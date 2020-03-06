@@ -3,8 +3,9 @@
 import _interpreters
 import logging
 
-__all__ = ['Interpreter', 'SendChannel', 'RecvChannel', 'is_shareable',
-           'create_channel', 'list_all_channels', 'list_all', 'get_current',
+__all__ = ['Interpreter', 'SendChannel', 'RecvChannel',
+            'is_shareable', 'create_channel',
+            'list_all_channels', 'get_current',
            'create']
 
 
@@ -21,7 +22,8 @@ def list_all():
 
     Get all existing interpreters.
     """
-    return [Interpreter(id) for id in _interpreters.list_all()]
+    return [Interpreter(id) for id in
+            _interpreters.list_all()]
 
 def get_current():
     """ get_current() -> Interpreter
@@ -44,28 +46,24 @@ class Interpreter:
     def is_running(self):
         """is_running() -> bool
 
-        Return whether or not the identified interpreter is running.
+        Return whether or not the identified
+        interpreter is running.
         """
         return _interpreters.is_running(self._id)
 
     def destroy(self):
         """destroy()
 
-        Destroy the identified interpreter.
+        Destroy the interpreter.
 
         Attempting to destroy the current
-        interpreter results in a RuntimeError. So does an unrecognized ID
+        interpreter results in a RuntimeError.
         """
         return _interpreters.destroy(self._id)
 
-    def run(self, src_str, /, *, channels=None):
-        """run(src_str, /, *, channels=None)
-
-        channel = (RecvChannel, SendChannel)
-
-        Run the given source code in the interpreter.
-        This blocks the current thread until done.
-        """
+    def _handle_channels(self, channels):
+        # Looks like the only way for an interpreter to be associated
+        # to a channel is through sending or recving data.
         if channels:
             if channels[0] and channels[1] != None:
                 _interpreters.channel_recv(channels[0].id)
@@ -76,6 +74,14 @@ class Interpreter:
                 _interpreters.channel_send(channels[1].id, src_str)
             else:
                 pass
+
+    def run(self, src_str, /, *, channels=None):
+        """run(src_str, /, *, channels=None)
+
+        Run the given source code in the interpreter.
+        This blocks the current thread until done.
+        """
+        self._handle_channels(channels)
         try:
             _interpreters.run_string(self._id, src_str)
         except RunFailedError as err:
@@ -86,15 +92,16 @@ class Interpreter:
 def is_shareable(obj):
     """ is_shareable(obj) -> Bool
 
-    Return `True` if the object's data can be shared between
-    interpreters and `False` otherwise.
+    Return `True` if the object's data can be
+    shared between interpreters and `False` otherwise.
     """
     return _interpreters.is_shareable(obj)
 
 def create_channel():
     """ create_channel() -> (RecvChannel, SendChannel)
 
-    Create a new channel for passing data between interpreters.
+    Create a new channel for passing data between
+    interpreters.
     """
 
     cid = _interpreters.channel_create()
@@ -105,7 +112,8 @@ def list_all_channels():
 
     Return all open channels.
     """
-    return [(RecvChannel(cid), SendChannel(cid)) for cid in _interpreters.channel_list_all()]
+    return [(RecvChannel(cid), SendChannel(cid))
+            for cid in _interpreters.channel_list_all()]
 
 def wait(timeout):
     #The implementation for wait
@@ -117,7 +125,9 @@ class RecvChannel:
 
     def __init__(self, id):
         self.id = id
-        self.interpreters = _interpreters.channel_list_interpreters(self.id, send=False)
+        self.interpreters = _interpreters.\
+                            channel_list_interpreters(self.id,\
+                                                      send=False)
 
     def recv(self):
         """ channel_recv() -> obj
@@ -126,101 +136,174 @@ class RecvChannel:
         and wait if none have been sent.
         Associate the interpreter with the channel.
         """
-        obj = _interpreters.channel_recv(self.id)
-        if obj == None:
-            wait(timeout)
+        try:
             obj = _interpreters.channel_recv(self.id)
+            if obj == None:
+                wait(2)
+                obj = _interpreters.channel_recv(self.id)
+        except _interpreters.ChannelEmptyError:
+            raise ChannelEmptyError
+        except _interpreters.ChannelNotFoundError:
+            raise ChannelNotFoundError
+        except _interpreters.ChannelClosedError:
+            raise ChannelClosedError
+        except _interpreters.RunFailedError:
+            raise RunFailedError
         return obj
 
     def recv_nowait(self, default=None):
         """recv_nowait(default=None) -> object
 
-        Like recv(), but return the default instead of waiting.
+        Like recv(), but return the default
+        instead of waiting.
         """
-        obj = _interpreters.channel_recv(self.id)
-        if obj == None:
-            obj = default
+        try:
+            obj = _interpreters.channel_recv(self.id)
+            if obj == None:
+                obj = default
+        except _interpreters.ChannelEmptyError:
+            raise ChannelEmptyError
+        except _interpreters.ChannelNotFoundError:
+            raise ChannelNotFoundError
+        except _interpreters.ChannelClosedError:
+            raise ChannelClosedError
+        except _interpreters.RunFailedError:
+            raise RunFailedError
         return obj
 
     def release(self):
         """ release()
 
-        No longer associate the current interpreterwith the channel
-        (on the receiving end).
+        No longer associate the current interpreter
+        with the channel (on the receiving end).
         """
-        return _interpreters.channel_release(self.id, recv=True)
+        try:
+            _interpreters.channel_release(self.id, recv=True)
+        except _interpreters.ChannelClosedError:
+            raise ChannelClosedError
+        except _interpreters.ChannelNotEmptyError:
+            raise ChannelNotEmptyError
 
     def close(self, force=False):
         """close(force=False)
 
-        Close the channel in all interpreters..
+        Close the channel in all interpreters.
         """
-        return _interpreters.channel_close(self.id, recv=force)
+        try:
+            _interpreters.channel_close(self.id,
+                                        force=force, recv=True)
+        except _interpreters.ChannelClosedError:
+            raise ChannelClosedError
+        except _interpreters.ChannelNotEmptyError:
+            raise ChannelNotEmptyError
 
 
 class SendChannel:
 
     def __init__(self, id):
         self.id = id
-        self.interpreters = _interpreters.channel_list_interpreters(self.id, send=True)
+        self.interpreters = _interpreters.\
+                            channel_list_interpreters(self.id,\
+                                                      send=True)
 
     def send(self, obj):
         """ send(obj)
 
-        Send the object (i.e. its data) to the receiving end of the channel
-        and wait. Associate the interpreter with the channel.
+        Send the object (i.e. its data) to the receiving
+        end of the channel and wait. Associate the interpreter
+        with the channel.
         """
-        _interpreters.channel_send(self.id, obj)
-        wait(2)
+        try:
+            _interpreters.channel_send(self.id, obj)
+            wait(2)
+        except _interpreters.ChannelNotFoundError:
+            raise ChannelNotFoundError
+        except _interpreters.ChannelClosedError:
+            raise ChannelClosedError
+        except _interpreters.RunFailedError:
+            raise RunFailedError
 
     def send_nowait(self, obj):
         """ send_nowait(obj)
 
         Like send(), but return False if not received.
         """
-        _interpreters.channel_send(self.id, obj)
+        try:
+            _interpreters.channel_send(self.id, obj)
+        except _interpreters.ChannelNotFoundError:
+            raise ChannelNotFoundError
+        except _interpreters.ChannelClosedError:
+            raise ChannelClosedError
+        except _interpreters.RunFailedError:
+            raise RunFailedError
+
         recv_obj = _interpreters.channel_recv(self.id)
         if recv_obj:
-            return obj   
+            return obj
         else:
             return False
 
     def send_buffer(self, obj):
-        """ ssend_buffer(obj)
+        """ send_buffer(obj)
 
         Send the object's buffer to the receiving
         end of the channel and wait. Associate the interpreter
         with the channel.
         """
-        _interpreters.channel_send_buffer(self.id, obj)
-        wait(2)
+        try:
+            _interpreters.channel_send_buffer(self.id, obj)
+            wait(2)
+        except _interpreters.ChannelNotFoundError:
+            raise ChannelNotFoundError
+        except _interpreters.ChannelClosedError:
+            raise ChannelClosedError
+        except _interpreters.RunFailedError:
+            raise RunFailedError
 
     def send_buffer_nowait(self, obj):
         """ send_buffer_nowait(obj)
 
         Like send(), but return False if not received.
         """
-        _interpreters.channel_send_buffer(self.id, obj)
+        try:
+            _interpreters.channel_send_buffer(self.id, obj)
+        except _interpreters.ChannelNotFoundError:
+            raise ChannelNotFoundError
+        except _interpreters.ChannelClosedError:
+            raise ChannelClosedError
+        except _interpreters.RunFailedError:
+            raise RunFailedError
         recv_obj = _interpreters.channel_recv(self.id)
         if recv_obj:
-            return obj   
+            return obj
         else:
             return False
 
     def release(self):
         """ release()
 
-        No longer associate the current interpreterwith the channel
-        (on the sending end).
+        No longer associate the current interpreter
+        with the channel (on the sending end).
         """
-        return _interpreters.channel_release(self.id, send=True)
+        try:
+            _interpreters.channel_release(self.id, send=True)
+        except _interpreters.ChannelClosedError:
+            raise ChannelClosedError
+        except _interpreters.ChannelNotEmptyError:
+            raise ChannelNotEmptyError
 
     def close(self, force=False):
         """close(force=False)
 
         Close the channel in all interpreters..
         """
-        return _interpreters.channel_close(self.id, send=force)
+        try:
+            _interpreters.channel_close(self.id,
+                                        force=force, send=False)
+        except _interpreters.ChannelClosedError:
+            raise ChannelClosedError
+        except _interpreters.ChannelNotEmptyError:
+            raise ChannelNotEmptyError
 
 
 class ChannelError(Exception):

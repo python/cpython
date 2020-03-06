@@ -3,7 +3,7 @@ import os
 import threading
 from textwrap import dedent
 import unittest
-
+import time
 import interpreters
 import _interpreters
 
@@ -107,11 +107,11 @@ class CreateTests(TestBase):
                 print(interp)
                 """))
             interp2 = int(out.strip())
- 
+
         t = threading.Thread(target=f)
         t.start()
         t.join()
- 
+
         self.assertEqual(len(set(interpreters.list_all())), len({main, interp, interp2}))
 
     def test_after_destroy_all(self):
@@ -193,15 +193,15 @@ class ListAllTests(TestBase):
 
 class TestInterpreterId(TestBase):
 
-    def test_id_field_in_main(self):
+    def test_in_main(self):
         main = interpreters.get_current()
         self.assertEqual(0, main.id)
 
-    def test_id_field_custom(self):
+    def test_with_custom_num(self):
         interp = interpreters.Interpreter(1)
         self.assertEqual(1, interp.id)
 
-    def test_id_field_readonly(self):
+    def test_for_readonly_property(self):
         interp = interpreters.Interpreter(1)
         with self.assertRaises(AttributeError):
             interp.id = 2
@@ -209,11 +209,11 @@ class TestInterpreterId(TestBase):
 
 class TestInterpreterIsRunning(TestBase):
 
-    def test_is_running_main(self):
+    def test_main(self):
         main = interpreters.get_current()
         self.assertTrue(main.is_running())
 
-    def test_is_running_subinterpreter(self):
+    def test_subinterpreter(self):
         interp = interpreters.create()
         self.assertFalse(interp.is_running())
 
@@ -221,7 +221,7 @@ class TestInterpreterIsRunning(TestBase):
             self.assertTrue(interp.is_running())
         self.assertFalse(interp.is_running())
 
-    def test_is_running_from_subinterpreter(self):
+    def test_from_subinterpreter(self):
         interp = interpreters.create()
         out = _run_output(interp, dedent(f"""
             import _interpreters
@@ -232,13 +232,13 @@ class TestInterpreterIsRunning(TestBase):
             """))
         self.assertEqual(out.strip(), 'True')
 
-    def test_is_running_already_destroyed(self):
+    def test_already_destroyed(self):
         interp = interpreters.create()
         interp.destroy()
         with self.assertRaises(RuntimeError):
             interp.is_running()
 
-    def test_is_running_bad_id(self):
+    def test_bad_id(self):
         interp = interpreters.Interpreter(-1)
         with self.assertRaises(RuntimeError):
             interp.is_running()
@@ -246,7 +246,7 @@ class TestInterpreterIsRunning(TestBase):
 
 class TestInterpreterDestroy(TestBase):
 
-    def test_destroy_basic(self):
+    def test_basic(self):
         interp1 = interpreters.create()
         interp2 = interpreters.create()
         interp3 = interpreters.create()
@@ -254,7 +254,7 @@ class TestInterpreterDestroy(TestBase):
         interp2.destroy()
         self.assertEqual(3, len(interpreters.list_all()))
 
-    def test_destroy_all(self):
+    def test_all(self):
         before = set(interpreters.list_all())
         interps = set()
         for _ in range(3):
@@ -265,7 +265,7 @@ class TestInterpreterDestroy(TestBase):
             interp.destroy()
         self.assertEqual(len(set(interpreters.list_all())), len(before))
 
-    def test_destroy_main(self):
+    def test_main(self):
         main, = interpreters.list_all()
         with self.assertRaises(RuntimeError):
             main.destroy()
@@ -278,13 +278,13 @@ class TestInterpreterDestroy(TestBase):
         t.start()
         t.join()
 
-    def test_destroy_already_destroyed(self):
+    def test_already_destroyed(self):
         interp = interpreters.create()
         interp.destroy()
         with self.assertRaises(RuntimeError):
             interp.destroy()
 
-    def test_destroy_from_current(self):
+    def test_from_current(self):
         main, = interpreters.list_all()
         interp = interpreters.create()
         script = dedent(f"""
@@ -299,7 +299,7 @@ class TestInterpreterDestroy(TestBase):
         interp.run(script)
         self.assertEqual(len(set(interpreters.list_all())), len({main, interp}))
 
-    def test_destroy_from_sibling(self):
+    def test_from_sibling(self):
         main, = interpreters.list_all()
         interp1 = interpreters.create()
         script = dedent(f"""
@@ -311,7 +311,7 @@ class TestInterpreterDestroy(TestBase):
 
         self.assertEqual(len(set(interpreters.list_all())), len({main, interp1}))
 
-    def test_destroy_from_other_thread(self):
+    def test_from_other_thread(self):
         interp = interpreters.create()
         def f():
             interp.destroy()
@@ -320,7 +320,7 @@ class TestInterpreterDestroy(TestBase):
         t.start()
         t.join()
 
-    def test_destroy_still_running(self):
+    def test_still_running(self):
         main, = interpreters.list_all()
         interp = interpreters.create()
         with _running(interp):
@@ -490,7 +490,248 @@ class TestChannel(TestBase):
         channels3 = interpreters.create_channel()
         after = interpreters.list_all_channels()
 
-        self.assertEqual(len(set(after) - set(before)), 
+        self.assertEqual(len(set(after) - set(before)),
                          len({channels1, channels2, channels3}))
 
-class TestRecvChannelID(TestBase):
+class TestSendRecv(TestBase):
+
+    def test_fields(self):
+        r, s = interpreters.create_channel()
+        self.assertGreaterEqual(r.id, 0)
+        self.assertEqual([], r.interpreters)
+
+    def test_send_recv_main(self):
+        r, s = interpreters.create_channel()
+        orig = b'spam'
+        s.send(orig)
+        obj = r.recv()
+
+        self.assertEqual(obj, orig)
+        self.assertIsNot(obj, orig)
+
+    def test_send_recv_same_interpreter(self):
+        interp = interpreters.create()
+        out = _run_output(interp, dedent("""
+            import interpreters
+            r, s = interpreters.create_channel()
+            orig = b'spam'
+            s.send(orig)
+            obj = r.recv()
+            assert obj is not orig
+            assert obj == orig
+            """))
+
+    def test_send_recv_different_threads(self):
+        r, s = interpreters.create_channel()
+
+        def f():
+            while True:
+                try:
+                    obj = r.recv()
+                    break
+                except interpreters.ChannelEmptyError:
+                    time.sleep(0.1)
+            s.send(obj)
+        t = threading.Thread(target=f)
+        t.start()
+
+        s.send(b'spam')
+        t.join()
+        obj = r.recv()
+
+        self.assertEqual(obj, b'spam')
+
+    def test_recv_empty(self):
+        r, s = interpreters.create_channel()
+        with self.assertRaises(interpreters.ChannelEmptyError):
+            r.recv()
+
+    def test_send_recv_nowait_main(self):
+        r, s = interpreters.create_channel()
+        orig = b'spam'
+        s.send(orig)
+        obj = r.recv_nowait()
+
+        self.assertEqual(obj, orig)
+        self.assertIsNot(obj, orig)
+
+    def test_send_recv_nowait_same_interpreter(self):
+        interp = interpreters.create()
+        out = _run_output(interp, dedent("""
+            import interpreters
+            r, s = interpreters.create_channel()
+            orig = b'spam'
+            s.send(orig)
+            obj = r.recv_nowait()
+            assert obj is not orig
+            assert obj == orig
+            """))
+
+    def test_send_recv_nowait_different_threads(self):
+        r, s = interpreters.create_channel()
+
+        def f():
+            while True:
+                try:
+                    obj = r.recv_nowait()
+                    break
+                except interpreters.ChannelEmptyError:
+                    time.sleep(0.1)
+            s.send(obj)
+        t = threading.Thread(target=f)
+        t.start()
+
+        s.send(b'spam')
+        t.join()
+        obj = r.recv_nowait()
+
+        self.assertEqual(obj, b'spam')
+
+    def test_recv_nowait_empty(self):
+        r, s = interpreters.create_channel()
+        with self.assertRaises(interpreters.ChannelEmptyError):
+            r.recv_nowait()
+
+    # close
+
+    def test_close_single_user(self):
+        r, s = interpreters.create_channel()
+        s.send(b'spam')
+        r.recv()
+        s.close()
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            s.send(b'eggs')
+        with self.assertRaises(interpreters.ChannelClosedError):
+            r.recv()
+
+    def test_close_multiple_times(self):
+        r, s = interpreters.create_channel()
+        s.send(b'spam')
+        r.recv()
+        s.close()
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            s.close()
+
+    def test_close_empty(self):
+        tests = [
+            (False, False),
+            (True, False),
+            (False, True),
+            (True, True),
+            ]
+        for send, recv in tests:
+            with self.subTest((send, recv)):
+                r, s = interpreters.create_channel()
+                s.send(b'spam')
+                r.recv()
+                s.close()
+
+                with self.assertRaises(interpreters.ChannelClosedError):
+                    s.send(b'eggs')
+                with self.assertRaises(interpreters.ChannelClosedError):
+                    r.recv()
+
+    def test_close_defaults_with_unused_items(self):
+        r, s = interpreters.create_channel()
+        s.send(b'spam')
+        s.send(b'ham')
+
+        with self.assertRaises(interpreters.ChannelNotEmptyError):
+            s.close()
+        r.recv()
+        s.send(b'eggs')
+
+    def test_close_never_used(self):
+        r, s = interpreters.create_channel()
+        r.close()
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            s.send(b'spam')
+        with self.assertRaises(interpreters.ChannelClosedError):
+            r.recv()
+
+    def test_close_used_multiple_times_by_single_user(self):
+        r, s = interpreters.create_channel()
+        s.send(b'spam')
+        s.send(b'spam')
+        s.send(b'spam')
+        r.recv()
+        s.close(force=True)
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            s.send(b'eggs')
+        with self.assertRaises(interpreters.ChannelClosedError):
+            r.recv()
+
+    # release
+
+    def test_single_user(self):
+        r, s = interpreters.create_channel()
+        s.send(b'spam')
+        r.recv()
+        s.release()
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            s.send(b'eggs')
+
+    def test_with_unused_items(self):
+        r, s = interpreters.create_channel()
+        s.send(b'spam')
+        s.send(b'ham')
+        s.release()
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            r.recv()
+
+    def test_never_used(self):
+        r, s = interpreters.create_channel()
+        s.release()
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            s.send(b'spam')
+        with self.assertRaises(interpreters.ChannelClosedError):
+            r.recv()
+
+class TestSendBuffer(TestBase):
+    def test_send_recv_main(self):
+        r, s = interpreters.create_channel()
+        orig = b'spam'
+        s.send_buffer(orig)
+        obj = r.recv()
+
+        self.assertEqual(obj, orig)
+        self.assertIsNot(obj, orig)
+
+    def test_send_recv_same_interpreter(self):
+        interp = interpreters.create()
+        out = _run_output(interp, dedent("""
+            import interpreters
+            r, s = interpreters.create_channel()
+            orig = b'spam'
+            s.send_buffer(orig)
+            obj = r.recv()
+            assert obj is not orig
+            assert obj == orig
+            """))
+
+    def test_send_recv_different_threads(self):
+        r, s = interpreters.create_channel()
+
+        def f():
+            while True:
+                try:
+                    obj = r.recv()
+                    break
+                except interpreters.ChannelEmptyError:
+                    time.sleep(0.1)
+            s.send_buffer(obj)
+        t = threading.Thread(target=f)
+        t.start()
+
+        s.send_buffer(b'spam')
+        t.join()
+        obj = r.recv()
+
+        self.assertEqual(obj, b'spam')

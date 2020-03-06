@@ -286,6 +286,8 @@ static PyObject *ChannelNotFoundError;
 static PyObject *ChannelClosedError;
 static PyObject *ChannelEmptyError;
 static PyObject *ChannelNotEmptyError;
+static PyObject *ChannelReleasedError;
+static PyObject *NotReceivedError;
 
 static int
 channel_exceptions_init(PyObject *ns)
@@ -319,6 +321,27 @@ channel_exceptions_init(PyObject *ns)
         return -1;
     }
     if (PyDict_SetItemString(ns, "ChannelClosedError", ChannelClosedError) != 0) {
+        return -1;
+    }
+
+    // An operation tried to use a released channel.
+    ChannelReleasedError = PyErr_NewException(
+            "_interpreters.ChannelReleasedError", ChannelClosedError, NULL);
+    if (ChannelReleasedError == NULL) {
+        return -1;
+    }
+    if (PyDict_SetItemString(ns, "ChannelReleasedError", ChannelReleasedError) != 0) {
+        return -1;
+    }
+
+    // An operation trying to send an object when Nothing was waiting
+    // to receive it
+    NotReceivedError = PyErr_NewException(
+            "_interpreters.NotReceivedError", ChannelError, NULL);
+    if (NotReceivedError == NULL) {
+        return -1;
+    }
+    if (PyDict_SetItemString(ns, "NotReceivedError", NotReceivedError) != 0) {
         return -1;
     }
 
@@ -484,6 +507,7 @@ typedef struct _channelend {
     struct _channelend *next;
     int64_t interp;
     int open;
+    int release;
 } _channelend;
 
 static _channelend *
@@ -618,6 +642,10 @@ _channelends_associate(_channelends *ends, int64_t interp, int send)
             PyErr_SetString(ChannelClosedError, "channel already closed");
             return -1;
         }
+        if (end->release && !end->open) {
+            PyErr_SetString(ChannelReleasedError, "channel released");
+            return -1;
+        }
         // already associated
         return 0;
     }
@@ -732,6 +760,7 @@ typedef struct _channel {
     _channelqueue *queue;
     _channelends *ends;
     int open;
+    int release;
     struct _channel_closing *closing;
 } _PyChannelState;
 
@@ -789,6 +818,10 @@ _channel_add(_PyChannelState *chan, int64_t interp,
         PyErr_SetString(ChannelClosedError, "channel closed");
         goto done;
     }
+    if (chan->release && !chan->open) {
+            PyErr_SetString(ChannelReleasedError, "channel released");
+            return -1;
+    }
     if (_channelends_associate(chan->ends, interp, 1) != 0) {
         goto done;
     }
@@ -811,6 +844,10 @@ _channel_next(_PyChannelState *chan, int64_t interp)
 
     if (!chan->open) {
         PyErr_SetString(ChannelClosedError, "channel closed");
+        goto done;
+    }
+    if (chan->release && !chan->open) {
+        PyErr_SetString(ChannelReleasedError, "channel released");
         goto done;
     }
     if (_channelends_associate(chan->ends, interp, 0) != 0) {
@@ -1306,21 +1343,24 @@ _channel_destroy(_channels *channels, int64_t id)
 static int
 _channel_send_buffer(_channels *channels, int64_t id, PyObject *obj)
 {
-    const char *s = NULL;
-    Py_buffer view = {NULL, NULL};
-    if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0){
+    Py_buffer buffer;
+    PyObject *bytes;
+
+    if (PyObject_GetBuffer(obj, &buffer, PyBUF_SIMPLE) < 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "Error creating object buffer, %.80s found",
+                     Py_TYPE(obj)->tp_name);
         return -1;
     }
 
-    s = view.buf;
-    if (s == NULL) {
-        PyBuffer_Release(&view);
+    if (buffer.len == 0) {
+        PyBuffer_Release(&buffer);
         return -1;
     }
 
     PyInterpreterState *interp = _get_current();
     if (interp == NULL) {
-        PyBuffer_Release(&view);
+        PyBuffer_Release(&buffer);
         return -1;
     }
 
@@ -1328,7 +1368,7 @@ _channel_send_buffer(_channels *channels, int64_t id, PyObject *obj)
     PyThread_type_lock mutex = NULL;
     _PyChannelState *chan = _channels_lookup(channels, id, &mutex);
     if (chan == NULL) {
-        PyBuffer_Release(&view);
+        PyBuffer_Release(&buffer);
         return -1;
     }
     // Past this point we are responsible for releasing the mutex.
@@ -1336,7 +1376,7 @@ _channel_send_buffer(_channels *channels, int64_t id, PyObject *obj)
     if (chan->closing != NULL) {
         PyErr_Format(ChannelClosedError, "channel %" PRId64 " closed", id);
         PyThread_release_lock(mutex);
-        PyBuffer_Release(&view);
+        PyBuffer_Release(&buffer);
         return -1;
     }
 
@@ -1344,13 +1384,21 @@ _channel_send_buffer(_channels *channels, int64_t id, PyObject *obj)
     _PyCrossInterpreterData *data = PyMem_NEW(_PyCrossInterpreterData, 1);
     if (data == NULL) {
         PyThread_release_lock(mutex);
-        PyBuffer_Release(&view);
+        PyBuffer_Release(&buffer);
         return -1;
     }
-    if (_PyObject_GetCrossInterpreterData((PyObject *)s, data) != 0) {
+
+    if (buffer.buf != NULL)
+        bytes = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
+    else {
+        Py_INCREF(Py_None);
+        bytes = Py_None;
+    }
+
+    if (_PyObject_GetCrossInterpreterData(bytes, data) != 0) {
         PyThread_release_lock(mutex);
         PyMem_Free(data);
-        PyBuffer_Release(&view);
+        PyBuffer_Release(&buffer);
         return -1;
     }
 
@@ -1360,11 +1408,12 @@ _channel_send_buffer(_channels *channels, int64_t id, PyObject *obj)
     if (res != 0) {
         _PyCrossInterpreterData_Release(data);
         PyMem_Free(data);
-        PyBuffer_Release(&view);
+        PyBuffer_Release(&buffer);
         return -1;
     }
     
-    PyBuffer_Release(&view);
+    PyBuffer_Release(&buffer);
+
     return 0;
 }
 
@@ -1466,6 +1515,13 @@ _channel_drop(_channels *channels, int64_t id, int send, int recv)
         return -1;
     }
     // Past this point we are responsible for releasing the mutex.
+
+    //  Release the channel
+    if (!chan->release) {
+        PyErr_SetString(ChannelClosedError, "channel already released");
+        return -1;
+    }
+    chan->release = 1;
 
     // Close one or both of the two ends.
     int res = _channel_close_interpreter(chan, PyInterpreterState_GetID(interp), send-recv);

@@ -8,7 +8,7 @@
 
 --------------
 
-This module provides highlevel tools for working with sub-interpreters, 
+This module provides highlevel tools for working with sub-interpreters,
 such as creating them, running code in them, or sending data between them.
 It is a wrapper around the low-level :mod:`_interpreters` module.
 
@@ -25,16 +25,18 @@ The Interpreter object represents a single interpreter.
     .. method:: is_running()
 
        Return whether or not the identified interpreter is running.
+       It returns `True` and `False` otherwise.
 
     .. method:: destroy()
 
-       Destroy the identified interpreter. Attempting to destroy the current
-       interpreter results in a RuntimeError. So does an unrecognized ID.
+       Destroy the interpreter. Attempting to destroy the current
+       interpreter results in a `RuntimeError`.
 
     .. method:: run(self, src_str, /, *, channels=None):
 
-       Run the given source code in the interpreter. This blocks the current
-       thread until done.
+       Run the given source code in the interpreter. This blocks
+       the current thread until done. `channels` should be in
+       the form : `(RecvChannel, SendChannel)`.
 
 RecvChannel Objects
 -------------------
@@ -47,60 +49,69 @@ The RecvChannel object represents a recieving channel.
 
     .. method:: recv()
 
-        Get the next object from the channel, and wait if none have been
-        sent. Associate the interpreter with the channel.
+        Get the next object from the channel, and wait if
+        none have been sent. Associate the interpreter
+        with the channel.
 
     .. method:: recv_nowait(default=None)
 
-        Like ``recv()``, but return the default instead of waiting.
+        Like ``recv()``, but return the default result
+        instead of waiting.
 
-     .. method:: release()
+    .. method:: release()
 
-        Close the channel for the current interpreter.  'send' and 'recv' (bool) may
-        be used to indicate the ends to close.  By default both ends are closed.
-        Closing an already closed end is a noop.
+        Release the channel for the current interpreter.
+        By default both ends are released. Releasing an already
+        released end results in a ``ChannelReleasedError`` exception.
 
     .. method:: close(force=False)
 
-        Close the channel in all interpreters.
+        Close the channel in all interpreters. By default
+        both ends are closed. closing an already closed end
+        results in a ``ChannelClosedError`` exception. Without
+        seeting ``force`` to ``True`` a ``ChannelNotEmptyError``
+        will be returned when a channel with data is closed.
 
 
 SendChannel Objects
 --------------------
 
-The SendChannel object represents a sending channel.
+The ``SendChannel`` object represents a sending channel.
 
 .. class:: SendChannel(id)
 
-    This class represents the receiving end of a channel.
+    This class represents the sending end of a channel.
 
     .. method:: send(obj)
 
-       Send the object (i.e. its data) to the receiving end of the channel
-       and wait.Associate the interpreter with the channel.
+       Send the object ``obj`` to the receiving end of the channel
+       and wait. Associate the interpreter with the channel.
 
     .. method:: send_nowait(obj)
 
-        Like ``send()``, but return False if not received.
+        Like ``send()`` but return ``False`` if not received.
 
     .. method:: send_buffer(obj)
 
-       Send the object's buffer to the receiving end of the channel and wait.
-       Associate the interpreter with the channel.
+       Send the object's buffer to the receiving end of the
+       channel and wait. Associate the interpreter with the
+       channel.
 
     .. method:: send_buffer_nowait(obj)
 
-       Like ``send_buffer()``, but return False if not received.
+       Like ``send_buffer()`` but return ``False`` if not received.
 
     .. method:: release()
 
-       Close the channel for the current interpreter.  'send' and 'recv' (bool) may
-       be used to indicate the ends to close.  By default both ends are closed.
-       Closing an already closed end is a noop.
+        Release the channel for the current interpreter.
+        By default both ends are released. Releasing an already
+        released end results in a ``ChannelReleasedError`` exception.
 
     .. method:: close(force=False)
 
-        Close the channel in all interpreters.
+        Close the channel in all interpreters. By default
+        both ends are closed. closing an already closed end
+        results in a ``ChannelClosedError`` exception.
 
 
 This module defines the following global functions:
@@ -108,7 +119,8 @@ This module defines the following global functions:
 
 .. function:: is_shareable(obj)
 
-   Return `True` if the object's data can be shared between interpreters.
+   Return ``True`` if the object's data can be shared between
+   interpreters.
 
 .. function:: create_channel()
 
@@ -120,16 +132,18 @@ This module defines the following global functions:
 
 .. function:: create()
 
-   Initialize a new (idle) Python interpreter.
+   Initialize a new (idle) Python interpreter. Get the currently
+   running interpreter. This method returns an ``Interpreter`` object.
 
 .. function:: get_current()
 
    Get the currently running interpreter. This method returns
-   an `interpreter` object.
+   an ``Interpreter`` object.
 
 .. function:: list_all()
 
-   Get all existing interpreters.
+   Get all existing interpreters. Returns a list
+   of ``Interpreter`` objects.
 
 This module also defines the following exceptions.
 
@@ -140,35 +154,35 @@ This module also defines the following exceptions.
 
 .. exception:: ChannelError
 
-   This exception, a subclass of :exc:`Exception`, and is the base class for
-   channel-related exceptions.
+   This exception is a subclass of :exc:`Exception`, and is the base
+   class for all channel-related exceptions.
 
 .. exception:: ChannelNotFoundError
 
-   This exception, a subclass of :exc:`ChannelError`, is raised when the
-   the identified channel was not found.
+   This exception is a subclass of :exc:`ChannelError`, and is raised
+   when the the identified channel is not found.
 
 .. exception:: ChannelEmptyError
 
-   This exception, a subclass of :exc:`ChannelError`, is raised when
+   This exception is a subclass of :exc:`ChannelError`, and is raised when
    the channel is unexpectedly empty.
 
 .. exception:: ChannelNotEmptyError
 
-   This exception, a subclass of :exc:`ChannelError`, is raised when
+   This exception is a subclass of :exc:`ChannelError`, and is raised when
    the channel is unexpectedly not empty.
 
 .. exception:: NotReceivedError
 
-   This exception, a subclass of :exc:`ChannelError`, is raised when
+   This exception is a subclass of :exc:`ChannelError`, and is raised when
    nothing was waiting to receive a sent object.
 
 .. exception:: ChannelClosedError
 
-   This exception, a subclass of :exc:`ChannelError`, is raised when
+   This exception is a subclass of :exc:`ChannelError`, and is raised when
    the channel is closed.
 
 .. exception:: ChannelReleasedError
 
-   This exception, a subclass of :exc:`ChannelClosedError`, is raised when
-   the channel is released (but not yet closed).
+   This exception is a subclass of :exc:`ChannelClosedError`, and is raised
+   when the channel is released (but not yet closed).
