@@ -466,7 +466,7 @@ parse_number(PyObject *s, Py_ssize_t pos, Py_ssize_t end,
    Return -1 on error. */
 static Py_ssize_t
 calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
-                   Py_UCS4 sign_char, PyObject *number, Py_ssize_t n_start,
+                   Py_UCS4 sign_char, Py_ssize_t n_start,
                    Py_ssize_t n_end, Py_ssize_t n_remainder,
                    int has_decimal, const LocaleInfo *locale,
                    const InternalFormatSpec *format, Py_UCS4 *maxchar)
@@ -595,7 +595,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
    Return -1 on error, or 0 on success. */
 static int
 fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
-            PyObject *digits, Py_ssize_t d_start, Py_ssize_t d_end,
+            PyObject *digits, Py_ssize_t d_start,
             PyObject *prefix, Py_ssize_t p_start,
             Py_UCS4 fill_char,
             LocaleInfo *locale, int toupper)
@@ -983,7 +983,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
         goto done;
 
     /* Calculate how much memory we'll need. */
-    n_total = calc_number_widths(&spec, n_prefix, sign_char, tmp, inumeric_chars,
+    n_total = calc_number_widths(&spec, n_prefix, sign_char, inumeric_chars,
                                  inumeric_chars + n_digits, n_remainder, 0,
                                  &locale, format, &maxchar);
     if (n_total == -1) {
@@ -996,7 +996,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
 
     /* Populate the memory. */
     result = fill_number(writer, &spec,
-                         tmp, inumeric_chars, inumeric_chars + n_digits,
+                         tmp, inumeric_chars,
                          tmp, prefix, format->fill_char,
                          &locale, format->type == 'X');
 
@@ -1131,7 +1131,7 @@ format_float_internal(PyObject *value,
         goto done;
 
     /* Calculate how much memory we'll need. */
-    n_total = calc_number_widths(&spec, 0, sign_char, unicode_tmp, index,
+    n_total = calc_number_widths(&spec, 0, sign_char, index,
                                  index + n_digits, n_remainder, has_decimal,
                                  &locale, format, &maxchar);
     if (n_total == -1) {
@@ -1144,7 +1144,7 @@ format_float_internal(PyObject *value,
 
     /* Populate the memory. */
     result = fill_number(writer, &spec,
-                         unicode_tmp, index, index + n_digits,
+                         unicode_tmp, index,
                          NULL, 0, format->fill_char,
                          &locale, 0);
 
@@ -1316,7 +1316,7 @@ format_complex_internal(PyObject *value,
     tmp_format.width = -1;
 
     /* Calculate how much memory we'll need. */
-    n_re_total = calc_number_widths(&re_spec, 0, re_sign_char, re_unicode_tmp,
+    n_re_total = calc_number_widths(&re_spec, 0, re_sign_char,
                                     i_re, i_re + n_re_digits, n_re_remainder,
                                     re_has_decimal, &locale, &tmp_format,
                                     &maxchar);
@@ -1329,7 +1329,7 @@ format_complex_internal(PyObject *value,
      * requested by the original format. */
     if (!skip_re)
         tmp_format.sign = '+';
-    n_im_total = calc_number_widths(&im_spec, 0, im_sign_char, im_unicode_tmp,
+    n_im_total = calc_number_widths(&im_spec, 0, im_sign_char,
                                     i_im, i_im + n_im_digits, n_im_remainder,
                                     im_has_decimal, &locale, &tmp_format,
                                     &maxchar);
@@ -1366,7 +1366,7 @@ format_complex_internal(PyObject *value,
 
     if (!skip_re) {
         result = fill_number(writer, &re_spec,
-                             re_unicode_tmp, i_re, i_re + n_re_digits,
+                             re_unicode_tmp, i_re,
                              NULL, 0,
                              0,
                              &locale, 0);
@@ -1374,7 +1374,7 @@ format_complex_internal(PyObject *value,
             goto done;
     }
     result = fill_number(writer, &im_spec,
-                         im_unicode_tmp, i_im, i_im + n_im_digits,
+                         im_unicode_tmp, i_im,
                          NULL, 0,
                          0,
                          &locale, 0);
