@@ -1642,6 +1642,17 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 
+Assignment expressions
+======================
+
+.. productionlist::
+   assignment_expression: `conditional_expression` [":=" `conditional_expression`]
+
+.. XXX TODO!
+
+See :pep:`572` for more details about assignment expressions.
+
+
 .. _if_expr:
 
 Conditional expressions
