@@ -178,7 +178,7 @@ called "displays", each of them in two flavors:
 Common syntax elements for comprehensions are:
 
 .. productionlist::
-   comprehension: `namedexpr_test` `comp_for`
+   comprehension: `assignment_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `expression_nocond` [`comp_iter`]
