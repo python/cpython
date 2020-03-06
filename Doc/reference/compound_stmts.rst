@@ -90,8 +90,8 @@ The :keyword:`!if` statement
 The :keyword:`if` statement is used for conditional execution:
 
 .. productionlist::
-   if_stmt: "if" `expression` ":" `suite`
-          : ("elif" `expression` ":" `suite`)*
+   if_stmt: "if" `assignment_expression` ":" `suite`
+          : ("elif" `assignment_expression` ":" `suite`)*
           : ["else" ":" `suite`]
 
 It selects exactly one of the suites by evaluating the expressions one by one
@@ -116,7 +116,7 @@ The :keyword:`while` statement is used for repeated execution as long as an
 expression is true:
 
 .. productionlist::
-   while_stmt: "while" `expression` ":" `suite`
+   while_stmt: "while" `assignment_expression` ":" `suite`
              : ["else" ":" `suite`]
 
 This repeatedly tests the expression and, if it is true, executes the first

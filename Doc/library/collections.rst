@@ -729,6 +729,10 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         initialized from the first argument to the constructor, if present, or to
         ``None``, if absent.
 
+    .. versionchanged:: 3.9
+       Added merge (``|``) and update (``|=``) operators, specified in
+       :pep:`584`.
+
 
 :class:`defaultdict` Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
