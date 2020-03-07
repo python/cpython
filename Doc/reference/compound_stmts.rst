@@ -551,8 +551,9 @@ is roughly equivalent to ::
 except that the original function is not temporarily bound to the name ``func``.
 
 .. versionchanged:: 3.9
-   Functions may be decorated with any valid expression.  Previously, the
-   grammar was much more restrictive; see :pep:`614` for details.
+   Functions may be decorated with any valid :token:`assignment_expression`.
+   Previously, the grammar was much more restrictive; see :pep:`614` for
+   details.
 
 .. index::
    triple: default; parameter; value
@@ -722,8 +723,9 @@ The evaluation rules for the decorator expressions are the same as for function
 decorators.  The result is then bound to the class name.
 
 .. versionchanged:: 3.9
-   Classes may be decorated with any valid expression.  Previously, the grammar
-   was much more restrictive; see :pep:`614` for details.
+   Classes may be decorated with any valid :token:`assignment_expression`.
+   Previously, the grammar was much more restrictive; see :pep:`614` for
+   details.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
