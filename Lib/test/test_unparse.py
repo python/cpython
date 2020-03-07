@@ -344,6 +344,20 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("call((yield x))")
         self.check_src_roundtrip("return x + (yield x)")
 
+    def test_subscript(self):
+        self.check_src_roundtrip("a[i]")
+        self.check_src_roundtrip("a[i,]")
+        self.check_src_roundtrip("a[i, j]")
+        self.check_src_roundtrip("a[()]")
+        self.check_src_roundtrip("a[i:j]")
+        self.check_src_roundtrip("a[:j]")
+        self.check_src_roundtrip("a[i:]")
+        self.check_src_roundtrip("a[i:j:k]")
+        self.check_src_roundtrip("a[:j:k]")
+        self.check_src_roundtrip("a[i::k]")
+        self.check_src_roundtrip("a[i:j,]")
+        self.check_src_roundtrip("a[i:j, k]")
+
     def test_docstrings(self):
         docstrings = (
             '"""simple doc string"""',
