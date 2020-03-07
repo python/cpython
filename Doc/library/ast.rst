@@ -340,11 +340,14 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('-a', mode='eval'), indent=4))
-        Expression(
-            body=UnaryOp(
-                op=USub(),
-                operand=Name(id='a', ctx=Load())))
+        >>> print(ast.dump(ast.parse('-a'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=UnaryOp(
+                        op=USub(),
+                        operand=Name(id='a', ctx=Load())))],
+            type_ignores=[])
 
 
 .. class:: UnaryOp(op, operand)
