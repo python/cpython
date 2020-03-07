@@ -436,12 +436,12 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('1 < a < 10', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('1 <= a < 10', mode='eval'), indent=4))
         Expression(
             body=Compare(
                 left=Constant(value=1, kind=None),
                 ops=[
-                    Lt(),
+                    LtE(),
                     Lt()],
                 comparators=[
                     Name(id='a', ctx=Load()),
