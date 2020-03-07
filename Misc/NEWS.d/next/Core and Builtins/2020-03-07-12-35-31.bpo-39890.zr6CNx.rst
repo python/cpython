@@ -1,0 +1,1 @@
+Don't mutate the ast when compiling starred assignments.
