@@ -556,7 +556,17 @@ class Unparser:
     def _Subscript(self, t):
         self.dispatch(t.value)
         self.write("[")
-        self.dispatch(t.slice)
+        if (isinstance(t.slice, ast.Index)
+                and isinstance(t.slice.value, ast.Tuple)
+                and t.slice.value.elts):
+            if len(t.slice.value.elts) == 1:
+                elt = t.slice.value.elts[0]
+                self.dispatch(elt)
+                self.write(",")
+            else:
+                interleave(lambda: self.write(", "), self.dispatch, t.slice.value.elts)
+        else:
+            self.dispatch(t.slice)
         self.write("]")
 
     def _Starred(self, t):
@@ -581,7 +591,12 @@ class Unparser:
             self.dispatch(t.step)
 
     def _ExtSlice(self, t):
-        interleave(lambda: self.write(', '), self.dispatch, t.dims)
+        if len(t.dims) == 1:
+            elt = t.dims[0]
+            self.dispatch(elt)
+            self.write(",")
+        else:
+            interleave(lambda: self.write(', '), self.dispatch, t.dims)
 
     # argument
     def _arg(self, t):
