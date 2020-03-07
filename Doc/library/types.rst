@@ -284,9 +284,8 @@ Standard names are defined for the following types:
 
    .. versionchanged:: 3.9
 
-      Updated to support the new union operators in :pep:`584`. The binary ``|``
-      operator simply delegates to the mapping itself, while the in-place ``|=``
-      operator delegates to a shallow copy of it (to enforce read-only behavior).
+      Updated to support the new union (``|``) operator from :pep:`584`, which
+      simply delegates to the underlying mapping.
 
    .. describe:: key in proxy
 
