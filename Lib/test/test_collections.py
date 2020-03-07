@@ -247,7 +247,7 @@ class TestChainMap(unittest.TestCase):
         tmp = cm2 | d # testing between chainmap and mapping
         self.assertEqual(tmp.maps, [cm2.maps[0] | d, *cm2.maps[1:]])
         self.assertEqual((d | cm2).maps, [d | dict(cm2)])
-        cm2 |= d 
+        cm2 |= d
         self.assertEqual(tmp, cm2)
 
         # testing behavior between chainmap and iterable key-value pairs
