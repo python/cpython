@@ -995,15 +995,15 @@ mappingproxy_or(PyObject *left, PyObject *right)
 }
 
 static PyObject *
-mappingproxy_ior(mappingproxyobject *self, PyObject *other)
+mappingproxy_ior(PyObject *self, PyObject *Py_UNUSED(other))
 {
-    PyErr_Format(PyExc_TypeError,
+    return PyErr_Format(PyExc_TypeError,
         "'|=' is not supported by %s; use '|' instead", Py_TYPE(self)->tp_name);
 }
 
 static PyNumberMethods mappingproxy_as_number = {
     .nb_or = mappingproxy_or,
-    .nb_inplace_or = (binaryfunc)mappingproxy_ior,
+    .nb_inplace_or = mappingproxy_ior,
 };
 
 static int
