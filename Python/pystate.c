@@ -292,7 +292,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
-    if (runtime->finalizing == NULL) {
+    if (_PyRuntimeState_GetFinalizing(runtime) == NULL) {
         _PyWarnings_Fini(interp);
     }
     // XXX Once we have one allocator per interpreter (i.e.
@@ -327,20 +327,20 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     PyInterpreterState **p;
     for (p = &interpreters->head; ; p = &(*p)->next) {
         if (*p == NULL) {
-            Py_FatalError("PyInterpreterState_Delete: invalid interp");
+            Py_FatalError("invalid interp");
         }
         if (*p == interp) {
             break;
         }
     }
     if (interp->tstate_head != NULL) {
-        Py_FatalError("PyInterpreterState_Delete: remaining threads");
+        Py_FatalError("remaining threads");
     }
     *p = interp->next;
     if (interpreters->main == interp) {
         interpreters->main = NULL;
         if (interpreters->head != NULL) {
-            Py_FatalError("PyInterpreterState_Delete: remaining subinterpreters");
+            Py_FatalError("remaining subinterpreters");
         }
     }
     HEAD_UNLOCK(runtime);
@@ -363,7 +363,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 
     PyThreadState *tstate = _PyThreadState_Swap(gilstate, NULL);
     if (tstate != NULL && tstate->interp != interpreters->main) {
-        Py_FatalError("PyInterpreterState_DeleteExceptMain: not main interpreter");
+        Py_FatalError("not main interpreter");
     }
 
     HEAD_LOCK(runtime);
@@ -389,7 +389,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
     HEAD_UNLOCK(runtime);
 
     if (interpreters->head == NULL) {
-        Py_FatalError("PyInterpreterState_DeleteExceptMain: missing main");
+        Py_FatalError("missing main");
     }
     _PyThreadState_Swap(gilstate, tstate);
 }
@@ -400,11 +400,11 @@ _PyInterpreterState_Get(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
-        Py_FatalError("_PyInterpreterState_Get(): no current thread state");
+        Py_FatalError("no current thread state");
     }
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
-        Py_FatalError("_PyInterpreterState_Get(): no current interpreter");
+        Py_FatalError("no current interpreter");
     }
     return interp;
 }
@@ -695,7 +695,7 @@ int
 PyState_AddModule(PyObject* module, struct PyModuleDef* def)
 {
     if (!def) {
-        Py_FatalError("PyState_AddModule: Module Definition is NULL");
+        Py_FatalError("Module Definition is NULL");
         return -1;
     }
 
@@ -706,7 +706,7 @@ PyState_AddModule(PyObject* module, struct PyModuleDef* def)
         index < PyList_GET_SIZE(interp->modules_by_index) &&
         module == PyList_GET_ITEM(interp->modules_by_index, index))
     {
-        Py_FatalError("PyState_AddModule: Module already added!");
+        Py_FatalError("Module already added");
         return -1;
     }
     return _PyState_AddModule(tstate, module, def);
@@ -724,15 +724,15 @@ PyState_RemoveModule(struct PyModuleDef* def)
     }
     state = _PyInterpreterState_GET_UNSAFE();
     if (index == 0) {
-        Py_FatalError("PyState_RemoveModule: Module index invalid.");
+        Py_FatalError("Module index invalid");
         return -1;
     }
     if (state->modules_by_index == NULL) {
-        Py_FatalError("PyState_RemoveModule: Interpreters module-list not accessible.");
+        Py_FatalError("Interpreters module-list not accessible.");
         return -1;
     }
     if (index > PyList_GET_SIZE(state->modules_by_index)) {
-        Py_FatalError("PyState_RemoveModule: Module index out of bounds.");
+        Py_FatalError("Module index out of bounds.");
         return -1;
     }
     Py_INCREF(Py_None);
@@ -819,11 +819,11 @@ tstate_delete_common(PyThreadState *tstate,
 {
     _PyRuntimeState *runtime = tstate->interp->runtime;
     if (tstate == NULL) {
-        Py_FatalError("PyThreadState_Delete: NULL tstate");
+        Py_FatalError("NULL tstate");
     }
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
-        Py_FatalError("PyThreadState_Delete: NULL interp");
+        Py_FatalError("NULL interp");
     }
     HEAD_LOCK(runtime);
     if (tstate->prev)
@@ -850,7 +850,7 @@ _PyThreadState_Delete(PyThreadState *tstate, int check_current)
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
     if (check_current) {
         if (tstate == _PyRuntimeGILState_GetThreadState(gilstate)) {
-            Py_FatalError("PyThreadState_Delete: tstate is still current");
+            Py_FatalError("tstate is still current");
         }
     }
     tstate_delete_common(tstate, gilstate);
@@ -869,9 +869,9 @@ _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime)
 {
     struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
     PyThreadState *tstate = _PyRuntimeGILState_GetThreadState(gilstate);
-    if (tstate == NULL)
-        Py_FatalError(
-            "PyThreadState_DeleteCurrent: no current tstate");
+    if (tstate == NULL) {
+        Py_FatalError("no current tstate");
+    }
     tstate_delete_common(tstate, gilstate);
     _PyRuntimeGILState_SetThreadState(gilstate, NULL);
     PyEval_ReleaseLock();
@@ -932,9 +932,9 @@ PyThreadState *
 PyThreadState_Get(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate == NULL)
-        Py_FatalError("PyThreadState_Get: no current thread");
-
+    if (tstate == NULL) {
+        Py_FatalError("no current thread");
+    }
     return tstate;
 }
 

@@ -4247,7 +4247,8 @@ class CMiscIOTest(MiscIOTest):
         err = res.err.decode()
         if res.rc != 0:
             # Failure: should be a fatal error
-            pattern = (r"Fatal Python error: could not acquire lock "
+            pattern = (r"Fatal Python error: _enter_buffered_busy: "
+                       r"could not acquire lock "
                        r"for <(_io\.)?BufferedWriter name='<{stream_name}>'> "
                        r"at interpreter shutdown, possibly due to "
                        r"daemon threads".format_map(locals()))

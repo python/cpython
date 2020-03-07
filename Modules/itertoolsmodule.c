@@ -614,7 +614,7 @@ itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
 
     if (len == LINKCELLS) {
         if (next != Py_None) {
-            if (Py_TYPE(next) != &teedataobject_type)
+            if (!Py_IS_TYPE(next, &teedataobject_type))
                 goto err;
             assert(tdo->nextlink == NULL);
             Py_INCREF(next);

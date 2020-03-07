@@ -269,6 +269,8 @@ class SysModuleTest(unittest.TestCase):
         finally:
             sys.setrecursionlimit(oldlimit)
 
+    # The error message is specific to CPython
+    @test.support.cpython_only
     def test_recursionlimit_fatalerror(self):
         # A fatal error occurs if a second recursion limit is hit when recovering
         # from a first one.
@@ -290,7 +292,8 @@ class SysModuleTest(unittest.TestCase):
                 err = sub.communicate()[1]
                 self.assertTrue(sub.returncode, sub.returncode)
                 self.assertIn(
-                    b"Fatal Python error: Cannot recover from stack overflow",
+                    b"Fatal Python error: _Py_CheckRecursiveCall: "
+                    b"Cannot recover from stack overflow",
                     err)
 
     def test_getwindowsversion(self):
