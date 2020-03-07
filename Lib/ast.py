@@ -1261,7 +1261,17 @@ class _Unparser(NodeVisitor):
         self.set_precedence(_Precedence.ATOM, node.value)
         self.traverse(node.value)
         with self.delimit("[", "]"):
-            self.traverse(node.slice)
+            if (isinstance(node.slice, Index)
+                    and isinstance(node.slice.value, Tuple)
+                    and node.slice.value.elts):
+                if len(node.slice.value.elts) == 1:
+                    elt = node.slice.value.elts[0]
+                    self.traverse(elt)
+                    self.write(",")
+                else:
+                    self.interleave(lambda: self.write(", "), self.traverse, node.slice.value.elts)
+            else:
+                self.traverse(node.slice)
 
     def visit_Starred(self, node):
         self.write("*")
@@ -1286,7 +1296,12 @@ class _Unparser(NodeVisitor):
             self.traverse(node.step)
 
     def visit_ExtSlice(self, node):
-        self.interleave(lambda: self.write(", "), self.traverse, node.dims)
+        if len(node.dims) == 1:
+            elt = node.dims[0]
+            self.traverse(elt)
+            self.write(",")
+        else:
+            self.interleave(lambda: self.write(", "), self.traverse, node.dims)
 
     def visit_arg(self, node):
         self.write(node.arg)
