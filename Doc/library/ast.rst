@@ -377,7 +377,7 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse("x + y",mode="eval"), indent=4))
+        >>> print(ast.dump(ast.parse('x + y', mode='eval'), indent=4))
         Expression(
             body=BinOp(
                 left=Name(id='x', ctx=Load()),
