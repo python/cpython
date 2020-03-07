@@ -1,1 +1,3 @@
-Updated :meth:`importlib._bootstrap_external._make_relax_case` to ignore :envvar:`PYTHONCASEOK` when -E or -I flags are used.
+The :mod:`importlib` module now ignores the :envvar:`PYTHONCASEOK`
+environment variable when the :option:`-E` or :option:`-I` command line
+options are being used.
