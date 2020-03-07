@@ -712,22 +712,10 @@ class UTF16Test(ReadTest, unittest.TestCase):
         self.addCleanup(support.unlink, support.TESTFN)
         with open(support.TESTFN, 'wb') as fp:
             fp.write(s)
-        with codecs.open(support.TESTFN, 'r',
-                         encoding=self.encoding) as reader:
+        with support.check_warnings(('', DeprecationWarning)):
+            reader = codecs.open(support.TESTFN, 'U', encoding=self.encoding)
+        with reader:
             self.assertEqual(reader.read(), s1)
-
-    def test_invalid_modes(self):
-        for mode in ('U', 'rU', 'r+U'):
-            with self.assertRaises(ValueError) as cm:
-                codecs.open(support.TESTFN, mode, encoding=self.encoding)
-            self.assertIn('invalid mode', str(cm.exception))
-
-        for mode in ('rt', 'wt', 'at', 'r+t'):
-            with self.assertRaises(ValueError) as cm:
-                codecs.open(support.TESTFN, mode, encoding=self.encoding)
-            self.assertIn("can't have text and binary mode at once",
-                          str(cm.exception))
-
 
 class UTF16LETest(ReadTest, unittest.TestCase):
     encoding = "utf-16-le"
@@ -1153,6 +1141,7 @@ class UTF8SigTest(UTF8Test, unittest.TestCase):
 
             got = ostream.getvalue()
             self.assertEqual(got, unistring)
+
 
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
@@ -1724,6 +1713,14 @@ class CodecsModuleTest(unittest.TestCase):
                 codecs.encode, 'abc', 'undefined', errors)
             self.assertRaises(UnicodeError,
                 codecs.decode, b'abc', 'undefined', errors)
+
+    def test_file_closes_if_lookup_error_raised(self):
+        mock_open = mock.mock_open()
+        with mock.patch('builtins.open', mock_open) as file:
+            with self.assertRaises(LookupError):
+                codecs.open(support.TESTFN, 'wt', 'invalid-encoding')
+
+            file().close.assert_called()
 
 
 class StreamReaderTest(unittest.TestCase):

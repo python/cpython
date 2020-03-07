@@ -156,12 +156,17 @@ NotImplemented
    object is accessed through the built-in name ``NotImplemented``. Numeric methods
    and rich comparison methods should return this value if they do not implement the
    operation for the operands provided.  (The interpreter will then try the
-   reflected operation, or some other fallback, depending on the operator.)  Its
-   truth value is true.
+   reflected operation, or some other fallback, depending on the operator.)  It
+   should not be evaluated in a boolean context.
 
    See
    :ref:`implementing-the-arithmetic-operations`
    for more details.
+
+   .. versionchanged:: 3.9
+      Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+      it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
+      It will raise a :exc:`TypeError` in a future version of Python.
 
 
 Ellipsis
@@ -1951,7 +1956,7 @@ namespace returned by ``__prepare__`` is passed in to ``__new__``, but when
 the final class object is created the namespace is copied into a new ``dict``.
 
 If the metaclass has no ``__prepare__`` attribute, then the class namespace
-is initialised as an empty :func:`dict`.
+is initialised as an empty ordered mapping.
 
 .. seealso::
 

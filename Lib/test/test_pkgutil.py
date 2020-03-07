@@ -246,7 +246,11 @@ class PkgutilTests(unittest.TestCase):
 
         for uw in unicode_words:
             d = os.path.join(self.dirname, uw)
-            os.makedirs(d, exist_ok=True)
+            try:
+                os.makedirs(d, exist_ok=True)
+            except  UnicodeEncodeError:
+                # When filesystem encoding cannot encode uw: skip this test
+                continue
             # make an empty __init__.py file
             f = os.path.join(d, '__init__.py')
             with open(f, 'w') as f:

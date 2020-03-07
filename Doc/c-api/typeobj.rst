@@ -1192,7 +1192,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    The :c:member:`~PyTypeObject.tp_traverse` pointer is used by the garbage collector to detect
    reference cycles. A typical implementation of a :c:member:`~PyTypeObject.tp_traverse` function
    simply calls :c:func:`Py_VISIT` on each of the instance's members that are Python
-   objects.  For example, this is function :c:func:`local_traverse` from the
+   objects that the instance owns. For example, this is function :c:func:`local_traverse` from the
    :mod:`_thread` extension module::
 
       static int
@@ -1211,6 +1211,18 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    On the other hand, even if you know a member can never be part of a cycle, as a
    debugging aid you may want to visit it anyway just so the :mod:`gc` module's
    :func:`~gc.get_referents` function will include it.
+
+   .. warning::
+       When implementing :c:member:`~PyTypeObject.tp_traverse`, only the members
+       that the instance *owns* (by having strong references to them) must be
+       visited. For instance, if an object supports weak references via the
+       :c:member:`~PyTypeObject.tp_weaklist` slot, the pointer supporting
+       the linked list (what *tp_weaklist* points to) must **not** be
+       visited as the instance does not directly own the weak references to itself
+       (the weakreference list is there to support the weak reference machinery,
+       but the instance has no strong reference to the elements inside it, as they
+       are allowed to be removed even if the instance is still alive).
+
 
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
    :c:func:`local_traverse` to have these specific names; don't name them just
