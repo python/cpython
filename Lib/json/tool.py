@@ -74,5 +74,5 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except BrokenPipeError as e:
-        sys.exit(e.errno)
+    except BrokenPipeError as exc:
+        sys.exit(exc.errno)
