@@ -507,7 +507,7 @@ A function definition defines a user-defined function object (see section
    funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
-   decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
+   decorator: "@" `assignment_expression` NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
    parameter_list: `defparameter` ("," `defparameter`)* "," "/" ["," [`parameter_list_no_posonly`]]
                  :   | `parameter_list_no_posonly`
@@ -549,6 +549,11 @@ is roughly equivalent to ::
    func = f1(arg)(f2(func))
 
 except that the original function is not temporarily bound to the name ``func``.
+
+.. versionchanged:: 3.9
+   Functions may be decorated with any valid :token:`assignment_expression`.
+   Previously, the grammar was much more restrictive; see :pep:`614` for
+   details.
 
 .. index::
    triple: default; parameter; value
@@ -716,6 +721,11 @@ is roughly equivalent to ::
 
 The evaluation rules for the decorator expressions are the same as for function
 decorators.  The result is then bound to the class name.
+
+.. versionchanged:: 3.9
+   Classes may be decorated with any valid :token:`assignment_expression`.
+   Previously, the grammar was much more restrictive; see :pep:`614` for
+   details.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
