@@ -785,15 +785,11 @@ class MappingProxyTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             [('r', 2), ('d', 2)] | view
         with self.assertRaises(TypeError):
-            view |= None
+            view |= [('r', 2), ('d', 2)]
         other = {'c': 3, 'p': 0}
         self.assertDictEqual(view | other, {'a': 0, 'b': 1, 'c': 3, 'p': 0})
         self.assertDictEqual(other | view, {'c': 2, 'p': 0, 'a': 0, 'b': 1})
-        view |= other
-        self.assertDictEqual(view, {'a': 0, 'b': 1, 'c': 3, 'p': 0})
-        view = self.mappingproxy(mapping)
-        view |= iter((('c', 3), ('p', 0)))
-        self.assertDictEqual(view, {'a': 0, 'b': 1, 'c': 3, 'p': 0})
+        self.assertEqual(view, {'a': 0, 'b': 1, 'c': 2})
         self.assertDictEqual(mapping, {'a': 0, 'b': 1, 'c': 2})
         self.assertDictEqual(other, {'c': 3, 'p': 0})
 

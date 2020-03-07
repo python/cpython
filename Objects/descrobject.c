@@ -997,14 +997,8 @@ mappingproxy_or(PyObject *left, PyObject *right)
 static PyObject *
 mappingproxy_ior(mappingproxyobject *self, PyObject *other)
 {
-    _Py_IDENTIFIER(copy);
-    PyObject *new = _PyObject_CallMethodIdNoArgs(self->mapping, &PyId_copy);
-    if (!new) {
-        return NULL;
-    }
-    PyObject *result = PyNumber_InPlaceOr(new, other);
-    Py_DECREF(new);
-    return result;
+    PyErr_Format(PyExc_TypeError,
+        "'|=' is not supported by %s; use '|' instead", Py_TYPE(self)->tp_name);
 }
 
 static PyNumberMethods mappingproxy_as_number = {
