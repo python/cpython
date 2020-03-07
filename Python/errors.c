@@ -573,7 +573,7 @@ PyErr_BadArgument(void)
 PyObject *
 _PyErr_NoMemory(PyThreadState *tstate)
 {
-    if (Py_TYPE(PyExc_MemoryError) == NULL) {
+    if (Py_IS_TYPE(PyExc_MemoryError, NULL)) {
         /* PyErr_NoMemory() has been called before PyExc_MemoryError has been
            initialized by _PyExc_Init() */
         Py_FatalError("Out of memory and PyExc_MemoryError is not "
@@ -1321,7 +1321,7 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    if (Py_TYPE(args) != &UnraisableHookArgsType) {
+    if (!Py_IS_TYPE(args, &UnraisableHookArgsType)) {
         _PyErr_SetString(tstate, PyExc_TypeError,
                          "sys.unraisablehook argument type "
                          "must be UnraisableHookArgs");

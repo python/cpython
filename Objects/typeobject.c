@@ -302,7 +302,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
        each subclass when their mro is recursively updated.
      */
     Py_ssize_t i, n;
-    int custom = (Py_TYPE(type) != &PyType_Type);
+    int custom = !Py_IS_TYPE(type, &PyType_Type);
     int unbound;
     PyObject *mro_meth = NULL;
     PyObject *type_mro_meth = NULL;
@@ -1889,7 +1889,7 @@ mro_invoke(PyTypeObject *type)
 {
     PyObject *mro_result;
     PyObject *new_mro;
-    int custom = (Py_TYPE(type) != &PyType_Type);
+    const int custom = !Py_IS_TYPE(type, &PyType_Type);
 
     if (custom) {
         int unbound;
@@ -5335,7 +5335,7 @@ PyType_Ready(PyTypeObject *type)
        NULL when type is &PyBaseObject_Type, and we know its ob_type is
        not NULL (it's initialized to &PyType_Type).      But coverity doesn't
        know that. */
-    if (Py_TYPE(type) == NULL && base != NULL) {
+    if (Py_IS_TYPE(type, NULL) && base != NULL) {
         Py_SET_TYPE(type, Py_TYPE(base));
     }
 
@@ -6191,7 +6191,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
     PyThreadState *tstate = _PyThreadState_GET(); \
     _Py_static_string(op_id, OPSTR); \
     _Py_static_string(rop_id, ROPSTR); \
-    int do_other = Py_TYPE(self) != Py_TYPE(other) && \
+    int do_other = !Py_IS_TYPE(self, Py_TYPE(other)) && \
         Py_TYPE(other)->tp_as_number != NULL && \
         Py_TYPE(other)->tp_as_number->SLOTNAME == TESTFUNC; \
     if (Py_TYPE(self)->tp_as_number != NULL && \
@@ -6645,7 +6645,7 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
        needed, with call_attribute. */
     getattribute = _PyType_LookupId(tp, &PyId___getattribute__);
     if (getattribute == NULL ||
-        (Py_TYPE(getattribute) == &PyWrapperDescr_Type &&
+        (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
          (void *)PyObject_GenericGetAttr))
         res = PyObject_GenericGetAttr(self, name);
@@ -7352,7 +7352,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
             }
             continue;
         }
-        if (Py_TYPE(descr) == &PyWrapperDescr_Type &&
+        if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
             void **tptr = resolve_slotdups(type, p->name_strobj);
             if (tptr == NULL || tptr == ptr)
@@ -7375,7 +7375,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
                 use_generic = 1;
             }
         }
-        else if (Py_TYPE(descr) == &PyCFunction_Type &&
+        else if (Py_IS_TYPE(descr, &PyCFunction_Type) &&
                  PyCFunction_GET_FUNCTION(descr) ==
                  (PyCFunction)(void(*)(void))tp_new_wrapper &&
                  ptr == (void**)&type->tp_new)
@@ -7901,7 +7901,7 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         Py_INCREF(self);
         return self;
     }
-    if (Py_TYPE(su) != &PySuper_Type)
+    if (!Py_IS_TYPE(su, &PySuper_Type))
         /* If su is an instance of a (strict) subclass of super,
            call its type */
         return PyObject_CallFunctionObjArgs((PyObject *)Py_TYPE(su),

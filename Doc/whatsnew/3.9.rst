@@ -66,10 +66,44 @@ Summary -- Release highlights
 .. PEP-sized items next.
 
 
+You should check for DeprecationWarning in your code
+====================================================
+
+When Python 2.7 was still supported, many functions were kept for backward
+compatibility with Python 2.7. With the end of Python 2.7 support, these
+backward compatibility layers have been removed, or will be removed soon.
+Most of them emitted a :exc:`DeprecationWarning` warning for several years. For
+example, using ``collections.Mapping`` instead of ``collections.abc.Mapping``
+emits a :exc:`DeprecationWarning` since Python 3.3, released in 2012.
+
+Test your application with the :option:`-W` ``default`` command-line option to see
+:exc:`DeprecationWarning` and :exc:`PendingDeprecationWarning`, or even with
+:option:`-W` ``error`` to treat them as errors. :ref:`Warnings Filter
+<warning-filter>` can be used to ignore warnings from third-party code.
+
+It has been decided to keep a few backward compatibility layers for one last
+release, to give more time to Python projects maintainers to organize the
+removal of the Python 2 support and add support for Python 3.9.
+
+Aliases to :ref:`Abstract Base Classes <collections-abstract-base-classes>` in
+the :mod:`collections` module, like ``collections.Mapping`` alias to
+:class:`collections.abc.Mapping`, are kept for one last release for backward
+compatibility. They will be removed from Python 3.10.
+
+More generally, try to run your tests in the :ref:`Python Development Mode
+<devmode>` which helps to prepare your code to make it compatible with the
+next Python version.
+
 
 New Features
 ============
 
+Dictionary Merge & Update Operators
+-----------------------------------
+
+Merge (``|``) and update (``|=``) operators have been added to the built-in
+:class:`dict` class.  See :pep:`584` for a full description.
+(Contributed by Brandt Bucher in :issue:`36144`.)
 
 
 Other Language Changes
@@ -83,11 +117,10 @@ Other Language Changes
 
 * Python now gets the absolute path of the script filename specified on
   the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
-  the :mod:`__main__` module and ``sys.path[0]`` become an
-  absolute path, rather than a relative path. These paths now remain valid
-  after the current directory is changed by :func:`os.chdir`. As a side effect,
-  a traceback also displays the absolute path for :mod:`__main__` module frames
-  in this case.
+  the :mod:`__main__` module became an absolute path, rather than a relative
+  path. These paths now remain valid after the current directory is changed
+  by :func:`os.chdir`. As a side effect, the traceback also displays the
+  absolute path for :mod:`__main__` module frames in this case.
   (Contributed by Victor Stinner in :issue:`20443`.)
 
 * In the :ref:`Python Development Mode <devmode>` and in debug build, the
@@ -213,8 +246,31 @@ now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`.)
 
+inspect
+-------
+
+:attr:`inspect.BoundArguments.arguments` is changed from ``OrderedDict`` to regular
+dict.  (Contributed by Inada Naoki in :issue:`36350` and :issue:`39775`.)
+
+ipaddress
+---------
+
+:mod:`ipaddress` now supports IPv6 Scoped Addresses (IPv6 address with suffix ``%<scope_id>``).
+
+Scoped IPv6 addresses can be parsed using :class:`ipaddress.IPv6Address`.
+If present, scope zone ID is available through the :attr:`~ipaddress.IPv6Address.scope_id` attribute.
+(Contributed by Oleksandr Pavliuk in :issue:`34788`.)
+
 math
 ----
+
+Expanded the :func:`math.gcd` function to handle multiple arguments.
+Formerly, it only supported two arguments.
+(Contributed by Serhiy Storchaka in :issue:`39648`.)
+
+Add :func:`math.lcm`: return the least common multiple of specified arguments.
+(Contributed by Mark Dickinson, Ananthakrishnan and Serhiy Storchaka in
+:issue:`39479` and :issue:`39648`.)
 
 Add :func:`math.nextafter`: return the next floating-point value after *x*
 towards *y*.
@@ -424,6 +480,12 @@ Deprecated
   of Python. For the majority of use cases, users can leverage the Abstract Syntax
   Tree (AST) generation and compilation stage, using the :mod:`ast` module.
 
+* Using :data:`NotImplemented` in a boolean context has been deprecated,
+  as it is almost exclusively the result of incorrect rich comparator
+  implementations. It will be made a :exc:`TypeError` in a future version
+  of Python.
+  (Contributed by Josh Rosenberg in :issue:`35712`.)
+
 * The :mod:`random` module currently accepts any hashable type as a
   possible seed value.  Unfortunately, some of those types are not
   guaranteed to have a deterministic hash value.  After Python 3.9,
@@ -476,11 +538,6 @@ Removed
   removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
   since Python 3.2.
   (Contributed by Victor Stinner in :issue:`38916`.)
-
-* The abstract base classes in :mod:`collections.abc` no longer are
-  exposed in the regular :mod:`collections` module.  This will help
-  create a clearer distinction between the concrete classes and the abstract
-  base classes.
 
 * The undocumented ``sys.callstats()`` function has been removed. Since Python
   3.7, it was deprecated and always returned :const:`None`. It required a special
@@ -560,6 +617,9 @@ Removed
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
+* The ``ast.Suite`` node class has been removed due to no longer being needed.
+  (Contributed by Batuhan Taskaya in :issue:`39639`.)
+
 
 Porting to Python 3.9
 =====================
@@ -570,14 +630,6 @@ that may require changes to your code.
 
 Changes in the Python API
 -------------------------
-
-* :func:`open`, :func:`io.open`, :func:`codecs.open` and
-  :class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")
-  in the file mode. This flag was deprecated since Python 3.3. In Python 3, the
-  "universal newline" is used by default when a file is open in text mode.  The
-  :ref:`newline parameter <open-newline-parameter>` of :func:`open` controls
-  how universal newlines works.
-  (Contributed by Victor Stinner in :issue:`37330`.)
 
 * :func:`__import__` and :func:`importlib.util.resolve_name` now raise
   :exc:`ImportError` where it previously raised :exc:`ValueError`. Callers

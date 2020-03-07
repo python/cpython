@@ -624,17 +624,14 @@ function.
 
    .. attribute:: Signature.parameters
 
-      An dictionary of :class:`Parameter` objects.  Parameters appear in strict
-      definition order, including keyword-only parameters.
+      An ordered mapping of parameters' names to the corresponding
+      :class:`Parameter` objects.  Parameters appear in strict definition
+      order, including keyword-only parameters.
 
       .. versionchanged:: 3.7
          Python only explicitly guaranteed that it preserved the declaration
          order of keyword-only parameters as of version 3.7, although in practice
          this order had always been preserved in Python 3.
-
-      .. versionchanged:: 3.9
-         :attr:`parameters` is now of type :class:`dict`. Formerly, it was of
-         type :class:`collections.OrderedDict`.
 
    .. attribute:: Signature.return_annotation
 
@@ -824,7 +821,7 @@ function.
 
    .. attribute:: BoundArguments.arguments
 
-      An ordered, mutable mapping of parameters' names to arguments' values.
+      A mutable mapping of parameters' names to arguments' values.
       Contains only explicitly bound arguments.  Changes in :attr:`arguments`
       will reflect in :attr:`args` and :attr:`kwargs`.
 

@@ -33,10 +33,10 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`UserString`     wrapper around string objects for easier string subclassing
 =====================   ====================================================================
 
-.. deprecated-removed:: 3.3 3.9
+.. deprecated-removed:: 3.3 3.10
     Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
     For backwards compatibility, they continue to be visible in this module through
-    Python 3.8.
+    Python 3.9.
 
 
 :class:`ChainMap` objects
@@ -728,6 +728,10 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         This attribute is used by the :meth:`__missing__` method; it is
         initialized from the first argument to the constructor, if present, or to
         ``None``, if absent.
+
+    .. versionchanged:: 3.9
+       Added merge (``|``) and update (``|=``) operators, specified in
+       :pep:`584`.
 
 
 :class:`defaultdict` Examples

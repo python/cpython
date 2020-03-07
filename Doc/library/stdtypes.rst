@@ -261,8 +261,10 @@ and imaginary parts.
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
 widened to that of the other, where integer is narrower than floating point,
-which is narrower than complex.  Comparisons between numbers of mixed type use
-the same rule. [2]_ The constructors :func:`int`, :func:`float`, and
+which is narrower than complex. A comparison between numbers of different types
+behaves as though the exact values of those numbers were being compared. [2]_
+
+The constructors :func:`int`, :func:`float`, and
 :func:`complex` can be used to produce numbers of a specific type.
 
 All numeric types (except complex) support the following operations (for priorities of
@@ -4391,6 +4393,22 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
          >>> d = {'a': 1}
          >>> d.values() == d.values()
          False
+
+   .. describe:: d | other
+
+      Create a new dictionary with the merged keys and values of *d* and
+      *other*, which must both be dictionaries. The values of *other* take
+      priority when *d* and *other* share keys.
+
+      .. versionadded:: 3.9
+
+   .. describe:: d |= other
+
+      Update the dictionary *d* with keys and values from *other*, which may be
+      either a :term:`mapping` or an :term:`iterable` of key/value pairs. The
+      values of *other* take priority when *d* and *other* share keys.
+
+      .. versionadded:: 3.9
 
    Dictionaries compare equal if and only if they have the same ``(key,
    value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise

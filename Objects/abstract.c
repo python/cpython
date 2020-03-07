@@ -834,7 +834,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 
     if (Py_TYPE(v)->tp_as_number != NULL)
         slotv = NB_BINOP(Py_TYPE(v)->tp_as_number, op_slot);
-    if (Py_TYPE(w) != Py_TYPE(v) &&
+    if (!Py_IS_TYPE(w, Py_TYPE(v)) &&
         Py_TYPE(w)->tp_as_number != NULL) {
         slotw = NB_BINOP(Py_TYPE(w)->tp_as_number, op_slot);
         if (slotw == slotv)
@@ -925,8 +925,7 @@ ternary_op(PyObject *v,
     mw = Py_TYPE(w)->tp_as_number;
     if (mv != NULL)
         slotv = NB_TERNOP(mv, op_slot);
-    if (Py_TYPE(w) != Py_TYPE(v) &&
-        mw != NULL) {
+    if (!Py_IS_TYPE(w, Py_TYPE(v)) && mw != NULL) {
         slotw = NB_TERNOP(mw, op_slot);
         if (slotw == slotv)
             slotw = NULL;
@@ -2379,9 +2378,16 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
     int r = 0;
 
     while (1) {
-        if (derived == cls)
+        if (derived == cls) {
+            Py_XDECREF(bases); /* See below comment */
             return 1;
-        bases = abstract_get_bases(derived);
+        }
+        /* Use XSETREF to drop bases reference *after* finishing with
+           derived; bases might be the only reference to it.
+           XSETREF is used instead of SETREF, because bases is NULL on the
+           first iteration of the loop.
+        */
+        Py_XSETREF(bases, abstract_get_bases(derived));
         if (bases == NULL) {
             if (PyErr_Occurred())
                 return -1;
@@ -2395,7 +2401,6 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
         /* Avoid recursivity in the single inheritance case */
         if (n == 1) {
             derived = PyTuple_GET_ITEM(bases, 0);
-            Py_DECREF(bases);
             continue;
         }
         for (i = 0; i < n; i++) {
@@ -2466,7 +2471,7 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
     _Py_IDENTIFIER(__instancecheck__);
 
     /* Quick test for an exact match */
-    if (Py_TYPE(inst) == (PyTypeObject *)cls) {
+    if (Py_IS_TYPE(inst, (PyTypeObject *)cls)) {
         return 1;
     }
 

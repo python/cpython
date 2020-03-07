@@ -608,7 +608,7 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
     if (numfree) {
         mp = free_list[--numfree];
         assert (mp != NULL);
-        assert (Py_TYPE(mp) == &PyDict_Type);
+        assert (Py_IS_TYPE(mp, &PyDict_Type));
         _Py_NewReference((PyObject *)mp);
     }
     else {
@@ -2007,7 +2007,7 @@ dict_dealloc(PyDictObject *mp)
         assert(keys->dk_refcnt == 1);
         dictkeys_decref(keys);
     }
-    if (numfree < PyDict_MAXFREELIST && Py_TYPE(mp) == &PyDict_Type)
+    if (numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type))
         free_list[numfree++] = mp;
     else
         Py_TYPE(mp)->tp_free((PyObject *)mp);
@@ -2320,6 +2320,25 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
 
+/* Single-arg dict update; used by dict_update_common and operators. */
+static int
+dict_update_arg(PyObject *self, PyObject *arg)
+{
+    if (PyDict_CheckExact(arg)) {
+        return PyDict_Merge(self, arg, 1);
+    }
+    _Py_IDENTIFIER(keys);
+    PyObject *func;
+    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+        return -1;
+    }
+    if (func != NULL) {
+        Py_DECREF(func);
+        return PyDict_Merge(self, arg, 1);
+    }
+    return PyDict_MergeFromSeq2(self, arg, 1);
+}
+
 static int
 dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
                    const char *methname)
@@ -2331,23 +2350,7 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
         result = -1;
     }
     else if (arg != NULL) {
-        if (PyDict_CheckExact(arg)) {
-            result = PyDict_Merge(self, arg, 1);
-        }
-        else {
-            _Py_IDENTIFIER(keys);
-            PyObject *func;
-            if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
-                result = -1;
-            }
-            else if (func != NULL) {
-                Py_DECREF(func);
-                result = PyDict_Merge(self, arg, 1);
-            }
-            else {
-                result = PyDict_MergeFromSeq2(self, arg, 1);
-            }
-        }
+        result = dict_update_arg(self, arg);
     }
 
     if (result == 0 && kwds != NULL) {
@@ -3169,6 +3172,33 @@ dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
     return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
 }
 
+static PyObject *
+dict_or(PyObject *self, PyObject *other)
+{
+    if (!PyDict_Check(self) || !PyDict_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    PyObject *new = PyDict_Copy(self);
+    if (new == NULL) {
+        return NULL;
+    }
+    if (dict_update_arg(new, other)) {
+        Py_DECREF(new);
+        return NULL;
+    }
+    return new;
+}
+
+static PyObject *
+dict_ior(PyObject *self, PyObject *other)
+{
+    if (dict_update_arg(self, other)) {
+        return NULL;
+    }
+    Py_INCREF(self);
+    return self;
+}
+
 PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
 
 PyDoc_STRVAR(sizeof__doc__,
@@ -3274,6 +3304,11 @@ static PySequenceMethods dict_as_sequence = {
     0,                          /* sq_inplace_repeat */
 };
 
+static PyNumberMethods dict_as_number = {
+    .nb_or = dict_or,
+    .nb_inplace_or = dict_ior,
+};
+
 static PyObject *
 dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -3335,7 +3370,7 @@ PyTypeObject PyDict_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)dict_repr,                        /* tp_repr */
-    0,                                          /* tp_as_number */
+    &dict_as_number,                            /* tp_as_number */
     &dict_as_sequence,                          /* tp_as_sequence */
     &dict_as_mapping,                           /* tp_as_mapping */
     PyObject_HashNotImplemented,                /* tp_hash */
@@ -3864,15 +3899,15 @@ dictreviter_iternext(dictiterobject *di)
     di->di_pos = i-1;
     di->len--;
 
-    if (Py_TYPE(di) == &PyDictRevIterKey_Type) {
+    if (Py_IS_TYPE(di, &PyDictRevIterKey_Type)) {
         Py_INCREF(key);
         return key;
     }
-    else if (Py_TYPE(di) == &PyDictRevIterValue_Type) {
+    else if (Py_IS_TYPE(di, &PyDictRevIterValue_Type)) {
         Py_INCREF(value);
         return value;
     }
-    else if (Py_TYPE(di) == &PyDictRevIterItem_Type) {
+    else if (Py_IS_TYPE(di, &PyDictRevIterItem_Type)) {
         Py_INCREF(key);
         Py_INCREF(value);
         result = di->di_result;
@@ -4236,7 +4271,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
 
     /* if other is a set and self is smaller than other,
        reuse set intersection logic */
-    if (Py_TYPE(other) == &PySet_Type && len_self <= PyObject_Size(other)) {
+    if (Py_IS_TYPE(other, &PySet_Type) && len_self <= PyObject_Size(other)) {
         _Py_IDENTIFIER(intersection);
         return _PyObject_CallMethodIdObjArgs(other, &PyId_intersection, self, NULL);
     }

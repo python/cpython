@@ -12,7 +12,8 @@
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce',
            'TopologicalSorter', 'CycleError',
-           'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod']
+           'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
+           "cached_property"]
 
 from abc import get_cache_token
 from collections import namedtuple
@@ -95,6 +96,8 @@ def _gt_from_lt(self, other, NotImplemented=NotImplemented):
 def _le_from_lt(self, other, NotImplemented=NotImplemented):
     'Return a <= b.  Computed by @total_ordering from (a < b) or (a == b).'
     op_result = self.__lt__(other)
+    if op_result is NotImplemented:
+        return op_result
     return op_result or self == other
 
 def _ge_from_lt(self, other, NotImplemented=NotImplemented):
@@ -135,6 +138,8 @@ def _lt_from_gt(self, other, NotImplemented=NotImplemented):
 def _ge_from_gt(self, other, NotImplemented=NotImplemented):
     'Return a >= b.  Computed by @total_ordering from (a > b) or (a == b).'
     op_result = self.__gt__(other)
+    if op_result is NotImplemented:
+        return op_result
     return op_result or self == other
 
 def _le_from_gt(self, other, NotImplemented=NotImplemented):

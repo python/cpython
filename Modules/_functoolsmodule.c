@@ -41,7 +41,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
-    if (Py_TYPE(func) == &partial_type && type == &partial_type) {
+    if (Py_IS_TYPE(func, &partial_type) && type == &partial_type) {
         partialobject *part = (partialobject *)func;
         if (part->dict == NULL) {
             pargs = part->args;
@@ -573,7 +573,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     PyObject *answer;
     PyObject* stack[2];
 
-    if (Py_TYPE(other) != &keyobject_type){
+    if (!Py_IS_TYPE(other, &keyobject_type)) {
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
         return NULL;
     }
