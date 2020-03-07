@@ -235,18 +235,18 @@ class TestChainMap(unittest.TestCase):
     def test_union_operators(self):
         cm1 = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
         cm2 = ChainMap(dict(a=10, e=5), dict(b=20, d=4))
-        cm3 = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
+        cm3 = cm1.copy()
         d = dict(a=10, c=30)
         pairs = [('c', 3), ('p',0)]
 
         tmp = cm1 | cm2 # testing between chainmaps
-        self.assertEqual(tmp, ChainMap(cm1.maps[0] | dict(cm2), *cm1.maps[1:]))
+        self.assertEqual(tmp.maps, [cm1.maps[0] | dict(cm2), *cm1.maps[1:]])
         cm1 |= cm2
         self.assertEqual(tmp, cm1)
         
         tmp = cm2 | d # testing between chainmap and mapping
-        self.assertEqual(tmp, ChainMap(cm2.maps[0] | d, *cm2.maps[1:]))
-        self.assertEqual(d | cm2, ChainMap(d | dict(cm2)))
+        self.assertEqual(tmp.maps, [cm2.maps[0] | d, *cm2.maps[1:]])
+        self.assertEqual((d | cm2).maps, [d | dict(cm2)])
         cm2 |= d 
         self.assertEqual(tmp, cm2)
 
@@ -254,8 +254,7 @@ class TestChainMap(unittest.TestCase):
         with self.assertRaises(TypeError):
             cm3 | pairs
         cm3 |= pairs
-        self.assertEqual(cm3, ChainMap(cm3.maps[0] | dict(pairs), *cm3.maps[1:]))
-
+        self.assertEqual(cm3.maps, [cm3.maps[0] | dict(pairs), *cm3.maps[1:]])
 
 ################################################################################
 ### Named Tuples
