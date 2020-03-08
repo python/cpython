@@ -3638,6 +3638,24 @@ class ExportsTests(unittest.TestCase):
         self.assertIn('walk', os.__all__)
 
 
+class TestDirEntry(unittest.TestCase):
+    def setUp(self):
+        self.path = os.path.realpath(support.TESTFN)
+        self.addCleanup(support.rmtree, self.path)
+        os.mkdir(self.path)
+
+    def test_uninstantiable(self):
+        self.assertRaises(TypeError, os.DirEntry)
+
+    def test_unpickable(self):
+        filename = create_file(os.path.join(self.path, "file.txt"), b'python')
+        entry = [entry for entry in os.scandir(self.path)].pop()
+        self.assertIsInstance(entry, os.DirEntry)
+        self.assertEqual(entry.name, "file.txt")
+        import pickle
+        self.assertRaises(TypeError, pickle.dumps, entry, filename)
+
+
 class TestScandir(unittest.TestCase):
     check_no_resource_warning = support.check_no_resource_warning
 
@@ -3671,6 +3689,18 @@ class TestScandir(unittest.TestCase):
                                  (stat1, stat2, attr))
         else:
             self.assertEqual(stat1, stat2)
+
+    def test_uninstantiable(self):
+        scandir_iter = os.scandir(self.path)
+        self.assertRaises(TypeError, type(scandir_iter))
+        scandir_iter.close()
+
+    def test_unpickable(self):
+        filename = self.create_file("file.txt")
+        scandir_iter = os.scandir(self.path)
+        import pickle
+        self.assertRaises(TypeError, pickle.dumps, scandir_iter, filename)
+        scandir_iter.close()
 
     def check_entry(self, entry, name, is_dir, is_file, is_symlink):
         self.assertIsInstance(entry, os.DirEntry)

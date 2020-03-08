@@ -218,6 +218,9 @@ PyErr_SetString(PyObject *exception, const char *string)
 PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)
 {
+    /* The caller must hold the GIL. */
+    assert(PyGILState_Check());
+
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyErr_Occurred(tstate);
 }
@@ -517,6 +520,21 @@ _PyErr_FormatVFromCause(PyThreadState *tstate, PyObject *exception,
     PyException_SetContext(val2, val);
     _PyErr_Restore(tstate, exc, val2, tb);
 
+    return NULL;
+}
+
+PyObject *
+_PyErr_FormatFromCauseTstate(PyThreadState *tstate, PyObject *exception,
+                             const char *format, ...)
+{
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    _PyErr_FormatVFromCause(tstate, exception, format, vargs);
+    va_end(vargs);
     return NULL;
 }
 

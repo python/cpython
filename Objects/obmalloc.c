@@ -2313,12 +2313,13 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     return data;
 }
 
-static void
+static inline void
 _PyMem_DebugCheckGIL(void)
 {
-    if (!PyGILState_Check())
+    if (!PyGILState_Check()) {
         Py_FatalError("Python memory allocator called "
                       "without holding the GIL");
+    }
 }
 
 static void *

@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
 #include "structmember.h"
@@ -952,12 +953,12 @@ type_repr(PyTypeObject *type)
 static PyObject *
 type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *obj;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     if (type->tp_new == NULL) {
-        PyErr_Format(PyExc_TypeError,
-                     "cannot create '%.100s' instances",
-                     type->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "cannot create '%.100s' instances",
+                      type->tp_name);
         return NULL;
     }
 
@@ -965,11 +966,11 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* type_call() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
 #endif
 
-    obj = type->tp_new(type, args, kwds);
-    obj = _Py_CheckFunctionResult((PyObject*)type, obj, NULL);
+    PyObject *obj = type->tp_new(type, args, kwds);
+    obj = _Py_CheckFunctionResult(tstate, (PyObject*)type, obj, NULL);
     if (obj == NULL)
         return NULL;
 
@@ -990,12 +991,12 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (type->tp_init != NULL) {
         int res = type->tp_init(obj, args, kwds);
         if (res < 0) {
-            assert(PyErr_Occurred());
+            assert(_PyErr_Occurred(tstate));
             Py_DECREF(obj);
             obj = NULL;
         }
         else {
-            assert(!PyErr_Occurred());
+            assert(!_PyErr_Occurred(tstate));
         }
     }
     return obj;
@@ -1444,7 +1445,7 @@ lookup_method(PyObject *self, _Py_Identifier *attrid, int *unbound)
 
 
 static inline PyObject*
-vectorcall_unbound(int unbound, PyObject *func,
+vectorcall_unbound(PyThreadState *tstate, int unbound, PyObject *func,
                    PyObject *const *args, Py_ssize_t nargs)
 {
     size_t nargsf = nargs;
@@ -1454,7 +1455,7 @@ vectorcall_unbound(int unbound, PyObject *func,
         args++;
         nargsf = nargsf - 1 + PY_VECTORCALL_ARGUMENTS_OFFSET;
     }
-    return _PyObject_Vectorcall(func, args, nargsf, NULL);
+    return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
 }
 
 static PyObject*
@@ -1478,13 +1479,15 @@ vectorcall_method(_Py_Identifier *name,
                   PyObject *const *args, Py_ssize_t nargs)
 {
     assert(nargs >= 1);
+
+    PyThreadState *tstate = _PyThreadState_GET();
     int unbound;
     PyObject *self = args[0];
     PyObject *func = lookup_method(self, name, &unbound);
     if (func == NULL) {
         return NULL;
     }
-    PyObject *retval = vectorcall_unbound(unbound, func, args, nargs);
+    PyObject *retval = vectorcall_unbound(tstate, unbound, func, args, nargs);
     Py_DECREF(func);
     return retval;
 }
@@ -1492,10 +1495,11 @@ vectorcall_method(_Py_Identifier *name,
 /* Clone of vectorcall_method() that returns NotImplemented
  * when the lookup fails. */
 static PyObject *
-vectorcall_maybe(_Py_Identifier *name,
+vectorcall_maybe(PyThreadState *tstate, _Py_Identifier *name,
                  PyObject *const *args, Py_ssize_t nargs)
 {
     assert(nargs >= 1);
+
     int unbound;
     PyObject *self = args[0];
     PyObject *func = lookup_maybe_method(self, name, &unbound);
@@ -1504,7 +1508,7 @@ vectorcall_maybe(_Py_Identifier *name,
             Py_RETURN_NOTIMPLEMENTED;
         return NULL;
     }
-    PyObject *retval = vectorcall_unbound(unbound, func, args, nargs);
+    PyObject *retval = vectorcall_unbound(tstate, unbound, func, args, nargs);
     Py_DECREF(func);
     return retval;
 }
@@ -6176,6 +6180,7 @@ static PyObject * \
 FUNCNAME(PyObject *self, PyObject *other) \
 { \
     PyObject* stack[2]; \
+    PyThreadState *tstate = _PyThreadState_GET(); \
     _Py_static_string(op_id, OPSTR); \
     _Py_static_string(rop_id, ROPSTR); \
     int do_other = Py_TYPE(self) != Py_TYPE(other) && \
@@ -6192,7 +6197,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
             if (ok) { \
                 stack[0] = other; \
                 stack[1] = self; \
-                r = vectorcall_maybe(&rop_id, stack, 2); \
+                r = vectorcall_maybe(tstate, &rop_id, stack, 2); \
                 if (r != Py_NotImplemented) \
                     return r; \
                 Py_DECREF(r); \
@@ -6201,7 +6206,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
         } \
         stack[0] = self; \
         stack[1] = other; \
-        r = vectorcall_maybe(&op_id, stack, 2); \
+        r = vectorcall_maybe(tstate, &op_id, stack, 2); \
         if (r != Py_NotImplemented || \
             Py_TYPE(other) == Py_TYPE(self)) \
             return r; \
@@ -6210,7 +6215,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
     if (do_other) { \
         stack[0] = other; \
         stack[1] = self; \
-        return vectorcall_maybe(&rop_id, stack, 2); \
+        return vectorcall_maybe(tstate, &rop_id, stack, 2); \
     } \
     Py_RETURN_NOTIMPLEMENTED; \
 }
@@ -6292,6 +6297,7 @@ slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 static int
 slot_sq_contains(PyObject *self, PyObject *value)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *func, *res;
     int result = -1, unbound;
     _Py_IDENTIFIER(__contains__);
@@ -6306,7 +6312,7 @@ slot_sq_contains(PyObject *self, PyObject *value)
     }
     if (func != NULL) {
         PyObject *args[2] = {self, value};
-        res = vectorcall_unbound(unbound, func, args, 2);
+        res = vectorcall_unbound(tstate, unbound, func, args, 2);
         Py_DECREF(func);
         if (res != NULL) {
             result = PyObject_IsTrue(res);
@@ -6681,6 +6687,7 @@ static _Py_Identifier name_op[] = {
 static PyObject *
 slot_tp_richcompare(PyObject *self, PyObject *other, int op)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     int unbound;
     PyObject *func, *res;
 
@@ -6691,7 +6698,7 @@ slot_tp_richcompare(PyObject *self, PyObject *other, int op)
     }
 
     PyObject *stack[2] = {self, other};
-    res = vectorcall_unbound(unbound, func, stack, 2);
+    res = vectorcall_unbound(tstate, unbound, func, stack, 2);
     Py_DECREF(func);
     return res;
 }

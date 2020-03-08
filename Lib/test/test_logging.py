@@ -1613,7 +1613,7 @@ class ConfigFileTest(BaseTest):
             format=%(levelname)s ++ %(message)s
             """
         self.apply_config(test_config)
-        self.assertEquals(logging.getLogger().handlers[0].name, 'hand1')
+        self.assertEqual(logging.getLogger().handlers[0].name, 'hand1')
 
     def test_defaults_do_no_interpolation(self):
         """bpo-33802 defaults should not get interpolated"""
@@ -5028,6 +5028,25 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.emit(self.next_rec())
         self.assertLogFile(namer(self.fn + ".2"))
         self.assertFalse(os.path.exists(namer(self.fn + ".3")))
+        rh.close()
+
+    def test_namer_rotator_inheritance(self):
+        class HandlerWithNamerAndRotator(logging.handlers.RotatingFileHandler):
+            def namer(self, name):
+                return name + ".test"
+
+            def rotator(self, source, dest):
+                if os.path.exists(source):
+                    os.rename(source, dest + ".rotated")
+
+        rh = HandlerWithNamerAndRotator(
+            self.fn, backupCount=2, maxBytes=1)
+        self.assertEqual(rh.namer(self.fn), self.fn + ".test")
+        rh.emit(self.next_rec())
+        self.assertLogFile(self.fn)
+        rh.emit(self.next_rec())
+        self.assertLogFile(rh.namer(self.fn + ".1") + ".rotated")
+        self.assertFalse(os.path.exists(rh.namer(self.fn + ".1")))
         rh.close()
 
     @support.requires_zlib

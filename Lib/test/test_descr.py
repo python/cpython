@@ -1967,7 +1967,7 @@ order (MRO) for bases """
         # different error messages.
         set_add = set.add
 
-        expected_errmsg = "descriptor 'add' of 'set' object needs an argument"
+        expected_errmsg = "unbound method set.add() needs an argument"
 
         with self.assertRaises(TypeError) as cm:
             set_add()

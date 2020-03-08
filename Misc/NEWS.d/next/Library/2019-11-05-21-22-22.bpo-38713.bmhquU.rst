@@ -1,0 +1,2 @@
+Add :data:`os.P_PIDFD` constant, which may be passed to :func:`os.waitid` to
+wait on a Linux process file descriptor.
