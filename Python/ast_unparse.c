@@ -15,7 +15,7 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level);
 static int
 append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
 static int
-append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
+append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e);
 static int
 append_ast_slice(_PyUnicodeWriter *writer, slice_ty slice);
 
@@ -583,7 +583,7 @@ append_fstring_element(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
     case JoinedStr_kind:
         return append_joinedstr(writer, e, is_format_spec);
     case FormattedValue_kind:
-        return append_formattedvalue(writer, e, is_format_spec);
+        return append_formattedvalue(writer, e);
     default:
         PyErr_SetString(PyExc_SystemError,
                         "unknown expression kind inside f-string");
@@ -640,7 +640,7 @@ append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 }
 
 static int
-append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
+append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e)
 {
     const char *conversion;
     const char *outer_brace = "{";
@@ -870,7 +870,7 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
     case JoinedStr_kind:
         return append_joinedstr(writer, e, false);
     case FormattedValue_kind:
-        return append_formattedvalue(writer, e, false);
+        return append_formattedvalue(writer, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         return append_ast_attribute(writer, e);
