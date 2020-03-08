@@ -50,6 +50,7 @@ int PyCodec_Register(PyObject *search_function)
 }
 
 extern int _Py_normalize_encoding(const char *, char *, size_t);
+extern void _Py_bytes_lower(char *, const char *, Py_ssize_t);
 
 /* Convert a string to a normalized Python string(decoded from UTF-8): all characters are
    converted to lower case, spaces and hyphens are replaced with underscores. */
@@ -59,27 +60,34 @@ PyObject *normalizestring(const char *string)
 {
     size_t len = strlen(string);
     char *encoding;
-    PyObject *v;
+    PyObject * normalized_encoding;
 
     if (len > PY_SSIZE_T_MAX) {
         PyErr_SetString(PyExc_OverflowError, "string is too large");
         return NULL;
     }
 
-    encoding = PyMem_Malloc(len + 1);
-    if (encoding == NULL)
+    encoding = PyMem_Malloc(len + 1); 
+    if (encoding == NULL) {
         return PyErr_NoMemory();
+    }
+    _Py_bytes_lower(encoding, string, len);
+    encoding[len] = '\0';
 
-    if (!_Py_normalize_encoding(string, encoding, len + 1))
-    {
-        PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
-        PyMem_Free(encoding);
+    PyObject *encodings_module = PyImport_AddModule("encodings");
+    if (encodings_module == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "can't get encodings from sys.modules");
         return NULL;
     }
 
-    v = PyUnicode_FromString(encoding);
-    PyMem_Free(encoding);
-    return v;
+    normalized_encoding = PyObject_CallMethod(encodings_module, "normalize_encoding",
+                                              "s", encoding);
+    if (normalized_encoding == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "normalize_encoding() failed");
+        return NULL;
+    }
+
+    return normalized_encoding;
 }
 
 /* Lookup the given encoding and return a tuple providing the codec
