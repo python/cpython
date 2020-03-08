@@ -978,7 +978,7 @@ _elementtree_Element___getstate___impl(ElementObject *self)
     return Py_BuildValue("{sOsNsNsOsO}",
                          PICKLED_TAG, self->tag,
                          PICKLED_CHILDREN, children,
-                         PICKLED_ATTRIB, self->extra->attrib,
+                         PICKLED_ATTRIB, attrib,
                          PICKLED_TEXT, JOIN_OBJ(self->text),
                          PICKLED_TAIL, JOIN_OBJ(self->tail));
 }
