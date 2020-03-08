@@ -1659,45 +1659,16 @@ The expression ``name := expr`` where **expr** is any valid Python expression
 other than an unparenthesize tuple and the **name** is an identifier.
 Here the variable **name** holds the assigned value of a given **expression**.
 
-**Examples**
-
-*The following examples demonstrate the use case of an assignment expressions.*
-
 
 One common use case is when handling the matched data in regular expression
-
-**Current scenario**
-
-.. code-block:: python
-
-   matching = patern.search(data)
-   if matching:
-       do_something(matching)
-
-Notice that a matching variable is being called two times in the code
-that may be replaced using assignment expression in one line.
-
-**Using assignment expression**
 
 .. code-block:: python
 
    if (matching := pattern.search(data)):
        do_something(matching)
 
-
 Another popular use case is when processing the streams in a
 chunk from the file.
-
-**Current scenario**
-
-.. code-block:: python
-
-   chunk = file.read(9000)
-   while chunk:
-       process(chunk)
-       chunk = file.read(9000)
-
-**Using assignment expression**
 
 .. code-block:: python
 
