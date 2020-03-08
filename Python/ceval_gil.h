@@ -246,6 +246,20 @@ take_gil(PyThreadState *tstate)
 
         unsigned long interval = (gil->interval >= 1 ? gil->interval : 1);
         COND_TIMED_WAIT(gil->cond, gil->mutex, interval, timed_out);
+
+        if (thread_must_exit(tstate)) {
+            /* bpo-36475: If Py_Finalize() has been called and tstate is not
+               the thread which called Py_Finalize(), exit immediately the
+               thread.
+
+               This code path can be reached by a daemon thread which continues
+               to run after wait_for_thread_shutdown() and before Py_Finalize()
+               completes. For example, when _PyImport_Cleanup() executes Python
+               code. */
+            MUTEX_UNLOCK(gil->mutex);
+            PyThread_exit_thread();
+        }
+
         /* If we timed out and no switch occurred in the meantime, it is time
            to ask the GIL-holding thread to drop it. */
         if (timed_out &&
@@ -283,17 +297,7 @@ _ready:
 
     MUTEX_UNLOCK(gil->mutex);
 
-    if (thread_must_exit(tstate)) {
-        /* bpo-36475: If Py_Finalize() has been called and tstate is not the
-           thread which called Py_Finalize(), exit immediately the thread.
-
-           This code path can be reached by a daemon thread which continues to
-           run after wait_for_thread_shutdown() and before Py_Finalize()
-           completes. For example, when _PyImport_Cleanup() executes Python
-           code. */
-        drop_gil(ceval, tstate);
-        PyThread_exit_thread();
-    }
+    assert(!thread_must_exit(tstate));
 
     errno = err;
 }
