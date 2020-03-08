@@ -7,7 +7,7 @@ from sysconfig import get_config_var
 # if not available, the config_vars are also definitely not available
 # supply substitutes to bootstrap the build
 try:
-    import subprocess
+    from subprocess import check_output
     _have_subprocess = True
     _tmp_bd = get_config_var("AIX_BUILDDATE")
     _bgt = get_config_var("BUILD_GNU_TYPE")
@@ -50,7 +50,7 @@ def _aix_bosmp64():
     """
     if _have_subprocess:
         # We expect all AIX systems to have lslpp installed in this location
-        out = subprocess.check_output(["/usr/bin/lslpp", "-Lqc", "bos.mp64"])
+        out = check_output(["/usr/bin/lslpp", "-Lqc", "bos.mp64"])
         out = out.decode("utf-8").strip().split(":")  # type: ignore
         # Use str() and int() to help mypy see types
         return str(out[2]), int(out[-1])
