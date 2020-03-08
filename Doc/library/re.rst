@@ -931,8 +931,8 @@ form.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
-      >>> print(re.escape('python.exe'))
-      python\.exe
+      >>> print(re.escape('http://www.python.org'))
+      http://www\.python\.org
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
@@ -955,7 +955,9 @@ form.
 
    .. versionchanged:: 3.7
       Only characters that can have special meaning in a regular expression
-      are escaped.
+      are escaped. As a result, ``'!'``, ``'"'``, ``'%'``, ``"'"``, ``','``,
+      ``'/'``, ``':'``, ``';'``, ``'<'``, ``'='``, ``'>'``, ``'@'``, and
+      ``"`"`` are no longer escaped.
 
 
 .. function:: purge()

@@ -71,9 +71,8 @@ class FaultHandlerTests(unittest.TestCase):
         with support.SuppressCrashReport():
             process = script_helper.spawn_python('-c', code, pass_fds=pass_fds)
             with process:
-                stdout, stderr = process.communicate()
+                output, stderr = process.communicate()
                 exitcode = process.wait()
-        output = support.strip_python_stderr(stdout)
         output = output.decode('ascii', 'backslashreplace')
         if filename:
             self.assertEqual(output, '')
@@ -124,7 +123,9 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertRegex(output, regex)
         self.assertNotEqual(exitcode, 0)
 
-    def check_fatal_error(self, code, line_number, name_regex, **kw):
+    def check_fatal_error(self, code, line_number, name_regex, func=None, **kw):
+        if func:
+            name_regex = '%s: %s' % (func, name_regex)
         fatal_error = 'Fatal Python error: %s' % name_regex
         self.check_error(code, line_number, fatal_error, **kw)
 
@@ -174,6 +175,7 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'in new thread',
             know_current_thread=False,
+            func='faulthandler_fatal_error_thread',
             py_fatal_error=True)
 
     def test_sigabrt(self):
@@ -231,6 +233,7 @@ class FaultHandlerTests(unittest.TestCase):
             """,
             2,
             'xyz',
+            func='faulthandler_fatal_error_py',
             py_fatal_error=True)
 
     def test_fatal_error_without_gil(self):
@@ -240,6 +243,7 @@ class FaultHandlerTests(unittest.TestCase):
             """,
             2,
             'xyz',
+            func='faulthandler_fatal_error_py',
             py_fatal_error=True)
 
     @unittest.skipIf(sys.platform.startswith('openbsd'),

@@ -779,6 +779,8 @@ class PureProxy(SMTPServer):
 
 class MailmanProxy(PureProxy):
     def __init__(self, *args, **kwargs):
+        warn('MailmanProxy is deprecated and will be removed '
+             'in future', DeprecationWarning, 2)
         if 'enable_SMTPUTF8' in kwargs and kwargs['enable_SMTPUTF8']:
             raise ValueError("MailmanProxy does not support SMTPUTF8.")
         super(PureProxy, self).__init__(*args, **kwargs)

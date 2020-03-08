@@ -287,7 +287,7 @@ random_seed(RandomObject *self, PyObject *arg)
         /* Calling int.__abs__() prevents calling arg.__abs__(), which might
            return an invalid value. See issue #31478. */
         args[0] = arg;
-        n = _PyObject_Vectorcall(_randomstate_global->Long___abs__, args, 0,
+        n = PyObject_Vectorcall(_randomstate_global->Long___abs__, args, 0,
                                          NULL);
     }
     else {
@@ -543,7 +543,7 @@ PyDoc_STRVAR(random_doc,
 "Random() -> create a random number generator with its own internal state.");
 
 static PyType_Slot Random_Type_slots[] = {
-    {Py_tp_doc, random_doc},
+    {Py_tp_doc, (void *)random_doc},
     {Py_tp_methods, random_methods},
     {Py_tp_new, random_new},
     {Py_tp_free, PyObject_Free},

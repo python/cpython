@@ -1,2 +1,0 @@
-The ``nul`` file on Windows now returns True from :func:`~os.path.exists`
-and a valid result from :func:`os.stat` with ``S_IFCHR`` set.

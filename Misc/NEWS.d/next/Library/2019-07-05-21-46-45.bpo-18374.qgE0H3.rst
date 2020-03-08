@@ -1,2 +1,0 @@
-Fix the ``.col_offset`` attribute of nested :class:`ast.BinOp` instances
-which had a too large value in some situations.

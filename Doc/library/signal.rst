@@ -247,6 +247,19 @@ The :mod:`signal` module defines the following functions:
    .. versionadded:: 3.8
 
 
+.. function:: pidfd_send_signal(pidfd, sig, siginfo=None, flags=0)
+
+   Send signal *sig* to the process referred to by file descriptor *pidfd*.
+   Python does not currently support the *siginfo* parameter; it must be
+   ``None``.  The *flags* argument is provided for future extensions; no flag
+   values are currently defined.
+
+   See the :manpage:`pidfd_send_signal(2)` man page for more information.
+
+   .. availability:: Linux 5.1+
+   .. versionadded:: 3.9
+
+
 .. function:: pthread_kill(thread_id, signalnum)
 
    Send the signal *signalnum* to the thread *thread_id*, another thread in the
@@ -263,6 +276,8 @@ The :mod:`signal` module defines the following functions:
 
    If *signalnum* is 0, then no signal is sent, but error checking is still
    performed; this can be used to check if the target thread is still running.
+
+   .. audit-event:: signal.pthread_kill thread_id,signalnum signal.pthread_kill
 
    .. availability:: Unix.  See the man page :manpage:`pthread_kill(3)` for further
       information.

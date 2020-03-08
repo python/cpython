@@ -844,7 +844,7 @@ _ldict(localobject *self)
         }
     }
     else {
-        assert(Py_TYPE(dummy) == &localdummytype);
+        assert(Py_IS_TYPE(dummy, &localdummytype));
         ldict = ((localdummyobject *) dummy)->localdict;
     }
 
@@ -938,7 +938,7 @@ local_getattro(localobject *self, PyObject *name)
     if (r == -1)
         return NULL;
 
-    if (Py_TYPE(self) != &localtype)
+    if (!Py_IS_TYPE(self, &localtype))
         /* use generic lookup for subtypes */
         return _PyObject_GenericGetAttrWithDict(
             (PyObject *)self, name, ldict, 0);
@@ -1007,7 +1007,7 @@ t_bootstrap(void *boot_raw)
     runtime = boot->runtime;
     tstate = boot->tstate;
     tstate->thread_id = PyThread_get_thread_ident();
-    _PyThreadState_Init(runtime, tstate);
+    _PyThreadState_Init(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->num_threads++;
     res = PyObject_Call(boot->func, boot->args, boot->keyw);
@@ -1209,7 +1209,7 @@ release_sentinel(void *wr_raw)
     PyObject *obj = PyWeakref_GET_OBJECT(wr);
     lockobject *lock;
     if (obj != Py_None) {
-        assert(Py_TYPE(obj) == &Locktype);
+        assert(Py_IS_TYPE(obj, &Locktype));
         lock = (lockobject *) obj;
         if (lock->locked) {
             PyThread_release_lock(lock->lock_lock);
@@ -1400,7 +1400,7 @@ static PyStructSequence_Desc ExceptHookArgs_desc = {
 static PyObject *
 thread_excepthook(PyObject *self, PyObject *args)
 {
-    if (Py_TYPE(args) != &ExceptHookArgsType) {
+    if (!Py_IS_TYPE(args, &ExceptHookArgsType)) {
         PyErr_SetString(PyExc_TypeError,
                         "_thread.excepthook argument type "
                         "must be ExceptHookArgs");
@@ -1466,9 +1466,9 @@ static PyObject *
 _thread__is_main_interpreter_impl(PyObject *module)
 /*[clinic end generated code: output=7dd82e1728339adc input=cc1eb00fd4598915]*/
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
-    return PyBool_FromLong(interp == runtime->interpreters.main);
+    PyThreadState *tstate = _PyThreadState_GET();
+    int is_main = _Py_IsMainInterpreter(tstate);
+    return PyBool_FromLong(is_main);
 }
 
 static PyMethodDef thread_methods[] = {

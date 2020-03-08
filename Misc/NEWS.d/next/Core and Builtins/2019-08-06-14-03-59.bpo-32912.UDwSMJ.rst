@@ -1,3 +1,0 @@
-Reverted :issue:`32912`: emitting :exc:`SyntaxWarning` instead of
-:exc:`DeprecationWarning` for invalid escape sequences in string and bytes
-literals.

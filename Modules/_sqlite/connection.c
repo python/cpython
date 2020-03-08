@@ -308,7 +308,7 @@ PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, 
         factory = (PyObject*)&pysqlite_CursorType;
     }
 
-    cursor = _PyObject_CallOneArg(factory, (PyObject *)self);
+    cursor = PyObject_CallOneArg(factory, (PyObject *)self);
     if (cursor == NULL)
         return NULL;
     if (!PyObject_TypeCheck(cursor, &pysqlite_CursorType)) {
@@ -550,7 +550,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
         cur_value = argv[i];
         switch (sqlite3_value_type(argv[i])) {
             case SQLITE_INTEGER:
-                cur_py_value = _pysqlite_long_from_int64(sqlite3_value_int64(cur_value));
+                cur_py_value = PyLong_FromLongLong(sqlite3_value_int64(cur_value));
                 break;
             case SQLITE_FLOAT:
                 cur_py_value = PyFloat_FromDouble(sqlite3_value_double(cur_value));
@@ -975,7 +975,7 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     py_statement = PyUnicode_DecodeUTF8(statement_string,
             strlen(statement_string), "replace");
     if (py_statement) {
-        ret = _PyObject_CallOneArg((PyObject*)user_arg, py_statement);
+        ret = PyObject_CallOneArg((PyObject*)user_arg, py_statement);
         Py_DECREF(py_statement);
     }
 
@@ -1472,7 +1472,7 @@ pysqlite_connection_iterdump(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    retval = _PyObject_CallOneArg(pyfn_iterdump, (PyObject *)self);
+    retval = PyObject_CallOneArg(pyfn_iterdump, (PyObject *)self);
 
 finally:
     Py_XDECREF(module);

@@ -685,6 +685,11 @@ strings), but they cannot contain comments.  Each expression is evaluated
 in the context where the formatted string literal appears, in order from
 left to right.
 
+.. versionchanged:: 3.7
+   Prior to Python 3.7, an :keyword:`await` expression and comprehensions
+   containing an :keyword:`async for` clause were illegal in the expressions
+   in formatted string literals due to a problem with the implementation.
+
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
 the result, ``'!r'`` calls :func:`repr`, and ``'!a'`` calls :func:`ascii`.

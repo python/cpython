@@ -1269,7 +1269,7 @@ test_long_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     a = PyLong_AsLongLong(args[0]);
-    if (a == (PY_LONG_LONG)-1 && PyErr_Occurred()) {
+    if (a == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional:
@@ -1281,7 +1281,7 @@ exit:
 
 static PyObject *
 test_long_long_converter_impl(PyObject *module, long long a)
-/*[clinic end generated code: output=3e8083f3aee4f18a input=d5fc81577ff4dd02]*/
+/*[clinic end generated code: output=7143b585d7e433e8 input=d5fc81577ff4dd02]*/
 
 
 /*[clinic input]

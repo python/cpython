@@ -123,7 +123,7 @@ def _runtest(ns, test_name):
 
     start_time = time.perf_counter()
     try:
-        support.set_match_tests(ns.match_tests)
+        support.set_match_tests(ns.match_tests, ns.ignore_tests)
         support.junit_xml_list = xml_list = [] if ns.xmlpath else None
         if ns.failfast:
             support.failfast = True

@@ -13,7 +13,7 @@ This module allows a Python program to determine if a string is a keyword.
 
 .. function:: iskeyword(s)
 
-   Return true if *s* is a Python keyword.
+   Return ``True`` if *s* is a Python keyword.
 
 
 .. data:: kwlist

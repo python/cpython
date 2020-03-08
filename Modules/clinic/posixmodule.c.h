@@ -2838,7 +2838,7 @@ PyDoc_STRVAR(os_sched_param__doc__,
 "sched_param(sched_priority)\n"
 "--\n"
 "\n"
-"Current has only one field: sched_priority\");\n"
+"Currently has only one field: sched_priority\n"
 "\n"
 "  sched_priority\n"
 "    A scheduling parameter.");
@@ -3963,6 +3963,44 @@ os_wait(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_WAIT) */
 
+#if (defined(__linux__) && defined(__NR_pidfd_open))
+
+PyDoc_STRVAR(os_pidfd_open__doc__,
+"pidfd_open($module, /, pid, flags=0)\n"
+"--\n"
+"\n"
+"Return a file descriptor referring to the process *pid*.\n"
+"\n"
+"The descriptor can be used to perform process management without races and\n"
+"signals.");
+
+#define OS_PIDFD_OPEN_METHODDEF    \
+    {"pidfd_open", (PyCFunction)(void(*)(void))os_pidfd_open, METH_FASTCALL|METH_KEYWORDS, os_pidfd_open__doc__},
+
+static PyObject *
+os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags);
+
+static PyObject *
+os_pidfd_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"pid", "flags", NULL};
+    static _PyArg_Parser _parser = {"" _Py_PARSE_PID "|O&:pidfd_open", _keywords, 0};
+    pid_t pid;
+    unsigned int flags = 0;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &pid, _PyLong_UnsignedInt_Converter, &flags)) {
+        goto exit;
+    }
+    return_value = os_pidfd_open_impl(module, pid, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(__linux__) && defined(__NR_pidfd_open)) */
+
 #if (defined(HAVE_READLINK) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(os_readlink__doc__,
@@ -4799,14 +4837,14 @@ PyDoc_STRVAR(os_pread__doc__,
     {"pread", (PyCFunction)(void(*)(void))os_pread, METH_FASTCALL, os_pread__doc__},
 
 static PyObject *
-os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset);
+os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset);
 
 static PyObject *
 os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    int length;
+    Py_ssize_t length;
     Py_off_t offset;
 
     if (!_PyArg_CheckPositional("pread", nargs, 3, 3)) {
@@ -4826,9 +4864,17 @@ os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    length = _PyLong_AsInt(args[1]);
-    if (length == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
     if (!Py_off_t_converter(args[2], &offset)) {
         goto exit;
@@ -4978,7 +5024,7 @@ exit:
 #if defined(__APPLE__)
 
 PyDoc_STRVAR(os__fcopyfile__doc__,
-"_fcopyfile($module, infd, outfd, flags, /)\n"
+"_fcopyfile($module, in_fd, out_fd, flags, /)\n"
 "--\n"
 "\n"
 "Efficiently copy content or metadata of 2 regular file descriptors (macOS).");
@@ -4987,14 +5033,14 @@ PyDoc_STRVAR(os__fcopyfile__doc__,
     {"_fcopyfile", (PyCFunction)(void(*)(void))os__fcopyfile, METH_FASTCALL, os__fcopyfile__doc__},
 
 static PyObject *
-os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags);
+os__fcopyfile_impl(PyObject *module, int in_fd, int out_fd, int flags);
 
 static PyObject *
 os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int infd;
-    int outfd;
+    int in_fd;
+    int out_fd;
     int flags;
 
     if (!_PyArg_CheckPositional("_fcopyfile", nargs, 3, 3)) {
@@ -5005,8 +5051,8 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    infd = _PyLong_AsInt(args[0]);
-    if (infd == -1 && PyErr_Occurred()) {
+    in_fd = _PyLong_AsInt(args[0]);
+    if (in_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -5014,8 +5060,8 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    outfd = _PyLong_AsInt(args[1]);
-    if (outfd == -1 && PyErr_Occurred()) {
+    out_fd = _PyLong_AsInt(args[1]);
+    if (out_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (PyFloat_Check(args[2])) {
@@ -5027,7 +5073,7 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = os__fcopyfile_impl(module, infd, outfd, flags);
+    return_value = os__fcopyfile_impl(module, in_fd, out_fd, flags);
 
 exit:
     return return_value;
@@ -5988,7 +6034,7 @@ exit:
 
 #endif /* (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)) */
 
-#if defined(HAVE_PUTENV) && defined(MS_WINDOWS)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_putenv__doc__,
 "putenv($module, name, value, /)\n"
@@ -6034,9 +6080,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_PUTENV) && defined(MS_WINDOWS) */
+#endif /* defined(MS_WINDOWS) */
 
-#if defined(HAVE_PUTENV) && !defined(MS_WINDOWS)
+#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_putenv__doc__,
 "putenv($module, name, value, /)\n"
@@ -6077,9 +6123,45 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_PUTENV) && !defined(MS_WINDOWS) */
+#endif /* !defined(MS_WINDOWS) */
 
-#if defined(HAVE_UNSETENV)
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_unsetenv__doc__,
+"unsetenv($module, name, /)\n"
+"--\n"
+"\n"
+"Delete an environment variable.");
+
+#define OS_UNSETENV_METHODDEF    \
+    {"unsetenv", (PyCFunction)os_unsetenv, METH_O, os_unsetenv__doc__},
+
+static PyObject *
+os_unsetenv_impl(PyObject *module, PyObject *name);
+
+static PyObject *
+os_unsetenv(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *name;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("unsetenv", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    name = arg;
+    return_value = os_unsetenv_impl(module, name);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_unsetenv__doc__,
 "unsetenv($module, name, /)\n"
@@ -6111,7 +6193,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_UNSETENV) */
+#endif /* !defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os_strerror__doc__,
 "strerror($module, code, /)\n"
@@ -8472,6 +8554,10 @@ exit:
     #define OS_WAIT_METHODDEF
 #endif /* !defined(OS_WAIT_METHODDEF) */
 
+#ifndef OS_PIDFD_OPEN_METHODDEF
+    #define OS_PIDFD_OPEN_METHODDEF
+#endif /* !defined(OS_PIDFD_OPEN_METHODDEF) */
+
 #ifndef OS_READLINK_METHODDEF
     #define OS_READLINK_METHODDEF
 #endif /* !defined(OS_READLINK_METHODDEF) */
@@ -8723,4 +8809,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=113d9fbdd18a62f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d99f90cead7c0e1 input=a9049054013a1b77]*/
