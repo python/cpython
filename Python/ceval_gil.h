@@ -180,17 +180,57 @@ drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
 #endif
 }
 
+
+static inline int
+thread_must_exit(PyThreadState *tstate)
+{
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
+    return (finalizing != NULL && finalizing != tstate);
+}
+
+
 /* Take the GIL.
 
    The function saves errno at entry and restores its value at exit.
 
+   Exit immediately the thread if Py_Finalize() has been called and tstate is
+   not the thread which called Py_Finalize(). For example, exit daemon threads
+   which survive after Py_Finalize().
+
    tstate must be non-NULL. */
 static void
-take_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
+take_gil(PyThreadState *tstate)
 {
     int err = errno;
 
+    if (thread_must_exit(tstate)) {
+        /* bpo-39877: If Py_Finalize() has been called and tstate is not the
+           thread which called Py_Finalize(), exit immediately the thread.
+
+           This code path can be reached by a daemon thread after Py_Finalize()
+           completes. In this case, tstate is a dangling pointer: points to
+           PyThreadState freed memory.
+
+           When this function is called after Py_Finalize() completed, the GIL
+           does no longer exist. */
+        PyThread_exit_thread();
+    }
+
+    /* ensure that tstate is valid */
+    assert(!_PyMem_IsPtrFreed(tstate));
+    assert(!_PyMem_IsPtrFreed(tstate->interp));
+
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     struct _gil_runtime_state *gil = &ceval->gil;
+
+    /* Check someone has called PyEval_InitThreads() to create the lock */
+    assert(gil_created(gil));
+
     MUTEX_LOCK(gil->mutex);
 
     if (!_Py_atomic_load_relaxed(&gil->locked)) {
@@ -242,6 +282,18 @@ _ready:
     }
 
     MUTEX_UNLOCK(gil->mutex);
+
+    if (thread_must_exit(tstate)) {
+        /* bpo-36475: If Py_Finalize() has been called and tstate is not the
+           thread which called Py_Finalize(), exit immediately the thread.
+
+           This code path can be reached by a daemon thread which continues to
+           run after wait_for_thread_shutdown() and before Py_Finalize()
+           completes. For example, when _PyImport_Cleanup() executes Python
+           code. */
+        drop_gil(ceval, tstate);
+        PyThread_exit_thread();
+    }
 
     errno = err;
 }
