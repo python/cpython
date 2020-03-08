@@ -178,13 +178,13 @@ struct compiler {
 
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
 static void compiler_free(struct compiler *);
-static basicblock *compiler_new_block(struct compiler *);
-static int compiler_next_instr(struct compiler *, basicblock *);
+static basicblock *compiler_new_block(const struct compiler *);
+static int compiler_next_instr(basicblock *);
 static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
-static int compiler_error(struct compiler *, const char *);
-static int compiler_warn(struct compiler *, const char *, ...);
+static int compiler_error(const struct compiler *, const char *);
+static int compiler_warn(const struct compiler *, const char *, ...);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
 
 static PyCodeObject *compiler_mod(struct compiler *, mod_ty);
@@ -196,7 +196,7 @@ static int compiler_annassign(struct compiler *, stmt_ty);
 static int compiler_visit_slice(struct compiler *, slice_ty,
                                 expr_context_ty);
 
-static int inplace_binop(struct compiler *, operator_ty);
+static int inplace_binop(operator_ty);
 static int are_all_items_const(asdl_seq *, Py_ssize_t, Py_ssize_t);
 static int expr_constant(expr_ty);
 
@@ -759,7 +759,7 @@ compiler_set_qualname(struct compiler *c)
 */
 
 static basicblock *
-compiler_new_block(struct compiler *c)
+compiler_new_block(const struct compiler *c)
 {
     basicblock *b;
     struct compiler_unit *u;
@@ -803,7 +803,7 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
 */
 
 static int
-compiler_next_instr(struct compiler *c, basicblock *b)
+compiler_next_instr(basicblock *b)
 {
     assert(b != NULL);
     if (b->b_instr == NULL) {
@@ -1159,7 +1159,7 @@ compiler_addop(struct compiler *c, int opcode)
     if (c->c_do_not_emit_bytecode) {
         return 1;
     }
-    off = compiler_next_instr(c, c->u->u_curblock);
+    off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
     b = c->u->u_curblock;
@@ -1173,7 +1173,7 @@ compiler_addop(struct compiler *c, int opcode)
 }
 
 static Py_ssize_t
-compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
+compiler_add_o(PyObject *dict, PyObject *o)
 {
     PyObject *v;
     Py_ssize_t arg;
@@ -1201,7 +1201,7 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 
 // Merge const *o* recursively and return constant key object.
 static PyObject*
-merge_consts_recursive(struct compiler *c, PyObject *o)
+merge_consts_recursive(const struct compiler *c, PyObject *o)
 {
     // None and Ellipsis are singleton, and key is the singleton.
     // No need to merge object and key.
@@ -1310,7 +1310,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
 }
 
 static Py_ssize_t
-compiler_add_const(struct compiler *c, PyObject *o)
+compiler_add_const(const struct compiler *c, PyObject *o)
 {
     if (c->c_do_not_emit_bytecode) {
         return 0;
@@ -1321,7 +1321,7 @@ compiler_add_const(struct compiler *c, PyObject *o)
         return -1;
     }
 
-    Py_ssize_t arg = compiler_add_o(c, c->u->u_consts, key);
+    Py_ssize_t arg = compiler_add_o(c->u->u_consts, key);
     Py_DECREF(key);
     return arg;
 }
@@ -1347,7 +1347,7 @@ compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
         return 1;
     }
 
-    Py_ssize_t arg = compiler_add_o(c, dict, o);
+    Py_ssize_t arg = compiler_add_o(dict, o);
     if (arg < 0)
         return 0;
     return compiler_addop_i(c, opcode, arg);
@@ -1366,7 +1366,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
     PyObject *mangled = _Py_Mangle(c->u->u_private, o);
     if (!mangled)
         return 0;
-    arg = compiler_add_o(c, dict, mangled);
+    arg = compiler_add_o(dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0)
         return 0;
@@ -1397,7 +1397,7 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
     assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
-    off = compiler_next_instr(c, c->u->u_curblock);
+    off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
     i = &c->u->u_curblock->b_instr[off];
@@ -1419,7 +1419,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 
     assert(HAS_ARG(opcode));
     assert(b != NULL);
-    off = compiler_next_instr(c, c->u->u_curblock);
+    off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
     i = &c->u->u_curblock->b_instr[off];
@@ -1571,7 +1571,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 /* Search if variable annotations are present statically in a block. */
 
 static int
-find_ann(asdl_seq *stmts)
+find_ann(const asdl_seq *stmts)
 {
     int i, j, res = 0;
     stmt_ty st;
@@ -1630,7 +1630,7 @@ find_ann(asdl_seq *stmts)
  */
 
 static int
-compiler_push_fblock(struct compiler *c, enum fblocktype t, basicblock *b,
+compiler_push_fblock(const struct compiler *c, enum fblocktype t, basicblock *b,
                      basicblock *exit, void *datum)
 {
     struct fblockinfo *f;
@@ -1648,7 +1648,7 @@ compiler_push_fblock(struct compiler *c, enum fblocktype t, basicblock *b,
 }
 
 static void
-compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
+compiler_pop_fblock(const struct compiler *c, enum fblocktype t, basicblock *b)
 {
     struct compiler_unit *u = c->u;
     assert(u->u_nfblocks > 0);
@@ -1879,7 +1879,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 */
 
 static int
-get_ref_type(struct compiler *c, PyObject *name)
+get_ref_type(const struct compiler *c, PyObject *name)
 {
     int scope;
     if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
@@ -2403,7 +2403,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 /* Return 0 if the expression is a constant value except named singletons.
    Return 1 otherwise. */
 static int
-check_is_arg(expr_ty e)
+check_is_arg(const struct _expr *e)
 {
     if (e->kind != Constant_kind) {
         return 1;
@@ -2420,7 +2420,7 @@ check_is_arg(expr_ty e)
    Return 0 on error.
  */
 static int
-check_compare(struct compiler *c, expr_ty e)
+check_compare(const struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
     int left = check_is_arg(e->v.Compare.left);
@@ -3439,7 +3439,7 @@ unaryop(unaryop_ty op)
 }
 
 static int
-binop(struct compiler *c, operator_ty op)
+binop(operator_ty op)
 {
     switch (op) {
     case Add:
@@ -3476,7 +3476,7 @@ binop(struct compiler *c, operator_ty op)
 }
 
 static int
-inplace_binop(struct compiler *c, operator_ty op)
+inplace_binop(operator_ty op)
 {
     switch (op) {
     case Add:
@@ -3637,7 +3637,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     }
 
     assert(op);
-    arg = compiler_add_o(c, dict, mangled);
+    arg = compiler_add_o(dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0)
         return 0;
@@ -3995,7 +3995,7 @@ infer_type(expr_ty e)
 }
 
 static int
-check_caller(struct compiler *c, expr_ty e)
+check_caller(const struct compiler *c, expr_ty e)
 {
     switch (e->kind) {
     case Constant_kind:
@@ -4018,7 +4018,7 @@ check_caller(struct compiler *c, expr_ty e)
 }
 
 static int
-check_subscripter(struct compiler *c, expr_ty e)
+check_subscripter(const struct compiler *c, expr_ty e)
 {
     PyObject *v;
 
@@ -4045,7 +4045,7 @@ check_subscripter(struct compiler *c, expr_ty e)
 }
 
 static int
-check_index(struct compiler *c, expr_ty e, slice_ty s)
+check_index(const struct compiler *c, expr_ty e, slice_ty s)
 {
     PyObject *v;
 
@@ -4964,7 +4964,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case BinOp_kind:
         VISIT(c, expr, e->v.BinOp.left);
         VISIT(c, expr, e->v.BinOp.right);
-        ADDOP(c, binop(c, e->v.BinOp.op));
+        ADDOP(c, binop(e->v.BinOp.op));
         break;
     case UnaryOp_kind:
         VISIT(c, expr, e->v.UnaryOp.operand);
@@ -5162,7 +5162,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
             return 0;
         VISIT(c, expr, auge);
         VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
+        ADDOP(c, inplace_binop(s->v.AugAssign.op));
         auge->v.Attribute.ctx = AugStore;
         VISIT(c, expr, auge);
         break;
@@ -5174,7 +5174,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
             return 0;
         VISIT(c, expr, auge);
         VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
+        ADDOP(c, inplace_binop(s->v.AugAssign.op));
         auge->v.Subscript.ctx = AugStore;
         VISIT(c, expr, auge);
         break;
@@ -5182,7 +5182,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         if (!compiler_nameop(c, e->v.Name.id, Load))
             return 0;
         VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
+        ADDOP(c, inplace_binop(s->v.AugAssign.op));
         return compiler_nameop(c, e->v.Name.id, Store);
     default:
         PyErr_Format(PyExc_SystemError,
@@ -5339,7 +5339,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 */
 
 static int
-compiler_error(struct compiler *c, const char *errstr)
+compiler_error(const struct compiler *c, const char *errstr)
 {
     PyObject *loc;
     PyObject *u = NULL, *v = NULL;
@@ -5369,7 +5369,7 @@ compiler_error(struct compiler *c, const char *errstr)
    and returns 0.
 */
 static int
-compiler_warn(struct compiler *c, const char *format, ...)
+compiler_warn(const struct compiler *c, const char *format, ...)
 {
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
@@ -5535,7 +5535,7 @@ struct assembler {
 };
 
 static void
-dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
+dfs(const struct compiler *c, basicblock *b, struct assembler *a, int end)
 {
     int i, j;
 
@@ -5575,7 +5575,7 @@ stackdepth_push(basicblock ***sp, basicblock *b, int depth)
  * cycles in the flow graph have no net effect on the stack depth.
  */
 static int
-stackdepth(struct compiler *c)
+stackdepth(const struct compiler *c)
 {
     basicblock *b, *entryblock = NULL;
     basicblock **stack, **sp;
@@ -5676,7 +5676,7 @@ assemble_free(struct assembler *a)
 }
 
 static int
-blocksize(basicblock *b)
+blocksize(const basicblock *b)
 {
     int i;
     int size = 0;
@@ -5823,7 +5823,7 @@ assemble_emit(struct assembler *a, struct instr *i)
 }
 
 static void
-assemble_jump_offsets(struct assembler *a, struct compiler *c)
+assemble_jump_offsets(struct assembler *a, const struct compiler *c)
 {
     basicblock *b;
     int bsize, totsize, extended_arg_recompile;
@@ -5925,7 +5925,7 @@ consts_dict_keys_inorder(PyObject *dict)
 }
 
 static int
-compute_code_flags(struct compiler *c)
+compute_code_flags(const struct compiler *c)
 {
     PySTEntryObject *ste = c->u->u_ste;
     int flags = 0;
@@ -5960,7 +5960,7 @@ compute_code_flags(struct compiler *c)
 // Merge *tuple* with constant cache.
 // Unlike merge_consts_recursive(), this function doesn't work recursively.
 static int
-merge_const_tuple(struct compiler *c, PyObject **tuple)
+merge_const_tuple(const struct compiler *c, PyObject **tuple)
 {
     assert(PyTuple_CheckExact(*tuple));
 
