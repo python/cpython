@@ -1649,7 +1649,61 @@ Assignment expressions
 .. productionlist::
    assignment_expression: [`identifier` ":="] `expression`
 
-.. TODO: BPO-39868
+Assignment expression is the new expression introduced in the Python3.8
+or later (sometimes also called as "named expression" or "walrus operator"),
+which aims to reduce the number of lines of code by allowing the
+assignment and return of value in the same expression. This makes codebase
+more readable and maintainable.
+
+The expression ``name := expr`` where **expr** is any valid Python expression
+other than an unparenthesize tuple and the **name** is an identifier.
+Here the variable **name** holds the assigned value of a given **expression**.
+
+**Examples**
+
+*The following examples demonstrate the use case of an assignment expressions.*
+
+
+One common use case is when handling the matched data in regular expression
+
+**Current scenario**
+
+.. code-block:: python
+
+   matching = patern.search(data)
+   if matching:
+       do_something(matching)
+
+Notice that a matching variable is being called two times in the code
+that may be replaced using assignment expression in one line.
+
+**Using assignment expression**
+
+.. code-block:: python
+
+   if (matching := pattern.search(data)):
+       do_something(matching)
+
+
+Another popular use case is when processing the streams in a
+chunk from the file.
+
+**Current scenario**
+
+.. code-block:: python
+
+   chunk = file.read(9000)
+   while chunk:
+       process(chunk)
+       chunk = file.read(9000)
+
+**Using assignment expression**
+
+.. code-block:: python
+
+   while chunk := file.read(9000):
+       process(chunk)
+
 
 See :pep:`572` for more details about assignment expressions.
 
