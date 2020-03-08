@@ -138,6 +138,10 @@ Other Language Changes
   There are similar changes for :class:`bytes` and :class:`bytearray` objects.
   (Contributed by Serhiy Storchaka in :issue:`28029`.)
 
+* Any valid expression can now be used as a :term:`decorator`.  Previously, the
+  grammar was much more restrictive.  See :pep:`614` for details.
+  (Contributed by Brandt Bucher in :issue:`39702`.)
+
 
 New Modules
 ===========
