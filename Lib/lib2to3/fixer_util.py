@@ -156,7 +156,6 @@ def BlankLineOrPass(node):
     within a suite after conversion"""
     skip = {token.NEWLINE, token.INDENT, token.DEDENT}
     def has_significant_sibling(node, is_forward):
-        sibling = None
         if is_forward:
             sibling = node.next_sibling
         else:
