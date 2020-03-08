@@ -3,6 +3,9 @@ Released on 2020-10-05?
 ======================================
 
 
+bpo-39885: Since clicking to get an IDLE context menu moves the
+cursor, any text selection should be and now is cleared.
+
 bpo-39852: Edit "Go to line" now clears any selection, preventing
 accidental deletion.  It also updates Ln and Col on the status bar.
 
