@@ -444,7 +444,23 @@ class _NormalAccessor(_Accessor):
         def symlink(a, b, target_is_directory):
             return os.symlink(a, b)
 
-    utime = os.utime
+    def touch(self, path, mode=0o666, exist_ok=True):
+        if exist_ok:
+            # First try to bump modification time
+            # Implementation note: GNU touch uses the UTIME_NOW option of
+            # the utimensat() / futimens() functions.
+            try:
+                os.utime(path, None)
+            except OSError:
+                # Avoid exception chaining
+                pass
+            else:
+                return
+        flags = os.O_CREAT | os.O_WRONLY
+        if not exist_ok:
+            flags |= os.O_EXCL
+        fd = os.open(path, flags, mode)
+        os.close(fd)
 
     # Helper for resolve()
     def readlink(self, path):
@@ -1111,13 +1127,6 @@ class Path(PurePath):
         # A stub for the opener argument to built-in open()
         return self._accessor.open(self, flags, mode)
 
-    def _raw_open(self, flags, mode=0o777):
-        """
-        Open the file pointed by this path and return a file descriptor,
-        as os.open() does.
-        """
-        return self._accessor.open(self, flags, mode)
-
     # Public API
 
     @classmethod
@@ -1290,22 +1299,7 @@ class Path(PurePath):
         """
         Create this file with the given access mode, if it doesn't exist.
         """
-        if exist_ok:
-            # First try to bump modification time
-            # Implementation note: GNU touch uses the UTIME_NOW option of
-            # the utimensat() / futimens() functions.
-            try:
-                self._accessor.utime(self, None)
-            except OSError:
-                # Avoid exception chaining
-                pass
-            else:
-                return
-        flags = os.O_CREAT | os.O_WRONLY
-        if not exist_ok:
-            flags |= os.O_EXCL
-        fd = self._raw_open(flags, mode)
-        os.close(fd)
+        self._accessor.touch(self, mode, exist_ok)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         """
