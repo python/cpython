@@ -241,12 +241,7 @@ _PyEval_InitThreads(PyThreadState *tstate)
 void
 PyEval_InitThreads(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
-    PyStatus status = _PyEval_InitThreads(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        Py_ExitStatusException(status);
-    }
+    /* Do nothing: kept for backward compatibility */
 }
 
 void
