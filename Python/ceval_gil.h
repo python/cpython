@@ -180,15 +180,17 @@ drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
 #endif
 }
 
+/* Take the GIL.
+
+   The function saves errno at entry and restores its value at exit.
+
+   tstate must be non-NULL. */
 static void
 take_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
 {
-    if (tstate == NULL) {
-        Py_FatalError("take_gil: NULL tstate");
-    }
+    int err = errno;
 
     struct _gil_runtime_state *gil = &ceval->gil;
-    int err = errno;
     MUTEX_LOCK(gil->mutex);
 
     if (!_Py_atomic_load_relaxed(&gil->locked)) {
@@ -240,6 +242,7 @@ _ready:
     }
 
     MUTEX_UNLOCK(gil->mutex);
+
     errno = err;
 }
 
