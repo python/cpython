@@ -142,7 +142,9 @@ Replace...
    Open a search-and-replace dialog.
 
 Go to Line
-   Move cursor to the line number requested and make that line visible.
+   Move the cursor to the beginning of the line requested and make that
+   line visible.  A request past the end of the file goes to the end.
+   Clear any selection and update the line and column status.
 
 Show Completions
    Open a scrollable list allowing selection of keywords and attributes. See
