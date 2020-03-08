@@ -17,7 +17,7 @@ Python 2.6 figure it out.
 from .. import fixer_base
 from ..pytree import Node
 from ..pygram import python_symbols as syms
-from ..fixer_util import Name, ArgList, ListComp, in_special_context
+from ..fixer_util import Name, ArgList, ListComp, in_special_context, parenthesize
 
 
 class FixFilter(fixer_base.ConditionalFix):
@@ -65,10 +65,14 @@ class FixFilter(fixer_base.ConditionalFix):
                 trailers.append(t.clone())
 
         if "filter_lambda" in results:
+            xp = results.get("xp").clone()
+            if xp.type == syms.test:
+                xp.prefix = ""
+                xp = parenthesize(xp)
+
             new = ListComp(results.get("fp").clone(),
                            results.get("fp").clone(),
-                           results.get("it").clone(),
-                           results.get("xp").clone())
+                           results.get("it").clone(), xp)
             new = Node(syms.power, [new] + trailers, prefix="")
 
         elif "none" in results:

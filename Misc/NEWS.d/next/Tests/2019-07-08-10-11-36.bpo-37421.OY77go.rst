@@ -1,2 +1,0 @@
-test_concurrent_futures now explicitly stops the ForkServer instance if it's
-running.

@@ -259,8 +259,12 @@ class EventLoopTestsMixin:
             self.assertTrue(self.loop.is_running())
             self.loop.run_until_complete(coro1())
 
-        self.assertRaises(
-            RuntimeError, self.loop.run_until_complete, coro2())
+        with self.assertWarnsRegex(
+            RuntimeWarning,
+            r"coroutine \S+ was never awaited"
+        ):
+            self.assertRaises(
+                RuntimeError, self.loop.run_until_complete, coro2())
 
     # Note: because of the default Windows timing granularity of
     # 15.6 msec, we use fairly long sleep times here (~100 msec).
@@ -699,7 +703,7 @@ class EventLoopTestsMixin:
         proto.transport.close()
         lsock.close()
 
-        support.join_thread(thread, timeout=1)
+        support.join_thread(thread)
         self.assertFalse(thread.is_alive())
         self.assertEqual(proto.state, 'CLOSED')
         self.assertEqual(proto.nbytes, len(message))
@@ -724,7 +728,7 @@ class EventLoopTestsMixin:
         sock = socket.socket()
         self.addCleanup(sock.close)
         coro = self.loop.connect_accepted_socket(
-            MyProto, sock, ssl_handshake_timeout=1)
+            MyProto, sock, ssl_handshake_timeout=support.LOOPBACK_TIMEOUT)
         with self.assertRaisesRegex(
                 ValueError,
                 'ssl_handshake_timeout is only meaningful with ssl'):
@@ -1475,12 +1479,12 @@ class EventLoopTestsMixin:
             return len(data)
 
         test_utils.run_until(self.loop, lambda: reader(data) >= 1,
-                             timeout=10)
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(b'1', data)
 
         transport.write(b'2345')
         test_utils.run_until(self.loop, lambda: reader(data) >= 5,
-                             timeout=10)
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(b'12345', data)
         self.assertEqual('CONNECTED', proto.state)
 
@@ -1531,27 +1535,29 @@ class EventLoopTestsMixin:
             return len(data)
 
         write_transport.write(b'1')
-        test_utils.run_until(self.loop, lambda: reader(data) >= 1, timeout=10)
+        test_utils.run_until(self.loop, lambda: reader(data) >= 1,
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(b'1', data)
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual('CONNECTED', write_proto.state)
 
         os.write(master, b'a')
         test_utils.run_until(self.loop, lambda: read_proto.nbytes >= 1,
-                             timeout=10)
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual(1, read_proto.nbytes)
         self.assertEqual('CONNECTED', write_proto.state)
 
         write_transport.write(b'2345')
-        test_utils.run_until(self.loop, lambda: reader(data) >= 5, timeout=10)
+        test_utils.run_until(self.loop, lambda: reader(data) >= 5,
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(b'12345', data)
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual('CONNECTED', write_proto.state)
 
         os.write(master, b'bcde')
         test_utils.run_until(self.loop, lambda: read_proto.nbytes >= 5,
-                             timeout=10)
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual(5, read_proto.nbytes)
         self.assertEqual('CONNECTED', write_proto.state)

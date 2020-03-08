@@ -325,7 +325,7 @@ def _args_from_interpreter_flags():
     if dev_mode:
         args.extend(('-X', 'dev'))
     for opt in ('faulthandler', 'tracemalloc', 'importtime',
-                'showalloccount', 'showrefcount', 'utf8'):
+                'showrefcount', 'utf8'):
         if opt in xoptions:
             value = xoptions[opt]
             if value is True:
@@ -445,6 +445,19 @@ class CompletedProcess(object):
         if self.stderr is not None:
             args.append('stderr={!r}'.format(self.stderr))
         return "{}({})".format(type(self).__name__, ', '.join(args))
+
+    def __class_getitem__(cls, type):
+        """Provide minimal support for using this class as generic
+        (for example in type annotations).
+
+        See PEP 484 and PEP 560 for more details. For example,
+        `CompletedProcess[bytes]` is a valid expression at runtime
+        (type argument `bytes` indicates the type used for stdout).
+        Note, no type checking happens at runtime, but a static type
+        checker can be used.
+        """
+        return cls
+
 
     def check_returncode(self):
         """Raise CalledProcessError if the exit code is non-zero."""
@@ -733,6 +746,8 @@ class Popen(object):
 
       user (POSIX only)
 
+      umask (POSIX only)
+
       pass_fds (POSIX only)
 
       encoding and errors: Text mode encoding and error handling to use for
@@ -750,7 +765,7 @@ class Popen(object):
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
-                 encoding=None, errors=None, text=None):
+                 encoding=None, errors=None, text=None, umask=-1):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -945,7 +960,7 @@ class Popen(object):
                                 c2pread, c2pwrite,
                                 errread, errwrite,
                                 restore_signals,
-                                gid, gids, uid,
+                                gid, gids, uid, umask,
                                 start_new_session)
         except:
             # Cleanup if the child failed starting.
@@ -975,6 +990,26 @@ class Popen(object):
                         pass
 
             raise
+
+    def __repr__(self):
+        obj_repr = (
+            f"<{self.__class__.__name__}: "
+            f"returncode: {self.returncode} args: {list(self.args)!r}>"
+        )
+        if len(obj_repr) > 80:
+            obj_repr = obj_repr[:76] + "...>"
+        return obj_repr
+
+    def __class_getitem__(cls, type):
+        """Provide minimal support for using this class as generic
+        (for example in type annotations).
+
+        See PEP 484 and PEP 560 for more details. For example, `Popen[bytes]`
+        is a valid expression at runtime (type argument `bytes` indicates the
+        type used for stdout). Note, no type checking happens at runtime, but
+        a static type checker can be used.
+        """
+        return cls
 
     @property
     def universal_newlines(self):
@@ -1318,6 +1353,7 @@ class Popen(object):
                            errread, errwrite,
                            unused_restore_signals,
                            unused_gid, unused_gids, unused_uid,
+                           unused_umask,
                            unused_start_new_session):
             """Execute program (MS Windows version)"""
 
@@ -1645,7 +1681,7 @@ class Popen(object):
                            c2pread, c2pwrite,
                            errread, errwrite,
                            restore_signals,
-                           gid, gids, uid,
+                           gid, gids, uid, umask,
                            start_new_session):
             """Execute program (POSIX version)"""
 
@@ -1684,7 +1720,8 @@ class Popen(object):
                     and not start_new_session
                     and gid is None
                     and gids is None
-                    and uid is None):
+                    and uid is None
+                    and umask < 0):
                 self._posix_spawn(args, executable, env, restore_signals,
                                   p2cread, p2cwrite,
                                   c2pread, c2pwrite,
@@ -1738,7 +1775,7 @@ class Popen(object):
                             errread, errwrite,
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
-                            gid, gids, uid,
+                            gid, gids, uid, umask,
                             preexec_fn)
                     self._child_created = True
                 finally:
@@ -1946,9 +1983,9 @@ class Popen(object):
             with _PopenSelector() as selector:
                 if self.stdin and input:
                     selector.register(self.stdin, selectors.EVENT_WRITE)
-                if self.stdout:
+                if self.stdout and not self.stdout.closed:
                     selector.register(self.stdout, selectors.EVENT_READ)
-                if self.stderr:
+                if self.stderr and not self.stderr.closed:
                     selector.register(self.stderr, selectors.EVENT_READ)
 
                 while selector.get_map():
@@ -2024,9 +2061,31 @@ class Popen(object):
 
         def send_signal(self, sig):
             """Send a signal to the process."""
-            # Skip signalling a process that we know has already died.
-            if self.returncode is None:
-                os.kill(self.pid, sig)
+            # bpo-38630: Polling reduces the risk of sending a signal to the
+            # wrong process if the process completed, the Popen.returncode
+            # attribute is still None, and the pid has been reassigned
+            # (recycled) to a new different process. This race condition can
+            # happens in two cases.
+            #
+            # Case 1. Thread A calls Popen.poll(), thread B calls
+            # Popen.send_signal(). In thread A, waitpid() succeed and returns
+            # the exit status. Thread B calls kill() because poll() in thread A
+            # did not set returncode yet. Calling poll() in thread B prevents
+            # the race condition thanks to Popen._waitpid_lock.
+            #
+            # Case 2. waitpid(pid, 0) has been called directly, without
+            # using Popen methods: returncode is still None is this case.
+            # Calling Popen.poll() will set returncode to a default value,
+            # since waitpid() fails with ProcessLookupError.
+            self.poll()
+            if self.returncode is not None:
+                # Skip signalling a process that we know has already died.
+                return
+
+            # The race condition can still happen if the race condition
+            # described above happens between the returncode test
+            # and the kill() call.
+            os.kill(self.pid, sig)
 
         def terminate(self):
             """Terminate the process with SIGTERM

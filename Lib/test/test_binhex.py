@@ -3,9 +3,11 @@
    Uses the mechanism of the python binhex module
    Based on an original test by Roger E. Masse.
 """
-import binhex
 import unittest
 from test import support
+
+with support.check_warnings(('', DeprecationWarning)):
+    import binhex
 
 
 class BinHexTestCase(unittest.TestCase):

@@ -11,8 +11,11 @@ extern "C" {
 /* Forward declarations */
 struct pyruntimestate;
 struct _ceval_runtime_state;
+struct _frame;
 
-PyAPI_FUNC(void) _Py_FinishPendingCalls(struct pyruntimestate *runtime);
+#include "pycore_pystate.h"   /* PyInterpreterState.eval_frame */
+
+PyAPI_FUNC(void) _Py_FinishPendingCalls(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
 PyAPI_FUNC(void) _PyEval_FiniThreads(
     struct _ceval_runtime_state *ceval);
@@ -33,6 +36,22 @@ PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
 
 /* Private function */
 void _PyEval_Fini(void);
+
+static inline PyObject*
+_PyEval_EvalFrame(PyThreadState *tstate, struct _frame *f, int throwflag)
+{
+    return tstate->interp->eval_frame(f, throwflag);
+}
+
+extern PyObject *_PyEval_EvalCode(
+    PyThreadState *tstate,
+    PyObject *_co, PyObject *globals, PyObject *locals,
+    PyObject *const *args, Py_ssize_t argcount,
+    PyObject *const *kwnames, PyObject *const *kwargs,
+    Py_ssize_t kwcount, int kwstep,
+    PyObject *const *defs, Py_ssize_t defcount,
+    PyObject *kwdefs, PyObject *closure,
+    PyObject *name, PyObject *qualname);
 
 #ifdef __cplusplus
 }

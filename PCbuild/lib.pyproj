@@ -1125,6 +1125,8 @@
     <Compile Include="test\test_import\data\package\submodule.py" />
     <Compile Include="test\test_import\data\package2\submodule1.py" />
     <Compile Include="test\test_import\data\package2\submodule2.py" />
+    <Compile Include="test\test_import\data\unwritable\__init__.py" />
+    <Compile Include="test\test_import\data\unwritable\x.py" />
     <Compile Include="test\test_import\__init__.py" />
     <Compile Include="test\test_import\__main__.py" />
     <Compile Include="test\test_index.py" />

@@ -14,25 +14,34 @@ class TestPathfixFunctional(unittest.TestCase):
     script = os.path.join(scriptsdir, 'pathfix.py')
 
     def setUp(self):
-        self.temp_file = support.TESTFN
         self.addCleanup(support.unlink, support.TESTFN)
 
-    def pathfix(self, shebang, pathfix_flags, exitcode=0, stdout='', stderr=''):
-        with open(self.temp_file, 'w', encoding='utf8') as f:
+    def pathfix(self, shebang, pathfix_flags, exitcode=0, stdout='', stderr='',
+                directory=''):
+        if directory:
+            # bpo-38347: Test filename should contain lowercase, uppercase,
+            # "-", "_" and digits.
+            filename = os.path.join(directory, 'script-A_1.py')
+            pathfix_arg = directory
+        else:
+            filename = support.TESTFN
+            pathfix_arg = filename
+
+        with open(filename, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
 
         proc = subprocess.run(
             [sys.executable, self.script,
-             *pathfix_flags, '-n', self.temp_file],
+             *pathfix_flags, '-n', pathfix_arg],
             capture_output=True, text=1)
 
         if stdout == '' and proc.returncode == 0:
-            stdout = f'{self.temp_file}: updating\n'
+            stdout = f'{filename}: updating\n'
         self.assertEqual(proc.returncode, exitcode, proc)
         self.assertEqual(proc.stdout, stdout, proc)
         self.assertEqual(proc.stderr, stderr, proc)
 
-        with open(self.temp_file, 'r', encoding='utf8') as f:
+        with open(filename, 'r', encoding='utf8') as f:
             output = f.read()
 
         lines = output.split('\n')
@@ -43,6 +52,19 @@ class TestPathfixFunctional(unittest.TestCase):
             self.assertEqual(shebang, new_shebang)
 
         return new_shebang
+
+    def test_recursive(self):
+        tmpdir = support.TESTFN + '.d'
+        self.addCleanup(support.rmtree, tmpdir)
+        os.mkdir(tmpdir)
+        expected_stderr = f"recursedown('{os.path.basename(tmpdir)}')\n"
+        self.assertEqual(
+            self.pathfix(
+                '#! /usr/bin/env python',
+                ['-i', '/usr/bin/python3'],
+                directory=tmpdir,
+                stderr=expected_stderr),
+            '#! /usr/bin/python3')
 
     def test_pathfix(self):
         self.assertEqual(

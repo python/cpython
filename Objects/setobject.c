@@ -608,7 +608,7 @@ set_repr(PySetObject *so)
         goto done;
     listrepr = tmp;
 
-    if (Py_TYPE(so) != &PySet_Type)
+    if (!Py_IS_TYPE(so, &PySet_Type))
         result = PyUnicode_FromFormat("%s({%U})",
                                       Py_TYPE(so)->tp_name,
                                       listrepr);
@@ -2529,7 +2529,7 @@ dummy_repr(PyObject *op)
     return PyUnicode_FromString("<dummy key>");
 }
 
-static void
+static void _Py_NO_RETURN
 dummy_dealloc(PyObject* ignore)
 {
     Py_FatalError("deallocating <dummy key>");

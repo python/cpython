@@ -34,7 +34,7 @@ should be added for runtime state.  Instead, they should be added to
 _PyRuntimeState or one of its sub-structs.  The check-c-globals script
 should be run to ensure that no new globals have been added:
 
-  python3 Tools/c-globals/check-c-globals.py
+  python3 Tools/c-analyzer/check-c-globals.py
 
 If it reports any globals then they should be resolved.  If the globals
 are runtime state then they should be folded into _PyRuntimeState.

@@ -61,8 +61,8 @@ PyWideStringList
 
    List of ``wchar_t*`` strings.
 
-   If *length* is non-zero, *items* must be non-NULL and all strings must be
-   non-NULL.
+   If *length* is non-zero, *items* must be non-``NULL`` and all strings must be
+   non-``NULL``.
 
    Methods:
 
@@ -466,13 +466,13 @@ PyConfig
 
    .. c:member:: int dev_mode
 
-      Development mode: see :option:`-X dev <-X>`.
+      If non-zero, enable the :ref:`Python Development Mode <devmode>`.
 
    .. c:member:: int dump_refs
 
       If non-zero, dump all objects which are still alive at exit.
 
-      Require a debug build of Python (``Py_REF_DEBUG`` macro must be defined).
+      ``Py_TRACE_REFS`` macro must be defined in build.
 
    .. c:member:: wchar_t* exec_prefix
 
@@ -608,7 +608,7 @@ PyConfig
 
       :data:`sys.pycache_prefix`: ``.pyc`` cache prefix.
 
-      If NULL, :data:`sys.pycache_prefix` is set to ``None``.
+      If ``NULL``, :data:`sys.pycache_prefix` is set to ``None``.
 
    .. c:member:: int quiet
 
@@ -626,14 +626,6 @@ PyConfig
    .. c:member:: wchar_t* run_module
 
       ``python3 -m MODULE`` argument. Used by :c:func:`Py_RunMain`.
-
-   .. c:member:: int show_alloc_count
-
-      Show allocation counts at exit?
-
-      Set to 1 by :option:`-X showalloccount <-X>` command line option.
-
-      Need a special Python build with ``COUNT_ALLOCS`` macro defined.
 
    .. c:member:: int show_ref_count
 
@@ -702,6 +694,10 @@ arguments are stripped from ``argv``: see :ref:`Command Line Arguments
 The ``xoptions`` options are parsed to set other options: see :option:`-X`
 option.
 
+.. versionchanged:: 3.9
+
+   The ``show_alloc_count`` field has been removed.
+
 
 Initialization with PyConfig
 ----------------------------
@@ -757,7 +753,7 @@ configuration, and then override some parameters::
         PyConfig config;
         PyConfig_InitPythonConfig(&config);
 
-        /* Set the program name before reading the configuraton
+        /* Set the program name before reading the configuration
            (decode byte string from the locale encoding).
 
            Implicitly preinitialize Python. */

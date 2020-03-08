@@ -10,8 +10,6 @@ import sys
 
 support.requires("network")
 
-TIMEOUT = 60  # seconds
-
 
 def _retry_thrice(func, exc, *args, **kwargs):
     for i in range(3):
@@ -199,7 +197,7 @@ class OtherNetworkTests(unittest.TestCase):
             try:
                 with urllib.request.urlopen(URL) as res:
                     pass
-            except ValueError as e:
+            except ValueError:
                 self.fail("urlopen failed for site not sending \
                            Connection:close")
             else:
@@ -227,7 +225,7 @@ class OtherNetworkTests(unittest.TestCase):
 
                 with support.transient_internet(url):
                     try:
-                        f = urlopen(url, req, TIMEOUT)
+                        f = urlopen(url, req, support.INTERNET_TIMEOUT)
                     # urllib.error.URLError is a subclass of OSError
                     except OSError as err:
                         if expected_err:

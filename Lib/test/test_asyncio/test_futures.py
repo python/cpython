@@ -822,5 +822,44 @@ class PyFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
         return futures._PyFuture(loop=self.loop)
 
 
+class BaseFutureInheritanceTests:
+
+    def _get_future_cls(self):
+        raise NotImplementedError
+
+    def setUp(self):
+        super().setUp()
+        self.loop = self.new_test_loop()
+        self.addCleanup(self.loop.close)
+
+    def test_inherit_without_calling_super_init(self):
+        # See https://bugs.python.org/issue38785 for the context
+        cls = self._get_future_cls()
+
+        class MyFut(cls):
+            def __init__(self, *args, **kwargs):
+                # don't call super().__init__()
+                pass
+
+        fut = MyFut(loop=self.loop)
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Future object is not initialized."
+        ):
+            fut.get_loop()
+
+
+class PyFutureInheritanceTests(BaseFutureInheritanceTests,
+                               test_utils.TestCase):
+    def _get_future_cls(self):
+        return futures._PyFuture
+
+
+class CFutureInheritanceTests(BaseFutureInheritanceTests,
+                              test_utils.TestCase):
+    def _get_future_cls(self):
+        return futures._CFuture
+
+
 if __name__ == '__main__':
     unittest.main()

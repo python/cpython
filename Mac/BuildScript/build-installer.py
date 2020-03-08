@@ -313,9 +313,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.28.0",
-              url="https://www.sqlite.org/2019/sqlite-autoconf-3280000.tar.gz",
-              checksum='3c68eb400f8354605736cd55400e1572',
+              name="SQLite 3.31.1",
+              url="https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz",
+              checksum='2d0a553534c521504e3ac3ad3b90f125',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -1068,7 +1068,7 @@ def buildPythonDocs():
     runCommand('make clean')
     # Create virtual environment for docs builds with blurb and sphinx
     runCommand('make venv')
-    runCommand('venv/bin/python3 -m pip install -U Sphinx==2.0.1')
+    runCommand('venv/bin/python3 -m pip install -U Sphinx==2.2.0')
     runCommand('make html PYTHON=venv/bin/python')
     os.chdir(curDir)
     if not os.path.exists(docdir):
