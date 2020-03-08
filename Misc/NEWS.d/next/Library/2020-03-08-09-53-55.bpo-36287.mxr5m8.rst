@@ -1,0 +1,3 @@
+:func:`ast.dump()` no longer output optional fields and attributes. Values
+for optional fields and attributes of AST nodes are now set as class
+attributes (e.g. ``Constant.kind`` is set to ``None``).
