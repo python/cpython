@@ -500,7 +500,7 @@ Path objects are traversable using the ``/`` operator.
    ``pwd`` is the ``pwd`` parameter to
    :meth:`ZipFile.open`.
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.8.3
       Added support for text and binary modes for open. Default
       mode is now text.
 
