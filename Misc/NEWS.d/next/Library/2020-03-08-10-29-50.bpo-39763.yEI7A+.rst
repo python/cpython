@@ -1,4 +1,0 @@
-Update test in `Lib/_aix_support.py` to check for `subprocess.check_output()` rather
-than `subprocess` as a loadable module because 1ec63b62035e73111e204a0e03b83503e1c58f2e
-now provides a minimal subprocess via setup.py.
-Patch by M. Felt.
