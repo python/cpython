@@ -499,6 +499,7 @@ class EditorWindow(object):
     rmenu = None
 
     def right_menu_event(self, event):
+        self.text.tag_remove("sel", "1.0", "end")
         self.text.mark_set("insert", "@%d,%d" % (event.x, event.y))
         if not self.rmenu:
             self.make_rmenu()
