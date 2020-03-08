@@ -10,6 +10,61 @@ import sys
 import sysconfig
 from glob import glob
 
+
+try:
+    import subprocess
+    del subprocess
+    SUBPROCESS_BOOTSTRAP = False
+except ImportError:
+    SUBPROCESS_BOOTSTRAP = True
+
+    # Bootstrap Python: distutils.spawn uses subprocess to build C extensions,
+    # subprocess requires C extensions built by setup.py like _posixsubprocess.
+    #
+    # Basic subprocess implementation for POSIX (setup.py is not used on
+    # Windows) which only uses os functions. Only implement features required
+    # by distutils.spawn.
+    #
+    # It is dropped from sys.modules as soon as all C extension modules
+    # are built.
+    class Popen:
+        def __init__(self, cmd, env=None):
+            self._cmd = cmd
+            self._env = env
+            self.returncode = None
+
+        def wait(self):
+            pid = os.fork()
+            if pid == 0:
+                # Child process
+                try:
+                    if self._env is not None:
+                        os.execve(self._cmd[0], self._cmd, self._env)
+                    else:
+                        os.execv(self._cmd[0], self._cmd)
+                finally:
+                    os._exit(1)
+            else:
+                # Parent process
+                pid, status = os.waitpid(pid, 0)
+                if os.WIFSIGNALED(status):
+                    self.returncode = -os.WTERMSIG(status)
+                elif os.WIFEXITED(status):
+                    self.returncode = os.WEXITSTATUS(status)
+                elif os.WIFSTOPPED(status):
+                    self.returncode = -os.WSTOPSIG(status)
+                else:
+                    # Should never happen
+                    raise Exception("Unknown child exit status!")
+
+            return self.returncode
+
+    mod = type(sys)('subprocess')
+    mod.Popen = Popen
+    sys.modules['subprocess'] = mod
+    del mod
+
+
 from distutils import log
 from distutils.command.build_ext import build_ext
 from distutils.command.build_scripts import build_scripts
@@ -309,16 +364,14 @@ class PyBuildExt(build_ext):
     def add(self, ext):
         self.extensions.append(ext)
 
-    def build_extensions(self):
+    def set_srcdir(self):
         self.srcdir = sysconfig.get_config_var('srcdir')
         if not self.srcdir:
             # Maybe running on Windows but not using CYGWIN?
             raise ValueError("No source directory; cannot proceed.")
         self.srcdir = os.path.abspath(self.srcdir)
 
-        # Detect which modules should be compiled
-        self.detect_modules()
-
+    def remove_disabled(self):
         # Remove modules that are present on the disabled list
         extensions = [ext for ext in self.extensions
                       if ext.name not in DISABLED_MODULE_LIST]
@@ -329,6 +382,7 @@ class PyBuildExt(build_ext):
             extensions.append(ctypes)
         self.extensions = extensions
 
+    def update_sources_depends(self):
         # Fix up the autodetected modules, prefixing all the source files
         # with Modules/.
         moddirlist = [os.path.join(self.srcdir, 'Modules')]
@@ -341,14 +395,6 @@ class PyBuildExt(build_ext):
         headers = [sysconfig.get_config_h_filename()]
         headers += glob(os.path.join(sysconfig.get_path('include'), "*.h"))
 
-        # The sysconfig variables built by makesetup that list the already
-        # built modules and the disabled modules as configured by the Setup
-        # files.
-        sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
-        sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
-
-        mods_built = []
-        mods_disabled = []
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]
@@ -360,6 +406,16 @@ class PyBuildExt(build_ext):
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
+    def remove_configured_extensions(self):
+        # The sysconfig variables built by makesetup that list the already
+        # built modules and the disabled modules as configured by the Setup
+        # files.
+        sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
+        sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
+
+        mods_built = []
+        mods_disabled = []
+        for ext in self.extensions:
             # If a module has already been built or has been disabled in the
             # Setup files, don't build it here.
             if ext.name in sysconf_built:
@@ -377,6 +433,9 @@ class PyBuildExt(build_ext):
                 if os.path.exists(fullpath):
                     os.unlink(fullpath)
 
+        return (mods_built, mods_disabled)
+
+    def set_compiler_executables(self):
         # When you run "make CC=altcc" or something similar, you really want
         # those environment variables passed into the setup.py phase.  Here's
         # a small set of useful ones.
@@ -389,11 +448,31 @@ class PyBuildExt(build_ext):
             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
         self.compiler.set_executables(**args)
 
+    def build_extensions(self):
+        self.set_srcdir()
+
+        # Detect which modules should be compiled
+        self.detect_modules()
+
+        self.remove_disabled()
+
+        self.update_sources_depends()
+        mods_built, mods_disabled = self.remove_configured_extensions()
+        self.set_compiler_executables()
+
         build_ext.build_extensions(self)
+
+        if SUBPROCESS_BOOTSTRAP:
+            # Drop our custom subprocess module:
+            # use the newly built subprocess module
+            del sys.modules['subprocess']
 
         for ext in self.extensions:
             self.check_extension_import(ext)
 
+        self.summary(mods_built, mods_disabled)
+
+    def summary(self, mods_built, mods_disabled):
         longest = max([len(e.name) for e in self.extensions], default=0)
         if self.failed or self.failed_on_import:
             all_failed = self.failed + self.failed_on_import

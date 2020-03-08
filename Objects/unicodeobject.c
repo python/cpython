@@ -8484,7 +8484,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
     char *outstart;
     Py_ssize_t outsize = PyBytes_GET_SIZE(*outobj);
 
-    if (Py_TYPE(mapping) == &EncodingMapType) {
+    if (Py_IS_TYPE(mapping, &EncodingMapType)) {
         int res = encoding_map_lookup(c, mapping);
         Py_ssize_t requiredsize = *outpos+1;
         if (res == -1)
@@ -8563,7 +8563,7 @@ charmap_encoding_error(
     /* find all unencodable characters */
     while (collendpos < size) {
         PyObject *rep;
-        if (Py_TYPE(mapping) == &EncodingMapType) {
+        if (Py_IS_TYPE(mapping, &EncodingMapType)) {
             ch = PyUnicode_READ_CHAR(unicode, collendpos);
             val = encoding_map_lookup(ch, mapping);
             if (val != -1)

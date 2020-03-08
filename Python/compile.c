@@ -1862,10 +1862,6 @@ compiler_mod(struct compiler *c, mod_ty mod)
         VISIT_IN_SCOPE(c, expr, mod->v.Expression.body);
         addNone = 0;
         break;
-    case Suite_kind:
-        PyErr_SetString(PyExc_SystemError,
-                        "suite should not be possible");
-        return 0;
     default:
         PyErr_Format(PyExc_SystemError,
                      "module kind %d should not be possible",
@@ -3769,7 +3765,6 @@ assignment_helper(struct compiler *c, asdl_seq *elts)
                     "star-unpacking assignment");
             ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
             seen_star = 1;
-            asdl_seq_SET(elts, i, elt->v.Starred.value);
         }
         else if (elt->kind == Starred_kind) {
             return compiler_error(c,
@@ -3779,7 +3774,10 @@ assignment_helper(struct compiler *c, asdl_seq *elts)
     if (!seen_star) {
         ADDOP_I(c, UNPACK_SEQUENCE, n);
     }
-    VISIT_SEQ(c, expr, elts);
+    for (i = 0; i < n; i++) {
+        expr_ty elt = asdl_seq_GET(elts, i);
+        VISIT(c, expr, elt->kind != Starred_kind ? elt : elt->v.Starred.value);
+    }
     return 1;
 }
 

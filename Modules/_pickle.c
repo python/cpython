@@ -4974,7 +4974,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    if (Py_TYPE(obj) == &PicklerMemoProxyType) {
+    if (Py_IS_TYPE(obj, &PicklerMemoProxyType)) {
         PicklerObject *pickler =
             ((PicklerMemoProxyObject *)obj)->pickler;
 
@@ -7519,7 +7519,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored
         return -1;
     }
 
-    if (Py_TYPE(obj) == &UnpicklerMemoProxyType) {
+    if (Py_IS_TYPE(obj, &UnpicklerMemoProxyType)) {
         UnpicklerObject *unpickler =
             ((UnpicklerMemoProxyObject *)obj)->unpickler;
 

@@ -1791,7 +1791,12 @@ class POSIXProcessTestCase(BaseTestCase):
         name_uid = "nobody" if sys.platform != 'darwin' else "unknown"
 
         if pwd is not None:
-            test_users.append(name_uid)
+            try:
+                pwd.getpwnam(name_uid)
+                test_users.append(name_uid)
+            except KeyError:
+                # unknown user name
+                name_uid = None
 
         for user in test_users:
             # posix_spawn() may be used with close_fds=False
@@ -1819,7 +1824,7 @@ class POSIXProcessTestCase(BaseTestCase):
         with self.assertRaises(ValueError):
             subprocess.check_call(ZERO_RETURN_CMD, user=-1)
 
-        if pwd is None:
+        if pwd is None and name_uid is not None:
             with self.assertRaises(ValueError):
                 subprocess.check_call(ZERO_RETURN_CMD, user=name_uid)
 

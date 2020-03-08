@@ -402,7 +402,7 @@ stringio_iternext(stringio *self)
     CHECK_CLOSED(self);
     ENSURE_REALIZED(self);
 
-    if (Py_TYPE(self) == &PyStringIO_Type) {
+    if (Py_IS_TYPE(self, &PyStringIO_Type)) {
         /* Skip method call overhead for speed */
         line = _stringio_readline(self, -1);
     }

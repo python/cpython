@@ -982,6 +982,30 @@ static PyMappingMethods mappingproxy_as_mapping = {
     0,                                          /* mp_ass_subscript */
 };
 
+static PyObject *
+mappingproxy_or(PyObject *left, PyObject *right)
+{
+    if (PyObject_TypeCheck(left, &PyDictProxy_Type)) {
+        left = ((mappingproxyobject*)left)->mapping;
+    }
+    if (PyObject_TypeCheck(right, &PyDictProxy_Type)) {
+        right = ((mappingproxyobject*)right)->mapping;
+    }
+    return PyNumber_Or(left, right);
+}
+
+static PyObject *
+mappingproxy_ior(PyObject *self, PyObject *Py_UNUSED(other))
+{
+    return PyErr_Format(PyExc_TypeError,
+        "'|=' is not supported by %s; use '|' instead", Py_TYPE(self)->tp_name);
+}
+
+static PyNumberMethods mappingproxy_as_number = {
+    .nb_or = mappingproxy_or,
+    .nb_inplace_or = mappingproxy_ior,
+};
+
 static int
 mappingproxy_contains(mappingproxyobject *pp, PyObject *key)
 {
@@ -1178,7 +1202,7 @@ typedef struct {
     PyObject *self;
 } wrapperobject;
 
-#define Wrapper_Check(v) (Py_TYPE(v) == &_PyMethodWrapper_Type)
+#define Wrapper_Check(v) Py_IS_TYPE(v, &_PyMethodWrapper_Type)
 
 static void
 wrapper_dealloc(wrapperobject *wp)
@@ -1628,7 +1652,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         if (rc <= 0) {
             return rc;
         }
-        if (Py_TYPE(self) == &PyProperty_Type) {
+        if (Py_IS_TYPE(self, &PyProperty_Type)) {
             Py_XSETREF(self->prop_doc, get_doc);
         }
         else {
@@ -1717,7 +1741,7 @@ PyTypeObject PyDictProxy_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)mappingproxy_repr,                /* tp_repr */
-    0,                                          /* tp_as_number */
+    &mappingproxy_as_number,                    /* tp_as_number */
     &mappingproxy_as_sequence,                  /* tp_as_sequence */
     &mappingproxy_as_mapping,                   /* tp_as_mapping */
     0,                                          /* tp_hash */

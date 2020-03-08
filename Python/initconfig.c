@@ -1434,7 +1434,7 @@ config_read_complex_options(PyConfig *config)
 
 
 static const wchar_t *
-config_get_stdio_errors(const PyConfig *config)
+config_get_stdio_errors(void)
 {
 #ifndef MS_WINDOWS
     const char *loc = setlocale(LC_CTYPE, NULL);
@@ -1590,7 +1590,7 @@ config_init_stdio_encoding(PyConfig *config,
         }
     }
     if (config->stdio_errors == NULL) {
-        const wchar_t *errors = config_get_stdio_errors(config);
+        const wchar_t *errors = config_get_stdio_errors();
         assert(errors != NULL);
 
         status = PyConfig_SetString(config, &config->stdio_errors, errors);
