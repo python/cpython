@@ -1,2 +1,4 @@
 Types created by calling :func:`~abc.ABCMeta` have now a proper
 :attr:`__module__` attribute.
+The inheritance registry for an ``ABCMeta`` instance is now
+set up in the ``__init__()`` method instead of the ``__new__()`` method.
