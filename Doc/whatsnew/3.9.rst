@@ -325,6 +325,12 @@ and :meth:`~datetime.datetime.isocalendar()` of :class:`datetime.datetime`
 methods now returns a :func:`~collections.namedtuple` instead of a :class:`tuple`.
 (Contributed by Dong-hee Na in :issue:`24416`.)
 
+dis
+---
+
+:class:`dis.Bytecode` objects now support equality comparisons. (Contributed
+by Batuhan Taskaya in :issue:`39902`.)
+
 fcntl
 -----
 

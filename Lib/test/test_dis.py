@@ -1202,5 +1202,16 @@ class BytecodeTests(unittest.TestCase):
         b = dis.Bytecode.from_traceback(tb)
         self.assertEqual(b.dis(), dis_traceback)
 
+    def test_equality(self):
+        self.assertEqual(dis.Bytecode("print(1)"), dis.Bytecode("print(1)"))
+        self.assertNotEqual(dis.Bytecode("print(1)"), dis.Bytecode("print(2)"))
+        self.assertNotEqual(
+            dis.Bytecode("print(1)", first_line=3), dis.Bytecode("print(1)")
+        )
+        self.assertNotEqual(
+            dis.Bytecode("print(1)", current_offset=5),
+            dis.Bytecode("print(1)"),
+        )
+
 if __name__ == "__main__":
     unittest.main()
