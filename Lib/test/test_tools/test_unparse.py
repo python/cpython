@@ -260,6 +260,20 @@ class UnparseTestCase(ASTTestCase):
         self.check_roundtrip(r"""{**{'y': 2}, 'x': 1}""")
         self.check_roundtrip(r"""{**{'y': 2}, **{'x': 1}}""")
 
+    def test_subscript(self):
+        self.check_roundtrip("a[i]")
+        self.check_roundtrip("a[i,]")
+        self.check_roundtrip("a[i, j]")
+        self.check_roundtrip("a[()]")
+        self.check_roundtrip("a[i:j]")
+        self.check_roundtrip("a[:j]")
+        self.check_roundtrip("a[i:]")
+        self.check_roundtrip("a[i:j:k]")
+        self.check_roundtrip("a[:j:k]")
+        self.check_roundtrip("a[i::k]")
+        self.check_roundtrip("a[i:j,]")
+        self.check_roundtrip("a[i:j, k]")
+
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
