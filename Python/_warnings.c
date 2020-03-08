@@ -737,10 +737,8 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         int kind;
         void *data;
 
-        if (PyUnicode_READY(*filename)) {
-            Py_DECREF(*filename);
+        if (PyUnicode_READY(*filename))
             goto handle_error;
-        }
 
         len = PyUnicode_GetLength(*filename);
         kind = PyUnicode_KIND(*filename);
@@ -763,7 +761,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
             Py_INCREF(*filename);
     }
     else {
-        Py_CLEAR(*filename);
+        *filename = NULL;
         if (*module != Py_None && _PyUnicode_EqualToASCIIString(*module, "__main__")) {
             PyObject *argv = _PySys_GetObjectId(&PyId_argv);
             /* PyList_Check() is needed because sys.argv is set to None during
