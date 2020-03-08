@@ -1551,18 +1551,15 @@ PyNumber_Float(PyObject *o)
 PyObject *
 PyNumber_ToBase(PyObject *n, int base)
 {
-    PyObject *res = NULL;
+    if (!(base == 2 || base == 8 || base == 10 || base == 16)) {
+        PyErr_SetString(PyExc_SystemError,
+                        "PyNumber_ToBase: base must be 2, 8, 10 or 16");
+        return NULL;
+    }
     PyObject *index = PyNumber_Index(n);
-
     if (!index)
         return NULL;
-    if (PyLong_Check(index))
-        res = _PyLong_Format(index, base);
-    else
-        /* It should not be possible to get here, as
-           PyNumber_Index already has a check for the same
-           condition */
-        PyErr_SetString(PyExc_ValueError, "PyNumber_ToBase: index not int");
+    PyObject *res = _PyLong_Format(index, base);
     Py_DECREF(index);
     return res;
 }

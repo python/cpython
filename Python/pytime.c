@@ -746,7 +746,7 @@ _PyTime_GetSystemClock(void)
     _PyTime_t t;
     if (pygettimeofday(&t, NULL, 0) < 0) {
         /* should not happen, _PyTime_Init() checked the clock at startup */
-        Py_UNREACHABLE();
+        Py_FatalError("pygettimeofday() failed.");
     }
     return t;
 }
@@ -775,8 +775,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             _PyTime_overflow();
             return -1;
         }
-        /* Hello, time traveler! */
-        Py_UNREACHABLE();
+        Py_FatalError("Hello, time traveler!");
     }
     *tp = t * MS_TO_NS;
 
@@ -918,7 +917,7 @@ _PyTime_GetMonotonicClock(void)
     if (pymonotonic(&t, NULL, 0) < 0) {
         /* should not happen, _PyTime_Init() checked that monotonic clock at
            startup */
-        Py_UNREACHABLE();
+        Py_FatalError("pymonotonic() failed.");
     }
     return t;
 }
@@ -1019,7 +1018,7 @@ _PyTime_GetPerfCounter(void)
 {
     _PyTime_t t;
     if (_PyTime_GetPerfCounterWithInfo(&t, NULL)) {
-        Py_UNREACHABLE();
+        Py_FatalError("_PyTime_GetPerfCounterWithInfo() failed.");
     }
     return t;
 }
