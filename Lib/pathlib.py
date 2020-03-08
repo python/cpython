@@ -447,6 +447,8 @@ class _NormalAccessor(_Accessor):
     def readlink(self, path):
         return os.readlink(path)
 
+    fsencode = staticmethod(os.fsencode)
+
 
 _normal_accessor = _NormalAccessor()
 
@@ -1093,6 +1095,11 @@ class Path(PurePath):
         return self._accessor.open(self, flags, mode)
 
     # Public API
+
+    def __bytes__(self):
+        """Return the bytes representation of the path.  This is only
+        recommended to use under Unix."""
+        return self._accessor.fsencode(self)
 
     @classmethod
     def cwd(cls):
