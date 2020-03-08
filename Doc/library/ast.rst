@@ -138,6 +138,7 @@ Literals
    (tuples and frozensets) if all of their elements are constant.
 
    .. doctest::
+
         >>> import ast
         >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
         Expression(
