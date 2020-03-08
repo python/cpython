@@ -788,12 +788,6 @@ Module(
             "end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)], "
             "type_ignores=[])"
         )
-#Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], keywords=[], lineno=1, col_offset=0, end_lineno=1, end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, end_col_offset=13), Expr(value=Call(
-#func=Name(id='spam', ctx=Load(), lineno=1, col_offset=0),
-#args=[Constant(value='eggs', lineno=1, col_offset=0)], keywords=[], lineno=1, col_offset=0), lineno=1, col_offset=0)], type_ignores=[])
-#Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], keywords=[], lineno=1, col_offset=0, end_lineno=1, end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, end_col_offset=13), Expr(value=Call(
-#func=Name(id='spam', ctx=Load(), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0),
-#args=[Constant(value='eggs', lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)], keywords=[], lineno=1, col_offset=0, end_lineno=1, end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)], type_ignores=[])
 
     def test_increment_lineno(self):
         src = ast.parse('1 + 1', mode='eval')
