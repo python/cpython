@@ -1,0 +1,5 @@
+Fix :c:func:`PyEval_RestoreThread` random crash at exit with daemon threads.
+It now accesses the ``_PyRuntime`` variable directly instead of using
+``tstate->interp->runtime``, since ``tstate`` can be a dangling pointer after
+:c:func:`Py_Finalize` has been called. Moreover, the daemon thread now exits
+before trying to take the GIL.
