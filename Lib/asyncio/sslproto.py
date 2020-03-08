@@ -241,6 +241,10 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         self._closed = True
         self._ssl_protocol._abort()
 
+    def _force_close(self, exc):
+        self._closed = True
+        self._ssl_protocol._abort(exc)
+
     def _test__append_write_backlog(self, data):
         # for test only
         self._ssl_protocol._write_backlog.append(data)
