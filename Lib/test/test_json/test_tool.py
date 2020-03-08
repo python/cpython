@@ -3,6 +3,7 @@ import sys
 import textwrap
 import unittest
 import subprocess
+
 from test import support
 from test.support.script_helper import assert_python_ok
 
@@ -206,3 +207,14 @@ class TestTool(unittest.TestCase):
         # asserting an ascii encoded output file
         expected = [b'{', rb'    "key": "\ud83d\udca9"', b"}"]
         self.assertEqual(lines, expected)
+
+    @unittest.skipIf(sys.platform =="win32", "The test is failed with ValueError on Windows")
+    def test_broken_pipe_error(self):
+        cmd = [sys.executable, '-m', 'json.tool']
+        proc = subprocess.Popen(cmd,
+                                stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE)
+        proc.stdout.close()
+        proc.communicate(b'"a"')
+        proc.stdin.close()
+        self.assertEqual(proc.returncode, 32)
