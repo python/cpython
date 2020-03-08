@@ -1,0 +1,3 @@
+The :c:func:`Py_FatalError` function is replaced with a macro which logs
+automatically the name of the current function, unless the ``Py_LIMITED_API``
+macro is defined.

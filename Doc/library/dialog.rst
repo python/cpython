@@ -73,7 +73,7 @@ listed below:
 
  | *defaultextension* - default extension to append to file (save dialogs)
 
- | *multiple* - when True, selection of multiple items is allowed
+ | *multiple* - when true, selection of multiple items is allowed
 
 
 **Static factory functions**

@@ -241,6 +241,11 @@ class TestBasicOps:
         choices = self.gen.choices
         choices(population=[1, 2], weights=[1e-323, 1e-323], k=5000)
 
+    def test_choices_with_all_zero_weights(self):
+        # See issue #38881
+        with self.assertRaises(ValueError):
+            self.gen.choices('AB', [0.0, 0.0])
+
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
         # particular, through 2.2.1 it failed to reset a piece of state used

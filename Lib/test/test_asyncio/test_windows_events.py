@@ -69,6 +69,8 @@ class ProactorMultithreading(test_utils.TestCase):
             nonlocal finished
             loop = asyncio.new_event_loop()
             loop.run_until_complete(coro())
+            # close() must not call signal.set_wakeup_fd()
+            loop.close()
             finished = True
 
         thread = threading.Thread(target=func)

@@ -761,7 +761,7 @@ _elementtree_TreeBuilder_close(TreeBuilderObject *self, PyObject *Py_UNUSED(igno
 }
 
 PyDoc_STRVAR(_elementtree_TreeBuilder_start__doc__,
-"start($self, tag, attrs=None, /)\n"
+"start($self, tag, attrs, /)\n"
 "--\n"
 "\n");
 
@@ -777,17 +777,17 @@ _elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *const *args, P
 {
     PyObject *return_value = NULL;
     PyObject *tag;
-    PyObject *attrs = Py_None;
+    PyObject *attrs;
 
-    if (!_PyArg_CheckPositional("start", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional("start", nargs, 2, 2)) {
         goto exit;
     }
     tag = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
+    if (!PyDict_Check(args[1])) {
+        _PyArg_BadArgument("start", "argument 2", "dict", args[1]);
+        goto exit;
     }
     attrs = args[1];
-skip_optional:
     return_value = _elementtree_TreeBuilder_start_impl(self, tag, attrs);
 
 exit:
@@ -916,4 +916,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bee26d0735a3fddc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3ad029ba71f5ae39 input=a9049054013a1b77]*/

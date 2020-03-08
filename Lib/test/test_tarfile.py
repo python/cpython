@@ -319,6 +319,38 @@ class LzmaListTest(LzmaTest, ListTest):
 
 class CommonReadTest(ReadTest):
 
+    def test_is_tarfile_erroneous(self):
+        with open(tmpname, "wb"):
+            pass
+
+        # is_tarfile works on filenames
+        self.assertFalse(tarfile.is_tarfile(tmpname))
+
+        # is_tarfile works on path-like objects
+        self.assertFalse(tarfile.is_tarfile(pathlib.Path(tmpname)))
+
+        # is_tarfile works on file objects
+        with open(tmpname, "rb") as fobj:
+            self.assertFalse(tarfile.is_tarfile(fobj))
+
+        # is_tarfile works on file-like objects
+        self.assertFalse(tarfile.is_tarfile(io.BytesIO(b"invalid")))
+
+    def test_is_tarfile_valid(self):
+        # is_tarfile works on filenames
+        self.assertTrue(tarfile.is_tarfile(self.tarname))
+
+        # is_tarfile works on path-like objects
+        self.assertTrue(tarfile.is_tarfile(pathlib.Path(self.tarname)))
+
+        # is_tarfile works on file objects
+        with open(self.tarname, "rb") as fobj:
+            self.assertTrue(tarfile.is_tarfile(fobj))
+
+        # is_tarfile works on file-like objects
+        with open(self.tarname, "rb") as fobj:
+            self.assertTrue(tarfile.is_tarfile(io.BytesIO(fobj.read())))
+
     def test_empty_tarfile(self):
         # Test for issue6123: Allow opening empty archives.
         # This test checks if tarfile.open() is able to open an empty tar
@@ -1515,6 +1547,52 @@ class GNUWriteTest(unittest.TestCase):
     def test_longnamelink_1025(self):
         self._test(("longnam/" * 127) + "longname_",
                    ("longlnk/" * 127) + "longlink_")
+
+
+class DeviceHeaderTest(WriteTestBase, unittest.TestCase):
+
+    prefix = "w:"
+
+    def test_headers_written_only_for_device_files(self):
+        # Regression test for bpo-18819.
+        tempdir = os.path.join(TEMPDIR, "device_header_test")
+        os.mkdir(tempdir)
+        try:
+            tar = tarfile.open(tmpname, self.mode)
+            try:
+                input_blk = tarfile.TarInfo(name="my_block_device")
+                input_reg = tarfile.TarInfo(name="my_regular_file")
+                input_blk.type = tarfile.BLKTYPE
+                input_reg.type = tarfile.REGTYPE
+                tar.addfile(input_blk)
+                tar.addfile(input_reg)
+            finally:
+                tar.close()
+
+            # devmajor and devminor should be *interpreted* as 0 in both...
+            tar = tarfile.open(tmpname, "r")
+            try:
+                output_blk = tar.getmember("my_block_device")
+                output_reg = tar.getmember("my_regular_file")
+            finally:
+                tar.close()
+            self.assertEqual(output_blk.devmajor, 0)
+            self.assertEqual(output_blk.devminor, 0)
+            self.assertEqual(output_reg.devmajor, 0)
+            self.assertEqual(output_reg.devminor, 0)
+
+            # ...but the fields should not actually be set on regular files:
+            with open(tmpname, "rb") as infile:
+                buf = infile.read()
+            buf_blk = buf[output_blk.offset:output_blk.offset_data]
+            buf_reg = buf[output_reg.offset:output_reg.offset_data]
+            # See `struct posixheader` in GNU docs for byte offsets:
+            # <https://www.gnu.org/software/tar/manual/html_node/Standard.html>
+            device_headers = slice(329, 329 + 16)
+            self.assertEqual(buf_blk[device_headers], b"0000000\0" * 2)
+            self.assertEqual(buf_reg[device_headers], b"\0" * 16)
+        finally:
+            support.rmtree(tempdir)
 
 
 class CreateTest(WriteTestBase, unittest.TestCase):

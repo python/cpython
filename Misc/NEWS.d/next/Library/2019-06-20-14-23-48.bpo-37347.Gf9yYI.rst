@@ -1,6 +1,0 @@
-:meth:`sqlite3.Connection.create_aggregate`,
-:meth:`sqlite3.Connection.create_function`,
-:meth:`sqlite3.Connection.set_authorizer`,
-:meth:`sqlite3.Connection.set_progress_handler` 
-:meth:`sqlite3.Connection.set_trace_callback` 
-methods lead to segfaults if some of these methods are called twice with an equal object but not the same. Now callbacks are stored more carefully. Patch by Aleksandr Balezin.

@@ -41,7 +41,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
-    if (Py_TYPE(func) == &partial_type && type == &partial_type) {
+    if (Py_IS_TYPE(func, &partial_type) && type == &partial_type) {
         partialobject *part = (partialobject *)func;
         if (part->dict == NULL) {
             pargs = part->args;
@@ -132,21 +132,25 @@ partial_dealloc(partialobject *pto)
  * if we would need to do that, we stop using vectorcall and fall back
  * to using partial_call() instead. */
 _Py_NO_INLINE static PyObject *
-partial_vectorcall_fallback(partialobject *pto, PyObject *const *args,
-                            size_t nargsf, PyObject *kwnames)
+partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
+                            PyObject *const *args, size_t nargsf,
+                            PyObject *kwnames)
 {
     pto->vectorcall = NULL;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    return _PyObject_MakeTpCall((PyObject *)pto, args, nargs, kwnames);
+    return _PyObject_MakeTpCall(tstate, (PyObject *)pto,
+                                args, nargs, kwnames);
 }
 
 static PyObject *
 partial_vectorcall(partialobject *pto, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     /* pto->kw is mutable, so need to check every time */
     if (PyDict_GET_SIZE(pto->kw)) {
-        return partial_vectorcall_fallback(pto, args, nargsf, kwnames);
+        return partial_vectorcall_fallback(tstate, pto, args, nargsf, kwnames);
     }
 
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
@@ -160,7 +164,8 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 
     /* Fast path if we're called without arguments */
     if (nargs_total == 0) {
-        return _PyObject_Vectorcall(pto->fn, pto_args, pto_nargs, NULL);
+        return _PyObject_VectorcallTstate(tstate, pto->fn,
+                                          pto_args, pto_nargs, NULL);
     }
 
     /* Fast path using PY_VECTORCALL_ARGUMENTS_OFFSET to prepend a single
@@ -169,7 +174,8 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         PyObject **newargs = (PyObject **)args - 1;
         PyObject *tmp = newargs[0];
         newargs[0] = pto_args[0];
-        PyObject *ret = _PyObject_Vectorcall(pto->fn, newargs, nargs + 1, kwnames);
+        PyObject *ret = _PyObject_VectorcallTstate(tstate, pto->fn,
+                                                   newargs, nargs + 1, kwnames);
         newargs[0] = tmp;
         return ret;
     }
@@ -195,7 +201,8 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
     memcpy(stack, pto_args, pto_nargs * sizeof(PyObject*));
     memcpy(stack + pto_nargs, args, nargs_total * sizeof(PyObject*));
 
-    ret = _PyObject_Vectorcall(pto->fn, stack, pto_nargs + nargs, kwnames);
+    ret = _PyObject_VectorcallTstate(tstate, pto->fn,
+                                     stack, pto_nargs + nargs, kwnames);
     if (stack != small_stack) {
         PyMem_Free(stack);
     }
@@ -206,7 +213,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 static void
 partial_setvectorcall(partialobject *pto)
 {
-    if (_PyVectorcall_Function(pto->fn) == NULL) {
+    if (PyVectorcall_Function(pto->fn) == NULL) {
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
     }
@@ -433,7 +440,7 @@ static PyTypeObject partial_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE |
-        _Py_TPFLAGS_HAVE_VECTORCALL,    /* tp_flags */
+        Py_TPFLAGS_HAVE_VECTORCALL,     /* tp_flags */
     partial_doc,                        /* tp_doc */
     (traverseproc)partial_traverse,     /* tp_traverse */
     0,                                  /* tp_clear */
@@ -566,7 +573,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     PyObject *answer;
     PyObject* stack[2];
 
-    if (Py_TYPE(other) != &keyobject_type){
+    if (!Py_IS_TYPE(other, &keyobject_type)) {
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
         return NULL;
     }
@@ -642,7 +649,7 @@ functools_reduce(PyObject *self, PyObject *args)
     for (;;) {
         PyObject *op2;
 
-        if (args->ob_refcnt > 1) {
+        if (Py_REFCNT(args) > 1) {
             Py_DECREF(args);
             if ((args = PyTuple_New(2)) == NULL)
                 goto Fail;
@@ -659,7 +666,7 @@ functools_reduce(PyObject *self, PyObject *args)
             result = op2;
         else {
             /* Update the args tuple in-place */
-            assert(args->ob_refcnt == 1);
+            assert(Py_REFCNT(args) == 1);
             Py_XSETREF(_PyTuple_ITEMS(args)[0], result);
             Py_XSETREF(_PyTuple_ITEMS(args)[1], op2);
             if ((result = PyObject_Call(func, args, NULL)) == NULL) {

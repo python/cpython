@@ -135,10 +135,13 @@ class IMAP4:
 
     r"""IMAP4 client class.
 
-    Instantiate with: IMAP4([host[, port]])
+    Instantiate with: IMAP4([host[, port[, timeout=None]]])
 
             host - host's name (default: localhost);
             port - port number (default: standard IMAP4 port).
+            timeout - socket timeout (default: None)
+                      If timeout is not given or is None,
+                      the global default socket timeout is used
 
     All IMAP4rev1 commands are supported by methods of the same
     name (in lower-case).
@@ -181,7 +184,7 @@ class IMAP4:
     class abort(error): pass        # Service errors - close and retry
     class readonly(abort): pass     # Mailbox status changed to READ-ONLY
 
-    def __init__(self, host='', port=IMAP4_PORT):
+    def __init__(self, host='', port=IMAP4_PORT, timeout=None):
         self.debug = Debug
         self.state = 'LOGOUT'
         self.literal = None             # A literal argument to a command
@@ -195,7 +198,7 @@ class IMAP4:
 
         # Open socket to server.
 
-        self.open(host, port)
+        self.open(host, port, timeout)
 
         try:
             self._connect()
@@ -284,15 +287,20 @@ class IMAP4:
     #       Overridable methods
 
 
-    def _create_socket(self):
+    def _create_socket(self, timeout):
         # Default value of IMAP4.host is '', but socket.getaddrinfo()
         # (which is used by socket.create_connection()) expects None
         # as a default value for host.
+        if timeout is not None and not timeout:
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
         host = None if not self.host else self.host
         sys.audit("imaplib.open", self, self.host, self.port)
-        return socket.create_connection((host, self.port))
+        address = (host, self.port)
+        if timeout is not None:
+            return socket.create_connection(address, timeout)
+        return socket.create_connection(address)
 
-    def open(self, host = '', port = IMAP4_PORT):
+    def open(self, host='', port=IMAP4_PORT, timeout=None):
         """Setup connection to remote server on "host:port"
             (default: localhost:standard IMAP4 port).
         This connection will be used by the routines:
@@ -300,7 +308,7 @@ class IMAP4:
         """
         self.host = host
         self.port = port
-        self.sock = self._create_socket()
+        self.sock = self._create_socket(timeout)
         self.file = self.sock.makefile('rb')
 
 
@@ -1261,7 +1269,7 @@ if HAVE_SSL:
 
         """IMAP4 client class over SSL connection
 
-        Instantiate with: IMAP4_SSL([host[, port[, keyfile[, certfile[, ssl_context]]]]])
+        Instantiate with: IMAP4_SSL([host[, port[, keyfile[, certfile[, ssl_context[, timeout=None]]]]]])
 
                 host - host's name (default: localhost);
                 port - port number (default: standard IMAP4 SSL port);
@@ -1271,13 +1279,15 @@ if HAVE_SSL:
                               and private key (default: None)
                 Note: if ssl_context is provided, then parameters keyfile or
                 certfile should not be set otherwise ValueError is raised.
+                timeout - socket timeout (default: None) If timeout is not given or is None,
+                          the global default socket timeout is used
 
         for more documentation see the docstring of the parent class IMAP4.
         """
 
 
         def __init__(self, host='', port=IMAP4_SSL_PORT, keyfile=None,
-                     certfile=None, ssl_context=None):
+                     certfile=None, ssl_context=None, timeout=None):
             if ssl_context is not None and keyfile is not None:
                 raise ValueError("ssl_context and keyfile arguments are mutually "
                                  "exclusive")
@@ -1294,20 +1304,20 @@ if HAVE_SSL:
                 ssl_context = ssl._create_stdlib_context(certfile=certfile,
                                                          keyfile=keyfile)
             self.ssl_context = ssl_context
-            IMAP4.__init__(self, host, port)
+            IMAP4.__init__(self, host, port, timeout)
 
-        def _create_socket(self):
-            sock = IMAP4._create_socket(self)
+        def _create_socket(self, timeout):
+            sock = IMAP4._create_socket(self, timeout)
             return self.ssl_context.wrap_socket(sock,
                                                 server_hostname=self.host)
 
-        def open(self, host='', port=IMAP4_SSL_PORT):
+        def open(self, host='', port=IMAP4_SSL_PORT, timeout=None):
             """Setup connection to remote server on "host:port".
                 (default: localhost:standard IMAP4 SSL port).
             This connection will be used by the routines:
                 read, readline, send, shutdown.
             """
-            IMAP4.open(self, host, port)
+            IMAP4.open(self, host, port, timeout)
 
     __all__.append("IMAP4_SSL")
 
@@ -1329,7 +1339,7 @@ class IMAP4_stream(IMAP4):
         IMAP4.__init__(self)
 
 
-    def open(self, host = None, port = None):
+    def open(self, host=None, port=None, timeout=None):
         """Setup a stream connection.
         This connection will be used by the routines:
             read, readline, send, shutdown.
