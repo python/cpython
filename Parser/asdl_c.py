@@ -996,8 +996,6 @@ static int add_ast_fields(void)
             if field.opt:
                 self.emit('if (PyObject_SetAttr(state->%s_type, state->%s, Py_None) == -1)' %
                             (name, field.name), depth)
-                #self.emit('if (PyObject_SetAttrString(state->%s_type, "%s", Py_None) == -1)' %
-                            #(name, field.name), depth)
                 self.emit("return 0;", depth+1)
 
 
