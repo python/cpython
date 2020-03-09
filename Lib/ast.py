@@ -123,35 +123,36 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
             prefix = ''
             sep = ', '
         if isinstance(node, AST):
+            cls = type(node)
             args = []
             allsimple = True
             keywords = annotate_fields
-            for field in node._fields:
+            for name in node._fields:
                 try:
-                    value = getattr(node, field)
+                    value = getattr(node, name)
                 except AttributeError:
                     keywords = True
                     continue
-                if value is None and getattr(type(node), field, ...) is None:
+                if value is None and getattr(cls, name, ...) is None:
                     keywords = True
                     continue
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
-                    args.append('%s=%s' % (field, value))
+                    args.append('%s=%s' % (name, value))
                 else:
                     args.append(value)
             if include_attributes and node._attributes:
-                for attr in node._attributes:
+                for name in node._attributes:
                     try:
-                        value = getattr(node, attr)
+                        value = getattr(node, name)
                     except AttributeError:
                         continue
-                    if value is None and getattr(type(node), attr, ...) is None:
+                    if value is None and getattr(cls, name, ...) is None:
                         continue
                     value, simple = _format(value, level)
                     allsimple = allsimple and simple
-                    args.append('%s=%s' % (attr, value))
+                    args.append('%s=%s' % (name, value))
             if allsimple and len(args) <= 3:
                 return '%s(%s)' % (node.__class__.__name__, ', '.join(args)), not args
             return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args)), False
