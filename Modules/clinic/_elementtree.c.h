@@ -515,6 +515,10 @@ _elementtree_Element_makeelement(ElementObject *self, PyObject *const *args, Py_
         goto exit;
     }
     tag = args[0];
+    if (!PyDict_Check(args[1])) {
+        _PyArg_BadArgument("makeelement", "argument 2", "dict", args[1]);
+        goto exit;
+    }
     attrib = args[1];
     return_value = _elementtree_Element_makeelement_impl(self, tag, attrib);
 
@@ -916,4 +920,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3ad029ba71f5ae39 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7f6a32462fc42a9 input=a9049054013a1b77]*/
