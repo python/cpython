@@ -106,7 +106,7 @@ def log_to_stderr(level=None):
 # Abstract socket support
 
 def _platform_supports_abstract_sockets():
-    if "linux" in sys.platform:
+    if sys.platform == "linux":
         return True
     if hasattr(sys, 'getandroidapilevel'):
         return True
@@ -114,6 +114,8 @@ def _platform_supports_abstract_sockets():
 
 
 def is_abstract_socket_namespace(address):
+    if not address:
+        return False
     if isinstance(address, bytes):
         return address[0] == 0
     elif isinstance(address, str):

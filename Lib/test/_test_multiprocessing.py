@@ -3279,12 +3279,12 @@ class _TestListener(BaseTestCase):
     def test_abstract_socket(self):
         with self.connection.Listener("\0something") as listener:
             with self.connection.Client(l.address) as client:
-                with l.accept() as d:
-                    c.send(1729)
+                with listener.accept() as d:
+                    client.send(1729)
                     self.assertEqual(d.recv(), 1729)
 
         if self.TYPE == 'processes':
-            self.assertRaises(OSError, l.accept)
+            self.assertRaises(OSError, listener.accept)
 
 
 class _TestListenerClient(BaseTestCase):
