@@ -223,6 +223,22 @@ class ModuleName(Query):
         return file_path
 
 
+class Goto(Query):
+    "Get a positive line number for editor Go To Line."
+    # Used in editor.EditorWindow.goto_line_event.
+
+    def entry_ok(self):
+        try:
+            lineno = int(self.entry.get())
+        except ValueError:
+            self.showerror('not a base 10 integer.')
+            return None
+        if lineno <= 0:
+            self.showerror('not a positive integer.')
+            return None
+        return lineno
+
+
 class HelpSource(Query):
     "Get menu name and help source for Help menu."
     # Used in ConfigDialog.HelpListItemAdd/Edit, (941/9)
