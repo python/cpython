@@ -1019,7 +1019,7 @@ _PyTime_GetPerfCounter(void)
 {
     _PyTime_t t;
     if (_PyTime_GetPerfCounterWithInfo(&t, NULL)) {
-        Py_FatalError("_PyTime_GetPerfCounterWithInfo() failed.");
+        Py_FatalError("_PyTime_GetPerfCounterWithInfo() failed");
     }
     return t;
 }
