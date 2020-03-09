@@ -613,6 +613,16 @@ class _Unparser(NodeVisitor):
                 inter()
                 f(x)
 
+    def items_view(self, traverser, items):
+        """Traverse and separate the given *items* with a comma and append it to
+        the buffer. If *items* is a single item sequence, a trailing comma
+        will be added."""
+        if len(items) == 1:
+            traverser(items[0])
+            self.write(",")
+        else:
+            self.interleave(lambda: self.write(", "), traverser, items)
+
     def fill(self, text=""):
         """Indent a piece of text and append it, according to the current
         indentation level"""
@@ -1020,11 +1030,7 @@ class _Unparser(NodeVisitor):
         value = node.value
         if isinstance(value, tuple):
             with self.delimit("(", ")"):
-                if len(value) == 1:
-                    self._write_constant(value[0])
-                    self.write(",")
-                else:
-                    self.interleave(lambda: self.write(", "), self._write_constant, value)
+                self.items_view(self._write_constant, value)
         elif value is ...:
             self.write("...")
         else:
@@ -1116,12 +1122,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Tuple(self, node):
         with self.delimit("(", ")"):
-            if len(node.elts) == 1:
-                elt = node.elts[0]
-                self.traverse(elt)
-                self.write(",")
-            else:
-                self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+            self.items_view(self.traverse, node.elts)
 
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
     unop_precedence = {
@@ -1264,12 +1265,7 @@ class _Unparser(NodeVisitor):
             if (isinstance(node.slice, Index)
                     and isinstance(node.slice.value, Tuple)
                     and node.slice.value.elts):
-                if len(node.slice.value.elts) == 1:
-                    elt = node.slice.value.elts[0]
-                    self.traverse(elt)
-                    self.write(",")
-                else:
-                    self.interleave(lambda: self.write(", "), self.traverse, node.slice.value.elts)
+                self.items_view(self.traverse, node.slice.value.elts)
             else:
                 self.traverse(node.slice)
 
@@ -1296,12 +1292,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.step)
 
     def visit_ExtSlice(self, node):
-        if len(node.dims) == 1:
-            elt = node.dims[0]
-            self.traverse(elt)
-            self.write(",")
-        else:
-            self.interleave(lambda: self.write(", "), self.traverse, node.dims)
+        self.items_view(self.traverse, node.dims)
 
     def visit_arg(self, node):
         self.write(node.arg)
