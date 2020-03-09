@@ -677,10 +677,11 @@ class EditorWindow(object):
                 "Enter a positive integer\n"
                 "('big' = end of file):"
                 ).result
-        text.tag_remove("sel", "1.0", "end")
-        text.mark_set("insert", f'{lineno}.0')
-        text.see("insert")
-        self.set_line_and_column()
+        if lineno is not None:
+            text.tag_remove("sel", "1.0", "end")
+            text.mark_set("insert", f'{lineno}.0')
+            text.see("insert")
+            self.set_line_and_column()
         return "break"
 
     def open_module(self):
