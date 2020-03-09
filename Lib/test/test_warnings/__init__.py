@@ -367,6 +367,29 @@ class FilterTests(BaseTest):
                 "appended duplicate changed order of filters"
             )
 
+    def test_argument_validation(self):
+        with self.assertRaises(ValueError):
+            self.module.filterwarnings(action='foo')
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', message=0)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', category=0)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', category=int)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', module=0)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', lineno=int)
+        with self.assertRaises(ValueError):
+            self.module.filterwarnings('ignore', lineno=-1)
+        with self.assertRaises(ValueError):
+            self.module.simplefilter(action='foo')
+        with self.assertRaises(TypeError):
+            self.module.simplefilter('ignore', lineno=int)
+        with self.assertRaises(ValueError):
+            self.module.simplefilter('ignore', lineno=-1)
+
+
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
 
