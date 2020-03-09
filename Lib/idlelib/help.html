@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>IDLE &#8212; Python 3.9.0a1 documentation</title>
+    <title>IDLE &#8212; Python 3.9.0a4 documentation</title>
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
@@ -17,7 +17,7 @@
     <script type="text/javascript" src="../_static/sidebar.js"></script>
 
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.9.0a1 documentation"
+          title="Search within Python 3.9.0a4 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -71,7 +71,7 @@
 
 
     <li>
-      <a href="../index.html">3.9.0a1 Documentation</a> &#187;
+      <a href="../index.html">3.9.0a4 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -197,7 +197,9 @@ be undone.</p>
 </dd>
 <dt>Replace…</dt><dd><p>Open a search-and-replace dialog.</p>
 </dd>
-<dt>Go to Line</dt><dd><p>Move cursor to the line number requested and make that line visible.</p>
+<dt>Go to Line</dt><dd><p>Move the cursor to the beginning of the line requested and make that
+line visible.  A request past the end of the file goes to the end.
+Clear any selection and update the line and column status.</p>
 </dd>
 <dt>Show Completions</dt><dd><p>Open a scrollable list allowing selection of keywords and attributes. See
 <a class="reference internal" href="#completions"><span class="std std-ref">Completions</span></a> in the Editing and navigation section below.</p>
@@ -635,17 +637,20 @@ clash, or a single installation might need admin access.  If one undo the
 clash, or cannot or does not want to run as admin, it might be easiest to
 completely remove Python and start over.</p>
 <p>A zombie pythonw.exe process could be a problem.  On Windows, use Task
-Manager to detect and stop one.  Sometimes a restart initiated by a program
-crash or Keyboard Interrupt (control-C) may fail to connect.  Dismissing
-the error box or Restart Shell on the Shell menu may fix a temporary problem.</p>
+Manager to check for one and stop it if there is.  Sometimes a restart
+initiated by a program crash or Keyboard Interrupt (control-C) may fail
+to connect.  Dismissing the error box or using Restart Shell on the Shell
+menu may fix a temporary problem.</p>
 <p>When IDLE first starts, it attempts to read user configuration files in
 <code class="docutils literal notranslate"><span class="pre">~/.idlerc/</span></code> (~ is one’s home directory).  If there is a problem, an error
 message should be displayed.  Leaving aside random disk glitches, this can
-be prevented by never editing the files by hand, using the configuration
-dialog, under Options, instead Options.  Once it happens, the solution may
-be to delete one or more of the configuration files.</p>
+be prevented by never editing the files by hand.  Instead, use the
+configuration dialog, under Options.  Once there is an error in a user
+configuration file, the best solution may be to delete it and start over
+with the settings dialog.</p>
 <p>If IDLE quits with no message, and it was not started from a console, try
-starting from a console (<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">idlelib</span></code>) and see if a message appears.</p>
+starting it from a console or terminal (<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">idlelib</span></code>) and see if
+this results in an error message.</p>
 </div>
 <div class="section" id="running-user-code">
 <h3>Running user code<a class="headerlink" href="#running-user-code" title="Permalink to this headline">¶</a></h3>
@@ -930,7 +935,7 @@ also used for testing.</p>
 
 
     <li>
-      <a href="../index.html">3.9.0a1 Documentation</a> &#187;
+      <a href="../index.html">3.9.0a4 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -953,7 +958,7 @@ also used for testing.</p>
       </ul>
     </div>
     <div class="footer">
-    &copy; <a href="../copyright.html">Copyright</a> 2001-2019, Python Software Foundation.
+    &copy; <a href="../copyright.html">Copyright</a> 2001-2020, Python Software Foundation.
     <br />
 
     The Python Software Foundation is a non-profit corporation.
@@ -961,7 +966,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Nov 24, 2019.
+    Last updated on Mar 07, 2020.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 

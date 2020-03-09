@@ -657,7 +657,11 @@ Changes in the Python API
   will return ``Tuple(slices, Load())``.
   (Contributed by Serhiy Storchaka in :issue:`34822`.)
 
+* The :mod:`importlib` module now ignores the :envvar:`PYTHONCASEOK`
+  environment variable when the :option:`-E` or :option:`-I` command line
+  options are being used.
 
+  
 CPython bytecode changes
 ------------------------
 
