@@ -102,7 +102,7 @@ def address_type(address):
         return 'AF_INET'
     elif type(address) is str and address.startswith('\\\\'):
         return 'AF_PIPE'
-    elif type(address) is str:
+    elif type(address) is str or util.is_abstract_socket_namespace(address):
         return 'AF_UNIX'
     else:
         raise ValueError('address type of %r unrecognized' % address)
@@ -597,7 +597,8 @@ class SocketListener(object):
         self._family = family
         self._last_accepted = None
 
-        if family == 'AF_UNIX':
+        if family == 'AF_UNIX' and not util.is_abstract_socket_namespace(address):
+            # Linux abstract socket namespaces do not need to be explicitly unlinked
             self._unlink = util.Finalize(
                 self, os.unlink, args=(address,), exitpriority=0
                 )
