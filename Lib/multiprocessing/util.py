@@ -102,6 +102,27 @@ def log_to_stderr(level=None):
     _log_to_stderr = True
     return _logger
 
+
+# Abstract socket support
+
+def _platform_supports_abstract_sockets():
+    if "linux" in sys.platform:
+        return True
+    if hasattr(sys, 'getandroidapilevel'):
+        return True
+    return False
+
+
+def is_abstract_socket_namespace(address):
+    if isinstance(address, bytes):
+        return address[0] == 0
+    elif isinstance(address, str):
+        return address[0] == "\0"
+    raise ValueError('address type of %r unrecognized' % address)
+
+
+abstract_sockets_supported = _platform_supports_abstract_sockets()
+
 #
 # Function returning a temp directory which will be removed on exit
 #
