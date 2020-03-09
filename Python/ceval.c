@@ -13,6 +13,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_code.h"
+#include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
@@ -214,26 +215,39 @@ PyEval_ThreadsInitialized(void)
     return gil_created(&runtime->ceval.gil);
 }
 
-void
-PyEval_InitThreads(void)
+PyStatus
+_PyEval_InitThreads(PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
+    if (tstate == NULL) {
+        return _PyStatus_ERR("tstate is NULL");
+    }
+
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     struct _gil_runtime_state *gil = &ceval->gil;
     if (gil_created(gil)) {
-        return;
+        return _PyStatus_OK();
     }
 
     PyThread_init_thread();
     create_gil(gil);
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    ensure_tstate_not_null(__func__, tstate);
     take_gil(ceval, tstate);
 
     struct _pending_calls *pending = &ceval->pending;
     pending->lock = PyThread_allocate_lock();
     if (pending->lock == NULL) {
-        Py_FatalError("Can't initialize threads for pending calls");
+        return _PyStatus_NO_MEMORY();
+    }
+    return _PyStatus_OK();
+}
+
+void
+PyEval_InitThreads(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    PyStatus status = _PyEval_InitThreads(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        Py_ExitStatusException(status);
     }
 }
 
