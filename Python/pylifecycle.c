@@ -554,7 +554,10 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     _PyGILState_Init(tstate);
 
     /* Create the GIL */
-    PyEval_InitThreads();
+    status = _PyEval_InitThreads(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     *tstate_p = tstate;
     return _PyStatus_OK();
