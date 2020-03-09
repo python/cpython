@@ -645,6 +645,12 @@ Changes in the Python API
   since the *buffering* parameter has been removed.
   (Contributed by Victor Stinner in :issue:`39357`.)
 
+* The inheritance registry for an :class:`~abc.ABCMeta` instance is now
+  set up in the ``__init__()`` method instead of the ``__new__()`` method.
+  Be aware of this if you implement a subclass of ``ABCMeta`` and override
+  its ``__new__()`` or ``__init__()`` methods.
+  (Contributed by Serhiy Storchaka in :issue:`28869`.)
+
 
 CPython bytecode changes
 ------------------------
