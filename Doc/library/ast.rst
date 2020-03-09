@@ -141,7 +141,7 @@ Literals
 
         >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
         Expression(
-            body=Constant(value=123, kind=None))
+            body=Constant(value=123))
 
 
 .. class:: FormattedValue(value, conversion, format_spec)
@@ -175,12 +175,11 @@ Literals
         Expression(
             body=JoinedStr(
                 values=[
-                    Constant(value='sin(', kind=None),
+                    Constant(value='sin('),
                     FormattedValue(
                         value=Name(id='a', ctx=Load()),
-                        conversion=-1,
-                        format_spec=None),
-                    Constant(value=') is ', kind=None),
+                        conversion=-1),
+                    Constant(value=') is '),
                     FormattedValue(
                         value=Call(
                             func=Name(id='sin', ctx=Load()),
@@ -190,7 +189,7 @@ Literals
                         conversion=-1,
                         format_spec=JoinedStr(
                             values=[
-                                Constant(value='.3', kind=None)]))]))
+                                Constant(value='.3')]))]))
 
 
 .. class:: List(elts, ctx)
@@ -206,17 +205,17 @@ Literals
         Expression(
             body=List(
                 elts=[
-                    Constant(value=1, kind=None),
-                    Constant(value=2, kind=None),
-                    Constant(value=3, kind=None)],
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)],
                 ctx=Load()))
         >>> print(ast.dump(ast.parse('(1, 2, 3)', mode='eval'), indent=4))
         Expression(
             body=Tuple(
                 elts=[
-                    Constant(value=1, kind=None),
-                    Constant(value=2, kind=None),
-                    Constant(value=3, kind=None)],
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)],
                 ctx=Load()))
 
 
@@ -230,9 +229,9 @@ Literals
         Expression(
             body=Set(
                 elts=[
-                    Constant(value=1, kind=None),
-                    Constant(value=2, kind=None),
-                    Constant(value=3, kind=None)]))
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)]))
 
 
 .. class:: Dict(keys, values)
@@ -251,10 +250,10 @@ Literals
         Expression(
             body=Dict(
                 keys=[
-                    Constant(value='a', kind=None),
+                    Constant(value='a'),
                     None],
                 values=[
-                    Constant(value=1, kind=None),
+                    Constant(value=1),
                     Name(id='d', ctx=Load())]))
 
 
@@ -290,8 +289,7 @@ Variables
                 Assign(
                     targets=[
                         Name(id='a', ctx=Store())],
-                    value=Constant(value=1, kind=None),
-                    type_comment=None)],
+                    value=Constant(value=1))],
             type_ignores=[])
 
         >>> print(ast.dump(ast.parse('del a'), indent=4))
@@ -323,8 +321,7 @@ Variables
                                     value=Name(id='b', ctx=Store()),
                                     ctx=Store())],
                             ctx=Store())],
-                    value=Name(id='it', ctx=Load()),
-                    type_comment=None)],
+                    value=Name(id='it', ctx=Load()))],
             type_ignores=[])
 
 
@@ -442,13 +439,13 @@ Expressions
         >>> print(ast.dump(ast.parse('1 <= a < 10', mode='eval'), indent=4))
         Expression(
             body=Compare(
-                left=Constant(value=1, kind=None),
+                left=Constant(value=1),
                 ops=[
                     LtE(),
                     Lt()],
                 comparators=[
                     Name(id='a', ctx=Load()),
-                    Constant(value=10, kind=None)]))
+                    Constant(value=10)]))
 
 
 .. class:: Eq
@@ -493,7 +490,6 @@ Expressions
                         arg='b',
                         value=Name(id='c', ctx=Load())),
                     keyword(
-                        arg=None,
                         value=Name(id='e', ctx=Load()))]))
 
 
@@ -548,7 +544,7 @@ Expressions
         Expression(
             body=NamedExpr(
                 target=Name(id='x', ctx=Store()),
-                value=Constant(value=4, kind=None)))
+                value=Constant(value=4)))
 
 
 Subscripting
@@ -573,7 +569,7 @@ Subscripting
             body=Subscript(
                 value=Name(id='l', ctx=Load()),
                 slice=Index(
-                    value=Constant(value=1, kind=None)),
+                    value=Constant(value=1)),
                 ctx=Load()))
 
 
@@ -588,9 +584,8 @@ Subscripting
             body=Subscript(
                 value=Name(id='l', ctx=Load()),
                 slice=Slice(
-                    lower=Constant(value=1, kind=None),
-                    upper=Constant(value=2, kind=None),
-                    step=None),
+                    lower=Constant(value=1),
+                    upper=Constant(value=2)),
                 ctx=Load()))
 
 
@@ -608,11 +603,10 @@ Subscripting
                 slice=ExtSlice(
                     dims=[
                         Slice(
-                            lower=Constant(value=1, kind=None),
-                            upper=Constant(value=2, kind=None),
-                            step=None),
+                            lower=Constant(value=1),
+                            upper=Constant(value=2)),
                         Index(
-                            value=Constant(value=3, kind=None))]),
+                            value=Constant(value=3))]),
                 ctx=Load()))
 
 
@@ -649,7 +643,7 @@ Comprehensions
                 value=BinOp(
                     left=Name(id='x', ctx=Load()),
                     op=Pow(),
-                    right=Constant(value=2, kind=None)),
+                    right=Constant(value=2)),
                 generators=[
                     comprehension(
                         target=Name(id='x', ctx=Store()),
@@ -708,7 +702,7 @@ Comprehensions
                 elt=BinOp(
                     left=Name(id='n', ctx=Load()),
                     op=Pow(),
-                    right=Constant(value=2, kind=None)),
+                    right=Constant(value=2)),
                 generators=[
                     comprehension(
                         target=Name(id='n', ctx=Store()),
@@ -719,13 +713,13 @@ Comprehensions
                                 ops=[
                                     Gt()],
                                 comparators=[
-                                    Constant(value=5, kind=None)]),
+                                    Constant(value=5)]),
                             Compare(
                                 left=Name(id='n', ctx=Load()),
                                 ops=[
                                     Lt()],
                                 comparators=[
-                                    Constant(value=10, kind=None)])],
+                                    Constant(value=10)])],
                         is_async=0)]))
 
         >>> print(ast.dump(ast.parse('[i async for i in soc]', mode='eval'),
@@ -764,8 +758,7 @@ Statements
                     targets=[
                         Name(id='a', ctx=Store()),
                         Name(id='b', ctx=Store())],
-                    value=Constant(value=1, kind=None),
-                    type_comment=None)],
+                    value=Constant(value=1))],
             type_ignores=[])
 
         >>> print(ast.dump(ast.parse('a,b = c'), indent=4)) # Unpacking
@@ -778,8 +771,7 @@ Statements
                                 Name(id='a', ctx=Store()),
                                 Name(id='b', ctx=Store())],
                             ctx=Store())],
-                    value=Name(id='c', ctx=Load()),
-                    type_comment=None)],
+                    value=Name(id='c', ctx=Load()))],
             type_ignores=[])
 
 
@@ -800,7 +792,6 @@ Statements
                 AnnAssign(
                     target=Name(id='c', ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    value=None,
                     simple=1)],
             type_ignores=[])
 
@@ -810,7 +801,7 @@ Statements
                 AnnAssign(
                     target=Name(id='a', ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    value=Constant(value=1, kind=None),
+                    value=Constant(value=1),
                     simple=0)],
             type_ignores=[])
 
@@ -823,7 +814,6 @@ Statements
                         attr='b',
                         ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    value=None,
                     simple=0)],
             type_ignores=[])
 
@@ -834,10 +824,9 @@ Statements
                     target=Subscript(
                         value=Name(id='a', ctx=Load()),
                         slice=Index(
-                            value=Constant(value=1, kind=None)),
+                            value=Constant(value=1)),
                         ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    value=None,
                     simple=0)],
             type_ignores=[])
 
@@ -860,7 +849,7 @@ Statements
                 AugAssign(
                     target=Name(id='x', ctx=Store()),
                     op=Add(),
-                    value=Constant(value=2, kind=None))],
+                    value=Constant(value=2))],
             type_ignores=[])
 
 
@@ -945,9 +934,9 @@ Imports
             body=[
                 Import(
                     names=[
-                        alias(name='x', asname=None),
-                        alias(name='y', asname=None),
-                        alias(name='z', asname=None)])],
+                        alias(name='x'),
+                        alias(name='y'),
+                        alias(name='z')])],
             type_ignores=[])
 
 
@@ -966,9 +955,9 @@ Imports
                 ImportFrom(
                     module='y',
                     names=[
-                        alias(name='x', asname=None),
-                        alias(name='y', asname=None),
-                        alias(name='z', asname=None)],
+                        alias(name='x'),
+                        alias(name='y'),
+                        alias(name='z')],
                     level=0)],
             type_ignores=[])
 
@@ -987,7 +976,7 @@ Imports
                     module='foo.bar',
                     names=[
                         alias(name='a', asname='b'),
-                        alias(name='c', asname=None)],
+                        alias(name='c')],
                     level=2)],
             type_ignores=[])
 
@@ -1023,16 +1012,16 @@ Control flow
                     test=Name(id='x', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
+                            value=Constant(value=Ellipsis))],
                     orelse=[
                         If(
                             test=Name(id='y', ctx=Load()),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis, kind=None))],
+                                    value=Constant(value=Ellipsis))],
                             orelse=[
                                 Expr(
-                                    value=Constant(value=Ellipsis, kind=None))])])],
+                                    value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
 
@@ -1063,11 +1052,10 @@ Control flow
                     iter=Name(id='y', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
+                            value=Constant(value=Ellipsis))],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
-                    type_comment=None)],
+                            value=Constant(value=Ellipsis))])],
             type_ignores=[])
 
 
@@ -1090,10 +1078,10 @@ Control flow
                     test=Name(id='x', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
+                            value=Constant(value=Ellipsis))],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))])],
+                            value=Constant(value=Ellipsis))])],
             type_ignores=[])
 
 
@@ -1124,13 +1112,12 @@ Control flow
                                 ops=[
                                     Gt()],
                                 comparators=[
-                                    Constant(value=5, kind=None)]),
+                                    Constant(value=5)]),
                             body=[
                                 Break()],
                             orelse=[
                                 Continue()])],
-                    orelse=[],
-                    type_comment=None)],
+                    orelse=[])],
             type_ignores=[])
 
 
@@ -1158,26 +1145,25 @@ Control flow
                 Try(
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
+                            value=Constant(value=Ellipsis))],
                     handlers=[
                         ExceptHandler(
                             type=Name(id='Exception', ctx=Load()),
-                            name=None,
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis, kind=None))]),
+                                    value=Constant(value=Ellipsis))]),
                         ExceptHandler(
                             type=Name(id='OtherException', ctx=Load()),
                             name='e',
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis, kind=None))])],
+                                    value=Constant(value=Ellipsis))])],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))],
+                            value=Constant(value=Ellipsis))],
                     finalbody=[
                         Expr(
-                            value=Constant(value=Ellipsis, kind=None))])],
+                            value=Constant(value=Ellipsis))])],
             type_ignores=[])
 
 
@@ -1204,11 +1190,10 @@ Control flow
                             value=BinOp(
                                 left=Name(id='a', ctx=Load()),
                                 op=Add(),
-                                right=Constant(value=1, kind=None)))],
+                                right=Constant(value=1)))],
                     handlers=[
                         ExceptHandler(
                             type=Name(id='TypeError', ctx=Load()),
-                            name=None,
                             body=[
                                 Pass()])],
                     orelse=[],
@@ -1256,8 +1241,7 @@ Control flow
                                 args=[
                                     Name(id='b', ctx=Load()),
                                     Name(id='d', ctx=Load())],
-                                keywords=[]))],
-                    type_comment=None)],
+                                keywords=[]))])],
             type_ignores=[])
 
 
@@ -1295,14 +1279,12 @@ Function and class definitions
                         args=arguments(
                             posonlyargs=[],
                             args=[
-                                arg(arg='x', annotation=None, type_comment=None),
-                                arg(arg='y', annotation=None, type_comment=None)],
-                            vararg=None,
+                                arg(arg='x'),
+                                arg(arg='y')],
                             kwonlyargs=[],
                             kw_defaults=[],
-                            kwarg=None,
                             defaults=[]),
-                        body=Constant(value=Ellipsis, kind=None)))],
+                        body=Constant(value=Ellipsis)))],
             type_ignores=[])
 
 
@@ -1347,28 +1329,26 @@ Function and class definitions
                         args=[
                             arg(
                                 arg='a',
-                                annotation=Constant(value='annotation', kind=None),
-                                type_comment=None),
-                            arg(arg='b', annotation=None, type_comment=None),
-                            arg(arg='c', annotation=None, type_comment=None)],
-                        vararg=arg(arg='d', annotation=None, type_comment=None),
+                                annotation=Constant(value='annotation')),
+                            arg(arg='b'),
+                            arg(arg='c')],
+                        vararg=arg(arg='d'),
                         kwonlyargs=[
-                            arg(arg='e', annotation=None, type_comment=None),
-                            arg(arg='f', annotation=None, type_comment=None)],
+                            arg(arg='e'),
+                            arg(arg='f')],
                         kw_defaults=[
                             None,
-                            Constant(value=3, kind=None)],
-                        kwarg=arg(arg='g', annotation=None, type_comment=None),
+                            Constant(value=3)],
+                        kwarg=arg(arg='g'),
                         defaults=[
-                            Constant(value=1, kind=None),
-                            Constant(value=2, kind=None)]),
+                            Constant(value=1),
+                            Constant(value=2)]),
                     body=[
                         Pass()],
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
                         Name(id='decorator2', ctx=Load())],
-                    returns=Constant(value='return annotation', kind=None),
-                    type_comment=None)],
+                    returns=Constant(value='return annotation'))],
             type_ignores=[])
 
 
@@ -1382,7 +1362,7 @@ Function and class definitions
         Module(
             body=[
                 Return(
-                    value=Constant(value=4, kind=None))],
+                    value=Constant(value=4))],
             type_ignores=[])
 
 
@@ -1508,10 +1488,8 @@ Async and await
                 args=arguments(
                     posonlyargs=[],
                     args=[],
-                    vararg=None,
                     kwonlyargs=[],
                     kw_defaults=[],
-                    kwarg=None,
                     defaults=[]),
                 body=[
                     Expr(
@@ -1520,9 +1498,7 @@ Async and await
                                 func=Name(id='other_func', ctx=Load()),
                                 args=[],
                                 keywords=[])))],
-                decorator_list=[],
-                returns=None,
-                type_comment=None)],
+                decorator_list=[])],
         type_ignores=[])
 
 
