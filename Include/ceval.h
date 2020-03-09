@@ -121,9 +121,6 @@ PyAPI_FUNC(PyObject *) PyEval_EvalFrameEx(struct _frame *f, int exc);
    WARNING: NEVER NEST CALLS TO Py_BEGIN_ALLOW_THREADS AND
    Py_END_ALLOW_THREADS!!!
 
-   The function PyEval_InitThreads() should be called only from
-   init_thread() in "_threadmodule.c".
-
    Note that not yet all candidates have been converted to use this
    mechanism!
 */
