@@ -1439,58 +1439,102 @@ static int init_types(void)
     state->stmt_type = make_type("stmt", state->AST_type, NULL, 0);
     if (!state->stmt_type) return 0;
     if (!add_attributes(state->stmt_type, stmt_attributes, 4)) return 0;
+    if (PyObject_SetAttr(state->stmt_type, state->end_lineno, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->stmt_type, state->end_col_offset, Py_None) ==
+        -1)
+        return 0;
     state->FunctionDef_type = make_type("FunctionDef", state->stmt_type,
                                         FunctionDef_fields, 6);
     if (!state->FunctionDef_type) return 0;
+    if (PyObject_SetAttr(state->FunctionDef_type, state->returns, Py_None) ==
+        -1)
+        return 0;
+    if (PyObject_SetAttr(state->FunctionDef_type, state->type_comment, Py_None)
+        == -1)
+        return 0;
     state->AsyncFunctionDef_type = make_type("AsyncFunctionDef",
                                              state->stmt_type,
                                              AsyncFunctionDef_fields, 6);
     if (!state->AsyncFunctionDef_type) return 0;
+    if (PyObject_SetAttr(state->AsyncFunctionDef_type, state->returns, Py_None)
+        == -1)
+        return 0;
+    if (PyObject_SetAttr(state->AsyncFunctionDef_type, state->type_comment,
+        Py_None) == -1)
+        return 0;
     state->ClassDef_type = make_type("ClassDef", state->stmt_type,
                                      ClassDef_fields, 5);
     if (!state->ClassDef_type) return 0;
     state->Return_type = make_type("Return", state->stmt_type, Return_fields,
                                    1);
     if (!state->Return_type) return 0;
+    if (PyObject_SetAttr(state->Return_type, state->value, Py_None) == -1)
+        return 0;
     state->Delete_type = make_type("Delete", state->stmt_type, Delete_fields,
                                    1);
     if (!state->Delete_type) return 0;
     state->Assign_type = make_type("Assign", state->stmt_type, Assign_fields,
                                    3);
     if (!state->Assign_type) return 0;
+    if (PyObject_SetAttr(state->Assign_type, state->type_comment, Py_None) ==
+        -1)
+        return 0;
     state->AugAssign_type = make_type("AugAssign", state->stmt_type,
                                       AugAssign_fields, 3);
     if (!state->AugAssign_type) return 0;
     state->AnnAssign_type = make_type("AnnAssign", state->stmt_type,
                                       AnnAssign_fields, 4);
     if (!state->AnnAssign_type) return 0;
+    if (PyObject_SetAttr(state->AnnAssign_type, state->value, Py_None) == -1)
+        return 0;
     state->For_type = make_type("For", state->stmt_type, For_fields, 5);
     if (!state->For_type) return 0;
+    if (PyObject_SetAttr(state->For_type, state->type_comment, Py_None) == -1)
+        return 0;
     state->AsyncFor_type = make_type("AsyncFor", state->stmt_type,
                                      AsyncFor_fields, 5);
     if (!state->AsyncFor_type) return 0;
+    if (PyObject_SetAttr(state->AsyncFor_type, state->type_comment, Py_None) ==
+        -1)
+        return 0;
     state->While_type = make_type("While", state->stmt_type, While_fields, 3);
     if (!state->While_type) return 0;
     state->If_type = make_type("If", state->stmt_type, If_fields, 3);
     if (!state->If_type) return 0;
     state->With_type = make_type("With", state->stmt_type, With_fields, 3);
     if (!state->With_type) return 0;
+    if (PyObject_SetAttr(state->With_type, state->type_comment, Py_None) == -1)
+        return 0;
     state->AsyncWith_type = make_type("AsyncWith", state->stmt_type,
                                       AsyncWith_fields, 3);
     if (!state->AsyncWith_type) return 0;
+    if (PyObject_SetAttr(state->AsyncWith_type, state->type_comment, Py_None)
+        == -1)
+        return 0;
     state->Raise_type = make_type("Raise", state->stmt_type, Raise_fields, 2);
     if (!state->Raise_type) return 0;
+    if (PyObject_SetAttr(state->Raise_type, state->exc, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->Raise_type, state->cause, Py_None) == -1)
+        return 0;
     state->Try_type = make_type("Try", state->stmt_type, Try_fields, 4);
     if (!state->Try_type) return 0;
     state->Assert_type = make_type("Assert", state->stmt_type, Assert_fields,
                                    2);
     if (!state->Assert_type) return 0;
+    if (PyObject_SetAttr(state->Assert_type, state->msg, Py_None) == -1)
+        return 0;
     state->Import_type = make_type("Import", state->stmt_type, Import_fields,
                                    1);
     if (!state->Import_type) return 0;
     state->ImportFrom_type = make_type("ImportFrom", state->stmt_type,
                                        ImportFrom_fields, 3);
     if (!state->ImportFrom_type) return 0;
+    if (PyObject_SetAttr(state->ImportFrom_type, state->module, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->ImportFrom_type, state->level, Py_None) == -1)
+        return 0;
     state->Global_type = make_type("Global", state->stmt_type, Global_fields,
                                    1);
     if (!state->Global_type) return 0;
@@ -1508,6 +1552,11 @@ static int init_types(void)
     state->expr_type = make_type("expr", state->AST_type, NULL, 0);
     if (!state->expr_type) return 0;
     if (!add_attributes(state->expr_type, expr_attributes, 4)) return 0;
+    if (PyObject_SetAttr(state->expr_type, state->end_lineno, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->expr_type, state->end_col_offset, Py_None) ==
+        -1)
+        return 0;
     state->BoolOp_type = make_type("BoolOp", state->expr_type, BoolOp_fields,
                                    2);
     if (!state->BoolOp_type) return 0;
@@ -1544,6 +1593,8 @@ static int init_types(void)
     if (!state->Await_type) return 0;
     state->Yield_type = make_type("Yield", state->expr_type, Yield_fields, 1);
     if (!state->Yield_type) return 0;
+    if (PyObject_SetAttr(state->Yield_type, state->value, Py_None) == -1)
+        return 0;
     state->YieldFrom_type = make_type("YieldFrom", state->expr_type,
                                       YieldFrom_fields, 1);
     if (!state->YieldFrom_type) return 0;
@@ -1555,12 +1606,20 @@ static int init_types(void)
     state->FormattedValue_type = make_type("FormattedValue", state->expr_type,
                                            FormattedValue_fields, 3);
     if (!state->FormattedValue_type) return 0;
+    if (PyObject_SetAttr(state->FormattedValue_type, state->conversion,
+        Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->FormattedValue_type, state->format_spec,
+        Py_None) == -1)
+        return 0;
     state->JoinedStr_type = make_type("JoinedStr", state->expr_type,
                                       JoinedStr_fields, 1);
     if (!state->JoinedStr_type) return 0;
     state->Constant_type = make_type("Constant", state->expr_type,
                                      Constant_fields, 2);
     if (!state->Constant_type) return 0;
+    if (PyObject_SetAttr(state->Constant_type, state->kind, Py_None) == -1)
+        return 0;
     state->Attribute_type = make_type("Attribute", state->expr_type,
                                       Attribute_fields, 3);
     if (!state->Attribute_type) return 0;
@@ -1619,6 +1678,12 @@ static int init_types(void)
     if (!add_attributes(state->slice_type, NULL, 0)) return 0;
     state->Slice_type = make_type("Slice", state->slice_type, Slice_fields, 3);
     if (!state->Slice_type) return 0;
+    if (PyObject_SetAttr(state->Slice_type, state->lower, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->Slice_type, state->upper, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->Slice_type, state->step, Py_None) == -1)
+        return 0;
     state->ExtSlice_type = make_type("ExtSlice", state->slice_type,
                                      ExtSlice_fields, 1);
     if (!state->ExtSlice_type) return 0;
@@ -1797,28 +1862,57 @@ static int init_types(void)
     if (!state->excepthandler_type) return 0;
     if (!add_attributes(state->excepthandler_type, excepthandler_attributes,
         4)) return 0;
+    if (PyObject_SetAttr(state->excepthandler_type, state->end_lineno, Py_None)
+        == -1)
+        return 0;
+    if (PyObject_SetAttr(state->excepthandler_type, state->end_col_offset,
+        Py_None) == -1)
+        return 0;
     state->ExceptHandler_type = make_type("ExceptHandler",
                                           state->excepthandler_type,
                                           ExceptHandler_fields, 3);
     if (!state->ExceptHandler_type) return 0;
+    if (PyObject_SetAttr(state->ExceptHandler_type, state->type, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->ExceptHandler_type, state->name, Py_None) == -1)
+        return 0;
     state->arguments_type = make_type("arguments", state->AST_type,
                                       arguments_fields, 7);
     if (!state->arguments_type) return 0;
     if (!add_attributes(state->arguments_type, NULL, 0)) return 0;
+    if (PyObject_SetAttr(state->arguments_type, state->vararg, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->arguments_type, state->kwarg, Py_None) == -1)
+        return 0;
     state->arg_type = make_type("arg", state->AST_type, arg_fields, 3);
     if (!state->arg_type) return 0;
     if (!add_attributes(state->arg_type, arg_attributes, 4)) return 0;
+    if (PyObject_SetAttr(state->arg_type, state->annotation, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->arg_type, state->type_comment, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->arg_type, state->end_lineno, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->arg_type, state->end_col_offset, Py_None) == -1)
+        return 0;
     state->keyword_type = make_type("keyword", state->AST_type, keyword_fields,
                                     2);
     if (!state->keyword_type) return 0;
     if (!add_attributes(state->keyword_type, NULL, 0)) return 0;
+    if (PyObject_SetAttr(state->keyword_type, state->arg, Py_None) == -1)
+        return 0;
     state->alias_type = make_type("alias", state->AST_type, alias_fields, 2);
     if (!state->alias_type) return 0;
     if (!add_attributes(state->alias_type, NULL, 0)) return 0;
+    if (PyObject_SetAttr(state->alias_type, state->asname, Py_None) == -1)
+        return 0;
     state->withitem_type = make_type("withitem", state->AST_type,
                                      withitem_fields, 2);
     if (!state->withitem_type) return 0;
     if (!add_attributes(state->withitem_type, NULL, 0)) return 0;
+    if (PyObject_SetAttr(state->withitem_type, state->optional_vars, Py_None)
+        == -1)
+        return 0;
     state->type_ignore_type = make_type("type_ignore", state->AST_type, NULL,
                                         0);
     if (!state->type_ignore_type) return 0;
