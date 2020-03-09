@@ -213,8 +213,13 @@ take_gil(PyThreadState *tstate)
 
     assert(tstate != NULL);
 
-    /* Check if we should make a quick exit. */
     if (tstate_must_exit(tstate)) {
+        /* bpo-39877: If Py_Finalize() has been called and tstate is not the
+           thread which called Py_Finalize(), exit immediately the thread.
+
+           This code path can be reached by a daemon thread after Py_Finalize()
+           completes. In this case, tstate is a dangling pointer: points to
+           PyThreadState freed memory. */
         PyThread_exit_thread();
     }
 
@@ -281,6 +286,18 @@ _ready:
     }
 
     MUTEX_UNLOCK(gil->mutex);
+
+    if (tstate_must_exit(tstate)) {
+        /* bpo-36475: If Py_Finalize() has been called and tstate is not
+           the thread which called Py_Finalize(), exit immediately the
+           thread.
+
+           This code path can be reached by a daemon thread which was waiting
+           in take_gil() while the main thread called
+           wait_for_thread_shutdown() from Py_Finalize(). */
+        drop_gil(ceval, tstate);
+        PyThread_exit_thread();
+    }
 
     errno = err;
 }
