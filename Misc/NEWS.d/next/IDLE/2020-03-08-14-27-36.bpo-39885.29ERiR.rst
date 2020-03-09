@@ -1,0 +1,2 @@
+Since clicking to get an IDLE context menu moves the cursor,
+any text selection should be and now is cleared.
