@@ -499,6 +499,7 @@ class EditorWindow(object):
     rmenu = None
 
     def right_menu_event(self, event):
+        self.text.tag_remove("sel", "1.0", "end")
         self.text.mark_set("insert", "@%d,%d" % (event.x, event.y))
         if not self.rmenu:
             self.make_rmenu()
@@ -678,8 +679,11 @@ class EditorWindow(object):
         if lineno <= 0:
             text.bell()
             return "break"
-        text.mark_set("insert", "%d.0" % lineno)
+
+        text.tag_remove("sel", "1.0", "end")
+        text.mark_set("insert", f'{lineno}.0')
         text.see("insert")
+        self.set_line_and_column()
         return "break"
 
     def open_module(self):

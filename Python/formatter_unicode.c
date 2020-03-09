@@ -574,7 +574,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
             spec->n_lpadding = n_padding;
             break;
         default:
-            /* Shouldn't get here, but treat it as '>' */
+            /* Shouldn't get here */
             Py_UNREACHABLE();
         }
     }
