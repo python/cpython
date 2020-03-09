@@ -199,8 +199,10 @@ class Goto(Query):
             lineno = int(self.entry.get())
         except ValueError:
             self.showerror('not a base 10 integer.')
+            return None
         if lineno <= 0:
             self.showerror('not a positive integer.')
+            return None
         return lineno
 
 
