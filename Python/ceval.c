@@ -13,6 +13,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_code.h"
+#include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
@@ -197,16 +198,6 @@ ensure_tstate_not_null(const char *func, PyThreadState *tstate)
 }
 
 
-#ifndef NDEBUG
-static int is_tstate_valid(PyThreadState *tstate)
-{
-    assert(!_PyMem_IsPtrFreed(tstate));
-    assert(!_PyMem_IsPtrFreed(tstate->interp));
-    return 1;
-}
-#endif
-
-
 int
 PyEval_ThreadsInitialized(void)
 {
@@ -214,26 +205,41 @@ PyEval_ThreadsInitialized(void)
     return gil_created(&runtime->ceval.gil);
 }
 
-void
-PyEval_InitThreads(void)
+PyStatus
+_PyEval_InitThreads(PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
+    if (tstate == NULL) {
+        return _PyStatus_ERR("tstate is NULL");
+    }
+
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     struct _gil_runtime_state *gil = &ceval->gil;
     if (gil_created(gil)) {
-        return;
+        return _PyStatus_OK();
     }
 
     PyThread_init_thread();
     create_gil(gil);
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    ensure_tstate_not_null(__func__, tstate);
-    take_gil(ceval, tstate);
+
+    take_gil(tstate);
 
     struct _pending_calls *pending = &ceval->pending;
     pending->lock = PyThread_allocate_lock();
     if (pending->lock == NULL) {
-        Py_FatalError("Can't initialize threads for pending calls");
+        return _PyStatus_NO_MEMORY();
+    }
+
+    return _PyStatus_OK();
+}
+
+void
+PyEval_InitThreads(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    PyStatus status = _PyEval_InitThreads(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        Py_ExitStatusException(status);
     }
 }
 
@@ -252,30 +258,6 @@ _PyEval_FiniThreads(struct _ceval_runtime_state *ceval)
     if (pending->lock != NULL) {
         PyThread_free_lock(pending->lock);
         pending->lock = NULL;
-    }
-}
-
-/* This function is designed to exit daemon threads immediately rather than
-   taking the GIL if Py_Finalize() has been called.
-
-   The caller must *not* hold the GIL, since this function does not release
-   the GIL before exiting the thread.
-
-   When this function is called by a daemon thread after Py_Finalize() has been
-   called, the GIL does no longer exist.
-
-   tstate must be non-NULL. */
-static inline void
-exit_thread_if_finalizing(PyThreadState *tstate)
-{
-    /* bpo-39877: Access _PyRuntime directly rather than using
-       tstate->interp->runtime to support calls from Python daemon threads.
-       After Py_Finalize() has been called, tstate can be a dangling pointer:
-       point to PyThreadState freed memory. */
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
-    if (finalizing != NULL && finalizing != tstate) {
-        PyThread_exit_thread();
     }
 }
 
@@ -315,11 +297,7 @@ PyEval_AcquireLock(void)
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     ensure_tstate_not_null(__func__, tstate);
 
-    exit_thread_if_finalizing(tstate);
-    assert(is_tstate_valid(tstate));
-
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
-    take_gil(ceval, tstate);
+    take_gil(tstate);
 }
 
 void
@@ -339,17 +317,10 @@ PyEval_AcquireThread(PyThreadState *tstate)
 {
     ensure_tstate_not_null(__func__, tstate);
 
-    exit_thread_if_finalizing(tstate);
-    assert(is_tstate_valid(tstate));
+    take_gil(tstate);
 
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
-
-    /* Check someone has called PyEval_InitThreads() to create the lock */
-    assert(gil_created(&ceval->gil));
-
-    take_gil(ceval, tstate);
-    if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
+    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
+    if (_PyThreadState_Swap(gilstate, tstate) != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
 }
@@ -382,7 +353,8 @@ _PyEval_ReInitThreads(_PyRuntimeState *runtime)
     recreate_gil(&ceval->gil);
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     ensure_tstate_not_null(__func__, tstate);
-    take_gil(ceval, tstate);
+
+    take_gil(tstate);
 
     struct _pending_calls *pending = &ceval->pending;
     pending->lock = PyThread_allocate_lock();
@@ -422,16 +394,10 @@ PyEval_RestoreThread(PyThreadState *tstate)
 {
     ensure_tstate_not_null(__func__, tstate);
 
-    exit_thread_if_finalizing(tstate);
-    assert(is_tstate_valid(tstate));
+    take_gil(tstate);
 
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
-    assert(gil_created(&ceval->gil));
-
-    take_gil(ceval, tstate);
-
-    _PyThreadState_Swap(&runtime->gilstate, tstate);
+    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
+    _PyThreadState_Swap(gilstate, tstate);
 }
 
 
@@ -541,9 +507,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 static int
 handle_signals(_PyRuntimeState *runtime)
 {
-    /* Only handle signals on main thread.  PyEval_InitThreads must
-     * have been called already.
-     */
+    /* Only handle signals on main thread */
     if (PyThread_get_thread_ident() != runtime->main_thread) {
         return 0;
     }
@@ -793,7 +757,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
     PyThreadState * const tstate = _PyRuntimeState_GetThreadState(runtime);
     ensure_tstate_not_null(__func__, tstate);
-    assert(is_tstate_valid(tstate));
 
     /* when tracing we set things up so that
 
@@ -1282,10 +1245,7 @@ main_loop:
 
                 /* Other threads may run now */
 
-                /* Check if we should make a quick exit. */
-                exit_thread_if_finalizing(tstate);
-
-                take_gil(ceval, tstate);
+                take_gil(tstate);
 
                 if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
                     Py_FatalError("orphan tstate");

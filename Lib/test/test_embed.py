@@ -267,9 +267,8 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_bpo20891(self):
         """
-        bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
-        calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
-        call PyEval_InitThreads() for us in this case.
+        bpo-20891: Calling PyGILState_Ensure in a non-Python thread must not
+        crash.
         """
         out, err = self.run_embedded_interpreter("test_bpo20891")
         self.assertEqual(out, '')
