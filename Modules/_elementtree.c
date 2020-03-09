@@ -926,8 +926,8 @@ static PyObject *
 _elementtree_Element___getstate___impl(ElementObject *self)
 /*[clinic end generated code: output=37279aeeb6bb5b04 input=f0d16d7ec2f7adc1]*/
 {
-    Py_ssize_t i, noattrib;
-    PyObject *instancedict = NULL, *children;
+    Py_ssize_t i;
+    PyObject *children, *attrib;
 
     /* Build a list of children. */
     children = PyList_New(self->extra ? self->extra->length : 0);
@@ -939,33 +939,24 @@ _elementtree_Element___getstate___impl(ElementObject *self)
         PyList_SET_ITEM(children, i, child);
     }
 
-    /* Construct the state object. */
-    noattrib = (self->extra == NULL || self->extra->attrib == Py_None);
-    if (noattrib)
-        instancedict = Py_BuildValue("{sOsOs{}sOsO}",
-                                     PICKLED_TAG, self->tag,
-                                     PICKLED_CHILDREN, children,
-                                     PICKLED_ATTRIB,
-                                     PICKLED_TEXT, JOIN_OBJ(self->text),
-                                     PICKLED_TAIL, JOIN_OBJ(self->tail));
-    else
-        instancedict = Py_BuildValue("{sOsOsOsOsO}",
-                                     PICKLED_TAG, self->tag,
-                                     PICKLED_CHILDREN, children,
-                                     PICKLED_ATTRIB, self->extra->attrib,
-                                     PICKLED_TEXT, JOIN_OBJ(self->text),
-                                     PICKLED_TAIL, JOIN_OBJ(self->tail));
-    if (instancedict) {
-        Py_DECREF(children);
-        return instancedict;
+    if (self->extra && self->extra->attrib != Py_None) {
+        attrib = self->extra->attrib;
+        Py_INCREF(attrib);
     }
     else {
-        for (i = 0; i < PyList_GET_SIZE(children); i++)
-            Py_DECREF(PyList_GET_ITEM(children, i));
-        Py_DECREF(children);
-
-        return NULL;
+        attrib = PyDict_New();
+        if (!attrib) {
+            Py_DECREF(children);
+            return NULL;
+        }
     }
+
+    return Py_BuildValue("{sOsNsNsOsO}",
+                         PICKLED_TAG, self->tag,
+                         PICKLED_CHILDREN, children,
+                         PICKLED_ATTRIB, attrib,
+                         PICKLED_TEXT, JOIN_OBJ(self->text),
+                         PICKLED_TAIL, JOIN_OBJ(self->tail));
 }
 
 static PyObject *
