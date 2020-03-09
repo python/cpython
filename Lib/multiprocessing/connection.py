@@ -603,7 +603,7 @@ class SocketListener(object):
         self._last_accepted = None
 
         if family == 'AF_UNIX' and not util.is_abstract_socket_namespace(address):
-            # Linux abstract socket namespaces do not need to be unlinked
+            # Linux abstract socket namespaces do not need to be explicitly unlinked
             self._unlink = util.Finalize(
                 self, os.unlink, args=(address,), exitpriority=0
                 )
