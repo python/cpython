@@ -2728,8 +2728,6 @@ test_thread_state(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    /* Ensure Python is set up for threading */
-    PyEval_InitThreads();
     thread_done = PyThread_allocate_lock();
     if (thread_done == NULL)
         return PyErr_NoMemory();
@@ -4174,8 +4172,6 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
     PyObject *res = NULL;
     test_c_thread_t test_c_thread;
     long thread;
-
-    PyEval_InitThreads();
 
     test_c_thread.start_event = PyThread_allocate_lock();
     test_c_thread.exit_event = PyThread_allocate_lock();

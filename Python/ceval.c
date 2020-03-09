@@ -345,7 +345,7 @@ PyEval_AcquireThread(PyThreadState *tstate)
     _PyRuntimeState *runtime = tstate->interp->runtime;
     struct _ceval_runtime_state *ceval = &runtime->ceval;
 
-    /* Check someone has called PyEval_InitThreads() to create the lock */
+    /* Check that _PyEval_InitThreads() was called to create the lock */
     assert(gil_created(&ceval->gil));
 
     take_gil(ceval, tstate);
@@ -541,9 +541,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 static int
 handle_signals(_PyRuntimeState *runtime)
 {
-    /* Only handle signals on main thread.  PyEval_InitThreads must
-     * have been called already.
-     */
+    /* Only handle signals on main thread */
     if (PyThread_get_thread_ident() != runtime->main_thread) {
         return 0;
     }
