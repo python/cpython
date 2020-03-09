@@ -129,14 +129,14 @@ Node classes
 
    Old classes :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
    :class:`ast.NameConstant` and :class:`ast.Ellipsis` are still available,
-   but they will be removed in future Python releases.  In the meanwhile,
+   but they will be removed in future Python releases.  In the meantime,
    instantiating them will return an instance of a different class.
 
 .. deprecated:: 3.9
 
    Old classes :class:`ast.Index` and :class:`ast.ExtSlice` are still
    available, but they will be removed in future Python releases.
-   In the meanwhile, instantiating them will return an instance of
+   In the meantime, instantiating them will return an instance of
    a different class.
 
 
@@ -581,21 +581,22 @@ Subscripting
         Expression(
             body=Subscript(
                 value=Name(id='l', ctx=Load()),
-                slice=ExtSlice(
-                    dims=[
+                slice=Tuple(
+                    elts=[
                         Slice(
                             lower=Constant(value=1, kind=None),
                             upper=Constant(value=2, kind=None),
                             step=None),
-                        Index(
-                            value=Constant(value=3, kind=None))]),
+                        Constant(value=3, kind=None)],
+                    ctx=Load()),
                 ctx=Load()))
 
 
 .. class:: Slice(lower, upper, step)
 
    Regular slicing (on the form ``lower:upper`` or ``lower:upper:step``).
-   Can occur only in the *slice* field of :class:`Subscript`.
+   Can occur only inside the *slice* field of :class:`Subscript`, either
+   directly or as an element of :class:`Tuple`.
 
    .. doctest::
 

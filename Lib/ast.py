@@ -559,12 +559,20 @@ _const_node_type_names = {
 }
 
 class Index(AST):
-    def __new__(cls, value, *args, **kwargs):
+    def __new__(cls, value, **kwargs):
         return value
 
 class ExtSlice(AST):
-    def __new__(cls, dims=(), *args, **kwargs):
-        return Tuple(list(dims), Load(), *args, **kwargs)
+    def __new__(cls, dims=(), **kwargs):
+        return Tuple(list(dims), Load(), **kwargs)
+
+def _dims_getter(self):
+    return self.elts
+
+def _dims_setter(self, value):
+    self.elts = value
+
+Tuple.dims = property(_dims_getter, _dims_setter)
 
 
 # Large float and imaginary literals get turned into infinities in the AST.
