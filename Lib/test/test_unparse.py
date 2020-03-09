@@ -280,6 +280,20 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip(r"""{**{'y': 2}, 'x': 1}""")
         self.check_ast_roundtrip(r"""{**{'y': 2}, **{'x': 1}}""")
 
+    def test_ext_slices(self):
+        self.check_ast_roundtrip("a[i]")
+        self.check_ast_roundtrip("a[i,]")
+        self.check_ast_roundtrip("a[i, j]")
+        self.check_ast_roundtrip("a[()]")
+        self.check_ast_roundtrip("a[i:j]")
+        self.check_ast_roundtrip("a[:j]")
+        self.check_ast_roundtrip("a[i:]")
+        self.check_ast_roundtrip("a[i:j:k]")
+        self.check_ast_roundtrip("a[:j:k]")
+        self.check_ast_roundtrip("a[i::k]")
+        self.check_ast_roundtrip("a[i:j,]")
+        self.check_ast_roundtrip("a[i:j, k]")
+
     def test_invalid_raise(self):
         self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X")))
 
@@ -309,6 +323,12 @@ class UnparseTestCase(ASTTestCase):
         for docstring in docstrings:
             # check as Module docstrings for easy testing
             self.check_ast_roundtrip(f"'{docstring}'")
+
+    def test_constant_tuples(self):
+        self.check_src_roundtrip(ast.Constant(value=(1,), kind=None), "(1,)")
+        self.check_src_roundtrip(
+            ast.Constant(value=(1, 2, 3), kind=None), "(1, 2, 3)"
+        )
 
 
 class CosmeticTestCase(ASTTestCase):
@@ -343,20 +363,6 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("yield from x")
         self.check_src_roundtrip("call((yield x))")
         self.check_src_roundtrip("return x + (yield x)")
-
-    def test_subscript(self):
-        self.check_src_roundtrip("a[i]")
-        self.check_src_roundtrip("a[i,]")
-        self.check_src_roundtrip("a[i, j]")
-        self.check_src_roundtrip("a[()]")
-        self.check_src_roundtrip("a[i:j]")
-        self.check_src_roundtrip("a[:j]")
-        self.check_src_roundtrip("a[i:]")
-        self.check_src_roundtrip("a[i:j:k]")
-        self.check_src_roundtrip("a[:j:k]")
-        self.check_src_roundtrip("a[i::k]")
-        self.check_src_roundtrip("a[i:j,]")
-        self.check_src_roundtrip("a[i:j, k]")
 
     def test_docstrings(self):
         docstrings = (
