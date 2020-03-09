@@ -400,8 +400,6 @@ class _NormalAccessor(_Accessor):
 
     open = os.open
 
-    listdir = os.listdir
-
     scandir = os.scandir
 
     chmod = os.chmod
@@ -1125,11 +1123,8 @@ class Path(PurePath):
         """
         if self._closed:
             self._raise_closed()
-        for name in self._accessor.listdir(self):
-            if name in {'.', '..'}:
-                # Yielding a path object for these makes little sense
-                continue
-            yield self._make_child_relpath(name)
+        for entry in self._accessor.scandir(self):
+            yield self._make_child_relpath(entry.name)
             if self._closed:
                 self._raise_closed()
 
