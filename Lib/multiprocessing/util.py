@@ -118,7 +118,7 @@ def is_abstract_socket_namespace(address):
         return address[0] == 0
     elif isinstance(address, str):
         return address[0] == "\0"
-    raise ValueError('address type of %r unrecognized' % address)
+    raise TypeError('address type of {address!r} unrecognized')
 
 
 abstract_sockets_supported = _platform_supports_abstract_sockets()
