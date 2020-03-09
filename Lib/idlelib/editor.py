@@ -672,18 +672,16 @@ class EditorWindow(object):
 
     def goto_line_event(self, event):
         text = self.text
-        lineno = tkSimpleDialog.askinteger("Goto",
-                "Go to line number:",parent=text)
-        if lineno is None:
-            return "break"
-        if lineno <= 0:
-            text.bell()
-            return "break"
-
-        text.tag_remove("sel", "1.0", "end")
-        text.mark_set("insert", f'{lineno}.0')
-        text.see("insert")
-        self.set_line_and_column()
+        lineno = query.Goto(
+                text, "Go To Line",
+                "Enter a positive integer\n"
+                "('big' = end of file):"
+                ).result
+        if lineno is not None:
+            text.tag_remove("sel", "1.0", "end")
+            text.mark_set("insert", f'{lineno}.0')
+            text.see("insert")
+            self.set_line_and_column()
         return "break"
 
     def open_module(self):
