@@ -1265,7 +1265,7 @@ if HAS_SHMEM:
             address = self.address
             # The address of Linux abstract namespaces can be bytes
             if isinstance(address, bytes):
-                address = address.decode()
+                address = os.fsdecode(address)
             self.shared_memory_context = \
                 _SharedMemoryTracker(f"shm_{address}_{getpid()}")
             util.debug(f"SharedMemoryServer started by pid {getpid()}")
