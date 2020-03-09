@@ -228,9 +228,6 @@ class Goto(Query):
     "Get a positive line number for editor Go To Line."
     # Used in editor.EditorWindow.goto_line_event.
 
-    def __init__(self, parent, title, message, *, _htest=False, _utest=False):
-        super().__init__(parent, title, message, _htest=_htest, _utest=_utest)
-
     def entry_ok(self):
         try:
             lineno = int(self.entry.get())
