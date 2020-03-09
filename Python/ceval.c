@@ -199,10 +199,16 @@ ensure_tstate_not_null(const char *func, PyThreadState *tstate)
 
 
 int
+_PyEval_ThreadsInitialized(_PyRuntimeState *runtime)
+{
+    return gil_created(&runtime->ceval.gil);
+}
+
+int
 PyEval_ThreadsInitialized(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    return gil_created(&runtime->ceval.gil);
+    return _PyEval_ThreadsInitialized(runtime);
 }
 
 PyStatus
