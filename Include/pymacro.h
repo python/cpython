@@ -119,7 +119,7 @@
         "The limits were in our heads all along. Follow your dreams.\n" \
         "https://xkcd.com/2200")
 #elif defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
-#define Py_UNREACHABLE() __builtin_unreachable()
+#  define Py_UNREACHABLE() __builtin_unreachable()
 #elif defined(_MSC_VER)
 #define Py_UNREACHABLE() __assume(0)
 #else
