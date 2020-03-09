@@ -187,6 +187,23 @@ class SectionName(Query):
         return name
 
 
+class Goto(Query):
+    "Get a positive line number for editor Go To Line."
+    # Used in editor.EditorWindow.goto_line_event.
+
+    def __init__(self, parent, title, message, *, _htest=False, _utest=False):
+        super().__init__(parent, title, message, _htest=_htest, _utest=_utest)
+
+    def entry_ok(self):
+        try:
+            lineno = int(self.entry.get())
+        except ValueError:
+            self.showerror('not a base 10 integer.')
+        if lineno <= 0:
+            self.showerror('not a positive integer.')
+        return lineno
+
+
 class ModuleName(Query):
     "Get a module name for Open Module menu entry."
     # Used in open_module (editor.EditorWindow until move to iobinding).
