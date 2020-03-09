@@ -1267,7 +1267,7 @@ if HAS_SHMEM:
             if isinstance(address, bytes):
                 address = address.decode()
             self.shared_memory_context = \
-                _SharedMemoryTracker(f"shmm_{address}_{getpid()}")
+                _SharedMemoryTracker(f"shm_{address}_{getpid()}")
             util.debug(f"SharedMemoryServer started by pid {getpid()}")
 
         def create(self, c, typeid, /, *args, **kwargs):

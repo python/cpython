@@ -3278,7 +3278,7 @@ class _TestListener(BaseTestCase):
                          "test needs abstract socket support")
     def test_abstract_socket(self):
         with self.connection.Listener("\0something") as listener:
-            with self.connection.Client(l.address) as client:
+            with self.connection.Client(listener.address) as client:
                 with listener.accept() as d:
                     client.send(1729)
                     self.assertEqual(d.recv(), 1729)
