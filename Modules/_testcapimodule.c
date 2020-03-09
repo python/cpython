@@ -4653,6 +4653,19 @@ get_main_config(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject*
+pynumber_tobase(PyObject *module, PyObject *args)
+{
+    PyObject *obj;
+    int base;
+    if (!PyArg_ParseTuple(args, "Oi:pynumber_tobase",
+                          &obj, &base)) {
+        return NULL;
+    }
+    return PyNumber_ToBase(obj, base);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -4888,6 +4901,7 @@ static PyMethodDef TestMethods[] = {
     {"get_global_config", get_global_config, METH_NOARGS},
     {"get_core_config", get_core_config, METH_NOARGS},
     {"get_main_config", get_main_config, METH_NOARGS},
+    {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
