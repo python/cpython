@@ -53,6 +53,8 @@ extern PyObject *_PyEval_EvalCode(
     PyObject *kwdefs, PyObject *closure,
     PyObject *name, PyObject *qualname);
 
+extern PyStatus _PyEval_InitThreads(PyThreadState *tstate);
+
 #ifdef __cplusplus
 }
 #endif
