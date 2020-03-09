@@ -953,7 +953,6 @@ _elementtree_Element___getstate___impl(ElementObject *self)
         PyList_SET_ITEM(children, i, child);
     }
 
-    /* Construct the state object. */
     if (self->extra && self->extra->attrib) {
         attrib = self->extra->attrib;
         Py_INCREF(attrib);
@@ -965,6 +964,7 @@ _elementtree_Element___getstate___impl(ElementObject *self)
             return NULL;
         }
     }
+
     return Py_BuildValue("{sOsNsNsOsO}",
                          PICKLED_TAG, self->tag,
                          PICKLED_CHILDREN, children,
