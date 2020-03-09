@@ -503,34 +503,47 @@ class TestNtpath(NtpathTestCase):
             env.clear()
             tester('ntpath.expanduser("~test")', '~test')
 
-            env['HOMEPATH'] = 'eric\\idle'
             env['HOMEDRIVE'] = 'C:\\'
-            tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
-            tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
+            env['HOMEPATH'] = 'Users\\eric'
+            env['USERNAME'] = 'eric'
+            tester('ntpath.expanduser("~test")', 'C:\\Users\\test')
+            tester('ntpath.expanduser("~")', 'C:\\Users\\eric')
 
             del env['HOMEDRIVE']
-            tester('ntpath.expanduser("~test")', 'eric\\test')
-            tester('ntpath.expanduser("~")', 'eric\\idle')
+            tester('ntpath.expanduser("~test")', 'Users\\test')
+            tester('ntpath.expanduser("~")', 'Users\\eric')
 
             env.clear()
-            env['USERPROFILE'] = 'C:\\eric\\idle'
-            tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
-            tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
+            env['USERPROFILE'] = 'C:\\Users\\eric'
+            env['USERNAME'] = 'eric'
+            tester('ntpath.expanduser("~test")', 'C:\\Users\\test')
+            tester('ntpath.expanduser("~")', 'C:\\Users\\eric')
             tester('ntpath.expanduser("~test\\foo\\bar")',
-                   'C:\\eric\\test\\foo\\bar')
+                   'C:\\Users\\test\\foo\\bar')
             tester('ntpath.expanduser("~test/foo/bar")',
-                   'C:\\eric\\test/foo/bar')
+                   'C:\\Users\\test/foo/bar')
             tester('ntpath.expanduser("~\\foo\\bar")',
-                   'C:\\eric\\idle\\foo\\bar')
+                   'C:\\Users\\eric\\foo\\bar')
             tester('ntpath.expanduser("~/foo/bar")',
-                   'C:\\eric\\idle/foo/bar')
+                   'C:\\Users\\eric/foo/bar')
 
             # bpo-36264: ignore `HOME` when set on windows
             env.clear()
             env['HOME'] = 'F:\\'
-            env['USERPROFILE'] = 'C:\\eric\\idle'
-            tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
-            tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
+            env['USERPROFILE'] = 'C:\\Users\\eric'
+            env['USERNAME'] = 'eric'
+            tester('ntpath.expanduser("~test")', 'C:\\Users\\test')
+            tester('ntpath.expanduser("~")', 'C:\\Users\\eric')
+
+            # bpo-39899: don't guess another user's home directory if
+            # `%USERNAME% != basename(%USERPROFILE%)`
+            env.clear()
+            env['USERPROFILE'] = 'C:\\Users\\eric'
+            env['USERNAME'] = 'idle'
+            tester('ntpath.expanduser("~test")', '~test')
+            tester('ntpath.expanduser("~")', 'C:\\Users\\eric')
+
+
 
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):
