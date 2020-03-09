@@ -966,12 +966,11 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #endif
 
     /* Special case: type(x) should return Py_TYPE(x) */
-    /* We only want type itself to accept the one-argument form (#27157)
-       Note: We don't call PyType_CheckExact as that also allows subclasses */
+    /* We only want type itself to accept the one-argument form (#27157) */
     if (type == &PyType_Type) {
         assert(args != NULL && PyTuple_Check(args));
         assert(kwds == NULL || PyDict_Check(kwds));
-        const Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+        Py_ssize_t nargs = PyTuple_GET_SIZE(args);
 
         if (nargs == 1 && (kwds == NULL || !PyDict_GET_SIZE(kwds))) {
             obj = (PyObject *) Py_TYPE(PyTuple_GET_ITEM(args, 0));
@@ -980,7 +979,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
 
         /* SF bug 475327 -- if that didn't trigger, we need 3
-           arguments. but PyArg_ParseTuple below may give
+           arguments. But PyArg_ParseTuple in type_new may give
            a msg saying type() needs exactly 3. */
         if (nargs != 3) {
             PyErr_SetString(PyExc_TypeError,
