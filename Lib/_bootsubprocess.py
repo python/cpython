@@ -89,11 +89,10 @@ def check_output(cmd, **kwargs):
             raise ValueError(f"Command {cmd!r} failed with status {status!r}")
 
         try:
-            # Use the locale encoding
-            with open(tmp_filename) as fp:
+            with open(tmp_filename, "rb") as fp:
                 stdout = fp.read()
         except FileNotFoundError:
-            stdout = ''
+            stdout = b''
     finally:
         try:
             os.unlink(tmp_filename)
