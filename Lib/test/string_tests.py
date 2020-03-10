@@ -682,6 +682,40 @@ class BaseTest:
         self.checkraises(OverflowError, A2_16, "replace", "A", A2_16)
         self.checkraises(OverflowError, A2_16, "replace", "AA", A2_16+A2_16)
 
+    def test_cutprefix(self):
+        self.checkequal('am', 'spam', 'cutprefix', 'sp')
+        self.checkequal('spamspam', 'spamspamspam', 'cutprefix', 'spam')
+        self.checkequal('spam', 'spam', 'cutprefix', 'python')
+        self.checkequal('spam', 'spam', 'cutprefix', 'spider')
+        self.checkequal('spam', 'spam', 'cutprefix', 'spam and eggs')
+
+        self.checkequal('', '', 'cutprefix', '')
+        self.checkequal('', '', 'cutprefix', 'abcde')
+        self.checkequal('abcde', 'abcde', 'cutprefix', '')
+        self.checkequal('', 'abcde', 'cutprefix', 'abcde')
+
+        self.checkraises(TypeError, 'hello', 'cutprefix')
+        self.checkraises(TypeError, 'hello', 'cutprefix', 42)
+        self.checkraises(TypeError, 'hello', 'cutprefix', 42, 'h')
+        self.checkraises(TypeError, 'hello', 'cutprefix', 'h', 42)
+
+    def test_cutsuffix(self):
+        self.checkequal('sp', 'spam', 'cutsuffix', 'am')
+        self.checkequal('spamspam', 'spamspamspam', 'cutsuffix', 'spam')
+        self.checkequal('spam', 'spam', 'cutsuffix', 'python')
+        self.checkequal('spam', 'spam', 'cutsuffix', 'blam')
+        self.checkequal('spam', 'spam', 'cutsuffix', 'eggs and spam')
+
+        self.checkequal('', '', 'cutsuffix', '')
+        self.checkequal('', '', 'cutsuffix', 'abcde')
+        self.checkequal('abcde', 'abcde', 'cutsuffix', '')
+        self.checkequal('', 'abcde', 'cutsuffix', 'abcde')
+
+        self.checkraises(TypeError, 'hello', 'cutsuffix')
+        self.checkraises(TypeError, 'hello', 'cutsuffix', 42)
+        self.checkraises(TypeError, 'hello', 'cutsuffix', 42, 'h')
+        self.checkraises(TypeError, 'hello', 'cutsuffix', 'h', 42)
+
     def test_capitalize(self):
         self.checkequal(' hello ', ' hello ', 'capitalize')
         self.checkequal('Hello ', 'Hello ','capitalize')

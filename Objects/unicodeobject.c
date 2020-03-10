@@ -12757,6 +12757,60 @@ unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
     return replace(self, old, new, count);
 }
 
+/*[clinic input]
+str.cutprefix as unicode_cutprefix
+
+    prefix: unicode
+    /
+
+Remove a specified prefix, if present.
+
+If the string starts with the prefix, return string[len(prefix):].
+Otherwise, return the original string.
+[clinic start generated code]*/
+
+static PyObject *
+unicode_cutprefix_impl(PyObject* self, PyObject* prefix)
+/*[clinic end generated code: output=885902e3c7f5fae0 input=52efc288b6160337]*/
+{
+    int match = tailmatch(self, prefix, 0, PY_SSIZE_T_MAX, -1);
+    if (match == -1) {
+        return NULL;
+    }
+    if (match) {
+        return PyUnicode_Substring(self, PyUnicode_GET_LENGTH(prefix),
+            PyUnicode_GET_LENGTH(self));
+    }
+    return unicode_result_unchanged(self);
+}
+
+/*[clinic input]
+str.cutsuffix as unicode_cutsuffix
+
+    suffix: unicode
+    /
+
+Remove a specified suffix, if present.
+
+If the string starts with the suffix, return string[len(suffix):].
+Otherwise, return the original string.
+[clinic start generated code]*/
+
+static PyObject *
+unicode_cutsuffix_impl(PyObject* self, PyObject* suffix)
+/*[clinic end generated code: output=5e5babcd284e6e6e input=7cb8ec5dd6849be0]*/
+{
+    int match = tailmatch(self, suffix, 0, PY_SSIZE_T_MAX, +1);
+    if (match == -1) {
+        return NULL;
+    }
+    if (match) {
+        return PyUnicode_Substring(self, 0, PyUnicode_GET_LENGTH(self)
+            - PyUnicode_GET_LENGTH(suffix));
+    }
+    return unicode_result_unchanged(self);
+}
+
 static PyObject *
 unicode_repr(PyObject *unicode)
 {
@@ -14070,6 +14124,8 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_UPPER_METHODDEF
     {"startswith", (PyCFunction) unicode_startswith, METH_VARARGS, startswith__doc__},
     {"endswith", (PyCFunction) unicode_endswith, METH_VARARGS, endswith__doc__},
+    UNICODE_CUTPREFIX_METHODDEF
+    UNICODE_CUTSUFFIX_METHODDEF
     UNICODE_ISASCII_METHODDEF
     UNICODE_ISLOWER_METHODDEF
     UNICODE_ISUPPER_METHODDEF

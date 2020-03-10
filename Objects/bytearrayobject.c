@@ -1185,6 +1185,69 @@ bytearray_endswith(PyByteArrayObject *self, PyObject *args)
     return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
 }
 
+/*[clinic input]
+bytearray.cutprefix as bytearray_cutprefix
+
+    prefix: Py_buffer
+    /
+
+Return a copy of the bytearray with a given prefix removed if present.
+
+If the bytearray starts with the prefix, return b[len(prefix):].
+Otherwise, return a copy of the original bytearray.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_cutprefix_impl(PyByteArrayObject *self, Py_buffer *prefix)
+/*[clinic end generated code: output=21632e315d769b4b input=1848afa62344e091]*/
+{
+    const char* self_start = PyByteArray_AS_STRING(self);
+    Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
+    const char* prefix_start = prefix->buf;
+    Py_ssize_t prefix_len = prefix->len;
+
+    if (self_len >= prefix_len
+        && memcmp(self_start, prefix_start, prefix_len) == 0)
+    {
+        return PyByteArray_FromStringAndSize(self_start + prefix_len,
+            self_len - prefix_len);
+    }
+
+    return PyByteArray_FromStringAndSize(self_start, self_len);
+}
+
+/*[clinic input]
+bytearray.cutsuffix as bytearray_cutsuffix
+
+    suffix: Py_buffer
+    /
+
+Return a copy of the bytearray with a given suffix removed if present.
+
+If the bytearray ends with the suffix, return b[:len(b)-len(suffix)].
+Otherwise, return a copy of the original bytearray.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_cutsuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
+/*[clinic end generated code: output=9862e6f256b4e5a0 input=8f8c10709806b42b]*/
+{
+    const char* self_start = PyByteArray_AS_STRING(self);
+    Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
+    const char* suffix_start = suffix->buf;
+    Py_ssize_t suffix_len = suffix->len;
+
+    if (self_len >= suffix_len
+        && memcmp(self_start + self_len - suffix_len,
+            suffix_start, suffix_len) == 0)
+    {
+        return PyByteArray_FromStringAndSize(self_start,
+            self_len - suffix_len);
+    }
+
+    return PyByteArray_FromStringAndSize(self_start, self_len);
+}
+
 
 /*[clinic input]
 bytearray.translate
@@ -2207,6 +2270,8 @@ bytearray_methods[] = {
     BYTEARRAY_POP_METHODDEF
     BYTEARRAY_REMOVE_METHODDEF
     BYTEARRAY_REPLACE_METHODDEF
+    BYTEARRAY_CUTPREFIX_METHODDEF
+    BYTEARRAY_CUTSUFFIX_METHODDEF
     BYTEARRAY_REVERSE_METHODDEF
     {"rfind", (PyCFunction)bytearray_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytearray_rindex, METH_VARARGS, _Py_rindex__doc__},

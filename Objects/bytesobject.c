@@ -2181,6 +2181,68 @@ bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
 
 /** End DALKE **/
 
+/*[clinic input]
+bytes.cutprefix as bytes_cutprefix
+
+    prefix: Py_buffer
+    /
+
+Remove a specified prefix, if present.
+
+If the bytes starts with the prefix, return b[len(prefix):].
+Otherwise, return the original bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes_cutprefix_impl(PyBytesObject *self, Py_buffer *prefix)
+/*[clinic end generated code: output=5e5ef0cf576a8a9c input=f5409d4eb86164e8]*/
+{
+    const char *self_start = PyBytes_AS_STRING(self);
+    Py_ssize_t self_len = PyBytes_GET_SIZE(self);
+    const char *prefix_start = prefix->buf;
+    Py_ssize_t prefix_len = prefix->len;
+
+    if (self_len >= prefix_len
+        && memcmp(self_start, prefix_start, prefix_len) == 0)
+    {
+        return PyBytes_FromStringAndSize(self_start + prefix_len,
+                                         self_len - prefix_len);
+    }
+
+    return PyBytes_FromStringAndSize(self_start, self_len);
+}
+
+/*[clinic input]
+bytes.cutsuffix as bytes_cutsuffix
+
+    suffix: Py_buffer
+    /
+
+Remove a specified suffix, if present.
+
+If the bytes ends with the suffix, return b[:len(b)-len(prefix)].
+Otherwise, return the original bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes_cutsuffix_impl(PyBytesObject *self, Py_buffer *suffix)
+/*[clinic end generated code: output=303549ce0a999724 input=5e4ee249c40f7bf6]*/
+{
+    const char* self_start = PyBytes_AS_STRING(self);
+    Py_ssize_t self_len = PyBytes_GET_SIZE(self);
+    const char* suffix_start = suffix->buf;
+    Py_ssize_t suffix_len = suffix->len;
+
+    if (self_len >= suffix_len
+        && memcmp(self_start + self_len - suffix_len,
+                  suffix_start, suffix_len) == 0)
+    {
+        return PyBytes_FromStringAndSize(self_start,
+                                         self_len - suffix_len);
+    }
+
+    return PyBytes_FromStringAndSize(self_start, self_len);
+}
 
 static PyObject *
 bytes_startswith(PyBytesObject *self, PyObject *args)
@@ -2420,6 +2482,8 @@ bytes_methods[] = {
     BYTES_MAKETRANS_METHODDEF
     BYTES_PARTITION_METHODDEF
     BYTES_REPLACE_METHODDEF
+    BYTES_CUTPREFIX_METHODDEF
+    BYTES_CUTSUFFIX_METHODDEF
     {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, _Py_rindex__doc__},
     STRINGLIB_RJUST_METHODDEF

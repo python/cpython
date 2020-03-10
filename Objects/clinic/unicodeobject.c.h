@@ -754,6 +754,76 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_cutprefix__doc__,
+"cutprefix($self, prefix, /)\n"
+"--\n"
+"\n"
+"Remove a specified prefix, if present.\n"
+"\n"
+"If the string starts with the prefix, return string[len(prefix):].\n"
+"Otherwise, return the original string.");
+
+#define UNICODE_CUTPREFIX_METHODDEF    \
+    {"cutprefix", (PyCFunction)unicode_cutprefix, METH_O, unicode_cutprefix__doc__},
+
+static PyObject *
+unicode_cutprefix_impl(PyObject *self, PyObject *prefix);
+
+static PyObject *
+unicode_cutprefix(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *prefix;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("cutprefix", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    prefix = arg;
+    return_value = unicode_cutprefix_impl(self, prefix);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_cutsuffix__doc__,
+"cutsuffix($self, suffix, /)\n"
+"--\n"
+"\n"
+"Remove a specified suffix, if present.\n"
+"\n"
+"If the string starts with the suffix, return string[len(suffix):].\n"
+"Otherwise, return the original string.");
+
+#define UNICODE_CUTSUFFIX_METHODDEF    \
+    {"cutsuffix", (PyCFunction)unicode_cutsuffix, METH_O, unicode_cutsuffix__doc__},
+
+static PyObject *
+unicode_cutsuffix_impl(PyObject *self, PyObject *suffix);
+
+static PyObject *
+unicode_cutsuffix(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *suffix;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("cutsuffix", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    suffix = arg;
+    return_value = unicode_cutsuffix_impl(self, suffix);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode_rjust__doc__,
 "rjust($self, width, fillchar=\' \', /)\n"
 "--\n"
@@ -1232,4 +1302,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=e4ed33400979c7e8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=94e6d11b96656992 input=a9049054013a1b77]*/
