@@ -551,7 +551,10 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     _PyEval_FiniThreads(&runtime->ceval);
 
     /* Auto-thread-state API */
-    _PyGILState_Init(tstate);
+    status = _PyGILState_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     /* Create the GIL */
     status = _PyEval_InitThreads(tstate);
