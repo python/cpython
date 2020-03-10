@@ -895,25 +895,30 @@ void
 _PyThreadState_DeleteExcept(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    PyThreadState *p, *next, *garbage;
+
     HEAD_LOCK(runtime);
     /* Remove all thread states, except tstate, from the linked list of
        thread states.  This will allow calling PyThreadState_Clear()
        without holding the lock. */
-    garbage = interp->tstate_head;
-    if (garbage == tstate)
-        garbage = tstate->next;
-    if (tstate->prev)
+    PyThreadState *list = interp->tstate_head;
+    if (list == tstate) {
+        list = tstate->next;
+    }
+    if (tstate->prev) {
         tstate->prev->next = tstate->next;
-    if (tstate->next)
+    }
+    if (tstate->next) {
         tstate->next->prev = tstate->prev;
+    }
     tstate->prev = tstate->next = NULL;
     interp->tstate_head = tstate;
     HEAD_UNLOCK(runtime);
+
     /* Clear and deallocate all stale thread states.  Even if this
        executes Python code, we should be safe since it executes
        in the current thread, not one of the stale threads. */
-    for (p = garbage; p; p = next) {
+    PyThreadState *p, *next;
+    for (p = list; p; p = next) {
         next = p->next;
         PyThreadState_Clear(p);
         PyMem_RawFree(p);
@@ -1275,27 +1280,28 @@ PyGILState_Check(void)
 PyGILState_STATE
 PyGILState_Ensure(void)
 {
-    struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
-    int current;
-    PyThreadState *tcur;
-    int need_init_threads = 0;
+    _PyRuntimeState *runtime = &_PyRuntime;
+    struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
 
     /* Note that we do not auto-init Python here - apart from
        potential races with 2 threads auto-initializing, pep-311
        spells out other issues.  Embedders are expected to have
-       called Py_Initialize() and usually PyEval_InitThreads().
-    */
-    /* Py_Initialize() hasn't been called! */
+       called Py_Initialize(). */
+
+    /* Ensure that _PyEval_InitThreads() and _PyGILState_Init() have been
+       called by Py_Initialize() */
+    assert(_PyEval_ThreadsInitialized(runtime));
     assert(gilstate->autoInterpreterState);
 
-    tcur = (PyThreadState *)PyThread_tss_get(&gilstate->autoTSSkey);
+    PyThreadState *tcur = (PyThreadState *)PyThread_tss_get(&gilstate->autoTSSkey);
+    int current;
     if (tcur == NULL) {
-        need_init_threads = 1;
-
-        /* Create a new thread state for this thread */
+        /* Create a new Python thread state for this thread */
         tcur = PyThreadState_New(gilstate->autoInterpreterState);
-        if (tcur == NULL)
+        if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
+        }
+
         /* This is our thread state!  We'll need to delete it in the
            matching call to PyGILState_Release(). */
         tcur->gilstate_counter = 0;
@@ -1315,13 +1321,6 @@ PyGILState_Ensure(void)
          to modify this value
     */
     ++tcur->gilstate_counter;
-
-    if (need_init_threads) {
-        /* At startup, Python has no concrete GIL. If PyGILState_Ensure() is
-           called from a new thread for the first time, we need the create the
-           GIL. */
-        PyEval_InitThreads();
-    }
 
     return current ? PyGILState_LOCKED : PyGILState_UNLOCKED;
 }

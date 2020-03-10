@@ -128,8 +128,8 @@ PyAPI_FUNC(PyObject *) PyEval_EvalFrameEx(struct _frame *f, int exc);
 PyAPI_FUNC(PyThreadState *) PyEval_SaveThread(void);
 PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 
-PyAPI_FUNC(int)  PyEval_ThreadsInitialized(void);
-PyAPI_FUNC(void) PyEval_InitThreads(void);
+Py_DEPRECATED(3.9) PyAPI_FUNC(int) PyEval_ThreadsInitialized(void);
+Py_DEPRECATED(3.9) PyAPI_FUNC(void) PyEval_InitThreads(void);
 Py_DEPRECATED(3.2) PyAPI_FUNC(void) PyEval_AcquireLock(void);
 /* Py_DEPRECATED(3.2) */ PyAPI_FUNC(void) PyEval_ReleaseLock(void);
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
