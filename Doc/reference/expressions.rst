@@ -1653,7 +1653,7 @@ An assignment expression (sometimes also called a "named expression" or
 "walrus") assigns an :token:`expression` to an :token:`identifier`, while also
 returning the value of the :token:`expression`.
 
-One common use case is when handling matched regular expression:
+One common use case is when handling matched regular expressions:
 
 .. code-block:: python
 
