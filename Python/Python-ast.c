@@ -52,7 +52,6 @@ typedef struct {
     PyObject *ExceptHandler_type;
     PyObject *Expr_type;
     PyObject *Expression_type;
-    PyObject *ExtSlice_type;
     PyObject *FloorDiv_singleton;
     PyObject *FloorDiv_type;
     PyObject *For_type;
@@ -71,7 +70,6 @@ typedef struct {
     PyObject *Import_type;
     PyObject *In_singleton;
     PyObject *In_type;
-    PyObject *Index_type;
     PyObject *Interactive_type;
     PyObject *Invert_singleton;
     PyObject *Invert_type;
@@ -166,7 +164,6 @@ typedef struct {
     PyObject *ctx;
     PyObject *decorator_list;
     PyObject *defaults;
-    PyObject *dims;
     PyObject *elt;
     PyObject *elts;
     PyObject *end_col_offset;
@@ -213,7 +210,6 @@ typedef struct {
     PyObject *right;
     PyObject *simple;
     PyObject *slice;
-    PyObject *slice_type;
     PyObject *step;
     PyObject *stmt_type;
     PyObject *tag;
@@ -281,7 +277,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->ExceptHandler_type);
     Py_CLEAR(astmodulestate(module)->Expr_type);
     Py_CLEAR(astmodulestate(module)->Expression_type);
-    Py_CLEAR(astmodulestate(module)->ExtSlice_type);
     Py_CLEAR(astmodulestate(module)->FloorDiv_singleton);
     Py_CLEAR(astmodulestate(module)->FloorDiv_type);
     Py_CLEAR(astmodulestate(module)->For_type);
@@ -300,7 +295,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->Import_type);
     Py_CLEAR(astmodulestate(module)->In_singleton);
     Py_CLEAR(astmodulestate(module)->In_type);
-    Py_CLEAR(astmodulestate(module)->Index_type);
     Py_CLEAR(astmodulestate(module)->Interactive_type);
     Py_CLEAR(astmodulestate(module)->Invert_singleton);
     Py_CLEAR(astmodulestate(module)->Invert_type);
@@ -395,7 +389,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->ctx);
     Py_CLEAR(astmodulestate(module)->decorator_list);
     Py_CLEAR(astmodulestate(module)->defaults);
-    Py_CLEAR(astmodulestate(module)->dims);
     Py_CLEAR(astmodulestate(module)->elt);
     Py_CLEAR(astmodulestate(module)->elts);
     Py_CLEAR(astmodulestate(module)->end_col_offset);
@@ -442,7 +435,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->right);
     Py_CLEAR(astmodulestate(module)->simple);
     Py_CLEAR(astmodulestate(module)->slice);
-    Py_CLEAR(astmodulestate(module)->slice_type);
     Py_CLEAR(astmodulestate(module)->step);
     Py_CLEAR(astmodulestate(module)->stmt_type);
     Py_CLEAR(astmodulestate(module)->tag);
@@ -509,7 +501,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->ExceptHandler_type);
     Py_VISIT(astmodulestate(module)->Expr_type);
     Py_VISIT(astmodulestate(module)->Expression_type);
-    Py_VISIT(astmodulestate(module)->ExtSlice_type);
     Py_VISIT(astmodulestate(module)->FloorDiv_singleton);
     Py_VISIT(astmodulestate(module)->FloorDiv_type);
     Py_VISIT(astmodulestate(module)->For_type);
@@ -528,7 +519,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->Import_type);
     Py_VISIT(astmodulestate(module)->In_singleton);
     Py_VISIT(astmodulestate(module)->In_type);
-    Py_VISIT(astmodulestate(module)->Index_type);
     Py_VISIT(astmodulestate(module)->Interactive_type);
     Py_VISIT(astmodulestate(module)->Invert_singleton);
     Py_VISIT(astmodulestate(module)->Invert_type);
@@ -623,7 +613,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->ctx);
     Py_VISIT(astmodulestate(module)->decorator_list);
     Py_VISIT(astmodulestate(module)->defaults);
-    Py_VISIT(astmodulestate(module)->dims);
     Py_VISIT(astmodulestate(module)->elt);
     Py_VISIT(astmodulestate(module)->elts);
     Py_VISIT(astmodulestate(module)->end_col_offset);
@@ -670,7 +659,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->right);
     Py_VISIT(astmodulestate(module)->simple);
     Py_VISIT(astmodulestate(module)->slice);
-    Py_VISIT(astmodulestate(module)->slice_type);
     Py_VISIT(astmodulestate(module)->step);
     Py_VISIT(astmodulestate(module)->stmt_type);
     Py_VISIT(astmodulestate(module)->tag);
@@ -733,7 +721,6 @@ static int init_identifiers(void)
     if ((state->ctx = PyUnicode_InternFromString("ctx")) == NULL) return 0;
     if ((state->decorator_list = PyUnicode_InternFromString("decorator_list")) == NULL) return 0;
     if ((state->defaults = PyUnicode_InternFromString("defaults")) == NULL) return 0;
-    if ((state->dims = PyUnicode_InternFromString("dims")) == NULL) return 0;
     if ((state->elt = PyUnicode_InternFromString("elt")) == NULL) return 0;
     if ((state->elts = PyUnicode_InternFromString("elts")) == NULL) return 0;
     if ((state->end_col_offset = PyUnicode_InternFromString("end_col_offset")) == NULL) return 0;
@@ -1035,19 +1022,12 @@ static const char * const Tuple_fields[]={
     "elts",
     "ctx",
 };
-static PyObject* ast2obj_expr_context(expr_context_ty);
-static PyObject* ast2obj_slice(void*);
 static const char * const Slice_fields[]={
     "lower",
     "upper",
     "step",
 };
-static const char * const ExtSlice_fields[]={
-    "dims",
-};
-static const char * const Index_fields[]={
-    "value",
-};
+static PyObject* ast2obj_expr_context(expr_context_ty);
 static PyObject* ast2obj_boolop(boolop_ty);
 static PyObject* ast2obj_operator(operator_ty);
 static PyObject* ast2obj_unaryop(unaryop_ty);
@@ -1635,6 +1615,14 @@ static int init_types(void)
     if (!state->List_type) return 0;
     state->Tuple_type = make_type("Tuple", state->expr_type, Tuple_fields, 2);
     if (!state->Tuple_type) return 0;
+    state->Slice_type = make_type("Slice", state->expr_type, Slice_fields, 3);
+    if (!state->Slice_type) return 0;
+    if (PyObject_SetAttr(state->Slice_type, state->lower, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->Slice_type, state->upper, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->Slice_type, state->step, Py_None) == -1)
+        return 0;
     state->expr_context_type = make_type("expr_context", state->AST_type, NULL,
                                          0);
     if (!state->expr_context_type) return 0;
@@ -1673,22 +1661,6 @@ static int init_types(void)
     state->Param_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->Param_type, NULL, NULL);
     if (!state->Param_singleton) return 0;
-    state->slice_type = make_type("slice", state->AST_type, NULL, 0);
-    if (!state->slice_type) return 0;
-    if (!add_attributes(state->slice_type, NULL, 0)) return 0;
-    state->Slice_type = make_type("Slice", state->slice_type, Slice_fields, 3);
-    if (!state->Slice_type) return 0;
-    if (PyObject_SetAttr(state->Slice_type, state->lower, Py_None) == -1)
-        return 0;
-    if (PyObject_SetAttr(state->Slice_type, state->upper, Py_None) == -1)
-        return 0;
-    if (PyObject_SetAttr(state->Slice_type, state->step, Py_None) == -1)
-        return 0;
-    state->ExtSlice_type = make_type("ExtSlice", state->slice_type,
-                                     ExtSlice_fields, 1);
-    if (!state->ExtSlice_type) return 0;
-    state->Index_type = make_type("Index", state->slice_type, Index_fields, 1);
-    if (!state->Index_type) return 0;
     state->boolop_type = make_type("boolop", state->AST_type, NULL, 0);
     if (!state->boolop_type) return 0;
     if (!add_attributes(state->boolop_type, NULL, 0)) return 0;
@@ -1929,7 +1901,6 @@ static int obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena);
 static int obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena);
 static int obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena*
                                 arena);
-static int obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena);
 static int obj2ast_boolop(PyObject* obj, boolop_ty* out, PyArena* arena);
 static int obj2ast_operator(PyObject* obj, operator_ty* out, PyArena* arena);
 static int obj2ast_unaryop(PyObject* obj, unaryop_ty* out, PyArena* arena);
@@ -3092,7 +3063,7 @@ Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno, int
 }
 
 expr_ty
-Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno, int
+Subscript(expr_ty value, expr_ty slice, expr_context_ty ctx, int lineno, int
           col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
@@ -3227,46 +3198,22 @@ Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, int
     return p;
 }
 
-slice_ty
-Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena)
+expr_ty
+Slice(expr_ty lower, expr_ty upper, expr_ty step, int lineno, int col_offset,
+      int end_lineno, int end_col_offset, PyArena *arena)
 {
-    slice_ty p;
-    p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
+    expr_ty p;
+    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->kind = Slice_kind;
     p->v.Slice.lower = lower;
     p->v.Slice.upper = upper;
     p->v.Slice.step = step;
-    return p;
-}
-
-slice_ty
-ExtSlice(asdl_seq * dims, PyArena *arena)
-{
-    slice_ty p;
-    p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = ExtSlice_kind;
-    p->v.ExtSlice.dims = dims;
-    return p;
-}
-
-slice_ty
-Index(expr_ty value, PyArena *arena)
-{
-    slice_ty p;
-    if (!value) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field value is required for Index");
-        return NULL;
-    }
-    p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Index_kind;
-    p->v.Index.value = value;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
@@ -4389,7 +4336,7 @@ ast2obj_expr(void* _o)
         if (PyObject_SetAttr(result, astmodulestate_global->value, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_slice(o->v.Subscript.slice);
+        value = ast2obj_expr(o->v.Subscript.slice);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, astmodulestate_global->slice, value) == -1)
             goto failed;
@@ -4460,6 +4407,26 @@ ast2obj_expr(void* _o)
             goto failed;
         Py_DECREF(value);
         break;
+    case Slice_kind:
+        tp = (PyTypeObject *)astmodulestate_global->Slice_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(o->v.Slice.lower);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->lower, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->v.Slice.upper);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->upper, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->v.Slice.step);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->step, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
     }
     value = ast2obj_int(o->lineno);
     if (!value) goto failed;
@@ -4516,65 +4483,6 @@ PyObject* ast2obj_expr_context(expr_context_ty o)
             return NULL;
     }
 }
-PyObject*
-ast2obj_slice(void* _o)
-{
-    slice_ty o = (slice_ty)_o;
-    PyObject *result = NULL, *value = NULL;
-    PyTypeObject *tp;
-    if (!o) {
-        Py_RETURN_NONE;
-    }
-
-    switch (o->kind) {
-    case Slice_kind:
-        tp = (PyTypeObject *)astmodulestate_global->Slice_type;
-        result = PyType_GenericNew(tp, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_expr(o->v.Slice.lower);
-        if (!value) goto failed;
-        if (PyObject_SetAttr(result, astmodulestate_global->lower, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        value = ast2obj_expr(o->v.Slice.upper);
-        if (!value) goto failed;
-        if (PyObject_SetAttr(result, astmodulestate_global->upper, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        value = ast2obj_expr(o->v.Slice.step);
-        if (!value) goto failed;
-        if (PyObject_SetAttr(result, astmodulestate_global->step, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case ExtSlice_kind:
-        tp = (PyTypeObject *)astmodulestate_global->ExtSlice_type;
-        result = PyType_GenericNew(tp, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_list(o->v.ExtSlice.dims, ast2obj_slice);
-        if (!value) goto failed;
-        if (PyObject_SetAttr(result, astmodulestate_global->dims, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case Index_kind:
-        tp = (PyTypeObject *)astmodulestate_global->Index_type;
-        result = PyType_GenericNew(tp, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_expr(o->v.Index.value);
-        if (!value) goto failed;
-        if (PyObject_SetAttr(result, astmodulestate_global->value, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    }
-    return result;
-failed:
-    Py_XDECREF(value);
-    Py_XDECREF(result);
-    return NULL;
-}
-
 PyObject* ast2obj_boolop(boolop_ty o)
 {
     switch(o) {
@@ -8421,7 +8329,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     }
     if (isinstance) {
         expr_ty value;
-        slice_ty slice;
+        expr_ty slice;
         expr_context_ty ctx;
 
         if (_PyObject_LookupAttr(obj, astmodulestate_global->value, &tmp) < 0) {
@@ -8446,7 +8354,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_slice(tmp, &slice, arena);
+            res = obj2ast_expr(tmp, &slice, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8668,6 +8576,60 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
+    tp = astmodulestate_global->Slice_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        expr_ty lower;
+        expr_ty upper;
+        expr_ty step;
+
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->lower, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            lower = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &lower, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->upper, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            upper = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &upper, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->step, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            step = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &step, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = Slice(lower, upper, step, lineno, col_offset, end_lineno,
+                     end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr, but got %R", obj);
     failed:
@@ -8730,148 +8692,6 @@ obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena* arena)
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr_context, but got %R", obj);
-    return 1;
-}
-
-int
-obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
-{
-    int isinstance;
-
-    PyObject *tmp = NULL;
-    PyObject *tp;
-
-    if (obj == Py_None) {
-        *out = NULL;
-        return 0;
-    }
-    tp = astmodulestate_global->Slice_type;
-    isinstance = PyObject_IsInstance(obj, tp);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        expr_ty lower;
-        expr_ty upper;
-        expr_ty step;
-
-        if (_PyObject_LookupAttr(obj, astmodulestate_global->lower, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            lower = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_expr(tmp, &lower, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        if (_PyObject_LookupAttr(obj, astmodulestate_global->upper, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            upper = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_expr(tmp, &upper, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        if (_PyObject_LookupAttr(obj, astmodulestate_global->step, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            step = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_expr(tmp, &step, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Slice(lower, upper, step, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    tp = astmodulestate_global->ExtSlice_type;
-    isinstance = PyObject_IsInstance(obj, tp);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        asdl_seq* dims;
-
-        if (_PyObject_LookupAttr(obj, astmodulestate_global->dims, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"dims\" missing from ExtSlice");
-            return 1;
-        }
-        else {
-            int res;
-            Py_ssize_t len;
-            Py_ssize_t i;
-            if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "ExtSlice field \"dims\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
-                goto failed;
-            }
-            len = PyList_GET_SIZE(tmp);
-            dims = _Py_asdl_seq_new(len, arena);
-            if (dims == NULL) goto failed;
-            for (i = 0; i < len; i++) {
-                slice_ty val;
-                PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
-                Py_INCREF(tmp2);
-                res = obj2ast_slice(tmp2, &val, arena);
-                Py_DECREF(tmp2);
-                if (res != 0) goto failed;
-                if (len != PyList_GET_SIZE(tmp)) {
-                    PyErr_SetString(PyExc_RuntimeError, "ExtSlice field \"dims\" changed size during iteration");
-                    goto failed;
-                }
-                asdl_seq_SET(dims, i, val);
-            }
-            Py_CLEAR(tmp);
-        }
-        *out = ExtSlice(dims, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    tp = astmodulestate_global->Index_type;
-    isinstance = PyObject_IsInstance(obj, tp);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        expr_ty value;
-
-        if (_PyObject_LookupAttr(obj, astmodulestate_global->value, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Index");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_expr(tmp, &value, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Index(value, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-
-    PyErr_Format(PyExc_TypeError, "expected some sort of slice, but got %R", obj);
-    failed:
-    Py_XDECREF(tmp);
     return 1;
 }
 
@@ -10187,6 +10007,10 @@ PyInit__ast(void)
         goto error;
     }
     Py_INCREF(astmodulestate(m)->Tuple_type);
+    if (PyModule_AddObject(m, "Slice", astmodulestate_global->Slice_type) < 0) {
+        goto error;
+    }
+    Py_INCREF(astmodulestate(m)->Slice_type);
     if (PyModule_AddObject(m, "expr_context",
         astmodulestate_global->expr_context_type) < 0) {
         goto error;
@@ -10218,23 +10042,6 @@ PyInit__ast(void)
         goto error;
     }
     Py_INCREF(astmodulestate(m)->Param_type);
-    if (PyModule_AddObject(m, "slice", astmodulestate_global->slice_type) < 0) {
-        goto error;
-    }
-    Py_INCREF(astmodulestate(m)->slice_type);
-    if (PyModule_AddObject(m, "Slice", astmodulestate_global->Slice_type) < 0) {
-        goto error;
-    }
-    Py_INCREF(astmodulestate(m)->Slice_type);
-    if (PyModule_AddObject(m, "ExtSlice", astmodulestate_global->ExtSlice_type)
-        < 0) {
-        goto error;
-    }
-    Py_INCREF(astmodulestate(m)->ExtSlice_type);
-    if (PyModule_AddObject(m, "Index", astmodulestate_global->Index_type) < 0) {
-        goto error;
-    }
-    Py_INCREF(astmodulestate(m)->Index_type);
     if (PyModule_AddObject(m, "boolop", astmodulestate_global->boolop_type) <
         0) {
         goto error;

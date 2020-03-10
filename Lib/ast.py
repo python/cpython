@@ -445,7 +445,7 @@ class NodeTransformer(NodeVisitor):
            def visit_Name(self, node):
                return copy_location(Subscript(
                    value=Name(id='data', ctx=Load()),
-                   slice=Index(value=Str(s=node.id)),
+                   slice=Constant(value=node.id),
                    ctx=node.ctx
                ), node)
 
@@ -552,6 +552,7 @@ _const_types = {
 _const_types_not = {
     Num: (bool,),
 }
+
 _const_node_type_names = {
     bool: 'NameConstant',  # should be before int
     type(None): 'NameConstant',
@@ -562,6 +563,23 @@ _const_node_type_names = {
     bytes: 'Bytes',
     type(...): 'Ellipsis',
 }
+
+class Index(AST):
+    def __new__(cls, value, **kwargs):
+        return value
+
+class ExtSlice(AST):
+    def __new__(cls, dims=(), **kwargs):
+        return Tuple(list(dims), Load(), **kwargs)
+
+def _dims_getter(self):
+    return self.elts
+
+def _dims_setter(self, value):
+    self.elts = value
+
+Tuple.dims = property(_dims_getter, _dims_setter)
+
 
 # Large float and imaginary literals get turned into infinities in the AST.
 # We unparse those infinities to INFSTR.
@@ -1268,10 +1286,8 @@ class _Unparser(NodeVisitor):
         self.set_precedence(_Precedence.ATOM, node.value)
         self.traverse(node.value)
         with self.delimit("[", "]"):
-            if (isinstance(node.slice, Index)
-                    and isinstance(node.slice.value, Tuple)
-                    and node.slice.value.elts):
-                self.items_view(self.traverse, node.slice.value.elts)
+            if isinstance(node.slice, Tuple) and node.slice.elts:
+                self.items_view(self.traverse, node.slice.elts)
             else:
                 self.traverse(node.slice)
 
@@ -1283,10 +1299,6 @@ class _Unparser(NodeVisitor):
     def visit_Ellipsis(self, node):
         self.write("...")
 
-    def visit_Index(self, node):
-        self.set_precedence(_Precedence.TUPLE, node.value)
-        self.traverse(node.value)
-
     def visit_Slice(self, node):
         if node.lower:
             self.traverse(node.lower)
@@ -1296,9 +1308,6 @@ class _Unparser(NodeVisitor):
         if node.step:
             self.write(":")
             self.traverse(node.step)
-
-    def visit_ExtSlice(self, node):
-        self.items_view(self.traverse, node.dims)
 
     def visit_arg(self, node):
         self.write(node.arg)

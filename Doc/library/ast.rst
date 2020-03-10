@@ -120,12 +120,25 @@ Node classes
 
    Class :class:`ast.Constant` is now used for all constants.
 
+.. versionchanged:: 3.9
+
+   Simple indices are represented by their value, extended slices are
+   represented as tuples.
+
 .. deprecated:: 3.8
 
    Old classes :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
    :class:`ast.NameConstant` and :class:`ast.Ellipsis` are still available,
-   but they will be removed in future Python releases.  In the meanwhile,
+   but they will be removed in future Python releases.  In the meantime,
    instantiating them will return an instance of a different class.
+
+.. deprecated:: 3.9
+
+   Old classes :class:`ast.Index` and :class:`ast.ExtSlice` are still
+   available, but they will be removed in future Python releases.
+   In the meantime, instantiating them will return an instance of
+   a different class.
+
 
 Literals
 ^^^^^^^^
@@ -552,30 +565,33 @@ Subscripting
 
 .. class:: Subscript(value, slice, ctx)
 
-   A subscript, such as ``l[1]``. ``value`` is the object, often a
-   :class:`Name`. ``slice`` is one of :class:`Index`, :class:`Slice` or
-   :class:`ExtSlice`. ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del`
+   A subscript, such as ``l[1]``. ``value`` is the subscripted object
+   (usually sequence or mapping). ``slice`` is an index, slice or key.
+   It can be a :class:`Tuple` and contain a :class:`Slice`.
+   ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del`
    according to the action performed with the subscript.
-
-
-.. class:: Index(value)
-
-   Simple subscripting with a single value
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('l[1]', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('l[1:2, 3]', mode='eval'), indent=4))
         Expression(
             body=Subscript(
                 value=Name(id='l', ctx=Load()),
-                slice=Index(
-                    value=Constant(value=1)),
+                slice=Tuple(
+                    elts=[
+                        Slice(
+                            lower=Constant(value=1),
+                            upper=Constant(value=2)),
+                        Constant(value=3)],
+                    ctx=Load()),
                 ctx=Load()))
 
 
 .. class:: Slice(lower, upper, step)
 
-   Regular slicing (on the form x:y).
+   Regular slicing (on the form ``lower:upper`` or ``lower:upper:step``).
+   Can occur only inside the *slice* field of :class:`Subscript`, either
+   directly or as an element of :class:`Tuple`.
 
    .. doctest::
 
@@ -586,27 +602,6 @@ Subscripting
                 slice=Slice(
                     lower=Constant(value=1),
                     upper=Constant(value=2)),
-                ctx=Load()))
-
-
-.. class:: ExtSlice(dims)
-
-   Advanced slicing. ``dims`` holds a list of :class:`Slice` and
-   :class:`Index` nodes
-
-   .. doctest::
-
-        >>> print(ast.dump(ast.parse('l[1:2, 3]', mode='eval'), indent=4))
-        Expression(
-            body=Subscript(
-                value=Name(id='l', ctx=Load()),
-                slice=ExtSlice(
-                    dims=[
-                        Slice(
-                            lower=Constant(value=1),
-                            upper=Constant(value=2)),
-                        Index(
-                            value=Constant(value=3))]),
                 ctx=Load()))
 
 
@@ -823,8 +818,7 @@ Statements
                 AnnAssign(
                     target=Subscript(
                         value=Name(id='a', ctx=Load()),
-                        slice=Index(
-                            value=Constant(value=1)),
+                        slice=Constant(value=1),
                         ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
                     simple=0)],
@@ -1708,7 +1702,7 @@ and classes for traversing abstract syntax trees:
           def visit_Name(self, node):
               return Subscript(
                   value=Name(id='data', ctx=Load()),
-                  slice=Index(value=Constant(value=node.id)),
+                  slice=Constant(value=node.id),
                   ctx=node.ctx
               ), node)
 
