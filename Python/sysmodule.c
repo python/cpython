@@ -2739,8 +2739,6 @@ err_occurred:
     return _PyStatus_ERR("can't initialize sys module");
 }
 
-#undef SET_SYS_FROM_STRING
-
 /* Updating the sys namespace, returning integer error codes */
 #define SET_SYS_FROM_STRING_INT_RESULT(key, value)         \
     do {                                                   \
@@ -2844,6 +2842,13 @@ _PySys_InitMain(PyThreadState *tstate)
     SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
     SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
     SET_SYS_FROM_WSTR("base_exec_prefix", config->base_exec_prefix);
+    {
+        PyObject *str = PyUnicode_FromString(PLATLIBDIR);
+        if (str == NULL) {
+            return -1;
+        }
+        SET_SYS_FROM_STRING("platlibdir", str);
+    }
 
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
@@ -2863,6 +2868,7 @@ _PySys_InitMain(PyThreadState *tstate)
 
 #undef COPY_LIST
 #undef SET_SYS_FROM_WSTR
+
 
     /* Set flags to their final values */
     SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(tstate));
@@ -2897,6 +2903,7 @@ err_occurred:
     return -1;
 }
 
+#undef SET_SYS_FROM_STRING
 #undef SET_SYS_FROM_STRING_BORROW
 #undef SET_SYS_FROM_STRING_INT_RESULT
 

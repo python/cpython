@@ -4723,12 +4723,36 @@ else
   LIBPYTHON=''
 fi
 
+
+# Check for --with-libdir-name
+# /usr/$LIDIRNAME/python$VERSION
+AC_SUBST(PLATLIBDIR)
+PLATLIBDIR="lib"
+AC_MSG_CHECKING(for --with-platlibdir)
+AC_ARG_WITH(platlibdir,
+            AS_HELP_STRING([--with-platlibdir=DIRNAME],
+            [Python library directory name (default is "lib")]),
+[
+# ignore 3 options:
+#   --with-platlibdir
+#   --with-platlibdir=
+#   --without-platlibdir
+if test -n "$withval" -a "$withval" != yes -a "$withval" != no
+then
+  AC_MSG_RESULT(yes)
+  PLATLIBDIR="$withval"
+else
+  AC_MSG_RESULT(no)
+fi],
+[AC_MSG_RESULT(no)])
+
+
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST(PY_ENABLE_SHARED)
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 AC_SUBST(LIBPL)
 
