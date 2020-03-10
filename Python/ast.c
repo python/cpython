@@ -40,31 +40,6 @@ validate_comprehension(asdl_seq *gens)
 }
 
 static int
-validate_slice(slice_ty slice)
-{
-    switch (slice->kind) {
-    case Slice_kind:
-        return (!slice->v.Slice.lower || validate_expr(slice->v.Slice.lower, Load)) &&
-            (!slice->v.Slice.upper || validate_expr(slice->v.Slice.upper, Load)) &&
-            (!slice->v.Slice.step || validate_expr(slice->v.Slice.step, Load));
-    case ExtSlice_kind: {
-        Py_ssize_t i;
-        if (!validate_nonempty_seq(slice->v.ExtSlice.dims, "dims", "ExtSlice"))
-            return 0;
-        for (i = 0; i < asdl_seq_LEN(slice->v.ExtSlice.dims); i++)
-            if (!validate_slice(asdl_seq_GET(slice->v.ExtSlice.dims, i)))
-                return 0;
-        return 1;
-    }
-    case Index_kind:
-        return validate_expr(slice->v.Index.value, Load);
-    default:
-        PyErr_SetString(PyExc_SystemError, "unknown slice node");
-        return 0;
-    }
-}
-
-static int
 validate_keywords(asdl_seq *keywords)
 {
     Py_ssize_t i;
@@ -309,10 +284,14 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
     case Attribute_kind:
         return validate_expr(exp->v.Attribute.value, Load);
     case Subscript_kind:
-        return validate_slice(exp->v.Subscript.slice) &&
+        return validate_expr(exp->v.Subscript.slice, Load) &&
             validate_expr(exp->v.Subscript.value, Load);
     case Starred_kind:
         return validate_expr(exp->v.Starred.value, ctx);
+    case Slice_kind:
+        return (!exp->v.Slice.lower || validate_expr(exp->v.Slice.lower, Load)) &&
+            (!exp->v.Slice.upper || validate_expr(exp->v.Slice.upper, Load)) &&
+            (!exp->v.Slice.step || validate_expr(exp->v.Slice.step, Load));
     case List_kind:
         return validate_exprs(exp->v.List.elts, ctx, 0);
     case Tuple_kind:
@@ -2471,7 +2450,7 @@ ast_for_atom(struct compiling *c, const node *n)
     }
 }
 
-static slice_ty
+static expr_ty
 ast_for_slice(struct compiling *c, const node *n)
 {
     node *ch;
@@ -2485,13 +2464,7 @@ ast_for_slice(struct compiling *c, const node *n)
     */
     ch = CHILD(n, 0);
     if (NCH(n) == 1 && TYPE(ch) == test) {
-        /* 'step' variable hold no significance in terms of being used over
-           other vars */
-        step = ast_for_expr(c, ch);
-        if (!step)
-            return NULL;
-
-        return Index(step, c->c_arena);
+        return ast_for_expr(c, ch);
     }
 
     if (TYPE(ch) == test) {
@@ -2533,7 +2506,8 @@ ast_for_slice(struct compiling *c, const node *n)
         }
     }
 
-    return Slice(lower, upper, step, c->c_arena);
+    return Slice(lower, upper, step, LINENO(n), n->n_col_offset,
+                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
 static expr_ty
@@ -2621,7 +2595,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr, const nod
         REQ(CHILD(n, 2), RSQB);
         n = CHILD(n, 1);
         if (NCH(n) == 1) {
-            slice_ty slc = ast_for_slice(c, CHILD(n, 0));
+            expr_ty slc = ast_for_slice(c, CHILD(n, 0));
             if (!slc)
                 return NULL;
             return Subscript(left_expr, slc, Load, LINENO(start), start->n_col_offset,
@@ -2629,47 +2603,27 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr, const nod
                              c->c_arena);
         }
         else {
-            /* The grammar is ambiguous here. The ambiguity is resolved
-               by treating the sequence as a tuple literal if there are
-               no slice features.
-            */
-            Py_ssize_t j;
-            slice_ty slc;
-            expr_ty e;
-            int simple = 1;
-            asdl_seq *slices, *elts;
-            slices = _Py_asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
-            if (!slices)
+            int j;
+            expr_ty slc, e;
+            asdl_seq *elts;
+            elts = _Py_asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
+            if (!elts)
                 return NULL;
             for (j = 0; j < NCH(n); j += 2) {
                 slc = ast_for_slice(c, CHILD(n, j));
                 if (!slc)
                     return NULL;
-                if (slc->kind != Index_kind)
-                    simple = 0;
-                asdl_seq_SET(slices, j / 2, slc);
-            }
-            if (!simple) {
-                return Subscript(left_expr, ExtSlice(slices, c->c_arena),
-                                 Load, LINENO(start), start->n_col_offset,
-                                 n_copy->n_end_lineno, n_copy->n_end_col_offset, c->c_arena);
-            }
-            /* extract Index values and put them in a Tuple */
-            elts = _Py_asdl_seq_new(asdl_seq_LEN(slices), c->c_arena);
-            if (!elts)
-                return NULL;
-            for (j = 0; j < asdl_seq_LEN(slices); ++j) {
-                slc = (slice_ty)asdl_seq_GET(slices, j);
-                assert(slc->kind == Index_kind  && slc->v.Index.value);
-                asdl_seq_SET(elts, j, slc->v.Index.value);
+                asdl_seq_SET(elts, j / 2, slc);
             }
             e = Tuple(elts, Load, LINENO(n), n->n_col_offset,
-                      n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                      n->n_end_lineno, n->n_end_col_offset,
+                      c->c_arena);
             if (!e)
                 return NULL;
-            return Subscript(left_expr, Index(e, c->c_arena),
+            return Subscript(left_expr, e,
                              Load, LINENO(start), start->n_col_offset,
-                             n_copy->n_end_lineno, n_copy->n_end_col_offset, c->c_arena);
+                             n_copy->n_end_lineno, n_copy->n_end_col_offset,
+                             c->c_arena);
         }
     }
 }
