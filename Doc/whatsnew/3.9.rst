@@ -519,6 +519,12 @@ Deprecated
 
   (Contributed by Victor Stinner in :issue:`39353`.)
 
+* The :c:func:`PyEval_InitThreads` and :c:func:`PyEval_ThreadsInitialized`
+  functions are now deprecated and will be removed in Python 3.11. Calling
+  :c:func:`PyEval_InitThreads` now does nothing. The :term:`GIL` is initialized
+  by :c:func:`Py_Initialize()` since Python 3.7.
+  (Contributed by Victor Stinner in :issue:`39877`.)
+
 
 Removed
 =======
