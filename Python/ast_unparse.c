@@ -17,7 +17,7 @@ append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
 static int
 append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e);
 static int
-append_ast_slice(_PyUnicodeWriter *writer, slice_ty slice);
+append_ast_slice(_PyUnicodeWriter *writer, expr_ty e);
 
 static int
 append_charp(_PyUnicodeWriter *writer, const char *charp)
@@ -718,54 +718,23 @@ append_ast_attribute(_PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
-append_ast_simple_slice(_PyUnicodeWriter *writer, slice_ty slice)
+append_ast_slice(_PyUnicodeWriter *writer, expr_ty e)
 {
-    if (slice->v.Slice.lower) {
-        APPEND_EXPR(slice->v.Slice.lower, PR_TEST);
+    if (e->v.Slice.lower) {
+        APPEND_EXPR(e->v.Slice.lower, PR_TEST);
     }
 
     APPEND_STR(":");
 
-    if (slice->v.Slice.upper) {
-        APPEND_EXPR(slice->v.Slice.upper, PR_TEST);
+    if (e->v.Slice.upper) {
+        APPEND_EXPR(e->v.Slice.upper, PR_TEST);
     }
 
-    if (slice->v.Slice.step) {
+    if (e->v.Slice.step) {
         APPEND_STR(":");
-        APPEND_EXPR(slice->v.Slice.step, PR_TEST);
+        APPEND_EXPR(e->v.Slice.step, PR_TEST);
     }
     return 0;
-}
-
-static int
-append_ast_ext_slice(_PyUnicodeWriter *writer, slice_ty slice)
-{
-    Py_ssize_t i, dims_count;
-    dims_count = asdl_seq_LEN(slice->v.ExtSlice.dims);
-    for (i = 0; i < dims_count; i++) {
-        APPEND_STR_IF(i > 0, ", ");
-        APPEND(slice, (slice_ty)asdl_seq_GET(slice->v.ExtSlice.dims, i));
-    }
-    APPEND_STR_IF(dims_count == 1, ",");
-    return 0;
-}
-
-static int
-append_ast_slice(_PyUnicodeWriter *writer, slice_ty slice)
-{
-    switch (slice->kind) {
-    case Slice_kind:
-        return append_ast_simple_slice(writer, slice);
-    case ExtSlice_kind:
-        return append_ast_ext_slice(writer, slice);
-    case Index_kind:
-        APPEND_EXPR(slice->v.Index.value, PR_TUPLE);
-        return 0;
-    default:
-        PyErr_SetString(PyExc_SystemError,
-                        "unexpected slice kind");
-        return -1;
-    }
 }
 
 static int
@@ -773,7 +742,7 @@ append_ast_subscript(_PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_EXPR(e->v.Subscript.value, PR_ATOM);
     APPEND_STR("[");
-    APPEND(slice, e->v.Subscript.slice);
+    APPEND_EXPR(e->v.Subscript.slice, PR_TUPLE);
     APPEND_STR_FINISH("]");
 }
 
@@ -878,6 +847,8 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_subscript(writer, e);
     case Starred_kind:
         return append_ast_starred(writer, e);
+    case Slice_kind:
+        return append_ast_slice(writer, e);
     case Name_kind:
         return _PyUnicodeWriter_WriteStr(writer, e->v.Name.id);
     case List_kind:

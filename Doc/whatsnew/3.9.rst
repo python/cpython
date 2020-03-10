@@ -535,6 +535,12 @@ Deprecated
 
   (Contributed by Victor Stinner in :issue:`39353`.)
 
+* :mod:`ast` classes ``Index`` and ``ExtSlice`` are considered deprecated
+  and will be removed in future Python versions.  ``value`` itself should be
+  used instead of ``Index(value)``.  ``Tuple(slices, Load())`` should be
+  used instead of ``ExtSlice(slices)``.
+  (Contributed by Serhiy Storchaka in :issue:`32892`.)
+
 * The :c:func:`PyEval_InitThreads` and :c:func:`PyEval_ThreadsInitialized`
   functions are now deprecated and will be removed in Python 3.11. Calling
   :c:func:`PyEval_InitThreads` now does nothing. The :term:`GIL` is initialized
@@ -667,9 +673,16 @@ Changes in the Python API
   since the *buffering* parameter has been removed.
   (Contributed by Victor Stinner in :issue:`39357`.)
 
+* Simplified AST for subscription. Simple indices will be represented by
+  their value, extended slices will be represented as tuples.
+  ``Index(value)`` will return a ``value`` itself, ``ExtSlice(slices)``
+  will return ``Tuple(slices, Load())``.
+  (Contributed by Serhiy Storchaka in :issue:`34822`.)
+
 * The :mod:`importlib` module now ignores the :envvar:`PYTHONCASEOK`
   environment variable when the :option:`-E` or :option:`-I` command line
   options are being used.
+
 
 CPython bytecode changes
 ------------------------
