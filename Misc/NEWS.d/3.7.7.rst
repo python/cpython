@@ -1,0 +1,19 @@
+.. bpo: 13487
+.. date: 2020-03-04-16-10-59
+.. nonce: gqe4Fb
+.. release date: 2020-03-10
+.. section: Library
+
+Avoid a possible *"RuntimeError: dictionary changed size during iteration"*
+from :func:`inspect.getmodule` when it tried to loop through
+:attr:`sys.modules`.
+
+..
+
+.. bpo: 17422
+.. date: 2020-02-27-17-35-27
+.. nonce: eS1hVh
+.. section: Documentation
+
+The language reference no longer restricts default class namespaces to dicts
+only.
