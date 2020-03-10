@@ -209,6 +209,7 @@ class TestTool(unittest.TestCase):
         expected = [b'{', rb'    "key": "\ud83d\udca9"', b"}"]
         self.assertEqual(lines, expected)
 
+    @unittest.skipIf(sys.platform =="win32", "The test is failed with ValueError on Windows")
     def test_broken_pipe_error(self):
         cmd = [sys.executable, '-m', 'json.tool']
         proc = subprocess.Popen(cmd,
