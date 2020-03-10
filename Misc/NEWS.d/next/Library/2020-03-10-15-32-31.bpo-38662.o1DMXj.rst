@@ -1,0 +1,4 @@
+The ``ensurepip`` module now invokes ``pip`` via the ``runpy`` module.
+Hence it is no longer tightly coupled with the internal API of the bundled
+``pip`` version, allowing easier updates to a newer ``pip`` version both
+internally and for distributors.

@@ -2,6 +2,7 @@ import os
 import os.path
 import pkgutil
 import sys
+import runpy
 import tempfile
 
 
@@ -23,9 +24,18 @@ def _run_pip(args, additional_paths=None):
     if additional_paths is not None:
         sys.path = additional_paths + sys.path
 
-    # Install the bundled software
-    import pip._internal
-    return pip._internal.main(args)
+    # Invoke pip as if it's the main module, and catch the exit.
+    backup_argv = sys.argv[:]
+    sys.argv[1:] = args
+    try:
+        # run_module() alters sys.modules and sys.argv, but restores them at exit
+        runpy.run_module("pip", run_name="__main__", alter_sys=True)
+    except SystemExit as exc:
+        return exc.code
+    finally:
+        sys.argv[:] = backup_argv
+
+    raise SystemError("pip did not exit, this should never happen")
 
 
 def version():
