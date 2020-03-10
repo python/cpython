@@ -1068,11 +1068,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         else:
             ver = sys.version_info
             return [
-                os.path.join(prefix, 'lib',
+                os.path.join(prefix, sys.platlibdir,
                              f'python{ver.major}{ver.minor}.zip'),
-                os.path.join(prefix, 'lib',
+                os.path.join(prefix, sys.platlibdir,
                              f'python{ver.major}.{ver.minor}'),
-                os.path.join(exec_prefix, 'lib',
+                os.path.join(exec_prefix, sys.platlibdir,
                              f'python{ver.major}.{ver.minor}', 'lib-dynload'),
             ]
 
@@ -1183,7 +1183,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             if not MS_WINDOWS:
                 lib_dynload = os.path.join(pyvenv_home,
-                                           'lib',
+                                           sys.platlibdir,
                                            f'python{ver.major}.{ver.minor}',
                                            'lib-dynload')
                 os.makedirs(lib_dynload)
