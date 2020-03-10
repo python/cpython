@@ -154,7 +154,8 @@ Literals
 
         >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
         Expression(
-            body=Constant(value=123))
+            body=Constant(value=123)
+        )
 
 
 .. class:: FormattedValue(value, conversion, format_spec)
@@ -191,18 +192,27 @@ Literals
                     Constant(value='sin('),
                     FormattedValue(
                         value=Name(id='a', ctx=Load()),
-                        conversion=-1),
+                        conversion=-1
+                    ),
                     Constant(value=') is '),
                     FormattedValue(
                         value=Call(
                             func=Name(id='sin', ctx=Load()),
                             args=[
-                                Name(id='a', ctx=Load())],
-                            keywords=[]),
+                                Name(id='a', ctx=Load())
+                            ],
+                            keywords=[]
+                        ),
                         conversion=-1,
                         format_spec=JoinedStr(
                             values=[
-                                Constant(value='.3')]))]))
+                                Constant(value='.3')
+                            ]
+                        )
+                    )
+                ]
+            )
+        )
 
 
 .. class:: List(elts, ctx)
@@ -220,16 +230,23 @@ Literals
                 elts=[
                     Constant(value=1),
                     Constant(value=2),
-                    Constant(value=3)],
-                ctx=Load()))
+                    Constant(value=3)
+                ],
+                ctx=Load()
+            )
+        )
+
         >>> print(ast.dump(ast.parse('(1, 2, 3)', mode='eval'), indent=4))
         Expression(
             body=Tuple(
                 elts=[
                     Constant(value=1),
                     Constant(value=2),
-                    Constant(value=3)],
-                ctx=Load()))
+                    Constant(value=3)
+                ],
+                ctx=Load()
+            )
+        )
 
 
 .. class:: Set(elts)
@@ -244,7 +261,10 @@ Literals
                 elts=[
                     Constant(value=1),
                     Constant(value=2),
-                    Constant(value=3)]))
+                    Constant(value=3)
+                ]
+            )
+        )
 
 
 .. class:: Dict(keys, values)
@@ -264,10 +284,14 @@ Literals
             body=Dict(
                 keys=[
                     Constant(value='a'),
-                    None],
+                    None
+                ],
                 values=[
                     Constant(value=1),
-                    Name(id='d', ctx=Load())]))
+                    Name(id='d', ctx=Load())
+                ]
+            )
+        )
 
 
 Variables
@@ -293,25 +317,36 @@ Variables
         Module(
             body=[
                 Expr(
-                    value=Name(id='a', ctx=Load()))],
-            type_ignores=[])
+                    value=Name(id='a', ctx=Load())
+                )
+            ],
+            type_ignores=[]
+        )
 
         >>> print(ast.dump(ast.parse('a = 1'), indent=4))
         Module(
             body=[
                 Assign(
                     targets=[
-                        Name(id='a', ctx=Store())],
-                    value=Constant(value=1))],
-            type_ignores=[])
+                        Name(id='a', ctx=Store())
+                    ],
+                    value=Constant(value=1)
+                )
+            ],
+            type_ignores=[]
+        )
 
         >>> print(ast.dump(ast.parse('del a'), indent=4))
         Module(
             body=[
                 Delete(
                     targets=[
-                        Name(id='a', ctx=Del())])],
-            type_ignores=[])
+                        Name(id='a', ctx=Del())
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: Starred(value, ctx)
@@ -332,10 +367,17 @@ Variables
                                 Name(id='a', ctx=Store()),
                                 Starred(
                                     value=Name(id='b', ctx=Store()),
-                                    ctx=Store())],
-                            ctx=Store())],
-                    value=Name(id='it', ctx=Load()))],
-            type_ignores=[])
+                                    ctx=Store()
+                                )
+                            ],
+                            ctx=Store()
+                        )
+                    ],
+                    value=Name(id='it', ctx=Load())
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 Expressions
@@ -356,8 +398,12 @@ Expressions
                 Expr(
                     value=UnaryOp(
                         op=USub(),
-                        operand=Name(id='a', ctx=Load())))],
-            type_ignores=[])
+                        operand=Name(id='a', ctx=Load())
+                    )
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: UnaryOp(op, operand)
@@ -380,7 +426,9 @@ Expressions
         Expression(
             body=UnaryOp(
                 op=Not(),
-                operand=Name(id='x', ctx=Load())))
+                operand=Name(id='x', ctx=Load())
+            )
+        )
 
 
 .. class:: BinOp(left, op, right)
@@ -395,7 +443,9 @@ Expressions
             body=BinOp(
                 left=Name(id='x', ctx=Load()),
                 op=Add(),
-                right=Name(id='y', ctx=Load())))
+                right=Name(id='y', ctx=Load())
+            )
+        )
 
 
 .. class:: Add
@@ -432,7 +482,10 @@ Expressions
                 op=Or(),
                 values=[
                     Name(id='x', ctx=Load()),
-                    Name(id='y', ctx=Load())]))
+                    Name(id='y', ctx=Load())
+                ]
+            )
+        )
 
 
 .. class:: And
@@ -455,10 +508,14 @@ Expressions
                 left=Constant(value=1),
                 ops=[
                     LtE(),
-                    Lt()],
+                    Lt()
+                ],
                 comparators=[
                     Name(id='a', ctx=Load()),
-                    Constant(value=10)]))
+                    Constant(value=10)
+                ]
+            )
+        )
 
 
 .. class:: Eq
@@ -497,13 +554,20 @@ Expressions
                     Name(id='a', ctx=Load()),
                     Starred(
                         value=Name(id='d', ctx=Load()),
-                        ctx=Load())],
+                        ctx=Load()
+                    )
+                ],
                 keywords=[
                     keyword(
                         arg='b',
-                        value=Name(id='c', ctx=Load())),
+                        value=Name(id='c', ctx=Load())
+                    ),
                     keyword(
-                        value=Name(id='e', ctx=Load()))]))
+                        value=Name(id='e', ctx=Load())
+                    )
+                ]
+            )
+        )
 
 
 .. class:: keyword(arg, value)
@@ -524,7 +588,9 @@ Expressions
             body=IfExp(
                 test=Name(id='b', ctx=Load()),
                 body=Name(id='a', ctx=Load()),
-                orelse=Name(id='c', ctx=Load())))
+                orelse=Name(id='c', ctx=Load())
+            )
+        )
 
 
 .. class:: Attribute(value, attr, ctx)
@@ -541,7 +607,9 @@ Expressions
             body=Attribute(
                 value=Name(id='snake', ctx=Load()),
                 attr='colour',
-                ctx=Load()))
+                ctx=Load()
+            )
+        )
 
 
 .. class:: NamedExpr(target, value)
@@ -557,7 +625,9 @@ Expressions
         Expression(
             body=NamedExpr(
                 target=Name(id='x', ctx=Store()),
-                value=Constant(value=4)))
+                value=Constant(value=4)
+            )
+        )
 
 
 Subscripting
@@ -581,10 +651,15 @@ Subscripting
                     elts=[
                         Slice(
                             lower=Constant(value=1),
-                            upper=Constant(value=2)),
-                        Constant(value=3)],
-                    ctx=Load()),
-                ctx=Load()))
+                            upper=Constant(value=2)
+                        ),
+                        Constant(value=3)
+                    ],
+                    ctx=Load()
+                ),
+                ctx=Load()
+            )
+        )
 
 
 .. class:: Slice(lower, upper, step)
@@ -601,8 +676,11 @@ Subscripting
                 value=Name(id='l', ctx=Load()),
                 slice=Slice(
                     lower=Constant(value=1),
-                    upper=Constant(value=2)),
-                ctx=Load()))
+                    upper=Constant(value=2)
+                ),
+                ctx=Load()
+            )
+        )
 
 
 Comprehensions
@@ -630,7 +708,11 @@ Comprehensions
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
                         ifs=[],
-                        is_async=0)]))
+                        is_async=0
+                    )
+                ]
+            )
+        )
         >>> print(ast.dump(ast.parse('{x: x**2 for x in numbers}', mode='eval'), indent=4))
         Expression(
             body=DictComp(
@@ -638,13 +720,18 @@ Comprehensions
                 value=BinOp(
                     left=Name(id='x', ctx=Load()),
                     op=Pow(),
-                    right=Constant(value=2)),
+                    right=Constant(value=2)
+                ),
                 generators=[
                     comprehension(
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
                         ifs=[],
-                        is_async=0)]))
+                        is_async=0
+                    )
+                ]
+            )
+        )
         >>> print(ast.dump(ast.parse('{x for x in numbers}', mode='eval'), indent=4))
         Expression(
             body=SetComp(
@@ -654,7 +741,11 @@ Comprehensions
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
                         ifs=[],
-                        is_async=0)]))
+                        is_async=0
+                    )
+                ]
+            )
+        )
 
 
 .. class:: comprehension(target, iter, ifs, is_async)
@@ -676,19 +767,26 @@ Comprehensions
                 elt=Call(
                     func=Name(id='ord', ctx=Load()),
                     args=[
-                        Name(id='c', ctx=Load())],
-                    keywords=[]),
+                        Name(id='c', ctx=Load())
+                    ],
+                    keywords=[]
+                ),
                 generators=[
                     comprehension(
                         target=Name(id='line', ctx=Store()),
                         iter=Name(id='file', ctx=Load()),
                         ifs=[],
-                        is_async=0),
+                        is_async=0
+                    ),
                     comprehension(
                         target=Name(id='c', ctx=Store()),
                         iter=Name(id='line', ctx=Load()),
                         ifs=[],
-                        is_async=0)]))
+                        is_async=0
+                    )
+                ]
+            )
+        )
 
         >>> print(ast.dump(ast.parse('(n**2 for n in it if n>5 if n<10)', mode='eval'),
         ...                indent=4)) # generator comprehension
@@ -697,7 +795,8 @@ Comprehensions
                 elt=BinOp(
                     left=Name(id='n', ctx=Load()),
                     op=Pow(),
-                    right=Constant(value=2)),
+                    right=Constant(value=2)
+                ),
                 generators=[
                     comprehension(
                         target=Name(id='n', ctx=Store()),
@@ -706,16 +805,27 @@ Comprehensions
                             Compare(
                                 left=Name(id='n', ctx=Load()),
                                 ops=[
-                                    Gt()],
+                                    Gt()
+                                ],
                                 comparators=[
-                                    Constant(value=5)]),
+                                    Constant(value=5)
+                                ]
+                            ),
                             Compare(
                                 left=Name(id='n', ctx=Load()),
                                 ops=[
-                                    Lt()],
+                                    Lt()
+                                ],
                                 comparators=[
-                                    Constant(value=10)])],
-                        is_async=0)]))
+                                    Constant(value=10)
+                                ]
+                            )
+                        ],
+                        is_async=0
+                    )
+                ]
+            )
+        )
 
         >>> print(ast.dump(ast.parse('[i async for i in soc]', mode='eval'),
         ...                indent=4)) # Async comprehension
@@ -727,7 +837,11 @@ Comprehensions
                         target=Name(id='i', ctx=Store()),
                         iter=Name(id='soc', ctx=Load()),
                         ifs=[],
-                        is_async=1)]))
+                        is_async=1
+                    )
+                ]
+            )
+        )
 
 Statements
 ^^^^^^^^^^
@@ -752,9 +866,13 @@ Statements
                 Assign(
                     targets=[
                         Name(id='a', ctx=Store()),
-                        Name(id='b', ctx=Store())],
-                    value=Constant(value=1))],
-            type_ignores=[])
+                        Name(id='b', ctx=Store())
+                    ],
+                    value=Constant(value=1)
+                )
+            ],
+            type_ignores=[]
+        )
 
         >>> print(ast.dump(ast.parse('a,b = c'), indent=4)) # Unpacking
         Module(
@@ -764,10 +882,16 @@ Statements
                         Tuple(
                             elts=[
                                 Name(id='a', ctx=Store()),
-                                Name(id='b', ctx=Store())],
-                            ctx=Store())],
-                    value=Name(id='c', ctx=Load()))],
-            type_ignores=[])
+                                Name(id='b', ctx=Store())
+                            ],
+                            ctx=Store()
+                        )
+                    ],
+                    value=Name(id='c', ctx=Load())
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: AnnAssign(target, annotation, value, simple)
@@ -787,8 +911,11 @@ Statements
                 AnnAssign(
                     target=Name(id='c', ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    simple=1)],
-            type_ignores=[])
+                    simple=1
+                )
+            ],
+            type_ignores=[]
+        )
 
         >>> print(ast.dump(ast.parse('(a): int = 1'), indent=4)) # Annotation with parenthesis
         Module(
@@ -797,8 +924,11 @@ Statements
                     target=Name(id='a', ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
                     value=Constant(value=1),
-                    simple=0)],
-            type_ignores=[])
+                    simple=0
+                )
+            ],
+            type_ignores=[]
+        )
 
         >>> print(ast.dump(ast.parse('a.b: int'), indent=4)) # Attribute annotation
         Module(
@@ -807,10 +937,14 @@ Statements
                     target=Attribute(
                         value=Name(id='a', ctx=Load()),
                         attr='b',
-                        ctx=Store()),
+                        ctx=Store()
+                    ),
                     annotation=Name(id='int', ctx=Load()),
-                    simple=0)],
-            type_ignores=[])
+                    simple=0
+                )
+            ],
+            type_ignores=[]
+        )
 
         >>> print(ast.dump(ast.parse('a[1]: int'), indent=4)) # Subscript annotation
         Module(
@@ -819,10 +953,14 @@ Statements
                     target=Subscript(
                         value=Name(id='a', ctx=Load()),
                         slice=Constant(value=1),
-                        ctx=Store()),
+                        ctx=Store()
+                    ),
                     annotation=Name(id='int', ctx=Load()),
-                    simple=0)],
-            type_ignores=[])
+                    simple=0
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: AugAssign(target, op, value)
@@ -843,8 +981,11 @@ Statements
                 AugAssign(
                     target=Name(id='x', ctx=Store()),
                     op=Add(),
-                    value=Constant(value=2))],
-            type_ignores=[])
+                    value=Constant(value=2)
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: Raise(exc, cause)
@@ -860,8 +1001,11 @@ Statements
             body=[
                 Raise(
                     exc=Name(id='x', ctx=Load()),
-                    cause=Name(id='y', ctx=Load()))],
-            type_ignores=[])
+                    cause=Name(id='y', ctx=Load())
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: Assert(test, msg)
@@ -876,8 +1020,11 @@ Statements
             body=[
                 Assert(
                     test=Name(id='x', ctx=Load()),
-                    msg=Name(id='y', ctx=Load()))],
-            type_ignores=[])
+                    msg=Name(id='y', ctx=Load())
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: Delete(targets)
@@ -894,8 +1041,12 @@ Statements
                     targets=[
                         Name(id='x', ctx=Del()),
                         Name(id='y', ctx=Del()),
-                        Name(id='z', ctx=Del())])],
-            type_ignores=[])
+                        Name(id='z', ctx=Del())
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: Pass()
@@ -907,8 +1058,10 @@ Statements
         >>> print(ast.dump(ast.parse('pass'), indent=4))
         Module(
             body=[
-                Pass()],
-            type_ignores=[])
+                Pass()
+            ],
+            type_ignores=[]
+        )
 
 
 Other statements which are only applicable inside functions or loops are
@@ -930,8 +1083,12 @@ Imports
                     names=[
                         alias(name='x'),
                         alias(name='y'),
-                        alias(name='z')])],
-            type_ignores=[])
+                        alias(name='z')
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: ImportFrom(module, names, level)
@@ -951,9 +1108,13 @@ Imports
                     names=[
                         alias(name='x'),
                         alias(name='y'),
-                        alias(name='z')],
-                    level=0)],
-            type_ignores=[])
+                        alias(name='z')
+                    ],
+                    level=0
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: alias(name, asname)
@@ -970,9 +1131,13 @@ Imports
                     module='foo.bar',
                     names=[
                         alias(name='a', asname='b'),
-                        alias(name='c')],
-                    level=2)],
-            type_ignores=[])
+                        alias(name='c')
+                    ],
+                    level=2
+                )
+            ],
+            type_ignores=[]
+        )
 
 Control flow
 ^^^^^^^^^^^^
@@ -1006,17 +1171,28 @@ Control flow
                     test=Name(id='x', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis))],
+                            value=Constant(value=Ellipsis)
+                        )
+                    ],
                     orelse=[
                         If(
                             test=Name(id='y', ctx=Load()),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))],
+                                    value=Constant(value=Ellipsis)
+                                )
+                            ],
                             orelse=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
+                                    value=Constant(value=Ellipsis)
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: For(target, iter, body, orelse, type_comment)
@@ -1046,11 +1222,18 @@ Control flow
                     iter=Name(id='y', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis))],
+                            value=Constant(value=Ellipsis)
+                        )
+                    ],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis))])],
-            type_ignores=[])
+                            value=Constant(value=Ellipsis)
+                        )
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: While(test, body, orelse)
@@ -1060,7 +1243,7 @@ Control flow
 
    .. doctest::
 
-        >> print(ast.dump(ast.parse("""
+        >>> print(ast.dump(ast.parse("""
         ... while x:
         ...    ...
         ... else:
@@ -1072,11 +1255,18 @@ Control flow
                     test=Name(id='x', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis))],
+                            value=Constant(value=Ellipsis)
+                        )
+                    ],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis))])],
-            type_ignores=[])
+                            value=Constant(value=Ellipsis)
+                        )
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: Break
@@ -1104,15 +1294,25 @@ Control flow
                             test=Compare(
                                 left=Name(id='a', ctx=Load()),
                                 ops=[
-                                    Gt()],
+                                    Gt()
+                                ],
                                 comparators=[
-                                    Constant(value=5)]),
+                                    Constant(value=5)
+                                ]
+                            ),
                             body=[
-                                Break()],
+                                Break()
+                            ],
                             orelse=[
-                                Continue()])],
-                    orelse=[])],
-            type_ignores=[])
+                                Continue()
+                            ]
+                        )
+                    ],
+                    orelse=[]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: Try(body, handlers, orelse, finalbody)
@@ -1139,26 +1339,42 @@ Control flow
                 Try(
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis))],
+                            value=Constant(value=Ellipsis)
+                        )
+                    ],
                     handlers=[
                         ExceptHandler(
                             type=Name(id='Exception', ctx=Load()),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))]),
+                                    value=Constant(value=Ellipsis)
+                                )
+                            ]
+                        ),
                         ExceptHandler(
                             type=Name(id='OtherException', ctx=Load()),
                             name='e',
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])],
+                                    value=Constant(value=Ellipsis)
+                                )
+                            ]
+                        )
+                    ],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis))],
+                            value=Constant(value=Ellipsis)
+                        )
+                    ],
                     finalbody=[
                         Expr(
-                            value=Constant(value=Ellipsis))])],
-            type_ignores=[])
+                            value=Constant(value=Ellipsis)
+                        )
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: ExceptHandler(type, name, body)
@@ -1184,15 +1400,24 @@ Control flow
                             value=BinOp(
                                 left=Name(id='a', ctx=Load()),
                                 op=Add(),
-                                right=Constant(value=1)))],
+                                right=Constant(value=1)
+                            )
+                        )
+                    ],
                     handlers=[
                         ExceptHandler(
                             type=Name(id='TypeError', ctx=Load()),
                             body=[
-                                Pass()])],
+                                Pass()
+                            ]
+                        )
+                    ],
                     orelse=[],
-                    finalbody=[])],
-            type_ignores=[])
+                    finalbody=[]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: With(items, body, type_comment)
@@ -1224,19 +1449,29 @@ Control flow
                     items=[
                         withitem(
                             context_expr=Name(id='a', ctx=Load()),
-                            optional_vars=Name(id='b', ctx=Store())),
+                            optional_vars=Name(id='b', ctx=Store())
+                        ),
                         withitem(
                             context_expr=Name(id='c', ctx=Load()),
-                            optional_vars=Name(id='d', ctx=Store()))],
+                            optional_vars=Name(id='d', ctx=Store())
+                        )
+                    ],
                     body=[
                         Expr(
                             value=Call(
                                 func=Name(id='something', ctx=Load()),
                                 args=[
                                     Name(id='b', ctx=Load()),
-                                    Name(id='d', ctx=Load())],
-                                keywords=[]))])],
-            type_ignores=[])
+                                    Name(id='d', ctx=Load())
+                                ],
+                                keywords=[]
+                            )
+                        )
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 Function and class definitions
@@ -1274,12 +1509,18 @@ Function and class definitions
                             posonlyargs=[],
                             args=[
                                 arg(arg='x'),
-                                arg(arg='y')],
+                                arg(arg='y')
+                            ],
                             kwonlyargs=[],
                             kw_defaults=[],
-                            defaults=[]),
-                        body=Constant(value=Ellipsis)))],
-            type_ignores=[])
+                            defaults=[]
+                        ),
+                        body=Constant(value=Ellipsis)
+                    )
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg, defaults)
@@ -1323,27 +1564,38 @@ Function and class definitions
                         args=[
                             arg(
                                 arg='a',
-                                annotation=Constant(value='annotation')),
+                                annotation=Constant(value='annotation')
+                            ),
                             arg(arg='b'),
-                            arg(arg='c')],
+                            arg(arg='c')
+                        ],
                         vararg=arg(arg='d'),
                         kwonlyargs=[
                             arg(arg='e'),
-                            arg(arg='f')],
+                            arg(arg='f')
+                        ],
                         kw_defaults=[
                             None,
-                            Constant(value=3)],
+                            Constant(value=3)
+                        ],
                         kwarg=arg(arg='g'),
                         defaults=[
                             Constant(value=1),
-                            Constant(value=2)]),
+                            Constant(value=2)
+                        ]
+                    ),
                     body=[
-                        Pass()],
+                        Pass()
+                    ],
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
-                        Name(id='decorator2', ctx=Load())],
-                    returns=Constant(value='return annotation'))],
-            type_ignores=[])
+                        Name(id='decorator2', ctx=Load())
+                    ],
+                    returns=Constant(value='return annotation')
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: Return(value)
@@ -1356,8 +1608,11 @@ Function and class definitions
         Module(
             body=[
                 Return(
-                    value=Constant(value=4))],
-            type_ignores=[])
+                    value=Constant(value=4)
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: Yield(value)
@@ -1373,16 +1628,24 @@ Function and class definitions
             body=[
                 Expr(
                     value=Yield(
-                        value=Name(id='x', ctx=Load())))],
-            type_ignores=[])
+                        value=Name(id='x', ctx=Load())
+                    )
+                )
+            ],
+            type_ignores=[]
+        )
 
         >>> print(ast.dump(ast.parse('yield from x'), indent=4))
         Module(
             body=[
                 Expr(
                     value=YieldFrom(
-                        value=Name(id='x', ctx=Load())))],
-            type_ignores=[])
+                        value=Name(id='x', ctx=Load())
+                    )
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: Global(names)
@@ -1399,8 +1662,12 @@ Function and class definitions
                     names=[
                         'x',
                         'y',
-                        'z'])],
-            type_ignores=[])
+                        'z'
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
         >>> print(ast.dump(ast.parse('nonlocal x,y,z'), indent=4))
         Module(
@@ -1409,8 +1676,12 @@ Function and class definitions
                     names=[
                         'x',
                         'y',
-                        'z'])],
-            type_ignores=[])
+                        'z'
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
 
 .. class:: ClassDef(name, bases, keywords, starargs, kwargs, body, decorator_list)
@@ -1443,17 +1714,25 @@ Function and class definitions
                     name='Foo',
                     bases=[
                         Name(id='base1', ctx=Load()),
-                        Name(id='base2', ctx=Load())],
+                        Name(id='base2', ctx=Load())
+                    ],
                     keywords=[
                         keyword(
                             arg='metaclass',
-                            value=Name(id='meta', ctx=Load()))],
+                            value=Name(id='meta', ctx=Load())
+                        )
+                    ],
                     body=[
-                        Pass()],
+                        Pass()
+                    ],
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
-                        Name(id='decorator2', ctx=Load())])],
-            type_ignores=[])
+                        Name(id='decorator2', ctx=Load())
+                    ]
+                )
+            ],
+            type_ignores=[]
+        )
 
 Async and await
 ^^^^^^^^^^^^^^^
@@ -1484,16 +1763,24 @@ Async and await
                     args=[],
                     kwonlyargs=[],
                     kw_defaults=[],
-                    defaults=[]),
+                    defaults=[]
+                ),
                 body=[
                     Expr(
                         value=Await(
                             value=Call(
                                 func=Name(id='other_func', ctx=Load()),
                                 args=[],
-                                keywords=[])))],
-                decorator_list=[])],
-        type_ignores=[])
+                                keywords=[]
+                            )
+                        )
+                    )
+                ],
+                decorator_list=[]
+            )
+        ],
+        type_ignores=[]
+    )
 
 
 .. class:: AsyncFor(target, iter, body, orelse, type_comment)

@@ -1,0 +1,2 @@
+:func:`ast.dump` in multi-line mode now outputs closing parenthesis on
+separate lines.
