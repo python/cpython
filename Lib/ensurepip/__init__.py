@@ -38,7 +38,7 @@ def _run_pip(args, additional_paths=None):
     finally:
         sys.argv[:] = backup_argv
 
-    raise SystemError("pip have not exited, that should never happen")
+    raise SystemError("pip did not exit, this should never happen")
 
 
 def version():
