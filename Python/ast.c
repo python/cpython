@@ -727,11 +727,8 @@ num_stmts(const node *n)
                 return l;
             }
         default: {
-            char buf[128];
-
-            sprintf(buf, "Non-statement found: %d %d",
-                    TYPE(n), NCH(n));
-            Py_FatalError(buf);
+            _Py_FatalErrorFormat(__func__, "Non-statement found: %d %d",
+                                 TYPE(n), NCH(n));
         }
     }
     Py_UNREACHABLE();
@@ -1664,7 +1661,7 @@ ast_for_decorator(struct compiling *c, const node *n)
     REQ(n, decorator);
     REQ(CHILD(n, 0), AT);
     REQ(CHILD(n, 2), NEWLINE);
-    
+
     return ast_for_expr(c, CHILD(n, 1));
 }
 
