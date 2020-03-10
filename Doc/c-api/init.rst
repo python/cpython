@@ -842,12 +842,12 @@ code, or when embedding the Python interpreter:
       single: PyEval_SaveThread()
       single: PyEval_RestoreThread()
 
-   Initialize and acquire the global interpreter lock.  It should be called in the
-   main thread before creating a second thread or engaging in any other thread
-   operations such as ``PyEval_ReleaseThread(tstate)``. It is not needed before
-   calling :c:func:`PyEval_SaveThread` or :c:func:`PyEval_RestoreThread`.
+   Deprecated function which does nothing.
 
-   This is a no-op when called for a second time.
+   In Python 3.6 and older, this function created the GIL if it didn't exist.
+
+   .. versionchanged:: 3.9
+      The function now does nothing.
 
    .. versionchanged:: 3.7
       This function is now called by :c:func:`Py_Initialize()`, so you don't
@@ -855,6 +855,8 @@ code, or when embedding the Python interpreter:
 
    .. versionchanged:: 3.2
       This function cannot be called before :c:func:`Py_Initialize()` anymore.
+
+   .. deprecated-removed:: 3.9 3.11
 
    .. index:: module: _thread
 
@@ -867,6 +869,8 @@ code, or when embedding the Python interpreter:
 
    .. versionchanged:: 3.7
       The :term:`GIL` is now initialized by :c:func:`Py_Initialize()`.
+
+   .. deprecated-removed:: 3.9 3.11
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
