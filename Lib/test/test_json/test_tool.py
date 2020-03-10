@@ -1,3 +1,4 @@
+import errno
 import os
 import sys
 import textwrap
@@ -208,13 +209,12 @@ class TestTool(unittest.TestCase):
         expected = [b'{', rb'    "key": "\ud83d\udca9"', b"}"]
         self.assertEqual(lines, expected)
 
-    @unittest.skipIf(sys.platform =="win32", "The test is failed with ValueError on Windows")
     def test_broken_pipe_error(self):
         cmd = [sys.executable, '-m', 'json.tool']
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
                                 stdin=subprocess.PIPE)
+        # bpo-39828: Closing before json.tool attempts to write into stdout.
         proc.stdout.close()
-        proc.communicate(b'"a"')
-        proc.stdin.close()
-        self.assertEqual(proc.returncode, 32)
+        proc.communicate(b'"{}"')
+        self.assertEqual(proc.returncode, errno.EPIPE)
