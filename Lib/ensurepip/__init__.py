@@ -31,9 +31,10 @@ def _run_pip(args, additional_paths=None):
     backup_argv = sys.argv[:]
     sys.argv[1:] = args
     try:
+        # run_module() alters sys.modules and sys.argv, but restore them at exit
         runpy.run_module("pip", run_name="__main__", alter_sys=True)
-    except SystemExit as e:
-        return e.code
+    except SystemExit as exc:
+        return exc.code
     finally:
         sys.argv[:] = backup_argv
 
