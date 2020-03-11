@@ -2209,6 +2209,11 @@ bytes_cutprefix_impl(PyBytesObject *self, Py_buffer *prefix)
                                          self_len - prefix_len);
     }
 
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+
     return PyBytes_FromStringAndSize(self_start, self_len);
 }
 
@@ -2239,6 +2244,11 @@ bytes_cutsuffix_impl(PyBytesObject *self, Py_buffer *suffix)
     {
         return PyBytes_FromStringAndSize(self_start,
                                          self_len - suffix_len);
+    }
+
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
     }
 
     return PyBytes_FromStringAndSize(self_start, self_len);
