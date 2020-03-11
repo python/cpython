@@ -372,6 +372,11 @@ types with context-specific metadata and new ``include_extras`` parameter to
 :func:`typing.get_type_hints` to access the metadata at runtime. (Contributed
 by Till Varoquaux and Konstantin Kashin.)
 
+unicodedata
+-----------
+
+The Unicode database has been updated to version 13.0.0. (:issue:`39926`).
+
 venv
 ----
 
