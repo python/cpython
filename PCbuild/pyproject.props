@@ -215,9 +215,11 @@ public override bool Execute() {
 
     <ItemGroup Condition="$(VCInstallDir) != ''">
       <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" />
+      <_AllRedist Include="$(VCInstallDir)\Redist\**" />
     </ItemGroup>
 
-    <Warning Text="vcruntime14*.dll not found under $(VCInstallDir)" Condition="@(VCRuntimeDLL) == ''" />
+    <Warning Text="vcruntime14*.dll not found under $(VCRedistDir)." Condition="@(VCRuntimeDLL) == ''" />
+    <Message Text="Found @(_AllRedist,'%0A')" Importance="high" Condition="@(VCRuntimeDLL) == ''" />
     <Message Text="VCRuntimeDLL: @(VCRuntimeDLL)" Importance="high" />
   </Target>
 </Project>
