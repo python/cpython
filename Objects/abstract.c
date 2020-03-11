@@ -1931,6 +1931,7 @@ PySequence_Tuple(PyObject *v)
         PyObject *it = PyObject_GetIter(v);
         
         if (it == NULL) {
+            Py_DECREF(result);
             return NULL;
         }
         
@@ -1938,7 +1939,7 @@ PySequence_Tuple(PyObject *v)
         Py_ssize_t j;
         
         // support variable
-        size_t new_n_tmp_1;
+        size_t new_n_tmp;
         
         PyObject *item;
         
@@ -1961,8 +1962,8 @@ PySequence_Tuple(PyObject *v)
                    the excess before the end of this routine.
                    So, grow by ten and then add 25%.
                 */
-                new_n_tmp_1 = newn + 10u;
-                newn = new_n_tmp_1 + (new_n_tmp_1 >> 2);
+                new_n_tmp = newn + 10u;
+                newn = new_n_tmp + (new_n_tmp >> 2);
                 
                 if (newn > PY_SSIZE_T_MAX) {
                     /* Check for overflow */
