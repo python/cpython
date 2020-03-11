@@ -1,3 +1,0 @@
-In the whatsnew section, under the point which mentions the deprecation of getchildren() and getiterator() through bpo-36543, it is suggested to use iter() instead.
-
-Ideally there should be a suggestion to use Element.iter() instead.
