@@ -227,7 +227,7 @@ public override bool Execute() {
     </PropertyGroup>
 
     <Message Text="VC Redist Directory: $(VCRedistDir)" />
-    <Message Text="VC Redist Directory: $(VCToolsRedistVersion)" />
+    <Message Text="VC Redist Version: $(VCToolsRedistVersion)" />
   </Target>
 
   <Target Name="FindVCRuntime" Returns="VCRuntimeDLL" DependsOnTargets="FindVCRedistDir">
