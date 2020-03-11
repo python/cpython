@@ -1060,7 +1060,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             os.environ |= dict_with_bad_key
 
         with self.assertRaises(TypeError):
-            dict_with_bad_val = {1: 'a'}
+            dict_with_bad_val = {'a': 1}
             os.environ |= dict_with_bad_val
 
         # Check nothing was added.
