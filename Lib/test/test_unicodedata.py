@@ -176,7 +176,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertRaises(TypeError, self.db.combining, 'xx')
 
     def test_pr29(self):
-        # http://www.unicode.org/review/pr-29.html
+        # https://www.unicode.org/review/pr-29.html
         # See issues #1054943 and #10254.
         composed = ("\u0b47\u0300\u0b3e", "\u1100\u0300\u1161",
                     'Li\u030dt-s\u1e73\u0301',
