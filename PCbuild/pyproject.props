@@ -199,4 +199,25 @@ public override bool Execute() {
     <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
     <Exec Command='$(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)"' ContinueOnError="false" />
   </Target>
+
+
+  <Target Name="FindVCRuntime" Returns="VCRuntimeDLL">
+    <PropertyGroup Condition="$(PlatformToolset) != 'v140'">
+      <VCRedistDir>$(VCInstallDir)\Redist\MSVC\$(VCToolsRedistVersion)\</VCRedistDir>
+      <VCRedistDir Condition="$(Platform) == 'Win32'">$(VCRedistDir)x86\</VCRedistDir>
+      <VCRedistDir Condition="$(Platform) != 'Win32'">$(VCRedistDir)$(Platform)\</VCRedistDir>
+    </PropertyGroup>
+    <PropertyGroup Condition="$(PlatformToolset) == 'v140'">
+      <VCRedistDir>$(VCInstallDir)\redist\</VCRedistDir>
+      <VCRedistDir Condition="$(Platform) == 'Win32'">$(VCRedistDir)x86\</VCRedistDir>
+      <VCRedistDir Condition="$(Platform) != 'Win32'">$(VCRedistDir)$(Platform)\</VCRedistDir>
+    </PropertyGroup>
+
+    <ItemGroup Condition="$(VCInstallDir) != ''">
+      <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" />
+    </ItemGroup>
+
+    <Error Text="vcruntime14*.dll not found under $(VCInstallDir)" Condition="@(VCRuntimeDLL) == ''" />
+    <Message Text="VCRuntimeDLL: @(VCRuntimeDLL)" Importance="high" />
+  </Target>
 </Project>
