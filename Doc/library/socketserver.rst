@@ -237,7 +237,7 @@ Server Objects
    .. method:: shutdown()
 
       Tell the :meth:`serve_forever` loop to stop and wait until it does.
-      :meth:`shutdown` must be called while :meth:`serve_forever` is running in a 
+      :meth:`shutdown` must be called while :meth:`serve_forever` is running in a
       different thread otherwise it will deadlock.
 
 
