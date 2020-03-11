@@ -692,7 +692,7 @@ class PyBuildExt(build_ext):
         # directories (i.e. '.' and 'Include') must be first.  See issue
         # 10520.
         if not CROSS_COMPILING:
-            add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
+            add_dir_to_list(self.compiler.library_dirs, f'/usr/local/{sys.platlibdir}')
             add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
         # only change this for cross builds for 3.3, issues on Mageia
         if CROSS_COMPILING:
@@ -993,16 +993,17 @@ class PyBuildExt(build_ext):
                 readline_extra_link_args = ()
 
             readline_libs = ['readline']
+            termcap_libdir = f'/usr/{sys.platlibdir}/termcap'
             if readline_termcap_library:
                 pass # Issue 7384: Already linked against curses or tinfo.
             elif curses_library:
                 readline_libs.append(curses_library)
             elif self.compiler.find_library_file(self.lib_dirs +
-                                                     ['/usr/lib/termcap'],
+                                                     [termcap_libdir],
                                                      'termcap'):
                 readline_libs.append('termcap')
             self.add(Extension('readline', ['readline.c'],
-                               library_dirs=['/usr/lib/termcap'],
+                               library_dirs=[termcap_libdir],
                                extra_link_args=readline_extra_link_args,
                                libraries=readline_libs))
         else:

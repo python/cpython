@@ -1,0 +1,2 @@
+setup.py now uses :attr:`sys.platlibdir` to configure the compiler library
+directories and to locate the termcap library.
