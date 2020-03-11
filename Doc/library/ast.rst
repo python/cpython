@@ -316,7 +316,7 @@ and classes for traversing abstract syntax trees:
       class RewriteName(NodeTransformer):
 
           def visit_Name(self, node):
-              return Subscript(
+              return copy_location(Subscript(
                   value=Name(id='data', ctx=Load()),
                   slice=Index(value=Constant(value=node.id)),
                   ctx=node.ctx
