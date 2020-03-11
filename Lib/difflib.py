@@ -148,7 +148,7 @@ class SequenceMatcher:
         Return an upper bound on ratio() very quickly.
     """
 
-    def __init__(self, isjunk=None, a='', b='', autojunk=True):
+    def __init__(self, isjunk=None, a='', b='', autojunk=True, ignorecase=False):
         """Construct a SequenceMatcher.
 
         Optional arg isjunk is None (the default), or a one-argument
@@ -210,6 +210,7 @@ class SequenceMatcher:
         self.isjunk = isjunk
         self.a = self.b = None
         self.autojunk = autojunk
+        self.ignorecase = ignorecase
         self.set_seqs(a, b)
 
     def set_seqs(self, a, b):
@@ -309,6 +310,8 @@ class SequenceMatcher:
         self.b2j = b2j = {}
 
         for i, elt in enumerate(b):
+            if self.ignorecase:
+                elt = elt.lower()
             indices = b2j.setdefault(elt, [])
             indices.append(i)
 
@@ -401,7 +404,10 @@ class SequenceMatcher:
             # b2j has no junk keys, the loop is skipped if a[i] is junk
             j2lenget = j2len.get
             newj2len = {}
-            for j in b2j.get(a[i], nothing):
+            ai = a[i]
+            if self.ignorecase:
+                ai = ai.lower()
+            for j in b2j.get(ai, nothing):
                 # a[i] matches b[j]
                 if j < blo:
                     continue
@@ -657,6 +663,8 @@ class SequenceMatcher:
         if self.fullbcount is None:
             self.fullbcount = fullbcount = {}
             for elt in self.b:
+                if self.ignorecase:
+                    elt = elt.lower()
                 fullbcount[elt] = fullbcount.get(elt, 0) + 1
         fullbcount = self.fullbcount
         # avail[x] is the number of times x appears in 'b' less the
@@ -664,6 +672,8 @@ class SequenceMatcher:
         avail = {}
         availhas, matches = avail.__contains__, 0
         for elt in self.a:
+            if self.ignorecase:
+                elt = elt.lower()
             if availhas(elt):
                 numb = avail[elt]
             else:
@@ -685,7 +695,7 @@ class SequenceMatcher:
         # shorter sequence
         return _calculate_ratio(min(la, lb), la + lb)
 
-def get_close_matches(word, possibilities, n=3, cutoff=0.6):
+def get_close_matches(word, possibilities, n=3, cutoff=0.6, ignorecase=False):
     """Use SequenceMatcher to return list of the best "good enough" matches.
 
     word is a sequence for which close matches are desired (typically a
@@ -719,7 +729,7 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     if not 0.0 <= cutoff <= 1.0:
         raise ValueError("cutoff must be in [0.0, 1.0]: %r" % (cutoff,))
     result = []
-    s = SequenceMatcher()
+    s = SequenceMatcher(ignorecase=ignorecase)
     s.set_seq2(word)
     for x in possibilities:
         s.set_seq1(x)
