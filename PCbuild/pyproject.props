@@ -217,7 +217,7 @@ public override bool Execute() {
       <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" />
     </ItemGroup>
 
-    <Error Text="vcruntime14*.dll not found under $(VCInstallDir)" Condition="@(VCRuntimeDLL) == ''" />
+    <Warning Text="vcruntime14*.dll not found under $(VCInstallDir)" Condition="@(VCRuntimeDLL) == ''" />
     <Message Text="VCRuntimeDLL: @(VCRuntimeDLL)" Importance="high" />
   </Target>
 </Project>
