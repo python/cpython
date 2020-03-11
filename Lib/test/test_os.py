@@ -1056,7 +1056,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test_ior_operator_invalid_dicts(self):
         os_environ_copy = os.environ.copy()
         with self.assertRaises(TypeError):
-            dict_with_bad_key = {'a': 1}
+            dict_with_bad_key = {1: 'a'}
             os.environ |= dict_with_bad_key
 
         with self.assertRaises(TypeError):
