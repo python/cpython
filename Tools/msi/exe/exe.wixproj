@@ -11,9 +11,9 @@
         <SuppressICEs>ICE43</SuppressICEs>
     </PropertyGroup>
     <Import Project="..\msi.props" />
-    <ProprtyGroup Condition="exists('$(BuildPath)vcruntime140_1.dll')">
+    <PropertyGroup Condition="exists('$(BuildPath)vcruntime140_1.dll')">
         <DefineConstants>$(DefineConstants);Include_Vcruntime140_1_dll=1</DefineConstants>
-    </ProprtyGroup>
+    </PropertyGroup>
     <ItemGroup>
         <Compile Include="exe.wxs" />
         <Compile Include="exe_files.wxs" />
