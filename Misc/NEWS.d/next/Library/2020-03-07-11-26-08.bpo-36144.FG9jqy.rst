@@ -1,1 +1,1 @@
-Added :pep:`584` operators to :class:`collections.ChainMap`.
+Added :pep:`584` operators (| and |=) to :class:`collections.ChainMap`.
