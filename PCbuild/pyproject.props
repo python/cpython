@@ -201,25 +201,38 @@ public override bool Execute() {
   </Target>
 
 
-  <Target Name="FindVCRuntime" Returns="VCRuntimeDLL">
-    <PropertyGroup Condition="$(PlatformToolset) != 'v140'">
-      <VCRedistDir>$(VCInstallDir)\Redist\MSVC\$(VCToolsRedistVersion)\</VCRedistDir>
-      <VCRedistDir Condition="$(Platform) == 'Win32'">$(VCRedistDir)x86\</VCRedistDir>
-      <VCRedistDir Condition="$(Platform) != 'Win32'">$(VCRedistDir)$(Platform)\</VCRedistDir>
-    </PropertyGroup>
+  <Target Name="FindVCRedistDir">
+    <!-- Hard coded path for VS 2015 -->
     <PropertyGroup Condition="$(PlatformToolset) == 'v140'">
       <VCRedistDir>$(VCInstallDir)\redist\</VCRedistDir>
+    </PropertyGroup>
+    <!-- Correct variable for VS 2017 and later -->
+    <PropertyGroup Condition="$(VCRedistDir) == '' and $(VCToolsRedistVersion) != ''">
+      <VCRedistDir>$(VCInstallDir)\Redist\MSVC\$(VCToolsRedistVersion)\</VCRedistDir>
+    </PropertyGroup>
+
+    <!-- Search in some broken Build Tools installs -->
+    <ItemGroup Condition="$(VCRedistDir) == ''">
+      <_RedistFiles Include="$(VCInstallDir)\Redist\MSVC\*\*.*" />
+    </ItemGroup>
+    <PropertyGroup Condition="$(VCRedistDir) == ''">
+      <VCRedistDir>%(_RedistFiles.RootDir)%(_RedistFiles.Directory)</VCRedistDir>
+    </PropertyGroup>
+
+    <PropertyGroup>
       <VCRedistDir Condition="$(Platform) == 'Win32'">$(VCRedistDir)x86\</VCRedistDir>
       <VCRedistDir Condition="$(Platform) != 'Win32'">$(VCRedistDir)$(Platform)\</VCRedistDir>
     </PropertyGroup>
 
+    <Message Text="VC Redist Directory: $(VCRedistDir)" />
+  </Target>
+
+  <Target Name="FindVCRuntime" Returns="VCRuntimeDLL" DependsOnTargets="FindVCRedistDir">
     <ItemGroup Condition="$(VCInstallDir) != ''">
       <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" />
-      <_AllRedist Include="$(VCInstallDir)\Redist\**" />
     </ItemGroup>
 
-    <Warning Text="vcruntime14*.dll not found under $(VCRedistDir)." Condition="@(VCRuntimeDLL) == ''" />
-    <Message Text="Found @(_AllRedist,'%0A')" Importance="high" Condition="@(VCRuntimeDLL) == ''" />
-    <Message Text="VCRuntimeDLL: @(VCRuntimeDLL)" Importance="high" />
+    <Warning Text="vcruntime*.dll not found under $(VCRedistDir)." Condition="@(VCRuntimeDLL) == ''" />
+    <Message Text="VC Runtime DLL(s):%0A- @(VCRuntimeDLL,'%0A- ')" />
   </Target>
 </Project>
