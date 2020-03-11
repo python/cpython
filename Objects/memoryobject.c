@@ -1699,7 +1699,9 @@ unpack_single(const char *ptr, const char *fmt)
     case 'l': UNPACK_SINGLE(ld, ptr, long); goto convert_ld;
 
     /* boolean */
-    case '?': UNPACK_SINGLE(ld, ptr, _Bool); goto convert_bool;
+    // memcpy-ing values other than 0 or 1 to a _Bool variable triggers
+    // undefined behavior, so cast from char instead. See bpo-39689.
+    case '?': ld = (_Bool)*ptr; goto convert_bool;
 
     /* unsigned integers */
     case 'H': UNPACK_SINGLE(lu, ptr, unsigned short); goto convert_lu;
