@@ -1026,6 +1026,74 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test_iter_error_when_changing_os_environ_values(self):
         self._test_environ_iteration(os.environ.values())
 
+    def test_or_operator(self):
+        overridden_key = '_test_var_'
+        os.environ[overridden_key] = 'original_value'
+
+        new_vars_dict = {'_a_': '1', '_b_': '2', overridden_key: '3'}
+        expected = os.environ.copy()
+        expected.update(new_vars_dict)
+
+        actual = os.environ | new_vars_dict
+        self.assertDictEqual(expected, actual)
+        self.assertEqual('3', actual[overridden_key])
+
+        new_vars_items = new_vars_dict.items()
+        self.assertIs(NotImplemented, os.environ.__or__(new_vars_items))
+
+    def test_ior_operator(self):
+        overridden_key = '_test_var_'
+        os.environ[overridden_key] = 'original_value'
+
+        new_vars_dict = {'_a_': '1', '_b_': '2', overridden_key: '3'}
+        expected = os.environ.copy()
+        expected.update(new_vars_dict)
+
+        os.environ |= new_vars_dict
+        self.assertEqual(expected, os.environ)
+        self.assertEqual('3', os.environ[overridden_key])
+
+    def test_ior_operator_invalid_dicts(self):
+        os_environ_copy = os.environ.copy()
+        with self.assertRaises(TypeError):
+            dict_with_bad_key = {'a': 1}
+            os.environ |= dict_with_bad_key
+
+        with self.assertRaises(TypeError):
+            dict_with_bad_val = {1: 'a'}
+            os.environ |= dict_with_bad_val
+
+        # Check nothing was added.
+        self.assertEqual(os_environ_copy, os.environ.copy())
+
+    def test_ior_operator_key_value_iterable(self):
+        overridden_key = '_test_var_'
+        os.environ[overridden_key] = 'original_value'
+
+        new_vars_items = (('_a_', '1'), ('_b_', '2'), (overridden_key, '3'))
+        expected = os.environ.copy()
+        expected.update(new_vars_items)
+
+        os.environ |= new_vars_items
+        self.assertEqual(expected, os.environ)
+        self.assertEqual('3', os.environ[overridden_key])
+
+    def test_ror_operator(self):
+        overridden_key = '_test_var_'
+        original_value = 'original_value'
+        os.environ[overridden_key] = original_value
+
+        new_vars_dict = {'_a_': '1', '_b_': '2', overridden_key: '3'}
+        expected = dict(new_vars_dict)
+        expected.update(os.environ)
+
+        actual = new_vars_dict | os.environ
+        self.assertDictEqual(expected, actual)
+        self.assertEqual(original_value, actual[overridden_key])
+
+        new_vars_items = new_vars_dict.items()
+        self.assertIs(NotImplemented, os.environ.__ror__(new_vars_items))
+
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""

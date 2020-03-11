@@ -135,6 +135,9 @@ process and user.
    ``os.environ``, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
 
+   .. versionchanged:: 3.9
+      Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
 
 .. data:: environb
 
@@ -147,6 +150,9 @@ process and user.
    ``True``.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.9
+      Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
 
 
 .. function:: chdir(path)
