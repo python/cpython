@@ -12779,7 +12779,7 @@ unicode_cutprefix_impl(PyObject* self, PyObject* prefix)
     }
     if (match) {
         return PyUnicode_Substring(self, PyUnicode_GET_LENGTH(prefix),
-                                   PyUnicode_GET_LENGTH(self));
+            PyUnicode_GET_LENGTH(self));
     }
     return unicode_result_unchanged(self);
 }
@@ -12806,7 +12806,7 @@ unicode_cutsuffix_impl(PyObject* self, PyObject* suffix)
     }
     if (match) {
         return PyUnicode_Substring(self, 0, PyUnicode_GET_LENGTH(self)
-                                            - PyUnicode_GET_LENGTH(suffix));
+            - PyUnicode_GET_LENGTH(suffix));
     }
     return unicode_result_unchanged(self);
 }
