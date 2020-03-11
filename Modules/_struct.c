@@ -482,9 +482,18 @@ nu_ulonglong(const char *p, const formatdef *f)
 static PyObject *
 nu_bool(const char *p, const formatdef *f)
 {
-    _Bool x;
-    memcpy((char *)&x, p, sizeof x);
-    return PyBool_FromLong(x != 0);
+    /* The usual thing to do here is to memcpy *p to a _Bool variable.
+     * However, that would expose C undefined behavior to Python code:
+     * any bit-patterns except 0 and 1 would trigger UB.
+     * So we instead cast *p from char to _Bool, as in bu_bool.
+     *
+     * We assume, and assert, that sizeof(_Bool) is 1.
+     * We also assume the bit-pattern for (_Bool)0 is the same as for (char)0;
+     * this is covered by tests.
+     * See bpo-39689.
+     */
+    assert(sizeof(_Bool) == sizeof(char));
+    return PyBool_FromLong((_Bool)*p != 0);
 }
 
 

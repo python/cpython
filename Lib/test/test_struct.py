@@ -516,8 +516,18 @@ class StructTest(unittest.TestCase):
                 self.fail("Expected OSError: struct.pack(%r, "
                           "ExplodingBool())" % (prefix + '?'))
 
-        for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
-            self.assertTrue(struct.unpack('>?', c)[0])
+            # To avoid undefined behavior in the C code, we assume that in
+            # every mode, the size is 1, '\x00' is false, and `\x01` is true.
+            # If there is a platform where this is not the case, the unpack
+            # code and the tests below will need adjusting. See bpo-39689.
+
+            self.assertEqual(packedFalse, b'\0' * len(false))
+            self.assertEqual(packedTrue, b'\x01' * len(true))
+
+            self.assertFalse(struct.unpack(prefix + '?', b'\0')[0])
+
+            for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
+                self.assertTrue(struct.unpack(prefix + '?', c)[0])
 
     def test_count_overflow(self):
         hugecount = '{}b'.format(sys.maxsize+1)

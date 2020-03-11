@@ -1,0 +1,3 @@
+The struct module now loads native booleans as ``char`` rather than
+``_Bool`` to avoid triggering undefined behavior. The behavior is the same
+on all supported (tested) platforms.
