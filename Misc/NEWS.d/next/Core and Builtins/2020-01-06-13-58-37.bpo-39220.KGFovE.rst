@@ -1,2 +1,2 @@
-Do not optimise annotations if 'from __future__ import annotations' is used.
+Do not optimize annotations if 'from __future__ import annotations' is used.
 Patch by Pablo Galindo.
