@@ -259,11 +259,11 @@ class TestChainMap(unittest.TestCase):
         # testing proper return types for ChainMap and it's subclasses
         class Subclass(ChainMap):
             pass
- 
+
         class SubclassRor(ChainMap):
             def __ror__(self, other):
                 return super().__ror__(other)
-        
+
         tmp = ChainMap() | ChainMap()
         self.assertIs(type(tmp), ChainMap)
         self.assertIs(type(tmp.maps[0]), dict)
