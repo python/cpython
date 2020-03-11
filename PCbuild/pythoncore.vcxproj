@@ -527,15 +527,7 @@
     <Warning Text="Not including zlib is not a supported configuration." />
   </Target>
 
-  <PropertyGroup>
-    <VCRedistDir>$(VCInstallDir)\Redist\MSVC\$(VCToolsRedistVersion)\</VCRedistDir>
-    <VCRedistDir Condition="$(Platform) == 'Win32'">$(VCRedistDir)x86\</VCRedistDir>
-    <VCRedistDir Condition="$(Platform) != 'Win32'">$(VCRedistDir)$(Platform)\</VCRedistDir>
-  </PropertyGroup>
-  <ItemGroup Condition="$(VCInstallDir) != ''">
-    <VCRuntimeDLL Include="$(VCRedistDir)\**\vcruntime*.dll" />
-  </ItemGroup>
-  <Target Name="_CopyVCRuntime" AfterTargets="Build" Inputs="@(VCRuntimeDLL)" Outputs="$(OutDir)%(Filename)%(Extension)">
+  <Target Name="_CopyVCRuntime" AfterTargets="Build" Inputs="@(VCRuntimeDLL)" Outputs="$(OutDir)%(Filename)%(Extension)" DependsOnTargets="FindVCRuntime">
     <!-- bpo-38597: When we switch to another VCRuntime DLL, include vcruntime140.dll as well -->
     <Warning Text="A copy of vcruntime140.dll is also required" Condition="!$(VCToolsRedistVersion.StartsWith(`14.`))" />
     <Copy SourceFiles="%(VCRuntimeDLL.FullPath)" DestinationFolder="$(OutDir)" />
