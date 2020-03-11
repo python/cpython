@@ -600,7 +600,8 @@ Removed
 
 * Methods ``getchildren()`` and ``getiterator()`` in the
   :mod:`~xml.etree.ElementTree` module have been removed.  They were
-  deprecated in Python 3.2.  Use functions :func:`list` and :func:`iter`
+  deprecated in Python 3.2.  Use functions :func:`list` and
+  :meth:`Element.iter()<xml.etree.ElementTree.Element.iter>`
   instead.  The ``xml.etree.cElementTree`` module has been removed.
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
 
