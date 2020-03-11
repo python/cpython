@@ -206,17 +206,19 @@ public override bool Execute() {
     <PropertyGroup Condition="$(PlatformToolset) == 'v140'">
       <VCRedistDir>$(VCInstallDir)\redist\</VCRedistDir>
     </PropertyGroup>
-    <!-- Correct variable for VS 2017 and later -->
-    <PropertyGroup Condition="$(VCRedistDir) == '' and $(VCToolsRedistVersion) != ''">
-      <VCRedistDir>$(VCInstallDir)\Redist\MSVC\$(VCToolsRedistVersion)\</VCRedistDir>
-    </PropertyGroup>
 
-    <!-- Search in some broken Build Tools installs -->
-    <ItemGroup Condition="$(VCRedistDir) == ''">
+    <!-- Search for version number in some broken Build Tools installs -->
+    <ItemGroup Condition="$(VCRedistDir) == '' and $(VCToolsRedistVersion) == ''">
       <_RedistFiles Include="$(VCInstallDir)\Redist\MSVC\*\*.*" />
     </ItemGroup>
+    <PropertyGroup Condition="$(VCRedistDir) == '' and $(VCToolsRedistVersion) == ''">
+      <_RedistDir>%(_RedistFiles.Directory)</_RedistDir>
+      <VCToolsRedistVersion>$([System.IO.Path]::GetFileName($(_RedistDir.Trim(`\`))))</VCToolsRedistVersion>
+    </PropertyGroup>
+
+    <!-- Use correct path for VS 2017 and later -->
     <PropertyGroup Condition="$(VCRedistDir) == ''">
-      <VCRedistDir>%(_RedistFiles.RootDir)%(_RedistFiles.Directory)</VCRedistDir>
+      <VCRedistDir>$(VCInstallDir)\Redist\MSVC\$(VCToolsRedistVersion)\</VCRedistDir>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -225,6 +227,7 @@ public override bool Execute() {
     </PropertyGroup>
 
     <Message Text="VC Redist Directory: $(VCRedistDir)" />
+    <Message Text="VC Redist Directory: $(VCToolsRedistVersion)" />
   </Target>
 
   <Target Name="FindVCRuntime" Returns="VCRuntimeDLL" DependsOnTargets="FindVCRedistDir">
