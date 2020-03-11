@@ -293,11 +293,7 @@ const unsigned char _Py_ascii_whitespace[] = {
 /*     case 0x000D: * CARRIAGE RETURN */
     0, 1, 1, 1, 1, 1, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
-/*     case 0x001C: * FILE SEPARATOR */
-/*     case 0x001D: * GROUP SEPARATOR */
-/*     case 0x001E: * RECORD SEPARATOR */
-/*     case 0x001F: * UNIT SEPARATOR */
-    0, 0, 0, 0, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0,
 /*     case 0x0020: * SPACE */
     1, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,

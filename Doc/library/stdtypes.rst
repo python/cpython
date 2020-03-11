@@ -1766,10 +1766,13 @@ expression support in the :mod:`re` module).
    Return ``True`` if there are only whitespace characters in the string and there is
    at least one character, ``False`` otherwise.
 
-   A character is *whitespace* if in the Unicode character database
-   (see :mod:`unicodedata`), either its general category is ``Zs``
-   ("Separator, space"), or its bidirectional class is one of ``WS``,
-   ``B``, or ``S``.
+   The whitespace characters are `as defined by Unicode
+   <https://www.unicode.org/reports/tr44/#White_Space>`_.
+
+   .. versionchanged:: 3.9
+      Previously used a different definition of whitespace characters,
+      which included the additional characters ``\x1c``, ``\x1d``,
+      ``\x1e``, and ``\x1f``.
 
 
 .. method:: str.istitle()

@@ -885,6 +885,7 @@ class BaseTest:
         self.checkequal(True, '\t', 'isspace')
         self.checkequal(True, '\r', 'isspace')
         self.checkequal(True, '\n', 'isspace')
+        self.checkequal(False, '\x1c', 'isspace')
         self.checkequal(True, ' \t\r\n', 'isspace')
         self.checkequal(False, ' \t\r\na', 'isspace')
         self.checkraises(TypeError, 'abc', 'isspace', 42)
