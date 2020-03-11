@@ -1064,7 +1064,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             os.environ |= dict_with_bad_val
 
         # Check nothing was added.
-        self.assertEqual(os_environ_copy, os.environ.copy())
+        self.assertEqual(os_environ_copy, os.environ)
 
     def test_ior_operator_key_value_iterable(self):
         overridden_key = '_test_var_'
