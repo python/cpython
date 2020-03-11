@@ -1201,16 +1201,16 @@ static PyObject *
 bytearray_cutprefix_impl(PyByteArrayObject *self, Py_buffer *prefix)
 /*[clinic end generated code: output=21632e315d769b4b input=1848afa62344e091]*/
 {
-    const char* self_start = PyByteArray_AS_STRING(self);
+    const char *self_start = PyByteArray_AS_STRING(self);
     Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
-    const char* prefix_start = prefix->buf;
+    const char *prefix_start = prefix->buf;
     Py_ssize_t prefix_len = prefix->len;
 
     if (self_len >= prefix_len
         && memcmp(self_start, prefix_start, prefix_len) == 0)
     {
         return PyByteArray_FromStringAndSize(self_start + prefix_len,
-            self_len - prefix_len);
+                                             self_len - prefix_len);
     }
 
     return PyByteArray_FromStringAndSize(self_start, self_len);
@@ -1232,9 +1232,9 @@ static PyObject *
 bytearray_cutsuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
 /*[clinic end generated code: output=9862e6f256b4e5a0 input=8f8c10709806b42b]*/
 {
-    const char* self_start = PyByteArray_AS_STRING(self);
+    const char *self_start = PyByteArray_AS_STRING(self);
     Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
-    const char* suffix_start = suffix->buf;
+    const char *suffix_start = suffix->buf;
     Py_ssize_t suffix_len = suffix->len;
 
     if (self_len >= suffix_len
@@ -1242,7 +1242,7 @@ bytearray_cutsuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
             suffix_start, suffix_len) == 0)
     {
         return PyByteArray_FromStringAndSize(self_start,
-            self_len - suffix_len);
+                                             self_len - suffix_len);
     }
 
     return PyByteArray_FromStringAndSize(self_start, self_len);
