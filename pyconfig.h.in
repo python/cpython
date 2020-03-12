@@ -145,6 +145,9 @@
 /* Define to 1 if you have the <conio.h> header file. */
 #undef HAVE_CONIO_H
 
+/* Define to 1 if you have the <copyfile.h> header file. */
+#undef HAVE_COPYFILE_H
+
 /* Define to 1 if you have the `copysign' function. */
 #undef HAVE_COPYSIGN
 
@@ -798,6 +801,9 @@
 
 /* Define to 1 if you have the `pthread_sigmask' function. */
 #undef HAVE_PTHREAD_SIGMASK
+
+/* Define to 1 if you have the `pthread_threadid_np' function. */
+#undef HAVE_PTHREAD_THREADID_NP
 
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H

@@ -1,0 +1,3 @@
+Restored compatibility with Mac OS X 10.4 and 10.5, by disabling
+:func:`threading.get_native_id` and :func:`posix._fcopyfile` when not
+available.

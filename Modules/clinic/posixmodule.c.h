@@ -5021,7 +5021,7 @@ exit:
     return return_value;
 }
 
-#if defined(__APPLE__)
+#if (defined(__APPLE__) && HAVE_COPYFILE_H)
 
 PyDoc_STRVAR(os__fcopyfile__doc__,
 "_fcopyfile($module, in_fd, out_fd, flags, /)\n"
@@ -5079,7 +5079,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(__APPLE__) */
+#endif /* (defined(__APPLE__) && HAVE_COPYFILE_H) */
 
 PyDoc_STRVAR(os_fstat__doc__,
 "fstat($module, /, fd)\n"
@@ -8809,4 +8809,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=5d99f90cead7c0e1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ef32e3ecbf0f610 input=a9049054013a1b77]*/

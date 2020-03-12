@@ -2170,7 +2170,7 @@ dnl AC_MSG_RESULT($cpp_type)
 
 # checks for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
+AC_CHECK_HEADERS(asm/types.h crypt.h conio.h copyfile.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
@@ -3618,7 +3618,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  memrchr mbrtowc mkdirat mkfifo \
  madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
- pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
+ pthread_condattr_setclock pthread_init pthread_kill pthread_threadid_np pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \

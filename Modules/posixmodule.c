@@ -13,12 +13,13 @@
 #ifdef __APPLE__
    /*
     * Step 1 of support for weak-linking a number of symbols existing on
-    * OSX 10.4 and later, see the comment in the #ifdef __APPLE__ block
-    * at the end of this file for more information.
+    * newer OS X versions only, see the comment in the #ifdef __APPLE__
+    * block at the end of this file for more information.
     */
 #  pragma weak lchown
 #  pragma weak statvfs
 #  pragma weak fstatvfs
+#  pragma weak fcopyfile
 
 #endif /* __APPLE__ */
 
@@ -113,7 +114,7 @@ corresponding Unix manual entries for more information on calls.");
 #include <sys/sendfile.h>
 #endif
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && HAVE_COPYFILE_H
 #include <copyfile.h>
 #endif
 
@@ -9370,7 +9371,7 @@ done:
 #endif /* HAVE_SENDFILE */
 
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && HAVE_COPYFILE_H
 /*[clinic input]
 os._fcopyfile
 
@@ -14439,8 +14440,16 @@ all_ins(PyObject *m)
 #endif
 #endif
 
-#if defined(__APPLE__)
-    if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
+#if defined(__APPLE__) && HAVE_COPYFILE_H
+    /*
+     * Include this constant only if the fcopyfile function is available
+     * at runtime. This might not be the case if the runtime OS X version is
+     * older than the SDK version used at build time. For more information,
+     * see the #ifdef __APPLE__ blocks near the start and end of the file.
+     */
+    if (fcopyfile != NULL) {
+        if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
+    }
 #endif
 
 #ifdef MS_WINDOWS
@@ -14738,9 +14747,9 @@ INITFUNC(void)
      * The code below removes functions that are not available on the
      * currently active platform.
      *
-     * This block allow one to use a python binary that was build on
-     * OSX 10.4 on OSX 10.3, without losing access to new APIs on
-     * OSX 10.4.
+     * This block allows one to, for example, use a python binary that
+     * was built on OSX 10.4 on OSX 10.3, without losing access to new
+     * APIs on OSX 10.4.
      */
 #ifdef HAVE_FSTATVFS
     if (fstatvfs == NULL) {
@@ -14765,6 +14774,14 @@ INITFUNC(void)
         }
     }
 #endif /* HAVE_LCHOWN */
+
+#ifdef HAVE_COPYFILE_H
+    if (fcopyfile == NULL) {
+        if (PyObject_DelAttrString(m, "_fcopyfile") == -1) {
+            return NULL;
+        }
+    }
+#endif /* HAVE_COPYFILE_H */
 
 
 #endif /* __APPLE__ */
