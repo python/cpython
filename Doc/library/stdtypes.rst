@@ -2640,12 +2640,13 @@ arbitrary binary data.
 
 .. method:: bytes.cutsuffix(suffix, /)
             bytearray.cutsuffix(suffix, /)
+
    Return a copy of the binary data with the given suffix removed,
    if present. ::
 
       >>> b'BarFooBaz'.cutsuffix(b'Baz')
       b'BarFoo'
-      >>> 'BarFooBaz'.cutsuffix(b'Bar')
+      >>> b'BarFooBaz'.cutsuffix(b'Bar')
       b'BarFooBaz'
 
    The *suffix* may be any :term:`bytes-like object`.
