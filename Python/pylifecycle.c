@@ -65,7 +65,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
-static PyStatus init_set_builtins_open(PyThreadState *tstate);
+static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
 static PyStatus init_signals(PyThreadState *tstate);
 static void call_py_exitfuncs(PyThreadState *tstate);
@@ -1025,7 +1025,7 @@ init_interp_main(PyThreadState *tstate)
         return status;
     }
 
-    status = init_set_builtins_open(tstate);
+    status = init_set_builtins_open();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1888,7 +1888,7 @@ error:
 
 /* Set builtins.open to io.OpenWrapper */
 static PyStatus
-init_set_builtins_open(PyThreadState *tstate)
+init_set_builtins_open(void)
 {
     PyObject *iomod = NULL, *wrapper;
     PyObject *bimod = NULL;
@@ -2056,9 +2056,8 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
    Return 1 if the traceback was displayed, 0 otherwise. */
 
 static int
-_Py_FatalError_PrintExc(int fd)
+_Py_FatalError_PrintExc(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *ferr, *res;
     PyObject *exception, *v, *tb;
     int has_tb;
@@ -2220,7 +2219,7 @@ fatal_error(const char *prefix, const char *msg, int status)
     int has_tstate_and_gil = (tss_tstate != NULL && tss_tstate == tstate);
     if (has_tstate_and_gil) {
         /* If an exception is set, print the exception with its traceback */
-        if (!_Py_FatalError_PrintExc(fd)) {
+        if (!_Py_FatalError_PrintExc(tss_tstate)) {
             /* No exception is set, or an exception is set without traceback */
             _Py_FatalError_DumpTracebacks(fd, interp, tss_tstate);
         }
