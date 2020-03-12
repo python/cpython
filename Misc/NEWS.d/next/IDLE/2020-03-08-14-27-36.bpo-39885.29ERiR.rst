@@ -1,2 +1,2 @@
-Since clicking to get an IDLE context menu moves the cursor,
-any text selection should be and now is cleared.
+When a context menu is invoked by clicking outside of a selection,
+clear the selection and move the cursor.
