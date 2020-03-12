@@ -554,9 +554,8 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
     }
 
     default:
-        PyErr_SetString(PyExc_SystemError,
-                        "Bad call flags in _PyMethodDef_RawFastCallDict. "
-                        "METH_OLDARGS is no longer supported!");
+        PyErr_Format(PyExc_SystemError,
+                     "%s() method: bad call flags", method->ml_name);
         goto exit;
     }
 
@@ -702,9 +701,8 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
     }
 
     default:
-        PyErr_SetString(PyExc_SystemError,
-                        "Bad call flags in _PyMethodDef_RawFastCallKeywords. "
-                        "METH_OLDARGS is no longer supported!");
+        PyErr_Format(PyExc_SystemError,
+                     "%s() method: bad call flags", method->ml_name);
         goto exit;
     }
 
