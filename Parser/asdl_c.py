@@ -957,6 +957,8 @@ static int add_ast_fields(void)
                             (name, name, len(prod.attributes)), 1)
         else:
             self.emit("if (!add_attributes(state->%s_type, NULL, 0)) return 0;" % name, 1)
+        self.emit_defaults(name, prod.fields, 1)
+        self.emit_defaults(name, prod.attributes, 1)
 
     def visitSum(self, sum, name):
         self.emit('state->%s_type = make_type("%s", state->AST_type, NULL, 0);' %
@@ -968,6 +970,7 @@ static int add_ast_fields(void)
                             (name, name, len(sum.attributes)), 1)
         else:
             self.emit("if (!add_attributes(state->%s_type, NULL, 0)) return 0;" % name, 1)
+        self.emit_defaults(name, sum.attributes, 1)
         simple = is_simple(sum)
         for t in sum.types:
             self.visitConstructor(t, name, simple)
@@ -981,11 +984,19 @@ static int add_ast_fields(void)
                             (cons.name, cons.name, name, fields, len(cons.fields)), 1)
         self.emit("if (!state->%s_type) return 0;" % cons.name, 1)
         self.emit_type("%s_type" % cons.name)
+        self.emit_defaults(cons.name, cons.fields, 1)
         if simple:
             self.emit("state->%s_singleton = PyType_GenericNew((PyTypeObject *)"
                       "state->%s_type, NULL, NULL);" %
                              (cons.name, cons.name), 1)
             self.emit("if (!state->%s_singleton) return 0;" % cons.name, 1)
+
+    def emit_defaults(self, name, fields, depth):
+        for field in fields:
+            if field.opt:
+                self.emit('if (PyObject_SetAttr(state->%s_type, state->%s, Py_None) == -1)' %
+                            (name, field.name), depth)
+                self.emit("return 0;", depth+1)
 
 
 class ASTModuleVisitor(PickleVisitor):

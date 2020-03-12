@@ -5695,7 +5695,6 @@ PyInit__ctypes(void)
    ob_type is the metatype (the 'type'), defaults to PyType_Type,
    tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
 */
-    PyEval_InitThreads();
     m = PyModule_Create(&_ctypesmodule);
     if (!m)
         return NULL;

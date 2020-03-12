@@ -3053,6 +3053,8 @@ features:
           for name in dirs:
               os.rmdir(os.path.join(root, name))
 
+   .. audit-event:: os.walk top,topdown,onerror,followlinks os.walk
+
    .. versionchanged:: 3.5
       This function now calls :func:`os.scandir` instead of :func:`os.listdir`,
       making it faster by reducing the number of calls to :func:`os.stat`.
@@ -3111,6 +3113,8 @@ features:
               os.unlink(name, dir_fd=rootfd)
           for name in dirs:
               os.rmdir(name, dir_fd=rootfd)
+
+   .. audit-event:: os.fwalk top,topdown,onerror,follow_symlinks,dir_fd os.fwalk
 
    .. availability:: Unix.
 

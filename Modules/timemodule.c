@@ -1759,52 +1759,78 @@ PyInit_time(void)
 
     /* Set, or reset, module variables like time.timezone */
     if (init_timezone(m) < 0) {
-        return NULL;
+        goto error;
     }
 
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES)
 
 #ifdef CLOCK_REALTIME
-    PyModule_AddIntMacro(m, CLOCK_REALTIME);
+    if (PyModule_AddIntMacro(m, CLOCK_REALTIME) < 0) {
+        goto error;
+    }
 #endif
 #ifdef CLOCK_MONOTONIC
-    PyModule_AddIntMacro(m, CLOCK_MONOTONIC);
+    if (PyModule_AddIntMacro(m, CLOCK_MONOTONIC) < 0) {
+        goto error;
+    }
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
-    PyModule_AddIntMacro(m, CLOCK_MONOTONIC_RAW);
+    if (PyModule_AddIntMacro(m, CLOCK_MONOTONIC_RAW) < 0) {
+        goto error;
+    }
 #endif
 #ifdef CLOCK_HIGHRES
-    PyModule_AddIntMacro(m, CLOCK_HIGHRES);
+    if (PyModule_AddIntMacro(m, CLOCK_HIGHRES) < 0) {
+        goto error;
+    }
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
-    PyModule_AddIntMacro(m, CLOCK_PROCESS_CPUTIME_ID);
+    if (PyModule_AddIntMacro(m, CLOCK_PROCESS_CPUTIME_ID) < 0) {
+        goto error;
+    }
 #endif
 #ifdef CLOCK_THREAD_CPUTIME_ID
-    PyModule_AddIntMacro(m, CLOCK_THREAD_CPUTIME_ID);
+    if (PyModule_AddIntMacro(m, CLOCK_THREAD_CPUTIME_ID) < 0) {
+        goto error;
+    }
 #endif
 #ifdef CLOCK_PROF
-    PyModule_AddIntMacro(m, CLOCK_PROF);
+    if (PyModule_AddIntMacro(m, CLOCK_PROF) < 0) {
+        goto error;
+    }
 #endif
 #ifdef CLOCK_BOOTTIME
-    PyModule_AddIntMacro(m, CLOCK_BOOTTIME);
+    if (PyModule_AddIntMacro(m, CLOCK_BOOTTIME) < 0) {
+        goto error;
+    }
 #endif
 #ifdef CLOCK_UPTIME
-    PyModule_AddIntMacro(m, CLOCK_UPTIME);
+    if (PyModule_AddIntMacro(m, CLOCK_UPTIME) < 0) {
+        goto error;
+    }
 #endif
 #ifdef CLOCK_UPTIME_RAW
-    PyModule_AddIntMacro(m, CLOCK_UPTIME_RAW);
+    if (PyModule_AddIntMacro(m, CLOCK_UPTIME_RAW) < 0) {
+        goto error;
+    }
 #endif
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
 
     if (!initialized) {
         if (PyStructSequence_InitType2(&StructTimeType,
-                                       &struct_time_type_desc) < 0)
-            return NULL;
+                                       &struct_time_type_desc) < 0) {
+            goto error;
+        }
+    }
+    if (PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11)) {
+        goto error;
     }
     Py_INCREF(&StructTimeType);
-    PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11);
-    PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
+    if (PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType)) {
+        Py_DECREF(&StructTimeType);
+        goto error;
+    }
     initialized = 1;
 
 #if defined(__linux__) && !defined(__GLIBC__)
@@ -1814,10 +1840,11 @@ PyInit_time(void)
         utc_string = tm.tm_zone;
 #endif
 
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
 
 /* Implement pysleep() for various platforms.

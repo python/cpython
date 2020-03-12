@@ -572,7 +572,7 @@ future_set_exception(FutureObj *fut, PyObject *exc)
         PyErr_SetString(PyExc_TypeError, "invalid exception object");
         return NULL;
     }
-    if ((PyObject*)Py_TYPE(exc_val) == PyExc_StopIteration) {
+    if (Py_IS_TYPE(exc_val, (PyTypeObject *)PyExc_StopIteration)) {
         Py_DECREF(exc_val);
         PyErr_SetString(PyExc_TypeError,
                         "StopIteration interacts badly with generators "
