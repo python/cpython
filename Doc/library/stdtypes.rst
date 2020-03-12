@@ -1549,6 +1549,35 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
 
+.. method:: str.cutprefix(prefix, /)
+
+   Return a copy of the string with the given prefix removed, if present. ::
+
+      >>> 'BarFooBaz'.cutprefix('Bar')
+      'FooBaz'
+      >>> 'BarFooBaz'.cutprefix('Baz')
+      'BarFooBaz'
+
+   The expression ``s.cutprefix(pre)`` is roughly equivalent to
+   ``s[len(pre):] if s.startswith(pre) else s``.
+
+   .. versionadded:: 3.9
+
+.. method:: str.cutsuffix(suffix, /)
+
+   Return a copy of the string with the given suffix removed, if present. ::
+
+      >>> 'BarFooBaz'.cutsuffix('Baz')
+      'BarFoo'
+      >>> 'BarFooBaz'.cutsuffix('Bar')
+      'BarFooBaz'
+
+   The expression ``s.cutprefix(suf)`` is roughly equivalent to
+   ``s[:len(s)-len(suf)] if s.endswith(suf) else s``.
+
+   .. versionadded:: 3.9
+
+
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
    Return an encoded version of the string as a bytes object. Default encoding
@@ -2589,6 +2618,41 @@ arbitrary binary data.
 
    .. versionchanged:: 3.3
       Also accept an integer in the range 0 to 255 as the subsequence.
+
+
+.. method:: bytes.cutprefix(prefix, /)
+            bytearray.cutprefix(prefix, /)
+
+   Return a copy of the binary data with the given prefix removed,
+   if present. ::
+
+      >>> b'BarFooBaz'.cutprefix(b'Bar')
+      b'FooBaz'
+      >>> b'BarFooBaz'.cutprefix(b'Baz')
+      b'BarFooBaz'
+
+   The *prefix* may be any :term:`bytes-like object`.
+   The expression ``b.cutprefix(pre)`` is roughly equivalent to
+   ``b[len(pre):] if b.startswith(pre) else b``.
+
+   .. versionadded:: 3.9
+
+
+.. method:: bytes.cutsuffix(suffix, /)
+            bytearray.cutsuffix(suffix, /)
+   Return a copy of the binary data with the given suffix removed,
+   if present. ::
+
+      >>> b'BarFooBaz'.cutsuffix(b'Baz')
+      b'BarFoo'
+      >>> 'BarFooBaz'.cutsuffix(b'Bar')
+      b'BarFooBaz'
+
+   The *suffix* may be any :term:`bytes-like object`.
+   The expression ``b.cutsuffix(suf)`` is roughly equivalent to
+   ``b[:len(b)-len(suf)] if b.endswith(suf) else b``.
+
+   .. versionadded:: 3.9
 
 
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
