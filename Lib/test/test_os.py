@@ -1031,7 +1031,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environ[overridden_key] = 'original_value'
 
         new_vars_dict = {'_A_': '1', '_B_': '2', overridden_key: '3'}
-        expected = os.environ.copy()
+        expected = dict(os.environ)
         expected.update(new_vars_dict)
 
         actual = os.environ | new_vars_dict
@@ -1046,7 +1046,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environ[overridden_key] = 'original_value'
 
         new_vars_dict = {'_A_': '1', '_B_': '2', overridden_key: '3'}
-        expected = os.environ.copy()
+        expected = dict(os.environ)
         expected.update(new_vars_dict)
 
         os.environ |= new_vars_dict
@@ -1071,7 +1071,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environ[overridden_key] = 'original_value'
 
         new_vars_items = (('_A_', '1'), ('_B_', '2'), (overridden_key, '3'))
-        expected = os.environ.copy()
+        expected = dict(os.environ)
         expected.update(new_vars_items)
 
         os.environ |= new_vars_items
