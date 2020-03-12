@@ -741,7 +741,7 @@ PyAPI_FUNC(void*) _PyUnicode_AsKind(PyObject *s, unsigned int kind);
    calls to PyBuffer_Release.
 */
 
-PyAPI_FUNC(int) PyUnicode_GetUTF8Buffer(
+PyAPI_FUNC(int) _PyUnicode_GetUTF8Buffer(
     PyObject *unicode,      /* Unicode object */
     const char *errors,     /* error handling */
     Py_buffer *view         /* (out) buffer to the UTF-8 encoding */
@@ -759,12 +759,6 @@ PyAPI_FUNC(int) PyUnicode_GetUTF8Buffer(
 
    _PyUnicode_AsStringAndSize is a #define for PyUnicode_AsUTF8AndSize to
    support the previous internal function with the same behaviour.
-
-   *** This API is for interpreter INTERNAL USE ONLY and will likely
-   *** be removed or changed in the future.
-
-   *** If you need to access the Unicode object as UTF-8 bytes string,
-   *** please use PyUnicode_GetUTF8Buffer() instead.
 */
 
 PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(

@@ -1975,7 +1975,7 @@ unicode_getutf8buffer(PyObject *self, PyObject *args)
     }
 
     Py_buffer buffer;
-    if (PyUnicode_GetUTF8Buffer(unicode, errors, &buffer) < 0) {
+    if (_PyUnicode_GetUTF8Buffer(unicode, errors, &buffer) < 0) {
         return NULL;
     }
 
@@ -1999,8 +1999,8 @@ unicode_test_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     Py_ssize_t refcnt = Py_REFCNT(str);
 
-    // PyUnicode_GetUTF8Buffer() must not fail for ASCII string.
-    int ret = PyUnicode_GetUTF8Buffer(str, NULL,  &buf);
+    // _PyUnicode_GetUTF8Buffer() must not fail for ASCII string.
+    int ret = _PyUnicode_GetUTF8Buffer(str, NULL,  &buf);
     assert(ret == 0);
 
     if (buf.obj != str) {
@@ -2064,11 +2064,11 @@ unicode_test_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
     refcnt = Py_REFCNT(str);
     assert(PyUnicode_GET_LENGTH(str) == 5);
 
-    if (PyUnicode_GetUTF8Buffer(str, NULL,  &buf) < 0) {
+    if (_PyUnicode_GetUTF8Buffer(str, NULL,  &buf) < 0) {
         Py_DECREF(str);
         if (!PyErr_Occurred()) {
             PyErr_Format(TestError,
-                         "PyUnicode_GetUTF8Buffer() returned nonzero "
+                         "_PyUnicode_GetUTF8Buffer() returned nonzero "
                          "without exception set. (%s:%d)",
                          __FILE__, __LINE__);
         }
@@ -2112,11 +2112,11 @@ unicode_test_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
-    if (PyUnicode_GetUTF8Buffer(str, NULL,  &buf) < 0) {
+    if (_PyUnicode_GetUTF8Buffer(str, NULL,  &buf) < 0) {
         Py_DECREF(str);
         if (!PyErr_Occurred()) {
             PyErr_Format(TestError,
-                         "PyUnicode_GetUTF8Buffer() returned nonzero "
+                         "_PyUnicode_GetUTF8Buffer() returned nonzero "
                          "without exception set. (%s:%d)",
                          __FILE__, __LINE__);
         }

@@ -1071,28 +1071,6 @@ These are the UTF-8 codec APIs:
    raised by the codec.
 
 
-.. c:function: int PyUnicode_GetUTF8Buffer(PyObject *unicode, const char errors, Py_buffer *view)
-
-   Get a read-only buffer of the UTF-8 encoding of the Unicode object.
-   Return ``-1`` if an error happened.
-
-   Successful calls to :c:func:`PyUnicode_GetUTF8Buffer` must be paired with
-   calls to :c:func:`PyBuffer_Release`, similar to :c:func:`PyObject_GetBuffer`.
-
-   .. note::
-      When compared to :c:function:`PyUnicode_AsUTF8String`, this function
-      does not create a bytes object when the *unicode* is ASCII string or
-      has UTF-8 cache.
-
-      When compared to :c:function:`PyUnicode_AsUTF8` or
-      :c:function:`PyUnicode_AsUTF8AndSize`, this function does not cache the
-      UTF-8 representation of the string in the *unicode* object.
-      So this API is faster and more efficient when the *unicode* object is
-      not ASCII string and it is encoded into UTF-8 only once.
-
-   .. versionadded:: 3.9
-
-
 .. c:function:: const char* PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *size)
 
    Return a pointer to the UTF-8 encoding of the Unicode object, and

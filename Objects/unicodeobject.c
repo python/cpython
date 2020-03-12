@@ -3992,8 +3992,8 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
 
 
 int
-PyUnicode_GetUTF8Buffer(PyObject *unicode, const char *errors,
-                        Py_buffer *view)
+_PyUnicode_GetUTF8Buffer(PyObject *unicode, const char *errors,
+                         Py_buffer *view)
 {
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();

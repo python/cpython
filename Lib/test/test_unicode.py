@@ -2830,7 +2830,7 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(unicode_asucs4(s, len(s), True), s+'\0')
             self.assertEqual(unicode_asucs4(s, len(s), False), s+'\uffff')
 
-    # Test PyUnicode_GetUTF8Buffer()
+    # Test _PyUnicode_GetUTF8Buffer()
     @support.cpython_only
     def test_getutf8buffer(self):
         from _testcapi import unicode_getutf8buffer, unicode_test_getutf8buffer
