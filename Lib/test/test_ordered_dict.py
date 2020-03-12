@@ -655,7 +655,6 @@ class OrderedDictTests:
         support.check_free_after_iterating(self, lambda d: iter(d.items()), self.OrderedDict)
 
     def test_merge_operator(self):
-
         OrderedDict = self.OrderedDict
 
         a = OrderedDict({0: 0, 1: 1, 2: 1})
@@ -665,7 +664,6 @@ class OrderedDictTests:
         d = a.copy()
         c |= b
         d |= list(b.items())
-
         expected = OrderedDict({0: 0, 1: 1, 2: 2, 3: 3})
         self.assertEqual(a | dict(b), expected)
         self.assertEqual(a | b, expected)
@@ -674,17 +672,13 @@ class OrderedDictTests:
 
         c = b.copy()
         c |= a
-        
         expected = OrderedDict({1: 1, 2: 1, 3: 3, 0: 0})
         self.assertEqual(dict(b) | a, expected)
         self.assertEqual(b | a, expected)
         self.assertEqual(c, expected)
 
         expected = a.copy()
-
         a |= ()
-        self.assertEqual(a, expected)
-
         a |= ""
         self.assertEqual(a, expected)
 
@@ -696,7 +690,6 @@ class OrderedDictTests:
             a | "BAD"
         with self.assertRaises(TypeError):
             a | ""
-
         with self.assertRaises(ValueError):
             a |= "BAD"
 
