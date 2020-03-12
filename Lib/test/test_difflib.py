@@ -60,6 +60,44 @@ class TestAutojunk(unittest.TestCase):
         self.assertAlmostEqual(sm.ratio(), 0.9975, places=3)
         self.assertEqual(sm.bpopular, set())
 
+class TestIgnorecase(unittest.TestCase):
+    """
+    Tests for the ignorecase parameter added to SequenceMatcher in 3.9.
+    When ignorecase=True, SequenceMatcher should consider any equivalent
+    uppercase or lowercase characters in either seq1 or seq2 to be equal.
+    """
+    def test_lowercase_matches_uppercase(self):
+        # seq1 is lowercase, seq2 is uppercase. Check they are deemed equivalent.
+        seq1 = 'apple'
+        seq2 = seq1.upper()
+        sm = difflib.SequenceMatcher(None, seq1, seq2, ignorecase=True)
+        self.assertEqual(sm.quick_ratio(), 1)
+        self.assertEqual(sm.ratio(), 1)
+
+    def test_uppercase_matches_lowercase(self):
+        # seq1 is uppercase, seq2 is lowercase. Check they are deemed equivalent.
+        seq1 = 'APPLE'
+        seq2 = seq1.lower()
+        sm = difflib.SequenceMatcher(None, seq1, seq2, ignorecase=True)
+        self.assertEqual(sm.quick_ratio(), 1)
+        self.assertEqual(sm.ratio(), 1)
+
+    def test_uppercase_does_not_match_lowercase_without_ignorecase(self):
+        # Test that the behaviour with ignorecase=False is that the two strings
+        # are considered inequivalent.
+        seq1 = 'apple'
+        seq2 = 'APPLE'
+        sm = difflib.SequenceMatcher(None, seq1, seq2, ignorecase=False)
+        self.assertEqual(sm.ratio(), 0)
+
+    def test_mixed_case_matches_mixed_case(self):
+        # Test that the same string with each character having the inverse casing of
+        # the other string's character are still considered equivalent when
+        # ignorecase=True
+        seq1 = 'aPPle'
+        seq2 = 'AppLE'
+        sm = difflib.SequenceMatcher(None, seq1, seq2, ignorecase=True)
+        self.assertEqual(sm.ratio(), 1)
 
 class TestSFbugs(unittest.TestCase):
     def test_ratio_for_null_seqn(self):
@@ -505,7 +543,7 @@ def test_main():
     difflib.HtmlDiff._default_prefix = 0
     Doctests = doctest.DocTestSuite(difflib)
     run_unittest(
-        TestWithAscii, TestAutojunk, TestSFpatches, TestSFbugs,
+        TestWithAscii, TestAutojunk, TestIgnorecase, TestSFpatches, TestSFbugs,
         TestOutputFormat, TestBytes, TestJunkAPIs, Doctests)
 
 if __name__ == '__main__':
