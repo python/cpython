@@ -1,0 +1,3 @@
+:c:func:`_PyMethodDef_RawFastCallDict` and
+:c:func:`_PyMethodDef_RawFastCallKeywords` now include the method name in the
+SystemError "bad call flags" error message to ease debug.
