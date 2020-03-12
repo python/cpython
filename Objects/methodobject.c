@@ -57,7 +57,7 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
             break;
         default:
             PyErr_Format(PyExc_SystemError,
-                         "%s method: bad call flags", ml->ml_name);
+                         "%s() method: bad call flags", ml->ml_name);
             return NULL;
     }
 

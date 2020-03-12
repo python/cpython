@@ -889,7 +889,7 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
             break;
         default:
             PyErr_Format(PyExc_SystemError,
-                         "%s method: bad call flags", method->ml_name);
+                         "%s() method: bad call flags", method->ml_name);
             return NULL;
     }
 
