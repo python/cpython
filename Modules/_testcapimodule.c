@@ -5063,6 +5063,19 @@ test_write_unraisable_exc(PyObject *self, PyObject *args)
 }
 
 
+static PyObject*
+pynumber_tobase(PyObject *module, PyObject *args)
+{
+    PyObject *obj;
+    int base;
+    if (!PyArg_ParseTuple(args, "Oi:pynumber_tobase",
+                          &obj, &base)) {
+        return NULL;
+    }
+    return PyNumber_ToBase(obj, base);
+}
+
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
@@ -5309,6 +5322,7 @@ static PyMethodDef TestMethods[] = {
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
+    {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
