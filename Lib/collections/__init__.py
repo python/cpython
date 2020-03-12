@@ -300,7 +300,7 @@ class OrderedDict(dict):
     def __or__(self, other):
         if not isinstance(other, dict):
             return NotImplemented
-        new = self.copy()
+        new = self.__class__(self)
         new.update(other)
         return new
 
