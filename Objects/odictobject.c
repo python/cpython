@@ -855,31 +855,29 @@ static PyMappingMethods odict_as_mapping = {
  * OrderedDict number methods
  */
 
+static int mutablemapping_update_arg(PyObject*, PyObject*);
+
 static PyObject *
 odict_or(PyObject *left, PyObject *right)
 {
+    PyTypeObject *type;
+    PyObject *other;
     if (PyODict_Check(left)) {
-        self = left;
-        other = right
+        type = Py_TYPE(left);
+        other = right;
     }
     else {
-        self = right;
+        type = Py_TYPE(right);
         other = left;
     }
     if (!PyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    PyObject *new;
-    if (PyODict_CheckExact(self)) {
-        new = PyODict_New();
-    }
-    else {
-        new = _PyObject_CallNoArg(Py_TYPE(self));
-    }
+    PyObject *new = PyObject_CallFunctionObjArgs((PyObject*)type, left, NULL);
     if (!new) {
         return NULL;
     }
-    if (mutablemapping_update_arg(new, left) < 0 || mutablemapping_update_arg(new, right) < 0) {
+    if (mutablemapping_update_arg(new, right) < 0) {
         Py_DECREF(new);
         return NULL;
     }
@@ -2247,10 +2245,9 @@ Done:
 static int
 mutablemapping_update_arg(PyObject *self, PyObject *arg)
 {
-    int res;
+    int res = 0;
     if (PyDict_CheckExact(arg)) {
         PyObject *items = PyDict_Items(arg);
-        Py_DECREF(arg);
         if (items == NULL) {
             return -1;
         }
@@ -2261,20 +2258,17 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
     _Py_IDENTIFIER(keys);
     PyObject *func;
     if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
-        Py_DECREF(arg);
         return -1;
     }
     if (func != NULL) {
         PyObject *keys = _PyObject_CallNoArg(func);
         Py_DECREF(func);
         if (keys == NULL) {
-            Py_DECREF(arg);
             return -1;
         }
         PyObject *iterator = PyObject_GetIter(keys);
         Py_DECREF(keys);
         if (iterator == NULL) {
-            Py_DECREF(arg);
             return -1;
         }
         PyObject *key;
@@ -2289,7 +2283,6 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
             }
             Py_DECREF(key);
         }
-        Py_DECREF(arg);
         Py_DECREF(iterator);
         if (res != 0 || PyErr_Occurred()) {
             return -1;
@@ -2297,11 +2290,9 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         return 0;
     }
     if (_PyObject_LookupAttrId(arg, &PyId_items, &func) < 0) {
-        Py_DECREF(arg);
         return -1;
     }
     if (func != NULL) {
-        Py_DECREF(arg);
         PyObject *items = _PyObject_CallNoArg(func);
         Py_DECREF(func);
         if (items == NULL) {
@@ -2312,13 +2303,13 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         return res;
     }
     res = mutablemapping_add_pairs(self, arg);
-    Py_DECREF(arg);
     return res;
 }
 
 static PyObject *
 mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    int res;
     /* first handle args, if any */
     assert(args == NULL || PyTuple_Check(args));
     Py_ssize_t len = (args != NULL) ? PyTuple_GET_SIZE(args) : 0;
@@ -2332,7 +2323,9 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
         PyObject *other = PyTuple_GET_ITEM(args, 0);  /* borrowed reference */
         assert(other != NULL);
         Py_INCREF(other);
-        if (mutablemapping_add_pairs(self, other) < 0) {
+        res = mutablemapping_update_arg(self, other);
+        Py_DECREF(other);
+        if (res < 0) {
             return NULL;
         }
     }
@@ -2343,7 +2336,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
         PyObject *items = PyDict_Items(kwargs);
         if (items == NULL)
             return NULL;
-        int res = mutablemapping_add_pairs(self, items);
+        res = mutablemapping_add_pairs(self, items);
         Py_DECREF(items);
         if (res == -1)
             return NULL;
