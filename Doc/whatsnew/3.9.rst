@@ -356,7 +356,7 @@ running.
 sys
 ---
 
-Add a new :attr:`sys.platlitdir` attribute: name of the platform-specific
+Add a new :attr:`sys.platlibdir` attribute: name of the platform-specific
 library directory. It is used to build the path of platform-specific dynamic
 libraries and the path of the standard library. It is equal to ``"lib"`` on
 most platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit
@@ -407,7 +407,7 @@ Build and C API Changes
 =======================
 
 * Add ``--with-platlibdir`` option to the ``configure`` script: name of the
-  platform-specific library directory, stored in the new :attr:`sys.platlitdir`
+  platform-specific library directory, stored in the new :attr:`sys.platlibdir`
   attribute. See :attr:`sys.platlibdir` attribute for more information.
   (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
 
