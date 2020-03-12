@@ -1203,11 +1203,17 @@ class UserString(_collections_abc.Sequence):
             sub = sub.data
         return self.data.count(sub, start, end)
     def cutprefix(self, prefix, /):
+        if not isinstance(prefix, str):
+            raise TypeError(f"cutprefix() argument must be str, not "
+                            f"{type(prefix)!r}")
         if self.startswith(prefix):
             return self[len(prefix):]
         return self[:]
     def cutsuffix(self, suffix, /):
-        if self.endswith(suffix):
+        if not isinstance(suffix, str):
+            raise TypeError(f"cutsuffix() argument must be str, not "
+                            f"{type(suffix)!r}")
+        if suffix and self.endswith(suffix):
             return self[:len(self)-len(suffix)]
         return self[:]
     def encode(self, encoding='utf-8', errors='strict'):

@@ -698,6 +698,7 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'cutprefix', 42)
         self.checkraises(TypeError, 'hello', 'cutprefix', 42, 'h')
         self.checkraises(TypeError, 'hello', 'cutprefix', 'h', 42)
+        self.checkraises(TypeError, 'hello', 'cutprefix', ("he", "l"))
 
     def test_cutsuffix(self):
         self.checkequal('sp', 'spam', 'cutsuffix', 'am')
@@ -715,6 +716,7 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'cutsuffix', 42)
         self.checkraises(TypeError, 'hello', 'cutsuffix', 42, 'h')
         self.checkraises(TypeError, 'hello', 'cutsuffix', 'h', 42)
+        self.checkraises(TypeError, 'hello', 'cutsuffix', ("lo", "l"))
 
     def test_capitalize(self):
         self.checkequal(' hello ', ' hello ', 'capitalize')
