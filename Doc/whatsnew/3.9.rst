@@ -487,6 +487,10 @@ Build and C API Changes
 
   (Contributed by Victor Stinner in :issue:`38644` and :issue:`39542`.)
 
+* ``PyInterpreterState.eval_frame`` (:pep:`523`) now requires a new mandatory
+  *tstate* parameter (``PyThreadState*``).
+  (Contributed by Victor Stinner in :issue:`38500`.)
+
 
 Deprecated
 ==========
