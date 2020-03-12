@@ -1560,6 +1560,8 @@ expression support in the :mod:`re` module).
 
    The expression ``s.cutprefix(pre)`` is roughly equivalent to
    ``s[len(pre):] if s.startswith(pre) else s``.
+   Unlike :meth:`~str.startswith`, only one prefix can be passed
+   at a time.
 
    .. versionadded:: 3.9
 
@@ -1574,6 +1576,8 @@ expression support in the :mod:`re` module).
 
    The expression ``s.cutprefix(suf)`` is roughly equivalent to
    ``s[:-len(suf)] if suf and s.endswith(suf) else s``.
+   Unlike :meth:`~str.endswith`, only one suffix can be passed
+   at a time.
 
    .. versionadded:: 3.9
 
@@ -2634,6 +2638,8 @@ arbitrary binary data.
    The *prefix* may be any :term:`bytes-like object`.
    The expression ``b.cutprefix(pre)`` is roughly equivalent to
    ``b[len(pre):] if b.startswith(pre) else b[:]``.
+   Unlike :meth:`~bytes.startswith`, only one prefix can be passed
+   at a time.
 
    .. versionadded:: 3.9
 
@@ -2652,6 +2658,8 @@ arbitrary binary data.
    The *suffix* may be any :term:`bytes-like object`.
    The expression ``b.cutsuffix(suf)`` is roughly equivalent to
    ``b[:-len(suf)] if suf and b.endswith(suf) else b[:]``.
+   Unlike :meth:`~bytes.endswith`, only one suffix can be passed
+   at a time.
 
    .. versionadded:: 3.9
 
