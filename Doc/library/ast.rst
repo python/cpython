@@ -308,7 +308,7 @@ and classes for traversing abstract syntax trees:
                   value=Name(id='data', ctx=Load()),
                   slice=Index(value=Constant(value=node.id)),
                   ctx=node.ctx
-              ), node)
+              )
 
    Keep in mind that if the node you're operating on has child nodes you must
    either transform the child nodes yourself or call the :meth:`generic_visit`
