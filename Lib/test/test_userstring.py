@@ -26,6 +26,7 @@ class UserStringTest(
             result,
             realresult
         )
+        self.assertEqual(type(result), type(realresult))
 
     def checkraises(self, exc, obj, methodname, *args):
         obj = self.fixtype(obj)
