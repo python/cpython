@@ -1,1 +1,1 @@
-Added str.cutprefix and str.cutsuffix methods and corresponding bytes and bytearray methods to cut affixes off of a string, if present.
+Added str.cutprefix and str.cutsuffix methods and corresponding bytes and bytearray methods to cut affixes off of a string, if present. Patch by Dennis Sweeney.
