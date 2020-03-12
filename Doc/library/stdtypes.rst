@@ -1864,6 +1864,9 @@ expression support in the :mod:`re` module).
       >>> 'www.example.com'.lstrip('cmowz.')
       'example.com'
 
+   See :meth:`str.cutprefix` for a method that will remove a single prefix
+   string rather than all of a set of characters.
+
 
 .. staticmethod:: str.maketrans(x[, y[, z]])
 
@@ -1944,6 +1947,8 @@ expression support in the :mod:`re` module).
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
 
+   See :meth:`str.cutsuffix` for a method that will remove a single suffix
+   string rather than all of a set of characters.
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2914,7 +2919,9 @@ produce new objects.
       b'example.com'
 
    The binary sequence of byte values to remove may be any
-   :term:`bytes-like object`.
+   :term:`bytes-like object`. See :meth:`~bytes.cutprefix` for a method
+   that will remove a single prefix string rather than all of a set of
+   characters.
 
    .. note::
 
@@ -2963,7 +2970,9 @@ produce new objects.
       b'mississ'
 
    The binary sequence of byte values to remove may be any
-   :term:`bytes-like object`.
+   :term:`bytes-like object`. See :meth:`~bytes.cutsuffix` for a method
+   that will remove a single suffix string rather than all of a set of
+   characters.
 
    .. note::
 
