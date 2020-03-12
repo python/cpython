@@ -56,7 +56,8 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
             vectorcall = cfunction_vectorcall_O;
             break;
         default:
-            PyErr_SetString(PyExc_SystemError, "bad call flags");
+            PyErr_Format(PyExc_SystemError,
+                         "%s() method: bad call flags", ml->ml_name);
             return NULL;
     }
 
