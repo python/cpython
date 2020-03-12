@@ -315,6 +315,20 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
         self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
 
+    def test_pynumber_tobase(self):
+        from _testcapi import pynumber_tobase
+        self.assertEqual(pynumber_tobase(123, 2), '0b1111011')
+        self.assertEqual(pynumber_tobase(123, 8), '0o173')
+        self.assertEqual(pynumber_tobase(123, 10), '123')
+        self.assertEqual(pynumber_tobase(123, 16), '0x7b')
+        self.assertEqual(pynumber_tobase(-123, 2), '-0b1111011')
+        self.assertEqual(pynumber_tobase(-123, 8), '-0o173')
+        self.assertEqual(pynumber_tobase(-123, 10), '-123')
+        self.assertEqual(pynumber_tobase(-123, 16), '-0x7b')
+        self.assertRaises(TypeError, pynumber_tobase, 123.0, 10)
+        self.assertRaises(TypeError, pynumber_tobase, '123', 10)
+        self.assertRaises(SystemError, pynumber_tobase, 123, 0)
+
 
 class TestPendingCalls(unittest.TestCase):
 
