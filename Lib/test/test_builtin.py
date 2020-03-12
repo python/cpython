@@ -397,6 +397,7 @@ class BuiltinTest(unittest.TestCase):
             '''a = [x async for x in arange(2) async for x in arange(2)][1]''',
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
+            '''a = [await asyncio.sleep(0.001, x) async for x in arange(2)][1]'''
         ]
         policy = maybe_get_event_loop_policy()
         try:
