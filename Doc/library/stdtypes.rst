@@ -1573,7 +1573,7 @@ expression support in the :mod:`re` module).
       'BarFooBaz'
 
    The expression ``s.cutprefix(suf)`` is roughly equivalent to
-   ``s[:len(s)-len(suf)] if s.endswith(suf) else s``.
+   ``s[:-len(suf)] if suf and s.endswith(suf) else s``.
 
    .. versionadded:: 3.9
 
@@ -2633,7 +2633,7 @@ arbitrary binary data.
 
    The *prefix* may be any :term:`bytes-like object`.
    The expression ``b.cutprefix(pre)`` is roughly equivalent to
-   ``b[len(pre):] if b.startswith(pre) else b``.
+   ``b[len(pre):] if b.startswith(pre) else b[:]``.
 
    .. versionadded:: 3.9
 
@@ -2651,7 +2651,7 @@ arbitrary binary data.
 
    The *suffix* may be any :term:`bytes-like object`.
    The expression ``b.cutsuffix(suf)`` is roughly equivalent to
-   ``b[:len(b)-len(suf)] if b.endswith(suf) else b``.
+   ``b[:-len(suf)] if suf and b.endswith(suf) else b[:]``.
 
    .. versionadded:: 3.9
 

@@ -2203,6 +2203,7 @@ bytes_cutprefix_impl(PyBytesObject *self, Py_buffer *prefix)
     Py_ssize_t prefix_len = prefix->len;
 
     if (self_len >= prefix_len
+        && prefix_len > 0
         && memcmp(self_start, prefix_start, prefix_len) == 0)
     {
         return PyBytes_FromStringAndSize(self_start + prefix_len,
@@ -2239,6 +2240,7 @@ bytes_cutsuffix_impl(PyBytesObject *self, Py_buffer *suffix)
     Py_ssize_t suffix_len = suffix->len;
 
     if (self_len >= suffix_len
+        && suffix_len > 0
         && memcmp(self_start + self_len - suffix_len,
                   suffix_start, suffix_len) == 0)
     {
