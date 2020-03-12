@@ -1,0 +1,1 @@
+UserString.join() now correctly accepts and returns UserStrings.
