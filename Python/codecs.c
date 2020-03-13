@@ -49,7 +49,8 @@ int PyCodec_Register(PyObject *search_function)
     return -1;
 }
 
-extern int _Py_normalize_encoding(const char *, char *, size_t);
+extern PyObject *
+_Py_normalize_unicode_encoding(const PyObject *);
 
 /* Convert a string to a normalized Python string(decoded from UTF-8): all characters are
    converted to lower case, spaces and hyphens are replaced with underscores. */
@@ -58,27 +59,26 @@ static
 PyObject *normalizestring(const char *string)
 {
     size_t len = strlen(string);
-    char *encoding;
     PyObject *v;
+    PyObject *str;
 
     if (len > PY_SSIZE_T_MAX) {
         PyErr_SetString(PyExc_OverflowError, "string is too large");
         return NULL;
     }
 
-    encoding = PyMem_Malloc(len + 1);
-    if (encoding == NULL)
-        return PyErr_NoMemory();
-
-    if (!_Py_normalize_encoding(string, encoding, len + 1))
+    str = PyUnicode_FromString(string);
+    if (str == NULL) {
+        return NULL;
+    }
+    v = _Py_normalize_unicode_encoding(str);
+    if (!v)
     {
         PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
-        PyMem_Free(encoding);
         return NULL;
     }
 
-    v = PyUnicode_FromString(encoding);
-    PyMem_Free(encoding);
+    Py_DECREF(str);
     return v;
 }
 
