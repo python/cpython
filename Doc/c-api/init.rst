@@ -1064,12 +1064,21 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    :c:func:`PyThreadState_Clear`.
 
 
-   .. c:function:: void PyThreadState_DeleteCurrent()
+.. c:function:: void PyThreadState_DeleteCurrent(void)
 
-    Destroy the current thread state and release the global interpreter lock.
-    Like :c:func:`PyThreadState_Delete`, the global interpreter lock need not
-    be held. The thread state must have been reset with a previous call
-    to :c:func:`PyThreadState_Clear`.
+   Destroy the current thread state and release the global interpreter lock.
+   Like :c:func:`PyThreadState_Delete`, the global interpreter lock need not
+   be held. The thread state must have been reset with a previous call
+   to :c:func:`PyThreadState_Clear`.
+
+
+.. c:function:: PyInterpreterState* PyThreadState_GetInterpreter(PyThreadState *tstate)
+
+   Get the interpreter of the Python thread state *tstate*.
+
+   *tstate* must not be ``NULL``.
+
+   .. versionadded:: 3.9
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)

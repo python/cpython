@@ -998,6 +998,17 @@ PyThreadState_GetDict(void)
 }
 
 
+PyInterpreterState *
+PyThreadState_GetInterpreter(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    if (tstate == NULL) {
+        return NULL;
+    }
+    return tstate->interp;
+}
+
+
 /* Asynchronously raise an exception in a thread.
    Requested by Just van Rossum and Alex Martelli.
    To prevent naive misuse, you must write your own extension
