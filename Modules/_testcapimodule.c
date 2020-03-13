@@ -5,9 +5,11 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
-/* The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
-   define, but we only want to test the public C API, not the internal
-   C API. */
+/* This module tests the public (Include/ and Include/cpython/) C API.
+   The internal C API must not be used here: use _testinternalcapi for that.
+
+   The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
+   macro defined, but only the public C API must be tested here. */
 #undef Py_BUILD_CORE_MODULE
 
 #define PY_SSIZE_T_CLEAN
@@ -4524,15 +4526,6 @@ test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
 }
 
 static PyObject*
-get_recursion_depth(PyObject *self, PyObject *args)
-{
-    PyThreadState *tstate = PyThreadState_Get();
-
-    /* subtract one to ignore the frame of the get_recursion_depth() call */
-    return PyLong_FromLong(tstate->recursion_depth - 1);
-}
-
-static PyObject*
 pymem_buffer_overflow(PyObject *self, PyObject *args)
 {
     char *buffer;
@@ -5486,7 +5479,6 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"PyTime_AsMilliseconds", test_PyTime_AsMilliseconds, METH_VARARGS},
     {"PyTime_AsMicroseconds", test_PyTime_AsMicroseconds, METH_VARARGS},
-    {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"pymem_buffer_overflow", pymem_buffer_overflow, METH_NOARGS},
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
