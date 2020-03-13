@@ -275,6 +275,13 @@ static PyObject *
 unicode_decode_utf8(const char *s, Py_ssize_t size,
                     _Py_error_handler error_handler, const char *errors,
                     Py_ssize_t *consumed);
+static PyObject *
+ascii_upper_or_lower(PyObject *self, int lower);
+static Py_ssize_t
+do_lower(int kind, void *data, Py_ssize_t length, Py_UCS4 *res, Py_UCS4 *maxchar);
+static PyObject *
+case_operation(PyObject *self,
+               Py_ssize_t (*perform)(int, void *, Py_ssize_t, Py_UCS4 *, Py_UCS4 *));
 
 /* List of static strings. */
 static _Py_Identifier *static_strings = NULL;
@@ -3314,45 +3321,130 @@ _Py_normalize_encoding(const char *encoding,
                        char *lower,
                        size_t lower_len)
 {
-    const char *e;
     char *l;
     char *l_end;
     int punct;
+    size_t i;
+    PyObject *str;
+    PyObject *lower_str;
 
     assert(encoding != NULL);
 
-    e = encoding;
+    str = PyUnicode_FromString(encoding);
+    if (str == NULL) {
+        return 0;
+    }
+
+    if (PyUnicode_IS_ASCII(str)) {
+        lower_str = ascii_upper_or_lower(str, 1);
+    }
+    else {
+        lower_str = case_operation(str, do_lower);
+    }
+
+    if (lower_str == NULL) {
+        Py_DECREF(str);
+        return 0;
+    }
+
+    punct = 0;
     l = lower;
     l_end = &lower[lower_len - 1];
-    punct = 0;
-    while (1) {
-        char c = *e;
-        if (c == 0) {
+    for (i = 0; i < lower_len - 1; i++) {
+        const Py_UCS4 ch = PyUnicode_READ_CHAR(lower_str, i);
+        if (ch == 0) {
             break;
         }
 
-        if (Py_ISALNUM(c) || c == '.') {
+        if (Py_UNICODE_ISALNUM(ch) || ch == '.') {
             if (punct && l != lower) {
                 if (l == l_end) {
-                    return 0;
+                    goto exit;
                 }
                 *l++ = '_';
             }
             punct = 0;
 
-            if (l == l_end) {
-                return 0;
+            if(l == l_end) {
+                goto exit;
             }
-            *l++ = Py_TOLOWER(c);
+            *l++ = ch;
         }
         else {
             punct = 1;
         }
-
-        e++;
     }
     *l = '\0';
+    Py_DECREF(str);
+    Py_DECREF(lower_str);
     return 1;
+
+  exit:
+    Py_DECREF(str);
+    Py_DECREF(lower_str);
+    return 0;
+
+}
+
+/* bpo-39337: Normalize an encoding name: similar to _Py_normalize_encoding().
+   Note that encoding names not just ASCII.*/
+PyObject *
+_Py_normalize_unicode_encoding(PyObject *encoding)
+{
+    Py_UCS4 *buffer;
+    int punct;
+    Py_ssize_t i;
+    Py_ssize_t len;
+    Py_ssize_t out;
+    PyObject *lower_str;
+    PyObject *result;
+
+    assert(encoding != NULL);
+
+    len = PyUnicode_GetLength(encoding);
+    buffer = PyMem_NEW(Py_UCS4, len);
+    if (!buffer) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    if (PyUnicode_IS_ASCII(encoding)) {
+        lower_str = ascii_upper_or_lower(encoding, 1);
+    }
+    else {
+        lower_str = case_operation(encoding, do_lower);
+    }
+
+    if (lower_str == NULL) {
+        PyMem_Free(buffer);
+        return NULL;
+    }
+
+    punct = 0;
+    out = 0;
+    for (i = 0; i < len; i++) {
+        Py_UCS4 ch = PyUnicode_READ_CHAR(lower_str, i);
+        if (ch == 0) {
+            break;
+        }
+
+        if (Py_UNICODE_ISALNUM(ch) || ch == '.') {
+            if (punct) {
+                PyUnicode_WRITE(PyUnicode_4BYTE_KIND, buffer, out++, '_');
+            }
+            punct = 0;
+
+            PyUnicode_WRITE(PyUnicode_4BYTE_KIND, buffer, out++, ch);
+        }
+        else {
+            punct = 1;
+        }
+    }
+
+    result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer, out);
+    PyMem_Free(buffer);
+    Py_DECREF(lower_str);
+    return result;
 }
 
 PyObject *
@@ -12414,7 +12506,17 @@ unicode_lower_impl(PyObject *self)
         return NULL;
     if (PyUnicode_IS_ASCII(self))
         return ascii_upper_or_lower(self, 1);
-    return case_operation(self, do_lower);
+    PyObject *lower = case_operation(self, do_lower);
+    Py_ssize_t len = PyUnicode_GetLength(lower);
+    char *l;
+    int i;
+
+    l = PyMem_Malloc(len + 1);
+    i = 0;
+    for (i = 0; i < len; i++) {
+        *l++ = PyUnicode_READ_CHAR(lower, i);
+    }
+    return lower;
 }
 
 #define LEFTSTRIP 0
