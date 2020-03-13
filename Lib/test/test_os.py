@@ -1052,7 +1052,6 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self.assertIs(NotImplemented, os.environ.__or__(new_vars_items))
 
         self._test_underlying_process_env('_A_', '')
-        self._test_underlying_process_env('_B_', '')
         self._test_underlying_process_env(overridden_key, original_value)
 
     def test_ior_operator(self):
@@ -1068,7 +1067,6 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self.assertEqual('3', os.environ[overridden_key])
 
         self._test_underlying_process_env('_A_', '1')
-        self._test_underlying_process_env('_B_', '2')
         self._test_underlying_process_env(overridden_key, '3')
 
     def test_ior_operator_invalid_dicts(self):
@@ -1097,7 +1095,6 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self.assertEqual('3', os.environ[overridden_key])
 
         self._test_underlying_process_env('_A_', '1')
-        self._test_underlying_process_env('_B_', '2')
         self._test_underlying_process_env(overridden_key, '3')
 
     def test_ror_operator(self):
@@ -1117,7 +1114,6 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         self.assertIs(NotImplemented, os.environ.__ror__(new_vars_items))
 
         self._test_underlying_process_env('_A_', '')
-        self._test_underlying_process_env('_B_', '')
         self._test_underlying_process_env(overridden_key, original_value)
 
 
