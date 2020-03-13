@@ -227,8 +227,8 @@ def library_recipes():
     if internalTk():
         result.extend([
           dict(
-              name="Tcl 8.6.8",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.8-src.tar.gz",
+              name="Tcl 8.6.10",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.10-src.tar.gz",
               checksum='81656d3367af032e0ae6157eff134f89',
               buildDir="unix",
               configure_pre=[
@@ -243,11 +243,11 @@ def library_recipes():
                   },
               ),
           dict(
-              name="Tk 8.6.8",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
+              name="Tk 8.6.10",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.10-src.tar.gz",
               checksum='5e0faecba458ee1386078fb228d008ba',
               patches=[
-                  "tk868_on_10_8_10_9.patch",
+                  "tk8610_on_10_8_10_9.patch",
                    ],
               buildDir="unix",
               configure_pre=[
