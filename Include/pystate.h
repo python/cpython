@@ -87,6 +87,11 @@ PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+/* New in 3.9 */
+PyAPI_FUNC(PyInterpreterState *) PyThreadState_GetInterpreter(PyThreadState *tstate);
+#endif
+
 typedef
     enum {PyGILState_LOCKED, PyGILState_UNLOCKED}
         PyGILState_STATE;
