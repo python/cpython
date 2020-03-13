@@ -677,6 +677,10 @@ class OrderedDictTests:
         self.assertEqual(b | a, expected)
         self.assertEqual(c, expected)
 
+        self.assertIs(type(a | b), OrderedDict)
+        self.assertIs(type(dict(a) | b), OrderedDict)
+        self.assertIs(type(a | dict(b)), OrderedDict)
+
         expected = a.copy()
         a |= ()
         a |= ""
