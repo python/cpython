@@ -139,13 +139,8 @@ struct _ts {
 
 };
 
-/* Get the current interpreter state.
-
-   Issue a fatal error if there no current Python thread state or no current
-   interpreter. It cannot return NULL.
-
-   The caller must hold the GIL.*/
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
+// Alias for backward compatibility with Python 3.8
+#define _PyInterpreterState_Get PyInterpreterState_Get
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 
