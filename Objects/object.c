@@ -2116,6 +2116,30 @@ _PyTrash_thread_destroy_chain(void)
 }
 
 
+int
+_PyTrash_begin(PyThreadState *tstate, PyObject *op)
+{
+    if (tstate->trash_delete_nesting >= PyTrash_UNWIND_LEVEL) {
+        /* Store the object (to be deallocated later) and jump past
+         * Py_TRASHCAN_END, skipping the body of the deallocator */
+        _PyTrash_thread_deposit_object(op);
+        return 1;
+    }
+    ++tstate->trash_delete_nesting;
+    return 0;
+}
+
+
+void
+_PyTrash_end(PyThreadState *tstate)
+{
+    --tstate->trash_delete_nesting;
+    if (tstate->trash_delete_later && tstate->trash_delete_nesting <= 0) {
+        _PyTrash_thread_destroy_chain();
+    }
+}
+
+
 void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
                        const char *file, int line, const char *function)
