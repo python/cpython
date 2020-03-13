@@ -1,6 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include <ctype.h>
