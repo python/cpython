@@ -78,17 +78,14 @@ class Lock(_ContextManagerMixin):
         self._waiters = None
         self._locked = False
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_running_loop()
+            if self._loop is None:
+                warnings.warn("The creation of asyncio objects outside a running "
+                              "event loop is deprecated as of Python 3.9.",
+                              DeprecationWarning, stacklevel=2)
+                self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
-
-        if not self._loop.is_running():
-            warnings.warn("The creation of asyncio objects without a running "
-                          "event loop is deprecated as of Python 3.9.",
-                          DeprecationWarning, stacklevel=2)
 
     def __repr__(self):
         res = super().__repr__()
@@ -179,17 +176,14 @@ class Event:
         self._waiters = collections.deque()
         self._value = False
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_running_loop()
+            if self._loop is None:
+                warnings.warn("The creation of asyncio objects outside a running "
+                              "event loop is deprecated as of Python 3.9.",
+                              DeprecationWarning, stacklevel=2)
+                self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
-
-        if not self._loop.is_running():
-            warnings.warn("The creation of asyncio objects without a running "
-                          "event loop is deprecated as of Python 3.9.",
-                          DeprecationWarning, stacklevel=2)
 
     def __repr__(self):
         res = super().__repr__()
@@ -251,17 +245,14 @@ class Condition(_ContextManagerMixin):
 
     def __init__(self, lock=None, *, loop=None):
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_running_loop()
+            if self._loop is None:
+                warnings.warn("The creation of asyncio objects outside a running "
+                              "event loop is deprecated as of Python 3.9.",
+                              DeprecationWarning, stacklevel=2)
+                self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
-
-        if not self._loop.is_running():
-            warnings.warn("The creation of asyncio objects without a running "
-                          "event loop is deprecated as of Python 3.9.",
-                          DeprecationWarning, stacklevel=2)
 
         if lock is None:
             lock = Lock(loop=loop)
@@ -387,17 +378,14 @@ class Semaphore(_ContextManagerMixin):
         self._value = value
         self._waiters = collections.deque()
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_running_loop()
+            if self._loop is None:
+                warnings.warn("The creation of asyncio objects outside a running "
+                              "event loop is deprecated as of Python 3.9.",
+                              DeprecationWarning, stacklevel=2)
+                self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
-
-        if not self._loop.is_running():
-            warnings.warn("The creation of asyncio objects without a running "
-                          "event loop is deprecated as of Python 3.9.",
-                          DeprecationWarning, stacklevel=2)
 
     def __repr__(self):
         res = super().__repr__()

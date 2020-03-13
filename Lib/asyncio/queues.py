@@ -32,18 +32,16 @@ class Queue:
 
     def __init__(self, maxsize=0, *, loop=None):
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_running_loop()
+            if self._loop is None:
+                warnings.warn("The creation of asyncio objects outside a running "
+                              "event loop is deprecated as of Python 3.9.",
+                              DeprecationWarning, stacklevel=2)
+                self._loop = events.get_event_loop()
         else:
             self._loop = loop
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
-        self._maxsize = maxsize
 
-        if not self._loop.is_running():
-            warnings.warn("The creation of asyncio objects without a running "
-                          "event loop is deprecated as of Python 3.9.",
-                          DeprecationWarning, stacklevel=2)
+        self._maxsize = maxsize
 
         # Futures.
         self._getters = collections.deque()
