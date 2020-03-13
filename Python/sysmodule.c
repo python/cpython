@@ -876,7 +876,7 @@ trace_init(void)
 
 
 static PyObject *
-call_trampoline(PyObject* callback,
+call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
     if (PyFrame_FastToLocalsWithError(frame) < 0) {
@@ -889,7 +889,7 @@ call_trampoline(PyObject* callback,
     stack[2] = (arg != NULL) ? arg : Py_None;
 
     /* call the Python-level function */
-    PyObject *result = _PyObject_FastCall(callback, stack, 3);
+    PyObject *result = _PyObject_FastCallTstate(tstate, callback, stack, 3);
 
     PyFrame_LocalsToFast(frame, 1);
     if (result == NULL) {
@@ -903,15 +903,17 @@ static int
 profile_trampoline(PyObject *self, PyFrameObject *frame,
                    int what, PyObject *arg)
 {
-    PyObject *result;
-
-    if (arg == NULL)
+    if (arg == NULL) {
         arg = Py_None;
-    result = call_trampoline(self, frame, what, arg);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *result = call_trampoline(tstate, self, frame, what, arg);
     if (result == NULL) {
-        PyEval_SetProfile(NULL, NULL);
+        _PyEval_SetProfile(tstate, NULL, NULL);
         return -1;
     }
+
     Py_DECREF(result);
     return 0;
 }
@@ -921,20 +923,24 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
                  int what, PyObject *arg)
 {
     PyObject *callback;
-    PyObject *result;
-
-    if (what == PyTrace_CALL)
+    if (what == PyTrace_CALL) {
         callback = self;
-    else
+    }
+    else {
         callback = frame->f_trace;
-    if (callback == NULL)
+    }
+    if (callback == NULL) {
         return 0;
-    result = call_trampoline(callback, frame, what, arg);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *result = call_trampoline(tstate, callback, frame, what, arg);
     if (result == NULL) {
-        PyEval_SetTrace(NULL, NULL);
+        _PyEval_SetTrace(tstate, NULL, NULL);
         Py_CLEAR(frame->f_trace);
         return -1;
     }
+
     if (result != Py_None) {
         Py_XSETREF(frame->f_trace, result);
     }
@@ -947,12 +953,21 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
 static PyObject *
 sys_settrace(PyObject *self, PyObject *args)
 {
-    if (trace_init() == -1)
+    if (trace_init() == -1) {
         return NULL;
-    if (args == Py_None)
-        PyEval_SetTrace(NULL, NULL);
-    else
-        PyEval_SetTrace(trace_trampoline, args);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (args == Py_None) {
+        if (_PyEval_SetTrace(tstate, NULL, NULL) < 0) {
+            return NULL;
+        }
+    }
+    else {
+        if (_PyEval_SetTrace(tstate, trace_trampoline, args) < 0) {
+            return NULL;
+        }
+    }
     Py_RETURN_NONE;
 }
 
@@ -987,12 +1002,21 @@ sys_gettrace_impl(PyObject *module)
 static PyObject *
 sys_setprofile(PyObject *self, PyObject *args)
 {
-    if (trace_init() == -1)
+    if (trace_init() == -1) {
         return NULL;
-    if (args == Py_None)
-        PyEval_SetProfile(NULL, NULL);
-    else
-        PyEval_SetProfile(profile_trampoline, args);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (args == Py_None) {
+        if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
+            return NULL;
+        }
+    }
+    else {
+        if (_PyEval_SetProfile(tstate, profile_trampoline, args) < 0) {
+            return NULL;
+        }
+    }
     Py_RETURN_NONE;
 }
 

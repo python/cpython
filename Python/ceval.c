@@ -4586,50 +4586,84 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     return result;
 }
 
+int
+_PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+{
+    assert(tstate != NULL);
+    /* The caller must hold the GIL */
+    assert(PyGILState_Check());
+
+    /* Call PySys_Audit() in the context of the current thread state,
+       even if tstate is not the current thread state. */
+    if (PySys_Audit("sys.setprofile", NULL) < 0) {
+        return -1;
+    }
+
+    PyObject *profileobj = tstate->c_profileobj;
+
+    tstate->c_profilefunc = NULL;
+    tstate->c_profileobj = NULL;
+    /* Must make sure that tracing is not ignored if 'profileobj' is freed */
+    tstate->use_tracing = tstate->c_tracefunc != NULL;
+    Py_XDECREF(profileobj);
+
+    Py_XINCREF(arg);
+    tstate->c_profileobj = arg;
+    tstate->c_profilefunc = func;
+
+    /* Flag that tracing or profiling is turned on */
+    tstate->use_tracing = (func != NULL) || (tstate->c_tracefunc != NULL);
+    return 0;
+}
+
 void
 PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 {
-    if (PySys_Audit("sys.setprofile", NULL) < 0) {
-        return;
+    PyThreadState *tstate = _PyThreadState_GET();
+    (void)_PyEval_SetProfile(tstate, func, arg);
+}
+
+int
+_PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
+{
+    assert(tstate != NULL);
+    /* The caller must hold the GIL */
+    assert(PyGILState_Check());
+
+    /* Call PySys_Audit() in the context of the current thread state,
+       even if tstate is not the current thread state. */
+    if (PySys_Audit("sys.settrace", NULL) < 0) {
+        return -1;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *temp = tstate->c_profileobj;
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
+    PyObject *traceobj = tstate->c_traceobj;
+    ceval->tracing_possible += (func != NULL) - (tstate->c_tracefunc != NULL);
+
+    tstate->c_tracefunc = NULL;
+    tstate->c_traceobj = NULL;
+    /* Must make sure that profiling is not ignored if 'traceobj' is freed */
+    tstate->use_tracing = (tstate->c_profilefunc != NULL);
+    Py_XDECREF(traceobj);
+
     Py_XINCREF(arg);
-    tstate->c_profilefunc = NULL;
-    tstate->c_profileobj = NULL;
-    /* Must make sure that tracing is not ignored if 'temp' is freed */
-    tstate->use_tracing = tstate->c_tracefunc != NULL;
-    Py_XDECREF(temp);
-    tstate->c_profilefunc = func;
-    tstate->c_profileobj = arg;
+    tstate->c_traceobj = arg;
+    tstate->c_tracefunc = func;
+
     /* Flag that tracing or profiling is turned on */
-    tstate->use_tracing = (func != NULL) || (tstate->c_tracefunc != NULL);
+    tstate->use_tracing = ((func != NULL)
+                           || (tstate->c_profilefunc != NULL));
+
+    return 0;
 }
 
 void
 PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 {
-    if (PySys_Audit("sys.settrace", NULL) < 0) {
-        return;
-    }
-
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    PyObject *temp = tstate->c_traceobj;
-    runtime->ceval.tracing_possible += (func != NULL) - (tstate->c_tracefunc != NULL);
-    Py_XINCREF(arg);
-    tstate->c_tracefunc = NULL;
-    tstate->c_traceobj = NULL;
-    /* Must make sure that profiling is not ignored if 'temp' is freed */
-    tstate->use_tracing = tstate->c_profilefunc != NULL;
-    Py_XDECREF(temp);
-    tstate->c_tracefunc = func;
-    tstate->c_traceobj = arg;
-    /* Flag that tracing or profiling is turned on */
-    tstate->use_tracing = ((func != NULL)
-                           || (tstate->c_profilefunc != NULL));
+    PyThreadState *tstate = _PyThreadState_GET();
+    (void)_PyEval_SetTrace(tstate, func, arg);
 }
+
 
 void
 _PyEval_SetCoroutineOriginTrackingDepth(PyThreadState *tstate, int new_depth)
