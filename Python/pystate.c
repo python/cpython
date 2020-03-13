@@ -396,7 +396,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 
 
 PyInterpreterState *
-_PyInterpreterState_Get(void)
+PyInterpreterState_Get(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
@@ -1423,9 +1423,9 @@ _check_xidata(_PyCrossInterpreterData *data)
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    // _PyInterpreterState_Get() aborts if lookup fails, so we don't need
+    // PyInterpreterState_Get() aborts if lookup fails, so we don't need
     // to check the result for NULL.
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = PyInterpreterState_Get();
 
     // Reset data before re-populating.
     *data = (_PyCrossInterpreterData){0};

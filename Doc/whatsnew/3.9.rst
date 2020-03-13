@@ -406,6 +406,8 @@ Optimizations
 Build and C API Changes
 =======================
 
+* New :c:func:`PyInterpreterState_Get` function.
+
 * Add ``--with-platlibdir`` option to the ``configure`` script: name of the
   platform-specific library directory, stored in the new :attr:`sys.platlibdir`
   attribute. See :attr:`sys.platlibdir` attribute for more information.
