@@ -451,7 +451,7 @@ run_at_forkers(PyObject *lst, int reverse)
 void
 PyOS_BeforeFork(void)
 {
-    run_at_forkers(_PyInterpreterState_Get()->before_forkers, 1);
+    run_at_forkers(_PyInterpreterState_GET_UNSAFE()->before_forkers, 1);
 
     _PyImport_AcquireLock();
 }
@@ -462,7 +462,7 @@ PyOS_AfterFork_Parent(void)
     if (_PyImport_ReleaseLock() <= 0)
         Py_FatalError("failed releasing import lock after fork");
 
-    run_at_forkers(_PyInterpreterState_Get()->after_forkers_parent, 0);
+    run_at_forkers(_PyInterpreterState_GET_UNSAFE()->after_forkers_parent, 0);
 }
 
 void
@@ -476,7 +476,7 @@ PyOS_AfterFork_Child(void)
     _PyRuntimeState_ReInitThreads(runtime);
     _PyInterpreterState_DeleteExceptMain(runtime);
 
-    run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
+    run_at_forkers(_PyInterpreterState_GET_UNSAFE()->after_forkers_child, 0);
 }
 
 static int
@@ -6177,7 +6177,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
         check_null_or_callable(after_in_parent, "after_in_parent")) {
         return NULL;
     }
-    interp = _PyInterpreterState_Get();
+    interp = _PyInterpreterState_GET_UNSAFE();
 
     if (register_at_forker(&interp->before_forkers, before)) {
         return NULL;
@@ -6208,7 +6208,7 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+    if (_PyInterpreterState_GET_UNSAFE() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -6243,7 +6243,7 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+    if (_PyInterpreterState_GET_UNSAFE() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -6851,7 +6851,7 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
-    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+    if (_PyInterpreterState_GET_UNSAFE() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
