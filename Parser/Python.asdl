@@ -78,20 +78,19 @@ module Python
 
          -- the following expression can appear in assignment context
          | Attribute(expr value, identifier attr, expr_context ctx)
-         | Subscript(expr value, slice slice, expr_context ctx)
+         | Subscript(expr value, expr slice, expr_context ctx)
          | Starred(expr value, expr_context ctx)
          | Name(identifier id, expr_context ctx)
          | List(expr* elts, expr_context ctx)
          | Tuple(expr* elts, expr_context ctx)
 
+         -- can appear only in Subscript
+         | Slice(expr? lower, expr? upper, expr? step)
+
           -- col_offset is the byte offset in the utf8 string the parser uses
           attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
     expr_context = Load | Store | Del | AugLoad | AugStore | Param
-
-    slice = Slice(expr? lower, expr? upper, expr? step)
-          | ExtSlice(slice* dims)
-          | Index(expr value)
 
     boolop = And | Or
 

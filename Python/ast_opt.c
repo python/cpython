@@ -310,20 +310,16 @@ fold_subscr(expr_ty node, PyArena *arena, int optimize)
 {
     PyObject *newval;
     expr_ty arg, idx;
-    slice_ty slice;
 
     arg = node->v.Subscript.value;
-    slice = node->v.Subscript.slice;
+    idx = node->v.Subscript.slice;
     if (node->v.Subscript.ctx != Load ||
             arg->kind != Constant_kind ||
-            /* TODO: handle other types of slices */
-            slice->kind != Index_kind ||
-            slice->v.Index.value->kind != Constant_kind)
+            idx->kind != Constant_kind)
     {
         return 1;
     }
 
-    idx = slice->v.Index.value;
     newval = PyObject_GetItem(arg->v.Constant.value, idx->v.Constant.value);
     return make_const(node, newval, arena);
 }
@@ -395,7 +391,6 @@ static int astfold_expr(expr_ty node_, PyArena *ctx_, int optimize_);
 static int astfold_arguments(arguments_ty node_, PyArena *ctx_, int optimize_);
 static int astfold_comprehension(comprehension_ty node_, PyArena *ctx_, int optimize_);
 static int astfold_keyword(keyword_ty node_, PyArena *ctx_, int optimize_);
-static int astfold_slice(slice_ty node_, PyArena *ctx_, int optimize_);
 static int astfold_arg(arg_ty node_, PyArena *ctx_, int optimize_);
 static int astfold_withitem(withitem_ty node_, PyArena *ctx_, int optimize_);
 static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, int optimize_);
@@ -548,11 +543,16 @@ astfold_expr(expr_ty node_, PyArena *ctx_, int optimize_)
         break;
     case Subscript_kind:
         CALL(astfold_expr, expr_ty, node_->v.Subscript.value);
-        CALL(astfold_slice, slice_ty, node_->v.Subscript.slice);
+        CALL(astfold_expr, expr_ty, node_->v.Subscript.slice);
         CALL(fold_subscr, expr_ty, node_);
         break;
     case Starred_kind:
         CALL(astfold_expr, expr_ty, node_->v.Starred.value);
+        break;
+    case Slice_kind:
+        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.lower);
+        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.upper);
+        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.step);
         break;
     case List_kind:
         CALL_SEQ(astfold_expr, expr_ty, node_->v.List.elts);
@@ -565,27 +565,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, int optimize_)
         if (_PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
             return make_const(node_, PyBool_FromLong(!optimize_), ctx_);
         }
-        break;
-    default:
-        break;
-    }
-    return 1;
-}
-
-static int
-astfold_slice(slice_ty node_, PyArena *ctx_, int optimize_)
-{
-    switch (node_->kind) {
-    case Slice_kind:
-        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.lower);
-        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.upper);
-        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.step);
-        break;
-    case ExtSlice_kind:
-        CALL_SEQ(astfold_slice, slice_ty, node_->v.ExtSlice.dims);
-        break;
-    case Index_kind:
-        CALL(astfold_expr, expr_ty, node_->v.Index.value);
         break;
     default:
         break;

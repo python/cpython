@@ -1,0 +1,5 @@
+AIX: Fix _aix_support module when the subprocess is not available, when
+building Python from scratch. It now uses new private _bootsubprocess
+module, rather than having two implementations depending if subprocess is
+available or not. So _aix_support.aix_platform() result is now the same if
+subprocess is available or not.

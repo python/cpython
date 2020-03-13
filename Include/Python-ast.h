@@ -20,8 +20,6 @@ typedef struct _expr *expr_ty;
 typedef enum _expr_context { Load=1, Store=2, Del=3, AugLoad=4, AugStore=5,
                              Param=6 } expr_context_ty;
 
-typedef struct _slice *slice_ty;
-
 typedef enum _boolop { And=1, Or=2 } boolop_ty;
 
 typedef enum _operator { Add=1, Sub=2, Mult=3, MatMult=4, Div=5, Mod=6, Pow=7,
@@ -233,7 +231,7 @@ enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
                   YieldFrom_kind=15, Compare_kind=16, Call_kind=17,
                   FormattedValue_kind=18, JoinedStr_kind=19, Constant_kind=20,
                   Attribute_kind=21, Subscript_kind=22, Starred_kind=23,
-                  Name_kind=24, List_kind=25, Tuple_kind=26};
+                  Name_kind=24, List_kind=25, Tuple_kind=26, Slice_kind=27};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -346,7 +344,7 @@ struct _expr {
 
         struct {
             expr_ty value;
-            slice_ty slice;
+            expr_ty slice;
             expr_context_ty ctx;
         } Subscript;
 
@@ -370,32 +368,17 @@ struct _expr {
             expr_context_ty ctx;
         } Tuple;
 
-    } v;
-    int lineno;
-    int col_offset;
-    int end_lineno;
-    int end_col_offset;
-};
-
-enum _slice_kind {Slice_kind=1, ExtSlice_kind=2, Index_kind=3};
-struct _slice {
-    enum _slice_kind kind;
-    union {
         struct {
             expr_ty lower;
             expr_ty upper;
             expr_ty step;
         } Slice;
 
-        struct {
-            asdl_seq *dims;
-        } ExtSlice;
-
-        struct {
-            expr_ty value;
-        } Index;
-
     } v;
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
 };
 
 struct _comprehension {
@@ -648,7 +631,7 @@ expr_ty _Py_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
                       lineno, int col_offset, int end_lineno, int
                       end_col_offset, PyArena *arena);
 #define Subscript(a0, a1, a2, a3, a4, a5, a6, a7) _Py_Subscript(a0, a1, a2, a3, a4, a5, a6, a7)
-expr_ty _Py_Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int
+expr_ty _Py_Subscript(expr_ty value, expr_ty slice, expr_context_ty ctx, int
                       lineno, int col_offset, int end_lineno, int
                       end_col_offset, PyArena *arena);
 #define Starred(a0, a1, a2, a3, a4, a5, a6) _Py_Starred(a0, a1, a2, a3, a4, a5, a6)
@@ -667,12 +650,10 @@ expr_ty _Py_List(asdl_seq * elts, expr_context_ty ctx, int lineno, int
 expr_ty _Py_Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int
                   col_offset, int end_lineno, int end_col_offset, PyArena
                   *arena);
-#define Slice(a0, a1, a2, a3) _Py_Slice(a0, a1, a2, a3)
-slice_ty _Py_Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena);
-#define ExtSlice(a0, a1) _Py_ExtSlice(a0, a1)
-slice_ty _Py_ExtSlice(asdl_seq * dims, PyArena *arena);
-#define Index(a0, a1) _Py_Index(a0, a1)
-slice_ty _Py_Index(expr_ty value, PyArena *arena);
+#define Slice(a0, a1, a2, a3, a4, a5, a6, a7) _Py_Slice(a0, a1, a2, a3, a4, a5, a6, a7)
+expr_ty _Py_Slice(expr_ty lower, expr_ty upper, expr_ty step, int lineno, int
+                  col_offset, int end_lineno, int end_col_offset, PyArena
+                  *arena);
 #define comprehension(a0, a1, a2, a3, a4) _Py_comprehension(a0, a1, a2, a3, a4)
 comprehension_ty _Py_comprehension(expr_ty target, expr_ty iter, asdl_seq *
                                    ifs, int is_async, PyArena *arena);

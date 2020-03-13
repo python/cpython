@@ -40,7 +40,7 @@ void _PyEval_Fini(void);
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _frame *f, int throwflag)
 {
-    return tstate->interp->eval_frame(f, throwflag);
+    return tstate->interp->eval_frame(tstate, f, throwflag);
 }
 
 extern PyObject *_PyEval_EvalCode(
@@ -52,6 +52,9 @@ extern PyObject *_PyEval_EvalCode(
     PyObject *const *defs, Py_ssize_t defcount,
     PyObject *kwdefs, PyObject *closure,
     PyObject *name, PyObject *qualname);
+
+extern int _PyEval_ThreadsInitialized(_PyRuntimeState *runtime);
+extern PyStatus _PyEval_InitThreads(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }
