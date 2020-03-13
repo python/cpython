@@ -69,11 +69,9 @@ class Address:
         """The addr_spec (username@domain) portion of the address, quoted
         according to RFC 5322 rules, but with no Content Transfer Encoding.
         """
-        nameset = set(self.username)
-        if len(nameset) > len(nameset-parser.DOT_ATOM_ENDS):
-            lp = parser.quote_string(self.username)
-        else:
-            lp = self.username
+        lp = self.username
+        if not parser.DOT_ATOM_ENDS.isdisjoint(lp):
+            lp = parser.quote_string(lp)
         if self.domain:
             return lp + '@' + self.domain
         if not lp:
@@ -86,19 +84,17 @@ class Address:
                         self.display_name, self.username, self.domain)
 
     def __str__(self):
-        nameset = set(self.display_name)
-        if len(nameset) > len(nameset-parser.SPECIALS):
-            disp = parser.quote_string(self.display_name)
-        else:
-            disp = self.display_name
+        disp = self.display_name
+        if not parser.SPECIALS.isdisjoint(disp):
+            disp = parser.quote_string(disp)
         if disp:
             addr_spec = '' if self.addr_spec=='<>' else self.addr_spec
             return "{} <{}>".format(disp, addr_spec)
         return self.addr_spec
 
     def __eq__(self, other):
-        if type(other) != type(self):
-            return False
+        if not isinstance(other, Address):
+            return NotImplemented
         return (self.display_name == other.display_name and
                 self.username == other.username and
                 self.domain == other.domain)
@@ -141,17 +137,15 @@ class Group:
         if self.display_name is None and len(self.addresses)==1:
             return str(self.addresses[0])
         disp = self.display_name
-        if disp is not None:
-            nameset = set(disp)
-            if len(nameset) > len(nameset-parser.SPECIALS):
-                disp = parser.quote_string(disp)
+        if disp is not None and not parser.SPECIALS.isdisjoint(disp):
+            disp = parser.quote_string(disp)
         adrstr = ", ".join(str(x) for x in self.addresses)
         adrstr = ' ' + adrstr if adrstr else adrstr
         return "{}:{};".format(disp, adrstr)
 
     def __eq__(self, other):
-        if type(other) != type(self):
-            return False
+        if not isinstance(other, Group):
+            return NotImplemented
         return (self.display_name == other.display_name and
                 self.addresses == other.addresses)
 
@@ -245,7 +239,7 @@ class BaseHeader(str):
         the header name and the ': ' separator.
 
         """
-        # At some point we need to put fws here iif it was in the source.
+        # At some point we need to put fws here if it was in the source.
         header = parser.Header([
             parser.HeaderLabel([
                 parser.ValueTerminal(self.name, 'header-name'),
@@ -520,6 +514,18 @@ class ContentTransferEncodingHeader:
         return self._cte
 
 
+class MessageIDHeader:
+
+    max_count = 1
+    value_parser = staticmethod(parser.parse_message_id)
+
+    @classmethod
+    def parse(cls, value, kwds):
+        kwds['parse_tree'] = parse_tree = cls.value_parser(value)
+        kwds['decoded'] = str(parse_tree)
+        kwds['defects'].extend(parse_tree.all_defects)
+
+
 # The header factory #
 
 _default_header_map = {
@@ -542,6 +548,7 @@ _default_header_map = {
     'content-type':                 ContentTypeHeader,
     'content-disposition':          ContentDispositionHeader,
     'content-transfer-encoding':    ContentTransferEncodingHeader,
+    'message-id':                   MessageIDHeader,
     }
 
 class HeaderRegistry:

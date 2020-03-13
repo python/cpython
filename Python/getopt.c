@@ -18,10 +18,6 @@
  * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA, OR PROFITS, WHETHER
  * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * Nevertheless, I would like to know about bugs in this library or
- * suggestions for improvment.  Send bug reports and feedback to
- * davegottner@delphi.com.
  *---------------------------------------------------------------------------*/
 
 /* Modified to support --help and --version, as well as /? on Windows
@@ -41,7 +37,7 @@ int _PyOS_opterr = 1;                 /* generate error messages */
 Py_ssize_t _PyOS_optind = 1;          /* index into argv array   */
 const wchar_t *_PyOS_optarg = NULL;   /* optional argument       */
 
-static wchar_t *opt_ptr = L"";
+static const wchar_t *opt_ptr = L"";
 
 /* Python command line short and long options */
 
@@ -61,7 +57,7 @@ void _PyOS_ResetGetOpt(void)
     opt_ptr = L"";
 }
 
-int _PyOS_GetOpt(Py_ssize_t argc, wchar_t **argv, int *longindex)
+int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
 {
     wchar_t *ptr;
     wchar_t option;

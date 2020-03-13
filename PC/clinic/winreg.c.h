@@ -169,7 +169,7 @@ winreg_ConnectRegistry(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         }
     }
     else {
-        _PyArg_BadArgument("ConnectRegistry", 1, "str or None", args[0]);
+        _PyArg_BadArgument("ConnectRegistry", "argument 1", "str or None", args[0]);
         goto exit;
     }
     if (!clinic_HKEY_converter(args[1], &key)) {
@@ -243,7 +243,7 @@ winreg_CreateKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("CreateKey", 2, "str or None", args[1]);
+        _PyArg_BadArgument("CreateKey", "argument 2", "str or None", args[1]);
         goto exit;
     }
     _return_value = winreg_CreateKey_impl(module, key, sub_key);
@@ -363,7 +363,7 @@ winreg_DeleteKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("DeleteKey", 2, "str", args[1]);
+        _PyArg_BadArgument("DeleteKey", "argument 2", "str", args[1]);
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
@@ -488,7 +488,7 @@ winreg_DeleteValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("DeleteValue", 2, "str or None", args[1]);
+        _PyArg_BadArgument("DeleteValue", "argument 2", "str or None", args[1]);
         goto exit;
     }
     return_value = winreg_DeleteValue_impl(module, key, value);
@@ -629,7 +629,7 @@ winreg_ExpandEnvironmentStrings(PyObject *module, PyObject *arg)
     const Py_UNICODE *string;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("ExpandEnvironmentStrings", 0, "str", arg);
+        _PyArg_BadArgument("ExpandEnvironmentStrings", "argument", "str", arg);
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
@@ -741,7 +741,7 @@ winreg_LoadKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("LoadKey", 2, "str", args[1]);
+        _PyArg_BadArgument("LoadKey", "argument 2", "str", args[1]);
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
@@ -753,7 +753,7 @@ winreg_LoadKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("LoadKey", 3, "str", args[2]);
+        _PyArg_BadArgument("LoadKey", "argument 3", "str", args[2]);
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
@@ -982,7 +982,7 @@ winreg_QueryValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("QueryValue", 2, "str or None", args[1]);
+        _PyArg_BadArgument("QueryValue", "argument 2", "str or None", args[1]);
         goto exit;
     }
     return_value = winreg_QueryValue_impl(module, key, sub_key);
@@ -1045,7 +1045,7 @@ winreg_QueryValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("QueryValueEx", 2, "str or None", args[1]);
+        _PyArg_BadArgument("QueryValueEx", "argument 2", "str or None", args[1]);
         goto exit;
     }
     return_value = winreg_QueryValueEx_impl(module, key, name);
@@ -1100,7 +1100,7 @@ winreg_SaveKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("SaveKey", 2, "str", args[1]);
+        _PyArg_BadArgument("SaveKey", "argument 2", "str", args[1]);
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
@@ -1264,7 +1264,7 @@ PyDoc_STRVAR(winreg_DisableReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.\n"
+"Will generally raise NotImplementedError if executed on a 32bit OS.\n"
 "\n"
 "If the key is not on the reflection list, the function succeeds but has\n"
 "no effect.  Disabling reflection for a key does not affect reflection\n"
@@ -1300,7 +1300,7 @@ PyDoc_STRVAR(winreg_EnableReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.\n"
+"Will generally raise NotImplementedError if executed on a 32bit OS.\n"
 "Restoring reflection for a key does not affect reflection of any\n"
 "subkeys.");
 
@@ -1334,7 +1334,7 @@ PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.");
+"Will generally raise NotImplementedError if executed on a 32bit OS.");
 
 #define WINREG_QUERYREFLECTIONKEY_METHODDEF    \
     {"QueryReflectionKey", (PyCFunction)winreg_QueryReflectionKey, METH_O, winreg_QueryReflectionKey__doc__},
@@ -1356,4 +1356,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d710dde7327c59e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00feda4c74094328 input=a9049054013a1b77]*/

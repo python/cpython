@@ -124,11 +124,12 @@
 #include "weakrefobject.h"
 #include "structseq.h"
 #include "namespaceobject.h"
+#include "picklebufobject.h"
 
 #include "codecs.h"
 #include "pyerrors.h"
 
-#include "cpython/coreconfig.h"
+#include "cpython/initconfig.h"
 #include "pystate.h"
 #include "context.h"
 
@@ -151,7 +152,6 @@
 #include "pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
-#include "dtoa.h"
 #include "fileutils.h"
 #include "pyfpe.h"
 #include "tracemalloc.h"

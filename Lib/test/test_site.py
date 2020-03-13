@@ -266,11 +266,18 @@ class HelperFunctionsTests(unittest.TestCase):
         dirs = site.getsitepackages()
         if os.sep == '/':
             # OS X, Linux, FreeBSD, etc
-            self.assertEqual(len(dirs), 1)
+            if sys.platlibdir != "lib":
+                self.assertEqual(len(dirs), 2)
+                wanted = os.path.join('xoxo', sys.platlibdir,
+                                      'python%d.%d' % sys.version_info[:2],
+                                      'site-packages')
+                self.assertEqual(dirs[0], wanted)
+            else:
+                self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'lib',
                                   'python%d.%d' % sys.version_info[:2],
                                   'site-packages')
-            self.assertEqual(dirs[0], wanted)
+            self.assertEqual(dirs[-1], wanted)
         else:
             # other platforms
             self.assertEqual(len(dirs), 2)
@@ -526,15 +533,15 @@ class StartupImportTests(unittest.TestCase):
 
         # http://bugs.python.org/issue19205
         re_mods = {'re', '_sre', 'sre_compile', 'sre_constants', 'sre_parse'}
-        # _osx_support uses the re module in many placs
-        if sys.platform != 'darwin':
-            self.assertFalse(modules.intersection(re_mods), stderr)
+        self.assertFalse(modules.intersection(re_mods), stderr)
+
         # http://bugs.python.org/issue9548
         self.assertNotIn('locale', modules, stderr)
-        if sys.platform != 'darwin':
-            # http://bugs.python.org/issue19209
-            self.assertNotIn('copyreg', modules, stderr)
-        # http://bugs.python.org/issue19218>
+
+        # http://bugs.python.org/issue19209
+        self.assertNotIn('copyreg', modules, stderr)
+
+        # http://bugs.python.org/issue19218
         collection_mods = {'_collections', 'collections', 'functools',
                            'heapq', 'itertools', 'keyword', 'operator',
                            'reprlib', 'types', 'weakref'

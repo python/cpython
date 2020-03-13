@@ -1,0 +1,2 @@
+Refactor queue_manager in :class:`concurrent.futures.ProcessPoolExecutor` to
+make it easier to maintain.

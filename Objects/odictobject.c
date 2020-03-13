@@ -526,6 +526,8 @@ struct _odictnode {
 #define _odict_FOREACH(od, node) \
     for (node = _odict_FIRST(od); node != NULL; node = _odictnode_NEXT(node))
 
+_Py_IDENTIFIER(items);
+
 /* Return the index into the hash table, regardless of a valid node. */
 static Py_ssize_t
 _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
@@ -896,7 +898,6 @@ static PyObject *
 odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(__dict__);
-    _Py_IDENTIFIER(items);
     PyObject *dict = NULL, *result = NULL;
     PyObject *items_iter, *items, *args = NULL;
 
@@ -920,7 +921,7 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (args == NULL)
         goto Done;
 
-    items = _PyObject_CallMethodIdObjArgs((PyObject *)od, &PyId_items, NULL);
+    items = _PyObject_CallMethodIdNoArgs((PyObject *)od, &PyId_items);
     if (items == NULL)
         goto Done;
 
@@ -1356,28 +1357,17 @@ static PyGetSetDef odict_getset[] = {
 static void
 odict_dealloc(PyODictObject *self)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self)
+    Py_TRASHCAN_BEGIN(self, odict_dealloc)
 
     Py_XDECREF(self->od_inst_dict);
     if (self->od_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
 
     _odict_clear_nodes(self);
-
-    /* Call the base tp_dealloc().  Since it too uses the trashcan mechanism,
-     * temporarily decrement trash_delete_nesting to prevent triggering it
-     * and putting the partially deallocated object on the trashcan's
-     * to-be-deleted-later list.
-     */
-    --tstate->trash_delete_nesting;
-    assert(_tstate->trash_delete_nesting < PyTrash_UNWIND_LEVEL);
     PyDict_Type.tp_dealloc((PyObject *)self);
-    ++tstate->trash_delete_nesting;
 
-    Py_TRASHCAN_SAFE_END(self)
+    Py_TRASHCAN_END
 }
 
 /* tp_repr */
@@ -1386,7 +1376,6 @@ static PyObject *
 odict_repr(PyODictObject *self)
 {
     int i;
-    _Py_IDENTIFIER(items);
     PyObject *pieces = NULL, *result = NULL;
 
     if (PyODict_SIZE(self) == 0)
@@ -1428,12 +1417,13 @@ odict_repr(PyODictObject *self)
             }
             count++;
         }
-        if (count < PyList_GET_SIZE(pieces))
-            Py_SIZE(pieces) = count;
+        if (count < PyList_GET_SIZE(pieces)) {
+            Py_SET_SIZE(pieces, count);
+        }
     }
     else {
-        PyObject *items = _PyObject_CallMethodIdObjArgs((PyObject *)self,
-                                                        &PyId_items, NULL);
+        PyObject *items = _PyObject_CallMethodIdNoArgs((PyObject *)self,
+                                                       &PyId_items);
         if (items == NULL)
             goto Done;
         pieces = PySequence_List(items);
@@ -1464,7 +1454,6 @@ odict_traverse(PyODictObject *od, visitproc visit, void *arg)
     _ODictNode *node;
 
     Py_VISIT(od->od_inst_dict);
-    Py_VISIT(od->od_weakreflist);
     _odict_FOREACH(od, node) {
         Py_VISIT(_odictnode_KEY(node));
     }
@@ -1477,7 +1466,6 @@ static int
 odict_tp_clear(PyODictObject *od)
 {
     Py_CLEAR(od->od_inst_dict);
-    Py_CLEAR(od->od_weakreflist);
     PyDict_Clear((PyObject *)od);
     _odict_clear_nodes(od);
     return 0;
@@ -1562,10 +1550,10 @@ PyTypeObject PyODict_Type = {
     sizeof(PyODictObject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)odict_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)odict_repr,                       /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -1834,10 +1822,10 @@ PyTypeObject PyODictIter_Type = {
     0,                                        /* tp_itemsize */
     /* methods */
     (destructor)odictiter_dealloc,            /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     0,                                        /* tp_repr */
     0,                                        /* tp_as_number */
     0,                                        /* tp_as_sequence */
@@ -1927,10 +1915,10 @@ PyTypeObject PyODictKeys_Type = {
     0,                                        /* tp_basicsize */
     0,                                        /* tp_itemsize */
     0,                                        /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     0,                                        /* tp_repr */
     0,                                        /* tp_as_number */
     0,                                        /* tp_as_sequence */
@@ -1994,10 +1982,10 @@ PyTypeObject PyODictItems_Type = {
     0,                                        /* tp_basicsize */
     0,                                        /* tp_itemsize */
     0,                                        /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     0,                                        /* tp_repr */
     0,                                        /* tp_as_number */
     0,                                        /* tp_as_sequence */
@@ -2061,10 +2049,10 @@ PyTypeObject PyODictValues_Type = {
     0,                                        /* tp_basicsize */
     0,                                        /* tp_itemsize */
     0,                                        /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     0,                                        /* tp_repr */
     0,                                        /* tp_as_number */
     0,                                        /* tp_as_sequence */
@@ -2206,7 +2194,6 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int res = 0;
     Py_ssize_t len;
-    _Py_IDENTIFIER(items);
     _Py_IDENTIFIER(keys);
 
     /* first handle args, if any */

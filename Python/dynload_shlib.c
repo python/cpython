@@ -38,9 +38,10 @@ const char *_PyImport_DynLoadFiletab[] = {
     ".dll",
 #else  /* !__CYGWIN__ */
     "." SOABI ".so",
-#ifndef Py_DEBUG
+#ifdef ALT_SOABI
+    "." ALT_SOABI ".so",
+#endif
     ".abi" PYTHON_ABI_STRING ".so",
-#endif /* ! Py_DEBUG */
     ".so",
 #endif  /* __CYGWIN__ */
     NULL,

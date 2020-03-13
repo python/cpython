@@ -200,7 +200,7 @@ object___format__(PyObject *self, PyObject *arg)
     PyObject *format_spec;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__format__", 0, "str", arg);
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -248,4 +248,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=ea5734413064fa7e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a6d272d282308f3 input=a9049054013a1b77]*/

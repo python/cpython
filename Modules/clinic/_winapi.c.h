@@ -240,7 +240,7 @@ _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("CreateJunction", 1, "str", args[0]);
+        _PyArg_BadArgument("CreateJunction", "argument 1", "str", args[0]);
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
@@ -252,7 +252,7 @@ _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("CreateJunction", 2, "str", args[1]);
+        _PyArg_BadArgument("CreateJunction", "argument 2", "str", args[1]);
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
@@ -1148,4 +1148,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b37c7990ebf35ed6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1f10e03f64ff9777 input=a9049054013a1b77]*/

@@ -30,7 +30,7 @@
 #define VCCOMPAT_H
 
 
-/* Visual C fixes: no stdint.h, no snprintf ... */
+/* Visual C fixes: no snprintf ... */
 #ifdef _MSC_VER
   #undef inline
   #define inline __inline

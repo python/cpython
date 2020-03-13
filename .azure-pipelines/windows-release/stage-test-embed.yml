@@ -1,0 +1,41 @@
+jobs:
+- job: Test_Embed
+  displayName: Test Embed
+  condition: and(succeeded(), eq(variables['DoEmbed'], 'true'))
+
+  pool:
+    vmImage: windows-2019
+
+  workspace:
+    clean: all
+
+  strategy:
+    matrix:
+      win32:
+        Name: win32
+      amd64:
+        Name: amd64
+
+  steps:
+  - checkout: none
+
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download artifact: embed'
+    inputs:
+      artifactName: embed
+      downloadPath: $(Build.BinariesDirectory)
+
+  - powershell: |
+      $p = gi "$(Build.BinariesDirectory)\embed\python*embed-$(Name).zip"
+      Expand-Archive -Path $p -DestinationPath "$(Build.BinariesDirectory)\Python"
+      $p = gi "$(Build.BinariesDirectory)\Python\python.exe"
+      Write-Host "##vso[task.prependpath]$(Split-Path -Parent $p)"
+    displayName: 'Install Python and add to PATH'
+
+  - script: |
+      python -c "import sys; print(sys.version)"
+    displayName: 'Collect version number'
+
+  - script: |
+      python -m site
+    displayName: 'Collect site'

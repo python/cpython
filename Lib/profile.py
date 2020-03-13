@@ -425,7 +425,7 @@ class Profile:
         return self
 
     # This method is more useful to profile a single function call.
-    def runcall(self, func, *args, **kw):
+    def runcall(self, func, /, *args, **kw):
         self.set_cmd(repr(func))
         sys.setprofile(self.dispatcher)
         try:

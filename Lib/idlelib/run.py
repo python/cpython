@@ -1,14 +1,20 @@
+""" idlelib.run
+
+Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
+f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
+'.run' is needed because __import__ returns idlelib, not idlelib.run.
+"""
+import functools
 import io
 import linecache
 import queue
 import sys
+import textwrap
 import time
 import traceback
 import _thread as thread
 import threading
 import warnings
-
-import tkinter  # Tcl, deletions, messagebox if startup fails
 
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
 from idlelib import calltip  # Calltip
@@ -19,11 +25,16 @@ from idlelib import rpc  # multiple objects
 from idlelib import stackviewer  # StackTreeItem
 import __main__
 
-for mod in ('simpledialog', 'messagebox', 'font',
-            'dialog', 'filedialog', 'commondialog',
-            'ttk'):
-    delattr(tkinter, mod)
-    del sys.modules['tkinter.' + mod]
+import tkinter  # Use tcl and, if startup fails, messagebox.
+if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
+    # Undo modifications of tkinter by idlelib imports; see bpo-25507.
+    for mod in ('simpledialog', 'messagebox', 'font',
+                'dialog', 'filedialog', 'commondialog',
+                'ttk'):
+        delattr(tkinter, mod)
+        del sys.modules['tkinter.' + mod]
+    # Avoid AttributeError if run again; see bpo-37038.
+    sys.modules['idlelib.run'].firstrun = False
 
 LOCALHOST = '127.0.0.1'
 
@@ -190,11 +201,13 @@ def show_socket_error(err, address):
     root = tkinter.Tk()
     fix_scaling(root)
     root.withdraw()
-    msg = f"IDLE's subprocess can't connect to {address[0]}:{address[1]}.\n"\
-          f"Fatal OSError #{err.errno}: {err.strerror}.\n"\
-          f"See the 'Startup failure' section of the IDLE doc, online at\n"\
-          f"https://docs.python.org/3/library/idle.html#startup-failure"
-    showerror("IDLE Subprocess Error", msg, parent=root)
+    showerror(
+            "Subprocess Connection Error",
+            f"IDLE's subprocess can't connect to {address[0]}:{address[1]}.\n"
+            f"Fatal OSError #{err.errno}: {err.strerror}.\n"
+            "See the 'Startup failure' section of the IDLE doc, online at\n"
+            "https://docs.python.org/3/library/idle.html#startup-failure",
+            parent=root)
     root.destroy()
 
 def print_exception():
@@ -294,6 +307,67 @@ def fix_scaling(root):
                 font['size'] = round(-0.75*size)
 
 
+def fixdoc(fun, text):
+    tem = (fun.__doc__ + '\n\n') if fun.__doc__ is not None else ''
+    fun.__doc__ = tem + textwrap.fill(textwrap.dedent(text))
+
+RECURSIONLIMIT_DELTA = 30
+
+def install_recursionlimit_wrappers():
+    """Install wrappers to always add 30 to the recursion limit."""
+    # see: bpo-26806
+
+    @functools.wraps(sys.setrecursionlimit)
+    def setrecursionlimit(*args, **kwargs):
+        # mimic the original sys.setrecursionlimit()'s input handling
+        if kwargs:
+            raise TypeError(
+                "setrecursionlimit() takes no keyword arguments")
+        try:
+            limit, = args
+        except ValueError:
+            raise TypeError(f"setrecursionlimit() takes exactly one "
+                            f"argument ({len(args)} given)")
+        if not limit > 0:
+            raise ValueError(
+                "recursion limit must be greater or equal than 1")
+
+        return setrecursionlimit.__wrapped__(limit + RECURSIONLIMIT_DELTA)
+
+    fixdoc(setrecursionlimit, f"""\
+            This IDLE wrapper adds {RECURSIONLIMIT_DELTA} to prevent possible
+            uninterruptible loops.""")
+
+    @functools.wraps(sys.getrecursionlimit)
+    def getrecursionlimit():
+        return getrecursionlimit.__wrapped__() - RECURSIONLIMIT_DELTA
+
+    fixdoc(getrecursionlimit, f"""\
+            This IDLE wrapper subtracts {RECURSIONLIMIT_DELTA} to compensate
+            for the {RECURSIONLIMIT_DELTA} IDLE adds when setting the limit.""")
+
+    # add the delta to the default recursion limit, to compensate
+    sys.setrecursionlimit(sys.getrecursionlimit() + RECURSIONLIMIT_DELTA)
+
+    sys.setrecursionlimit = setrecursionlimit
+    sys.getrecursionlimit = getrecursionlimit
+
+
+def uninstall_recursionlimit_wrappers():
+    """Uninstall the recursion limit wrappers from the sys module.
+
+    IDLE only uses this for tests. Users can import run and call
+    this to remove the wrapping.
+    """
+    if (
+            getattr(sys.setrecursionlimit, '__wrapped__', None) and
+            getattr(sys.getrecursionlimit, '__wrapped__', None)
+    ):
+        sys.setrecursionlimit = sys.setrecursionlimit.__wrapped__
+        sys.getrecursionlimit = sys.getrecursionlimit.__wrapped__
+        sys.setrecursionlimit(sys.getrecursionlimit() - RECURSIONLIMIT_DELTA)
+
+
 class MyRPCServer(rpc.RPCServer):
 
     def handle_error(self, request, client_address):
@@ -327,16 +401,21 @@ class MyRPCServer(rpc.RPCServer):
 
 # Pseudofiles for shell-remote communication (also used in pyshell)
 
-class PseudoFile(io.TextIOBase):
+class StdioFile(io.TextIOBase):
 
-    def __init__(self, shell, tags, encoding=None):
+    def __init__(self, shell, tags, encoding='utf-8', errors='strict'):
         self.shell = shell
         self.tags = tags
         self._encoding = encoding
+        self._errors = errors
 
     @property
     def encoding(self):
         return self._encoding
+
+    @property
+    def errors(self):
+        return self._errors
 
     @property
     def name(self):
@@ -346,7 +425,7 @@ class PseudoFile(io.TextIOBase):
         return True
 
 
-class PseudoOutputFile(PseudoFile):
+class StdOutputFile(StdioFile):
 
     def writable(self):
         return True
@@ -354,19 +433,12 @@ class PseudoOutputFile(PseudoFile):
     def write(self, s):
         if self.closed:
             raise ValueError("write to closed file")
-        if type(s) is not str:
-            if not isinstance(s, str):
-                raise TypeError('must be str, not ' + type(s).__name__)
-            # See issue #19481
-            s = str.__str__(s)
+        s = str.encode(s, self.encoding, self.errors).decode(self.encoding, self.errors)
         return self.shell.write(s, self.tags)
 
 
-class PseudoInputFile(PseudoFile):
-
-    def __init__(self, shell, tags, encoding=None):
-        PseudoFile.__init__(self, shell, tags, encoding)
-        self._line_buffer = ''
+class StdInputFile(StdioFile):
+    _line_buffer = ''
 
     def readable(self):
         return True
@@ -421,12 +493,12 @@ class MyHandler(rpc.RPCHandler):
         executive = Executive(self)
         self.register("exec", executive)
         self.console = self.get_remote_proxy("console")
-        sys.stdin = PseudoInputFile(self.console, "stdin",
-                iomenu.encoding)
-        sys.stdout = PseudoOutputFile(self.console, "stdout",
-                iomenu.encoding)
-        sys.stderr = PseudoOutputFile(self.console, "stderr",
-                iomenu.encoding)
+        sys.stdin = StdInputFile(self.console, "stdin",
+                                 iomenu.encoding, iomenu.errors)
+        sys.stdout = StdOutputFile(self.console, "stdout",
+                                   iomenu.encoding, iomenu.errors)
+        sys.stderr = StdOutputFile(self.console, "stderr",
+                                   iomenu.encoding, "backslashreplace")
 
         sys.displayhook = rpc.displayhook
         # page help() text to shell.
@@ -436,6 +508,8 @@ class MyHandler(rpc.RPCHandler):
         # Keep a reference to stdin so that it won't try to exit IDLE if
         # sys.stdin gets changed from within IDLE's shell. See issue17838.
         self._keep_stdin = sys.stdin
+
+        install_recursionlimit_wrappers()
 
         self.interp = self.get_remote_proxy("interp")
         rpc.RPCHandler.getresponse(self, myseq=None, wait=0.05)
@@ -474,15 +548,16 @@ class Executive(object):
                 exec(code, self.locals)
             finally:
                 interruptable = False
-        except SystemExit:
-            # Scripts that raise SystemExit should just
-            # return to the interactive prompt
-            pass
+        except SystemExit as e:
+            if e.args:  # SystemExit called with an argument.
+                ob = e.args[0]
+                if not isinstance(ob, (type(None), int)):
+                    print('SystemExit: ' + str(ob), file=sys.stderr)
+            # Return to the interactive prompt.
         except:
             self.usr_exc_info = sys.exc_info()
             if quitting:
                 exit()
-            # even print a user code SystemExit exception, continue
             print_exception()
             jit = self.rpchandler.console.getvar("<<toggle-jit-stack-viewer>>")
             if jit:
@@ -522,4 +597,9 @@ class Executive(object):
         item = stackviewer.StackTreeItem(flist, tb)
         return debugobj_r.remote_object_tree_item(item)
 
-capture_warnings(False)  # Make sure turned off; see issue 18081
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_run', verbosity=2)
+
+capture_warnings(False)  # Make sure turned off; see bpo-18081.

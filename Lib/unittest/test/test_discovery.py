@@ -723,11 +723,13 @@ class TestDiscovery(unittest.TestCase):
         original_listdir = os.listdir
         original_isfile = os.path.isfile
         original_isdir = os.path.isdir
+        original_realpath = os.path.realpath
 
         def cleanup():
             os.listdir = original_listdir
             os.path.isfile = original_isfile
             os.path.isdir = original_isdir
+            os.path.realpath = original_realpath
             del sys.modules['foo']
             if full_path in sys.path:
                 sys.path.remove(full_path)
@@ -742,6 +744,10 @@ class TestDiscovery(unittest.TestCase):
         os.listdir = listdir
         os.path.isfile = isfile
         os.path.isdir = isdir
+        if os.name == 'nt':
+            # ntpath.realpath may inject path prefixes when failing to
+            # resolve real files, so we substitute abspath() here instead.
+            os.path.realpath = os.path.abspath
         return full_path
 
     def test_detect_module_clash(self):

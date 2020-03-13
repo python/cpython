@@ -38,7 +38,7 @@ associated messages through the :class:`http.HTTPStatus` enum:
       <HTTPStatus.OK: 200>
       >>> HTTPStatus.OK == 200
       True
-      >>> http.HTTPStatus.OK.value
+      >>> HTTPStatus.OK.value
       200
       >>> HTTPStatus.OK.phrase
       'OK'
@@ -106,6 +106,7 @@ Code    Enum Name                           Details
 ``428`` ``PRECONDITION_REQUIRED``           Additional HTTP Status Codes :rfc:`6585`
 ``429`` ``TOO_MANY_REQUESTS``               Additional HTTP Status Codes :rfc:`6585`
 ``431`` ``REQUEST_HEADER_FIELDS_TOO_LARGE`` Additional HTTP Status Codes :rfc:`6585`
+``451`` ``UNAVAILABLE_FOR_LEGAL_REASONS``   An HTTP Status Code to Report Legal Obstacles :rfc:`7725`
 ``500`` ``INTERNAL_SERVER_ERROR``           HTTP/1.1 :rfc:`7231`, Section 6.6.1
 ``501`` ``NOT_IMPLEMENTED``                 HTTP/1.1 :rfc:`7231`, Section 6.6.2
 ``502`` ``BAD_GATEWAY``                     HTTP/1.1 :rfc:`7231`, Section 6.6.3
@@ -126,3 +127,6 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 
 .. versionchanged:: 3.7
    Added ``421 MISDIRECTED_REQUEST`` status code.
+
+.. versionadded:: 3.8
+   Added ``451 UNAVAILABLE_FOR_LEGAL_REASONS`` status code.

@@ -311,10 +311,10 @@ PyTypeObject OverlappedType = {
     /* tp_basicsize      */ sizeof(OverlappedObject),
     /* tp_itemsize       */ 0,
     /* tp_dealloc        */ (destructor) overlapped_dealloc,
-    /* tp_print          */ 0,
+    /* tp_vectorcall_offset */ 0,
     /* tp_getattr        */ 0,
     /* tp_setattr        */ 0,
-    /* tp_reserved       */ 0,
+    /* tp_as_async       */ 0,
     /* tp_repr           */ 0,
     /* tp_as_number      */ 0,
     /* tp_as_sequence    */ 0,
@@ -462,6 +462,12 @@ _winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
 {
     HANDLE handle;
 
+    if (PySys_Audit("_winapi.CreateFile", "uIIII",
+                    file_name, desired_access, share_mode,
+                    creation_disposition, flags_and_attributes) < 0) {
+        return INVALID_HANDLE_VALUE;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     handle = CreateFile(file_name, desired_access,
                         share_mode, security_attributes,
@@ -503,7 +509,9 @@ _winapi_CreateFileMapping_impl(PyObject *module, HANDLE file_handle,
     Py_END_ALLOW_THREADS
 
     if (handle == NULL) {
-        PyErr_SetFromWindowsErrWithUnicodeFilename(0, name);
+        PyObject *temp = PyUnicode_FromWideChar(name, -1);
+        PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError, 0, temp);
+        Py_XDECREF(temp);
         handle = INVALID_HANDLE_VALUE;
     }
 
@@ -542,6 +550,10 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 
     if (wcsncmp(src_path, L"\\??\\", prefix_len) == 0)
         return PyErr_SetFromWindowsErr(ERROR_INVALID_PARAMETER);
+
+    if (PySys_Audit("_winapi.CreateJunction", "uu", src_path, dst_path) < 0) {
+        return NULL;
+    }
 
     /* Adjust privileges to allow rewriting directory entry as a
        junction point. */
@@ -671,6 +683,11 @@ _winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
 {
     HANDLE handle;
 
+    if (PySys_Audit("_winapi.CreateNamedPipe", "uII",
+                    name, open_mode, pipe_mode) < 0) {
+        return INVALID_HANDLE_VALUE;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     handle = CreateNamedPipe(name, open_mode, pipe_mode,
                              max_instances, out_buffer_size,
@@ -704,6 +721,10 @@ _winapi_CreatePipe_impl(PyObject *module, PyObject *pipe_attrs, DWORD size)
     HANDLE read_pipe;
     HANDLE write_pipe;
     BOOL result;
+
+    if (PySys_Audit("_winapi.CreatePipe", NULL) < 0) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     result = CreatePipe(&read_pipe, &write_pipe, NULL, size);
@@ -1056,6 +1077,11 @@ _winapi_CreateProcess_impl(PyObject *module,
     wchar_t *command_line_copy = NULL;
     AttributeList attribute_list = {0};
 
+    if (PySys_Audit("_winapi.CreateProcess", "uuu", application_name,
+                    command_line, current_directory) < 0) {
+        return NULL;
+    }
+
     ZeroMemory(&si, sizeof(si));
     si.StartupInfo.cb = sizeof(si);
 
@@ -1271,8 +1297,10 @@ _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
     BOOL result;
     WCHAR filename[MAX_PATH];
 
+    Py_BEGIN_ALLOW_THREADS
     result = GetModuleFileNameW(module_handle, filename, MAX_PATH);
     filename[MAX_PATH-1] = '\0';
+    Py_END_ALLOW_THREADS
 
     if (! result)
         return PyErr_SetFromWindowsErr(GetLastError());
@@ -1380,7 +1408,9 @@ _winapi_OpenFileMapping_impl(PyObject *module, DWORD desired_access,
     Py_END_ALLOW_THREADS
 
     if (handle == NULL) {
-        PyErr_SetFromWindowsErrWithUnicodeFilename(0, name);
+        PyObject *temp = PyUnicode_FromWideChar(name, -1);
+        PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError, 0, temp);
+        Py_XDECREF(temp);
         handle = INVALID_HANDLE_VALUE;
     }
 
@@ -1403,9 +1433,16 @@ _winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
 {
     HANDLE handle;
 
+    if (PySys_Audit("_winapi.OpenProcess", "II",
+                    process_id, desired_access) < 0) {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
     handle = OpenProcess(desired_access, inherit_handle, process_id);
+    Py_END_ALLOW_THREADS
     if (handle == NULL) {
-        PyErr_SetFromWindowsErr(0);
+        PyErr_SetFromWindowsErr(GetLastError());
         handle = INVALID_HANDLE_VALUE;
     }
 
@@ -1540,6 +1577,7 @@ _winapi_SetNamedPipeHandleState_impl(PyObject *module, HANDLE named_pipe,
     PyObject *oArgs[3] = {mode, max_collection_count, collect_data_timeout};
     DWORD dwArgs[3], *pArgs[3] = {NULL, NULL, NULL};
     int i;
+    BOOL b;
 
     for (i = 0 ; i < 3 ; i++) {
         if (oArgs[i] != Py_None) {
@@ -1550,7 +1588,11 @@ _winapi_SetNamedPipeHandleState_impl(PyObject *module, HANDLE named_pipe,
         }
     }
 
-    if (!SetNamedPipeHandleState(named_pipe, pArgs[0], pArgs[1], pArgs[2]))
+    Py_BEGIN_ALLOW_THREADS
+    b = SetNamedPipeHandleState(named_pipe, pArgs[0], pArgs[1], pArgs[2]);
+    Py_END_ALLOW_THREADS
+
+    if (!b)
         return PyErr_SetFromWindowsErr(0);
 
     Py_RETURN_NONE;
@@ -1573,6 +1615,11 @@ _winapi_TerminateProcess_impl(PyObject *module, HANDLE handle,
 /*[clinic end generated code: output=f4e99ac3f0b1f34a input=d6bc0aa1ee3bb4df]*/
 {
     BOOL result;
+
+    if (PySys_Audit("_winapi.TerminateProcess", "nI",
+                    (Py_ssize_t)handle, exit_code) < 0) {
+        return NULL;
+    }
 
     result = TerminateProcess(handle, exit_code);
 
@@ -1956,6 +2003,7 @@ PyInit__winapi(void)
     WINAPI_CONSTANT(F_DWORD, PIPE_UNLIMITED_INSTANCES);
     WINAPI_CONSTANT(F_DWORD, PIPE_WAIT);
     WINAPI_CONSTANT(F_DWORD, PROCESS_ALL_ACCESS);
+    WINAPI_CONSTANT(F_DWORD, SYNCHRONIZE);
     WINAPI_CONSTANT(F_DWORD, PROCESS_DUP_HANDLE);
     WINAPI_CONSTANT(F_DWORD, SEC_COMMIT);
     WINAPI_CONSTANT(F_DWORD, SEC_IMAGE);

@@ -186,8 +186,7 @@ INTERNAL_ERROR        = -32603
 
 class Error(Exception):
     """Base class for client errors."""
-    def __str__(self):
-        return repr(self)
+    __str__ = object.__str__
 
 ##
 # Indicates an HTTP-level protocol error.  This is raised by the HTTP
@@ -314,31 +313,38 @@ class DateTime:
             s = self.timetuple()
             o = other.timetuple()
         else:
-            otype = (hasattr(other, "__class__")
-                     and other.__class__.__name__
-                     or type(other))
-            raise TypeError("Can't compare %s and %s" %
-                            (self.__class__.__name__, otype))
+            s = self
+            o = NotImplemented
         return s, o
 
     def __lt__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s < o
 
     def __le__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s <= o
 
     def __gt__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s > o
 
     def __ge__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s >= o
 
     def __eq__(self, other):
         s, o = self.make_comparable(other)
+        if o is NotImplemented:
+            return NotImplemented
         return s == o
 
     def timetuple(self):
@@ -436,7 +442,7 @@ class ExpatParser:
         target.xml(encoding, None)
 
     def feed(self, data):
-        self._parser.Parse(data, 0)
+        self._parser.Parse(data, False)
 
     def close(self):
         try:
@@ -868,8 +874,6 @@ class MultiCall:
 
     def __repr__(self):
         return "<%s at %#x>" % (self.__class__.__name__, id(self))
-
-    __str__ = __repr__
 
     def __getattr__(self, name):
         return _MultiCallMethod(self.__call_list, name)
@@ -1417,15 +1421,14 @@ class ServerProxy:
         # establish a "logical" server connection
 
         # get the url
-        type, uri = urllib.parse._splittype(uri)
-        if type not in ("http", "https"):
+        p = urllib.parse.urlparse(uri)
+        if p.scheme not in ("http", "https"):
             raise OSError("unsupported XML-RPC protocol")
-        self.__host, self.__handler = urllib.parse._splithost(uri)
-        if not self.__handler:
-            self.__handler = "/RPC2"
+        self.__host = p.netloc
+        self.__handler = p.path or "/RPC2"
 
         if transport is None:
-            if type == "https":
+            if p.scheme == "https":
                 handler = SafeTransport
                 extra_kwargs = {"context": context}
             else:
@@ -1467,8 +1470,6 @@ class ServerProxy:
             "<%s for %s%s>" %
             (self.__class__.__name__, self.__host, self.__handler)
             )
-
-    __str__ = __repr__
 
     def __getattr__(self, name):
         # magic method dispatcher

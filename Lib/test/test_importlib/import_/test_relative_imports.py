@@ -133,6 +133,7 @@ class RelativeImports:
             self.assertEqual(module.__name__, 'pkg')
             self.assertTrue(hasattr(module, 'subpkg2'))
             self.assertEqual(module.subpkg2.attr, 'pkg.subpkg2.__init__')
+        self.relative_import_test(create, globals_, callback)
 
     def test_deep_import(self):
         # [deep import]
@@ -156,7 +157,7 @@ class RelativeImports:
                     {'__name__': 'pkg', '__path__': ['blah']})
         def callback(global_):
             self.__import__('pkg')
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ImportError):
                 self.__import__('', global_, fromlist=['top_level'],
                                     level=2)
         self.relative_import_test(create, globals_, callback)
@@ -167,7 +168,7 @@ class RelativeImports:
         globals_ = {'__package__': 'pkg'}, {'__name__': 'pkg.module'}
         def callback(global_):
             self.__import__('pkg')
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ImportError):
                 self.__import__('', global_, fromlist=['top_level'],
                                     level=2)
         self.relative_import_test(create, globals_, callback)

@@ -1,3 +1,4 @@
+#ifndef Py_LIMITED_API
 #ifndef Py_ASDL_H
 #define Py_ASDL_H
 
@@ -44,3 +45,4 @@ asdl_int_seq *_Py_asdl_int_seq_new(Py_ssize_t size, PyArena *arena);
 #endif
 
 #endif /* !Py_ASDL_H */
+#endif /* Py_LIMITED_API */

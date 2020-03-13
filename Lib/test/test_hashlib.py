@@ -8,6 +8,7 @@
 
 import array
 from binascii import unhexlify
+import functools
 import hashlib
 import importlib
 import itertools
@@ -18,6 +19,7 @@ import unittest
 import warnings
 from test import support
 from test.support import _4G, bigmemtest, import_fresh_module
+from test.support import requires_hashdigest
 from http.client import HTTPException
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
@@ -25,6 +27,11 @@ COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
 c_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
 py_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
+
+try:
+    from _hashlib import HASH
+except ImportError:
+    HASH = None
 
 try:
     import _blake2
@@ -114,6 +121,7 @@ class HashLibTestCase(unittest.TestCase):
             constructors.add(_test_algorithm_via_hashlib_new)
 
         _hashlib = self._conditional_import_module('_hashlib')
+        self._hashlib = _hashlib
         if _hashlib:
             # These two algorithms should always be present when this module
             # is compiled.  If not, something was compiled wrong.
@@ -122,7 +130,13 @@ class HashLibTestCase(unittest.TestCase):
             for algorithm, constructors in self.constructors_to_test.items():
                 constructor = getattr(_hashlib, 'openssl_'+algorithm, None)
                 if constructor:
-                    constructors.add(constructor)
+                    try:
+                        constructor()
+                    except ValueError:
+                        # default constructor blocked by crypto policy
+                        pass
+                    else:
+                        constructors.add(constructor)
 
         def add_builtin_constructor(name):
             constructor = getattr(hashlib, "__get_builtin_constructor")(name)
@@ -162,16 +176,6 @@ class HashLibTestCase(unittest.TestCase):
         constructors = self.constructors_to_test.values()
         return itertools.chain.from_iterable(constructors)
 
-    @support.refcount_test
-    @unittest.skipIf(c_hashlib is None, 'Require _hashlib module')
-    def test_refleaks_in_hash___init__(self):
-        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        sha1_hash = c_hashlib.new('sha1')
-        refs_before = gettotalrefcount()
-        for i in range(100):
-            sha1_hash.__init__('sha1')
-        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
-
     def test_hash_array(self):
         a = array.array("b", range(10))
         for cons in self.hash_constructors:
@@ -190,9 +194,24 @@ class HashLibTestCase(unittest.TestCase):
         self.assertTrue(set(hashlib.algorithms_guaranteed).
                             issubset(hashlib.algorithms_available))
 
+    def test_usedforsecurity(self):
+        for cons in self.hash_constructors:
+            cons(usedforsecurity=True)
+            cons(usedforsecurity=False)
+            cons(b'', usedforsecurity=True)
+            cons(b'', usedforsecurity=False)
+        hashlib.new("sha256", usedforsecurity=True)
+        hashlib.new("sha256", usedforsecurity=False)
+        if self._hashlib is not None:
+            self._hashlib.new("md5", usedforsecurity=False)
+            self._hashlib.openssl_md5(usedforsecurity=False)
+
     def test_unknown_hash(self):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
         self.assertRaises(TypeError, hashlib.new, 1)
+
+    def test_new_upper_to_lower(self):
+        self.assertEqual(hashlib.new("SHA256").name, "sha256")
 
     def test_get_builtin_constructor(self):
         get_builtin_constructor = getattr(hashlib,
@@ -374,6 +393,9 @@ class HashLibTestCase(unittest.TestCase):
         constructors = self.constructors_to_test[name]
         for hash_object_constructor in constructors:
             m = hash_object_constructor()
+            if HASH is not None and isinstance(m, HASH):
+                # _hashopenssl's variant does not have extra SHA3 attributes
+                continue
             self.assertEqual(capacity + rate, 1600)
             self.assertEqual(m._capacity_bits, capacity)
             self.assertEqual(m._rate_bits, rate)
@@ -972,6 +994,10 @@ class KDFTests(unittest.TestCase):
             with self.assertRaises((ValueError, OverflowError, TypeError)):
                 hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1,
                                dklen=dklen)
+
+    def test_normalized_name(self):
+        self.assertNotIn("blake2b512", hashlib.algorithms_available)
+        self.assertNotIn("sha3-512", hashlib.algorithms_available)
 
 
 if __name__ == "__main__":

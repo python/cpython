@@ -13,7 +13,7 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
-#define PyCFunction_Check(op) (Py_TYPE(op) == &PyCFunction_Type)
+#define PyCFunction_Check(op) Py_IS_TYPE(op, &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
@@ -22,8 +22,6 @@ typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
 typedef PyObject *(*_PyCFunctionFastWithKeywords) (PyObject *,
                                                    PyObject *const *, Py_ssize_t,
                                                    PyObject *);
-typedef PyObject *(*PyNoArgsFunction)(PyObject *);
-
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
 PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
@@ -39,19 +37,7 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 #define PyCFunction_GET_FLAGS(func) \
         (((PyCFunctionObject *)func) -> m_ml -> ml_flags)
 #endif
-PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
-
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyCFunction_FastCallDict(PyObject *func,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
-PyAPI_FUNC(PyObject *) _PyCFunction_FastCallKeywords(PyObject *func,
-    PyObject *const *stack,
-    Py_ssize_t nargs,
-    PyObject *kwnames);
-#endif
+Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 struct PyMethodDef {
     const char  *ml_name;   /* The name of the built-in function/method */
@@ -105,28 +91,8 @@ typedef struct {
     PyObject    *m_self; /* Passed as 'self' arg to the C func, can be NULL */
     PyObject    *m_module; /* The __module__ attribute, can be anything */
     PyObject    *m_weakreflist; /* List of weak references */
+    vectorcallfunc vectorcall;
 } PyCFunctionObject;
-
-PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallDict(
-    PyMethodDef *method,
-    PyObject *self,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
-PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallKeywords(
-    PyMethodDef *method,
-    PyObject *self,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwnames);
-#endif
-
-PyAPI_FUNC(int) PyCFunction_ClearFreeList(void);
-
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyCFunction_DebugMallocStats(FILE *out);
-PyAPI_FUNC(void) _PyMethod_DebugMallocStats(FILE *out);
 #endif
 
 #ifdef __cplusplus

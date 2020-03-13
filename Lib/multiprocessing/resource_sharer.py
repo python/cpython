@@ -59,7 +59,7 @@ else:
 
 
 class _ResourceSharer(object):
-    '''Manager for resouces using background thread.'''
+    '''Manager for resources using background thread.'''
     def __init__(self):
         self._key = 0
         self._cache = {}

@@ -339,6 +339,8 @@ def prepare_input_source(source, base=""):
     """This function takes an InputSource and an optional base URL and
     returns a fully resolved InputSource object ready for reading."""
 
+    if isinstance(source, os.PathLike):
+        source = os.fspath(source)
     if isinstance(source, str):
         source = xmlreader.InputSource(source)
     elif hasattr(source, "read"):
