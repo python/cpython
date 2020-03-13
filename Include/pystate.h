@@ -28,6 +28,17 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+/* New in 3.9 */
+/* Get the current interpreter state.
+
+   Issue a fatal error if there no current Python thread state or no current
+   interpreter. It cannot return NULL.
+
+   The caller must hold the GIL. */
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Get(void);
+#endif
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
 /* New in 3.8 */
 PyAPI_FUNC(PyObject *) PyInterpreterState_GetDict(PyInterpreterState *);
