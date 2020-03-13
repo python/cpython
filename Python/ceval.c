@@ -4620,7 +4620,10 @@ void
 PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    (void)_PyEval_SetProfile(tstate, func, arg);
+    if (_PyEval_SetProfile(tstate, func, arg) < 0) {
+        /* Log PySys_Audit() error */
+        _PyErr_WriteUnraisableMsg("in PyEval_SetProfile", NULL);
+    }
 }
 
 int
@@ -4661,7 +4664,10 @@ void
 PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    (void)_PyEval_SetTrace(tstate, func, arg);
+    if (_PyEval_SetTrace(tstate, func, arg) < 0) {
+        /* Log PySys_Audit() error */
+        _PyErr_WriteUnraisableMsg("in PyEval_SetTrace", NULL);
+    }
 }
 
 
