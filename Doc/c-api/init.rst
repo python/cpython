@@ -1072,6 +1072,18 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
     to :c:func:`PyThreadState_Clear`.
 
 
+.. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
+
+   Get the current interpreter.
+
+   Issue a fatal error if there no current Python thread state or no current
+   interpreter. It cannot return NULL.
+
+   The caller must hold the GIL.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: PY_INT64_T PyInterpreterState_GetID(PyInterpreterState *interp)
 
    Return the interpreter's unique ID.  If there was any error in doing
