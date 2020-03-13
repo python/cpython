@@ -527,23 +527,27 @@ class _WildcardSelector(_Selector):
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
-            entries = list(scandir(parent_path))
+            with scandir(parent_path) as scandir_it:
+                entries = list(scandir_it)
             for entry in entries:
-                entry_is_dir = False
-                try:
-                    entry_is_dir = entry.is_dir()
-                except OSError as e:
-                    if not _ignore_error(e):
-                        raise
-                if not self.dironly or entry_is_dir:
-                    name = entry.name
-                    if self.match(name):
-                        path = parent_path._make_child_relpath(name)
-                        for p in self.successor._select_from(path, is_dir, exists, scandir):
-                            yield p
+                if self.dironly:
+                    try:
+                        # "entry.is_dir()" can raise PermissionError
+                        # in some cases (see bpo-38894), which is not
+                        # among the errors ignored by _ignore_error()
+                        if not entry.is_dir():
+                            continue
+                    except OSError as e:
+                        if not _ignore_error(e):
+                            raise
+                        continue
+                name = entry.name
+                if self.match(name):
+                    path = parent_path._make_child_relpath(name)
+                    for p in self.successor._select_from(path, is_dir, exists, scandir):
+                        yield p
         except PermissionError:
             return
-
 
 
 class _RecursiveWildcardSelector(_Selector):
@@ -554,7 +558,8 @@ class _RecursiveWildcardSelector(_Selector):
     def _iterate_directories(self, parent_path, is_dir, scandir):
         yield parent_path
         try:
-            entries = list(scandir(parent_path))
+            with scandir(parent_path) as scandir_it:
+                entries = list(scandir_it)
             for entry in entries:
                 entry_is_dir = False
                 try:

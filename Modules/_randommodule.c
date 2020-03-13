@@ -264,7 +264,6 @@ random_seed(RandomObject *self, PyObject *arg)
     uint32_t *key = NULL;
     size_t bits, keyused;
     int res;
-    PyObject *args[1];
 
     if (arg == NULL || arg == Py_None) {
        if (random_seed_urandom(self) < 0) {
@@ -286,9 +285,7 @@ random_seed(RandomObject *self, PyObject *arg)
     } else if (PyLong_Check(arg)) {
         /* Calling int.__abs__() prevents calling arg.__abs__(), which might
            return an invalid value. See issue #31478. */
-        args[0] = arg;
-        n = PyObject_Vectorcall(_randomstate_global->Long___abs__, args, 0,
-                                         NULL);
+        n = PyObject_CallOneArg(_randomstate_global->Long___abs__, arg);
     }
     else {
         Py_hash_t hash = PyObject_Hash(arg);

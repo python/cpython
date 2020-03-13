@@ -1,0 +1,2 @@
+Fix the :meth:`random.Random.seed` method when a :class:`bool` is passed as the
+seed.

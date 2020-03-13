@@ -123,31 +123,36 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
             prefix = ''
             sep = ', '
         if isinstance(node, AST):
+            cls = type(node)
             args = []
             allsimple = True
             keywords = annotate_fields
-            for field in node._fields:
+            for name in node._fields:
                 try:
-                    value = getattr(node, field)
+                    value = getattr(node, name)
                 except AttributeError:
                     keywords = True
+                    continue
+                if value is None and getattr(cls, name, ...) is None:
+                    keywords = True
+                    continue
+                value, simple = _format(value, level)
+                allsimple = allsimple and simple
+                if keywords:
+                    args.append('%s=%s' % (name, value))
                 else:
+                    args.append(value)
+            if include_attributes and node._attributes:
+                for name in node._attributes:
+                    try:
+                        value = getattr(node, name)
+                    except AttributeError:
+                        continue
+                    if value is None and getattr(cls, name, ...) is None:
+                        continue
                     value, simple = _format(value, level)
                     allsimple = allsimple and simple
-                    if keywords:
-                        args.append('%s=%s' % (field, value))
-                    else:
-                        args.append(value)
-            if include_attributes and node._attributes:
-                for attr in node._attributes:
-                    try:
-                        value = getattr(node, attr)
-                    except AttributeError:
-                        pass
-                    else:
-                        value, simple = _format(value, level)
-                        allsimple = allsimple and simple
-                        args.append('%s=%s' % (attr, value))
+                    args.append('%s=%s' % (name, value))
             if allsimple and len(args) <= 3:
                 return '%s(%s)' % (node.__class__.__name__, ', '.join(args)), not args
             return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args)), False
@@ -170,9 +175,10 @@ def copy_location(new_node, old_node):
     attributes) from *old_node* to *new_node* if possible, and return *new_node*.
     """
     for attr in 'lineno', 'col_offset', 'end_lineno', 'end_col_offset':
-        if attr in old_node._attributes and attr in new_node._attributes \
-           and hasattr(old_node, attr):
-            setattr(new_node, attr, getattr(old_node, attr))
+        if attr in old_node._attributes and attr in new_node._attributes:
+            value = getattr(old_node, attr, None)
+            if value is not None:
+                setattr(new_node, attr, value)
     return new_node
 
 
@@ -191,7 +197,7 @@ def fix_missing_locations(node):
             else:
                 lineno = node.lineno
         if 'end_lineno' in node._attributes:
-            if not hasattr(node, 'end_lineno'):
+            if getattr(node, 'end_lineno', None) is None:
                 node.end_lineno = end_lineno
             else:
                 end_lineno = node.end_lineno
@@ -201,7 +207,7 @@ def fix_missing_locations(node):
             else:
                 col_offset = node.col_offset
         if 'end_col_offset' in node._attributes:
-            if not hasattr(node, 'end_col_offset'):
+            if getattr(node, 'end_col_offset', None) is None:
                 node.end_col_offset = end_col_offset
             else:
                 end_col_offset = node.end_col_offset
@@ -437,11 +443,11 @@ class NodeTransformer(NodeVisitor):
        class RewriteName(NodeTransformer):
 
            def visit_Name(self, node):
-               return copy_location(Subscript(
+               return Subscript(
                    value=Name(id='data', ctx=Load()),
-                   slice=Index(value=Str(s=node.id)),
+                   slice=Constant(value=node.id),
                    ctx=node.ctx
-               ), node)
+               )
 
     Keep in mind that if the node you're operating on has child nodes you must
     either transform the child nodes yourself or call the :meth:`generic_visit`
@@ -546,6 +552,7 @@ _const_types = {
 _const_types_not = {
     Num: (bool,),
 }
+
 _const_node_type_names = {
     bool: 'NameConstant',  # should be before int
     type(None): 'NameConstant',
@@ -556,6 +563,23 @@ _const_node_type_names = {
     bytes: 'Bytes',
     type(...): 'Ellipsis',
 }
+
+class Index(AST):
+    def __new__(cls, value, **kwargs):
+        return value
+
+class ExtSlice(AST):
+    def __new__(cls, dims=(), **kwargs):
+        return Tuple(list(dims), Load(), **kwargs)
+
+def _dims_getter(self):
+    return self.elts
+
+def _dims_setter(self, value):
+    self.elts = value
+
+Tuple.dims = property(_dims_getter, _dims_setter)
+
 
 # Large float and imaginary literals get turned into infinities in the AST.
 # We unparse those infinities to INFSTR.
@@ -612,6 +636,16 @@ class _Unparser(NodeVisitor):
             for x in seq:
                 inter()
                 f(x)
+
+    def items_view(self, traverser, items):
+        """Traverse and separate the given *items* with a comma and append it to
+        the buffer. If *items* is a single item sequence, a trailing comma
+        will be added."""
+        if len(items) == 1:
+            traverser(items[0])
+            self.write(",")
+        else:
+            self.interleave(lambda: self.write(", "), traverser, items)
 
     def fill(self, text=""):
         """Indent a piece of text and append it, according to the current
@@ -1020,11 +1054,7 @@ class _Unparser(NodeVisitor):
         value = node.value
         if isinstance(value, tuple):
             with self.delimit("(", ")"):
-                if len(value) == 1:
-                    self._write_constant(value[0])
-                    self.write(",")
-                else:
-                    self.interleave(lambda: self.write(", "), self._write_constant, value)
+                self.items_view(self._write_constant, value)
         elif value is ...:
             self.write("...")
         else:
@@ -1116,12 +1146,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Tuple(self, node):
         with self.delimit("(", ")"):
-            if len(node.elts) == 1:
-                elt = node.elts[0]
-                self.traverse(elt)
-                self.write(",")
-            else:
-                self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+            self.items_view(self.traverse, node.elts)
 
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
     unop_precedence = {
@@ -1261,7 +1286,10 @@ class _Unparser(NodeVisitor):
         self.set_precedence(_Precedence.ATOM, node.value)
         self.traverse(node.value)
         with self.delimit("[", "]"):
-            self.traverse(node.slice)
+            if isinstance(node.slice, Tuple) and node.slice.elts:
+                self.items_view(self.traverse, node.slice.elts)
+            else:
+                self.traverse(node.slice)
 
     def visit_Starred(self, node):
         self.write("*")
@@ -1270,10 +1298,6 @@ class _Unparser(NodeVisitor):
 
     def visit_Ellipsis(self, node):
         self.write("...")
-
-    def visit_Index(self, node):
-        self.set_precedence(_Precedence.TUPLE, node.value)
-        self.traverse(node.value)
 
     def visit_Slice(self, node):
         if node.lower:
@@ -1284,9 +1308,6 @@ class _Unparser(NodeVisitor):
         if node.step:
             self.write(":")
             self.traverse(node.step)
-
-    def visit_ExtSlice(self, node):
-        self.interleave(lambda: self.write(", "), self.traverse, node.dims)
 
     def visit_arg(self, node):
         self.write(node.arg)

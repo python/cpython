@@ -390,7 +390,7 @@ class TypeCommentTests(unittest.TestCase):
         arg = tree.argtypes[0]
         self.assertEqual(arg.id, "int")
         self.assertEqual(tree.returns.value.id, "List")
-        self.assertEqual(tree.returns.slice.value.id, "str")
+        self.assertEqual(tree.returns.slice.id, "str")
 
         tree = parse_func_type_input("(int, *str, **Any) -> float")
         self.assertEqual(tree.argtypes[0].id, "int")

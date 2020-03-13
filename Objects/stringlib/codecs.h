@@ -153,7 +153,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                 /* Decoding UTF-8 sequences in range \xED\xA0\x80-\xED\xBF\xBF
                    will result in surrogates in range D800-DFFF. Surrogates are
                    not valid UTF-8 so they are rejected.
-                   See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
+                   See https://www.unicode.org/versions/Unicode5.2.0/ch03.pdf
                    (table 3-7) and http://www.rfc-editor.org/rfc/rfc3629.txt */
                 goto InvalidContinuation1;
             }
