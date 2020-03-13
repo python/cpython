@@ -4578,7 +4578,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     PyObject *qualname = NULL;
     int is_async_generator = 0;
 
-    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) {
         c->u->u_ste->ste_coroutine = 1;
     }
     int is_async_function = c->u->u_ste->ste_coroutine;
