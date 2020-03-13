@@ -873,7 +873,7 @@ odict_or(PyObject *left, PyObject *right)
     if (!PyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    PyObject *new = PyObject_CallFunctionObjArgs((PyObject*)type, left, NULL);
+    PyObject *new = PyObject_CallOneArg((PyObject*)type, left);
     if (!new) {
         return NULL;
     }
