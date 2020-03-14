@@ -1139,7 +1139,7 @@ All of the following opcodes use their arguments.
 .. opcode:: MAKE_FUNCTION (flags)
 
    Pushes a new function object on the stack.  From bottom to top, the consumed
-   stack must consist of values if *flags* carries a specified flag value
+   stack must consist of values if the argument carries a specified flag value
 
    * ``0x01`` a tuple of default values for positional-only and
      positional-or-keyword parameters in positional order
