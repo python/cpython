@@ -64,10 +64,10 @@ def reflow_c_string(s, depth):
     buffer = []
     for index, line in enumerate(s.splitlines()):
         if index == 0:
-            buffer.append(f'"{line}"')
+            buffer.append('"%s"' % line)
         else:
-            buffer.append(f'"\\n{line}"')
-    return f"\n{' ' * depth * TABSIZE}".join(buffer)
+            buffer.append('"\\n%s"' % line)
+    return ("\n%s" % (' ' * depth * TABSIZE)).join(buffer)
 
 def is_simple(sum):
     """Return True if a sum is a simple.
