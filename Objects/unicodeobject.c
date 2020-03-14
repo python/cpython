@@ -3991,6 +3991,41 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
 }
 
 
+int
+_PyUnicode_GetUTF8Buffer(PyObject *unicode, const char *errors,
+                         Py_buffer *view)
+{
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        return -1;
+    }
+    if (PyUnicode_READY(unicode) == -1) {
+        return -1;
+    }
+
+    if (PyUnicode_UTF8(unicode) != NULL
+            && Py_TYPE(unicode)->tp_as_buffer == NULL) {
+        return PyBuffer_FillInfo(view, unicode,
+                PyUnicode_UTF8(unicode),
+                PyUnicode_UTF8_LENGTH(unicode),
+                /* readonly */ 1, PyBUF_SIMPLE);
+    }
+
+    // Unlike PyUnicode_AsUTF8AndSize(), this function doesn't
+    // create a UTF-8 cache for speed and efficiency.
+    PyObject *bytes = _PyUnicode_AsUTF8String(unicode, errors);
+    if (bytes == NULL) {
+        return -1;
+    }
+    assert(PyBytes_CheckExact(bytes));
+    if (PyObject_GetBuffer(bytes, view, PyBUF_SIMPLE) < 0) {
+        Py_DECREF(bytes);
+        return -1;
+    }
+    return 0;
+}
+
+  
 static int unicode_fill_utf8(PyObject *unicode);
 
 const char *

@@ -1,0 +1,2 @@
+Add new ``_PyUnicode_GetUTF8Buffer`` private API to get UTF-8 encode of the
+unicode object without cache or extra allocation.

@@ -2830,6 +2830,28 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(unicode_asucs4(s, len(s), True), s+'\0')
             self.assertEqual(unicode_asucs4(s, len(s), False), s+'\uffff')
 
+    # Test _PyUnicode_GetUTF8Buffer()
+    @support.cpython_only
+    def test_getutf8buffer(self):
+        from _testcapi import unicode_getutf8buffer, unicode_test_getutf8buffer
+
+        # Run tests wrtten in C.  Raise an error when test failed.
+        unicode_test_getutf8buffer()
+
+        ascii_ = "foo"
+        bmp = '\u0100'
+        bmp2 = '\uffff'
+        nonbmp = chr(0x10ffff)
+        surrogates = 'a\ud800b\udfffc'
+
+        self.assertEqual(unicode_getutf8buffer(ascii_), b'foo')
+        self.assertEqual(unicode_getutf8buffer(bmp), b'\xc4\x80')
+        self.assertEqual(unicode_getutf8buffer(bmp2), b'\xef\xbf\xbf')
+        self.assertEqual(unicode_getutf8buffer(nonbmp), b'\xf4\x8f\xbf\xbf')
+        self.assertRaises(UnicodeEncodeError, unicode_getutf8buffer, surrogates)
+        self.assertEqual(unicode_getutf8buffer(surrogates, "surrogatepass"),
+                         b'a\xed\xa0\x80b\xed\xbf\xbfc')
+
     # Test PyUnicode_AsUTF8()
     @support.cpython_only
     def test_asutf8(self):
