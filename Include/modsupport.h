@@ -60,14 +60,14 @@ PyAPI_FUNC(int) _PyArg_UnpackStack(
     ...);
 
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kwargs);
+PyAPI_FUNC(int) _PyArg_NoKwnames(const char *funcname, PyObject *kwnames);
 PyAPI_FUNC(int) _PyArg_NoPositional(const char *funcname, PyObject *args);
-PyAPI_FUNC(int) _PyArg_NoTupleKeywords(const char *funcname, PyObject *kwnames);
 #define _PyArg_NoKeywords(funcname, kwargs) \
     ((kwargs) == NULL || _PyArg_NoKeywords((funcname), (kwargs)))
+#define _PyArg_NoKwnames(funcname, kwnames) \
+    ((kwnames) == NULL || _PyArg_NoKwnames((funcname), (kwnames)))
 #define _PyArg_NoPositional(funcname, args) \
     ((args) == NULL || _PyArg_NoPositional((funcname), (args)))
-#define _PyArg_NoTupleKeywords(funcname, kwnames) \
-    ((kwnames) == NULL || _PyArg_NoTupleKeywords((funcname), (kwnames)))
 
 PyAPI_FUNC(void) _PyArg_BadArgument(const char *, const char *, const char *, PyObject *);
 PyAPI_FUNC(int) _PyArg_CheckPositional(const char *, Py_ssize_t,

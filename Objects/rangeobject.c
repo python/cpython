@@ -146,7 +146,7 @@ range_vectorcall(PyTypeObject *type, PyObject *const *args,
                  size_t nargsf, PyObject *kwnames)
 {
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_NoTupleKeywords("range", kwnames)) {
+    if (!_PyArg_NoKwnames("range", kwnames)) {
         return NULL;
     }
     return range_from_array(type, args, nargs);

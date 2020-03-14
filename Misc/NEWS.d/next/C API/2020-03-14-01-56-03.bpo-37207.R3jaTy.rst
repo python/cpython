@@ -1,1 +1,1 @@
-Add _PyArg_NoTupleKeywords helper function. Patch by Dong-hee Na.
+Add _PyArg_NoKwnames helper function. Patch by Dong-hee Na.

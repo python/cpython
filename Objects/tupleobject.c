@@ -709,7 +709,7 @@ static PyObject *
 tuple_vectorcall(PyObject *type, PyObject * const*args,
                  size_t nargsf, PyObject *kwnames)
 {
-    if (!_PyArg_NoTupleKeywords("tuple", kwnames)) {
+    if (!_PyArg_NoKwnames("tuple", kwnames)) {
         return NULL;
     }
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
