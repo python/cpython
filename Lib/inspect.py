@@ -2770,7 +2770,7 @@ class Signature:
                 top_kind = _POSITIONAL_ONLY
                 kind_defaults = False
 
-                for idx, param in enumerate(parameters):
+                for param in parameters:
                     kind = param.kind
                     name = param.name
 
@@ -2805,8 +2805,7 @@ class Signature:
 
                     params[name] = param
             else:
-                params = OrderedDict(((param.name, param)
-                                                for param in parameters))
+                params = OrderedDict((param.name, param) for param in parameters)
 
         self._parameters = types.MappingProxyType(params)
         self._return_annotation = return_annotation
