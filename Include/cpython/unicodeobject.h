@@ -734,19 +734,6 @@ PyAPI_FUNC(void*) _PyUnicode_AsKind(PyObject *s, unsigned int kind);
 
 /* --- Manage the default encoding ---------------------------------------- */
 
-/* Get a buffer to the UTF-8 encoding of the Unicode object unicode.
-   Returns -1 on error.
-
-   Successful calls must be paired to
-   calls to PyBuffer_Release.
-*/
-
-PyAPI_FUNC(int) _PyUnicode_GetUTF8Buffer(
-    PyObject *unicode,      /* Unicode object */
-    const char *errors,     /* error handling */
-    Py_buffer *view         /* (out) buffer to the UTF-8 encoding */
-    );
-
 /* Returns a pointer to the default encoding (UTF-8) of the
    Unicode object unicode and the size of the encoded representation
    in bytes stored in *size.
