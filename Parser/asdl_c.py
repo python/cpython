@@ -61,13 +61,7 @@ def reflow_lines(s, depth):
     return lines
 
 def reflow_c_string(s, depth):
-    buffer = []
-    for index, line in enumerate(s.splitlines()):
-        if index == 0:
-            buffer.append('"%s"' % line)
-        else:
-            buffer.append('"\\n%s"' % line)
-    return ("\n%s" % (' ' * depth * TABSIZE)).join(buffer)
+    return '"%s"' % s.replace('\n', '\\n"\n%s"' % (' ' * depth * TABSIZE))
 
 def is_simple(sum):
     """Return True if a sum is a simple.
@@ -972,12 +966,26 @@ static int add_ast_fields(void)
             fields = name+"_fields"
         else:
             fields = "NULL"
-        self.emit(
-            'state->%s_type = make_type("%s", state->AST_type, %s, %d, %s);'
-            % (name, name, fields, len(prod.fields), reflow_c_string(asdl_of(name, prod), 1)),
-            1,
-            reflow=False,
-        )
+        docstring = asdl_of(name, prod)
+        if '\n' in docstring or '(' in docstring:
+            self.emit(
+                'state->%s_type = make_type("%s", state->AST_type, %s, %d,'
+                % (name, name, fields, len(prod.fields)),
+                1,
+                reflow=False,
+            )
+            self.emit(
+                '%s);' % reflow_c_string(docstring, 2),
+                2,
+                reflow=False,
+            )
+        else:
+            self.emit(
+                'state->%s_type = make_type("%s", state->AST_type, %s, %d, %s);'
+                % (name, name, fields, len(prod.fields), reflow_c_string(docstring, 2)),
+                1,
+                reflow=False,
+            )
         self.emit("if (!state->%s_type) return 0;" % name, 1)
         self.emit_type("AST_type")
         self.emit_type("%s_type" % name)
@@ -990,12 +998,9 @@ static int add_ast_fields(void)
         self.emit_defaults(name, prod.attributes, 1)
 
     def visitSum(self, sum, name):
-        self.emit(
-            'state->%s_type = make_type("%s", state->AST_type, NULL, 0, %s);'
-            % (name, name, reflow_c_string(asdl_of(name, sum), 1)),
-            1,
-            reflow=False,
-        )
+        self.emit('state->%s_type = make_type("%s", state->AST_type, NULL, 0,' %
+                  (name, name), 1)
+        self.emit('%s);' % reflow_c_string(asdl_of(name, sum), 2), 2, reflow=False)
         self.emit_type("%s_type" % name)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
         if sum.attributes:
@@ -1014,18 +1019,9 @@ static int add_ast_fields(void)
         else:
             fields = "NULL"
         self.emit(
-            'state->%s_type = make_type("%s", state->%s_type, %s, %d, %s);'
-            % (
-                cons.name,
-                cons.name,
-                name,
-                fields,
-                len(cons.fields),
-                reflow_c_string(asdl_of(cons.name, cons), 1),
-            ),
-            1,
-            reflow=False,
-        )
+            'state->%s_type = make_type("%s", state->%s_type, %s, %d,' %
+                      (cons.name, cons.name, name, fields, len(cons.fields)), 1)
+        self.emit('%s);' % reflow_c_string(asdl_of(cons.name, cons), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % cons.name, 1)
         self.emit_type("%s_type" % cons.name)
         self.emit_defaults(cons.name, cons.fields, 1)
