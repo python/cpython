@@ -966,26 +966,10 @@ static int add_ast_fields(void)
             fields = name+"_fields"
         else:
             fields = "NULL"
-        docstring = asdl_of(name, prod)
-        if '\n' in docstring or '(' in docstring:
-            self.emit(
-                'state->%s_type = make_type("%s", state->AST_type, %s, %d,'
-                % (name, name, fields, len(prod.fields)),
-                1,
-                reflow=False,
-            )
-            self.emit(
-                '%s);' % reflow_c_string(docstring, 2),
-                2,
-                reflow=False,
-            )
-        else:
-            self.emit(
-                'state->%s_type = make_type("%s", state->AST_type, %s, %d, %s);'
-                % (name, name, fields, len(prod.fields), reflow_c_string(docstring, 2)),
-                1,
-                reflow=False,
-            )
+        self.emit(
+            'state->%s_type = make_type("%s", state->AST_type, %s, %d,' %
+                  (name, name, fields, len(prod.fields)), 1)
+        self.emit('%s);' % reflow_c_string(asdl_of(name, prod), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
         self.emit_type("AST_type")
         self.emit_type("%s_type" % name)
@@ -1018,9 +1002,8 @@ static int add_ast_fields(void)
             fields = cons.name+"_fields"
         else:
             fields = "NULL"
-        self.emit(
-            'state->%s_type = make_type("%s", state->%s_type, %s, %d,' %
-                      (cons.name, cons.name, name, fields, len(cons.fields)), 1)
+        self.emit('state->%s_type = make_type("%s", state->%s_type, %s, %d,' %
+                            (cons.name, cons.name, name, fields, len(cons.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(cons.name, cons), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % cons.name, 1)
         self.emit_type("%s_type" % cons.name)

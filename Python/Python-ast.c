@@ -1962,7 +1962,8 @@ static int init_types(void)
     state->NotIn_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->NotIn_type, NULL, NULL);
     if (!state->NotIn_singleton) return 0;
-    state->comprehension_type = make_type("comprehension", state->AST_type, comprehension_fields, 4,
+    state->comprehension_type = make_type("comprehension", state->AST_type,
+                                          comprehension_fields, 4,
         "comprehension(expr target, expr iter, expr* ifs, int is_async)");
     if (!state->comprehension_type) return 0;
     if (!add_attributes(state->comprehension_type, NULL, 0)) return 0;
@@ -1987,7 +1988,8 @@ static int init_types(void)
         return 0;
     if (PyObject_SetAttr(state->ExceptHandler_type, state->name, Py_None) == -1)
         return 0;
-    state->arguments_type = make_type("arguments", state->AST_type, arguments_fields, 7,
+    state->arguments_type = make_type("arguments", state->AST_type,
+                                      arguments_fields, 7,
         "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults, arg? kwarg, expr* defaults)");
     if (!state->arguments_type) return 0;
     if (!add_attributes(state->arguments_type, NULL, 0)) return 0;
@@ -2007,7 +2009,8 @@ static int init_types(void)
         return 0;
     if (PyObject_SetAttr(state->arg_type, state->end_col_offset, Py_None) == -1)
         return 0;
-    state->keyword_type = make_type("keyword", state->AST_type, keyword_fields, 2,
+    state->keyword_type = make_type("keyword", state->AST_type, keyword_fields,
+                                    2,
         "keyword(identifier? arg, expr value)");
     if (!state->keyword_type) return 0;
     if (!add_attributes(state->keyword_type, NULL, 0)) return 0;
@@ -2019,7 +2022,8 @@ static int init_types(void)
     if (!add_attributes(state->alias_type, NULL, 0)) return 0;
     if (PyObject_SetAttr(state->alias_type, state->asname, Py_None) == -1)
         return 0;
-    state->withitem_type = make_type("withitem", state->AST_type, withitem_fields, 2,
+    state->withitem_type = make_type("withitem", state->AST_type,
+                                     withitem_fields, 2,
         "withitem(expr context_expr, expr? optional_vars)");
     if (!state->withitem_type) return 0;
     if (!add_attributes(state->withitem_type, NULL, 0)) return 0;
