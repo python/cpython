@@ -294,9 +294,13 @@ class ShareableList:
             ]
             self._list_len = len(_formats)
             assert sum(len(fmt) <= 8 for fmt in _formats) == self._list_len
+            sum_allocated_bytes = 0
             self._allocated_bytes = tuple(
-                    self._alignment if fmt[-1] != "s" else int(fmt[:-1])
-                    for fmt in _formats
+                (sum_allocated_bytes := sum_allocated_bytes + (
+                        self._alignment if fmt[-1] != "s" else int(fmt[:-1])
+                    )
+                 )
+                for fmt in _formats
             )
             _recreation_codes = [
                 self._extract_recreation_code(item) for item in sequence
@@ -409,8 +413,11 @@ class ShareableList:
 
     def __getitem__(self, position):
         try:
-            offset = self._offset_data_start \
-                     + sum(self._allocated_bytes[:position])
+            if position == 0:
+                allocated_predecessor = 0
+            else:
+                allocated_predecessor = self._allocated_bytes[position - 1]
+            offset = self._offset_data_start + allocated_predecessor
             (v,) = struct.unpack_from(
                 self._get_packing_format(position),
                 self.shm.buf,
@@ -426,8 +433,11 @@ class ShareableList:
 
     def __setitem__(self, position, value):
         try:
-            offset = self._offset_data_start \
-                     + sum(self._allocated_bytes[:position])
+            if position == 0:
+                allocated_predecessor = 0
+            else:
+                allocated_predecessor = self._allocated_bytes[position - 1]
+            offset = self._offset_data_start + allocated_predecessor
             current_format = self._get_packing_format(position)
         except IndexError:
             raise IndexError("assignment index out of range")
@@ -435,13 +445,15 @@ class ShareableList:
         if not isinstance(value, (str, bytes)):
             new_format = self._types_mapping[type(value)]
         else:
-            if len(value) > self._allocated_bytes[position]:
+            allocated_position = self._allocated_bytes[position] - allocated_predecessor
+
+            if len(value) > allocated_position:
                 raise ValueError("exceeds available storage for existing str")
             if current_format[-1] == "s":
                 new_format = current_format
             else:
                 new_format = self._types_mapping[str] % (
-                    self._allocated_bytes[position],
+                    allocated_position,
                 )
 
         self._set_packing_format_and_transform(
@@ -489,7 +501,7 @@ class ShareableList:
 
     @property
     def _offset_packing_formats(self):
-        return self._offset_data_start + sum(self._allocated_bytes)
+        return self._offset_data_start + self._allocated_bytes[-1]
 
     @property
     def _offset_back_transform_codes(self):
