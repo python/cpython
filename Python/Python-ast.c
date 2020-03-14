@@ -1401,7 +1401,10 @@ static int init_types(void)
     state->AST_type = PyType_FromSpec(&AST_type_spec);
     if (!state->AST_type) return 0;
     if (add_ast_fields() < 0) return 0;
-    state->mod_type = make_type("mod", state->AST_type, NULL, 0, "mod = Module(stmt* body, type_ignore* type_ignores)\n      | Interactive(stmt* body)\n      | Expression(expr body)\n      | FunctionType(expr* argtypes, expr returns)");
+    state->mod_type = make_type("mod", state->AST_type, NULL, 0, "mod = Module(stmt* body, type_ignore* type_ignores)"
+    "\n    | Interactive(stmt* body)"
+    "\n    | Expression(expr body)"
+    "\n    | FunctionType(expr* argtypes, expr returns)");
     if (!state->mod_type) return 0;
     if (!add_attributes(state->mod_type, NULL, 0)) return 0;
     state->Module_type = make_type("Module", state->mod_type, Module_fields, 2, "Module(stmt* body, type_ignore* type_ignores)");
@@ -1412,7 +1415,31 @@ static int init_types(void)
     if (!state->Expression_type) return 0;
     state->FunctionType_type = make_type("FunctionType", state->mod_type, FunctionType_fields, 2, "FunctionType(expr* argtypes, expr returns)");
     if (!state->FunctionType_type) return 0;
-    state->stmt_type = make_type("stmt", state->AST_type, NULL, 0, "stmt = FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)\n       | AsyncFunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)\n       | ClassDef(identifier name, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)\n       | Return(expr? value)\n       | Delete(expr* targets)\n       | Assign(expr* targets, expr value, string? type_comment)\n       | AugAssign(expr target, operator op, expr value)\n       | AnnAssign(expr target, expr annotation, expr? value, int simple)\n       | For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)\n       | AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)\n       | While(expr test, stmt* body, stmt* orelse)\n       | If(expr test, stmt* body, stmt* orelse)\n       | With(withitem* items, stmt* body, string? type_comment)\n       | AsyncWith(withitem* items, stmt* body, string? type_comment)\n       | Raise(expr? exc, expr? cause)\n       | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)\n       | Assert(expr test, expr? msg)\n       | Import(alias* names)\n       | ImportFrom(identifier? module, alias* names, int? level)\n       | Global(identifier* names)\n       | Nonlocal(identifier* names)\n       | Expr(expr value)\n       | Pass\n       | Break\n       | Continue");
+    state->stmt_type = make_type("stmt", state->AST_type, NULL, 0, "stmt = FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)"
+    "\n     | AsyncFunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)"
+    "\n     | ClassDef(identifier name, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)"
+    "\n     | Return(expr? value)"
+    "\n     | Delete(expr* targets)"
+    "\n     | Assign(expr* targets, expr value, string? type_comment)"
+    "\n     | AugAssign(expr target, operator op, expr value)"
+    "\n     | AnnAssign(expr target, expr annotation, expr? value, int simple)"
+    "\n     | For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)"
+    "\n     | AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)"
+    "\n     | While(expr test, stmt* body, stmt* orelse)"
+    "\n     | If(expr test, stmt* body, stmt* orelse)"
+    "\n     | With(withitem* items, stmt* body, string? type_comment)"
+    "\n     | AsyncWith(withitem* items, stmt* body, string? type_comment)"
+    "\n     | Raise(expr? exc, expr? cause)"
+    "\n     | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)"
+    "\n     | Assert(expr test, expr? msg)"
+    "\n     | Import(alias* names)"
+    "\n     | ImportFrom(identifier? module, alias* names, int? level)"
+    "\n     | Global(identifier* names)"
+    "\n     | Nonlocal(identifier* names)"
+    "\n     | Expr(expr value)"
+    "\n     | Pass"
+    "\n     | Break"
+    "\n     | Continue");
     if (!state->stmt_type) return 0;
     if (!add_attributes(state->stmt_type, stmt_attributes, 4)) return 0;
     if (PyObject_SetAttr(state->stmt_type, state->end_lineno, Py_None) == -1)
@@ -1509,7 +1536,33 @@ static int init_types(void)
     if (!state->Break_type) return 0;
     state->Continue_type = make_type("Continue", state->stmt_type, NULL, 0, "Continue");
     if (!state->Continue_type) return 0;
-    state->expr_type = make_type("expr", state->AST_type, NULL, 0, "expr = BoolOp(boolop op, expr* values)\n       | NamedExpr(expr target, expr value)\n       | BinOp(expr left, operator op, expr right)\n       | UnaryOp(unaryop op, expr operand)\n       | Lambda(arguments args, expr body)\n       | IfExp(expr test, expr body, expr orelse)\n       | Dict(expr* keys, expr* values)\n       | Set(expr* elts)\n       | ListComp(expr elt, comprehension* generators)\n       | SetComp(expr elt, comprehension* generators)\n       | DictComp(expr key, expr value, comprehension* generators)\n       | GeneratorExp(expr elt, comprehension* generators)\n       | Await(expr value)\n       | Yield(expr? value)\n       | YieldFrom(expr value)\n       | Compare(expr left, cmpop* ops, expr* comparators)\n       | Call(expr func, expr* args, keyword* keywords)\n       | FormattedValue(expr value, int? conversion, expr? format_spec)\n       | JoinedStr(expr* values)\n       | Constant(constant value, string? kind)\n       | Attribute(expr value, identifier attr, expr_context ctx)\n       | Subscript(expr value, expr slice, expr_context ctx)\n       | Starred(expr value, expr_context ctx)\n       | Name(identifier id, expr_context ctx)\n       | List(expr* elts, expr_context ctx)\n       | Tuple(expr* elts, expr_context ctx)\n       | Slice(expr? lower, expr? upper, expr? step)");
+    state->expr_type = make_type("expr", state->AST_type, NULL, 0, "expr = BoolOp(boolop op, expr* values)"
+    "\n     | NamedExpr(expr target, expr value)"
+    "\n     | BinOp(expr left, operator op, expr right)"
+    "\n     | UnaryOp(unaryop op, expr operand)"
+    "\n     | Lambda(arguments args, expr body)"
+    "\n     | IfExp(expr test, expr body, expr orelse)"
+    "\n     | Dict(expr* keys, expr* values)"
+    "\n     | Set(expr* elts)"
+    "\n     | ListComp(expr elt, comprehension* generators)"
+    "\n     | SetComp(expr elt, comprehension* generators)"
+    "\n     | DictComp(expr key, expr value, comprehension* generators)"
+    "\n     | GeneratorExp(expr elt, comprehension* generators)"
+    "\n     | Await(expr value)"
+    "\n     | Yield(expr? value)"
+    "\n     | YieldFrom(expr value)"
+    "\n     | Compare(expr left, cmpop* ops, expr* comparators)"
+    "\n     | Call(expr func, expr* args, keyword* keywords)"
+    "\n     | FormattedValue(expr value, int? conversion, expr? format_spec)"
+    "\n     | JoinedStr(expr* values)"
+    "\n     | Constant(constant value, string? kind)"
+    "\n     | Attribute(expr value, identifier attr, expr_context ctx)"
+    "\n     | Subscript(expr value, expr slice, expr_context ctx)"
+    "\n     | Starred(expr value, expr_context ctx)"
+    "\n     | Name(identifier id, expr_context ctx)"
+    "\n     | List(expr* elts, expr_context ctx)"
+    "\n     | Tuple(expr* elts, expr_context ctx)"
+    "\n     | Slice(expr? lower, expr? upper, expr? step)");
     if (!state->expr_type) return 0;
     if (!add_attributes(state->expr_type, expr_attributes, 4)) return 0;
     if (PyObject_SetAttr(state->expr_type, state->end_lineno, Py_None) == -1)

@@ -60,6 +60,15 @@ def reflow_lines(s, depth):
         lines.append(padding + cur)
     return lines
 
+def reflow_c_string(s, depth):
+    buffer = []
+    for index, line in enumerate(s.splitlines()):
+        if index == 0:
+            buffer.append(f'"{line}"')
+        else:
+            buffer.append(f'"\\n{line}"')
+    return f"\n{' ' * depth * TABSIZE}".join(buffer)
+
 def is_simple(sum):
     """Return True if a sum is a simple.
 
@@ -81,8 +90,8 @@ def asdl_of(name, obj):
         if is_simple(obj):
             types = " | ".join(type.name for type in obj.types)
         else:
-            template = "\\n{}| ".format(" " * (len(name) + 3))
-            types = template.join(
+            sep = "\n{}| ".format(" " * (len(name) + 1))
+            types = sep.join(
                 asdl_of(type.name, type) for type in obj.types
             )
         return "{} = {}".format(name, types)
@@ -964,8 +973,8 @@ static int add_ast_fields(void)
         else:
             fields = "NULL"
         self.emit(
-            'state->%s_type = make_type("%s", state->AST_type, %s, %d, "%s");'
-            % (name, name, fields, len(prod.fields), asdl_of(name, prod)),
+            'state->%s_type = make_type("%s", state->AST_type, %s, %d, %s);'
+            % (name, name, fields, len(prod.fields), reflow_c_string(asdl_of(name, prod), 1)),
             1,
             reflow=False,
         )
@@ -982,8 +991,8 @@ static int add_ast_fields(void)
 
     def visitSum(self, sum, name):
         self.emit(
-            'state->%s_type = make_type("%s", state->AST_type, NULL, 0, "%s");'
-            % (name, name, asdl_of(name, sum)),
+            'state->%s_type = make_type("%s", state->AST_type, NULL, 0, %s);'
+            % (name, name, reflow_c_string(asdl_of(name, sum), 1)),
             1,
             reflow=False,
         )
@@ -1005,14 +1014,14 @@ static int add_ast_fields(void)
         else:
             fields = "NULL"
         self.emit(
-            'state->%s_type = make_type("%s", state->%s_type, %s, %d, "%s");'
+            'state->%s_type = make_type("%s", state->%s_type, %s, %d, %s);'
             % (
                 cons.name,
                 cons.name,
                 name,
                 fields,
                 len(cons.fields),
-                asdl_of(cons.name, cons),
+                reflow_c_string(asdl_of(cons.name, cons), 1),
             ),
             1,
             reflow=False,

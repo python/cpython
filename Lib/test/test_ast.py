@@ -637,19 +637,14 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(attr_b.end_col_offset, 4)
 
     def test_ast_asdl_signature(self):
-        assert ast.withitem.__doc__ == "withitem(expr context_expr, expr? optional_vars)"
-        assert ast.GtE.__doc__ == "GtE"
-        assert ast.Name.__doc__ == "Name(identifier id, expr_context ctx)"
-        assert ast.cmpop.__doc__ == "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn"
-        expressions = []
-        for name, node in ast.__dict__.items():
-            if (
-                self._is_ast_node(name, node)
-                and issubclass(node, ast.expr)
-                and node.__doc__
-            ):
-                expressions.append(node.__doc__)
-        assert ast.expr.__doc__ == "expr = " + "\n       | ".join(expressions)
+        self.assertEqual(ast.withitem.__doc__, "withitem(expr context_expr, expr? optional_vars)")
+        self.assertEqual(ast.GtE.__doc__, "GtE")
+        self.assertEqual(ast.Name.__doc__, "Name(identifier id, expr_context ctx)")
+        self.assertEqual(ast.cmpop.__doc__, "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn")
+        expressions = [f"     | {node.__doc__}" for node in ast.expr.__subclasses__()]
+        expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
+        self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
+
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
