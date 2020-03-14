@@ -1123,6 +1123,10 @@ anywhere a regular dictionary is used.
    passed to the :class:`OrderedDict` constructor and its :meth:`update`
    method.
 
+.. versionchanged:: 3.9
+    Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
+
+
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

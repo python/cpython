@@ -142,12 +142,18 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
    "tuple" and keyword arguments "dict". "dict" may also be NULL */
 PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
 
+static inline PyObject *
+_PyObject_FastCallTstate(PyThreadState *tstate, PyObject *func, PyObject *const *args, Py_ssize_t nargs)
+{
+    return _PyObject_VectorcallTstate(tstate, func, args, (size_t)nargs, NULL);
+}
+
 /* Same as PyObject_Vectorcall except without keyword arguments */
 static inline PyObject *
 _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
 {
     PyThreadState *tstate = PyThreadState_GET();
-    return _PyObject_VectorcallTstate(tstate, func, args, (size_t)nargs, NULL);
+    return _PyObject_FastCallTstate(tstate, func, args, nargs);
 }
 
 /* Call a callable without any arguments

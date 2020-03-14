@@ -635,7 +635,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         return NULL;
 
     if ((preexec_fn != Py_None) &&
-            (_PyInterpreterState_Get() != PyInterpreterState_Main())) {
+            (PyInterpreterState_Get() != PyInterpreterState_Main())) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported within subinterpreters");
         return NULL;

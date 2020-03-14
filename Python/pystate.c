@@ -396,7 +396,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 
 
 PyInterpreterState *
-_PyInterpreterState_Get(void)
+PyInterpreterState_Get(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
@@ -998,6 +998,17 @@ PyThreadState_GetDict(void)
 }
 
 
+PyInterpreterState *
+PyThreadState_GetInterpreter(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    if (tstate == NULL) {
+        return NULL;
+    }
+    return tstate->interp;
+}
+
+
 /* Asynchronously raise an exception in a thread.
    Requested by Just van Rossum and Alex Martelli.
    To prevent naive misuse, you must write your own extension
@@ -1423,9 +1434,9 @@ _check_xidata(_PyCrossInterpreterData *data)
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    // _PyInterpreterState_Get() aborts if lookup fails, so we don't need
+    // PyInterpreterState_Get() aborts if lookup fails, so we don't need
     // to check the result for NULL.
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = PyInterpreterState_Get();
 
     // Reset data before re-populating.
     *data = (_PyCrossInterpreterData){0};
@@ -1721,6 +1732,20 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     }
 }
 
+
+_PyFrameEvalFunction
+_PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
+{
+    return interp->eval_frame;
+}
+
+
+void
+_PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
+                                     _PyFrameEvalFunction eval_frame)
+{
+    interp->eval_frame = eval_frame;
+}
 
 #ifdef __cplusplus
 }
