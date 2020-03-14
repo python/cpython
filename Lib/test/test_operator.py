@@ -476,11 +476,10 @@ class OperatorTestCase:
 
     def test_iconcat_without_getitem(self):
         operator = self.module
-        class X: pass
 
-        msg = "'X' object can't be concatenated"
+        msg = "'int' object can't be concatenated"
         with self.assertRaisesRegex(TypeError, msg):
-            operator.iconcat(X(), X())
+            operator.iconcat(1, 0.5)
 
     def test_index(self):
         operator = self.module
@@ -492,11 +491,15 @@ class OperatorTestCase:
 
     def test_not_(self):
         operator = self.module
-        class X:
+        class C:
             def __bool__(self):
-                return False
-
-        self.assertEqual(operator.not_(X()), True)
+                raise SyntaxError
+        self.assertRaises(TypeError, operator.not_)
+        self.assertRaises(SyntaxError, operator.not_, C())
+        self.assertFalse(operator.not_(5))
+        self.assertFalse(operator.not_([0]))
+        self.assertTrue(operator.not_(0))
+        self.assertTrue(operator.not_([]))
 
     def test_length_hint(self):
         operator = self.module
