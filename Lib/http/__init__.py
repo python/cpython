@@ -17,6 +17,8 @@ class HTTPStatus(IntEnum):
         * RFC 2774: An HTTP Extension Framework
         * RFC 7725: An HTTP Status Code to Report Legal Obstacles
         * RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)
+        * RFC 8297: An HTTP Status Code for Indicating Hints
+        * RFC 8470: Using Early Data in HTTP
     """
     def __new__(cls, value, phrase, description=''):
         obj = int.__new__(cls, value)
@@ -31,6 +33,7 @@ class HTTPStatus(IntEnum):
     SWITCHING_PROTOCOLS = (101, 'Switching Protocols',
             'Switching to new protocol; obey Upgrade header')
     PROCESSING = 102, 'Processing'
+    EARLY_HINTS = 103, 'Early Hints'
 
     # success
     OK = 200, 'OK', 'Request fulfilled, document follows'
@@ -105,6 +108,7 @@ class HTTPStatus(IntEnum):
     UNPROCESSABLE_ENTITY = 422, 'Unprocessable Entity'
     LOCKED = 423, 'Locked'
     FAILED_DEPENDENCY = 424, 'Failed Dependency'
+    TOO_EARLY = 425, 'Too Early'
     UPGRADE_REQUIRED = 426, 'Upgrade Required'
     PRECONDITION_REQUIRED = (428, 'Precondition Required',
         'The origin server requires the request to be conditional')
