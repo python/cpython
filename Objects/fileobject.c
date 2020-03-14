@@ -359,8 +359,6 @@ static PyObject *
 stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 {
     PyObject *unicode;
-    PyObject *bytes = NULL;
-    const char *str;
     Py_ssize_t n;
     int err;
 
@@ -380,21 +378,15 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
     }
 
     /* Encode Unicode to UTF-8/surrogateescape */
-    str = PyUnicode_AsUTF8AndSize(unicode, &n);
-    if (str == NULL) {
-        PyErr_Clear();
-        bytes = _PyUnicode_AsUTF8String(unicode, "backslashreplace");
-        if (bytes == NULL)
-            return NULL;
-        str = PyBytes_AS_STRING(bytes);
-        n = PyBytes_GET_SIZE(bytes);
+    Py_buffer buf;
+    if (_PyUnicode_GetUTF8Buffer(unicode, "backslashreplace", &buf) < 0) {
+        return NULL;
     }
 
-    n = _Py_write(self->fd, str, n);
+    n = _Py_write(self->fd, buf.buf, buf.len);
     /* save errno, it can be modified indirectly by Py_XDECREF() */
     err = errno;
-
-    Py_XDECREF(bytes);
+    PyBuffer_Release(&buf);
 
     if (n == -1) {
         if (err == EAGAIN) {
