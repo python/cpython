@@ -605,10 +605,13 @@ Removed
   Use :meth:`~threading.Thread.is_alive()` instead.
   (Contributed by Dong-hee Na in :issue:`37804`.)
 
-* Methods ``getchildren()`` and ``getiterator()`` in the
-  :mod:`~xml.etree.ElementTree` module have been removed.  They were
-  deprecated in Python 3.2.  Use functions :func:`list` and :func:`iter`
-  instead.  The ``xml.etree.cElementTree`` module has been removed.
+* Methods ``getchildren()`` and ``getiterator()`` of classes
+  :class:`~xml.etree.ElementTree.ElementTree` and
+  :class:`~xml.etree.ElementTree.Element` in the :mod:`~xml.etree.ElementTree`
+  module have been removed.  They were deprecated in Python 3.2.
+  Use ``iter(x)`` or ``list(x)`` instead of ``x.getchildren()`` and
+  ``x.iter()`` or ``list(x.iter())`` instead of ``x.getiterator()``.
+  The ``xml.etree.cElementTree`` module has been removed.
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
 
 * The old :mod:`plistlib` API has been removed, it was deprecated since Python
