@@ -445,6 +445,8 @@ class _NormalAccessor(_Accessor):
 
     # Helper for resolve()
     def readlink(self, path):
+        if not hasattr(os, "readlink"):
+            raise NotImplementedError("readlink() not available on this system")
         return os.readlink(path)
 
 

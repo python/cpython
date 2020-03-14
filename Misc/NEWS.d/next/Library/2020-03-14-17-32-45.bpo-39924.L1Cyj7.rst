@@ -1,0 +1,1 @@
+optimize the pathlib.readlink behavior when the readlink is not existed in os module
