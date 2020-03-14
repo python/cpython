@@ -9,6 +9,7 @@ from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType
+import typing
 
 from typing import TypeVar
 T = TypeVar('T')
@@ -196,6 +197,18 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(alias.__origin__, loaded.__origin__)
         self.assertEqual(alias.__args__, loaded.__args__)
         self.assertEqual(alias.__parameters__, loaded.__parameters__)
+
+    def test_union(self):
+        a = typing.Union[list[int], list[str]]
+        self.assertEqual(a.__args__, (list[int], list[str]))
+        self.assertEqual(a.__parameters__, ())
+
+    def test_union_generic(self):
+        T = typing.TypeVar('T')
+        a = typing.Union[list[T], tuple[T, ...]]
+        self.assertEqual(a.__args__, (list[T], tuple[T, ...]))
+        # TODO: To make this work, would need to update typing.py to recognize list[T].
+        # self.assertEqual(a.__parameters__, (T,))
 
 
 if __name__ == "__main__":

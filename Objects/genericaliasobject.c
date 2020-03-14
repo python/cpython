@@ -228,6 +228,16 @@ static PyMappingMethods ga_as_mapping = {
     .mp_subscript = ga_getitem,
 };
 
+static Py_hash_t
+ga_hash(PyObject *self)
+{
+    gaobject *alias = (gaobject *)self;
+    // TODO: Hash in the hash for the origin
+    Py_hash_t h0 = PyObject_Hash(alias->origin);
+    Py_hash_t h1 = PyObject_Hash(alias->args);
+    return h0 ^ h1;
+}
+
 static PyObject *
 ga_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -392,6 +402,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,
     .tp_as_mapping = &ga_as_mapping,
+    .tp_hash = ga_hash,
     .tp_call = ga_call,
     .tp_getattro = ga_getattro,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
