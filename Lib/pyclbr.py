@@ -125,7 +125,7 @@ def _readmodule(module, path, inpackage=None):
     """
     # Compute the full module name (prepending inpackage if set).
     if inpackage is not None:
-        fullmodule = "%s.%s" % (inpackage, module)
+        fullmodule = f"{inpackage}.{module}"
     else:
         fullmodule = module
 
@@ -148,7 +148,7 @@ def _readmodule(module, path, inpackage=None):
         submodule = module[i+1:]
         parent = _readmodule(package, path, inpackage)
         if inpackage is not None:
-            package = "%s.%s" % (inpackage, package)
+            package = f"{inpackage}.{package}"
         if not '__path__' in parent:
             raise ImportError('No package named {}'.format(package))
         return _readmodule(submodule, parent['__path__'], package)
