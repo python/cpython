@@ -3387,7 +3387,7 @@ _Py_normalize_encoding(const char *encoding,
 }
 
 /* bpo-39337: Normalize an encoding name: similar to _Py_normalize_encoding(),
-   but encoding names not just ASCII.*/
+   but encoding names is not just ASCII.*/
 PyObject *
 _Py_normalize_unicode_encoding(PyObject *encoding)
 {
