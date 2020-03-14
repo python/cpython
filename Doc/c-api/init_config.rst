@@ -252,8 +252,9 @@ PyPreConfig
 
       See :c:member:`PyConfig.isolated`.
 
-   .. c:member:: int legacy_windows_fs_encoding (Windows only)
+   .. c:member:: int legacy_windows_fs_encoding
 
+      (Windows only)
       If non-zero, disable UTF-8 Mode, set the Python filesystem encoding to
       ``mbcs``, set the filesystem error handler to ``replace``.
 

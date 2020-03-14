@@ -519,11 +519,11 @@ Customize pymalloc Arena Allocator
    | ``void free(void *ctx, size_t size, void *ptr)`` | free an arena                         |
    +--------------------------------------------------+---------------------------------------+
 
-.. c:function:: PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator)
+.. c:function:: void PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator)
 
    Get the arena allocator.
 
-.. c:function:: PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
+.. c:function:: void PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 
    Set the arena allocator.
 
