@@ -491,8 +491,9 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 
     name = _PyObject_GetAttrId(category, &PyId___name__);
-    if (name == NULL)  /* XXX Can an object lack a '__name__' attribute? */
+    if (name == NULL) {
         goto error;
+    }
 
     f_stderr = _PySys_GetObjectId(&PyId_stderr);
     if (f_stderr == NULL) {
