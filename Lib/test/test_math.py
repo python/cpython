@@ -1878,6 +1878,22 @@ class MathTests(unittest.TestCase):
             self.assertIs(type(comb(IntSubclass(5), IntSubclass(k))), int)
             self.assertIs(type(comb(MyIndexable(5), MyIndexable(k))), int)
 
+    def test_issue39871(self):
+        # A SystemError should not be raised if the first arg to atan2(),
+        # copysign(), or remainder() cannot be converted to a float.
+        class F:
+            def __float__(self):
+                self.converted = True
+                1/0
+        for func in math.atan2, math.copysign, math.remainder:
+            y = F()
+            with self.assertRaises(TypeError):
+                func("not a number", y)
+
+            # There should not have been any attempt to convert the second
+            # argument to a float.
+            self.assertFalse(getattr(y, "converted", False))
+
     # Custom assertions.
 
     def assertIsNaN(self, value):
