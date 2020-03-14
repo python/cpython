@@ -17,8 +17,8 @@ of Unicode characters while staying memory efficient.  There are special cases
 for strings where all code points are below 128, 256, or 65536; otherwise, code
 points must be below 1114112 (which is the full Unicode range).
 
-:c:type:`Py_UNICODE*` and UTF-8 representations are created on demand and cached
-in the Unicode object.  The :c:type:`Py_UNICODE*` representation is deprecated
+:c:expr:`Py_UNICODE*` and UTF-8 representations are created on demand and cached
+in the Unicode object.  The :c:expr:`Py_UNICODE*` representation is deprecated
 and inefficient; it should be avoided in performance- or memory-sensitive
 situations.
 
@@ -31,7 +31,7 @@ can internally be in two states depending on how they were created:
 
 * "legacy" Unicode objects have been created through one of the deprecated
   APIs (typically :c:func:`PyUnicode_FromUnicode`) and only bear the
-  :c:type:`Py_UNICODE*` representation; you will have to call
+  :c:expr:`Py_UNICODE*` representation; you will have to call
   :c:func:`PyUnicode_READY` on them before calling any other API.
 
 
@@ -225,7 +225,7 @@ access internal read-only data of Unicode objects:
    returned buffer is always terminated with an extra null code point.  It
    may also contain embedded null code points, which would cause the string
    to be truncated when used in most C functions.  The ``AS_DATA`` form
-   casts the pointer to :c:type:`const char *`.  The *o* argument has to be
+   casts the pointer to :c:expr:`const char*`.  The *o* argument has to be
    a Unicode object (not checked).
 
    .. versionchanged:: 3.3
@@ -695,7 +695,7 @@ Extension modules can continue using them, as they will not be removed in Python
 
    Return a read-only pointer to the Unicode object's internal
    :c:type:`Py_UNICODE` buffer, or ``NULL`` on error. This will create the
-   :c:type:`Py_UNICODE*` representation of the object if it is not yet
+   :c:expr:`Py_UNICODE*` representation of the object if it is not yet
    available. The buffer is always terminated with an extra null code point.
    Note that the resulting :c:type:`Py_UNICODE` string may also contain
    embedded null code points, which would cause the string to be truncated when
@@ -717,7 +717,7 @@ Extension modules can continue using them, as they will not be removed in Python
 
    Like :c:func:`PyUnicode_AsUnicode`, but also saves the :c:func:`Py_UNICODE`
    array length (excluding the extra null terminator) in *size*.
-   Note that the resulting :c:type:`Py_UNICODE*` string
+   Note that the resulting :c:expr:`Py_UNICODE*` string
    may contain embedded null code points, which would cause the string to be
    truncated when used in most C functions.
 
@@ -729,7 +729,7 @@ Extension modules can continue using them, as they will not be removed in Python
    Create a copy of a Unicode string ending with a null code point. Return ``NULL``
    and raise a :exc:`MemoryError` exception on memory allocation failure,
    otherwise return a new allocated buffer (use :c:func:`PyMem_Free` to free
-   the buffer). Note that the resulting :c:type:`Py_UNICODE*` string may
+   the buffer). Note that the resulting :c:expr:`Py_UNICODE*` string may
    contain embedded null code points, which would cause the string to be
    truncated when used in most C functions.
 
@@ -843,7 +843,7 @@ argument parsing, the ``"O&"`` converter should be used, passing
    ParseTuple converter: encode :class:`str` objects -- obtained directly or
    through the :class:`os.PathLike` interface -- to :class:`bytes` using
    :c:func:`PyUnicode_EncodeFSDefault`; :class:`bytes` objects are output as-is.
-   *result* must be a :c:type:`PyBytesObject*` which must be released when it is
+   *result* must be a :c:expr:`PyBytesObject*` which must be released when it is
    no longer used.
 
    .. versionadded:: 3.1
@@ -860,7 +860,7 @@ conversion function:
    ParseTuple converter: decode :class:`bytes` objects -- obtained either
    directly or indirectly through the :class:`os.PathLike` interface -- to
    :class:`str` using :c:func:`PyUnicode_DecodeFSDefaultAndSize`; :class:`str`
-   objects are output as-is. *result* must be a :c:type:`PyUnicodeObject*` which
+   objects are output as-is. *result* must be a :c:expr:`PyUnicodeObject*` which
    must be released when it is no longer used.
 
    .. versionadded:: 3.2
@@ -945,10 +945,10 @@ wchar_t Support
    Copy the Unicode object contents into the :c:type:`wchar_t` buffer *w*.  At most
    *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
    null termination character).  Return the number of :c:type:`wchar_t` characters
-   copied or ``-1`` in case of an error.  Note that the resulting :c:type:`wchar_t*`
+   copied or ``-1`` in case of an error.  Note that the resulting :c:expr:`wchar_t*`
    string may or may not be null-terminated.  It is the responsibility of the caller
-   to make sure that the :c:type:`wchar_t*` string is null-terminated in case this is
-   required by the application. Also, note that the :c:type:`wchar_t*` string
+   to make sure that the :c:expr:`wchar_t*` string is null-terminated in case this is
+   required by the application. Also, note that the :c:expr:`wchar_t*` string
    might contain null characters, which would cause the string to be truncated
    when used with most C functions.
 
@@ -960,7 +960,7 @@ wchar_t Support
    of wide characters (excluding the trailing null termination character) into
    *\*size*. Note that the resulting :c:type:`wchar_t` string might contain
    null characters, which would cause the string to be truncated when used with
-   most C functions. If *size* is ``NULL`` and the :c:type:`wchar_t*` string
+   most C functions. If *size* is ``NULL`` and the :c:expr:`wchar_t*` string
    contains null characters a :exc:`ValueError` is raised.
 
    Returns a buffer allocated by :c:func:`PyMem_Alloc` (use
@@ -971,7 +971,7 @@ wchar_t Support
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.7
-      Raises a :exc:`ValueError` if *size* is ``NULL`` and the :c:type:`wchar_t*`
+      Raises a :exc:`ValueError` if *size* is ``NULL`` and the :c:expr:`wchar_t*`
       string contains null characters.
 
 

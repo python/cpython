@@ -24,7 +24,7 @@ The Basics
 ==========
 
 The :term:`CPython` runtime sees all Python objects as variables of type
-:c:type:`PyObject\*`, which serves as a "base type" for all Python objects.
+:c:expr:`PyObject*`, which serves as a "base type" for all Python objects.
 The :c:type:`PyObject` structure itself only contains the object's
 :term:`reference count` and a pointer to the object's "type object".
 This is where the action is; the type object determines which (C) functions

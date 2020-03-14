@@ -105,8 +105,8 @@ Operating System Utilities
 
    Return the current signal handler for signal *i*.  This is a thin wrapper around
    either :c:func:`sigaction` or :c:func:`signal`.  Do not call those functions
-   directly! :c:type:`PyOS_sighandler_t` is a typedef alias for :c:type:`void
-   (\*)(int)`.
+   directly! :c:type:`PyOS_sighandler_t` is a typedef alias for
+   :c:expr:`void (*)(int)`.
 
 
 .. c:function:: PyOS_sighandler_t PyOS_setsig(int i, PyOS_sighandler_t h)
@@ -114,7 +114,7 @@ Operating System Utilities
    Set the signal handler for signal *i* to be *h*; return the old signal handler.
    This is a thin wrapper around either :c:func:`sigaction` or :c:func:`signal`.  Do
    not call those functions directly!  :c:type:`PyOS_sighandler_t` is a typedef
-   alias for :c:type:`void (\*)(int)`.
+   alias for :c:expr:`void (*)(int)`.
 
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
 
@@ -350,8 +350,9 @@ accessible to C code.  They all work with the current interpreter thread's
    silently abort the operation by raising an error subclassed from
    :class:`Exception` (other errors will not be silenced).
 
-   The hook function is of type :c:type:`int (*)(const char *event, PyObject
-   *args, void *userData)`, where *args* is guaranteed to be a
+   The hook function is of type
+   :c:expr:`int (*)(const char *event, PyObject *args, void *userData)`,
+   where *args* is guaranteed to be a
    :c:type:`PyTupleObject`. The hook function is always called with the GIL
    held by the Python interpreter that raised the event.
 

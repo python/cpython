@@ -438,12 +438,12 @@ Buffer-related functions
 
    Send a request to *exporter* to fill in *view* as specified by  *flags*.
    If the exporter cannot provide a buffer of the exact type, it MUST raise
-   :c:data:`PyExc_BufferError`, set :c:member:`view->obj` to ``NULL`` and
+   :c:data:`PyExc_BufferError`, set :c:expr:`view->obj` to ``NULL`` and
    return ``-1``.
 
-   On success, fill in *view*, set :c:member:`view->obj` to a new reference
+   On success, fill in *view*, set :c:expr:`view->obj` to a new reference
    to *exporter* and return 0. In the case of chained buffer providers
-   that redirect requests to a single object, :c:member:`view->obj` MAY
+   that redirect requests to a single object, :c:expr:`view->obj` MAY
    refer to this object instead of *exporter* (See :ref:`Buffer Object Structures <buffer-structs>`).
 
    Successful calls to :c:func:`PyObject_GetBuffer` must be paired with calls
@@ -455,7 +455,7 @@ Buffer-related functions
 .. c:function:: void PyBuffer_Release(Py_buffer *view)
 
    Release the buffer *view* and decrement the reference count for
-   :c:member:`view->obj`. This function MUST be called when the buffer
+   :c:expr:`view->obj`. This function MUST be called when the buffer
    is no longer being used, otherwise reference leaks may occur.
 
    It is an error to call this function on a buffer that was not obtained via
@@ -516,9 +516,9 @@ Buffer-related functions
    *view* as specified by flags, unless *buf* has been designated as read-only
    and :c:macro:`PyBUF_WRITABLE` is set in *flags*.
 
-   On success, set :c:member:`view->obj` to a new reference to *exporter* and
+   On success, set :c:expr:`view->obj` to a new reference to *exporter* and
    return 0. Otherwise, raise :c:data:`PyExc_BufferError`, set
-   :c:member:`view->obj` to ``NULL`` and return ``-1``;
+   :c:expr:`view->obj` to ``NULL`` and return ``-1``;
 
    If this function is used as part of a :ref:`getbufferproc <buffer-structs>`,
    *exporter* MUST be set to the exporting object and *flags* must be passed
