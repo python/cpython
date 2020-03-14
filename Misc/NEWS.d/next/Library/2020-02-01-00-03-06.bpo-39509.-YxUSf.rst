@@ -1,0 +1,2 @@
+HTTP status codes ``103 EARLY_HINTS`` and ``425 TOO_EARLY`` are added to
+:class:`http.HTTPStatus`. Patch by Dong-hee Na.

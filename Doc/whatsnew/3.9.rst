@@ -232,6 +232,12 @@ Added a new function :func:`gc.is_finalized` to check if an object has been
 finalized by the garbage collector. (Contributed by Pablo Galindo in
 :issue:`39322`.)
 
+http
+----
+
+HTTP status codes ``103 EARLY_HINTS`` and ``425 TOO_EARLY`` are added to
+:class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509`.)
+
 imaplib
 -------
 
