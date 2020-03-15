@@ -26,4 +26,3 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages
         FOLDER: Doc/build/html
-        TARGET_FOLDER: ${ GITHUB_SHA }
