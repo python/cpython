@@ -1,3 +1,2 @@
-Fix ``urllib.parse.urljoin``
-when ``base`` has fragment and ``url`` is blank
-(Returns ``base`` without fragment, not ``base`` entirely).
+Fix ``urllib.parse.urljoin``.
+In RFC 3986, ``base``'s fragment is always discarded.

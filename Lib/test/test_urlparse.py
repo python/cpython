@@ -394,6 +394,10 @@ class UrlParseTestCase(unittest.TestCase):
         # Test for issue9721
         self.checkJoin('http://a/b/c/de', ';x','http://a/b/c/;x')
 
+        # Tests for issue39799: no base fragment
+        self.checkJoin('http://a/b#f', '', 'http://a/b')
+        self.checkJoin('http://a/b/#f', 'g', 'http://a/b/g')
+
     def test_urljoins(self):
         self.checkJoin(SIMPLE_BASE, 'g:h','g:h')
         self.checkJoin(SIMPLE_BASE, 'http:g','http://a/b/c/g')
@@ -448,9 +452,6 @@ class UrlParseTestCase(unittest.TestCase):
 
         # issue 23703: don't duplicate filename
         self.checkJoin('a', 'b', 'b')
-
-        # issue 39799: no base fragment (not compatible with RFC1808)
-        self.checkJoin('http://a/b#f', '', 'http://a/b')
 
     def test_RFC2732(self):
         str_cases = [
