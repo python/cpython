@@ -17,6 +17,7 @@ class HTTPStatus(IntEnum):
         * RFC 2774: An HTTP Extension Framework
         * RFC 7725: An HTTP Status Code to Report Legal Obstacles
         * RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)
+        * RFC 2324: Hyper Text Coffee Pot Control Protocol (HTCPCP/1.0)
         * RFC 8297: An HTTP Status Code for Indicating Hints
         * RFC 8470: Using Early Data in HTTP
     """
@@ -103,6 +104,8 @@ class HTTPStatus(IntEnum):
         'Cannot satisfy request range')
     EXPECTATION_FAILED = (417, 'Expectation Failed',
         'Expect condition could not be satisfied')
+    IM_A_TEAPOT = (418, 'I\'m a Teapot',
+        'Server refuses to brew coffee because it is a teapot.')
     MISDIRECTED_REQUEST = (421, 'Misdirected Request',
         'Server is not able to produce a response')
     UNPROCESSABLE_ENTITY = 422, 'Unprocessable Entity'
