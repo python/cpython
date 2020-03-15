@@ -966,9 +966,8 @@ static int add_ast_fields(void)
             fields = name+"_fields"
         else:
             fields = "NULL"
-        self.emit(
-            'state->%s_type = make_type("%s", state->AST_type, %s, %d,' %
-                  (name, name, fields, len(prod.fields)), 1)
+        self.emit('state->%s_type = make_type("%s", state->AST_type, %s, %d,' %
+                        (name, name, fields, len(prod.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(name, prod), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
         self.emit_type("AST_type")
