@@ -741,6 +741,15 @@ class _Unparser(NodeVisitor):
     def visit_Module(self, node):
         self._write_docstring_and_traverse_body(node)
 
+    def visit_FunctionType(self, node):
+        with self.delimit("(", ")"):
+            self.interleave(
+                lambda: self.write(", "), self.traverse, node.argtypes
+            )
+
+        self.write(" -> ")
+        self.traverse(node.returns)
+
     def visit_Expr(self, node):
         self.fill()
         self.set_precedence(_Precedence.YIELD, node.value)
