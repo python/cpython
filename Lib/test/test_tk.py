@@ -5,7 +5,7 @@ support.import_module('_tkinter')
 # Skip test if tk cannot be initialized.
 support.requires('gui')
 
-from tkinter.test import runtktests
+from Lib.test.tkinter_test import runtktests
 
 def test_main():
     support.run_unittest(

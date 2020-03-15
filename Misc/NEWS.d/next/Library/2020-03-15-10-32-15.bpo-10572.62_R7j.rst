@@ -1,0 +1,1 @@
+Moved these class tests: `tkinter.test` to be under `Lib/test/MODULE_NAME_test`
