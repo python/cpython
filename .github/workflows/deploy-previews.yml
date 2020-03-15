@@ -18,7 +18,7 @@ jobs:
         make venv
         make html
         mkdir to-github
-        mv build/html to-github/${GITHUB_SHA}
+        mv build/html to-github/${{ github.sha }}
       working-directory: Doc
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@3.4.1
