@@ -664,8 +664,9 @@ Removed
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
-* The ``ast.Suite`` node class has been removed due to no longer being needed.
-  (Contributed by Batuhan Taskaya in :issue:`39639`.)
+* The ``ast.Suite`` and ``ast.Param`` node classes has been removed due to no
+  longer being needed.
+  (Contributed by Batuhan Taskaya in :issue:`39639` and :issue:`39969`.)
 
 
 Porting to Python 3.9
