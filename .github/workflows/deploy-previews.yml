@@ -1,0 +1,33 @@
+name: Generate Deploy Preview
+
+on:
+  pull_request:
+    branches: [ master ]
+ 
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v1.2.0
+      with:
+        python-version: 3.7
+    - name: Build documentation
+      run: |
+        make venv
+        make html
+        mkdir to-github
+        mv build/html to-github/${{ github.sha }}
+      working-directory: Doc
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@3.4.1
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages
+        FOLDER: Doc/to-github
+    - name: Comment Deploy Preview Link
+      uses: thollander/actions-comment-pull-request@1.0.0
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        message: Deploy preview available at https://epicfaace.github.io/cpython/${{ github.sha }}
