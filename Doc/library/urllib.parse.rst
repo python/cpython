@@ -43,11 +43,12 @@ or on combining URL components into a URL string.
    corresponds to the general structure of a URL:
    ``scheme://netloc/path;parameters?query#fragment``.
 
-   Each tuple item is a string, possibly empty. The components are not broken up
-   into smaller parts (for example, the network location is a single string), and %
-   escapes are not expanded. The delimiters as shown above are not part of the
-   result, except for a leading slash in the *path* component, which is retained if
-   present.  For example:
+   Each tuple item is a string, possibly empty. The components are broken up into
+   smaller parts (for example, the components of the network location variable -
+   username, password, hostname, and port - are available as extra attributes in the
+   ParseResult/ParseResultBytes object). % escapes are not expanded.
+   The delimiters as shown above are not part of the result, except for a leading slash
+   in the *path* component, which is retained if present.  For example:
 
       >>> from urllib.parse import urlparse
       >>> o = urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
@@ -248,7 +249,9 @@ or on combining URL components into a URL string.
 
 .. function:: urlsplit(url, scheme='', allow_fragments=True)
 
-   This is similar to :func:`urlparse`, but does not split the params from the URL.
+   This is similar to :func:`urlparse`, the returned SplitResult/SplitResultBytes object
+   will split the parameters from the URL, for example, the components of the network location
+   variable - username, password, hostname, and port - are available as extra attributes.
    This should generally be used instead of :func:`urlparse` if the more recent URL
    syntax allowing parameters to be applied to each segment of the *path* portion
    of the URL (see :rfc:`2396`) is wanted.  A separate function is needed to
