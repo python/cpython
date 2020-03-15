@@ -235,8 +235,8 @@ finalized by the garbage collector. (Contributed by Pablo Galindo in
 http
 ----
 
-HTTP status codes ``103 EARLY_HINTS`` and ``425 TOO_EARLY`` are added to
-:class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509`.)
+HTTP status codes ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` are added to
+:class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509` and Ross Rhodes in :issue:`39507`.)
 
 imaplib
 -------
