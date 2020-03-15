@@ -382,7 +382,7 @@ class ResourceReader(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def contents(self):
         """Return an iterable of strings over the contents of the package."""
-        return []
+        return ()
 
 
 _register(ResourceReader, machinery.SourceFileLoader)
