@@ -1,0 +1,2 @@
+Ensure all workers exit when finalizing a :class:`multiprocessing.Pool`.
+Patch by Batuhan Taskaya.

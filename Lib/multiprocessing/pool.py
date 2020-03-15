@@ -651,8 +651,6 @@ class Pool(object):
     def terminate(self):
         util.debug('terminating pool')
         self._state = TERMINATE
-        self._worker_handler._state = TERMINATE
-        self._change_notifier.put(None)
         self._terminate()
 
     def join(self):
@@ -683,6 +681,8 @@ class Pool(object):
         util.debug('finalizing pool')
 
         worker_handler._state = TERMINATE
+        change_notifier.put(None)
+
         task_handler._state = TERMINATE
 
         util.debug('helping task handler/workers to finish')
