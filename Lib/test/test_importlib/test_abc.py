@@ -333,8 +333,7 @@ class ResourceReaderDefaultsTests(ABCTestHarness):
             self.ins.resource_path('dummy_file')
 
     def test_is_resource(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.is_resource('dummy_file')
+        self.assertFalse(self.ins.is_resource('dummy_file'))
 
     def test_contents(self):
         self.assertEqual([], list(self.ins.contents()))
