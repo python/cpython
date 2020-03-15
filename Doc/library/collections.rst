@@ -36,7 +36,7 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 .. deprecated-removed:: 3.3 3.10
     Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
     For backwards compatibility, they continue to be visible in this module through
-    Python 3.8.
+    Python 3.9.
 
 
 :class:`ChainMap` objects
@@ -729,6 +729,10 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         initialized from the first argument to the constructor, if present, or to
         ``None``, if absent.
 
+    .. versionchanged:: 3.9
+       Added merge (``|``) and update (``|=``) operators, specified in
+       :pep:`584`.
+
 
 :class:`defaultdict` Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1118,6 +1122,10 @@ anywhere a regular dictionary is used.
    With the acceptance of :pep:`468`, order is retained for keyword arguments
    passed to the :class:`OrderedDict` constructor and its :meth:`update`
    method.
+
+.. versionchanged:: 3.9
+    Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
+
 
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

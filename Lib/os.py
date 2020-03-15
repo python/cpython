@@ -659,7 +659,7 @@ def get_exec_path(env=None):
 
 
 # Change environ to automatically call putenv() and unsetenv()
-from _collections_abc import MutableMapping
+from _collections_abc import MutableMapping, Mapping
 
 class _Environ(MutableMapping):
     def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue):
@@ -713,6 +713,24 @@ class _Environ(MutableMapping):
         if key not in self:
             self[key] = value
         return self[key]
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        new = dict(self)
+        new.update(other)
+        return new
+
+    def __ror__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        new = dict(other)
+        new.update(self)
+        return new
 
 def _createenviron():
     if name == 'nt':

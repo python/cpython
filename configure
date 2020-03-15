@@ -631,6 +631,7 @@ SRCDIRS
 THREADHEADERS
 LIBPL
 PY_ENABLE_SHARED
+PLATLIBDIR
 LIBPYTHON
 EXT_SUFFIX
 ALT_SOABI
@@ -782,7 +783,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -826,6 +826,7 @@ with_libs
 with_system_expat
 with_system_ffi
 with_system_libmpdec
+with_decimal_contextvar
 enable_loadable_sqlite_extensions
 with_tcltk_includes
 with_tcltk_libs
@@ -839,6 +840,7 @@ with_dtrace
 with_libm
 with_libc
 enable_big_digits
+with_platlibdir
 with_computed_gotos
 with_ensurepip
 with_openssl
@@ -896,7 +898,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1149,15 +1150,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1295,7 +1287,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1448,7 +1440,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1548,6 +1539,9 @@ Optional Packages:
                           system-dependent)
   --with-system-libmpdec  build _decimal module using an installed libmpdec
                           library, see Doc/library/decimal.rst (default is no)
+  --with-decimal-contextvar
+                          build _decimal module using a coroutine-local rather
+                          than a thread-local context (default is yes)
   --with-tcltk-includes='-I...'
                           override search for Tcl and Tk include files
   --with-tcltk-libs='-L...'
@@ -1567,6 +1561,8 @@ Optional Packages:
                           system-dependent)
   --with-libc=STRING      override libc C library to STRING (default is
                           system-dependent)
+  --with-platlibdir=DIRNAME
+                          Python library directory name (default is "lib")
   --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
   --with-ensurepip[=install|upgrade|no]
@@ -10496,6 +10492,28 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_system_libmpdec" >&5
 $as_echo "$with_system_libmpdec" >&6; }
 
+# Check whether _decimal should use a coroutine-local or thread-local context
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-decimal-contextvar" >&5
+$as_echo_n "checking for --with-decimal-contextvar... " >&6; }
+
+# Check whether --with-decimal_contextvar was given.
+if test "${with_decimal_contextvar+set}" = set; then :
+  withval=$with_decimal_contextvar;
+else
+  with_decimal_contextvar="yes"
+fi
+
+
+if test "$with_decimal_contextvar" != "no"
+then
+
+$as_echo "#define WITH_DECIMAL_CONTEXTVAR 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_decimal_contextvar" >&5
+$as_echo "$with_decimal_contextvar" >&6; }
+
 # Check for support for loadable sqlite extensions
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-loadable-sqlite-extensions" >&5
 $as_echo_n "checking for --enable-loadable-sqlite-extensions... " >&6; }
@@ -11469,7 +11487,7 @@ if ${ac_cv_dtrace_link+:} false; then :
 else
               ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" "$DFLAGS" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            "$DTRACE" $DFLAGS -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
 
 fi
@@ -15232,10 +15250,41 @@ else
 fi
 
 
-if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}"
+# Check for --with-libdir-name
+# /usr/$LIDIRNAME/python$VERSION
+
+PLATLIBDIR="lib"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-platlibdir" >&5
+$as_echo_n "checking for --with-platlibdir... " >&6; }
+
+# Check whether --with-platlibdir was given.
+if test "${with_platlibdir+set}" = set; then :
+  withval=$with_platlibdir;
+# ignore 3 options:
+#   --with-platlibdir
+#   --with-platlibdir=
+#   --without-platlibdir
+if test -n "$withval" -a "$withval" != yes -a "$withval" != no
+then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  PLATLIBDIR="$withval"
 else
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+
+if test x$PLATFORM_TRIPLET = x; then
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}"
+else
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 
 

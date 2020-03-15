@@ -3050,6 +3050,21 @@ AC_ARG_WITH(system_libmpdec,
 
 AC_MSG_RESULT($with_system_libmpdec)
 
+# Check whether _decimal should use a coroutine-local or thread-local context
+AC_MSG_CHECKING(for --with-decimal-contextvar)
+AC_ARG_WITH(decimal_contextvar,
+            AS_HELP_STRING([--with-decimal-contextvar], [build _decimal module using a coroutine-local rather than a thread-local context (default is yes)]),
+            [],
+            [with_decimal_contextvar="yes"])
+
+if test "$with_decimal_contextvar" != "no"
+then
+    AC_DEFINE(WITH_DECIMAL_CONTEXTVAR, 1,
+      [Define if you want build the _decimal module using a coroutine-local rather than a thread-local context])
+fi
+
+AC_MSG_RESULT($with_decimal_contextvar)
+
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
 AC_ARG_ENABLE(loadable-sqlite-extensions,
@@ -3526,7 +3541,7 @@ then
         [ac_cv_dtrace_link], [dnl
             ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" "$DFLAGS" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            "$DTRACE" $DFLAGS -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
       ])
     if test "$ac_cv_dtrace_link" = "yes"; then
@@ -4708,12 +4723,36 @@ else
   LIBPYTHON=''
 fi
 
+
+# Check for --with-libdir-name
+# /usr/$LIDIRNAME/python$VERSION
+AC_SUBST(PLATLIBDIR)
+PLATLIBDIR="lib"
+AC_MSG_CHECKING(for --with-platlibdir)
+AC_ARG_WITH(platlibdir,
+            AS_HELP_STRING([--with-platlibdir=DIRNAME],
+            [Python library directory name (default is "lib")]),
+[
+# ignore 3 options:
+#   --with-platlibdir
+#   --with-platlibdir=
+#   --without-platlibdir
+if test -n "$withval" -a "$withval" != yes -a "$withval" != no
+then
+  AC_MSG_RESULT(yes)
+  PLATLIBDIR="$withval"
+else
+  AC_MSG_RESULT(no)
+fi],
+[AC_MSG_RESULT(no)])
+
+
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST(PY_ENABLE_SHARED)
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 AC_SUBST(LIBPL)
 

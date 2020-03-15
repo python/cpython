@@ -28,7 +28,7 @@ jobs:
     - name: 'Configure CPython'
       run: ./configure --with-pydebug
     - name: 'Build CPython'
-      run: make -s -j4
+      run: make -j4
     - name: 'Install build dependencies'
       run: make -C Doc/ PYTHON=../python venv
     - name: 'Build documentation'

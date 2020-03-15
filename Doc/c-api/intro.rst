@@ -107,10 +107,23 @@ complete listing.
 
 .. c:macro:: Py_UNREACHABLE()
 
-   Use this when you have a code path that you do not expect to be reached.
+   Use this when you have a code path that cannot be reached by design.
    For example, in the ``default:`` clause in a ``switch`` statement for which
    all possible values are covered in ``case`` statements.  Use this in places
    where you might be tempted to put an ``assert(0)`` or ``abort()`` call.
+
+   In release mode, the macro helps the compiler to optimize the code, and
+   avoids a warning about unreachable code.  For example, the macro is
+   implemented with ``__builtin_unreachable()`` on GCC in release mode.
+
+   A use for ``Py_UNREACHABLE()`` is following a call a function that
+   never returns but that is not declared :c:macro:`_Py_NO_RETURN`.
+
+   If a code path is very unlikely code but can be reached under exceptional
+   case, this macro must not be used.  For example, under low memory condition
+   or if a system call returns a value out of the expected range.  In this
+   case, it's better to report the error to the caller.  If the error cannot
+   be reported to caller, :c:func:`Py_FatalError` can be used.
 
    .. versionadded:: 3.7
 

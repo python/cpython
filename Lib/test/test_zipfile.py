@@ -5,6 +5,7 @@ import itertools
 import os
 import pathlib
 import posixpath
+import string
 import struct
 import subprocess
 import sys
@@ -2880,7 +2881,7 @@ class TestPath(unittest.TestCase):
             a, b, g = root.iterdir()
             with a.open() as strm:
                 data = strm.read()
-            assert data == b"content of a"
+            assert data == "content of a"
 
     def test_read(self):
         for alpharep in self.zipfile_alpharep():
@@ -2973,6 +2974,11 @@ class TestPath(unittest.TestCase):
             entry.joinpath('suffix')
         # Check the file iterated all items
         assert entries.count == self.HUGE_ZIPFILE_NUM_ENTRIES
+
+    # @func_timeout.func_set_timeout(3)
+    def test_implied_dirs_performance(self):
+        data = ['/'.join(string.ascii_lowercase + str(n)) for n in range(10000)]
+        zipfile.CompleteDirs._implied_dirs(data)
 
 
 if __name__ == "__main__":

@@ -2526,9 +2526,9 @@ order (MRO) for bases """
         except TypeError:
             pass
 
-        # Two essentially featureless objects, just inheriting stuff from
-        # object.
-        self.assertEqual(dir(NotImplemented), dir(Ellipsis))
+        # Two essentially featureless objects, (Ellipsis just inherits stuff
+        # from object.
+        self.assertEqual(dir(object()), dir(Ellipsis))
 
         # Nasty test case for proxied objects
         class Wrapper(object):

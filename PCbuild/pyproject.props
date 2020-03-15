@@ -199,4 +199,43 @@ public override bool Execute() {
     <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
     <Exec Command='$(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)"' ContinueOnError="false" />
   </Target>
+
+
+  <Target Name="FindVCRedistDir">
+    <!-- Hard coded path for VS 2015 -->
+    <PropertyGroup Condition="$(PlatformToolset) == 'v140'">
+      <VCRedistDir>$(VCInstallDir)\redist\</VCRedistDir>
+    </PropertyGroup>
+
+    <!-- Search for version number in some broken Build Tools installs -->
+    <ItemGroup Condition="$(VCRedistDir) == '' and $(VCToolsRedistVersion) == ''">
+      <_RedistFiles Include="$(VCInstallDir)\Redist\MSVC\*\*.*" />
+    </ItemGroup>
+    <PropertyGroup Condition="$(VCRedistDir) == '' and $(VCToolsRedistVersion) == ''">
+      <_RedistDir>%(_RedistFiles.Directory)</_RedistDir>
+      <VCToolsRedistVersion>$([System.IO.Path]::GetFileName($(_RedistDir.Trim(`\`))))</VCToolsRedistVersion>
+    </PropertyGroup>
+
+    <!-- Use correct path for VS 2017 and later -->
+    <PropertyGroup Condition="$(VCRedistDir) == ''">
+      <VCRedistDir>$(VCInstallDir)\Redist\MSVC\$(VCToolsRedistVersion)\</VCRedistDir>
+    </PropertyGroup>
+
+    <PropertyGroup>
+      <VCRedistDir Condition="$(Platform) == 'Win32'">$(VCRedistDir)x86\</VCRedistDir>
+      <VCRedistDir Condition="$(Platform) != 'Win32'">$(VCRedistDir)$(Platform)\</VCRedistDir>
+    </PropertyGroup>
+
+    <Message Text="VC Redist Directory: $(VCRedistDir)" />
+    <Message Text="VC Redist Version: $(VCToolsRedistVersion)" />
+  </Target>
+
+  <Target Name="FindVCRuntime" Returns="VCRuntimeDLL" DependsOnTargets="FindVCRedistDir">
+    <ItemGroup Condition="$(VCInstallDir) != ''">
+      <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" />
+    </ItemGroup>
+
+    <Warning Text="vcruntime*.dll not found under $(VCRedistDir)." Condition="@(VCRuntimeDLL) == ''" />
+    <Message Text="VC Runtime DLL(s):%0A- @(VCRuntimeDLL,'%0A- ')" />
+  </Target>
 </Project>

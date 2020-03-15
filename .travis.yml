@@ -94,7 +94,7 @@ matrix:
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
         - source ./venv/bin/activate
-        - bash <(curl -s https://codecov.io/bash)
+        - bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
     - name: "Test code coverage (C)"
       os: linux
       language: c
@@ -111,7 +111,7 @@ matrix:
         - xvfb-run make -j4 coverage-report
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         - make pythoninfo
-        - bash <(curl -s https://codecov.io/bash)
+        - bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
 
 
 before_install:
