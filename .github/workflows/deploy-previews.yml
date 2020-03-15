@@ -31,5 +31,5 @@ jobs:
     - name: Comment Deploy Preview Link
       uses: thollander/actions-comment-pull-request@1.0.0
       with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         message: Nice PR!👍 Deploy preview available at https://epicfaace.github.io/cpython/${GITHUB_SHA}
