@@ -667,6 +667,9 @@ Removed
 * The ``ast.Suite`` node class has been removed due to no longer being needed.
   (Contributed by Batuhan Taskaya in :issue:`39639`.)
 
+* The ``ast.Param`` node class has been removed due to no longer being needed.
+  (Contributed by Batuhan Taskaya in :issue:`39969`.)
+
 
 Porting to Python 3.9
 =====================
