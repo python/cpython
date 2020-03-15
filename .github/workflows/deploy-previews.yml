@@ -15,13 +15,15 @@ jobs:
         python-version: 3.7
     - name: Build documentation
       run: |
-        make venv
-        make html
+        # make venv
+        # make html
+        mkdir -p build/html
+        echo "Hello world<h1>aaa</a>" > build/html/index.html
       working-directory: Doc
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@3.4.1
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages
-        FOLDER: Doc/build/build
+        FOLDER: Doc/build/html
         TARGET_FOLDER: ${ GITHUB_SHA }
