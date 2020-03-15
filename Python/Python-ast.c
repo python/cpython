@@ -107,8 +107,6 @@ typedef struct {
     PyObject *Not_type;
     PyObject *Or_singleton;
     PyObject *Or_type;
-    PyObject *Param_singleton;
-    PyObject *Param_type;
     PyObject *Pass_type;
     PyObject *Pow_singleton;
     PyObject *Pow_type;
@@ -332,8 +330,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->Not_type);
     Py_CLEAR(astmodulestate(module)->Or_singleton);
     Py_CLEAR(astmodulestate(module)->Or_type);
-    Py_CLEAR(astmodulestate(module)->Param_singleton);
-    Py_CLEAR(astmodulestate(module)->Param_type);
     Py_CLEAR(astmodulestate(module)->Pass_type);
     Py_CLEAR(astmodulestate(module)->Pow_singleton);
     Py_CLEAR(astmodulestate(module)->Pow_type);
@@ -556,8 +552,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->Not_type);
     Py_VISIT(astmodulestate(module)->Or_singleton);
     Py_VISIT(astmodulestate(module)->Or_type);
-    Py_VISIT(astmodulestate(module)->Param_singleton);
-    Py_VISIT(astmodulestate(module)->Param_type);
     Py_VISIT(astmodulestate(module)->Pass_type);
     Py_VISIT(astmodulestate(module)->Pow_singleton);
     Py_VISIT(astmodulestate(module)->Pow_type);
@@ -1656,11 +1650,6 @@ static int init_types(void)
                                                   *)state->AugStore_type, NULL,
                                                   NULL);
     if (!state->AugStore_singleton) return 0;
-    state->Param_type = make_type("Param", state->expr_context_type, NULL, 0);
-    if (!state->Param_type) return 0;
-    state->Param_singleton = PyType_GenericNew((PyTypeObject
-                                               *)state->Param_type, NULL, NULL);
-    if (!state->Param_singleton) return 0;
     state->boolop_type = make_type("boolop", state->AST_type, NULL, 0);
     if (!state->boolop_type) return 0;
     if (!add_attributes(state->boolop_type, NULL, 0)) return 0;
@@ -4474,9 +4463,6 @@ PyObject* ast2obj_expr_context(expr_context_ty o)
         case AugStore:
             Py_INCREF(astmodulestate_global->AugStore_singleton);
             return astmodulestate_global->AugStore_singleton;
-        case Param:
-            Py_INCREF(astmodulestate_global->Param_singleton);
-            return astmodulestate_global->Param_singleton;
         default:
             /* should never happen, but just in case ... */
             PyErr_Format(PyExc_SystemError, "unknown expr_context found");
@@ -8682,14 +8668,6 @@ obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena* arena)
         *out = AugStore;
         return 0;
     }
-    isinstance = PyObject_IsInstance(obj, astmodulestate_global->Param_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        *out = Param;
-        return 0;
-    }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr_context, but got %R", obj);
     return 1;
@@ -10038,10 +10016,6 @@ PyInit__ast(void)
         goto error;
     }
     Py_INCREF(astmodulestate(m)->AugStore_type);
-    if (PyModule_AddObject(m, "Param", astmodulestate_global->Param_type) < 0) {
-        goto error;
-    }
-    Py_INCREF(astmodulestate(m)->Param_type);
     if (PyModule_AddObject(m, "boolop", astmodulestate_global->boolop_type) <
         0) {
         goto error;
