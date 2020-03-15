@@ -19,6 +19,7 @@ jobs:
         make html
         mkdir to-github
         mv build/html to-github/${{ github.sha }}
+        touch to-github/.nojekyll
       working-directory: Doc
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@3.4.1
