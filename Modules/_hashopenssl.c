@@ -55,7 +55,7 @@ typedef struct {
 static inline _hashlibstate*
 get_hashlib_state(PyObject *module)
 {
-    _hashlibstate *state = PyModule_GetState(module);
+    void *state = PyModule_GetState(module);
     assert(state != NULL);
     return (_hashlibstate *)state;
 }
