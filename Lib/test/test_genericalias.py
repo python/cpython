@@ -207,8 +207,7 @@ class BaseTest(unittest.TestCase):
         T = typing.TypeVar('T')
         a = typing.Union[list[T], tuple[T, ...]]
         self.assertEqual(a.__args__, (list[T], tuple[T, ...]))
-        # TODO: To make this work, would need to update typing.py to recognize list[T].
-        # self.assertEqual(a.__parameters__, (T,))
+        self.assertEqual(a.__parameters__, (T,))
 
 
 if __name__ == "__main__":
