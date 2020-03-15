@@ -17,8 +17,8 @@ typedef struct _stmt *stmt_ty;
 
 typedef struct _expr *expr_ty;
 
-typedef enum _expr_context { Load=1, Store=2, Del=3, AugLoad=4, AugStore=5,
-                             Param=6 } expr_context_ty;
+typedef enum _expr_context { Load=1, Store=2, Del=3, AugLoad=4, AugStore=5 }
+                             expr_context_ty;
 
 typedef enum _boolop { And=1, Or=2 } boolop_ty;
 
