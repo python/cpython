@@ -8,11 +8,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Comment Deploy Preview Link
-      uses: thollander/actions-comment-pull-request@1.0.0
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        message: Test. Nice PR!👍 Deploy preview available at https://epicfaace.github.io/cpython/${{ github.sha }}
     - uses: actions/checkout@v2
     - name: Setup Python
       uses: actions/setup-python@v1.2.0
@@ -20,10 +15,8 @@ jobs:
         python-version: 3.7
     - name: Build documentation
       run: |
-        # make venv
-        # make html
-        mkdir -p build/html
-        echo "Hello world<h1>aaa</h1>" > build/html/index.html
+        make venv
+        make html
         mkdir to-github
         mv build/html to-github/${GITHUB_SHA}
       working-directory: Doc
@@ -37,4 +30,4 @@ jobs:
       uses: thollander/actions-comment-pull-request@1.0.0
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        message: Nice PR!👍 Deploy preview available at https://epicfaace.github.io/cpython/${GITHUB_SHA}
+        message: Deploy preview available at https://epicfaace.github.io/cpython/${{ github.sha }}
