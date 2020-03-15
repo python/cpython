@@ -2780,7 +2780,7 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         for (j, res) in enumerate(results):
             self.assertEqual(res.get(), sqr(j))
 
-    def test_pool_hang(self):
+    def test_worker_finalization_via_atexit_handler_of_multiprocessing(self):
         # tests cases against bpo-38744 and bpo-39360
         cmd = '''if 1:
             from multiprocessing import Pool
