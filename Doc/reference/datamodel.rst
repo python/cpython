@@ -425,6 +425,8 @@ Mappings
       equal (e.g., ``1`` and ``1.0``) then they can be used interchangeably to index
       the same dictionary entry.
 
+			Contrary to older Python `see release notes of Python 3.7 : <https://docs.python.org/3/whatsnew/3.7.html#summary-release-highlights>`_ versions (older than 3.7), the insertion-order is now preserved in a dict thus dict objects behaves the same way as `collection.OrderedDict <https://docs.python.org/3/library/collections.html#collections.OrderedDict>`_.
+
       Dictionaries are mutable; they can be created by the ``{...}`` notation (see
       section :ref:`dict`).
 
