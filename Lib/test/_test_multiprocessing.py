@@ -2784,13 +2784,16 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         # tests cases against bpo-38744 and bpo-39360
         cmd = '''if 1:
             from multiprocessing import Pool
+            problem = None
             class A:
                 def __init__(self):
                     self.pool = Pool(processes=1)
-            def do_something(x):
-                return x + 1
-            problem = A()
-            problem.pool.map(do_something, [1,2,3])
+            def test():
+                global problem
+                problem = A()
+                problem.pool.map(float, tuple(range(10)))
+            if __name__ == "__main__":
+                test()
         '''
         rc, out, err = test.support.script_helper.assert_python_ok('-c', cmd)
         self.assertEqual(rc, 0)

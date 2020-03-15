@@ -651,8 +651,6 @@ class Pool(object):
     def terminate(self):
         util.debug('terminating pool')
         self._state = TERMINATE
-        self._worker_handler._state = TERMINATE
-        self._change_notifier.put(None)
         self._terminate()
 
     def join(self):
@@ -682,14 +680,11 @@ class Pool(object):
         # this is guaranteed to only be called once
         util.debug('finalizing pool')
 
-        # Explicitly do the cleanup here if it didn't come from terminate()
-        # (required for if the queue will block, if it is already closed)
-        if worker_handler._state != TERMINATE:
-            # Notify that the worker_handler state has been changed so the
-            # _handle_workers loop can be unblocked (and exited) in order to
-            # send the finalization sentinel all the workers.
-            worker_handler._state = TERMINATE
-            change_notifier.put(None)
+        # Notify that the worker_handler state has been changed so the
+        # _handle_workers loop can be unblocked (and exited) in order to
+        # send the finalization sentinel all the workers.
+        worker_handler._state = TERMINATE
+        change_notifier.put(None)
 
         task_handler._state = TERMINATE
 
