@@ -32,4 +32,4 @@ jobs:
       uses: github-actions-up-and-running/pr-comment@v1.0.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        message: Nice PR!👍
+        message: Nice PR!👍 Deploy preview available at https://epicfaace.github.io/cpython/${GITHUB_SHA}
