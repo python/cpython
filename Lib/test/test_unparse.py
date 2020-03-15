@@ -122,10 +122,10 @@ class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
         self.assertEqual(ast.dump(ast1), ast.dump(ast2))
 
-    def check_ast_roundtrip(self, code1):
-        ast1 = ast.parse(code1)
+    def check_ast_roundtrip(self, code1, **kwargs):
+        ast1 = ast.parse(code1, **kwargs)
         code2 = ast.unparse(ast1)
-        ast2 = ast.parse(code2)
+        ast2 = ast.parse(code2, **kwargs)
         self.assertASTEqual(ast1, ast2)
 
     def check_invalid(self, node, raises=ValueError):
@@ -329,6 +329,14 @@ class UnparseTestCase(ASTTestCase):
         self.check_src_roundtrip(
             ast.Constant(value=(1, 2, 3), kind=None), "(1, 2, 3)"
         )
+
+    def test_function_type(self):
+        for function_type in (
+            "() -> int",
+            "(int, int) -> int",
+            "(Callable[complex], More[Complex(call.to_typevar())]) -> None"
+        ):
+            self.check_ast_roundtrip(function_type, mode="func_type")
 
 
 class CosmeticTestCase(ASTTestCase):
