@@ -21,19 +21,25 @@ typedef struct {
     PyObject *PyCursesPanel_Type;
 } _curses_panelstate;
 
-#define _curses_panelstate(o) ((_curses_panelstate *)PyModule_GetState(o))
+static inline _curses_panelstate*
+get_curses_panelstate(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_curses_panelstate *)state;
+}
 
 static int
 _curses_panel_clear(PyObject *m)
 {
-    Py_CLEAR(_curses_panelstate(m)->PyCursesError);
+    Py_CLEAR(get_curses_panelstate(m)->PyCursesError);
     return 0;
 }
 
 static int
 _curses_panel_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    Py_VISIT(_curses_panelstate(m)->PyCursesError);
+    Py_VISIT(get_curses_panelstate(m)->PyCursesError);
     return 0;
 }
 
@@ -645,15 +651,15 @@ PyInit__curses_panel(void)
     if (v == NULL)
         goto fail;
     ((PyTypeObject *)v)->tp_new = NULL;
-    _curses_panelstate(m)->PyCursesPanel_Type = v;
+    get_curses_panelstate(m)->PyCursesPanel_Type = v;
 
     import_curses();
     if (PyErr_Occurred())
         goto fail;
 
     /* For exception _curses_panel.error */
-    _curses_panelstate(m)->PyCursesError = PyErr_NewException("_curses_panel.error", NULL, NULL);
-    PyDict_SetItemString(d, "error", _curses_panelstate(m)->PyCursesError);
+    get_curses_panelstate(m)->PyCursesError = PyErr_NewException("_curses_panel.error", NULL, NULL);
+    PyDict_SetItemString(d, "error", get_curses_panelstate(m)->PyCursesError);
 
     /* Make the version available */
     v = PyUnicode_FromString(PyCursesVersion);
@@ -661,8 +667,9 @@ PyInit__curses_panel(void)
     PyDict_SetItemString(d, "__version__", v);
     Py_DECREF(v);
 
-    Py_INCREF(_curses_panelstate(m)->PyCursesPanel_Type);
-    PyModule_AddObject(m, "panel", (PyObject *)_curses_panelstate(m)->PyCursesPanel_Type);
+    Py_INCREF(get_curses_panelstate(m)->PyCursesPanel_Type);
+    PyModule_AddObject(m, "panel",
+                       (PyObject *)get_curses_panelstate(m)->PyCursesPanel_Type);
     return m;
   fail:
     Py_XDECREF(m);
