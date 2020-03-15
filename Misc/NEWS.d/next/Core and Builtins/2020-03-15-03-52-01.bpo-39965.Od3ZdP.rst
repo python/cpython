@@ -1,0 +1,3 @@
+Correctly raise ``SyntaxError`` if *await* is used inside non-async
+functions and ``PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set (like in the asyncio
+REPL). Patch by Pablo Galindo.
