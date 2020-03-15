@@ -2785,10 +2785,10 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         cmd = '''if 1:
             from multiprocessing import Pool
             class A:
-                def init(self):
+                def __init__(self):
                     self.pool = Pool(processes=1)
             def do_something(x):
-                return x1
+                return x + 1
             problem = A()
             problem.pool.map(do_something, [1,2,3])
         '''
