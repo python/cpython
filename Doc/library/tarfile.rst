@@ -8,7 +8,7 @@
 .. sectionauthor:: Lars Gustäbel <lars@gustaebel.de>
 
 **Source code:** :source:`Lib/tarfile.py`
-
+ 
 --------------
 
 The :mod:`tarfile` module makes it possible to read and write tar
