@@ -135,4 +135,4 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
    Added ``451 UNAVAILABLE_FOR_LEGAL_REASONS`` status code.
 
 .. versionadded:: 3.9
-   Added ``103 EARLY_HINTS`` and ``425 TOO_EARLY`` status codes.
+   Added ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` status codes.
