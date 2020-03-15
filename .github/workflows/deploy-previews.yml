@@ -1,0 +1,27 @@
+name: Generate Deploy Preview
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v1.2.0
+      with:
+        python-version: 3.7
+    - name: Build documentation
+      run: |
+        make venv
+        make html
+      working-directory: Doc
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@3.4.1
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages
+        FOLDER: Doc/build/build
+        TARGET_FOLDER: ${{ GITHUB_SHA }}
