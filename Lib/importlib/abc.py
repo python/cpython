@@ -377,7 +377,7 @@ class ResourceReader(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def is_resource(self, name):
         """Return True if the named 'name' is consider a resource."""
-        raise FileNotFoundError
+        return False
 
     @abc.abstractmethod
     def contents(self):

@@ -529,7 +529,8 @@ ABC hierarchy::
     .. abstractmethod:: is_resource(name)
 
         Returns ``True`` if the named *name* is considered a resource.
-        :exc:`FileNotFoundError` is raised if *name* does not exist.
+
+        The abstract method always returns ``False``.
 
     .. abstractmethod:: contents()
 
