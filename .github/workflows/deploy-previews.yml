@@ -8,6 +8,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - name: Comment Deploy Preview Link
+      uses: thollander/actions-comment-pull-request@1.0.0
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        message: Test. Nice PR!👍 Deploy preview available at https://epicfaace.github.io/cpython/${{GITHUB_SHA}}
     - uses: actions/checkout@v2
     - name: Setup Python
       uses: actions/setup-python@v1.2.0
