@@ -28,3 +28,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages
         FOLDER: Doc/to-github
+    - name: Comment Deploy Preview Link
+      uses: github-actions-up-and-running/pr-comment@v1.0.0
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        message: Nice PR!👍
