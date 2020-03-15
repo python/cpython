@@ -19,10 +19,12 @@ jobs:
         # make html
         mkdir -p build/html
         echo "Hello world<h1>aaa</a>" > build/html/index.html
+        mkdir to-github
+        mv build/html to-github/${GITHUB_SHA}
       working-directory: Doc
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@3.4.1
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages
-        FOLDER: Doc/build/html
+        FOLDER: Doc/to-github
