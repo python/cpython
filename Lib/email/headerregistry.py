@@ -48,6 +48,12 @@ class Address:
                 raise a_s.all_defects[0]
             username = a_s.local_part
             domain = a_s.domain
+        else:
+            self._validate_part(username)
+            self._validate_part(domain)
+
+        self._validate_part(display_name)
+
         self._display_name = display_name
         self._username = username
         self._domain = domain
@@ -99,6 +105,10 @@ class Address:
                 self.username == other.username and
                 self.domain == other.domain)
 
+    def _validate_part(self, value):
+        """Parts cannot contain CRLF for security reasons."""
+        if '\r\n' in value:
+            raise ValueError("invalid address; address parts cannot contain CRLF")
 
 class Group:
 

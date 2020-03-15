@@ -1437,6 +1437,18 @@ class TestAddressAndGroup(TestEmailBase):
     #    with self.assertRaises(ValueError):
     #        Address('foo', 'wők', 'example.com')
 
+    def test_crlf_in_display_name_raises(self):
+        with self.assertRaisesRegex(ValueError, "invalid address"):
+            Address(display_name='example.com\r\n')
+
+    def test_crlf_in_username_raises(self):
+        with self.assertRaisesRegex(ValueError, "invalid address"):
+            Address(username='hello\r\n')
+
+    def test_crlf_in_domain_raises(self):
+        with self.assertRaisesRegex(ValueError, "invalid address"):
+            Address(domain='example.com\r\n')
+
     def test_non_ascii_username_in_addr_spec_raises(self):
         with self.assertRaises(ValueError):
             Address('foo', addr_spec='wők@example.com')
