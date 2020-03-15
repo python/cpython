@@ -945,7 +945,7 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
     if (!checker || !retval)
         return retval;
 
-    v = _PyObject_CallOneArg(checker, retval);
+    v = PyObject_CallOneArg(checker, retval);
     if (v == NULL)
         _PyTraceback_Add("GetResult", "_ctypes/callproc.c", __LINE__-2);
     Py_DECREF(retval);
@@ -1138,7 +1138,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
         if (argtypes && argtype_count > i) {
             PyObject *v;
             converter = PyTuple_GET_ITEM(argtypes, i);
-            v = _PyObject_CallOneArg(converter, arg);
+            v = PyObject_CallOneArg(converter, arg);
             if (v == NULL) {
                 _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
@@ -1835,7 +1835,7 @@ pointer(PyObject *self, PyObject *arg)
 
     typ = PyDict_GetItemWithError(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg));
     if (typ) {
-        return _PyObject_CallOneArg(typ, arg);
+        return PyObject_CallOneArg(typ, arg);
     }
     else if (PyErr_Occurred()) {
         return NULL;
@@ -1843,7 +1843,7 @@ pointer(PyObject *self, PyObject *arg)
     typ = POINTER(NULL, (PyObject *)Py_TYPE(arg));
     if (typ == NULL)
         return NULL;
-    result = _PyObject_CallOneArg(typ, arg);
+    result = PyObject_CallOneArg(typ, arg);
     Py_DECREF(typ);
     return result;
 }

@@ -336,7 +336,10 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             dirs.remove('CVS')  # don't visit CVS directories
 
     """
-    top = fspath(top)
+    sys.audit("os.walk", top, topdown, onerror, followlinks)
+    return _walk(fspath(top), topdown, onerror, followlinks)
+
+def _walk(top, topdown, onerror, followlinks):
     dirs = []
     nondirs = []
     walk_dirs = []
@@ -410,11 +413,11 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             # the caller can replace the directory entry during the "yield"
             # above.
             if followlinks or not islink(new_path):
-                yield from walk(new_path, topdown, onerror, followlinks)
+                yield from _walk(new_path, topdown, onerror, followlinks)
     else:
         # Recurse into sub-directories
         for new_path in walk_dirs:
-            yield from walk(new_path, topdown, onerror, followlinks)
+            yield from _walk(new_path, topdown, onerror, followlinks)
         # Yield after recursion if going bottom up
         yield top, dirs, nondirs
 
@@ -455,6 +458,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             if 'CVS' in dirs:
                 dirs.remove('CVS')  # don't visit CVS directories
         """
+        sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
         if not isinstance(top, int) or not hasattr(top, '__index__'):
             top = fspath(top)
         # Note: To guard against symlink races, we use the standard
@@ -655,7 +659,7 @@ def get_exec_path(env=None):
 
 
 # Change environ to automatically call putenv() and unsetenv()
-from _collections_abc import MutableMapping
+from _collections_abc import MutableMapping, Mapping
 
 class _Environ(MutableMapping):
     def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue):
@@ -709,6 +713,24 @@ class _Environ(MutableMapping):
         if key not in self:
             self[key] = value
         return self[key]
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        new = dict(self)
+        new.update(other)
+        return new
+
+    def __ror__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        new = dict(other)
+        new.update(self)
+        return new
 
 def _createenviron():
     if name == 'nt':

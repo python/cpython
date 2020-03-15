@@ -957,6 +957,8 @@ static int add_ast_fields(void)
                             (name, name, len(prod.attributes)), 1)
         else:
             self.emit("if (!add_attributes(state->%s_type, NULL, 0)) return 0;" % name, 1)
+        self.emit_defaults(name, prod.fields, 1)
+        self.emit_defaults(name, prod.attributes, 1)
 
     def visitSum(self, sum, name):
         self.emit('state->%s_type = make_type("%s", state->AST_type, NULL, 0);' %
@@ -968,6 +970,7 @@ static int add_ast_fields(void)
                             (name, name, len(sum.attributes)), 1)
         else:
             self.emit("if (!add_attributes(state->%s_type, NULL, 0)) return 0;" % name, 1)
+        self.emit_defaults(name, sum.attributes, 1)
         simple = is_simple(sum)
         for t in sum.types:
             self.visitConstructor(t, name, simple)
@@ -981,11 +984,19 @@ static int add_ast_fields(void)
                             (cons.name, cons.name, name, fields, len(cons.fields)), 1)
         self.emit("if (!state->%s_type) return 0;" % cons.name, 1)
         self.emit_type("%s_type" % cons.name)
+        self.emit_defaults(cons.name, cons.fields, 1)
         if simple:
             self.emit("state->%s_singleton = PyType_GenericNew((PyTypeObject *)"
                       "state->%s_type, NULL, NULL);" %
                              (cons.name, cons.name), 1)
             self.emit("if (!state->%s_singleton) return 0;" % cons.name, 1)
+
+    def emit_defaults(self, name, fields, depth):
+        for field in fields:
+            if field.opt:
+                self.emit('if (PyObject_SetAttr(state->%s_type, state->%s, Py_None) == -1)' %
+                            (name, field.name), depth)
+                self.emit("return 0;", depth+1)
 
 
 class ASTModuleVisitor(PickleVisitor):
@@ -998,17 +1009,25 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("if (!init_types()) return NULL;", 1)
         self.emit('m = PyState_FindModule(&_astmodule);', 1)
         self.emit("if (!m) return NULL;", 1)
+        self.emit('if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0) {', 1)
+        self.emit('goto error;', 2)
+        self.emit('}', 1)
         self.emit('Py_INCREF(astmodulestate(m)->AST_type);', 1)
-        self.emit('if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0) return NULL;', 1)
-        self.emit('if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)', 1)
-        self.emit("return NULL;", 2)
-        self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)', 1)
-        self.emit("return NULL;", 2)
-        self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)', 1)
-        self.emit("return NULL;", 2)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0) {', 1)
+        self.emit("goto error;", 2)
+        self.emit('}', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0) {', 1)
+        self.emit("goto error;", 2)
+        self.emit('}', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {', 1)
+        self.emit("goto error;", 2)
+        self.emit('}', 1)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("return m;", 1)
+        self.emit("error:", 0)
+        self.emit("Py_DECREF(m);", 1)
+        self.emit("return NULL;", 1)
         self.emit("}", 0)
 
     def visitProduct(self, prod, name):
@@ -1024,7 +1043,9 @@ class ASTModuleVisitor(PickleVisitor):
 
     def addObj(self, name):
         self.emit("if (PyModule_AddObject(m, \"%s\", "
-                  "astmodulestate_global->%s_type) < 0) return NULL;" % (name, name), 1)
+                  "astmodulestate_global->%s_type) < 0) {" % (name, name), 1)
+        self.emit("goto error;", 2)
+        self.emit('}', 1)
         self.emit("Py_INCREF(astmodulestate(m)->%s_type);" % name, 1)
 
 

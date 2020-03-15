@@ -41,6 +41,10 @@
 #define COMP_SETCOMP  2
 #define COMP_DICTCOMP 3
 
+#define IS_TOP_LEVEL_AWAIT(c) ( \
+        (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
+        && (c->u->u_ste->ste_type == ModuleBlock))
+
 struct instr {
     unsigned i_jabs : 1;
     unsigned i_jrel : 1;
@@ -179,7 +183,7 @@ struct compiler {
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
 static void compiler_free(struct compiler *);
 static basicblock *compiler_new_block(struct compiler *);
-static int compiler_next_instr(struct compiler *, basicblock *);
+static int compiler_next_instr(basicblock *);
 static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
@@ -193,10 +197,10 @@ static int compiler_visit_keyword(struct compiler *, keyword_ty);
 static int compiler_visit_expr(struct compiler *, expr_ty);
 static int compiler_augassign(struct compiler *, stmt_ty);
 static int compiler_annassign(struct compiler *, stmt_ty);
-static int compiler_visit_slice(struct compiler *, slice_ty,
-                                expr_context_ty);
+static int compiler_subscript(struct compiler *, expr_ty);
+static int compiler_slice(struct compiler *, expr_ty);
 
-static int inplace_binop(struct compiler *, operator_ty);
+static int inplace_binop(operator_ty);
 static int are_all_items_const(asdl_seq *, Py_ssize_t, Py_ssize_t);
 static int expr_constant(expr_ty);
 
@@ -212,11 +216,13 @@ static int compiler_set_qualname(struct compiler *);
 static int compiler_sync_comprehension_generator(
                                       struct compiler *c,
                                       asdl_seq *generators, int gen_index,
+                                      int depth,
                                       expr_ty elt, expr_ty val, int type);
 
 static int compiler_async_comprehension_generator(
                                       struct compiler *c,
                                       asdl_seq *generators, int gen_index,
+                                      int depth,
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
@@ -801,7 +807,7 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
 */
 
 static int
-compiler_next_instr(struct compiler *c, basicblock *b)
+compiler_next_instr(basicblock *b)
 {
     assert(b != NULL);
     if (b->b_instr == NULL) {
@@ -1157,7 +1163,7 @@ compiler_addop(struct compiler *c, int opcode)
     if (c->c_do_not_emit_bytecode) {
         return 1;
     }
-    off = compiler_next_instr(c, c->u->u_curblock);
+    off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
     b = c->u->u_curblock;
@@ -1171,7 +1177,7 @@ compiler_addop(struct compiler *c, int opcode)
 }
 
 static Py_ssize_t
-compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
+compiler_add_o(PyObject *dict, PyObject *o)
 {
     PyObject *v;
     Py_ssize_t arg;
@@ -1319,7 +1325,7 @@ compiler_add_const(struct compiler *c, PyObject *o)
         return -1;
     }
 
-    Py_ssize_t arg = compiler_add_o(c, c->u->u_consts, key);
+    Py_ssize_t arg = compiler_add_o(c->u->u_consts, key);
     Py_DECREF(key);
     return arg;
 }
@@ -1345,7 +1351,7 @@ compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
         return 1;
     }
 
-    Py_ssize_t arg = compiler_add_o(c, dict, o);
+    Py_ssize_t arg = compiler_add_o(dict, o);
     if (arg < 0)
         return 0;
     return compiler_addop_i(c, opcode, arg);
@@ -1364,7 +1370,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
     PyObject *mangled = _Py_Mangle(c->u->u_private, o);
     if (!mangled)
         return 0;
-    arg = compiler_add_o(c, dict, mangled);
+    arg = compiler_add_o(dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0)
         return 0;
@@ -1395,7 +1401,7 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
     assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
-    off = compiler_next_instr(c, c->u->u_curblock);
+    off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
     i = &c->u->u_curblock->b_instr[off];
@@ -1417,7 +1423,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 
     assert(HAS_ARG(opcode));
     assert(b != NULL);
-    off = compiler_next_instr(c, c->u->u_curblock);
+    off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
     i = &c->u->u_curblock->b_instr[off];
@@ -1860,10 +1866,6 @@ compiler_mod(struct compiler *c, mod_ty mod)
         VISIT_IN_SCOPE(c, expr, mod->v.Expression.body);
         addNone = 0;
         break;
-    case Suite_kind:
-        PyErr_SetString(PyExc_SystemError,
-                        "suite should not be possible");
-        return 0;
     default:
         PyErr_Format(PyExc_SystemError,
                      "module kind %d should not be possible",
@@ -2745,7 +2747,7 @@ static int
 compiler_async_for(struct compiler *c, stmt_ty s)
 {
     basicblock *start, *except, *end;
-    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+    if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
         return compiler_error(c, "'async for' outside async function");
@@ -3441,7 +3443,7 @@ unaryop(unaryop_ty op)
 }
 
 static int
-binop(struct compiler *c, operator_ty op)
+binop(operator_ty op)
 {
     switch (op) {
     case Add:
@@ -3478,7 +3480,7 @@ binop(struct compiler *c, operator_ty op)
 }
 
 static int
-inplace_binop(struct compiler *c, operator_ty op)
+inplace_binop(operator_ty op)
 {
     switch (op) {
     case Add:
@@ -3639,7 +3641,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     }
 
     assert(op);
-    arg = compiler_add_o(c, dict, mangled);
+    arg = compiler_add_o(dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0)
         return 0;
@@ -3767,7 +3769,6 @@ assignment_helper(struct compiler *c, asdl_seq *elts)
                     "star-unpacking assignment");
             ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
             seen_star = 1;
-            asdl_seq_SET(elts, i, elt->v.Starred.value);
         }
         else if (elt->kind == Starred_kind) {
             return compiler_error(c,
@@ -3777,7 +3778,10 @@ assignment_helper(struct compiler *c, asdl_seq *elts)
     if (!seen_star) {
         ADDOP_I(c, UNPACK_SEQUENCE, n);
     }
-    VISIT_SEQ(c, expr, elts);
+    for (i = 0; i < n; i++) {
+        expr_ty elt = asdl_seq_GET(elts, i);
+        VISIT(c, expr, elt->kind != Starred_kind ? elt : elt->v.Starred.value);
+    }
     return 1;
 }
 
@@ -3988,7 +3992,7 @@ infer_type(expr_ty e)
     case FormattedValue_kind:
         return &PyUnicode_Type;
     case Constant_kind:
-        return e->v.Constant.value->ob_type;
+        return Py_TYPE(e->v.Constant.value);
     default:
         return NULL;
     }
@@ -4045,14 +4049,11 @@ check_subscripter(struct compiler *c, expr_ty e)
 }
 
 static int
-check_index(struct compiler *c, expr_ty e, slice_ty s)
+check_index(struct compiler *c, expr_ty e, expr_ty s)
 {
     PyObject *v;
 
-    if (s->kind != Index_kind) {
-        return 1;
-    }
-    PyTypeObject *index_type = infer_type(s->v.Index.value);
+    PyTypeObject *index_type = infer_type(s);
     if (index_type == NULL
         || PyType_FastSubclass(index_type, Py_TPFLAGS_LONG_SUBCLASS)
         || index_type == &PySlice_Type) {
@@ -4343,22 +4344,24 @@ ex_call:
 static int
 compiler_comprehension_generator(struct compiler *c,
                                  asdl_seq *generators, int gen_index,
+                                 int depth,
                                  expr_ty elt, expr_ty val, int type)
 {
     comprehension_ty gen;
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
         return compiler_async_comprehension_generator(
-            c, generators, gen_index, elt, val, type);
+            c, generators, gen_index, depth, elt, val, type);
     } else {
         return compiler_sync_comprehension_generator(
-            c, generators, gen_index, elt, val, type);
+            c, generators, gen_index, depth, elt, val, type);
     }
 }
 
 static int
 compiler_sync_comprehension_generator(struct compiler *c,
                                       asdl_seq *generators, int gen_index,
+                                      int depth,
                                       expr_ty elt, expr_ty val, int type)
 {
     /* generate code for the iterator, then each of the ifs,
@@ -4386,12 +4389,38 @@ compiler_sync_comprehension_generator(struct compiler *c,
     }
     else {
         /* Sub-iter - calculate on the fly */
-        VISIT(c, expr, gen->iter);
-        ADDOP(c, GET_ITER);
+        /* Fast path for the temporary variable assignment idiom:
+             for y in [f(x)]
+         */
+        asdl_seq *elts;
+        switch (gen->iter->kind) {
+            case List_kind:
+                elts = gen->iter->v.List.elts;
+                break;
+            case Tuple_kind:
+                elts = gen->iter->v.Tuple.elts;
+                break;
+            default:
+                elts = NULL;
+        }
+        if (asdl_seq_LEN(elts) == 1) {
+            expr_ty elt = asdl_seq_GET(elts, 0);
+            if (elt->kind != Starred_kind) {
+                VISIT(c, expr, elt);
+                start = NULL;
+            }
+        }
+        if (start) {
+            VISIT(c, expr, gen->iter);
+            ADDOP(c, GET_ITER);
+        }
     }
-    compiler_use_next_block(c, start);
-    ADDOP_JREL(c, FOR_ITER, anchor);
-    NEXT_BLOCK(c);
+    if (start) {
+        depth++;
+        compiler_use_next_block(c, start);
+        ADDOP_JREL(c, FOR_ITER, anchor);
+        NEXT_BLOCK(c);
+    }
     VISIT(c, expr, gen->target);
 
     /* XXX this needs to be cleaned up...a lot! */
@@ -4405,7 +4434,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
 
     if (++gen_index < asdl_seq_LEN(generators))
         if (!compiler_comprehension_generator(c,
-                                              generators, gen_index,
+                                              generators, gen_index, depth,
                                               elt, val, type))
         return 0;
 
@@ -4420,18 +4449,18 @@ compiler_sync_comprehension_generator(struct compiler *c,
             break;
         case COMP_LISTCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, LIST_APPEND, gen_index + 1);
+            ADDOP_I(c, LIST_APPEND, depth + 1);
             break;
         case COMP_SETCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, SET_ADD, gen_index + 1);
+            ADDOP_I(c, SET_ADD, depth + 1);
             break;
         case COMP_DICTCOMP:
             /* With '{k: v}', k is evaluated before v, so we do
                the same. */
             VISIT(c, expr, elt);
             VISIT(c, expr, val);
-            ADDOP_I(c, MAP_ADD, gen_index + 1);
+            ADDOP_I(c, MAP_ADD, depth + 1);
             break;
         default:
             return 0;
@@ -4440,8 +4469,10 @@ compiler_sync_comprehension_generator(struct compiler *c,
         compiler_use_next_block(c, skip);
     }
     compiler_use_next_block(c, if_cleanup);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, start);
-    compiler_use_next_block(c, anchor);
+    if (start) {
+        ADDOP_JABS(c, JUMP_ABSOLUTE, start);
+        compiler_use_next_block(c, anchor);
+    }
 
     return 1;
 }
@@ -4449,6 +4480,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
 static int
 compiler_async_comprehension_generator(struct compiler *c,
                                       asdl_seq *generators, int gen_index,
+                                      int depth,
                                       expr_ty elt, expr_ty val, int type)
 {
     comprehension_ty gen;
@@ -4492,9 +4524,10 @@ compiler_async_comprehension_generator(struct compiler *c,
         NEXT_BLOCK(c);
     }
 
+    depth++;
     if (++gen_index < asdl_seq_LEN(generators))
         if (!compiler_comprehension_generator(c,
-                                              generators, gen_index,
+                                              generators, gen_index, depth,
                                               elt, val, type))
         return 0;
 
@@ -4509,18 +4542,18 @@ compiler_async_comprehension_generator(struct compiler *c,
             break;
         case COMP_LISTCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, LIST_APPEND, gen_index + 1);
+            ADDOP_I(c, LIST_APPEND, depth + 1);
             break;
         case COMP_SETCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, SET_ADD, gen_index + 1);
+            ADDOP_I(c, SET_ADD, depth + 1);
             break;
         case COMP_DICTCOMP:
             /* With '{k: v}', k is evaluated before v, so we do
                the same. */
             VISIT(c, expr, elt);
             VISIT(c, expr, val);
-            ADDOP_I(c, MAP_ADD, gen_index + 1);
+            ADDOP_I(c, MAP_ADD, depth + 1);
             break;
         default:
             return 0;
@@ -4583,7 +4616,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP_I(c, op, 0);
     }
 
-    if (!compiler_comprehension_generator(c, generators, 0, elt,
+    if (!compiler_comprehension_generator(c, generators, 0, 0, elt,
                                           val, type))
         goto error_in_scope;
 
@@ -4760,7 +4793,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
-    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+    if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
         return compiler_error(c, "'async with' outside async function");
@@ -4932,7 +4965,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case BinOp_kind:
         VISIT(c, expr, e->v.BinOp.left);
         VISIT(c, expr, e->v.BinOp.right);
-        ADDOP(c, binop(c, e->v.BinOp.op));
+        ADDOP(c, binop(e->v.BinOp.op));
         break;
     case UnaryOp_kind:
         VISIT(c, expr, e->v.UnaryOp.operand);
@@ -4978,7 +5011,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         ADDOP(c, YIELD_FROM);
         break;
     case Await_kind:
-        if (!(c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT)){
+        if (!IS_TOP_LEVEL_AWAIT(c)){
             if (c->u->u_ste->ste_type != FunctionBlock){
                 return compiler_error(c, "'await' outside function");
             }
@@ -5033,39 +5066,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         }
         break;
     case Subscript_kind:
-        switch (e->v.Subscript.ctx) {
-        case AugLoad:
-            VISIT(c, expr, e->v.Subscript.value);
-            VISIT_SLICE(c, e->v.Subscript.slice, AugLoad);
-            break;
-        case Load:
-            if (!check_subscripter(c, e->v.Subscript.value)) {
-                return 0;
-            }
-            if (!check_index(c, e->v.Subscript.value, e->v.Subscript.slice)) {
-                return 0;
-            }
-            VISIT(c, expr, e->v.Subscript.value);
-            VISIT_SLICE(c, e->v.Subscript.slice, Load);
-            break;
-        case AugStore:
-            VISIT_SLICE(c, e->v.Subscript.slice, AugStore);
-            break;
-        case Store:
-            VISIT(c, expr, e->v.Subscript.value);
-            VISIT_SLICE(c, e->v.Subscript.slice, Store);
-            break;
-        case Del:
-            VISIT(c, expr, e->v.Subscript.value);
-            VISIT_SLICE(c, e->v.Subscript.slice, Del);
-            break;
-        case Param:
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                "param invalid in subscript expression");
-            return 0;
-        }
-        break;
+        return compiler_subscript(c, e);
     case Starred_kind:
         switch (e->v.Starred.ctx) {
         case Store:
@@ -5077,6 +5078,9 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             return compiler_error(c,
                 "can't use starred expression here");
         }
+        break;
+    case Slice_kind:
+        return compiler_slice(c, e);
     case Name_kind:
         return compiler_nameop(c, e->v.Name.id, e->v.Name.ctx);
     /* child nodes of List and Tuple will have expr_context set */
@@ -5130,7 +5134,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
             return 0;
         VISIT(c, expr, auge);
         VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
+        ADDOP(c, inplace_binop(s->v.AugAssign.op));
         auge->v.Attribute.ctx = AugStore;
         VISIT(c, expr, auge);
         break;
@@ -5142,7 +5146,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
             return 0;
         VISIT(c, expr, auge);
         VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
+        ADDOP(c, inplace_binop(s->v.AugAssign.op));
         auge->v.Subscript.ctx = AugStore;
         VISIT(c, expr, auge);
         break;
@@ -5150,7 +5154,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         if (!compiler_nameop(c, e->v.Name.id, Load))
             return 0;
         VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
+        ADDOP(c, inplace_binop(s->v.AugAssign.op));
         return compiler_nameop(c, e->v.Name.id, Store);
     default:
         PyErr_Format(PyExc_SystemError,
@@ -5181,68 +5185,35 @@ check_annotation(struct compiler *c, stmt_ty s)
 }
 
 static int
-check_ann_slice(struct compiler *c, slice_ty sl)
-{
-    switch(sl->kind) {
-    case Index_kind:
-        return check_ann_expr(c, sl->v.Index.value);
-    case Slice_kind:
-        if (sl->v.Slice.lower && !check_ann_expr(c, sl->v.Slice.lower)) {
-            return 0;
-        }
-        if (sl->v.Slice.upper && !check_ann_expr(c, sl->v.Slice.upper)) {
-            return 0;
-        }
-        if (sl->v.Slice.step && !check_ann_expr(c, sl->v.Slice.step)) {
-            return 0;
-        }
-        break;
-    default:
-        PyErr_SetString(PyExc_SystemError,
-                        "unexpected slice kind");
-        return 0;
-    }
-    return 1;
-}
-
-static int
-check_ann_subscr(struct compiler *c, slice_ty sl)
+check_ann_subscr(struct compiler *c, expr_ty e)
 {
     /* We check that everything in a subscript is defined at runtime. */
-    Py_ssize_t i, n;
-
-    switch (sl->kind) {
-    case Index_kind:
+    switch (e->kind) {
     case Slice_kind:
-        if (!check_ann_slice(c, sl)) {
+        if (e->v.Slice.lower && !check_ann_expr(c, e->v.Slice.lower)) {
             return 0;
         }
-        break;
-    case ExtSlice_kind:
-        n = asdl_seq_LEN(sl->v.ExtSlice.dims);
+        if (e->v.Slice.upper && !check_ann_expr(c, e->v.Slice.upper)) {
+            return 0;
+        }
+        if (e->v.Slice.step && !check_ann_expr(c, e->v.Slice.step)) {
+            return 0;
+        }
+        return 1;
+    case Tuple_kind: {
+        /* extended slice */
+        asdl_seq *elts = e->v.Tuple.elts;
+        Py_ssize_t i, n = asdl_seq_LEN(elts);
         for (i = 0; i < n; i++) {
-            slice_ty subsl = (slice_ty)asdl_seq_GET(sl->v.ExtSlice.dims, i);
-            switch (subsl->kind) {
-            case Index_kind:
-            case Slice_kind:
-                if (!check_ann_slice(c, subsl)) {
-                    return 0;
-                }
-                break;
-            case ExtSlice_kind:
-            default:
-                PyErr_SetString(PyExc_SystemError,
-                                "extended slice invalid in nested slice");
+            if (!check_ann_subscr(c, asdl_seq_GET(elts, i))) {
                 return 0;
             }
         }
-        break;
-    default:
-        PyErr_Format(PyExc_SystemError,
-                     "invalid subscript kind %d", sl->kind);
-        return 0;
+        return 1;
     }
-    return 1;
+    default:
+        return check_ann_expr(c, e);
+    }
 }
 
 static int
@@ -5368,12 +5339,20 @@ compiler_warn(struct compiler *c, const char *format, ...)
 }
 
 static int
-compiler_handle_subscr(struct compiler *c, const char *kind,
-                       expr_context_ty ctx)
+compiler_subscript(struct compiler *c, expr_ty e)
 {
+    expr_context_ty ctx = e->v.Subscript.ctx;
     int op = 0;
 
-    /* XXX this code is duplicated */
+    if (ctx == Load) {
+        if (!check_subscripter(c, e->v.Subscript.value)) {
+            return 0;
+        }
+        if (!check_index(c, e->v.Subscript.value, e->v.Subscript.slice)) {
+            return 0;
+        }
+    }
+
     switch (ctx) {
         case AugLoad: /* fall through to Load */
         case Load:    op = BINARY_SUBSCR; break;
@@ -5381,23 +5360,26 @@ compiler_handle_subscr(struct compiler *c, const char *kind,
         case Store:   op = STORE_SUBSCR; break;
         case Del:     op = DELETE_SUBSCR; break;
         case Param:
-            PyErr_Format(PyExc_SystemError,
-                         "invalid %s kind %d in subscript\n",
-                         kind, ctx);
+            PyErr_SetString(PyExc_SystemError,
+                "param invalid in subscript expression");
             return 0;
     }
-    if (ctx == AugLoad) {
-        ADDOP(c, DUP_TOP_TWO);
-    }
-    else if (ctx == AugStore) {
+    if (ctx == AugStore) {
         ADDOP(c, ROT_THREE);
+    }
+    else {
+        VISIT(c, expr, e->v.Subscript.value);
+        VISIT(c, expr, e->v.Subscript.slice);
+        if (ctx == AugLoad) {
+            ADDOP(c, DUP_TOP_TWO);
+        }
     }
     ADDOP(c, op);
     return 1;
 }
 
 static int
-compiler_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
+compiler_slice(struct compiler *c, expr_ty s)
 {
     int n = 2;
     assert(s->kind == Slice_kind);
@@ -5423,64 +5405,6 @@ compiler_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
     }
     ADDOP_I(c, BUILD_SLICE, n);
     return 1;
-}
-
-static int
-compiler_visit_nested_slice(struct compiler *c, slice_ty s,
-                            expr_context_ty ctx)
-{
-    switch (s->kind) {
-    case Slice_kind:
-        return compiler_slice(c, s, ctx);
-    case Index_kind:
-        VISIT(c, expr, s->v.Index.value);
-        break;
-    case ExtSlice_kind:
-    default:
-        PyErr_SetString(PyExc_SystemError,
-                        "extended slice invalid in nested slice");
-        return 0;
-    }
-    return 1;
-}
-
-static int
-compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
-{
-    const char * kindname = NULL;
-    switch (s->kind) {
-    case Index_kind:
-        kindname = "index";
-        if (ctx != AugStore) {
-            VISIT(c, expr, s->v.Index.value);
-        }
-        break;
-    case Slice_kind:
-        kindname = "slice";
-        if (ctx != AugStore) {
-            if (!compiler_slice(c, s, ctx))
-                return 0;
-        }
-        break;
-    case ExtSlice_kind:
-        kindname = "extended slice";
-        if (ctx != AugStore) {
-            Py_ssize_t i, n = asdl_seq_LEN(s->v.ExtSlice.dims);
-            for (i = 0; i < n; i++) {
-                slice_ty sub = (slice_ty)asdl_seq_GET(
-                    s->v.ExtSlice.dims, i);
-                if (!compiler_visit_nested_slice(c, sub, ctx))
-                    return 0;
-            }
-            ADDOP_I(c, BUILD_TUPLE, n);
-        }
-        break;
-    default:
-        PyErr_Format(PyExc_SystemError,
-                     "invalid subscript kind %d", s->kind);
-        return 0;
-    }
-    return compiler_handle_subscr(c, kindname, ctx);
 }
 
 /* End of the compiler section, beginning of the assembler section */
@@ -5916,7 +5840,7 @@ compute_code_flags(struct compiler *c)
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
 
-    if ((c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+    if ((IS_TOP_LEVEL_AWAIT(c)) &&
          ste->ste_coroutine &&
          !ste->ste_generator) {
         flags |= CO_COROUTINE;

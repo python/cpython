@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pymem.h"
 #include "pycore_traceback.h"
 #include "hashtable.h"
 #include "frameobject.h"
@@ -711,7 +712,7 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
 
                The GIL and the table lock ensures that only one thread is
                allocating memory. */
-            Py_UNREACHABLE();
+            Py_FatalError("tracemalloc_realloc() failed to allocate a trace");
         }
         TABLES_UNLOCK();
     }

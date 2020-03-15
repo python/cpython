@@ -1,0 +1,2 @@
+Package for nuget.org now includes repository reference and bundled icon
+image.

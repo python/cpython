@@ -4,6 +4,7 @@
    for any kind of float exception without losing portability. */
 
 #include "Python.h"
+#include "pycore_dtoa.h"
 
 #include <ctype.h>
 #include <float.h>
@@ -221,7 +222,7 @@ float_dealloc(PyFloatObject *op)
             return;
         }
         numfree++;
-        Py_TYPE(op) = (struct _typeobject *)free_list;
+        Py_SET_TYPE(op, (PyTypeObject *)free_list);
         free_list = op;
     }
     else
@@ -256,7 +257,7 @@ PyFloat_AsDouble(PyObject *op)
             return val;
         }
         PyErr_Format(PyExc_TypeError, "must be real number, not %.50s",
-                     op->ob_type->tp_name);
+                     Py_TYPE(op)->tp_name);
         return -1;
     }
 
@@ -268,7 +269,7 @@ PyFloat_AsDouble(PyObject *op)
         if (!PyFloat_Check(res)) {
             PyErr_Format(PyExc_TypeError,
                          "%.50s.__float__ returned non-float (type %.50s)",
-                         op->ob_type->tp_name, res->ob_type->tp_name);
+                         Py_TYPE(op)->tp_name, Py_TYPE(res)->tp_name);
             Py_DECREF(res);
             return -1;
         }
@@ -276,7 +277,7 @@ PyFloat_AsDouble(PyObject *op)
                 "%.50s.__float__ returned non-float (type %.50s).  "
                 "The ability to return an instance of a strict subclass of float "
                 "is deprecated, and may be removed in a future version of Python.",
-                op->ob_type->tp_name, res->ob_type->tp_name)) {
+                Py_TYPE(op)->tp_name, Py_TYPE(res)->tp_name)) {
             Py_DECREF(res);
             return -1;
         }
@@ -641,7 +642,7 @@ _float_div_mod(double vx, double wx, double *floordiv, double *mod)
         *floordiv = floor(div);
         if (div - *floordiv > 0.5) {
             *floordiv += 1.0;
-        }       
+        }
     }
     else {
         /* div is zero - get the same sign as the true quotient */
@@ -652,16 +653,16 @@ _float_div_mod(double vx, double wx, double *floordiv, double *mod)
 static PyObject *
 float_divmod(PyObject *v, PyObject *w)
 {
-     double vx, wx;
-     double mod, floordiv;
-     CONVERT_TO_DOUBLE(v, vx);
-     CONVERT_TO_DOUBLE(w, wx);
-     if (wx == 0.0) {
-         PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-         return NULL;
-     }
-     _float_div_mod(vx, wx, &floordiv, &mod);
-     return Py_BuildValue("(dd)", floordiv, mod);
+    double vx, wx;
+    double mod, floordiv;
+    CONVERT_TO_DOUBLE(v, vx);
+    CONVERT_TO_DOUBLE(w, wx);
+    if (wx == 0.0) {
+        PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
+        return NULL;
+    }
+    _float_div_mod(vx, wx, &floordiv, &mod);
+    return Py_BuildValue("(dd)", floordiv, mod);
 }
 
 static PyObject *
@@ -1490,7 +1491,7 @@ float_fromhex(PyTypeObject *type, PyObject *string)
         goto parse_error;
     result = PyFloat_FromDouble(negate ? -x : x);
     if (type != &PyFloat_Type && result != NULL) {
-        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 

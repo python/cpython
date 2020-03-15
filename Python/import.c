@@ -310,7 +310,7 @@ PyImport_GetModuleDict(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     if (interp->modules == NULL) {
-        Py_FatalError("PyImport_GetModuleDict: no module dictionary!");
+        Py_FatalError("no module dictionary");
     }
     return interp->modules;
 }
@@ -568,8 +568,6 @@ _PyImport_Cleanup(PyThreadState *tstate)
         _PyErr_Clear(tstate);
     }
     Py_XDECREF(dict);
-    /* Clear module dict copies stored in the interpreter state */
-    _PyInterpreterState_ClearModules(interp);
     /* Collect references */
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
@@ -621,6 +619,9 @@ _PyImport_Cleanup(PyThreadState *tstate)
     }
     _PyModule_ClearDict(interp->builtins);
 
+    /* Clear module dict copies stored in the interpreter state */
+    _PyInterpreterState_ClearModules(interp);
+
     /* Clear and delete the modules directory.  Actual modules will
        still be there only if imported during the execution of some
        destructor. */
@@ -641,7 +642,7 @@ long
 PyImport_GetMagicNumber(void)
 {
     long res;
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     PyObject *external, *pyc_magic;
 
     external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
@@ -981,8 +982,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
         _Py_IDENTIFIER(_get_sourcefile);
 
         if (interp == NULL) {
-            Py_FatalError("PyImport_ExecCodeModuleWithPathnames: "
-                          "no interpreter!");
+            Py_FatalError("no interpreter!");
         }
 
         external= PyObject_GetAttrString(interp->importlib,
@@ -1205,7 +1205,7 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
         PyObject *hook = PyList_GetItem(path_hooks, j);
         if (hook == NULL)
             return NULL;
-        importer = _PyObject_CallOneArg(hook, p);
+        importer = PyObject_CallOneArg(hook, p);
         if (importer != NULL)
             break;
 
@@ -2412,7 +2412,7 @@ PyInit__imp(void)
         goto failure;
     }
 
-    const wchar_t *mode = _PyInterpreterState_Get()->config.check_hash_pycs_mode;
+    const wchar_t *mode = _PyInterpreterState_GET_UNSAFE()->config.check_hash_pycs_mode;
     PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
     if (pyc_mode == NULL) {
         goto failure;

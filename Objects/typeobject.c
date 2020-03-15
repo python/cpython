@@ -302,7 +302,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
        each subclass when their mro is recursively updated.
      */
     Py_ssize_t i, n;
-    int custom = (Py_TYPE(type) != &PyType_Type);
+    int custom = !Py_IS_TYPE(type, &PyType_Type);
     int unbound;
     PyObject *mro_meth = NULL;
     PyObject *type_mro_meth = NULL;
@@ -955,14 +955,8 @@ type_repr(PyTypeObject *type)
 static PyObject *
 type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    PyObject *obj;
     PyThreadState *tstate = _PyThreadState_GET();
-
-    if (type->tp_new == NULL) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "cannot create '%.100s' instances",
-                      type->tp_name);
-        return NULL;
-    }
 
 #ifdef Py_DEBUG
     /* type_call() must not be called with an exception set,
@@ -971,18 +965,40 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
     assert(!_PyErr_Occurred(tstate));
 #endif
 
-    PyObject *obj = type->tp_new(type, args, kwds);
+    /* Special case: type(x) should return Py_TYPE(x) */
+    /* We only want type itself to accept the one-argument form (#27157) */
+    if (type == &PyType_Type) {
+        assert(args != NULL && PyTuple_Check(args));
+        assert(kwds == NULL || PyDict_Check(kwds));
+        Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+
+        if (nargs == 1 && (kwds == NULL || !PyDict_GET_SIZE(kwds))) {
+            obj = (PyObject *) Py_TYPE(PyTuple_GET_ITEM(args, 0));
+            Py_INCREF(obj);
+            return obj;
+        }
+
+        /* SF bug 475327 -- if that didn't trigger, we need 3
+           arguments. But PyArg_ParseTuple in type_new may give
+           a msg saying type() needs exactly 3. */
+        if (nargs != 3) {
+            PyErr_SetString(PyExc_TypeError,
+                            "type() takes 1 or 3 arguments");
+            return NULL;
+        }
+    }
+
+    if (type->tp_new == NULL) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "cannot create '%.100s' instances",
+                      type->tp_name);
+        return NULL;
+    }
+
+    obj = type->tp_new(type, args, kwds);
     obj = _Py_CheckFunctionResult(tstate, (PyObject*)type, obj, NULL);
     if (obj == NULL)
         return NULL;
-
-    /* Ugly exception: when the call was type(something),
-       don't call tp_init on the result. */
-    if (type == &PyType_Type &&
-        PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
-        (kwds == NULL ||
-         (PyDict_Check(kwds) && PyDict_GET_SIZE(kwds) == 0)))
-        return obj;
 
     /* If the returned object is not an instance of type,
        it won't be initialized. */
@@ -1173,8 +1189,9 @@ subtype_dealloc(PyObject *self)
         }
         if (type->tp_del) {
             type->tp_del(self);
-            if (self->ob_refcnt > 0)
+            if (Py_REFCNT(self) > 0) {
                 return;
+            }
         }
 
         /* Find the nearest base with a different tp_dealloc */
@@ -1239,7 +1256,7 @@ subtype_dealloc(PyObject *self)
     if (type->tp_del) {
         _PyObject_GC_TRACK(self);
         type->tp_del(self);
-        if (self->ob_refcnt > 0) {
+        if (Py_REFCNT(self) > 0) {
             /* Resurrected */
             goto endlabel;
         }
@@ -1464,7 +1481,7 @@ static PyObject*
 call_unbound_noarg(int unbound, PyObject *func, PyObject *self)
 {
     if (unbound) {
-        return _PyObject_CallOneArg(func, self);
+        return PyObject_CallOneArg(func, self);
     }
     else {
         return _PyObject_CallNoArg(func);
@@ -1888,7 +1905,7 @@ mro_invoke(PyTypeObject *type)
 {
     PyObject *mro_result;
     PyObject *new_mro;
-    int custom = (Py_TYPE(type) != &PyType_Type);
+    const int custom = !Py_IS_TYPE(type, &PyType_Type);
 
     if (custom) {
         int unbound;
@@ -2343,29 +2360,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
     assert(args != NULL && PyTuple_Check(args));
     assert(kwds == NULL || PyDict_Check(kwds));
-
-    /* Special case: type(x) should return x->ob_type */
-    /* We only want type itself to accept the one-argument form (#27157)
-       Note: We don't call PyType_CheckExact as that also allows subclasses */
-    if (metatype == &PyType_Type) {
-        const Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-        const Py_ssize_t nkwds = kwds == NULL ? 0 : PyDict_GET_SIZE(kwds);
-
-        if (nargs == 1 && nkwds == 0) {
-            PyObject *x = PyTuple_GET_ITEM(args, 0);
-            Py_INCREF(Py_TYPE(x));
-            return (PyObject *) Py_TYPE(x);
-        }
-
-        /* SF bug 475327 -- if that didn't trigger, we need 3
-           arguments. but PyArg_ParseTuple below may give
-           a msg saying type() needs exactly 3. */
-        if (nargs != 3) {
-            PyErr_SetString(PyExc_TypeError,
-                            "type() takes 1 or 3 arguments");
-            return NULL;
-        }
-    }
 
     /* Check arguments: (name, bases, dict) */
     if (!PyArg_ParseTuple(args, "UO!O!:type.__new__", &name, &PyTuple_Type,
@@ -3229,7 +3223,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
-                     name->ob_type->tp_name);
+                     Py_TYPE(name)->tp_name);
         return NULL;
     }
 
@@ -3664,7 +3658,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
     Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TYPE_SUBCLASS |
-    _Py_TPFLAGS_HAVE_VECTORCALL,                /* tp_flags */
+    Py_TPFLAGS_HAVE_VECTORCALL,                 /* tp_flags */
     type_doc,                                   /* tp_doc */
     (traverseproc)type_traverse,                /* tp_traverse */
     (inquiry)type_clear,                        /* tp_clear */
@@ -3887,12 +3881,12 @@ object_richcompare(PyObject *self, PyObject *other, int op)
     case Py_NE:
         /* By default, __ne__() delegates to __eq__() and inverts the result,
            unless the latter returns NotImplemented. */
-        if (self->ob_type->tp_richcompare == NULL) {
+        if (Py_TYPE(self)->tp_richcompare == NULL) {
             res = Py_NotImplemented;
             Py_INCREF(res);
             break;
         }
-        res = (*self->ob_type->tp_richcompare)(self, other, Py_EQ);
+        res = (*Py_TYPE(self)->tp_richcompare)(self, other, Py_EQ);
         if (res != NULL && res != Py_NotImplemented) {
             int ok = PyObject_IsTrue(res);
             Py_DECREF(res);
@@ -4096,9 +4090,10 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     }
 
     if (compatible_for_assignment(oldto, newto, "__class__")) {
-        if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE)
+        if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_INCREF(newto);
-        Py_TYPE(self) = newto;
+        }
+        Py_SET_TYPE(self, newto);
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE)
             Py_DECREF(oldto);
         return 0;
@@ -4214,7 +4209,7 @@ _PyObject_GetState(PyObject *obj, int required)
     if (getstate == NULL) {
         PyObject *slotnames;
 
-        if (required && obj->ob_type->tp_itemsize) {
+        if (required && Py_TYPE(obj)->tp_itemsize) {
             PyErr_Format(PyExc_TypeError,
                          "cannot pickle '%.200s' object",
                          Py_TYPE(obj)->tp_name);
@@ -4247,13 +4242,13 @@ _PyObject_GetState(PyObject *obj, int required)
         assert(slotnames == Py_None || PyList_Check(slotnames));
         if (required) {
             Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
-            if (obj->ob_type->tp_dictoffset)
+            if (Py_TYPE(obj)->tp_dictoffset)
                 basicsize += sizeof(PyObject *);
-            if (obj->ob_type->tp_weaklistoffset)
+            if (Py_TYPE(obj)->tp_weaklistoffset)
                 basicsize += sizeof(PyObject *);
             if (slotnames != Py_None)
                 basicsize += sizeof(PyObject *) * PyList_GET_SIZE(slotnames);
-            if (obj->ob_type->tp_basicsize > basicsize) {
+            if (Py_TYPE(obj)->tp_basicsize > basicsize) {
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
                 PyErr_Format(PyExc_TypeError,
@@ -4724,7 +4719,7 @@ object___format___impl(PyObject *self, PyObject *format_spec)
     if (PyUnicode_GET_LENGTH(format_spec) > 0) {
         PyErr_Format(PyExc_TypeError,
                      "unsupported format string passed to %.200s.__format__",
-                     self->ob_type->tp_name);
+                     Py_TYPE(self)->tp_name);
         return NULL;
     }
     return PyObject_Str(self);
@@ -4743,10 +4738,10 @@ object___sizeof___impl(PyObject *self)
     Py_ssize_t res, isize;
 
     res = 0;
-    isize = self->ob_type->tp_itemsize;
+    isize = Py_TYPE(self)->tp_itemsize;
     if (isize > 0)
         res = Py_SIZE(self) * isize;
-    res += self->ob_type->tp_basicsize;
+    res += Py_TYPE(self)->tp_basicsize;
 
     return PyLong_FromSsize_t(res);
 }
@@ -4793,7 +4788,7 @@ object___dir___impl(PyObject *self)
     if (_PyObject_LookupAttrId(self, &PyId___class__, &itsclass) < 0) {
         goto error;
     }
-    /* XXX(tomer): Perhaps fall back to obj->ob_type if no
+    /* XXX(tomer): Perhaps fall back to Py_TYPE(obj) if no
                    __class__ exists? */
     if (itsclass != NULL && merge_class_dict(dict, itsclass) < 0)
         goto error;
@@ -5194,17 +5189,17 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     /* tp_hash see tp_richcompare */
     {
         /* Always inherit tp_vectorcall_offset to support PyVectorcall_Call().
-         * If _Py_TPFLAGS_HAVE_VECTORCALL is not inherited, then vectorcall
+         * If Py_TPFLAGS_HAVE_VECTORCALL is not inherited, then vectorcall
          * won't be used automatically. */
         COPYSLOT(tp_vectorcall_offset);
 
-        /* Inherit _Py_TPFLAGS_HAVE_VECTORCALL for non-heap types
+        /* Inherit Py_TPFLAGS_HAVE_VECTORCALL for non-heap types
         * if tp_call is not overridden */
         if (!type->tp_call &&
-            (base->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) &&
+            (base->tp_flags & Py_TPFLAGS_HAVE_VECTORCALL) &&
             !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
         {
-            type->tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
+            type->tp_flags |= Py_TPFLAGS_HAVE_VECTORCALL;
         }
         COPYSLOT(tp_call);
     }
@@ -5280,14 +5275,14 @@ PyType_Ready(PyTypeObject *type)
 
     /* Consistency checks for PEP 590:
      * - Py_TPFLAGS_METHOD_DESCRIPTOR requires tp_descr_get
-     * - _Py_TPFLAGS_HAVE_VECTORCALL requires tp_call and
+     * - Py_TPFLAGS_HAVE_VECTORCALL requires tp_call and
      *   tp_vectorcall_offset > 0
      * To avoid mistakes, we require this before inheriting.
      */
     if (type->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
         _PyObject_ASSERT((PyObject *)type, type->tp_descr_get != NULL);
     }
-    if (type->tp_flags & _Py_TPFLAGS_HAVE_VECTORCALL) {
+    if (type->tp_flags & Py_TPFLAGS_HAVE_VECTORCALL) {
         _PyObject_ASSERT((PyObject *)type, type->tp_vectorcall_offset > 0);
         _PyObject_ASSERT((PyObject *)type, type->tp_call != NULL);
     }
@@ -5333,8 +5328,9 @@ PyType_Ready(PyTypeObject *type)
        NULL when type is &PyBaseObject_Type, and we know its ob_type is
        not NULL (it's initialized to &PyType_Type).      But coverity doesn't
        know that. */
-    if (Py_TYPE(type) == NULL && base != NULL)
-        Py_TYPE(type) = Py_TYPE(base);
+    if (Py_IS_TYPE(type, NULL) && base != NULL) {
+        Py_SET_TYPE(type, Py_TYPE(base));
+    }
 
     /* Initialize tp_bases */
     bases = type->tp_bases;
@@ -6188,7 +6184,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
     PyThreadState *tstate = _PyThreadState_GET(); \
     _Py_static_string(op_id, OPSTR); \
     _Py_static_string(rop_id, ROPSTR); \
-    int do_other = Py_TYPE(self) != Py_TYPE(other) && \
+    int do_other = !Py_IS_TYPE(self, Py_TYPE(other)) && \
         Py_TYPE(other)->tp_as_number != NULL && \
         Py_TYPE(other)->tp_as_number->SLOTNAME == TESTFUNC; \
     if (Py_TYPE(self)->tp_as_number != NULL && \
@@ -6611,7 +6607,7 @@ call_attribute(PyObject *self, PyObject *attr, PyObject *name)
         else
             attr = descr;
     }
-    res = _PyObject_CallOneArg(attr, name);
+    res = PyObject_CallOneArg(attr, name);
     Py_XDECREF(descr);
     return res;
 }
@@ -6642,7 +6638,7 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
        needed, with call_attribute. */
     getattribute = _PyType_LookupId(tp, &PyId___getattribute__);
     if (getattribute == NULL ||
-        (Py_TYPE(getattribute) == &PyWrapperDescr_Type &&
+        (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
          (void *)PyObject_GenericGetAttr))
         res = PyObject_GenericGetAttr(self, name);
@@ -7349,7 +7345,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
             }
             continue;
         }
-        if (Py_TYPE(descr) == &PyWrapperDescr_Type &&
+        if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
             void **tptr = resolve_slotdups(type, p->name_strobj);
             if (tptr == NULL || tptr == ptr)
@@ -7372,7 +7368,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
                 use_generic = 1;
             }
         }
-        else if (Py_TYPE(descr) == &PyCFunction_Type &&
+        else if (Py_IS_TYPE(descr, &PyCFunction_Type) &&
                  PyCFunction_GET_FUNCTION(descr) ==
                  (PyCFunction)(void(*)(void))tp_new_wrapper &&
                  ptr == (void**)&type->tp_new)
@@ -7536,7 +7532,7 @@ set_names(PyTypeObject *type)
                 _PyErr_FormatFromCause(PyExc_RuntimeError,
                     "Error calling __set_name__ on '%.100s' instance %R "
                     "in '%.100s'",
-                    value->ob_type->tp_name, key, type->tp_name);
+                    Py_TYPE(value)->tp_name, key, type->tp_name);
                 Py_DECREF(names_to_set);
                 return -1;
             }
@@ -7572,7 +7568,7 @@ init_subclass(PyTypeObject *type, PyObject *kwds)
     }
 
 
-    result = _PyObject_FastCallDict(func, NULL, 0, kwds);
+    result = PyObject_VectorcallDict(func, NULL, 0, kwds);
     Py_DECREF(func);
     if (result == NULL) {
         return -1;
@@ -7898,7 +7894,7 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         Py_INCREF(self);
         return self;
     }
-    if (Py_TYPE(su) != &PySuper_Type)
+    if (!Py_IS_TYPE(su, &PySuper_Type))
         /* If su is an instance of a (strict) subclass of super,
            call its type */
         return PyObject_CallFunctionObjArgs((PyObject *)Py_TYPE(su),

@@ -69,6 +69,7 @@ The :mod:`pty` module defines the following functions:
    *select* throws an error on your platform when passed three empty lists. This
    is a bug, documented in `issue 26228 <https://bugs.python.org/issue26228>`_.
 
+   .. audit-event:: pty.spawn argv pty.spawn
 
    .. versionchanged:: 3.4
       :func:`spawn` now returns the status value from :func:`os.waitpid`

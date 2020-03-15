@@ -80,7 +80,7 @@ _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
 
     if (need_to_reenable_gc) {
         PyErr_Fetch(&exctype, &val, &tb);
-        result = _PyObject_CallMethodNoArgs(
+        result = PyObject_CallMethodNoArgs(
             gc_module, _posixsubprocessstate_global->enable);
         if (exctype != NULL) {
             PyErr_Restore(exctype, val, tb);
@@ -635,7 +635,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         return NULL;
 
     if ((preexec_fn != Py_None) &&
-            (_PyInterpreterState_Get() != PyInterpreterState_Main())) {
+            (PyInterpreterState_Get() != PyInterpreterState_Main())) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported within subinterpreters");
         return NULL;
@@ -657,7 +657,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         gc_module = PyImport_ImportModule("gc");
         if (gc_module == NULL)
             return NULL;
-        result = _PyObject_CallMethodNoArgs(
+        result = PyObject_CallMethodNoArgs(
             gc_module, _posixsubprocessstate_global->isenabled);
         if (result == NULL) {
             Py_DECREF(gc_module);
@@ -669,7 +669,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             Py_DECREF(gc_module);
             return NULL;
         }
-        result = _PyObject_CallMethodNoArgs(
+        result = PyObject_CallMethodNoArgs(
             gc_module, _posixsubprocessstate_global->disable);
         if (result == NULL) {
             Py_DECREF(gc_module);
