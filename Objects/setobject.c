@@ -2014,6 +2014,28 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
     return set_update_internal(self, iterable);
 }
 
+static PyObject*
+set_vectorcall(PyObject *type, PyObject * const*args,
+               size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(type));
+
+    if (!_PyArg_NoKwnames("set", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("set", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    if (nargs) {
+        return make_new_set((PyTypeObject *)type, args[0]);
+    }
+
+    return make_new_set((PyTypeObject *)type, NULL);
+}
+
 static PySequenceMethods set_as_sequence = {
     set_len,                            /* sq_length */
     0,                                  /* sq_concat */
@@ -2162,6 +2184,7 @@ PyTypeObject PySet_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     set_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
+    .tp_vectorcall = set_vectorcall,
 };
 
 /* frozenset object ********************************************************/
