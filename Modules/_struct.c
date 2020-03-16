@@ -20,11 +20,17 @@ typedef struct {
     PyObject *StructError;
 } _structmodulestate;
 
-#define _structmodulestate(o) ((_structmodulestate *)PyModule_GetState(o))
+static inline _structmodulestate*
+get_struct_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_structmodulestate *)state;
+}
 
 static struct PyModuleDef _structmodule;
 
-#define _structmodulestate_global _structmodulestate(PyState_FindModule(&_structmodule))
+#define _structmodulestate_global get_struct_state(PyState_FindModule(&_structmodule))
 
 /* The translation function for each format character is table driven */
 typedef struct _formatdef {
@@ -2310,18 +2316,24 @@ The variable struct.error is an exception raised on errors.\n");
 static int
 _structmodule_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Py_VISIT(_structmodulestate(module)->PyStructType);
-    Py_VISIT(_structmodulestate(module)->unpackiter_type);
-    Py_VISIT(_structmodulestate(module)->StructError);
+    _structmodulestate *state = (_structmodulestate *)PyModule_GetState(module);
+    if (state) {
+        Py_VISIT(state->PyStructType);
+        Py_VISIT(state->unpackiter_type);
+        Py_VISIT(state->StructError);
+    }
     return 0;
 }
 
 static int
 _structmodule_clear(PyObject *module)
 {
-    Py_CLEAR(_structmodulestate(module)->PyStructType);
-    Py_CLEAR(_structmodulestate(module)->unpackiter_type);
-    Py_CLEAR(_structmodulestate(module)->StructError);
+    _structmodulestate *state = (_structmodulestate *)PyModule_GetState(module);
+    if (state) {
+        Py_CLEAR(state->PyStructType);
+        Py_CLEAR(state->unpackiter_type);
+        Py_CLEAR(state->StructError);
+    }
     return 0;
 }
 
@@ -2358,13 +2370,13 @@ PyInit__struct(void)
     }
     Py_INCREF(PyStructType);
     PyModule_AddObject(m, "Struct", PyStructType);
-    _structmodulestate(m)->PyStructType = PyStructType;
+    get_struct_state(m)->PyStructType = PyStructType;
 
     PyObject *unpackiter_type = PyType_FromSpec(&unpackiter_type_spec);
     if (unpackiter_type == NULL) {
         return NULL;
     }
-    _structmodulestate(m)->unpackiter_type = unpackiter_type;
+    get_struct_state(m)->unpackiter_type = unpackiter_type;
 
     /* Check endian and swap in faster functions */
     {
@@ -2411,7 +2423,7 @@ PyInit__struct(void)
         return NULL;
     Py_INCREF(StructError);
     PyModule_AddObject(m, "error", StructError);
-    _structmodulestate(m)->StructError = StructError;
+    get_struct_state(m)->StructError = StructError;
 
     return m;
 }

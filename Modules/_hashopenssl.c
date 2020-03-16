@@ -52,7 +52,14 @@ typedef struct {
     PyTypeObject *EVPtype;
 } _hashlibstate;
 
-#define _hashlibstate(o) ((_hashlibstate *)PyModule_GetState(o))
+static inline _hashlibstate*
+get_hashlib_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_hashlibstate *)state;
+}
+
 #define _hashlibstate_global ((_hashlibstate *)PyModule_GetState(PyState_FindModule(&_hashlibmodule)))
 
 
@@ -1112,7 +1119,7 @@ static struct PyMethodDef EVP_functions[] = {
 static int
 hashlib_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    _hashlibstate *state = _hashlibstate(m);
+    _hashlibstate *state = get_hashlib_state(m);
     Py_VISIT(state->EVPtype);
     return 0;
 }
@@ -1120,7 +1127,7 @@ hashlib_traverse(PyObject *m, visitproc visit, void *arg)
 static int
 hashlib_clear(PyObject *m)
 {
-    _hashlibstate *state = _hashlibstate(m);
+    _hashlibstate *state = get_hashlib_state(m);
     Py_CLEAR(state->EVPtype);
     return 0;
 }
@@ -1168,7 +1175,7 @@ PyInit__hashlib(void)
     PyTypeObject *EVPtype = (PyTypeObject *)PyType_FromSpec(&EVPtype_spec);
     if (EVPtype == NULL)
         return NULL;
-    _hashlibstate(m)->EVPtype = EVPtype;
+    get_hashlib_state(m)->EVPtype = EVPtype;
 
     openssl_md_meth_names = generate_hash_name_list();
     if (openssl_md_meth_names == NULL) {
@@ -1180,8 +1187,8 @@ PyInit__hashlib(void)
         return NULL;
     }
 
-    Py_INCREF((PyObject *)_hashlibstate(m)->EVPtype);
-    PyModule_AddObject(m, "HASH", (PyObject *)_hashlibstate(m)->EVPtype);
+    Py_INCREF((PyObject *)get_hashlib_state(m)->EVPtype);
+    PyModule_AddObject(m, "HASH", (PyObject *)get_hashlib_state(m)->EVPtype);
 
     PyState_AddModule(m, &_hashlibmodule);
     return m;
