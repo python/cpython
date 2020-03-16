@@ -1669,7 +1669,7 @@ class TestMisc(BaseTest, unittest.TestCase):
         try:
             user = pwd.getpwuid(uid)[0]
             group = grp.getgrgid(gid)[0]
-         except KeyError:
+        except KeyError:
             # On some systems uid/gid cannot be resolved.
             pass
         else:
