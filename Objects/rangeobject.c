@@ -146,8 +146,7 @@ range_vectorcall(PyTypeObject *type, PyObject *const *args,
                  size_t nargsf, PyObject *kwnames)
 {
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (kwnames && PyTuple_GET_SIZE(kwnames) != 0) {
-        PyErr_Format(PyExc_TypeError, "range() takes no keyword arguments");
+    if (!_PyArg_NoKwnames("range", kwnames)) {
         return NULL;
     }
     return range_from_array(type, args, nargs);
