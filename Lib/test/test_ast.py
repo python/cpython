@@ -352,23 +352,42 @@ class AST_Tests(unittest.TestCase):
                     self.assertEqual(type(x._fields), tuple)
 
     def test_arguments(self):
-        x = ast.arguments()
-        self.assertEqual(x._fields, ('posonlyargs', 'args', 'vararg', 'kwonlyargs',
-                                     'kw_defaults', 'kwarg', 'defaults'))
+        x = ast.FunctionDef()
+        self.assertEqual(x._fields, ('name', 'args', 'body', 'decorator_list', 'returns', 'type_comment'))
+        self.assertEqual(x._field_defaults, ('', '', '*', '*', '?', '?'))
 
         with self.assertRaises(AttributeError):
-            x.args
-        self.assertIsNone(x.vararg)
+            x.name
 
-        x = ast.arguments(*range(1, 8))
+        self.assertIsNone(x.returns)
+        self.assertEqual(x.body, [])
+
+        x = ast.FunctionDef(*range(1, 4))
         self.assertEqual(x.args, 2)
-        self.assertEqual(x.vararg, 3)
+        self.assertEqual(x.body, 3)
+        self.assertEqual(x.decorator_list, [])
+        self.assertIsNone(x.returns)
+        self.assertIsNone(x.type_comment)
+
+        x = ast.Module(body=1)
+        self.assertEqual(x.body, 1)
+        self.assertEqual(x.type_ignores, [])
+
+        x = ast.Module(body=1, type_ignores=2)
+        self.assertEqual(x.body, 1)
+        self.assertEqual(x.type_ignores, 2)
+
+        x = ast.Module(type_ignores=2)
+        self.assertEqual(x.body, [])
+        self.assertEqual(x.type_ignores, 2)
 
     def test_field_attr_writable(self):
         x = ast.Num()
         # We can assign to _fields
         x._fields = 666
+        x._field_defaults = 999
         self.assertEqual(x._fields, 666)
+        self.assertEqual(x._field_defaults, 999)
 
     def test_classattrs(self):
         x = ast.Num()
@@ -666,21 +685,21 @@ class ASTHelpers_Test(unittest.TestCase):
         node = ast.parse('spam(eggs, "and cheese")')
         self.assertEqual(ast.dump(node),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), "
-            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')], "
-            "keywords=[]))], type_ignores=[])"
+            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')"
+            "]))])"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
             "Module([Expr(Call(Name('spam', Load()), [Name('eggs', Load()), "
-            "Constant('and cheese')], []))], [])"
+            "Constant('and cheese')]))])"
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=4), "
             "args=[Name(id='eggs', ctx=Load(), lineno=1, col_offset=5, "
             "end_lineno=1, end_col_offset=9), Constant(value='and cheese', "
-            "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], keywords=[], "
+            "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24), "
-            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)], type_ignores=[])"
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)])"
         )
 
     def test_dump_indent(self):
@@ -693,9 +712,7 @@ Module(
             func=Name(id='spam', ctx=Load()),
             args=[
                Name(id='eggs', ctx=Load()),
-               Constant(value='and cheese')],
-            keywords=[]))],
-   type_ignores=[])""")
+               Constant(value='and cheese')]))])""")
         self.assertEqual(ast.dump(node, annotate_fields=False, indent='\t'), """\
 Module(
 \t[
@@ -704,9 +721,7 @@ Module(
 \t\t\t\tName('spam', Load()),
 \t\t\t\t[
 \t\t\t\t\tName('eggs', Load()),
-\t\t\t\t\tConstant('and cheese')],
-\t\t\t\t[]))],
-\t[])""")
+\t\t\t\t\tConstant('and cheese')]))])""")
         self.assertEqual(ast.dump(node, include_attributes=True, indent=3), """\
 Module(
    body=[
@@ -733,7 +748,6 @@ Module(
                   col_offset=11,
                   end_lineno=1,
                   end_col_offset=23)],
-            keywords=[],
             lineno=1,
             col_offset=0,
             end_lineno=1,
@@ -741,8 +755,7 @@ Module(
          lineno=1,
          col_offset=0,
          end_lineno=1,
-         end_col_offset=24)],
-   type_ignores=[])""")
+         end_col_offset=24)])""")
 
     def test_dump_incomplete(self):
         node = ast.Raise(lineno=3, col_offset=4)
@@ -791,16 +804,13 @@ Module(
         self.maxDiff = None
         self.assertEqual(ast.dump(src, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
-            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), "
-            "args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, "
-            "end_col_offset=12)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
-            "end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, "
-            "end_col_offset=13), Expr(value=Call(func=Name(id='spam', ctx=Load(), "
-            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=0), "
-            "args=[Constant(value='eggs', lineno=1, col_offset=0, end_lineno=1, "
-            "end_col_offset=0)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
-            "end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)], "
-            "type_ignores=[])"
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), args=["
+            "Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], "
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=13), lineno=1, col_offset=0, "
+            "end_lineno=1, end_col_offset=13), Expr(value=Call(func=Name(id='spam', ctx=Load(), "
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=0), args=[Constant(value='eggs', "
+            "lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)], lineno=1, col_offset=0, "
+            "end_lineno=1, end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)])"
         )
 
     def test_increment_lineno(self):

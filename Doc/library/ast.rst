@@ -152,9 +152,9 @@ Literals
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4, omit_defaults=False))
         Expression(
-            body=Constant(value=123))
+            body=Constant(value=123, kind=None))
 
 
 .. class:: FormattedValue(value, conversion, format_spec)
@@ -184,15 +184,16 @@ Literals
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('f"sin({a}) is {sin(a):.3}"', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('f"sin({a}) is {sin(a):.3}"', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=JoinedStr(
                 values=[
-                    Constant(value='sin('),
+                    Constant(value='sin(', kind=None),
                     FormattedValue(
                         value=Name(id='a', ctx=Load()),
-                        conversion=-1),
-                    Constant(value=') is '),
+                        conversion=-1,
+                        format_spec=None),
+                    Constant(value=') is ', kind=None),
                     FormattedValue(
                         value=Call(
                             func=Name(id='sin', ctx=Load()),
@@ -202,7 +203,7 @@ Literals
                         conversion=-1,
                         format_spec=JoinedStr(
                             values=[
-                                Constant(value='.3')]))]))
+                                Constant(value='.3', kind=None)]))]))
 
 
 .. class:: List(elts, ctx)
@@ -214,21 +215,21 @@ Literals
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('[1, 2, 3]', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('[1, 2, 3]', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=List(
                 elts=[
-                    Constant(value=1),
-                    Constant(value=2),
-                    Constant(value=3)],
+                    Constant(value=1, kind=None),
+                    Constant(value=2, kind=None),
+                    Constant(value=3, kind=None)],
                 ctx=Load()))
-        >>> print(ast.dump(ast.parse('(1, 2, 3)', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('(1, 2, 3)', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=Tuple(
                 elts=[
-                    Constant(value=1),
-                    Constant(value=2),
-                    Constant(value=3)],
+                    Constant(value=1, kind=None),
+                    Constant(value=2, kind=None),
+                    Constant(value=3, kind=None)],
                 ctx=Load()))
 
 
@@ -238,13 +239,13 @@ Literals
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('{1, 2, 3}', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('{1, 2, 3}', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=Set(
                 elts=[
-                    Constant(value=1),
-                    Constant(value=2),
-                    Constant(value=3)]))
+                    Constant(value=1, kind=None),
+                    Constant(value=2, kind=None),
+                    Constant(value=3, kind=None)]))
 
 
 .. class:: Dict(keys, values)
@@ -259,14 +260,14 @@ Literals
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('{"a":1, **d}', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('{"a":1, **d}', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=Dict(
                 keys=[
-                    Constant(value='a'),
+                    Constant(value='a', kind=None),
                     None],
                 values=[
-                    Constant(value=1),
+                    Constant(value=1, kind=None),
                     Name(id='d', ctx=Load())]))
 
 
@@ -289,23 +290,24 @@ Variables
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('a'), indent=4))
+        >>> print(ast.dump(ast.parse('a'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Expr(
                     value=Name(id='a', ctx=Load()))],
             type_ignores=[])
 
-        >>> print(ast.dump(ast.parse('a = 1'), indent=4))
+        >>> print(ast.dump(ast.parse('a = 1'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Assign(
                     targets=[
                         Name(id='a', ctx=Store())],
-                    value=Constant(value=1))],
+                    value=Constant(value=1, kind=None),
+                    type_comment=None)],
             type_ignores=[])
 
-        >>> print(ast.dump(ast.parse('del a'), indent=4))
+        >>> print(ast.dump(ast.parse('del a'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Delete(
@@ -322,7 +324,7 @@ Variables
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('a, *b = it'), indent=4))
+        >>> print(ast.dump(ast.parse('a, *b = it'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Assign(
@@ -334,7 +336,8 @@ Variables
                                     value=Name(id='b', ctx=Store()),
                                     ctx=Store())],
                             ctx=Store())],
-                    value=Name(id='it', ctx=Load()))],
+                    value=Name(id='it', ctx=Load()),
+                    type_comment=None)],
             type_ignores=[])
 
 
@@ -350,7 +353,7 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('-a'), indent=4))
+        >>> print(ast.dump(ast.parse('-a'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Expr(
@@ -376,7 +379,7 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('not x', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('not x', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=UnaryOp(
                 op=Not(),
@@ -390,7 +393,7 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('x + y', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('x + y', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=BinOp(
                 left=Name(id='x', ctx=Load()),
@@ -426,7 +429,7 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('x or y', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('x or y', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=BoolOp(
                 op=Or(),
@@ -449,16 +452,16 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('1 <= a < 10', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('1 <= a < 10', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=Compare(
-                left=Constant(value=1),
+                left=Constant(value=1, kind=None),
                 ops=[
                     LtE(),
                     Lt()],
                 comparators=[
                     Name(id='a', ctx=Load()),
-                    Constant(value=10)]))
+                    Constant(value=10, kind=None)]))
 
 
 .. class:: Eq
@@ -489,7 +492,7 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('func(a, b=c, *d, **e)', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('func(a, b=c, *d, **e)', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=Call(
                 func=Name(id='func', ctx=Load()),
@@ -503,6 +506,7 @@ Expressions
                         arg='b',
                         value=Name(id='c', ctx=Load())),
                     keyword(
+                        arg=None,
                         value=Name(id='e', ctx=Load()))]))
 
 
@@ -519,7 +523,7 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('a if b else c', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('a if b else c', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=IfExp(
                 test=Name(id='b', ctx=Load()),
@@ -536,7 +540,7 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('snake.colour', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('snake.colour', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=Attribute(
                 value=Name(id='snake', ctx=Load()),
@@ -553,11 +557,11 @@ Expressions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('(x := 4)', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('(x := 4)', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=NamedExpr(
                 target=Name(id='x', ctx=Store()),
-                value=Constant(value=4)))
+                value=Constant(value=4, kind=None)))
 
 
 Subscripting
@@ -571,18 +575,20 @@ Subscripting
    ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del`
    according to the action performed with the subscript.
 
+
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('l[1:2, 3]', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('l[1:2, 3]', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=Subscript(
                 value=Name(id='l', ctx=Load()),
                 slice=Tuple(
                     elts=[
                         Slice(
-                            lower=Constant(value=1),
-                            upper=Constant(value=2)),
-                        Constant(value=3)],
+                            lower=Constant(value=1, kind=None),
+                            upper=Constant(value=2, kind=None),
+                            step=None),
+                        Constant(value=3, kind=None)],
                     ctx=Load()),
                 ctx=Load()))
 
@@ -595,13 +601,14 @@ Subscripting
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('l[1:2]', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('l[1:2]', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=Subscript(
                 value=Name(id='l', ctx=Load()),
                 slice=Slice(
-                    lower=Constant(value=1),
-                    upper=Constant(value=2)),
+                    lower=Constant(value=1, kind=None),
+                    upper=Constant(value=2, kind=None),
+                    step=None),
                 ctx=Load()))
 
 
@@ -621,7 +628,7 @@ Comprehensions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('[x for x in numbers]', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('[x for x in numbers]', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=ListComp(
                 elt=Name(id='x', ctx=Load()),
@@ -631,21 +638,21 @@ Comprehensions
                         iter=Name(id='numbers', ctx=Load()),
                         ifs=[],
                         is_async=0)]))
-        >>> print(ast.dump(ast.parse('{x: x**2 for x in numbers}', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('{x: x**2 for x in numbers}', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=DictComp(
                 key=Name(id='x', ctx=Load()),
                 value=BinOp(
                     left=Name(id='x', ctx=Load()),
                     op=Pow(),
-                    right=Constant(value=2)),
+                    right=Constant(value=2, kind=None)),
                 generators=[
                     comprehension(
                         target=Name(id='x', ctx=Store()),
                         iter=Name(id='numbers', ctx=Load()),
                         ifs=[],
                         is_async=0)]))
-        >>> print(ast.dump(ast.parse('{x for x in numbers}', mode='eval'), indent=4))
+        >>> print(ast.dump(ast.parse('{x for x in numbers}', mode='eval'), indent=4, omit_defaults=False))
         Expression(
             body=SetComp(
                 elt=Name(id='x', ctx=Load()),
@@ -670,7 +677,7 @@ Comprehensions
    .. doctest::
 
         >>> print(ast.dump(ast.parse('[ord(c) for line in file for c in line]', mode='eval'),
-        ...                indent=4)) # Multiple comprehensions in one.
+        ...                indent=4, omit_defaults=False)) # Multiple comprehensions in one.
         Expression(
             body=ListComp(
                 elt=Call(
@@ -691,13 +698,13 @@ Comprehensions
                         is_async=0)]))
 
         >>> print(ast.dump(ast.parse('(n**2 for n in it if n>5 if n<10)', mode='eval'),
-        ...                indent=4)) # generator comprehension
+        ...                indent=4, omit_defaults=False)) # generator comprehension
         Expression(
             body=GeneratorExp(
                 elt=BinOp(
                     left=Name(id='n', ctx=Load()),
                     op=Pow(),
-                    right=Constant(value=2)),
+                    right=Constant(value=2, kind=None)),
                 generators=[
                     comprehension(
                         target=Name(id='n', ctx=Store()),
@@ -708,17 +715,17 @@ Comprehensions
                                 ops=[
                                     Gt()],
                                 comparators=[
-                                    Constant(value=5)]),
+                                    Constant(value=5, kind=None)]),
                             Compare(
                                 left=Name(id='n', ctx=Load()),
                                 ops=[
                                     Lt()],
                                 comparators=[
-                                    Constant(value=10)])],
+                                    Constant(value=10, kind=None)])],
                         is_async=0)]))
 
         >>> print(ast.dump(ast.parse('[i async for i in soc]', mode='eval'),
-        ...                indent=4)) # Async comprehension
+        ...                indent=4, omit_defaults=False)) # Async comprehension
         Expression(
             body=ListComp(
                 elt=Name(id='i', ctx=Load()),
@@ -746,17 +753,18 @@ Statements
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('a = b = 1'), indent=4)) # Multiple assignment
+        >>> print(ast.dump(ast.parse('a = b = 1'), indent=4, omit_defaults=False)) # Multiple assignment
         Module(
             body=[
                 Assign(
                     targets=[
                         Name(id='a', ctx=Store()),
                         Name(id='b', ctx=Store())],
-                    value=Constant(value=1))],
+                    value=Constant(value=1, kind=None),
+                    type_comment=None)],
             type_ignores=[])
 
-        >>> print(ast.dump(ast.parse('a,b = c'), indent=4)) # Unpacking
+        >>> print(ast.dump(ast.parse('a,b = c'), indent=4, omit_defaults=False)) # Unpacking
         Module(
             body=[
                 Assign(
@@ -766,7 +774,8 @@ Statements
                                 Name(id='a', ctx=Store()),
                                 Name(id='b', ctx=Store())],
                             ctx=Store())],
-                    value=Name(id='c', ctx=Load()))],
+                    value=Name(id='c', ctx=Load()),
+                    type_comment=None)],
             type_ignores=[])
 
 
@@ -781,26 +790,27 @@ Statements
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('c: int'), indent=4))
+        >>> print(ast.dump(ast.parse('c: int'), indent=4, omit_defaults=False))
         Module(
             body=[
                 AnnAssign(
                     target=Name(id='c', ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
+                    value=None,
                     simple=1)],
             type_ignores=[])
 
-        >>> print(ast.dump(ast.parse('(a): int = 1'), indent=4)) # Annotation with parenthesis
+        >>> print(ast.dump(ast.parse('(a): int = 1'), indent=4, omit_defaults=False)) # Annotation with parenthesis
         Module(
             body=[
                 AnnAssign(
                     target=Name(id='a', ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
-                    value=Constant(value=1),
+                    value=Constant(value=1, kind=None),
                     simple=0)],
             type_ignores=[])
 
-        >>> print(ast.dump(ast.parse('a.b: int'), indent=4)) # Attribute annotation
+        >>> print(ast.dump(ast.parse('a.b: int'), indent=4, omit_defaults=False)) # Attribute annotation
         Module(
             body=[
                 AnnAssign(
@@ -809,18 +819,20 @@ Statements
                         attr='b',
                         ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
+                    value=None,
                     simple=0)],
             type_ignores=[])
 
-        >>> print(ast.dump(ast.parse('a[1]: int'), indent=4)) # Subscript annotation
+        >>> print(ast.dump(ast.parse('a[1]: int'), indent=4, omit_defaults=False)) # Subscript annotation
         Module(
             body=[
                 AnnAssign(
                     target=Subscript(
                         value=Name(id='a', ctx=Load()),
-                        slice=Constant(value=1),
+                        slice=Constant(value=1, kind=None),
                         ctx=Store()),
                     annotation=Name(id='int', ctx=Load()),
+                    value=None,
                     simple=0)],
             type_ignores=[])
 
@@ -837,13 +849,13 @@ Statements
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('x += 2'), indent=4))
+        >>> print(ast.dump(ast.parse('x += 2'), indent=4, omit_defaults=False))
         Module(
             body=[
                 AugAssign(
                     target=Name(id='x', ctx=Store()),
                     op=Add(),
-                    value=Constant(value=2))],
+                    value=Constant(value=2, kind=None))],
             type_ignores=[])
 
 
@@ -855,7 +867,7 @@ Statements
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('raise x from y'), indent=4))
+        >>> print(ast.dump(ast.parse('raise x from y'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Raise(
@@ -871,7 +883,7 @@ Statements
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('assert x,y'), indent=4))
+        >>> print(ast.dump(ast.parse('assert x,y'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Assert(
@@ -887,7 +899,7 @@ Statements
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('del x,y,z'), indent=4))
+        >>> print(ast.dump(ast.parse('del x,y,z'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Delete(
@@ -904,7 +916,7 @@ Statements
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('pass'), indent=4))
+        >>> print(ast.dump(ast.parse('pass'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Pass()],
@@ -923,14 +935,14 @@ Imports
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('import x,y,z'), indent=4))
+        >>> print(ast.dump(ast.parse('import x,y,z'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Import(
                     names=[
-                        alias(name='x'),
-                        alias(name='y'),
-                        alias(name='z')])],
+                        alias(name='x', asname=None),
+                        alias(name='y', asname=None),
+                        alias(name='z', asname=None)])],
             type_ignores=[])
 
 
@@ -943,15 +955,15 @@ Imports
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('from y import x,y,z'), indent=4))
+        >>> print(ast.dump(ast.parse('from y import x,y,z'), indent=4, omit_defaults=False))
         Module(
             body=[
                 ImportFrom(
                     module='y',
                     names=[
-                        alias(name='x'),
-                        alias(name='y'),
-                        alias(name='z')],
+                        alias(name='x', asname=None),
+                        alias(name='y', asname=None),
+                        alias(name='z', asname=None)],
                     level=0)],
             type_ignores=[])
 
@@ -963,14 +975,14 @@ Imports
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('from ..foo.bar import a as b, c'), indent=4))
+        >>> print(ast.dump(ast.parse('from ..foo.bar import a as b, c'), indent=4, omit_defaults=False))
         Module(
             body=[
                 ImportFrom(
                     module='foo.bar',
                     names=[
                         alias(name='a', asname='b'),
-                        alias(name='c')],
+                        alias(name='c', asname=None)],
                     level=2)],
             type_ignores=[])
 
@@ -999,23 +1011,23 @@ Control flow
         ...    ...
         ... else:
         ...    ...
-        ... """), indent=4))
+        ... """), indent=4, omit_defaults=False))
         Module(
             body=[
                 If(
                     test=Name(id='x', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis))],
+                            value=Constant(value=Ellipsis, kind=None))],
                     orelse=[
                         If(
                             test=Name(id='y', ctx=Load()),
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))],
+                                    value=Constant(value=Ellipsis, kind=None))],
                             orelse=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])])],
+                                    value=Constant(value=Ellipsis, kind=None))])])],
             type_ignores=[])
 
 
@@ -1038,7 +1050,7 @@ Control flow
         ...     ...
         ... else:
         ...     ...
-        ... """), indent=4))
+        ... """), indent=4, omit_defaults=False))
         Module(
             body=[
                 For(
@@ -1046,10 +1058,11 @@ Control flow
                     iter=Name(id='y', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis))],
+                            value=Constant(value=Ellipsis, kind=None))],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis))])],
+                            value=Constant(value=Ellipsis, kind=None))],
+                    type_comment=None)],
             type_ignores=[])
 
 
@@ -1065,17 +1078,17 @@ Control flow
         ...    ...
         ... else:
         ...    ...
-        ... """), indent=4))
+        ... """), indent=4, omit_defaults=False))
         Module(
             body=[
                 While(
                     test=Name(id='x', ctx=Load()),
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis))],
+                            value=Constant(value=Ellipsis, kind=None))],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis))])],
+                            value=Constant(value=Ellipsis, kind=None))])],
             type_ignores=[])
 
 
@@ -1093,7 +1106,7 @@ Control flow
         ...     else:
         ...         continue
         ...
-        ... """), indent=4))
+        ... """), indent=4, omit_defaults=False))
         Module(
             body=[
                 For(
@@ -1106,12 +1119,13 @@ Control flow
                                 ops=[
                                     Gt()],
                                 comparators=[
-                                    Constant(value=5)]),
+                                    Constant(value=5, kind=None)]),
                             body=[
                                 Break()],
                             orelse=[
                                 Continue()])],
-                    orelse=[])],
+                    orelse=[],
+                    type_comment=None)],
             type_ignores=[])
 
 
@@ -1133,31 +1147,32 @@ Control flow
         ...    ...
         ... finally:
         ...    ...
-        ... """), indent=4))
+        ... """), indent=4, omit_defaults=False))
         Module(
             body=[
                 Try(
                     body=[
                         Expr(
-                            value=Constant(value=Ellipsis))],
+                            value=Constant(value=Ellipsis, kind=None))],
                     handlers=[
                         ExceptHandler(
                             type=Name(id='Exception', ctx=Load()),
+                            name=None,
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))]),
+                                    value=Constant(value=Ellipsis, kind=None))]),
                         ExceptHandler(
                             type=Name(id='OtherException', ctx=Load()),
                             name='e',
                             body=[
                                 Expr(
-                                    value=Constant(value=Ellipsis))])],
+                                    value=Constant(value=Ellipsis, kind=None))])],
                     orelse=[
                         Expr(
-                            value=Constant(value=Ellipsis))],
+                            value=Constant(value=Ellipsis, kind=None))],
                     finalbody=[
                         Expr(
-                            value=Constant(value=Ellipsis))])],
+                            value=Constant(value=Ellipsis, kind=None))])],
             type_ignores=[])
 
 
@@ -1175,7 +1190,7 @@ Control flow
         ...     a + 1
         ... except TypeError:
         ...     pass
-        ... """), indent=4))
+        ... """), indent=4, omit_defaults=False))
         Module(
             body=[
                 Try(
@@ -1184,10 +1199,11 @@ Control flow
                             value=BinOp(
                                 left=Name(id='a', ctx=Load()),
                                 op=Add(),
-                                right=Constant(value=1)))],
+                                right=Constant(value=1, kind=None)))],
                     handlers=[
                         ExceptHandler(
                             type=Name(id='TypeError', ctx=Load()),
+                            name=None,
                             body=[
                                 Pass()])],
                     orelse=[],
@@ -1217,7 +1233,7 @@ Control flow
         >>> print(ast.dump(ast.parse("""\
         ... with a as b, c as d:
         ...    something(b, d)
-        ... """), indent=4))
+        ... """), indent=4, omit_defaults=False))
         Module(
             body=[
                 With(
@@ -1235,7 +1251,8 @@ Control flow
                                 args=[
                                     Name(id='b', ctx=Load()),
                                     Name(id='d', ctx=Load())],
-                                keywords=[]))])],
+                                keywords=[]))],
+                    type_comment=None)],
             type_ignores=[])
 
 
@@ -1265,7 +1282,7 @@ Function and class definitions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('lambda x,y: ...'), indent=4))
+        >>> print(ast.dump(ast.parse('lambda x,y: ...'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Expr(
@@ -1273,12 +1290,14 @@ Function and class definitions
                         args=arguments(
                             posonlyargs=[],
                             args=[
-                                arg(arg='x'),
-                                arg(arg='y')],
+                                arg(arg='x', annotation=None, type_comment=None),
+                                arg(arg='y', annotation=None, type_comment=None)],
+                            vararg=None,
                             kwonlyargs=[],
                             kw_defaults=[],
+                            kwarg=None,
                             defaults=[]),
-                        body=Constant(value=Ellipsis)))],
+                        body=Constant(value=Ellipsis, kind=None)))],
             type_ignores=[])
 
 
@@ -1313,7 +1332,7 @@ Function and class definitions
         ... @decorator2
         ... def f(a: 'annotation', b=1, c=2, *d, e, f=3, **g) -> 'return annotation':
         ...     pass
-        ... """), indent=4))
+        ... """), indent=4, omit_defaults=False))
         Module(
             body=[
                 FunctionDef(
@@ -1323,26 +1342,28 @@ Function and class definitions
                         args=[
                             arg(
                                 arg='a',
-                                annotation=Constant(value='annotation')),
-                            arg(arg='b'),
-                            arg(arg='c')],
-                        vararg=arg(arg='d'),
+                                annotation=Constant(value='annotation', kind=None),
+                                type_comment=None),
+                            arg(arg='b', annotation=None, type_comment=None),
+                            arg(arg='c', annotation=None, type_comment=None)],
+                        vararg=arg(arg='d', annotation=None, type_comment=None),
                         kwonlyargs=[
-                            arg(arg='e'),
-                            arg(arg='f')],
+                            arg(arg='e', annotation=None, type_comment=None),
+                            arg(arg='f', annotation=None, type_comment=None)],
                         kw_defaults=[
                             None,
-                            Constant(value=3)],
-                        kwarg=arg(arg='g'),
+                            Constant(value=3, kind=None)],
+                        kwarg=arg(arg='g', annotation=None, type_comment=None),
                         defaults=[
-                            Constant(value=1),
-                            Constant(value=2)]),
+                            Constant(value=1, kind=None),
+                            Constant(value=2, kind=None)]),
                     body=[
                         Pass()],
                     decorator_list=[
                         Name(id='decorator1', ctx=Load()),
                         Name(id='decorator2', ctx=Load())],
-                    returns=Constant(value='return annotation'))],
+                    returns=Constant(value='return annotation', kind=None),
+                    type_comment=None)],
             type_ignores=[])
 
 
@@ -1352,11 +1373,11 @@ Function and class definitions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('return 4'), indent=4))
+        >>> print(ast.dump(ast.parse('return 4'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Return(
-                    value=Constant(value=4))],
+                    value=Constant(value=4, kind=None))],
             type_ignores=[])
 
 
@@ -1368,7 +1389,7 @@ Function and class definitions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('yield x'), indent=4))
+        >>> print(ast.dump(ast.parse('yield x'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Expr(
@@ -1376,7 +1397,7 @@ Function and class definitions
                         value=Name(id='x', ctx=Load())))],
             type_ignores=[])
 
-        >>> print(ast.dump(ast.parse('yield from x'), indent=4))
+        >>> print(ast.dump(ast.parse('yield from x'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Expr(
@@ -1392,7 +1413,7 @@ Function and class definitions
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('global x,y,z'), indent=4))
+        >>> print(ast.dump(ast.parse('global x,y,z'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Global(
@@ -1402,7 +1423,7 @@ Function and class definitions
                         'z'])],
             type_ignores=[])
 
-        >>> print(ast.dump(ast.parse('nonlocal x,y,z'), indent=4))
+        >>> print(ast.dump(ast.parse('nonlocal x,y,z'), indent=4, omit_defaults=False))
         Module(
             body=[
                 Nonlocal(
@@ -1436,7 +1457,7 @@ Function and class definitions
         ... @decorator2
         ... class Foo(base1, base2, metaclass=meta):
         ...     pass
-        ... """), indent=4))
+        ... """), indent=4, omit_defaults=False))
         Module(
             body=[
                 ClassDef(
@@ -1474,7 +1495,7 @@ Async and await
     >>> print(ast.dump(ast.parse("""\
     ... async def f():
     ...     await other_func()
-    ... """), indent=4))
+    ... """), indent=4, omit_defaults=False))
     Module(
         body=[
             AsyncFunctionDef(
@@ -1482,8 +1503,10 @@ Async and await
                 args=arguments(
                     posonlyargs=[],
                     args=[],
+                    vararg=None,
                     kwonlyargs=[],
                     kw_defaults=[],
+                    kwarg=None,
                     defaults=[]),
                 body=[
                     Expr(
@@ -1492,7 +1515,9 @@ Async and await
                                 func=Name(id='other_func', ctx=Load()),
                                 args=[],
                                 keywords=[])))],
-                decorator_list=[])],
+                decorator_list=[],
+                returns=None,
+                type_comment=None)],
         type_ignores=[])
 
 
@@ -1702,7 +1727,7 @@ and classes for traversing abstract syntax trees:
           def visit_Name(self, node):
               return Subscript(
                   value=Name(id='data', ctx=Load()),
-                  slice=Constant(value=node.id),
+                  slice=Constant(value=node.id, kind=None),
                   ctx=node.ctx
               )
 
@@ -1727,7 +1752,7 @@ and classes for traversing abstract syntax trees:
       node = YourTransformer().visit(node)
 
 
-.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None)
+.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None, omit_defaults=True)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
    debugging purposes.  If *annotate_fields* is true (by default),
@@ -1735,7 +1760,8 @@ and classes for traversing abstract syntax trees:
    If *annotate_fields* is false, the result string will be more compact by
    omitting unambiguous field names.  Attributes such as line
    numbers and column offsets are not dumped by default.  If this is wanted,
-   *include_attributes* can be set to true.
+   *include_attributes* can be set to true. In case of *omit_defaults* is true,
+   any field that has its default value will be omitted from the output.
 
    If *indent* is a non-negative integer or string, then the tree will be
    pretty-printed with that indent level.  An indent level
@@ -1746,6 +1772,9 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.9
       Added the *indent* option.
+
+   .. versionchanged:: 3.9
+      Added the *omit_defaults* option.
 
 
 .. _ast-cli:

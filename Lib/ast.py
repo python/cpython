@@ -28,6 +28,7 @@ import sys
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto
+from functools import lru_cache
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
@@ -101,8 +102,20 @@ def literal_eval(node_or_string):
         return _convert_signed_num(node)
     return _convert(node_or_string)
 
+@lru_cache
+def _field_defaults(node_type):
+    field_defaults = {}
+    for field, default in zip(node_type._fields, node_type._field_defaults):
+        if default == "?":
+            field_defaults[field] = None
+        elif default == "*":
+            field_defaults[field] = []
+        else:
+            field_defaults[field] = Ellipsis # sentinel
+    return field_defaults
 
-def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
+
+def dump(node, annotate_fields=True, include_attributes=False, *, indent=None, omit_defaults=True):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
     debugging purposes.  If annotate_fields is true (by default),
@@ -112,7 +125,9 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     numbers and column offsets are not dumped by default.  If this is wanted,
     include_attributes can be set to true.  If indent is a non-negative
     integer or string, then the tree will be pretty-printed with that indent
-    level. None (the default) selects the single line representation.
+    level. None (the default) selects the single line representation. If
+    omit_defaults is true, fields that have their default values will be
+    omitted.
     """
     def _format(node, level=0):
         if indent is not None:
@@ -127,13 +142,14 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
             args = []
             allsimple = True
             keywords = annotate_fields
+            field_defaults = _field_defaults(cls)
             for name in node._fields:
                 try:
                     value = getattr(node, name)
                 except AttributeError:
                     keywords = True
                     continue
-                if value is None and getattr(cls, name, ...) is None:
+                if omit_defaults and field_defaults[name] == value:
                     keywords = True
                     continue
                 value, simple = _format(value, level)
@@ -148,7 +164,11 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
                         value = getattr(node, name)
                     except AttributeError:
                         continue
-                    if value is None and getattr(cls, name, ...) is None:
+                    if (
+                        omit_defaults
+                        and value is None
+                        and getattr(cls, name, ...) is None
+                    ):
                         continue
                     value, simple = _format(value, level)
                     allsimple = allsimple and simple

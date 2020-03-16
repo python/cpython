@@ -71,16 +71,15 @@ class Field(AST):
         self.name = name
         self.seq = seq
         self.opt = opt
+        if seq:
+            self.extra = "*"
+        elif opt:
+            self.extra = "?"
+        else:
+            self.extra = ""
 
     def __str__(self):
-        if self.seq:
-            extra = "*"
-        elif self.opt:
-            extra = "?"
-        else:
-            extra = ""
-
-        return "{}{} {}".format(self.type, extra, self.name)
+        return "{}{} {}".format(self.type, self.extra, self.name)
 
     def __repr__(self):
         if self.seq:

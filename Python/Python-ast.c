@@ -136,6 +136,7 @@ typedef struct {
     PyObject *__module__;
     PyObject *_ast;
     PyObject *_attributes;
+    PyObject *_field_defaults;
     PyObject *_fields;
     PyObject *alias_type;
     PyObject *annotation;
@@ -356,6 +357,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->__module__);
     Py_CLEAR(astmodulestate(module)->_ast);
     Py_CLEAR(astmodulestate(module)->_attributes);
+    Py_CLEAR(astmodulestate(module)->_field_defaults);
     Py_CLEAR(astmodulestate(module)->_fields);
     Py_CLEAR(astmodulestate(module)->alias_type);
     Py_CLEAR(astmodulestate(module)->annotation);
@@ -575,6 +577,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->__module__);
     Py_VISIT(astmodulestate(module)->_ast);
     Py_VISIT(astmodulestate(module)->_attributes);
+    Py_VISIT(astmodulestate(module)->_field_defaults);
     Py_VISIT(astmodulestate(module)->_fields);
     Py_VISIT(astmodulestate(module)->alias_type);
     Py_VISIT(astmodulestate(module)->annotation);
@@ -690,6 +693,7 @@ static int init_identifiers(void)
     if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return 0;
     if ((state->_ast = PyUnicode_InternFromString("_ast")) == NULL) return 0;
     if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return 0;
+    if ((state->_field_defaults = PyUnicode_InternFromString("_field_defaults")) == NULL) return 0;
     if ((state->_fields = PyUnicode_InternFromString("_fields")) == NULL) return 0;
     if ((state->annotation = PyUnicode_InternFromString("annotation")) == NULL) return 0;
     if ((state->arg = PyUnicode_InternFromString("arg")) == NULL) return 0;
@@ -767,15 +771,29 @@ static const char * const Module_fields[]={
     "body",
     "type_ignores",
 };
+static const char * const Module_field_defaults[]={
+    "*",
+    "*",
+};
 static const char * const Interactive_fields[]={
     "body",
+};
+static const char * const Interactive_field_defaults[]={
+    "*",
 };
 static const char * const Expression_fields[]={
     "body",
 };
+static const char * const Expression_field_defaults[]={
+    "",
+};
 static const char * const FunctionType_fields[]={
     "argtypes",
     "returns",
+};
+static const char * const FunctionType_field_defaults[]={
+    "*",
+    "",
 };
 static const char * const stmt_attributes[] = {
     "lineno",
@@ -792,6 +810,14 @@ static const char * const FunctionDef_fields[]={
     "returns",
     "type_comment",
 };
+static const char * const FunctionDef_field_defaults[]={
+    "",
+    "",
+    "*",
+    "*",
+    "?",
+    "?",
+};
 static const char * const AsyncFunctionDef_fields[]={
     "name",
     "args",
@@ -800,6 +826,14 @@ static const char * const AsyncFunctionDef_fields[]={
     "returns",
     "type_comment",
 };
+static const char * const AsyncFunctionDef_field_defaults[]={
+    "",
+    "",
+    "*",
+    "*",
+    "?",
+    "?",
+};
 static const char * const ClassDef_fields[]={
     "name",
     "bases",
@@ -807,27 +841,56 @@ static const char * const ClassDef_fields[]={
     "body",
     "decorator_list",
 };
+static const char * const ClassDef_field_defaults[]={
+    "",
+    "*",
+    "*",
+    "*",
+    "*",
+};
 static const char * const Return_fields[]={
     "value",
 };
+static const char * const Return_field_defaults[]={
+    "?",
+};
 static const char * const Delete_fields[]={
     "targets",
+};
+static const char * const Delete_field_defaults[]={
+    "*",
 };
 static const char * const Assign_fields[]={
     "targets",
     "value",
     "type_comment",
 };
+static const char * const Assign_field_defaults[]={
+    "*",
+    "",
+    "?",
+};
 static const char * const AugAssign_fields[]={
     "target",
     "op",
     "value",
+};
+static const char * const AugAssign_field_defaults[]={
+    "",
+    "",
+    "",
 };
 static const char * const AnnAssign_fields[]={
     "target",
     "annotation",
     "value",
     "simple",
+};
+static const char * const AnnAssign_field_defaults[]={
+    "",
+    "",
+    "?",
+    "",
 };
 static const char * const For_fields[]={
     "target",
@@ -836,6 +899,13 @@ static const char * const For_fields[]={
     "orelse",
     "type_comment",
 };
+static const char * const For_field_defaults[]={
+    "",
+    "",
+    "*",
+    "*",
+    "?",
+};
 static const char * const AsyncFor_fields[]={
     "target",
     "iter",
@@ -843,29 +913,60 @@ static const char * const AsyncFor_fields[]={
     "orelse",
     "type_comment",
 };
+static const char * const AsyncFor_field_defaults[]={
+    "",
+    "",
+    "*",
+    "*",
+    "?",
+};
 static const char * const While_fields[]={
     "test",
     "body",
     "orelse",
+};
+static const char * const While_field_defaults[]={
+    "",
+    "*",
+    "*",
 };
 static const char * const If_fields[]={
     "test",
     "body",
     "orelse",
 };
+static const char * const If_field_defaults[]={
+    "",
+    "*",
+    "*",
+};
 static const char * const With_fields[]={
     "items",
     "body",
     "type_comment",
+};
+static const char * const With_field_defaults[]={
+    "*",
+    "*",
+    "?",
 };
 static const char * const AsyncWith_fields[]={
     "items",
     "body",
     "type_comment",
 };
+static const char * const AsyncWith_field_defaults[]={
+    "*",
+    "*",
+    "?",
+};
 static const char * const Raise_fields[]={
     "exc",
     "cause",
+};
+static const char * const Raise_field_defaults[]={
+    "?",
+    "?",
 };
 static const char * const Try_fields[]={
     "body",
@@ -873,26 +974,53 @@ static const char * const Try_fields[]={
     "orelse",
     "finalbody",
 };
+static const char * const Try_field_defaults[]={
+    "*",
+    "*",
+    "*",
+    "*",
+};
 static const char * const Assert_fields[]={
     "test",
     "msg",
 };
+static const char * const Assert_field_defaults[]={
+    "",
+    "?",
+};
 static const char * const Import_fields[]={
     "names",
+};
+static const char * const Import_field_defaults[]={
+    "*",
 };
 static const char * const ImportFrom_fields[]={
     "module",
     "names",
     "level",
 };
+static const char * const ImportFrom_field_defaults[]={
+    "?",
+    "*",
+    "?",
+};
 static const char * const Global_fields[]={
     "names",
+};
+static const char * const Global_field_defaults[]={
+    "*",
 };
 static const char * const Nonlocal_fields[]={
     "names",
 };
+static const char * const Nonlocal_field_defaults[]={
+    "*",
+};
 static const char * const Expr_fields[]={
     "value",
+};
+static const char * const Expr_field_defaults[]={
+    "",
 };
 static const char * const expr_attributes[] = {
     "lineno",
@@ -905,113 +1033,225 @@ static const char * const BoolOp_fields[]={
     "op",
     "values",
 };
+static const char * const BoolOp_field_defaults[]={
+    "",
+    "*",
+};
 static const char * const NamedExpr_fields[]={
     "target",
     "value",
+};
+static const char * const NamedExpr_field_defaults[]={
+    "",
+    "",
 };
 static const char * const BinOp_fields[]={
     "left",
     "op",
     "right",
 };
+static const char * const BinOp_field_defaults[]={
+    "",
+    "",
+    "",
+};
 static const char * const UnaryOp_fields[]={
     "op",
     "operand",
 };
+static const char * const UnaryOp_field_defaults[]={
+    "",
+    "",
+};
 static const char * const Lambda_fields[]={
     "args",
     "body",
+};
+static const char * const Lambda_field_defaults[]={
+    "",
+    "",
 };
 static const char * const IfExp_fields[]={
     "test",
     "body",
     "orelse",
 };
+static const char * const IfExp_field_defaults[]={
+    "",
+    "",
+    "",
+};
 static const char * const Dict_fields[]={
     "keys",
     "values",
 };
+static const char * const Dict_field_defaults[]={
+    "*",
+    "*",
+};
 static const char * const Set_fields[]={
     "elts",
+};
+static const char * const Set_field_defaults[]={
+    "*",
 };
 static const char * const ListComp_fields[]={
     "elt",
     "generators",
 };
+static const char * const ListComp_field_defaults[]={
+    "",
+    "*",
+};
 static const char * const SetComp_fields[]={
     "elt",
     "generators",
+};
+static const char * const SetComp_field_defaults[]={
+    "",
+    "*",
 };
 static const char * const DictComp_fields[]={
     "key",
     "value",
     "generators",
 };
+static const char * const DictComp_field_defaults[]={
+    "",
+    "",
+    "*",
+};
 static const char * const GeneratorExp_fields[]={
     "elt",
     "generators",
 };
+static const char * const GeneratorExp_field_defaults[]={
+    "",
+    "*",
+};
 static const char * const Await_fields[]={
     "value",
+};
+static const char * const Await_field_defaults[]={
+    "",
 };
 static const char * const Yield_fields[]={
     "value",
 };
+static const char * const Yield_field_defaults[]={
+    "?",
+};
 static const char * const YieldFrom_fields[]={
     "value",
+};
+static const char * const YieldFrom_field_defaults[]={
+    "",
 };
 static const char * const Compare_fields[]={
     "left",
     "ops",
     "comparators",
 };
+static const char * const Compare_field_defaults[]={
+    "",
+    "*",
+    "*",
+};
 static const char * const Call_fields[]={
     "func",
     "args",
     "keywords",
+};
+static const char * const Call_field_defaults[]={
+    "",
+    "*",
+    "*",
 };
 static const char * const FormattedValue_fields[]={
     "value",
     "conversion",
     "format_spec",
 };
+static const char * const FormattedValue_field_defaults[]={
+    "",
+    "?",
+    "?",
+};
 static const char * const JoinedStr_fields[]={
     "values",
+};
+static const char * const JoinedStr_field_defaults[]={
+    "*",
 };
 static const char * const Constant_fields[]={
     "value",
     "kind",
+};
+static const char * const Constant_field_defaults[]={
+    "",
+    "?",
 };
 static const char * const Attribute_fields[]={
     "value",
     "attr",
     "ctx",
 };
+static const char * const Attribute_field_defaults[]={
+    "",
+    "",
+    "",
+};
 static const char * const Subscript_fields[]={
     "value",
     "slice",
     "ctx",
 };
+static const char * const Subscript_field_defaults[]={
+    "",
+    "",
+    "",
+};
 static const char * const Starred_fields[]={
     "value",
     "ctx",
+};
+static const char * const Starred_field_defaults[]={
+    "",
+    "",
 };
 static const char * const Name_fields[]={
     "id",
     "ctx",
 };
+static const char * const Name_field_defaults[]={
+    "",
+    "",
+};
 static const char * const List_fields[]={
     "elts",
     "ctx",
+};
+static const char * const List_field_defaults[]={
+    "*",
+    "",
 };
 static const char * const Tuple_fields[]={
     "elts",
     "ctx",
 };
+static const char * const Tuple_field_defaults[]={
+    "*",
+    "",
+};
 static const char * const Slice_fields[]={
     "lower",
     "upper",
     "step",
+};
+static const char * const Slice_field_defaults[]={
+    "?",
+    "?",
+    "?",
 };
 static PyObject* ast2obj_expr_context(expr_context_ty);
 static PyObject* ast2obj_boolop(boolop_ty);
@@ -1025,6 +1265,12 @@ static const char * const comprehension_fields[]={
     "ifs",
     "is_async",
 };
+static const char * const comprehension_field_defaults[]={
+    "",
+    "",
+    "*",
+    "",
+};
 static const char * const excepthandler_attributes[] = {
     "lineno",
     "col_offset",
@@ -1037,6 +1283,11 @@ static const char * const ExceptHandler_fields[]={
     "name",
     "body",
 };
+static const char * const ExceptHandler_field_defaults[]={
+    "?",
+    "?",
+    "*",
+};
 static PyObject* ast2obj_arguments(void*);
 static const char * const arguments_fields[]={
     "posonlyargs",
@@ -1046,6 +1297,15 @@ static const char * const arguments_fields[]={
     "kw_defaults",
     "kwarg",
     "defaults",
+};
+static const char * const arguments_field_defaults[]={
+    "*",
+    "*",
+    "?",
+    "*",
+    "*",
+    "?",
+    "*",
 };
 static PyObject* ast2obj_arg(void*);
 static const char * const arg_attributes[] = {
@@ -1059,25 +1319,46 @@ static const char * const arg_fields[]={
     "annotation",
     "type_comment",
 };
+static const char * const arg_field_defaults[]={
+    "",
+    "?",
+    "?",
+};
 static PyObject* ast2obj_keyword(void*);
 static const char * const keyword_fields[]={
     "arg",
     "value",
+};
+static const char * const keyword_field_defaults[]={
+    "?",
+    "",
 };
 static PyObject* ast2obj_alias(void*);
 static const char * const alias_fields[]={
     "name",
     "asname",
 };
+static const char * const alias_field_defaults[]={
+    "",
+    "?",
+};
 static PyObject* ast2obj_withitem(void*);
 static const char * const withitem_fields[]={
     "context_expr",
     "optional_vars",
 };
+static const char * const withitem_field_defaults[]={
+    "",
+    "?",
+};
 static PyObject* ast2obj_type_ignore(void*);
 static const char * const TypeIgnore_fields[]={
     "lineno",
     "tag",
+};
+static const char * const TypeIgnore_field_defaults[]={
+    "",
+    "",
 };
 
 
@@ -1114,13 +1395,38 @@ ast_clear(AST_object *self)
     return 0;
 }
 
+static inline PyObject *
+find_field_default(PyObject *field_default)
+{
+    PyObject *ret = NULL;
+    if (PyUnicode_GET_LENGTH(field_default) < 1) {
+        goto result;
+    }
+    switch (PyUnicode_READ_CHAR(field_default, 0)){
+    case '?':
+        ret = Py_None;
+        goto result;
+    case '*':
+        ret = PyList_New(0);
+        goto result;
+    default:
+        goto result;
+    }
+  result:
+    Py_DECREF(field_default);
+    return ret;
+}
+
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
     Py_ssize_t i, numfields = 0;
     int res = -1;
-    PyObject *key, *value, *fields;
+    PyObject *key, *value, *fields, *field_defaults;
     if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), astmodulestate_global->_fields, &fields) < 0) {
+        goto cleanup;
+    }
+    if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), astmodulestate_global->_field_defaults, &field_defaults) < 0) {
         goto cleanup;
     }
     if (fields) {
@@ -1158,8 +1464,34 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 goto cleanup;
         }
     }
+    PyObject *field, *field_default;
+    for (i = 0; i < numfields; i++) {
+        field = PySequence_GetItem(fields, i);
+        if (!field) {
+            res = -1;
+            goto cleanup;
+        }
+        int attr_present = PyObject_HasAttr(self, field);
+        Py_DECREF(field);
+        if (!attr_present) {
+            field_default = PySequence_GetItem(field_defaults, i);
+            if (!field_default) {
+                res = -1;
+                goto cleanup;
+            }
+            if (!(field_default = find_field_default(field_default))) {
+                continue;
+            }
+            res = PyObject_SetAttr(self, field, field_default);
+            Py_XDECREF(field_default);
+            if (res < 0) {
+                goto cleanup;
+            }
+        }
+    }
   cleanup:
     Py_XDECREF(fields);
+    Py_XDECREF(field_defaults);
     return res;
 }
 
@@ -1217,28 +1549,51 @@ static PyType_Spec AST_type_spec = {
 };
 
 static PyObject *
-make_type(const char *type, PyObject* base, const char* const* fields, int num_fields, const char *doc)
+make_type(
+    const char *type,
+    PyObject* base,
+    const char* const* fields,
+    const char* const* field_defaults,
+    int num_fields,
+    const char *doc
+)
 {
-    PyObject *fnames, *result;
+    PyObject *fnames, *fdefaults, *result;
     int i;
     fnames = PyTuple_New(num_fields);
-    if (!fnames) return NULL;
+    if (!fnames) {
+        return NULL;
+    }
+    fdefaults = PyTuple_New(num_fields);
+    if (!fdefaults) {
+        return NULL;
+    }
     for (i = 0; i < num_fields; i++) {
         PyObject *field = PyUnicode_InternFromString(fields[i]);
         if (!field) {
-            Py_DECREF(fnames);
-            return NULL;
+            goto cleanup;
         }
         PyTuple_SET_ITEM(fnames, i, field);
+        PyObject *field_default = PyUnicode_InternFromString(field_defaults[i]);
+        if (!field_default) {
+            goto cleanup;
+        }
+        PyTuple_SET_ITEM(fdefaults, i, field_default);
     }
-    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOs}",
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOOOs}",
                     type, base,
                     astmodulestate_global->_fields, fnames,
+                    astmodulestate_global->_field_defaults,
+                    fdefaults,
                     astmodulestate_global->__module__,
                     astmodulestate_global->_ast,
                     astmodulestate_global->__doc__, doc);
     Py_DECREF(fnames);
     return result;
+  cleanup:
+    Py_DECREF(fnames);
+    Py_DECREF(fdefaults);
+    return NULL;
 }
 
 static int
@@ -1389,29 +1744,33 @@ static int init_types(void)
     state->AST_type = PyType_FromSpec(&AST_type_spec);
     if (!state->AST_type) return 0;
     if (add_ast_fields() < 0) return 0;
-    state->mod_type = make_type("mod", state->AST_type, NULL, 0,
+    state->mod_type = make_type("mod", state->AST_type, NULL, NULL, 0,
         "mod = Module(stmt* body, type_ignore* type_ignores)\n"
         "    | Interactive(stmt* body)\n"
         "    | Expression(expr body)\n"
         "    | FunctionType(expr* argtypes, expr returns)");
     if (!state->mod_type) return 0;
     if (!add_attributes(state->mod_type, NULL, 0)) return 0;
-    state->Module_type = make_type("Module", state->mod_type, Module_fields, 2,
+    state->Module_type = make_type("Module", state->mod_type, Module_fields,
+                                   Module_field_defaults, 2,
         "Module(stmt* body, type_ignore* type_ignores)");
     if (!state->Module_type) return 0;
     state->Interactive_type = make_type("Interactive", state->mod_type,
-                                        Interactive_fields, 1,
+                                        Interactive_fields,
+                                        Interactive_field_defaults, 1,
         "Interactive(stmt* body)");
     if (!state->Interactive_type) return 0;
     state->Expression_type = make_type("Expression", state->mod_type,
-                                       Expression_fields, 1,
+                                       Expression_fields,
+                                       Expression_field_defaults, 1,
         "Expression(expr body)");
     if (!state->Expression_type) return 0;
     state->FunctionType_type = make_type("FunctionType", state->mod_type,
-                                         FunctionType_fields, 2,
+                                         FunctionType_fields,
+                                         FunctionType_field_defaults, 2,
         "FunctionType(expr* argtypes, expr returns)");
     if (!state->FunctionType_type) return 0;
-    state->stmt_type = make_type("stmt", state->AST_type, NULL, 0,
+    state->stmt_type = make_type("stmt", state->AST_type, NULL, NULL, 0,
         "stmt = FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)\n"
         "     | AsyncFunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)\n"
         "     | ClassDef(identifier name, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)\n"
@@ -1445,7 +1804,8 @@ static int init_types(void)
         -1)
         return 0;
     state->FunctionDef_type = make_type("FunctionDef", state->stmt_type,
-                                        FunctionDef_fields, 6,
+                                        FunctionDef_fields,
+                                        FunctionDef_field_defaults, 6,
         "FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)");
     if (!state->FunctionDef_type) return 0;
     if (PyObject_SetAttr(state->FunctionDef_type, state->returns, Py_None) ==
@@ -1456,7 +1816,8 @@ static int init_types(void)
         return 0;
     state->AsyncFunctionDef_type = make_type("AsyncFunctionDef",
                                              state->stmt_type,
-                                             AsyncFunctionDef_fields, 6,
+                                             AsyncFunctionDef_fields,
+                                             AsyncFunctionDef_field_defaults, 6,
         "AsyncFunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)");
     if (!state->AsyncFunctionDef_type) return 0;
     if (PyObject_SetAttr(state->AsyncFunctionDef_type, state->returns, Py_None)
@@ -1466,109 +1827,130 @@ static int init_types(void)
         Py_None) == -1)
         return 0;
     state->ClassDef_type = make_type("ClassDef", state->stmt_type,
-                                     ClassDef_fields, 5,
+                                     ClassDef_fields, ClassDef_field_defaults,
+                                     5,
         "ClassDef(identifier name, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)");
     if (!state->ClassDef_type) return 0;
-    state->Return_type = make_type("Return", state->stmt_type, Return_fields, 1,
+    state->Return_type = make_type("Return", state->stmt_type, Return_fields,
+                                   Return_field_defaults, 1,
         "Return(expr? value)");
     if (!state->Return_type) return 0;
     if (PyObject_SetAttr(state->Return_type, state->value, Py_None) == -1)
         return 0;
-    state->Delete_type = make_type("Delete", state->stmt_type, Delete_fields, 1,
+    state->Delete_type = make_type("Delete", state->stmt_type, Delete_fields,
+                                   Delete_field_defaults, 1,
         "Delete(expr* targets)");
     if (!state->Delete_type) return 0;
-    state->Assign_type = make_type("Assign", state->stmt_type, Assign_fields, 3,
+    state->Assign_type = make_type("Assign", state->stmt_type, Assign_fields,
+                                   Assign_field_defaults, 3,
         "Assign(expr* targets, expr value, string? type_comment)");
     if (!state->Assign_type) return 0;
     if (PyObject_SetAttr(state->Assign_type, state->type_comment, Py_None) ==
         -1)
         return 0;
     state->AugAssign_type = make_type("AugAssign", state->stmt_type,
-                                      AugAssign_fields, 3,
+                                      AugAssign_fields,
+                                      AugAssign_field_defaults, 3,
         "AugAssign(expr target, operator op, expr value)");
     if (!state->AugAssign_type) return 0;
     state->AnnAssign_type = make_type("AnnAssign", state->stmt_type,
-                                      AnnAssign_fields, 4,
+                                      AnnAssign_fields,
+                                      AnnAssign_field_defaults, 4,
         "AnnAssign(expr target, expr annotation, expr? value, int simple)");
     if (!state->AnnAssign_type) return 0;
     if (PyObject_SetAttr(state->AnnAssign_type, state->value, Py_None) == -1)
         return 0;
-    state->For_type = make_type("For", state->stmt_type, For_fields, 5,
+    state->For_type = make_type("For", state->stmt_type, For_fields,
+                                For_field_defaults, 5,
         "For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)");
     if (!state->For_type) return 0;
     if (PyObject_SetAttr(state->For_type, state->type_comment, Py_None) == -1)
         return 0;
     state->AsyncFor_type = make_type("AsyncFor", state->stmt_type,
-                                     AsyncFor_fields, 5,
+                                     AsyncFor_fields, AsyncFor_field_defaults,
+                                     5,
         "AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)");
     if (!state->AsyncFor_type) return 0;
     if (PyObject_SetAttr(state->AsyncFor_type, state->type_comment, Py_None) ==
         -1)
         return 0;
-    state->While_type = make_type("While", state->stmt_type, While_fields, 3,
+    state->While_type = make_type("While", state->stmt_type, While_fields,
+                                  While_field_defaults, 3,
         "While(expr test, stmt* body, stmt* orelse)");
     if (!state->While_type) return 0;
-    state->If_type = make_type("If", state->stmt_type, If_fields, 3,
+    state->If_type = make_type("If", state->stmt_type, If_fields,
+                               If_field_defaults, 3,
         "If(expr test, stmt* body, stmt* orelse)");
     if (!state->If_type) return 0;
-    state->With_type = make_type("With", state->stmt_type, With_fields, 3,
+    state->With_type = make_type("With", state->stmt_type, With_fields,
+                                 With_field_defaults, 3,
         "With(withitem* items, stmt* body, string? type_comment)");
     if (!state->With_type) return 0;
     if (PyObject_SetAttr(state->With_type, state->type_comment, Py_None) == -1)
         return 0;
     state->AsyncWith_type = make_type("AsyncWith", state->stmt_type,
-                                      AsyncWith_fields, 3,
+                                      AsyncWith_fields,
+                                      AsyncWith_field_defaults, 3,
         "AsyncWith(withitem* items, stmt* body, string? type_comment)");
     if (!state->AsyncWith_type) return 0;
     if (PyObject_SetAttr(state->AsyncWith_type, state->type_comment, Py_None)
         == -1)
         return 0;
-    state->Raise_type = make_type("Raise", state->stmt_type, Raise_fields, 2,
+    state->Raise_type = make_type("Raise", state->stmt_type, Raise_fields,
+                                  Raise_field_defaults, 2,
         "Raise(expr? exc, expr? cause)");
     if (!state->Raise_type) return 0;
     if (PyObject_SetAttr(state->Raise_type, state->exc, Py_None) == -1)
         return 0;
     if (PyObject_SetAttr(state->Raise_type, state->cause, Py_None) == -1)
         return 0;
-    state->Try_type = make_type("Try", state->stmt_type, Try_fields, 4,
+    state->Try_type = make_type("Try", state->stmt_type, Try_fields,
+                                Try_field_defaults, 4,
         "Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)");
     if (!state->Try_type) return 0;
-    state->Assert_type = make_type("Assert", state->stmt_type, Assert_fields, 2,
+    state->Assert_type = make_type("Assert", state->stmt_type, Assert_fields,
+                                   Assert_field_defaults, 2,
         "Assert(expr test, expr? msg)");
     if (!state->Assert_type) return 0;
     if (PyObject_SetAttr(state->Assert_type, state->msg, Py_None) == -1)
         return 0;
-    state->Import_type = make_type("Import", state->stmt_type, Import_fields, 1,
+    state->Import_type = make_type("Import", state->stmt_type, Import_fields,
+                                   Import_field_defaults, 1,
         "Import(alias* names)");
     if (!state->Import_type) return 0;
     state->ImportFrom_type = make_type("ImportFrom", state->stmt_type,
-                                       ImportFrom_fields, 3,
+                                       ImportFrom_fields,
+                                       ImportFrom_field_defaults, 3,
         "ImportFrom(identifier? module, alias* names, int? level)");
     if (!state->ImportFrom_type) return 0;
     if (PyObject_SetAttr(state->ImportFrom_type, state->module, Py_None) == -1)
         return 0;
     if (PyObject_SetAttr(state->ImportFrom_type, state->level, Py_None) == -1)
         return 0;
-    state->Global_type = make_type("Global", state->stmt_type, Global_fields, 1,
+    state->Global_type = make_type("Global", state->stmt_type, Global_fields,
+                                   Global_field_defaults, 1,
         "Global(identifier* names)");
     if (!state->Global_type) return 0;
     state->Nonlocal_type = make_type("Nonlocal", state->stmt_type,
-                                     Nonlocal_fields, 1,
+                                     Nonlocal_fields, Nonlocal_field_defaults,
+                                     1,
         "Nonlocal(identifier* names)");
     if (!state->Nonlocal_type) return 0;
-    state->Expr_type = make_type("Expr", state->stmt_type, Expr_fields, 1,
+    state->Expr_type = make_type("Expr", state->stmt_type, Expr_fields,
+                                 Expr_field_defaults, 1,
         "Expr(expr value)");
     if (!state->Expr_type) return 0;
-    state->Pass_type = make_type("Pass", state->stmt_type, NULL, 0,
+    state->Pass_type = make_type("Pass", state->stmt_type, NULL, NULL, 0,
         "Pass");
     if (!state->Pass_type) return 0;
-    state->Break_type = make_type("Break", state->stmt_type, NULL, 0,
+    state->Break_type = make_type("Break", state->stmt_type, NULL, NULL, 0,
         "Break");
     if (!state->Break_type) return 0;
-    state->Continue_type = make_type("Continue", state->stmt_type, NULL, 0,
+    state->Continue_type = make_type("Continue", state->stmt_type, NULL, NULL,
+                                     0,
         "Continue");
     if (!state->Continue_type) return 0;
-    state->expr_type = make_type("expr", state->AST_type, NULL, 0,
+    state->expr_type = make_type("expr", state->AST_type, NULL, NULL, 0,
         "expr = BoolOp(boolop op, expr* values)\n"
         "     | NamedExpr(expr target, expr value)\n"
         "     | BinOp(expr left, operator op, expr right)\n"
@@ -1603,69 +1985,84 @@ static int init_types(void)
     if (PyObject_SetAttr(state->expr_type, state->end_col_offset, Py_None) ==
         -1)
         return 0;
-    state->BoolOp_type = make_type("BoolOp", state->expr_type, BoolOp_fields, 2,
+    state->BoolOp_type = make_type("BoolOp", state->expr_type, BoolOp_fields,
+                                   BoolOp_field_defaults, 2,
         "BoolOp(boolop op, expr* values)");
     if (!state->BoolOp_type) return 0;
     state->NamedExpr_type = make_type("NamedExpr", state->expr_type,
-                                      NamedExpr_fields, 2,
+                                      NamedExpr_fields,
+                                      NamedExpr_field_defaults, 2,
         "NamedExpr(expr target, expr value)");
     if (!state->NamedExpr_type) return 0;
-    state->BinOp_type = make_type("BinOp", state->expr_type, BinOp_fields, 3,
+    state->BinOp_type = make_type("BinOp", state->expr_type, BinOp_fields,
+                                  BinOp_field_defaults, 3,
         "BinOp(expr left, operator op, expr right)");
     if (!state->BinOp_type) return 0;
     state->UnaryOp_type = make_type("UnaryOp", state->expr_type,
-                                    UnaryOp_fields, 2,
+                                    UnaryOp_fields, UnaryOp_field_defaults, 2,
         "UnaryOp(unaryop op, expr operand)");
     if (!state->UnaryOp_type) return 0;
-    state->Lambda_type = make_type("Lambda", state->expr_type, Lambda_fields, 2,
+    state->Lambda_type = make_type("Lambda", state->expr_type, Lambda_fields,
+                                   Lambda_field_defaults, 2,
         "Lambda(arguments args, expr body)");
     if (!state->Lambda_type) return 0;
-    state->IfExp_type = make_type("IfExp", state->expr_type, IfExp_fields, 3,
+    state->IfExp_type = make_type("IfExp", state->expr_type, IfExp_fields,
+                                  IfExp_field_defaults, 3,
         "IfExp(expr test, expr body, expr orelse)");
     if (!state->IfExp_type) return 0;
-    state->Dict_type = make_type("Dict", state->expr_type, Dict_fields, 2,
+    state->Dict_type = make_type("Dict", state->expr_type, Dict_fields,
+                                 Dict_field_defaults, 2,
         "Dict(expr* keys, expr* values)");
     if (!state->Dict_type) return 0;
-    state->Set_type = make_type("Set", state->expr_type, Set_fields, 1,
+    state->Set_type = make_type("Set", state->expr_type, Set_fields,
+                                Set_field_defaults, 1,
         "Set(expr* elts)");
     if (!state->Set_type) return 0;
     state->ListComp_type = make_type("ListComp", state->expr_type,
-                                     ListComp_fields, 2,
+                                     ListComp_fields, ListComp_field_defaults,
+                                     2,
         "ListComp(expr elt, comprehension* generators)");
     if (!state->ListComp_type) return 0;
     state->SetComp_type = make_type("SetComp", state->expr_type,
-                                    SetComp_fields, 2,
+                                    SetComp_fields, SetComp_field_defaults, 2,
         "SetComp(expr elt, comprehension* generators)");
     if (!state->SetComp_type) return 0;
     state->DictComp_type = make_type("DictComp", state->expr_type,
-                                     DictComp_fields, 3,
+                                     DictComp_fields, DictComp_field_defaults,
+                                     3,
         "DictComp(expr key, expr value, comprehension* generators)");
     if (!state->DictComp_type) return 0;
     state->GeneratorExp_type = make_type("GeneratorExp", state->expr_type,
-                                         GeneratorExp_fields, 2,
+                                         GeneratorExp_fields,
+                                         GeneratorExp_field_defaults, 2,
         "GeneratorExp(expr elt, comprehension* generators)");
     if (!state->GeneratorExp_type) return 0;
-    state->Await_type = make_type("Await", state->expr_type, Await_fields, 1,
+    state->Await_type = make_type("Await", state->expr_type, Await_fields,
+                                  Await_field_defaults, 1,
         "Await(expr value)");
     if (!state->Await_type) return 0;
-    state->Yield_type = make_type("Yield", state->expr_type, Yield_fields, 1,
+    state->Yield_type = make_type("Yield", state->expr_type, Yield_fields,
+                                  Yield_field_defaults, 1,
         "Yield(expr? value)");
     if (!state->Yield_type) return 0;
     if (PyObject_SetAttr(state->Yield_type, state->value, Py_None) == -1)
         return 0;
     state->YieldFrom_type = make_type("YieldFrom", state->expr_type,
-                                      YieldFrom_fields, 1,
+                                      YieldFrom_fields,
+                                      YieldFrom_field_defaults, 1,
         "YieldFrom(expr value)");
     if (!state->YieldFrom_type) return 0;
     state->Compare_type = make_type("Compare", state->expr_type,
-                                    Compare_fields, 3,
+                                    Compare_fields, Compare_field_defaults, 3,
         "Compare(expr left, cmpop* ops, expr* comparators)");
     if (!state->Compare_type) return 0;
-    state->Call_type = make_type("Call", state->expr_type, Call_fields, 3,
+    state->Call_type = make_type("Call", state->expr_type, Call_fields,
+                                 Call_field_defaults, 3,
         "Call(expr func, expr* args, keyword* keywords)");
     if (!state->Call_type) return 0;
     state->FormattedValue_type = make_type("FormattedValue", state->expr_type,
-                                           FormattedValue_fields, 3,
+                                           FormattedValue_fields,
+                                           FormattedValue_field_defaults, 3,
         "FormattedValue(expr value, int? conversion, expr? format_spec)");
     if (!state->FormattedValue_type) return 0;
     if (PyObject_SetAttr(state->FormattedValue_type, state->conversion,
@@ -1675,37 +2072,45 @@ static int init_types(void)
         Py_None) == -1)
         return 0;
     state->JoinedStr_type = make_type("JoinedStr", state->expr_type,
-                                      JoinedStr_fields, 1,
+                                      JoinedStr_fields,
+                                      JoinedStr_field_defaults, 1,
         "JoinedStr(expr* values)");
     if (!state->JoinedStr_type) return 0;
     state->Constant_type = make_type("Constant", state->expr_type,
-                                     Constant_fields, 2,
+                                     Constant_fields, Constant_field_defaults,
+                                     2,
         "Constant(constant value, string? kind)");
     if (!state->Constant_type) return 0;
     if (PyObject_SetAttr(state->Constant_type, state->kind, Py_None) == -1)
         return 0;
     state->Attribute_type = make_type("Attribute", state->expr_type,
-                                      Attribute_fields, 3,
+                                      Attribute_fields,
+                                      Attribute_field_defaults, 3,
         "Attribute(expr value, identifier attr, expr_context ctx)");
     if (!state->Attribute_type) return 0;
     state->Subscript_type = make_type("Subscript", state->expr_type,
-                                      Subscript_fields, 3,
+                                      Subscript_fields,
+                                      Subscript_field_defaults, 3,
         "Subscript(expr value, expr slice, expr_context ctx)");
     if (!state->Subscript_type) return 0;
     state->Starred_type = make_type("Starred", state->expr_type,
-                                    Starred_fields, 2,
+                                    Starred_fields, Starred_field_defaults, 2,
         "Starred(expr value, expr_context ctx)");
     if (!state->Starred_type) return 0;
-    state->Name_type = make_type("Name", state->expr_type, Name_fields, 2,
+    state->Name_type = make_type("Name", state->expr_type, Name_fields,
+                                 Name_field_defaults, 2,
         "Name(identifier id, expr_context ctx)");
     if (!state->Name_type) return 0;
-    state->List_type = make_type("List", state->expr_type, List_fields, 2,
+    state->List_type = make_type("List", state->expr_type, List_fields,
+                                 List_field_defaults, 2,
         "List(expr* elts, expr_context ctx)");
     if (!state->List_type) return 0;
-    state->Tuple_type = make_type("Tuple", state->expr_type, Tuple_fields, 2,
+    state->Tuple_type = make_type("Tuple", state->expr_type, Tuple_fields,
+                                  Tuple_field_defaults, 2,
         "Tuple(expr* elts, expr_context ctx)");
     if (!state->Tuple_type) return 0;
-    state->Slice_type = make_type("Slice", state->expr_type, Slice_fields, 3,
+    state->Slice_type = make_type("Slice", state->expr_type, Slice_fields,
+                                  Slice_field_defaults, 3,
         "Slice(expr? lower, expr? upper, expr? step)");
     if (!state->Slice_type) return 0;
     if (PyObject_SetAttr(state->Slice_type, state->lower, Py_None) == -1)
@@ -1715,232 +2120,241 @@ static int init_types(void)
     if (PyObject_SetAttr(state->Slice_type, state->step, Py_None) == -1)
         return 0;
     state->expr_context_type = make_type("expr_context", state->AST_type, NULL,
-                                         0,
+                                         NULL, 0,
         "expr_context = Load | Store | Del");
     if (!state->expr_context_type) return 0;
     if (!add_attributes(state->expr_context_type, NULL, 0)) return 0;
-    state->Load_type = make_type("Load", state->expr_context_type, NULL, 0,
+    state->Load_type = make_type("Load", state->expr_context_type, NULL, NULL,
+                                 0,
         "Load");
     if (!state->Load_type) return 0;
     state->Load_singleton = PyType_GenericNew((PyTypeObject *)state->Load_type,
                                               NULL, NULL);
     if (!state->Load_singleton) return 0;
-    state->Store_type = make_type("Store", state->expr_context_type, NULL, 0,
+    state->Store_type = make_type("Store", state->expr_context_type, NULL,
+                                  NULL, 0,
         "Store");
     if (!state->Store_type) return 0;
     state->Store_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->Store_type, NULL, NULL);
     if (!state->Store_singleton) return 0;
-    state->Del_type = make_type("Del", state->expr_context_type, NULL, 0,
+    state->Del_type = make_type("Del", state->expr_context_type, NULL, NULL, 0,
         "Del");
     if (!state->Del_type) return 0;
     state->Del_singleton = PyType_GenericNew((PyTypeObject *)state->Del_type,
                                              NULL, NULL);
     if (!state->Del_singleton) return 0;
-    state->boolop_type = make_type("boolop", state->AST_type, NULL, 0,
+    state->boolop_type = make_type("boolop", state->AST_type, NULL, NULL, 0,
         "boolop = And | Or");
     if (!state->boolop_type) return 0;
     if (!add_attributes(state->boolop_type, NULL, 0)) return 0;
-    state->And_type = make_type("And", state->boolop_type, NULL, 0,
+    state->And_type = make_type("And", state->boolop_type, NULL, NULL, 0,
         "And");
     if (!state->And_type) return 0;
     state->And_singleton = PyType_GenericNew((PyTypeObject *)state->And_type,
                                              NULL, NULL);
     if (!state->And_singleton) return 0;
-    state->Or_type = make_type("Or", state->boolop_type, NULL, 0,
+    state->Or_type = make_type("Or", state->boolop_type, NULL, NULL, 0,
         "Or");
     if (!state->Or_type) return 0;
     state->Or_singleton = PyType_GenericNew((PyTypeObject *)state->Or_type,
                                             NULL, NULL);
     if (!state->Or_singleton) return 0;
-    state->operator_type = make_type("operator", state->AST_type, NULL, 0,
+    state->operator_type = make_type("operator", state->AST_type, NULL, NULL, 0,
         "operator = Add | Sub | Mult | MatMult | Div | Mod | Pow | LShift | RShift | BitOr | BitXor | BitAnd | FloorDiv");
     if (!state->operator_type) return 0;
     if (!add_attributes(state->operator_type, NULL, 0)) return 0;
-    state->Add_type = make_type("Add", state->operator_type, NULL, 0,
+    state->Add_type = make_type("Add", state->operator_type, NULL, NULL, 0,
         "Add");
     if (!state->Add_type) return 0;
     state->Add_singleton = PyType_GenericNew((PyTypeObject *)state->Add_type,
                                              NULL, NULL);
     if (!state->Add_singleton) return 0;
-    state->Sub_type = make_type("Sub", state->operator_type, NULL, 0,
+    state->Sub_type = make_type("Sub", state->operator_type, NULL, NULL, 0,
         "Sub");
     if (!state->Sub_type) return 0;
     state->Sub_singleton = PyType_GenericNew((PyTypeObject *)state->Sub_type,
                                              NULL, NULL);
     if (!state->Sub_singleton) return 0;
-    state->Mult_type = make_type("Mult", state->operator_type, NULL, 0,
+    state->Mult_type = make_type("Mult", state->operator_type, NULL, NULL, 0,
         "Mult");
     if (!state->Mult_type) return 0;
     state->Mult_singleton = PyType_GenericNew((PyTypeObject *)state->Mult_type,
                                               NULL, NULL);
     if (!state->Mult_singleton) return 0;
-    state->MatMult_type = make_type("MatMult", state->operator_type, NULL, 0,
+    state->MatMult_type = make_type("MatMult", state->operator_type, NULL,
+                                    NULL, 0,
         "MatMult");
     if (!state->MatMult_type) return 0;
     state->MatMult_singleton = PyType_GenericNew((PyTypeObject
                                                  *)state->MatMult_type, NULL,
                                                  NULL);
     if (!state->MatMult_singleton) return 0;
-    state->Div_type = make_type("Div", state->operator_type, NULL, 0,
+    state->Div_type = make_type("Div", state->operator_type, NULL, NULL, 0,
         "Div");
     if (!state->Div_type) return 0;
     state->Div_singleton = PyType_GenericNew((PyTypeObject *)state->Div_type,
                                              NULL, NULL);
     if (!state->Div_singleton) return 0;
-    state->Mod_type = make_type("Mod", state->operator_type, NULL, 0,
+    state->Mod_type = make_type("Mod", state->operator_type, NULL, NULL, 0,
         "Mod");
     if (!state->Mod_type) return 0;
     state->Mod_singleton = PyType_GenericNew((PyTypeObject *)state->Mod_type,
                                              NULL, NULL);
     if (!state->Mod_singleton) return 0;
-    state->Pow_type = make_type("Pow", state->operator_type, NULL, 0,
+    state->Pow_type = make_type("Pow", state->operator_type, NULL, NULL, 0,
         "Pow");
     if (!state->Pow_type) return 0;
     state->Pow_singleton = PyType_GenericNew((PyTypeObject *)state->Pow_type,
                                              NULL, NULL);
     if (!state->Pow_singleton) return 0;
-    state->LShift_type = make_type("LShift", state->operator_type, NULL, 0,
+    state->LShift_type = make_type("LShift", state->operator_type, NULL, NULL,
+                                   0,
         "LShift");
     if (!state->LShift_type) return 0;
     state->LShift_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->LShift_type, NULL,
                                                 NULL);
     if (!state->LShift_singleton) return 0;
-    state->RShift_type = make_type("RShift", state->operator_type, NULL, 0,
+    state->RShift_type = make_type("RShift", state->operator_type, NULL, NULL,
+                                   0,
         "RShift");
     if (!state->RShift_type) return 0;
     state->RShift_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->RShift_type, NULL,
                                                 NULL);
     if (!state->RShift_singleton) return 0;
-    state->BitOr_type = make_type("BitOr", state->operator_type, NULL, 0,
+    state->BitOr_type = make_type("BitOr", state->operator_type, NULL, NULL, 0,
         "BitOr");
     if (!state->BitOr_type) return 0;
     state->BitOr_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->BitOr_type, NULL, NULL);
     if (!state->BitOr_singleton) return 0;
-    state->BitXor_type = make_type("BitXor", state->operator_type, NULL, 0,
+    state->BitXor_type = make_type("BitXor", state->operator_type, NULL, NULL,
+                                   0,
         "BitXor");
     if (!state->BitXor_type) return 0;
     state->BitXor_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->BitXor_type, NULL,
                                                 NULL);
     if (!state->BitXor_singleton) return 0;
-    state->BitAnd_type = make_type("BitAnd", state->operator_type, NULL, 0,
+    state->BitAnd_type = make_type("BitAnd", state->operator_type, NULL, NULL,
+                                   0,
         "BitAnd");
     if (!state->BitAnd_type) return 0;
     state->BitAnd_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->BitAnd_type, NULL,
                                                 NULL);
     if (!state->BitAnd_singleton) return 0;
-    state->FloorDiv_type = make_type("FloorDiv", state->operator_type, NULL, 0,
+    state->FloorDiv_type = make_type("FloorDiv", state->operator_type, NULL,
+                                     NULL, 0,
         "FloorDiv");
     if (!state->FloorDiv_type) return 0;
     state->FloorDiv_singleton = PyType_GenericNew((PyTypeObject
                                                   *)state->FloorDiv_type, NULL,
                                                   NULL);
     if (!state->FloorDiv_singleton) return 0;
-    state->unaryop_type = make_type("unaryop", state->AST_type, NULL, 0,
+    state->unaryop_type = make_type("unaryop", state->AST_type, NULL, NULL, 0,
         "unaryop = Invert | Not | UAdd | USub");
     if (!state->unaryop_type) return 0;
     if (!add_attributes(state->unaryop_type, NULL, 0)) return 0;
-    state->Invert_type = make_type("Invert", state->unaryop_type, NULL, 0,
+    state->Invert_type = make_type("Invert", state->unaryop_type, NULL, NULL, 0,
         "Invert");
     if (!state->Invert_type) return 0;
     state->Invert_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->Invert_type, NULL,
                                                 NULL);
     if (!state->Invert_singleton) return 0;
-    state->Not_type = make_type("Not", state->unaryop_type, NULL, 0,
+    state->Not_type = make_type("Not", state->unaryop_type, NULL, NULL, 0,
         "Not");
     if (!state->Not_type) return 0;
     state->Not_singleton = PyType_GenericNew((PyTypeObject *)state->Not_type,
                                              NULL, NULL);
     if (!state->Not_singleton) return 0;
-    state->UAdd_type = make_type("UAdd", state->unaryop_type, NULL, 0,
+    state->UAdd_type = make_type("UAdd", state->unaryop_type, NULL, NULL, 0,
         "UAdd");
     if (!state->UAdd_type) return 0;
     state->UAdd_singleton = PyType_GenericNew((PyTypeObject *)state->UAdd_type,
                                               NULL, NULL);
     if (!state->UAdd_singleton) return 0;
-    state->USub_type = make_type("USub", state->unaryop_type, NULL, 0,
+    state->USub_type = make_type("USub", state->unaryop_type, NULL, NULL, 0,
         "USub");
     if (!state->USub_type) return 0;
     state->USub_singleton = PyType_GenericNew((PyTypeObject *)state->USub_type,
                                               NULL, NULL);
     if (!state->USub_singleton) return 0;
-    state->cmpop_type = make_type("cmpop", state->AST_type, NULL, 0,
+    state->cmpop_type = make_type("cmpop", state->AST_type, NULL, NULL, 0,
         "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn");
     if (!state->cmpop_type) return 0;
     if (!add_attributes(state->cmpop_type, NULL, 0)) return 0;
-    state->Eq_type = make_type("Eq", state->cmpop_type, NULL, 0,
+    state->Eq_type = make_type("Eq", state->cmpop_type, NULL, NULL, 0,
         "Eq");
     if (!state->Eq_type) return 0;
     state->Eq_singleton = PyType_GenericNew((PyTypeObject *)state->Eq_type,
                                             NULL, NULL);
     if (!state->Eq_singleton) return 0;
-    state->NotEq_type = make_type("NotEq", state->cmpop_type, NULL, 0,
+    state->NotEq_type = make_type("NotEq", state->cmpop_type, NULL, NULL, 0,
         "NotEq");
     if (!state->NotEq_type) return 0;
     state->NotEq_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->NotEq_type, NULL, NULL);
     if (!state->NotEq_singleton) return 0;
-    state->Lt_type = make_type("Lt", state->cmpop_type, NULL, 0,
+    state->Lt_type = make_type("Lt", state->cmpop_type, NULL, NULL, 0,
         "Lt");
     if (!state->Lt_type) return 0;
     state->Lt_singleton = PyType_GenericNew((PyTypeObject *)state->Lt_type,
                                             NULL, NULL);
     if (!state->Lt_singleton) return 0;
-    state->LtE_type = make_type("LtE", state->cmpop_type, NULL, 0,
+    state->LtE_type = make_type("LtE", state->cmpop_type, NULL, NULL, 0,
         "LtE");
     if (!state->LtE_type) return 0;
     state->LtE_singleton = PyType_GenericNew((PyTypeObject *)state->LtE_type,
                                              NULL, NULL);
     if (!state->LtE_singleton) return 0;
-    state->Gt_type = make_type("Gt", state->cmpop_type, NULL, 0,
+    state->Gt_type = make_type("Gt", state->cmpop_type, NULL, NULL, 0,
         "Gt");
     if (!state->Gt_type) return 0;
     state->Gt_singleton = PyType_GenericNew((PyTypeObject *)state->Gt_type,
                                             NULL, NULL);
     if (!state->Gt_singleton) return 0;
-    state->GtE_type = make_type("GtE", state->cmpop_type, NULL, 0,
+    state->GtE_type = make_type("GtE", state->cmpop_type, NULL, NULL, 0,
         "GtE");
     if (!state->GtE_type) return 0;
     state->GtE_singleton = PyType_GenericNew((PyTypeObject *)state->GtE_type,
                                              NULL, NULL);
     if (!state->GtE_singleton) return 0;
-    state->Is_type = make_type("Is", state->cmpop_type, NULL, 0,
+    state->Is_type = make_type("Is", state->cmpop_type, NULL, NULL, 0,
         "Is");
     if (!state->Is_type) return 0;
     state->Is_singleton = PyType_GenericNew((PyTypeObject *)state->Is_type,
                                             NULL, NULL);
     if (!state->Is_singleton) return 0;
-    state->IsNot_type = make_type("IsNot", state->cmpop_type, NULL, 0,
+    state->IsNot_type = make_type("IsNot", state->cmpop_type, NULL, NULL, 0,
         "IsNot");
     if (!state->IsNot_type) return 0;
     state->IsNot_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->IsNot_type, NULL, NULL);
     if (!state->IsNot_singleton) return 0;
-    state->In_type = make_type("In", state->cmpop_type, NULL, 0,
+    state->In_type = make_type("In", state->cmpop_type, NULL, NULL, 0,
         "In");
     if (!state->In_type) return 0;
     state->In_singleton = PyType_GenericNew((PyTypeObject *)state->In_type,
                                             NULL, NULL);
     if (!state->In_singleton) return 0;
-    state->NotIn_type = make_type("NotIn", state->cmpop_type, NULL, 0,
+    state->NotIn_type = make_type("NotIn", state->cmpop_type, NULL, NULL, 0,
         "NotIn");
     if (!state->NotIn_type) return 0;
     state->NotIn_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->NotIn_type, NULL, NULL);
     if (!state->NotIn_singleton) return 0;
     state->comprehension_type = make_type("comprehension", state->AST_type,
-                                          comprehension_fields, 4,
+                                          comprehension_fields,
+                                          comprehension_field_defaults, 4,
         "comprehension(expr target, expr iter, expr* ifs, int is_async)");
     if (!state->comprehension_type) return 0;
     if (!add_attributes(state->comprehension_type, NULL, 0)) return 0;
     state->excepthandler_type = make_type("excepthandler", state->AST_type,
-                                          NULL, 0,
+                                          NULL, NULL, 0,
         "excepthandler = ExceptHandler(expr? type, identifier? name, stmt* body)");
     if (!state->excepthandler_type) return 0;
     if (!add_attributes(state->excepthandler_type, excepthandler_attributes,
@@ -1953,7 +2367,8 @@ static int init_types(void)
         return 0;
     state->ExceptHandler_type = make_type("ExceptHandler",
                                           state->excepthandler_type,
-                                          ExceptHandler_fields, 3,
+                                          ExceptHandler_fields,
+                                          ExceptHandler_field_defaults, 3,
         "ExceptHandler(expr? type, identifier? name, stmt* body)");
     if (!state->ExceptHandler_type) return 0;
     if (PyObject_SetAttr(state->ExceptHandler_type, state->type, Py_None) == -1)
@@ -1961,7 +2376,8 @@ static int init_types(void)
     if (PyObject_SetAttr(state->ExceptHandler_type, state->name, Py_None) == -1)
         return 0;
     state->arguments_type = make_type("arguments", state->AST_type,
-                                      arguments_fields, 7,
+                                      arguments_fields,
+                                      arguments_field_defaults, 7,
         "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults, arg? kwarg, expr* defaults)");
     if (!state->arguments_type) return 0;
     if (!add_attributes(state->arguments_type, NULL, 0)) return 0;
@@ -1969,7 +2385,8 @@ static int init_types(void)
         return 0;
     if (PyObject_SetAttr(state->arguments_type, state->kwarg, Py_None) == -1)
         return 0;
-    state->arg_type = make_type("arg", state->AST_type, arg_fields, 3,
+    state->arg_type = make_type("arg", state->AST_type, arg_fields,
+                                arg_field_defaults, 3,
         "arg(identifier arg, expr? annotation, string? type_comment)");
     if (!state->arg_type) return 0;
     if (!add_attributes(state->arg_type, arg_attributes, 4)) return 0;
@@ -1982,32 +2399,36 @@ static int init_types(void)
     if (PyObject_SetAttr(state->arg_type, state->end_col_offset, Py_None) == -1)
         return 0;
     state->keyword_type = make_type("keyword", state->AST_type, keyword_fields,
-                                    2,
+                                    keyword_field_defaults, 2,
         "keyword(identifier? arg, expr value)");
     if (!state->keyword_type) return 0;
     if (!add_attributes(state->keyword_type, NULL, 0)) return 0;
     if (PyObject_SetAttr(state->keyword_type, state->arg, Py_None) == -1)
         return 0;
-    state->alias_type = make_type("alias", state->AST_type, alias_fields, 2,
+    state->alias_type = make_type("alias", state->AST_type, alias_fields,
+                                  alias_field_defaults, 2,
         "alias(identifier name, identifier? asname)");
     if (!state->alias_type) return 0;
     if (!add_attributes(state->alias_type, NULL, 0)) return 0;
     if (PyObject_SetAttr(state->alias_type, state->asname, Py_None) == -1)
         return 0;
     state->withitem_type = make_type("withitem", state->AST_type,
-                                     withitem_fields, 2,
+                                     withitem_fields, withitem_field_defaults,
+                                     2,
         "withitem(expr context_expr, expr? optional_vars)");
     if (!state->withitem_type) return 0;
     if (!add_attributes(state->withitem_type, NULL, 0)) return 0;
     if (PyObject_SetAttr(state->withitem_type, state->optional_vars, Py_None)
         == -1)
         return 0;
-    state->type_ignore_type = make_type("type_ignore", state->AST_type, NULL, 0,
+    state->type_ignore_type = make_type("type_ignore", state->AST_type, NULL,
+                                        NULL, 0,
         "type_ignore = TypeIgnore(int lineno, string tag)");
     if (!state->type_ignore_type) return 0;
     if (!add_attributes(state->type_ignore_type, NULL, 0)) return 0;
     state->TypeIgnore_type = make_type("TypeIgnore", state->type_ignore_type,
-                                       TypeIgnore_fields, 2,
+                                       TypeIgnore_fields,
+                                       TypeIgnore_field_defaults, 2,
         "TypeIgnore(int lineno, string tag)");
     if (!state->TypeIgnore_type) return 0;
     state->initialized = 1;
