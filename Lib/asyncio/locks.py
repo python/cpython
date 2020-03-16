@@ -80,7 +80,7 @@ class Lock(_ContextManagerMixin):
         if loop is None:
             self._loop = events._get_running_loop()
             if self._loop is None:
-                warnings.warn("The creation of asyncio objects outside a running "
+                warnings.warn("The creation of asyncio objects outside of a running "
                               "event loop is deprecated as of Python 3.9.",
                               DeprecationWarning, stacklevel=2)
                 self._loop = events.get_event_loop()
