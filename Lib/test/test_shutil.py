@@ -1666,12 +1666,18 @@ class TestMisc(BaseTest, unittest.TestCase):
         shutil.chown(dirname, group=gid)
         check_chown(dirname, gid=gid)
 
-        user = pwd.getpwuid(uid)[0]
-        group = grp.getgrgid(gid)[0]
-        shutil.chown(filename, user, group)
-        check_chown(filename, uid, gid)
-        shutil.chown(dirname, user, group)
-        check_chown(dirname, uid, gid)
+        try:
+            user = pwd.getpwuid(uid)[0]
+            group = grp.getgrgid(gid)[0]
+        except KeyError:
+            # In case the uid/gid cannot be resolved.
+            user = None
+            group = None
+        if user is not None and group is not None:
+            shutil.chown(filename, user, group)
+            check_chown(filename, uid, gid)
+            shutil.chown(dirname, user, group)
+            check_chown(dirname, uid, gid)
 
 
 class TestWhich(BaseTest, unittest.TestCase):
