@@ -1,6 +1,7 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
+#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
@@ -888,7 +889,8 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
             vectorcall = method_vectorcall_O;
             break;
         default:
-            PyErr_SetString(PyExc_SystemError, "bad call flags");
+            PyErr_Format(PyExc_SystemError,
+                         "%s() method: bad call flags", method->ml_name);
             return NULL;
     }
 

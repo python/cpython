@@ -1,0 +1,2 @@
+Add :c:func:`PyThreadState_GetInterpreter`: get the interpreter of a Python
+thread state.

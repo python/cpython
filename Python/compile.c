@@ -41,6 +41,10 @@
 #define COMP_SETCOMP  2
 #define COMP_DICTCOMP 3
 
+#define IS_TOP_LEVEL_AWAIT(c) ( \
+        (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
+        && (c->u->u_ste->ste_type == ModuleBlock))
+
 struct instr {
     unsigned i_jabs : 1;
     unsigned i_jrel : 1;
@@ -2743,7 +2747,7 @@ static int
 compiler_async_for(struct compiler *c, stmt_ty s)
 {
     basicblock *start, *except, *end;
-    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+    if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
         return compiler_error(c, "'async for' outside async function");
@@ -3575,10 +3579,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         case AugStore:
             break;
         case Del: op = DELETE_DEREF; break;
-        case Param:
         default:
-            PyErr_SetString(PyExc_SystemError,
-                            "param invalid for deref variable");
+            PyErr_Format(PyExc_SystemError,
+                         "expr_context kind %d should not be possible",
+                         ctx);
             return 0;
         }
         break;
@@ -3592,10 +3596,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         case AugLoad:
         case AugStore:
             break;
-        case Param:
         default:
-            PyErr_SetString(PyExc_SystemError,
-                            "param invalid for local variable");
+            PyErr_Format(PyExc_SystemError,
+                         "expr_context kind %d should not be possible",
+                         ctx);
             return 0;
         }
         ADDOP_N(c, op, mangled, varnames);
@@ -3610,10 +3614,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         case AugLoad:
         case AugStore:
             break;
-        case Param:
         default:
-            PyErr_SetString(PyExc_SystemError,
-                            "param invalid for global variable");
+            PyErr_Format(PyExc_SystemError,
+                         "expr_context kind %d should not be possible",
+                         ctx);
             return 0;
         }
         break;
@@ -3627,10 +3631,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         case AugLoad:
         case AugStore:
             break;
-        case Param:
         default:
-            PyErr_SetString(PyExc_SystemError,
-                            "param invalid for name variable");
+            PyErr_Format(PyExc_SystemError,
+                         "expr_context kind %d should not be possible",
+                         ctx);
             return 0;
         }
         break;
@@ -4789,7 +4793,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
-    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+    if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
         return compiler_error(c, "'async with' outside async function");
@@ -5007,7 +5011,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         ADDOP(c, YIELD_FROM);
         break;
     case Await_kind:
-        if (!(c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT)){
+        if (!IS_TOP_LEVEL_AWAIT(c)){
             if (c->u->u_ste->ste_type != FunctionBlock){
                 return compiler_error(c, "'await' outside function");
             }
@@ -5054,10 +5058,10 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         case Del:
             ADDOP_NAME(c, DELETE_ATTR, e->v.Attribute.attr, names);
             break;
-        case Param:
         default:
-            PyErr_SetString(PyExc_SystemError,
-                            "param invalid in attribute expression");
+            PyErr_Format(PyExc_SystemError,
+                         "expr_context kind %d should not be possible",
+                         e->v.Attribute.ctx);
             return 0;
         }
         break;
@@ -5355,9 +5359,10 @@ compiler_subscript(struct compiler *c, expr_ty e)
         case AugStore:/* fall through to Store */
         case Store:   op = STORE_SUBSCR; break;
         case Del:     op = DELETE_SUBSCR; break;
-        case Param:
-            PyErr_SetString(PyExc_SystemError,
-                "param invalid in subscript expression");
+        default:
+            PyErr_Format(PyExc_SystemError,
+                         "expr_context kind %d should not be possible",
+                         ctx);
             return 0;
     }
     if (ctx == AugStore) {
@@ -5836,7 +5841,7 @@ compute_code_flags(struct compiler *c)
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
 
-    if ((c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+    if ((IS_TOP_LEVEL_AWAIT(c)) &&
          ste->ste_coroutine &&
          !ste->ste_generator) {
         flags |= CO_COROUTINE;

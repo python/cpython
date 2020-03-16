@@ -2133,12 +2133,8 @@ defdict_repr(defdictobject *dd)
 static PyObject*
 defdict_or(PyObject* left, PyObject* right)
 {
-    int left_is_self = PyObject_IsInstance(left, (PyObject*)&defdict_type);
-    if (left_is_self < 0) {
-        return NULL;
-    }
     PyObject *self, *other;
-    if (left_is_self) {
+    if (PyObject_TypeCheck(left, &defdict_type)) {
         self = left;
         other = right;
     }

@@ -232,6 +232,12 @@ Added a new function :func:`gc.is_finalized` to check if an object has been
 finalized by the garbage collector. (Contributed by Pablo Galindo in
 :issue:`39322`.)
 
+http
+----
+
+HTTP status codes ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` are added to
+:class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509` and Ross Rhodes in :issue:`39507`.)
+
 imaplib
 -------
 
@@ -356,7 +362,7 @@ running.
 sys
 ---
 
-Add a new :attr:`sys.platlitdir` attribute: name of the platform-specific
+Add a new :attr:`sys.platlibdir` attribute: name of the platform-specific
 library directory. It is used to build the path of platform-specific dynamic
 libraries and the path of the standard library. It is equal to ``"lib"`` on
 most platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit
@@ -406,8 +412,11 @@ Optimizations
 Build and C API Changes
 =======================
 
+* New :c:func:`PyThreadState_GetInterpreter` and
+  :c:func:`PyInterpreterState_Get` functions to get the interpreter.
+
 * Add ``--with-platlibdir`` option to the ``configure`` script: name of the
-  platform-specific library directory, stored in the new :attr:`sys.platlitdir`
+  platform-specific library directory, stored in the new :attr:`sys.platlibdir`
   attribute. See :attr:`sys.platlibdir` attribute for more information.
   (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
 
@@ -486,6 +495,10 @@ Build and C API Changes
     * ``_Py_AddToAllObjects()`` (specific to ``Py_TRACE_REFS`` build)
 
   (Contributed by Victor Stinner in :issue:`38644` and :issue:`39542`.)
+
+* ``PyInterpreterState.eval_frame`` (:pep:`523`) now requires a new mandatory
+  *tstate* parameter (``PyThreadState*``).
+  (Contributed by Victor Stinner in :issue:`38500`.)
 
 
 Deprecated
@@ -598,10 +611,13 @@ Removed
   Use :meth:`~threading.Thread.is_alive()` instead.
   (Contributed by Dong-hee Na in :issue:`37804`.)
 
-* Methods ``getchildren()`` and ``getiterator()`` in the
-  :mod:`~xml.etree.ElementTree` module have been removed.  They were
-  deprecated in Python 3.2.  Use functions :func:`list` and :func:`iter`
-  instead.  The ``xml.etree.cElementTree`` module has been removed.
+* Methods ``getchildren()`` and ``getiterator()`` of classes
+  :class:`~xml.etree.ElementTree.ElementTree` and
+  :class:`~xml.etree.ElementTree.Element` in the :mod:`~xml.etree.ElementTree`
+  module have been removed.  They were deprecated in Python 3.2.
+  Use ``iter(x)`` or ``list(x)`` instead of ``x.getchildren()`` and
+  ``x.iter()`` or ``list(x.iter())`` instead of ``x.getiterator()``.
+  The ``xml.etree.cElementTree`` module has been removed.
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
 
 * The old :mod:`plistlib` API has been removed, it was deprecated since Python
@@ -648,8 +664,9 @@ Removed
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
-* The ``ast.Suite`` node class has been removed due to no longer being needed.
-  (Contributed by Batuhan Taskaya in :issue:`39639`.)
+* The ``ast.Suite`` and ``ast.Param`` node classes has been removed due to no
+  longer being needed.
+  (Contributed by Batuhan Taskaya in :issue:`39639` and :issue:`39969`.)
 
 
 Porting to Python 3.9

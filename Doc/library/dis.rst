@@ -1136,7 +1136,7 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.7
 
 
-.. opcode:: MAKE_FUNCTION (argc)
+.. opcode:: MAKE_FUNCTION (flags)
 
    Pushes a new function object on the stack.  From bottom to top, the consumed
    stack must consist of values if the argument carries a specified flag value
