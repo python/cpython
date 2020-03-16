@@ -164,6 +164,9 @@ be used to unparse an :class:`ast.AST` object and produce a string with code
 that would produce an equivalent :class:`ast.AST` object when parsed.
 (Contributed by Pablo Galindo and Batuhan Taskaya in :issue:`38870`.)
 
+Added docstrings to AST nodes that contains the ASDL signature used to
+construct that node. (Contributed by Batuhan Taskaya in :issue:`39638`.)
+
 asyncio
 -------
 
