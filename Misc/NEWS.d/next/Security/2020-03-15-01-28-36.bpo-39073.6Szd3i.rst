@@ -1,0 +1,1 @@
+Validate email.headerregistry.Address to disallow CRLF in address parts (username, domain, display_name).
