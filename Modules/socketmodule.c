@@ -658,7 +658,7 @@ set_herror(int h_error)
     PyObject *v;
 
 #ifdef HAVE_HSTRERROR
-    v = Py_BuildValue("(is)", h_error, (char *)hstrerror(h_error));
+    v = Py_BuildValue("(is)", h_error, hstrerror(h_error));
 #else
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif

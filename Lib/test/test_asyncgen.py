@@ -1191,5 +1191,20 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.loop.run_until_complete(run())
 
+    def test_async_gen_aclose_compatible_with_get_stack(self):
+        async def async_generator():
+            yield object()
+
+        async def run():
+            ag = async_generator()
+            asyncio.create_task(ag.aclose())
+            tasks = asyncio.all_tasks()
+            for task in tasks:
+                # No AttributeError raised
+                task.get_stack()
+
+        self.loop.run_until_complete(run())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,1 @@
+Adding HTTP status 418 "I'm a Teapot" to HTTPStatus in http library. Patch by Ross Rhodes.

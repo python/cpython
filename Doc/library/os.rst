@@ -135,6 +135,9 @@ process and user.
    ``os.environ``, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
 
+   .. versionchanged:: 3.9
+      Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
 
 .. data:: environb
 
@@ -147,6 +150,9 @@ process and user.
    ``True``.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.9
+      Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
 
 
 .. function:: chdir(path)
@@ -3053,6 +3059,8 @@ features:
           for name in dirs:
               os.rmdir(os.path.join(root, name))
 
+   .. audit-event:: os.walk top,topdown,onerror,followlinks os.walk
+
    .. versionchanged:: 3.5
       This function now calls :func:`os.scandir` instead of :func:`os.listdir`,
       making it faster by reducing the number of calls to :func:`os.stat`.
@@ -3111,6 +3119,8 @@ features:
               os.unlink(name, dir_fd=rootfd)
           for name in dirs:
               os.rmdir(name, dir_fd=rootfd)
+
+   .. audit-event:: os.fwalk top,topdown,onerror,follow_symlinks,dir_fd os.fwalk
 
    .. availability:: Unix.
 

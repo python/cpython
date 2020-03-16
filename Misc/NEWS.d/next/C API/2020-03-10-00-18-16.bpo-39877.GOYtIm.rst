@@ -1,0 +1,3 @@
+Deprecated :c:func:`PyEval_InitThreads` and
+:c:func:`PyEval_ThreadsInitialized`. Calling :c:func:`PyEval_InitThreads` now
+does nothing.

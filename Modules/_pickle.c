@@ -4974,7 +4974,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    if (Py_TYPE(obj) == &PicklerMemoProxyType) {
+    if (Py_IS_TYPE(obj, &PicklerMemoProxyType)) {
         PicklerObject *pickler =
             ((PicklerMemoProxyObject *)obj)->pickler;
 
@@ -7519,7 +7519,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored
         return -1;
     }
 
-    if (Py_TYPE(obj) == &UnpicklerMemoProxyType) {
+    if (Py_IS_TYPE(obj, &UnpicklerMemoProxyType)) {
         UnpicklerObject *unpickler =
             ((UnpicklerMemoProxyObject *)obj)->unpickler;
 
@@ -7965,6 +7965,7 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->import_mapping_3to2);
     Py_VISIT(st->codecs_encode);
     Py_VISIT(st->getattr);
+    Py_VISIT(st->partial);
     return 0;
 }
 

@@ -489,7 +489,7 @@ deque_copy(PyObject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result;
     dequeobject *old_deque = (dequeobject *)deque;
-    if (Py_TYPE(deque) == &deque_type) {
+    if (Py_IS_TYPE(deque, &deque_type)) {
         dequeobject *new_deque;
         PyObject *rv;
 
@@ -1992,6 +1992,13 @@ defdict_missing(defdictobject *dd, PyObject *key)
     return value;
 }
 
+static inline PyObject*
+new_defdict(defdictobject *dd, PyObject *arg)
+{
+    return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd),
+        dd->default_factory ? dd->default_factory : Py_None, arg, NULL);
+}
+
 PyDoc_STRVAR(defdict_copy_doc, "D.copy() -> a shallow copy of D.");
 
 static PyObject *
@@ -2001,11 +2008,7 @@ defdict_copy(defdictobject *dd, PyObject *Py_UNUSED(ignored))
        whose class constructor has the same signature.  Subclasses that
        define a different constructor signature must override copy().
     */
-
-    if (dd->default_factory == NULL)
-        return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd), Py_None, dd, NULL);
-    return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd),
-                                        dd->default_factory, dd, NULL);
+    return new_defdict(dd, (PyObject*)dd);
 }
 
 static PyObject *
@@ -2131,6 +2134,38 @@ defdict_repr(defdictobject *dd)
     return result;
 }
 
+static PyObject*
+defdict_or(PyObject* left, PyObject* right)
+{
+    PyObject *self, *other;
+    if (PyObject_TypeCheck(left, &defdict_type)) {
+        self = left;
+        other = right;
+    }
+    else {
+        self = right;
+        other = left;
+    }
+    if (!PyDict_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    // Like copy(), this calls the object's class.
+    // Override __or__/__ror__ for subclasses with different constructors.
+    PyObject *new = new_defdict((defdictobject*)self, left);
+    if (!new) {
+        return NULL;
+    }
+    if (PyDict_Update(new, right)) {
+        Py_DECREF(new);
+        return NULL;
+    }
+    return new;
+}
+
+static PyNumberMethods defdict_as_number = {
+    .nb_or = defdict_or,
+};
+
 static int
 defdict_traverse(PyObject *self, visitproc visit, void *arg)
 {
@@ -2202,7 +2237,7 @@ static PyTypeObject defdict_type = {
     0,                                  /* tp_setattr */
     0,                                  /* tp_as_async */
     (reprfunc)defdict_repr,             /* tp_repr */
-    0,                                  /* tp_as_number */
+    &defdict_as_number,                 /* tp_as_number */
     0,                                  /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
     0,                                  /* tp_hash */

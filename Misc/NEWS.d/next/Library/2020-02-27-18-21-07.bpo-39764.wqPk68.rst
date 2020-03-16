@@ -1,0 +1,1 @@
+Fix AttributeError when calling get_stack on a PyAsyncGenObject Task

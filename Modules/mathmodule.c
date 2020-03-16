@@ -1106,9 +1106,13 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
     if (!_PyArg_CheckPositional(funcname, nargs, 2, 2))
         return NULL;
     x = PyFloat_AsDouble(args[0]);
-    y = PyFloat_AsDouble(args[1]);
-    if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
+    if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
+    }
+    y = PyFloat_AsDouble(args[1]);
+    if (y == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
     errno = 0;
     r = (*func)(x, y);
     if (Py_IS_NAN(r)) {

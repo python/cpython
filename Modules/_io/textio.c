@@ -897,7 +897,7 @@ _textiowrapper_decode(PyObject *decoder, PyObject *bytes, int eof)
 {
     PyObject *chars;
 
-    if (Py_TYPE(decoder) == &PyIncrementalNewlineDecoder_Type)
+    if (Py_IS_TYPE(decoder, &PyIncrementalNewlineDecoder_Type))
         chars = _PyIncrementalNewlineDecoder_decode(decoder, bytes, eof);
     else
         chars = PyObject_CallMethodObjArgs(decoder, _PyIO_str_decode, bytes,
@@ -1226,15 +1226,15 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Finished sorting out the codec details */
     Py_CLEAR(codec_info);
 
-    if (Py_TYPE(buffer) == &PyBufferedReader_Type ||
-        Py_TYPE(buffer) == &PyBufferedWriter_Type ||
-        Py_TYPE(buffer) == &PyBufferedRandom_Type)
+    if (Py_IS_TYPE(buffer, &PyBufferedReader_Type) ||
+        Py_IS_TYPE(buffer, &PyBufferedWriter_Type) ||
+        Py_IS_TYPE(buffer, &PyBufferedRandom_Type))
     {
         if (_PyObject_LookupAttrId(buffer, &PyId_raw, &raw) < 0)
             goto error;
         /* Cache the raw FileIO object to speed up 'closed' checks */
         if (raw != NULL) {
-            if (Py_TYPE(raw) == &PyFileIO_Type)
+            if (Py_IS_TYPE(raw, &PyFileIO_Type))
                 self->raw = raw;
             else
                 Py_DECREF(raw);
@@ -1466,7 +1466,7 @@ textiowrapper_closed_get(textio *self, void *context);
     do { \
         int r; \
         PyObject *_res; \
-        if (Py_TYPE(self) == &PyTextIOWrapper_Type) { \
+        if (Py_IS_TYPE(self, &PyTextIOWrapper_Type)) { \
             if (self->raw != NULL) \
                 r = _PyFileIO_closed(self->raw); \
             else { \
@@ -1937,7 +1937,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (bytes == NULL)
             goto fail;
 
-        if (Py_TYPE(self->decoder) == &PyIncrementalNewlineDecoder_Type)
+        if (Py_IS_TYPE(self->decoder, &PyIncrementalNewlineDecoder_Type))
             decoded = _PyIncrementalNewlineDecoder_decode(self->decoder,
                                                           bytes, 1);
         else
@@ -3079,7 +3079,7 @@ textiowrapper_iternext(textio *self)
     CHECK_ATTACHED(self);
 
     self->telling = 0;
-    if (Py_TYPE(self) == &PyTextIOWrapper_Type) {
+    if (Py_IS_TYPE(self, &PyTextIOWrapper_Type)) {
         /* Skip method call overhead for speed */
         line = _textiowrapper_readline(self, -1);
     }

@@ -40,7 +40,7 @@ jobs:
     - name: Configure CPython
       run: ./configure --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
     - name: Build CPython
-      run: make -s -j4
+      run: make -j4
     - name: Display build info
       run: make pythoninfo
     - name: 'Coverage Preparation'
@@ -65,7 +65,7 @@ jobs:
     - name: 'Publish code coverage results'
       run: |
         source ./.venv/bin/activate
-        bash <(curl -s https://codecov.io/bash)
+        bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -84,6 +84,6 @@ jobs:
       if: always()
       run: |
         make pythoninfo
-        bash <(curl -s https://codecov.io/bash)
+        bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
