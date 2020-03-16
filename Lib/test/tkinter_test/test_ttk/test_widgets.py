@@ -4,10 +4,10 @@ from tkinter import ttk, TclError
 from test.support import requires
 import sys
 
-from Lib.test.tkinter_test.test_ttk.test_functions import MockTclObj
-from Lib.test.tkinter_test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
+from test.tkinter_test.test_ttk.test_functions import MockTclObj
+from test.tkinter_test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
                                   simulate_mouse_click)
-from Lib.test.tkinter_test.widget_tests import (add_standard_options, noconv,
+from test.tkinter_test.widget_tests import (add_standard_options, noconv,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
     setUpModule)
 

@@ -1,7 +1,7 @@
 import unittest
 import tkinter
 from test import support
-from Lib.test.tkinter_test.support import AbstractTkTest
+from test.tkinter_test.support import AbstractTkTest
 
 support.requires('gui')
 

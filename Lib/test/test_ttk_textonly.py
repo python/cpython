@@ -3,7 +3,7 @@ from test import support
 # Skip this test if _tkinter does not exist.
 support.import_module('_tkinter')
 
-from Lib.test.tkinter_test import runtktests
+from test.tkinter_test import runtktests
 
 def test_main():
     support.run_unittest(

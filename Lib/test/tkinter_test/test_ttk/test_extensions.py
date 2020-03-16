@@ -3,7 +3,7 @@ import unittest
 import tkinter
 from tkinter import ttk
 from test.support import requires, run_unittest, swap_attr
-from Lib.test.tkinter_test.support import AbstractTkTest, destroy_default_root
+from test.tkinter_test.support import AbstractTkTest, destroy_default_root
 
 requires('gui')
 

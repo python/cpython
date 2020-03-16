@@ -3,7 +3,7 @@
 import unittest
 import sys
 import tkinter
-from Lib.test.tkinter_test.support import (AbstractTkTest, tcl_version, requires_tcl,
+from test.tkinter_test.support import (AbstractTkTest, tcl_version, requires_tcl,
                                   get_tk_patchlevel, pixels_conv, tcl_obj_eq)
 import test.support
 
