@@ -1,1 +1,1 @@
-Validate email.headerregistry.Address to disallow CRLF in address parts (username, domain, display_name).
+Disallow CR or LF in email.headerregistry.Address arguments to guard against header injection attacks.
