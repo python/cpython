@@ -64,7 +64,8 @@ class GroupDatabaseTestCase(unittest.TestCase):
 
         allnames = list(bynames.keys())
         namei = 0
-        fakename = allnames[namei]
+        # Start with a name that very likely does not exist. Typos deliberate.
+        fakename = "should_noot_exxist"
         while fakename in bynames:
             chars = list(fakename)
             for i in range(len(chars)):
@@ -87,12 +88,21 @@ class GroupDatabaseTestCase(unittest.TestCase):
 
         self.assertRaises(KeyError, grp.getgrnam, fakename)
 
-        # Choose a non-existent gid.
-        fakegid = 4127
-        while fakegid in bygids:
-            fakegid = (fakegid * 3) % 0x10000
+        # Picking a nonexistent GID is hard, since getgrall() will not
+        # necessarily report all existing groups (typical for LDAP based
+        # directories in big organisations).
+        # Try to find one in the range 1-99 as the lower IDs are typically
+        # statically assigned and more likely to be reported accurately.
+        nonexistent_gid = None
+        candidates = list(range(1, 99))
+        candidates = candidates[90:] + candidates[:90]
+        for i in candidates:
+            if i not in bygids:
+                nonexistent_gid = i
+                break
 
-        self.assertRaises(KeyError, grp.getgrgid, fakegid)
+        if nonexistent_gid is not None:
+            self.assertRaises(KeyError, grp.getgrgid, nonexistent_gid)
 
     def test_noninteger_gid(self):
         entries = grp.getgrall()
