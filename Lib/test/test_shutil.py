@@ -1669,13 +1669,14 @@ class TestMisc(BaseTest, unittest.TestCase):
         try:
             user = pwd.getpwuid(uid)[0]
             group = grp.getgrgid(gid)[0]
+         except KeyError:
+            # On some systems uid/gid cannot be resolved.
+            pass
+        else:
             shutil.chown(filename, user, group)
             check_chown(filename, uid, gid)
             shutil.chown(dirname, user, group)
             check_chown(dirname, uid, gid)
-        except KeyError:
-            # On some systems uid/gid cannot be resolved.
-            pass
 
 
 class TestWhich(BaseTest, unittest.TestCase):
