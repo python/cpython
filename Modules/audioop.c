@@ -1926,9 +1926,7 @@ static int
 audioop_traverse(PyObject *module, visitproc visit, void *arg)
 {
     audioop_state *state = (audioop_state *)PyModule_GetState(module);
-    if (state) {
-        Py_VISIT(state->AudioopError);
-    }
+    Py_VISIT(state->AudioopError);
     return 0;
 }
 
@@ -1936,9 +1934,7 @@ static int
 audioop_clear(PyObject *module)
 {
     audioop_state *state = (audioop_state *)PyModule_GetState(module);
-    if (state) {
-        Py_CLEAR(state->AudioopError);
-    }
+    Py_CLEAR(state->AudioopError);
     return 0;
 }
 
