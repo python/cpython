@@ -709,8 +709,7 @@ static PyObject *
 tuple_vectorcall(PyObject *type, PyObject * const*args,
                  size_t nargsf, PyObject *kwnames)
 {
-    if (kwnames && PyTuple_GET_SIZE(kwnames) != 0) {
-        PyErr_Format(PyExc_TypeError, "tuple() takes no keyword arguments");
+    if (!_PyArg_NoKwnames("tuple", kwnames)) {
         return NULL;
     }
 
