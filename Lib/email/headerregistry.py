@@ -53,7 +53,6 @@ class Address:
                 raise a_s.all_defects[0]
             username = a_s.local_part
             domain = a_s.domain
-
         self._display_name = display_name
         self._username = username
         self._domain = domain
@@ -104,6 +103,7 @@ class Address:
         return (self.display_name == other.display_name and
                 self.username == other.username and
                 self.domain == other.domain)
+
 
 class Group:
 
