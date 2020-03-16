@@ -136,6 +136,7 @@ typedef struct {
     PyObject *YieldFrom_type;
     PyObject *Yield_type;
     PyObject *__dict__;
+    PyObject *__doc__;
     PyObject *__module__;
     PyObject *_ast;
     PyObject *_attributes;
@@ -359,6 +360,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->YieldFrom_type);
     Py_CLEAR(astmodulestate(module)->Yield_type);
     Py_CLEAR(astmodulestate(module)->__dict__);
+    Py_CLEAR(astmodulestate(module)->__doc__);
     Py_CLEAR(astmodulestate(module)->__module__);
     Py_CLEAR(astmodulestate(module)->_ast);
     Py_CLEAR(astmodulestate(module)->_attributes);
@@ -581,6 +583,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->YieldFrom_type);
     Py_VISIT(astmodulestate(module)->Yield_type);
     Py_VISIT(astmodulestate(module)->__dict__);
+    Py_VISIT(astmodulestate(module)->__doc__);
     Py_VISIT(astmodulestate(module)->__module__);
     Py_VISIT(astmodulestate(module)->_ast);
     Py_VISIT(astmodulestate(module)->_attributes);
@@ -695,6 +698,7 @@ static int init_identifiers(void)
 {
     astmodulestate *state = astmodulestate_global;
     if ((state->__dict__ = PyUnicode_InternFromString("__dict__")) == NULL) return 0;
+    if ((state->__doc__ = PyUnicode_InternFromString("__doc__")) == NULL) return 0;
     if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return 0;
     if ((state->_ast = PyUnicode_InternFromString("_ast")) == NULL) return 0;
     if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return 0;
@@ -1225,7 +1229,7 @@ static PyType_Spec AST_type_spec = {
 };
 
 static PyObject *
-make_type(const char *type, PyObject* base, const char* const* fields, int num_fields)
+make_type(const char *type, PyObject* base, const char* const* fields, int num_fields, const char *doc)
 {
     PyObject *fnames, *result;
     int i;
@@ -1239,11 +1243,12 @@ make_type(const char *type, PyObject* base, const char* const* fields, int num_f
         }
         PyTuple_SET_ITEM(fnames, i, field);
     }
-    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOO}",
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOs}",
                     type, base,
                     astmodulestate_global->_fields, fnames,
                     astmodulestate_global->__module__,
-                    astmodulestate_global->_ast);
+                    astmodulestate_global->_ast,
+                    astmodulestate_global->__doc__, doc);
     Py_DECREF(fnames);
     return result;
 }
@@ -1396,21 +1401,54 @@ static int init_types(void)
     state->AST_type = PyType_FromSpec(&AST_type_spec);
     if (!state->AST_type) return 0;
     if (add_ast_fields() < 0) return 0;
-    state->mod_type = make_type("mod", state->AST_type, NULL, 0);
+    state->mod_type = make_type("mod", state->AST_type, NULL, 0,
+        "mod = Module(stmt* body, type_ignore* type_ignores)\n"
+        "    | Interactive(stmt* body)\n"
+        "    | Expression(expr body)\n"
+        "    | FunctionType(expr* argtypes, expr returns)");
     if (!state->mod_type) return 0;
     if (!add_attributes(state->mod_type, NULL, 0)) return 0;
-    state->Module_type = make_type("Module", state->mod_type, Module_fields, 2);
+    state->Module_type = make_type("Module", state->mod_type, Module_fields, 2,
+        "Module(stmt* body, type_ignore* type_ignores)");
     if (!state->Module_type) return 0;
     state->Interactive_type = make_type("Interactive", state->mod_type,
-                                        Interactive_fields, 1);
+                                        Interactive_fields, 1,
+        "Interactive(stmt* body)");
     if (!state->Interactive_type) return 0;
     state->Expression_type = make_type("Expression", state->mod_type,
-                                       Expression_fields, 1);
+                                       Expression_fields, 1,
+        "Expression(expr body)");
     if (!state->Expression_type) return 0;
     state->FunctionType_type = make_type("FunctionType", state->mod_type,
-                                         FunctionType_fields, 2);
+                                         FunctionType_fields, 2,
+        "FunctionType(expr* argtypes, expr returns)");
     if (!state->FunctionType_type) return 0;
-    state->stmt_type = make_type("stmt", state->AST_type, NULL, 0);
+    state->stmt_type = make_type("stmt", state->AST_type, NULL, 0,
+        "stmt = FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)\n"
+        "     | AsyncFunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)\n"
+        "     | ClassDef(identifier name, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)\n"
+        "     | Return(expr? value)\n"
+        "     | Delete(expr* targets)\n"
+        "     | Assign(expr* targets, expr value, string? type_comment)\n"
+        "     | AugAssign(expr target, operator op, expr value)\n"
+        "     | AnnAssign(expr target, expr annotation, expr? value, int simple)\n"
+        "     | For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)\n"
+        "     | AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)\n"
+        "     | While(expr test, stmt* body, stmt* orelse)\n"
+        "     | If(expr test, stmt* body, stmt* orelse)\n"
+        "     | With(withitem* items, stmt* body, string? type_comment)\n"
+        "     | AsyncWith(withitem* items, stmt* body, string? type_comment)\n"
+        "     | Raise(expr? exc, expr? cause)\n"
+        "     | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)\n"
+        "     | Assert(expr test, expr? msg)\n"
+        "     | Import(alias* names)\n"
+        "     | ImportFrom(identifier? module, alias* names, int? level)\n"
+        "     | Global(identifier* names)\n"
+        "     | Nonlocal(identifier* names)\n"
+        "     | Expr(expr value)\n"
+        "     | Pass\n"
+        "     | Break\n"
+        "     | Continue");
     if (!state->stmt_type) return 0;
     if (!add_attributes(state->stmt_type, stmt_attributes, 4)) return 0;
     if (PyObject_SetAttr(state->stmt_type, state->end_lineno, Py_None) == -1)
@@ -1419,7 +1457,8 @@ static int init_types(void)
         -1)
         return 0;
     state->FunctionDef_type = make_type("FunctionDef", state->stmt_type,
-                                        FunctionDef_fields, 6);
+                                        FunctionDef_fields, 6,
+        "FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)");
     if (!state->FunctionDef_type) return 0;
     if (PyObject_SetAttr(state->FunctionDef_type, state->returns, Py_None) ==
         -1)
@@ -1429,7 +1468,8 @@ static int init_types(void)
         return 0;
     state->AsyncFunctionDef_type = make_type("AsyncFunctionDef",
                                              state->stmt_type,
-                                             AsyncFunctionDef_fields, 6);
+                                             AsyncFunctionDef_fields, 6,
+        "AsyncFunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)");
     if (!state->AsyncFunctionDef_type) return 0;
     if (PyObject_SetAttr(state->AsyncFunctionDef_type, state->returns, Py_None)
         == -1)
@@ -1438,92 +1478,136 @@ static int init_types(void)
         Py_None) == -1)
         return 0;
     state->ClassDef_type = make_type("ClassDef", state->stmt_type,
-                                     ClassDef_fields, 5);
+                                     ClassDef_fields, 5,
+        "ClassDef(identifier name, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)");
     if (!state->ClassDef_type) return 0;
-    state->Return_type = make_type("Return", state->stmt_type, Return_fields,
-                                   1);
+    state->Return_type = make_type("Return", state->stmt_type, Return_fields, 1,
+        "Return(expr? value)");
     if (!state->Return_type) return 0;
     if (PyObject_SetAttr(state->Return_type, state->value, Py_None) == -1)
         return 0;
-    state->Delete_type = make_type("Delete", state->stmt_type, Delete_fields,
-                                   1);
+    state->Delete_type = make_type("Delete", state->stmt_type, Delete_fields, 1,
+        "Delete(expr* targets)");
     if (!state->Delete_type) return 0;
-    state->Assign_type = make_type("Assign", state->stmt_type, Assign_fields,
-                                   3);
+    state->Assign_type = make_type("Assign", state->stmt_type, Assign_fields, 3,
+        "Assign(expr* targets, expr value, string? type_comment)");
     if (!state->Assign_type) return 0;
     if (PyObject_SetAttr(state->Assign_type, state->type_comment, Py_None) ==
         -1)
         return 0;
     state->AugAssign_type = make_type("AugAssign", state->stmt_type,
-                                      AugAssign_fields, 3);
+                                      AugAssign_fields, 3,
+        "AugAssign(expr target, operator op, expr value)");
     if (!state->AugAssign_type) return 0;
     state->AnnAssign_type = make_type("AnnAssign", state->stmt_type,
-                                      AnnAssign_fields, 4);
+                                      AnnAssign_fields, 4,
+        "AnnAssign(expr target, expr annotation, expr? value, int simple)");
     if (!state->AnnAssign_type) return 0;
     if (PyObject_SetAttr(state->AnnAssign_type, state->value, Py_None) == -1)
         return 0;
-    state->For_type = make_type("For", state->stmt_type, For_fields, 5);
+    state->For_type = make_type("For", state->stmt_type, For_fields, 5,
+        "For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)");
     if (!state->For_type) return 0;
     if (PyObject_SetAttr(state->For_type, state->type_comment, Py_None) == -1)
         return 0;
     state->AsyncFor_type = make_type("AsyncFor", state->stmt_type,
-                                     AsyncFor_fields, 5);
+                                     AsyncFor_fields, 5,
+        "AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)");
     if (!state->AsyncFor_type) return 0;
     if (PyObject_SetAttr(state->AsyncFor_type, state->type_comment, Py_None) ==
         -1)
         return 0;
-    state->While_type = make_type("While", state->stmt_type, While_fields, 3);
+    state->While_type = make_type("While", state->stmt_type, While_fields, 3,
+        "While(expr test, stmt* body, stmt* orelse)");
     if (!state->While_type) return 0;
-    state->If_type = make_type("If", state->stmt_type, If_fields, 3);
+    state->If_type = make_type("If", state->stmt_type, If_fields, 3,
+        "If(expr test, stmt* body, stmt* orelse)");
     if (!state->If_type) return 0;
-    state->With_type = make_type("With", state->stmt_type, With_fields, 3);
+    state->With_type = make_type("With", state->stmt_type, With_fields, 3,
+        "With(withitem* items, stmt* body, string? type_comment)");
     if (!state->With_type) return 0;
     if (PyObject_SetAttr(state->With_type, state->type_comment, Py_None) == -1)
         return 0;
     state->AsyncWith_type = make_type("AsyncWith", state->stmt_type,
-                                      AsyncWith_fields, 3);
+                                      AsyncWith_fields, 3,
+        "AsyncWith(withitem* items, stmt* body, string? type_comment)");
     if (!state->AsyncWith_type) return 0;
     if (PyObject_SetAttr(state->AsyncWith_type, state->type_comment, Py_None)
         == -1)
         return 0;
-    state->Raise_type = make_type("Raise", state->stmt_type, Raise_fields, 2);
+    state->Raise_type = make_type("Raise", state->stmt_type, Raise_fields, 2,
+        "Raise(expr? exc, expr? cause)");
     if (!state->Raise_type) return 0;
     if (PyObject_SetAttr(state->Raise_type, state->exc, Py_None) == -1)
         return 0;
     if (PyObject_SetAttr(state->Raise_type, state->cause, Py_None) == -1)
         return 0;
-    state->Try_type = make_type("Try", state->stmt_type, Try_fields, 4);
+    state->Try_type = make_type("Try", state->stmt_type, Try_fields, 4,
+        "Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)");
     if (!state->Try_type) return 0;
-    state->Assert_type = make_type("Assert", state->stmt_type, Assert_fields,
-                                   2);
+    state->Assert_type = make_type("Assert", state->stmt_type, Assert_fields, 2,
+        "Assert(expr test, expr? msg)");
     if (!state->Assert_type) return 0;
     if (PyObject_SetAttr(state->Assert_type, state->msg, Py_None) == -1)
         return 0;
-    state->Import_type = make_type("Import", state->stmt_type, Import_fields,
-                                   1);
+    state->Import_type = make_type("Import", state->stmt_type, Import_fields, 1,
+        "Import(alias* names)");
     if (!state->Import_type) return 0;
     state->ImportFrom_type = make_type("ImportFrom", state->stmt_type,
-                                       ImportFrom_fields, 3);
+                                       ImportFrom_fields, 3,
+        "ImportFrom(identifier? module, alias* names, int? level)");
     if (!state->ImportFrom_type) return 0;
     if (PyObject_SetAttr(state->ImportFrom_type, state->module, Py_None) == -1)
         return 0;
     if (PyObject_SetAttr(state->ImportFrom_type, state->level, Py_None) == -1)
         return 0;
-    state->Global_type = make_type("Global", state->stmt_type, Global_fields,
-                                   1);
+    state->Global_type = make_type("Global", state->stmt_type, Global_fields, 1,
+        "Global(identifier* names)");
     if (!state->Global_type) return 0;
     state->Nonlocal_type = make_type("Nonlocal", state->stmt_type,
-                                     Nonlocal_fields, 1);
+                                     Nonlocal_fields, 1,
+        "Nonlocal(identifier* names)");
     if (!state->Nonlocal_type) return 0;
-    state->Expr_type = make_type("Expr", state->stmt_type, Expr_fields, 1);
+    state->Expr_type = make_type("Expr", state->stmt_type, Expr_fields, 1,
+        "Expr(expr value)");
     if (!state->Expr_type) return 0;
-    state->Pass_type = make_type("Pass", state->stmt_type, NULL, 0);
+    state->Pass_type = make_type("Pass", state->stmt_type, NULL, 0,
+        "Pass");
     if (!state->Pass_type) return 0;
-    state->Break_type = make_type("Break", state->stmt_type, NULL, 0);
+    state->Break_type = make_type("Break", state->stmt_type, NULL, 0,
+        "Break");
     if (!state->Break_type) return 0;
-    state->Continue_type = make_type("Continue", state->stmt_type, NULL, 0);
+    state->Continue_type = make_type("Continue", state->stmt_type, NULL, 0,
+        "Continue");
     if (!state->Continue_type) return 0;
-    state->expr_type = make_type("expr", state->AST_type, NULL, 0);
+    state->expr_type = make_type("expr", state->AST_type, NULL, 0,
+        "expr = BoolOp(boolop op, expr* values)\n"
+        "     | NamedExpr(expr target, expr value)\n"
+        "     | BinOp(expr left, operator op, expr right)\n"
+        "     | UnaryOp(unaryop op, expr operand)\n"
+        "     | Lambda(arguments args, expr body)\n"
+        "     | IfExp(expr test, expr body, expr orelse)\n"
+        "     | Dict(expr* keys, expr* values)\n"
+        "     | Set(expr* elts)\n"
+        "     | ListComp(expr elt, comprehension* generators)\n"
+        "     | SetComp(expr elt, comprehension* generators)\n"
+        "     | DictComp(expr key, expr value, comprehension* generators)\n"
+        "     | GeneratorExp(expr elt, comprehension* generators)\n"
+        "     | Await(expr value)\n"
+        "     | Yield(expr? value)\n"
+        "     | YieldFrom(expr value)\n"
+        "     | Compare(expr left, cmpop* ops, expr* comparators)\n"
+        "     | Call(expr func, expr* args, keyword* keywords)\n"
+        "     | FormattedValue(expr value, int? conversion, expr? format_spec)\n"
+        "     | JoinedStr(expr* values)\n"
+        "     | Constant(constant value, string? kind)\n"
+        "     | Attribute(expr value, identifier attr, expr_context ctx)\n"
+        "     | Subscript(expr value, expr slice, expr_context ctx)\n"
+        "     | Starred(expr value, expr_context ctx)\n"
+        "     | Name(identifier id, expr_context ctx)\n"
+        "     | List(expr* elts, expr_context ctx)\n"
+        "     | Tuple(expr* elts, expr_context ctx)\n"
+        "     | Slice(expr? lower, expr? upper, expr? step)");
     if (!state->expr_type) return 0;
     if (!add_attributes(state->expr_type, expr_attributes, 4)) return 0;
     if (PyObject_SetAttr(state->expr_type, state->end_lineno, Py_None) == -1)
@@ -1531,54 +1615,70 @@ static int init_types(void)
     if (PyObject_SetAttr(state->expr_type, state->end_col_offset, Py_None) ==
         -1)
         return 0;
-    state->BoolOp_type = make_type("BoolOp", state->expr_type, BoolOp_fields,
-                                   2);
+    state->BoolOp_type = make_type("BoolOp", state->expr_type, BoolOp_fields, 2,
+        "BoolOp(boolop op, expr* values)");
     if (!state->BoolOp_type) return 0;
     state->NamedExpr_type = make_type("NamedExpr", state->expr_type,
-                                      NamedExpr_fields, 2);
+                                      NamedExpr_fields, 2,
+        "NamedExpr(expr target, expr value)");
     if (!state->NamedExpr_type) return 0;
-    state->BinOp_type = make_type("BinOp", state->expr_type, BinOp_fields, 3);
+    state->BinOp_type = make_type("BinOp", state->expr_type, BinOp_fields, 3,
+        "BinOp(expr left, operator op, expr right)");
     if (!state->BinOp_type) return 0;
     state->UnaryOp_type = make_type("UnaryOp", state->expr_type,
-                                    UnaryOp_fields, 2);
+                                    UnaryOp_fields, 2,
+        "UnaryOp(unaryop op, expr operand)");
     if (!state->UnaryOp_type) return 0;
-    state->Lambda_type = make_type("Lambda", state->expr_type, Lambda_fields,
-                                   2);
+    state->Lambda_type = make_type("Lambda", state->expr_type, Lambda_fields, 2,
+        "Lambda(arguments args, expr body)");
     if (!state->Lambda_type) return 0;
-    state->IfExp_type = make_type("IfExp", state->expr_type, IfExp_fields, 3);
+    state->IfExp_type = make_type("IfExp", state->expr_type, IfExp_fields, 3,
+        "IfExp(expr test, expr body, expr orelse)");
     if (!state->IfExp_type) return 0;
-    state->Dict_type = make_type("Dict", state->expr_type, Dict_fields, 2);
+    state->Dict_type = make_type("Dict", state->expr_type, Dict_fields, 2,
+        "Dict(expr* keys, expr* values)");
     if (!state->Dict_type) return 0;
-    state->Set_type = make_type("Set", state->expr_type, Set_fields, 1);
+    state->Set_type = make_type("Set", state->expr_type, Set_fields, 1,
+        "Set(expr* elts)");
     if (!state->Set_type) return 0;
     state->ListComp_type = make_type("ListComp", state->expr_type,
-                                     ListComp_fields, 2);
+                                     ListComp_fields, 2,
+        "ListComp(expr elt, comprehension* generators)");
     if (!state->ListComp_type) return 0;
     state->SetComp_type = make_type("SetComp", state->expr_type,
-                                    SetComp_fields, 2);
+                                    SetComp_fields, 2,
+        "SetComp(expr elt, comprehension* generators)");
     if (!state->SetComp_type) return 0;
     state->DictComp_type = make_type("DictComp", state->expr_type,
-                                     DictComp_fields, 3);
+                                     DictComp_fields, 3,
+        "DictComp(expr key, expr value, comprehension* generators)");
     if (!state->DictComp_type) return 0;
     state->GeneratorExp_type = make_type("GeneratorExp", state->expr_type,
-                                         GeneratorExp_fields, 2);
+                                         GeneratorExp_fields, 2,
+        "GeneratorExp(expr elt, comprehension* generators)");
     if (!state->GeneratorExp_type) return 0;
-    state->Await_type = make_type("Await", state->expr_type, Await_fields, 1);
+    state->Await_type = make_type("Await", state->expr_type, Await_fields, 1,
+        "Await(expr value)");
     if (!state->Await_type) return 0;
-    state->Yield_type = make_type("Yield", state->expr_type, Yield_fields, 1);
+    state->Yield_type = make_type("Yield", state->expr_type, Yield_fields, 1,
+        "Yield(expr? value)");
     if (!state->Yield_type) return 0;
     if (PyObject_SetAttr(state->Yield_type, state->value, Py_None) == -1)
         return 0;
     state->YieldFrom_type = make_type("YieldFrom", state->expr_type,
-                                      YieldFrom_fields, 1);
+                                      YieldFrom_fields, 1,
+        "YieldFrom(expr value)");
     if (!state->YieldFrom_type) return 0;
     state->Compare_type = make_type("Compare", state->expr_type,
-                                    Compare_fields, 3);
+                                    Compare_fields, 3,
+        "Compare(expr left, cmpop* ops, expr* comparators)");
     if (!state->Compare_type) return 0;
-    state->Call_type = make_type("Call", state->expr_type, Call_fields, 3);
+    state->Call_type = make_type("Call", state->expr_type, Call_fields, 3,
+        "Call(expr func, expr* args, keyword* keywords)");
     if (!state->Call_type) return 0;
     state->FormattedValue_type = make_type("FormattedValue", state->expr_type,
-                                           FormattedValue_fields, 3);
+                                           FormattedValue_fields, 3,
+        "FormattedValue(expr value, int? conversion, expr? format_spec)");
     if (!state->FormattedValue_type) return 0;
     if (PyObject_SetAttr(state->FormattedValue_type, state->conversion,
         Py_None) == -1)
@@ -1587,29 +1687,38 @@ static int init_types(void)
         Py_None) == -1)
         return 0;
     state->JoinedStr_type = make_type("JoinedStr", state->expr_type,
-                                      JoinedStr_fields, 1);
+                                      JoinedStr_fields, 1,
+        "JoinedStr(expr* values)");
     if (!state->JoinedStr_type) return 0;
     state->Constant_type = make_type("Constant", state->expr_type,
-                                     Constant_fields, 2);
+                                     Constant_fields, 2,
+        "Constant(constant value, string? kind)");
     if (!state->Constant_type) return 0;
     if (PyObject_SetAttr(state->Constant_type, state->kind, Py_None) == -1)
         return 0;
     state->Attribute_type = make_type("Attribute", state->expr_type,
-                                      Attribute_fields, 3);
+                                      Attribute_fields, 3,
+        "Attribute(expr value, identifier attr, expr_context ctx)");
     if (!state->Attribute_type) return 0;
     state->Subscript_type = make_type("Subscript", state->expr_type,
-                                      Subscript_fields, 3);
+                                      Subscript_fields, 3,
+        "Subscript(expr value, expr slice, expr_context ctx)");
     if (!state->Subscript_type) return 0;
     state->Starred_type = make_type("Starred", state->expr_type,
-                                    Starred_fields, 2);
+                                    Starred_fields, 2,
+        "Starred(expr value, expr_context ctx)");
     if (!state->Starred_type) return 0;
-    state->Name_type = make_type("Name", state->expr_type, Name_fields, 2);
+    state->Name_type = make_type("Name", state->expr_type, Name_fields, 2,
+        "Name(identifier id, expr_context ctx)");
     if (!state->Name_type) return 0;
-    state->List_type = make_type("List", state->expr_type, List_fields, 2);
+    state->List_type = make_type("List", state->expr_type, List_fields, 2,
+        "List(expr* elts, expr_context ctx)");
     if (!state->List_type) return 0;
-    state->Tuple_type = make_type("Tuple", state->expr_type, Tuple_fields, 2);
+    state->Tuple_type = make_type("Tuple", state->expr_type, Tuple_fields, 2,
+        "Tuple(expr* elts, expr_context ctx)");
     if (!state->Tuple_type) return 0;
-    state->Slice_type = make_type("Slice", state->expr_type, Slice_fields, 3);
+    state->Slice_type = make_type("Slice", state->expr_type, Slice_fields, 3,
+        "Slice(expr? lower, expr? upper, expr? step)");
     if (!state->Slice_type) return 0;
     if (PyObject_SetAttr(state->Slice_type, state->lower, Py_None) == -1)
         return 0;
@@ -1618,208 +1727,249 @@ static int init_types(void)
     if (PyObject_SetAttr(state->Slice_type, state->step, Py_None) == -1)
         return 0;
     state->expr_context_type = make_type("expr_context", state->AST_type, NULL,
-                                         0);
+                                         0,
+        "expr_context = Load | Store | Del | AugLoad | AugStore");
     if (!state->expr_context_type) return 0;
     if (!add_attributes(state->expr_context_type, NULL, 0)) return 0;
-    state->Load_type = make_type("Load", state->expr_context_type, NULL, 0);
+    state->Load_type = make_type("Load", state->expr_context_type, NULL, 0,
+        "Load");
     if (!state->Load_type) return 0;
     state->Load_singleton = PyType_GenericNew((PyTypeObject *)state->Load_type,
                                               NULL, NULL);
     if (!state->Load_singleton) return 0;
-    state->Store_type = make_type("Store", state->expr_context_type, NULL, 0);
+    state->Store_type = make_type("Store", state->expr_context_type, NULL, 0,
+        "Store");
     if (!state->Store_type) return 0;
     state->Store_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->Store_type, NULL, NULL);
     if (!state->Store_singleton) return 0;
-    state->Del_type = make_type("Del", state->expr_context_type, NULL, 0);
+    state->Del_type = make_type("Del", state->expr_context_type, NULL, 0,
+        "Del");
     if (!state->Del_type) return 0;
     state->Del_singleton = PyType_GenericNew((PyTypeObject *)state->Del_type,
                                              NULL, NULL);
     if (!state->Del_singleton) return 0;
     state->AugLoad_type = make_type("AugLoad", state->expr_context_type, NULL,
-                                    0);
+                                    0,
+        "AugLoad");
     if (!state->AugLoad_type) return 0;
     state->AugLoad_singleton = PyType_GenericNew((PyTypeObject
                                                  *)state->AugLoad_type, NULL,
                                                  NULL);
     if (!state->AugLoad_singleton) return 0;
     state->AugStore_type = make_type("AugStore", state->expr_context_type,
-                                     NULL, 0);
+                                     NULL, 0,
+        "AugStore");
     if (!state->AugStore_type) return 0;
     state->AugStore_singleton = PyType_GenericNew((PyTypeObject
                                                   *)state->AugStore_type, NULL,
                                                   NULL);
     if (!state->AugStore_singleton) return 0;
-    state->boolop_type = make_type("boolop", state->AST_type, NULL, 0);
+    state->boolop_type = make_type("boolop", state->AST_type, NULL, 0,
+        "boolop = And | Or");
     if (!state->boolop_type) return 0;
     if (!add_attributes(state->boolop_type, NULL, 0)) return 0;
-    state->And_type = make_type("And", state->boolop_type, NULL, 0);
+    state->And_type = make_type("And", state->boolop_type, NULL, 0,
+        "And");
     if (!state->And_type) return 0;
     state->And_singleton = PyType_GenericNew((PyTypeObject *)state->And_type,
                                              NULL, NULL);
     if (!state->And_singleton) return 0;
-    state->Or_type = make_type("Or", state->boolop_type, NULL, 0);
+    state->Or_type = make_type("Or", state->boolop_type, NULL, 0,
+        "Or");
     if (!state->Or_type) return 0;
     state->Or_singleton = PyType_GenericNew((PyTypeObject *)state->Or_type,
                                             NULL, NULL);
     if (!state->Or_singleton) return 0;
-    state->operator_type = make_type("operator", state->AST_type, NULL, 0);
+    state->operator_type = make_type("operator", state->AST_type, NULL, 0,
+        "operator = Add | Sub | Mult | MatMult | Div | Mod | Pow | LShift | RShift | BitOr | BitXor | BitAnd | FloorDiv");
     if (!state->operator_type) return 0;
     if (!add_attributes(state->operator_type, NULL, 0)) return 0;
-    state->Add_type = make_type("Add", state->operator_type, NULL, 0);
+    state->Add_type = make_type("Add", state->operator_type, NULL, 0,
+        "Add");
     if (!state->Add_type) return 0;
     state->Add_singleton = PyType_GenericNew((PyTypeObject *)state->Add_type,
                                              NULL, NULL);
     if (!state->Add_singleton) return 0;
-    state->Sub_type = make_type("Sub", state->operator_type, NULL, 0);
+    state->Sub_type = make_type("Sub", state->operator_type, NULL, 0,
+        "Sub");
     if (!state->Sub_type) return 0;
     state->Sub_singleton = PyType_GenericNew((PyTypeObject *)state->Sub_type,
                                              NULL, NULL);
     if (!state->Sub_singleton) return 0;
-    state->Mult_type = make_type("Mult", state->operator_type, NULL, 0);
+    state->Mult_type = make_type("Mult", state->operator_type, NULL, 0,
+        "Mult");
     if (!state->Mult_type) return 0;
     state->Mult_singleton = PyType_GenericNew((PyTypeObject *)state->Mult_type,
                                               NULL, NULL);
     if (!state->Mult_singleton) return 0;
-    state->MatMult_type = make_type("MatMult", state->operator_type, NULL, 0);
+    state->MatMult_type = make_type("MatMult", state->operator_type, NULL, 0,
+        "MatMult");
     if (!state->MatMult_type) return 0;
     state->MatMult_singleton = PyType_GenericNew((PyTypeObject
                                                  *)state->MatMult_type, NULL,
                                                  NULL);
     if (!state->MatMult_singleton) return 0;
-    state->Div_type = make_type("Div", state->operator_type, NULL, 0);
+    state->Div_type = make_type("Div", state->operator_type, NULL, 0,
+        "Div");
     if (!state->Div_type) return 0;
     state->Div_singleton = PyType_GenericNew((PyTypeObject *)state->Div_type,
                                              NULL, NULL);
     if (!state->Div_singleton) return 0;
-    state->Mod_type = make_type("Mod", state->operator_type, NULL, 0);
+    state->Mod_type = make_type("Mod", state->operator_type, NULL, 0,
+        "Mod");
     if (!state->Mod_type) return 0;
     state->Mod_singleton = PyType_GenericNew((PyTypeObject *)state->Mod_type,
                                              NULL, NULL);
     if (!state->Mod_singleton) return 0;
-    state->Pow_type = make_type("Pow", state->operator_type, NULL, 0);
+    state->Pow_type = make_type("Pow", state->operator_type, NULL, 0,
+        "Pow");
     if (!state->Pow_type) return 0;
     state->Pow_singleton = PyType_GenericNew((PyTypeObject *)state->Pow_type,
                                              NULL, NULL);
     if (!state->Pow_singleton) return 0;
-    state->LShift_type = make_type("LShift", state->operator_type, NULL, 0);
+    state->LShift_type = make_type("LShift", state->operator_type, NULL, 0,
+        "LShift");
     if (!state->LShift_type) return 0;
     state->LShift_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->LShift_type, NULL,
                                                 NULL);
     if (!state->LShift_singleton) return 0;
-    state->RShift_type = make_type("RShift", state->operator_type, NULL, 0);
+    state->RShift_type = make_type("RShift", state->operator_type, NULL, 0,
+        "RShift");
     if (!state->RShift_type) return 0;
     state->RShift_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->RShift_type, NULL,
                                                 NULL);
     if (!state->RShift_singleton) return 0;
-    state->BitOr_type = make_type("BitOr", state->operator_type, NULL, 0);
+    state->BitOr_type = make_type("BitOr", state->operator_type, NULL, 0,
+        "BitOr");
     if (!state->BitOr_type) return 0;
     state->BitOr_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->BitOr_type, NULL, NULL);
     if (!state->BitOr_singleton) return 0;
-    state->BitXor_type = make_type("BitXor", state->operator_type, NULL, 0);
+    state->BitXor_type = make_type("BitXor", state->operator_type, NULL, 0,
+        "BitXor");
     if (!state->BitXor_type) return 0;
     state->BitXor_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->BitXor_type, NULL,
                                                 NULL);
     if (!state->BitXor_singleton) return 0;
-    state->BitAnd_type = make_type("BitAnd", state->operator_type, NULL, 0);
+    state->BitAnd_type = make_type("BitAnd", state->operator_type, NULL, 0,
+        "BitAnd");
     if (!state->BitAnd_type) return 0;
     state->BitAnd_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->BitAnd_type, NULL,
                                                 NULL);
     if (!state->BitAnd_singleton) return 0;
-    state->FloorDiv_type = make_type("FloorDiv", state->operator_type, NULL, 0);
+    state->FloorDiv_type = make_type("FloorDiv", state->operator_type, NULL, 0,
+        "FloorDiv");
     if (!state->FloorDiv_type) return 0;
     state->FloorDiv_singleton = PyType_GenericNew((PyTypeObject
                                                   *)state->FloorDiv_type, NULL,
                                                   NULL);
     if (!state->FloorDiv_singleton) return 0;
-    state->unaryop_type = make_type("unaryop", state->AST_type, NULL, 0);
+    state->unaryop_type = make_type("unaryop", state->AST_type, NULL, 0,
+        "unaryop = Invert | Not | UAdd | USub");
     if (!state->unaryop_type) return 0;
     if (!add_attributes(state->unaryop_type, NULL, 0)) return 0;
-    state->Invert_type = make_type("Invert", state->unaryop_type, NULL, 0);
+    state->Invert_type = make_type("Invert", state->unaryop_type, NULL, 0,
+        "Invert");
     if (!state->Invert_type) return 0;
     state->Invert_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->Invert_type, NULL,
                                                 NULL);
     if (!state->Invert_singleton) return 0;
-    state->Not_type = make_type("Not", state->unaryop_type, NULL, 0);
+    state->Not_type = make_type("Not", state->unaryop_type, NULL, 0,
+        "Not");
     if (!state->Not_type) return 0;
     state->Not_singleton = PyType_GenericNew((PyTypeObject *)state->Not_type,
                                              NULL, NULL);
     if (!state->Not_singleton) return 0;
-    state->UAdd_type = make_type("UAdd", state->unaryop_type, NULL, 0);
+    state->UAdd_type = make_type("UAdd", state->unaryop_type, NULL, 0,
+        "UAdd");
     if (!state->UAdd_type) return 0;
     state->UAdd_singleton = PyType_GenericNew((PyTypeObject *)state->UAdd_type,
                                               NULL, NULL);
     if (!state->UAdd_singleton) return 0;
-    state->USub_type = make_type("USub", state->unaryop_type, NULL, 0);
+    state->USub_type = make_type("USub", state->unaryop_type, NULL, 0,
+        "USub");
     if (!state->USub_type) return 0;
     state->USub_singleton = PyType_GenericNew((PyTypeObject *)state->USub_type,
                                               NULL, NULL);
     if (!state->USub_singleton) return 0;
-    state->cmpop_type = make_type("cmpop", state->AST_type, NULL, 0);
+    state->cmpop_type = make_type("cmpop", state->AST_type, NULL, 0,
+        "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn");
     if (!state->cmpop_type) return 0;
     if (!add_attributes(state->cmpop_type, NULL, 0)) return 0;
-    state->Eq_type = make_type("Eq", state->cmpop_type, NULL, 0);
+    state->Eq_type = make_type("Eq", state->cmpop_type, NULL, 0,
+        "Eq");
     if (!state->Eq_type) return 0;
     state->Eq_singleton = PyType_GenericNew((PyTypeObject *)state->Eq_type,
                                             NULL, NULL);
     if (!state->Eq_singleton) return 0;
-    state->NotEq_type = make_type("NotEq", state->cmpop_type, NULL, 0);
+    state->NotEq_type = make_type("NotEq", state->cmpop_type, NULL, 0,
+        "NotEq");
     if (!state->NotEq_type) return 0;
     state->NotEq_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->NotEq_type, NULL, NULL);
     if (!state->NotEq_singleton) return 0;
-    state->Lt_type = make_type("Lt", state->cmpop_type, NULL, 0);
+    state->Lt_type = make_type("Lt", state->cmpop_type, NULL, 0,
+        "Lt");
     if (!state->Lt_type) return 0;
     state->Lt_singleton = PyType_GenericNew((PyTypeObject *)state->Lt_type,
                                             NULL, NULL);
     if (!state->Lt_singleton) return 0;
-    state->LtE_type = make_type("LtE", state->cmpop_type, NULL, 0);
+    state->LtE_type = make_type("LtE", state->cmpop_type, NULL, 0,
+        "LtE");
     if (!state->LtE_type) return 0;
     state->LtE_singleton = PyType_GenericNew((PyTypeObject *)state->LtE_type,
                                              NULL, NULL);
     if (!state->LtE_singleton) return 0;
-    state->Gt_type = make_type("Gt", state->cmpop_type, NULL, 0);
+    state->Gt_type = make_type("Gt", state->cmpop_type, NULL, 0,
+        "Gt");
     if (!state->Gt_type) return 0;
     state->Gt_singleton = PyType_GenericNew((PyTypeObject *)state->Gt_type,
                                             NULL, NULL);
     if (!state->Gt_singleton) return 0;
-    state->GtE_type = make_type("GtE", state->cmpop_type, NULL, 0);
+    state->GtE_type = make_type("GtE", state->cmpop_type, NULL, 0,
+        "GtE");
     if (!state->GtE_type) return 0;
     state->GtE_singleton = PyType_GenericNew((PyTypeObject *)state->GtE_type,
                                              NULL, NULL);
     if (!state->GtE_singleton) return 0;
-    state->Is_type = make_type("Is", state->cmpop_type, NULL, 0);
+    state->Is_type = make_type("Is", state->cmpop_type, NULL, 0,
+        "Is");
     if (!state->Is_type) return 0;
     state->Is_singleton = PyType_GenericNew((PyTypeObject *)state->Is_type,
                                             NULL, NULL);
     if (!state->Is_singleton) return 0;
-    state->IsNot_type = make_type("IsNot", state->cmpop_type, NULL, 0);
+    state->IsNot_type = make_type("IsNot", state->cmpop_type, NULL, 0,
+        "IsNot");
     if (!state->IsNot_type) return 0;
     state->IsNot_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->IsNot_type, NULL, NULL);
     if (!state->IsNot_singleton) return 0;
-    state->In_type = make_type("In", state->cmpop_type, NULL, 0);
+    state->In_type = make_type("In", state->cmpop_type, NULL, 0,
+        "In");
     if (!state->In_type) return 0;
     state->In_singleton = PyType_GenericNew((PyTypeObject *)state->In_type,
                                             NULL, NULL);
     if (!state->In_singleton) return 0;
-    state->NotIn_type = make_type("NotIn", state->cmpop_type, NULL, 0);
+    state->NotIn_type = make_type("NotIn", state->cmpop_type, NULL, 0,
+        "NotIn");
     if (!state->NotIn_type) return 0;
     state->NotIn_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->NotIn_type, NULL, NULL);
     if (!state->NotIn_singleton) return 0;
     state->comprehension_type = make_type("comprehension", state->AST_type,
-                                          comprehension_fields, 4);
+                                          comprehension_fields, 4,
+        "comprehension(expr target, expr iter, expr* ifs, int is_async)");
     if (!state->comprehension_type) return 0;
     if (!add_attributes(state->comprehension_type, NULL, 0)) return 0;
     state->excepthandler_type = make_type("excepthandler", state->AST_type,
-                                          NULL, 0);
+                                          NULL, 0,
+        "excepthandler = ExceptHandler(expr? type, identifier? name, stmt* body)");
     if (!state->excepthandler_type) return 0;
     if (!add_attributes(state->excepthandler_type, excepthandler_attributes,
         4)) return 0;
@@ -1831,21 +1981,24 @@ static int init_types(void)
         return 0;
     state->ExceptHandler_type = make_type("ExceptHandler",
                                           state->excepthandler_type,
-                                          ExceptHandler_fields, 3);
+                                          ExceptHandler_fields, 3,
+        "ExceptHandler(expr? type, identifier? name, stmt* body)");
     if (!state->ExceptHandler_type) return 0;
     if (PyObject_SetAttr(state->ExceptHandler_type, state->type, Py_None) == -1)
         return 0;
     if (PyObject_SetAttr(state->ExceptHandler_type, state->name, Py_None) == -1)
         return 0;
     state->arguments_type = make_type("arguments", state->AST_type,
-                                      arguments_fields, 7);
+                                      arguments_fields, 7,
+        "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults, arg? kwarg, expr* defaults)");
     if (!state->arguments_type) return 0;
     if (!add_attributes(state->arguments_type, NULL, 0)) return 0;
     if (PyObject_SetAttr(state->arguments_type, state->vararg, Py_None) == -1)
         return 0;
     if (PyObject_SetAttr(state->arguments_type, state->kwarg, Py_None) == -1)
         return 0;
-    state->arg_type = make_type("arg", state->AST_type, arg_fields, 3);
+    state->arg_type = make_type("arg", state->AST_type, arg_fields, 3,
+        "arg(identifier arg, expr? annotation, string? type_comment)");
     if (!state->arg_type) return 0;
     if (!add_attributes(state->arg_type, arg_attributes, 4)) return 0;
     if (PyObject_SetAttr(state->arg_type, state->annotation, Py_None) == -1)
@@ -1857,29 +2010,33 @@ static int init_types(void)
     if (PyObject_SetAttr(state->arg_type, state->end_col_offset, Py_None) == -1)
         return 0;
     state->keyword_type = make_type("keyword", state->AST_type, keyword_fields,
-                                    2);
+                                    2,
+        "keyword(identifier? arg, expr value)");
     if (!state->keyword_type) return 0;
     if (!add_attributes(state->keyword_type, NULL, 0)) return 0;
     if (PyObject_SetAttr(state->keyword_type, state->arg, Py_None) == -1)
         return 0;
-    state->alias_type = make_type("alias", state->AST_type, alias_fields, 2);
+    state->alias_type = make_type("alias", state->AST_type, alias_fields, 2,
+        "alias(identifier name, identifier? asname)");
     if (!state->alias_type) return 0;
     if (!add_attributes(state->alias_type, NULL, 0)) return 0;
     if (PyObject_SetAttr(state->alias_type, state->asname, Py_None) == -1)
         return 0;
     state->withitem_type = make_type("withitem", state->AST_type,
-                                     withitem_fields, 2);
+                                     withitem_fields, 2,
+        "withitem(expr context_expr, expr? optional_vars)");
     if (!state->withitem_type) return 0;
     if (!add_attributes(state->withitem_type, NULL, 0)) return 0;
     if (PyObject_SetAttr(state->withitem_type, state->optional_vars, Py_None)
         == -1)
         return 0;
-    state->type_ignore_type = make_type("type_ignore", state->AST_type, NULL,
-                                        0);
+    state->type_ignore_type = make_type("type_ignore", state->AST_type, NULL, 0,
+        "type_ignore = TypeIgnore(int lineno, string tag)");
     if (!state->type_ignore_type) return 0;
     if (!add_attributes(state->type_ignore_type, NULL, 0)) return 0;
     state->TypeIgnore_type = make_type("TypeIgnore", state->type_ignore_type,
-                                       TypeIgnore_fields, 2);
+                                       TypeIgnore_fields, 2,
+        "TypeIgnore(int lineno, string tag)");
     if (!state->TypeIgnore_type) return 0;
     state->initialized = 1;
     return 1;
