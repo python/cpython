@@ -1439,9 +1439,12 @@ class TestAddressAndGroup(TestEmailBase):
 
     def test_crlf_in_constructor_args_raises(self):
         cases = (
-            dict(display_name='example.com\r'),
-            dict(display_name='example.com\n'),
-            dict(display_name='example.com\r\n'),
+            dict(display_name='foo\r'),
+            dict(display_name='foo\n'),
+            dict(display_name='foo\r\n'),
+            dict(domain='example.com\r'),
+            dict(domain='example.com\n'),
+            dict(domain='example.com\r\n'),
             dict(username='wok\r'),
             dict(username='wok\n'),
             dict(username='wok\r\n'),
