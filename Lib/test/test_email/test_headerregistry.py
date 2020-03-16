@@ -1437,17 +1437,21 @@ class TestAddressAndGroup(TestEmailBase):
     #    with self.assertRaises(ValueError):
     #        Address('foo', 'wők', 'example.com')
 
-    def test_crlf_in_display_name_raises(self):
-        with self.assertRaisesRegex(ValueError, "invalid address"):
-            Address(display_name='example.com\r\n')
-
-    def test_crlf_in_username_raises(self):
-        with self.assertRaisesRegex(ValueError, "invalid address"):
-            Address(username='hello\r\n')
-
-    def test_crlf_in_domain_raises(self):
-        with self.assertRaisesRegex(ValueError, "invalid address"):
-            Address(domain='example.com\r\n')
+    def test_crlf_in_constructor_args_raises(self):
+        cases = (
+            dict(display_name='example.com\r'),
+            dict(display_name='example.com\n'),
+            dict(display_name='example.com\r\n'),
+            dict(username='wok\r'),
+            dict(username='wok\n'),
+            dict(username='wok\r\n'),
+            dict(addr_spec='wok@example.com\r'),
+            dict(addr_spec='wok@example.com\n'),
+            dict(addr_spec='wok@example.com\r\n')
+        )
+        for kwargs in cases:
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "invalid inputs"):
+                Address(**kwargs)
 
     def test_non_ascii_username_in_addr_spec_raises(self):
         with self.assertRaises(ValueError):

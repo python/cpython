@@ -31,6 +31,11 @@ class Address:
         without any Content Transfer Encoding.
 
         """
+
+        inputs = ''.join(filter(None, (display_name, username, domain, addr_spec)))
+        if '\r' in inputs or '\n' in inputs:
+            raise ValueError("invalid inputs; address parts cannot contain CR / LF")
+
         # This clause with its potential 'raise' may only happen when an
         # application program creates an Address object using an addr_spec
         # keyword.  The email library code itself must always supply username
@@ -48,11 +53,6 @@ class Address:
                 raise a_s.all_defects[0]
             username = a_s.local_part
             domain = a_s.domain
-        else:
-            self._validate_part(username)
-            self._validate_part(domain)
-
-        self._validate_part(display_name)
 
         self._display_name = display_name
         self._username = username
@@ -104,11 +104,6 @@ class Address:
         return (self.display_name == other.display_name and
                 self.username == other.username and
                 self.domain == other.domain)
-
-    def _validate_part(self, value):
-        """Parts cannot contain CRLF for security reasons."""
-        if '\r\n' in value:
-            raise ValueError("invalid address; address parts cannot contain CRLF")
 
 class Group:
 
