@@ -31,7 +31,7 @@ mailserver supports IMAP, you would be better off using the
 The :mod:`poplib` module provides two classes:
 
 
-.. class:: POP3(host, port=POP3_PORT, timeout=socket._GLOBAL_DEFAULT_TIMEOUT)
+.. class:: POP3(host, port=POP3_PORT[, timeout])
 
    This class implements the actual POP3 protocol.  The connection is created when
    the instance is initialized. If *port* is omitted, the standard POP3 port (110)
