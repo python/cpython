@@ -1,0 +1,2 @@
+Update language reference to specify that dict is insertion-ordered.
+Patch by Furkan Önder.
