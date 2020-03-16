@@ -715,7 +715,7 @@ class PriorityQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
 
 
 class QueueLoopTests:
-    """Tests the deprecation of creating asyncio objects outside of a
+    """Tests the deprecation of creating asyncio objects outside a
     running event loop."""
 
     def setUp(self):
