@@ -4686,6 +4686,7 @@ void
 PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 {
     if (PySys_Audit("sys.setprofile", NULL) < 0) {
+        _PyErr_WriteUnraisableMsg("in PyEval_SetProfile", NULL);
         return;
     }
 
@@ -4707,6 +4708,7 @@ void
 PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 {
     if (PySys_Audit("sys.settrace", NULL) < 0) {
+        _PyErr_WriteUnraisableMsg("in PyEval_SetTrace", NULL);
         return;
     }
 
