@@ -436,6 +436,11 @@ Mappings
       additional examples of mapping types, as does the :mod:`collections`
       module.
 
+      .. versionchanged:: 3.7
+         Dictionary order is guaranteed to be insertion order. Note that updating a key
+         does not affect the order. Keys added after deletion are inserted at the end.
+         This behavior was an implementation detail of CPython from 3.6.
+
 Callable types
    .. index::
       object: callable
