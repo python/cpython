@@ -713,9 +713,9 @@ tuple_vectorcall(PyObject *type, PyObject * const*args,
         PyErr_Format(PyExc_TypeError, "tuple() takes no keyword arguments");
         return NULL;
     }
+
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (nargs > 1) {
-        PyErr_Format(PyExc_TypeError, "tuple() expected at most 1 argument, got %zd", nargs);
+    if (!_PyArg_CheckPositional("tuple", nargs, 0, 1)) {
         return NULL;
     }
 
