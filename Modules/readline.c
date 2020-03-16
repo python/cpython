@@ -87,7 +87,7 @@ typedef struct {
 } readlinestate;
 
 static inline readlinestate*
-get_readline_state(PyModule *module)
+get_readline_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
     assert(state != NULL);
