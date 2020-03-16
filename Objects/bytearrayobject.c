@@ -1239,7 +1239,7 @@ bytearray_cutsuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
 
     if (self_len >= suffix_len
         && memcmp(self_start + self_len - suffix_len,
-            suffix_start, suffix_len) == 0)
+                  suffix_start, suffix_len) == 0)
     {
         return PyByteArray_FromStringAndSize(self_start,
                                              self_len - suffix_len);

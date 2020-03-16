@@ -2234,9 +2234,9 @@ static PyObject *
 bytes_cutsuffix_impl(PyBytesObject *self, Py_buffer *suffix)
 /*[clinic end generated code: output=303549ce0a999724 input=5e4ee249c40f7bf6]*/
 {
-    const char* self_start = PyBytes_AS_STRING(self);
+    const char *self_start = PyBytes_AS_STRING(self);
     Py_ssize_t self_len = PyBytes_GET_SIZE(self);
-    const char* suffix_start = suffix->buf;
+    const char *suffix_start = suffix->buf;
     Py_ssize_t suffix_len = suffix->len;
 
     if (self_len >= suffix_len
