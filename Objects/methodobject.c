@@ -2,6 +2,7 @@
 /* Method object implementation */
 
 #include "Python.h"
+#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pymem.h"
@@ -56,7 +57,8 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
             vectorcall = cfunction_vectorcall_O;
             break;
         default:
-            PyErr_SetString(PyExc_SystemError, "bad call flags");
+            PyErr_Format(PyExc_SystemError,
+                         "%s() method: bad call flags", ml->ml_name);
             return NULL;
     }
 
@@ -222,7 +224,7 @@ static PyGetSetDef meth_getsets [] = {
 #define OFF(x) offsetof(PyCFunctionObject, x)
 
 static PyMemberDef meth_members[] = {
-    {"__module__",    T_OBJECT,     OFF(m_module), PY_WRITE_RESTRICTED},
+    {"__module__",    T_OBJECT,     OFF(m_module), 0},
     {NULL}
 };
 

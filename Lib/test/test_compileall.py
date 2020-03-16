@@ -212,6 +212,47 @@ class CompileallTestsBase:
         compileall.compile_dir(self.directory, quiet=True, maxlevels=depth)
         self.assertTrue(os.path.isfile(pyc_filename))
 
+    def _test_ddir_only(self, *, ddir, parallel=True):
+        """Recursive compile_dir ddir must contain package paths; bpo39769."""
+        fullpath = ["test", "foo"]
+        path = self.directory
+        mods = []
+        for subdir in fullpath:
+            path = os.path.join(path, subdir)
+            os.mkdir(path)
+            script_helper.make_script(path, "__init__", "")
+            mods.append(script_helper.make_script(path, "mod",
+                                                  "def fn(): 1/0\nfn()\n"))
+        compileall.compile_dir(
+                self.directory, quiet=True, ddir=ddir,
+                workers=2 if parallel else 1)
+        self.assertTrue(mods)
+        for mod in mods:
+            self.assertTrue(mod.startswith(self.directory), mod)
+            modcode = importlib.util.cache_from_source(mod)
+            modpath = mod[len(self.directory+os.sep):]
+            _, _, err = script_helper.assert_python_failure(modcode)
+            expected_in = os.path.join(ddir, modpath)
+            mod_code_obj = test.test_importlib.util.get_code_from_pyc(modcode)
+            self.assertEqual(mod_code_obj.co_filename, expected_in)
+            self.assertIn(f'"{expected_in}"', os.fsdecode(err))
+
+    def test_ddir_only_one_worker(self):
+        """Recursive compile_dir ddir= contains package paths; bpo39769."""
+        return self._test_ddir_only(ddir="<a prefix>", parallel=False)
+
+    def test_ddir_multiple_workers(self):
+        """Recursive compile_dir ddir= contains package paths; bpo39769."""
+        return self._test_ddir_only(ddir="<a prefix>", parallel=True)
+
+    def test_ddir_empty_only_one_worker(self):
+        """Recursive compile_dir ddir='' contains package paths; bpo39769."""
+        return self._test_ddir_only(ddir="", parallel=False)
+
+    def test_ddir_empty_multiple_workers(self):
+        """Recursive compile_dir ddir='' contains package paths; bpo39769."""
+        return self._test_ddir_only(ddir="", parallel=True)
+
     def test_strip_only(self):
         fullpath = ["test", "build", "real", "path"]
         path = os.path.join(self.directory, *fullpath)

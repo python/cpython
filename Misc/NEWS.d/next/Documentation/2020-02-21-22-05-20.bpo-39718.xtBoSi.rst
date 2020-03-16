@@ -1,0 +1,1 @@
+Update :mod:`token` documentation to reflect additions in Python 3.8

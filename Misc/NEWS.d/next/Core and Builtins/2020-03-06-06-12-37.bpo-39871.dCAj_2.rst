@@ -1,0 +1,3 @@
+Fix a possible :exc:`SystemError` in ``math.{atan2,copysign,remainder}()``
+when the first argument cannot be converted to a :class:`float`. Patch by
+Zachary Spytz.

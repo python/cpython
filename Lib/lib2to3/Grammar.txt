@@ -49,7 +49,7 @@ pass_stmt: 'pass'
 flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt | yield_stmt
 break_stmt: 'break'
 continue_stmt: 'continue'
-return_stmt: 'return' [testlist]
+return_stmt: 'return' [testlist_star_expr]
 yield_stmt: yield_expr
 raise_stmt: 'raise' [test ['from' test | ',' test [',' test]]]
 import_stmt: import_name | import_from
@@ -151,4 +151,4 @@ testlist1: test (',' test)*
 encoding_decl: NAME
 
 yield_expr: 'yield' [yield_arg]
-yield_arg: 'from' test | testlist
+yield_arg: 'from' test | testlist_star_expr

@@ -388,6 +388,13 @@ Process Control
    function :c:func:`abort` is called which will attempt to produce a :file:`core`
    file.
 
+   The ``Py_FatalError()`` function is replaced with a macro which logs
+   automatically the name of the current function, unless the
+   ``Py_LIMITED_API`` macro is defined.
+
+   .. versionchanged:: 3.9
+      Log the function name automatically.
+
 
 .. c:function:: void Py_Exit(int status)
 

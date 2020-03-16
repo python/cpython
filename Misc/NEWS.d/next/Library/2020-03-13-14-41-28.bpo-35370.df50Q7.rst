@@ -1,0 +1,3 @@
+sys.settrace(), sys.setprofile() and _lsprof.Profiler.enable() now properly
+report :c:func:`PySys_Audit` error if "sys.setprofile" or "sys.settrace"
+audit event is denied.
