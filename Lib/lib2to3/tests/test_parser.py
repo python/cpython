@@ -253,6 +253,13 @@ class TestUnpackingGeneralizations(GrammarTest):
     def test_double_star_dict_literal_after_keywords(self):
         self.validate("""func(spam='fried', **{'eggs':'scrambled'})""")
 
+    def test_double_star_expression(self):
+        self.validate("""func(**{'a':2} or {})""")
+        self.validate("""func(**() or {})""")
+
+    def test_star_expression(self):
+        self.validate("""func(*[] or [2])""")
+
     def test_list_display(self):
         self.validate("""[*{2}, 3, *[4]]""")
 

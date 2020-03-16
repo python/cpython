@@ -685,7 +685,7 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.stat()
 
-   Return information about this path (similarly to :func:`os.stat`).
+   Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
    The result is looked up at each call to this method.
 
    ::
@@ -762,6 +762,8 @@ call fails (for example because the path doesn't exist).
    .. note::
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
+
+   .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
 
 .. method:: Path.group()
@@ -944,6 +946,19 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
+.. method:: Path.readlink()
+
+   Return the path to which the symbolic link points (as returned by
+   :func:`os.readlink`)::
+
+      >>> p = Path('mylink')
+      >>> p.symlink_to('setup.py')
+      >>> p.readlink()
+      PosixPath('setup.py')
+
+   .. versionadded:: 3.9
+
+
 .. method:: Path.rename(target)
 
    Rename this file or directory to the given *target*, and return a new Path
@@ -1011,6 +1026,8 @@ call fails (for example because the path doesn't exist).
        PosixPath('pathlib.py'),
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
+
+   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
 
 .. method:: Path.rmdir()
@@ -1153,6 +1170,7 @@ os and os.path                         pathlib
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`

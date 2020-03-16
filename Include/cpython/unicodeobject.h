@@ -746,12 +746,6 @@ PyAPI_FUNC(void*) _PyUnicode_AsKind(PyObject *s, unsigned int kind);
 
    _PyUnicode_AsStringAndSize is a #define for PyUnicode_AsUTF8AndSize to
    support the previous internal function with the same behaviour.
-
-   *** This API is for interpreter INTERNAL USE ONLY and will likely
-   *** be removed or changed in the future.
-
-   *** If you need to access the Unicode object as UTF-8 bytes string,
-   *** please use PyUnicode_AsUTF8String() instead.
 */
 
 PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(

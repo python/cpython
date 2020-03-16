@@ -219,11 +219,32 @@ class DictSetTest(unittest.TestCase):
         self.assertEqual(origin.keys() & iter([1, 2]), {1})
         self.assertEqual(origin.keys() | iter([1, 2]), {1, 2, 3})
         self.assertEqual(origin.keys() ^ iter([1, 2]), {2, 3})
+        self.assertEqual(origin.keys() - iter([1, 2]), {3})
 
         items = origin.items()
         self.assertEqual(items & iter([(1, 2)]), {(1, 2)})
         self.assertEqual(items ^ iter([(1, 2)]), {(3, 4)})
         self.assertEqual(items | iter([(1, 2)]), {(1, 2), (3, 4)})
+        self.assertEqual(items - iter([(1, 2)]), {(3, 4)})
+
+    def test_set_operations_with_noniterable(self):
+        with self.assertRaises(TypeError):
+            {}.keys() & 1
+        with self.assertRaises(TypeError):
+            {}.keys() | 1
+        with self.assertRaises(TypeError):
+            {}.keys() ^ 1
+        with self.assertRaises(TypeError):
+            {}.keys() - 1
+
+        with self.assertRaises(TypeError):
+            {}.items() & 1
+        with self.assertRaises(TypeError):
+            {}.items() | 1
+        with self.assertRaises(TypeError):
+            {}.items() ^ 1
+        with self.assertRaises(TypeError):
+            {}.items() - 1
 
     def test_recursive_repr(self):
         d = {}

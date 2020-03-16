@@ -1086,8 +1086,7 @@ need:
 |                                               | :func:`sys._getframe`, which may help  |
 |                                               | to speed up your code in environments  |
 |                                               | like PyPy (which can't speed up code   |
-|                                               | that uses :func:`sys._getframe`), if   |
-|                                               | and when PyPy supports Python 3.x.     |
+|                                               | that uses :func:`sys._getframe`).      |
 +-----------------------------------------------+----------------------------------------+
 | Threading information.                        | Set ``logging.logThreads`` to ``0``.   |
 +-----------------------------------------------+----------------------------------------+

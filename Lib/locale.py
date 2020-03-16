@@ -279,6 +279,8 @@ def currency(val, symbol=True, grouping=False, international=False):
         if precedes:
             s = smb + (separated and ' ' or '') + s
         else:
+            if international and smb[-1] == ' ':
+                smb = smb[:-1]
             s = s + (separated and ' ' or '') + smb
 
     sign_pos = conv[val<0 and 'n_sign_posn' or 'p_sign_posn']

@@ -26,9 +26,9 @@ _copy_raw_string(PyObject *strobj)
 static PyInterpreterState *
 _get_current(void)
 {
-    // _PyInterpreterState_Get() aborts if lookup fails, so don't need
+    // PyInterpreterState_Get() aborts if lookup fails, so don't need
     // to check the result for NULL.
-    return _PyInterpreterState_Get();
+    return PyInterpreterState_Get();
 }
 
 
@@ -221,8 +221,9 @@ _sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
     if (err->name == NULL) {
         if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
             failure = "out of memory copying exception type name";
+        } else {
+            failure = "unable to encode and copy exception type name";
         }
-        failure = "unable to encode and copy exception type name";
         goto finally;
     }
 
@@ -237,8 +238,9 @@ _sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
         if (err->msg == NULL) {
             if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
                 failure = "out of memory copying exception message";
+            } else {
+                failure = "unable to encode and copy exception message";
             }
-            failure = "unable to encode and copy exception message";
             goto finally;
         }
     }
@@ -1426,7 +1428,7 @@ channel_id_converter(PyObject *arg, void *ptr)
     else {
         PyErr_Format(PyExc_TypeError,
                      "channel ID must be an int, got %.100s",
-                     arg->ob_type->tp_name);
+                     Py_TYPE(arg)->tp_name);
         return 0;
     }
     *(int64_t *)ptr = cid;
@@ -1926,7 +1928,7 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
 
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
-    if (interp != _PyInterpreterState_Get()) {
+    if (interp != PyInterpreterState_Get()) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?
@@ -2056,7 +2058,6 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Destroy the interpreter.
-    //PyInterpreterState_Delete(interp);
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
     // XXX Possible GILState issues?
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);

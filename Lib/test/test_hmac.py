@@ -312,10 +312,15 @@ class TestVectorsTestCase(unittest.TestCase):
                 self.fail('Expected warning about small block_size')
 
     def test_with_digestmod_no_default(self):
-        with self.assertRaises(ValueError):
+        """The digestmod parameter is required as of Python 3.8."""
+        with self.assertRaisesRegex(TypeError, r'required.*digestmod'):
             key = b"\x0b" * 16
             data = b"Hi There"
             hmac.HMAC(key, data, digestmod=None)
+        with self.assertRaisesRegex(TypeError, r'required.*digestmod'):
+            hmac.new(key, data)
+        with self.assertRaisesRegex(TypeError, r'required.*digestmod'):
+            hmac.HMAC(key, msg=data, digestmod='')
 
 
 class ConstructorTestCase(unittest.TestCase):
@@ -362,7 +367,7 @@ class ConstructorTestCase(unittest.TestCase):
                           digestmod="sha256")
         except Exception:
             self.fail("Constructor call with bytearray arguments raised exception.")
-            self.assertEqual(h.hexdigest(), self.expected)
+        self.assertEqual(h.hexdigest(), self.expected)
 
     @requires_hashdigest('sha256')
     def test_with_memoryview_msg(self):
@@ -370,7 +375,7 @@ class ConstructorTestCase(unittest.TestCase):
             h = hmac.HMAC(b"key", memoryview(b"hash this!"), digestmod="sha256")
         except Exception:
             self.fail("Constructor call with memoryview msg raised exception.")
-            self.assertEqual(h.hexdigest(), self.expected)
+        self.assertEqual(h.hexdigest(), self.expected)
 
     @requires_hashdigest('sha256')
     def test_withmodule(self):

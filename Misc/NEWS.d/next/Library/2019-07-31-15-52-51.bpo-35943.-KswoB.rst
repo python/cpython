@@ -1,2 +1,0 @@
-The function :c:func:`PyImport_GetModule` now ensures any module it returns is fully initialized.
-Patch by Joannah Nanjekye.

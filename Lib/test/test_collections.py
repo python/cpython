@@ -2064,6 +2064,29 @@ class TestCounter(unittest.TestCase):
                 set_result = setop(set(p.elements()), set(q.elements()))
                 self.assertEqual(counter_result, dict.fromkeys(set_result, 1))
 
+    def test_subset_superset_not_implemented(self):
+        # Verify that multiset comparison operations are not implemented.
+
+        # These operations were intentionally omitted because multiset
+        # comparison semantics conflict with existing dict equality semantics.
+
+        # For multisets, we would expect that if p<=q and p>=q are both true,
+        # then p==q.  However, dict equality semantics require that p!=q when
+        # one of sets contains an element with a zero count and the other
+        # doesn't.
+
+        p = Counter(a=1, b=0)
+        q = Counter(a=1, c=0)
+        self.assertNotEqual(p, q)
+        with self.assertRaises(TypeError):
+            p < q
+        with self.assertRaises(TypeError):
+            p <= q
+        with self.assertRaises(TypeError):
+            p > q
+        with self.assertRaises(TypeError):
+            p >= q
+
     def test_inplace_operations(self):
         elements = 'abcd'
         for i in range(1000):

@@ -391,6 +391,26 @@ class ReferencesTestCase(TestBase):
         lyst = List()
         self.assertEqual(bool(weakref.proxy(lyst)), bool(lyst))
 
+    def test_proxy_iter(self):
+        # Test fails with a debug build of the interpreter
+        # (see bpo-38395).
+
+        obj = None
+
+        class MyObj:
+            def __iter__(self):
+                nonlocal obj
+                del obj
+                return NotImplemented
+
+        obj = MyObj()
+        p = weakref.proxy(obj)
+        with self.assertRaises(TypeError):
+            # "blech" in p calls MyObj.__iter__ through the proxy,
+            # without keeping a reference to the real object, so it
+            # can be killed in the middle of the call
+            "blech" in p
+
     def test_getweakrefcount(self):
         o = C()
         ref1 = weakref.ref(o)
@@ -629,7 +649,6 @@ class ReferencesTestCase(TestBase):
         del c1, c2, C, D
         gc.collect()
 
-    @support.requires_type_collecting
     def test_callback_in_cycle_resurrection(self):
         import gc
 

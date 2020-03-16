@@ -766,9 +766,9 @@ which incur interpreter overhead.
    def dotproduct(vec1, vec2):
        return sum(map(operator.mul, vec1, vec2))
 
-   def flatten(listOfLists):
+   def flatten(list_of_lists):
        "Flatten one level of nesting"
-       return chain.from_iterable(listOfLists)
+       return chain.from_iterable(list_of_lists)
 
    def repeatfunc(func, times=None, *args):
        """Repeat calls to func with specified arguments.

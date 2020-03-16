@@ -127,6 +127,7 @@ latex_elements['preamble'] = r'''
 }
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
+\setcounter{tocdepth}{2}
 '''
 
 # The paper size ('letter' or 'a4').

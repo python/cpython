@@ -1,0 +1,2 @@
+Updated :data:`os.environ` and :data:`os.environb` to support :pep:`584`'s
+merge (``|``) and update (``|=``) operators.
