@@ -2018,8 +2018,9 @@ static PyObject*
 set_vectorcall(PyObject *type, PyObject * const*args,
                size_t nargsf, PyObject *kwnames)
 {
-    if (kwnames && PyTuple_GET_SIZE(kwnames) != 0) {
-        PyErr_Format(PyExc_TypeError, "set() takes no keyword arguments");
+    assert(PyType_Check(type));
+
+    if (!_PyArg_NoKwnames("set", kwnames)) {
         return NULL;
     }
 
@@ -2027,8 +2028,6 @@ set_vectorcall(PyObject *type, PyObject * const*args,
     if (!_PyArg_CheckPositional("set", nargs, 0, 1)) {
         return NULL;
     }
-
-    assert(PyType_Check(type));
 
     if (nargs) {
         return make_new_set((PyTypeObject *)type, args[0]);
