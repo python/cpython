@@ -34,7 +34,7 @@ class Address:
 
         inputs = ''.join(filter(None, (display_name, username, domain, addr_spec)))
         if '\r' in inputs or '\n' in inputs:
-            raise ValueError("invalid inputs; address parts cannot contain CR / LF")
+            raise ValueError("invalid arguments; address parts cannot contain CR or LF")
 
         # This clause with its potential 'raise' may only happen when an
         # application program creates an Address object using an addr_spec

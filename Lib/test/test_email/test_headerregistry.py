@@ -1453,7 +1453,7 @@ class TestAddressAndGroup(TestEmailBase):
             dict(addr_spec='wok@example.com\r\n')
         )
         for kwargs in cases:
-            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "invalid inputs"):
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "invalid arguments"):
                 Address(**kwargs)
 
     def test_non_ascii_username_in_addr_spec_raises(self):
