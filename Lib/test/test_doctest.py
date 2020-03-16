@@ -2667,7 +2667,7 @@ Test the verbose output:
     >>> sys.argv = save_argv
 """
 
-class TestLoader(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
+class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
 
     def find_spec(self, fullname, path, target=None):
         return importlib.util.spec_from_file_location(fullname, path, loader=self)
@@ -2685,7 +2685,7 @@ class TestHook:
         sys.path.append(pathdir)
         sys.path_importer_cache.clear()
         self.modules_before = sys.modules.copy()
-        self.importer = TestLoader()
+        self.importer = TestImporter()
         sys.meta_path.append(self.importer)
 
     def remove(self):
