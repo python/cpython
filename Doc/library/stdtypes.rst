@@ -1574,7 +1574,7 @@ expression support in the :mod:`re` module).
       >>> 'BarFooBaz'.cutsuffix('Bar')
       'BarFooBaz'
 
-   The expression ``s.cutprefix(suf)`` is roughly equivalent to
+   The expression ``s.cutsuffix(suf)`` is roughly equivalent to
    ``s[:-len(suf)] if suf and s.endswith(suf) else s``.
    Unlike :meth:`~str.endswith`, only one suffix can be passed
    at a time.
