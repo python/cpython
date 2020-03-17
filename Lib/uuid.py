@@ -456,7 +456,10 @@ def _find_mac_under_heading(command, args, heading):
         try:
             words = line.rstrip().split()
             word = words[column_index]
-            if len(word) == 17:
+            # Accept 'HH:HH:HH:HH:HH:HH' MAC address (ex: '52:54:00:9d:0e:67'),
+            # but reject IPv6 address (ex: 'fe80::5054:ff:fe9') detected
+            # by '::' pattern.
+            if len(word) == 17 and b'::' not in word:
                 mac = int(word.replace(_MAC_DELIM, b''), 16)
             elif _MAC_OMITS_LEADING_ZEROES:
                 # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.

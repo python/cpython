@@ -23,6 +23,12 @@ def importable(name):
         return False
 
 
+def mock_get_command_stdout(data):
+    def get_command_stdout(command, args):
+        return io.BytesIO(data.encode())
+    return get_command_stdout
+
+
 class BaseTestUUID:
     uuid = None
 
@@ -673,7 +679,6 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 class BaseTestInternals:
     _uuid = py_uuid
 
-
     def test_find_under_heading(self):
         data = '''\
 Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
@@ -685,15 +690,12 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
                         224.0.0.1
 '''
 
-        def mock_get_command_stdout(command, args):
-            return io.BytesIO(data.encode())
-
         # The above data is from AIX - with '.' as _MAC_DELIM and strings
         # shorter than 17 bytes (no leading 0). (_MAC_OMITS_LEADING_ZEROES=True)
         with mock.patch.multiple(self.uuid,
                                  _MAC_DELIM=b'.',
                                  _MAC_OMITS_LEADING_ZEROES=True,
-                                 _get_command_stdout=mock_get_command_stdout):
+                                 _get_command_stdout=mock_get_command_stdout(data)):
             mac = self.uuid._find_mac_under_heading(
                 command='netstat',
                 args='-ian',
@@ -701,6 +703,43 @@ en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
             )
 
         self.assertEqual(mac, 0xfead0c012304)
+
+    def test_find_under_heading_ipv6(self):
+        # bpo-39991: IPv6 address "fe80::5054:ff:fe9" looks like a MAC address
+        # (same string length) but must be skipped
+        data = '''\
+Name    Mtu Network       Address              Ipkts Ierrs Idrop    Opkts Oerrs  Coll
+vtnet  1500 <Link#1>      52:54:00:9d:0e:67    10017     0     0     8174     0     0
+vtnet     - fe80::%vtnet0 fe80::5054:ff:fe9        0     -     -        4     -     -
+vtnet     - 192.168.122.0 192.168.122.45        8844     -     -     8171     -     -
+lo0   16384 <Link#2>      lo0                 260148     0     0   260148     0     0
+lo0       - ::1/128       ::1                    193     -     -      193     -     -
+                          ff01::1%lo0
+                          ff02::2:2eb7:74fa
+                          ff02::2:ff2e:b774
+                          ff02::1%lo0
+                          ff02::1:ff00:1%lo
+lo0       - fe80::%lo0/64 fe80::1%lo0              0     -     -        0     -     -
+                          ff01::1%lo0
+                          ff02::2:2eb7:74fa
+                          ff02::2:ff2e:b774
+                          ff02::1%lo0
+                          ff02::1:ff00:1%lo
+lo0       - 127.0.0.0/8   127.0.0.1           259955     -     -   259955     -     -
+                          224.0.0.1
+'''
+
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b':',
+                                 _MAC_OMITS_LEADING_ZEROES=False,
+                                 _get_command_stdout=mock_get_command_stdout(data)):
+            mac = self.uuid._find_mac_under_heading(
+                command='netstat',
+                args='-ian',
+                heading=b'Address',
+            )
+
+        self.assertEqual(mac, 0x5254009d0e67)
 
     def test_find_mac_near_keyword(self):
         # key and value are on the same line
@@ -710,14 +749,11 @@ cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
 
-        def mock_get_command_stdout(command, args):
-            return io.BytesIO(data.encode())
-
         # The above data will only be parsed properly on non-AIX unixes.
         with mock.patch.multiple(self.uuid,
                                  _MAC_DELIM=b':',
                                  _MAC_OMITS_LEADING_ZEROES=False,
-                                 _get_command_stdout=mock_get_command_stdout):
+                                 _get_command_stdout=mock_get_command_stdout(data)):
             mac = self.uuid._find_mac_near_keyword(
                 command='ifconfig',
                 args='',
