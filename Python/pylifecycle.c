@@ -548,7 +548,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
        another running thread (see issue #9901).
        Instead we destroy the previously created GIL here, which ensures
        that we can call Py_Initialize / Py_FinalizeEx multiple times. */
-    _PyEval_FiniThreads(&runtime->ceval);
+    _PyEval_FiniThreads(tstate);
 
     /* Auto-thread-state API */
     status = _PyGILState_Init(tstate);
