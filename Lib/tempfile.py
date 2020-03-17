@@ -749,10 +749,6 @@ class SpooledTemporaryFile:
     def seek(self, *args):
         self._file.seek(*args)
 
-    @property
-    def softspace(self):
-        return self._file.softspace
-
     def tell(self):
         return self._file.tell()
 
