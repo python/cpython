@@ -119,11 +119,9 @@ class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
         self.assertEqual(ast.dump(ast1), ast.dump(ast2))
 
-    def check_ast_roundtrip(self, code1, strip=True, **kwargs):
+    def check_ast_roundtrip(self, code1, **kwargs):
         ast1 = ast.parse(code1, **kwargs)
         code2 = ast.unparse(ast1)
-        if strip:
-            code2 = code2.strip()
         ast2 = ast.parse(code2, **kwargs)
         self.assertASTEqual(ast1, ast2)
 
@@ -337,6 +335,7 @@ class UnparseTestCase(ASTTestCase):
 
     def test_type_comments(self):
         for statement in (
+            "a = 5 # type:",
             "a = 5 # type: int",
             "a = 5 # type: int and more",
             "def x(): # type: () -> None\n\tpass",

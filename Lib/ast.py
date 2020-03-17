@@ -698,16 +698,15 @@ class _Unparser(NodeVisitor):
         return value
 
     @contextmanager
-    def block(self, node=None, *, append_type_comment = False):
+    def block(self, *, extra = None):
         """A context manager for preparing the source for blocks. It adds
         the character':', increases the indentation on enter and decreases
-        the indentation on exit. If *append_type_comment* is True, and *node*
-        is not None, this function will add given *node*'s type comment after
-        the colon character.
+        the indentation on exit. If *extra* is given, it will be directly
+        appended after the colon character.
         """
         self.write(":")
-        if append_type_comment and node:
-            self.append_type_comment(node)
+        if extra:
+            self.write(extra)
         self._indent += 1
         yield
         self._indent -= 1
@@ -754,17 +753,10 @@ class _Unparser(NodeVisitor):
         if isinstance(node, Constant) and isinstance(node.value, str):
             return node
 
-    def append_type_comment(self, node):
-        comment = None
-        ignore = self._type_ignores.get(node.lineno)
-
-        if ignore:
-            comment = f"ignore{ignore.tag}"
-        else:
-            comment = node.type_comment
-
-        if comment:
-            self.write(f" # type: {comment}")
+    def get_type_comment(self, node):
+        comment = self._type_ignores.get(node.lineno) or node.type_comment
+        if comment is not None:
+            return f" # type: {comment}"
 
     def traverse(self, node):
         if isinstance(node, list):
@@ -789,7 +781,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Module(self, node):
         self._type_ignores = {
-            ignore.lineno: ignore
+            ignore.lineno: f"ignore{ignore.tag}"
             for ignore in node.type_ignores
         }
         self._write_docstring_and_traverse_body(node)
@@ -834,7 +826,8 @@ class _Unparser(NodeVisitor):
             self.traverse(target)
             self.write(" = ")
         self.traverse(node.value)
-        self.append_type_comment(node)
+        if type_comment := self.get_type_comment(node):
+            self.write(type_comment)
 
     def visit_AugAssign(self, node):
         self.fill()
@@ -990,7 +983,7 @@ class _Unparser(NodeVisitor):
         if node.returns:
             self.write(" -> ")
             self.traverse(node.returns)
-        with self.block(node, append_type_comment=True):
+        with self.block(extra=self.get_type_comment(node)):
             self._write_docstring_and_traverse_body(node)
 
     def visit_For(self, node):
@@ -1004,7 +997,7 @@ class _Unparser(NodeVisitor):
         self.traverse(node.target)
         self.write(" in ")
         self.traverse(node.iter)
-        with self.block(node, append_type_comment=True):
+        with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
         if node.orelse:
             self.fill("else")
@@ -1042,13 +1035,13 @@ class _Unparser(NodeVisitor):
     def visit_With(self, node):
         self.fill("with ")
         self.interleave(lambda: self.write(", "), self.traverse, node.items)
-        with self.block(node, append_type_comment=True):
+        with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
 
     def visit_AsyncWith(self, node):
         self.fill("async with ")
         self.interleave(lambda: self.write(", "), self.traverse, node.items)
-        with self.block(node, append_type_comment=True):
+        with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
 
     def visit_JoinedStr(self, node):
