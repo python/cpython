@@ -638,26 +638,31 @@ Py_MakePendingCalls(void)
 int _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
 
 void
-_PyEval_Initialize(struct _ceval_runtime_state *state)
+_PyEval_InitializeRuntime(struct _ceval_runtime_state *ceval)
 {
-    state->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
     _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
-    _gil_initialize(&state->gil);
+    _gil_initialize(&ceval->gil);
+}
+
+void
+_PyEval_InitializeInterp(struct _ceval_state *ceval)
+{
+    ceval->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
 }
 
 int
 Py_GetRecursionLimit(void)
 {
-    struct _ceval_runtime_state *ceval = &_PyRuntime.ceval;
-    return ceval->recursion_limit;
+    PyThreadState *tstate = _PyThreadState_GET();
+    return tstate->interp->ceval.recursion_limit;
 }
 
 void
 Py_SetRecursionLimit(int new_limit)
 {
-    struct _ceval_runtime_state *ceval = &_PyRuntime.ceval;
-    ceval->recursion_limit = new_limit;
-    _Py_CheckRecursionLimit = ceval->recursion_limit;
+    PyThreadState *tstate = _PyThreadState_GET();
+    tstate->interp->ceval.recursion_limit = new_limit;
+    _Py_CheckRecursionLimit = new_limit;
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
@@ -668,8 +673,7 @@ Py_SetRecursionLimit(int new_limit)
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    int recursion_limit = runtime->ceval.recursion_limit;
+    int recursion_limit = tstate->interp->ceval.recursion_limit;
 
 #ifdef USE_STACKCHECK
     tstate->stackcheck_counter = 0;

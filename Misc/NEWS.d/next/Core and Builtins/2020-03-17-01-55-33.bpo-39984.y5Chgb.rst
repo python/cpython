@@ -1,0 +1,3 @@
+subinterpreters: Move ``_PyRuntimeState.ceval.recursion_limit`` to
+``PyInterpreterState.ceval.recursion_limit``: make the limit
+per-interpreter.
