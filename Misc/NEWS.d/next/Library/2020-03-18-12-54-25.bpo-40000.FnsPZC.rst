@@ -1,0 +1,2 @@
+Improved error messages for Constant node validation in AST. Patch by
+Batuhan Taskaya.

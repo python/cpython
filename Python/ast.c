@@ -111,6 +111,8 @@ validate_arguments(arguments_ty args)
 static int
 validate_constant(PyObject *value)
 {
+    PyObject *invalid_value = value;
+
     if (value == Py_None || value == Py_Ellipsis)
         return 1;
 
@@ -126,23 +128,25 @@ validate_constant(PyObject *value)
         PyObject *it;
 
         it = PyObject_GetIter(value);
-        if (it == NULL)
-            return 0;
+        if (it == NULL) {
+            goto invalid;
+        }
 
         while (1) {
             PyObject *item = PyIter_Next(it);
             if (item == NULL) {
                 if (PyErr_Occurred()) {
                     Py_DECREF(it);
-                    return 0;
+                    goto invalid;
                 }
                 break;
             }
 
             if (!validate_constant(item)) {
+                invalid_value = item;
                 Py_DECREF(it);
                 Py_DECREF(item);
-                return 0;
+                goto invalid;
             }
             Py_DECREF(item);
         }
@@ -151,6 +155,12 @@ validate_constant(PyObject *value)
         return 1;
     }
 
+    goto invalid;
+
+  invalid:
+    PyErr_Format(PyExc_TypeError,
+                 "got an invalid type in Constant: %s",
+                 _PyType_Name(Py_TYPE(invalid_value)));
     return 0;
 }
 
@@ -265,9 +275,6 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             validate_keywords(exp->v.Call.keywords);
     case Constant_kind:
         if (!validate_constant(exp->v.Constant.value)) {
-            PyErr_Format(PyExc_TypeError,
-                         "got an invalid type in Constant: %s",
-                         _PyType_Name(Py_TYPE(exp->v.Constant.value)));
             return 0;
         }
         return 1;
