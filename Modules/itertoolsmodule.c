@@ -4736,7 +4736,7 @@ itertoolsmodule_exec(PyObject *m)
             return -1;
         }
         const char *name = _PyType_Name(type);
-        Py_INCREF(typelist[i]);
+        Py_INCREF(type);
         if (PyModule_AddObject(m, name, (PyObject *)type) < 0) {
             Py_DECREF(type);
             return -1;
