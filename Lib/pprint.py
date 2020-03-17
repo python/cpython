@@ -176,12 +176,6 @@ class PrettyPrinter:
                 p(self, object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
-            elif isinstance(object, dict):
-                context[objid] = 1
-                self._pprint_dict(object, stream, indent, allowance,
-                                  context, level + 1)
-                del context[objid]
-                return
         stream.write(rep)
 
     _dispatch = {}
