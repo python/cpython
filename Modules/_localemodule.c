@@ -778,9 +778,7 @@ static int
 locale_traverse(PyObject *m, visitproc visit, void *arg)
 {
     _locale_state *state = (_locale_state*)PyModule_GetState(m);
-    if (state) {
-        Py_VISIT(state->Error);
-    }
+    Py_VISIT(state->Error);
     return 0;
 }
 
@@ -788,9 +786,7 @@ static int
 locale_clear(PyObject *m)
 {
     _locale_state *state = (_locale_state*)PyModule_GetState(m);
-    if (state) {
-        Py_CLEAR(state->Error);
-    }
+    Py_CLEAR(state->Error);
     return 0;
 }
 

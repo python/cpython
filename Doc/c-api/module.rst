@@ -196,23 +196,47 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: traverseproc m_traverse
 
       A traversal function to call during GC traversal of the module object, or
-      ``NULL`` if not needed. This function may be called before module state
-      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
-      and before the :c:member:`Py_mod_exec` function is executed.
+      ``NULL`` if not needed.
+
+      This function is not called if the module state was requested but is not
+      allocated yet. This is the case immediately after the module is created
+      and before the module is executed (:c:data:`Py_mod_exec` function). More
+      precisely, this function is not called if :c:member:`m_size` is greater
+      than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
+      is ``NULL``.
+
+      .. versionchanged:: 3.9
+         No longer called before the module state is allocated.
 
    .. c:member:: inquiry m_clear
 
       A clear function to call during GC clearing of the module object, or
-      ``NULL`` if not needed. This function may be called before module state
-      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
-      and before the :c:member:`Py_mod_exec` function is executed.
+      ``NULL`` if not needed.
+
+      This function is not called if the module state was requested but is not
+      allocated yet. This is the case immediately after the module is created
+      and before the module is executed (:c:data:`Py_mod_exec` function). More
+      precisely, this function is not called if :c:member:`m_size` is greater
+      than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
+      is ``NULL``.
+
+      .. versionchanged:: 3.9
+         No longer called before the module state is allocated.
 
    .. c:member:: freefunc m_free
 
-      A function to call during deallocation of the module object, or ``NULL`` if
-      not needed. This function may be called before module state
-      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
-      and before the :c:member:`Py_mod_exec` function is executed.
+      A function to call during deallocation of the module object, or ``NULL``
+      if not needed.
+
+      This function is not called if the module state was requested but is not
+      allocated yet. This is the case immediately after the module is created
+      and before the module is executed (:c:data:`Py_mod_exec` function). More
+      precisely, this function is not called if :c:member:`m_size` is greater
+      than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
+      is ``NULL``.
+
+      .. versionchanged:: 3.9
+         No longer called before the module state is allocated.
 
 Single-phase initialization
 ...........................
