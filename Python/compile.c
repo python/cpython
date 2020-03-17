@@ -5559,8 +5559,9 @@ assemble_lnotab(struct assembler *a, struct instr *i)
     unsigned char *lnotab;
 
     d_lineno = i->i_lineno - a->a_lineno;
-    if (d_lineno == 0)
+    if (d_lineno == 0) {
         return 1;
+    }
 
     d_bytecode = (a->a_offset - a->a_lineno_off) * sizeof(_Py_CODEUNIT);
     assert(d_bytecode >= 0);
