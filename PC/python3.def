@@ -158,7 +158,6 @@ EXPORTS
   PyErr_WarnExplicit=python39.PyErr_WarnExplicit
   PyErr_WarnFormat=python39.PyErr_WarnFormat
   PyErr_WriteUnraisable=python39.PyErr_WriteUnraisable
-  PyEval_AcquireLock=python39.PyEval_AcquireLock
   PyEval_AcquireThread=python39.PyEval_AcquireThread
   PyEval_CallFunction=python39.PyEval_CallFunction
   PyEval_CallMethod=python39.PyEval_CallMethod
@@ -176,7 +175,6 @@ EXPORTS
   PyEval_GetLocals=python39.PyEval_GetLocals
   PyEval_InitThreads=python39.PyEval_InitThreads
   PyEval_ReInitThreads=python39.PyEval_ReInitThreads
-  PyEval_ReleaseLock=python39.PyEval_ReleaseLock
   PyEval_ReleaseThread=python39.PyEval_ReleaseThread
   PyEval_RestoreThread=python39.PyEval_RestoreThread
   PyEval_SaveThread=python39.PyEval_SaveThread

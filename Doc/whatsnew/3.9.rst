@@ -533,6 +533,14 @@ Build and C API Changes
   scheduled calls.
   (Contributed by Victor Stinner in :issue:`39984`.)
 
+* The misleading ``PyEval_AcquireLock()`` and ``PyEval_ReleaseLock()``
+  functions have been removed. These functions were deprecated since Python 3.2
+  and did not update the current thread state. Instead, use
+  :c:func:`PyEval_SaveThread` with :c:func:`PyEval_RestoreThread`,
+  or :c:func:`PyEval_AcquireThread` with :c:func:`PyEval_ReleaseThread`,
+  which are thread-state aware APIs.
+  (Contributed by Victor Stinner in :issue:`39998`.)
+
 
 Deprecated
 ==========
