@@ -434,6 +434,34 @@ def _find_mac_near_keyword(command, args, keywords, get_word_index):
     return first_local_mac or None
 
 
+def _parse_mac(word):
+    # Accept 'HH:HH:HH:HH:HH:HH' MAC address (ex: '52:54:00:9d:0e:67'),
+    # but reject IPv6 address (ex: 'fe80::5054:ff:fe9' or '123:2:3:4:5:6:7:8').
+    #
+    # Virtual interfaces, such as those provided by VPNs, do not have a
+    # colon-delimited MAC address as expected, but a 16-byte HWAddr separated
+    # by dashes. These should be ignored in favor of a real MAC address
+    parts = word.split(_MAC_DELIM)
+    if len(parts) != 6:
+        return
+    if _MAC_OMITS_LEADING_ZEROES:
+        # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
+        # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
+        # not
+        # en0   1500  link#2      fa.bc.de.f7.62.04 110854824     0 160133733     0     0
+        if not all(1 <= len(part) <= 2 for part in parts):
+            return
+        hexstr = b''.join(part.rjust(2, b'0') for part in parts)
+    else:
+        if not all(len(part) == 2 for part in parts):
+            return
+        hexstr = b''.join(parts)
+    try:
+        return int(hexstr, 16)
+    except ValueError:
+        return
+
+
 def _find_mac_under_heading(command, args, heading):
     """Looks for a MAC address under a heading in a command's output.
 
@@ -453,39 +481,21 @@ def _find_mac_under_heading(command, args, heading):
 
     first_local_mac = None
     for line in stdout:
+        words = line.rstrip().split()
         try:
-            words = line.rstrip().split()
             word = words[column_index]
-            # Accept 'HH:HH:HH:HH:HH:HH' MAC address (ex: '52:54:00:9d:0e:67'),
-            # but reject IPv6 address (ex: 'fe80::5054:ff:fe9') detected
-            # by '::' pattern.
-            if len(word) == 17 and b'::' not in word:
-                mac = int(word.replace(_MAC_DELIM, b''), 16)
-            elif _MAC_OMITS_LEADING_ZEROES:
-                # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
-                # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
-                # not
-                # en0   1500  link#2      fa.bc.de.f7.62.04 110854824     0 160133733     0     0
-                parts = word.split(_MAC_DELIM)
-                if len(parts) == 6 and all(0 < len(p) <= 2 for p in parts):
-                    hexstr = b''.join(p.rjust(2, b'0') for p in parts)
-                    mac = int(hexstr, 16)
-                else:
-                    continue
-            else:
-                continue
-        except (ValueError, IndexError):
-            # Virtual interfaces, such as those provided by
-            # VPNs, do not have a colon-delimited MAC address
-            # as expected, but a 16-byte HWAddr separated by
-            # dashes. These should be ignored in favor of a
-            # real MAC address
-            pass
-        else:
-            if _is_universal(mac):
-                return mac
-            first_local_mac = first_local_mac or mac
-    return first_local_mac or None
+        except IndexError:
+            continue
+
+        mac = _parse_mac(word)
+        if mac is None:
+            continue
+        if _is_universal(mac):
+            return mac
+        if first_local_mac is None:
+            first_local_mac = mac
+
+    return first_local_mac
 
 
 # The following functions call external programs to 'get' a macaddr value to
