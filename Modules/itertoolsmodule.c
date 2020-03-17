@@ -4753,7 +4753,7 @@ static struct PyModuleDef_Slot itertoolsmodule_slots[] = {
 
 static PyMethodDef module_methods[] = {
     ITERTOOLS_TEE_METHODDEF
-    {NULL,              NULL}           /* sentinel */
+    {NULL, NULL} /* sentinel */
 };
 
 
