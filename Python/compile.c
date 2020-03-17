@@ -3506,7 +3506,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 
     PyObject *dict = c->u->u_names;
     PyObject *mangled;
-    /* XXX AugStore isn't used anywhere! */
 
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
            !_PyUnicode_EqualToASCIIString(name, "True") &&
@@ -3553,70 +3552,30 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         case Load:
             op = (c->u->u_ste->ste_type == ClassBlock) ? LOAD_CLASSDEREF : LOAD_DEREF;
             break;
-        case Store:
-            op = STORE_DEREF;
-            break;
-        case AugLoad:
-        case AugStore:
-            break;
+        case Store: op = STORE_DEREF; break;
         case Del: op = DELETE_DEREF; break;
-        default:
-            PyErr_Format(PyExc_SystemError,
-                         "expr_context kind %d should not be possible",
-                         ctx);
-            return 0;
         }
         break;
     case OP_FAST:
         switch (ctx) {
         case Load: op = LOAD_FAST; break;
-        case Store:
-            op = STORE_FAST;
-            break;
+        case Store: op = STORE_FAST; break;
         case Del: op = DELETE_FAST; break;
-        case AugLoad:
-        case AugStore:
-            break;
-        default:
-            PyErr_Format(PyExc_SystemError,
-                         "expr_context kind %d should not be possible",
-                         ctx);
-            return 0;
         }
         ADDOP_N(c, op, mangled, varnames);
         return 1;
     case OP_GLOBAL:
         switch (ctx) {
         case Load: op = LOAD_GLOBAL; break;
-        case Store:
-            op = STORE_GLOBAL;
-            break;
+        case Store: op = STORE_GLOBAL; break;
         case Del: op = DELETE_GLOBAL; break;
-        case AugLoad:
-        case AugStore:
-            break;
-        default:
-            PyErr_Format(PyExc_SystemError,
-                         "expr_context kind %d should not be possible",
-                         ctx);
-            return 0;
         }
         break;
     case OP_NAME:
         switch (ctx) {
         case Load: op = LOAD_NAME; break;
-        case Store:
-            op = STORE_NAME;
-            break;
+        case Store: op = STORE_NAME; break;
         case Del: op = DELETE_NAME; break;
-        case AugLoad:
-        case AugStore:
-            break;
-        default:
-            PyErr_Format(PyExc_SystemError,
-                         "expr_context kind %d should not be possible",
-                         ctx);
-            return 0;
         }
         break;
     }
@@ -5021,29 +4980,17 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_formatted_value(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
-        if (e->v.Attribute.ctx != AugStore)
-            VISIT(c, expr, e->v.Attribute.value);
+        VISIT(c, expr, e->v.Attribute.value);
         switch (e->v.Attribute.ctx) {
-        case AugLoad:
-            ADDOP(c, DUP_TOP);
-            /* Fall through */
         case Load:
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
-        case AugStore:
-            ADDOP(c, ROT_TWO);
-            /* Fall through */
         case Store:
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
             ADDOP_NAME(c, DELETE_ATTR, e->v.Attribute.attr, names);
             break;
-        default:
-            PyErr_Format(PyExc_SystemError,
-                         "expr_context kind %d should not be possible",
-                         e->v.Attribute.ctx);
-            return 0;
         }
         break;
     case Subscript_kind:
@@ -5088,47 +5035,57 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 static int
 compiler_augassign(struct compiler *c, stmt_ty s)
 {
-    expr_ty e = s->v.AugAssign.target;
-    expr_ty auge;
-
     assert(s->kind == AugAssign_kind);
+    expr_ty e = s->v.AugAssign.target;
+
+    int old_lineno = c->u->u_lineno;
+    int old_col_offset = c->u->u_col_offset;
+    SET_LOC(c, e);
 
     switch (e->kind) {
     case Attribute_kind:
-        auge = Attribute(e->v.Attribute.value, e->v.Attribute.attr,
-                         AugLoad, e->lineno, e->col_offset,
-                         e->end_lineno, e->end_col_offset, c->c_arena);
-        if (auge == NULL)
-            return 0;
-        VISIT(c, expr, auge);
-        VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(s->v.AugAssign.op));
-        auge->v.Attribute.ctx = AugStore;
-        VISIT(c, expr, auge);
+        VISIT(c, expr, e->v.Attribute.value);
+        ADDOP(c, DUP_TOP);
+        ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
-        auge = Subscript(e->v.Subscript.value, e->v.Subscript.slice,
-                         AugLoad, e->lineno, e->col_offset,
-                         e->end_lineno, e->end_col_offset, c->c_arena);
-        if (auge == NULL)
-            return 0;
-        VISIT(c, expr, auge);
-        VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(s->v.AugAssign.op));
-        auge->v.Subscript.ctx = AugStore;
-        VISIT(c, expr, auge);
+        VISIT(c, expr, e->v.Subscript.value);
+        VISIT(c, expr, e->v.Subscript.slice);
+        ADDOP(c, DUP_TOP_TWO);
+        ADDOP(c, BINARY_SUBSCR);
         break;
     case Name_kind:
         if (!compiler_nameop(c, e->v.Name.id, Load))
             return 0;
-        VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(s->v.AugAssign.op));
-        return compiler_nameop(c, e->v.Name.id, Store);
+        break;
     default:
         PyErr_Format(PyExc_SystemError,
             "invalid node type (%d) for augmented assignment",
             e->kind);
         return 0;
+    }
+
+    c->u->u_lineno = old_lineno;
+    c->u->u_col_offset = old_col_offset;
+
+    VISIT(c, expr, s->v.AugAssign.value);
+    ADDOP(c, inplace_binop(s->v.AugAssign.op));
+
+    SET_LOC(c, e);
+
+    switch (e->kind) {
+    case Attribute_kind:
+        ADDOP(c, ROT_TWO);
+        ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
+        break;
+    case Subscript_kind:
+        ADDOP(c, ROT_THREE);
+        ADDOP(c, STORE_SUBSCR);
+        break;
+    case Name_kind:
+        return compiler_nameop(c, e->v.Name.id, Store);
+    default:
+        Py_UNREACHABLE();
     }
     return 1;
 }
@@ -5322,27 +5279,13 @@ compiler_subscript(struct compiler *c, expr_ty e)
     }
 
     switch (ctx) {
-        case AugLoad: /* fall through to Load */
         case Load:    op = BINARY_SUBSCR; break;
-        case AugStore:/* fall through to Store */
         case Store:   op = STORE_SUBSCR; break;
         case Del:     op = DELETE_SUBSCR; break;
-        default:
-            PyErr_Format(PyExc_SystemError,
-                         "expr_context kind %d should not be possible",
-                         ctx);
-            return 0;
     }
-    if (ctx == AugStore) {
-        ADDOP(c, ROT_THREE);
-    }
-    else {
-        VISIT(c, expr, e->v.Subscript.value);
-        VISIT(c, expr, e->v.Subscript.slice);
-        if (ctx == AugLoad) {
-            ADDOP(c, DUP_TOP_TWO);
-        }
-    }
+    assert(op);
+    VISIT(c, expr, e->v.Subscript.value);
+    VISIT(c, expr, e->v.Subscript.slice);
     ADDOP(c, op);
     return 1;
 }
