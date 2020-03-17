@@ -4730,14 +4730,15 @@ itertoolsmodule_exec(PyObject *m)
 
     Py_SET_TYPE(&teedataobject_type, &PyType_Type);
 
-    for (int i=0 ; typelist[i] != NULL ; i++) {
-        if (PyType_Ready(typelist[i]) < 0) {
+    for (int i = 0; typelist[i] != NULL; i++) {
+        PyTypeObject *type = typelist[i];
+        if (PyType_Ready(type) < 0) {
             return -1;
         }
-        const char *name = _PyType_Name(typelist[i]);
+        const char *name = _PyType_Name(type);
         Py_INCREF(typelist[i]);
-        if (PyModule_AddObject(m, name, (PyObject *)typelist[i]) < 0) {
-            Py_DECREF(typelist[i]);
+        if (PyModule_AddObject(m, name, (PyObject *)type) < 0) {
+            Py_DECREF(type);
             return -1;
         }
     }
