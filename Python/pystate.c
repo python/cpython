@@ -58,7 +58,7 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     runtime->open_code_userdata = open_code_userdata;
     runtime->audit_hook_head = audit_hook_head;
 
-    _PyEval_Initialize(&runtime->ceval);
+    _PyEval_InitRuntimeState(&runtime->ceval);
 
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
@@ -213,6 +213,7 @@ PyInterpreterState_New(void)
     _PyRuntimeState *runtime = &_PyRuntime;
     interp->runtime = runtime;
 
+    _PyEval_InitState(&interp->ceval);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
 

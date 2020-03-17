@@ -638,11 +638,17 @@ Py_MakePendingCalls(void)
 int _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
 
 void
-_PyEval_Initialize(struct _ceval_runtime_state *state)
+_PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
 {
-    state->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
+    ceval->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
     _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
-    _gil_initialize(&state->gil);
+    _gil_initialize(&ceval->gil);
+}
+
+void
+_PyEval_InitState(struct _ceval_state *ceval)
+{
+    /* PyInterpreterState_New() initializes ceval to zero */
 }
 
 int
@@ -657,7 +663,7 @@ Py_SetRecursionLimit(int new_limit)
 {
     struct _ceval_runtime_state *ceval = &_PyRuntime.ceval;
     ceval->recursion_limit = new_limit;
-    _Py_CheckRecursionLimit = ceval->recursion_limit;
+    _Py_CheckRecursionLimit = new_limit;
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
@@ -753,6 +759,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     PyObject *retval = NULL;            /* Return value */
     _PyRuntimeState * const runtime = &_PyRuntime;
     struct _ceval_runtime_state * const ceval = &runtime->ceval;
+    struct _ceval_state * const ceval2 = &tstate->interp->ceval;
     _Py_atomic_int * const eval_breaker = &ceval->eval_breaker;
     PyCodeObject *co;
 
@@ -841,7 +848,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 #ifdef LLTRACE
 #define FAST_DISPATCH() \
     { \
-        if (!lltrace && !_Py_TracingPossible(ceval) && !PyDTrace_LINE_ENABLED()) { \
+        if (!lltrace && !_Py_TracingPossible(ceval2) && !PyDTrace_LINE_ENABLED()) { \
             f->f_lasti = INSTR_OFFSET(); \
             NEXTOPARG(); \
             goto *opcode_targets[opcode]; \
@@ -851,7 +858,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 #else
 #define FAST_DISPATCH() \
     { \
-        if (!_Py_TracingPossible(ceval) && !PyDTrace_LINE_ENABLED()) { \
+        if (!_Py_TracingPossible(ceval2) && !PyDTrace_LINE_ENABLED()) { \
             f->f_lasti = INSTR_OFFSET(); \
             NEXTOPARG(); \
             goto *opcode_targets[opcode]; \
@@ -1268,7 +1275,7 @@ main_loop:
 
         /* line-by-line tracing support */
 
-        if (_Py_TracingPossible(ceval) &&
+        if (_Py_TracingPossible(ceval2) &&
             tstate->c_tracefunc != NULL && !tstate->tracing) {
             int err;
             /* see maybe_call_line_trace
@@ -3647,7 +3654,7 @@ exception_unwind:
                 PUSH(val);
                 PUSH(exc);
                 JUMPTO(handler);
-                if (_Py_TracingPossible(ceval)) {
+                if (_Py_TracingPossible(ceval2)) {
                     int needs_new_execution_window = (f->f_lasti < instr_lb || f->f_lasti >= instr_ub);
                     int needs_line_update = (f->f_lasti == instr_lb || f->f_lasti < instr_prev);
                     /* Make sure that we trace line after exception if we are in a new execution
@@ -4639,7 +4646,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         return -1;
     }
 
-    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
+    struct _ceval_state *ceval = &tstate->interp->ceval;
     PyObject *traceobj = tstate->c_traceobj;
     ceval->tracing_possible += (func != NULL) - (tstate->c_tracefunc != NULL);
 
