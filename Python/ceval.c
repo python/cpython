@@ -4387,14 +4387,17 @@ unpack_iterable(PyThreadState *tstate, PyObject *v,
                 if (argcntafter == -1) {
                     _PyErr_Format(tstate, PyExc_ValueError,
                                   "not enough values to unpack "
-                                  "(expected %d, got %d)",
-                                  argcnt, i);
+                                  "(expected %d, got %d) from object of type "
+                                  "'%.200s'",
+                                  argcnt, i, Py_TYPE(v)->tp_name);
                 }
                 else {
                     _PyErr_Format(tstate, PyExc_ValueError,
                                   "not enough values to unpack "
-                                  "(expected at least %d, got %d)",
-                                  argcnt + argcntafter, i);
+                                  "(expected at least %d, got %d) from "
+                                  "object of type '%.200s'",
+                                  argcnt + argcntafter, i,
+                                  Py_TYPE(v)->tp_name);
                 }
             }
             goto Error;
@@ -4413,8 +4416,9 @@ unpack_iterable(PyThreadState *tstate, PyObject *v,
         }
         Py_DECREF(w);
         _PyErr_Format(tstate, PyExc_ValueError,
-                      "too many values to unpack (expected %d)",
-                      argcnt);
+                      "too many values to unpack (expected %d) from object "
+                      "of type '%.200s'",
+                      argcnt, Py_TYPE(v)->tp_name);
         goto Error;
     }
 
@@ -4427,8 +4431,9 @@ unpack_iterable(PyThreadState *tstate, PyObject *v,
     ll = PyList_GET_SIZE(l);
     if (ll < argcntafter) {
         _PyErr_Format(tstate, PyExc_ValueError,
-            "not enough values to unpack (expected at least %d, got %zd)",
-            argcnt + argcntafter, argcnt + ll);
+            "not enough values to unpack (expected at least %d, got %zd) "
+            "from object of type '%.200s'",
+            argcnt + argcntafter, argcnt + ll, Py_TYPE(v)->tp_name);
         goto Error;
     }
 

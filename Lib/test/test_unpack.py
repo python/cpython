@@ -62,28 +62,28 @@ Unpacking tuple of wrong size
     >>> a, b = t
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 2)
+    ValueError: too many values to unpack (expected 2) from object of type 'tuple'
 
-Unpacking tuple of wrong size
+Unpacking list of wrong size
 
     >>> a, b = l
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 2)
+    ValueError: too many values to unpack (expected 2) from object of type 'list'
 
 Unpacking sequence too short
 
     >>> a, b, c, d = Seq()
     Traceback (most recent call last):
       ...
-    ValueError: not enough values to unpack (expected 4, got 3)
+    ValueError: not enough values to unpack (expected 4, got 3) from object of type 'Seq'
 
 Unpacking sequence too long
 
     >>> a, b = Seq()
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 2)
+    ValueError: too many values to unpack (expected 2) from object of type 'Seq'
 
 Unpacking a sequence where the test for too long raises a different kind of
 error
@@ -136,7 +136,7 @@ Unpacking to an empty iterable should raise ValueError
     >>> () = [42]
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 0)
+    ValueError: too many values to unpack (expected 0) from object of type 'list'
 
 """
 
