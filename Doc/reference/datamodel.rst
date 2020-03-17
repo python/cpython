@@ -437,9 +437,10 @@ Mappings
       module.
 
       .. versionchanged:: 3.7
-         The dictionary order is guaranteed to be the same as the insertion order. Note that updating a key
-         does not affect the order. Keys added after deletion are inserted at the end.
-         This behavior was an implementation detail of CPython from 3.6.
+         The dictionary order is guaranteed to be the same as the insertion order. 
+         Note that updating a key does not affect the order. Keys added after 
+         deletion are inserted at the end. This behavior was an implementation 
+         detail of CPython from 3.6.
 
 Callable types
    .. index::
