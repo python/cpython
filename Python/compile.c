@@ -142,8 +142,6 @@ struct compiler_unit {
     int u_firstlineno; /* the first lineno of the block */
     int u_lineno;          /* the lineno for the current stmt */
     int u_col_offset;      /* the offset of the current stmt */
-    int u_lineno_set;  /* boolean to indicate whether instr
-                          has been generated with current lineno */
 };
 
 /* This struct captures the global state of a compilation.
@@ -614,7 +612,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_firstlineno = lineno;
     u->u_lineno = 0;
     u->u_col_offset = 0;
-    u->u_lineno_set = 0;
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
         compiler_unit_free(u);
@@ -849,28 +846,18 @@ compiler_next_instr(basicblock *b)
     return b->b_iused++;
 }
 
-/* Set the i_lineno member of the instruction at offset off if the
-   line number for the current expression/statement has not
-   already been set.  If it has been set, the call has no effect.
+/* Set the line number and column offset for the following instructions.
 
    The line number is reset in the following cases:
    - when entering a new scope
    - on each statement
-   - on each expression that start a new line
+   - on each expression and sub-expression
    - before the "except" and "finally" clauses
-   - before the "for" and "while" expressions
 */
 
-static void
-compiler_set_lineno(struct compiler *c, int off)
-{
-    basicblock *b;
-    if (c->u->u_lineno_set)
-        return;
-    c->u->u_lineno_set = 1;
-    b = c->u->u_curblock;
-    b->b_instr[off].i_lineno = c->u->u_lineno;
-}
+#define SET_LOC(c, x)                           \
+    (c)->u->u_lineno = (x)->lineno;             \
+    (c)->u->u_col_offset = (x)->col_offset;
 
 /* Return the stack effect of opcode with argument oparg.
 
@@ -1172,7 +1159,7 @@ compiler_addop(struct compiler *c, int opcode)
     i->i_oparg = 0;
     if (opcode == RETURN_VALUE)
         b->b_return = 1;
-    compiler_set_lineno(c, off);
+    i->i_lineno = c->u->u_lineno;
     return 1;
 }
 
@@ -1407,7 +1394,7 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
     i = &c->u->u_curblock->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    compiler_set_lineno(c, off);
+    i->i_lineno = c->u->u_lineno;
     return 1;
 }
 
@@ -1433,7 +1420,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
         i->i_jabs = 1;
     else
         i->i_jrel = 1;
-    compiler_set_lineno(c, off);
+    i->i_lineno = c->u->u_lineno;
     return 1;
 }
 
@@ -1706,7 +1693,6 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             int saved_lineno = c->u->u_lineno;
             VISIT_SEQ(c, stmt, info->fb_datum);
             c->u->u_lineno = saved_lineno;
-            c->u->u_lineno_set = 0;
             if (preserve_tos) {
                 compiler_pop_fblock(c, POP_VALUE, NULL);
             }
@@ -1805,10 +1791,9 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
        This way line number for SETUP_ANNOTATIONS will always
        coincide with the line number of first "real" statement in module.
        If body is empty, then lineno will be set later in assemble. */
-    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE &&
-        !c->u->u_lineno && asdl_seq_LEN(stmts)) {
+    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE && asdl_seq_LEN(stmts)) {
         st = (stmt_ty)asdl_seq_GET(stmts, 0);
-        c->u->u_lineno = st->lineno;
+        SET_LOC(c, st);
     }
     /* Every annotated class and module should have __annotations__. */
     if (find_ann(stmts)) {
@@ -3043,9 +3028,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             s->v.Try.handlers, i);
         if (!handler->v.ExceptHandler.type && i < n-1)
             return compiler_error(c, "default 'except:' must be last");
-        c->u->u_lineno_set = 0;
-        c->u->u_lineno = handler->lineno;
-        c->u->u_col_offset = handler->col_offset;
+        SET_LOC(c, handler);
         except = compiler_new_block(c);
         if (except == NULL)
             return 0;
@@ -3345,9 +3328,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     Py_ssize_t i, n;
 
     /* Always assign a lineno to the next instruction for a stmt. */
-    c->u->u_lineno = s->lineno;
-    c->u->u_col_offset = s->col_offset;
-    c->u->u_lineno_set = 0;
+    SET_LOC(c, s);
 
     switch (s->kind) {
     case FunctionDef_kind:
@@ -5095,24 +5076,11 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
 static int
 compiler_visit_expr(struct compiler *c, expr_ty e)
 {
-    /* If expr e has a different line number than the last expr/stmt,
-       set a new line number for the next instruction.
-    */
     int old_lineno = c->u->u_lineno;
     int old_col_offset = c->u->u_col_offset;
-    if (e->lineno != c->u->u_lineno) {
-        c->u->u_lineno = e->lineno;
-        c->u->u_lineno_set = 0;
-    }
-    /* Updating the column offset is always harmless. */
-    c->u->u_col_offset = e->col_offset;
-
+    SET_LOC(c, e);
     int res = compiler_visit_expr1(c, e);
-
-    if (old_lineno != c->u->u_lineno) {
-        c->u->u_lineno = old_lineno;
-        c->u->u_lineno_set = 0;
-    }
+    c->u->u_lineno = old_lineno;
     c->u->u_col_offset = old_col_offset;
     return res;
 }
@@ -5590,13 +5558,13 @@ assemble_lnotab(struct assembler *a, struct instr *i)
     Py_ssize_t len;
     unsigned char *lnotab;
 
-    d_bytecode = (a->a_offset - a->a_lineno_off) * sizeof(_Py_CODEUNIT);
     d_lineno = i->i_lineno - a->a_lineno;
-
-    assert(d_bytecode >= 0);
-
-    if(d_bytecode == 0 && d_lineno == 0)
+    if (d_lineno == 0) {
         return 1;
+    }
+
+    d_bytecode = (a->a_offset - a->a_lineno_off) * sizeof(_Py_CODEUNIT);
+    assert(d_bytecode >= 0);
 
     if (d_bytecode > 255) {
         int j, nbytes, ncodes = d_bytecode / 255;
