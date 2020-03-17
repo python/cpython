@@ -679,6 +679,58 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 class BaseTestInternals:
     _uuid = py_uuid
 
+    def check_parse_mac(self, aix):
+        if not aix:
+            patch = mock.patch.multiple(self.uuid,
+                                        _MAC_DELIM=b':',
+                                        _MAC_OMITS_LEADING_ZEROES=False)
+        else:
+            patch = mock.patch.multiple(self.uuid,
+                                        _MAC_DELIM=b'.',
+                                        _MAC_OMITS_LEADING_ZEROES=True)
+
+        with patch:
+            # Valid MAC addresses
+            if not aix:
+                tests = (
+                    (b'52:54:00:9d:0e:67', 0x5254009d0e67),
+                    (b'12:34:56:78:90:ab', 0x1234567890ab),
+                )
+            else:
+                # AIX format
+                tests = (
+                    (b'fe.ad.c.1.23.4', 0xfead0c012304),
+                )
+            for mac, expected in tests:
+                self.assertEqual(self.uuid._parse_mac(mac), expected)
+
+            # Invalid MAC addresses
+            for mac in (
+                b'',
+                # IPv6 addresses with same length than valid MAC address
+                # (17 characters)
+                b'fe80::5054:ff:fe9',
+                b'123:2:3:4:5:6:7:8',
+                # empty 5rd field
+                b'52:54:00:9d::67',
+                # only 5 fields instead of 6
+                b'52:54:00:9d:0e'
+                # invalid character 'x'
+                b'52:54:00:9d:0e:6x'
+                # dash separator
+                b'52-54-00-9d-0e-67',
+            ):
+                if aix:
+                    mac = mac.replace(b':', b'.')
+                with self.subTest(mac=mac):
+                    self.assertIsNone(self.uuid._parse_mac(mac))
+
+    def test_parse_mac(self):
+        self.check_parse_mac(False)
+
+    def test_parse_mac_aix(self):
+        self.check_parse_mac(True)
+
     def test_find_under_heading(self):
         data = '''\
 Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
