@@ -21,10 +21,6 @@ typedef struct {
     PyObject *AsyncWith_type;
     PyObject *Attribute_type;
     PyObject *AugAssign_type;
-    PyObject *AugLoad_singleton;
-    PyObject *AugLoad_type;
-    PyObject *AugStore_singleton;
-    PyObject *AugStore_type;
     PyObject *Await_type;
     PyObject *BinOp_type;
     PyObject *BitAnd_singleton;
@@ -245,10 +241,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->AsyncWith_type);
     Py_CLEAR(astmodulestate(module)->Attribute_type);
     Py_CLEAR(astmodulestate(module)->AugAssign_type);
-    Py_CLEAR(astmodulestate(module)->AugLoad_singleton);
-    Py_CLEAR(astmodulestate(module)->AugLoad_type);
-    Py_CLEAR(astmodulestate(module)->AugStore_singleton);
-    Py_CLEAR(astmodulestate(module)->AugStore_type);
     Py_CLEAR(astmodulestate(module)->Await_type);
     Py_CLEAR(astmodulestate(module)->BinOp_type);
     Py_CLEAR(astmodulestate(module)->BitAnd_singleton);
@@ -468,10 +460,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->AsyncWith_type);
     Py_VISIT(astmodulestate(module)->Attribute_type);
     Py_VISIT(astmodulestate(module)->AugAssign_type);
-    Py_VISIT(astmodulestate(module)->AugLoad_singleton);
-    Py_VISIT(astmodulestate(module)->AugLoad_type);
-    Py_VISIT(astmodulestate(module)->AugStore_singleton);
-    Py_VISIT(astmodulestate(module)->AugStore_type);
     Py_VISIT(astmodulestate(module)->Await_type);
     Py_VISIT(astmodulestate(module)->BinOp_type);
     Py_VISIT(astmodulestate(module)->BitAnd_singleton);
@@ -1728,7 +1716,7 @@ static int init_types(void)
         return 0;
     state->expr_context_type = make_type("expr_context", state->AST_type, NULL,
                                          0,
-        "expr_context = Load | Store | Del | AugLoad | AugStore");
+        "expr_context = Load | Store | Del");
     if (!state->expr_context_type) return 0;
     if (!add_attributes(state->expr_context_type, NULL, 0)) return 0;
     state->Load_type = make_type("Load", state->expr_context_type, NULL, 0,
@@ -1749,22 +1737,6 @@ static int init_types(void)
     state->Del_singleton = PyType_GenericNew((PyTypeObject *)state->Del_type,
                                              NULL, NULL);
     if (!state->Del_singleton) return 0;
-    state->AugLoad_type = make_type("AugLoad", state->expr_context_type, NULL,
-                                    0,
-        "AugLoad");
-    if (!state->AugLoad_type) return 0;
-    state->AugLoad_singleton = PyType_GenericNew((PyTypeObject
-                                                 *)state->AugLoad_type, NULL,
-                                                 NULL);
-    if (!state->AugLoad_singleton) return 0;
-    state->AugStore_type = make_type("AugStore", state->expr_context_type,
-                                     NULL, 0,
-        "AugStore");
-    if (!state->AugStore_type) return 0;
-    state->AugStore_singleton = PyType_GenericNew((PyTypeObject
-                                                  *)state->AugStore_type, NULL,
-                                                  NULL);
-    if (!state->AugStore_singleton) return 0;
     state->boolop_type = make_type("boolop", state->AST_type, NULL, 0,
         "boolop = And | Or");
     if (!state->boolop_type) return 0;
@@ -4614,12 +4586,6 @@ PyObject* ast2obj_expr_context(expr_context_ty o)
         case Del:
             Py_INCREF(astmodulestate_global->Del_singleton);
             return astmodulestate_global->Del_singleton;
-        case AugLoad:
-            Py_INCREF(astmodulestate_global->AugLoad_singleton);
-            return astmodulestate_global->AugLoad_singleton;
-        case AugStore:
-            Py_INCREF(astmodulestate_global->AugStore_singleton);
-            return astmodulestate_global->AugStore_singleton;
         default:
             /* should never happen, but just in case ... */
             PyErr_Format(PyExc_SystemError, "unknown expr_context found");
@@ -8809,22 +8775,6 @@ obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena* arena)
         *out = Del;
         return 0;
     }
-    isinstance = PyObject_IsInstance(obj, astmodulestate_global->AugLoad_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        *out = AugLoad;
-        return 0;
-    }
-    isinstance = PyObject_IsInstance(obj, astmodulestate_global->AugStore_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        *out = AugStore;
-        return 0;
-    }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr_context, but got %R", obj);
     return 1;
@@ -10163,16 +10113,6 @@ PyInit__ast(void)
         goto error;
     }
     Py_INCREF(astmodulestate(m)->Del_type);
-    if (PyModule_AddObject(m, "AugLoad", astmodulestate_global->AugLoad_type) <
-        0) {
-        goto error;
-    }
-    Py_INCREF(astmodulestate(m)->AugLoad_type);
-    if (PyModule_AddObject(m, "AugStore", astmodulestate_global->AugStore_type)
-        < 0) {
-        goto error;
-    }
-    Py_INCREF(astmodulestate(m)->AugStore_type);
     if (PyModule_AddObject(m, "boolop", astmodulestate_global->boolop_type) <
         0) {
         goto error;
