@@ -229,15 +229,14 @@ atexit_m_traverse(PyObject *self, visitproc visit, void *arg)
     atexitmodule_state *modstate;
 
     modstate = (atexitmodule_state *)PyModule_GetState(self);
-    if (modstate != NULL) {
-        for (i = 0; i < modstate->ncallbacks; i++) {
-            atexit_callback *cb = modstate->atexit_callbacks[i];
-            if (cb == NULL)
-                continue;
-            Py_VISIT(cb->func);
-            Py_VISIT(cb->args);
-            Py_VISIT(cb->kwargs);
-        }
+
+    for (i = 0; i < modstate->ncallbacks; i++) {
+        atexit_callback *cb = modstate->atexit_callbacks[i];
+        if (cb == NULL)
+            continue;
+        Py_VISIT(cb->func);
+        Py_VISIT(cb->args);
+        Py_VISIT(cb->kwargs);
     }
     return 0;
 }
@@ -247,9 +246,7 @@ atexit_m_clear(PyObject *self)
 {
     atexitmodule_state *modstate;
     modstate = (atexitmodule_state *)PyModule_GetState(self);
-    if (modstate != NULL) {
-        atexit_cleanup(modstate);
-    }
+    atexit_cleanup(modstate);
     return 0;
 }
 
@@ -258,10 +255,8 @@ atexit_free(PyObject *m)
 {
     atexitmodule_state *modstate;
     modstate = (atexitmodule_state *)PyModule_GetState(m);
-    if (modstate != NULL) {
-        atexit_cleanup(modstate);
-        PyMem_Free(modstate->atexit_callbacks);
-    }
+    atexit_cleanup(modstate);
+    PyMem_Free(modstate->atexit_callbacks);
 }
 
 PyDoc_STRVAR(atexit_unregister__doc__,
