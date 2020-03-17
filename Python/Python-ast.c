@@ -1398,23 +1398,18 @@ ast_clear(AST_object *self)
 static inline PyObject *
 find_field_default(PyObject *field_default)
 {
-    PyObject *ret = NULL;
     if (PyUnicode_GET_LENGTH(field_default) < 1) {
-        goto result;
+        return NULL;
     }
     switch (PyUnicode_READ_CHAR(field_default, 0)){
-    case '?':
-        ret = Py_None;
-        goto result;
-    case '*':
-        ret = PyList_New(0);
-        goto result;
-    default:
-        goto result;
+        case '?':
+            Py_INCREF(Py_None);
+            return Py_None;
+        case '*':
+            return PyList_New(0);
+        default:
+            return NULL;
     }
-  result:
-    Py_DECREF(field_default);
-    return ret;
 }
 
 static int
@@ -1423,10 +1418,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields, *field_defaults;
-    if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), astmodulestate_global->_fields, &fields) < 0) {
+    if (_PyObject_LookupAttr(Py_TYPE(self), astmodulestate_global->_fields, &fields) < 0) {
         goto cleanup;
     }
-    if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), astmodulestate_global->_field_defaults, &field_defaults) < 0) {
+    if (_PyObject_LookupAttr(Py_TYPE(self), astmodulestate_global->_field_defaults, &field_defaults) < 0) {
         goto cleanup;
     }
     if (fields) {
@@ -1464,7 +1459,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 goto cleanup;
         }
     }
-    PyObject *field, *field_default;
+    PyObject *field, *raw_field_default, *field_default;
     for (i = 0; i < numfields; i++) {
         field = PySequence_GetItem(fields, i);
         if (!field) {
@@ -1474,16 +1469,18 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         int attr_present = PyObject_HasAttr(self, field);
         Py_DECREF(field);
         if (!attr_present) {
-            field_default = PySequence_GetItem(field_defaults, i);
-            if (!field_default) {
+            raw_field_default = PySequence_GetItem(field_defaults, i);
+            if (!raw_field_default) {
                 res = -1;
                 goto cleanup;
             }
-            if (!(field_default = find_field_default(field_default))) {
+            field_default = find_field_default(raw_field_default);
+            Py_DECREF(raw_field_default);
+            if (!field_default) {
                 continue;
             }
             res = PyObject_SetAttr(self, field, field_default);
-            Py_XDECREF(field_default);
+            Py_DECREF(field_default);
             if (res < 0) {
                 goto cleanup;
             }
@@ -1554,29 +1551,31 @@ make_type(
     PyObject* base,
     const char* const* fields,
     const char* const* field_defaults,
-    int num_fields,
+    Py_ssize_t num_fields,
     const char *doc
 )
 {
-    PyObject *fnames, *fdefaults, *result;
-    int i;
+    Py_ssize_t i;
+    PyObject *fnames, *fdefaults;
+    PyObject *result = NULL;
+
     fnames = PyTuple_New(num_fields);
     if (!fnames) {
-        return NULL;
+        goto exit;
     }
     fdefaults = PyTuple_New(num_fields);
     if (!fdefaults) {
-        return NULL;
+        goto exit;
     }
     for (i = 0; i < num_fields; i++) {
         PyObject *field = PyUnicode_InternFromString(fields[i]);
         if (!field) {
-            goto cleanup;
+            goto exit;
         }
         PyTuple_SET_ITEM(fnames, i, field);
         PyObject *field_default = PyUnicode_InternFromString(field_defaults[i]);
         if (!field_default) {
-            goto cleanup;
+            goto exit;
         }
         PyTuple_SET_ITEM(fdefaults, i, field_default);
     }
@@ -1588,12 +1587,11 @@ make_type(
                     astmodulestate_global->__module__,
                     astmodulestate_global->_ast,
                     astmodulestate_global->__doc__, doc);
-    Py_DECREF(fnames);
+    goto exit;
+  exit:
+    Py_XDECREF(fnames);
+    Py_XDECREF(fdefaults);
     return result;
-  cleanup:
-    Py_DECREF(fnames);
-    Py_DECREF(fdefaults);
-    return NULL;
 }
 
 static int
