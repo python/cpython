@@ -1,0 +1,2 @@
+:func:`uuid.getnode` now skips IPv6 addresses with the same string length
+than a MAC address (17 characters): only use MAC addresses.
