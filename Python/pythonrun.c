@@ -95,7 +95,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     int nomem_count = 0;
 #ifdef Py_REF_DEBUG
-    int show_ref_count = _PyInterpreterState_Get()->config.show_ref_count;
+    int show_ref_count = _PyInterpreterState_GET_UNSAFE()->config.show_ref_count;
 #endif
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
@@ -346,7 +346,7 @@ set_main_loader(PyObject *d, const char *filename, const char *loader_name)
     filename_obj = PyUnicode_DecodeFSDefault(filename);
     if (filename_obj == NULL)
         return -1;
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     bootstrap = PyObject_GetAttrString(interp->importlib,
                                        "_bootstrap_external");
     if (bootstrap != NULL) {
@@ -1117,7 +1117,7 @@ run_eval_code_obj(PyCodeObject *co, PyObject *globals, PyObject *locals)
 
     /* Set globals['__builtins__'] if it doesn't exist */
     if (globals != NULL && PyDict_GetItemString(globals, "__builtins__") == NULL) {
-        PyInterpreterState *interp = _PyInterpreterState_Get();
+        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
         if (PyDict_SetItemString(globals, "__builtins__", interp->builtins) < 0) {
             return NULL;
         }

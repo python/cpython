@@ -2572,8 +2572,8 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* pre config */
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    const PyPreConfig *pre_config = &_PyRuntime.preconfig;
+    PyThreadState *tstate = _PyThreadState_GET();
+    const PyPreConfig *pre_config = &tstate->interp->runtime->preconfig;
     dict = _PyPreConfig_AsDict(pre_config);
     if (dict == NULL) {
         goto error;
@@ -2584,7 +2584,7 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* core config */
-    const PyConfig *config = &interp->config;
+    const PyConfig *config = &tstate->interp->config;
     dict = config_as_dict(config);
     if (dict == NULL) {
         goto error;

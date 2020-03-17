@@ -443,11 +443,11 @@ class NodeTransformer(NodeVisitor):
        class RewriteName(NodeTransformer):
 
            def visit_Name(self, node):
-               return copy_location(Subscript(
+               return Subscript(
                    value=Name(id='data', ctx=Load()),
                    slice=Constant(value=node.id),
                    ctx=node.ctx
-               ), node)
+               )
 
     Keep in mind that if the node you're operating on has child nodes you must
     either transform the child nodes yourself or call the :meth:`generic_visit`
@@ -740,6 +740,15 @@ class _Unparser(NodeVisitor):
 
     def visit_Module(self, node):
         self._write_docstring_and_traverse_body(node)
+
+    def visit_FunctionType(self, node):
+        with self.delimit("(", ")"):
+            self.interleave(
+                lambda: self.write(", "), self.traverse, node.argtypes
+            )
+
+        self.write(" -> ")
+        self.traverse(node.returns)
 
     def visit_Expr(self, node):
         self.fill()

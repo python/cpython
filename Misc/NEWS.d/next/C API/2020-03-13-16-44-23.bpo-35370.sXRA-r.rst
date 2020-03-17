@@ -1,0 +1,2 @@
+If :c:func:`PySys_Audit` fails in :c:func:`PyEval_SetProfile` or
+:c:func:`PyEval_SetTrace`, log the error as an unraisable exception.
