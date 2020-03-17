@@ -725,7 +725,6 @@ class BaseTestInternals:
                 with self.subTest(mac=mac):
                     self.assertIsNone(self.uuid._parse_mac(mac))
 
-
     def test_parse_mac(self):
         self.check_parse_mac(False)
 
