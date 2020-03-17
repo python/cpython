@@ -4701,31 +4701,9 @@ combinations(p, r)\n\
 combinations_with_replacement(p, r)\n\
 ");
 
-
-static PyMethodDef module_methods[] = {
-    ITERTOOLS_TEE_METHODDEF
-    {NULL,              NULL}           /* sentinel */
-};
-
-
-static struct PyModuleDef itertoolsmodule = {
-    PyModuleDef_HEAD_INIT,
-    "itertools",
-    module_doc,
-    -1,
-    module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_itertools(void)
+static int
+itertoolsmodule_exec(PyObject *m)
 {
-    int i;
-    PyObject *m;
-    const char *name;
     PyTypeObject *typelist[] = {
         &accumulate_type,
         &combinations_type,
@@ -4751,19 +4729,48 @@ PyInit_itertools(void)
     };
 
     Py_SET_TYPE(&teedataobject_type, &PyType_Type);
-    m = PyModule_Create(&itertoolsmodule);
-    if (m == NULL) {
-        return NULL;
-    }
 
-    for (i=0 ; typelist[i] != NULL ; i++) {
-        if (PyType_Ready(typelist[i]) < 0) {
-            return NULL;
+    for (int i = 0; typelist[i] != NULL; i++) {
+        PyTypeObject *type = typelist[i];
+        if (PyType_Ready(type) < 0) {
+            return -1;
         }
-        name = _PyType_Name(typelist[i]);
-        Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
+        const char *name = _PyType_Name(type);
+        Py_INCREF(type);
+        if (PyModule_AddObject(m, name, (PyObject *)type) < 0) {
+            Py_DECREF(type);
+            return -1;
+        }
     }
 
-    return m;
+    return 0;
+}
+
+static struct PyModuleDef_Slot itertoolsmodule_slots[] = {
+    {Py_mod_exec, itertoolsmodule_exec},
+    {0, NULL}
+};
+
+static PyMethodDef module_methods[] = {
+    ITERTOOLS_TEE_METHODDEF
+    {NULL, NULL} /* sentinel */
+};
+
+
+static struct PyModuleDef itertoolsmodule = {
+    PyModuleDef_HEAD_INIT,
+    "itertools",
+    module_doc,
+    0,
+    module_methods,
+    itertoolsmodule_slots,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit_itertools(void)
+{
+    return PyModuleDef_Init(&itertoolsmodule);
 }
