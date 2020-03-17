@@ -1,0 +1,2 @@
+Make test_os test_listdir test robust against root directory changing while
+the test runs.
