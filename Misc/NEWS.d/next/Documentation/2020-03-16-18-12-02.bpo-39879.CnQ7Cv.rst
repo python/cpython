@@ -1,2 +1,0 @@
-Update docs dict preserve insertion order and added that thus dict object behaves the same as collections.OrderedDict objects.
-Patch by Furkan Onder and Samy Lahfa.
