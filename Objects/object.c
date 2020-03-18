@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
 #include "pycore_context.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
@@ -33,7 +34,6 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
     CHECK(!_PyObject_IsFreed(op));
     CHECK(Py_REFCNT(op) >= 1);
 
-    CHECK(Py_TYPE(op) != NULL);
     _PyType_CheckConsistency(Py_TYPE(op));
 
     if (PyUnicode_Check(op)) {
@@ -144,12 +144,7 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
         return PyErr_NoMemory();
     }
 
-    Py_SET_TYPE(op, tp);
-    if (PyType_GetFlags(tp) & Py_TPFLAGS_HEAPTYPE) {
-        Py_INCREF(tp);
-    }
-    _Py_NewReference(op);
-    return op;
+    return PyObject_INIT(op, tp);
 }
 
 PyVarObject *
@@ -160,9 +155,7 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
         return (PyVarObject *) PyErr_NoMemory();
     }
 
-    Py_SET_SIZE(op, size);
-    PyObject_Init((PyObject *)op, tp);
-    return op;
+    return PyObject_INIT_VAR(op, tp, size);
 }
 
 PyObject *
@@ -665,7 +658,7 @@ do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
     PyObject *res;
     int checked_reverse_op = 0;
 
-    if (Py_TYPE(v) != Py_TYPE(w) &&
+    if (!Py_IS_TYPE(v, Py_TYPE(w)) &&
         PyType_IsSubtype(Py_TYPE(w), Py_TYPE(v)) &&
         (f = Py_TYPE(w)->tp_richcompare) != NULL) {
         checked_reverse_op = 1;
@@ -1673,6 +1666,22 @@ notimplemented_dealloc(PyObject* ignore)
     Py_FatalError("deallocating NotImplemented");
 }
 
+static int
+notimplemented_bool(PyObject *v)
+{
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "NotImplemented should not be used in a boolean context",
+                     1) < 0)
+    {
+        return -1;
+    }
+    return 1;
+}
+
+static PyNumberMethods notimplemented_as_number = {
+    .nb_bool = notimplemented_bool,
+};
+
 PyTypeObject _PyNotImplemented_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NotImplementedType",
@@ -1683,8 +1692,8 @@ PyTypeObject _PyNotImplemented_Type = {
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_as_async*/
-    NotImplemented_repr, /*tp_repr*/
-    0,                  /*tp_as_number*/
+    NotImplemented_repr,        /*tp_repr*/
+    &notimplemented_as_number,  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
     0,                  /*tp_hash */
@@ -1899,7 +1908,7 @@ _Py_GetObjects(PyObject *self, PyObject *args)
         return NULL;
     for (i = 0; (n == 0 || i < n) && op != &refchain; i++) {
         while (op == self || op == args || op == res || op == t ||
-               (t != NULL && Py_TYPE(op) != (PyTypeObject *) t)) {
+               (t != NULL && !Py_IS_TYPE(op, (PyTypeObject *) t))) {
             op = op->_ob_next;
             if (op == &refchain)
                 return res;
@@ -2104,6 +2113,30 @@ _PyTrash_thread_destroy_chain(void)
         assert(tstate->trash_delete_nesting == 1);
     }
     --tstate->trash_delete_nesting;
+}
+
+
+int
+_PyTrash_begin(PyThreadState *tstate, PyObject *op)
+{
+    if (tstate->trash_delete_nesting >= PyTrash_UNWIND_LEVEL) {
+        /* Store the object (to be deallocated later) and jump past
+         * Py_TRASHCAN_END, skipping the body of the deallocator */
+        _PyTrash_thread_deposit_object(op);
+        return 1;
+    }
+    ++tstate->trash_delete_nesting;
+    return 0;
+}
+
+
+void
+_PyTrash_end(PyThreadState *tstate)
+{
+    --tstate->trash_delete_nesting;
+    if (tstate->trash_delete_later && tstate->trash_delete_nesting <= 0) {
+        _PyTrash_thread_destroy_chain();
+    }
 }
 
 

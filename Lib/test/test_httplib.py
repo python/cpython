@@ -1155,7 +1155,7 @@ class BasicTest(TestCase):
         thread.join()
         self.assertEqual(result, b"proxied data\n")
 
-    def test_putrequest_override_validation(self):
+    def test_putrequest_override_domain_validation(self):
         """
         It should be possible to override the default validation
         behavior in putrequest (bpo-38216).
@@ -1167,6 +1167,17 @@ class BasicTest(TestCase):
         conn = UnsafeHTTPConnection('example.com')
         conn.sock = FakeSocket('')
         conn.putrequest('GET', '/\x00')
+
+    def test_putrequest_override_host_validation(self):
+        class UnsafeHTTPConnection(client.HTTPConnection):
+            def _validate_host(self, url):
+                pass
+
+        conn = UnsafeHTTPConnection('example.com\r\n')
+        conn.sock = FakeSocket('')
+        # set skip_host so a ValueError is not raised upon adding the
+        # invalid URL as the value of the "Host:" header
+        conn.putrequest('GET', '/', skip_host=1)
 
     def test_putrequest_override_encoding(self):
         """
@@ -1422,6 +1433,7 @@ class OfflineTest(TestCase):
             'UNSUPPORTED_MEDIA_TYPE',
             'REQUESTED_RANGE_NOT_SATISFIABLE',
             'EXPECTATION_FAILED',
+            'IM_A_TEAPOT',
             'MISDIRECTED_REQUEST',
             'UNPROCESSABLE_ENTITY',
             'LOCKED',
@@ -1440,6 +1452,8 @@ class OfflineTest(TestCase):
             'INSUFFICIENT_STORAGE',
             'NOT_EXTENDED',
             'NETWORK_AUTHENTICATION_REQUIRED',
+            'EARLY_HINTS',
+            'TOO_EARLY'
         ]
         for const in expected:
             with self.subTest(constant=const):

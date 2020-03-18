@@ -1,0 +1,1 @@
+Remove :meth:`tempfile.SpooledTemporaryFile.softspace` as files no longer have the ``softspace`` attribute in Python 3. Patch by Shantanu.

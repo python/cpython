@@ -1,35 +1,20 @@
 """Shared AIX support functions."""
 
 import sys
-from sysconfig import get_config_var
+import sysconfig
 
-# subprocess is not necessarily available early in the build process
-# if not available, the config_vars are also definitely not available
-# supply substitutes to bootstrap the build
 try:
     import subprocess
-    _have_subprocess = True
-    _tmp_bd = get_config_var("AIX_BUILDDATE")
-    _bgt = get_config_var("BUILD_GNU_TYPE")
 except ImportError:  # pragma: no cover
-    _have_subprocess = False
-    _tmp_bd = None
-    _bgt = "powerpc-ibm-aix6.1.7.0"
-
-# if get_config_var("AIX_BUILDDATE") was unknown, provide a substitute,
-# impossible builddate to specify 'unknown'
-_MISSING_BD = 9898
-try:
-    _bd = int(_tmp_bd)
-except TypeError:
-    _bd = _MISSING_BD
-
-# Infer the ABI bitwidth from maxsize (assuming 64 bit as the default)
-_sz = 32 if sys.maxsize == (2**31-1) else 64
+    # _aix_support is used in distutils by setup.py to build C extensions,
+    # before subprocess dependencies like _posixsubprocess are available.
+    import _bootsubprocess as subprocess
 
 
 def _aix_tag(vrtl, bd):
     # type: (List[int], int) -> str
+    # Infer the ABI bitwidth from maxsize (assuming 64 bit as the default)
+    _sz = 32 if sys.maxsize == (2**31-1) else 64
     # vrtl[version, release, technology_level]
     return "aix-{:1x}{:1d}{:02d}-{:04d}-{}".format(vrtl[0], vrtl[1], vrtl[2], bd, _sz)
 
@@ -48,17 +33,12 @@ def _aix_bosmp64():
     The fileset bos.mp64 is the AIX kernel. It's VRMF and builddate
     reflect the current ABI levels of the runtime environment.
     """
-    if _have_subprocess:
-        # We expect all AIX systems to have lslpp installed in this location
-        out = subprocess.check_output(["/usr/bin/lslpp", "-Lqc", "bos.mp64"])
-        out = out.decode("utf-8").strip().split(":")  # type: ignore
-        # Use str() and int() to help mypy see types
-        return str(out[2]), int(out[-1])
-    else:
-        from os import uname
-
-        osname, host, release, version, machine = uname()
-        return "{}.{}.0.0".format(version, release), _MISSING_BD
+    # We expect all AIX systems to have lslpp installed in this location
+    out = subprocess.check_output(["/usr/bin/lslpp", "-Lqc", "bos.mp64"])
+    out = out.decode("utf-8")
+    out = out.strip().split(":")  # type: ignore
+    # Use str() and int() to help mypy see types
+    return (str(out[2]), int(out[-1]))
 
 
 def aix_platform():
@@ -87,8 +67,10 @@ def aix_platform():
 # extract vrtl from the BUILD_GNU_TYPE as an int
 def _aix_bgt():
     # type: () -> List[int]
-    assert _bgt
-    return _aix_vrtl(vrmf=_bgt)
+    gnu_type = sysconfig.get_config_var("BUILD_GNU_TYPE")
+    if not gnu_type:
+        raise ValueError("BUILD_GNU_TYPE is not defined")
+    return _aix_vrtl(vrmf=gnu_type)
 
 
 def aix_buildtag():
@@ -96,4 +78,12 @@ def aix_buildtag():
     """
     Return the platform_tag of the system Python was built on.
     """
-    return _aix_tag(_aix_bgt(), _bd)
+    # AIX_BUILDDATE is defined by configure with:
+    # lslpp -Lcq bos.mp64 | awk -F:  '{ print $NF }'
+    build_date = sysconfig.get_config_var("AIX_BUILDDATE")
+    try:
+        build_date = int(build_date)
+    except (ValueError, TypeError):
+        raise ValueError(f"AIX_BUILDDATE is not defined or invalid: "
+                         f"{build_date!r}")
+    return _aix_tag(_aix_bgt(), build_date)

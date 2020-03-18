@@ -35,12 +35,6 @@ struct _pending_calls {
 
 struct _ceval_runtime_state {
     int recursion_limit;
-    /* Records whether tracing is on for any thread.  Counts the number
-       of threads for which tstate->c_tracefunc is non-NULL, so if the
-       value is 0, we know we don't have to check this thread's
-       c_tracefunc.  This speeds up the if statement in
-       PyEval_EvalFrameEx() after fast_next_opcode. */
-    int tracing_possible;
     /* This single variable consolidates all requests to break out of
        the fast path in the eval loop. */
     _Py_atomic_int eval_breaker;
@@ -52,9 +46,16 @@ struct _ceval_runtime_state {
     struct _gil_runtime_state gil;
 };
 
-/* interpreter state */
+struct _ceval_state {
+    /* Records whether tracing is on for any thread.  Counts the number
+       of threads for which tstate->c_tracefunc is non-NULL, so if the
+       value is 0, we know we don't have to check this thread's
+       c_tracefunc.  This speeds up the if statement in
+       _PyEval_EvalFrameDefault() after fast_next_opcode. */
+    int tracing_possible;
+};
 
-typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
+/* interpreter state */
 
 #define _PY_NSMALLPOSINTS           257
 #define _PY_NSMALLNEGINTS           5
@@ -77,6 +78,7 @@ struct _is {
 
     int finalizing;
 
+    struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
     PyObject *modules;
@@ -223,8 +225,11 @@ typedef struct pyruntimestate {
     int initialized;
 
     /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
-       is called again. */
-    PyThreadState *finalizing;
+       is called again.
+
+       Use _PyRuntimeState_GetFinalizing() and _PyRuntimeState_SetFinalizing()
+       to access it, don't access it directly. */
+    _Py_atomic_address _finalizing;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
@@ -279,8 +284,15 @@ PyAPI_FUNC(PyStatus) _PyRuntime_Initialize(void);
 
 PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
-#define _Py_CURRENTLY_FINALIZING(runtime, tstate) \
-    (runtime->finalizing == tstate)
+static inline PyThreadState*
+_PyRuntimeState_GetFinalizing(_PyRuntimeState *runtime) {
+    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->_finalizing);
+}
+
+static inline void
+_PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
+    _Py_atomic_store_relaxed(&runtime->_finalizing, (uintptr_t)tstate);
+}
 
 PyAPI_FUNC(int) _Py_IsMainInterpreter(PyThreadState* tstate);
 
@@ -288,8 +300,9 @@ PyAPI_FUNC(int) _Py_IsMainInterpreter(PyThreadState* tstate);
 /* Variable and macro for in-line access to current thread
    and interpreter state */
 
-#define _PyRuntimeState_GetThreadState(runtime) \
-    ((PyThreadState*)_Py_atomic_load_relaxed(&(runtime)->gilstate.tstate_current))
+static inline PyThreadState* _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime) {
+    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->gilstate.tstate_current);
+}
 
 /* Get the current Python thread state.
 
