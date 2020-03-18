@@ -200,7 +200,7 @@ class CookieTests(unittest.TestCase):
                   'secure;foo=bar', 'Version=1;foo=bar',
                   'invalid\x00=cookie', 'Path=/acme;',
                   'foo=bar;Version;'):
-            with self.assertRaises(cookie.CookieError):
+            with self.assertRaises(cookies.CookieError):
                 C.load(s)
 
     def test_pickle(self):
