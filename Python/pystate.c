@@ -1034,23 +1034,26 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
      * head_mutex for the duration.
      */
     HEAD_LOCK(runtime);
-    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
-        if (p->thread_id == id) {
-            /* Tricky:  we need to decref the current value
-             * (if any) in p->async_exc, but that can in turn
-             * allow arbitrary Python code to run, including
-             * perhaps calls to this function.  To prevent
-             * deadlock, we need to release head_mutex before
-             * the decref.
-             */
-            PyObject *old_exc = p->async_exc;
-            Py_XINCREF(exc);
-            p->async_exc = exc;
-            HEAD_UNLOCK(runtime);
-            Py_XDECREF(old_exc);
-            _PyEval_SignalAsyncExc(&runtime->ceval);
-            return 1;
+    for (PyThreadState *tstate = interp->tstate_head; tstate != NULL; tstate = tstate->next) {
+        if (tstate->thread_id != id) {
+            continue;
         }
+
+        /* Tricky:  we need to decref the current value
+         * (if any) in tstate->async_exc, but that can in turn
+         * allow arbitrary Python code to run, including
+         * perhaps calls to this function.  To prevent
+         * deadlock, we need to release head_mutex before
+         * the decref.
+         */
+        PyObject *old_exc = tstate->async_exc;
+        Py_XINCREF(exc);
+        tstate->async_exc = exc;
+        HEAD_UNLOCK(runtime);
+
+        Py_XDECREF(old_exc);
+        _PyEval_SignalAsyncExc(tstate);
+        return 1;
     }
     HEAD_UNLOCK(runtime);
     return 0;

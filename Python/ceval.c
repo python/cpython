@@ -246,8 +246,9 @@ PyEval_InitThreads(void)
 }
 
 void
-_PyEval_FiniThreads(struct _ceval_runtime_state *ceval)
+_PyEval_FiniThreads(PyThreadState *tstate)
 {
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     struct _gil_runtime_state *gil = &ceval->gil;
     if (!gil_created(gil)) {
         return;
@@ -356,10 +357,11 @@ void
 _PyEval_ReInitThreads(_PyRuntimeState *runtime)
 {
     struct _ceval_runtime_state *ceval = &runtime->ceval;
-    if (!gil_created(&ceval->gil)) {
+    struct _gil_runtime_state *gil = &runtime->ceval.gil;
+    if (!gil_created(gil)) {
         return;
     }
-    recreate_gil(&ceval->gil);
+    recreate_gil(gil);
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     ensure_tstate_not_null(__func__, tstate);
 
@@ -379,8 +381,9 @@ _PyEval_ReInitThreads(_PyRuntimeState *runtime)
    raised. */
 
 void
-_PyEval_SignalAsyncExc(struct _ceval_runtime_state *ceval)
+_PyEval_SignalAsyncExc(PyThreadState *tstate)
 {
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     SIGNAL_ASYNC_EXC(ceval);
 }
 
