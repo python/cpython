@@ -1340,6 +1340,10 @@ Py_FinalizeEx(void)
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     PyInterpreterState *interp = tstate->interp;
 
+    if (!_Py_IsMainInterpreter(tstate)) {
+        Py_FatalError("Py_FinalizeEx cannot be called in a subinterpreter");
+    }
+
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 

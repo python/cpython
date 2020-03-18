@@ -514,6 +514,9 @@ Build and C API Changes
 
   Extension modules without module state (``m_size <= 0``) are not affected.
 
+* :c:func:`Py_FinalizeEx` cannot be called in a subinterpreter anymore.
+  (Contributed by Victor Stinner in :issue:`38865`.)
+
 
 Deprecated
 ==========

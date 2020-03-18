@@ -1165,7 +1165,7 @@ static volatile int _audit_subinterpreter_interpreter_count = 0;
 
 static int _audit_subinterpreter_hook(const char *event, PyObject *args, void *userdata)
 {
-    printf("%s\n", event);
+    fprintf(stderr, "audit event: %s\n", event);
     if (strcmp(event, "cpython.PyInterpreterState_New") == 0) {
         _audit_subinterpreter_interpreter_count += 1;
     }
@@ -1178,17 +1178,30 @@ static int test_audit_subinterpreter(void)
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
     _testembed_Py_Initialize();
 
-    Py_NewInterpreter();
-    Py_NewInterpreter();
-    Py_NewInterpreter();
+    PyThreadState *mainstate = PyThreadState_Get();
+
+    for (int i=0; i<3; i++) {
+        PyThreadState *substate = Py_NewInterpreter();
+        if (substate == NULL) {
+            fprintf(stderr, "Py_NewInterpreter() failed\n");
+            return 1;
+        }
+        Py_EndInterpreter(substate);
+
+        /* Restore tstate after each Py_EndInterpreter() call. Otherwise the
+           current Python thread state is NULL and so PySys_Audit() does
+           nothing. */
+        PyThreadState_Swap(mainstate);
+    }
 
     Py_Finalize();
 
-    switch (_audit_subinterpreter_interpreter_count) {
-        case 3: return 0;
-        case 0: return -1;
-        default: return _audit_subinterpreter_interpreter_count;
+    printf("audit subinterpreter count: %i\n",
+           _audit_subinterpreter_interpreter_count);
+    if (_audit_subinterpreter_interpreter_count != 3) {
+        return 2;
     }
+    return 0;
 }
 
 typedef struct {

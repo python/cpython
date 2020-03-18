@@ -290,6 +290,8 @@ Initializing and finalizing the interpreter
    developer might want to free all memory allocated by Python before exiting from
    the application.
 
+   This function cannot be called in a subinterpreter.
+
    **Bugs and caveats:** The destruction of modules and objects in modules is done
    in random order; this may cause destructors (:meth:`__del__` methods) to fail
    when they depend on other objects (even functions) or modules.  Dynamically
@@ -304,6 +306,9 @@ Initializing and finalizing the interpreter
    .. audit-event:: cpython._PySys_ClearAuditHooks "" c.Py_FinalizeEx
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.9
+      This function cannot be called in a subinterpreter anymore.
 
 .. c:function:: void Py_Finalize()
 
