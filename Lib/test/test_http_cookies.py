@@ -83,6 +83,13 @@ class CookieTests(unittest.TestCase):
         </script>
         """)
 
+        C = cookies.SimpleCookie()
+        C.load('inv/alid=test; Customer="WILE_E_COYOTE"; Version=1; Path=/acme', ignore_errors=True)
+
+        self.assertEqual(C['Customer'].value, 'WILE_E_COYOTE')
+        self.assertEqual(C['Customer']['version'], '1')
+        self.assertEqual(C['Customer']['path'], '/acme')
+
     def test_extended_encode(self):
         # Issue 9824: some browsers don't follow the standard; we now
         # encode , and ; to keep them from tripping up.
