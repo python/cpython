@@ -514,6 +514,12 @@ Build and C API Changes
 
   Extension modules without module state (``m_size <= 0``) are not affected.
 
+* If :c:func:`Py_AddPendingCall` is called in a subinterpreter, the function is
+  now scheduled to be called from the subinterpreter, rather than being called
+  from the main interpreter. Each subinterpreter now has its own list of
+  scheduled calls.
+  (Contributed by Victor Stinner in :issue:`39984`.)
+
 
 Deprecated
 ==========

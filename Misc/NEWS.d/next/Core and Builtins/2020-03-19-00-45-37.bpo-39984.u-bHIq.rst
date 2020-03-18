@@ -1,0 +1,4 @@
+If :c:func:`Py_AddPendingCall` is called in a subinterpreter, the function is
+now scheduled to be called from the subinterpreter, rather than being called
+from the main interpreter. Each subinterpreter now has its own list of
+scheduled calls.

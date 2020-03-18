@@ -304,7 +304,7 @@ trip_signal(int sig_num)
                 if (wakeup.warn_on_full_buffer ||
                     last_error != WSAEWOULDBLOCK)
                 {
-                    /* Py_AddPendingCall() isn't signal-safe, but we
+                    /* _PyEval_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
                     _PyEval_AddPendingCall(tstate,
                                            report_wakeup_send_error,
@@ -323,7 +323,7 @@ trip_signal(int sig_num)
                 if (wakeup.warn_on_full_buffer ||
                     (errno != EWOULDBLOCK && errno != EAGAIN))
                 {
-                    /* Py_AddPendingCall() isn't signal-safe, but we
+                    /* _PyEval_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
                     _PyEval_AddPendingCall(tstate,
                                            report_wakeup_write_error,
