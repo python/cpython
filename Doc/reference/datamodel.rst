@@ -424,10 +424,14 @@ Mappings
       for keys obey the normal rules for numeric comparison: if two numbers compare
       equal (e.g., ``1`` and ``1.0``) then they can be used interchangeably to index
       the same dictionary entry.
-
-      Contrary to older Python `see release notes of Python 3.7 : <https://docs.python.org/3/whatsnew/3.7.html#summary-release-highlights>`_ versions (older than 3.7), the insertion-order is now preserved in a dict thus dict objects behaves the same way as `collections.OrderedDict <https://docs.python.org/3/library/collections.html#collections.OrderedDict>`_.
-
-      Dictionaries are mutable; they can be created by the ``{...}`` notation (see
+	
+	 		Dictionaries preserve insertion order, meaning that keys will be produced
+			in the same order they were added sequencially over the dictionary.
+			Replacing an existing key does not change the order, however removing a key
+			and re-inserting it will add it to the end instead of keeping its old place.
+      Note that older Python versions dictionaries do not preserve insertion order.
+      
+			Dictionaries are mutable; they can be created by the ``{...}`` notation (see
       section :ref:`dict`).
 
       .. index::
