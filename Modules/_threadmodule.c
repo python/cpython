@@ -1028,7 +1028,7 @@ t_bootstrap(void *boot_raw)
     PyMem_DEL(boot_raw);
     tstate->interp->num_threads--;
     PyThreadState_Clear(tstate);
-    _PyThreadState_DeleteCurrent(runtime);
+    _PyThreadState_DeleteCurrent(tstate);
     PyThread_exit_thread();
 }
 

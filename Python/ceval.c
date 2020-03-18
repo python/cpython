@@ -193,7 +193,8 @@ static void
 ensure_tstate_not_null(const char *func, PyThreadState *tstate)
 {
     if (tstate == NULL) {
-        _Py_FatalErrorFunc(func, "current thread state is NULL");
+        _Py_FatalErrorFunc(func,
+                           "current thread state is NULL (released GIL?)");
     }
 }
 
@@ -311,6 +312,13 @@ PyEval_ReleaseLock(void)
        in debug mode.
     */
     drop_gil(&runtime->ceval, tstate);
+}
+
+void
+_PyEval_ReleaseLock(PyThreadState *tstate)
+{
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
+    drop_gil(ceval, tstate);
 }
 
 void
