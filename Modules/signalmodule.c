@@ -259,10 +259,14 @@ trip_signal(int sig_num)
        cleared in PyErr_CheckSignals() before .tripped. */
     _Py_atomic_store(&is_tripped, 1);
 
+    /* Get the Python thread state using PyGILState API, since
+       _PyThreadState_GET() returns NULL if the GIL is released.
+       For example, signal.raise_signal() releases the GIL. */
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    assert(tstate != NULL);
+
     /* Notify ceval.c */
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    _PyEval_SignalReceived(&runtime->ceval);
+    _PyEval_SignalReceived(tstate);
 
     /* And then write to the wakeup fd *after* setting all the globals and
        doing the _PyEval_SignalReceived. We used to write to the wakeup fd
@@ -302,7 +306,7 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _PyEval_AddPendingCall(tstate, &runtime->ceval,
+                    _PyEval_AddPendingCall(tstate,
                                            report_wakeup_send_error,
                                            (void *)(intptr_t) last_error);
                 }
@@ -321,7 +325,7 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _PyEval_AddPendingCall(tstate, &runtime->ceval,
+                    _PyEval_AddPendingCall(tstate,
                                            report_wakeup_write_error,
                                            (void *)(intptr_t)errno);
                 }
