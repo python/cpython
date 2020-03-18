@@ -583,17 +583,13 @@ class AST_Tests(unittest.TestCase):
         self.assertIn("identifier must be of type str", str(cm.exception))
 
     def test_invalid_constant(self):
-        for invalid_constant in (int, (1, 2, int), frozenset((1, 2, int))):
-            e = ast.Expression(value=ast.Constant(invalid_constant))
+        for invalid_constant in int, (1, 2, int), frozenset((1, 2, int)):
+            e = ast.Expression(body=ast.Constant(invalid_constant))
             ast.fix_missing_locations(e)
-            self.assertRaises(
-                TypeError,
-                compile,
-                e,
-                "<test>",
-                "eval",
-                msg="TypeError: got an invalid type in Constant: type",
-            )
+            with self.assertRaisesRegex(
+                TypeError, "invalid type in Constant: type"
+            ) as cm:
+                compile(e, "<test>", "eval")
 
     def test_empty_yield_from(self):
         # Issue 16546: yield from value is not optional.
