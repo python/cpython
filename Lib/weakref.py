@@ -310,6 +310,20 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             self._commit_removals()
         return list(self.data.values())
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        c = self.copy()
+        c.update(other)
+        return c
+
+    def __ror__(self, other):
+        c = other.copy()
+        c.update(self)
+        return c
+
 
 class KeyedRef(ref):
     """Specialized reference that includes a key corresponding to the value.

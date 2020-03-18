@@ -201,6 +201,8 @@ than needed.
 same issues as the :meth:`keyrefs` method of :class:`WeakKeyDictionary`
 objects.
 
+   .. versionchanged:: 3.9
+      Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
 
 .. method:: WeakValueDictionary.valuerefs()
 
