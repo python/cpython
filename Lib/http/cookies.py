@@ -585,7 +585,7 @@ class BaseCookie(dict):
 
         # Invalid tailing data, make sure it's not whitespace.
         if i < n:
-            tail = str[i:].rstrip():
+            tail = str[i:].rstrip()
             if tail:
                 raise CookieError('Invalid tailing data %r' % (tail,))
 
