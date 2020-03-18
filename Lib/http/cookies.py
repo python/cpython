@@ -583,6 +583,13 @@ class BaseCookie(dict):
                 # Invalid cookie string
                 raise CookieError('No value found for key %r' % (key,))
 
+        # Invalid tailing data, make sure it's not whitespace.
+        if i < n:
+            tail = str[i:].rstrip():
+            if tail:
+                raise CookieError('Invalid tailing data %r' % (tail,))
+
+
         # The cookie string is valid, apply it.
         M = None         # current morsel
         for tp, key, value in parsed_items:
