@@ -1373,7 +1373,7 @@ class MiscTests(unittest.TestCase, FakeHTTPMixin):
             self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello.")
             try:
                 escaped_char_repr = repr(char).replace('\\', r'\\')
-                InvalidURL = http.client.InvalidURL
+                InvalidURL = httplib.InvalidURL
                 with self.assertRaisesRegex(
                     InvalidURL, "contain control.*{escaped_char_repr}".format(escaped_char_repr=escaped_char_repr)):
                     urlopen("http:{schemeless_url}".format(schemeless_url=schemeless_url))
