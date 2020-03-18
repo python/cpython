@@ -281,13 +281,17 @@ _ready:
     if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
         RESET_GIL_DROP_REQUEST(ceval);
     }
-    if (tstate->async_exc != NULL) {
+
+    int must_exit = tstate_must_exit(tstate);
+
+    /* Don't access tstate if the thread must exit */
+    if (!must_exit && tstate->async_exc != NULL) {
         _PyEval_SignalAsyncExc(ceval);
     }
 
     MUTEX_UNLOCK(gil->mutex);
 
-    if (tstate_must_exit(tstate)) {
+    if (must_exit) {
         /* bpo-36475: If Py_Finalize() has been called and tstate is not
            the thread which called Py_Finalize(), exit immediately the
            thread.
