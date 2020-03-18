@@ -1077,6 +1077,7 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         if (res == NULL || PySet_GET_SIZE(res) != 0) {
             return res;
         }
+        /* If the created frozenset is empty, return the empty frozenset singleton instead */
         Py_DECREF(res);
     }
 
