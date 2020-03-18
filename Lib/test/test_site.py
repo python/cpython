@@ -530,7 +530,7 @@ class StartupImportTests(unittest.TestCase):
         isolated_paths = eval(stdout)
 
         # bpo-27807: Even with -I, the site module executes all .pth files
-        # found in sys.path (see site.addpackage()). Skip the file if at least
+        # found in sys.path (see site.addpackage()). Skip the test if at least
         # one .pth file is found.
         for path in isolated_paths:
             pth_files = glob.glob(os.path.join(path, "*.pth"))
