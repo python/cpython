@@ -702,7 +702,7 @@ class BasicTest(TestCase):
         with self.assertRaisesRegexp(socket.error, "Invalid response"):
             conn._tunnel()
 
-    def test_putrequest_override_validation(self):
+    def test_putrequest_override_domain_validation(self):
         """
         It should be possible to override the default validation
         behavior in putrequest (bpo-38216).
@@ -714,6 +714,17 @@ class BasicTest(TestCase):
         conn = UnsafeHTTPConnection('example.com')
         conn.sock = FakeSocket('')
         conn.putrequest('GET', '/\x00')
+
+    def test_putrequest_override_host_validation(self):
+        class UnsafeHTTPConnection(httplib.HTTPConnection):
+            def _validate_host(self, url):
+                pass
+
+        conn = UnsafeHTTPConnection('example.com\r\n')
+        conn.sock = FakeSocket('')
+        # set skip_host so a ValueError is not raised upon adding the
+        # invalid URL as the value of the "Host:" header
+        conn.putrequest('GET', '/', skip_host=1)
 
 
 class OfflineTest(TestCase):
