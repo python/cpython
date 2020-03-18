@@ -501,7 +501,7 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         c = other.copy()
         c.update(self)
         return c
-    
+
 
 class finalize:
     """Class for finalization of weakrefable objects

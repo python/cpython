@@ -1629,7 +1629,7 @@ class MappingTestCase(TestBase):
         c1 = C()
         c2 = C()
         c3 = C()
-        
+
         wvd1 = weakref.WeakKeyDictionary({c1: '1', c2: '2'})
         wvd2 = weakref.WeakKeyDictionary({c3: '3', c1: '4'})
 
