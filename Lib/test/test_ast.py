@@ -283,7 +283,7 @@ class AST_Tests(unittest.TestCase):
             x.vararg
 
         with self.assertRaises(TypeError):
-            # "_ast.AST constructor takes 0 positional arguments"
+            # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
     def test_AST_garbage_collection(self):
@@ -573,7 +573,7 @@ class AST_Tests(unittest.TestCase):
         m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("but got <_ast.expr", str(cm.exception))
+        self.assertIn("but got <ast.expr", str(cm.exception))
 
     def test_invalid_identifier(self):
         m = ast.Module([ast.Expr(ast.Name(42, ast.Load()))], [])

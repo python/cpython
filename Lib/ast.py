@@ -494,10 +494,13 @@ def _getter(self):
 def _setter(self, value):
     self.value = value
 
-Constant.n = property(_getter, _setter)
-Constant.s = property(_getter, _setter)
+Constant.n = property(_getter, _setter, doc='Deprecated. Use value instead.')
+Constant.s = property(_getter, _setter, doc='Deprecated. Use value instead.')
 
 class _ABC(type):
+
+    def __init__(cls, *args):
+        cls.__doc__ = """Deprecated AST node class. Use ast.Constant instead"""
 
     def __instancecheck__(cls, inst):
         if not isinstance(inst, Constant):
@@ -565,10 +568,12 @@ _const_node_type_names = {
 }
 
 class Index(AST):
+    """Deprecated AST node class. Use the index value directly instead."""
     def __new__(cls, value, **kwargs):
         return value
 
 class ExtSlice(AST):
+    """Deprecated AST node class. Use ast.Tuple instead."""
     def __new__(cls, dims=(), **kwargs):
         return Tuple(list(dims), Load(), **kwargs)
 
@@ -578,7 +583,19 @@ def _dims_getter(self):
 def _dims_setter(self, value):
     self.elts = value
 
-Tuple.dims = property(_dims_getter, _dims_setter)
+Tuple.dims = property(_dims_getter, _dims_setter, doc='Deprecated. Use elts instead.')
+
+class Suite(mod):
+    """Unused AST node class."""
+
+class AugLoad(expr_context):
+    """Unused AST node class."""
+
+class AugStore(expr_context):
+    """Unused AST node class."""
+
+class Param(expr_context):
+    """Unused AST node class"""
 
 
 # Large float and imaginary literals get turned into infinities in the AST.
