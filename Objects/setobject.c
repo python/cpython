@@ -1133,41 +1133,6 @@ frozenset_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 static PyObject *
-frozenset_vectorcall(PyObject *type, PyObject * const*args,
-                     size_t nargsf, PyObject *kwnames)
-{
-    assert(PyType_Check(type));
-
-    if (!_PyArg_NoKwnames("frozenset", kwnames)) {
-        return NULL;
-    }
-
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_CheckPositional("frozenset", nargs, 0, 1)) {
-        return NULL;
-    }
-
-    if (nargs) {
-        if (PyFrozenSet_CheckExact(args[0])) {
-            Py_INCREF(args[0]);
-            return args[0];
-        }
-        PyObject *res = make_new_set((PyTypeObject *)type, args[0]);
-        if (res == NULL || PySet_GET_SIZE(res)) {
-            return res;
-        }
-        Py_DECREF(res);
-    }
-
-    // The empty frozenset is a singleton
-    if (emptyfrozenset == NULL) {
-        emptyfrozenset = make_new_set((PyTypeObject *)type, NULL);
-    }
-    Py_XINCREF(emptyfrozenset);
-    return emptyfrozenset;
-}
-
-static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     return make_new_set(type, NULL);
