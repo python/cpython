@@ -1066,14 +1066,15 @@ static PyObject *emptyfrozenset = NULL;
 static PyObject *
 make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 {
+    assert(PyType_Check(type));
     if (iterable != NULL) {
-        /* frozenset(f) is idempotent */
         if (PyFrozenSet_CheckExact(iterable)) {
+            /* frozenset(f) is idempotent */
             Py_INCREF(iterable);
             return iterable;
         }
         PyObject *res = make_new_set((PyTypeObject *)type, iterable);
-        if (res == NULL || PySet_GET_SIZE(res)) {
+        if (res == NULL || PySet_GET_SIZE(res) != 0) {
             return res;
         }
         Py_DECREF(res);
@@ -1104,18 +1105,13 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return make_new_set(type, iterable);
     }
 
-    if (iterable != NULL) {
-        return make_new_frozenset(type, iterable);
-    }
-    return make_new_frozenset(type, NULL);
+    return make_new_frozenset(type, iterable);
 }
 
 static PyObject *
 frozenset_vectorcall(PyObject *type, PyObject * const*args,
                      size_t nargsf, PyObject *kwnames)
 {
-    assert(PyType_Check(type));
-
     if (!_PyArg_NoKwnames("frozenset", kwnames)) {
         return NULL;
     }
@@ -1125,11 +1121,8 @@ frozenset_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    if (nargs) {
-        return make_new_frozenset((PyTypeObject *)type, args[0]);
-    }
-
-    return make_new_frozenset((PyTypeObject *)type, NULL);
+    PyObject *iterable = (nargs ? args[0] : NULL);
+    return make_new_frozenset((PyTypeObject *)type, iterable);
 }
 
 static PyObject *
