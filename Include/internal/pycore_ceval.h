@@ -57,6 +57,8 @@ extern PyObject *_PyEval_EvalCode(
 extern int _PyEval_ThreadsInitialized(_PyRuntimeState *runtime);
 extern PyStatus _PyEval_InitThreads(PyThreadState *tstate);
 
+extern void _PyEval_ReleaseLock(PyThreadState *tstate);
+
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
