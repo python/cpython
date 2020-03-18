@@ -1624,6 +1624,21 @@ class MappingTestCase(TestBase):
         self.assertEqual(len(d), 1)
         self.assertEqual(list(d.keys()), [o2])
 
+    def test_weak_keyed_union_operators(self):
+        class C: pass
+        c1 = C()
+        c2 = C()
+        c3 = C()
+        
+        wvd1 = weakref.WeakKeyDictionary({c1: '1', c2: '2'})
+        wvd2 = weakref.WeakKeyDictionary({c3: '3', c1: '4'})
+
+        wvd3 = wvd1 | wvd2
+        self.assertEqual(dict(wvd3), dict(wvd1) | dict(wvd2))
+
+        wvd1 |= wvd2
+        self.assertEqual(wvd1, wvd3)
+
     def test_weak_valued_delitem(self):
         d = weakref.WeakValueDictionary()
         o1 = Object('1')
