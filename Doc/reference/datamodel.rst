@@ -442,7 +442,7 @@ Mappings
       module.
 
       .. versionchanged:: 3.7
-         Note that older Python versions dictionaries do not preserve insertion order.
+         Older Python versions dictionaries do not preserve insertion order.
          This behavior was an implementation detail of CPython from 3.6.
 
 Callable types
