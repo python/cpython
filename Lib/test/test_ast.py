@@ -354,7 +354,7 @@ class AST_Tests(unittest.TestCase):
     def test_arguments(self):
         x = ast.FunctionDef()
         self.assertEqual(x._fields, ('name', 'args', 'body', 'decorator_list', 'returns', 'type_comment'))
-        self.assertEqual(x._field_defaults, ('', '', '*', '*', '?', '?'))
+        self.assertEqual(x._field_defaults, {'body': [], 'decorator_list': [], 'returns': None, 'type_comment': None})
 
         with self.assertRaises(AttributeError):
             x.name

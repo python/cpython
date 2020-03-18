@@ -102,18 +102,6 @@ def literal_eval(node_or_string):
         return _convert_signed_num(node)
     return _convert(node_or_string)
 
-@lru_cache
-def _field_defaults(node_type):
-    field_defaults = {}
-    for field, default in zip(node_type._fields, node_type._field_defaults):
-        if default == "?":
-            field_defaults[field] = None
-        elif default == "*":
-            field_defaults[field] = []
-        else:
-            field_defaults[field] = Ellipsis # sentinel
-    return field_defaults
-
 
 def dump(node, annotate_fields=True, include_attributes=False, *, indent=None, omit_defaults=True):
     """
@@ -142,14 +130,18 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None, o
             args = []
             allsimple = True
             keywords = annotate_fields
-            field_defaults = _field_defaults(cls)
+            field_defaults = cls._field_defaults
             for name in node._fields:
                 try:
                     value = getattr(node, name)
                 except AttributeError:
                     keywords = True
                     continue
-                if omit_defaults and field_defaults[name] == value:
+                if (
+                    omit_defaults
+                    and name in field_defaults
+                    and field_defaults[name] == value
+                ):
                     keywords = True
                     continue
                 value, simple = _format(value, level)

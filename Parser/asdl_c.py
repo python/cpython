@@ -614,9 +614,8 @@ class PyTypesDeclareVisitor(PickleVisitor):
             for f in prod.fields:
                 self.emit('"%s",' % f.name, 1)
             self.emit("};", 0)
-            self.emit("static const char * const %s_field_defaults[]={" % name, 0)
-            for f in prod.fields:
-                self.emit('"%s",' % f.extra, 1)
+            self.emit("static const char %s_field_defaults[]={" % name, 0)
+            self.emit_field_defaults(prod.fields)
             self.emit("};", 0)
 
     def visitSum(self, sum, name):
@@ -645,10 +644,16 @@ class PyTypesDeclareVisitor(PickleVisitor):
             for t in cons.fields:
                 self.emit('"%s",' % t.name, 1)
             self.emit("};",0)
-            self.emit("static const char * const %s_field_defaults[]={" % cons.name, 0)
-            for t in cons.fields:
-                self.emit('"%s",' % t.extra, 1)
+            self.emit("static const char %s_field_defaults[]={" % cons.name, 0)
+            self.emit_field_defaults(cons.fields)
             self.emit("};",0)
+
+    def emit_field_defaults(self, fields):
+        for field in fields:
+            if field.extra:
+                self.emit("%r," % field.extra, 1)
+            else:
+                self.emit("' ',", 1)
 
 
 class PyTypesVisitor(PickleVisitor):
@@ -686,23 +691,6 @@ ast_clear(AST_object *self)
 {
     Py_CLEAR(self->dict);
     return 0;
-}
-
-static inline PyObject *
-find_field_default(PyObject *field_default)
-{
-    if (PyUnicode_GET_LENGTH(field_default) < 1) {
-        return NULL;
-    }
-    switch (PyUnicode_READ_CHAR(field_default, 0)){
-        case '?':
-            Py_INCREF(Py_None);
-            return Py_None;
-        case '*':
-            return PyList_New(0);
-        default:
-            return NULL;
-    }
 }
 
 static int
@@ -752,7 +740,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 goto cleanup;
         }
     }
-    PyObject *field, *raw_field_default, *field_default;
+    PyObject *field, *field_default;
     for (i = 0; i < numfields; i++) {
         field = PySequence_GetItem(fields, i);
         if (!field) {
@@ -760,17 +748,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             goto cleanup;
         }
         int attr_present = PyObject_HasAttr(self, field);
+        field_default = PyDict_GetItem(field_defaults, field);
         Py_DECREF(field);
-        if (!attr_present) {
-            raw_field_default = PySequence_GetItem(field_defaults, i);
-            if (!raw_field_default) {
-                res = -1;
-                goto cleanup;
-            }
-            field_default = find_field_default(raw_field_default);
-            Py_DECREF(raw_field_default);
-            if (!field_default) {
-                continue;
+        if (!attr_present && field_default) {
+            if (PyList_Check(field_default)) {
+                field_default = PyList_New(0);
+            } else {
+                Py_INCREF(field_default);
             }
             res = PyObject_SetAttr(self, field, field_default);
             Py_DECREF(field_default);
@@ -843,7 +827,7 @@ make_type(
     const char *type,
     PyObject* base,
     const char* const* fields,
-    const char* const* field_defaults,
+    const char* field_defaults,
     Py_ssize_t num_fields,
     const char *doc
 )
@@ -856,21 +840,29 @@ make_type(
     if (!fnames) {
         goto exit;
     }
-    fdefaults = PyTuple_New(num_fields);
+    fdefaults = PyDict_New();
     if (!fdefaults) {
         goto exit;
     }
+    PyObject *field, *field_default;
     for (i = 0; i < num_fields; i++) {
-        PyObject *field = PyUnicode_InternFromString(fields[i]);
+        field = PyUnicode_InternFromString(fields[i]);
         if (!field) {
             goto exit;
         }
         PyTuple_SET_ITEM(fnames, i, field);
-        PyObject *field_default = PyUnicode_InternFromString(field_defaults[i]);
-        if (!field_default) {
-            goto exit;
+        if (field_defaults[i] == '?') {
+            field_default = Py_None;
+            Py_INCREF(field_default);
+        } else if (field_defaults[i] == '*') {
+            field_default = PyList_New(0);
+            if (!field_default) {
+                goto exit;
+            }
+        } else {
+            continue;
         }
-        PyTuple_SET_ITEM(fdefaults, i, field_default);
+        PyDict_SetItem(fdefaults, field, field_default);
     }
     result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOOOs}",
                     type, base,

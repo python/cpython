@@ -771,29 +771,29 @@ static const char * const Module_fields[]={
     "body",
     "type_ignores",
 };
-static const char * const Module_field_defaults[]={
-    "*",
-    "*",
+static const char Module_field_defaults[]={
+    '*',
+    '*',
 };
 static const char * const Interactive_fields[]={
     "body",
 };
-static const char * const Interactive_field_defaults[]={
-    "*",
+static const char Interactive_field_defaults[]={
+    '*',
 };
 static const char * const Expression_fields[]={
     "body",
 };
-static const char * const Expression_field_defaults[]={
-    "",
+static const char Expression_field_defaults[]={
+    ' ',
 };
 static const char * const FunctionType_fields[]={
     "argtypes",
     "returns",
 };
-static const char * const FunctionType_field_defaults[]={
-    "*",
-    "",
+static const char FunctionType_field_defaults[]={
+    '*',
+    ' ',
 };
 static const char * const stmt_attributes[] = {
     "lineno",
@@ -810,13 +810,13 @@ static const char * const FunctionDef_fields[]={
     "returns",
     "type_comment",
 };
-static const char * const FunctionDef_field_defaults[]={
-    "",
-    "",
-    "*",
-    "*",
-    "?",
-    "?",
+static const char FunctionDef_field_defaults[]={
+    ' ',
+    ' ',
+    '*',
+    '*',
+    '?',
+    '?',
 };
 static const char * const AsyncFunctionDef_fields[]={
     "name",
@@ -826,13 +826,13 @@ static const char * const AsyncFunctionDef_fields[]={
     "returns",
     "type_comment",
 };
-static const char * const AsyncFunctionDef_field_defaults[]={
-    "",
-    "",
-    "*",
-    "*",
-    "?",
-    "?",
+static const char AsyncFunctionDef_field_defaults[]={
+    ' ',
+    ' ',
+    '*',
+    '*',
+    '?',
+    '?',
 };
 static const char * const ClassDef_fields[]={
     "name",
@@ -841,44 +841,44 @@ static const char * const ClassDef_fields[]={
     "body",
     "decorator_list",
 };
-static const char * const ClassDef_field_defaults[]={
-    "",
-    "*",
-    "*",
-    "*",
-    "*",
+static const char ClassDef_field_defaults[]={
+    ' ',
+    '*',
+    '*',
+    '*',
+    '*',
 };
 static const char * const Return_fields[]={
     "value",
 };
-static const char * const Return_field_defaults[]={
-    "?",
+static const char Return_field_defaults[]={
+    '?',
 };
 static const char * const Delete_fields[]={
     "targets",
 };
-static const char * const Delete_field_defaults[]={
-    "*",
+static const char Delete_field_defaults[]={
+    '*',
 };
 static const char * const Assign_fields[]={
     "targets",
     "value",
     "type_comment",
 };
-static const char * const Assign_field_defaults[]={
-    "*",
-    "",
-    "?",
+static const char Assign_field_defaults[]={
+    '*',
+    ' ',
+    '?',
 };
 static const char * const AugAssign_fields[]={
     "target",
     "op",
     "value",
 };
-static const char * const AugAssign_field_defaults[]={
-    "",
-    "",
-    "",
+static const char AugAssign_field_defaults[]={
+    ' ',
+    ' ',
+    ' ',
 };
 static const char * const AnnAssign_fields[]={
     "target",
@@ -886,11 +886,11 @@ static const char * const AnnAssign_fields[]={
     "value",
     "simple",
 };
-static const char * const AnnAssign_field_defaults[]={
-    "",
-    "",
-    "?",
-    "",
+static const char AnnAssign_field_defaults[]={
+    ' ',
+    ' ',
+    '?',
+    ' ',
 };
 static const char * const For_fields[]={
     "target",
@@ -899,12 +899,12 @@ static const char * const For_fields[]={
     "orelse",
     "type_comment",
 };
-static const char * const For_field_defaults[]={
-    "",
-    "",
-    "*",
-    "*",
-    "?",
+static const char For_field_defaults[]={
+    ' ',
+    ' ',
+    '*',
+    '*',
+    '?',
 };
 static const char * const AsyncFor_fields[]={
     "target",
@@ -913,60 +913,60 @@ static const char * const AsyncFor_fields[]={
     "orelse",
     "type_comment",
 };
-static const char * const AsyncFor_field_defaults[]={
-    "",
-    "",
-    "*",
-    "*",
-    "?",
+static const char AsyncFor_field_defaults[]={
+    ' ',
+    ' ',
+    '*',
+    '*',
+    '?',
 };
 static const char * const While_fields[]={
     "test",
     "body",
     "orelse",
 };
-static const char * const While_field_defaults[]={
-    "",
-    "*",
-    "*",
+static const char While_field_defaults[]={
+    ' ',
+    '*',
+    '*',
 };
 static const char * const If_fields[]={
     "test",
     "body",
     "orelse",
 };
-static const char * const If_field_defaults[]={
-    "",
-    "*",
-    "*",
+static const char If_field_defaults[]={
+    ' ',
+    '*',
+    '*',
 };
 static const char * const With_fields[]={
     "items",
     "body",
     "type_comment",
 };
-static const char * const With_field_defaults[]={
-    "*",
-    "*",
-    "?",
+static const char With_field_defaults[]={
+    '*',
+    '*',
+    '?',
 };
 static const char * const AsyncWith_fields[]={
     "items",
     "body",
     "type_comment",
 };
-static const char * const AsyncWith_field_defaults[]={
-    "*",
-    "*",
-    "?",
+static const char AsyncWith_field_defaults[]={
+    '*',
+    '*',
+    '?',
 };
 static const char * const Raise_fields[]={
     "exc",
     "cause",
 };
-static const char * const Raise_field_defaults[]={
-    "?",
-    "?",
+static const char Raise_field_defaults[]={
+    '?',
+    '?',
 };
 static const char * const Try_fields[]={
     "body",
@@ -974,53 +974,53 @@ static const char * const Try_fields[]={
     "orelse",
     "finalbody",
 };
-static const char * const Try_field_defaults[]={
-    "*",
-    "*",
-    "*",
-    "*",
+static const char Try_field_defaults[]={
+    '*',
+    '*',
+    '*',
+    '*',
 };
 static const char * const Assert_fields[]={
     "test",
     "msg",
 };
-static const char * const Assert_field_defaults[]={
-    "",
-    "?",
+static const char Assert_field_defaults[]={
+    ' ',
+    '?',
 };
 static const char * const Import_fields[]={
     "names",
 };
-static const char * const Import_field_defaults[]={
-    "*",
+static const char Import_field_defaults[]={
+    '*',
 };
 static const char * const ImportFrom_fields[]={
     "module",
     "names",
     "level",
 };
-static const char * const ImportFrom_field_defaults[]={
-    "?",
-    "*",
-    "?",
+static const char ImportFrom_field_defaults[]={
+    '?',
+    '*',
+    '?',
 };
 static const char * const Global_fields[]={
     "names",
 };
-static const char * const Global_field_defaults[]={
-    "*",
+static const char Global_field_defaults[]={
+    '*',
 };
 static const char * const Nonlocal_fields[]={
     "names",
 };
-static const char * const Nonlocal_field_defaults[]={
-    "*",
+static const char Nonlocal_field_defaults[]={
+    '*',
 };
 static const char * const Expr_fields[]={
     "value",
 };
-static const char * const Expr_field_defaults[]={
-    "",
+static const char Expr_field_defaults[]={
+    ' ',
 };
 static const char * const expr_attributes[] = {
     "lineno",
@@ -1033,225 +1033,225 @@ static const char * const BoolOp_fields[]={
     "op",
     "values",
 };
-static const char * const BoolOp_field_defaults[]={
-    "",
-    "*",
+static const char BoolOp_field_defaults[]={
+    ' ',
+    '*',
 };
 static const char * const NamedExpr_fields[]={
     "target",
     "value",
 };
-static const char * const NamedExpr_field_defaults[]={
-    "",
-    "",
+static const char NamedExpr_field_defaults[]={
+    ' ',
+    ' ',
 };
 static const char * const BinOp_fields[]={
     "left",
     "op",
     "right",
 };
-static const char * const BinOp_field_defaults[]={
-    "",
-    "",
-    "",
+static const char BinOp_field_defaults[]={
+    ' ',
+    ' ',
+    ' ',
 };
 static const char * const UnaryOp_fields[]={
     "op",
     "operand",
 };
-static const char * const UnaryOp_field_defaults[]={
-    "",
-    "",
+static const char UnaryOp_field_defaults[]={
+    ' ',
+    ' ',
 };
 static const char * const Lambda_fields[]={
     "args",
     "body",
 };
-static const char * const Lambda_field_defaults[]={
-    "",
-    "",
+static const char Lambda_field_defaults[]={
+    ' ',
+    ' ',
 };
 static const char * const IfExp_fields[]={
     "test",
     "body",
     "orelse",
 };
-static const char * const IfExp_field_defaults[]={
-    "",
-    "",
-    "",
+static const char IfExp_field_defaults[]={
+    ' ',
+    ' ',
+    ' ',
 };
 static const char * const Dict_fields[]={
     "keys",
     "values",
 };
-static const char * const Dict_field_defaults[]={
-    "*",
-    "*",
+static const char Dict_field_defaults[]={
+    '*',
+    '*',
 };
 static const char * const Set_fields[]={
     "elts",
 };
-static const char * const Set_field_defaults[]={
-    "*",
+static const char Set_field_defaults[]={
+    '*',
 };
 static const char * const ListComp_fields[]={
     "elt",
     "generators",
 };
-static const char * const ListComp_field_defaults[]={
-    "",
-    "*",
+static const char ListComp_field_defaults[]={
+    ' ',
+    '*',
 };
 static const char * const SetComp_fields[]={
     "elt",
     "generators",
 };
-static const char * const SetComp_field_defaults[]={
-    "",
-    "*",
+static const char SetComp_field_defaults[]={
+    ' ',
+    '*',
 };
 static const char * const DictComp_fields[]={
     "key",
     "value",
     "generators",
 };
-static const char * const DictComp_field_defaults[]={
-    "",
-    "",
-    "*",
+static const char DictComp_field_defaults[]={
+    ' ',
+    ' ',
+    '*',
 };
 static const char * const GeneratorExp_fields[]={
     "elt",
     "generators",
 };
-static const char * const GeneratorExp_field_defaults[]={
-    "",
-    "*",
+static const char GeneratorExp_field_defaults[]={
+    ' ',
+    '*',
 };
 static const char * const Await_fields[]={
     "value",
 };
-static const char * const Await_field_defaults[]={
-    "",
+static const char Await_field_defaults[]={
+    ' ',
 };
 static const char * const Yield_fields[]={
     "value",
 };
-static const char * const Yield_field_defaults[]={
-    "?",
+static const char Yield_field_defaults[]={
+    '?',
 };
 static const char * const YieldFrom_fields[]={
     "value",
 };
-static const char * const YieldFrom_field_defaults[]={
-    "",
+static const char YieldFrom_field_defaults[]={
+    ' ',
 };
 static const char * const Compare_fields[]={
     "left",
     "ops",
     "comparators",
 };
-static const char * const Compare_field_defaults[]={
-    "",
-    "*",
-    "*",
+static const char Compare_field_defaults[]={
+    ' ',
+    '*',
+    '*',
 };
 static const char * const Call_fields[]={
     "func",
     "args",
     "keywords",
 };
-static const char * const Call_field_defaults[]={
-    "",
-    "*",
-    "*",
+static const char Call_field_defaults[]={
+    ' ',
+    '*',
+    '*',
 };
 static const char * const FormattedValue_fields[]={
     "value",
     "conversion",
     "format_spec",
 };
-static const char * const FormattedValue_field_defaults[]={
-    "",
-    "?",
-    "?",
+static const char FormattedValue_field_defaults[]={
+    ' ',
+    '?',
+    '?',
 };
 static const char * const JoinedStr_fields[]={
     "values",
 };
-static const char * const JoinedStr_field_defaults[]={
-    "*",
+static const char JoinedStr_field_defaults[]={
+    '*',
 };
 static const char * const Constant_fields[]={
     "value",
     "kind",
 };
-static const char * const Constant_field_defaults[]={
-    "",
-    "?",
+static const char Constant_field_defaults[]={
+    ' ',
+    '?',
 };
 static const char * const Attribute_fields[]={
     "value",
     "attr",
     "ctx",
 };
-static const char * const Attribute_field_defaults[]={
-    "",
-    "",
-    "",
+static const char Attribute_field_defaults[]={
+    ' ',
+    ' ',
+    ' ',
 };
 static const char * const Subscript_fields[]={
     "value",
     "slice",
     "ctx",
 };
-static const char * const Subscript_field_defaults[]={
-    "",
-    "",
-    "",
+static const char Subscript_field_defaults[]={
+    ' ',
+    ' ',
+    ' ',
 };
 static const char * const Starred_fields[]={
     "value",
     "ctx",
 };
-static const char * const Starred_field_defaults[]={
-    "",
-    "",
+static const char Starred_field_defaults[]={
+    ' ',
+    ' ',
 };
 static const char * const Name_fields[]={
     "id",
     "ctx",
 };
-static const char * const Name_field_defaults[]={
-    "",
-    "",
+static const char Name_field_defaults[]={
+    ' ',
+    ' ',
 };
 static const char * const List_fields[]={
     "elts",
     "ctx",
 };
-static const char * const List_field_defaults[]={
-    "*",
-    "",
+static const char List_field_defaults[]={
+    '*',
+    ' ',
 };
 static const char * const Tuple_fields[]={
     "elts",
     "ctx",
 };
-static const char * const Tuple_field_defaults[]={
-    "*",
-    "",
+static const char Tuple_field_defaults[]={
+    '*',
+    ' ',
 };
 static const char * const Slice_fields[]={
     "lower",
     "upper",
     "step",
 };
-static const char * const Slice_field_defaults[]={
-    "?",
-    "?",
-    "?",
+static const char Slice_field_defaults[]={
+    '?',
+    '?',
+    '?',
 };
 static PyObject* ast2obj_expr_context(expr_context_ty);
 static PyObject* ast2obj_boolop(boolop_ty);
@@ -1265,11 +1265,11 @@ static const char * const comprehension_fields[]={
     "ifs",
     "is_async",
 };
-static const char * const comprehension_field_defaults[]={
-    "",
-    "",
-    "*",
-    "",
+static const char comprehension_field_defaults[]={
+    ' ',
+    ' ',
+    '*',
+    ' ',
 };
 static const char * const excepthandler_attributes[] = {
     "lineno",
@@ -1283,10 +1283,10 @@ static const char * const ExceptHandler_fields[]={
     "name",
     "body",
 };
-static const char * const ExceptHandler_field_defaults[]={
-    "?",
-    "?",
-    "*",
+static const char ExceptHandler_field_defaults[]={
+    '?',
+    '?',
+    '*',
 };
 static PyObject* ast2obj_arguments(void*);
 static const char * const arguments_fields[]={
@@ -1298,14 +1298,14 @@ static const char * const arguments_fields[]={
     "kwarg",
     "defaults",
 };
-static const char * const arguments_field_defaults[]={
-    "*",
-    "*",
-    "?",
-    "*",
-    "*",
-    "?",
-    "*",
+static const char arguments_field_defaults[]={
+    '*',
+    '*',
+    '?',
+    '*',
+    '*',
+    '?',
+    '*',
 };
 static PyObject* ast2obj_arg(void*);
 static const char * const arg_attributes[] = {
@@ -1319,46 +1319,46 @@ static const char * const arg_fields[]={
     "annotation",
     "type_comment",
 };
-static const char * const arg_field_defaults[]={
-    "",
-    "?",
-    "?",
+static const char arg_field_defaults[]={
+    ' ',
+    '?',
+    '?',
 };
 static PyObject* ast2obj_keyword(void*);
 static const char * const keyword_fields[]={
     "arg",
     "value",
 };
-static const char * const keyword_field_defaults[]={
-    "?",
-    "",
+static const char keyword_field_defaults[]={
+    '?',
+    ' ',
 };
 static PyObject* ast2obj_alias(void*);
 static const char * const alias_fields[]={
     "name",
     "asname",
 };
-static const char * const alias_field_defaults[]={
-    "",
-    "?",
+static const char alias_field_defaults[]={
+    ' ',
+    '?',
 };
 static PyObject* ast2obj_withitem(void*);
 static const char * const withitem_fields[]={
     "context_expr",
     "optional_vars",
 };
-static const char * const withitem_field_defaults[]={
-    "",
-    "?",
+static const char withitem_field_defaults[]={
+    ' ',
+    '?',
 };
 static PyObject* ast2obj_type_ignore(void*);
 static const char * const TypeIgnore_fields[]={
     "lineno",
     "tag",
 };
-static const char * const TypeIgnore_field_defaults[]={
-    "",
-    "",
+static const char TypeIgnore_field_defaults[]={
+    ' ',
+    ' ',
 };
 
 
@@ -1393,23 +1393,6 @@ ast_clear(AST_object *self)
 {
     Py_CLEAR(self->dict);
     return 0;
-}
-
-static inline PyObject *
-find_field_default(PyObject *field_default)
-{
-    if (PyUnicode_GET_LENGTH(field_default) < 1) {
-        return NULL;
-    }
-    switch (PyUnicode_READ_CHAR(field_default, 0)){
-        case '?':
-            Py_INCREF(Py_None);
-            return Py_None;
-        case '*':
-            return PyList_New(0);
-        default:
-            return NULL;
-    }
 }
 
 static int
@@ -1459,7 +1442,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 goto cleanup;
         }
     }
-    PyObject *field, *raw_field_default, *field_default;
+    PyObject *field, *field_default;
     for (i = 0; i < numfields; i++) {
         field = PySequence_GetItem(fields, i);
         if (!field) {
@@ -1467,17 +1450,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             goto cleanup;
         }
         int attr_present = PyObject_HasAttr(self, field);
+        field_default = PyDict_GetItem(field_defaults, field);
         Py_DECREF(field);
-        if (!attr_present) {
-            raw_field_default = PySequence_GetItem(field_defaults, i);
-            if (!raw_field_default) {
-                res = -1;
-                goto cleanup;
-            }
-            field_default = find_field_default(raw_field_default);
-            Py_DECREF(raw_field_default);
-            if (!field_default) {
-                continue;
+        if (!attr_present && field_default) {
+            if (PyList_Check(field_default)) {
+                field_default = PyList_New(0);
+            } else {
+                Py_INCREF(field_default);
             }
             res = PyObject_SetAttr(self, field, field_default);
             Py_DECREF(field_default);
@@ -1550,7 +1529,7 @@ make_type(
     const char *type,
     PyObject* base,
     const char* const* fields,
-    const char* const* field_defaults,
+    const char* field_defaults,
     Py_ssize_t num_fields,
     const char *doc
 )
@@ -1563,21 +1542,29 @@ make_type(
     if (!fnames) {
         goto exit;
     }
-    fdefaults = PyTuple_New(num_fields);
+    fdefaults = PyDict_New();
     if (!fdefaults) {
         goto exit;
     }
+    PyObject *field, *field_default;
     for (i = 0; i < num_fields; i++) {
-        PyObject *field = PyUnicode_InternFromString(fields[i]);
+        field = PyUnicode_InternFromString(fields[i]);
         if (!field) {
             goto exit;
         }
         PyTuple_SET_ITEM(fnames, i, field);
-        PyObject *field_default = PyUnicode_InternFromString(field_defaults[i]);
-        if (!field_default) {
-            goto exit;
+        if (field_defaults[i] == '?') {
+            field_default = Py_None;
+            Py_INCREF(field_default);
+        } else if (field_defaults[i] == '*') {
+            field_default = PyList_New(0);
+            if (!field_default) {
+                goto exit;
+            }
+        } else {
+            continue;
         }
-        PyTuple_SET_ITEM(fdefaults, i, field_default);
+        PyDict_SetItem(fdefaults, field, field_default);
     }
     result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOOOs}",
                     type, base,
