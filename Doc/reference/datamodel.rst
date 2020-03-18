@@ -432,7 +432,7 @@ Mappings
          and re-inserting it will add it to the end instead of keeping its old place.
          Note that older Python versions dictionaries do not preserve insertion order.
          This behavior was an implementation detail of CPython from 3.6.   
-         
+
       Dictionaries are mutable; they can be created by the ``{...}`` notation (see
       section :ref:`dict`).
 
