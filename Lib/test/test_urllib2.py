@@ -1374,10 +1374,10 @@ class MiscTests(unittest.TestCase, FakeHTTPMixin):
             try:
                 escaped_char_repr = repr(char).replace('\\', r'\\')
                 InvalidURL = httplib.InvalidURL
-                with self.assertRaisesRegex(
+                with self.assertRaisesRegexp(
                     InvalidURL, "contain control.*{escaped_char_repr}".format(escaped_char_repr=escaped_char_repr)):
                     urlopen("http:{schemeless_url}".format(schemeless_url=schemeless_url))
-                with self.assertRaisesRegex(InvalidURL, "contain control.*{escaped_char_repr}".format(escaped_char_repr=escaped_char_repr)):
+                with self.assertRaisesRegexp(InvalidURL, "contain control.*{escaped_char_repr}".format(escaped_char_repr=escaped_char_repr)):
                     urlopen("https:{schemeless_url}".format(schemeless_url=schemeless_url))
             finally:
                 self.unfakehttp()
