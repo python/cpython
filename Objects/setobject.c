@@ -1024,6 +1024,7 @@ PyDoc_STRVAR(update_doc,
 static PyObject *
 make_new_set(PyTypeObject *type, PyObject *iterable)
 {
+    assert(PyType_Check(type));
     PySetObject *so;
 
     so = (PySetObject *)type->tp_alloc(type, 0);
@@ -1066,7 +1067,10 @@ static PyObject *emptyfrozenset = NULL;
 static PyObject *
 make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 {
-    assert(PyType_Check(type));
+    if (type != &PyFrozenSet_Type) {
+        return make_new_set(type, iterable);
+    }
+
     if (iterable != NULL) {
         if (PyFrozenSet_CheckExact(iterable)) {
             /* frozenset(f) is idempotent */
@@ -1100,10 +1104,6 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable)) {
         return NULL;
-    }
-
-    if (type != &PyFrozenSet_Type) {
-        return make_new_set(type, iterable);
     }
 
     return make_new_frozenset(type, iterable);
