@@ -83,6 +83,25 @@ class CookieTests(unittest.TestCase):
         </script>
         """)
 
+    def test_load_invalid_cookie(self):
+        # Issue 40002: Error inconsistency
+        C = cookies.SimpleCookie()
+        breakpoint()
+        with self.assertRaises(CookieError):
+            C.load('invalid\x00=cookie;Path=/acme')
+
+        # Morsel reserved first
+        with self.assertRaises(CookieError):
+            C.load('Path=/acme;Customer="WILE_E_COYOTE"; Version=1;')
+
+        # Morsel reserved no-value
+        with self.assertRaises(CookieError):
+            C.load('Customer="WILE_E_COYOTE"; Version;')
+
+        # No value
+        with self.assertRaises(CookieError):
+            C.load('Customer="WILE_E_COYOTE"; Name; Version=1;')
+
     def test_extended_encode(self):
         # Issue 9824: some browsers don't follow the standard; we now
         # encode , and ; to keep them from tripping up.
