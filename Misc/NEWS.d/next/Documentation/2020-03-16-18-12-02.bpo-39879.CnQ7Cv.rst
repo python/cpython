@@ -1,2 +1,2 @@
-Update docs dict preserve insertion order and added that thus dict object behaves the same as collections.OrderedDict objects.
+Updated :ref:`datamodel` docs to include :func:`dict` insertion order preservation.
 Patch by Furkan Onder and Samy Lahfa.
