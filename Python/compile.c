@@ -354,7 +354,11 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_nestlevel = 0;
     c.c_do_not_emit_bytecode = 0;
 
-    if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
+    _PyASTOptimizeState state;
+    state.optimize = c.c_optimize;
+    state.ff_features = merged;
+
+    if (!_PyAST_Optimize(mod, arena, &state)) {
         goto finally;
     }
 
