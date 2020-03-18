@@ -436,8 +436,9 @@ PyEval_RestoreThread(PyThreadState *tstate)
 */
 
 void
-_PyEval_SignalReceived(struct _ceval_runtime_state *ceval)
+_PyEval_SignalReceived(PyThreadState *tstate)
 {
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     /* bpo-30703: Function called when the C signal handler of Python gets a
        signal. We cannot queue a callback using Py_AddPendingCall() since
        that function is not async-signal-safe. */
@@ -482,9 +483,9 @@ _pop_pending_call(struct _pending_calls *pending,
 
 int
 _PyEval_AddPendingCall(PyThreadState *tstate,
-                       struct _ceval_runtime_state *ceval,
                        int (*func)(void *), void *arg)
 {
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     struct _pending_calls *pending = &ceval->pending;
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
@@ -511,9 +512,12 @@ _PyEval_AddPendingCall(PyThreadState *tstate,
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    return _PyEval_AddPendingCall(tstate, &runtime->ceval, func, arg);
+    /* Get the Python thread state using PyGILState API, since
+       _PyThreadState_GET() returns NULL if the GIL is released.
+       Py_AddPendingCall() doesn't require the caller to hold the GIL. */
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    assert(tstate != NULL);
+    return _PyEval_AddPendingCall(tstate, func, arg);
 }
 
 static int
