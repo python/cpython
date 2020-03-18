@@ -1,2 +1,0 @@
-Change ``inspect.Signature.parameters`` to ``collections.OrderedDict``.
-A non-working fix was provided in bpo-39775.
