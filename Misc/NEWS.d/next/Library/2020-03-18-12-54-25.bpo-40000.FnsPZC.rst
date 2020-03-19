@@ -1,0 +1,2 @@
+Improved error messages for validation of ``ast.Constant`` nodes. Patch by
+Batuhan Taskaya.
