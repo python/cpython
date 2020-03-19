@@ -588,7 +588,7 @@ class AST_Tests(unittest.TestCase):
             ast.fix_missing_locations(e)
             with self.assertRaisesRegex(
                 TypeError, "invalid type in Constant: type"
-            ) as cm:
+            ):
                 compile(e, "<test>", "eval")
 
     def test_empty_yield_from(self):
