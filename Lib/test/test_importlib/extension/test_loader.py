@@ -35,8 +35,7 @@ class LoaderTests(abc.LoaderTests):
                     name=util.EXTENSIONS.name,
                     path=util.EXTENSIONS.file_path)
 
-        self.assertIn("the 'name' parameter is deprecated; use 'fullname' "
-                      "instead", str(cm.warning))
+        self.assertIn("fullname", str(cm.warning))
 
     def test_argument_name_and_fullname_use(self):
         with self.assertWarns(DeprecationWarning) as warning_cm, \
@@ -46,8 +45,7 @@ class LoaderTests(abc.LoaderTests):
                 name=util.EXTENSIONS.name,
                 path=util.EXTENSIONS.file_path)
 
-        self.assertIn("'name' and 'fullname' cannot be used simultaneously",
-                      str(exception_cm.exception))
+        self.assertIn("fullname", str(exception_cm.exception))
 
     def test_equality(self):
         other = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
