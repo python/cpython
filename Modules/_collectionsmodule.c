@@ -2566,7 +2566,10 @@ collections_exec(PyObject *m) {
         &dequeiter_type,
         &dequereviter_type,
         &tuplegetter_type,
+        NULL,
     };
+
+    defdict_type.tp_base = &PyDict_Type;
 
     for (int i = 0; typelist[i] != NULL; i++) {
         PyTypeObject *type = typelist[i];
