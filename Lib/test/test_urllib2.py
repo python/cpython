@@ -1321,7 +1321,7 @@ class MiscTests(unittest.TestCase, FakeHTTPMixin):
         )
 
     @unittest.skipUnless(ssl, "ssl module required")
-    def test_url_with_control_char_rejected(self):
+    def test_url_path_with_control_char_rejected(self):
         for char_no in range(0, 0x21) + range(0x7f, 0x100):
             char = chr(char_no)
             schemeless_url = "//localhost:7777/test%s/" % char
@@ -1345,7 +1345,7 @@ class MiscTests(unittest.TestCase, FakeHTTPMixin):
                 self.unfakehttp()
 
     @unittest.skipUnless(ssl, "ssl module required")
-    def test_url_with_newline_header_injection_rejected(self):
+    def test_url_path_with_newline_header_injection_rejected(self):
         self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello.")
         host = "localhost:7777?a=1 HTTP/1.1\r\nX-injected: header\r\nTEST: 123"
         schemeless_url = "//" + host + ":8080/test/?test=a"
@@ -1357,14 +1357,32 @@ class MiscTests(unittest.TestCase, FakeHTTPMixin):
             # calls urllib.parse.quote() on the URL which makes all of the
             # above attempts at injection within the url _path_ safe.
             InvalidURL = httplib.InvalidURL
-            with self.assertRaisesRegexp(
-                InvalidURL, r"contain control.*\\r.*(found at least . .)"):
-                urllib2.urlopen("http:" + schemeless_url)
-            with self.assertRaisesRegexp(InvalidURL, r"contain control.*\\n"):
-                urllib2.urlopen("https:" + schemeless_url)
+            with self.assertRaisesRegexp(InvalidURL,
+                    r"contain control.*\\r.*(found at least . .)"):
+                urllib2.urlopen("http:{}".format(schemeless_url))
+            with self.assertRaisesRegexp(InvalidURL,
+                    r"contain control.*\\n"):
+                urllib2.urlopen("https:{}".format(schemeless_url))
         finally:
             self.unfakehttp()
 
+    @unittest.skipUnless(ssl, "ssl module required")
+    def test_url_host_with_control_char_rejected(self):
+        for char_no in list(range(0, 0x21)) + [0x7f]:
+            char = chr(char_no)
+            schemeless_url = "//localhost{}/test/".format(char)
+            self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello.")
+            try:
+                escaped_char_repr = repr(char).replace('\\', r'\\')
+                InvalidURL = httplib.InvalidURL
+                with self.assertRaisesRegexp(InvalidURL,
+                    "contain control.*{}".format(escaped_char_repr)):
+                        urllib2.urlopen("http:{}".format(schemeless_url))
+                with self.assertRaisesRegexp(InvalidURL,
+                    "contain control.*{}".format(escaped_char_repr)):
+                        urllib2.urlopen("https:{}".format(schemeless_url))
+            finally:
+                self.unfakehttp()
 
 
 class RequestTests(unittest.TestCase):
