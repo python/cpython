@@ -533,6 +533,10 @@ Build and C API Changes
   scheduled calls.
   (Contributed by Victor Stinner in :issue:`39984`.)
 
+* Remove ``_PyRuntime.getframe`` hook and remove ``_PyThreadState_GetFrame``
+  macro which was an alias to ``_PyRuntime.getframe``. They were only exposed
+  by the internal C API. Remove also ``PyThreadFrameGetter`` type.
+  (Contributed by Victor Stinner in :issue:`39946`.)
 
 Deprecated
 ==========
