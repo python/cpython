@@ -442,8 +442,9 @@ Mappings
       module.
 
       .. versionchanged:: 3.7
-         Older Python versions dictionaries do not preserve insertion order.
-         This behavior was an implementation detail of CPython from 3.6.
+         Dictionaries did not preserve insertion order in versions of Python before 3.6.
+         In CPython 3.6, insertion order was preserved, but it was considered
+         an implementation detail at that time rather than a language guarantee.
 
 Callable types
    .. index::
