@@ -1625,19 +1625,22 @@ class MappingTestCase(TestBase):
         self.assertEqual(list(d.keys()), [o2])
 
     def test_weak_keyed_union_operators(self):
-        class C: pass
-        c1 = C()
-        c2 = C()
-        c3 = C()
+        o1 = Object('1')
+        wkd1 = weakref.WeakKeyDictionary({o1: '1', C(): '2'})
+        wkd2 = weakref.WeakKeyDictionary({C(): '3', o1: '4'})
+        d1 = {C(): '5', o1: '6'}
 
-        wkd1 = weakref.WeakKeyDictionary({c1: '1', c2: '2'})
-        wkd2 = weakref.WeakKeyDictionary({c3: '3', c1: '4'})
-
-        wkd3 = wkd1 | wkd2
-        self.assertEqual(dict(wkd3), dict(wkd1) | dict(wkd2))
-
+        tmp = wkd1 | wkd2 # Between two WeakKeyDictionaries
+        self.assertEqual(dict(tmp), dict(wkd1) | dict(wkd2))
+        self.assertIsInstance(tmp, weakref.WeakKeyDictionary)
         wkd1 |= wkd2
-        self.assertEqual(wkd1, wkd3)
+        self.assertEqual(wkd1, tmp)
+
+        tmp = wkd2 | d1 # Between WeakKeyDictionary and mapping
+        self.assertEqual(dict(tmp), dict(wkd2) | d1)
+        self.assertIsInstance(tmp, weakref.WeakKeyDictionary)
+        wkd2 |= d1
+        self.assertEqual(wkd2, tmp)
 
     def test_weak_valued_delitem(self):
         d = weakref.WeakValueDictionary()

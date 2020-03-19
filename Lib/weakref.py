@@ -489,18 +489,24 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
             self.update(kwargs)
 
     def __ior__(self, other):
-        self.update(other)
-        return self
+        if isinstance(other, (dict, WeakKeyDictionary, WeakValueDictionary)):
+            self.update(other)
+            return self
+        return NotImplemented
 
     def __or__(self, other):
-        c = self.copy()
-        c.update(other)
-        return c
+        if isinstance(other, (dict, WeakKeyDictionary, WeakValueDictionary)):
+            c = self.copy()
+            c.update(other)
+            return c
+        return NotImplemented
 
     def __ror__(self, other):
-        c = other.copy()
-        c.update(self)
-        return c
+        if isinstance(other, (dict, WeakKeyDictionary, WeakValueDictionary)):
+            c = other.copy()
+            c.update(self)
+            return c
+        return NotImplemented
 
 
 class finalize:
