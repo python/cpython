@@ -2558,7 +2558,7 @@ static struct PyMethodDef collections_methods[] = {
 };
 
 static int
-collections_exec(PyObject *m) {
+collections_exec(PyObject *module) {
     PyTypeObject *typelist[] = {
         &deque_type,
         &defdict_type,
@@ -2578,7 +2578,7 @@ collections_exec(PyObject *m) {
         }
         const char *name = _PyType_Name(type);
         Py_INCREF(type);
-        if (PyModule_AddObject(m, name, (PyObject *)type) < 0) {
+        if (PyModule_AddObject(module, name, (PyObject *)type) < 0) {
             Py_DECREF(type);
             return -1;
         }
