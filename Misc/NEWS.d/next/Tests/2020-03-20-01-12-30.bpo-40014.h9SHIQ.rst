@@ -1,2 +1,2 @@
-Skip :func:`~os.getgrouplist` related tests. if :exc:`OSError` is raised.
+Skip :func:`~os.getgrouplist` related tests, if :exc:`OSError` is raised.
 Patch by Dong-hee Na.
