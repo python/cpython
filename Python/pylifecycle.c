@@ -556,7 +556,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    /* Create the GIL */
+    /* Create the GIL and the pending calls lock */
     status = _PyEval_InitThreads(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1579,6 +1579,12 @@ new_interpreter(PyThreadState **tstate_p)
     status = init_interp_main(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
+    }
+
+    /* Create the pending calls lock */
+    status = _PyEval_InitThreads(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     *tstate_p = tstate;
