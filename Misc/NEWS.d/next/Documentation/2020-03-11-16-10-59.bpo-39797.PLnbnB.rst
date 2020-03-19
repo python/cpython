@@ -1,1 +1,0 @@
-Simple change to documentation for socketserver.BaseServer informing users that shutdown() should be run from a different thread than serve_forever()
