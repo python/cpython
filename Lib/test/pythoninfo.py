@@ -333,9 +333,13 @@ def collect_pwd(info_add):
         return
 
     if hasattr(os, 'getgrouplist'):
-        groups = os.getgrouplist(entry.pw_name, entry.pw_gid)
-        groups = ', '.join(map(str, groups))
-        info_add('os.getgrouplist', groups)
+        try:
+            groups = os.getgrouplist(entry.pw_name, entry.pw_gid)
+            groups = ', '.join(map(str, groups))
+        except OSError:
+            pass
+        else:
+            info_add('os.getgrouplist', groups)
 
 
 def collect_readline(info_add):
