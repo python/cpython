@@ -1025,8 +1025,10 @@ class PosixTester(unittest.TestCase):
     def test_getgrouplist(self):
         user = pwd.getpwuid(os.getuid())[0]
         group = pwd.getpwuid(os.getuid())[3]
-        self.assertIn(group, posix.getgrouplist(user, group))
-
+        try:
+            self.assertIn(group, posix.getgrouplist(user, group))
+        except OSError:
+            raise unittest.SkipTest("os.getgrouplist() is not available")
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
     def test_getgroups(self):
