@@ -8,6 +8,7 @@ import encodings
 from unittest import mock
 
 from test import support
+import _testinternalcapi
 
 try:
     import _testcapi
@@ -47,6 +48,7 @@ def is_code_page_present(cp):
     GetCPInfoEx = prototype(("GetCPInfoExW", WinDLL("kernel32")))
     info = CPINFOEXW()
     return GetCPInfoEx(cp, 0, info)
+
 
 class Queue(object):
     """
@@ -3399,6 +3401,20 @@ class Rot13UtilTest(unittest.TestCase):
         self.assertEqual(
             plain_text,
             'To be, or not to be, that is the question')
+
+
+class ZNormalizedTest(unittest.TestCase):
+    """Test the normalizestring function via codecs module"""
+    def test_normalized_encoding(self):
+        def search_function(encoding):
+            if encoding == "aaa_8":
+                return (1, 2, 3, 4)
+            else:
+                return (None, None, None, None)
+        _testinternalcapi.codecs_unregister()
+        codecs.register(search_function)
+        self.assertEqual((1, 2, 3, 4), codecs.lookup('AAA-8'))
+        self.assertEqual((None, None, None, None), codecs.lookup('BBB-8'))
 
 
 if __name__ == "__main__":
