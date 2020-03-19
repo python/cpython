@@ -120,6 +120,15 @@ static size_t opcache_global_hits = 0;
 static size_t opcache_global_misses = 0;
 #endif
 
+
+/* Only handle signals on the main thread of the main interpreter. */
+static int
+thread_can_handle_signals(void)
+{
+    return (PyThread_get_thread_ident() == _PyRuntime.main_thread);
+}
+
+
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
    the GIL eventually anyway. */
@@ -127,7 +136,8 @@ static size_t opcache_global_misses = 0;
     _Py_atomic_store_relaxed( \
         &(ceval2)->eval_breaker, \
         _Py_atomic_load_relaxed(&(ceval)->gil_drop_request) | \
-        _Py_atomic_load_relaxed(&(ceval)->signals_pending) | \
+        (_Py_atomic_load_relaxed(&(ceval)->signals_pending) \
+            && thread_can_handle_signals()) | \
         _Py_atomic_load_relaxed(&(ceval2)->pending.calls_to_do) | \
         (ceval2)->pending.async_exc)
 
@@ -156,10 +166,11 @@ static size_t opcache_global_misses = 0;
         COMPUTE_EVAL_BREAKER(ceval, ceval2); \
     } while (0)
 
+/* eval_breaker is not set to 1 if thread_can_handle_signals() is false. */
 #define SIGNAL_PENDING_SIGNALS(ceval, ceval2) \
     do { \
         _Py_atomic_store_relaxed(&(ceval)->signals_pending, 1); \
-        _Py_atomic_store_relaxed(&(ceval2)->eval_breaker, 1); \
+        COMPUTE_EVAL_BREAKER(ceval, ceval2); \
     } while (0)
 
 #define UNSIGNAL_PENDING_SIGNALS(ceval, ceval2) \
@@ -540,8 +551,7 @@ handle_signals(PyThreadState *tstate)
 {
     _PyRuntimeState *runtime = tstate->interp->runtime;
 
-    /* Only handle signals on main thread */
-    if (PyThread_get_thread_ident() != runtime->main_thread) {
+    if (!thread_can_handle_signals()) {
         return 0;
     }
     /*
