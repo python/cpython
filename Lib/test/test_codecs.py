@@ -49,7 +49,6 @@ def is_code_page_present(cp):
     info = CPINFOEXW()
     return GetCPInfoEx(cp, 0, info)
 
-
 class Queue(object):
     """
     queue: write bytes at one end, read bytes from the other end

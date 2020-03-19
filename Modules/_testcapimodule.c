@@ -2155,6 +2155,7 @@ codec_incrementaldecoder(PyObject *self, PyObject *args)
     return PyCodec_IncrementalDecoder(encoding, errors);
 }
 
+
 /* Simple test of _PyLong_NumBits and _PyLong_Sign. */
 static PyObject *
 test_long_numbits(PyObject *self, PyObject *Py_UNUSED(ignored))
