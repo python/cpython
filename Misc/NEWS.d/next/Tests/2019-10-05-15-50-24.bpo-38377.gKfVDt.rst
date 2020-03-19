@@ -1,2 +1,5 @@
-Skip test_get_event_loop_new_process on systems which don’t provide it
-(e.g., building environments of some Linux distributions).
+Add the environment variable :data:`PYTHON_NO_DEV_SHM`,
+which when set to 1, makes the Python skip tests depending
+on :data:`/dev/shm` interface, which are missing in building
+environments of some Linux distributions. Currently skipping
+:method:`test_get_event_loop_new_process`.
