@@ -1,2 +1,2 @@
-Skip :func:`~os.getgrouplist` related tests, if :exc:`OSError` is raised.
+test.pythoninfo: skip :func:`~os.getgrouplist` if it raises an :exc:`OSError`.
 Patch by Dong-hee Na.

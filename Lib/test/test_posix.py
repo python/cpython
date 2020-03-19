@@ -1027,8 +1027,13 @@ class PosixTester(unittest.TestCase):
         group = pwd.getpwuid(os.getuid())[3]
         try:
             self.assertIn(group, posix.getgrouplist(user, group))
-        except OSError:
-            raise unittest.SkipTest("os.getgrouplist() is not available")
+        except OSError as e:
+            # bpo-40014: getgrouplist fails with
+            # "[Errno 25] Inappropriate ioctl for device" on macOS
+            if sys.platform == 'darwin':
+                raise unittest.SkipTest("bpo-40014: os.getgrouplist() is not available")
+            else:
+                raise e
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
     def test_getgroups(self):
