@@ -280,8 +280,17 @@ _ready:
     COND_SIGNAL(gil->switch_cond);
     MUTEX_UNLOCK(gil->switch_mutex);
 #endif
+
     if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
         RESET_GIL_DROP_REQUEST(ceval, ceval2);
+    }
+    else {
+        /* bpo-40010: eval_breaker should be recomputed to be set to 1 if there
+           a pending signal: signal received by another thread which cannot
+           handle signals.
+
+           Note: RESET_GIL_DROP_REQUEST() calls COMPUTE_EVAL_BREAKER(). */
+        COMPUTE_EVAL_BREAKER(ceval, ceval2);
     }
 
     int must_exit = tstate_must_exit(tstate);
