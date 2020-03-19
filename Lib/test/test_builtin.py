@@ -390,7 +390,14 @@ class BuiltinTest(unittest.TestCase):
             '''async for i in arange(1):
                    a = 1''',
             '''async with asyncio.Lock() as l:
-                   a = 1'''
+                   a = 1''',
+            '''a = [x async for x in arange(2)][1]''',
+            '''a = 1 in {x async for x in arange(2)}''',
+            '''a = {x:1 async for x in arange(1)}[0]''',
+            '''a = [x async for x in arange(2) async for x in arange(2)][1]''',
+            '''a = [x async for x in (x async for x in arange(5))][1]''',
+            '''a, = [1 for x in {x async for x in arange(1)}]''',
+            '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]'''
         ]
         policy = maybe_get_event_loop_policy()
         try:
