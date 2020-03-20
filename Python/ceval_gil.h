@@ -141,8 +141,7 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 }
 
 static void
-drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
-         PyThreadState *tstate)
+drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
 {
     struct _gil_runtime_state *gil = &ceval->gil;
     if (!_Py_atomic_load_relaxed(&gil->locked)) {
@@ -169,7 +168,7 @@ drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
         {
-            RESET_GIL_DROP_REQUEST(ceval, ceval2);
+            RESET_GIL_DROP_REQUEST(tstate);
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
                the GIL and drop it again, and reset the condition
@@ -223,14 +222,9 @@ take_gil(PyThreadState *tstate)
         PyThread_exit_thread();
     }
 
-    /* Ensure that tstate is valid: sanity check for PyEval_AcquireThread() and
-       PyEval_RestoreThread(). Detect if tstate memory was freed. */
-    assert(!_PyMem_IsPtrFreed(tstate));
-    assert(!_PyMem_IsPtrFreed(tstate->interp));
-
+    assert(is_tstate_valid(tstate));
     struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     struct _gil_runtime_state *gil = &ceval->gil;
-    struct _ceval_state *ceval2 = &tstate->interp->ceval;
 
     /* Check that _PyEval_InitThreads() was called to create the lock */
     assert(gil_created(gil));
@@ -259,7 +253,7 @@ take_gil(PyThreadState *tstate)
                 PyThread_exit_thread();
             }
 
-            SET_GIL_DROP_REQUEST(ceval);
+            SET_GIL_DROP_REQUEST(tstate);
         }
     }
 
@@ -292,20 +286,21 @@ _ready:
            in take_gil() while the main thread called
            wait_for_thread_shutdown() from Py_Finalize(). */
         MUTEX_UNLOCK(gil->mutex);
-        drop_gil(ceval, ceval2, tstate);
+        drop_gil(ceval, tstate);
         PyThread_exit_thread();
     }
 
     if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
-        RESET_GIL_DROP_REQUEST(ceval, ceval2);
+        RESET_GIL_DROP_REQUEST(tstate);
     }
     else {
         /* bpo-40010: eval_breaker should be recomputed to be set to 1 if there
-           a pending signal: signal received by another thread which cannot
+           is a pending signal: signal received by another thread which cannot
            handle signals.
 
            Note: RESET_GIL_DROP_REQUEST() calls COMPUTE_EVAL_BREAKER(). */
-        COMPUTE_EVAL_BREAKER(ceval, ceval2);
+        struct _ceval_state *ceval2 = &tstate->interp->ceval;
+        COMPUTE_EVAL_BREAKER(tstate, ceval, ceval2);
     }
 
     /* Don't access tstate if the thread must exit */
