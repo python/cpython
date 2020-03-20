@@ -1625,10 +1625,10 @@ class MappingTestCase(TestBase):
         self.assertEqual(list(d.keys()), [o2])
 
     def test_weak_keyed_union_operators(self):
-        o1 = Object('1')
-        wkd1 = weakref.WeakKeyDictionary({o1: '1', C(): '2'})
-        wkd2 = weakref.WeakKeyDictionary({C(): '3', o1: '4'})
-        d1 = {C(): '5', o1: '6'}
+        o = Object('1')
+        wkd1 = weakref.WeakKeyDictionary({o: '1', C(): '2'})
+        wkd2 = weakref.WeakKeyDictionary({C(): '3', o: '4'})
+        d1 = {C(): '5', o: '6'}
 
         tmp = wkd1 | wkd2 # Between two WeakKeyDictionaries
         self.assertEqual(dict(tmp), dict(wkd1) | dict(wkd2))
