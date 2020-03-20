@@ -317,9 +317,15 @@ _Py_IsMainInterpreter(PyThreadState* tstate)
 static inline int
 _Py_ThreadCanHandleSignals(PyThreadState *tstate)
 {
-    /* Use directly _PyRuntime rather than tstate->interp->runtime, since
-       this function is used in performance critical code path (ceval) */
     return (_Py_IsMainThread() && _Py_IsMainInterpreter(tstate));
+}
+
+
+/* Only execute pending calls on the main thread. */
+static inline int
+_Py_ThreadCanHandlePendingCalls(void)
+{
+    return _Py_IsMainThread();
 }
 
 
