@@ -47,7 +47,7 @@ codecs_unregister(PyObject *self, PyObject *Py_UNUSED(args))
         Py_SET_SIZE(codec_search_path, 0);
         codec_search_path->ob_item = NULL;
         codec_search_path->allocated = 0;
-        while (--i >= 0) {
+        while (--i > 0) {
             Py_XDECREF(item[i]);
         }
     }
