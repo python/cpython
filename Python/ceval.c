@@ -149,7 +149,8 @@ COMPUTE_EVAL_BREAKER(PyThreadState *tstate,
         _Py_atomic_load_relaxed(&ceval->gil_drop_request)
         | (_Py_atomic_load_relaxed(&ceval->signals_pending)
            && _Py_ThreadCanHandleSignals(tstate))
-        | _Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)
+        | (_Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)
+           && _Py_ThreadCanHandlePendingCalls())
         | ceval2->pending.async_exc);
 }
 
@@ -180,9 +181,10 @@ static inline void
 SIGNAL_PENDING_CALLS(PyThreadState *tstate)
 {
     assert(is_tstate_valid(tstate));
+    struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     struct _ceval_state *ceval2 = &tstate->interp->ceval;
     _Py_atomic_store_relaxed(&ceval2->pending.calls_to_do, 1);
-    _Py_atomic_store_relaxed(&ceval2->eval_breaker, 1);
+    COMPUTE_EVAL_BREAKER(tstate, ceval, ceval2);
 }
 
 
@@ -606,8 +608,8 @@ handle_signals(PyThreadState *tstate)
 static int
 make_pending_calls(PyThreadState *tstate)
 {
-    /* only service pending calls on main thread */
-    if (!_Py_IsMainThread()) {
+    /* only execute pending calls on main thread */
+    if (!_Py_ThreadCanHandlePendingCalls()) {
         return 0;
     }
 
