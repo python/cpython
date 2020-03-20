@@ -294,7 +294,33 @@ _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
     _Py_atomic_store_relaxed(&runtime->_finalizing, (uintptr_t)tstate);
 }
 
-PyAPI_FUNC(int) _Py_IsMainInterpreter(PyThreadState* tstate);
+/* Check if the current thread is the main thread.
+   Use _Py_IsMainInterpreter() to check if it's the main interpreter. */
+static inline int
+_Py_IsMainThread(void)
+{
+    unsigned long thread = PyThread_get_thread_ident();
+    return (thread == _PyRuntime.main_thread);
+}
+
+
+static inline int
+_Py_IsMainInterpreter(PyThreadState* tstate)
+{
+    /* Use directly _PyRuntime rather than tstate->interp->runtime, since
+       this function is used in performance critical code path (ceval) */
+    return (tstate->interp == _PyRuntime.interpreters.main);
+}
+
+
+/* Only handle signals on the main thread of the main interpreter. */
+static inline int
+_Py_ThreadCanHandleSignals(PyThreadState *tstate)
+{
+    /* Use directly _PyRuntime rather than tstate->interp->runtime, since
+       this function is used in performance critical code path (ceval) */
+    return (_Py_IsMainThread() && _Py_IsMainInterpreter(tstate));
+}
 
 
 /* Variable and macro for in-line access to current thread
