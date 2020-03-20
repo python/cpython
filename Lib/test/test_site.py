@@ -10,6 +10,7 @@ from test import support
 from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
                           change_cwd)
 import builtins
+import glob
 import os
 import sys
 import re
