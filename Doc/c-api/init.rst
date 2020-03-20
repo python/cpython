@@ -1072,6 +1072,18 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    to :c:func:`PyThreadState_Clear`.
 
 
+.. c:function:: PyFrameObject* PyThreadState_GetFrame(PyThreadState *tstate)
+
+   Get the current frame of the Python thread state *tstate*. It can be
+   ``NULL`` if no frame is currently executing.
+
+   See also :c:func:`PyEval_GetFrame`.
+
+   *tstate* must not be ``NULL``.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: PyInterpreterState* PyThreadState_GetInterpreter(PyThreadState *tstate)
 
    Get the interpreter of the Python thread state *tstate*.

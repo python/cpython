@@ -427,6 +427,9 @@ Build and C API Changes
 
 * New :c:func:`PyThreadState_GetInterpreter` and
   :c:func:`PyInterpreterState_Get` functions to get the interpreter.
+  New :c:func:`PyThreadState_GetFrame` function to get the current frame of a
+  Python thread state.
+  (Contributed by Victor Stinner in :issue:`39947`.)
 
 * Add ``--with-platlibdir`` option to the ``configure`` script: name of the
   platform-specific library directory, stored in the new :attr:`sys.platlibdir`
