@@ -1,0 +1,8 @@
+Optimize pending calls in multithreaded applications. If a thread different
+than the main thread schedules a pending call (:c:func:`Py_AddPendingCall`),
+the bytecode evaluation loop is no longer interrupted at each bytecode
+instruction to check for pending calls which cannot be executed. Only the
+main thread can execute pending calls.
+
+Previously, the bytecode evaluation loop was interrupted at each instruction
+until the main thread executes pending calls.
