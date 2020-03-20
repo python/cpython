@@ -73,7 +73,7 @@ class ParserGenerator:
             self.print(line)
 
     def collect_todo(self) -> None:
-        done: List[str] = list()
+        done: Set[str] = set()
         while True:
             alltodo = list(self.todo)
             todo = [i for i in alltodo if i not in done]
@@ -81,7 +81,7 @@ class ParserGenerator:
                 break
             for rulename in todo:
                 self.todo[rulename].collect_todo(self)
-            done = alltodo
+            done = set(alltodo)
 
     def keyword_type(self) -> int:
         self.keyword_counter += 1
