@@ -136,14 +136,6 @@ is_tstate_valid(PyThreadState *tstate)
 #endif
 
 
-/* Only handle signals on the main thread of the main interpreter. */
-static int
-thread_can_handle_signals(void)
-{
-    return (PyThread_get_thread_ident() == _PyRuntime.main_thread);
-}
-
-
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
    the GIL eventually anyway. */
@@ -156,7 +148,7 @@ COMPUTE_EVAL_BREAKER(PyThreadState *tstate,
     _Py_atomic_store_relaxed(&ceval2->eval_breaker,
         _Py_atomic_load_relaxed(&ceval->gil_drop_request)
         | (_Py_atomic_load_relaxed(&ceval->signals_pending)
-           && thread_can_handle_signals())
+           && _Py_ThreadCanHandleSignals(tstate))
         | _Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)
         | ceval2->pending.async_exc);
 }
@@ -598,17 +590,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 static int
 handle_signals(PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-
-    if (!thread_can_handle_signals()) {
-        return 0;
-    }
-    /*
-     * Ensure that the thread isn't currently running some other
-     * interpreter.
-     */
-    PyInterpreterState *interp = tstate->interp;
-    if (interp != runtime->interpreters.main) {
+    if (!_Py_ThreadCanHandleSignals(tstate)) {
         return 0;
     }
 
@@ -624,11 +606,8 @@ handle_signals(PyThreadState *tstate)
 static int
 make_pending_calls(PyThreadState *tstate)
 {
-
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-
     /* only service pending calls on main thread */
-    if (PyThread_get_thread_ident() != runtime->main_thread) {
+    if (!_Py_IsMainThread()) {
         return 0;
     }
 
