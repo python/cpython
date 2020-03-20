@@ -192,7 +192,6 @@ struct _gilstate_runtime_state {
     /* Assuming the current thread holds the GIL, this is the
        PyThreadState for the current thread. */
     _Py_atomic_address tstate_current;
-    PyThreadFrameGetter getframe;
     /* The single PyInterpreterState used by this process'
        GILState implementation
     */
@@ -200,9 +199,6 @@ struct _gilstate_runtime_state {
     PyInterpreterState *autoInterpreterState;
     Py_tss_t autoTSSkey;
 };
-
-/* hook for PyEval_GetFrame(), requested for Psyco */
-#define _PyThreadState_GetFrame _PyRuntime.gilstate.getframe
 
 /* Issue #26558: Flag to disable PyGILState_Check().
    If set to non-zero, PyGILState_Check() always return 1. */
