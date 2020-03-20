@@ -1007,6 +1007,14 @@ PyThreadState_GetInterpreter(PyThreadState *tstate)
 }
 
 
+struct _frame*
+PyThreadState_GetFrame(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    return _PyThreadState_GetFrame(tstate);
+}
+
+
 /* Asynchronously raise an exception in a thread.
    Requested by Just van Rossum and Alex Martelli.
    To prevent naive misuse, you must write your own extension

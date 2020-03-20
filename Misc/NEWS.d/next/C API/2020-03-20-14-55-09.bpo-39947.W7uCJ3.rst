@@ -1,0 +1,2 @@
+Add :c:func:`PyThreadState_GetFrame` function: get the current frame of a
+Python thread state.
