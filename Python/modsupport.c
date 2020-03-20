@@ -678,3 +678,20 @@ PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
     Py_DECREF(o);
     return -1;
 }
+
+int
+_PyModule_AddType(PyObject *module, PyTypeObject *type)
+{
+    if (PyType_Ready(type) < 0) {
+        return -1;
+    }
+
+    const char *name = _PyType_Name(type);
+    Py_INCREF(type);
+    if (PyModule_AddObject(module, name, (PyObject *)type) < 0) {
+        Py_DECREF(type);
+        return -1;
+    }
+
+    return 0;
+}

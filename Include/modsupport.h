@@ -139,6 +139,9 @@ void _PyArg_Fini(void);
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *, const char *, PyObject *);
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
 PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char *);
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(int) _PyModule_AddType(PyObject *module, PyTypeObject *type);
+#endif /* Py_LIMITED_API */
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_AddStringMacro(m, c) PyModule_AddStringConstant(m, #c, c)
 
