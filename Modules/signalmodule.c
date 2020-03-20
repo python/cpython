@@ -190,12 +190,10 @@ itimer_retval(struct itimerval *iv)
 #endif
 
 static int
-is_main(_PyRuntimeState *runtime)
+thread_can_handle_signals(void)
 {
-    unsigned long thread = PyThread_get_thread_ident();
-    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
-    return (thread == runtime->main_thread
-            && interp == runtime->interpreters.main);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _Py_ThreadCanHandleSignals(tstate);
 }
 
 static PyObject *
@@ -482,10 +480,10 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     }
 #endif
 
-    _PyRuntimeState *runtime = &_PyRuntime;
-    if (!is_main(runtime)) {
+    if (!thread_can_handle_signals()) {
         PyErr_SetString(PyExc_ValueError,
-                        "signal only works in main thread");
+                        "signal only works in main thread "
+                        "of the main interpreter");
         return NULL;
     }
     if (signalnum < 1 || signalnum >= NSIG) {
@@ -700,10 +698,10 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
 #endif
 
-    _PyRuntimeState *runtime = &_PyRuntime;
-    if (!is_main(runtime)) {
+    if (!thread_can_handle_signals()) {
         PyErr_SetString(PyExc_ValueError,
-                        "set_wakeup_fd only works in main thread");
+                        "set_wakeup_fd only works in main thread "
+                        "of the main interpreter");
         return NULL;
     }
 
@@ -1675,8 +1673,7 @@ finisignal(void)
 int
 PyErr_CheckSignals(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    if (!is_main(runtime)) {
+    if (!thread_can_handle_signals()) {
         return 0;
     }
 
@@ -1769,8 +1766,7 @@ int
 PyOS_InterruptOccurred(void)
 {
     if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
-        _PyRuntimeState *runtime = &_PyRuntime;
-        if (!is_main(runtime)) {
+        if (!thread_can_handle_signals()) {
             return 0;
         }
         _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
@@ -1803,8 +1799,7 @@ _PySignal_AfterFork(void)
 int
 _PyOS_IsMainThread(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    return is_main(runtime);
+    return thread_can_handle_signals();
 }
 
 #ifdef MS_WINDOWS
