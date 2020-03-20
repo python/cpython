@@ -774,6 +774,16 @@ These constants are used as parameters for :func:`clock_getres` and
 
    .. versionadded:: 3.7
 
+.. data:: CLOCK_TAI
+
+   International atomic time, as seconds from the unix epoch.
+
+   Warning: your system must have a current leap second table in order for this to give the correct answer.
+   You can configure ptp or ntp to maintain a leap second table.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.9
 
 .. data:: CLOCK_THREAD_CPUTIME_ID
 
@@ -804,7 +814,6 @@ These constants are used as parameters for :func:`clock_getres` and
    .. availability:: macOS 10.12 and newer.
 
    .. versionadded:: 3.8
-
 
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.
