@@ -2190,12 +2190,12 @@ bytes.cutprefix as bytes_cutprefix
 Remove a specified prefix, if present.
 
 If the bytes starts with the prefix, return b[len(prefix):].
-Otherwise, return the original bytes.
+Otherwise, return a copy of the original bytes.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_cutprefix_impl(PyBytesObject *self, Py_buffer *prefix)
-/*[clinic end generated code: output=5e5ef0cf576a8a9c input=f5409d4eb86164e8]*/
+/*[clinic end generated code: output=5e5ef0cf576a8a9c input=62efeb5116b52516]*/
 {
     const char *self_start = PyBytes_AS_STRING(self);
     Py_ssize_t self_len = PyBytes_GET_SIZE(self);
@@ -2227,12 +2227,12 @@ bytes.cutsuffix as bytes_cutsuffix
 Remove a specified suffix, if present.
 
 If the bytes ends with the suffix, return b[:len(b)-len(prefix)].
-Otherwise, return the original bytes.
+Otherwise, return a copy of the original bytes.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_cutsuffix_impl(PyBytesObject *self, Py_buffer *suffix)
-/*[clinic end generated code: output=303549ce0a999724 input=5e4ee249c40f7bf6]*/
+/*[clinic end generated code: output=303549ce0a999724 input=afec1a85ea98d67f]*/
 {
     const char *self_start = PyBytes_AS_STRING(self);
     Py_ssize_t self_len = PyBytes_GET_SIZE(self);

@@ -761,7 +761,7 @@ PyDoc_STRVAR(unicode_cutprefix__doc__,
 "Remove a specified prefix, if present.\n"
 "\n"
 "If the string starts with the prefix, return string[len(prefix):].\n"
-"Otherwise, return the original string.");
+"Otherwise, return a copy of the original string.");
 
 #define UNICODE_CUTPREFIX_METHODDEF    \
     {"cutprefix", (PyCFunction)unicode_cutprefix, METH_O, unicode_cutprefix__doc__},
@@ -795,8 +795,8 @@ PyDoc_STRVAR(unicode_cutsuffix__doc__,
 "\n"
 "Remove a specified suffix, if present.\n"
 "\n"
-"If the string starts with the suffix, return string[len(suffix):].\n"
-"Otherwise, return the original string.");
+"If the string ends with the suffix, return string[:len(string)-len(suffix)].\n"
+"Otherwise, return a copy of the original string.");
 
 #define UNICODE_CUTSUFFIX_METHODDEF    \
     {"cutsuffix", (PyCFunction)unicode_cutsuffix, METH_O, unicode_cutsuffix__doc__},
@@ -1302,4 +1302,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=94e6d11b96656992 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=db94a0ba79ae9c95 input=a9049054013a1b77]*/

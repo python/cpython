@@ -533,7 +533,7 @@ PyDoc_STRVAR(bytes_cutprefix__doc__,
 "Remove a specified prefix, if present.\n"
 "\n"
 "If the bytes starts with the prefix, return b[len(prefix):].\n"
-"Otherwise, return the original bytes.");
+"Otherwise, return a copy of the original bytes.");
 
 #define BYTES_CUTPREFIX_METHODDEF    \
     {"cutprefix", (PyCFunction)bytes_cutprefix, METH_O, bytes_cutprefix__doc__},
@@ -572,7 +572,7 @@ PyDoc_STRVAR(bytes_cutsuffix__doc__,
 "Remove a specified suffix, if present.\n"
 "\n"
 "If the bytes ends with the suffix, return b[:len(b)-len(prefix)].\n"
-"Otherwise, return the original bytes.");
+"Otherwise, return a copy of the original bytes.");
 
 #define BYTES_CUTSUFFIX_METHODDEF    \
     {"cutsuffix", (PyCFunction)bytes_cutsuffix, METH_O, bytes_cutsuffix__doc__},
@@ -833,4 +833,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9e9fe9b5771cea06 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=377e6c8757a80baa input=a9049054013a1b77]*/
