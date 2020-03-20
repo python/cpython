@@ -730,7 +730,7 @@ regen-importlib: Programs/_freeze_importlib
 ############################################################################
 # Regenerate all generated files
 
-regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar \
+regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar regen-pegen \
 	regen-token regen-keyword regen-symbol regen-ast regen-importlib clinic
 
 ############################################################################
@@ -804,6 +804,12 @@ regen-grammar: regen-token
 		$(srcdir)/Python/graminit.c.new
 	$(UPDATE_FILE) $(srcdir)/Include/graminit.h $(srcdir)/Include/graminit.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/graminit.c $(srcdir)/Python/graminit.c.new
+
+.PHONY: regen-pegen
+regen-pegen:
+	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -c -q $(srcdir)/Grammar/python.gram \
+		-o $(srcdir)/Modules/peg_parser/parse.new.c
+	$(UPDATE_FILE) $(srcdir)/Modules/peg_parser/parse.c $(srcdir)/Modules/peg_parser/parse.new.c
 
 .PHONY=regen-ast
 regen-ast:
