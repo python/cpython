@@ -525,7 +525,9 @@ Deprecated
 ==========
 
 * The parameter ``name`` in :class:`importlib.machinery.ExtensionFileLoader` is
-  now deprecated, use ``fullname`` instead.
+  now deprecated, use ``fullname`` instead. This brings the name in line with
+  the rest of :mod:`importlib` and what the documentation has always said the
+  name of the parameter was.
   (Contributed by Sayan Chowdhury in :issue:`30274`.)
 
 * The distutils ``bdist_msi`` command is now deprecated, use
