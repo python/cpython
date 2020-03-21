@@ -66,10 +66,12 @@ typedef struct binascii_state {
     PyObject *Incomplete;
 } binascii_state;
 
-static binascii_state *
+static inline binascii_state *
 get_binascii_state(PyObject *module)
 {
-    return (binascii_state *)PyModule_GetState(module);
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (binascii_state *)state;
 }
 
 /*
