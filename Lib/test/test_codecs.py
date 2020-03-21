@@ -3402,7 +3402,7 @@ class Rot13UtilTest(unittest.TestCase):
             'To be, or not to be, that is the question')
 
 
-class ZNormalizedTest(unittest.TestCase):
+class NormalizedTest(unittest.TestCase):
     """Test the normalizestring function via codecs module"""
     def test_normalized_encoding(self):
         def search_function(encoding):
@@ -3410,7 +3410,6 @@ class ZNormalizedTest(unittest.TestCase):
                 return (1, 2, 3, 4)
             else:
                 return (None, None, None, None)
-        _testinternalcapi.codecs_unregister()
         codecs.register(search_function)
         self.assertEqual((1, 2, 3, 4), codecs.lookup('AAA-8'))
         self.assertEqual((None, None, None, None), codecs.lookup('BBB-8'))
