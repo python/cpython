@@ -680,7 +680,7 @@ PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
 }
 
 int
-_PyModule_AddType(PyObject *module, PyTypeObject *type)
+PyModule_AddType(PyObject *module, PyTypeObject *type)
 {
     if (PyType_Ready(type) < 0) {
         return -1;

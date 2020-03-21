@@ -4731,7 +4731,7 @@ itertoolsmodule_exec(PyObject *m)
     Py_SET_TYPE(&teedataobject_type, &PyType_Type);
 
     for (int i = 0; typelist[i] != NULL; i++) {
-        if (_PyModule_AddType(m, typelist[i]) < 0) {
+        if (PyModule_AddType(m, typelist[i]) < 0) {
             return -1;
         }
     }

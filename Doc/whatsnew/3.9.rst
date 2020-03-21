@@ -538,6 +538,9 @@ Build and C API Changes
   by the internal C API. Remove also ``PyThreadFrameGetter`` type.
   (Contributed by Victor Stinner in :issue:`39946`.)
 
+* The :c:func:`PyModule_AddType` function is added to help adding a type to a module.
+  (Contributed by Dong-hee Na in :issue:`40024`.)
+
 Deprecated
 ==========
 

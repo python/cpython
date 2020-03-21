@@ -2572,7 +2572,7 @@ collections_exec(PyObject *module) {
     defdict_type.tp_base = &PyDict_Type;
 
     for (int i = 0; typelist[i] != NULL; i++) {
-        if (_PyModule_AddType(module, typelist[i]) < 0) {
+        if (PyModule_AddType(module, typelist[i]) < 0) {
             return -1;
         }
     }

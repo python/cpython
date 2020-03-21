@@ -484,11 +484,15 @@ state:
 
    Add a string constant to *module*.
 
-.. c:function:: int _PyModule_AddType(PyObject *module, PyTypeObject *type)
+.. c:function:: int PyModule_AddType(PyObject *module, PyTypeObject *type)
 
-   Add an type object to *module*. The name of the type object is taken from
-   the last component of :c:member:`~PyTypeObject.tp_name` after dot.
+   Add an type object to *module*. This function calls :c:func:`PyType_Ready`,
+   :c:func:`_PyType_Name()` and :c:func:`PyModule_AddObject()` internally.
+   The name of the type object is taken from the last component of
+   :c:member:`~PyTypeObject.tp_name` after dot.
    Return ``-1`` on error, ``0`` on success.
+
+   .. versionadded:: 3.9
 
 
 Module lookup

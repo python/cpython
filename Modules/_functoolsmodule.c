@@ -1450,7 +1450,7 @@ PyInit__functools(void)
     }
 
     for (i=0 ; typelist[i] != NULL ; i++) {
-        if (_PyModule_AddType(m, typelist[i]) < 0) {
+        if (PyModule_AddType(m, typelist[i]) < 0) {
             Py_DECREF(m);
             return NULL;
         }
