@@ -594,7 +594,7 @@ the module.
    Non-package modules should not have a ``__path__`` attribute.
 
 .. attribute:: __file__
-   ``__file__``is the pathname of the file from which the module 
+   ``__file__`` is the pathname of the file from which the module 
    was loaded,if it was loaded from a file. The ``__file__`` attribute 
    may be missing for certain types of modules, such as C modules that
    are statically linked into the interpreter; for extension modules
