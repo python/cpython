@@ -8,7 +8,6 @@ import encodings
 from unittest import mock
 
 from test import support
-import _testinternalcapi
 
 try:
     import _testcapi
