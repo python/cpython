@@ -1,1 +1,1 @@
-Added the CLOCK_TAI constant to the time library, if the operating system support is.
+Expose the CLOCK_TAI constant to the time library if the operating system support it.
