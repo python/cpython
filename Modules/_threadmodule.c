@@ -1001,10 +1001,8 @@ t_bootstrap(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
     PyThreadState *tstate;
-    _PyRuntimeState *runtime;
     PyObject *res;
 
-    runtime = boot->runtime;
     tstate = boot->tstate;
     tstate->thread_id = PyThread_get_thread_ident();
     _PyThreadState_Init(tstate);

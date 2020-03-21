@@ -1,0 +1,3 @@
+Remove ``_PyRuntime.getframe`` hook and remove ``_PyThreadState_GetFrame``
+macro which was an alias to ``_PyRuntime.getframe``. They were only exposed
+by the internal C API. Remove also ``PyThreadFrameGetter`` type.
