@@ -775,7 +775,7 @@ class MockTest(unittest.TestCase):
         obj1 = klass1()
         self.assertEqual(bool(obj1), False)
 
-        # use the default value if the attribute is not present 
+        # use the default value if the attribute is not present
         klass2 = MagicMock(wraps=Bar)
         obj2 = klass2()
         self.assertEqual(bool(obj2), True)
