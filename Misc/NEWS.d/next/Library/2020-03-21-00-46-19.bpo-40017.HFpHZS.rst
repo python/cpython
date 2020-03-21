@@ -1,0 +1,1 @@
+Added the CLOCK_TAI constant to the time library, if the operating system support is.
