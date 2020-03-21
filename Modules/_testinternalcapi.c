@@ -10,7 +10,6 @@
 
 #include "Python.h"
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
-#include "pycore_pystate.h"
 
 
 static PyObject *
