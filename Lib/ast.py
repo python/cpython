@@ -586,16 +586,16 @@ def _dims_setter(self, value):
 Tuple.dims = property(_dims_getter, _dims_setter, doc='Deprecated. Use elts instead.')
 
 class Suite(mod):
-    """Unused AST node class."""
+    """Deprecated AST node class.  Unused in Python 3."""
 
 class AugLoad(expr_context):
-    """Unused AST node class."""
+    """Deprecated AST node class.  Unused in Python 3."""
 
 class AugStore(expr_context):
-    """Unused AST node class."""
+    """Deprecated AST node class.  Unused in Python 3."""
 
 class Param(expr_context):
-    """Unused AST node class"""
+    """Deprecated AST node class.  Unused in Python 3."""
 
 
 # Large float and imaginary literals get turned into infinities in the AST.
