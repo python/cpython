@@ -176,7 +176,19 @@ class Symbol(object):
         self.__namespaces = namespaces or ()
 
     def __repr__(self):
-        return "<symbol {0!r}>".format(self.__name)
+        flags_repr = [_scopes_value_to_name.get(self.__scope, str(self.__scope))]
+        for flagname, flagvalue in _flags.items():
+            if self.__flags & flagvalue:
+                flags_repr.append(flagname)
+        return "<symbol {!r} {}>".format(self.__name, ', '.join(flags_repr))
+
+    def _scope_str(self):
+        return _scopes_value_to_name[self.__scope]
+
+    def _flags_str(self):
+        for flagname, flagvalue in _flags.items():
+            if self.__flags & flagvalue == flagvalue:
+                yield flagname
 
     def get_name(self):
         return self.__name
@@ -237,11 +249,33 @@ class Symbol(object):
             raise ValueError("name is bound to multiple namespaces")
         return self.__namespaces[0]
 
+_flags = {'USE': USE}
+_flags.update(kv for kv in globals().items() if kv[0].startswith('DEF_'))
+_scopes_names = ('FREE', 'LOCAL', 'GLOBAL_IMPLICIT', 'GLOBAL_EXPLICIT', 'CELL')
+_scopes_name_to_value = {n: globals()[n] for n in _scopes_names}
+_scopes_value_to_name = {v: k for k, v in _scopes_name_to_value.items()}
+
+
 if __name__ == "__main__":
-    import os, sys
-    with open(sys.argv[0]) as f:
-        src = f.read()
-    mod = symtable(src, os.path.split(sys.argv[0])[1], "exec")
-    for ident in mod.get_identifiers():
-        info = mod.lookup(ident)
-        print(info, info.is_local(), info.is_namespace())
+    import sys
+
+    def print_symbols(table, level=0):
+        indent = '    ' * level
+        for ident in table.get_identifiers():
+            info = table.lookup(ident)
+            flags = ', '.join(info._flags_str()).lower()
+            print(f'{indent}{info._scope_str().lower()} symbol {info.get_name()!r}: {flags}')
+            for table2 in info.get_namespaces():
+                print_symbols(table2, level + 1)
+                print()
+
+    if len(sys.argv) > 1:
+        for filename in sys.argv[1:]:
+            with open(filename, 'rb') as f:
+                src = f.read()
+            mod = symtable(src, filename, 'exec')
+            print_symbols(mod)
+    else:
+            src = sys.stdin.read()
+            mod = symtable(src, '<stdin>', 'exec')
+            print_symbols(mod)
