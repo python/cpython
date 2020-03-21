@@ -567,12 +567,15 @@ _const_node_type_names = {
     type(...): 'Ellipsis',
 }
 
-class Index(AST):
+class slice(AST):
+    """Deprecated AST node class."""
+
+class Index(slice):
     """Deprecated AST node class. Use the index value directly instead."""
     def __new__(cls, value, **kwargs):
         return value
 
-class ExtSlice(AST):
+class ExtSlice(slice):
     """Deprecated AST node class. Use ast.Tuple instead."""
     def __new__(cls, dims=(), **kwargs):
         return Tuple(list(dims), Load(), **kwargs)

@@ -590,7 +590,7 @@ Deprecated
 
   (Contributed by Victor Stinner in :issue:`39353`.)
 
-* :mod:`ast` classes ``Index`` and ``ExtSlice`` are considered deprecated
+* :mod:`ast` classes ``slice``, ``Index`` and ``ExtSlice`` are considered deprecated
   and will be removed in future Python versions.  ``value`` itself should be
   used instead of ``Index(value)``.  ``Tuple(slices, Load())`` should be
   used instead of ``ExtSlice(slices)``.
