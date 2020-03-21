@@ -84,11 +84,17 @@ typedef struct {
     PyObject *Long___abs__;
 } _randomstate;
 
-#define _randomstate(o) ((_randomstate *)PyModule_GetState(o))
+static inline _randomstate*
+get_random_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_randomstate *)state;
+}
 
 static struct PyModuleDef _randommodule;
 
-#define _randomstate_global _randomstate(PyState_FindModule(&_randommodule))
+#define _randomstate_global get_random_state(PyState_FindModule(&_randommodule))
 
 typedef struct {
     PyObject_HEAD
@@ -561,15 +567,15 @@ PyDoc_STRVAR(module_doc,
 static int
 _random_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Py_VISIT(_randomstate(module)->Random_Type);
+    Py_VISIT(get_random_state(module)->Random_Type);
     return 0;
 }
 
 static int
 _random_clear(PyObject *module)
 {
-    Py_CLEAR(_randomstate(module)->Random_Type);
-    Py_CLEAR(_randomstate(module)->Long___abs__);
+    Py_CLEAR(get_random_state(module)->Random_Type);
+    Py_CLEAR(get_random_state(module)->Long___abs__);
     return 0;
 }
 
@@ -606,7 +612,7 @@ PyInit__random(void)
         Py_DECREF(Random_Type);
         return NULL;
     }
-    _randomstate(m)->Random_Type = Random_Type;
+    get_random_state(m)->Random_Type = Random_Type;
 
     Py_INCREF(Random_Type);
     PyModule_AddObject(m, "Random", Random_Type);
@@ -624,7 +630,7 @@ PyInit__random(void)
 
     Py_DECREF(longtype);
     Py_DECREF(longval);
-    _randomstate(m)->Long___abs__ = abs;
+    get_random_state(m)->Long___abs__ = abs;
 
     return m;
 

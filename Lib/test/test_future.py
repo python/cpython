@@ -111,6 +111,10 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             ...
         def g(arg: {ann}) -> None:
             ...
+        async def f2() -> {ann}:
+            ...
+        async def g2(arg: {ann}) -> None:
+            ...
         var: {ann}
         var2: {ann} = None
         """
@@ -121,9 +125,13 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         exec(self.template.format(ann=annotation), {}, scope)
         func_ret_ann = scope['f'].__annotations__['return']
         func_arg_ann = scope['g'].__annotations__['arg']
+        async_func_ret_ann = scope['f2'].__annotations__['return']
+        async_func_arg_ann = scope['g2'].__annotations__['arg']
         var_ann1 = scope['__annotations__']['var']
         var_ann2 = scope['__annotations__']['var2']
         self.assertEqual(func_ret_ann, func_arg_ann)
+        self.assertEqual(func_ret_ann, async_func_ret_ann)
+        self.assertEqual(func_ret_ann, async_func_arg_ann)
         self.assertEqual(func_ret_ann, var_ann1)
         self.assertEqual(func_ret_ann, var_ann2)
         return func_ret_ann
@@ -288,6 +296,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('(((a, b)))', '(a, b)')
         eq("(x:=10)")
         eq("f'{(x:=10):=10}'")
+        eq("1 + 2 + 3")
 
     def test_fstring_debug_annotations(self):
         # f-strings with '=' don't round trip very well, so set the expected
@@ -298,7 +307,6 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
         self.assertAnnotationEqual("f'{x=!a}'", expected="f'x={x!a}'")
         self.assertAnnotationEqual("f'{x=!s:*^20}'", expected="f'x={x!s:*^20}'")
-
 
 if __name__ == "__main__":
     unittest.main()

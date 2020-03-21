@@ -573,13 +573,20 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
     return result;
 }
 
+static inline _PyIO_State*
+get_io_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_PyIO_State *)state;
+}
 
 _PyIO_State *
 _PyIO_get_module_state(void)
 {
     PyObject *mod = PyState_FindModule(&_PyIO_Module);
     _PyIO_State *state;
-    if (mod == NULL || (state = IO_MOD_STATE(mod)) == NULL) {
+    if (mod == NULL || (state = get_io_state(mod)) == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "could not find io module state "
                         "(interpreter shutdown?)");
@@ -615,7 +622,7 @@ _PyIO_get_locale_module(_PyIO_State *state)
 
 static int
 iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
-    _PyIO_State *state = IO_MOD_STATE(mod);
+    _PyIO_State *state = get_io_state(mod);
     if (!state->initialized)
         return 0;
     if (state->locale_module != NULL) {
@@ -628,7 +635,7 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
 
 static int
 iomodule_clear(PyObject *mod) {
-    _PyIO_State *state = IO_MOD_STATE(mod);
+    _PyIO_State *state = get_io_state(mod);
     if (!state->initialized)
         return 0;
     if (state->locale_module != NULL)
@@ -674,7 +681,7 @@ PyInit__io(void)
     _PyIO_State *state = NULL;
     if (m == NULL)
         return NULL;
-    state = IO_MOD_STATE(m);
+    state = get_io_state(m);
     state->initialized = 0;
 
 #define ADD_TYPE(type, name) \

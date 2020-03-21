@@ -1001,10 +1001,8 @@ t_bootstrap(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
     PyThreadState *tstate;
-    _PyRuntimeState *runtime;
     PyObject *res;
 
-    runtime = boot->runtime;
     tstate = boot->tstate;
     tstate->thread_id = PyThread_get_thread_ident();
     _PyThreadState_Init(tstate);
@@ -1028,7 +1026,7 @@ t_bootstrap(void *boot_raw)
     PyMem_DEL(boot_raw);
     tstate->interp->num_threads--;
     PyThreadState_Clear(tstate);
-    _PyThreadState_DeleteCurrent(runtime);
+    _PyThreadState_DeleteCurrent(tstate);
     PyThread_exit_thread();
 }
 
@@ -1061,7 +1059,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     boot = PyMem_NEW(struct bootstate, 1);
     if (boot == NULL)
         return PyErr_NoMemory();
-    boot->interp = _PyInterpreterState_Get();
+    boot->interp = _PyInterpreterState_GET_UNSAFE();
     boot->func = func;
     boot->args = args;
     boot->keyw = keyw;
@@ -1183,7 +1181,7 @@ particular thread within a system.");
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     return PyLong_FromLong(interp->num_threads);
 }
 
@@ -1542,7 +1540,7 @@ PyInit__thread(void)
     PyObject *m, *d, *v;
     double time_max;
     double timeout_max;
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
 
     /* Initialize types: */
     if (PyType_Ready(&localdummytype) < 0)

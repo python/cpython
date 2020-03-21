@@ -190,12 +190,10 @@ itimer_retval(struct itimerval *iv)
 #endif
 
 static int
-is_main(_PyRuntimeState *runtime)
+thread_can_handle_signals(void)
 {
-    unsigned long thread = PyThread_get_thread_ident();
-    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
-    return (thread == runtime->main_thread
-            && interp == runtime->interpreters.main);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _Py_ThreadCanHandleSignals(tstate);
 }
 
 static PyObject *
@@ -259,10 +257,14 @@ trip_signal(int sig_num)
        cleared in PyErr_CheckSignals() before .tripped. */
     _Py_atomic_store(&is_tripped, 1);
 
+    /* Get the Python thread state using PyGILState API, since
+       _PyThreadState_GET() returns NULL if the GIL is released.
+       For example, signal.raise_signal() releases the GIL. */
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    assert(tstate != NULL);
+
     /* Notify ceval.c */
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    _PyEval_SignalReceived(&runtime->ceval);
+    _PyEval_SignalReceived(tstate);
 
     /* And then write to the wakeup fd *after* setting all the globals and
        doing the _PyEval_SignalReceived. We used to write to the wakeup fd
@@ -300,9 +302,9 @@ trip_signal(int sig_num)
                 if (wakeup.warn_on_full_buffer ||
                     last_error != WSAEWOULDBLOCK)
                 {
-                    /* Py_AddPendingCall() isn't signal-safe, but we
+                    /* _PyEval_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _PyEval_AddPendingCall(tstate, &runtime->ceval,
+                    _PyEval_AddPendingCall(tstate,
                                            report_wakeup_send_error,
                                            (void *)(intptr_t) last_error);
                 }
@@ -319,9 +321,9 @@ trip_signal(int sig_num)
                 if (wakeup.warn_on_full_buffer ||
                     (errno != EWOULDBLOCK && errno != EAGAIN))
                 {
-                    /* Py_AddPendingCall() isn't signal-safe, but we
+                    /* _PyEval_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _PyEval_AddPendingCall(tstate, &runtime->ceval,
+                    _PyEval_AddPendingCall(tstate,
                                            report_wakeup_write_error,
                                            (void *)(intptr_t)errno);
                 }
@@ -478,10 +480,10 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     }
 #endif
 
-    _PyRuntimeState *runtime = &_PyRuntime;
-    if (!is_main(runtime)) {
+    if (!thread_can_handle_signals()) {
         PyErr_SetString(PyExc_ValueError,
-                        "signal only works in main thread");
+                        "signal only works in main thread "
+                        "of the main interpreter");
         return NULL;
     }
     if (signalnum < 1 || signalnum >= NSIG) {
@@ -696,10 +698,10 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
 #endif
 
-    _PyRuntimeState *runtime = &_PyRuntime;
-    if (!is_main(runtime)) {
+    if (!thread_can_handle_signals()) {
         PyErr_SetString(PyExc_ValueError,
-                        "set_wakeup_fd only works in main thread");
+                        "set_wakeup_fd only works in main thread "
+                        "of the main interpreter");
         return NULL;
     }
 
@@ -1671,8 +1673,7 @@ finisignal(void)
 int
 PyErr_CheckSignals(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    if (!is_main(runtime)) {
+    if (!thread_can_handle_signals()) {
         return 0;
     }
 
@@ -1765,8 +1766,7 @@ int
 PyOS_InterruptOccurred(void)
 {
     if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
-        _PyRuntimeState *runtime = &_PyRuntime;
-        if (!is_main(runtime)) {
+        if (!thread_can_handle_signals()) {
             return 0;
         }
         _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
@@ -1799,8 +1799,7 @@ _PySignal_AfterFork(void)
 int
 _PyOS_IsMainThread(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    return is_main(runtime);
+    return thread_can_handle_signals();
 }
 
 #ifdef MS_WINDOWS

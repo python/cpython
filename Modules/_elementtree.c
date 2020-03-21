@@ -101,7 +101,13 @@ static struct PyModuleDef elementtreemodule;
 /* Given a module object (assumed to be _elementtree), get its per-module
  * state.
  */
-#define ET_STATE(mod) ((elementtreestate *) PyModule_GetState(mod))
+static inline elementtreestate*
+get_elementtree_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (elementtreestate *)state;
+}
 
 /* Find the module instance imported in the currently running sub-interpreter
  * and get its state.
@@ -112,7 +118,7 @@ static struct PyModuleDef elementtreemodule;
 static int
 elementtree_clear(PyObject *m)
 {
-    elementtreestate *st = ET_STATE(m);
+    elementtreestate *st = get_elementtree_state(m);
     Py_CLEAR(st->parseerror_obj);
     Py_CLEAR(st->deepcopy_obj);
     Py_CLEAR(st->elementpath_obj);
@@ -124,7 +130,7 @@ elementtree_clear(PyObject *m)
 static int
 elementtree_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    elementtreestate *st = ET_STATE(m);
+    elementtreestate *st = get_elementtree_state(m);
     Py_VISIT(st->parseerror_obj);
     Py_VISIT(st->deepcopy_obj);
     Py_VISIT(st->elementpath_obj);
@@ -4377,7 +4383,7 @@ PyInit__elementtree(void)
     m = PyModule_Create(&elementtreemodule);
     if (!m)
         return NULL;
-    st = ET_STATE(m);
+    st = get_elementtree_state(m);
 
     if (!(temp = PyImport_ImportModule("copy")))
         return NULL;
