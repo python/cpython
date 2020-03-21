@@ -489,13 +489,14 @@ class NodeTransformer(NodeVisitor):
 # It will be removed in future.
 
 def _getter(self):
+    """Deprecated. Use value instead."""
     return self.value
 
 def _setter(self, value):
     self.value = value
 
-Constant.n = property(_getter, _setter, doc='Deprecated. Use value instead.')
-Constant.s = property(_getter, _setter, doc='Deprecated. Use value instead.')
+Constant.n = property(_getter, _setter)
+Constant.s = property(_getter, _setter)
 
 class _ABC(type):
 
@@ -581,12 +582,13 @@ class ExtSlice(slice):
         return Tuple(list(dims), Load(), **kwargs)
 
 def _dims_getter(self):
+    """Deprecated. Use elts instead."""
     return self.elts
 
 def _dims_setter(self, value):
     self.elts = value
 
-Tuple.dims = property(_dims_getter, _dims_setter, doc='Deprecated. Use elts instead.')
+Tuple.dims = property(_dims_getter, _dims_setter)
 
 class Suite(mod):
     """Deprecated AST node class.  Unused in Python 3."""
