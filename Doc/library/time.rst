@@ -776,9 +776,9 @@ These constants are used as parameters for :func:`clock_getres` and
 
 .. data:: CLOCK_TAI
 
-   International atomic time, as seconds from the unix epoch.
+   `International Atomic Time. <https://www.nist.gov/pml/time-and-frequency-division/nist-time-frequently-asked-questions-faq#tai>`_
 
-   Warning: your system must have a current leap second table in order for this to give the correct answer.
+   The system must have a current leap second table in order for this to give the correct answer.
    You can configure ptp or ntp to maintain a leap second table.
 
    .. availability:: Linux.
