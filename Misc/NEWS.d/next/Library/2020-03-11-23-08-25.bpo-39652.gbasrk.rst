@@ -1,0 +1,2 @@
+The column name found in ``sqlite3.Cursor.description`` is now truncated on
+the first '[' only if the PARSE_COLNAMES option is set.
