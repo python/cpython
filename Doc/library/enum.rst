@@ -274,7 +274,7 @@ overridden::
     the way it does this is an implementation detail and may change.
 
 .. note::
-    
+
     The :meth:`_generate_next_value_` method must be defined before any members.
 
 Iteration
