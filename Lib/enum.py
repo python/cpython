@@ -77,6 +77,9 @@ class _EnumDict(dict):
                     ):
                 raise ValueError('_names_ are reserved for future Enum use')
             if key == '_generate_next_value_':
+                # check if members already defined
+                if len(self._member_names) > len(dir(super)):
+                    raise TypeError("_generate_next_value_ must be defined before members")
                 setattr(self, '_generate_next_value', value)
             elif key == '_ignore_':
                 if isinstance(value, str):
