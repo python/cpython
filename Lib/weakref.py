@@ -501,7 +501,8 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
 
     def __ror__(self, other):
         if isinstance(other, (dict, WeakKeyDictionary, WeakValueDictionary)):
-            c = other.copy()
+            c = self.__class__()
+            c.update(other)
             c.update(self)
             return c
         return NotImplemented
