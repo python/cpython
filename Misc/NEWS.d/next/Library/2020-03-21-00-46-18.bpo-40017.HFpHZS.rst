@@ -1,1 +1,1 @@
-Expose the CLOCK_TAI constant to the time library if the operating system support it.
+Add :data:`time.CLOCK_TAI` constant, if the operating system support it: International Atomic Time.
