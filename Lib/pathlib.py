@@ -444,10 +444,12 @@ class _NormalAccessor(_Accessor):
     utime = os.utime
 
     # Helper for resolve()
-    def readlink(self, path):
-        if not hasattr(os, "readlink"):
+    if hasattr(os, "readlink"):
+        def readlink(self, path):
+            return os.readlink(path)
+    else:
+        def readlink(self, path):
             raise NotImplementedError("readlink() not available on this system")
-        return os.readlink(path)
 
 
 _normal_accessor = _NormalAccessor()
