@@ -165,9 +165,10 @@ Module functions and constants
    that 'mytype' is the type of the column. It will try to find an entry of
    'mytype' in the converters dictionary and then use the converter function found
    there to return the value. The column name found in :attr:`Cursor.description`
-   is only the first word of the column name, i.  e. if you use something like
-   ``'as "x [datetime]"'`` in your SQL, then we will parse out everything until the
-   first blank for the column name: the column name would simply be "x".
+   does not include the type, i. e. if you use something like
+   ``'as "Expiration date [datetime]"'`` in your SQL, then we will parse out
+   everything until the first ``'['`` for the column name and strip
+   the preceeding space: the column name would simply be "Expiration date".
 
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
