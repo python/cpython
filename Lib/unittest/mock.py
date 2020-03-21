@@ -2036,7 +2036,7 @@ _side_effect_methods = {
 def _set_return_value(mock, method, name):
     # If _mock_wraps is present then attach it so that wrapped object
     # is used for return value is used when called.
-    if mock._mock_wraps is not None:
+    if mock._mock_wraps is not None and hasattr(mock._mock_wraps, name):
         method._mock_wraps = getattr(mock._mock_wraps, name)
         return
 
