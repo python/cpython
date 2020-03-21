@@ -762,6 +762,25 @@ class MockTest(unittest.TestCase):
         self.assertEqual(obj.__custom_method__(), "foo")
 
 
+    def test_magic_method_wraps_with_and_without_default_value(self):
+        class Foo:
+            def __bool__(self):
+                return False
+
+        class Bar:
+            pass
+
+        # use __bool__ attribute if it is present in the wrapped object
+        klass1 = MagicMock(wraps=Foo)
+        obj1 = klass1()
+        self.assertEqual(bool(obj1), False)
+
+        # use the default value if the attribute is not present 
+        klass2 = MagicMock(wraps=Bar)
+        obj2 = klass2()
+        self.assertEqual(bool(obj2), True)
+
+
     def test_exceptional_side_effect(self):
         mock = Mock(side_effect=AttributeError)
         self.assertRaises(AttributeError, mock)
