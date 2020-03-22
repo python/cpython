@@ -612,6 +612,9 @@ Deprecated
   by :c:func:`Py_Initialize()` since Python 3.7.
   (Contributed by Victor Stinner in :issue:`39877`.)
 
+* Deprecated support of non-integer arguments in :func:`random.randrange`.
+  (Contributed by Serhiy Storchaka in :issue:`37319`.)
+
 
 Removed
 =======

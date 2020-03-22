@@ -130,6 +130,10 @@ Functions for integers
       values.  Formerly it used a style like ``int(random()*n)`` which could produce
       slightly uneven distributions.
 
+   .. deprecated:: 3.9
+      Accepting non-integer arguments is deprecated.
+
+
 .. function:: randint(a, b)
 
    Return a random integer *N* such that ``a <= N <= b``.  Alias for

@@ -367,15 +367,22 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         raises(3, 3)
         raises(-721)
         raises(0, 100, -12)
+        self.assertWarns(DeprecationWarning, raises, 3, 3, 1.0)
         # Non-integer start/stop
-        self.assertRaises(TypeError, self.gen.randrange, 3.0)
-        self.assertRaises(TypeError, self.gen.randrange, Fraction(3, 1))
-        self.assertRaises(TypeError, self.gen.randrange, 0, 2.0)
-        self.assertRaises(TypeError, self.gen.randrange, 0, Fraction(2, 1))
+        raises(3.14159)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 3.0)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, Fraction(3, 1))
+        raises('3')
+        raises(0, 2.71828)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 2.0)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, Fraction(2, 1))
+        raises(0, '2')
         # Zero and non-integer step
         raises(0, 42, 0)
-        self.assertRaises(TypeError, self.gen.randrange, 0, 42, 3.0)
-        self.assertRaises(TypeError, self.gen.randrange, 0, 42, Fraction(3, 1))
+        raises(0, 42, 3.14159)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 3.0)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, Fraction(3, 1))
+        raises(0, 42, '3')
 
     def test_genrandbits(self):
         # Verify ranges

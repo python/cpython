@@ -68,7 +68,7 @@ LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
 RECIP_BPF = 2**-BPF
-
+_ONE = 1
 
 # Translated by Guido van Rossum from C source provided by
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
@@ -209,7 +209,7 @@ class Random(_random.Random):
 
 ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1, _index=_index):
+    def randrange(self, start, stop=None, step=_ONE, _index=_index, _int=int):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
@@ -219,33 +219,55 @@ class Random(_random.Random):
 
         # This code is a bit messy to make it fast for the
         # common case while still doing adequate error checking.
-        start = _index(start)
+        try:
+            istart = _index(start)
+        except TypeError:
+            istart = _int(start)
+            if istart != start:
+                raise ValueError("non-integer arg 1 for randrange()")
+            _warn('non-integer arg 1 for randrange()',
+                  DeprecationWarning, 2)
         if stop is None:
-            if start > 0:
-                return self._randbelow(start)
+            if istart > 0:
+                return self._randbelow(istart)
             raise ValueError("empty range for randrange()")
 
         # stop argument supplied.
-        stop = _index(stop)
-        width = stop - start
-        if step == 1 and width > 0:
-            return start + self._randbelow(width)
-        if step == 1:
-            raise ValueError("empty range for randrange() (%d, %d, %d)" % (start, stop, width))
+        try:
+            istop = _index(stop)
+        except TypeError:
+            istop = _int(stop)
+            if istop != stop:
+                raise ValueError("non-integer stop for randrange()")
+            _warn('non-integer stop for randrange()',
+                  DeprecationWarning, 2)
+        width = istop - istart
+        # Fast path.
+        if step is _ONE:
+            if width > 0:
+                return istart + self._randbelow(width)
+            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
 
         # Non-unit step argument supplied.
-        step = _index(step)
-        if step > 0:
-            n = (width + step - 1) // step
-        elif step < 0:
-            n = (width + step + 1) // step
+        try:
+            istep = _index(step)
+        except TypeError:
+            istep = _int(step)
+            if istep != step:
+                raise ValueError("non-integer step for randrange()")
+            _warn('non-integer step for randrange()',
+                  DeprecationWarning, 2)
+        if istep > 0:
+            n = (width + istep - 1) // istep
+        elif istep < 0:
+            n = (width + istep + 1) // istep
         else:
             raise ValueError("zero step for randrange()")
 
         if n <= 0:
             raise ValueError("empty range for randrange()")
 
-        return start + step*self._randbelow(n)
+        return istart + istep*self._randbelow(n)
 
     def randint(self, a, b):
         """Return random integer in range [a, b], including both end points.
