@@ -1120,13 +1120,15 @@ ConfigParser Objects
       strings; if not, :exc:`TypeError` is raised.
 
 
-   .. method:: write(fileobject, space_around_delimiters=True)
+   .. method:: write(fileobject, space_around_delimiters=True, indent='')
 
       Write a representation of the configuration to the specified :term:`file
       object`, which must be opened in text mode (accepting strings).  This
       representation can be parsed by a future :meth:`read` call.  If
       *space_around_delimiters* is true, delimiters between
-      keys and values are surrounded by spaces.
+      keys and values are surrounded by spaces. If `indent' is empty (the default),
+      the keys won't be indented. When `indent' is set, each line will be indented
+      with the given value.
 
 
    .. method:: remove_option(section, option)
