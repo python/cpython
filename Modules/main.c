@@ -1208,6 +1208,17 @@ config_init_program_name(_PyCoreConfig *config)
                                          "variable", (Py_ssize_t)len);
             }
             config->program_name = program_name;
+
+            /*
+             * This environment variable is used to communicate between
+             * the stub launcher and the real interpreter and isn't needed
+             * beyond this point.
+             *
+             * Clean up to avoid problems when launching other programs
+             * later on.
+             */
+            (void)unsetenv("__PYVENV_LAUNCHER__");
+
             return _Py_INIT_OK();
         }
     }
