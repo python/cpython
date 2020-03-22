@@ -71,12 +71,6 @@ expr_context_name(expr_context_ty ctx)
         return "Store";
     case Del:
         return "Del";
-    case AugLoad:
-        return "AugLoad";
-    case AugStore:
-        return "AugStore";
-    case Param:
-        return "Param";
     default:
         Py_UNREACHABLE();
     }
@@ -153,6 +147,11 @@ validate_constant(PyObject *value)
         return 1;
     }
 
+    if (!PyErr_Occurred()) {
+        PyErr_Format(PyExc_TypeError,
+                     "got an invalid type in Constant: %s",
+                     _PyType_Name(Py_TYPE(value)));
+    }
     return 0;
 }
 
@@ -267,9 +266,6 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             validate_keywords(exp->v.Call.keywords);
     case Constant_kind:
         if (!validate_constant(exp->v.Constant.value)) {
-            PyErr_Format(PyExc_TypeError,
-                         "got an invalid type in Constant: %s",
-                         _PyType_Name(Py_TYPE(exp->v.Constant.value)));
             return 0;
         }
         return 1;
@@ -1101,14 +1097,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
 {
     asdl_seq *s = NULL;
 
-    /* The ast defines augmented store and load contexts, but the
-       implementation here doesn't actually use them.  The code may be
-       a little more complex than necessary as a result.  It also means
-       that expressions in an augmented assignment have a Store context.
-       Consider restructuring so that augmented assignment uses
-       set_context(), too.
-    */
-    assert(ctx != AugStore && ctx != AugLoad);
+    /* Expressions in an augmented assignment have a Store context. */
 
     switch (e->kind) {
         case Attribute_kind:

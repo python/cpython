@@ -21,21 +21,27 @@ typedef struct {
     long field_limit;   /* max parsed field size */
 } _csvstate;
 
-#define _csvstate(o) ((_csvstate *)PyModule_GetState(o))
+static inline _csvstate*
+get_csv_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_csvstate *)state;
+}
 
 static int
 _csv_clear(PyObject *m)
 {
-    Py_CLEAR(_csvstate(m)->error_obj);
-    Py_CLEAR(_csvstate(m)->dialects);
+    Py_CLEAR(get_csv_state(m)->error_obj);
+    Py_CLEAR(get_csv_state(m)->dialects);
     return 0;
 }
 
 static int
 _csv_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    Py_VISIT(_csvstate(m)->error_obj);
-    Py_VISIT(_csvstate(m)->dialects);
+    Py_VISIT(get_csv_state(m)->error_obj);
+    Py_VISIT(get_csv_state(m)->dialects);
     return 0;
 }
 
@@ -1647,15 +1653,15 @@ PyInit__csv(void)
         return NULL;
 
     /* Set the field limit */
-    _csvstate(module)->field_limit = 128 * 1024;
+    get_csv_state(module)->field_limit = 128 * 1024;
     /* Do I still need to add this var to the Module Dict? */
 
     /* Add _dialects dictionary */
-    _csvstate(module)->dialects = PyDict_New();
-    if (_csvstate(module)->dialects == NULL)
+    get_csv_state(module)->dialects = PyDict_New();
+    if (get_csv_state(module)->dialects == NULL)
         return NULL;
-    Py_INCREF(_csvstate(module)->dialects);
-    if (PyModule_AddObject(module, "_dialects", _csvstate(module)->dialects))
+    Py_INCREF(get_csv_state(module)->dialects);
+    if (PyModule_AddObject(module, "_dialects", get_csv_state(module)->dialects))
         return NULL;
 
     /* Add quote styles into dictionary */
@@ -1671,10 +1677,10 @@ PyInit__csv(void)
         return NULL;
 
     /* Add the CSV exception object to the module. */
-    _csvstate(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
-    if (_csvstate(module)->error_obj == NULL)
+    get_csv_state(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
+    if (get_csv_state(module)->error_obj == NULL)
         return NULL;
-    Py_INCREF(_csvstate(module)->error_obj);
-    PyModule_AddObject(module, "Error", _csvstate(module)->error_obj);
+    Py_INCREF(get_csv_state(module)->error_obj);
+    PyModule_AddObject(module, "Error", get_csv_state(module)->error_obj);
     return module;
 }
