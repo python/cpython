@@ -167,8 +167,8 @@ _symtable symtablemodule.c
 # Modules that should always be present (non UNIX dependent):
 
 #array arraymodule.c	# array objects
-#cmath cmathmodule.c _math.c # -lm # complex math library functions
-#math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
+#cmath cmathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # complex math library functions
+#math mathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # math library functions, e.g. sin()
 #_contextvars _contextvarsmodule.c  # Context Variables
 #_struct _struct.c	# binary structure packing/unpacking
 #_weakref _weakref.c	# basic weak reference support
@@ -182,6 +182,7 @@ _symtable symtablemodule.c
 #_heapq _heapqmodule.c	# Heap queue algorithm
 #_asyncio _asynciomodule.c  # Fast asyncio Future
 #_json -I$(srcdir)/Include/internal -DPy_BUILD_CORE_BUILTIN _json.c	# _json speedups
+#_statistics _statisticsmodule.c # statistics accelerator
 
 #unicodedata unicodedata.c    # static Unicode character database
 

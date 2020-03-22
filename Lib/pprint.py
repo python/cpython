@@ -342,6 +342,33 @@ class PrettyPrinter:
 
     _dispatch[_types.MappingProxyType.__repr__] = _pprint_mappingproxy
 
+    def _pprint_simplenamespace(self, object, stream, indent, allowance, context, level):
+        if type(object) is _types.SimpleNamespace:
+            # The SimpleNamespace repr is "namespace" instead of the class
+            # name, so we do the same here. For subclasses; use the class name.
+            cls_name = 'namespace'
+        else:
+            cls_name = object.__class__.__name__
+        indent += len(cls_name) + 1
+        delimnl = ',\n' + ' ' * indent
+        items = object.__dict__.items()
+        last_index = len(items) - 1
+
+        stream.write(cls_name + '(')
+        for i, (key, ent) in enumerate(items):
+            stream.write(key)
+            stream.write('=')
+
+            last = i == last_index
+            self._format(ent, stream, indent + len(key) + 1,
+                         allowance if last else 1,
+                         context, level)
+            if not last:
+                stream.write(delimnl)
+        stream.write(')')
+
+    _dispatch[_types.SimpleNamespace.__repr__] = _pprint_simplenamespace
+
     def _format_dict_items(self, items, stream, indent, allowance, context,
                            level):
         write = stream.write

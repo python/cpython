@@ -89,8 +89,9 @@ class IsolatedAsyncioTestCase(TestCase):
         else:
             return ret
 
-    async def _asyncioLoopRunner(self):
-        queue = self._asyncioCallsQueue
+    async def _asyncioLoopRunner(self, fut):
+        self._asyncioCallsQueue = queue = asyncio.Queue()
+        fut.set_result(None)
         while True:
             query = await queue.get()
             queue.task_done()
@@ -113,8 +114,9 @@ class IsolatedAsyncioTestCase(TestCase):
         asyncio.set_event_loop(loop)
         loop.set_debug(True)
         self._asyncioTestLoop = loop
-        self._asyncioCallsQueue = asyncio.Queue(loop=loop)
-        self._asyncioCallsTask = loop.create_task(self._asyncioLoopRunner())
+        fut = loop.create_future()
+        self._asyncioCallsTask = loop.create_task(self._asyncioLoopRunner(fut))
+        loop.run_until_complete(fut)
 
     def _tearDownAsyncioLoop(self):
         assert self._asyncioTestLoop is not None

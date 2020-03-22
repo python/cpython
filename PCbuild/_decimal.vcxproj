@@ -131,7 +131,7 @@
     <ClCompile Include="..\Modules\_decimal\libmpdec\fnt.c" />
     <ClCompile Include="..\Modules\_decimal\libmpdec\fourstep.c" />
     <ClCompile Include="..\Modules\_decimal\libmpdec\io.c" />
-    <ClCompile Include="..\Modules\_decimal\libmpdec\memory.c" />
+    <ClCompile Include="..\Modules\_decimal\libmpdec\mpalloc.c" />
     <ClCompile Include="..\Modules\_decimal\libmpdec\mpdecimal.c" />
     <ClCompile Include="..\Modules\_decimal\libmpdec\numbertheory.c" />
     <ClCompile Include="..\Modules\_decimal\libmpdec\sixstep.c" />

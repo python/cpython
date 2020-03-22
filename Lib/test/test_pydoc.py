@@ -21,7 +21,6 @@ import urllib.parse
 import xml.etree
 import xml.etree.ElementTree
 import textwrap
-import threading
 from io import StringIO
 from collections import namedtuple
 from test.support.script_helper import assert_python_ok
@@ -1312,6 +1311,17 @@ foo
             'async <a name="-an_async_generator"><strong>an_async_generator',
             html)
 
+    def test_html_for_https_links(self):
+        def a_fn_with_https_link():
+            """a link https://localhost/"""
+            pass
+
+        html = pydoc.HTMLDoc().document(a_fn_with_https_link)
+        self.assertIn(
+            '<a href="https://localhost/">https://localhost/</a>',
+            html
+        )
+
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 
@@ -1326,7 +1336,7 @@ class PydocServerTest(unittest.TestCase):
         self.assertIn('0.0.0.0', serverthread.docserver.address)
 
         starttime = time.monotonic()
-        timeout = 1  #seconds
+        timeout = test.support.SHORT_TIMEOUT
 
         while serverthread.serving:
             time.sleep(.01)

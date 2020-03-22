@@ -56,8 +56,8 @@ test runner
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
-   `Nose <https://nose.readthedocs.io/>`_ and `pytest <https://docs.pytest.org/>`_
-      Third-party unittest frameworks with a lighter-weight syntax for writing
+   `pytest <https://docs.pytest.org/>`_
+      Third-party unittest framework with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
    `The Python Testing Tools Taxonomy <https://wiki.python.org/moin/PythonTestingToolsTaxonomy>`_
@@ -1486,8 +1486,84 @@ Test cases
       .. versionadded:: 3.8
 
 
+.. class:: IsolatedAsyncioTestCase(methodName='runTest')
+
+   This class provides an API similar to :class:`TestCase` and also accepts
+   coroutines as test functions.
+
+   .. versionadded:: 3.8
+
+   .. coroutinemethod:: asyncSetUp()
+
+      Method called to prepare the test fixture. This is called after :meth:`setUp`.
+      This is called immediately before calling the test method; other than
+      :exc:`AssertionError` or :exc:`SkipTest`, any exception raised by this method
+      will be considered an error rather than a test failure. The default implementation
+      does nothing.
+
+   .. coroutinemethod:: asyncTearDown()
+
+      Method called immediately after the test method has been called and the
+      result recorded.  This is called before :meth:`tearDown`. This is called even if
+      the test method raised an exception, so the implementation in subclasses may need
+      to be particularly careful about checking internal state.  Any exception, other than
+      :exc:`AssertionError` or :exc:`SkipTest`, raised by this method will be
+      considered an additional error rather than a test failure (thus increasing
+      the total number of reported errors). This method will only be called if
+      the :meth:`asyncSetUp` succeeds, regardless of the outcome of the test method.
+      The default implementation does nothing.
+
+   .. method:: addAsyncCleanup(function, /, *args, **kwargs)
+
+      This method accepts a coroutine that can be used as a cleanup function.
+
+   .. method:: run(result=None)
+
+      Sets up a new event loop to run the test, collecting the result into
+      the :class:`TestResult` object passed as *result*.  If *result* is
+      omitted or ``None``, a temporary result object is created (by calling
+      the :meth:`defaultTestResult` method) and used. The result object is
+      returned to :meth:`run`'s caller. At the end of the test all the tasks
+      in the event loop are cancelled.
 
 
+   An example illustrating the order::
+
+      from unittest import IsolatedAsyncioTestCase
+
+      events = []
+
+
+      class Test(IsolatedAsyncioTestCase):
+
+
+          def setUp(self):
+              events.append("setUp")
+
+          async def asyncSetUp(self):
+              self._async_connection = await AsyncConnection()
+              events.append("asyncSetUp")
+
+          async def test_response(self):
+              events.append("test_response")
+              response = await self._async_connection.get("https://example.com")
+              self.assertEqual(response.status_code, 200)
+              self.addAsyncCleanup(self.on_cleanup)
+
+          def tearDown(self):
+              events.append("tearDown")
+
+          async def asyncTearDown(self):
+              await self._async_connection.close()
+              events.append("asyncTearDown")
+
+          async def on_cleanup(self):
+              events.append("cleanup")
+
+      if __name__ == "__main__":
+          unittest.main()
+
+   After running the test, ``events`` would contain ``["setUp", "asyncSetUp", "test_response", "asyncTearDown", "tearDown", "cleanup"]``.
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)

@@ -1,0 +1,6 @@
+Fix race condition where threads created by PyGILState_Ensure() could get a
+duplicate id.
+
+This affects consumers of tstate->id like the contextvar caching machinery,
+which could return invalid cached objects under heavy thread load (observed
+in embedded scenarios).

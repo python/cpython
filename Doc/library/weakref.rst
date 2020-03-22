@@ -65,8 +65,8 @@ exposed by the :mod:`weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced; those objects which can include class
 instances, functions written in Python (but not in C), instance methods, sets,
-frozensets, some :term:`file objects <file object>`, :term:`generator`\s, type
-objects, sockets, arrays, deques, regular expression pattern objects, and code
+frozensets, some :term:`file objects <file object>`, :term:`generators <generator>`,
+type objects, sockets, arrays, deques, regular expression pattern objects, and code
 objects.
 
 .. versionchanged:: 3.2
@@ -80,9 +80,10 @@ support weak references but can add support through subclassing::
 
    obj = Dict(red=1, green=2, blue=3)   # this object is weak referenceable
 
-Other built-in types such as :class:`tuple` and :class:`int` do not support weak
-references even when subclassed (This is an implementation detail and may be
-different across various Python implementations.).
+.. impl-detail::
+
+   Other built-in types such as :class:`tuple` and :class:`int` do not support weak
+   references even when subclassed.
 
 Extension types can easily be made to support weak references; see
 :ref:`weakref-support`.
@@ -324,12 +325,6 @@ objects.
    Sequence containing all the type objects for proxies.  This can make it simpler
    to test if an object is a proxy without being dependent on naming both proxy
    types.
-
-
-.. exception:: ReferenceError
-
-   Exception raised when a proxy object is used but the underlying object has been
-   collected.  This is the same as the standard :exc:`ReferenceError` exception.
 
 
 .. seealso::

@@ -139,16 +139,9 @@ struct _ts {
 
 };
 
-/* Get the current interpreter state.
+// Alias for backward compatibility with Python 3.8
+#define _PyInterpreterState_Get PyInterpreterState_Get
 
-   Issue a fatal error if there no current Python thread state or no current
-   interpreter. It cannot return NULL.
-
-   The caller must hold the GIL.*/
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
-
-PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
-PyAPI_FUNC(void) _PyState_ClearModules(void);
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
@@ -184,8 +177,17 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
+PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
-typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
+/* Frame evaluation API */
+
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _frame *, int);
+
+PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
+    PyInterpreterState *interp);
+PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
+    PyInterpreterState *interp,
+    _PyFrameEvalFunction eval_frame);
 
 /* cross-interpreter data */
 

@@ -3,6 +3,7 @@
 import os
 import re
 import fnmatch
+import sys
 
 __all__ = ["glob", "iglob", "escape"]
 
@@ -30,6 +31,7 @@ def iglob(pathname, *, recursive=False):
     If recursive is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
+    sys.audit("glob.glob", pathname, recursive)
     it = _iglob(pathname, recursive, False)
     if recursive and _isrecursive(pathname):
         s = next(it)  # skip empty string

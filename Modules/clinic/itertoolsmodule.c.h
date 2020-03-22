@@ -66,7 +66,7 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), &groupby_type)) {
-        _PyArg_BadArgument("_grouper", 1, (&groupby_type)->tp_name, PyTuple_GET_ITEM(args, 0));
+        _PyArg_BadArgument("_grouper", "argument 1", (&groupby_type)->tp_name, PyTuple_GET_ITEM(args, 0));
         goto exit;
     }
     parent = PyTuple_GET_ITEM(args, 0);
@@ -104,7 +104,7 @@ itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     it = PyTuple_GET_ITEM(args, 0);
     if (!PyList_Check(PyTuple_GET_ITEM(args, 1))) {
-        _PyArg_BadArgument("teedataobject", 2, "list", PyTuple_GET_ITEM(args, 1));
+        _PyArg_BadArgument("teedataobject", "argument 2", "list", PyTuple_GET_ITEM(args, 1));
         goto exit;
     }
     values = PyTuple_GET_ITEM(args, 1);
@@ -642,4 +642,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=04c49debcae96003 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=392c9706e79f6710 input=a9049054013a1b77]*/

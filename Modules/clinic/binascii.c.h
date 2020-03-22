@@ -64,7 +64,7 @@ binascii_b2a_uu(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_uu", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("b2a_uu", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -153,7 +153,7 @@ binascii_b2a_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_base64", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("b2a_base64", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -233,7 +233,7 @@ binascii_rlecode_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("rlecode_hqx", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("rlecode_hqx", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_rlecode_hqx_impl(module, &data);
@@ -269,7 +269,7 @@ binascii_b2a_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_hqx", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("b2a_hqx", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_b2a_hqx_impl(module, &data);
@@ -305,7 +305,7 @@ binascii_rledecode_hqx(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("rledecode_hqx", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("rledecode_hqx", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = binascii_rledecode_hqx_impl(module, &data);
@@ -328,7 +328,7 @@ PyDoc_STRVAR(binascii_crc_hqx__doc__,
 #define BINASCII_CRC_HQX_METHODDEF    \
     {"crc_hqx", (PyCFunction)(void(*)(void))binascii_crc_hqx, METH_FASTCALL, binascii_crc_hqx__doc__},
 
-static unsigned int
+static PyObject *
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc);
 
 static PyObject *
@@ -337,7 +337,6 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     unsigned int crc;
-    unsigned int _return_value;
 
     if (!_PyArg_CheckPositional("crc_hqx", nargs, 2, 2)) {
         goto exit;
@@ -346,7 +345,7 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("crc_hqx", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("crc_hqx", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -358,11 +357,7 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (crc == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
-    _return_value = binascii_crc_hqx_impl(module, &data, crc);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = binascii_crc_hqx_impl(module, &data, crc);
 
 exit:
     /* Cleanup for data */
@@ -400,7 +395,7 @@ binascii_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("crc32", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("crc32", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -432,7 +427,7 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_hex__doc__,
-"b2a_hex($module, /, data, sep=None, bytes_per_sep=1)\n"
+"b2a_hex($module, /, data, sep=<unrepresentable>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Hexadecimal representation of binary data.\n"
@@ -481,7 +476,7 @@ binascii_b2a_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_hex", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("b2a_hex", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -515,7 +510,7 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_hexlify__doc__,
-"hexlify($module, /, data, sep=None, bytes_per_sep=1)\n"
+"hexlify($module, /, data, sep=<unrepresentable>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Hexadecimal representation of binary data.\n"
@@ -556,7 +551,7 @@ binascii_hexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("hexlify", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("hexlify", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -747,7 +742,7 @@ binascii_b2a_qp(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("b2a_qp", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("b2a_qp", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -801,4 +796,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=f7b8049edb130c63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1e878d3963b615e input=a9049054013a1b77]*/

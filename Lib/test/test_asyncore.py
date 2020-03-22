@@ -16,7 +16,6 @@ if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
 
-TIMEOUT = 3
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
 
 class dummysocket:
@@ -360,7 +359,7 @@ class DispatcherWithSendTests(unittest.TestCase):
 
             self.assertEqual(cap.getvalue(), data*2)
         finally:
-            support.join_thread(t, timeout=TIMEOUT)
+            support.join_thread(t)
 
 
 @unittest.skipUnless(hasattr(asyncore, 'file_wrapper'),
@@ -788,7 +787,7 @@ class BaseTestAPI:
                 except OSError:
                     pass
         finally:
-            support.join_thread(t, timeout=TIMEOUT)
+            support.join_thread(t)
 
 class TestAPI_UseIPv4Sockets(BaseTestAPI):
     family = socket.AF_INET

@@ -80,14 +80,28 @@
 #define LOWER_MASK 0x7fffffffU  /* least significant r bits */
 
 typedef struct {
+    PyObject *Random_Type;
+    PyObject *Long___abs__;
+} _randomstate;
+
+static inline _randomstate*
+get_random_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_randomstate *)state;
+}
+
+static struct PyModuleDef _randommodule;
+
+#define _randomstate_global get_random_state(PyState_FindModule(&_randommodule))
+
+typedef struct {
     PyObject_HEAD
     int index;
     uint32_t state[N];
 } RandomObject;
 
-static PyTypeObject Random_Type;
-
-#define RandomObject_Check(v)      (Py_TYPE(v) == &Random_Type)
 
 #include "clinic/_randommodule.c.h"
 
@@ -272,10 +286,12 @@ random_seed(RandomObject *self, PyObject *arg)
      * So: if the arg is a PyLong, use its absolute value.
      * Otherwise use its hash value, cast to unsigned.
      */
-    if (PyLong_Check(arg)) {
+    if (PyLong_CheckExact(arg)) {
+        n = PyNumber_Absolute(arg);
+    } else if (PyLong_Check(arg)) {
         /* Calling int.__abs__() prevents calling arg.__abs__(), which might
            return an invalid value. See issue #31478. */
-        n = PyLong_Type.tp_as_number->nb_absolute(arg);
+        n = PyObject_CallOneArg(_randomstate_global->Long___abs__, arg);
     }
     else {
         Py_hash_t hash = PyObject_Hash(arg);
@@ -500,10 +516,12 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     RandomObject *self;
     PyObject *tmp;
 
-    if (type == &Random_Type && !_PyArg_NoKeywords("Random", kwds))
+    if (type == (PyTypeObject*)_randomstate_global->Random_Type &&
+        !_PyArg_NoKeywords("Random()", kwds)) {
         return NULL;
+    }
 
-    self = (RandomObject *)type->tp_alloc(type, 0);
+    self = (RandomObject *)PyType_GenericAlloc(type, 0);
     if (self == NULL)
         return NULL;
     tmp = random_seed(self, args);
@@ -527,64 +545,56 @@ static PyMethodDef random_methods[] = {
 PyDoc_STRVAR(random_doc,
 "Random() -> create a random number generator with its own internal state.");
 
-static PyTypeObject Random_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_random.Random",                   /*tp_name*/
-    sizeof(RandomObject),               /*tp_basicsize*/
-    0,                                  /*tp_itemsize*/
-    /* methods */
-    0,                                  /*tp_dealloc*/
-    0,                                  /*tp_vectorcall_offset*/
-    0,                                  /*tp_getattr*/
-    0,                                  /*tp_setattr*/
-    0,                                  /*tp_as_async*/
-    0,                                  /*tp_repr*/
-    0,                                  /*tp_as_number*/
-    0,                                  /*tp_as_sequence*/
-    0,                                  /*tp_as_mapping*/
-    0,                                  /*tp_hash*/
-    0,                                  /*tp_call*/
-    0,                                  /*tp_str*/
-    PyObject_GenericGetAttr,            /*tp_getattro*/
-    0,                                  /*tp_setattro*/
-    0,                                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,           /*tp_flags*/
-    random_doc,                         /*tp_doc*/
-    0,                                  /*tp_traverse*/
-    0,                                  /*tp_clear*/
-    0,                                  /*tp_richcompare*/
-    0,                                  /*tp_weaklistoffset*/
-    0,                                  /*tp_iter*/
-    0,                                  /*tp_iternext*/
-    random_methods,                     /*tp_methods*/
-    0,                                  /*tp_members*/
-    0,                                  /*tp_getset*/
-    0,                                  /*tp_base*/
-    0,                                  /*tp_dict*/
-    0,                                  /*tp_descr_get*/
-    0,                                  /*tp_descr_set*/
-    0,                                  /*tp_dictoffset*/
-    0,                                  /*tp_init*/
-    0,                                  /*tp_alloc*/
-    random_new,                         /*tp_new*/
-    PyObject_Free,                      /*tp_free*/
-    0,                                  /*tp_is_gc*/
+static PyType_Slot Random_Type_slots[] = {
+    {Py_tp_doc, (void *)random_doc},
+    {Py_tp_methods, random_methods},
+    {Py_tp_new, random_new},
+    {Py_tp_free, PyObject_Free},
+    {0, 0},
+};
+
+static PyType_Spec Random_Type_spec = {
+    "_random.Random",
+    sizeof(RandomObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    Random_Type_slots
 };
 
 PyDoc_STRVAR(module_doc,
 "Module implements the Mersenne Twister random number generator.");
 
+static int
+_random_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    Py_VISIT(get_random_state(module)->Random_Type);
+    return 0;
+}
+
+static int
+_random_clear(PyObject *module)
+{
+    Py_CLEAR(get_random_state(module)->Random_Type);
+    Py_CLEAR(get_random_state(module)->Long___abs__);
+    return 0;
+}
+
+static void
+_random_free(void *module)
+{
+    _random_clear((PyObject *)module);
+}
 
 static struct PyModuleDef _randommodule = {
     PyModuleDef_HEAD_INIT,
     "_random",
     module_doc,
-    -1,
+    sizeof(_randomstate),
     NULL,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    _random_traverse,
+    _random_clear,
+    _random_free,
 };
 
 PyMODINIT_FUNC
@@ -592,12 +602,41 @@ PyInit__random(void)
 {
     PyObject *m;
 
-    if (PyType_Ready(&Random_Type) < 0)
+    PyObject *Random_Type = PyType_FromSpec(&Random_Type_spec);
+    if (Random_Type == NULL) {
         return NULL;
+    }
+
     m = PyModule_Create(&_randommodule);
-    if (m == NULL)
+    if (m == NULL) {
+        Py_DECREF(Random_Type);
         return NULL;
-    Py_INCREF(&Random_Type);
-    PyModule_AddObject(m, "Random", (PyObject *)&Random_Type);
+    }
+    get_random_state(m)->Random_Type = Random_Type;
+
+    Py_INCREF(Random_Type);
+    PyModule_AddObject(m, "Random", Random_Type);
+
+    /* Look up and save int.__abs__, which is needed in random_seed(). */
+    PyObject *longval = NULL, *longtype = NULL;
+    longval = PyLong_FromLong(0);
+    if (longval == NULL) goto fail;
+
+    longtype = PyObject_Type(longval);
+    if (longtype == NULL) goto fail;
+
+    PyObject *abs = PyObject_GetAttrString(longtype, "__abs__");
+    if (abs == NULL) goto fail;
+
+    Py_DECREF(longtype);
+    Py_DECREF(longval);
+    get_random_state(m)->Long___abs__ = abs;
+
     return m;
+
+fail:
+    Py_XDECREF(longtype);
+    Py_XDECREF(longval);
+    Py_DECREF(m);
+    return NULL;
 }

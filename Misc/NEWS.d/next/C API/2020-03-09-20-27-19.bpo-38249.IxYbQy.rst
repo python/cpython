@@ -1,0 +1,2 @@
+:c:macro:`Py_UNREACHABLE` is now implemented with
+``__builtin_unreachable()`` and analogs in release mode.
