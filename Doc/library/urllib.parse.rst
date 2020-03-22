@@ -43,12 +43,11 @@ or on combining URL components into a URL string.
    corresponds to the general structure of a URL:
    ``scheme://netloc/path;parameters?query#fragment``.
 
-   Each tuple item is a string, possibly empty. The components are broken up into
-   smaller parts (for example, the components of the network location variable -
-   username, password, hostname, and port - are available as extra attributes in the
-   ParseResult/ParseResultBytes object). % escapes are not expanded.
-   The delimiters as shown above are not part of the result, except for a leading slash
-   in the *path* component, which is retained if present.  For example:
+   Each of the above tuple items is used as-is for the tuple fields. Only the netloc item
+   is broken down into: username, password, hostname, and port. These are added as additional
+   attributes of the returned object. % escapes are not expanded. The delimiters as shown above
+   are not part of the result, except for a leading slash in the *path* component, which is
+   retained if present.  For example:
 
       >>> from urllib.parse import urlparse
       >>> o = urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
