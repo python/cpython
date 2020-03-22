@@ -431,6 +431,7 @@ check_set_special_type_attr(PyTypeObject *type, PyObject *value, const char *nam
 const char *
 _PyType_Name(PyTypeObject *type)
 {
+    assert(type->tp_name != NULL);
     const char *s = strrchr(type->tp_name, '.');
     if (s == NULL) {
         s = type->tp_name;

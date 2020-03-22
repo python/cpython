@@ -4724,21 +4724,13 @@ itertoolsmodule_exec(PyObject *m)
         &groupby_type,
         &_grouper_type,
         &tee_type,
-        &teedataobject_type,
-        NULL
+        &teedataobject_type
     };
 
     Py_SET_TYPE(&teedataobject_type, &PyType_Type);
 
-    for (int i = 0; typelist[i] != NULL; i++) {
-        PyTypeObject *type = typelist[i];
-        if (PyType_Ready(type) < 0) {
-            return -1;
-        }
-        const char *name = _PyType_Name(type);
-        Py_INCREF(type);
-        if (PyModule_AddObject(m, name, (PyObject *)type) < 0) {
-            Py_DECREF(type);
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
+        if (PyModule_AddType(m, typelist[i]) < 0) {
             return -1;
         }
     }
