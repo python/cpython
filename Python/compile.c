@@ -2569,18 +2569,20 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
         /* fallback to general implementation */
         break;
     }
-    default: {
-        int constant = expr_constant(e);
-        if (constant >= 0) {
-            if (constant == cond) {
-                ADDOP_JABS(c, JUMP_ABSOLUTE, next);
-                NEXT_BLOCK(c);
-            }
-            return 1;
+    case Constant_kind: {
+        int is_true = PyObject_IsTrue(e->v.Constant.value);
+        if (is_true < 0) {
+            return 0;
         }
+        if (!is_true == !cond) {
+            ADDOP_JREL(c, JUMP_FORWARD, next);
+            NEXT_BLOCK(c);
+        }
+        return 1;
+    }
+    default:
         /* fallback to general implementation */
         break;
-    }
     }
 
     /* general implementation */
@@ -2847,10 +2849,6 @@ compiler_while(struct compiler *c, stmt_ty s)
     }
     VISIT_SEQ(c, stmt, s->v.While.body);
     ADDOP_JABS(c, JUMP_ABSOLUTE, loop);
-
-    /* XXX should the two POP instructions be in a separate block
-       if there is no else clause ?
-    */
 
     if (constant == -1)
         compiler_use_next_block(c, anchor);
@@ -4385,7 +4383,6 @@ compiler_sync_comprehension_generator(struct compiler *c,
         depth++;
         compiler_use_next_block(c, start);
         ADDOP_JREL(c, FOR_ITER, anchor);
-        NEXT_BLOCK(c);
     }
     VISIT(c, expr, gen->target);
 
@@ -4721,6 +4718,7 @@ compiler_with_except_finish(struct compiler *c) {
     if (exit == NULL)
         return 0;
     ADDOP_JABS(c, POP_JUMP_IF_TRUE, exit);
+    NEXT_BLOCK(c);
     ADDOP(c, RERAISE);
     compiler_use_next_block(c, exit);
     ADDOP(c, POP_TOP);
