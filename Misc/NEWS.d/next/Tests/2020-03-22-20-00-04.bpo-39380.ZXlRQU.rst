@@ -1,0 +1,2 @@
+Add the encoding in :class:`ftplib.FTP` and :class:`ftplib.FTP_TLS` to the
+constructor and change the default from ``latin-1`` to ``utf-8``.

@@ -19,6 +19,8 @@ as mirroring other FTP servers.  It is also used by the module
 :mod:`urllib.request` to handle URLs that use FTP.  For more information on FTP
 (File Transfer Protocol), see Internet :rfc:`959`.
 
+The default encoding is UTF-8, following :rfc:`2640`.
+
 Here's a sample session using the :mod:`ftplib` module::
 
    >>> from ftplib import FTP
@@ -41,12 +43,13 @@ Here's a sample session using the :mod:`ftplib` module::
 
 The module defines the following items:
 
-.. class:: FTP(host='', user='', passwd='', acct='', timeout=None, source_address=None)
+.. class:: FTP(host='', user='', passwd='', acct='', encoding='utf-8', timeout=None, source_address=None)
 
    Return a new instance of the :class:`FTP` class.  When *host* is given, the
    method call ``connect(host)`` is made.  When *user* is given, additionally
    the method call ``login(user, passwd, acct)`` is made (where *passwd* and
-   *acct* default to the empty string when not given).  The optional *timeout*
+   *acct* default to the empty string when not given). The *encoding* parameter
+   specifies the encoding for directories and filenames. The optional *timeout*
    parameter specifies a timeout in seconds for blocking operations like the
    connection attempt (if is not specified, the global default timeout setting
    will be used). *source_address* is a 2-tuple ``(host, port)`` for the socket
@@ -74,9 +77,11 @@ The module defines the following items:
 
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
-      :class:`ValueError` to prevent the creation of a non-blocking socket
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
+      The *encoding* parameter was added, and the default was changed from
+      Latin-1 to UTF-8.
 
-.. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None)
+.. class:: FTP_TLS(host='', user='', passwd='', acct='', encoding='utf-8', keyfile=None, certfile=None, context=None, timeout=None, source_address=None)
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
@@ -110,7 +115,9 @@ The module defines the following items:
 
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
-      :class:`ValueError` to prevent the creation of a non-blocking socket
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
+      The *encoding* parameter was added, and the default was changed from
+      Latin-1 to UTF-8.
 
    Here's a sample session using the :class:`FTP_TLS` class::
 

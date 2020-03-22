@@ -24,9 +24,9 @@ from test.support import HOST, HOSTv6
 TIMEOUT = support.LOOPBACK_TIMEOUT
 # the dummy data returned by server over the data channel when
 # RETR, LIST, NLST, MLSD commands are issued
-RETR_DATA = 'abcde12345\r\n' * 1000
-LIST_DATA = 'foo\r\nbar\r\n'
-NLST_DATA = 'foo\r\nbar\r\n'
+RETR_DATA = 'abcde12345\r\n' * 1000 + 'special char ®\r\n'
+LIST_DATA = 'foo\r\nbar\r\nspecial char ®\r\n'
+NLST_DATA = 'foo\r\nbar\r\nspecial char ®\r\n'
 MLSD_DATA = ("type=cdir;perm=el;unique==keVO1+ZF4; test\r\n"
              "type=pdir;perm=e;unique==keVO1+d?3; ..\r\n"
              "type=OS.unix=slink:/foobar;perm=;unique==keVO1+4G4; foobar\r\n"
@@ -41,7 +41,9 @@ MLSD_DATA = ("type=cdir;perm=el;unique==keVO1+ZF4; test\r\n"
              "type=dir;perm=cpmel;unique==keVO1+7G4; incoming\r\n"
              "type=file;perm=r;unique==keVO1+1G4; file2\r\n"
              "type=file;perm=r;unique==keVO1+1G4; file3\r\n"
-             "type=file;perm=r;unique==keVO1+1G4; file4\r\n")
+             "type=file;perm=r;unique==keVO1+1G4; file4\r\n"
+             "type=dir;perm=cpmel;unique==SGP1; dir ® special char\r\n"
+             "type=file;perm=r;unique==SGP2; file ® special char\r\n")
 
 
 class DummyDTPHandler(asynchat.async_chat):
@@ -53,7 +55,7 @@ class DummyDTPHandler(asynchat.async_chat):
         self.baseclass.last_received_data = ''
 
     def handle_read(self):
-        self.baseclass.last_received_data += self.recv(1024).decode('ascii')
+        self.baseclass.last_received_data += self.recv(1024).decode('utf-8')
 
     def handle_close(self):
         # XXX: this method can be called many times in a row for a single
@@ -70,7 +72,7 @@ class DummyDTPHandler(asynchat.async_chat):
             self.baseclass.next_data = None
         if not what:
             return self.close_when_done()
-        super(DummyDTPHandler, self).push(what.encode('ascii'))
+        super(DummyDTPHandler, self).push(what.encode('utf-8'))
 
     def handle_error(self):
         raise Exception
@@ -99,7 +101,7 @@ class DummyFTPHandler(asynchat.async_chat):
         self.in_buffer.append(data)
 
     def found_terminator(self):
-        line = b''.join(self.in_buffer).decode('ascii')
+        line = b''.join(self.in_buffer).decode('utf-8')
         self.in_buffer = []
         if self.next_response:
             self.push(self.next_response)
@@ -121,7 +123,7 @@ class DummyFTPHandler(asynchat.async_chat):
         raise Exception
 
     def push(self, data):
-        asynchat.async_chat.push(self, data.encode('ascii') + b'\r\n')
+        asynchat.async_chat.push(self, data.encode('utf-8') + b'\r\n')
 
     def cmd_port(self, arg):
         addr = list(map(int, arg.split(',')))
@@ -565,14 +567,14 @@ class TestFTPClass(TestCase):
 
     def test_retrbinary(self):
         def callback(data):
-            received.append(data.decode('ascii'))
+            received.append(data.decode('utf-8'))
         received = []
         self.client.retrbinary('retr', callback)
         self.check_data(''.join(received), RETR_DATA)
 
     def test_retrbinary_rest(self):
         def callback(data):
-            received.append(data.decode('ascii'))
+            received.append(data.decode('utf-8'))
         for rest in (0, 10, 20):
             received = []
             self.client.retrbinary('retr', callback, rest=rest)
@@ -584,7 +586,7 @@ class TestFTPClass(TestCase):
         self.check_data(''.join(received), RETR_DATA.replace('\r\n', ''))
 
     def test_storbinary(self):
-        f = io.BytesIO(RETR_DATA.encode('ascii'))
+        f = io.BytesIO(RETR_DATA.encode('utf-8'))
         self.client.storbinary('stor', f)
         self.check_data(self.server.handler_instance.last_received_data, RETR_DATA)
         # test new callback arg
@@ -594,14 +596,14 @@ class TestFTPClass(TestCase):
         self.assertTrue(flag)
 
     def test_storbinary_rest(self):
-        f = io.BytesIO(RETR_DATA.replace('\r\n', '\n').encode('ascii'))
+        f = io.BytesIO(RETR_DATA.replace('\r\n', '\n').encode('utf-8'))
         for r in (30, '30'):
             f.seek(0)
             self.client.storbinary('stor', f, rest=r)
             self.assertEqual(self.server.handler_instance.rest, str(r))
 
     def test_storlines(self):
-        f = io.BytesIO(RETR_DATA.replace('\r\n', '\n').encode('ascii'))
+        f = io.BytesIO(RETR_DATA.replace('\r\n', '\n').encode('utf-8'))
         self.client.storlines('stor', f)
         self.check_data(self.server.handler_instance.last_received_data, RETR_DATA)
         # test new callback arg
@@ -824,7 +826,7 @@ class TestIPv6Environment(TestCase):
     def test_transfer(self):
         def retr():
             def callback(data):
-                received.append(data.decode('ascii'))
+                received.append(data.decode('utf-8'))
             received = []
             self.client.retrbinary('retr', callback)
             self.assertEqual(len(''.join(received)), len(RETR_DATA))
@@ -877,7 +879,7 @@ class TestTLS_FTPClass(TestCase):
         # clear text
         with self.client.transfercmd('list') as sock:
             self.assertNotIsInstance(sock, ssl.SSLSocket)
-            self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
+            self.assertEqual(sock.recv(1024), LIST_DATA.encode('utf-8'))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
         # secured, after PROT P
@@ -886,14 +888,14 @@ class TestTLS_FTPClass(TestCase):
             self.assertIsInstance(sock, ssl.SSLSocket)
             # consume from SSL socket to finalize handshake and avoid
             # "SSLError [SSL] shutdown while in init"
-            self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
+            self.assertEqual(sock.recv(1024), LIST_DATA.encode('utf-8'))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
         # PROT C is issued, the connection must be in cleartext again
         self.client.prot_c()
         with self.client.transfercmd('list') as sock:
             self.assertNotIsInstance(sock, ssl.SSLSocket)
-            self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
+            self.assertEqual(sock.recv(1024), LIST_DATA.encode('utf-8'))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
     def test_login(self):
