@@ -110,14 +110,24 @@ S_IWOTH = 0o0002  # write by others
 S_IXOTH = 0o0001  # execute by others
 
 # Names for file flags
+#
+# Source: https://github.com/freebsd/freebsd/blob/master/sys/sys/stat.h
 
 UF_NODUMP    = 0x00000001  # do not dump file
 UF_IMMUTABLE = 0x00000002  # file may not be changed
 UF_APPEND    = 0x00000004  # file may only be appended to
 UF_OPAQUE    = 0x00000008  # directory is opaque when viewed through a union stack
 UF_NOUNLINK  = 0x00000010  # file may not be renamed or deleted
-UF_COMPRESSED = 0x00000020 # OS X: file is hfs-compressed
-UF_HIDDEN    = 0x00008000  # OS X: file should not be displayed
+UF_COMPRESSED = 0x00000020 # file is compressed
+UF_TRACKED   = 0x00000040  # OS X: renames and deletes are tracked
+UF_SYSTEM    = 0x00000080  # Windows: system file bit
+UF_SPARSE    = 0x00000100  # sparse file
+UF_OFFLINE   = 0x00000200  # Windows: file is offline (slow to access)
+UF_REPARSE   = 0x00000400  # Windows: reparse point file
+UF_ARCHIVE   = 0x00000800  # Windows: file should be archived
+UF_READONLY  = 0x00001000  # Windows: file is read-only
+UF_ENCRYPTED = 0x00002000  # Windows / Linux: file is encrypted
+UF_HIDDEN    = 0x00008000  # OS X / Windows: file should not be displayed
 SF_ARCHIVED  = 0x00010000  # file may be archived
 SF_IMMUTABLE = 0x00020000  # file may not be changed
 SF_APPEND    = 0x00040000  # file may only be appended to
@@ -186,6 +196,16 @@ FILE_ATTRIBUTE_SPARSE_FILE = 512
 FILE_ATTRIBUTE_SYSTEM = 4
 FILE_ATTRIBUTE_TEMPORARY = 256
 FILE_ATTRIBUTE_VIRTUAL = 65536
+
+
+# Linux STATX_ATTR constants for interpreting os.stat()'s
+# "st_attributes" and "st_attributes_mask" members
+
+STATX_ATTR_COMPRESSED = 0x0004
+STATX_ATTR_IMMUTABLE = 0x0010
+STATX_ATTR_APPEND = 0x0020
+STATX_ATTR_NODUMP = 0x0040
+STATX_ATTR_ENCRYPTED = 0x0800
 
 
 # If available, use C implementation
