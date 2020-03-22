@@ -1,0 +1,2 @@
+Deprecated ``ast.AugLoad`` and ``ast.AugStore`` node classes because they are
+no longer used.

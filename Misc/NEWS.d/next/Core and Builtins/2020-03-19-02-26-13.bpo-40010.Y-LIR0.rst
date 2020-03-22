@@ -1,0 +1,8 @@
+Optimize signal handling in multithreaded applications. If a thread different
+than the main thread gets a signal, the bytecode evaluation loop is no longer
+interrupted at each bytecode instruction to check for pending signals which
+cannot be handled. Only the main thread of the main interpreter can handle
+signals.
+
+Previously, the bytecode evaluation loop was interrupted at each instruction
+until the main thread handles signals.

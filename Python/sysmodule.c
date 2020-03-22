@@ -289,8 +289,9 @@ _PySys_ClearAuditHooks(void)
     /* Must be finalizing to clear hooks */
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *ts = _PyRuntimeState_GetThreadState(runtime);
-    assert(!ts || _Py_CURRENTLY_FINALIZING(runtime, ts));
-    if (!ts || !_Py_CURRENTLY_FINALIZING(runtime, ts)) {
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
+    assert(!ts || finalizing == ts);
+    if (!ts || finalizing != ts) {
         return;
     }
 
@@ -551,7 +552,7 @@ PyDoc_STRVAR(breakpointhook_doc,
 
    Helper function for sys_displayhook(). */
 static int
-sys_displayhook_unencodable(PyThreadState *tstate, PyObject *outf, PyObject *o)
+sys_displayhook_unencodable(PyObject *outf, PyObject *o)
 {
     PyObject *stdout_encoding = NULL;
     PyObject *encoded, *escaped_str, *repr_str, *buffer, *result;
@@ -624,7 +625,6 @@ sys_displayhook(PyObject *module, PyObject *o)
     PyObject *outf;
     PyObject *builtins;
     static PyObject *newline = NULL;
-    int err;
     PyThreadState *tstate = _PyThreadState_GET();
 
     builtins = _PyImport_GetModuleId(&PyId_builtins);
@@ -652,10 +652,11 @@ sys_displayhook(PyObject *module, PyObject *o)
     }
     if (PyFile_WriteObject(o, outf, 0) != 0) {
         if (_PyErr_ExceptionMatches(tstate, PyExc_UnicodeEncodeError)) {
+            int err;
             /* repr(o) is not encodable to sys.stdout.encoding with
              * sys.stdout.errors error handler (which is probably 'strict') */
             _PyErr_Clear(tstate);
-            err = sys_displayhook_unencodable(tstate, outf, o);
+            err = sys_displayhook_unencodable(outf, o);
             if (err) {
                 return NULL;
             }
@@ -875,7 +876,7 @@ trace_init(void)
 
 
 static PyObject *
-call_trampoline(PyObject* callback,
+call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
     if (PyFrame_FastToLocalsWithError(frame) < 0) {
@@ -888,7 +889,7 @@ call_trampoline(PyObject* callback,
     stack[2] = (arg != NULL) ? arg : Py_None;
 
     /* call the Python-level function */
-    PyObject *result = _PyObject_FastCall(callback, stack, 3);
+    PyObject *result = _PyObject_FastCallTstate(tstate, callback, stack, 3);
 
     PyFrame_LocalsToFast(frame, 1);
     if (result == NULL) {
@@ -902,15 +903,17 @@ static int
 profile_trampoline(PyObject *self, PyFrameObject *frame,
                    int what, PyObject *arg)
 {
-    PyObject *result;
-
-    if (arg == NULL)
+    if (arg == NULL) {
         arg = Py_None;
-    result = call_trampoline(self, frame, what, arg);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *result = call_trampoline(tstate, self, frame, what, arg);
     if (result == NULL) {
-        PyEval_SetProfile(NULL, NULL);
+        _PyEval_SetProfile(tstate, NULL, NULL);
         return -1;
     }
+
     Py_DECREF(result);
     return 0;
 }
@@ -920,20 +923,24 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
                  int what, PyObject *arg)
 {
     PyObject *callback;
-    PyObject *result;
-
-    if (what == PyTrace_CALL)
+    if (what == PyTrace_CALL) {
         callback = self;
-    else
+    }
+    else {
         callback = frame->f_trace;
-    if (callback == NULL)
+    }
+    if (callback == NULL) {
         return 0;
-    result = call_trampoline(callback, frame, what, arg);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *result = call_trampoline(tstate, callback, frame, what, arg);
     if (result == NULL) {
-        PyEval_SetTrace(NULL, NULL);
+        _PyEval_SetTrace(tstate, NULL, NULL);
         Py_CLEAR(frame->f_trace);
         return -1;
     }
+
     if (result != Py_None) {
         Py_XSETREF(frame->f_trace, result);
     }
@@ -946,12 +953,21 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
 static PyObject *
 sys_settrace(PyObject *self, PyObject *args)
 {
-    if (trace_init() == -1)
+    if (trace_init() == -1) {
         return NULL;
-    if (args == Py_None)
-        PyEval_SetTrace(NULL, NULL);
-    else
-        PyEval_SetTrace(trace_trampoline, args);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (args == Py_None) {
+        if (_PyEval_SetTrace(tstate, NULL, NULL) < 0) {
+            return NULL;
+        }
+    }
+    else {
+        if (_PyEval_SetTrace(tstate, trace_trampoline, args) < 0) {
+            return NULL;
+        }
+    }
     Py_RETURN_NONE;
 }
 
@@ -986,12 +1002,21 @@ sys_gettrace_impl(PyObject *module)
 static PyObject *
 sys_setprofile(PyObject *self, PyObject *args)
 {
-    if (trace_init() == -1)
+    if (trace_init() == -1) {
         return NULL;
-    if (args == Py_None)
-        PyEval_SetProfile(NULL, NULL);
-    else
-        PyEval_SetProfile(profile_trampoline, args);
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (args == Py_None) {
+        if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
+            return NULL;
+        }
+    }
+    else {
+        if (_PyEval_SetProfile(tstate, profile_trampoline, args) < 0) {
+            return NULL;
+        }
+    }
     Py_RETURN_NONE;
 }
 
@@ -2738,8 +2763,6 @@ err_occurred:
     return _PyStatus_ERR("can't initialize sys module");
 }
 
-#undef SET_SYS_FROM_STRING
-
 /* Updating the sys namespace, returning integer error codes */
 #define SET_SYS_FROM_STRING_INT_RESULT(key, value)         \
     do {                                                   \
@@ -2843,6 +2866,13 @@ _PySys_InitMain(PyThreadState *tstate)
     SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
     SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
     SET_SYS_FROM_WSTR("base_exec_prefix", config->base_exec_prefix);
+    {
+        PyObject *str = PyUnicode_FromString(PLATLIBDIR);
+        if (str == NULL) {
+            return -1;
+        }
+        SET_SYS_FROM_STRING("platlibdir", str);
+    }
 
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
@@ -2862,6 +2892,7 @@ _PySys_InitMain(PyThreadState *tstate)
 
 #undef COPY_LIST
 #undef SET_SYS_FROM_WSTR
+
 
     /* Set flags to their final values */
     SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(tstate));
@@ -2896,6 +2927,7 @@ err_occurred:
     return -1;
 }
 
+#undef SET_SYS_FROM_STRING
 #undef SET_SYS_FROM_STRING_BORROW
 #undef SET_SYS_FROM_STRING_INT_RESULT
 

@@ -623,7 +623,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 }
 
 static int
-find_nfc_index(PyObject *self, struct reindex* nfc, Py_UCS4 code)
+find_nfc_index(const struct reindex* nfc, Py_UCS4 code)
 {
     unsigned int index;
     for (index = 0; nfc[index].start; index++) {
@@ -709,7 +709,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
       }
 
       /* code is still input[i] here */
-      f = find_nfc_index(self, nfc_first, code);
+      f = find_nfc_index(nfc_first, code);
       if (f == -1) {
           output[o++] = code;
           i++;
@@ -732,7 +732,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
                   continue;
               }
           }
-          l = find_nfc_index(self, nfc_last, code1);
+          l = find_nfc_index(nfc_last, code1);
           /* i1 cannot be combined with i. If i1
              is a starter, we don't need to look further.
              Otherwise, record the combining class. */
@@ -757,7 +757,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
           assert(cskipped < 20);
           skipped[cskipped++] = i1;
           i1++;
-          f = find_nfc_index(self, nfc_first, output[o]);
+          f = find_nfc_index(nfc_first, output[o]);
           if (f == -1)
               break;
       }
@@ -1031,13 +1031,14 @@ static int
 is_unified_ideograph(Py_UCS4 code)
 {
     return
-        (0x3400 <= code && code <= 0x4DB5)   || /* CJK Ideograph Extension A */
-        (0x4E00 <= code && code <= 0x9FEF)   || /* CJK Ideograph */
-        (0x20000 <= code && code <= 0x2A6D6) || /* CJK Ideograph Extension B */
+        (0x3400 <= code && code <= 0x4DBF)   || /* CJK Ideograph Extension A */
+        (0x4E00 <= code && code <= 0x9FFC)   || /* CJK Ideograph */
+        (0x20000 <= code && code <= 0x2A6DD) || /* CJK Ideograph Extension B */
         (0x2A700 <= code && code <= 0x2B734) || /* CJK Ideograph Extension C */
         (0x2B740 <= code && code <= 0x2B81D) || /* CJK Ideograph Extension D */
         (0x2B820 <= code && code <= 0x2CEA1) || /* CJK Ideograph Extension E */
-        (0x2CEB0 <= code && code <= 0x2EBEF);   /* CJK Ideograph Extension F */
+        (0x2CEB0 <= code && code <= 0x2EBE0) || /* CJK Ideograph Extension F */
+        (0x30000 <= code && code <= 0x3134A);   /* CJK Ideograph Extension G */
 }
 
 /* macros used to determine if the given code point is in the PUA range that

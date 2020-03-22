@@ -3,7 +3,7 @@ jobs:
   displayName: Pack MSIX bundles
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   workspace:
     clean: all

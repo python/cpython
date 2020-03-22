@@ -527,7 +527,7 @@ teedataobject_traverse(teedataobject *tdo, visitproc visit, void * arg)
 static void
 teedataobject_safe_decref(PyObject *obj)
 {
-    while (obj && Py_TYPE(obj) == &teedataobject_type &&
+    while (obj && Py_IS_TYPE(obj, &teedataobject_type) &&
            Py_REFCNT(obj) == 1) {
         PyObject *nextlink = ((teedataobject *)obj)->nextlink;
         ((teedataobject *)obj)->nextlink = NULL;
@@ -614,7 +614,7 @@ itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
 
     if (len == LINKCELLS) {
         if (next != Py_None) {
-            if (Py_TYPE(next) != &teedataobject_type)
+            if (!Py_IS_TYPE(next, &teedataobject_type))
                 goto err;
             assert(tdo->nextlink == NULL);
             Py_INCREF(next);
@@ -4701,31 +4701,9 @@ combinations(p, r)\n\
 combinations_with_replacement(p, r)\n\
 ");
 
-
-static PyMethodDef module_methods[] = {
-    ITERTOOLS_TEE_METHODDEF
-    {NULL,              NULL}           /* sentinel */
-};
-
-
-static struct PyModuleDef itertoolsmodule = {
-    PyModuleDef_HEAD_INIT,
-    "itertools",
-    module_doc,
-    -1,
-    module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_itertools(void)
+static int
+itertoolsmodule_exec(PyObject *m)
 {
-    int i;
-    PyObject *m;
-    const char *name;
     PyTypeObject *typelist[] = {
         &accumulate_type,
         &combinations_type,
@@ -4746,24 +4724,45 @@ PyInit_itertools(void)
         &groupby_type,
         &_grouper_type,
         &tee_type,
-        &teedataobject_type,
-        NULL
+        &teedataobject_type
     };
 
     Py_SET_TYPE(&teedataobject_type, &PyType_Type);
-    m = PyModule_Create(&itertoolsmodule);
-    if (m == NULL) {
-        return NULL;
-    }
 
-    for (i=0 ; typelist[i] != NULL ; i++) {
-        if (PyType_Ready(typelist[i]) < 0) {
-            return NULL;
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
+        if (PyModule_AddType(m, typelist[i]) < 0) {
+            return -1;
         }
-        name = _PyType_Name(typelist[i]);
-        Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
     }
 
-    return m;
+    return 0;
+}
+
+static struct PyModuleDef_Slot itertoolsmodule_slots[] = {
+    {Py_mod_exec, itertoolsmodule_exec},
+    {0, NULL}
+};
+
+static PyMethodDef module_methods[] = {
+    ITERTOOLS_TEE_METHODDEF
+    {NULL, NULL} /* sentinel */
+};
+
+
+static struct PyModuleDef itertoolsmodule = {
+    PyModuleDef_HEAD_INIT,
+    "itertools",
+    module_doc,
+    0,
+    module_methods,
+    itertoolsmodule_slots,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit_itertools(void)
+{
+    return PyModuleDef_Init(&itertoolsmodule);
 }

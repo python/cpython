@@ -451,7 +451,7 @@ run_at_forkers(PyObject *lst, int reverse)
 void
 PyOS_BeforeFork(void)
 {
-    run_at_forkers(_PyInterpreterState_Get()->before_forkers, 1);
+    run_at_forkers(_PyInterpreterState_GET_UNSAFE()->before_forkers, 1);
 
     _PyImport_AcquireLock();
 }
@@ -462,7 +462,7 @@ PyOS_AfterFork_Parent(void)
     if (_PyImport_ReleaseLock() <= 0)
         Py_FatalError("failed releasing import lock after fork");
 
-    run_at_forkers(_PyInterpreterState_Get()->after_forkers_parent, 0);
+    run_at_forkers(_PyInterpreterState_GET_UNSAFE()->after_forkers_parent, 0);
 }
 
 void
@@ -476,7 +476,7 @@ PyOS_AfterFork_Child(void)
     _PyRuntimeState_ReInitThreads(runtime);
     _PyInterpreterState_DeleteExceptMain(runtime);
 
-    run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
+    run_at_forkers(_PyInterpreterState_GET_UNSAFE()->after_forkers_child, 0);
 }
 
 static int
@@ -842,7 +842,14 @@ typedef struct {
 
 static struct PyModuleDef posixmodule;
 
-#define _posixstate(o) ((_posixstate *)PyModule_GetState(o))
+static inline _posixstate*
+get_posix_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_posixstate *)state;
+}
+
 #define _posixstate_global ((_posixstate *)PyModule_GetState(PyState_FindModule(&posixmodule)))
 
 /*
@@ -2103,48 +2110,48 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 _posix_clear(PyObject *module)
 {
-    Py_CLEAR(_posixstate(module)->billion);
-    Py_CLEAR(_posixstate(module)->DirEntryType);
-    Py_CLEAR(_posixstate(module)->ScandirIteratorType);
+    Py_CLEAR(get_posix_state(module)->billion);
+    Py_CLEAR(get_posix_state(module)->DirEntryType);
+    Py_CLEAR(get_posix_state(module)->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-    Py_CLEAR(_posixstate(module)->SchedParamType);
+    Py_CLEAR(get_posix_state(module)->SchedParamType);
 #endif
-    Py_CLEAR(_posixstate(module)->StatResultType);
-    Py_CLEAR(_posixstate(module)->StatVFSResultType);
-    Py_CLEAR(_posixstate(module)->TerminalSizeType);
-    Py_CLEAR(_posixstate(module)->TimesResultType);
-    Py_CLEAR(_posixstate(module)->UnameResultType);
+    Py_CLEAR(get_posix_state(module)->StatResultType);
+    Py_CLEAR(get_posix_state(module)->StatVFSResultType);
+    Py_CLEAR(get_posix_state(module)->TerminalSizeType);
+    Py_CLEAR(get_posix_state(module)->TimesResultType);
+    Py_CLEAR(get_posix_state(module)->UnameResultType);
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
-    Py_CLEAR(_posixstate(module)->WaitidResultType);
+    Py_CLEAR(get_posix_state(module)->WaitidResultType);
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
-    Py_CLEAR(_posixstate(module)->struct_rusage);
+    Py_CLEAR(get_posix_state(module)->struct_rusage);
 #endif
-    Py_CLEAR(_posixstate(module)->st_mode);
+    Py_CLEAR(get_posix_state(module)->st_mode);
     return 0;
 }
 
 static int
 _posix_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Py_VISIT(_posixstate(module)->billion);
-    Py_VISIT(_posixstate(module)->DirEntryType);
-    Py_VISIT(_posixstate(module)->ScandirIteratorType);
+    Py_VISIT(get_posix_state(module)->billion);
+    Py_VISIT(get_posix_state(module)->DirEntryType);
+    Py_VISIT(get_posix_state(module)->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-    Py_VISIT(_posixstate(module)->SchedParamType);
+    Py_VISIT(get_posix_state(module)->SchedParamType);
 #endif
-    Py_VISIT(_posixstate(module)->StatResultType);
-    Py_VISIT(_posixstate(module)->StatVFSResultType);
-    Py_VISIT(_posixstate(module)->TerminalSizeType);
-    Py_VISIT(_posixstate(module)->TimesResultType);
-    Py_VISIT(_posixstate(module)->UnameResultType);
+    Py_VISIT(get_posix_state(module)->StatResultType);
+    Py_VISIT(get_posix_state(module)->StatVFSResultType);
+    Py_VISIT(get_posix_state(module)->TerminalSizeType);
+    Py_VISIT(get_posix_state(module)->TimesResultType);
+    Py_VISIT(get_posix_state(module)->UnameResultType);
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
-    Py_VISIT(_posixstate(module)->WaitidResultType);
+    Py_VISIT(get_posix_state(module)->WaitidResultType);
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
-    Py_VISIT(_posixstate(module)->struct_rusage);
+    Py_VISIT(get_posix_state(module)->struct_rusage);
 #endif
-    Py_VISIT(_posixstate(module)->st_mode);
+    Py_VISIT(get_posix_state(module)->st_mode);
     return 0;
 }
 
@@ -4673,7 +4680,7 @@ os_uname_impl(PyObject *module)
     if (res < 0)
         return posix_error();
 
-    PyObject *UnameResultType = _posixstate(module)->UnameResultType;
+    PyObject *UnameResultType = get_posix_state(module)->UnameResultType;
     value = PyStructSequence_New((PyTypeObject *)UnameResultType);
     if (value == NULL)
         return NULL;
@@ -6177,7 +6184,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
         check_null_or_callable(after_in_parent, "after_in_parent")) {
         return NULL;
     }
-    interp = _PyInterpreterState_Get();
+    interp = _PyInterpreterState_GET_UNSAFE();
 
     if (register_at_forker(&interp->before_forkers, before)) {
         return NULL;
@@ -6208,7 +6215,7 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+    if (_PyInterpreterState_GET_UNSAFE() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -6243,7 +6250,7 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+    if (_PyInterpreterState_GET_UNSAFE() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -6380,8 +6387,7 @@ convert_sched_param(PyObject *param, struct sched_param *res)
 {
     long priority;
 
-    PyObject *SchedParamType = _posixstate_global->SchedParamType;
-    if (Py_TYPE(param) != (PyTypeObject *)SchedParamType) {
+    if (!Py_IS_TYPE(param, (PyTypeObject *)_posixstate_global->SchedParamType)) {
         PyErr_SetString(PyExc_TypeError, "must have a sched_param object");
         return 0;
     }
@@ -6852,7 +6858,7 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
-    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+    if (_PyInterpreterState_GET_UNSAFE() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -7841,7 +7847,7 @@ os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options)
     if (si.si_pid == 0)
         Py_RETURN_NONE;
 
-    PyObject *WaitidResultType = _posixstate(module)->WaitidResultType;
+    PyObject *WaitidResultType = get_posix_state(module)->WaitidResultType;
     result = PyStructSequence_New((PyTypeObject *)WaitidResultType);
     if (!result)
         return NULL;
@@ -12408,7 +12414,7 @@ get_terminal_size(PyObject *self, PyObject *args)
     }
 #endif /* TERMSIZE_USE_CONIO */
 
-    PyObject *TerminalSizeType = _posixstate(self)->TerminalSizeType;
+    PyObject *TerminalSizeType = get_posix_state(self)->TerminalSizeType;
     termsize = PyStructSequence_New((PyTypeObject *)TerminalSizeType);
     if (termsize == NULL)
         return NULL;
@@ -13426,7 +13432,7 @@ os_scandir_impl(PyObject *module, path_t *path)
         return NULL;
     }
 
-    PyObject *ScandirIteratorType = _posixstate(module)->ScandirIteratorType;
+    PyObject *ScandirIteratorType = get_posix_state(module)->ScandirIteratorType;
     iterator = PyObject_New(ScandirIterator, (PyTypeObject *)ScandirIteratorType);
     if (!iterator)
         return NULL;
@@ -14644,7 +14650,7 @@ INITFUNC(void)
     }
     Py_INCREF(WaitidResultType);
     PyModule_AddObject(m, "waitid_result", WaitidResultType);
-    _posixstate(m)->WaitidResultType = WaitidResultType;
+    get_posix_state(m)->WaitidResultType = WaitidResultType;
 #endif
 
     stat_result_desc.name = "os.stat_result"; /* see issue #19209 */
@@ -14657,7 +14663,7 @@ INITFUNC(void)
     }
     Py_INCREF(StatResultType);
     PyModule_AddObject(m, "stat_result", StatResultType);
-    _posixstate(m)->StatResultType = StatResultType;
+    get_posix_state(m)->StatResultType = StatResultType;
     structseq_new = ((PyTypeObject *)StatResultType)->tp_new;
     ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
 
@@ -14668,7 +14674,7 @@ INITFUNC(void)
     }
     Py_INCREF(StatVFSResultType);
     PyModule_AddObject(m, "statvfs_result", StatVFSResultType);
-    _posixstate(m)->StatVFSResultType = StatVFSResultType;
+    get_posix_state(m)->StatVFSResultType = StatVFSResultType;
 #ifdef NEED_TICKS_PER_SECOND
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
     ticks_per_second = sysconf(_SC_CLK_TCK);
@@ -14687,7 +14693,7 @@ INITFUNC(void)
     }
     Py_INCREF(SchedParamType);
     PyModule_AddObject(m, "sched_param", SchedParamType);
-    _posixstate(m)->SchedParamType = SchedParamType;
+    get_posix_state(m)->SchedParamType = SchedParamType;
     ((PyTypeObject *)SchedParamType)->tp_new = os_sched_param;
 #endif
 
@@ -14698,14 +14704,14 @@ INITFUNC(void)
     }
     Py_INCREF(TerminalSizeType);
     PyModule_AddObject(m, "terminal_size", TerminalSizeType);
-    _posixstate(m)->TerminalSizeType = TerminalSizeType;
+    get_posix_state(m)->TerminalSizeType = TerminalSizeType;
 
     /* initialize scandir types */
     PyObject *ScandirIteratorType = PyType_FromSpec(&ScandirIteratorType_spec);
     if (ScandirIteratorType == NULL) {
         return NULL;
     }
-    _posixstate(m)->ScandirIteratorType = ScandirIteratorType;
+    get_posix_state(m)->ScandirIteratorType = ScandirIteratorType;
 
     PyObject *DirEntryType = PyType_FromSpec(&DirEntryType_spec);
     if (DirEntryType == NULL) {
@@ -14713,7 +14719,7 @@ INITFUNC(void)
     }
     Py_INCREF(DirEntryType);
     PyModule_AddObject(m, "DirEntry", DirEntryType);
-    _posixstate(m)->DirEntryType = DirEntryType;
+    get_posix_state(m)->DirEntryType = DirEntryType;
 
     times_result_desc.name = MODNAME ".times_result";
     PyObject *TimesResultType = (PyObject *)PyStructSequence_NewType(&times_result_desc);
@@ -14722,7 +14728,7 @@ INITFUNC(void)
     }
     Py_INCREF(TimesResultType);
     PyModule_AddObject(m, "times_result", TimesResultType);
-    _posixstate(m)->TimesResultType = TimesResultType;
+    get_posix_state(m)->TimesResultType = TimesResultType;
 
     PyTypeObject *UnameResultType = PyStructSequence_NewType(&uname_result_desc);
     if (UnameResultType == NULL) {
@@ -14730,7 +14736,7 @@ INITFUNC(void)
     }
     Py_INCREF(UnameResultType);
     PyModule_AddObject(m, "uname_result", (PyObject *)UnameResultType);
-    _posixstate(m)->UnameResultType = (PyObject *)UnameResultType;
+    get_posix_state(m)->UnameResultType = (PyObject *)UnameResultType;
 
 #ifdef __APPLE__
     /*
@@ -14770,15 +14776,15 @@ INITFUNC(void)
 
 #endif /* __APPLE__ */
 
-    if ((_posixstate(m)->billion = PyLong_FromLong(1000000000)) == NULL)
+    if ((get_posix_state(m)->billion = PyLong_FromLong(1000000000)) == NULL)
         return NULL;
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
-    _posixstate(m)->struct_rusage = PyUnicode_InternFromString("struct_rusage");
-    if (_posixstate(m)->struct_rusage == NULL)
+    get_posix_state(m)->struct_rusage = PyUnicode_InternFromString("struct_rusage");
+    if (get_posix_state(m)->struct_rusage == NULL)
         return NULL;
 #endif
-    _posixstate(m)->st_mode = PyUnicode_InternFromString("st_mode");
-    if (_posixstate(m)->st_mode == NULL)
+    get_posix_state(m)->st_mode = PyUnicode_InternFromString("st_mode");
+    if (get_posix_state(m)->st_mode == NULL)
         return NULL;
 
     /* suppress "function not used" warnings */

@@ -65,7 +65,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
-static PyStatus init_set_builtins_open(PyThreadState *tstate);
+static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
 static PyStatus init_signals(PyThreadState *tstate);
 static void call_py_exitfuncs(PyThreadState *tstate);
@@ -103,7 +103,7 @@ _PyRuntime_Finalize(void)
 int
 _Py_IsFinalizing(void)
 {
-    return _PyRuntime.finalizing != NULL;
+    return _PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL;
 }
 
 /* Hack to force loading of object files */
@@ -507,7 +507,7 @@ pycore_init_runtime(_PyRuntimeState *runtime,
      * threads still hanging around from a previous Py_Initialize/Finalize
      * pair :(
      */
-    runtime->finalizing = NULL;
+    _PyRuntimeState_SetFinalizing(runtime, NULL);
 
     PyStatus status = _Py_HashRandomization_Init(config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -548,13 +548,19 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
        another running thread (see issue #9901).
        Instead we destroy the previously created GIL here, which ensures
        that we can call Py_Initialize / Py_FinalizeEx multiple times. */
-    _PyEval_FiniThreads(&runtime->ceval);
+    _PyEval_FiniThreads(tstate);
 
     /* Auto-thread-state API */
-    _PyGILState_Init(tstate);
+    status = _PyGILState_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
-    /* Create the GIL */
-    PyEval_InitThreads();
+    /* Create the GIL and the pending calls lock */
+    status = _PyEval_InitThreads(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     *tstate_p = tstate;
     return _PyStatus_OK();
@@ -677,8 +683,9 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
     const PyConfig *config = &tstate->interp->config;
     if (_Py_IsMainInterpreter(tstate)) {
         /* Initialize _warnings. */
-        if (_PyWarnings_Init() == NULL) {
-            return _PyStatus_ERR("can't initialize warnings");
+        status = _PyWarnings_InitState(tstate);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
         }
 
         if (config->_install_importlib) {
@@ -1018,7 +1025,7 @@ init_interp_main(PyThreadState *tstate)
         return status;
     }
 
-    status = init_set_builtins_open(tstate);
+    status = init_set_builtins_open();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1363,11 +1370,21 @@ Py_FinalizeEx(void)
     int malloc_stats = interp->config.malloc_stats;
 #endif
 
-    /* Remaining threads (e.g. daemon threads) will automatically exit
-       after taking the GIL (in PyEval_RestoreThread()). */
-    runtime->finalizing = tstate;
+    /* Remaining daemon threads will automatically exit
+       when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
+    _PyRuntimeState_SetFinalizing(runtime, tstate);
     runtime->initialized = 0;
     runtime->core_initialized = 0;
+
+    /* Destroy the state of all threads of the interpreter, except of the
+       current thread. In practice, only daemon threads should still be alive,
+       except if wait_for_thread_shutdown() has been cancelled by CTRL+C.
+       Clear frames of other threads to call objects destructors. Destructors
+       will be called in the current Python thread. Since
+       _PyRuntimeState_SetFinalizing() has been called, no other Python thread
+       can take the GIL at this point: if they try, they will exit
+       immediately. */
+    _PyThreadState_DeleteExcept(runtime, tstate);
 
     /* Flush sys.stdout and sys.stderr */
     if (flush_std_files() < 0) {
@@ -1564,6 +1581,12 @@ new_interpreter(PyThreadState **tstate_p)
         goto error;
     }
 
+    /* Create the pending calls lock */
+    status = _PyEval_InitThreads(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     *tstate_p = tstate;
     return _PyStatus_OK();
 
@@ -1610,10 +1633,10 @@ Py_EndInterpreter(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
 
     if (tstate != _PyThreadState_GET()) {
-        Py_FatalError("Py_EndInterpreter: thread is not current");
+        Py_FatalError("thread is not current");
     }
     if (tstate->frame != NULL) {
-        Py_FatalError("Py_EndInterpreter: thread still has a frame");
+        Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;
 
@@ -1623,7 +1646,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     call_py_exitfuncs(tstate);
 
     if (tstate != interp->tstate_head || tstate->next != NULL) {
-        Py_FatalError("Py_EndInterpreter: not the last thread");
+        Py_FatalError("not the last thread");
     }
 
     _PyImport_Cleanup(tstate);
@@ -1871,7 +1894,7 @@ error:
 
 /* Set builtins.open to io.OpenWrapper */
 static PyStatus
-init_set_builtins_open(PyThreadState *tstate)
+init_set_builtins_open(void)
 {
     PyObject *iomod = NULL, *wrapper;
     PyObject *bimod = NULL;
@@ -2039,9 +2062,8 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
    Return 1 if the traceback was displayed, 0 otherwise. */
 
 static int
-_Py_FatalError_PrintExc(int fd)
+_Py_FatalError_PrintExc(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *ferr, *res;
     PyObject *exception, *v, *tb;
     int has_tb;
@@ -2130,8 +2152,9 @@ static void
 fatal_error_dump_runtime(FILE *stream, _PyRuntimeState *runtime)
 {
     fprintf(stream, "Python runtime state: ");
-    if (runtime->finalizing) {
-        fprintf(stream, "finalizing (tstate=%p)", runtime->finalizing);
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
+    if (finalizing) {
+        fprintf(stream, "finalizing (tstate=%p)", finalizing);
     }
     else if (runtime->initialized) {
         fprintf(stream, "initialized");
@@ -2202,7 +2225,7 @@ fatal_error(const char *prefix, const char *msg, int status)
     int has_tstate_and_gil = (tss_tstate != NULL && tss_tstate == tstate);
     if (has_tstate_and_gil) {
         /* If an exception is set, print the exception with its traceback */
-        if (!_Py_FatalError_PrintExc(fd)) {
+        if (!_Py_FatalError_PrintExc(tss_tstate)) {
             /* No exception is set, or an exception is set without traceback */
             _Py_FatalError_DumpTracebacks(fd, interp, tss_tstate);
         }
@@ -2239,10 +2262,18 @@ exit:
     }
 }
 
+#undef Py_FatalError
+
 void _Py_NO_RETURN
 Py_FatalError(const char *msg)
 {
     fatal_error(NULL, msg, -1);
+}
+
+void _Py_NO_RETURN
+_Py_FatalErrorFunc(const char *func, const char *msg)
+{
+    fatal_error(func, msg, -1);
 }
 
 void _Py_NO_RETURN
@@ -2373,6 +2404,8 @@ init_signals(PyThreadState *tstate)
  * All of the code in this function must only use async-signal-safe functions,
  * listed at `man 7 signal` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
+ *
+ * If this function is updated, update also _posix_spawn() of subprocess.py.
  */
 void
 _Py_RestoreSignals(void)

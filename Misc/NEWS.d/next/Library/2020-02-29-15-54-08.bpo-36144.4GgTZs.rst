@@ -1,0 +1,1 @@
+:class:`collections.defaultdict` now implements ``|`` (:pep:`584`).

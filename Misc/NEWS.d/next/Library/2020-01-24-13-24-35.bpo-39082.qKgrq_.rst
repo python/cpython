@@ -1,1 +1,0 @@
-Allow AsyncMock to correctly patch static/class methods

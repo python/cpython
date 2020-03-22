@@ -5,9 +5,11 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
-/* The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
-   define, but we only want to test the public C API, not the internal
-   C API. */
+/* This module tests the public (Include/ and Include/cpython/) C API.
+   The internal C API must not be used here: use _testinternalcapi for that.
+
+   The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
+   macro defined, but only the public C API must be tested here. */
 #undef Py_BUILD_CORE_MODULE
 
 #define PY_SSIZE_T_CLEAN
@@ -2728,8 +2730,6 @@ test_thread_state(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    /* Ensure Python is set up for threading */
-    PyEval_InitThreads();
     thread_done = PyThread_allocate_lock();
     if (thread_done == NULL)
         return PyErr_NoMemory();
@@ -4175,8 +4175,6 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
     test_c_thread_t test_c_thread;
     long thread;
 
-    PyEval_InitThreads();
-
     test_c_thread.start_event = PyThread_allocate_lock();
     test_c_thread.exit_event = PyThread_allocate_lock();
     test_c_thread.callback = NULL;
@@ -4525,15 +4523,6 @@ test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
     /* This conversion rely on the fact that _PyTime_t is a number of
        nanoseconds */
     return _PyTime_AsNanosecondsObject(ms);
-}
-
-static PyObject*
-get_recursion_depth(PyObject *self, PyObject *args)
-{
-    PyThreadState *tstate = PyThreadState_Get();
-
-    /* subtract one to ignore the frame of the get_recursion_depth() call */
-    return PyLong_FromLong(tstate->recursion_depth - 1);
 }
 
 static PyObject*
@@ -5258,6 +5247,22 @@ meth_fastcall_keywords(PyObject* self, PyObject* const* args,
     return Py_BuildValue("NNN", _null_to_none(self), pyargs, pykwargs);
 }
 
+
+static PyObject*
+pynumber_tobase(PyObject *module, PyObject *args)
+{
+    PyObject *obj;
+    int base;
+    if (!PyArg_ParseTuple(args, "Oi:pynumber_tobase",
+                          &obj, &base)) {
+        return NULL;
+    }
+    return PyNumber_ToBase(obj, base);
+}
+
+
+static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5322,6 +5327,7 @@ static PyMethodDef TestMethods[] = {
     {"getbuffer_with_null_view", getbuffer_with_null_view, METH_O},
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat, METH_VARARGS},
     {"test_buildvalue_N",       test_buildvalue_N,               METH_NOARGS},
+    {"test_buildvalue_issue38913", test_buildvalue_issue38913,   METH_NOARGS},
     {"get_args", get_args, METH_VARARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs, METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
@@ -5473,7 +5479,6 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"PyTime_AsMilliseconds", test_PyTime_AsMilliseconds, METH_VARARGS},
     {"PyTime_AsMicroseconds", test_PyTime_AsMicroseconds, METH_VARARGS},
-    {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"pymem_buffer_overflow", pymem_buffer_overflow, METH_NOARGS},
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
@@ -5515,6 +5520,7 @@ static PyMethodDef TestMethods[] = {
     {"meth_noargs", meth_noargs, METH_NOARGS},
     {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
     {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
+    {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -6790,4 +6796,43 @@ PyInit__testcapi(void)
 
     PyState_AddModule(m, &_testcapimodule);
     return m;
+}
+
+
+/* Test the C API exposed when PY_SSIZE_T_CLEAN is not defined */
+
+#undef Py_BuildValue
+PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
+
+static PyObject *
+test_buildvalue_issue38913(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *res;
+    const char str[] = "string";
+    const Py_UNICODE unicode[] = L"unicode";
+    PyErr_SetNone(PyExc_ZeroDivisionError);
+
+    res = Py_BuildValue("(s#O)", str, 1, Py_None);
+    assert(res == NULL);
+    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+        return NULL;
+    }
+    res = Py_BuildValue("(z#O)", str, 1, Py_None);
+    assert(res == NULL);
+    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+        return NULL;
+    }
+    res = Py_BuildValue("(y#O)", str, 1, Py_None);
+    assert(res == NULL);
+    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+        return NULL;
+    }
+    res = Py_BuildValue("(u#O)", unicode, 1, Py_None);
+    assert(res == NULL);
+    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+        return NULL;
+    }
+
+    PyErr_Clear();
+    Py_RETURN_NONE;
 }

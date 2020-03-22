@@ -1,0 +1,2 @@
+Avoid hang when computer is hibernated whilst waiting for a mutex (for
+lock-related objects from :mod:`threading`) around 49-day uptime.
