@@ -62,7 +62,6 @@ static int test_repeated_init_and_subinterpreters(void)
         _testembed_Py_Initialize();
         mainstate = PyThreadState_Get();
 
-        PyEval_InitThreads();
         PyEval_ReleaseThread(mainstate);
 
         gilstate = PyGILState_Ensure();
@@ -252,9 +251,8 @@ static int test_bpo20891(void)
     /* the test doesn't support custom memory allocators */
     putenv("PYTHONMALLOC=");
 
-    /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
-       calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
-       call PyEval_InitThreads() for us in this case. */
+    /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread must not
+       crash. */
     PyThread_type_lock lock = PyThread_allocate_lock();
     if (!lock) {
         fprintf(stderr, "PyThread_allocate_lock failed!");

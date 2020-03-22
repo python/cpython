@@ -1152,6 +1152,22 @@ class MinidomTest(unittest.TestCase):
 
         doc.unlink()
 
+    def testStandalone(self):
+        doc = parseString('<foo>&#x20ac;</foo>')
+        self.assertEqual(doc.toxml(),
+                         '<?xml version="1.0" ?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml(standalone=None),
+                         '<?xml version="1.0" ?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml(standalone=True),
+            '<?xml version="1.0" standalone="yes"?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml(standalone=False),
+            '<?xml version="1.0" standalone="no"?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml('utf-8', True),
+            b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>'
+            b'<foo>\xe2\x82\xac</foo>')
+
+        doc.unlink()
+
     class UserDataHandler:
         called = 0
         def handle(self, operation, key, data, src, dst):

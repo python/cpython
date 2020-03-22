@@ -1,0 +1,1 @@
+Add :c:func:`PyModule_AddType` helper function: add a type to a module. Patch by Dong-hee Na.

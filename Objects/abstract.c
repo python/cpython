@@ -1,6 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include <ctype.h>
@@ -834,7 +835,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 
     if (Py_TYPE(v)->tp_as_number != NULL)
         slotv = NB_BINOP(Py_TYPE(v)->tp_as_number, op_slot);
-    if (Py_TYPE(w) != Py_TYPE(v) &&
+    if (!Py_IS_TYPE(w, Py_TYPE(v)) &&
         Py_TYPE(w)->tp_as_number != NULL) {
         slotw = NB_BINOP(Py_TYPE(w)->tp_as_number, op_slot);
         if (slotw == slotv)
@@ -925,8 +926,7 @@ ternary_op(PyObject *v,
     mw = Py_TYPE(w)->tp_as_number;
     if (mv != NULL)
         slotv = NB_TERNOP(mv, op_slot);
-    if (Py_TYPE(w) != Py_TYPE(v) &&
-        mw != NULL) {
+    if (!Py_IS_TYPE(w, Py_TYPE(v)) && mw != NULL) {
         slotw = NB_TERNOP(mw, op_slot);
         if (slotw == slotv)
             slotw = NULL;
@@ -1552,18 +1552,15 @@ PyNumber_Float(PyObject *o)
 PyObject *
 PyNumber_ToBase(PyObject *n, int base)
 {
-    PyObject *res = NULL;
+    if (!(base == 2 || base == 8 || base == 10 || base == 16)) {
+        PyErr_SetString(PyExc_SystemError,
+                        "PyNumber_ToBase: base must be 2, 8, 10 or 16");
+        return NULL;
+    }
     PyObject *index = PyNumber_Index(n);
-
     if (!index)
         return NULL;
-    if (PyLong_Check(index))
-        res = _PyLong_Format(index, base);
-    else
-        /* It should not be possible to get here, as
-           PyNumber_Index already has a check for the same
-           condition */
-        PyErr_SetString(PyExc_ValueError, "PyNumber_ToBase: index not int");
+    PyObject *res = _PyLong_Format(index, base);
     Py_DECREF(index);
     return res;
 }
@@ -2472,7 +2469,7 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
     _Py_IDENTIFIER(__instancecheck__);
 
     /* Quick test for an exact match */
-    if (Py_TYPE(inst) == (PyTypeObject *)cls) {
+    if (Py_IS_TYPE(inst, (PyTypeObject *)cls)) {
         return 1;
     }
 

@@ -35,26 +35,27 @@ struct _pending_calls {
 
 struct _ceval_runtime_state {
     int recursion_limit;
-    /* Records whether tracing is on for any thread.  Counts the number
-       of threads for which tstate->c_tracefunc is non-NULL, so if the
-       value is 0, we know we don't have to check this thread's
-       c_tracefunc.  This speeds up the if statement in
-       PyEval_EvalFrameEx() after fast_next_opcode. */
-    int tracing_possible;
-    /* This single variable consolidates all requests to break out of
-       the fast path in the eval loop. */
-    _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
-    struct _pending_calls pending;
     /* Request for checking signals. */
     _Py_atomic_int signals_pending;
     struct _gil_runtime_state gil;
 };
 
-/* interpreter state */
+struct _ceval_state {
+    /* Records whether tracing is on for any thread.  Counts the number
+       of threads for which tstate->c_tracefunc is non-NULL, so if the
+       value is 0, we know we don't have to check this thread's
+       c_tracefunc.  This speeds up the if statement in
+       _PyEval_EvalFrameDefault() after fast_next_opcode. */
+    int tracing_possible;
+    /* This single variable consolidates all requests to break out of
+       the fast path in the eval loop. */
+    _Py_atomic_int eval_breaker;
+    struct _pending_calls pending;
+};
 
-typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
+/* interpreter state */
 
 #define _PY_NSMALLPOSINTS           257
 #define _PY_NSMALLNEGINTS           5
@@ -77,6 +78,7 @@ struct _is {
 
     int finalizing;
 
+    struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
     PyObject *modules;
@@ -190,7 +192,6 @@ struct _gilstate_runtime_state {
     /* Assuming the current thread holds the GIL, this is the
        PyThreadState for the current thread. */
     _Py_atomic_address tstate_current;
-    PyThreadFrameGetter getframe;
     /* The single PyInterpreterState used by this process'
        GILState implementation
     */
@@ -198,9 +199,6 @@ struct _gilstate_runtime_state {
     PyInterpreterState *autoInterpreterState;
     Py_tss_t autoTSSkey;
 };
-
-/* hook for PyEval_GetFrame(), requested for Psyco */
-#define _PyThreadState_GetFrame _PyRuntime.gilstate.getframe
 
 /* Issue #26558: Flag to disable PyGILState_Check().
    If set to non-zero, PyGILState_Check() always return 1. */
@@ -223,8 +221,11 @@ typedef struct pyruntimestate {
     int initialized;
 
     /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
-       is called again. */
-    PyThreadState *finalizing;
+       is called again.
+
+       Use _PyRuntimeState_GetFinalizing() and _PyRuntimeState_SetFinalizing()
+       to access it, don't access it directly. */
+    _Py_atomic_address _finalizing;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
@@ -279,17 +280,57 @@ PyAPI_FUNC(PyStatus) _PyRuntime_Initialize(void);
 
 PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
-#define _Py_CURRENTLY_FINALIZING(runtime, tstate) \
-    (runtime->finalizing == tstate)
+static inline PyThreadState*
+_PyRuntimeState_GetFinalizing(_PyRuntimeState *runtime) {
+    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->_finalizing);
+}
 
-PyAPI_FUNC(int) _Py_IsMainInterpreter(PyThreadState* tstate);
+static inline void
+_PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
+    _Py_atomic_store_relaxed(&runtime->_finalizing, (uintptr_t)tstate);
+}
+
+/* Check if the current thread is the main thread.
+   Use _Py_IsMainInterpreter() to check if it's the main interpreter. */
+static inline int
+_Py_IsMainThread(void)
+{
+    unsigned long thread = PyThread_get_thread_ident();
+    return (thread == _PyRuntime.main_thread);
+}
+
+
+static inline int
+_Py_IsMainInterpreter(PyThreadState* tstate)
+{
+    /* Use directly _PyRuntime rather than tstate->interp->runtime, since
+       this function is used in performance critical code path (ceval) */
+    return (tstate->interp == _PyRuntime.interpreters.main);
+}
+
+
+/* Only handle signals on the main thread of the main interpreter. */
+static inline int
+_Py_ThreadCanHandleSignals(PyThreadState *tstate)
+{
+    return (_Py_IsMainThread() && _Py_IsMainInterpreter(tstate));
+}
+
+
+/* Only execute pending calls on the main thread. */
+static inline int
+_Py_ThreadCanHandlePendingCalls(void)
+{
+    return _Py_IsMainThread();
+}
 
 
 /* Variable and macro for in-line access to current thread
    and interpreter state */
 
-#define _PyRuntimeState_GetThreadState(runtime) \
-    ((PyThreadState*)_Py_atomic_load_relaxed(&(runtime)->gilstate.tstate_current))
+static inline PyThreadState* _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime) {
+    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->gilstate.tstate_current);
+}
 
 /* Get the current Python thread state.
 

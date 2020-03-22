@@ -54,15 +54,17 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
      * enough to give linear-time amortized behavior over a long
      * sequence of appends() in the presence of a poorly-performing
      * system realloc().
-     * The growth pattern is:  0, 4, 8, 16, 25, 35, 46, 58, 72, 88, ...
+     * Add padding to make the allocated size multiple of 4.
+     * The growth pattern is:  0, 4, 8, 16, 24, 32, 40, 52, 64, 76, ...
      * Note: new_allocated won't overflow because the largest possible value
      *       is PY_SSIZE_T_MAX * (9 / 8) + 6 which always fits in a size_t.
      */
-    new_allocated = (size_t)newsize + (newsize >> 3) + (newsize < 9 ? 3 : 6);
-    if (new_allocated > (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
-        PyErr_NoMemory();
-        return -1;
-    }
+    new_allocated = ((size_t)newsize + (newsize >> 3) + 6) & ~(size_t)3;
+    /* Do not overallocate if the new size is closer to overalocated size
+     * than to the old size.
+     */
+    if (newsize - Py_SIZE(self) > (Py_ssize_t)(new_allocated - newsize))
+        new_allocated = ((size_t)newsize + 3) & ~(size_t)3;
 
     if (newsize == 0)
         new_allocated = 0;
@@ -2052,8 +2054,8 @@ unsafe_latin_compare(PyObject *v, PyObject *w, MergeState *ms)
     int res;
 
     /* Modified from Objects/unicodeobject.c:unicode_compare, assuming: */
-    assert(Py_TYPE(v) == Py_TYPE(w));
-    assert(Py_TYPE(v) == &PyUnicode_Type);
+    assert(Py_IS_TYPE(v, &PyUnicode_Type));
+    assert(Py_IS_TYPE(w, &PyUnicode_Type));
     assert(PyUnicode_KIND(v) == PyUnicode_KIND(w));
     assert(PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
 
@@ -2075,8 +2077,8 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
     PyLongObject *vl, *wl; sdigit v0, w0; int res;
 
     /* Modified from Objects/longobject.c:long_compare, assuming: */
-    assert(Py_TYPE(v) == Py_TYPE(w));
-    assert(Py_TYPE(v) == &PyLong_Type);
+    assert(Py_IS_TYPE(v, &PyLong_Type));
+    assert(Py_IS_TYPE(w, &PyLong_Type));
     assert(Py_ABS(Py_SIZE(v)) <= 1);
     assert(Py_ABS(Py_SIZE(w)) <= 1);
 
@@ -2103,8 +2105,8 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
     int res;
 
     /* Modified from Objects/floatobject.c:float_richcompare, assuming: */
-    assert(Py_TYPE(v) == Py_TYPE(w));
-    assert(Py_TYPE(v) == &PyFloat_Type);
+    assert(Py_IS_TYPE(v, &PyFloat_Type));
+    assert(Py_IS_TYPE(w, &PyFloat_Type));
 
     res = PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
     assert(res == PyObject_RichCompareBool(v, w, Py_LT));
@@ -2125,8 +2127,8 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
     int k;
 
     /* Modified from Objects/tupleobject.c:tuplerichcompare, assuming: */
-    assert(Py_TYPE(v) == Py_TYPE(w));
-    assert(Py_TYPE(v) == &PyTuple_Type);
+    assert(Py_IS_TYPE(v, &PyTuple_Type));
+    assert(Py_IS_TYPE(w, &PyTuple_Type));
     assert(Py_SIZE(v) > 0);
     assert(Py_SIZE(w) > 0);
 
@@ -2247,7 +2249,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
      * set ms appropriately. */
     if (saved_ob_size > 1) {
         /* Assume the first element is representative of the whole list. */
-        int keys_are_in_tuples = (Py_TYPE(lo.keys[0]) == &PyTuple_Type &&
+        int keys_are_in_tuples = (Py_IS_TYPE(lo.keys[0], &PyTuple_Type) &&
                                   Py_SIZE(lo.keys[0]) > 0);
 
         PyTypeObject* key_type = (keys_are_in_tuples ?
@@ -2262,7 +2264,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         for (i=0; i < saved_ob_size; i++) {
 
             if (keys_are_in_tuples &&
-                !(Py_TYPE(lo.keys[i]) == &PyTuple_Type && Py_SIZE(lo.keys[i]) != 0)) {
+                !(Py_IS_TYPE(lo.keys[i], &PyTuple_Type) && Py_SIZE(lo.keys[i]) != 0)) {
                 keys_are_in_tuples = 0;
                 keys_are_all_same_type = 0;
                 break;
@@ -2275,7 +2277,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                              PyTuple_GET_ITEM(lo.keys[i], 0) :
                              lo.keys[i]);
 
-            if (Py_TYPE(key) != key_type) {
+            if (!Py_IS_TYPE(key, key_type)) {
                 keys_are_all_same_type = 0;
                 /* If keys are in tuple we must loop over the whole list to make
                    sure all items are tuples */
@@ -2643,8 +2645,7 @@ list_richcompare(PyObject *v, PyObject *w, int op)
 
         Py_INCREF(vitem);
         Py_INCREF(witem);
-        int k = PyObject_RichCompareBool(vl->ob_item[i],
-                                         wl->ob_item[i], Py_EQ);
+        int k = PyObject_RichCompareBool(vitem, witem, Py_EQ);
         Py_DECREF(vitem);
         Py_DECREF(witem);
         if (k < 0)

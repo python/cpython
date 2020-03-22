@@ -40,31 +40,6 @@ validate_comprehension(asdl_seq *gens)
 }
 
 static int
-validate_slice(slice_ty slice)
-{
-    switch (slice->kind) {
-    case Slice_kind:
-        return (!slice->v.Slice.lower || validate_expr(slice->v.Slice.lower, Load)) &&
-            (!slice->v.Slice.upper || validate_expr(slice->v.Slice.upper, Load)) &&
-            (!slice->v.Slice.step || validate_expr(slice->v.Slice.step, Load));
-    case ExtSlice_kind: {
-        Py_ssize_t i;
-        if (!validate_nonempty_seq(slice->v.ExtSlice.dims, "dims", "ExtSlice"))
-            return 0;
-        for (i = 0; i < asdl_seq_LEN(slice->v.ExtSlice.dims); i++)
-            if (!validate_slice(asdl_seq_GET(slice->v.ExtSlice.dims, i)))
-                return 0;
-        return 1;
-    }
-    case Index_kind:
-        return validate_expr(slice->v.Index.value, Load);
-    default:
-        PyErr_SetString(PyExc_SystemError, "unknown slice node");
-        return 0;
-    }
-}
-
-static int
 validate_keywords(asdl_seq *keywords)
 {
     Py_ssize_t i;
@@ -96,12 +71,6 @@ expr_context_name(expr_context_ty ctx)
         return "Store";
     case Del:
         return "Del";
-    case AugLoad:
-        return "AugLoad";
-    case AugStore:
-        return "AugStore";
-    case Param:
-        return "Param";
     default:
         Py_UNREACHABLE();
     }
@@ -178,6 +147,11 @@ validate_constant(PyObject *value)
         return 1;
     }
 
+    if (!PyErr_Occurred()) {
+        PyErr_Format(PyExc_TypeError,
+                     "got an invalid type in Constant: %s",
+                     _PyType_Name(Py_TYPE(value)));
+    }
     return 0;
 }
 
@@ -292,9 +266,6 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             validate_keywords(exp->v.Call.keywords);
     case Constant_kind:
         if (!validate_constant(exp->v.Constant.value)) {
-            PyErr_Format(PyExc_TypeError,
-                         "got an invalid type in Constant: %s",
-                         _PyType_Name(Py_TYPE(exp->v.Constant.value)));
             return 0;
         }
         return 1;
@@ -309,10 +280,14 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
     case Attribute_kind:
         return validate_expr(exp->v.Attribute.value, Load);
     case Subscript_kind:
-        return validate_slice(exp->v.Subscript.slice) &&
+        return validate_expr(exp->v.Subscript.slice, Load) &&
             validate_expr(exp->v.Subscript.value, Load);
     case Starred_kind:
         return validate_expr(exp->v.Starred.value, ctx);
+    case Slice_kind:
+        return (!exp->v.Slice.lower || validate_expr(exp->v.Slice.lower, Load)) &&
+            (!exp->v.Slice.upper || validate_expr(exp->v.Slice.upper, Load)) &&
+            (!exp->v.Slice.step || validate_expr(exp->v.Slice.step, Load));
     case List_kind:
         return validate_exprs(exp->v.List.elts, ctx, 0);
     case Tuple_kind:
@@ -544,9 +519,6 @@ PyAST_Validate(mod_ty mod)
         break;
     case Expression_kind:
         res = validate_expr(mod->v.Expression.body, Load);
-        break;
-    case Suite_kind:
-        PyErr_SetString(PyExc_ValueError, "Suite is not valid in the CPython compiler");
         break;
     default:
         PyErr_SetString(PyExc_SystemError, "impossible module node");
@@ -1125,14 +1097,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
 {
     asdl_seq *s = NULL;
 
-    /* The ast defines augmented store and load contexts, but the
-       implementation here doesn't actually use them.  The code may be
-       a little more complex than necessary as a result.  It also means
-       that expressions in an augmented assignment have a Store context.
-       Consider restructuring so that augmented assignment uses
-       set_context(), too.
-    */
-    assert(ctx != AugStore && ctx != AugLoad);
+    /* Expressions in an augmented assignment have a Store context. */
 
     switch (e->kind) {
         case Attribute_kind:
@@ -1692,79 +1657,15 @@ ast_for_arguments(struct compiling *c, const node *n)
 }
 
 static expr_ty
-ast_for_dotted_name(struct compiling *c, const node *n)
-{
-    expr_ty e;
-    identifier id;
-    int lineno, col_offset;
-    int i;
-    node *ch;
-
-    REQ(n, dotted_name);
-
-    lineno = LINENO(n);
-    col_offset = n->n_col_offset;
-
-    ch = CHILD(n, 0);
-    id = NEW_IDENTIFIER(ch);
-    if (!id)
-        return NULL;
-    e = Name(id, Load, lineno, col_offset,
-             ch->n_end_lineno, ch->n_end_col_offset, c->c_arena);
-    if (!e)
-        return NULL;
-
-    for (i = 2; i < NCH(n); i+=2) {
-        const node *child = CHILD(n, i);
-        id = NEW_IDENTIFIER(child);
-        if (!id)
-            return NULL;
-        e = Attribute(e, id, Load, lineno, col_offset,
-                      child->n_end_lineno, child->n_end_col_offset, c->c_arena);
-        if (!e)
-            return NULL;
-    }
-
-    return e;
-}
-
-static expr_ty
 ast_for_decorator(struct compiling *c, const node *n)
 {
-    /* decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE */
-    expr_ty d = NULL;
-    expr_ty name_expr;
+    /* decorator: '@' namedexpr_test NEWLINE */
 
     REQ(n, decorator);
     REQ(CHILD(n, 0), AT);
-    REQ(RCHILD(n, -1), NEWLINE);
-
-    name_expr = ast_for_dotted_name(c, CHILD(n, 1));
-    if (!name_expr)
-        return NULL;
-
-    if (NCH(n) == 3) { /* No arguments */
-        d = name_expr;
-        name_expr = NULL;
-    }
-    else if (NCH(n) == 5) { /* Call with no arguments */
-        d = Call(name_expr, NULL, NULL,
-                 name_expr->lineno, name_expr->col_offset,
-                 CHILD(n, 3)->n_end_lineno, CHILD(n, 3)->n_end_col_offset,
-                 c->c_arena);
-        if (!d)
-            return NULL;
-        name_expr = NULL;
-    }
-    else {
-        d = ast_for_call(c, CHILD(n, 3), name_expr,
-                         CHILD(n, 1), CHILD(n, 2), CHILD(n, 4));
-        if (!d)
-            return NULL;
-        name_expr = NULL;
-    }
-
-    return d;
+    REQ(CHILD(n, 2), NEWLINE);
+    
+    return ast_for_expr(c, CHILD(n, 1));
 }
 
 static asdl_seq*
@@ -2538,7 +2439,7 @@ ast_for_atom(struct compiling *c, const node *n)
     }
 }
 
-static slice_ty
+static expr_ty
 ast_for_slice(struct compiling *c, const node *n)
 {
     node *ch;
@@ -2552,13 +2453,7 @@ ast_for_slice(struct compiling *c, const node *n)
     */
     ch = CHILD(n, 0);
     if (NCH(n) == 1 && TYPE(ch) == test) {
-        /* 'step' variable hold no significance in terms of being used over
-           other vars */
-        step = ast_for_expr(c, ch);
-        if (!step)
-            return NULL;
-
-        return Index(step, c->c_arena);
+        return ast_for_expr(c, ch);
     }
 
     if (TYPE(ch) == test) {
@@ -2600,7 +2495,8 @@ ast_for_slice(struct compiling *c, const node *n)
         }
     }
 
-    return Slice(lower, upper, step, c->c_arena);
+    return Slice(lower, upper, step, LINENO(n), n->n_col_offset,
+                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
 static expr_ty
@@ -2688,7 +2584,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr, const nod
         REQ(CHILD(n, 2), RSQB);
         n = CHILD(n, 1);
         if (NCH(n) == 1) {
-            slice_ty slc = ast_for_slice(c, CHILD(n, 0));
+            expr_ty slc = ast_for_slice(c, CHILD(n, 0));
             if (!slc)
                 return NULL;
             return Subscript(left_expr, slc, Load, LINENO(start), start->n_col_offset,
@@ -2696,47 +2592,27 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr, const nod
                              c->c_arena);
         }
         else {
-            /* The grammar is ambiguous here. The ambiguity is resolved
-               by treating the sequence as a tuple literal if there are
-               no slice features.
-            */
-            Py_ssize_t j;
-            slice_ty slc;
-            expr_ty e;
-            int simple = 1;
-            asdl_seq *slices, *elts;
-            slices = _Py_asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
-            if (!slices)
+            int j;
+            expr_ty slc, e;
+            asdl_seq *elts;
+            elts = _Py_asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
+            if (!elts)
                 return NULL;
             for (j = 0; j < NCH(n); j += 2) {
                 slc = ast_for_slice(c, CHILD(n, j));
                 if (!slc)
                     return NULL;
-                if (slc->kind != Index_kind)
-                    simple = 0;
-                asdl_seq_SET(slices, j / 2, slc);
-            }
-            if (!simple) {
-                return Subscript(left_expr, ExtSlice(slices, c->c_arena),
-                                 Load, LINENO(start), start->n_col_offset,
-                                 n_copy->n_end_lineno, n_copy->n_end_col_offset, c->c_arena);
-            }
-            /* extract Index values and put them in a Tuple */
-            elts = _Py_asdl_seq_new(asdl_seq_LEN(slices), c->c_arena);
-            if (!elts)
-                return NULL;
-            for (j = 0; j < asdl_seq_LEN(slices); ++j) {
-                slc = (slice_ty)asdl_seq_GET(slices, j);
-                assert(slc->kind == Index_kind  && slc->v.Index.value);
-                asdl_seq_SET(elts, j, slc->v.Index.value);
+                asdl_seq_SET(elts, j / 2, slc);
             }
             e = Tuple(elts, Load, LINENO(n), n->n_col_offset,
-                      n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                      n->n_end_lineno, n->n_end_col_offset,
+                      c->c_arena);
             if (!e)
                 return NULL;
-            return Subscript(left_expr, Index(e, c->c_arena),
+            return Subscript(left_expr, e,
                              Load, LINENO(start), start->n_col_offset,
-                             n_copy->n_end_lineno, n_copy->n_end_col_offset, c->c_arena);
+                             n_copy->n_end_lineno, n_copy->n_end_col_offset,
+                             c->c_arena);
         }
     }
 }

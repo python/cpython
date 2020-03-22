@@ -66,10 +66,44 @@ Summary -- Release highlights
 .. PEP-sized items next.
 
 
+You should check for DeprecationWarning in your code
+====================================================
+
+When Python 2.7 was still supported, many functions were kept for backward
+compatibility with Python 2.7. With the end of Python 2.7 support, these
+backward compatibility layers have been removed, or will be removed soon.
+Most of them emitted a :exc:`DeprecationWarning` warning for several years. For
+example, using ``collections.Mapping`` instead of ``collections.abc.Mapping``
+emits a :exc:`DeprecationWarning` since Python 3.3, released in 2012.
+
+Test your application with the :option:`-W` ``default`` command-line option to see
+:exc:`DeprecationWarning` and :exc:`PendingDeprecationWarning`, or even with
+:option:`-W` ``error`` to treat them as errors. :ref:`Warnings Filter
+<warning-filter>` can be used to ignore warnings from third-party code.
+
+It has been decided to keep a few backward compatibility layers for one last
+release, to give more time to Python projects maintainers to organize the
+removal of the Python 2 support and add support for Python 3.9.
+
+Aliases to :ref:`Abstract Base Classes <collections-abstract-base-classes>` in
+the :mod:`collections` module, like ``collections.Mapping`` alias to
+:class:`collections.abc.Mapping`, are kept for one last release for backward
+compatibility. They will be removed from Python 3.10.
+
+More generally, try to run your tests in the :ref:`Python Development Mode
+<devmode>` which helps to prepare your code to make it compatible with the
+next Python version.
+
 
 New Features
 ============
 
+Dictionary Merge & Update Operators
+-----------------------------------
+
+Merge (``|``) and update (``|=``) operators have been added to the built-in
+:class:`dict` class.  See :pep:`584` for a full description.
+(Contributed by Brandt Bucher in :issue:`36144`.)
 
 
 Other Language Changes
@@ -83,11 +117,10 @@ Other Language Changes
 
 * Python now gets the absolute path of the script filename specified on
   the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
-  the :mod:`__main__` module and ``sys.path[0]`` become an
-  absolute path, rather than a relative path. These paths now remain valid
-  after the current directory is changed by :func:`os.chdir`. As a side effect,
-  a traceback also displays the absolute path for :mod:`__main__` module frames
-  in this case.
+  the :mod:`__main__` module became an absolute path, rather than a relative
+  path. These paths now remain valid after the current directory is changed
+  by :func:`os.chdir`. As a side effect, the traceback also displays the
+  absolute path for :mod:`__main__` module frames in this case.
   (Contributed by Victor Stinner in :issue:`20443`.)
 
 * In the :ref:`Python Development Mode <devmode>` and in debug build, the
@@ -104,6 +137,10 @@ Other Language Changes
   all non-zero ``n``.  It is now consistent with ``"".replace("", s)``.
   There are similar changes for :class:`bytes` and :class:`bytearray` objects.
   (Contributed by Serhiy Storchaka in :issue:`28029`.)
+
+* Any valid expression can now be used as a :term:`decorator`.  Previously, the
+  grammar was much more restrictive.  See :pep:`614` for details.
+  (Contributed by Brandt Bucher in :issue:`39702`.)
 
 
 New Modules
@@ -126,6 +163,9 @@ Added :func:`ast.unparse` as a function in the :mod:`ast` module that can
 be used to unparse an :class:`ast.AST` object and produce a string with code
 that would produce an equivalent :class:`ast.AST` object when parsed.
 (Contributed by Pablo Galindo and Batuhan Taskaya in :issue:`38870`.)
+
+Added docstrings to AST nodes that contains the ASDL signature used to
+construct that node. (Contributed by Batuhan Taskaya in :issue:`39638`.)
 
 asyncio
 -------
@@ -195,6 +235,12 @@ Added a new function :func:`gc.is_finalized` to check if an object has been
 finalized by the garbage collector. (Contributed by Pablo Galindo in
 :issue:`39322`.)
 
+http
+----
+
+HTTP status codes ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` are added to
+:class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509` and Ross Rhodes in :issue:`39507`.)
+
 imaplib
 -------
 
@@ -212,6 +258,21 @@ To improve consistency with import statements, :func:`importlib.util.resolve_nam
 now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`.)
+
+inspect
+-------
+
+:attr:`inspect.BoundArguments.arguments` is changed from ``OrderedDict`` to regular
+dict.  (Contributed by Inada Naoki in :issue:`36350` and :issue:`39775`.)
+
+ipaddress
+---------
+
+:mod:`ipaddress` now supports IPv6 Scoped Addresses (IPv6 address with suffix ``%<scope_id>``).
+
+Scoped IPv6 addresses can be parsed using :class:`ipaddress.IPv6Address`.
+If present, scope zone ID is available through the :attr:`~ipaddress.IPv6Address.scope_id` attribute.
+(Contributed by Oleksandr Pavliuk in :issue:`34788`.)
 
 math
 ----
@@ -301,6 +362,17 @@ finalization crashed with a Python fatal error if a daemon thread was still
 running.
 (Contributed by Victor Stinner in :issue:`37266`.)
 
+sys
+---
+
+Add a new :attr:`sys.platlibdir` attribute: name of the platform-specific
+library directory. It is used to build the path of platform-specific dynamic
+libraries and the path of the standard library. It is equal to ``"lib"`` on
+most platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit
+platforms.
+(Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
+
+
 typing
 ------
 
@@ -308,6 +380,11 @@ typing
 types with context-specific metadata and new ``include_extras`` parameter to
 :func:`typing.get_type_hints` to access the metadata at runtime. (Contributed
 by Till Varoquaux and Konstantin Kashin.)
+
+unicodedata
+-----------
+
+The Unicode database has been updated to version 13.0.0. (:issue:`39926`).
 
 venv
 ----
@@ -334,9 +411,30 @@ Optimizations
 
   (Contributed by Serhiy Storchaka in :issue:`32856`.)
 
+* Optimize signal handling in multithreaded applications. If a thread different
+  than the main thread gets a signal, the bytecode evaluation loop is no longer
+  interrupted at each bytecode instruction to check for pending signals which
+  cannot be handled. Only the main thread of the main interpreter can handle
+  signals.
+
+  Previously, the bytecode evaluation loop was interrupted at each instruction
+  until the main thread handles signals.
+  (Contributed by Victor Stinner in :issue:`40010`.)
+
 
 Build and C API Changes
 =======================
+
+* New :c:func:`PyThreadState_GetInterpreter` and
+  :c:func:`PyInterpreterState_Get` functions to get the interpreter.
+  New :c:func:`PyThreadState_GetFrame` function to get the current frame of a
+  Python thread state.
+  (Contributed by Victor Stinner in :issue:`39947`.)
+
+* Add ``--with-platlibdir`` option to the ``configure`` script: name of the
+  platform-specific library directory, stored in the new :attr:`sys.platlibdir`
+  attribute. See :attr:`sys.platlibdir` attribute for more information.
+  (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
 
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
   calls a callable Python object without any arguments. It is the most efficient
@@ -414,6 +512,34 @@ Build and C API Changes
 
   (Contributed by Victor Stinner in :issue:`38644` and :issue:`39542`.)
 
+* ``PyInterpreterState.eval_frame`` (:pep:`523`) now requires a new mandatory
+  *tstate* parameter (``PyThreadState*``).
+  (Contributed by Victor Stinner in :issue:`38500`.)
+
+* Extension modules: :c:member:`~PyModuleDef.m_traverse`,
+  :c:member:`~PyModuleDef.m_clear` and :c:member:`~PyModuleDef.m_free`
+  functions of :c:type:`PyModuleDef` are no longer called if the module state
+  was requested but is not allocated yet. This is the case immediately after
+  the module is created and before the module is executed
+  (:c:data:`Py_mod_exec` function). More precisely, these functions are not called
+  if :c:member:`~PyModuleDef.m_size` is greater than 0 and the module state (as
+  returned by :c:func:`PyModule_GetState`) is ``NULL``.
+
+  Extension modules without module state (``m_size <= 0``) are not affected.
+
+* If :c:func:`Py_AddPendingCall` is called in a subinterpreter, the function is
+  now scheduled to be called from the subinterpreter, rather than being called
+  from the main interpreter. Each subinterpreter now has its own list of
+  scheduled calls.
+  (Contributed by Victor Stinner in :issue:`39984`.)
+
+* Remove ``_PyRuntime.getframe`` hook and remove ``_PyThreadState_GetFrame``
+  macro which was an alias to ``_PyRuntime.getframe``. They were only exposed
+  by the internal C API. Remove also ``PyThreadFrameGetter`` type.
+  (Contributed by Victor Stinner in :issue:`39946`.)
+
+* The :c:func:`PyModule_AddType` function is added to help adding a type to a module.
+  (Contributed by Dong-hee Na in :issue:`40024`.)
 
 Deprecated
 ==========
@@ -431,6 +557,12 @@ Deprecated
 * The :mod:`parser` module is deprecated and will be removed in future versions
   of Python. For the majority of use cases, users can leverage the Abstract Syntax
   Tree (AST) generation and compilation stage, using the :mod:`ast` module.
+
+* Using :data:`NotImplemented` in a boolean context has been deprecated,
+  as it is almost exclusively the result of incorrect rich comparator
+  implementations. It will be made a :exc:`TypeError` in a future version
+  of Python.
+  (Contributed by Josh Rosenberg in :issue:`35712`.)
 
 * The :mod:`random` module currently accepts any hashable type as a
   possible seed value.  Unfortunately, some of those types are not
@@ -460,6 +592,25 @@ Deprecated
   * :func:`~binascii.rlecode_hqx`, :func:`~binascii.rledecode_hqx`
 
   (Contributed by Victor Stinner in :issue:`39353`.)
+
+* :mod:`ast` classes ``slice``, ``Index`` and ``ExtSlice`` are considered deprecated
+  and will be removed in future Python versions.  ``value`` itself should be
+  used instead of ``Index(value)``.  ``Tuple(slices, Load())`` should be
+  used instead of ``ExtSlice(slices)``.
+  (Contributed by Serhiy Storchaka in :issue:`32892`.)
+
+* :mod:`ast` classes ``Suite``, ``Param``, ``AugLoad`` and ``AugStore``
+  are considered deprecated and will be removed in future Python versions.
+  They were not generated by the parser and not accepted by the code
+  generator in Python 3.
+  (Contributed by Batuhan Taskaya in :issue:`39639` and :issue:`39969`
+  and Serhiy Storchaka in :issue:`39988`.)
+
+* The :c:func:`PyEval_InitThreads` and :c:func:`PyEval_ThreadsInitialized`
+  functions are now deprecated and will be removed in Python 3.11. Calling
+  :c:func:`PyEval_InitThreads` now does nothing. The :term:`GIL` is initialized
+  by :c:func:`Py_Initialize()` since Python 3.7.
+  (Contributed by Victor Stinner in :issue:`39877`.)
 
 
 Removed
@@ -507,10 +658,13 @@ Removed
   Use :meth:`~threading.Thread.is_alive()` instead.
   (Contributed by Dong-hee Na in :issue:`37804`.)
 
-* Methods ``getchildren()`` and ``getiterator()`` in the
-  :mod:`~xml.etree.ElementTree` module have been removed.  They were
-  deprecated in Python 3.2.  Use functions :func:`list` and :func:`iter`
-  instead.  The ``xml.etree.cElementTree`` module has been removed.
+* Methods ``getchildren()`` and ``getiterator()`` of classes
+  :class:`~xml.etree.ElementTree.ElementTree` and
+  :class:`~xml.etree.ElementTree.Element` in the :mod:`~xml.etree.ElementTree`
+  module have been removed.  They were deprecated in Python 3.2.
+  Use ``iter(x)`` or ``list(x)`` instead of ``x.getchildren()`` and
+  ``x.iter()`` or ``list(x.iter())`` instead of ``x.getiterator()``.
+  The ``xml.etree.cElementTree`` module has been removed.
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
 
 * The old :mod:`plistlib` API has been removed, it was deprecated since Python
@@ -568,14 +722,6 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
-* :func:`open`, :func:`io.open`, :func:`codecs.open` and
-  :class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")
-  in the file mode. This flag was deprecated since Python 3.3. In Python 3, the
-  "universal newline" is used by default when a file is open in text mode.  The
-  :ref:`newline parameter <open-newline-parameter>` of :func:`open` controls
-  how universal newlines works.
-  (Contributed by Victor Stinner in :issue:`37330`.)
-
 * :func:`__import__` and :func:`importlib.util.resolve_name` now raise
   :exc:`ImportError` where it previously raised :exc:`ValueError`. Callers
   catching the specific exception type and supporting both Python 3.9 and
@@ -591,6 +737,16 @@ Changes in the Python API
 * The *compresslevel* parameter of :class:`bz2.BZ2File` became keyword-only,
   since the *buffering* parameter has been removed.
   (Contributed by Victor Stinner in :issue:`39357`.)
+
+* Simplified AST for subscription. Simple indices will be represented by
+  their value, extended slices will be represented as tuples.
+  ``Index(value)`` will return a ``value`` itself, ``ExtSlice(slices)``
+  will return ``Tuple(slices, Load())``.
+  (Contributed by Serhiy Storchaka in :issue:`34822`.)
+
+* The :mod:`importlib` module now ignores the :envvar:`PYTHONCASEOK`
+  environment variable when the :option:`-E` or :option:`-I` command line
+  options are being used.
 
 
 CPython bytecode changes

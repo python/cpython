@@ -143,7 +143,8 @@ LIBDIR=		@libdir@
 MANDIR=		@mandir@
 INCLUDEDIR=	@includedir@
 CONFINCLUDEDIR=	$(exec_prefix)/include
-SCRIPTDIR=	$(prefix)/lib
+PLATLIBDIR=	@PLATLIBDIR@
+SCRIPTDIR=	$(prefix)/$(PLATLIBDIR)
 ABIFLAGS=	@ABIFLAGS@
 
 # Detailed destination directories
@@ -754,6 +755,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 		-DEXEC_PREFIX='"$(exec_prefix)"' \
 		-DVERSION='"$(VERSION)"' \
 		-DVPATH='"$(VPATH)"' \
+		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
 
 Programs/python.o: $(srcdir)/Programs/python.c
@@ -785,6 +787,7 @@ Python/dynload_hpux.o: $(srcdir)/Python/dynload_hpux.c Makefile
 Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydtrace.h
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DABIFLAGS='"$(ABIFLAGS)"' \
+		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
 

@@ -156,9 +156,9 @@ UTF-8 has several convenient properties:
 References
 ----------
 
-The `Unicode Consortium site <http://www.unicode.org>`_ has character charts, a
+The `Unicode Consortium site <https://www.unicode.org>`_ has character charts, a
 glossary, and PDF versions of the Unicode specification.  Be prepared for some
-difficult reading.  `A chronology <http://www.unicode.org/history/>`_ of the
+difficult reading.  `A chronology <https://www.unicode.org/history/>`_ of the
 origin and development of Unicode is also available on the site.
 
 On the Computerphile Youtube channel, Tom Scott briefly
@@ -393,7 +393,7 @@ These are grouped into categories such as "Letter", "Number", "Punctuation", or
 from the above output, ``'Ll'`` means 'Letter, lowercase', ``'No'`` means
 "Number, other", ``'Mn'`` is "Mark, nonspacing", and ``'So'`` is "Symbol,
 other".  See
-`the General Category Values section of the Unicode Character Database documentation <http://www.unicode.org/reports/tr44/#General_Category_Values>`_ for a
+`the General Category Values section of the Unicode Character Database documentation <https://www.unicode.org/reports/tr44/#General_Category_Values>`_ for a
 list of category codes.
 
 

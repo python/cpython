@@ -41,6 +41,10 @@
 #define COMP_SETCOMP  2
 #define COMP_DICTCOMP 3
 
+#define IS_TOP_LEVEL_AWAIT(c) ( \
+        (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
+        && (c->u->u_ste->ste_type == ModuleBlock))
+
 struct instr {
     unsigned i_jabs : 1;
     unsigned i_jrel : 1;
@@ -138,8 +142,6 @@ struct compiler_unit {
     int u_firstlineno; /* the first lineno of the block */
     int u_lineno;          /* the lineno for the current stmt */
     int u_col_offset;      /* the offset of the current stmt */
-    int u_lineno_set;  /* boolean to indicate whether instr
-                          has been generated with current lineno */
 };
 
 /* This struct captures the global state of a compilation.
@@ -179,7 +181,7 @@ struct compiler {
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
 static void compiler_free(struct compiler *);
 static basicblock *compiler_new_block(struct compiler *);
-static int compiler_next_instr(struct compiler *, basicblock *);
+static int compiler_next_instr(basicblock *);
 static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
@@ -193,10 +195,10 @@ static int compiler_visit_keyword(struct compiler *, keyword_ty);
 static int compiler_visit_expr(struct compiler *, expr_ty);
 static int compiler_augassign(struct compiler *, stmt_ty);
 static int compiler_annassign(struct compiler *, stmt_ty);
-static int compiler_visit_slice(struct compiler *, slice_ty,
-                                expr_context_ty);
+static int compiler_subscript(struct compiler *, expr_ty);
+static int compiler_slice(struct compiler *, expr_ty);
 
-static int inplace_binop(struct compiler *, operator_ty);
+static int inplace_binop(operator_ty);
 static int are_all_items_const(asdl_seq *, Py_ssize_t, Py_ssize_t);
 static int expr_constant(expr_ty);
 
@@ -352,7 +354,11 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_nestlevel = 0;
     c.c_do_not_emit_bytecode = 0;
 
-    if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
+    _PyASTOptimizeState state;
+    state.optimize = c.c_optimize;
+    state.ff_features = merged;
+
+    if (!_PyAST_Optimize(mod, arena, &state)) {
         goto finally;
     }
 
@@ -610,7 +616,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_firstlineno = lineno;
     u->u_lineno = 0;
     u->u_col_offset = 0;
-    u->u_lineno_set = 0;
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
         compiler_unit_free(u);
@@ -803,7 +808,7 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
 */
 
 static int
-compiler_next_instr(struct compiler *c, basicblock *b)
+compiler_next_instr(basicblock *b)
 {
     assert(b != NULL);
     if (b->b_instr == NULL) {
@@ -845,28 +850,18 @@ compiler_next_instr(struct compiler *c, basicblock *b)
     return b->b_iused++;
 }
 
-/* Set the i_lineno member of the instruction at offset off if the
-   line number for the current expression/statement has not
-   already been set.  If it has been set, the call has no effect.
+/* Set the line number and column offset for the following instructions.
 
    The line number is reset in the following cases:
    - when entering a new scope
    - on each statement
-   - on each expression that start a new line
+   - on each expression and sub-expression
    - before the "except" and "finally" clauses
-   - before the "for" and "while" expressions
 */
 
-static void
-compiler_set_lineno(struct compiler *c, int off)
-{
-    basicblock *b;
-    if (c->u->u_lineno_set)
-        return;
-    c->u->u_lineno_set = 1;
-    b = c->u->u_curblock;
-    b->b_instr[off].i_lineno = c->u->u_lineno;
-}
+#define SET_LOC(c, x)                           \
+    (c)->u->u_lineno = (x)->lineno;             \
+    (c)->u->u_col_offset = (x)->col_offset;
 
 /* Return the stack effect of opcode with argument oparg.
 
@@ -1159,7 +1154,7 @@ compiler_addop(struct compiler *c, int opcode)
     if (c->c_do_not_emit_bytecode) {
         return 1;
     }
-    off = compiler_next_instr(c, c->u->u_curblock);
+    off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
     b = c->u->u_curblock;
@@ -1168,12 +1163,12 @@ compiler_addop(struct compiler *c, int opcode)
     i->i_oparg = 0;
     if (opcode == RETURN_VALUE)
         b->b_return = 1;
-    compiler_set_lineno(c, off);
+    i->i_lineno = c->u->u_lineno;
     return 1;
 }
 
 static Py_ssize_t
-compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
+compiler_add_o(PyObject *dict, PyObject *o)
 {
     PyObject *v;
     Py_ssize_t arg;
@@ -1321,7 +1316,7 @@ compiler_add_const(struct compiler *c, PyObject *o)
         return -1;
     }
 
-    Py_ssize_t arg = compiler_add_o(c, c->u->u_consts, key);
+    Py_ssize_t arg = compiler_add_o(c->u->u_consts, key);
     Py_DECREF(key);
     return arg;
 }
@@ -1347,7 +1342,7 @@ compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
         return 1;
     }
 
-    Py_ssize_t arg = compiler_add_o(c, dict, o);
+    Py_ssize_t arg = compiler_add_o(dict, o);
     if (arg < 0)
         return 0;
     return compiler_addop_i(c, opcode, arg);
@@ -1366,7 +1361,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
     PyObject *mangled = _Py_Mangle(c->u->u_private, o);
     if (!mangled)
         return 0;
-    arg = compiler_add_o(c, dict, mangled);
+    arg = compiler_add_o(dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0)
         return 0;
@@ -1397,13 +1392,13 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
     assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
-    off = compiler_next_instr(c, c->u->u_curblock);
+    off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
     i = &c->u->u_curblock->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    compiler_set_lineno(c, off);
+    i->i_lineno = c->u->u_lineno;
     return 1;
 }
 
@@ -1419,7 +1414,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 
     assert(HAS_ARG(opcode));
     assert(b != NULL);
-    off = compiler_next_instr(c, c->u->u_curblock);
+    off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
     i = &c->u->u_curblock->b_instr[off];
@@ -1429,7 +1424,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
         i->i_jabs = 1;
     else
         i->i_jrel = 1;
-    compiler_set_lineno(c, off);
+    i->i_lineno = c->u->u_lineno;
     return 1;
 }
 
@@ -1702,7 +1697,6 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             int saved_lineno = c->u->u_lineno;
             VISIT_SEQ(c, stmt, info->fb_datum);
             c->u->u_lineno = saved_lineno;
-            c->u->u_lineno_set = 0;
             if (preserve_tos) {
                 compiler_pop_fblock(c, POP_VALUE, NULL);
             }
@@ -1801,10 +1795,9 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
        This way line number for SETUP_ANNOTATIONS will always
        coincide with the line number of first "real" statement in module.
        If body is empty, then lineno will be set later in assemble. */
-    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE &&
-        !c->u->u_lineno && asdl_seq_LEN(stmts)) {
+    if (c->u->u_scope_type == COMPILER_SCOPE_MODULE && asdl_seq_LEN(stmts)) {
         st = (stmt_ty)asdl_seq_GET(stmts, 0);
-        c->u->u_lineno = st->lineno;
+        SET_LOC(c, st);
     }
     /* Every annotated class and module should have __annotations__. */
     if (find_ann(stmts)) {
@@ -1862,10 +1855,6 @@ compiler_mod(struct compiler *c, mod_ty mod)
         VISIT_IN_SCOPE(c, expr, mod->v.Expression.body);
         addNone = 0;
         break;
-    case Suite_kind:
-        PyErr_SetString(PyExc_SystemError,
-                        "suite should not be possible");
-        return 0;
     default:
         PyErr_Format(PyExc_SystemError,
                      "module kind %d should not be possible",
@@ -2747,7 +2736,7 @@ static int
 compiler_async_for(struct compiler *c, stmt_ty s)
 {
     basicblock *start, *except, *end;
-    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+    if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
         return compiler_error(c, "'async for' outside async function");
@@ -3043,9 +3032,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             s->v.Try.handlers, i);
         if (!handler->v.ExceptHandler.type && i < n-1)
             return compiler_error(c, "default 'except:' must be last");
-        c->u->u_lineno_set = 0;
-        c->u->u_lineno = handler->lineno;
-        c->u->u_col_offset = handler->col_offset;
+        SET_LOC(c, handler);
         except = compiler_new_block(c);
         if (except == NULL)
             return 0;
@@ -3345,9 +3332,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     Py_ssize_t i, n;
 
     /* Always assign a lineno to the next instruction for a stmt. */
-    c->u->u_lineno = s->lineno;
-    c->u->u_col_offset = s->col_offset;
-    c->u->u_lineno_set = 0;
+    SET_LOC(c, s);
 
     switch (s->kind) {
     case FunctionDef_kind:
@@ -3443,7 +3428,7 @@ unaryop(unaryop_ty op)
 }
 
 static int
-binop(struct compiler *c, operator_ty op)
+binop(operator_ty op)
 {
     switch (op) {
     case Add:
@@ -3480,7 +3465,7 @@ binop(struct compiler *c, operator_ty op)
 }
 
 static int
-inplace_binop(struct compiler *c, operator_ty op)
+inplace_binop(operator_ty op)
 {
     switch (op) {
     case Add:
@@ -3525,7 +3510,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 
     PyObject *dict = c->u->u_names;
     PyObject *mangled;
-    /* XXX AugStore isn't used anywhere! */
 
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
            !_PyUnicode_EqualToASCIIString(name, "True") &&
@@ -3572,76 +3556,36 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         case Load:
             op = (c->u->u_ste->ste_type == ClassBlock) ? LOAD_CLASSDEREF : LOAD_DEREF;
             break;
-        case Store:
-            op = STORE_DEREF;
-            break;
-        case AugLoad:
-        case AugStore:
-            break;
+        case Store: op = STORE_DEREF; break;
         case Del: op = DELETE_DEREF; break;
-        case Param:
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                            "param invalid for deref variable");
-            return 0;
         }
         break;
     case OP_FAST:
         switch (ctx) {
         case Load: op = LOAD_FAST; break;
-        case Store:
-            op = STORE_FAST;
-            break;
+        case Store: op = STORE_FAST; break;
         case Del: op = DELETE_FAST; break;
-        case AugLoad:
-        case AugStore:
-            break;
-        case Param:
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                            "param invalid for local variable");
-            return 0;
         }
         ADDOP_N(c, op, mangled, varnames);
         return 1;
     case OP_GLOBAL:
         switch (ctx) {
         case Load: op = LOAD_GLOBAL; break;
-        case Store:
-            op = STORE_GLOBAL;
-            break;
+        case Store: op = STORE_GLOBAL; break;
         case Del: op = DELETE_GLOBAL; break;
-        case AugLoad:
-        case AugStore:
-            break;
-        case Param:
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                            "param invalid for global variable");
-            return 0;
         }
         break;
     case OP_NAME:
         switch (ctx) {
         case Load: op = LOAD_NAME; break;
-        case Store:
-            op = STORE_NAME;
-            break;
+        case Store: op = STORE_NAME; break;
         case Del: op = DELETE_NAME; break;
-        case AugLoad:
-        case AugStore:
-            break;
-        case Param:
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                            "param invalid for name variable");
-            return 0;
         }
         break;
     }
 
     assert(op);
-    arg = compiler_add_o(c, dict, mangled);
+    arg = compiler_add_o(dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0)
         return 0;
@@ -3769,7 +3713,6 @@ assignment_helper(struct compiler *c, asdl_seq *elts)
                     "star-unpacking assignment");
             ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
             seen_star = 1;
-            asdl_seq_SET(elts, i, elt->v.Starred.value);
         }
         else if (elt->kind == Starred_kind) {
             return compiler_error(c,
@@ -3779,7 +3722,10 @@ assignment_helper(struct compiler *c, asdl_seq *elts)
     if (!seen_star) {
         ADDOP_I(c, UNPACK_SEQUENCE, n);
     }
-    VISIT_SEQ(c, expr, elts);
+    for (i = 0; i < n; i++) {
+        expr_ty elt = asdl_seq_GET(elts, i);
+        VISIT(c, expr, elt->kind != Starred_kind ? elt : elt->v.Starred.value);
+    }
     return 1;
 }
 
@@ -4047,14 +3993,11 @@ check_subscripter(struct compiler *c, expr_ty e)
 }
 
 static int
-check_index(struct compiler *c, expr_ty e, slice_ty s)
+check_index(struct compiler *c, expr_ty e, expr_ty s)
 {
     PyObject *v;
 
-    if (s->kind != Index_kind) {
-        return 1;
-    }
-    PyTypeObject *index_type = infer_type(s->v.Index.value);
+    PyTypeObject *index_type = infer_type(s);
     if (index_type == NULL
         || PyType_FastSubclass(index_type, Py_TPFLAGS_LONG_SUBCLASS)
         || index_type == &PySlice_Type) {
@@ -4577,11 +4520,14 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     PyCodeObject *co = NULL;
     comprehension_ty outermost;
     PyObject *qualname = NULL;
-    int is_async_function = c->u->u_ste->ste_coroutine;
     int is_async_generator = 0;
 
-    outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
+    if (IS_TOP_LEVEL_AWAIT(c)) {
+        c->u->u_ste->ste_coroutine = 1;
+    }
+    int is_async_function = c->u->u_ste->ste_coroutine;
 
+    outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
                               (void *)e, e->lineno))
     {
@@ -4794,7 +4740,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
-    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+    if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
         return compiler_error(c, "'async with' outside async function");
@@ -4966,7 +4912,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case BinOp_kind:
         VISIT(c, expr, e->v.BinOp.left);
         VISIT(c, expr, e->v.BinOp.right);
-        ADDOP(c, binop(c, e->v.BinOp.op));
+        ADDOP(c, binop(e->v.BinOp.op));
         break;
     case UnaryOp_kind:
         VISIT(c, expr, e->v.UnaryOp.operand);
@@ -5012,7 +4958,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         ADDOP(c, YIELD_FROM);
         break;
     case Await_kind:
-        if (!(c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT)){
+        if (!IS_TOP_LEVEL_AWAIT(c)){
             if (c->u->u_ste->ste_type != FunctionBlock){
                 return compiler_error(c, "'await' outside function");
             }
@@ -5041,65 +4987,21 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_formatted_value(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
-        if (e->v.Attribute.ctx != AugStore)
-            VISIT(c, expr, e->v.Attribute.value);
+        VISIT(c, expr, e->v.Attribute.value);
         switch (e->v.Attribute.ctx) {
-        case AugLoad:
-            ADDOP(c, DUP_TOP);
-            /* Fall through */
         case Load:
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
-        case AugStore:
-            ADDOP(c, ROT_TWO);
-            /* Fall through */
         case Store:
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
             ADDOP_NAME(c, DELETE_ATTR, e->v.Attribute.attr, names);
             break;
-        case Param:
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                            "param invalid in attribute expression");
-            return 0;
         }
         break;
     case Subscript_kind:
-        switch (e->v.Subscript.ctx) {
-        case AugLoad:
-            VISIT(c, expr, e->v.Subscript.value);
-            VISIT_SLICE(c, e->v.Subscript.slice, AugLoad);
-            break;
-        case Load:
-            if (!check_subscripter(c, e->v.Subscript.value)) {
-                return 0;
-            }
-            if (!check_index(c, e->v.Subscript.value, e->v.Subscript.slice)) {
-                return 0;
-            }
-            VISIT(c, expr, e->v.Subscript.value);
-            VISIT_SLICE(c, e->v.Subscript.slice, Load);
-            break;
-        case AugStore:
-            VISIT_SLICE(c, e->v.Subscript.slice, AugStore);
-            break;
-        case Store:
-            VISIT(c, expr, e->v.Subscript.value);
-            VISIT_SLICE(c, e->v.Subscript.slice, Store);
-            break;
-        case Del:
-            VISIT(c, expr, e->v.Subscript.value);
-            VISIT_SLICE(c, e->v.Subscript.slice, Del);
-            break;
-        case Param:
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                "param invalid in subscript expression");
-            return 0;
-        }
-        break;
+        return compiler_subscript(c, e);
     case Starred_kind:
         switch (e->v.Starred.ctx) {
         case Store:
@@ -5111,6 +5013,9 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             return compiler_error(c,
                 "can't use starred expression here");
         }
+        break;
+    case Slice_kind:
+        return compiler_slice(c, e);
     case Name_kind:
         return compiler_nameop(c, e->v.Name.id, e->v.Name.ctx);
     /* child nodes of List and Tuple will have expr_context set */
@@ -5125,24 +5030,11 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
 static int
 compiler_visit_expr(struct compiler *c, expr_ty e)
 {
-    /* If expr e has a different line number than the last expr/stmt,
-       set a new line number for the next instruction.
-    */
     int old_lineno = c->u->u_lineno;
     int old_col_offset = c->u->u_col_offset;
-    if (e->lineno != c->u->u_lineno) {
-        c->u->u_lineno = e->lineno;
-        c->u->u_lineno_set = 0;
-    }
-    /* Updating the column offset is always harmless. */
-    c->u->u_col_offset = e->col_offset;
-
+    SET_LOC(c, e);
     int res = compiler_visit_expr1(c, e);
-
-    if (old_lineno != c->u->u_lineno) {
-        c->u->u_lineno = old_lineno;
-        c->u->u_lineno_set = 0;
-    }
+    c->u->u_lineno = old_lineno;
     c->u->u_col_offset = old_col_offset;
     return res;
 }
@@ -5150,47 +5042,57 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 static int
 compiler_augassign(struct compiler *c, stmt_ty s)
 {
-    expr_ty e = s->v.AugAssign.target;
-    expr_ty auge;
-
     assert(s->kind == AugAssign_kind);
+    expr_ty e = s->v.AugAssign.target;
+
+    int old_lineno = c->u->u_lineno;
+    int old_col_offset = c->u->u_col_offset;
+    SET_LOC(c, e);
 
     switch (e->kind) {
     case Attribute_kind:
-        auge = Attribute(e->v.Attribute.value, e->v.Attribute.attr,
-                         AugLoad, e->lineno, e->col_offset,
-                         e->end_lineno, e->end_col_offset, c->c_arena);
-        if (auge == NULL)
-            return 0;
-        VISIT(c, expr, auge);
-        VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
-        auge->v.Attribute.ctx = AugStore;
-        VISIT(c, expr, auge);
+        VISIT(c, expr, e->v.Attribute.value);
+        ADDOP(c, DUP_TOP);
+        ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
-        auge = Subscript(e->v.Subscript.value, e->v.Subscript.slice,
-                         AugLoad, e->lineno, e->col_offset,
-                         e->end_lineno, e->end_col_offset, c->c_arena);
-        if (auge == NULL)
-            return 0;
-        VISIT(c, expr, auge);
-        VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
-        auge->v.Subscript.ctx = AugStore;
-        VISIT(c, expr, auge);
+        VISIT(c, expr, e->v.Subscript.value);
+        VISIT(c, expr, e->v.Subscript.slice);
+        ADDOP(c, DUP_TOP_TWO);
+        ADDOP(c, BINARY_SUBSCR);
         break;
     case Name_kind:
         if (!compiler_nameop(c, e->v.Name.id, Load))
             return 0;
-        VISIT(c, expr, s->v.AugAssign.value);
-        ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
-        return compiler_nameop(c, e->v.Name.id, Store);
+        break;
     default:
         PyErr_Format(PyExc_SystemError,
             "invalid node type (%d) for augmented assignment",
             e->kind);
         return 0;
+    }
+
+    c->u->u_lineno = old_lineno;
+    c->u->u_col_offset = old_col_offset;
+
+    VISIT(c, expr, s->v.AugAssign.value);
+    ADDOP(c, inplace_binop(s->v.AugAssign.op));
+
+    SET_LOC(c, e);
+
+    switch (e->kind) {
+    case Attribute_kind:
+        ADDOP(c, ROT_TWO);
+        ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
+        break;
+    case Subscript_kind:
+        ADDOP(c, ROT_THREE);
+        ADDOP(c, STORE_SUBSCR);
+        break;
+    case Name_kind:
+        return compiler_nameop(c, e->v.Name.id, Store);
+    default:
+        Py_UNREACHABLE();
     }
     return 1;
 }
@@ -5215,68 +5117,35 @@ check_annotation(struct compiler *c, stmt_ty s)
 }
 
 static int
-check_ann_slice(struct compiler *c, slice_ty sl)
-{
-    switch(sl->kind) {
-    case Index_kind:
-        return check_ann_expr(c, sl->v.Index.value);
-    case Slice_kind:
-        if (sl->v.Slice.lower && !check_ann_expr(c, sl->v.Slice.lower)) {
-            return 0;
-        }
-        if (sl->v.Slice.upper && !check_ann_expr(c, sl->v.Slice.upper)) {
-            return 0;
-        }
-        if (sl->v.Slice.step && !check_ann_expr(c, sl->v.Slice.step)) {
-            return 0;
-        }
-        break;
-    default:
-        PyErr_SetString(PyExc_SystemError,
-                        "unexpected slice kind");
-        return 0;
-    }
-    return 1;
-}
-
-static int
-check_ann_subscr(struct compiler *c, slice_ty sl)
+check_ann_subscr(struct compiler *c, expr_ty e)
 {
     /* We check that everything in a subscript is defined at runtime. */
-    Py_ssize_t i, n;
-
-    switch (sl->kind) {
-    case Index_kind:
+    switch (e->kind) {
     case Slice_kind:
-        if (!check_ann_slice(c, sl)) {
+        if (e->v.Slice.lower && !check_ann_expr(c, e->v.Slice.lower)) {
             return 0;
         }
-        break;
-    case ExtSlice_kind:
-        n = asdl_seq_LEN(sl->v.ExtSlice.dims);
+        if (e->v.Slice.upper && !check_ann_expr(c, e->v.Slice.upper)) {
+            return 0;
+        }
+        if (e->v.Slice.step && !check_ann_expr(c, e->v.Slice.step)) {
+            return 0;
+        }
+        return 1;
+    case Tuple_kind: {
+        /* extended slice */
+        asdl_seq *elts = e->v.Tuple.elts;
+        Py_ssize_t i, n = asdl_seq_LEN(elts);
         for (i = 0; i < n; i++) {
-            slice_ty subsl = (slice_ty)asdl_seq_GET(sl->v.ExtSlice.dims, i);
-            switch (subsl->kind) {
-            case Index_kind:
-            case Slice_kind:
-                if (!check_ann_slice(c, subsl)) {
-                    return 0;
-                }
-                break;
-            case ExtSlice_kind:
-            default:
-                PyErr_SetString(PyExc_SystemError,
-                                "extended slice invalid in nested slice");
+            if (!check_ann_subscr(c, asdl_seq_GET(elts, i))) {
                 return 0;
             }
         }
-        break;
-    default:
-        PyErr_Format(PyExc_SystemError,
-                     "invalid subscript kind %d", sl->kind);
-        return 0;
+        return 1;
     }
-    return 1;
+    default:
+        return check_ann_expr(c, e);
+    }
 }
 
 static int
@@ -5402,36 +5271,34 @@ compiler_warn(struct compiler *c, const char *format, ...)
 }
 
 static int
-compiler_handle_subscr(struct compiler *c, const char *kind,
-                       expr_context_ty ctx)
+compiler_subscript(struct compiler *c, expr_ty e)
 {
+    expr_context_ty ctx = e->v.Subscript.ctx;
     int op = 0;
 
-    /* XXX this code is duplicated */
+    if (ctx == Load) {
+        if (!check_subscripter(c, e->v.Subscript.value)) {
+            return 0;
+        }
+        if (!check_index(c, e->v.Subscript.value, e->v.Subscript.slice)) {
+            return 0;
+        }
+    }
+
     switch (ctx) {
-        case AugLoad: /* fall through to Load */
         case Load:    op = BINARY_SUBSCR; break;
-        case AugStore:/* fall through to Store */
         case Store:   op = STORE_SUBSCR; break;
         case Del:     op = DELETE_SUBSCR; break;
-        case Param:
-            PyErr_Format(PyExc_SystemError,
-                         "invalid %s kind %d in subscript\n",
-                         kind, ctx);
-            return 0;
     }
-    if (ctx == AugLoad) {
-        ADDOP(c, DUP_TOP_TWO);
-    }
-    else if (ctx == AugStore) {
-        ADDOP(c, ROT_THREE);
-    }
+    assert(op);
+    VISIT(c, expr, e->v.Subscript.value);
+    VISIT(c, expr, e->v.Subscript.slice);
     ADDOP(c, op);
     return 1;
 }
 
 static int
-compiler_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
+compiler_slice(struct compiler *c, expr_ty s)
 {
     int n = 2;
     assert(s->kind == Slice_kind);
@@ -5457,64 +5324,6 @@ compiler_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
     }
     ADDOP_I(c, BUILD_SLICE, n);
     return 1;
-}
-
-static int
-compiler_visit_nested_slice(struct compiler *c, slice_ty s,
-                            expr_context_ty ctx)
-{
-    switch (s->kind) {
-    case Slice_kind:
-        return compiler_slice(c, s, ctx);
-    case Index_kind:
-        VISIT(c, expr, s->v.Index.value);
-        break;
-    case ExtSlice_kind:
-    default:
-        PyErr_SetString(PyExc_SystemError,
-                        "extended slice invalid in nested slice");
-        return 0;
-    }
-    return 1;
-}
-
-static int
-compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
-{
-    const char * kindname = NULL;
-    switch (s->kind) {
-    case Index_kind:
-        kindname = "index";
-        if (ctx != AugStore) {
-            VISIT(c, expr, s->v.Index.value);
-        }
-        break;
-    case Slice_kind:
-        kindname = "slice";
-        if (ctx != AugStore) {
-            if (!compiler_slice(c, s, ctx))
-                return 0;
-        }
-        break;
-    case ExtSlice_kind:
-        kindname = "extended slice";
-        if (ctx != AugStore) {
-            Py_ssize_t i, n = asdl_seq_LEN(s->v.ExtSlice.dims);
-            for (i = 0; i < n; i++) {
-                slice_ty sub = (slice_ty)asdl_seq_GET(
-                    s->v.ExtSlice.dims, i);
-                if (!compiler_visit_nested_slice(c, sub, ctx))
-                    return 0;
-            }
-            ADDOP_I(c, BUILD_TUPLE, n);
-        }
-        break;
-    default:
-        PyErr_Format(PyExc_SystemError,
-                     "invalid subscript kind %d", s->kind);
-        return 0;
-    }
-    return compiler_handle_subscr(c, kindname, ctx);
 }
 
 /* End of the compiler section, beginning of the assembler section */
@@ -5699,13 +5508,13 @@ assemble_lnotab(struct assembler *a, struct instr *i)
     Py_ssize_t len;
     unsigned char *lnotab;
 
-    d_bytecode = (a->a_offset - a->a_lineno_off) * sizeof(_Py_CODEUNIT);
     d_lineno = i->i_lineno - a->a_lineno;
-
-    assert(d_bytecode >= 0);
-
-    if(d_bytecode == 0 && d_lineno == 0)
+    if (d_lineno == 0) {
         return 1;
+    }
+
+    d_bytecode = (a->a_offset - a->a_lineno_off) * sizeof(_Py_CODEUNIT);
+    assert(d_bytecode >= 0);
 
     if (d_bytecode > 255) {
         int j, nbytes, ncodes = d_bytecode / 255;
@@ -5950,7 +5759,7 @@ compute_code_flags(struct compiler *c)
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
 
-    if ((c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+    if ((IS_TOP_LEVEL_AWAIT(c)) &&
          ste->ste_coroutine &&
          !ste->ste_generator) {
         flags |= CO_COROUTINE;

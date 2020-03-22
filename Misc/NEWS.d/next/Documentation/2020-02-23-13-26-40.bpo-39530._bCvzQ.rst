@@ -1,0 +1,1 @@
+Fix misleading documentation about mixed-type numeric comparisons.

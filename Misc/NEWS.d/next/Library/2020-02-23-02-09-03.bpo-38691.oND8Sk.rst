@@ -1,0 +1,3 @@
+The :mod:`importlib` module now ignores the :envvar:`PYTHONCASEOK`
+environment variable when the :option:`-E` or :option:`-I` command line
+options are being used.

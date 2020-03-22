@@ -1,0 +1,4 @@
+Ensure all workers exit when finalizing a :class:`multiprocessing.Pool` implicitly via the module finalization
+handlers of multiprocessing. This fixes a deadlock situation that can be experienced when the Pool is not
+properly finalized via the context manager or a call to ``multiprocessing.Pool.terminate``. Patch by Batuhan Taskaya
+and Pablo Galindo.
