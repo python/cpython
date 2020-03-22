@@ -134,7 +134,6 @@ typedef struct {
     PyObject *__dict__;
     PyObject *__doc__;
     PyObject *__module__;
-    PyObject *_ast;
     PyObject *_attributes;
     PyObject *_fields;
     PyObject *alias_type;
@@ -145,6 +144,7 @@ typedef struct {
     PyObject *argtypes;
     PyObject *arguments_type;
     PyObject *asname;
+    PyObject *ast;
     PyObject *attr;
     PyObject *bases;
     PyObject *body;
@@ -354,7 +354,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->__dict__);
     Py_CLEAR(astmodulestate(module)->__doc__);
     Py_CLEAR(astmodulestate(module)->__module__);
-    Py_CLEAR(astmodulestate(module)->_ast);
     Py_CLEAR(astmodulestate(module)->_attributes);
     Py_CLEAR(astmodulestate(module)->_fields);
     Py_CLEAR(astmodulestate(module)->alias_type);
@@ -365,6 +364,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->argtypes);
     Py_CLEAR(astmodulestate(module)->arguments_type);
     Py_CLEAR(astmodulestate(module)->asname);
+    Py_CLEAR(astmodulestate(module)->ast);
     Py_CLEAR(astmodulestate(module)->attr);
     Py_CLEAR(astmodulestate(module)->bases);
     Py_CLEAR(astmodulestate(module)->body);
@@ -573,7 +573,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->__dict__);
     Py_VISIT(astmodulestate(module)->__doc__);
     Py_VISIT(astmodulestate(module)->__module__);
-    Py_VISIT(astmodulestate(module)->_ast);
     Py_VISIT(astmodulestate(module)->_attributes);
     Py_VISIT(astmodulestate(module)->_fields);
     Py_VISIT(astmodulestate(module)->alias_type);
@@ -584,6 +583,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->argtypes);
     Py_VISIT(astmodulestate(module)->arguments_type);
     Py_VISIT(astmodulestate(module)->asname);
+    Py_VISIT(astmodulestate(module)->ast);
     Py_VISIT(astmodulestate(module)->attr);
     Py_VISIT(astmodulestate(module)->bases);
     Py_VISIT(astmodulestate(module)->body);
@@ -688,7 +688,6 @@ static int init_identifiers(void)
     if ((state->__dict__ = PyUnicode_InternFromString("__dict__")) == NULL) return 0;
     if ((state->__doc__ = PyUnicode_InternFromString("__doc__")) == NULL) return 0;
     if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return 0;
-    if ((state->_ast = PyUnicode_InternFromString("_ast")) == NULL) return 0;
     if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return 0;
     if ((state->_fields = PyUnicode_InternFromString("_fields")) == NULL) return 0;
     if ((state->annotation = PyUnicode_InternFromString("annotation")) == NULL) return 0;
@@ -696,6 +695,7 @@ static int init_identifiers(void)
     if ((state->args = PyUnicode_InternFromString("args")) == NULL) return 0;
     if ((state->argtypes = PyUnicode_InternFromString("argtypes")) == NULL) return 0;
     if ((state->asname = PyUnicode_InternFromString("asname")) == NULL) return 0;
+    if ((state->ast = PyUnicode_InternFromString("ast")) == NULL) return 0;
     if ((state->attr = PyUnicode_InternFromString("attr")) == NULL) return 0;
     if ((state->bases = PyUnicode_InternFromString("bases")) == NULL) return 0;
     if ((state->body = PyUnicode_InternFromString("body")) == NULL) return 0;
@@ -1209,7 +1209,7 @@ static PyType_Slot AST_type_slots[] = {
 };
 
 static PyType_Spec AST_type_spec = {
-    "_ast.AST",
+    "ast.AST",
     sizeof(AST_object),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -1235,7 +1235,7 @@ make_type(const char *type, PyObject* base, const char* const* fields, int num_f
                     type, base,
                     astmodulestate_global->_fields, fnames,
                     astmodulestate_global->__module__,
-                    astmodulestate_global->_ast,
+                    astmodulestate_global->ast,
                     astmodulestate_global->__doc__, doc);
     Py_DECREF(fnames);
     return result;
