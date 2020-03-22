@@ -172,6 +172,11 @@ private:
             return E_FAIL;
         }
         auto dd = (DROPDESCRIPTION*)GlobalLock(medium.hGlobal);
+        if (!dd) {
+            OutputDebugString(L"PyShellExt::UpdateDropDescription - failed to lock DROPDESCRIPTION hGlobal");
+            ReleaseStgMedium(&medium);
+            return E_FAIL;
+        }
         StringCchCopy(dd->szMessage, sizeof(dd->szMessage) / sizeof(dd->szMessage[0]), DRAG_MESSAGE);
         StringCchCopy(dd->szInsert, sizeof(dd->szInsert) / sizeof(dd->szInsert[0]), PathFindFileNameW(target));
         dd->type = DROPIMAGE_MOVE;

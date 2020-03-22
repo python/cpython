@@ -18,9 +18,9 @@ and Tasks.
 Coroutines
 ==========
 
-Coroutines declared with async/await syntax is the preferred way of
-writing asyncio applications.  For example, the following snippet
-of code (requires Python 3.7+) prints "hello", waits 1 second,
+:term:`Coroutines <coroutine>` declared with the async/await syntax is the
+preferred way of writing asyncio applications.  For example, the following
+snippet of code (requires Python 3.7+) prints "hello", waits 1 second,
 and then prints "world"::
 
     >>> import asyncio
@@ -40,7 +40,7 @@ be executed::
     >>> main()
     <coroutine object main at 0x1053bb7c8>
 
-To actually run a coroutine asyncio provides three main mechanisms:
+To actually run a coroutine, asyncio provides three main mechanisms:
 
 * The :func:`asyncio.run` function to run the top-level
   entry point "main()" function (see the above example.)
@@ -57,12 +57,12 @@ To actually run a coroutine asyncio provides three main mechanisms:
           print(what)
 
       async def main():
-          print('started at', time.strftime('%X'))
+          print(f"started at {time.strftime('%X')}")
 
           await say_after(1, 'hello')
           await say_after(2, 'world')
 
-          print('finished at', time.strftime('%X'))
+          print(f"finished at {time.strftime('%X')}")
 
       asyncio.run(main())
 
@@ -86,14 +86,14 @@ To actually run a coroutine asyncio provides three main mechanisms:
           task2 = asyncio.create_task(
               say_after(2, 'world'))
 
-          print('started at', time.strftime('%X'))
+          print(f"started at {time.strftime('%X')}")
 
           # Wait until both tasks are completed (should take
           # around 2 seconds.)
           await task1
           await task2
 
-          print('finished at', time.strftime('%X'))
+          print(f"finished at {time.strftime('%X')}")
 
   Note that expected output now shows that the snippet runs
   1 second faster than before::
@@ -212,9 +212,11 @@ Running an asyncio Program
 
 .. function:: run(coro, \*, debug=False)
 
+    Execute the :term:`coroutine` *coro* and return the result.
+
     This function runs the passed coroutine, taking care of
-    managing the asyncio event loop and *finalizing asynchronous
-    generators*.
+    managing the asyncio event loop, *finalizing asynchronous
+    generators*, and closing the threadpool.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
@@ -225,10 +227,22 @@ Running an asyncio Program
     the end.  It should be used as a main entry point for asyncio
     programs, and should ideally only be called once.
 
-    .. versionadded:: 3.7
-       **Important:** this function has been added to asyncio in
-       Python 3.7 on a :term:`provisional basis <provisional api>`.
+    Example::
 
+        async def main():
+            await asyncio.sleep(1)
+            print('hello')
+
+        asyncio.run(main())
+
+    .. versionadded:: 3.7
+
+    .. versionchanged:: 3.9
+       Updated to use :meth:`loop.shutdown_default_executor`.
+
+    .. note::
+       The source code for ``asyncio.run()`` can be found in
+       :source:`Lib/asyncio/runners.py`.
 
 Creating Tasks
 ==============
@@ -276,8 +290,11 @@ Sleeping
    If *result* is provided, it is returned to the caller
    when the coroutine completes.
 
-   The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   ``sleep()`` always suspends the current task, allowing other tasks
+   to run.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
    .. _asyncio_example_sleep:
 
@@ -330,6 +347,9 @@ Running Tasks Concurrently
    call is **not** cancelled in this case.  This is to prevent the
    cancellation of one submitted Task/Future to cause other
    Tasks/Futures to be cancelled.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
    .. _asyncio_example_gather:
 
@@ -408,6 +428,9 @@ Shielding From Cancellation
        except CancelledError:
            res = None
 
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
 
 Timeouts
 ========
@@ -434,8 +457,8 @@ Timeouts
 
    If the wait is cancelled, the future *aw* is also cancelled.
 
-   The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
    .. _asyncio_example_waitfor:
 
@@ -472,16 +495,14 @@ Waiting Primitives
                             return_when=ALL_COMPLETED)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   sequence concurrently and block until the condition specified
+   set concurrently and block until the condition specified
    by *return_when*.
-
-   If any awaitable in *aws* is a coroutine, it is automatically
-   scheduled as a Task.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
-   The *loop* argument is deprecated and scheduled for removal
-   in Python 4.0.
+   Usage::
+
+        done, pending = await asyncio.wait(aws)
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -514,9 +535,48 @@ Waiting Primitives
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
 
-   Usage::
+   .. deprecated:: 3.8
 
-        done, pending = await asyncio.wait(aws)
+      If any awaitable in *aws* is a coroutine, it is automatically
+      scheduled as a Task.  Passing coroutines objects to
+      ``wait()`` directly is deprecated as it leads to
+      :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
+
+   .. deprecated-removed:: 3.8 3.10
+
+      The *loop* parameter.
+
+   .. _asyncio_example_wait_coroutine:
+   .. note::
+
+      ``wait()`` schedules coroutines as Tasks automatically and later
+      returns those implicitly created Task objects in ``(done, pending)``
+      sets.  Therefore the following code won't work as expected::
+
+          async def foo():
+              return 42
+
+          coro = foo()
+          done, pending = await asyncio.wait({coro})
+
+          if coro in done:
+              # This branch will never be run!
+
+      Here is how the above snippet can be fixed::
+
+          async def foo():
+              return 42
+
+          task = asyncio.create_task(foo())
+          done, pending = await asyncio.wait({task})
+
+          if task in done:
+              # Everything will work as expected now.
+
+   .. deprecated:: 3.8
+
+      Passing coroutine objects to ``wait()`` directly is
+      deprecated.
 
 
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
@@ -528,6 +588,9 @@ Waiting Primitives
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
    Example::
 
@@ -568,14 +631,14 @@ Scheduling From Other Threads
          print('The coroutine took too long, cancelling the task...')
          future.cancel()
      except Exception as exc:
-         print('The coroutine raised an exception: {!r}'.format(exc))
+         print(f'The coroutine raised an exception: {exc!r}')
      else:
-         print('The coroutine returned: {!r}'.format(result))
+         print(f'The coroutine returned: {result!r}')
 
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
 
-   Unlike other asyncio functions this functions requires the *loop*
+   Unlike other asyncio functions this function requires the *loop*
    argument to be passed explicitly.
 
    .. versionadded:: 3.5.1
@@ -654,6 +717,9 @@ Task Object
 
    .. versionchanged:: 3.8
       Added the ``name`` parameter.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
    .. method:: cancel()
 
@@ -803,6 +869,12 @@ Task Object
       The *file* argument is an I/O stream to which the output
       is written; by default output is written to :data:`sys.stderr`.
 
+   .. method:: get_coro()
+
+      Return the coroutine object wrapped by the :class:`Task`.
+
+      .. versionadded:: 3.8
+
    .. method:: get_name()
 
       Return the name of the Task.
@@ -833,8 +905,10 @@ Task Object
       If *loop* is ``None``, the :func:`get_event_loop` function
       is used to get the current loop.
 
-      This method is **deprecated** and will be removed in
-      Python 3.9.  Use the :func:`asyncio.all_tasks` function instead.
+      .. deprecated-removed:: 3.7 3.9
+
+         Do not call this as a task method. Use the :func:`asyncio.all_tasks`
+         function instead.
 
    .. classmethod:: current_task(loop=None)
 
@@ -843,9 +917,10 @@ Task Object
       If *loop* is ``None``, the :func:`get_event_loop` function
       is used to get the current loop.
 
-      This method is **deprecated** and will be removed in
-      Python 3.9.  Use the :func:`asyncio.current_task` function
-      instead.
+      .. deprecated-removed:: 3.7 3.9
+
+         Do not call this as a task method.  Use the
+         :func:`asyncio.current_task` function instead.
 
 
 .. _asyncio_generator_based_coro:
@@ -856,7 +931,7 @@ Generator-based Coroutines
 .. note::
 
    Support for generator-based coroutines is **deprecated** and
-   is scheduled for removal in Python 4.0.
+   is scheduled for removal in Python 3.10.
 
 Generator-based coroutines predate async/await syntax.  They are
 Python generators that use ``yield from`` expressions to await
@@ -881,19 +956,19 @@ enforced.
         async def main():
             await old_style_coroutine()
 
-    This decorator is **deprecated** and is scheduled for removal in
-    Python 4.0.
-
     This decorator should not be used for :keyword:`async def`
     coroutines.
+
+    .. deprecated-removed:: 3.8 3.10
+
+       Use :keyword:`async def` instead.
 
 .. function:: iscoroutine(obj)
 
    Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`.
 
    This method is different from :func:`inspect.iscoroutine` because
-   it returns ``True`` for generator-based coroutines decorated with
-   :func:`@coroutine <coroutine>`.
+   it returns ``True`` for generator-based coroutines.
 
 .. function:: iscoroutinefunction(func)
 

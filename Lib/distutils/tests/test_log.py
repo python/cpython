@@ -1,8 +1,8 @@
 """Tests for distutils.log"""
 
+import io
 import sys
 import unittest
-from tempfile import NamedTemporaryFile
 from test.support import swap_attr, run_unittest
 
 from distutils import log
@@ -14,9 +14,11 @@ class TestLog(unittest.TestCase):
         # output as is.
         for errors in ('strict', 'backslashreplace', 'surrogateescape',
                        'replace', 'ignore'):
-            with self.subTest(errors=errors), \
-                 NamedTemporaryFile("w+", encoding='cp437', errors=errors) as stdout, \
-                 NamedTemporaryFile("w+", encoding='cp437', errors=errors) as stderr:
+            with self.subTest(errors=errors):
+                stdout = io.TextIOWrapper(io.BytesIO(),
+                                          encoding='cp437', errors=errors)
+                stderr = io.TextIOWrapper(io.BytesIO(),
+                                          encoding='cp437', errors=errors)
                 old_threshold = log.set_threshold(log.DEBUG)
                 try:
                     with swap_attr(sys, 'stdout', stdout), \

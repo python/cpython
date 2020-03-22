@@ -281,36 +281,36 @@ def addsubst(substfile):
     except IOError as msg:
         err(substfile + ': cannot read substfile: ' + str(msg) + '\n')
         sys.exit(1)
-    lineno = 0
-    while 1:
-        line = fp.readline()
-        if not line: break
-        lineno = lineno + 1
-        try:
-            i = line.index('#')
-        except ValueError:
-            i = -1          # Happens to delete trailing \n
-        words = line[:i].split()
-        if not words: continue
-        if len(words) == 3 and words[0] == 'struct':
-            words[:2] = [words[0] + ' ' + words[1]]
-        elif len(words) != 2:
-            err(substfile + '%s:%r: warning: bad line: %r' % (substfile, lineno, line))
-            continue
-        if Reverse:
-            [value, key] = words
-        else:
-            [key, value] = words
-        if value[0] == '*':
-            value = value[1:]
-        if key[0] == '*':
-            key = key[1:]
-            NotInComment[key] = value
-        if key in Dict:
-            err('%s:%r: warning: overriding: %r %r\n' % (substfile, lineno, key, value))
-            err('%s:%r: warning: previous: %r\n' % (substfile, lineno, Dict[key]))
-        Dict[key] = value
-    fp.close()
+    with fp:
+        lineno = 0
+        while 1:
+            line = fp.readline()
+            if not line: break
+            lineno = lineno + 1
+            try:
+                i = line.index('#')
+            except ValueError:
+                i = -1          # Happens to delete trailing \n
+            words = line[:i].split()
+            if not words: continue
+            if len(words) == 3 and words[0] == 'struct':
+                words[:2] = [words[0] + ' ' + words[1]]
+            elif len(words) != 2:
+                err(substfile + '%s:%r: warning: bad line: %r' % (substfile, lineno, line))
+                continue
+            if Reverse:
+                [value, key] = words
+            else:
+                [key, value] = words
+            if value[0] == '*':
+                value = value[1:]
+            if key[0] == '*':
+                key = key[1:]
+                NotInComment[key] = value
+            if key in Dict:
+                err('%s:%r: warning: overriding: %r %r\n' % (substfile, lineno, key, value))
+                err('%s:%r: warning: previous: %r\n' % (substfile, lineno, Dict[key]))
+            Dict[key] = value
 
 if __name__ == '__main__':
     main()

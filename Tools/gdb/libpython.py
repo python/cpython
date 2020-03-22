@@ -99,6 +99,8 @@ hexdigits = "0123456789abcdef"
 
 ENCODING = locale.getpreferredencoding()
 
+FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
+UNABLE_READ_INFO_PYTHON_FRAME = 'Unable to read information on python frame'
 EVALFRAME = '_PyEval_EvalFrameDefault'
 
 class NullPyObjectPtr(RuntimeError):
@@ -918,7 +920,7 @@ class PyFrameObjectPtr(PyObjectPtr):
     def filename(self):
         '''Get the path of the current Python source file, as a string'''
         if self.is_optimized_out():
-            return '(frame information optimized out)'
+            return FRAME_INFO_OPTIMIZED_OUT
         return self.co_filename.proxyval(set())
 
     def current_line_num(self):
@@ -934,35 +936,50 @@ class PyFrameObjectPtr(PyObjectPtr):
         if long(f_trace) != 0:
             # we have a non-NULL f_trace:
             return self.f_lineno
-        else:
-            #try:
+
+        try:
             return self.co.addr2line(self.f_lasti)
-            #except ValueError:
-            #    return self.f_lineno
+        except Exception:
+            # bpo-34989: addr2line() is a complex function, it can fail in many
+            # ways. For example, it fails with a TypeError on "FakeRepr" if
+            # gdb fails to load debug symbols. Use a catch-all "except
+            # Exception" to make the whole function safe. The caller has to
+            # handle None anyway for optimized Python.
+            return None
 
     def current_line(self):
         '''Get the text of the current source line as a string, with a trailing
         newline character'''
         if self.is_optimized_out():
-            return '(frame information optimized out)'
+            return FRAME_INFO_OPTIMIZED_OUT
+
+        lineno = self.current_line_num()
+        if lineno is None:
+            return '(failed to get frame line number)'
+
         filename = self.filename()
         try:
-            f = open(os_fsencode(filename), 'r')
+            with open(os_fsencode(filename), 'r') as fp:
+                lines = fp.readlines()
         except IOError:
             return None
-        with f:
-            all_lines = f.readlines()
-            # Convert from 1-based current_line_num to 0-based list offset:
-            return all_lines[self.current_line_num()-1]
+
+        try:
+            # Convert from 1-based current_line_num to 0-based list offset
+            return lines[lineno - 1]
+        except IndexError:
+            return None
 
     def write_repr(self, out, visited):
         if self.is_optimized_out():
-            out.write('(frame information optimized out)')
+            out.write(FRAME_INFO_OPTIMIZED_OUT)
             return
-        out.write('Frame 0x%x, for file %s, line %i, in %s ('
+        lineno = self.current_line_num()
+        lineno = str(lineno) if lineno is not None else "?"
+        out.write('Frame 0x%x, for file %s, line %s, in %s ('
                   % (self.as_address(),
                      self.co_filename.proxyval(visited),
-                     self.current_line_num(),
+                     lineno,
                      self.co_name.proxyval(visited)))
         first = True
         for pyop_name, pyop_value in self.iter_locals():
@@ -978,12 +995,14 @@ class PyFrameObjectPtr(PyObjectPtr):
 
     def print_traceback(self):
         if self.is_optimized_out():
-            sys.stdout.write('  (frame information optimized out)\n')
+            sys.stdout.write('  %s\n' % FRAME_INFO_OPTIMIZED_OUT)
             return
         visited = set()
-        sys.stdout.write('  File "%s", line %i, in %s\n'
+        lineno = self.current_line_num()
+        lineno = str(lineno) if lineno is not None else "?"
+        sys.stdout.write('  File "%s", line %s, in %s\n'
                   % (self.co_filename.proxyval(visited),
-                     self.current_line_num(),
+                     lineno,
                      self.co_name.proxyval(visited)))
 
 class PySetObjectPtr(PyObjectPtr):
@@ -1161,7 +1180,7 @@ class PyUnicodeObjectPtr(PyObjectPtr):
     def proxyval(self, visited):
         global _is_pep393
         if _is_pep393 is None:
-            fields = gdb.lookup_type('PyUnicodeObject').target().fields()
+            fields = gdb.lookup_type('PyUnicodeObject').fields()
             _is_pep393 = 'data' in [f.name for f in fields]
         if _is_pep393:
             # Python 3.3 and newer
@@ -1375,7 +1394,7 @@ class wrapperobject(PyObjectPtr):
 
 
 def int_from_int(gdbval):
-    return int(str(gdbval))
+    return int(gdbval)
 
 
 def stringify(val):
@@ -1546,8 +1565,8 @@ class Frame(object):
         if not caller:
             return False
 
-        if caller in ('_PyCFunction_FastCallDict',
-                      '_PyCFunction_FastCallKeywords'):
+        if (caller.startswith('cfunction_vectorcall_') or
+            caller == 'cfunction_call'):
             arg_name = 'func'
             # Within that frame:
             #   "func" is the local containing the PyObject* of the
@@ -1583,7 +1602,7 @@ class Frame(object):
         # This assumes the _POSIX_THREADS version of Python/ceval_gil.h:
         name = self._gdbframe.name()
         if name:
-            return 'pthread_cond_timedwait' in name
+            return (name == 'take_gil')
 
     def is_gc_collect(self):
         '''Is this frame "collect" within the garbage-collector?'''
@@ -1727,11 +1746,14 @@ class PyList(gdb.Command):
 
         pyop = frame.get_pyop()
         if not pyop or pyop.is_optimized_out():
-            print('Unable to read information on python frame')
+            print(UNABLE_READ_INFO_PYTHON_FRAME)
             return
 
         filename = pyop.filename()
         lineno = pyop.current_line_num()
+        if lineno is None:
+            print('Unable to read python frame line number')
+            return
 
         if start is None:
             start = lineno - 5
@@ -1884,7 +1906,7 @@ class PyPrint(gdb.Command):
 
         pyop_frame = frame.get_pyop()
         if not pyop_frame:
-            print('Unable to read information on python frame')
+            print(UNABLE_READ_INFO_PYTHON_FRAME)
             return
 
         pyop_var, scope = pyop_frame.get_var_by_name(name)
@@ -1918,7 +1940,7 @@ class PyLocals(gdb.Command):
 
         pyop_frame = frame.get_pyop()
         if not pyop_frame:
-            print('Unable to read information on python frame')
+            print(UNABLE_READ_INFO_PYTHON_FRAME)
             return
 
         for pyop_name, pyop_value in pyop_frame.iter_locals():

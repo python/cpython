@@ -7,6 +7,20 @@ support.requires('gui')
 
 class MiscTest(AbstractTkTest, unittest.TestCase):
 
+    def test_all(self):
+        self.assertIn("Widget", tkinter.__all__)
+        # Check that variables from tkinter.constants are also in tkinter.__all__
+        self.assertIn("CASCADE", tkinter.__all__)
+        self.assertIsNotNone(tkinter.CASCADE)
+        # Check that sys, re, and constants are not in tkinter.__all__
+        self.assertNotIn("re", tkinter.__all__)
+        self.assertNotIn("sys", tkinter.__all__)
+        self.assertNotIn("constants", tkinter.__all__)
+        # Check that an underscored functions is not in tkinter.__all__
+        self.assertNotIn("_tkerror", tkinter.__all__)
+        # Check that wantobjects is not in tkinter.__all__
+        self.assertNotIn("wantobjects", tkinter.__all__)
+
     def test_repr(self):
         t = tkinter.Toplevel(self.root, name='top')
         f = tkinter.Frame(t, name='child')
@@ -155,6 +169,28 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(count, 1)
         with self.assertRaises(tkinter.TclError):
             root.tk.call('after', 'info', idle1)
+
+    def test_clipboard(self):
+        root = self.root
+        root.clipboard_clear()
+        root.clipboard_append('Ùñî')
+        self.assertEqual(root.clipboard_get(), 'Ùñî')
+        root.clipboard_append('çōđě')
+        self.assertEqual(root.clipboard_get(), 'Ùñîçōđě')
+        root.clipboard_clear()
+        with self.assertRaises(tkinter.TclError):
+            root.clipboard_get()
+
+    def test_clipboard_astral(self):
+        root = self.root
+        root.clipboard_clear()
+        root.clipboard_append('𝔘𝔫𝔦')
+        self.assertEqual(root.clipboard_get(), '𝔘𝔫𝔦')
+        root.clipboard_append('𝔠𝔬𝔡𝔢')
+        self.assertEqual(root.clipboard_get(), '𝔘𝔫𝔦𝔠𝔬𝔡𝔢')
+        root.clipboard_clear()
+        with self.assertRaises(tkinter.TclError):
+            root.clipboard_get()
 
 
 tests_gui = (MiscTest, )

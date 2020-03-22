@@ -53,10 +53,13 @@ static PyObject *
 Example_getattro(ExampleObject *self, PyObject *name)
 {
     if (self->x_attr != NULL) {
-        PyObject *v = PyDict_GetItem(self->x_attr, name);
+        PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
             Py_INCREF(v);
             return v;
+        }
+        else if (PyErr_Occurred()) {
+            return NULL;
         }
     }
     return PyObject_GenericGetAttr((PyObject *)self, name);
@@ -72,7 +75,7 @@ Example_setattr(ExampleObject *self, const char *name, PyObject *v)
     }
     if (v == NULL) {
         int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0)
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Example attribute");
         return rv;
@@ -95,7 +98,7 @@ static PyType_Spec Example_Type_spec = {
     "_testimportexec.Example",
     sizeof(ExampleObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     Example_Type_slots
 };
 
@@ -222,19 +225,17 @@ static int execfunc(PyObject *m)
 
 /* Helper for module definitions; there'll be a lot of them */
 
-#define TEST_MODULE_DEF_EX(name, slots, methods, statesize, traversefunc) { \
+#define TEST_MODULE_DEF(name, slots, methods) { \
     PyModuleDef_HEAD_INIT,                      /* m_base */ \
     name,                                       /* m_name */ \
     PyDoc_STR("Test module " name),             /* m_doc */ \
-    statesize,                                  /* m_size */ \
+    0,                                          /* m_size */ \
     methods,                                    /* m_methods */ \
     slots,                                      /* m_slots */ \
-    traversefunc,                               /* m_traverse */ \
+    NULL,                                       /* m_traverse */ \
     NULL,                                       /* m_clear */ \
     NULL,                                       /* m_free */ \
 }
-
-#define TEST_MODULE_DEF(name, slots, methods) TEST_MODULE_DEF_EX(name, slots, methods, 0, NULL)
 
 static PyModuleDef_Slot main_slots[] = {
     {Py_mod_exec, execfunc},
@@ -617,44 +618,6 @@ PyMODINIT_FUNC
 PyInit__testmultiphase_exec_unreported_exception(PyObject *spec)
 {
     return PyModuleDef_Init(&def_exec_unreported_exception);
-}
-
-static int
-bad_traverse(PyObject *self, visitproc visit, void *arg) {
-    testmultiphase_state *m_state;
-
-    m_state = PyModule_GetState(self);
-    Py_VISIT(m_state->integer);
-    return 0;
-}
-
-static int
-execfunc_with_bad_traverse(PyObject *mod) {
-    testmultiphase_state *m_state;
-
-    m_state = PyModule_GetState(mod);
-    if (m_state == NULL) {
-        return -1;
-    }
-
-    m_state->integer = PyLong_FromLong(0x7fffffff);
-    Py_INCREF(m_state->integer);
-
-    return 0;
-}
-
-static PyModuleDef_Slot slots_with_bad_traverse[] = {
-    {Py_mod_exec, execfunc_with_bad_traverse},
-    {0, NULL}
-};
-
-static PyModuleDef def_with_bad_traverse = TEST_MODULE_DEF_EX(
-       "_testmultiphase_with_bad_traverse", slots_with_bad_traverse, NULL,
-       sizeof(testmultiphase_state), bad_traverse);
-
-PyMODINIT_FUNC
-PyInit__testmultiphase_with_bad_traverse(PyObject *spec) {
-    return PyModuleDef_Init(&def_with_bad_traverse);
 }
 
 /*** Helper for imp test ***/

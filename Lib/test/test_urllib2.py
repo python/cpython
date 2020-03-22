@@ -47,6 +47,9 @@ class TrivialTests(unittest.TestCase):
     def test_trivial(self):
         # A couple trivial tests
 
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         self.assertRaises(ValueError, urllib.request.urlopen, 'bogus url')
 
         # XXX Name hacking to get this to work on Windows.
@@ -57,10 +60,8 @@ class TrivialTests(unittest.TestCase):
         else:
             file_url = "file://%s" % fname
 
-        f = urllib.request.urlopen(file_url)
-
-        f.read()
-        f.close()
+        with urllib.request.urlopen(file_url) as f:
+            f.read()
 
     def test_parse_http_list(self):
         tests = [
@@ -633,17 +634,12 @@ class OpenerDirectorTests(unittest.TestCase):
             [("http_error_302")],
             ]
         handlers = add_ordered_mock_handlers(o, meth_spec)
-
-        class Unknown:
-            def __eq__(self, other):
-                return True
-
         req = Request("http://example.com/")
         o.open(req)
         assert len(o.calls) == 2
         calls = [(handlers[0], "http_open", (req,)),
                  (handlers[2], "http_error_302",
-                  (req, Unknown(), 302, "", {}))]
+                  (req, support.ALWAYS_EQ, 302, "", {}))]
         for expected, got in zip(calls, o.calls):
             handler, method_name, args = expected
             self.assertEqual((handler, method_name), got[:2])
@@ -1292,6 +1288,10 @@ class HandlerTests(unittest.TestCase):
 
     def test_redirect_no_path(self):
         # Issue 14132: Relative redirect strips original path
+
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         real_class = http.client.HTTPConnection
         response1 = b"HTTP/1.1 302 Found\r\nLocation: ?query\r\n\r\n"
         http.client.HTTPConnection = test_urllib.fakehttp(response1)
@@ -1342,21 +1342,22 @@ class HandlerTests(unittest.TestCase):
                 self.assertTrue(request.startswith(expected), repr(request))
 
     def test_proxy(self):
-        o = OpenerDirector()
-        ph = urllib.request.ProxyHandler(dict(http="proxy.example.com:3128"))
-        o.add_handler(ph)
-        meth_spec = [
-            [("http_open", "return response")]
-            ]
-        handlers = add_ordered_mock_handlers(o, meth_spec)
+        u = "proxy.example.com:3128"
+        for d in dict(http=u), dict(HTTP=u):
+            o = OpenerDirector()
+            ph = urllib.request.ProxyHandler(d)
+            o.add_handler(ph)
+            meth_spec = [
+                [("http_open", "return response")]
+                ]
+            handlers = add_ordered_mock_handlers(o, meth_spec)
 
-        req = Request("http://acme.example.com/")
-        self.assertEqual(req.host, "acme.example.com")
-        o.open(req)
-        self.assertEqual(req.host, "proxy.example.com:3128")
-
-        self.assertEqual([(handlers[0], "http_open")],
-                         [tup[0:2] for tup in o.calls])
+            req = Request("http://acme.example.com/")
+            self.assertEqual(req.host, "acme.example.com")
+            o.open(req)
+            self.assertEqual(req.host, u)
+            self.assertEqual([(handlers[0], "http_open")],
+                             [tup[0:2] for tup in o.calls])
 
     def test_proxy_no_proxy(self):
         os.environ['no_proxy'] = 'python.org'

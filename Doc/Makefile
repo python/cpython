@@ -11,11 +11,16 @@ BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
+SPHINXERRORHANDLING = -W
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_elements.papersize=$(PAPER) \
-                $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
+# Internal variables.
+PAPEROPT_a4     = -D latex_elements.papersize=a4paper
+PAPEROPT_letter = -D latex_elements.papersize=letterpaper
 
-.PHONY: help build html htmlhelp latex text changes linkcheck \
+ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) \
+                $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
+
+.PHONY: help build html htmlhelp latex text texinfo changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
 	autobuild-dev autobuild-stable venv
 
@@ -28,6 +33,7 @@ help:
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
 	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  text       to make plain text files"
+	@echo "  texinfo    to make Texinfo file"
 	@echo "  epub       to make EPUB files"
 	@echo "  changes    to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
@@ -47,11 +53,19 @@ build:
 	@if [ -f  ../Misc/NEWS ] ; then \
 		echo "Using existing Misc/NEWS file"; \
 		cp ../Misc/NEWS build/NEWS; \
-	elif [ -d ../Misc/NEWS.d ]; then \
-		echo "Building NEWS from Misc/NEWS.d with blurb"; \
-		$(BLURB) merge -f build/NEWS; \
+	elif $(BLURB) help >/dev/null 2>&1 && $(SPHINXBUILD) --version >/dev/null 2>&1; then \
+		if [ -d ../Misc/NEWS.d ]; then \
+			echo "Building NEWS from Misc/NEWS.d with blurb"; \
+			$(BLURB) merge -f build/NEWS; \
+		else \
+			echo "Neither Misc/NEWS.d nor Misc/NEWS found; cannot build docs"; \
+			exit 1; \
+		fi \
 	else \
-		echo "Neither Misc/NEWS.d nor Misc/NEWS found; cannot build docs"; \
+		echo ""; \
+		echo "Missing the required blurb or sphinx-build tools."; \
+		echo "Please run 'make venv' to install local copies."; \
+		echo ""; \
 		exit 1; \
 	fi
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
@@ -75,6 +89,11 @@ latex: build
 text: BUILDER = text
 text: build
 	@echo "Build finished; the text files are in build/text."
+
+texinfo: BUILDER = texinfo
+texinfo: build
+	@echo "Build finished; the python.texi file is in build/texinfo."
+	@echo "Run \`make info' in that directory to run it through makeinfo."
 
 epub: BUILDER = epub
 epub: build
@@ -123,7 +142,8 @@ clean:
 
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb python-docs-theme
+	$(VENVDIR)/bin/python3 -m pip install -U pip setuptools
+	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==2.2.0 blurb python-docs-theme
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
@@ -169,11 +189,22 @@ dist:
 	make epub
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
 
+	# archive the texinfo build
+	rm -rf build/texinfo
+	make texinfo
+	make info --directory=build/texinfo
+	cp -pPR build/texinfo dist/python-$(DISTVERSION)-docs-texinfo
+	tar -C dist -cf dist/python-$(DISTVERSION)-docs-texinfo.tar python-$(DISTVERSION)-docs-texinfo
+	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-texinfo.tar
+	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-texinfo.zip python-$(DISTVERSION)-docs-texinfo)
+	rm -r dist/python-$(DISTVERSION)-docs-texinfo
+	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
+
 check:
 	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst
 
 serve:
-	../Tools/scripts/serve.py build/html
+	$(PYTHON) ../Tools/scripts/serve.py build/html
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.

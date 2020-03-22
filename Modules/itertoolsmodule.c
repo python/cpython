@@ -1,6 +1,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_tupleobject.h"
 #include "structmember.h"
 
 /* Itertools module written and maintained
@@ -133,7 +134,7 @@ groupby_step(groupbyobject *gbo)
         newkey = newvalue;
         Py_INCREF(newvalue);
     } else {
-        newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc, newvalue, NULL);
+        newkey = PyObject_CallOneArg(gbo->keyfunc, newvalue);
         if (newkey == NULL) {
             Py_DECREF(newvalue);
             return -1;
@@ -240,10 +241,10 @@ static PyTypeObject groupby_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)groupby_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -368,8 +369,9 @@ _grouper_next(_grouperobject *igo)
 static PyObject *
 _grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     if (((groupbyobject *)lz->parent)->currgrouper != lz) {
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
     }
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }
@@ -388,10 +390,10 @@ static PyTypeObject _grouper_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)_grouper_dealloc,       /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -441,6 +443,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *it;
     int numread;                /* 0 <= numread <= LINKCELLS */
+    int running;
     PyObject *nextlink;
     PyObject *(values[LINKCELLS]);
 } teedataobject;
@@ -463,6 +466,7 @@ teedataobject_newinternal(PyObject *it)
     if (tdo == NULL)
         return NULL;
 
+    tdo->running = 0;
     tdo->numread = 0;
     tdo->nextlink = NULL;
     Py_INCREF(it);
@@ -491,7 +495,14 @@ teedataobject_getitem(teedataobject *tdo, int i)
     else {
         /* this is the lead iterator, so fetch more data */
         assert(i == tdo->numread);
+        if (tdo->running) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "cannot re-enter the tee iterator");
+            return NULL;
+        }
+        tdo->running = 1;
         value = PyIter_Next(tdo->it);
+        tdo->running = 0;
         if (value == NULL)
             return NULL;
         tdo->numread++;
@@ -516,7 +527,7 @@ teedataobject_traverse(teedataobject *tdo, visitproc visit, void * arg)
 static void
 teedataobject_safe_decref(PyObject *obj)
 {
-    while (obj && Py_TYPE(obj) == &teedataobject_type &&
+    while (obj && Py_IS_TYPE(obj, &teedataobject_type) &&
            Py_REFCNT(obj) == 1) {
         PyObject *nextlink = ((teedataobject *)obj)->nextlink;
         ((teedataobject *)obj)->nextlink = NULL;
@@ -603,7 +614,7 @@ itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
 
     if (len == LINKCELLS) {
         if (next != Py_None) {
-            if (Py_TYPE(next) != &teedataobject_type)
+            if (!Py_IS_TYPE(next, &teedataobject_type))
                 goto err;
             assert(tdo->nextlink == NULL);
             Py_INCREF(next);
@@ -634,10 +645,10 @@ static PyTypeObject teedataobject_type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)teedataobject_dealloc,          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -823,10 +834,10 @@ static PyTypeObject tee_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)tee_dealloc,            /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1049,10 +1060,10 @@ cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
             }
             Py_DECREF(res);
         }
-        return Py_BuildValue("O(N)(Oi)", Py_TYPE(lz), it, lz->saved, 1);
+        return Py_BuildValue("O(N)(OO)", Py_TYPE(lz), it, lz->saved, Py_True);
     }
-    return Py_BuildValue("O(O)(Oi)", Py_TYPE(lz), lz->it, lz->saved,
-                         lz->firstpass);
+    return Py_BuildValue("O(O)(OO)", Py_TYPE(lz), lz->it, lz->saved,
+                         lz->firstpass ? Py_True : Py_False);
 }
 
 static PyObject *
@@ -1089,10 +1100,10 @@ static PyTypeObject cycle_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)cycle_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1208,7 +1219,7 @@ dropwhile_next(dropwhileobject *lz)
         if (lz->start == 1)
             return item;
 
-        good = PyObject_CallFunctionObjArgs(lz->func, item, NULL);
+        good = PyObject_CallOneArg(lz->func, item);
         if (good == NULL) {
             Py_DECREF(item);
             return NULL;
@@ -1256,10 +1267,10 @@ static PyTypeObject dropwhile_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)dropwhile_dealloc,      /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1371,7 +1382,7 @@ takewhile_next(takewhileobject *lz)
     if (item == NULL)
         return NULL;
 
-    good = PyObject_CallFunctionObjArgs(lz->func, item, NULL);
+    good = PyObject_CallOneArg(lz->func, item);
     if (good == NULL) {
         Py_DECREF(item);
         return NULL;
@@ -1418,10 +1429,10 @@ static PyTypeObject takewhile_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)takewhile_dealloc,      /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1677,10 +1688,10 @@ static PyTypeObject islice_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)islice_dealloc,         /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1818,10 +1829,10 @@ static PyTypeObject starmap_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)starmap_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -2039,10 +2050,10 @@ static PyTypeObject chain_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)chain_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -2238,15 +2249,10 @@ product_next(productobject *lz)
         /* Copy the previous result tuple or re-use it if available */
         if (Py_REFCNT(result) > 1) {
             PyObject *old_result = result;
-            result = PyTuple_New(npools);
+            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), npools);
             if (result == NULL)
                 goto empty;
             lz->result = result;
-            for (i=0; i < npools; i++) {
-                elem = PyTuple_GET_ITEM(old_result, i);
-                Py_INCREF(elem);
-                PyTuple_SET_ITEM(result, i, elem);
-            }
             Py_DECREF(old_result);
         }
         /* Now, we've got the only copy so we can update it in-place */
@@ -2397,10 +2403,10 @@ static PyTypeObject product_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)product_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -2568,15 +2574,10 @@ combinations_next(combinationsobject *co)
         /* Copy the previous result tuple or re-use it if available */
         if (Py_REFCNT(result) > 1) {
             PyObject *old_result = result;
-            result = PyTuple_New(r);
+            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             co->result = result;
-            for (i=0; i<r ; i++) {
-                elem = PyTuple_GET_ITEM(old_result, i);
-                Py_INCREF(elem);
-                PyTuple_SET_ITEM(result, i, elem);
-            }
             Py_DECREF(old_result);
         }
         /* Now, we've got the only copy so we can update it in-place
@@ -2710,10 +2711,10 @@ static PyTypeObject combinations_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)combinations_dealloc,   /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -2909,15 +2910,10 @@ cwr_next(cwrobject *co)
         /* Copy the previous result tuple or re-use it if available */
         if (Py_REFCNT(result) > 1) {
             PyObject *old_result = result;
-            result = PyTuple_New(r);
+            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             co->result = result;
-            for (i=0; i<r ; i++) {
-                elem = PyTuple_GET_ITEM(old_result, i);
-                Py_INCREF(elem);
-                PyTuple_SET_ITEM(result, i, elem);
-            }
             Py_DECREF(old_result);
         }
         /* Now, we've got the only copy so we can update it in-place CPython's
@@ -3039,10 +3035,10 @@ static PyTypeObject cwr_type = {
     0,                                                  /* tp_itemsize */
     /* methods */
     (destructor)cwr_dealloc,                            /* tp_dealloc */
-    0,                                                  /* tp_print */
+    0,                                                  /* tp_vectorcall_offset */
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
-    0,                                                  /* tp_reserved */
+    0,                                                  /* tp_as_async */
     0,                                                  /* tp_repr */
     0,                                                  /* tp_as_number */
     0,                                                  /* tp_as_sequence */
@@ -3080,12 +3076,15 @@ static PyTypeObject cwr_type = {
 /* permutations object ********************************************************
 
 def permutations(iterable, r=None):
-    'permutations(range(3), 2) --> (0,1) (0,2) (1,0) (1,2) (2,0) (2,1)'
+    # permutations('ABCD', 2) --> AB AC AD BA BC BD CA CB CD DA DB DC
+    # permutations(range(3)) --> 012 021 102 120 201 210
     pool = tuple(iterable)
     n = len(pool)
     r = n if r is None else r
-    indices = range(n)
-    cycles = range(n-r+1, n+1)[::-1]
+    if r > n:
+        return
+    indices = list(range(n))
+    cycles = list(range(n, n-r, -1))
     yield tuple(pool[i] for i in indices[:r])
     while n:
         for i in reversed(range(r)):
@@ -3257,15 +3256,10 @@ permutations_next(permutationsobject *po)
         /* Copy the previous result tuple or re-use it if available */
         if (Py_REFCNT(result) > 1) {
             PyObject *old_result = result;
-            result = PyTuple_New(r);
+            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             po->result = result;
-            for (i=0; i<r ; i++) {
-                elem = PyTuple_GET_ITEM(old_result, i);
-                Py_INCREF(elem);
-                PyTuple_SET_ITEM(result, i, elem);
-            }
             Py_DECREF(old_result);
         }
         /* Now, we've got the only copy so we can update it in-place */
@@ -3430,10 +3424,10 @@ static PyTypeObject permutations_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)permutations_dealloc,   /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -3475,6 +3469,7 @@ typedef struct {
     PyObject *total;
     PyObject *it;
     PyObject *binop;
+    PyObject *initial;
 } accumulateobject;
 
 static PyTypeObject accumulate_type;
@@ -3484,17 +3479,18 @@ static PyTypeObject accumulate_type;
 itertools.accumulate.__new__
     iterable: object
     func as binop: object = None
+    *
+    initial: object = None
 Return series of accumulated sums (or other binary function results).
 [clinic start generated code]*/
 
 static PyObject *
 itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
-                          PyObject *binop)
-/*[clinic end generated code: output=514d0fb30ba14d55 input=6d9d16aaa1d3cbfc]*/
+                          PyObject *binop, PyObject *initial)
+/*[clinic end generated code: output=66da2650627128f8 input=c4ce20ac59bf7ffd]*/
 {
     PyObject *it;
     accumulateobject *lz;
-
 
     /* Get iterator. */
     it = PyObject_GetIter(iterable);
@@ -3514,6 +3510,8 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
     }
     lz->total = NULL;
     lz->it = it;
+    Py_XINCREF(initial);
+    lz->initial = initial;
     return (PyObject *)lz;
 }
 
@@ -3524,6 +3522,7 @@ accumulate_dealloc(accumulateobject *lz)
     Py_XDECREF(lz->binop);
     Py_XDECREF(lz->total);
     Py_XDECREF(lz->it);
+    Py_XDECREF(lz->initial);
     Py_TYPE(lz)->tp_free(lz);
 }
 
@@ -3533,6 +3532,7 @@ accumulate_traverse(accumulateobject *lz, visitproc visit, void *arg)
     Py_VISIT(lz->binop);
     Py_VISIT(lz->it);
     Py_VISIT(lz->total);
+    Py_VISIT(lz->initial);
     return 0;
 }
 
@@ -3541,6 +3541,13 @@ accumulate_next(accumulateobject *lz)
 {
     PyObject *val, *newtotal;
 
+    if (lz->initial != Py_None) {
+        lz->total = lz->initial;
+        Py_INCREF(Py_None);
+        lz->initial = Py_None;
+        Py_INCREF(lz->total);
+        return lz->total;
+    }
     val = (*Py_TYPE(lz->it)->tp_iternext)(lz->it);
     if (val == NULL)
         return NULL;
@@ -3567,6 +3574,19 @@ accumulate_next(accumulateobject *lz)
 static PyObject *
 accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
 {
+    if (lz->initial != Py_None) {
+        PyObject *it;
+
+        assert(lz->total == NULL);
+        if (PyType_Ready(&chain_type) < 0)
+            return NULL;
+        it = PyObject_CallFunction((PyObject *)&chain_type, "(O)O",
+                                   lz->initial, lz->it);
+        if (it == NULL)
+            return NULL;
+        return Py_BuildValue("O(NO)O", Py_TYPE(lz),
+                            it, lz->binop?lz->binop:Py_None, Py_None);
+    }
     if (lz->total == Py_None) {
         PyObject *it;
 
@@ -3612,10 +3632,10 @@ static PyTypeObject accumulate_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)accumulate_dealloc,     /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -3779,10 +3799,10 @@ static PyTypeObject compress_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)compress_dealloc,       /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -3898,7 +3918,7 @@ filterfalse_next(filterfalseobject *lz)
             ok = PyObject_IsTrue(item);
         } else {
             PyObject *good;
-            good = PyObject_CallFunctionObjArgs(lz->func, item, NULL);
+            good = PyObject_CallOneArg(lz->func, item);
             if (good == NULL) {
                 Py_DECREF(item);
                 return NULL;
@@ -3933,10 +3953,10 @@ static PyTypeObject filterfalse_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)filterfalse_dealloc,    /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -4081,6 +4101,7 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
     lz = (countobject *)type->tp_alloc(type, 0);
     if (lz == NULL) {
         Py_XDECREF(long_cnt);
+        Py_DECREF(long_step);
         return NULL;
     }
     lz->cnt = cnt;
@@ -4182,10 +4203,10 @@ static PyTypeObject count_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)count_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)count_repr,               /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -4235,17 +4256,17 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     repeatobject *ro;
     PyObject *element;
-    Py_ssize_t cnt = -1, n_kwds = 0;
+    Py_ssize_t cnt = -1, n_args;
     static char *kwargs[] = {"object", "times", NULL};
 
+    n_args = PyTuple_GET_SIZE(args);
+    if (kwds != NULL)
+        n_args += PyDict_GET_SIZE(kwds);
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:repeat", kwargs,
                                      &element, &cnt))
         return NULL;
-
-    if (kwds != NULL)
-        n_kwds = PyDict_GET_SIZE(kwds);
     /* Does user supply times argument? */
-    if ((PyTuple_Size(args) + n_kwds == 2) && cnt < 0)
+    if (n_args == 2 && cnt < 0)
         cnt = 0;
 
     ro = (repeatobject *)type->tp_alloc(type, 0);
@@ -4337,10 +4358,10 @@ static PyTypeObject repeat_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)repeat_dealloc,         /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)repeat_repr,              /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -4391,6 +4412,7 @@ static PyTypeObject ziplongest_type;
 static PyObject *
 zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    _Py_IDENTIFIER(fillvalue);
     ziplongestobject *lz;
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
@@ -4399,10 +4421,15 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t tuplesize;
 
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
-        fillvalue = PyDict_GetItemString(kwds, "fillvalue");
-        if (fillvalue == NULL || PyDict_GET_SIZE(kwds) > 1) {
-            PyErr_SetString(PyExc_TypeError,
-                "zip_longest() got an unexpected keyword argument");
+        fillvalue = NULL;
+        if (PyDict_GET_SIZE(kwds) == 1) {
+            fillvalue = _PyDict_GetItemIdWithError(kwds, &PyId_fillvalue);
+        }
+        if (fillvalue == NULL) {
+            if (!PyErr_Occurred()) {
+                PyErr_SetString(PyExc_TypeError,
+                    "zip_longest() got an unexpected keyword argument");
+            }
             return NULL;
         }
     }
@@ -4419,10 +4446,6 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *item = PyTuple_GET_ITEM(args, i);
         PyObject *it = PyObject_GetIter(item);
         if (it == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError))
-                PyErr_Format(PyExc_TypeError,
-                    "zip_longest argument #%zd must support iteration",
-                    i+1);
             Py_DECREF(ittuple);
             return NULL;
         }
@@ -4608,10 +4631,10 @@ static PyTypeObject ziplongest_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)zip_longest_dealloc,    /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -4678,31 +4701,9 @@ combinations(p, r)\n\
 combinations_with_replacement(p, r)\n\
 ");
 
-
-static PyMethodDef module_methods[] = {
-    ITERTOOLS_TEE_METHODDEF
-    {NULL,              NULL}           /* sentinel */
-};
-
-
-static struct PyModuleDef itertoolsmodule = {
-    PyModuleDef_HEAD_INIT,
-    "itertools",
-    module_doc,
-    -1,
-    module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_itertools(void)
+static int
+itertoolsmodule_exec(PyObject *m)
 {
-    int i;
-    PyObject *m;
-    const char *name;
     PyTypeObject *typelist[] = {
         &accumulate_type,
         &combinations_type,
@@ -4727,18 +4728,49 @@ PyInit_itertools(void)
         NULL
     };
 
-    Py_TYPE(&teedataobject_type) = &PyType_Type;
-    m = PyModule_Create(&itertoolsmodule);
-    if (m == NULL)
-        return NULL;
+    Py_SET_TYPE(&teedataobject_type, &PyType_Type);
 
-    for (i=0 ; typelist[i] != NULL ; i++) {
-        if (PyType_Ready(typelist[i]) < 0)
-            return NULL;
-        name = _PyType_Name(typelist[i]);
-        Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
+    for (int i = 0; typelist[i] != NULL; i++) {
+        PyTypeObject *type = typelist[i];
+        if (PyType_Ready(type) < 0) {
+            return -1;
+        }
+        const char *name = _PyType_Name(type);
+        Py_INCREF(type);
+        if (PyModule_AddObject(m, name, (PyObject *)type) < 0) {
+            Py_DECREF(type);
+            return -1;
+        }
     }
 
-    return m;
+    return 0;
+}
+
+static struct PyModuleDef_Slot itertoolsmodule_slots[] = {
+    {Py_mod_exec, itertoolsmodule_exec},
+    {0, NULL}
+};
+
+static PyMethodDef module_methods[] = {
+    ITERTOOLS_TEE_METHODDEF
+    {NULL, NULL} /* sentinel */
+};
+
+
+static struct PyModuleDef itertoolsmodule = {
+    PyModuleDef_HEAD_INIT,
+    "itertools",
+    module_doc,
+    0,
+    module_methods,
+    itertoolsmodule_slots,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit_itertools(void)
+{
+    return PyModuleDef_Init(&itertoolsmodule);
 }

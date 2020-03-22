@@ -30,7 +30,6 @@ ftpmirror.py              FTP mirror script
 get-remote-certificate.py Fetch the certificate that the server(s) are providing in PEM form
 google.py                 Open a webbrowser with Google
 gprof2html.py             Transform gprof(1) output into useful HTML
-h2py.py                   Translate #define's into Python assignments
 highlight.py              Python syntax highlighting with HTML output
 idle3                     Main program to start IDLE
 ifdef.py                  Remove #if(n)def groups from C sources

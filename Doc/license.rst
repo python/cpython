@@ -1,4 +1,4 @@
-.. highlightlang:: none
+.. highlight:: none
 
 .. _history-and-license:
 
@@ -22,7 +22,7 @@ Virginia where he released several versions of the software.
 In May 2000, Guido and the Python core development team moved to BeOpen.com to
 form the BeOpen PythonLabs team.  In October of the same year, the PythonLabs
 team moved to Digital Creations (now Zope Corporation; see
-http://www.zope.com/).  In 2001, the Python Software Foundation (PSF, see
+https://www.zope.org/).  In 2001, the Python Software Foundation (PSF, see
 https://www.python.org/psf/) was formed, a non-profit organization created
 specifically to own Python-related Intellectual Property.  Zope Corporation is a
 sponsoring member of the PSF.
@@ -87,7 +87,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2018 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2020 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -561,7 +561,7 @@ SipHash24
 ---------
 
 The file :file:`Python/pyhash.c` contains Marek Majkowski' implementation of
-Dan Bernstein's SipHash24 algorithm. The contains the following note::
+Dan Bernstein's SipHash24 algorithm. It contains the following note::
 
   <MIT License>
   Copyright (c) 2013  Marek Majkowski <marek@popcount.org>
@@ -913,3 +913,40 @@ library unless the build is configured ``--with-system-libmpdec``::
    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
    SUCH DAMAGE.
+
+
+W3C C14N test suite
+-------------------
+
+The C14N 2.0 test suite in the :mod:`test` package
+(``Lib/test/xmltestdata/c14n-20/``) was retrieved from the W3C website at
+https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
+3-clause BSD license:
+
+   Copyright (c) 2013 W3C(R) (MIT, ERCIM, Keio, Beihang),
+   All Rights Reserved.
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions
+   are met:
+
+   * Redistributions of works must retain the original copyright notice,
+     this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the original copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+   * Neither the name of the W3C nor the names of its contributors may be
+     used to endorse or promote products derived from this work without
+     specific prior written permission.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

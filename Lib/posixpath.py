@@ -2,9 +2,9 @@
 
 Instead of importing this module directly, import os and refer to
 this module as os.path.  The "os.path" name is an alias for this
-module on Posix systems; on other systems (e.g. Mac, Windows),
+module on Posix systems; on other systems (e.g. Windows),
 os.path provides the same operations in a manner specific to that
-platform, and is an alias to another module (e.g. macpath, ntpath).
+platform, and is an alias to another module (e.g. ntpath).
 
 Some of this can actually be useful on non-Posix systems too, e.g.
 for manipulation of the pathname component of URLs.
@@ -18,7 +18,7 @@ pardir = '..'
 extsep = '.'
 sep = '/'
 pathsep = ':'
-defpath = ':/bin:/usr/bin'
+defpath = '/bin:/usr/bin'
 altsep = None
 devnull = '/dev/null'
 
@@ -51,11 +51,7 @@ def _get_sep(path):
 
 def normcase(s):
     """Normalize case of pathname.  Has no effect under Posix"""
-    s = os.fspath(s)
-    if not isinstance(s, (bytes, str)):
-        raise TypeError("normcase() argument must be str or bytes, "
-                        "not '{}'".format(s.__class__.__name__))
-    return s
+    return os.fspath(s)
 
 
 # Return whether a path is absolute.
@@ -246,7 +242,12 @@ def expanduser(path):
     if i == 1:
         if 'HOME' not in os.environ:
             import pwd
-            userhome = pwd.getpwuid(os.getuid()).pw_dir
+            try:
+                userhome = pwd.getpwuid(os.getuid()).pw_dir
+            except KeyError:
+                # bpo-10496: if the current user identifier doesn't exist in the
+                # password database, return the path unchanged
+                return path
         else:
             userhome = os.environ['HOME']
     else:
@@ -257,6 +258,8 @@ def expanduser(path):
         try:
             pwent = pwd.getpwnam(name)
         except KeyError:
+            # bpo-10496: if the user name from the path doesn't exist in the
+            # password database, return the path unchanged
             return path
         userhome = pwent.pw_dir
     if isinstance(path, bytes):

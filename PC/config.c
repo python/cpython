@@ -23,6 +23,7 @@ extern PyObject* PyInit__sha1(void);
 extern PyObject* PyInit__sha256(void);
 extern PyObject* PyInit__sha512(void);
 extern PyObject* PyInit__sha3(void);
+extern PyObject* PyInit__statistics(void);
 extern PyObject* PyInit__blake2(void);
 extern PyObject* PyInit_time(void);
 extern PyObject* PyInit__thread(void);
@@ -72,6 +73,8 @@ extern PyObject* PyInit__string(void);
 extern PyObject* PyInit__stat(void);
 extern PyObject* PyInit__opcode(void);
 
+extern PyObject* PyInit__contextvars(void);
+
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -101,6 +104,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_blake2", PyInit__blake2},
     {"time", PyInit_time},
     {"_thread", PyInit__thread},
+    {"_statistics", PyInit__statistics},
 #ifdef WIN32
     {"msvcrt", PyInit_msvcrt},
     {"_locale", PyInit__locale},
@@ -163,6 +167,8 @@ struct _inittab _PyImport_Inittab[] = {
     {"atexit", PyInit_atexit},
     {"_stat", PyInit__stat},
     {"_opcode", PyInit__opcode},
+
+    {"_contextvars", PyInit__contextvars},
 
     /* Sentinel */
     {0, 0}

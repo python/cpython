@@ -2,7 +2,7 @@ import bdb
 import os
 
 from tkinter import *
-from tkinter.ttk import Scrollbar
+from tkinter.ttk import Frame, Scrollbar
 
 from idlelib import macosx
 from idlelib.scrolledlist import ScrolledList

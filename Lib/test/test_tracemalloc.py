@@ -36,7 +36,7 @@ def allocate_bytes(size):
     bytes_len = (size - EMPTY_STRING_SIZE)
     frames = get_frames(nframe, 1)
     data = b'x' * bytes_len
-    return data, tracemalloc.Traceback(frames)
+    return data, tracemalloc.Traceback(frames, min(len(frames), nframe))
 
 def create_snapshots():
     traceback_limit = 2
@@ -45,27 +45,27 @@ def create_snapshots():
     # traceback_frames) tuples. traceback_frames is a tuple of (filename,
     # line_number) tuples.
     raw_traces = [
-        (0, 10, (('a.py', 2), ('b.py', 4))),
-        (0, 10, (('a.py', 2), ('b.py', 4))),
-        (0, 10, (('a.py', 2), ('b.py', 4))),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
 
-        (1, 2, (('a.py', 5), ('b.py', 4))),
+        (1, 2, (('a.py', 5), ('b.py', 4)), 3),
 
-        (2, 66, (('b.py', 1),)),
+        (2, 66, (('b.py', 1),), 1),
 
-        (3, 7, (('<unknown>', 0),)),
+        (3, 7, (('<unknown>', 0),), 1),
     ]
     snapshot = tracemalloc.Snapshot(raw_traces, traceback_limit)
 
     raw_traces2 = [
-        (0, 10, (('a.py', 2), ('b.py', 4))),
-        (0, 10, (('a.py', 2), ('b.py', 4))),
-        (0, 10, (('a.py', 2), ('b.py', 4))),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
 
-        (2, 2, (('a.py', 5), ('b.py', 4))),
-        (2, 5000, (('a.py', 5), ('b.py', 4))),
+        (2, 2, (('a.py', 5), ('b.py', 4)), 3),
+        (2, 5000, (('a.py', 5), ('b.py', 4)), 3),
 
-        (4, 400, (('c.py', 578),)),
+        (4, 400, (('c.py', 578),), 1),
     ]
     snapshot2 = tracemalloc.Snapshot(raw_traces2, traceback_limit)
 
@@ -111,6 +111,26 @@ class TestTracemallocEnabled(unittest.TestCase):
         traceback = tracemalloc.get_object_traceback(obj)
         self.assertEqual(traceback, obj_traceback)
 
+    def test_new_reference(self):
+        tracemalloc.clear_traces()
+        # gc.collect() indirectly calls PyList_ClearFreeList()
+        support.gc_collect()
+
+        # Create a list and "destroy it": put it in the PyListObject free list
+        obj = []
+        obj = None
+
+        # Create a list which should reuse the previously created empty list
+        obj = []
+
+        nframe = tracemalloc.get_traceback_limit()
+        frames = get_frames(nframe, -3)
+        obj_traceback = tracemalloc.Traceback(frames, min(len(frames), nframe))
+
+        traceback = tracemalloc.get_object_traceback(obj)
+        self.assertIsNotNone(traceback)
+        self.assertEqual(traceback, obj_traceback)
+
     def test_set_traceback_limit(self):
         obj_size = 10
 
@@ -147,7 +167,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         trace = self.find_trace(traces, obj_traceback)
 
         self.assertIsInstance(trace, tuple)
-        domain, size, traceback = trace
+        domain, size, traceback, length = trace
         self.assertEqual(size, obj_size)
         self.assertEqual(traceback, obj_traceback._frames)
 
@@ -177,8 +197,8 @@ class TestTracemallocEnabled(unittest.TestCase):
 
         trace1 = self.find_trace(traces, obj1_traceback)
         trace2 = self.find_trace(traces, obj2_traceback)
-        domain1, size1, traceback1 = trace1
-        domain2, size2, traceback2 = trace2
+        domain1, size1, traceback1, length1 = trace1
+        domain2, size2, traceback2, length2 = trace2
         self.assertIs(traceback2, traceback1)
 
     def test_get_traced_memory(self):
@@ -238,6 +258,9 @@ class TestTracemallocEnabled(unittest.TestCase):
 
         # take a snapshot
         snapshot = tracemalloc.take_snapshot()
+
+        # This can vary
+        self.assertGreater(snapshot.traces[1].traceback.total_nframe, 10)
 
         # write on disk
         snapshot.dump(support.TESTFN)
@@ -301,7 +324,7 @@ class TestSnapshot(unittest.TestCase):
     maxDiff = 4000
 
     def test_create_snapshot(self):
-        raw_traces = [(0, 5, (('a.py', 2),))]
+        raw_traces = [(0, 5, (('a.py', 2),), 10)]
 
         with contextlib.ExitStack() as stack:
             stack.enter_context(patch.object(tracemalloc, 'is_tracing',
@@ -316,6 +339,7 @@ class TestSnapshot(unittest.TestCase):
             self.assertEqual(len(snapshot.traces), 1)
             trace = snapshot.traces[0]
             self.assertEqual(trace.size, 5)
+            self.assertEqual(trace.traceback.total_nframe, 10)
             self.assertEqual(len(trace.traceback), 1)
             self.assertEqual(trace.traceback[0].filename, 'a.py')
             self.assertEqual(trace.traceback[0].lineno, 2)
@@ -331,11 +355,11 @@ class TestSnapshot(unittest.TestCase):
         # exclude b.py
         snapshot3 = snapshot.filter_traces((filter1,))
         self.assertEqual(snapshot3.traces._traces, [
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (1, 2, (('a.py', 5), ('b.py', 4))),
-            (3, 7, (('<unknown>', 0),)),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (1, 2, (('a.py', 5), ('b.py', 4)), 3),
+            (3, 7, (('<unknown>', 0),), 1),
         ])
 
         # filter_traces() must not touch the original snapshot
@@ -344,10 +368,10 @@ class TestSnapshot(unittest.TestCase):
         # only include two lines of a.py
         snapshot4 = snapshot3.filter_traces((filter2, filter3))
         self.assertEqual(snapshot4.traces._traces, [
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (1, 2, (('a.py', 5), ('b.py', 4))),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (1, 2, (('a.py', 5), ('b.py', 4)), 3),
         ])
 
         # No filter: just duplicate the snapshot
@@ -368,21 +392,21 @@ class TestSnapshot(unittest.TestCase):
         # exclude a.py of domain 1
         snapshot3 = snapshot.filter_traces((filter1,))
         self.assertEqual(snapshot3.traces._traces, [
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (2, 66, (('b.py', 1),)),
-            (3, 7, (('<unknown>', 0),)),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (2, 66, (('b.py', 1),), 1),
+            (3, 7, (('<unknown>', 0),), 1),
         ])
 
         # include domain 1
         snapshot3 = snapshot.filter_traces((filter1,))
         self.assertEqual(snapshot3.traces._traces, [
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (2, 66, (('b.py', 1),)),
-            (3, 7, (('<unknown>', 0),)),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (2, 66, (('b.py', 1),), 1),
+            (3, 7, (('<unknown>', 0),), 1),
         ])
 
     def test_filter_traces_domain_filter(self):
@@ -393,17 +417,17 @@ class TestSnapshot(unittest.TestCase):
         # exclude domain 2
         snapshot3 = snapshot.filter_traces((filter1,))
         self.assertEqual(snapshot3.traces._traces, [
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (1, 2, (('a.py', 5), ('b.py', 4))),
-            (2, 66, (('b.py', 1),)),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (1, 2, (('a.py', 5), ('b.py', 4)), 3),
+            (2, 66, (('b.py', 1),), 1),
         ])
 
         # include domain 2
         snapshot3 = snapshot.filter_traces((filter2,))
         self.assertEqual(snapshot3.traces._traces, [
-            (3, 7, (('<unknown>', 0),)),
+            (3, 7, (('<unknown>', 0),), 1),
         ])
 
     def test_snapshot_group_by_line(self):
@@ -865,7 +889,7 @@ class TestCommandLine(unittest.TestCase):
             return
         if b'PYTHONTRACEMALLOC: invalid number of frames' in stderr:
             return
-        self.fail(f"unexpeced output: {stderr!a}")
+        self.fail(f"unexpected output: {stderr!a}")
 
 
     def test_env_var_invalid(self):
@@ -894,7 +918,7 @@ class TestCommandLine(unittest.TestCase):
             return
         if b'-X tracemalloc=NFRAME: invalid number of frames' in stderr:
             return
-        self.fail(f"unexpeced output: {stderr!a}")
+        self.fail(f"unexpected output: {stderr!a}")
 
     def test_sys_xoptions_invalid(self):
         for nframe in INVALID_NFRAME:
