@@ -2565,13 +2565,12 @@ collections_exec(PyObject *module) {
         &PyODict_Type,
         &dequeiter_type,
         &dequereviter_type,
-        &tuplegetter_type,
-        NULL,
+        &tuplegetter_type
     };
 
     defdict_type.tp_base = &PyDict_Type;
 
-    for (int i = 0; typelist[i] != NULL; i++) {
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
         if (PyModule_AddType(module, typelist[i]) < 0) {
             return -1;
         }

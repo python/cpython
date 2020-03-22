@@ -1431,12 +1431,10 @@ static struct PyModuleDef _functoolsmodule = {
 PyMODINIT_FUNC
 PyInit__functools(void)
 {
-    int i;
     PyObject *m;
     PyTypeObject *typelist[] = {
         &partial_type,
-        &lru_cache_type,
-        NULL
+        &lru_cache_type
     };
 
     m = PyModule_Create(&_functoolsmodule);
@@ -1449,7 +1447,7 @@ PyInit__functools(void)
         return NULL;
     }
 
-    for (i=0 ; typelist[i] != NULL ; i++) {
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
         if (PyModule_AddType(m, typelist[i]) < 0) {
             Py_DECREF(m);
             return NULL;
