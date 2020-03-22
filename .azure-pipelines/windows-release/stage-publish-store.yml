@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), eq(variables['DoMSIX'], 'true'))
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   workspace:
     clean: all
@@ -14,9 +14,22 @@ jobs:
 
   - task: DownloadBuildArtifacts@0
     displayName: 'Download artifact: msixupload'
+    condition: and(succeeded(), not(variables['BuildToPublish']))
     inputs:
       artifactName: msixupload
       downloadPath: $(Build.BinariesDirectory)
 
-  # TODO: eq(variables['SigningCertificate'], 'Python Software Foundation')
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download artifact: msixupload'
+    condition: and(succeeded(), variables['BuildToPublish'])
+    inputs:
+      artifactName: msixupload
+      downloadPath: $(Build.BinariesDirectory)
+      buildType: specific
+      project: cpython
+      pipeline: Windows-Release
+      buildVersionToDownload: specific
+      buildId: $(BuildToPublish)
+
+  # TODO: eq(variables['SigningCertificate'], variables['__RealSigningCertificate'])
   # If we are not real-signed, DO NOT PUBLISH

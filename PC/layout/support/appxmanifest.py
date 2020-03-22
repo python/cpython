@@ -28,7 +28,14 @@ APPX_DATA = dict(
     ),
     DisplayName="Python {}".format(VER_DOT),
     Description="The Python {} runtime and console.".format(VER_DOT),
-    ProcessorArchitecture="x64" if IS_X64 else "x86",
+)
+
+APPX_PLATFORM_DATA = dict(
+    _keys=("ProcessorArchitecture",),
+    win32=("x86",),
+    amd64=("x64",),
+    arm32=("arm",),
+    arm64=("arm64",),
 )
 
 PYTHON_VE_DATA = dict(
@@ -64,6 +71,8 @@ IDLE_VE_DATA = dict(
     Square44x44Logo="_resources/pythonwx44.png",
     BackgroundColor="transparent",
 )
+
+PY_PNG = "_resources/py.png"
 
 APPXMANIFEST_NS = {
     "": "http://schemas.microsoft.com/appx/manifest/foundation/windows10",
@@ -145,18 +154,22 @@ RESOURCES_XML_TEMPLATE = r"""<?xml version="1.0" encoding="UTF-8" standalone="ye
 
 SCCD_FILENAME = "PC/classicAppCompat.sccd"
 
+SPECIAL_LOOKUP = object()
+
 REGISTRY = {
     "HKCU\\Software\\Python\\PythonCore": {
         VER_DOT: {
             "DisplayName": APPX_DATA["DisplayName"],
             "SupportUrl": "https://www.python.org/",
-            "SysArchitecture": "64bit" if IS_X64 else "32bit",
+            "SysArchitecture": SPECIAL_LOOKUP,
             "SysVersion": VER_DOT,
             "Version": "{}.{}.{}".format(VER_MAJOR, VER_MINOR, VER_MICRO),
             "InstallPath": {
                 "": "[{AppVPackageRoot}]",
-                "ExecutablePath": "[{AppVPackageRoot}]\\python.exe",
-                "WindowedExecutablePath": "[{AppVPackageRoot}]\\pythonw.exe",
+                "ExecutablePath": "[{{AppVPackageRoot}}]\\python{}.exe".format(VER_DOT),
+                "WindowedExecutablePath": "[{{AppVPackageRoot}}]\\pythonw{}.exe".format(
+                    VER_DOT
+                ),
             },
             "Help": {
                 "Main Python Documentation": {
@@ -278,12 +291,16 @@ def add_alias(xml, appid, alias, subsystem="windows"):
     e = find_or_add(e, "uap5:ExecutionAlias", ("Alias", alias))
 
 
-def add_file_type(xml, appid, name, suffix, parameters='"%1"'):
+def add_file_type(xml, appid, name, suffix, parameters='"%1"', info=None, logo=None):
     app = _get_app(xml, appid)
     e = find_or_add(app, "m:Extensions")
     e = find_or_add(e, "uap3:Extension", ("Category", "windows.fileTypeAssociation"))
     e = find_or_add(e, "uap3:FileTypeAssociation", ("Name", name))
     e.set("Parameters", parameters)
+    if info:
+        find_or_add(e, "uap:DisplayName").text = info
+    if logo:
+        find_or_add(e, "uap:Logo").text = logo
     e = find_or_add(e, "uap:SupportedFileTypes")
     if isinstance(suffix, str):
         suffix = [suffix]
@@ -322,7 +339,17 @@ def _get_registry_entries(ns, root="", d=None):
     for key, value in d.items():
         if key == "_condition":
             continue
-        elif isinstance(value, dict):
+        if value is SPECIAL_LOOKUP:
+            if key == "SysArchitecture":
+                value = {
+                    "win32": "32bit",
+                    "amd64": "64bit",
+                    "arm32": "32bit",
+                    "arm64": "64bit",
+                }[ns.arch]
+            else:
+                raise ValueError(f"Key '{key}' unhandled for special lookup")
+        if isinstance(value, dict):
             cond = value.get("_condition")
             if cond and not cond(ns):
                 continue
@@ -370,14 +397,18 @@ def get_appxmanifest(ns):
     NS = APPXMANIFEST_NS
     QN = ET.QName
 
+    data = dict(APPX_DATA)
+    for k, v in zip(APPX_PLATFORM_DATA["_keys"], APPX_PLATFORM_DATA[ns.arch]):
+        data[k] = v
+
     node = xml.find("m:Identity", NS)
     for k in node.keys():
-        value = APPX_DATA.get(k)
+        value = data.get(k)
         if value:
             node.set(k, value)
 
     for node in xml.find("m:Properties", NS):
-        value = APPX_DATA.get(node.tag.rpartition("}")[2])
+        value = data.get(node.tag.rpartition("}")[2])
         if value:
             node.text = value
 
@@ -395,22 +426,22 @@ def get_appxmanifest(ns):
         ns,
         xml,
         "Python",
-        "python",
+        "python{}".format(VER_DOT),
         ["python", "python{}".format(VER_MAJOR), "python{}".format(VER_DOT)],
         PYTHON_VE_DATA,
         "console",
-        ("python.file", [".py"]),
+        ("python.file", [".py"], '"%1"', "Python File", PY_PNG),
     )
 
     add_application(
         ns,
         xml,
         "PythonW",
-        "pythonw",
+        "pythonw{}".format(VER_DOT),
         ["pythonw", "pythonw{}".format(VER_MAJOR), "pythonw{}".format(VER_DOT)],
         PYTHONW_VE_DATA,
         "windows",
-        ("python.windowedfile", [".pyw"]),
+        ("python.windowedfile", [".pyw"], '"%1"', "Python File (no console)", PY_PNG),
     )
 
     if ns.include_pip and ns.include_launchers:
@@ -418,11 +449,11 @@ def get_appxmanifest(ns):
             ns,
             xml,
             "Pip",
-            "pip",
+            "pip{}".format(VER_DOT),
             ["pip", "pip{}".format(VER_MAJOR), "pip{}".format(VER_DOT)],
             PIP_VE_DATA,
             "console",
-            ("python.wheel", [".whl"], 'install "%1"'),
+            ("python.wheel", [".whl"], 'install "%1"', "Python Wheel"),
         )
 
     if ns.include_idle and ns.include_launchers:
@@ -430,7 +461,7 @@ def get_appxmanifest(ns):
             ns,
             xml,
             "Idle",
-            "idle",
+            "idle{}".format(VER_DOT),
             ["idle", "idle{}".format(VER_MAJOR), "idle{}".format(VER_DOT)],
             IDLE_VE_DATA,
             "windows",
@@ -459,16 +490,15 @@ def get_appx_layout(ns):
     yield "AppxManifest.xml", ("AppxManifest.xml", get_appxmanifest(ns))
     yield "_resources.xml", ("_resources.xml", get_resources_xml(ns))
     icons = ns.source / "PC" / "icons"
-    yield "_resources/pythonx44.png", icons / "pythonx44.png"
-    yield "_resources/pythonx44$targetsize-44_altform-unplated.png", icons / "pythonx44.png"
-    yield "_resources/pythonx50.png", icons / "pythonx50.png"
-    yield "_resources/pythonx50$targetsize-50_altform-unplated.png", icons / "pythonx50.png"
-    yield "_resources/pythonx150.png", icons / "pythonx150.png"
-    yield "_resources/pythonx150$targetsize-150_altform-unplated.png", icons / "pythonx150.png"
-    yield "_resources/pythonwx44.png", icons / "pythonwx44.png"
-    yield "_resources/pythonwx44$targetsize-44_altform-unplated.png", icons / "pythonwx44.png"
-    yield "_resources/pythonwx150.png", icons / "pythonwx150.png"
-    yield "_resources/pythonwx150$targetsize-150_altform-unplated.png", icons / "pythonwx150.png"
+    for px in [44, 50, 150]:
+        src = icons / "pythonx{}.png".format(px)
+        yield f"_resources/pythonx{px}.png", src
+        yield f"_resources/pythonx{px}$targetsize-{px}_altform-unplated.png", src
+    for px in [44, 150]:
+        src = icons / "pythonwx{}.png".format(px)
+        yield f"_resources/pythonwx{px}.png", src
+        yield f"_resources/pythonwx{px}$targetsize-{px}_altform-unplated.png", src
+    yield f"_resources/py.png", icons / "py.png"
     sccd = ns.source / SCCD_FILENAME
     if sccd.is_file():
         # This should only be set for side-loading purposes.

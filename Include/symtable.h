@@ -58,6 +58,8 @@ typedef struct _symtable_entry {
     unsigned ste_needs_class_closure : 1; /* for class scopes, true if a
                                              closure over __class__
                                              should be created */
+    unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
+    int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     int ste_lineno;          /* first line of block */
     int ste_col_offset;      /* offset of first line of block */
     int ste_opt_lineno;      /* lineno of last exec or import * */
@@ -67,7 +69,7 @@ typedef struct _symtable_entry {
 
 PyAPI_DATA(PyTypeObject) PySTEntry_Type;
 
-#define PySTEntry_Check(op) (Py_TYPE(op) == &PySTEntry_Type)
+#define PySTEntry_Check(op) Py_IS_TYPE(op, &PySTEntry_Type)
 
 PyAPI_FUNC(int) PyST_GetScope(PySTEntryObject *, PyObject *);
 
@@ -94,6 +96,7 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define DEF_FREE_CLASS 2<<5    /* free variable from class's method */
 #define DEF_IMPORT 2<<6        /* assignment occurred via import */
 #define DEF_ANNOT 2<<7         /* this name is annotated */
+#define DEF_COMP_ITER 2<<8     /* this name is a comprehension iteration variable */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 

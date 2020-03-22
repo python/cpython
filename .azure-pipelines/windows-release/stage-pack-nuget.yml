@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), eq(variables['DoNuget'], 'true'))
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   workspace:
     clean: all
@@ -15,15 +15,17 @@ jobs:
         Name: amd64
       win32:
         Name: win32
+      arm64:
+        Name: arm64
 
   steps:
   - checkout: none
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: layout_nuget_$(Name)'
     inputs:
       artifactName: layout_nuget_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\layout
 
   - task: NugetToolInstaller@0
     displayName: 'Install Nuget'
@@ -31,7 +33,7 @@ jobs:
       versionSpec: '>=5.0'
 
   - powershell: |
-      nuget pack "$(Build.BinariesDirectory)\layout_nuget_$(Name)\python.nuspec" -OutputDirectory $(Build.ArtifactStagingDirectory) -NoPackageAnalysis -NonInteractive
+      nuget pack "$(Build.BinariesDirectory)\layout\python.nuspec" -OutputDirectory $(Build.ArtifactStagingDirectory) -NoPackageAnalysis -NonInteractive
     displayName: 'Create nuget package'
 
   - task: PublishBuildArtifacts@1

@@ -163,7 +163,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
             }
 
             /* getrandom(GRND_NONBLOCK) fails with EAGAIN if the system urandom
-               is not initialiazed yet. For _PyRandom_Init(), we ignore the
+               is not initialized yet. For _PyRandom_Init(), we ignore the
                error and fall back on reading /dev/urandom which never blocks,
                even if the system urandom is not initialized yet:
                see the PEP 524. */

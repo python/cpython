@@ -3,7 +3,7 @@ jobs:
   displayName: Pack MSIX bundles
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   workspace:
     clean: all
@@ -20,15 +20,25 @@ jobs:
         Artifact: appxstore
         Suffix: -store
         Upload: true
+      arm64:
+        Name: arm64
+        Artifact: appx
+        Suffix:
+        ShouldSign: true
+      arm64_store:
+        Name: arm64
+        Artifact: appxstore
+        Suffix: -store
+        Upload: true
 
   steps:
   - template: ./checkout.yml
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: layout_$(Artifact)_$(Name)'
     inputs:
       artifactName: layout_$(Artifact)_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\layout
 
   - task: DownloadBuildArtifacts@0
     displayName: 'Download artifact: symbols'
@@ -46,7 +56,7 @@ jobs:
     displayName: 'Extract version numbers'
 
   - powershell: |
-      ./Tools/msi/make_appx.ps1 -layout "$(Build.BinariesDirectory)\layout_$(Artifact)_$(Name)" -msix "$(Build.ArtifactStagingDirectory)\msix\$(Filename).msix"
+      ./Tools/msi/make_appx.ps1 -layout "$(Build.BinariesDirectory)\layout" -msix "$(Build.ArtifactStagingDirectory)\msix\$(Filename).msix"
     displayName: 'Build msix'
 
   - powershell: |

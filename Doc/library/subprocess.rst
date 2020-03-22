@@ -339,7 +339,8 @@ functions.
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
                  cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
-                 start_new_session=False, pass_fds=(), *, \
+                 start_new_session=False, pass_fds=(), \*, group=None, \
+                 extra_groups=None, user=None, umask=-1, \
                  encoding=None, errors=None, text=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
@@ -355,14 +356,20 @@ functions.
    arguments for additional differences from the default behavior.  Unless
    otherwise stated, it is recommended to pass *args* as a sequence.
 
+   An example of passing some arguments to an external program
+   as a sequence is::
+
+     Popen(["/usr/bin/git", "commit", "-m", "Fixes a bug."])
+
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
    passing arguments to the program.
 
    .. note::
 
-      :meth:`shlex.split` can be useful when determining the correct
-      tokenization for *args*, especially in complex cases::
+      It may not be obvious how to break a shell command into a sequence of arguments,
+      especially in complex cases. :meth:`shlex.split` can illustrate how to
+      determine the correct tokenization for *args*::
 
          >>> import shlex, subprocess
          >>> command_line = input()
@@ -483,6 +490,13 @@ functions.
       The *start_new_session* parameter can take the place of a previously
       common use of *preexec_fn* to call os.setsid() in the child.
 
+   .. versionchanged:: 3.8
+
+      The *preexec_fn* parameter is no longer supported in subinterpreters.
+      The use of the parameter in a subinterpreter raises
+      :exc:`RuntimeError`. The new restriction may affect applications that
+      are deployed in mod_wsgi, uWSGI, and other embedded environments.
+
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
    :const:`2` will be closed before the child process is executed.  Otherwise
    when *close_fds* is false, file descriptors obey their inheritable flag
@@ -537,6 +551,39 @@ functions.
    .. versionchanged:: 3.2
       *start_new_session* was added.
 
+   If *group* is not ``None``, the setregid() system call will be made in the
+   child process prior to the execution of the subprocess. If the provided
+   value is a string, it will be looked up via :func:`grp.getgrnam()` and
+   the value in ``gr_gid`` will be used. If the value is an integer, it
+   will be passed verbatim. (POSIX only)
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
+
+   If *extra_groups* is not ``None``, the setgroups() system call will be
+   made in the child process prior to the execution of the subprocess.
+   Strings provided in *extra_groups* will be looked up via
+   :func:`grp.getgrnam()` and the values in ``gr_gid`` will be used.
+   Integer values will be passed verbatim. (POSIX only)
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
+
+   If *user* is not ``None``, the setreuid() system call will be made in the
+   child process prior to the execution of the subprocess. If the provided
+   value is a string, it will be looked up via :func:`pwd.getpwnam()` and
+   the value in ``pw_uid`` will be used. If the value is an integer, it will
+   be passed verbatim. (POSIX only)
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
+
+   If *umask* is not negative, the umask() system call will be made in the
+   child process prior to the execution of the subprocess.
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
+
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
    behavior of inheriting the current process' environment.
@@ -584,6 +631,13 @@ functions.
 
       with Popen(["ifconfig"], stdout=PIPE) as proc:
           log.write(proc.stdout.read())
+
+   .. audit-event:: subprocess.Popen executable,args,cwd,env subprocess.Popen
+
+      Popen and the other functions in this module that use it raise an
+      :ref:`auditing event <auditing>` ``subprocess.Popen`` with arguments
+      ``executable``, ``args``, ``cwd``, and ``env``. The value for ``args``
+      may be a single string or a list of strings, depending on platform.
 
    .. versionchanged:: 3.2
       Added context manager support.
@@ -725,6 +779,8 @@ Instances of the :class:`Popen` class have the following methods:
 .. method:: Popen.send_signal(signal)
 
    Sends the signal *signal* to the child.
+
+   Do nothing if the process completed.
 
    .. note::
 
@@ -1034,7 +1090,7 @@ calls these functions.
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
 
-   Code needing to capture stdout or stderr should use :func:`run` instead:
+   Code needing to capture stdout or stderr should use :func:`run` instead::
 
        run(...).returncode
 
@@ -1062,7 +1118,7 @@ calls these functions.
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
 
-   Code needing to capture stdout or stderr should use :func:`run` instead:
+   Code needing to capture stdout or stderr should use :func:`run` instead::
 
        run(..., check=True)
 
@@ -1159,12 +1215,12 @@ In the following examples, we assume that the relevant functions have already
 been imported from the :mod:`subprocess` module.
 
 
-Replacing /bin/sh shell backquote
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing :program:`/bin/sh` shell command substitution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   output=`mycmd myarg`
+   output=$(mycmd myarg)
 
 becomes::
 
@@ -1175,7 +1231,7 @@ Replacing shell pipeline
 
 .. code-block:: bash
 
-   output=`dmesg | grep hda`
+   output=$(dmesg | grep hda)
 
 becomes::
 
@@ -1184,15 +1240,15 @@ becomes::
    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
    output = p2.communicate()[0]
 
-The p1.stdout.close() call after starting the p2 is important in order for p1
-to receive a SIGPIPE if p2 exits before p1.
+The ``p1.stdout.close()`` call after starting the p2 is important in order for
+p1 to receive a SIGPIPE if p2 exits before p1.
 
 Alternatively, for trusted input, the shell's own pipeline support may still
 be used directly:
 
 .. code-block:: bash
 
-   output=`dmesg | grep hda`
+   output=$(dmesg | grep hda)
 
 becomes::
 

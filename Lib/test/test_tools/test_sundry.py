@@ -2,7 +2,7 @@
 
 This file contains extremely basic regression tests for the scripts found in
 the Tools directory of a Python checkout or tarball which don't have separate
-tests of their own, such as h2py.py.
+tests of their own.
 """
 
 import os

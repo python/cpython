@@ -11,7 +11,7 @@ PyDoc_STRVAR(code_replace__doc__,
 "        co_lnotab=None)\n"
 "--\n"
 "\n"
-"Return a new code object with new specified fields.");
+"Return a copy of the code object with new values for the specified fields.");
 
 #define CODE_REPLACE_METHODDEF    \
     {"replace", (PyCFunction)(void(*)(void))code_replace, METH_FASTCALL|METH_KEYWORDS, code_replace__doc__},
@@ -158,7 +158,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[7]) {
         if (!PyBytes_Check(args[7])) {
-            _PyArg_BadArgument("replace", 8, "bytes", args[7]);
+            _PyArg_BadArgument("replace", "argument 'co_code'", "bytes", args[7]);
             goto exit;
         }
         co_code = (PyBytesObject *)args[7];
@@ -168,7 +168,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[8]) {
         if (!PyTuple_Check(args[8])) {
-            _PyArg_BadArgument("replace", 9, "tuple", args[8]);
+            _PyArg_BadArgument("replace", "argument 'co_consts'", "tuple", args[8]);
             goto exit;
         }
         co_consts = args[8];
@@ -178,7 +178,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[9]) {
         if (!PyTuple_Check(args[9])) {
-            _PyArg_BadArgument("replace", 10, "tuple", args[9]);
+            _PyArg_BadArgument("replace", "argument 'co_names'", "tuple", args[9]);
             goto exit;
         }
         co_names = args[9];
@@ -188,7 +188,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[10]) {
         if (!PyTuple_Check(args[10])) {
-            _PyArg_BadArgument("replace", 11, "tuple", args[10]);
+            _PyArg_BadArgument("replace", "argument 'co_varnames'", "tuple", args[10]);
             goto exit;
         }
         co_varnames = args[10];
@@ -198,7 +198,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[11]) {
         if (!PyTuple_Check(args[11])) {
-            _PyArg_BadArgument("replace", 12, "tuple", args[11]);
+            _PyArg_BadArgument("replace", "argument 'co_freevars'", "tuple", args[11]);
             goto exit;
         }
         co_freevars = args[11];
@@ -208,7 +208,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[12]) {
         if (!PyTuple_Check(args[12])) {
-            _PyArg_BadArgument("replace", 13, "tuple", args[12]);
+            _PyArg_BadArgument("replace", "argument 'co_cellvars'", "tuple", args[12]);
             goto exit;
         }
         co_cellvars = args[12];
@@ -218,7 +218,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[13]) {
         if (!PyUnicode_Check(args[13])) {
-            _PyArg_BadArgument("replace", 14, "str", args[13]);
+            _PyArg_BadArgument("replace", "argument 'co_filename'", "str", args[13]);
             goto exit;
         }
         if (PyUnicode_READY(args[13]) == -1) {
@@ -231,7 +231,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[14]) {
         if (!PyUnicode_Check(args[14])) {
-            _PyArg_BadArgument("replace", 15, "str", args[14]);
+            _PyArg_BadArgument("replace", "argument 'co_name'", "str", args[14]);
             goto exit;
         }
         if (PyUnicode_READY(args[14]) == -1) {
@@ -243,7 +243,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (!PyBytes_Check(args[15])) {
-        _PyArg_BadArgument("replace", 16, "bytes", args[15]);
+        _PyArg_BadArgument("replace", "argument 'co_lnotab'", "bytes", args[15]);
         goto exit;
     }
     co_lnotab = (PyBytesObject *)args[15];
@@ -253,4 +253,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=624ab6f2ea8f0ea4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=27fe34e82106b220 input=a9049054013a1b77]*/

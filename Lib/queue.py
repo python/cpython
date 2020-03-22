@@ -14,7 +14,7 @@ __all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue', 'SimpleQueue'
 
 try:
     from _queue import Empty
-except AttributeError:
+except ImportError:
     class Empty(Exception):
         'Exception raised by Queue.get(block=0)/get_nowait().'
         pass

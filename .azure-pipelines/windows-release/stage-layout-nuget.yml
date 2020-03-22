@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), eq(variables['DoNuget'], 'true'))
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   workspace:
     clean: all
@@ -13,32 +13,40 @@ jobs:
     matrix:
       win32:
         Name: win32
-        Python: $(Build.BinariesDirectory)\bin_$(Name)\python.exe
+        Python: $(Build.BinariesDirectory)\bin\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
       amd64:
         Name: amd64
-        Python: $(Build.BinariesDirectory)\bin_$(Name)\python.exe
+        Python: $(Build.BinariesDirectory)\bin\python.exe
+        PYTHONHOME: $(Build.SourcesDirectory)
+      arm64:
+        Name: arm64
+        HostArch: amd64
+        Python: $(Build.BinariesDirectory)\bin_amd64\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
 
   steps:
   - template: ./checkout.yml
 
-  - task: DownloadBuildArtifacts@0
+  - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: bin_$(Name)'
     inputs:
       artifactName: bin_$(Name)
-      downloadPath: $(Build.BinariesDirectory)
+      targetPath: $(Build.BinariesDirectory)\bin
+
+  - powershell: |
+      copy $(Build.BinariesDirectory)\bin\Activate.ps1 Lib\venv\scripts\common\Activate.ps1 -Force
+    displayName: 'Copy signed files into sources'
+    condition: and(succeeded(), variables['SigningCertificate'])
 
   - template: ./layout-command.yml
 
   - powershell: |
       $(LayoutCmd) --copy "$(Build.ArtifactStagingDirectory)\nuget" --preset-nuget
     displayName: 'Generate nuget layout'
-    env:
-      TCL_LIBRARY: $(Build.BinariesDirectory)\bin_$(Name)\tcl\tcl8
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: 'Publish Artifact: layout_nuget_$(Name)'
     inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)\nuget'
-      ArtifactName: layout_nuget_$(Name)
+      targetPath: '$(Build.ArtifactStagingDirectory)\nuget'
+      artifactName: layout_nuget_$(Name)

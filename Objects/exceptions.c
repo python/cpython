@@ -405,7 +405,7 @@ static PyTypeObject _PyExc_BaseException = {
     BaseException_new,          /* tp_new */
 };
 /* the CPython API expects exceptions to be (PyObject *) - both a hold-over
-from the previous implmentation and also allowing Python objects to be used
+from the previous implementation and also allowing Python objects to be used
 in the API */
 PyObject *PyExc_BaseException = (PyObject *)&_PyExc_BaseException;
 
@@ -875,7 +875,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
 
     /* self->filename will remain Py_None otherwise */
     if (filename && filename != Py_None) {
-        if (Py_TYPE(self) == (PyTypeObject *) PyExc_BlockingIOError &&
+        if (Py_IS_TYPE(self, (PyTypeObject *) PyExc_BlockingIOError) &&
             PyNumber_Check(filename)) {
             /* BlockingIOError's 3rd argument can be the number of
              * characters written.
@@ -1379,7 +1379,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
          * Only applies to SyntaxError instances, not to subclasses such
          * as TabError or IndentationError (see issue #31161)
          */
-        if ((PyObject*)Py_TYPE(self) == PyExc_SyntaxError &&
+        if (Py_IS_TYPE(self, (PyTypeObject *)PyExc_SyntaxError) &&
                 self->text && PyUnicode_Check(self->text) &&
                 _report_missing_parentheses(self) < 0) {
             return -1;
@@ -1519,13 +1519,6 @@ ComplexExtendsException(PyExc_Exception, SyntaxError, SyntaxError,
  */
 MiddlingExtendsException(PyExc_SyntaxError, IndentationError, SyntaxError,
                          "Improper indentation.");
-
-
-/*
- *    TargetScopeError extends SyntaxError
- */
-MiddlingExtendsException(PyExc_SyntaxError, TargetScopeError, SyntaxError,
-                         "Improper scope target.");
 
 
 /*
@@ -2539,7 +2532,6 @@ _PyExc_Init(void)
     PRE_INIT(AttributeError);
     PRE_INIT(SyntaxError);
     PRE_INIT(IndentationError);
-    PRE_INIT(TargetScopeError);
     PRE_INIT(TabError);
     PRE_INIT(LookupError);
     PRE_INIT(IndexError);
@@ -2680,7 +2672,6 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     POST_INIT(AttributeError);
     POST_INIT(SyntaxError);
     POST_INIT(IndentationError);
-    POST_INIT(TargetScopeError);
     POST_INIT(TabError);
     POST_INIT(LookupError);
     POST_INIT(IndexError);

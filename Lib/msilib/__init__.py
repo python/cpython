@@ -116,7 +116,7 @@ def add_data(db, table, values):
                 raise TypeError("Unsupported type %s" % field.__class__.__name__)
         try:
             v.Modify(MSIMODIFY_INSERT, r)
-        except Exception as e:
+        except Exception:
             raise MSIError("Could not insert "+repr(values)+" into "+table)
 
         r.ClearData()

@@ -2,7 +2,7 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"   // _PyInterpreterState_GET_UNSAFE()
 #include "importdl.h"
 
 #include <sys/types.h>
@@ -94,7 +94,7 @@ _PyImport_FindSharedFuncptr(const char *prefix,
         }
     }
 
-    dlopenflags = _PyInterpreterState_Get()->dlopenflags;
+    dlopenflags = _PyInterpreterState_GET_UNSAFE()->dlopenflags;
 
     handle = dlopen(pathname, dlopenflags);
 

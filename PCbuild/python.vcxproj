@@ -151,11 +151,12 @@ $(_PGOPath)
                              $(PySourcePath)PC\crtlicense.txt;
                              $(bz2Dir)LICENSE;
                              $(opensslOutDir)LICENSE;
-                             $(tcltkDir)tcllicense.terms;
+                             $(libffiDir)LICENSE;" />
+      <LicenseFiles Include="$(tcltkDir)tcllicense.terms;
                              $(tcltkDir)tklicense.terms;
-                             $(tcltkDir)tixlicense.terms" />
+                             $(tcltkDir)tixlicense.terms" Condition="$(IncludeTkinter)" />
       <_LicenseFiles Include="@(LicenseFiles)">
-        <Content>$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
+        <Content Condition="Exists(%(FullPath))">$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
       </_LicenseFiles>
     </ItemGroup>
 

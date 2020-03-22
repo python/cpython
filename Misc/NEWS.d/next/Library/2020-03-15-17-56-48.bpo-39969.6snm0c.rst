@@ -1,0 +1,2 @@
+Remove ``ast.Param`` node class because it's no longer used. Patch by
+Batuhan Taskaya.

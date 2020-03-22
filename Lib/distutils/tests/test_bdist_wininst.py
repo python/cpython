@@ -2,7 +2,7 @@
 import sys
 import platform
 import unittest
-from test.support import run_unittest
+from test.support import run_unittest, check_warnings
 
 from distutils.command.bdist_wininst import bdist_wininst
 from distutils.tests import support
@@ -21,7 +21,8 @@ class BuildWinInstTestCase(support.TempdirManager,
         # this test makes sure it works now for every platform
         # let's create a command
         pkg_pth, dist = self.create_dist()
-        cmd = bdist_wininst(dist)
+        with check_warnings(("", DeprecationWarning)):
+            cmd = bdist_wininst(dist)
         cmd.ensure_finalized()
 
         # let's run the code that finds the right wininst*.exe file

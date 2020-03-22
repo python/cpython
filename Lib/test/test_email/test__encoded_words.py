@@ -58,6 +58,8 @@ class TestDecode(TestEmailBase):
             _ew.decode('=?')
         with self.assertRaises(ValueError):
             _ew.decode('')
+        with self.assertRaises(KeyError):
+            _ew.decode('=?utf-8?X?somevalue?=')
 
     def _test(self, source, result, charset='us-ascii', lang='', defects=[]):
         res, char, l, d = _ew.decode(source)
