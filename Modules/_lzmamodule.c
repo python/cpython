@@ -1486,19 +1486,13 @@ PyInit__lzma(void)
     if (PyModule_AddObject(m, "LZMAError", Error) == -1)
         return NULL;
 
-    if (PyType_Ready(&Compressor_type) == -1)
+    if (PyModule_AddType(m, &Compressor_type) < 0) {
         return NULL;
-    Py_INCREF(&Compressor_type);
-    if (PyModule_AddObject(m, "LZMACompressor",
-                           (PyObject *)&Compressor_type) == -1)
-        return NULL;
+    }
 
-    if (PyType_Ready(&Decompressor_type) == -1)
+    if (PyModule_AddType(m, &Decompressor_type) < 0) {
         return NULL;
-    Py_INCREF(&Decompressor_type);
-    if (PyModule_AddObject(m, "LZMADecompressor",
-                           (PyObject *)&Decompressor_type) == -1)
-        return NULL;
+    }
 
     return m;
 }
