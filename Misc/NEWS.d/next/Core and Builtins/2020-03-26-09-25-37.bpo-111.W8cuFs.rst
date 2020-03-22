@@ -1,0 +1,3 @@
+Extend list.reverse() interface with .reverse([start,[end]]) notation. It
+allows to reverse continuous sublist of a list in-place without performance
+decrease.

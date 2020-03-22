@@ -2457,15 +2457,41 @@ PyList_Sort(PyObject *v)
 /*[clinic input]
 list.reverse
 
+    start: Py_ssize_t = 0
+    stop: Py_ssize_t(c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    /
+
 Reverse *IN PLACE*.
 [clinic start generated code]*/
 
 static PyObject *
-list_reverse_impl(PyListObject *self)
-/*[clinic end generated code: output=482544fc451abea9 input=eefd4c3ae1bc9887]*/
+list_reverse_impl(PyListObject *self, Py_ssize_t start,
+                  Py_ssize_t stop)
+/*[clinic end generated code: output=902a1009dd649d65 input=6d23a5491e12c398]*/
 {
-    if (Py_SIZE(self) > 1)
-        reverse_slice(self->ob_item, self->ob_item + Py_SIZE(self));
+    Py_ssize_t len = Py_SIZE(self);
+
+    if (stop == PY_SSIZE_T_MAX) {
+        if (start == 0) {
+                stop = len;
+        } else if (start > 0) {
+            stop = start < len ? start : len;
+            start = 0;
+        } else {
+            stop = len;
+            start = len + start > 0 ? len + start : 0;
+        }
+    } else {
+        if (start < 0 || stop < 0 ||
+                    stop > Py_SIZE(self) || start > stop) {
+            PyErr_Format(PyExc_ValueError, "range invalid: %d, %d", start, stop);
+            return NULL;
+        }
+    }
+
+    if (stop - start > 1)
+        reverse_slice(self->ob_item + start, self->ob_item + stop);
+
     Py_RETURN_NONE;
 }
 

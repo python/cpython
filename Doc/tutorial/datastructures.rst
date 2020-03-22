@@ -85,10 +85,18 @@ objects:
    customization, see :func:`sorted` for their explanation).
 
 
-.. method:: list.reverse()
+.. method:: list.reverse([start[, end]])
    :noindex:
 
    Reverse the elements of the list in place.
+
+   The optional arguments *start* and *end* are interpreted as in the slice
+   notation and are used to limit the reverse to a particular subsequence of
+   the list.
+
+   If *start* only provided, it is interpreted as delimiter. In this case, if
+   *start* is non-negative, only first *start* elements of the list are reversed.
+   If *start* is negative, last *start* elements are reversed, accordingly.
 
 
 .. method:: list.copy()

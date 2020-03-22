@@ -213,21 +213,72 @@ exit:
 }
 
 PyDoc_STRVAR(list_reverse__doc__,
-"reverse($self, /)\n"
+"reverse($self, start=0, stop=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Reverse *IN PLACE*.");
 
 #define LIST_REVERSE_METHODDEF    \
-    {"reverse", (PyCFunction)list_reverse, METH_NOARGS, list_reverse__doc__},
+    {"reverse", (PyCFunction)(void(*)(void))list_reverse, METH_FASTCALL, list_reverse__doc__},
 
 static PyObject *
-list_reverse_impl(PyListObject *self);
+list_reverse_impl(PyListObject *self, Py_ssize_t start, Py_ssize_t stop);
 
 static PyObject *
-list_reverse(PyListObject *self, PyObject *Py_UNUSED(ignored))
+list_reverse(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    return list_reverse_impl(self);
+    PyObject *return_value = NULL;
+    Py_ssize_t start = 0;
+    Py_ssize_t stop = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("reverse", nargs, 0, 2)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        start = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        stop = ival;
+    }
+skip_optional:
+    return_value = list_reverse_impl(self, start, stop);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(list_index__doc__,
@@ -367,4 +418,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=1ff61490c091d165 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c99fc49621112919 input=a9049054013a1b77]*/

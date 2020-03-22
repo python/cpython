@@ -403,7 +403,15 @@ class CommonTest(seq_tests.CommonTest):
         u.reverse()
         self.assertEqual(u, u2)
 
-        self.assertRaises(TypeError, u.reverse, 42)
+        u.reverse(2)
+        self.assertEqual(u, [-1, -2, 0, 1, 2])
+        u.reverse(2)
+        self.assertEqual(u, u2)
+
+        u.reverse(-2)
+        self.assertEqual(u, [-2, -1, 0, 2, 1])
+        u.reverse(-2)
+        self.assertEqual(u, u2)
 
     def test_clear(self):
         u = self.type2test([2, 3, 4])
