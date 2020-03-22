@@ -1653,10 +1653,8 @@ static int
 binascii_traverse(PyObject *module, visitproc visit, void *arg)
 {
     binascii_state *state = get_binascii_state(module);
-    if (state) {
-        Py_VISIT(state->Error);
-        Py_VISIT(state->Incomplete);
-    }
+    Py_VISIT(state->Error);
+    Py_VISIT(state->Incomplete);
     return 0;
 }
 
@@ -1664,10 +1662,8 @@ static int
 binascii_clear(PyObject *module)
 {
     binascii_state *state = get_binascii_state(module);
-    if (state) {
-        Py_CLEAR(state->Error);
-        Py_CLEAR(state->Incomplete);
-    }
+    Py_CLEAR(state->Error);
+    Py_CLEAR(state->Incomplete);
     return 0;
 }
 
@@ -1686,7 +1682,7 @@ static struct PyModuleDef binasciimodule = {
     binascii_slots,
     binascii_traverse,
     binascii_clear,
-    binascii_free 
+    binascii_free
 };
 
 PyMODINIT_FUNC

@@ -1139,6 +1139,17 @@ config_init_program_name(PyConfig *config)
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
+
+            /*
+             * This environment variable is used to communicate between
+             * the stub launcher and the real interpreter and isn't needed
+             * beyond this point.
+             *
+             * Clean up to avoid problems when launching other programs
+             * later on.
+             */
+            (void)unsetenv("__PYVENV_LAUNCHER__");
+
             return _PyStatus_OK();
         }
     }

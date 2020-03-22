@@ -1,0 +1,2 @@
+Allow executing asynchronous comprehensions on the top level when the
+``PyCF_ALLOW_TOP_LEVEL_AWAIT`` flag is given. Patch by Batuhan Taskaya.

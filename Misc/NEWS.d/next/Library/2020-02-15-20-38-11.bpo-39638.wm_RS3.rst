@@ -1,0 +1,2 @@
+Keep ASDL signatures in the docstrings for ``AST`` nodes. Patch by Batuhan
+Taskaya

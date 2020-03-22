@@ -1,0 +1,3 @@
+``__module__`` of the AST node classes is now set to "ast" instead of
+"_ast". Added docstrings for dummy AST node classes and deprecated
+attributes.

@@ -104,7 +104,7 @@ PyAPI_FUNC(void) _PyErr_Print(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyErr_Display(PyObject *file, PyObject *exception,
                                 PyObject *value, PyObject *tb);
 
-PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(struct pyruntimestate *runtime);
+PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }
