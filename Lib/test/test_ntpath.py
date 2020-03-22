@@ -661,6 +661,8 @@ class TestNtpath(NtpathTestCase):
         self.assertTrue(ntpath.ismount(b"\\\\.\\c:\\"))
         self.assertTrue(ntpath.ismount(b"\\\\.\\C:\\"))
 
+        self.assertFalse(ntpath.ismount("C:\\NotExist"))
+
         with support.temp_dir() as d:
             self.assertFalse(ntpath.ismount(d))
 

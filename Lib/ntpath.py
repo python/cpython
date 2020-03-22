@@ -272,6 +272,8 @@ def ismount(path):
         return True
 
     if _getvolumepathname:
+        if not lexists(path):
+            return False
         return path.rstrip(seps) == _getvolumepathname(path).rstrip(seps)
     else:
         return False
