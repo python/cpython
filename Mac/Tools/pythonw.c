@@ -201,7 +201,7 @@ main(int argc, char **argv) {
 	 * to the actual python interpreter, and is read by code in
 	 * Python/coreconfig.c.
 	 *
-	 * This way the real interpreter knowns how the user invoked the
+	 * This way the real interpreter knows how the user invoked the
 	 * interpreter and can behave as if this launcher is the real
 	 * interpreter (looking for pyvenv configuration, ...)
 	 */
