@@ -169,12 +169,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 #define HEAD_UNLOCK(runtime) \
     PyThread_release_lock((runtime)->interpreters.mutex)
 
-int
-_Py_IsMainInterpreter(PyThreadState* tstate)
-{
-    return (tstate->interp == tstate->interp->runtime->interpreters.main);
-}
-
 /* Forward declaration */
 static void _PyGILState_NoteThreadState(
     struct _gilstate_runtime_state *gilstate, PyThreadState* tstate);
@@ -552,13 +546,6 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
     return interp->dict;
 }
 
-/* Default implementation for _PyThreadState_GetFrame */
-static struct _frame *
-threadstate_getframe(PyThreadState *self)
-{
-    return self->frame;
-}
-
 static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int init)
 {
@@ -566,10 +553,6 @@ new_threadstate(PyInterpreterState *interp, int init)
     PyThreadState *tstate = (PyThreadState *)PyMem_RawMalloc(sizeof(PyThreadState));
     if (tstate == NULL) {
         return NULL;
-    }
-
-    if (_PyThreadState_GetFrame == NULL) {
-        _PyThreadState_GetFrame = threadstate_getframe;
     }
 
     tstate->interp = interp;
@@ -1006,10 +989,15 @@ PyInterpreterState *
 PyThreadState_GetInterpreter(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    if (tstate == NULL) {
-        return NULL;
-    }
     return tstate->interp;
+}
+
+
+struct _frame*
+PyThreadState_GetFrame(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    return tstate->frame;
 }
 
 

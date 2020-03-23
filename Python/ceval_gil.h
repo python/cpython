@@ -168,7 +168,7 @@ drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
         {
-            RESET_GIL_DROP_REQUEST(ceval);
+            RESET_GIL_DROP_REQUEST(tstate);
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
                the GIL and drop it again, and reset the condition
@@ -195,8 +195,7 @@ tstate_must_exit(PyThreadState *tstate)
        tstate->interp->runtime to support calls from Python daemon threads.
        After Py_Finalize() has been called, tstate can be a dangling pointer:
        point to PyThreadState freed memory. */
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
     return (finalizing != NULL && finalizing != tstate);
 }
 
@@ -223,11 +222,7 @@ take_gil(PyThreadState *tstate)
         PyThread_exit_thread();
     }
 
-    /* Ensure that tstate is valid: sanity check for PyEval_AcquireThread() and
-       PyEval_RestoreThread(). Detect if tstate memory was freed. */
-    assert(!_PyMem_IsPtrFreed(tstate));
-    assert(!_PyMem_IsPtrFreed(tstate->interp));
-
+    assert(is_tstate_valid(tstate));
     struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     struct _gil_runtime_state *gil = &ceval->gil;
 
@@ -241,21 +236,24 @@ take_gil(PyThreadState *tstate)
     }
 
     while (_Py_atomic_load_relaxed(&gil->locked)) {
-        int timed_out = 0;
-        unsigned long saved_switchnum;
-
-        saved_switchnum = gil->switch_number;
-
+        unsigned long saved_switchnum = gil->switch_number;
 
         unsigned long interval = (gil->interval >= 1 ? gil->interval : 1);
+        int timed_out = 0;
         COND_TIMED_WAIT(gil->cond, gil->mutex, interval, timed_out);
+
         /* If we timed out and no switch occurred in the meantime, it is time
            to ask the GIL-holding thread to drop it. */
         if (timed_out &&
             _Py_atomic_load_relaxed(&gil->locked) &&
             gil->switch_number == saved_switchnum)
         {
-            SET_GIL_DROP_REQUEST(ceval);
+            if (tstate_must_exit(tstate)) {
+                MUTEX_UNLOCK(gil->mutex);
+                PyThread_exit_thread();
+            }
+
+            SET_GIL_DROP_REQUEST(tstate);
         }
     }
 
@@ -278,20 +276,8 @@ _ready:
     COND_SIGNAL(gil->switch_cond);
     MUTEX_UNLOCK(gil->switch_mutex);
 #endif
-    if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
-        RESET_GIL_DROP_REQUEST(ceval);
-    }
 
-    int must_exit = tstate_must_exit(tstate);
-
-    /* Don't access tstate if the thread must exit */
-    if (!must_exit && tstate->async_exc != NULL) {
-        _PyEval_SignalAsyncExc(tstate);
-    }
-
-    MUTEX_UNLOCK(gil->mutex);
-
-    if (must_exit) {
+    if (tstate_must_exit(tstate)) {
         /* bpo-36475: If Py_Finalize() has been called and tstate is not
            the thread which called Py_Finalize(), exit immediately the
            thread.
@@ -299,9 +285,30 @@ _ready:
            This code path can be reached by a daemon thread which was waiting
            in take_gil() while the main thread called
            wait_for_thread_shutdown() from Py_Finalize(). */
+        MUTEX_UNLOCK(gil->mutex);
         drop_gil(ceval, tstate);
         PyThread_exit_thread();
     }
+
+    if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
+        RESET_GIL_DROP_REQUEST(tstate);
+    }
+    else {
+        /* bpo-40010: eval_breaker should be recomputed to be set to 1 if there
+           is a pending signal: signal received by another thread which cannot
+           handle signals.
+
+           Note: RESET_GIL_DROP_REQUEST() calls COMPUTE_EVAL_BREAKER(). */
+        struct _ceval_state *ceval2 = &tstate->interp->ceval;
+        COMPUTE_EVAL_BREAKER(tstate, ceval, ceval2);
+    }
+
+    /* Don't access tstate if the thread must exit */
+    if (tstate->async_exc != NULL) {
+        _PyEval_SignalAsyncExc(tstate);
+    }
+
+    MUTEX_UNLOCK(gil->mutex);
 
     errno = err;
 }

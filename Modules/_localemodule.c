@@ -775,25 +775,25 @@ static struct PyModuleDef_Slot _locale_slots[] = {
 };
 
 static int
-locale_traverse(PyObject *m, visitproc visit, void *arg)
+locale_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    _locale_state *state = (_locale_state*)PyModule_GetState(m);
+    _locale_state *state = get_locale_state(module);
     Py_VISIT(state->Error);
     return 0;
 }
 
 static int
-locale_clear(PyObject *m)
+locale_clear(PyObject *module)
 {
-    _locale_state *state = (_locale_state*)PyModule_GetState(m);
+    _locale_state *state = get_locale_state(module);
     Py_CLEAR(state->Error);
     return 0;
 }
 
 static void
-locale_free(PyObject *m)
+locale_free(PyObject *module)
 {
-    locale_clear(m);
+    locale_clear(module);
 }
 
 static struct PyModuleDef _localemodule = {
