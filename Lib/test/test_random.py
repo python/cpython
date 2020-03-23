@@ -97,6 +97,7 @@ class TestBasicOps:
         shuffle(lst)
         self.assertTrue(lst != shuffled_lst)
         self.assertRaises(TypeError, shuffle, (1, 2, 3))
+        self.assertRaises(TypeError, shuffle, {1, 2, 3})
 
     def test_shuffle_random_argument(self):
         # Test random argument to shuffle.
@@ -112,6 +113,10 @@ class TestBasicOps:
             choice([])
         self.assertEqual(choice([50]), 50)
         self.assertIn(choice([25, 75]), [25, 75])
+        self.assertIn(choice((25, 75)), (25, 75))
+        self.assertIn(choice('abc'), ('a', 'b', 'c'))
+        self.assertRaises(TypeError, choice, {25, 75})
+        self.assertRaises(TypeError, choice, iter([25, 75]))
 
     def test_sample(self):
         # For the entire allowable range of 0 <= k <= N, validate that
@@ -127,7 +132,9 @@ class TestBasicOps:
         self.assertEqual(self.gen.sample([], 0), [])  # test edge case N==k==0
         # Exception raised if size of sample exceeds that of population
         self.assertRaises(ValueError, self.gen.sample, population, N+1)
+        self.assertRaises(ValueError, self.gen.sample, population, -1)
         self.assertRaises(ValueError, self.gen.sample, [], -1)
+        self.assertRaises(TypeError, self.gen.sample, population, 1.0)
 
     def test_sample_distribution(self):
         # For the entire allowable range of 0 <= k <= N, validate that
@@ -149,9 +156,9 @@ class TestBasicOps:
         # SF bug #801342 -- population can be any iterable defining __len__()
         self.gen.sample(set(range(20)), 2)
         self.gen.sample(range(20), 2)
-        self.gen.sample(range(20), 2)
         self.gen.sample(str('abcdefghijklmnopqrst'), 2)
         self.gen.sample(tuple('abcdefghijklmnopqrst'), 2)
+        self.assertRaises(TypeError, self.gen.sample, iter(range(20)), 2)
 
     def test_sample_on_dicts(self):
         self.assertRaises(TypeError, self.gen.sample, dict.fromkeys('abcdef'), 2)
@@ -187,6 +194,8 @@ class TestBasicOps:
         self.assertTrue(set(choices(range_data, k=5)) <= set(range_data))  # population is a range
         with self.assertRaises(TypeError):
             choices(set_data, k=2)                                       # population is not a sequence
+        with self.assertRaises(TypeError):
+            choices(iter(data), k=2)                                       # population is not a sequence
 
         self.assertTrue(set(choices(data, None, k=5)) <= set(data))      # weights is None
         self.assertTrue(set(choices(data, weights=None, k=5)) <= set(data))
@@ -200,7 +209,8 @@ class TestBasicOps:
                 [15, 10, 25, 30],                                                 # integer weights
                 [15.1, 10.2, 25.2, 30.3],                                         # float weights
                 [Fraction(1, 3), Fraction(2, 6), Fraction(3, 6), Fraction(4, 6)], # fractional weights
-                [True, False, True, False]                                        # booleans (include / exclude)
+                [True, False, True, False],                                       # booleans (include / exclude)
+                iter([15, 10, 25, 30]),
         ]:
             self.assertTrue(set(choices(data, weights, k=5)) <= set(data))
 
@@ -208,6 +218,10 @@ class TestBasicOps:
             choices(data, cum_weights=[1,2], k=5)                        # len(weights) != len(population)
         with self.assertRaises(TypeError):
             choices(data, cum_weights=10, k=5)                           # non-iterable cum_weights
+        with self.assertRaises(TypeError):
+            choices(data, cum_weights=set(range(4)), k=5)
+        with self.assertRaises(TypeError):
+            choices(data, cum_weights=iter(range(4)), k=5)
         with self.assertRaises(TypeError):
             choices(data, cum_weights=[None]*4, k=5)                     # non-numeric cum_weights
         with self.assertRaises(TypeError):
@@ -361,18 +375,32 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         rint = self.gen.randrange(0, 2, 2)
         self.assertEqual(rint, 0)
 
+    def test_randrange_non_integers(self):
+        randrange = self.gen.randrange
+        self.assertIn(randrange(3.0), range(3))
+        self.assertIn(randrange(0, 3.0), range(0, 3))
+        self.assertIn(randrange(0, 42, 1.0), range(0, 42, 1))
+        self.assertIn(randrange(0, 42, 3.0), range(0, 42, 3))
+
     def test_randrange_errors(self):
-        raises = partial(self.assertRaises, ValueError, self.gen.randrange)
+        randrange = self.gen.randrange
+        raises = partial(self.assertRaises, ValueError, randrange)
         # Empty range
         raises(3, 3)
         raises(-721)
         raises(0, 100, -12)
         # Non-integer start/stop
         raises(3.14159)
+        raises('3')
+        self.assertRaises(TypeError, randrange, [3])
         raises(0, 2.71828)
+        raises(0, '3')
+        self.assertRaises(TypeError, randrange, 0, [3])
         # Zero and non-integer step
         raises(0, 42, 0)
         raises(0, 42, 3.14159)
+        raises(0, 42, '3')
+        self.assertRaises(TypeError, randrange, 0, 42, [3])
 
     def test_genrandbits(self):
         # Verify ranges
@@ -392,6 +420,7 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
         self.assertRaises(ValueError, self.gen.getrandbits, 0)
         self.assertRaises(ValueError, self.gen.getrandbits, -1)
+        self.assertRaises(TypeError, self.gen.getrandbits, 10.0)
         self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
 
     def test_randbelow_logic(self, _log=log, int=int):

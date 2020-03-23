@@ -119,8 +119,8 @@ Functions for integers
               randrange(start, stop[, step])
 
    Return a randomly selected element from ``range(start, stop, step)``.  This is
-   equivalent to ``choice(range(start, stop, step))``, but doesn't actually build a
-   range object.
+   equivalent to ``choice(range(start, stop, step))``, but acceps also numbers
+   with integer value like ``3.0`` and doesn't actually build a range object.
 
    The positional argument pattern matches that of :func:`range`.  Keyword arguments
    should not be used because the function may use them in unexpected ways.
