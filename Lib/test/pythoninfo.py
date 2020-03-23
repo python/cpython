@@ -333,8 +333,13 @@ def collect_pwd(info_add):
         return
 
     if hasattr(os, 'getgrouplist'):
-        groups = os.getgrouplist(entry.pw_name, entry.pw_gid)
-        groups = ', '.join(map(str, groups))
+        try:
+            groups = os.getgrouplist(entry.pw_name, entry.pw_gid)
+        except OSError as exc:
+            # bpo-40014: os.getgrouplist() can fail on macOS 10.15 (Catalina)
+            groups = f'<ERROR: {exc!r}>'
+        else:
+            groups = ', '.join(map(str, groups))
         info_add('os.getgrouplist', groups)
 
 

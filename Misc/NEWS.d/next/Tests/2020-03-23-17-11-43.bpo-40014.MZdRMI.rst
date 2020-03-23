@@ -1,0 +1,2 @@
+``test.pythoninfo`` now catchs and handles :exc:`OSError` when calling
+:func:`os.getgrouplist`.
