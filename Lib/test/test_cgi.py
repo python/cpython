@@ -161,6 +161,19 @@ Content-Length: 3
         fs = cgi.FieldStorage(headers={'content-type':'text/plain'})
         self.assertRaises(TypeError, bool, fs)
 
+    def test_cgi_parse_multipart_post(self):
+        fp = BytesIO(   b'--------------------------c70158ae56918981\r\n'
+                        b'Content-Disposition: form-data; name="example_key"'
+                        b'\r\n\r\nexample_value\r\n'
+                        b'--------------------------c70158ae56918981--\r\n')
+        env = { "REQUEST_METHOD": "POST",
+                "CONTENT_LENGTH": "159",
+                "CONTENT_TYPE": "multipart/form-data; boundary=-----------"
+                                "-------------c70158ae56918981"}
+        result = cgi.parse(fp, env)
+        expected = {'example_key': ['example_value']}
+        self.assertEqual(result, expected)
+
     def test_strict(self):
         for orig, expect in parse_strict_test_cases:
             # Test basic parsing
