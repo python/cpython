@@ -488,6 +488,25 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         if len(kwargs):
             self.update(kwargs)
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.copy()
+            c.update(other)
+            return c
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.__class__()
+            c.update(other)
+            c.update(self)
+            return c
+        return NotImplemented
+
 
 class finalize:
     """Class for finalization of weakrefable objects
