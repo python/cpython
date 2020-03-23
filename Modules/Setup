@@ -135,7 +135,7 @@ faulthandler faulthandler.c
 _tracemalloc _tracemalloc.c hashtable.c
 
 # PEG-based parser module -- slated to be *the* parser
-peg_parser -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal -I$(srcdir)/Parser -I$(srcdir)/Modules/peg_parser peg_parser/parse.c peg_parser/parse_string.c peg_parser/pegen.c
+peg_parser peg_parser.c
 
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically

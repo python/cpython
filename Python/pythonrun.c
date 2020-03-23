@@ -28,6 +28,8 @@
 #include "osdefs.h"
 #include <locale.h>
 
+#include <pegen_interface.h>
+
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
@@ -1029,6 +1031,12 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     arena = PyArena_New();
     if (arena == NULL)
         return NULL;
+
+    // TODO: This crashes because it returns a Python module instead of a mod_ty
+    // I left this here so when you run 'nm python | grep PyPegen' you can see
+    // that the symbol is included and this function is called. Obviously this is
+    // wrong, and the function needs to be changed to return
+    mod = PyPegen_ASTFromString(str, arena);
 
     mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
     if (mod != NULL)

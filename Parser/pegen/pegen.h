@@ -14,6 +14,13 @@ enum INPUT_MODE {
 };
 typedef enum INPUT_MODE INPUT_MODE;
 
+enum MODE {
+    RAW_AST_OBJECT,
+    AST_OBJECT,
+    CODE_OBJECT
+};
+typedef enum MODE MODE;
+
 typedef struct _memo {
     int type;
     void *node;
@@ -81,6 +88,9 @@ typedef struct {
     int is_keyword;
 } KeywordOrStarred;
 
+extern const int n_keyword_lists;
+extern KeywordToken *reserved_keywords[];
+
 int insert_memo(Parser *p, int mark, int type, void *node);
 int update_memo(Parser *p, int mark, int type, void *node);
 int is_memoized(Parser *p, int type, void *pres);
@@ -133,16 +143,8 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
 #define CHECK_NULL_ALLOWED(result) CHECK_CALL_NULL_ALLOWED(p, result)
 
 PyObject *new_identifier(Parser *, char *);
-PyObject *run_parser_from_file(const char *filename,
-                               void *(start_rule_func)(Parser *),
-                               int mode,
-                               KeywordToken **keywords_list,
-                               int n_keyword_lists);
-PyObject *run_parser_from_string(const char *str,
-                                 void *(start_rule_func)(Parser *),
-                                 int mode,
-                                 KeywordToken **keywords_list,
-                                 int n_keyword_lists);
+void *run_parser_from_file(const char *, mod_ty(*)(Parser *), int, PyArena *);
+void *run_parser_from_string(const char *, mod_ty(*)(Parser *), int, PyArena *);
 asdl_seq *singleton_seq(Parser *, void *);
 asdl_seq *seq_insert_in_front(Parser *, void *, asdl_seq *);
 asdl_seq *seq_flatten(Parser *, asdl_seq *);
@@ -170,5 +172,7 @@ KeywordOrStarred *keyword_or_starred(Parser *, void *, int);
 asdl_seq *seq_extract_starred_exprs(Parser *, asdl_seq *);
 asdl_seq *seq_delete_starred_exprs(Parser *, asdl_seq *);
 expr_ty concatenate_strings(Parser *p, asdl_seq *);
+
+mod_ty parse_start(Parser *);
 
 #endif

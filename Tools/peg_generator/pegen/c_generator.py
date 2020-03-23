@@ -26,7 +26,9 @@ from pegen.tokenizer import exact_token_types
 
 EXTENSION_PREFIX = """\
 #include "pegen.h"
+
 """
+
 EXTENSION_SUFFIX = """
 static PyObject *
 parse_file(PyObject *self, PyObject *args, PyObject *kwds)
@@ -34,26 +36,50 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
     static char *keywords[] = {"file", "mode", NULL};
     const char *filename;
     int mode = %(mode)s;
-
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|i", keywords, &filename, &mode))
         return NULL;
     if (mode < 0 || mode > %(mode)s)
         return PyErr_Format(PyExc_ValueError, "Bad mode, must be 0 <= mode <= %(mode)s");
-    return run_parser_from_file(filename, (void *)start_rule, mode, reserved_keywords, %(n_keyword_lists)s);
+
+    PyArena *arena = PyArena_New();
+    if (arena == NULL) {
+        return NULL;
+    }
+
+    void *result = run_parser_from_file(filename, start_rule, mode, arena);
+    if (result != NULL && mode == 0) {
+        result = Py_None;
+        Py_INCREF(result);
+    }
+
+    PyArena_Free(arena);
+    return result;
 }
 
 static PyObject *
 parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *keywords[] = {"string", "mode", NULL};
+    static char *keywords[] = {"str", "mode", NULL};
     const char *the_string;
     int mode = %(mode)s;
-
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|i", keywords, &the_string, &mode))
         return NULL;
     if (mode < 0 || mode > %(mode)s)
         return PyErr_Format(PyExc_ValueError, "Bad mode, must be 0 <= mode <= %(mode)s");
-    return run_parser_from_string(the_string, (void *)start_rule, mode, reserved_keywords, %(n_keyword_lists)s);
+
+    PyArena *arena = PyArena_New();
+    if (arena == NULL) {
+        return NULL;
+    }
+
+    void *result = run_parser_from_string(the_string, start_rule, mode, arena);
+    if (result != NULL && mode == 0) {
+        result = Py_None;
+        Py_INCREF(result);
+    }
+
+    PyArena_Free(arena);
+    return result;
 }
 
 static PyMethodDef ParseMethods[] = {
@@ -75,7 +101,6 @@ PyInit_%(modulename)s(void)
     PyObject *m = PyModule_Create(&parsemodule);
     if (m == NULL)
         return NULL;
-
     return m;
 }
 
@@ -265,20 +290,11 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             mode = int(self.rules["start"].type == "mod_ty")
             if mode == 1 and self.grammar.metas.get("bytecode"):
                 mode += 1
-        modulename = self.grammar.metas.get("modulename", "peg_parser")
+        modulename = self.grammar.metas.get("modulename", "parse")
         trailer = self.grammar.metas.get("trailer", EXTENSION_SUFFIX)
         keyword_cache = self.callmakervisitor.keyword_cache
         if trailer:
-            self.print(
-                trailer.rstrip("\n")
-                % dict(
-                    mode=mode,
-                    modulename=modulename,
-                    n_keyword_lists=len(max(keyword_cache.keys(), key=len)) + 1
-                    if len(keyword_cache) > 0
-                    else 0,
-                )
-            )
+            self.print(trailer.rstrip("\n") % dict(mode=mode, modulename=modulename))
 
     def _group_keywords_by_length(self) -> Dict[int, List[Tuple[str, int]]]:
         groups: Dict[int, List[Tuple[str, int]]] = {}
@@ -291,8 +307,13 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         return groups
 
     def _setup_keywords(self) -> None:
+        keyword_cache = self.callmakervisitor.keyword_cache
+        n_keyword_lists = (
+            len(max(keyword_cache.keys(), key=len)) + 1 if len(keyword_cache) > 0 else 0
+        )
+        self.print(f"const int n_keyword_lists = {n_keyword_lists};")
         groups = self._group_keywords_by_length()
-        self.print("static KeywordToken *reserved_keywords[] = {")
+        self.print("KeywordToken *reserved_keywords[] = {")
         with self.indent():
             num_groups = max(groups) + 1 if groups else 1
             for keywords_length in range(num_groups):

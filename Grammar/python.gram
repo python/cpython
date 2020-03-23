@@ -1,6 +1,14 @@
 # Simplified grammar for Python
 
 @bytecode True
+@modulename 'peg_parser' # Non needed for now, but might be needed later
+@trailer '''
+mod_ty
+parse_start(Parser *p)
+{
+    return start_rule(p);
+}
+'''
 
 start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
 statements[asdl_seq*]: a=statement+ { seq_flatten(p, a) }

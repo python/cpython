@@ -295,6 +295,19 @@ LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
 
 ##########################################################################
 # Parser
+
+PEGEN_OBJS=		\
+		Parser/pegen/pegen.o \
+		Parser/pegen/parse.o \
+		Parser/pegen/parse_string.o \
+		Parser/pegen/peg_api.o
+
+
+PEGEN_HEADERS= \
+		$(srcdir)/Include/pegen_interface.h \
+		$(srcdir)/Parser/pegen/pegen.h \
+		$(srcdir)/Parser/pegen/parse_string.h
+
 POBJS=		\
 		Parser/acceler.o \
 		Parser/grammar1.o \
@@ -303,9 +316,10 @@ POBJS=		\
 		Parser/parser.o \
 		Parser/token.o \
 
-PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/parsetok.o Parser/tokenizer.o
+PARSER_OBJS=	$(POBJS) $(PEGEN_OBJS) Parser/myreadline.o Parser/parsetok.o Parser/tokenizer.o
 
 PARSER_HEADERS= \
+		$(PEGEN_HEADERS) \
 		$(srcdir)/Include/grammar.h \
 		$(srcdir)/Include/parsetok.h \
 		$(srcdir)/Parser/parser.h \
@@ -808,8 +822,8 @@ regen-grammar: regen-token
 .PHONY: regen-pegen
 regen-pegen:
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -c -q $(srcdir)/Grammar/python.gram \
-		-o $(srcdir)/Modules/peg_parser/parse.new.c
-	$(UPDATE_FILE) $(srcdir)/Modules/peg_parser/parse.c $(srcdir)/Modules/peg_parser/parse.new.c
+		-o $(srcdir)/Parser/pegen/parse.new.c
+	$(UPDATE_FILE) $(srcdir)/Parser/pegen/parse.c $(srcdir)/Parser/pegen/parse.new.c
 
 .PHONY=regen-ast
 regen-ast:

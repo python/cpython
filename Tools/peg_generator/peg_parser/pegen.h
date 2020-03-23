@@ -14,6 +14,13 @@ enum INPUT_MODE {
 };
 typedef enum INPUT_MODE INPUT_MODE;
 
+enum MODE {
+    RAW_AST_OBJECT,
+    AST_OBJECT,
+    CODE_OBJECT,
+};
+typedef enum MODE MODE;
+
 typedef struct _memo {
     int type;
     void *node;
@@ -81,6 +88,9 @@ typedef struct {
     int is_keyword;
 } KeywordOrStarred;
 
+extern const int n_keyword_lists;
+extern KeywordToken *reserved_keywords[];
+
 int insert_memo(Parser *p, int mark, int type, void *node);
 int update_memo(Parser *p, int mark, int type, void *node);
 int is_memoized(Parser *p, int type, void *pres);
@@ -107,10 +117,8 @@ void *CONSTRUCTOR(Parser *p, ...);
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define EXTRA_EXPR(head, tail) head->lineno, head->col_offset, tail->end_lineno, tail->end_col_offset, p->arena
 #define EXTRA start_lineno, start_col_offset, end_lineno, end_col_offset, p->arena
-#define CHECK(result) CHECK_CALL(p, result)
-#define CHECK_NULL_ALLOWED(result) CHECK_CALL_NULL_ALLOWED(p, result)
 
-inline void *
+Py_LOCAL_INLINE(void *)
 CHECK_CALL(Parser *p, void *result)
 {
     if (result == NULL) {
@@ -122,7 +130,7 @@ CHECK_CALL(Parser *p, void *result)
 
 /* This is needed for helper functions that are allowed to
    return NULL without an error. Example: seq_extract_starred_exprs */
-inline void *
+Py_LOCAL_INLINE(void *)
 CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
 {
     if (result == NULL && PyErr_Occurred()) {
@@ -131,17 +139,12 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
     return result;
 }
 
+#define CHECK(result) CHECK_CALL(p, result)
+#define CHECK_NULL_ALLOWED(result) CHECK_CALL_NULL_ALLOWED(p, result)
+
 PyObject *new_identifier(Parser *, char *);
-PyObject *run_parser_from_file(const char *filename,
-                               void *(start_rule_func)(Parser *),
-                               int mode,
-                               KeywordToken **keywords_list,
-                               int n_keyword_lists);
-PyObject *run_parser_from_string(const char *str,
-                                 void *(start_rule_func)(Parser *),
-                                 int mode,
-                                 KeywordToken **keywords_list,
-                                 int n_keyword_lists);
+void *run_parser_from_file(const char *, mod_ty(*)(Parser *), int, PyArena *);
+void *run_parser_from_string(const char *, mod_ty(*)(Parser *), int, PyArena *);
 asdl_seq *singleton_seq(Parser *, void *);
 asdl_seq *seq_insert_in_front(Parser *, void *, asdl_seq *);
 asdl_seq *seq_flatten(Parser *, asdl_seq *);
