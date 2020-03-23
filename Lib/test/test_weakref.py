@@ -1610,19 +1610,41 @@ class MappingTestCase(TestBase):
             self.assertEqual(d[kw], o)
 
     def test_weak_valued_union_operators(self):
-        class C: pass
-        c1 = C()
-        c2 = C()
-        c3 = C()
+        a = C()
+        b = C()
+        c = C()
+        wvd1 = weakref.WeakValueDictionary({1 : a})
+        wvd2 = weakref.WeakValueDictionary({1 : b, 2 : a})
+        wvd3 = wvd1.copy()
+        d1 = {1 : c, 3 : b}
+        pairs = [(5, c), (5, b)]
 
-        wvd1 = weakref.WeakValueDictionary({'1' : c1, '2': c2})
-        wvd2 = weakref.WeakValueDictionary({'1': c3, '4': c1})
-
-        wvd3 = wvd1 | wvd2
-        self.assertEqual(dict(wvd3), dict(wvd1) | dict(wvd2))
-
+        tmp1 = wvd1 | wvd2 # Between two WeakValueDictionaries
+        self.assertEqual(dict(tmp1), dict(wvd1) | dict(wvd2))
+        self.assertIs(type(tmp1), weakref.WeakValueDictionary)
         wvd1 |= wvd2
-        self.assertEqual(wvd1, wvd3)
+        self.assertEqual(wvd1, tmp1)
+
+        tmp2 = wvd2 | d1 # Between WeakValueDictionary and mapping
+        self.assertEqual(dict(tmp2), dict(wvd2) | d1)
+        self.assertIs(type(tmp2), weakref.WeakValueDictionary)
+        wvd2 |= d1
+        self.assertEqual(wvd2, tmp2)
+
+        tmp3 = wvd3.copy() # Between WeakValueDictionary and iterable key, value
+        tmp3 |= pairs
+        self.assertEqual(dict(tmp3), dict(wvd3) | dict(pairs))
+        self.assertIs(type(tmp3), weakref.WeakValueDictionary)
+
+        tmp4 = d1 | wvd3 # Testing .__ror__
+        self.assertEqual(dict(tmp4), d1 | dict(wvd3))
+        self.assertIs(type(tmp4), weakref.WeakValueDictionary)
+
+        del a
+        self.assertNotIn(2, tmp1.keys())
+        self.assertNotIn(2, tmp2.keys())
+        self.assertNotIn(1, tmp3.keys())
+        self.assertNotIn(1, tmp4.keys())
 
     def test_weak_keyed_dict_update(self):
         self.check_update(weakref.WeakKeyDictionary,

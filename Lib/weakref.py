@@ -315,14 +315,19 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         return self
 
     def __or__(self, other):
-        c = self.copy()
-        c.update(other)
-        return c
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.copy()
+            c.update(other)
+            return c
+        return NotImplemented
 
     def __ror__(self, other):
-        c = other.copy()
-        c.update(self)
-        return c
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.__class__()
+            c.update(other)
+            c.update(self)
+            return c
+        return NotImplemented
 
 
 class KeyedRef(ref):
