@@ -6178,10 +6178,29 @@ posix_getgrouplist(PyObject *self, PyObject *args)
     if (groups == NULL)
         return PyErr_NoMemory();
 
+#ifdef __APPLE__
+    while (getgrouplist(user, basegid, groups, &ngroups)) {
+        /* On macOS, getgrouplist() returns a non-zero value without setting
+           errno if the group list is too small. Double the list size and call
+           it again in this case. */
+        PyMem_Free(groups);
+
+        if (ngroups > INT_MAX / 2) {
+            return PyErr_NoMemory();
+        }
+        ngroups *= 2;
+
+        groups = PyMem_New(int, ngroups);
+        if (groups == NULL) {
+            return PyErr_NoMemory();
+        }
+    }
+#else
     if (getgrouplist(user, basegid, groups, &ngroups) == -1) {
         PyMem_Del(groups);
         return posix_error();
     }
+#endif
 
 #ifdef _Py_MEMORY_SANITIZER
     /* Clang memory sanitizer libc intercepts don't know getgrouplist. */
