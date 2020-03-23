@@ -1613,11 +1613,11 @@ class MappingTestCase(TestBase):
         a = C()
         b = C()
         c = C()
-        wvd1 = weakref.WeakValueDictionary({1 : a})
-        wvd2 = weakref.WeakValueDictionary({1 : b, 2 : a})
+        wvd1 = weakref.WeakValueDictionary({1: a})
+        wvd2 = weakref.WeakValueDictionary({1: b, 2: a})
         wvd3 = wvd1.copy()
-        d1 = {1 : c, 3 : b}
-        pairs = [(5, c), (5, b)]
+        d1 = {1: c, 3: b}
+        pairs = [(5, c), (6, b)]
 
         tmp1 = wvd1 | wvd2 # Between two WeakValueDictionaries
         self.assertEqual(dict(tmp1), dict(wvd1) | dict(wvd2))
@@ -1641,10 +1641,10 @@ class MappingTestCase(TestBase):
         self.assertIs(type(tmp4), weakref.WeakValueDictionary)
 
         del a
-        self.assertNotIn(2, tmp1.keys())
-        self.assertNotIn(2, tmp2.keys())
-        self.assertNotIn(1, tmp3.keys())
-        self.assertNotIn(1, tmp4.keys())
+        self.assertNotIn(2, tmp1)
+        self.assertNotIn(2, tmp2)
+        self.assertNotIn(1, tmp3)
+        self.assertNotIn(1, tmp4)
 
     def test_weak_keyed_dict_update(self):
         self.check_update(weakref.WeakKeyDictionary,
