@@ -455,8 +455,6 @@ typedef struct {
     PyObject *weakreflist;
 } teeobject;
 
-static PyTypeObject teedataobject_type;
-
 static PyObject *
 teedataobject_newinternal(PyObject *it)
 {
@@ -681,8 +679,6 @@ static PyTypeObject teedataobject_type = {
     PyObject_GC_Del,                            /* tp_free */
 };
 
-
-static PyTypeObject tee_type;
 
 static PyObject *
 tee_next(teeobject *to)
@@ -949,8 +945,6 @@ typedef struct {
     int firstpass;
 } cycleobject;
 
-static PyTypeObject cycle_type;
-
 /*[clinic input]
 @classmethod
 itertools.cycle.__new__
@@ -1147,8 +1141,6 @@ typedef struct {
     long start;
 } dropwhileobject;
 
-static PyTypeObject dropwhile_type;
-
 /*[clinic input]
 @classmethod
 itertools.dropwhile.__new__
@@ -1313,8 +1305,6 @@ typedef struct {
     PyObject *it;
     long stop;
 } takewhileobject;
-
-static PyTypeObject takewhile_type;
 
 /*[clinic input]
 @classmethod
@@ -1733,8 +1723,6 @@ typedef struct {
     PyObject *func;
     PyObject *it;
 } starmapobject;
-
-static PyTypeObject starmap_type;
 
 /*[clinic input]
 @classmethod
@@ -2452,8 +2440,6 @@ typedef struct {
     int stopped;            /* set to 1 when the iterator is exhausted */
 } combinationsobject;
 
-static PyTypeObject combinations_type;
-
 
 /*[clinic input]
 @classmethod
@@ -2786,8 +2772,6 @@ typedef struct {
     int stopped;            /* set to 1 when the cwr iterator is exhausted */
 } cwrobject;
 
-static PyTypeObject cwr_type;
-
 /*[clinic input]
 @classmethod
 itertools.combinations_with_replacement.__new__
@@ -3110,8 +3094,6 @@ typedef struct {
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
 } permutationsobject;
-
-static PyTypeObject permutations_type;
 
 /*[clinic input]
 @classmethod
@@ -3472,8 +3454,6 @@ typedef struct {
     PyObject *initial;
 } accumulateobject;
 
-static PyTypeObject accumulate_type;
-
 /*[clinic input]
 @classmethod
 itertools.accumulate.__new__
@@ -3685,8 +3665,6 @@ typedef struct {
     PyObject *selectors;
 } compressobject;
 
-static PyTypeObject compress_type;
-
 /*[clinic input]
 @classmethod
 itertools.compress.__new__
@@ -3844,8 +3822,6 @@ typedef struct {
     PyObject *func;
     PyObject *it;
 } filterfalseobject;
-
-static PyTypeObject filterfalse_type;
 
 /*[clinic input]
 @classmethod
@@ -4016,8 +3992,6 @@ slow_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is a float.
     Step may be zero -- effectively a slow version of repeat(cnt).
     Either long_cnt or long_step may be a float, Fraction, or Decimal.
 */
-
-static PyTypeObject count_type;
 
 /*[clinic input]
 @classmethod
