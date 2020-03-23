@@ -204,6 +204,7 @@ than needed.
 same issues as the :meth:`keyrefs` method of :class:`WeakKeyDictionary`
 objects.
 
+
 .. method:: WeakValueDictionary.valuerefs()
 
    Return an iterable of the weak references to the values.
