@@ -614,6 +614,13 @@ if test "$cross_compiling" = yes; then
 	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
 fi
 
+AC_ARG_ENABLE(linux-statx,
+              AS_HELP_STRING([--enable-linux-statx],
+                             [use the statx system call rather than traditional
+                              stat on Linux. When enabled CPython will only work
+                              on Linux 4.11 or later (default is no)]))
+
+
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
 # disable features if it is defined, without any means to access these
 # features as extensions. For these systems, we skip the definition of
@@ -5301,6 +5308,23 @@ else
 fi
 
 AC_CHECK_FUNCS(getnameinfo)
+
+if test "${enable_linux_statx+set}" = set;
+then
+	# check for Linux stat-replacement statx
+	AC_MSG_CHECKING(for Linux statx)
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+		#include <sys/stat.h>
+	]], [[void* p = statx]])],
+		[AC_DEFINE(HAVE_LINUX_STATX, 1, Define if you have the 'statx' function.)
+		 AC_MSG_RESULT(yes)],
+		[AC_MSG_RESULT(no)
+		 AC_MSG_ERROR([Parameter --enable-linux-statx is set, but the C library
+		               does not define this function. If using glibc, please
+		               note that this function is only defined in glibc 2.28
+		               or later.])
+	])
+fi
 
 dnl autoconf 2.71 deprecates AC_HEADER_TIME, keep for backwards compatibility
 dnl TIME_WITH_SYS_TIME works on all supported systems that have sys/time.h
