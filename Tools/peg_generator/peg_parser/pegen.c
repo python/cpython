@@ -103,6 +103,8 @@ error:
     return -1;
 }
 
+// Enable this if you uncomment any of the comments calling token_name().
+#if 0
 static const char *
 token_name(int type)
 {
@@ -111,6 +113,7 @@ token_name(int type)
     }
     return "<Huh?>";
 }
+#endif
 
 // Here, mark is the start of the node, while p->mark is the end.
 // If node==NULL, they should be the same.
