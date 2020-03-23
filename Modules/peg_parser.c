@@ -52,9 +52,10 @@ _Py_parse_string(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef ParseMethods[] = {
-    {"parse_file", (PyCFunction)(void(*)(void))_Py_parse_file, METH_VARARGS, "Parse a file."},
-    {"parse_string", (PyCFunction)(void(*)(void))_Py_parse_string, METH_VARARGS, "Parse a string."},
-    {NULL, NULL, 0, NULL}        /* Sentinel */
+    {"parse_file", (PyCFunction)(void (*)(void))_Py_parse_file, METH_VARARGS, "Parse a file."},
+    {"parse_string", (PyCFunction)(void (*)(void))_Py_parse_string, METH_VARARGS,
+     "Parse a string."},
+    {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
 static struct PyModuleDef parsemodule = {
