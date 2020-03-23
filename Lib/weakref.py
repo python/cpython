@@ -493,14 +493,14 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         return self
 
     def __or__(self, other):
-        if isinstance(other, (dict, WeakKeyDictionary, WeakValueDictionary)):
+        if isinstance(other, _collections_abc.Mapping):
             c = self.copy()
             c.update(other)
             return c
         return NotImplemented
 
     def __ror__(self, other):
-        if isinstance(other, (dict, WeakKeyDictionary, WeakValueDictionary)):
+        if isinstance(other, _collections_abc.Mapping):
             c = self.__class__()
             c.update(other)
             c.update(self)
