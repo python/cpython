@@ -83,6 +83,17 @@ The command, if run with ``-h``, will show the available options::
    particular note is that double-clicking ``python.exe`` in File Explorer
    will resolve the symlink eagerly and ignore the virtual environment.
 
+.. note::
+   On Microsoft Windows, it may be required to enable the ``Activate.ps1``
+   script by setting the execution policy for the user. You can do this by
+   issuing the following Powershell command from a Powershell command window:
+
+   PS C:\Users\user> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+   See `About Execution Policies 
+   <https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-7>`_
+   for more information.
+
 The created ``pyvenv.cfg`` file also includes the
 ``include-system-site-packages`` key, set to ``true`` if ``venv`` is
 run with the ``--system-site-packages`` option, ``false`` otherwise.
