@@ -2092,9 +2092,12 @@ static PyStructSequence_Field stat_result_fields[] = {
     {"st_atime",   "time of last access"},
     {"st_mtime",   "time of last modification"},
     {"st_ctime",   "time of last change"},
+    {"st_btime",   "time of creation"},
     {"st_atime_ns",   "time of last access in nanoseconds"},
     {"st_mtime_ns",   "time of last modification in nanoseconds"},
     {"st_ctime_ns",   "time of last change in nanoseconds"},
+    {"st_btime_ns",   "time of creation in nanoseconds"},
+    {"st_flags",   "user defined flags for file"},
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     {"st_blksize", "blocksize for filesystem I/O"},
 #endif
@@ -2103,9 +2106,6 @@ static PyStructSequence_Field stat_result_fields[] = {
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
     {"st_rdev",    "device type (if inode device)"},
-#endif
-#ifdef HAVE_STRUCT_STAT_ST_FLAGS
-    {"st_flags",   "user defined flags for file"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
     {"st_gen",    "generation number"},
@@ -2126,9 +2126,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 };
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-#define ST_BLKSIZE_IDX 16
+#define ST_BLKSIZE_IDX 19
 #else
-#define ST_BLKSIZE_IDX 15
+#define ST_BLKSIZE_IDX 18
 #endif
 
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
@@ -2143,16 +2143,10 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_RDEV_IDX ST_BLOCKS_IDX
 #endif
 
-#ifdef HAVE_STRUCT_STAT_ST_FLAGS
-#define ST_FLAGS_IDX (ST_RDEV_IDX+1)
-#else
-#define ST_FLAGS_IDX ST_RDEV_IDX
-#endif
-
 #ifdef HAVE_STRUCT_STAT_ST_GEN
-#define ST_GEN_IDX (ST_FLAGS_IDX+1)
+#define ST_GEN_IDX (ST_RDEV_IDX+1)
 #else
-#define ST_GEN_IDX ST_FLAGS_IDX
+#define ST_GEN_IDX ST_RDEV_IDX
 #endif
 
 #ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
@@ -2322,7 +2316,8 @@ _posix_free(void *module)
 }
 
 static void
-fill_time(PyObject *module, PyObject *v, int index, time_t sec, unsigned long nsec)
+fill_time(PyObject *module, PyObject *v, int index1, int index2, int index3,
+          time_t sec, unsigned long nsec)
 {
     PyObject *s = _PyLong_FromTime_t(sec);
     PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
@@ -2346,10 +2341,12 @@ fill_time(PyObject *module, PyObject *v, int index, time_t sec, unsigned long ns
         goto exit;
     }
 
-    PyStructSequence_SET_ITEM(v, index, s);
-    PyStructSequence_SET_ITEM(v, index+3, float_s);
-    PyStructSequence_SET_ITEM(v, index+6, ns_total);
-    s = NULL;
+    if(index1 >= 0) {
+        PyStructSequence_SET_ITEM(v, index1, s);
+        s = NULL;
+    }
+    PyStructSequence_SET_ITEM(v, index2, float_s);
+    PyStructSequence_SET_ITEM(v, index3, ns_total);
     float_s = NULL;
     ns_total = NULL;
 exit:
@@ -2407,9 +2404,19 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #else
     ansec = mnsec = cnsec = 0;
 #endif
-    fill_time(module, v, 7, st->st_atime, ansec);
-    fill_time(module, v, 8, st->st_mtime, mnsec);
-    fill_time(module, v, 9, st->st_ctime, cnsec);
+    fill_time(module, v, 7, 10, 14, st->st_atime, ansec);
+    fill_time(module, v, 8, 11, 15, st->st_mtime, mnsec);
+    fill_time(module, v, 9, 12, 16, st->st_ctime, cnsec);
+
+#ifdef MS_WINDOWS
+    // CTime is BTime on Windows
+    fill_time(module, v, -1, 13, 17, st->st_ctime, cnsec);
+#endif
+
+#ifdef HAVE_STRUCT_STAT_ST_FLAGS
+    PyStructSequence_SET_ITEM(module, v, 18,
+                              PyLong_FromLong((long)st->st_flags));
+#endif
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
@@ -2438,13 +2445,12 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
       bnsec = 0;
 #endif
       val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
-      PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
-                                val);
+      PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX, val);
+
+      // Also use this value as BTime, but keep the older name for
+      // compatiblity on these platforms
+      fill_time(module, v, -1, 13, 17, bsec, bnsec);
     }
-#endif
-#ifdef HAVE_STRUCT_STAT_ST_FLAGS
-    PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
-                              PyLong_FromLong((long)st->st_flags));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
     PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX,
