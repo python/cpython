@@ -435,3 +435,17 @@ constants, but are not an exhaustive list.
           IO_REPARSE_TAG_APPEXECLINK
 
    .. versionadded:: 3.8
+
+On Linux, the following constants are available for comparing against the
+``st_attributes`` and ``st_attributes_mask`` members returned by
+:func:`os.stat`.  See the relevant man-page on
+`statx(2) <http://man7.org/linux/man-pages/man2/statx.2.html>`_ for the exact
+meaning of these constants.
+
+.. data:: STATX_ATTR_COMPRESSED
+          STATX_ATTR_IMMUTABLE
+          STATX_ATTR_APPEND
+          STATX_ATTR_NODUMP
+          STATX_ATTR_ENCRYPTED
+
+   .. versionadded:: 3.12

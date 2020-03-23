@@ -1,0 +1,5 @@
+Use the ``statx(2)`` system call for :func:`os.stat` under Linux to provide
+cross-platform support for btime (time of file creation) and file
+attributes. On Windows btime is emulated using ctime and both Linux and
+Windows file attributes are converted to their (Free)BSD equivalent were
+reasonable.

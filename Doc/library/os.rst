@@ -1856,6 +1856,15 @@ features:
    * :data:`stat.UF_OPAQUE`
    * :data:`stat.UF_NOUNLINK`
    * :data:`stat.UF_COMPRESSED`
+   * :data:`stat.UF_COMPRESSED`
+   * :data:`stat.UF_TRACKED`
+   * :data:`stat.UF_SYSTEM`
+   * :data:`stat.UF_SPARSE`
+   * :data:`stat.UF_OFFLINE`
+   * :data:`stat.UF_REPARSE`
+   * :data:`stat.UF_ARCHIVE`
+   * :data:`stat.UF_READONLY`
+   * :data:`stat.UF_ENCRYPTED`
    * :data:`stat.UF_HIDDEN`
    * :data:`stat.SF_ARCHIVED`
    * :data:`stat.SF_IMMUTABLE`
@@ -2786,6 +2795,14 @@ features:
       The size of a symbolic link is the length of the pathname it contains,
       without a terminating null byte.
 
+   .. attribute:: st_flags
+
+      User defined flags for file.  On some systems this will contain the
+      equivalent BSD flags for the more specific flags returned on the given
+      platforms: See the :attr:`st_attributes` and :attr:`st_file_attributes`
+      fields below for the original values.  If the platform does not support
+      returning flags this will be set to ``0`` (no flags).
+
    Timestamps:
 
    .. attribute:: st_atime
@@ -2802,6 +2819,14 @@ features:
 
       * the time of most recent metadata change on Unix,
       * the time of creation on Windows, expressed in seconds.
+
+   .. attribute:: st_btime
+
+      Time of creation ("file birth") expressed in seconds.
+
+      Identical to :attr:`st_ctime` on Windows.  Some platforms, particularily
+      builds for pre-4.11 Linux kernels do not support returning this value,
+      and will return ``None`` instead.
 
    .. attribute:: st_atime_ns
 
@@ -2820,26 +2845,42 @@ features:
       * the time of creation on Windows, expressed in nanoseconds as an
         integer.
 
+   .. attribute:: st_btime_ns
+
+      Time of creation ("file birth") expressed in nanoseconds.
+
+      Identical to :attr:`st_ctime_ns` on Windows.  Some platforms,
+      particularily builds for pre-4.11 Linux kernels do not support returning
+      this value, and will return ``None`` instead.
+
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
-      :attr:`st_mtime`, and :attr:`st_ctime` attributes depend on the operating
-      system and the file system. For example, on Windows systems using the FAT
-      or FAT32 file systems, :attr:`st_mtime` has 2-second resolution, and
-      :attr:`st_atime` has only 1-day resolution.  See your operating system
-      documentation for details.
+      :attr:`st_mtime`, :attr:`st_ctime`, and :attr:`st_btime` attributes depend
+      on the operating system and the file system. For example, on Windows
+      systems using the FAT or FAT32 file systems, :attr:`st_mtime` has 2-second
+      resolution, and :attr:`st_atime` has only 1-day resolution.  See your
+      operating system documentation for details.
 
       Similarly, although :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
-      and :attr:`st_ctime_ns` are always expressed in nanoseconds, many
-      systems do not provide nanosecond precision.  On systems that do
-      provide nanosecond precision, the floating-point object used to
-      store :attr:`st_atime`, :attr:`st_mtime`, and :attr:`st_ctime`
-      cannot preserve all of it, and as such will be slightly inexact.
-      If you need the exact timestamps you should always use
-      :attr:`st_atime_ns`, :attr:`st_mtime_ns`, and :attr:`st_ctime_ns`.
+      :attr:`st_ctime_ns`, and :attr:`st_btime_ns` are always expressed in
+      nanoseconds, many systems do not provide nanosecond precision.  On
+      systems that do provide nanosecond precision, the floating-point object
+      used to store :attr:`st_atime`, :attr:`st_mtime`, :attr:`st_ctime`,
+      and :attr:`st_btime` cannot preserve all of it, and as such will be
+      slightly inexact. If you need the exact timestamps you should always use
+      :attr:`st_atime_ns`, :attr:`st_mtime_ns`, :attr:`st_ctime_ns`, and
+      :attr:`st_btime_ns`.
 
    On some Unix systems (such as Linux), the following attributes may also be
    available:
+
+   .. attribute:: st_attributes
+   .. attribute:: st_attributes_mask
+
+      Linux file attributes: ``stx_attributes`` and ``stx_attributes_mask``
+      members of the :c:type:`statx` structure returned by :c:func:`statx`.
+      See the ``STATX_FLAG_*`` constants in the :mod:`stat` module.
 
    .. attribute:: st_blocks
 
@@ -2853,11 +2894,8 @@ features:
 
    .. attribute:: st_rdev
 
-      Type of device if an inode device.
-
-   .. attribute:: st_flags
-
-      User defined flags for file.
+      Type of device (combined major and minor number) if the queried file
+      was an inode device.
 
    On other Unix systems (such as FreeBSD), the following attributes may be
    available (but may be only filled out if root tries to use them):
@@ -2868,7 +2906,8 @@ features:
 
    .. attribute:: st_birthtime
 
-      Time of file creation.
+      Time of file creation.  Identical to :attr:`st_btime`, but retained for
+      backward compatibility.
 
    On Solaris and derivatives, the following attributes may also be
    available:
@@ -2941,6 +2980,13 @@ features:
       On Windows, the :attr:`st_mode` member now identifies special
       files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
       as appropriate.
+
+   .. versionadded:: 3.9
+      Added the :attr:`st_attributes` and :attr:`st_attributes_mask` members
+      on modern Linux.
+
+   .. versionadded:: 3.9
+      Added the :attr:`st_btime` and :attr:`st_flags` members for all platforms.
 
 .. function:: statvfs(path)
 
