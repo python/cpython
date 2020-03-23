@@ -501,7 +501,7 @@ Parser_Free(Parser *p)
 }
 
 Parser *
-Parser_New(struct tok_state *tok, mod_ty(*parse_func)(Parser *), int input_mode,
+Parser_New(struct tok_state *tok, mod_ty (*parse_func)(Parser *), int input_mode,
            PyArena *arena)
 {
     Parser *p = PyMem_Malloc(sizeof(Parser));
@@ -562,9 +562,11 @@ run_parser(Parser *p, int mode)
     void *result = NULL;
     if (mode == CODE_OBJECT) {
         result = PyAST_CompileObject(res, p->tok->filename, NULL, -1, p->arena);
-    } else if (mode == AST_OBJECT) {
+    }
+    else if (mode == AST_OBJECT) {
         result = PyAST_mod2obj(res);
-    } else {
+    }
+    else {
         result = res;
     }
 
@@ -572,7 +574,8 @@ run_parser(Parser *p, int mode)
 }
 
 void *
-run_parser_from_file(const char *filename, mod_ty (*parse_func)(Parser *), int mode, PyArena *arena)
+run_parser_from_file(const char *filename, mod_ty (*parse_func)(Parser *), int mode,
+                     PyArena *arena)
 {
     FILE *fp = fopen(filename, "rb");
     if (fp == NULL) {
@@ -615,7 +618,8 @@ error:
 }
 
 void *
-run_parser_from_string(const char *str, mod_ty(*parse_func)(Parser *), int mode, PyArena *arena)
+run_parser_from_string(const char *str, mod_ty (*parse_func)(Parser *), int mode,
+                       PyArena *arena)
 {
     void *result = NULL;
     struct tok_state *tok = PyTokenizer_FromString(str, 1);
