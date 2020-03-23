@@ -2417,6 +2417,7 @@ static PyObject*
 _pystat_fromstructstat(PyObject *module, struct statx* stx)
 {
     unsigned long long attributes;
+    long flags;
     PyObject *StatResultType = get_posix_state(module)->StatResultType;
     PyObject *v = PyStructSequence_New((PyTypeObject *)StatResultType);
     if (v == NULL)
@@ -2461,6 +2462,28 @@ _pystat_fromstructstat(PyObject *module, struct statx* stx)
     PyStructSequence_SET_ITEM(v, ST_ATTRIBUTES_MASK_IDX,
                               PyLong_FromUnsignedLongLong(stx->stx_attributes_mask));
 
+    // Map statx flags to BSD flags
+    //
+    // The contants used here are not defined on Linux, are available to
+    // Python users through the "stat" module.
+    flags = 0;
+    if(attributes & STATX_ATTR_COMPRESSED) {
+        flags |= 0x00000020; // UF_COMPRESSED
+    }
+    if(attributes & STATX_ATTR_IMMUTABLE) {
+        flags |= 0x00020000; // SF_IMMUTABLE
+    }
+    if(attributes & STATX_ATTR_APPEND) {
+        flags |= 0x00040000; // SF_APPEND
+    }
+    if(attributes & STATX_ATTR_NODUMP) {
+        flags |= 0x00000001; // UF_NODUMP
+    }
+    if(attributes & STATX_ATTR_ENCRYPTED) {
+        flags |= 0x00002000; // UF_ENCRYPTED
+    }
+    PyStructSequence_SET_ITEM(v, 18, PyLong_FromLong(flags));
+
     PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
                               PyLong_FromLong((long)stx->stx_blksize));
     if(stx->stx_mask & STATX_BLOCKS) {
@@ -2486,7 +2509,7 @@ _pystat_fromstructstat(PyObject *module, struct statx* stx)
 static PyObject*
 _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 {
-    unsigned long ansec, mnsec, cnsec;
+    unsigned long ansec, mnsec, cnsec, flags;
     PyObject *StatResultType = get_posix_state(module)->StatResultType;
     PyObject *v = PyStructSequence_New((PyTypeObject *)StatResultType);
     if (v == NULL)
@@ -2537,10 +2560,39 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     fill_time(module, v, -1, 13, 17, st->st_ctime, cnsec);
 #endif
 
-#ifdef HAVE_STRUCT_STAT_ST_FLAGS
-    PyStructSequence_SET_ITEM(module, v, 18,
-                              PyLong_FromLong((long)st->st_flags));
+    flags = 0;
+#if defined(HAVE_STRUCT_STAT_ST_FLAGS)
+    flags = (long)st->st_flags;
+#elif defined(HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES)
+    if(st->st_file_attributes & FILE_ATTRIBUTE_ARCHIVE) {
+        flags |= 0x00000800; // UF_ARCHIVE
+    }
+    if(st->st_file_attributes & FILE_ATTRIBUTE_COMPRESSED) {
+        flags |= 0x00000020; // UF_COMPRESSED
+    }
+    if(st->st_file_attributes & FILE_ATTRIBUTE_ENCRYPTED) {
+        flags |= 0x00002000; // UF_ENCRYPTED
+    }
+    if(st->st_file_attributes & FILE_ATTRIBUTE_HIDDEN) {
+        flags |= 0x00008000; // UF_HIDDEN
+    }
+    if(st->st_file_attributes & FILE_ATTRIBUTE_OFFLINE) {
+        flags |= 0x00000200; // UF_OFFLINE
+    }
+    if(st->st_file_attributes & FILE_ATTRIBUTE_READONLY) {
+        flags |= 0x00001000; // UF_READONLY
+    }
+    if(st->st_file_attributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+        flags |= 0x00000400; // UF_REPARSE
+    }
+    if(st->st_file_attributes & FILE_ATTRIBUTE_SPARSE_FILE) {
+        flags |= 0x00000100; // UF_SPARSE
+    }
+    if(st->st_file_attributes & FILE_ATTRIBUTE_SYSTEM) {
+        flags |= 0x00000080; // UF_SYSTEM
+    }
 #endif
+    PyStructSequence_SET_ITEM(v, 18, PyLong_FromLong(flags));
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
