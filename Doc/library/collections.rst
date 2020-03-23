@@ -116,6 +116,9 @@ The class can be used to simulate nested scopes and is useful in templating.
         >>> list(combined)
         ['music', 'art', 'opera']
 
+    .. versionchanged:: 3.9
+       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
+
 .. seealso::
 
     * The `MultiContext class
