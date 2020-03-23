@@ -601,7 +601,6 @@ the module.
    are statically linked into the interpreter; for extension modules
    loaded dynamically from a shared library, it is the pathname
    of the shared library file.
-   
 .. attribute:: __cached__
 
    ``__file__`` is optional. If set, this attribute's value must be a
