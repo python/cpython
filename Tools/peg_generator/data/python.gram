@@ -34,12 +34,12 @@ compound_stmt[stmt_ty]:
     | &'try' try_stmt
     | &'while' while_stmt
 
-# NOTE: yield_expression may start with 'yield'; yield_expr must start with 'yield'
+# NOTE: annotated_rhs may start with 'yield'; yield_expr must start with 'yield'
 assignment:
-    | a=NAME ':' b=expression c=['=' d=yield_expression { d }] {
+    | a=NAME ':' b=expression c=['=' d=annotated_rhs { d }] {
         _Py_AnnAssign(CHECK(set_expr_context(p, a, Store)), b, c, 1, EXTRA) }
     | a=('(' b=inside_paren_ann_assign_target ')' { b }
-         | ann_assign_subscript_attribute_target) ':' b=expression c=['=' d=yield_expression { d }] {
+         | ann_assign_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
         _Py_AnnAssign(a, b, c, 0, EXTRA)}
     | a=(z=star_targets '=' { z })+ b=(yield_expr | expressions) {
          _Py_Assign(a, b, NULL, EXTRA) }
@@ -218,7 +218,7 @@ star_named_expression[expr_ty]:
 named_expression[expr_ty]:
     | a=NAME ':=' b=expression { _Py_NamedExpr(CHECK(set_expr_context(p, a, Store)), b, EXTRA) }
     | expression
-yield_expression: yield_expr | expression
+annotated_rhs[expr_ty]: yield_expr | expressions
 expression[expr_ty]:
     | a=disjunction 'if' b=disjunction 'else' c=expression { _Py_IfExp(b, a, c, EXTRA) }
     | disjunction

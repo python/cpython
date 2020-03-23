@@ -13,6 +13,7 @@ from pegen.testutil import parse_string, generate_parser_c_extension
 
 TEST_CASES = [
     ('annotated_assignment', 'x: int = 42'),
+    ('annotated_assignment_with_tuple', 'x: tuple = 1, 2'),
     ('annotated_assignment_with_parens', '(paren): int = 3+2'),
     ('annotated_assignment_with_yield', 'x: int = yield 42'),
     ('annotated_no_assignment', 'x: int'),

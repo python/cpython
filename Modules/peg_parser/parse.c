@@ -115,7 +115,7 @@ static KeywordToken *reserved_keywords[] = {
 #define star_named_expressions_type 1054
 #define star_named_expression_type 1055
 #define named_expression_type 1056
-#define yield_expression_type 1057
+#define annotated_rhs_type 1057
 #define expression_type 1058
 #define lambdef_type 1059
 #define lambda_parameters_type 1060
@@ -370,7 +370,7 @@ static expr_ty star_expression_rule(Parser *p);
 static asdl_seq* star_named_expressions_rule(Parser *p);
 static expr_ty star_named_expression_rule(Parser *p);
 static expr_ty named_expression_rule(Parser *p);
-static void *yield_expression_rule(Parser *p);
+static expr_ty annotated_rhs_rule(Parser *p);
 static expr_ty expression_rule(Parser *p);
 static expr_ty lambdef_rule(Parser *p);
 static arguments_ty lambda_parameters_rule(Parser *p);
@@ -1070,8 +1070,8 @@ compound_stmt_rule(Parser *p)
 }
 
 // assignment:
-//     | NAME ':' expression ['=' yield_expression]
-//     | ('(' inside_paren_ann_assign_target ')' | ann_assign_subscript_attribute_target) ':' expression ['=' yield_expression]
+//     | NAME ':' expression ['=' annotated_rhs]
+//     | ('(' inside_paren_ann_assign_target ')' | ann_assign_subscript_attribute_target) ':' expression ['=' annotated_rhs]
 //     | ((star_targets '='))+ (yield_expr | expressions)
 //     | target augassign (yield_expr | expressions)
 static void *
@@ -1088,7 +1088,7 @@ assignment_rule(Parser *p)
     UNUSED(start_lineno); // Only used by EXTRA macro
     int start_col_offset = p->tokens[mark]->col_offset;
     UNUSED(start_col_offset); // Only used by EXTRA macro
-    { // NAME ':' expression ['=' yield_expression]
+    { // NAME ':' expression ['=' annotated_rhs]
         expr_ty a;
         expr_ty b;
         void *c;
@@ -1119,7 +1119,7 @@ assignment_rule(Parser *p)
         }
         p->mark = mark;
     }
-    { // ('(' inside_paren_ann_assign_target ')' | ann_assign_subscript_attribute_target) ':' expression ['=' yield_expression]
+    { // ('(' inside_paren_ann_assign_target ')' | ann_assign_subscript_attribute_target) ':' expression ['=' annotated_rhs]
         void *a;
         expr_ty b;
         void *c;
@@ -4108,12 +4108,12 @@ named_expression_rule(Parser *p)
     return res;
 }
 
-// yield_expression: yield_expr | expression
-static void *
-yield_expression_rule(Parser *p)
+// annotated_rhs: yield_expr | expressions
+static expr_ty
+annotated_rhs_rule(Parser *p)
 {
-    void * res = NULL;
-    if (is_memoized(p, yield_expression_type, &res))
+    expr_ty res = NULL;
+    if (is_memoized(p, annotated_rhs_type, &res))
         return res;
     int mark = p->mark;
     { // yield_expr
@@ -4127,20 +4127,20 @@ yield_expression_rule(Parser *p)
         }
         p->mark = mark;
     }
-    { // expression
-        expr_ty expression_var;
+    { // expressions
+        expr_ty expressions_var;
         if (
-            (expression_var = expression_rule(p))
+            (expressions_var = expressions_rule(p))
         )
         {
-            res = expression_var;
+            res = expressions_var;
             goto done;
         }
         p->mark = mark;
     }
     res = NULL;
   done:
-    insert_memo(p, mark, yield_expression_type, res);
+    insert_memo(p, mark, annotated_rhs_type, res);
     return res;
 }
 
@@ -9199,7 +9199,7 @@ _tmp_8_rule(Parser *p)
     return res;
 }
 
-// _tmp_9: '=' yield_expression
+// _tmp_9: '=' annotated_rhs
 static void *
 _tmp_9_rule(Parser *p)
 {
@@ -9207,13 +9207,13 @@ _tmp_9_rule(Parser *p)
     if (is_memoized(p, _tmp_9_type, &res))
         return res;
     int mark = p->mark;
-    { // '=' yield_expression
-        void *d;
+    { // '=' annotated_rhs
+        expr_ty d;
         void *literal;
         if (
             (literal = expect_token(p, 22))
             &&
-            (d = yield_expression_rule(p))
+            (d = annotated_rhs_rule(p))
         )
         {
             res = d;
@@ -9275,7 +9275,7 @@ _tmp_10_rule(Parser *p)
     return res;
 }
 
-// _tmp_11: '=' yield_expression
+// _tmp_11: '=' annotated_rhs
 static void *
 _tmp_11_rule(Parser *p)
 {
@@ -9283,13 +9283,13 @@ _tmp_11_rule(Parser *p)
     if (is_memoized(p, _tmp_11_type, &res))
         return res;
     int mark = p->mark;
-    { // '=' yield_expression
-        void *d;
+    { // '=' annotated_rhs
+        expr_ty d;
         void *literal;
         if (
             (literal = expect_token(p, 22))
             &&
-            (d = yield_expression_rule(p))
+            (d = annotated_rhs_rule(p))
         )
         {
             res = d;
