@@ -1,0 +1,1 @@
+Fix an alignment build warning/error in function ``PyVectorcall_Function()`` publicly exposed by ``abstract.h``.
