@@ -1,0 +1,4 @@
+Adds end line no in class' use: generating dependency.
+: `end_lineno` is added to denote the scope of a class
+along with `lineno` which was already present in the codebase.
+Patch by Aviral Srivastava.
