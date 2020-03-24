@@ -67,4 +67,3 @@ class TestEncode(CTest):
         self.assertRaises(ZeroDivisionError, test, 'check_circular')
         self.assertRaises(ZeroDivisionError, test, 'allow_nan')
         self.assertRaises(ZeroDivisionError, test, 'sort_keys')
-
