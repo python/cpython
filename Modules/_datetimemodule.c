@@ -6386,34 +6386,19 @@ PyInit__datetime(void)
     if (m == NULL)
         return NULL;
 
-    if (PyModule_AddType(m, &PyDateTime_DateType) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
+    PyTypeObject *types[] = {
+        &PyDateTime_DateType,
+        &PyDateTime_DateTimeType,
+        &PyDateTime_TimeType,
+        &PyDateTime_DeltaType,
+        &PyDateTime_TZInfoType,
+        &PyDateTime_TimeZoneType
+    };
 
-    if (PyModule_AddType(m, &PyDateTime_DateTimeType) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    if (PyModule_AddType(m, &PyDateTime_TimeType) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    if (PyModule_AddType(m, &PyDateTime_DeltaType) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    if (PyModule_AddType(m, &PyDateTime_TZInfoType) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    if (PyModule_AddType(m, &PyDateTime_TimeZoneType) < 0) {
-        Py_DECREF(m);
-        return NULL;
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
+        if (PyModule_AddType(m, types[i]) < 0) {
+            return NULL;
+        }
     }
 
     /* timedelta values */
