@@ -281,7 +281,7 @@ class DemoWindow(object):
         for entry in getExampleEntries():
             def load(entry=entry):
                 self.loadfile(entry)
-            menu.add_command(label=entry, underline=0,
+            menu.add_command(label=entry.replace("_", " "), underline=0,
                              font=menufont, command=load)
         return menu
 
