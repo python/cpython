@@ -10,6 +10,7 @@ from importlib.resources import path
 from test.support import requires_zlib
 
 
+@requires_zlib
 class TestZip(unittest.TestCase):
     root = 'test.test_importlib.data'
 
@@ -23,7 +24,6 @@ class TestZip(unittest.TestCase):
         sys.path.insert(0, str(wheel))
         self.resources.callback(sys.path.pop, 0)
 
-    @requires_zlib
     def test_zip_version(self):
         self.assertEqual(version('example'), '21.12')
 
@@ -31,7 +31,6 @@ class TestZip(unittest.TestCase):
         with self.assertRaises(PackageNotFoundError):
             version('definitely-not-installed')
 
-    @requires_zlib
     def test_zip_entry_points(self):
         scripts = dict(entry_points()['console_scripts'])
         entry_point = scripts['example']
@@ -42,17 +41,16 @@ class TestZip(unittest.TestCase):
     def test_missing_metadata(self):
         self.assertIsNone(distribution('example').read_text('does not exist'))
 
-    @requires_zlib
     def test_case_insensitive(self):
         self.assertEqual(version('Example'), '21.12')
 
-    @requires_zlib
     def test_files(self):
         for file in files('example'):
             path = str(file.dist.locate_file(file))
             assert '.whl/' in path, path
 
 
+@requires_zlib
 class TestEgg(TestZip):
     def setUp(self):
         # Find the path to the example-*.egg so we can add it to the front of
@@ -64,7 +62,6 @@ class TestEgg(TestZip):
         sys.path.insert(0, str(egg))
         self.resources.callback(sys.path.pop, 0)
 
-    @requires_zlib
     def test_files(self):
         for file in files('example'):
             path = str(file.dist.locate_file(file))
