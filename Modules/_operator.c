@@ -1771,16 +1771,16 @@ PyInit__operator(void)
     if (m == NULL)
         return NULL;
 
-    if (PyModule_AddType(m, &itemgetter_type) < 0) {
-        return NULL;
-    }
+    PyTypeObject *types[] = {
+        &itemgetter_type,
+        &attrgetter_type,
+        &methodcaller_type
+    };
 
-    if (PyModule_AddType(m, &attrgetter_type) < 0) {
-        return NULL;
-    }
-
-    if (PyModule_AddType(m, &methodcaller_type) < 0) {
-        return NULL;
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
+        if (PyModule_AddType(m, types[i]) < 0) {
+            return NULL;
+        }
     }
 
     return m;
