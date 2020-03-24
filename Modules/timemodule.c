@@ -1786,6 +1786,11 @@ time_exec(PyObject *module)
         return -1;
     }
 #endif
+#ifdef CLOCK_TAI
+    if (PyModule_AddIntMacro(module, CLOCK_TAI) < 0) {
+        return -1;
+    }
+#endif
 #ifdef CLOCK_UPTIME
     if (PyModule_AddIntMacro(module, CLOCK_UPTIME) < 0) {
         return -1;
