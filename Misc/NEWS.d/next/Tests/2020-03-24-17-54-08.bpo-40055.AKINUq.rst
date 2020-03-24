@@ -1,0 +1,3 @@
+Distutils tests now prevent docutils from being imported since "import
+docutils" can have side effects on tests. For example, it imports
+pkg_resources which alters warnings filters.

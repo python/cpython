@@ -4,6 +4,7 @@ import textwrap
 import unittest
 from test.support import run_unittest
 
+# bpo-40055: distutils.tests prevents docutils from being imported
 from distutils.command.check import check, HAS_DOCUTILS
 from distutils.tests import support
 from distutils.errors import DistutilsSetupError

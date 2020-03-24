@@ -14,10 +14,8 @@ from distutils.log import INFO
 
 from distutils.tests.test_config import BasePyPIRCCommandTestCase
 
-try:
-    import docutils
-except ImportError:
-    docutils = None
+# bpo-40055: distutils.tests prevents docutils from being imported
+from distutils.command.check import HAS_DOCUTILS
 
 PYPIRC_NOPASSWORD = """\
 [distutils]
@@ -204,7 +202,7 @@ class RegisterTestCase(BasePyPIRCCommandTestCase):
         self.assertEqual(headers['Content-length'], '290')
         self.assertIn(b'tarek', req.data)
 
-    @unittest.skipUnless(docutils is not None, 'needs docutils')
+    @unittest.skipUnless(HAS_DOCUTILS, 'needs docutils')
     def test_strict(self):
         # testing the script option
         # when on, the register command stops if
@@ -270,7 +268,7 @@ class RegisterTestCase(BasePyPIRCCommandTestCase):
         finally:
             del register_module.input
 
-    @unittest.skipUnless(docutils is not None, 'needs docutils')
+    @unittest.skipUnless(HAS_DOCUTILS, 'needs docutils')
     def test_register_invalid_long_description(self):
         description = ':funkie:`str`'  # mimic Sphinx-specific markup
         metadata = {'url': 'xxx', 'author': 'xxx',

@@ -18,6 +18,12 @@ import unittest
 from test.support import run_unittest
 
 
+# bpo-40055: Prevent docutils from being imported to avoid depending on
+# docutils. Import docutils can have side effects. For example, docutils
+# imports pkg_resources which changes warnings filters.
+sys.modules['docutils'] = None
+
+
 here = os.path.dirname(__file__) or os.curdir
 
 
