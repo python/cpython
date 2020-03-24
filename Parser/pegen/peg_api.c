@@ -11,7 +11,7 @@ PyPegen_ASTFromString(const char *str, PyArena *arena)
         return NULL;
     }
 
-    mod_ty result = run_parser_from_string(str, parse_start, filename_ob, arena);
+    mod_ty result = run_parser_from_string(str, START, filename_ob, arena);
     Py_XDECREF(filename_ob);
     return result;
 }
@@ -24,7 +24,7 @@ PyPegen_ASTFromFile(const char *filename, PyArena *arena)
         return NULL;
     }
 
-    mod_ty result = run_parser_from_file(filename, parse_start, filename_ob, arena);
+    mod_ty result = run_parser_from_file(filename, START, filename_ob, arena);
     Py_XDECREF(filename_ob);
     return result;
 }

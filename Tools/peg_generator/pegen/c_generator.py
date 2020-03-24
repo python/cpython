@@ -347,9 +347,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         n_keyword_lists = (
             len(max(keyword_cache.keys(), key=len)) + 1 if len(keyword_cache) > 0 else 0
         )
-        self.print(f"const int n_keyword_lists = {n_keyword_lists};")
+        self.print(f"static const int n_keyword_lists = {n_keyword_lists};")
         groups = self._group_keywords_by_length()
-        self.print("KeywordToken *reserved_keywords[] = {")
+        self.print("static KeywordToken *reserved_keywords[] = {")
         with self.indent():
             num_groups = max(groups) + 1 if groups else 1
             for keywords_length in range(num_groups):

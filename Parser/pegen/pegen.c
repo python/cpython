@@ -501,7 +501,7 @@ Parser_Free(Parser *p)
 }
 
 Parser *
-Parser_New(struct tok_state *tok, mod_ty (*parse_func)(Parser *), int input_mode,
+Parser_New(struct tok_state *tok, START_RULE start_rule_func, int input_mode,
            PyArena *arena)
 {
     Parser *p = PyMem_Malloc(sizeof(Parser));
@@ -512,8 +512,8 @@ Parser_New(struct tok_state *tok, mod_ty (*parse_func)(Parser *), int input_mode
     assert(tok != NULL);
     p->tok = tok;
     p->input_mode = input_mode;
-    p->keywords = reserved_keywords;
-    p->n_keyword_lists = n_keyword_lists;
+    p->keywords = NULL;
+    p->n_keyword_lists = -1;
     p->tokens = PyMem_Malloc(sizeof(Token *));
     if (!p->tokens) {
         PyErr_Format(PyExc_MemoryError, "Out of memory for tokens");
@@ -526,12 +526,7 @@ Parser_New(struct tok_state *tok, mod_ty (*parse_func)(Parser *), int input_mode
     p->size = 1;
 
     p->arena = arena;
-
-    if (fill_token(p) < 0) {
-        return NULL;
-    }
-
-    p->start_rule_func = parse_func;
+    p->start_rule_func = start_rule_func;
 
     return p;
 }
@@ -544,8 +539,7 @@ run_parser(Parser *p)
         return NULL;
     }
 
-    mod_ty (*parse_func)(Parser *) = p->start_rule_func;
-    mod_ty res = (*parse_func)(p);
+    mod_ty res = parse(p);
     if (res == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -563,7 +557,7 @@ run_parser(Parser *p)
 }
 
 mod_ty
-run_parser_from_file(const char *filename, mod_ty (*parse_func)(Parser *),
+run_parser_from_file(const char *filename, START_RULE start_rule_func,
                      PyObject *filename_ob, PyArena *arena)
 {
     FILE *fp = fopen(filename, "rb");
@@ -583,7 +577,7 @@ run_parser_from_file(const char *filename, mod_ty (*parse_func)(Parser *),
     tok->filename = filename_ob;
     Py_INCREF(filename_ob);
 
-    Parser *p = Parser_New(tok, parse_func, FILE_INPUT, arena);
+    Parser *p = Parser_New(tok, start_rule_func, FILE_INPUT, arena);
     if (p == NULL) {
         goto after_tok_error;
     }
@@ -599,7 +593,7 @@ error:
 }
 
 mod_ty
-run_parser_from_string(const char *str, mod_ty (*parse_func)(Parser *), PyObject *filename_ob,
+run_parser_from_string(const char *str, START_RULE start_rule_func, PyObject *filename_ob,
                        PyArena *arena)
 {
     struct tok_state *tok = PyTokenizer_FromString(str, 1);
@@ -613,7 +607,7 @@ run_parser_from_string(const char *str, mod_ty (*parse_func)(Parser *), PyObject
     // We need to clear up from here on
     mod_ty result = NULL;
 
-    Parser *p = Parser_New(tok, parse_func, STRING_INPUT, arena);
+    Parser *p = Parser_New(tok, start_rule_func, STRING_INPUT, arena);
     if (p == NULL) {
         goto error;
     }

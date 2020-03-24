@@ -535,7 +535,7 @@ static expr_ty
 fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
                      Token *t)
 {
-    mod_ty mod = NULL;
+    expr_ty expr = NULL;
     char *str;
     Py_ssize_t len;
     const char *s;
@@ -585,68 +585,26 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         PyTokenizer_Free(tok);
         return NULL;
     }
-    mod_ty (*the_start_rule)(Parser*) = p->start_rule_func;
 
-    Parser *p2 = PyMem_Malloc(sizeof(Parser));
-    if (p2 == NULL) {
-        PyErr_Format(PyExc_MemoryError, "Out of memory for Parser");
-        goto exit;
-    }
-    p2->tok = tok;
-    p2->input_mode = STRING_INPUT;
-    p2->keywords = p->keywords;
-    p2->n_keyword_lists = p->n_keyword_lists;
-    p2->tokens = PyMem_Malloc(sizeof(Token *));
-    if (!p2->tokens) {
-        PyErr_Format(PyExc_MemoryError, "Out of memory for tokens");
-        goto exit;
-    }
-    p2->tokens[0] = PyMem_Malloc(sizeof(Token));
-    memset(p2->tokens[0], '\0', sizeof(Token));
-    p2->mark = 0;
-    p2->fill = 0;
-    p2->size = 1;
-    p2->arena = p->arena;
-    p2->start_rule_func = the_start_rule;
-    if (fill_token(p2) < 0) {
-        goto exit;
-    }
-    PyErr_Clear();
-    mod = the_start_rule(p2);
+    Parser *p2 = Parser_New(tok, EXPRESSIONS, STRING_INPUT, p->arena);
 
-    if (mod == NULL){
+    expr = parse(p2);
+
+    if (expr == NULL){
         raise_syntax_error(p2, "invalid syntax");
-        goto exit;
-    }
-
-    if (asdl_seq_LEN(mod->v.Module.body) == 0) {
-        raise_syntax_error(p, "f-string: empty expression not allowed");
-        goto exit;
-    }
-
-    stmt_ty expr = asdl_seq_GET(mod->v.Module.body, 0);
-    if (asdl_seq_LEN(mod->v.Module.body) != 1 || expr->kind != Expr_kind) {
-        raise_syntax_error(p, "f-string: invalid expression");
         goto exit;
     }
 
     /* Reuse str to find the correct column offset. */
     str[0] = '{';
     str[len+1] = '}';
-    fstring_fix_expr_location(t, expr->v.Expr.value, str);
+    fstring_fix_expr_location(t, expr, str);
 
-    result = expr->v.Expr.value;
+    result = expr;
 
 exit:
+    Parser_Free(p2);
     PyTokenizer_Free(tok);
-    for (int i = 0; i < p2->size; i++) {
-        PyMem_Free(p2->tokens[i]);
-    }
-    PyMem_Free(p2->tokens);
-    PyMem_Free(p2);
-    if (mod == NULL) {
-        return NULL;
-    }
     return result;
 }
 
