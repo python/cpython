@@ -1771,19 +1771,17 @@ PyInit__operator(void)
     if (m == NULL)
         return NULL;
 
-    if (PyType_Ready(&itemgetter_type) < 0)
-        return NULL;
-    Py_INCREF(&itemgetter_type);
-    PyModule_AddObject(m, "itemgetter", (PyObject *)&itemgetter_type);
+    PyTypeObject *types[] = {
+        &itemgetter_type,
+        &attrgetter_type,
+        &methodcaller_type
+    };
 
-    if (PyType_Ready(&attrgetter_type) < 0)
-        return NULL;
-    Py_INCREF(&attrgetter_type);
-    PyModule_AddObject(m, "attrgetter", (PyObject *)&attrgetter_type);
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
+        if (PyModule_AddType(m, types[i]) < 0) {
+            return NULL;
+        }
+    }
 
-    if (PyType_Ready(&methodcaller_type) < 0)
-        return NULL;
-    Py_INCREF(&methodcaller_type);
-    PyModule_AddObject(m, "methodcaller", (PyObject *)&methodcaller_type);
     return m;
 }
