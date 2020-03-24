@@ -1787,8 +1787,8 @@ time_exec(PyObject *module)
     }
 #endif
 #ifdef CLOCK_TAI
-    if (PyModule_AddIntMacro(m, CLOCK_TAI) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_TAI) < 0) {
+        return -1;
     }
 #endif
 #ifdef CLOCK_UPTIME
