@@ -15,13 +15,15 @@ _Py_parse_file(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    PyObject *result = NULL;
+
     mod_ty res = PyPegen_ASTFromFile(filename, arena);
     if (res == NULL) {
-        PyArena_Free(arena);
-        return NULL;
+        goto error;
     }
-    PyObject *result = PyAST_mod2obj(res);
+    result = PyAST_mod2obj(res);
 
+error:
     PyArena_Free(arena);
     return result;
 }
@@ -40,13 +42,15 @@ _Py_parse_string(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    PyObject *result = NULL;
+
     mod_ty res = PyPegen_ASTFromString(the_string, arena);
     if (res == NULL) {
-        PyArena_Free(arena);
-        return NULL;
+        goto error;
     }
-    PyObject *result = PyAST_mod2obj(res);
+    result = PyAST_mod2obj(res);
 
+error:
     PyArena_Free(arena);
     return result;
 }

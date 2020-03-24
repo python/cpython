@@ -10,8 +10,8 @@ extern "C" {
 
 PyAPI_FUNC(mod_ty) PyPegen_ASTFromFile(const char *filename, PyArena *arena);
 PyAPI_FUNC(mod_ty) PyPegen_ASTFromString(const char *str, PyArena *arena);
-PyAPI_FUNC(PyCodeObject *) PyPegen_CodeObjectFromFile(const char *filename, PyArena *arena);
-PyAPI_FUNC(PyCodeObject *) PyPegen_CodeObjectFromString(const char *str, PyArena *arena);
+PyAPI_FUNC(PyCodeObject *) PyPegen_CodeObjectFromFile(const char *filename);
+PyAPI_FUNC(PyCodeObject *) PyPegen_CodeObjectFromString(const char *str);
 
 #ifdef __cplusplus
 }

@@ -8,6 +8,8 @@ parse_start(Parser *p)
 {
     return start_rule(p);
 }
+
+// The end
 '''
 
 start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }

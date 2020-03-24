@@ -536,8 +536,8 @@ Parser_New(struct tok_state *tok, mod_ty (*parse_func)(Parser *), int input_mode
     return p;
 }
 
-void *
-run_parser(Parser *p, int mode)
+mod_ty
+run_parser(Parser *p)
 {
     int error = setjmp(p->error_env);
     if (error) {
@@ -559,23 +559,12 @@ run_parser(Parser *p, int mode)
         return NULL;
     }
 
-    void *result = NULL;
-    if (mode == CODE_OBJECT) {
-        result = PyAST_CompileObject(res, p->tok->filename, NULL, -1, p->arena);
-    }
-    else if (mode == AST_OBJECT) {
-        result = PyAST_mod2obj(res);
-    }
-    else {
-        result = res;
-    }
-
-    return result;
+    return res;
 }
 
-void *
-run_parser_from_file(const char *filename, mod_ty (*parse_func)(Parser *), int mode,
-                     PyArena *arena)
+mod_ty
+run_parser_from_file(const char *filename, mod_ty (*parse_func)(Parser *),
+                     PyObject *filename_ob, PyArena *arena)
 {
     FILE *fp = fopen(filename, "rb");
     if (fp == NULL) {
@@ -583,65 +572,56 @@ run_parser_from_file(const char *filename, mod_ty (*parse_func)(Parser *), int m
         return NULL;
     }
 
-    PyObject *filename_ob = NULL;
-    if ((filename_ob = PyUnicode_FromString(filename)) == NULL) {
-        return NULL;
-    }
-
     // From here on we need to clean up even if there's an error
-    void *result = NULL;
+    mod_ty result = NULL;
 
     struct tok_state *tok = PyTokenizer_FromFile(fp, NULL, NULL, NULL);
     if (tok == NULL) {
         goto error;
     }
-
-    // Transfers ownership
+    // This transfers the ownership to the tokenizer
     tok->filename = filename_ob;
-    filename_ob = NULL;
+    Py_INCREF(filename_ob);
 
     Parser *p = Parser_New(tok, parse_func, FILE_INPUT, arena);
     if (p == NULL) {
-        PyTokenizer_Free(tok);
-        goto error;
+        goto after_tok_error;
     }
 
-    result = run_parser(p, mode);
-
+    result = run_parser(p);
     Parser_Free(p);
-    PyTokenizer_Free(tok);
 
+after_tok_error:
+    PyTokenizer_Free(tok);
 error:
     fclose(fp);
-    Py_XDECREF(filename_ob);
     return result;
 }
 
-void *
-run_parser_from_string(const char *str, mod_ty (*parse_func)(Parser *), int mode,
+mod_ty
+run_parser_from_string(const char *str, mod_ty (*parse_func)(Parser *), PyObject *filename_ob,
                        PyArena *arena)
 {
-    void *result = NULL;
     struct tok_state *tok = PyTokenizer_FromString(str, 1);
     if (tok == NULL) {
         return NULL;
     }
+    // This transfers the ownership to the tokenizer
+    tok->filename = filename_ob;
+    Py_INCREF(filename_ob);
 
-    tok->filename = PyUnicode_FromString("<string>");
-    if (tok->filename == NULL) {
-        PyTokenizer_Free(tok);
-        return NULL;
-    }
+    // We need to clear up from here on
+    mod_ty result = NULL;
 
     Parser *p = Parser_New(tok, parse_func, STRING_INPUT, arena);
     if (p == NULL) {
-        PyTokenizer_Free(tok);
-        return NULL;
+        goto error;
     }
 
-    result = run_parser(p, mode);
-
+    result = run_parser(p);
     Parser_Free(p);
+
+error:
     PyTokenizer_Free(tok);
     return result;
 }

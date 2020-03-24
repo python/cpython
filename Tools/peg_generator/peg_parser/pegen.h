@@ -14,13 +14,6 @@ enum INPUT_MODE {
 };
 typedef enum INPUT_MODE INPUT_MODE;
 
-enum MODE {
-    RAW_AST_OBJECT,
-    AST_OBJECT,
-    CODE_OBJECT,
-};
-typedef enum MODE MODE;
-
 typedef struct _memo {
     int type;
     void *node;
@@ -143,8 +136,8 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
 #define CHECK_NULL_ALLOWED(result) CHECK_CALL_NULL_ALLOWED(p, result)
 
 PyObject *new_identifier(Parser *, char *);
-void *run_parser_from_file(const char *, mod_ty(*)(Parser *), int, PyArena *);
-void *run_parser_from_string(const char *, mod_ty(*)(Parser *), int, PyArena *);
+mod_ty run_parser_from_file(const char *, mod_ty(*)(Parser *), PyObject *, PyArena *);
+mod_ty run_parser_from_string(const char *, mod_ty(*)(Parser *), PyObject *, PyArena *);
 asdl_seq *singleton_seq(Parser *, void *);
 asdl_seq *seq_insert_in_front(Parser *, void *, asdl_seq *);
 asdl_seq *seq_flatten(Parser *, asdl_seq *);
