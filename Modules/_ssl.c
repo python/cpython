@@ -304,7 +304,6 @@ enum py_ssl_error {
     PY_SSL_ERROR_ZERO_RETURN,
     PY_SSL_ERROR_WANT_CONNECT,
     /* start of non ssl.h errorcodes */
-    PY_SSL_ERROR_EOF,         /* special case of SSL_ERROR_SYSCALL */
     PY_SSL_ERROR_NO_SOCKET,   /* socket has been GC'd */
     PY_SSL_ERROR_INVALID_ERROR_CODE
 };
@@ -776,11 +775,7 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
         {
             if (e == 0) {
                 PySocketSockObject *s = GET_SOCKET(sslsock);
-                if (ret == 0 || (((PyObject *)s) == Py_None)) {
-                    p = PY_SSL_ERROR_EOF;
-                    type = PySSLEOFErrorObject;
-                    errstr = "EOF occurred in violation of protocol";
-                } else if (s && ret == -1) {
+                if (s && ret == -1) {
                     /* underlying BIO reported an I/O error */
                     ERR_clear_error();
 #ifdef MS_WINDOWS
@@ -812,6 +807,10 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
             if (e == 0) {
                 /* possible? */
                 errstr = "A failure in the SSL library occurred";
+            }
+            if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
+                    ERR_GET_REASON(e) == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
+                type = PySSLEOFErrorObject;
             }
             if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
                     ERR_GET_REASON(e) == SSL_R_CERTIFICATE_VERIFY_FAILED) {
@@ -6088,8 +6087,6 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "SSL_ERROR_WANT_CONNECT",
                             PY_SSL_ERROR_WANT_CONNECT);
     /* non ssl.h errorcodes */
-    PyModule_AddIntConstant(m, "SSL_ERROR_EOF",
-                            PY_SSL_ERROR_EOF);
     PyModule_AddIntConstant(m, "SSL_ERROR_INVALID_ERROR_CODE",
                             PY_SSL_ERROR_INVALID_ERROR_CODE);
     /* cert requirements */

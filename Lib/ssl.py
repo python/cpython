@@ -32,7 +32,6 @@ SSL_ERROR_SYSCALL
 SSL_ERROR_SSL
 SSL_ERROR_WANT_CONNECT
 
-SSL_ERROR_EOF
 SSL_ERROR_INVALID_ERROR_CODE
 
 The following group define certificate requirements that one side is
@@ -1099,14 +1098,16 @@ class SSLSocket(socket):
                 return self._sslobj.read(len, buffer)
             else:
                 return self._sslobj.read(len)
-        except SSLError as x:
-            if x.args[0] == SSL_ERROR_EOF and self.suppress_ragged_eofs:
+        except SSLEOFError:
+            if self.suppress_ragged_eofs:
                 if buffer is not None:
                     return 0
                 else:
                     return b''
             else:
                 raise
+        except SSLError:
+            raise
 
     def write(self, data):
         """Write DATA to the underlying SSL channel.  Returns
