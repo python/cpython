@@ -203,8 +203,8 @@ class PyclbrTest(TestCase):
                 self.assertIs(ob.parent, parent2)
             for key in children1.keys():
                 o1, o2 = children1[key], children2[key]
-                t1 = type(o1), o1.name, o1.file, o1.module, o1.lineno
-                t2 = type(o2), o2.name, o2.file, o2.module, o2.lineno
+                t1 = type(o1), o1.name, o1.file, o1.module, o1.lineno, o1.end_lineno
+                t2 = type(o2), o2.name, o2.file, o2.module, o2.lineno, o2.end_lineno
                 self.assertEqual(t1, t2)
                 if type(o1) is mb.Class:
                     self.assertEqual(o1.methods, o2.methods)
