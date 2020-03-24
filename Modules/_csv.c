@@ -1633,9 +1633,6 @@ PyInit__csv(void)
     PyObject *module;
     const StyleDesc *style;
 
-    if (PyType_Ready(&Dialect_Type) < 0)
-        return NULL;
-
     if (PyType_Ready(&Reader_Type) < 0)
         return NULL;
 
@@ -1671,10 +1668,9 @@ PyInit__csv(void)
             return NULL;
     }
 
-    /* Add the Dialect type */
-    Py_INCREF(&Dialect_Type);
-    if (PyModule_AddObject(module, "Dialect", (PyObject *)&Dialect_Type))
+    if (PyModule_AddType(module, &Dialect_Type)) {
         return NULL;
+    }
 
     /* Add the CSV exception object to the module. */
     get_csv_state(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
