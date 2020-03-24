@@ -152,7 +152,7 @@ class SequenceMatcher:
         """Construct a SequenceMatcher.
 
         Optional arg isjunk is None (the default), or a one-argument
-        function that takes a sequence element and returns true iff the
+        function that takes a sequence element and returns true if the
         element is junk.  None is equivalent to passing "lambda x: 0", i.e.
         no elements are considered to be junk.  For example, pass
             lambda x: x in " \\t"
@@ -844,7 +844,7 @@ class Differ:
         The two optional keyword parameters are for filter functions:
 
         - `linejunk`: A function that should accept a single string argument,
-          and return true iff the string is junk. The module-level function
+          and return true if the string is junk. The module-level function
           `IS_LINE_JUNK` may be used to filter out lines without visible
           characters, except for at most one splat ('#').  It is recommended
           to leave linejunk None; the underlying SequenceMatcher class has
@@ -1343,7 +1343,7 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
       notion of "noise" lines.
 
     - charjunk: A function that accepts a character (string of length
-      1), and returns true iff the character is junk. The default is
+      1), and returns true if the character is junk. The default is
       the module-level function IS_CHARACTER_JUNK, which filters out
       whitespace characters (a blank or tab; note: it's a bad idea to
       include newline in this!).
