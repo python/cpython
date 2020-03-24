@@ -322,6 +322,7 @@ class DemoWindow(object):
         self.module = sys.modules[modname]
         with open(self.module.__file__, 'r') as f:
             chars = f.read()
+        self.chars = chars
         self.text.delete("1.0", "end")
         self.text.insert("1.0", chars)
         self.root.title(filename + " - a Python turtle graphics example")
@@ -338,6 +339,15 @@ class DemoWindow(object):
         self.screen.clear()
         self.screen.mode("standard")
         self.state = RUNNING
+
+        value = self.text.get("1.0", END)
+
+        if value != self.chars:
+            with open("_temp.py", "w") as f:
+                f.write(value)
+            modname = "_temp"
+            __import__(modname)
+            self.module = sys.modules[modname]
 
         try:
             result = self.module.main()
