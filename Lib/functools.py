@@ -10,13 +10,11 @@
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
-           'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
-           'partialmethod', 'singledispatch', 'singledispatchmethod']
+           'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce',
+           'TopologicalSorter', 'CycleError',
+           'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
+           'cached_property']
 
-try:
-    from _functools import reduce
-except ImportError:
-    pass
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
@@ -98,6 +96,8 @@ def _gt_from_lt(self, other, NotImplemented=NotImplemented):
 def _le_from_lt(self, other, NotImplemented=NotImplemented):
     'Return a <= b.  Computed by @total_ordering from (a < b) or (a == b).'
     op_result = self.__lt__(other)
+    if op_result is NotImplemented:
+        return op_result
     return op_result or self == other
 
 def _ge_from_lt(self, other, NotImplemented=NotImplemented):
@@ -138,6 +138,8 @@ def _lt_from_gt(self, other, NotImplemented=NotImplemented):
 def _ge_from_gt(self, other, NotImplemented=NotImplemented):
     'Return a >= b.  Computed by @total_ordering from (a > b) or (a == b).'
     op_result = self.__gt__(other)
+    if op_result is NotImplemented:
+        return op_result
     return op_result or self == other
 
 def _le_from_gt(self, other, NotImplemented=NotImplemented):
@@ -196,6 +198,250 @@ def total_ordering(cls):
             setattr(cls, opname, opfunc)
     return cls
 
+################################################################################
+### topological sort
+################################################################################
+
+_NODE_OUT = -1
+_NODE_DONE = -2
+
+
+class _NodeInfo:
+    __slots__ = 'node', 'npredecessors', 'successors'
+
+    def __init__(self, node):
+        # The node this class is augmenting.
+        self.node = node
+
+        # Number of predecessors, generally >= 0. When this value falls to 0,
+        # and is returned by get_ready(), this is set to _NODE_OUT and when the
+        # node is marked done by a call to done(), set to _NODE_DONE.
+        self.npredecessors = 0
+
+        # List of successor nodes. The list can contain duplicated elements as
+        # long as they're all reflected in the successor's npredecessors attribute).
+        self.successors = []
+
+
+class CycleError(ValueError):
+    """Subclass of ValueError raised by TopologicalSorterif cycles exist in the graph
+
+    If multiple cycles exist, only one undefined choice among them will be reported
+    and included in the exception. The detected cycle can be accessed via the second
+    element in the *args* attribute of the exception instance and consists in a list
+    of nodes, such that each node is, in the graph, an immediate predecessor of the
+    next node in the list. In the reported list, the first and the last node will be
+    the same, to make it clear that it is cyclic.
+    """
+    pass
+
+
+class TopologicalSorter:
+    """Provides functionality to topologically sort a graph of hashable nodes"""
+
+    def __init__(self, graph=None):
+        self._node2info = {}
+        self._ready_nodes = None
+        self._npassedout = 0
+        self._nfinished = 0
+
+        if graph is not None:
+            for node, predecessors in graph.items():
+                self.add(node, *predecessors)
+
+    def _get_nodeinfo(self, node):
+        if (result := self._node2info.get(node)) is None:
+            self._node2info[node] = result = _NodeInfo(node)
+        return result
+
+    def add(self, node, *predecessors):
+        """Add a new node and its predecessors to the graph.
+
+        Both the *node* and all elements in *predecessors* must be hashable.
+
+        If called multiple times with the same node argument, the set of dependencies
+        will be the union of all dependencies passed in.
+
+        It is possible to add a node with no dependencies (*predecessors* is not provided)
+        as well as provide a dependency twice. If a node that has not been provided before
+        is included among *predecessors* it will be automatically added to the graph with
+        no predecessors of its own.
+
+        Raises ValueError if called after "prepare".
+        """
+        if self._ready_nodes is not None:
+            raise ValueError("Nodes cannot be added after a call to prepare()")
+
+        # Create the node -> predecessor edges
+        nodeinfo = self._get_nodeinfo(node)
+        nodeinfo.npredecessors += len(predecessors)
+
+        # Create the predecessor -> node edges
+        for pred in predecessors:
+            pred_info = self._get_nodeinfo(pred)
+            pred_info.successors.append(node)
+
+    def prepare(self):
+        """Mark the graph as finished and check for cycles in the graph.
+
+        If any cycle is detected, "CycleError" will be raised, but "get_ready" can
+        still be used to obtain as many nodes as possible until cycles block more
+        progress. After a call to this function, the graph cannot be modified and
+        therefore no more nodes can be added using "add".
+        """
+        if self._ready_nodes is not None:
+            raise ValueError("cannot prepare() more than once")
+
+        self._ready_nodes = [i.node for i in self._node2info.values()
+                             if i.npredecessors == 0]
+        # ready_nodes is set before we look for cycles on purpose:
+        # if the user wants to catch the CycleError, that's fine,
+        # they can continue using the instance to grab as many
+        # nodes as possible before cycles block more progress
+        cycle = self._find_cycle()
+        if cycle:
+            raise CycleError(f"nodes are in a cycle", cycle)
+
+    def get_ready(self):
+        """Return a tuple of all the nodes that are ready.
+
+        Initially it returns all nodes with no predecessors; once those are marked
+        as processed by calling "done", further calls will return all new nodes that
+        have all their predecessors already processed. Once no more progress can be made,
+        empty tuples are returned.
+
+        Raises ValueError if called without calling "prepare" previously.
+        """
+        if self._ready_nodes is None:
+            raise ValueError("prepare() must be called first")
+
+        # Get the nodes that are ready and mark them
+        result = tuple(self._ready_nodes)
+        n2i = self._node2info
+        for node in result:
+            n2i[node].npredecessors = _NODE_OUT
+
+        # Clean the list of nodes that are ready and update
+        # the counter of nodes that we have returned.
+        self._ready_nodes.clear()
+        self._npassedout += len(result)
+
+        return result
+
+    def is_active(self):
+        """Return True if more progress can be made and ``False`` otherwise.
+
+        Progress can be made if cycles do not block the resolution and either there
+        are still nodes ready that haven't yet been returned by "get_ready" or the
+        number of nodes marked "done" is less than the number that have been returned
+        by "get_ready".
+
+        Raises ValueError if called without calling "prepare" previously.
+        """
+        if self._ready_nodes is None:
+            raise ValueError("prepare() must be called first")
+        return self._nfinished < self._npassedout or bool(self._ready_nodes)
+
+    def __bool__(self):
+        return self.is_active()
+
+    def done(self, *nodes):
+        """Marks a set of nodes returned by "get_ready" as processed.
+
+        This method unblocks any successor of each node in *nodes* for being returned
+        in the future by a a call to "get_ready"
+
+        Raises :exec:`ValueError` if any node in *nodes* has already been marked as
+        processed by a previous call to this method, if a node was not added to the
+        graph by using "add" or if called without calling "prepare" previously or if
+        node has not yet been returned by "get_ready".
+        """
+
+        if self._ready_nodes is None:
+            raise ValueError("prepare() must be called first")
+
+        n2i = self._node2info
+
+        for node in nodes:
+
+            # Check if we know about this node (it was added previously using add()
+            if (nodeinfo := n2i.get(node)) is None:
+                raise ValueError(f"node {node!r} was not added using add()")
+
+            # If the node has not being returned (marked as ready) previously, inform the user.
+            stat = nodeinfo.npredecessors
+            if stat != _NODE_OUT:
+                if stat >= 0:
+                    raise ValueError(f"node {node!r} was not passed out (still not ready)")
+                elif stat == _NODE_DONE:
+                    raise ValueError(f"node {node!r} was already marked done")
+                else:
+                    assert False, f"node {node!r}: unknown status {stat}"
+
+            # Mark the node as processed
+            nodeinfo.npredecessors = _NODE_DONE
+
+            # Go to all the successors and reduce the number of predecessors, collecting all the ones
+            # that are ready to be returned in the next get_ready() call.
+            for successor in nodeinfo.successors:
+                successor_info = n2i[successor]
+                successor_info.npredecessors -= 1
+                if successor_info.npredecessors == 0:
+                    self._ready_nodes.append(successor)
+            self._nfinished += 1
+
+    def _find_cycle(self):
+        n2i = self._node2info
+        stack = []
+        itstack = []
+        seen = set()
+        node2stacki = {}
+
+        for node in n2i:
+            if node in seen:
+                continue
+
+            while True:
+                if node in seen:
+                    # If we have seen already the node and is in the
+                    # current stack we have found a cycle.
+                    if node in node2stacki:
+                        return stack[node2stacki[node]:] + [node]
+                    # else go on to get next successor
+                else:
+                    seen.add(node)
+                    itstack.append(iter(n2i[node].successors).__next__)
+                    node2stacki[node] = len(stack)
+                    stack.append(node)
+
+                # Backtrack to the topmost stack entry with
+                # at least another successor.
+                while stack:
+                    try:
+                        node = itstack[-1]()
+                        break
+                    except StopIteration:
+                        del node2stacki[stack.pop()]
+                        itstack.pop()
+                else:
+                    break
+        return None
+
+    def static_order(self):
+        """Returns an iterable of nodes in a topological order.
+
+        The particular order that is returned may depend on the specific
+        order in which the items were inserted in the graph.
+
+        Using this method does not require to call "prepare" or "done". If any
+        cycle is detected, :exc:`CycleError` will be raised.
+        """
+        self.prepare()
+        while self.is_active():
+            node_group = self.get_ready()
+            yield from node_group
+            self.done(*node_group)
+
 
 ################################################################################
 ### cmp_to_key() function converter
@@ -227,6 +473,45 @@ except ImportError:
 
 
 ################################################################################
+### reduce() sequence to a single item
+################################################################################
+
+_initial_missing = object()
+
+def reduce(function, sequence, initial=_initial_missing):
+    """
+    reduce(function, sequence[, initial]) -> value
+
+    Apply a function of two arguments cumulatively to the items of a sequence,
+    from left to right, so as to reduce the sequence to a single value.
+    For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
+    ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
+    of the sequence in the calculation, and serves as a default when the
+    sequence is empty.
+    """
+
+    it = iter(sequence)
+
+    if initial is _initial_missing:
+        try:
+            value = next(it)
+        except StopIteration:
+            raise TypeError("reduce() of empty sequence with no initial value") from None
+    else:
+        value = initial
+
+    for element in it:
+        value = function(value, element)
+
+    return value
+
+try:
+    from _functools import reduce
+except ImportError:
+    pass
+
+
+################################################################################
 ### partial() argument application
 ################################################################################
 
@@ -238,22 +523,13 @@ class partial:
 
     __slots__ = "func", "args", "keywords", "__dict__", "__weakref__"
 
-    def __new__(*args, **keywords):
-        if not args:
-            raise TypeError("descriptor '__new__' of partial needs an argument")
-        if len(args) < 2:
-            raise TypeError("type 'partial' takes at least one argument")
-        cls, func, *args = args
+    def __new__(cls, func, /, *args, **keywords):
         if not callable(func):
             raise TypeError("the first argument must be callable")
-        args = tuple(args)
 
         if hasattr(func, "func"):
             args = func.args + args
-            tmpkw = func.keywords.copy()
-            tmpkw.update(keywords)
-            keywords = tmpkw
-            del tmpkw
+            keywords = {**func.keywords, **keywords}
             func = func.func
 
         self = super(partial, cls).__new__(cls)
@@ -263,13 +539,9 @@ class partial:
         self.keywords = keywords
         return self
 
-    def __call__(*args, **keywords):
-        if not args:
-            raise TypeError("descriptor '__call__' of partial needs an argument")
-        self, *args = args
-        newkeywords = self.keywords.copy()
-        newkeywords.update(keywords)
-        return self.func(*self.args, *args, **newkeywords)
+    def __call__(self, /, *args, **keywords):
+        keywords = {**self.keywords, **keywords}
+        return self.func(*self.args, *args, **keywords)
 
     @recursive_repr()
     def __repr__(self):
@@ -323,7 +595,7 @@ class partialmethod(object):
     callables as instance methods.
     """
 
-    def __init__(self, func, *args, **keywords):
+    def __init__(self, func, /, *args, **keywords):
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError("{!r} is not callable or a descriptor"
                                  .format(func))
@@ -336,8 +608,7 @@ class partialmethod(object):
             # it's also more efficient since only one function will be called
             self.func = func.func
             self.args = func.args + args
-            self.keywords = func.keywords.copy()
-            self.keywords.update(keywords)
+            self.keywords = {**func.keywords, **keywords}
         else:
             self.func = func
             self.args = args
@@ -355,17 +626,14 @@ class partialmethod(object):
                                     keywords=keywords)
 
     def _make_unbound_method(self):
-        def _method(*args, **keywords):
-            call_keywords = self.keywords.copy()
-            call_keywords.update(keywords)
-            cls_or_self, *rest = args
-            call_args = (cls_or_self,) + self.args + tuple(rest)
-            return self.func(*call_args, **call_keywords)
+        def _method(cls_or_self, /, *args, **keywords):
+            keywords = {**self.keywords, **keywords}
+            return self.func(cls_or_self, *self.args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method._partialmethod = self
         return _method
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         get = getattr(self.func, "__get__", None)
         result = None
         if get is not None:
@@ -388,6 +656,12 @@ class partialmethod(object):
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
 
+# Helper functions
+
+def _unwrap_partial(func):
+    while isinstance(func, partial):
+        func = func.func
+    return func
 
 ################################################################################
 ### LRU Cache function decorator
@@ -413,7 +687,7 @@ class _HashedSeq(list):
 
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
-             fasttypes = {int, str, frozenset, type(None)},
+             fasttypes = {int, str},
              tuple=tuple, type=type, len=len):
     """Make a cache key from optionally typed positional and keyword arguments
 
@@ -458,7 +732,7 @@ def lru_cache(maxsize=128, typed=False):
     with f.cache_info().  Clear the cache and statistics with f.cache_clear().
     Access the underlying function with f.__wrapped__.
 
-    See:  http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
+    See:  http://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)
 
     """
 
@@ -467,14 +741,23 @@ def lru_cache(maxsize=128, typed=False):
     # The internals of the lru_cache are encapsulated for thread safety and
     # to allow the implementation to change (including a possible C version).
 
-    # Early detection of an erroneous call to @lru_cache without any arguments
-    # resulting in the inner function being passed to maxsize instead of an
-    # integer or None.
-    if maxsize is not None and not isinstance(maxsize, int):
-        raise TypeError('Expected maxsize to be an integer or None')
+    if isinstance(maxsize, int):
+        # Negative maxsize is treated as 0
+        if maxsize < 0:
+            maxsize = 0
+    elif callable(maxsize) and isinstance(typed, bool):
+        # The user_function was passed in directly via the maxsize argument
+        user_function, maxsize = maxsize, 128
+        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+        wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
+        return update_wrapper(wrapper, user_function)
+    elif maxsize is not None:
+        raise TypeError(
+            'Expected first argument to be an integer, a callable, or None')
 
     def decorating_function(user_function):
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+        wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
 
     return decorating_function
@@ -497,10 +780,10 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     if maxsize == 0:
 
         def wrapper(*args, **kwds):
-            # No caching -- just a statistics update after a successful call
+            # No caching -- just a statistics update
             nonlocal misses
-            result = user_function(*args, **kwds)
             misses += 1
+            result = user_function(*args, **kwds)
             return result
 
     elif maxsize is None:
@@ -513,9 +796,9 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
             if result is not sentinel:
                 hits += 1
                 return result
+            misses += 1
             result = user_function(*args, **kwds)
             cache[key] = result
-            misses += 1
             return result
 
     else:
@@ -537,6 +820,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     link[NEXT] = root
                     hits += 1
                     return result
+                misses += 1
             result = user_function(*args, **kwds)
             with lock:
                 if key in cache:
@@ -574,7 +858,6 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # Use the cache_len bound method instead of the len() function
                     # which could potentially be wrapped in an lru_cache itself.
                     full = (cache_len() >= maxsize)
-                misses += 1
             return result
 
     def cache_info():
@@ -807,9 +1090,11 @@ def singledispatch(func):
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
             argname, cls = next(iter(get_type_hints(func).items()))
-            assert isinstance(cls, type), (
-                f"Invalid annotation for {argname!r}. {cls!r} is not a class."
-            )
+            if not isinstance(cls, type):
+                raise TypeError(
+                    f"Invalid annotation for {argname!r}. "
+                    f"{cls!r} is not a class."
+                )
         registry[cls] = func
         if cache_token is None and hasattr(cls, '__abstractmethods__'):
             cache_token = get_cache_token()
@@ -817,8 +1102,13 @@ def singledispatch(func):
         return func
 
     def wrapper(*args, **kw):
+        if not args:
+            raise TypeError(f'{funcname} requires at least '
+                            '1 positional argument')
+
         return dispatch(args[0].__class__)(*args, **kw)
 
+    funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func
     wrapper.register = register
     wrapper.dispatch = dispatch
@@ -850,7 +1140,7 @@ class singledispatchmethod:
         """
         return self.dispatcher.register(cls, func=method)
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         def _method(*args, **kwargs):
             method = self.dispatcher.dispatch(args[0].__class__)
             return method.__get__(obj, cls)(*args, **kwargs)
@@ -863,3 +1153,58 @@ class singledispatchmethod:
     @property
     def __isabstractmethod__(self):
         return getattr(self.func, '__isabstractmethod__', False)
+
+
+################################################################################
+### cached_property() - computed once per instance, cached as attribute
+################################################################################
+
+_NOT_FOUND = object()
+
+
+class cached_property:
+    def __init__(self, func):
+        self.func = func
+        self.attrname = None
+        self.__doc__ = func.__doc__
+        self.lock = RLock()
+
+    def __set_name__(self, owner, name):
+        if self.attrname is None:
+            self.attrname = name
+        elif name != self.attrname:
+            raise TypeError(
+                "Cannot assign the same cached_property to two different names "
+                f"({self.attrname!r} and {name!r})."
+            )
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        if self.attrname is None:
+            raise TypeError(
+                "Cannot use cached_property instance without calling __set_name__ on it.")
+        try:
+            cache = instance.__dict__
+        except AttributeError:  # not all objects have __dict__ (e.g. class defines slots)
+            msg = (
+                f"No '__dict__' attribute on {type(instance).__name__!r} "
+                f"instance to cache {self.attrname!r} property."
+            )
+            raise TypeError(msg) from None
+        val = cache.get(self.attrname, _NOT_FOUND)
+        if val is _NOT_FOUND:
+            with self.lock:
+                # check if another thread filled cache while we awaited lock
+                val = cache.get(self.attrname, _NOT_FOUND)
+                if val is _NOT_FOUND:
+                    val = self.func(instance)
+                    try:
+                        cache[self.attrname] = val
+                    except TypeError:
+                        msg = (
+                            f"The '__dict__' attribute on {type(instance).__name__!r} instance "
+                            f"does not support item assignment for caching {self.attrname!r} property."
+                        )
+                        raise TypeError(msg) from None
+        return val

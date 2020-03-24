@@ -6,35 +6,6 @@ from test import support
 
 import _ctypes_test
 
-# Only windows 32-bit has different calling conventions.
-@unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
-@unittest.skipUnless(sizeof(c_void_p) == sizeof(c_int),
-                     "sizeof c_void_p and c_int differ")
-class WindowsTestCase(unittest.TestCase):
-    def test_callconv_1(self):
-        # Testing stdcall function
-
-        IsWindow = windll.user32.IsWindow
-        # ValueError: Procedure probably called with not enough arguments
-        # (4 bytes missing)
-        self.assertRaises(ValueError, IsWindow)
-
-        # This one should succeed...
-        self.assertEqual(0, IsWindow(0))
-
-        # ValueError: Procedure probably called with too many arguments
-        # (8 bytes in excess)
-        self.assertRaises(ValueError, IsWindow, 0, 0, 0)
-
-    def test_callconv_2(self):
-        # Calling stdcall function as cdecl
-
-        IsWindow = cdll.user32.IsWindow
-
-        # ValueError: Procedure called with not enough arguments
-        # (4 bytes missing) or wrong calling convention
-        self.assertRaises(ValueError, IsWindow, None)
-
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class FunctionCallTestCase(unittest.TestCase):
     @unittest.skipUnless('MSC' in sys.version, "SEH only supported by MSC")
@@ -52,6 +23,24 @@ class FunctionCallTestCase(unittest.TestCase):
     def test_noargs(self):
         # This is a special case on win32 x64
         windll.user32.GetDesktopWindow()
+
+
+@unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
+class ReturnStructSizesTestCase(unittest.TestCase):
+    def test_sizes(self):
+        dll = CDLL(_ctypes_test.__file__)
+        for i in range(1, 11):
+            fields = [ (f"f{f}", c_char) for f in range(1, i + 1)]
+            class S(Structure):
+                _fields_ = fields
+            f = getattr(dll, f"TestSize{i}")
+            f.restype = S
+            res = f()
+            for i, f in enumerate(fields):
+                value = getattr(res, f[0])
+                expected = bytes([ord('a') + i])
+                self.assertEqual(value, expected)
+
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')

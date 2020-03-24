@@ -124,12 +124,18 @@ class NumberTestCase(unittest.TestCase):
         class IntLike(object):
             def __int__(self):
                 return 2
-        i = IntLike()
+        d = IntLike()
+        class IndexLike(object):
+            def __index__(self):
+                return 2
+        i = IndexLike()
         # integers cannot be constructed from floats,
         # but from integer-like objects
         for t in signed_types + unsigned_types:
             self.assertRaises(TypeError, t, 3.14)
             self.assertRaises(TypeError, t, f)
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(t(d).value, 2)
             self.assertEqual(t(i).value, 2)
 
     def test_sizes(self):

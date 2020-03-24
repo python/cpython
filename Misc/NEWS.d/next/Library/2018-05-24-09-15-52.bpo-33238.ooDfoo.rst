@@ -1,4 +1,0 @@
-Add ``InvalidStateError`` to :mod:`concurrent.futures`.
-``Future.set_result`` and ``Future.set_exception`` now raise
-``InvalidStateError`` if the futures are not pending or running. Patch by
-Jason Haydaman.

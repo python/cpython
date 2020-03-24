@@ -1,0 +1,8 @@
+<dsig:CanonicalizationMethod xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:c14n2="http://www.w3.org/2010/xml-c14n2" Algorithm="http://www.w3.org/2010/xml-c14n2">
+  <c14n2:PrefixRewrite>sequential</c14n2:PrefixRewrite>
+  <c14n2:QNameAware>
+   <c14n2:Element Name="bar" NS="http://a"/>
+   <c14n2:XPathElement Name="IncludedXPath" NS="http://www.w3.org/2010/xmldsig2#"/>
+  </c14n2:QNameAware>
+</dsig:CanonicalizationMethod>
+

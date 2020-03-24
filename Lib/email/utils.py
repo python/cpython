@@ -259,21 +259,13 @@ def decode_params(params):
 
     params is a sequence of 2-tuples containing (param name, string value).
     """
-    # Copy params so we don't mess with the original
-    params = params[:]
-    new_params = []
+    new_params = [params[0]]
     # Map parameter's name to a list of continuations.  The values are a
     # 3-tuple of the continuation number, the string value, and a flag
     # specifying whether a particular segment is %-encoded.
     rfc2231_params = {}
-    name, value = params.pop(0)
-    new_params.append((name, value))
-    while params:
-        name, value = params.pop(0)
-        if name.endswith('*'):
-            encoded = True
-        else:
-            encoded = False
+    for name, value in params[1:]:
+        encoded = name.endswith('*')
         value = unquote(value)
         mo = rfc2231_continuation.match(name)
         if mo:

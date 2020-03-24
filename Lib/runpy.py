@@ -13,7 +13,9 @@ importers when locating support scripts as well as when importing modules.
 import sys
 import importlib.machinery # importlib first so we can test #15386 via -m
 import importlib.util
+import io
 import types
+import os
 from pkgutil import read_code, get_importer
 
 __all__ = [
@@ -228,11 +230,12 @@ def _get_main_module_details(error=ImportError):
 
 def _get_code_from_file(run_name, fname):
     # Check for a compiled file first
-    with open(fname, "rb") as f:
+    decoded_path = os.path.abspath(os.fsdecode(fname))
+    with io.open_code(decoded_path) as f:
         code = read_code(f)
     if code is None:
         # That didn't work, so try it as normal source code
-        with open(fname, "rb") as f:
+        with io.open_code(decoded_path) as f:
             code = compile(f.read(), fname, 'exec')
     return code, fname
 

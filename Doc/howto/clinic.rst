@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 **********************
 Argument Clinic How-To
@@ -765,7 +765,7 @@ All Argument Clinic converters accept the following arguments:
 
   ``annotation``
     The annotation value for this parameter.  Not currently supported,
-    because PEP 8 mandates that the Python library may not use
+    because :pep:`8` mandates that the Python library may not use
     annotations.
 
 In addition, some converters accept additional arguments.  Here is a list
@@ -877,6 +877,12 @@ converter::
 
     Write a pickled representation of obj to the open file.
     [clinic start generated code]*/
+
+One advantage of real converters is that they're more flexible than legacy
+converters.  For example, the ``unsigned_int`` converter (and all the
+``unsigned_`` converters) can be specified without ``bitwise=True``.  Their
+default behavior performs range checking on the value, and they won't accept
+negative numbers.  You just can't do that with a legacy converter!
 
 Argument Clinic will show you all the converters it has
 available.  For each converter it'll show you all the parameters
@@ -1064,7 +1070,7 @@ Currently Argument Clinic supports only a few return converters:
     DecodeFSDefault
 
 None of these take parameters.  For the first three, return -1 to indicate
-error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a NULL
+error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a ``NULL``
 pointer to indicate an error.
 
 (There's also an experimental ``NoneType`` converter, which lets you

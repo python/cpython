@@ -10,8 +10,8 @@
 
 --------------
 
-This module is always available.  It provides access to the mathematical
-functions defined by the C standard.
+This module provides access to the mathematical functions defined by the C
+standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -36,6 +36,24 @@ Number-theoretic and representation functions
    :class:`~numbers.Integral` value.
 
 
+.. function:: comb(n, k)
+
+   Return the number of ways to choose *k* items from *n* items without repetition
+   and without order.
+
+   Evaluates to ``n! / (k! * (n - k)!)`` when ``k <= n`` and evaluates
+   to zero when ``k > n``.
+
+   Also called the binomial coefficient because it is equivalent
+   to the coefficient of k-th term in polynomial expansion of the
+   expression ``(1 + x) ** n``.
+
+   Raises :exc:`TypeError` if either of the arguments are not integers.
+   Raises :exc:`ValueError` if either of the arguments are negative.
+
+   .. versionadded:: 3.8
+
+
 .. function:: copysign(x, y)
 
    Return a float with the magnitude (absolute value) of *x* but the sign of
@@ -50,8 +68,11 @@ Number-theoretic and representation functions
 
 .. function:: factorial(x)
 
-   Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
+
+   .. deprecated:: 3.9
+      Accepting floats with integral values (like ``5.0``) is deprecated.
 
 
 .. function:: floor(x)
@@ -105,14 +126,19 @@ Number-theoretic and representation functions
    <https://code.activestate.com/recipes/393090/>`_\.
 
 
-.. function:: gcd(a, b)
+.. function:: gcd(*integers)
 
-   Return the greatest common divisor of the integers *a* and *b*.  If either
-   *a* or *b* is nonzero, then the value of ``gcd(a, b)`` is the largest
-   positive integer that divides both *a* and *b*.  ``gcd(0, 0)`` returns
-   ``0``.
+   Return the greatest common divisor of the specified integer arguments.
+   If any of the arguments is nonzero, then the returned value is the largest
+   positive integer that is a divisor af all arguments.  If all arguments
+   are zero, then the returned value is ``0``.  ``gcd()`` without arguments
+   returns ``0``.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.9
+      Added support for an arbitrary number of arguments. Formerly, only two
+      arguments were supported.
 
 
 .. function:: isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)
@@ -166,6 +192,31 @@ Number-theoretic and representation functions
    Return ``True`` if *x* is a NaN (not a number), and ``False`` otherwise.
 
 
+.. function:: isqrt(n)
+
+   Return the integer square root of the nonnegative integer *n*. This is the
+   floor of the exact square root of *n*, or equivalently the greatest integer
+   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
+
+   For some applications, it may be more convenient to have the least integer
+   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
+   the exact square root of *n*. For positive *n*, this can be computed using
+   ``a = 1 + isqrt(n - 1)``.
+
+   .. versionadded:: 3.8
+
+
+.. function:: lcm(*integers)
+
+   Return the least common multiple of the specified integer arguments.
+   If all arguments are nonzero, then the returned value is the smallest
+   positive integer that is a multiple of all arguments.  If any of the arguments
+   is zero, then the returned value is ``0``.  ``lcm()`` without arguments
+   returns ``1``.
+
+   .. versionadded:: 3.9
+
+
 .. function:: ldexp(x, i)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
@@ -176,6 +227,52 @@ Number-theoretic and representation functions
 
    Return the fractional and integer parts of *x*.  Both results carry the sign
    of *x* and are floats.
+
+
+.. function:: nextafter(x, y)
+
+   Return the next floating-point value after *x* towards *y*.
+
+   If *x* is equal to *y*, return *y*.
+
+   Examples:
+
+   * ``math.nextafter(x, math.inf)`` goes up: towards positive infinity.
+   * ``math.nextafter(x, -math.inf)`` goes down: towards minus infinity.
+   * ``math.nextafter(x, 0.0)`` goes towards zero.
+   * ``math.nextafter(x, math.copysign(math.inf, x))`` goes away from zero.
+
+   See also :func:`math.ulp`.
+
+   .. versionadded:: 3.9
+
+.. function:: perm(n, k=None)
+
+   Return the number of ways to choose *k* items from *n* items
+   without repetition and with order.
+
+   Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
+   to zero when ``k > n``.
+
+   If *k* is not specified or is None, then *k* defaults to *n*
+   and the function returns ``n!``.
+
+   Raises :exc:`TypeError` if either of the arguments are not integers.
+   Raises :exc:`ValueError` if either of the arguments are negative.
+
+   .. versionadded:: 3.8
+
+
+.. function:: prod(iterable, *, start=1)
+
+   Calculate the product of all the elements in the input *iterable*.
+   The default *start* value for the product is ``1``.
+
+   When the iterable is empty, return the start value.  This function is
+   intended specifically for use with numeric values and may reject
+   non-numeric types.
+
+   .. versionadded:: 3.8
 
 
 .. function:: remainder(x, y)
@@ -204,6 +301,30 @@ Number-theoretic and representation functions
    Return the :class:`~numbers.Real` value *x* truncated to an
    :class:`~numbers.Integral` (usually an integer). Delegates to
    :meth:`x.__trunc__() <object.__trunc__>`.
+
+.. function:: ulp(x)
+
+   Return the value of the least significant bit of the float *x*:
+
+   * If *x* is a NaN (not a number), return *x*.
+   * If *x* is negative, return ``ulp(-x)``.
+   * If *x* is a positive infinity, return *x*.
+   * If *x* is equal to zero, return the smallest positive
+     *denormalized* representable float (smaller than the minimum positive
+     *normalized* float, :data:`sys.float_info.min <sys.float_info>`).
+   * If *x* is equal to the largest positive representable float,
+     return the value of the least significant bit of *x*, such that the first
+     float smaller than *x* is ``x - ulp(x)``.
+   * Otherwise (*x* is a positive finite number), return the value of the least
+     significant bit of *x*, such that the first float bigger than *x*
+     is ``x + ulp(x)``.
+
+   ULP stands for "Unit in the Last Place".
+
+   See also :func:`math.nextafter` and :data:`sys.float_info.epsilon
+   <sys.float_info>`.
+
+   .. versionadded:: 3.9
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
@@ -302,17 +423,20 @@ Trigonometric functions
 
 .. function:: acos(x)
 
-   Return the arc cosine of *x*, in radians.
+   Return the arc cosine of *x*, in radians. The result is between ``0`` and
+   ``pi``.
 
 
 .. function:: asin(x)
 
-   Return the arc sine of *x*, in radians.
+   Return the arc sine of *x*, in radians. The result is between ``-pi/2`` and
+   ``pi/2``.
 
 
 .. function:: atan(x)
 
-   Return the arc tangent of *x*, in radians.
+   Return the arc tangent of *x*, in radians. The result is between ``-pi/2`` and
+   ``pi/2``.
 
 
 .. function:: atan2(y, x)
@@ -330,10 +454,32 @@ Trigonometric functions
    Return the cosine of *x* radians.
 
 
-.. function:: hypot(x, y)
+.. function:: dist(p, q)
 
-   Return the Euclidean norm, ``sqrt(x*x + y*y)``. This is the length of the vector
-   from the origin to point ``(x, y)``.
+   Return the Euclidean distance between two points *p* and *q*, each
+   given as a sequence (or iterable) of coordinates.  The two points
+   must have the same dimension.
+
+   Roughly equivalent to::
+
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+
+   .. versionadded:: 3.8
+
+
+.. function:: hypot(*coordinates)
+
+   Return the Euclidean norm, ``sqrt(sum(x**2 for x in coordinates))``.
+   This is the length of the vector from the origin to the point
+   given by the coordinates.
+
+   For a two dimensional point ``(x, y)``, this is equivalent to computing
+   the hypotenuse of a right triangle using the Pythagorean theorem,
+   ``sqrt(x*x + y*y)``.
+
+   .. versionchanged:: 3.8
+      Added support for n-dimensional points. Formerly, only the two
+      dimensional case was supported.
 
 
 .. function:: sin(x)
@@ -505,3 +651,6 @@ Constants
 
    Module :mod:`cmath`
       Complex number versions of many of these functions.
+
+.. |nbsp| unicode:: 0xA0
+   :trim:

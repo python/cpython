@@ -5,10 +5,10 @@ import os
 import signal
 import subprocess
 import sys
+import sysconfig
 from test import support
 from test.support import script_helper, is_android
 import tempfile
-import threading
 import unittest
 from textwrap import dedent
 
@@ -19,6 +19,17 @@ except ImportError:
 
 TIMEOUT = 0.5
 MS_WINDOWS = (os.name == 'nt')
+_cflags = sysconfig.get_config_var('CFLAGS') or ''
+_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+UB_SANITIZER = (
+    '-fsanitize=undefined' in _cflags or
+    '--with-undefined-behavior-sanitizer' in _config_args
+)
+MEMORY_SANITIZER = (
+    '-fsanitize=memory' in _cflags or
+    '--with-memory-sanitizer' in _config_args
+)
+
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
@@ -60,9 +71,8 @@ class FaultHandlerTests(unittest.TestCase):
         with support.SuppressCrashReport():
             process = script_helper.spawn_python('-c', code, pass_fds=pass_fds)
             with process:
-                stdout, stderr = process.communicate()
+                output, stderr = process.communicate()
                 exitcode = process.wait()
-        output = support.strip_python_stderr(stdout)
         output = output.decode('ascii', 'backslashreplace')
         if filename:
             self.assertEqual(output, '')
@@ -79,7 +89,8 @@ class FaultHandlerTests(unittest.TestCase):
 
     def check_error(self, code, line_number, fatal_error, *,
                     filename=None, all_threads=True, other_regex=None,
-                    fd=None, know_current_thread=True):
+                    fd=None, know_current_thread=True,
+                    py_fatal_error=False):
         """
         Check that the fault handler for fatal errors is enabled and check the
         traceback from the child process output.
@@ -94,15 +105,17 @@ class FaultHandlerTests(unittest.TestCase):
         else:
             header = 'Stack'
         regex = r"""
-            ^{fatal_error}
+            (?m)^{fatal_error}
 
             {header} \(most recent call first\):
               File "<string>", line {lineno} in <module>
             """
-        regex = dedent(regex.format(
+        if py_fatal_error:
+            fatal_error += "\nPython runtime state: initialized"
+        regex = dedent(regex).format(
             lineno=line_number,
             fatal_error=fatal_error,
-            header=header)).strip()
+            header=header).strip()
         if other_regex:
             regex += '|' + other_regex
         output, exitcode = self.get_output(code, filename=filename, fd=fd)
@@ -110,7 +123,9 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertRegex(output, regex)
         self.assertNotEqual(exitcode, 0)
 
-    def check_fatal_error(self, code, line_number, name_regex, **kw):
+    def check_fatal_error(self, code, line_number, name_regex, func=None, **kw):
+        if func:
+            name_regex = '%s: %s' % (func, name_regex)
         fatal_error = 'Fatal Python error: %s' % name_regex
         self.check_error(code, line_number, fatal_error, **kw)
 
@@ -159,7 +174,9 @@ class FaultHandlerTests(unittest.TestCase):
             """,
             3,
             'in new thread',
-            know_current_thread=False)
+            know_current_thread=False,
+            func='faulthandler_fatal_error_thread',
+            py_fatal_error=True)
 
     def test_sigabrt(self):
         self.check_fatal_error("""
@@ -186,14 +203,13 @@ class FaultHandlerTests(unittest.TestCase):
     @skip_segfault_on_android
     def test_sigbus(self):
         self.check_fatal_error("""
-            import _testcapi
             import faulthandler
             import signal
 
             faulthandler.enable()
-            _testcapi.raise_signal(signal.SIGBUS)
+            signal.raise_signal(signal.SIGBUS)
             """,
-            6,
+            5,
             'Bus error')
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
@@ -201,14 +217,13 @@ class FaultHandlerTests(unittest.TestCase):
     @skip_segfault_on_android
     def test_sigill(self):
         self.check_fatal_error("""
-            import _testcapi
             import faulthandler
             import signal
 
             faulthandler.enable()
-            _testcapi.raise_signal(signal.SIGILL)
+            signal.raise_signal(signal.SIGILL)
             """,
-            6,
+            5,
             'Illegal instruction')
 
     def test_fatal_error(self):
@@ -217,7 +232,9 @@ class FaultHandlerTests(unittest.TestCase):
             faulthandler._fatal_error(b'xyz')
             """,
             2,
-            'xyz')
+            'xyz',
+            func='faulthandler_fatal_error_py',
+            py_fatal_error=True)
 
     def test_fatal_error_without_gil(self):
         self.check_fatal_error("""
@@ -225,7 +242,9 @@ class FaultHandlerTests(unittest.TestCase):
             faulthandler._fatal_error(b'xyz', True)
             """,
             2,
-            'xyz')
+            'xyz',
+            func='faulthandler_fatal_error_py',
+            py_fatal_error=True)
 
     @unittest.skipIf(sys.platform.startswith('openbsd'),
                      "Issue #12868: sigaltstack() doesn't work on "
@@ -252,6 +271,8 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
+    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
+                     "sanitizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_file(self):
         with temporary_filename() as filename:
@@ -267,6 +288,8 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
+    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
+                     "sanitizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
@@ -400,7 +423,7 @@ class FaultHandlerTests(unittest.TestCase):
         if filename:
             lineno = 9
         elif fd is not None:
-            lineno = 12
+            lineno = 11
         else:
             lineno = 14
         expected = [
@@ -516,8 +539,6 @@ class FaultHandlerTests(unittest.TestCase):
         with temporary_filename() as filename:
             self.check_dump_traceback_threads(filename)
 
-    @unittest.skipIf(not hasattr(faulthandler, 'dump_traceback_later'),
-                     'need faulthandler.dump_traceback_later()')
     def check_dump_traceback_later(self, repeat=False, cancel=False, loops=1,
                                    *, filename=None, fd=None):
         """
@@ -725,9 +746,8 @@ class FaultHandlerTests(unittest.TestCase):
             faulthandler.enable()
         with self.check_stderr_none():
             faulthandler.dump_traceback()
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            with self.check_stderr_none():
-                faulthandler.dump_traceback_later(1e-3)
+        with self.check_stderr_none():
+            faulthandler.dump_traceback_later(1e-3)
         if hasattr(faulthandler, "register"):
             with self.check_stderr_none():
                 faulthandler.register(signal.SIGUSR1)
@@ -803,6 +823,17 @@ class FaultHandlerTests(unittest.TestCase):
         output, exitcode = self.get_output(code)
         self.assertEqual(output, [])
         self.assertEqual(exitcode, 0xC0000005)
+
+    def test_cancel_later_without_dump_traceback_later(self):
+        # bpo-37933: Calling cancel_dump_traceback_later()
+        # without dump_traceback_later() must not segfault.
+        code = dedent("""
+            import faulthandler
+            faulthandler.cancel_dump_traceback_later()
+        """)
+        output, exitcode = self.get_output(code)
+        self.assertEqual(output, [])
+        self.assertEqual(exitcode, 0)
 
 
 if __name__ == "__main__":

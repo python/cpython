@@ -80,7 +80,7 @@ def _compile(code, pattern, flags):
     tolower = None
     fixes = None
     if flags & SRE_FLAG_IGNORECASE and not flags & SRE_FLAG_LOCALE:
-        if flags & SRE_FLAG_UNICODE and not flags & SRE_FLAG_ASCII:
+        if flags & SRE_FLAG_UNICODE:
             iscased = _sre.unicode_iscased
             tolower = _sre.unicode_tolower
             fixes = _ignorecase_fixes
@@ -196,7 +196,7 @@ def _compile(code, pattern, flags):
                 av = AT_MULTILINE.get(av, av)
             if flags & SRE_FLAG_LOCALE:
                 av = AT_LOCALE.get(av, av)
-            elif (flags & SRE_FLAG_UNICODE) and not (flags & SRE_FLAG_ASCII):
+            elif flags & SRE_FLAG_UNICODE:
                 av = AT_UNICODE.get(av, av)
             emit(av)
         elif op is BRANCH:
@@ -217,7 +217,7 @@ def _compile(code, pattern, flags):
             emit(op)
             if flags & SRE_FLAG_LOCALE:
                 av = CH_LOCALE[av]
-            elif (flags & SRE_FLAG_UNICODE) and not (flags & SRE_FLAG_ASCII):
+            elif flags & SRE_FLAG_UNICODE:
                 av = CH_UNICODE[av]
             emit(av)
         elif op is GROUPREF:
@@ -265,7 +265,7 @@ def _compile_charset(charset, flags, code):
         elif op is CATEGORY:
             if flags & SRE_FLAG_LOCALE:
                 emit(CH_LOCALE[av])
-            elif (flags & SRE_FLAG_UNICODE) and not (flags & SRE_FLAG_ASCII):
+            elif flags & SRE_FLAG_UNICODE:
                 emit(CH_UNICODE[av])
             else:
                 emit(av)
@@ -453,7 +453,7 @@ def _generate_overlap_table(prefix):
 def _get_iscased(flags):
     if not flags & SRE_FLAG_IGNORECASE:
         return None
-    elif flags & SRE_FLAG_UNICODE and not flags & SRE_FLAG_ASCII:
+    elif flags & SRE_FLAG_UNICODE:
         return _sre.unicode_iscased
     else:
         return _sre.ascii_iscased
@@ -597,7 +597,7 @@ def isstring(obj):
 
 def _code(p, flags):
 
-    flags = p.pattern.flags | flags
+    flags = p.state.flags | flags
     code = []
 
     # compile info block
@@ -772,13 +772,13 @@ def compile(p, flags=0):
         dis(code)
 
     # map in either direction
-    groupindex = p.pattern.groupdict
-    indexgroup = [None] * p.pattern.groups
+    groupindex = p.state.groupdict
+    indexgroup = [None] * p.state.groups
     for k, i in groupindex.items():
         indexgroup[i] = k
 
     return _sre.compile(
-        pattern, flags | p.pattern.flags, code,
-        p.pattern.groups-1,
+        pattern, flags | p.state.flags, code,
+        p.state.groups-1,
         groupindex, tuple(indexgroup)
         )

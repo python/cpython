@@ -161,9 +161,10 @@ class build_ext(Command):
 
         # Put the Python "system" include dir at the end, so that
         # any local include dirs take precedence.
-        self.include_dirs.append(py_include)
+        self.include_dirs.extend(py_include.split(os.path.pathsep))
         if plat_py_include != py_include:
-            self.include_dirs.append(plat_py_include)
+            self.include_dirs.extend(
+                plat_py_include.split(os.path.pathsep))
 
         self.ensure_string_list('libraries')
         self.ensure_string_list('link_objects')
@@ -365,7 +366,7 @@ class build_ext(Command):
             ext_name, build_info = ext
 
             log.warn("old-style (ext_name, build_info) tuple found in "
-                     "ext_modules for extension '%s'"
+                     "ext_modules for extension '%s' "
                      "-- please convert to Extension instance", ext_name)
 
             if not (isinstance(ext_name, str) and
@@ -489,7 +490,8 @@ class build_ext(Command):
                   "in 'ext_modules' option (extension '%s'), "
                   "'sources' must be present and must be "
                   "a list of source filenames" % ext.name)
-        sources = list(sources)
+        # sort to make the resulting .so file build reproducible
+        sources = sorted(sources)
 
         ext_path = self.get_ext_fullpath(ext.name)
         depends = sources + ext.depends
@@ -687,7 +689,15 @@ class build_ext(Command):
         provided, "PyInit_" + module_name.  Only relevant on Windows, where
         the .pyd file (DLL) must export the module "PyInit_" function.
         """
-        initfunc_name = "PyInit_" + ext.name.split('.')[-1]
+        suffix = '_' + ext.name.split('.')[-1]
+        try:
+            # Unicode module name support as defined in PEP-489
+            # https://www.python.org/dev/peps/pep-0489/#export-hook-name
+            suffix.encode('ascii')
+        except UnicodeEncodeError:
+            suffix = 'U' + suffix.encode('punycode').replace(b'-', b'_').decode('ascii')
+
+        initfunc_name = "PyInit" + suffix
         if initfunc_name not in ext.export_symbols:
             ext.export_symbols.append(initfunc_name)
         return ext.export_symbols
@@ -713,20 +723,32 @@ class build_ext(Command):
                 # don't extend ext.libraries, it may be shared with other
                 # extensions, it is a reference to the original list
                 return ext.libraries + [pythonlib]
-            else:
-                return ext.libraries
-        elif sys.platform == 'darwin':
-            # Don't use the default code below
-            return ext.libraries
-        elif sys.platform[:3] == 'aix':
-            # Don't use the default code below
-            return ext.libraries
         else:
-            from distutils import sysconfig
-            if sysconfig.get_config_var('Py_ENABLE_SHARED'):
-                pythonlib = 'python{}.{}{}'.format(
-                    sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff,
-                    sysconfig.get_config_var('ABIFLAGS'))
-                return ext.libraries + [pythonlib]
-            else:
-                return ext.libraries
+            # On Android only the main executable and LD_PRELOADs are considered
+            # to be RTLD_GLOBAL, all the dependencies of the main executable
+            # remain RTLD_LOCAL and so the shared libraries must be linked with
+            # libpython when python is built with a shared python library (issue
+            # bpo-21536).
+            # On Cygwin (and if required, other POSIX-like platforms based on
+            # Windows like MinGW) it is simply necessary that all symbols in
+            # shared libraries are resolved at link time.
+            from distutils.sysconfig import get_config_var
+            link_libpython = False
+            if get_config_var('Py_ENABLE_SHARED'):
+                # A native build on an Android device or on Cygwin
+                if hasattr(sys, 'getandroidapilevel'):
+                    link_libpython = True
+                elif sys.platform == 'cygwin':
+                    link_libpython = True
+                elif '_PYTHON_HOST_PLATFORM' in os.environ:
+                    # We are cross-compiling for one of the relevant platforms
+                    if get_config_var('ANDROID_API_LEVEL') != 0:
+                        link_libpython = True
+                    elif get_config_var('MACHDEP') == 'cygwin':
+                        link_libpython = True
+
+            if link_libpython:
+                ldversion = get_config_var('LDVERSION')
+                return ext.libraries + ['python' + ldversion]
+
+        return ext.libraries

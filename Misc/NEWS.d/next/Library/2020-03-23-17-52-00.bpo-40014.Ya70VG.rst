@@ -1,0 +1,3 @@
+Fix ``os.getgrouplist()``: on macOS, the ``getgrouplist()`` function returns a
+non-zero value without setting ``errno`` if the group list is too small. Double
+the list size and call it again in this case.

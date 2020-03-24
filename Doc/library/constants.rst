@@ -31,7 +31,7 @@ A small number of constants live in the built-in namespace.  They are:
    etc.) to indicate that the operation is not implemented with respect to
    the other type; may be returned by the in-place binary special methods
    (e.g. :meth:`__imul__`, :meth:`__iand__`, etc.) for the same purpose.
-   Its truth value is true.
+   It should not be evaluated in a boolean context.
 
    .. note::
 
@@ -50,11 +50,17 @@ A small number of constants live in the built-in namespace.  They are:
       even though they have similar names and purposes.
       See :exc:`NotImplementedError` for details on when to use it.
 
+   .. versionchanged:: 3.9
+      Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+      it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
+      It will raise a :exc:`TypeError` in a future version of Python.
 
+
+.. index:: single: ...; ellipsis literal
 .. data:: Ellipsis
 
-   The same as ``...``.  Special value used mostly in conjunction with extended
-   slicing syntax for user-defined container data types.
+   The same as the ellipsis literal "``...``".  Special value used mostly in conjunction
+   with extended slicing syntax for user-defined container data types.
 
 
 .. data:: __debug__
@@ -96,4 +102,3 @@ should not be used in programs.
    Object that when printed, prints the message "Type license() to see the
    full license text", and when called, displays the full license text in a
    pager-like fashion (one screen at a time).
-

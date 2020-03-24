@@ -207,6 +207,10 @@ The following function takes either a single-character string or integer value;
 it returns a string.
 
 
+.. index::
+   single: ^ (caret); in curses module
+   single: ! (exclamation); in curses module
+
 .. function:: unctrl(c)
 
    Return a string representation of the ASCII character *c*.  If *c* is printable,

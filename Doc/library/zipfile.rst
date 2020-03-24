@@ -52,6 +52,15 @@ The module defines the following items:
    :ref:`zipfile-objects` for constructor details.
 
 
+.. class:: Path
+   :noindex:
+
+   A pathlib-compatible wrapper for zip files. See section
+   :ref:`path-objects` for details.
+
+   .. versionadded:: 3.8
+
+
 .. class:: PyZipFile
    :noindex:
 
@@ -131,7 +140,7 @@ ZipFile Objects
 
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
-                   compresslevel=None)
+                   compresslevel=None, *, strict_timestamps=True)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
    file-like object or a :term:`path-like object`.
@@ -169,13 +178,19 @@ ZipFile Objects
    When using :const:`ZIP_BZIP2` integers ``1`` through ``9`` are accepted
    (see :class:`bz2 <bz2.BZ2File>` for more information).
 
+   The *strict_timestamps* argument, when set to ``False``, allows to
+   zip files older than 1980-01-01 at the cost of setting the
+   timestamp to 1980-01-01.
+   Similar behavior occurs with files newer than 2107-12-31,
+   the timestamp is also set to the limit.
+
    If the file is created with mode ``'w'``, ``'x'`` or ``'a'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
    ZIP structures for an empty archive will be written to the file.
 
    ZipFile is also a context manager and therefore supports the
    :keyword:`with` statement.  In the example, *myzip* is closed after the
-   :keyword:`with` statement's suite is finished---even if an exception occurs::
+   :keyword:`!with` statement's suite is finished---even if an exception occurs::
 
       with ZipFile('spam.zip', 'w') as myzip:
           myzip.write('eggs.txt')
@@ -202,6 +217,9 @@ ZipFile Objects
 
    .. versionchanged:: 3.7
       Add the *compresslevel* parameter.
+
+   .. versionadded:: 3.8
+      The *strict_timestamps* keyword-only argument
 
 
 .. method:: ZipFile.close()
@@ -363,7 +381,7 @@ ZipFile Objects
    Return the name of the first bad file, or else return ``None``.
 
    .. versionchanged:: 3.6
-      Calling :meth:`testfile` on a closed ZipFile will raise a
+      Calling :meth:`testzip` on a closed ZipFile will raise a
       :exc:`ValueError`.  Previously, a :exc:`RuntimeError` was raised.
 
 
@@ -377,13 +395,6 @@ ZipFile Objects
    the new entry. Similarly, *compresslevel* will override the constructor if
    given.
    The archive must be open with mode ``'w'``, ``'x'`` or ``'a'``.
-
-   .. note::
-
-      There is no official file name encoding for ZIP files. If you have unicode file
-      names, you must convert them to byte strings in your desired encoding before
-      passing them to :meth:`write`. WinZip interprets all file names as encoded in
-      CP437, also known as DOS Latin.
 
    .. note::
 
@@ -404,7 +415,9 @@ ZipFile Objects
 .. method:: ZipFile.writestr(zinfo_or_arcname, data, compress_type=None, \
                              compresslevel=None)
 
-   Write the string *data* to the archive; *zinfo_or_arcname* is either the file
+   Write a file into the archive.  The contents is *data*, which may be either
+   a :class:`str` or a :class:`bytes` instance; if it is a :class:`str`,
+   it is encoded as UTF-8 first.  *zinfo_or_arcname* is either the file
    name it will be given in the archive, or a :class:`ZipInfo` instance.  If it's
    an instance, at least the filename, date, and time must be given.  If it's a
    name, the date and time is set to the current date and time.
@@ -445,11 +458,79 @@ The following data attributes are also available:
 
 .. attribute:: ZipFile.comment
 
-   The comment text associated with the ZIP file.  If assigning a comment to a
+   The comment associated with the ZIP file as a :class:`bytes` object.
+   If assigning a comment to a
    :class:`ZipFile` instance created with mode ``'w'``, ``'x'`` or ``'a'``,
-   this should be a
-   string no longer than 65535 bytes.  Comments longer than this will be
-   truncated in the written archive when :meth:`close` is called.
+   it should be no longer than 65535 bytes.  Comments longer than this will be
+   truncated.
+
+
+.. _path-objects:
+
+Path Objects
+------------
+
+.. class:: Path(root, at='')
+
+   Construct a Path object from a ``root`` zipfile (which may be a
+   :class:`ZipFile` instance or ``file`` suitable for passing to
+   the :class:`ZipFile` constructor).
+
+   ``at`` specifies the location of this Path within the zipfile,
+   e.g. 'dir/file.txt', 'dir/', or ''. Defaults to the empty string,
+   indicating the root.
+
+Path objects expose the following features of :mod:`pathlib.Path`
+objects:
+
+Path objects are traversable using the ``/`` operator.
+
+.. attribute:: Path.name
+
+   The final path component.
+
+.. method:: Path.open(mode='r', *, pwd, **)
+
+   Invoke :meth:`ZipFile.open` on the current path.
+   Allows opening for read or write, text or binary
+   through supported modes: 'r', 'w', 'rb', 'wb'.
+   Positional and keyword arguments are passed through to
+   :class:`io.TextIOWrapper` when opened as text and
+   ignored otherwise.
+   ``pwd`` is the ``pwd`` parameter to
+   :meth:`ZipFile.open`.
+
+   .. versionchanged:: 3.9
+      Added support for text and binary modes for open. Default
+      mode is now text.
+
+.. method:: Path.iterdir()
+
+   Enumerate the children of the current directory.
+
+.. method:: Path.is_dir()
+
+   Return ``True`` if the current context references a directory.
+
+.. method:: Path.is_file()
+
+   Return ``True`` if the current context references a file.
+
+.. method:: Path.exists()
+
+   Return ``True`` if the current context references a file or
+   directory in the zip file.
+
+.. method:: Path.read_text(*, **)
+
+   Read the current file as unicode text. Positional and
+   keyword arguments are passed through to
+   :class:`io.TextIOWrapper` (except ``buffer``, which is
+   implied by the context).
+
+.. method:: Path.read_bytes()
+
+   Read the current file as bytes.
 
 
 .. _pyzipfile-objects:
@@ -540,7 +621,8 @@ information about a single member of the ZIP archive.
 There is one classmethod to make a :class:`ZipInfo` instance for a filesystem
 file:
 
-.. classmethod:: ZipInfo.from_file(filename, arcname=None)
+.. classmethod:: ZipInfo.from_file(filename, arcname=None, *, \
+                                   strict_timestamps=True)
 
    Construct a :class:`ZipInfo` instance for a file on the filesystem, in
    preparation for adding it to a zip file.
@@ -551,10 +633,19 @@ file:
    If *arcname* is not specified, the name will be the same as *filename*, but
    with any drive letter and leading path separators removed.
 
+   The *strict_timestamps* argument, when set to ``False``, allows to
+   zip files older than 1980-01-01 at the cost of setting the
+   timestamp to 1980-01-01.
+   Similar behavior occurs with files newer than 2107-12-31,
+   the timestamp is also set to the limit.
+
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.6.2
       The *filename* parameter accepts a :term:`path-like object`.
+
+   .. versionadded:: 3.8
+      The *strict_timestamps* keyword-only argument
 
 
 Instances have the following methods and attributes:
@@ -606,13 +697,14 @@ Instances have the following methods and attributes:
 
 .. attribute:: ZipInfo.comment
 
-   Comment for the individual archive member.
+   Comment for the individual archive member as a :class:`bytes` object.
 
 
 .. attribute:: ZipInfo.extra
 
    Expansion field data.  The `PKZIP Application Note`_ contains
-   some comments on the internal structure of the data contained in this string.
+   some comments on the internal structure of the data contained in this
+   :class:`bytes` object.
 
 
 .. attribute:: ZipInfo.create_system
@@ -734,5 +826,45 @@ Command-line options
 
    Test whether the zipfile is valid or not.
 
+Decompression pitfalls
+----------------------
 
+The extraction in zipfile module might fail due to some pitfalls listed below.
+
+From file itself
+~~~~~~~~~~~~~~~~
+
+Decompression may fail due to incorrect password / CRC checksum / ZIP format or
+unsupported compression method / decryption.
+
+File System limitations
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Exceeding limitations on different file systems can cause decompression failed.
+Such as allowable characters in the directory entries, length of the file name,
+length of the pathname, size of a single file, and number of files, etc.
+
+Resources limitations
+~~~~~~~~~~~~~~~~~~~~~
+
+The lack of memory or disk volume would lead to decompression
+failed. For example, decompression bombs (aka `ZIP bomb`_)
+apply to zipfile library that can cause disk volume exhaustion.
+
+Interruption
+~~~~~~~~~~~~
+
+Interruption during the decompression, such as pressing control-C or killing the
+decompression process may result in incomplete decompression of the archive.
+
+Default behaviors of extraction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Not knowing the default extraction behaviors
+can cause unexpected decompression results.
+For example, when extracting the same archive twice,
+it overwrites files without asking.
+
+
+.. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
 .. _PKZIP Application Note: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT

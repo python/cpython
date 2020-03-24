@@ -1,4 +1,4 @@
-from datetime import tzinfo, timedelta, datetime, timezone
+from datetime import tzinfo, timedelta, datetime
 
 ZERO = timedelta(0)
 HOUR = timedelta(hours=1)

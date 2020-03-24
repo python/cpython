@@ -1,6 +1,7 @@
 __all__ = 'create_subprocess_exec', 'create_subprocess_shell'
 
 import subprocess
+import warnings
 
 from . import events
 from . import protocols
@@ -25,6 +26,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         self._transport = None
         self._process_exited = False
         self._pipe_fds = []
+        self._stdin_closed = self._loop.create_future()
 
     def __repr__(self):
         info = [self.__class__.__name__]
@@ -76,6 +78,10 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             if pipe is not None:
                 pipe.close()
             self.connection_lost(exc)
+            if exc is None:
+                self._stdin_closed.set_result(None)
+            else:
+                self._stdin_closed.set_exception(exc)
             return
         if fd == 1:
             reader = self.stdout
@@ -101,6 +107,10 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         if len(self._pipe_fds) == 0 and self._process_exited:
             self._transport.close()
             self._transport = None
+
+    def _get_close_waiter(self, stream):
+        if stream is self.stdin:
+            return self._stdin_closed
 
 
 class Process:
@@ -194,6 +204,13 @@ async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
                                   **kwds):
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8 "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning,
+                      stacklevel=2
+        )
+
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
     transport, protocol = await loop.subprocess_shell(
@@ -208,6 +225,12 @@ async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
                                  limit=streams._DEFAULT_LIMIT, **kwds):
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8 "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning,
+                      stacklevel=2
+        )
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
     transport, protocol = await loop.subprocess_exec(

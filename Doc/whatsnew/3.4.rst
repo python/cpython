@@ -1352,7 +1352,7 @@ shelve
 ------
 
 :class:`~shelve.Shelf` instances may now be used in :keyword:`with` statements,
-and will be automatically closed at the end of the :keyword:`with` block.
+and will be automatically closed at the end of the :keyword:`!with` block.
 (Contributed by Filip Gruszczyński in :issue:`13896`.)
 
 
@@ -1452,10 +1452,10 @@ in :issue:`18143`.)
 
 :class:`~ssl.SSLContext` has a new method,
 :meth:`~ssl.SSLContext.cert_store_stats`, that reports the number of loaded
-``X.509`` certs, ``X.509 CA`` certs, and certificate revocation lists (``crl``\
-s), as well as a :meth:`~ssl.SSLContext.get_ca_certs` method that returns a
-list of the loaded ``CA`` certificates.  (Contributed by Christian Heimes in
-:issue:`18147`.)
+``X.509`` certs, ``X.509 CA`` certs, and certificate revocation lists
+(``crl``\ s), as well as a :meth:`~ssl.SSLContext.get_ca_certs` method that
+returns a list of the loaded ``CA`` certificates.  (Contributed by Christian
+Heimes in :issue:`18147`.)
 
 If OpenSSL 0.9.8 or later is available, :class:`~ssl.SSLContext` has a new
 attribute :attr:`~ssl.SSLContext.verify_flags` that can be used to control the
@@ -1849,7 +1849,7 @@ Python's default implementation to a SipHash implementation on platforms that
 have a 64 bit data type.  Any performance differences in comparison with the
 older FNV algorithm are trivial.
 
-The PEP adds additional fields to the :attr:`sys.hash_info` struct sequence to
+The PEP adds additional fields to the :attr:`sys.hash_info` named tuple to
 describe the hash algorithm in use by the currently executing binary.  Otherwise,
 the PEP does not alter any existing CPython APIs.
 
@@ -2503,13 +2503,13 @@ Changes in the C API
 
 * The result of the :c:data:`PyOS_ReadlineFunctionPointer` callback must
   now be a string allocated by :c:func:`PyMem_RawMalloc` or
-  :c:func:`PyMem_RawRealloc`, or *NULL* if an error occurred, instead of a
+  :c:func:`PyMem_RawRealloc`, or ``NULL`` if an error occurred, instead of a
   string allocated by :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`
   (:issue:`16742`)
 
 * :c:func:`PyThread_set_key_value` now always set the value. In Python
   3.3, the function did nothing if the key already exists (if the current
-  value is a non-NULL pointer).
+  value is a non-``NULL`` pointer).
 
 * The ``f_tstate`` (thread state) field of the :c:type:`PyFrameObject`
   structure has been removed to fix a bug: see :issue:`14432` for the

@@ -1,14 +1,8 @@
 __all__ = ()
 
-import concurrent.futures
 import reprlib
 
 from . import format_helpers
-
-CancelledError = concurrent.futures.CancelledError
-TimeoutError = concurrent.futures.TimeoutError
-InvalidStateError = concurrent.futures.InvalidStateError
-
 
 # States for Future.
 _PENDING = 'PENDING'

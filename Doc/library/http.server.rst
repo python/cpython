@@ -16,6 +16,12 @@
 
 This module defines classes for implementing HTTP servers (Web servers).
 
+
+.. warning::
+
+    :mod:`http.server` is not recommended for production. It only implements
+    basic security checks.
+
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
 handler.  Code to create and run the server looks like this::
@@ -329,14 +335,20 @@ provides three different variants:
 
    .. attribute:: extensions_map
 
-      A dictionary mapping suffixes into MIME types. The default is
-      signified by an empty string, and is considered to be
-      ``application/octet-stream``. The mapping is used case-insensitively,
+      A dictionary mapping suffixes into MIME types, contains custom overrides
+      for the default system mappings. The mapping is used case-insensitively,
       and so should contain only lower-cased keys.
+
+      .. versionchanged:: 3.9
+         This dictionary is no longer filled with the default system mappings,
+         but only contains overrides.
 
    .. attribute:: directory
 
       If not specified, the directory to serve is the current working directory.
+
+      .. versionchanged:: 3.9
+         Accepts a :term:`path-like object`.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -404,13 +416,17 @@ the previous example, this serves files relative to the current directory::
         python -m http.server 8000
 
 By default, server binds itself to all interfaces.  The option ``-b/--bind``
-specifies a specific address to which it should bind.  For example, the
-following command causes the server to bind to localhost only::
+specifies a specific address to which it should bind. Both IPv4 and IPv6
+addresses are supported. For example, the following command causes the server
+to bind to localhost only::
 
         python -m http.server 8000 --bind 127.0.0.1
 
 .. versionadded:: 3.4
     ``--bind`` argument was introduced.
+
+.. versionadded:: 3.8
+    ``--bind`` argument enhanced to support IPv6
 
 By default, server uses the current directory. The option ``-d/--directory``
 specifies a directory to which it should serve the files. For example,

@@ -1,0 +1,28 @@
+parameters:
+  kind: nuget
+  extraOpts: --precompile
+  fulltest: false
+
+steps:
+- script: .\python.bat PC\layout -vv -s "$(Build.SourcesDirectory)" -b "$(Py_OutDir)\$(arch)" -t "$(Build.BinariesDirectory)\layout-tmp-${{ parameters.kind }}-$(arch)" --copy "$(Build.BinariesDirectory)\layout-${{ parameters.kind }}-$(arch)" ${{ parameters.extraOpts }} --preset-${{ parameters.kind }} --include-tests
+  displayName: Create ${{ parameters.kind }} layout
+
+- script: .\python.exe -m test.pythoninfo
+  workingDirectory: $(Build.BinariesDirectory)\layout-${{ parameters.kind }}-$(arch)
+  displayName: Show layout info (${{ parameters.kind }})
+
+- ${{ if eq(parameters.fulltest, 'true') }}:
+  - script: .\python.exe -m test -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results-${{ parameters.kind }}.xml" --tempdir "$(Build.BinariesDirectory)\tmp-${{ parameters.kind }}-$(arch)"
+    workingDirectory: $(Build.BinariesDirectory)\layout-${{ parameters.kind }}-$(arch)
+    displayName: ${{ parameters.kind }} Tests
+    env:
+      PREFIX: $(Build.BinariesDirectory)\layout-${{ parameters.kind }}-$(arch)
+
+  - task: PublishTestResults@2
+    displayName: Publish ${{ parameters.kind }} Test Results
+    inputs:
+      testResultsFiles: $(Build.BinariesDirectory)\test-results-${{ parameters.kind }}.xml
+      mergeTestResults: true
+      testRunTitle: ${{ parameters.kind }}-$(testRunTitle)
+      platform: $(testRunPlatform)
+    condition: succeededOrFailed()

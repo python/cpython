@@ -240,7 +240,7 @@ _Py_hashtable_print_stats(_Py_hashtable_t *ht)
     }
     printf("hash table %p: entries=%"
            PY_FORMAT_SIZE_T "u/%" PY_FORMAT_SIZE_T "u (%.0f%%), ",
-           ht, ht->entries, ht->num_buckets, load * 100.0);
+           (void *)ht, ht->entries, ht->num_buckets, load * 100.0);
     if (nchains)
         printf("avg_chain_len=%.1f, ", (double)total_chain_len / nchains);
     printf("max_chain_len=%" PY_FORMAT_SIZE_T "u, %" PY_FORMAT_SIZE_T "u KiB\n",
