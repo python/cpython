@@ -216,6 +216,7 @@ typedef struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
+    /* Borrowed reference to the current frame (it can be NULL) */
     struct _frame *frame;
     int recursion_depth;
     char overflowed; /* The stack has overflowed. Allow 50 more calls
