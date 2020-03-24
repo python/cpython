@@ -436,6 +436,14 @@ Request Handler Objects
    :attr:`DatagramRequestHandler.wfile` supports the
    :class:`io.BufferedIOBase` writable interface.
 
+   The :class:`StreamRequestHandler` class also provides the
+   :attr:`self.connection` attribute which is set to :attr:`self.request`, thus
+   acting as an alias for that attribute.
+
+   The :class:`DatagramRequestHandler` class also provides the
+   :attr:`self.packet` and :attr:`self.socket` attributes into which it unpacks
+   the :attr:`self.request` attribute.
+
    .. versionchanged:: 3.6
       :attr:`StreamRequestHandler.wfile` also supports the
       :class:`io.BufferedIOBase` writable interface.
