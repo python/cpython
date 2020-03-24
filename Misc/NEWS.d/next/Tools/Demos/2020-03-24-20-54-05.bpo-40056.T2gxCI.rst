@@ -1,0 +1,2 @@
+1. Display spaces in the turtledemo menu
+2. Allow custom code running in the turtle demo
