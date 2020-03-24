@@ -3409,6 +3409,7 @@ PyInit__asyncio(void)
         return NULL;
     }
 
+    /* FutureType and TaskType are made ready by PyModule_AddType() calls below. */
     if (PyModule_AddType(m, &FutureType) < 0) {
         Py_DECREF(m);
         return NULL;
