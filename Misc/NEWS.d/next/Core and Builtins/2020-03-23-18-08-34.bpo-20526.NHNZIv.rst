@@ -1,0 +1,3 @@
+Fix :c:func:`PyThreadState_Clear()`. ``PyThreadState.frame`` is a borrowed
+reference, not a strong reference: ``PyThreadState_Clear()`` must not call
+``Py_CLEAR(tstate->frame)``.
