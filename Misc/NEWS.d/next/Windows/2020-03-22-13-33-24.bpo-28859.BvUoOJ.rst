@@ -1,1 +1,2 @@
-无善无恶心之体，有善有恶意之动。
+Ensure `ismount` return False instead of raising `FileNotFoundError`
+when `path` does not exist.

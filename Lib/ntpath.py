@@ -272,9 +272,10 @@ def ismount(path):
         return True
 
     if _getvolumepathname:
-        if not lexists(path):
+        try:
+            return path.rstrip(seps) == _getvolumepathname(path).rstrip(seps)
+        except FileNotFoundError:
             return False
-        return path.rstrip(seps) == _getvolumepathname(path).rstrip(seps)
     else:
         return False
 
