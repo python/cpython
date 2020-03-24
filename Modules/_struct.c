@@ -2407,6 +2407,9 @@ PyInit__struct(void)
                        "unknown" float format */
                     if (ptr->format == 'd' || ptr->format == 'f')
                         break;
+                    /* Skip _Bool, semantics are different for standard size */
+                    if (ptr->format == '?')
+                        break;
                     ptr->pack = native->pack;
                     ptr->unpack = native->unpack;
                     break;
