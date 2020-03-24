@@ -2076,7 +2076,6 @@ PyInit__multibytecodec(void)
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
         if (PyModule_AddType(m, typelist[i]) < 0) {
-            Py_DECREF(m);
             return NULL;
         }
     }
