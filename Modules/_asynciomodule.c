@@ -3391,9 +3391,6 @@ PyInit__asyncio(void)
     if (module_init() < 0) {
         return NULL;
     }
-    if (PyType_Ready(&FutureType) < 0) {
-        return NULL;
-    }
     if (PyType_Ready(&FutureIterType) < 0) {
         return NULL;
     }
@@ -3401,9 +3398,6 @@ PyInit__asyncio(void)
         return NULL;
     }
     if (PyType_Ready(&TaskWakeupMethWrapper_Type) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&TaskType) < 0) {
         return NULL;
     }
     if (PyType_Ready(&PyRunningLoopHolder_Type) < 0) {
@@ -3415,16 +3409,13 @@ PyInit__asyncio(void)
         return NULL;
     }
 
-    Py_INCREF(&FutureType);
-    if (PyModule_AddObject(m, "Future", (PyObject *)&FutureType) < 0) {
-        Py_DECREF(&FutureType);
+    /* FutureType and TaskType are made ready by PyModule_AddType() calls below. */
+    if (PyModule_AddType(m, &FutureType) < 0) {
         Py_DECREF(m);
         return NULL;
     }
 
-    Py_INCREF(&TaskType);
-    if (PyModule_AddObject(m, "Task", (PyObject *)&TaskType) < 0) {
-        Py_DECREF(&TaskType);
+    if (PyModule_AddType(m, &TaskType) < 0) {
         Py_DECREF(m);
         return NULL;
     }
