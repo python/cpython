@@ -1,0 +1,5 @@
+Fix :func:`cgi.parse` for multipart POST requests.
+
+For applications that check CONTENT_TYPE and REQUEST_METHOD and then directly
+call :func:`urlparse.parse_qs` or :func:`cgi.parse_multipart` this should
+allow them to just call :func:`cgi.parse` and have it do the right thing.
