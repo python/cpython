@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import FakeIndex
 from itertools import *
 import weakref
 from decimal import Decimal
@@ -1289,15 +1290,10 @@ class TestBasicOps(unittest.TestCase):
 
         # Issue #30537: islice can accept integer-like objects as
         # arguments
-        class IntLike(object):
-            def __init__(self, val):
-                self.val = val
-            def __index__(self):
-                return self.val
-        self.assertEqual(list(islice(range(100), IntLike(10))), list(range(10)))
-        self.assertEqual(list(islice(range(100), IntLike(10), IntLike(50))),
+        self.assertEqual(list(islice(range(100), FakeIndex(10))), list(range(10)))
+        self.assertEqual(list(islice(range(100), FakeIndex(10), FakeIndex(50))),
                          list(range(10, 50)))
-        self.assertEqual(list(islice(range(100), IntLike(10), IntLike(50), IntLike(5))),
+        self.assertEqual(list(islice(range(100), FakeIndex(10), FakeIndex(50), FakeIndex(5))),
                          list(range(10,50,5)))
 
     def test_takewhile(self):

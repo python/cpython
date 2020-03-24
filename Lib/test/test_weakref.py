@@ -11,7 +11,7 @@ import time
 import random
 
 from test import support
-from test.support import script_helper, ALWAYS_EQ
+from test.support import script_helper, ALWAYS_EQ, FakeIndex
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -266,10 +266,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(bytes(weakref.proxy(instance)), b"bytes")
 
     def test_proxy_index(self):
-        class C:
-            def __index__(self):
-                return 10
-        o = C()
+        o = FakeIndex(10)
         p = weakref.proxy(o)
         self.assertEqual(operator.index(p), 10)
 

@@ -5,7 +5,7 @@ import copy
 import pickle
 import random
 import sys
-from test.support import bigmemtest, _1G, _4G
+from test.support import bigmemtest, _1G, _4G, FakeIndex
 
 zlib = support.import_module('zlib')
 
@@ -211,7 +211,7 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_custom_bufsize(self):
         data = HAMLET_SCENE * 10
         compressed = zlib.compress(data, 1)
-        self.assertEqual(zlib.decompress(compressed, 15, CustomInt()), data)
+        self.assertEqual(zlib.decompress(compressed, 15, FakeIndex(100)), data)
 
     @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
     @bigmemtest(size=_4G + 100, memuse=4)
@@ -421,7 +421,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         data = HAMLET_SCENE * 10
         compressed = zlib.compress(data, 1)
         dco = zlib.decompressobj()
-        self.assertEqual(dco.decompress(compressed, CustomInt()), data[:100])
+        self.assertEqual(dco.decompress(compressed, FakeIndex(100)), data[:100])
 
     def test_clear_unconsumed_tail(self):
         # Issue #12050: calling decompress() without providing max_length
@@ -631,7 +631,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         data = zlib.compress(input, 1)
         dco = zlib.decompressobj()
         dco.decompress(data, 1)
-        self.assertEqual(dco.flush(CustomInt()), input[1:])
+        self.assertEqual(dco.flush(FakeIndex(100)), input[1:])
 
     @requires_Compress_copy
     def test_compresscopy(self):
@@ -911,11 +911,6 @@ LAERTES
 
        Farewell.
 """
-
-
-class CustomInt:
-    def __index__(self):
-        return 100
 
 
 if __name__ == "__main__":

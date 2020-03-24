@@ -1,0 +1,2 @@
+Added classes ``FakeIndex``, ``FakeInt``, ``FakeFloat`` and ``FakeComplex``
+in :mod:`test.support`.

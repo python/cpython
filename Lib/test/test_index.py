@@ -1,44 +1,26 @@
 import unittest
 from test import support
+from test.support import FakeIndex
 import operator
 maxsize = support.MAX_Py_ssize_t
-
-class newstyle:
-    def __index__(self):
-        return self.ind
 
 class TrapInt(int):
     def __index__(self):
         return int(self)
 
 class BaseTestCase(unittest.TestCase):
-    def setUp(self):
-        self.o = newstyle()
-        self.n = newstyle()
-
     def test_basic(self):
-        self.o.ind = -2
-        self.n.ind = 2
-        self.assertEqual(operator.index(self.o), -2)
-        self.assertEqual(operator.index(self.n), 2)
+        self.assertEqual(operator.index(FakeIndex(-2)), -2)
 
     def test_slice(self):
-        self.o.ind = 1
-        self.n.ind = 2
-        slc = slice(self.o, self.o, self.o)
-        check_slc = slice(1, 1, 1)
-        self.assertEqual(slc.indices(self.o), check_slc.indices(1))
-        slc = slice(self.n, self.n, self.n)
+        slc = slice(FakeIndex(2), FakeIndex(2), FakeIndex(2))
         check_slc = slice(2, 2, 2)
-        self.assertEqual(slc.indices(self.n), check_slc.indices(2))
+        self.assertEqual(slc.indices(FakeIndex(2)), check_slc.indices(2))
 
     def test_wrappers(self):
-        self.o.ind = 4
-        self.n.ind = 5
         self.assertEqual(6 .__index__(), 6)
         self.assertEqual(-7 .__index__(), -7)
-        self.assertEqual(self.o.__index__(), 4)
-        self.assertEqual(self.n.__index__(), 5)
+        self.assertEqual(FakeIndex(5).__index__(), 5)
         self.assertEqual(True.__index__(), 1)
         self.assertEqual(False.__index__(), 0)
 
@@ -48,12 +30,8 @@ class BaseTestCase(unittest.TestCase):
         self.assertEqual(slice(TrapInt()).indices(0), (0,0,1))
 
     def test_error(self):
-        self.o.ind = 'dumb'
-        self.n.ind = 'bad'
-        self.assertRaises(TypeError, operator.index, self.o)
-        self.assertRaises(TypeError, operator.index, self.n)
-        self.assertRaises(TypeError, slice(self.o).indices, 0)
-        self.assertRaises(TypeError, slice(self.n).indices, 0)
+        self.assertRaises(TypeError, operator.index, FakeIndex('bad'))
+        self.assertRaises(TypeError, slice(FakeIndex('bad')).indices, 0)
 
     def test_int_subclass_with_index(self):
         # __index__ should be used when computing indices, even for int
@@ -72,15 +50,11 @@ class BaseTestCase(unittest.TestCase):
         #self.assertIs(type(operator_index), int)
 
     def test_index_returns_int_subclass(self):
-        class BadInt:
-            def __index__(self):
-                return True
-
         class BadInt2(int):
             def __index__(self):
                 return True
 
-        bad_int = BadInt()
+        bad_int = FakeIndex(True)
         with self.assertWarns(DeprecationWarning):
             n = operator.index(bad_int)
         self.assertEqual(n, 1)
@@ -93,105 +67,66 @@ class BaseTestCase(unittest.TestCase):
 class SeqTestCase:
     # This test case isn't run directly. It just defines common tests
     # to the different sequence types below
-    def setUp(self):
-        self.o = newstyle()
-        self.n = newstyle()
-        self.o2 = newstyle()
-        self.n2 = newstyle()
 
     def test_index(self):
-        self.o.ind = -2
-        self.n.ind = 2
-        self.assertEqual(self.seq[self.n], self.seq[2])
-        self.assertEqual(self.seq[self.o], self.seq[-2])
+        self.assertEqual(self.seq[FakeIndex(2)], self.seq[2])
+        self.assertEqual(self.seq[FakeIndex(-2)], self.seq[-2])
 
     def test_slice(self):
-        self.o.ind = 1
-        self.o2.ind = 3
-        self.n.ind = 2
-        self.n2.ind = 4
-        self.assertEqual(self.seq[self.o:self.o2], self.seq[1:3])
-        self.assertEqual(self.seq[self.n:self.n2], self.seq[2:4])
+        self.assertEqual(self.seq[FakeIndex(1):FakeIndex(3)], self.seq[1:3])
 
     def test_slice_bug7532(self):
         seqlen = len(self.seq)
-        self.o.ind = int(seqlen * 1.5)
-        self.n.ind = seqlen + 2
-        self.assertEqual(self.seq[self.o:], self.seq[0:0])
-        self.assertEqual(self.seq[:self.o], self.seq)
-        self.assertEqual(self.seq[self.n:], self.seq[0:0])
-        self.assertEqual(self.seq[:self.n], self.seq)
-        self.o2.ind = -seqlen - 2
-        self.n2.ind = -int(seqlen * 1.5)
-        self.assertEqual(self.seq[self.o2:], self.seq)
-        self.assertEqual(self.seq[:self.o2], self.seq[0:0])
-        self.assertEqual(self.seq[self.n2:], self.seq)
-        self.assertEqual(self.seq[:self.n2], self.seq[0:0])
+        self.assertEqual(self.seq[FakeIndex(seqlen + 2):], self.seq[0:0])
+        self.assertEqual(self.seq[:FakeIndex(seqlen + 2)], self.seq)
+        self.assertEqual(self.seq[FakeIndex(-seqlen - 2):], self.seq)
+        self.assertEqual(self.seq[:FakeIndex(-seqlen - 2)], self.seq[0:0])
 
     def test_repeat(self):
-        self.o.ind = 3
-        self.n.ind = 2
-        self.assertEqual(self.seq * self.o, self.seq * 3)
-        self.assertEqual(self.seq * self.n, self.seq * 2)
-        self.assertEqual(self.o * self.seq, self.seq * 3)
-        self.assertEqual(self.n * self.seq, self.seq * 2)
+        self.assertEqual(self.seq * FakeIndex(3), self.seq * 3)
+        self.assertEqual(FakeIndex(3) * self.seq, self.seq * 3)
 
     def test_wrappers(self):
-        self.o.ind = 4
-        self.n.ind = 5
-        self.assertEqual(self.seq.__getitem__(self.o), self.seq[4])
-        self.assertEqual(self.seq.__mul__(self.o), self.seq * 4)
-        self.assertEqual(self.seq.__rmul__(self.o), self.seq * 4)
-        self.assertEqual(self.seq.__getitem__(self.n), self.seq[5])
-        self.assertEqual(self.seq.__mul__(self.n), self.seq * 5)
-        self.assertEqual(self.seq.__rmul__(self.n), self.seq * 5)
+        self.assertEqual(self.seq.__getitem__(FakeIndex(4)), self.seq[4])
+        self.assertEqual(self.seq.__mul__(FakeIndex(4)), self.seq * 4)
+        self.assertEqual(self.seq.__rmul__(FakeIndex(4)), self.seq * 4)
 
     def test_subclasses(self):
         self.assertEqual(self.seq[TrapInt()], self.seq[0])
 
     def test_error(self):
-        self.o.ind = 'dumb'
-        self.n.ind = 'bad'
-        indexobj = lambda x, obj: obj.seq[x]
-        self.assertRaises(TypeError, indexobj, self.o, self)
-        self.assertRaises(TypeError, indexobj, self.n, self)
-        sliceobj = lambda x, obj: obj.seq[x:]
-        self.assertRaises(TypeError, sliceobj, self.o, self)
-        self.assertRaises(TypeError, sliceobj, self.n, self)
+        with self.assertRaises(TypeError):
+            self.seq[FakeIndex('bad')]
+        with self.assertRaises(TypeError):
+            self.seq[FakeIndex('bad'):]
 
 
 class ListTestCase(SeqTestCase, unittest.TestCase):
     seq = [0,10,20,30,40,50]
 
     def test_setdelitem(self):
-        self.o.ind = -2
-        self.n.ind = 2
         lst = list('ab!cdefghi!j')
-        del lst[self.o]
-        del lst[self.n]
-        lst[self.o] = 'X'
-        lst[self.n] = 'Y'
+        del lst[FakeIndex(-2)]
+        del lst[FakeIndex(2)]
+        lst[FakeIndex(-2)] = 'X'
+        lst[FakeIndex(2)] = 'Y'
         self.assertEqual(lst, list('abYdefghXj'))
 
         lst = [5, 6, 7, 8, 9, 10, 11]
-        lst.__setitem__(self.n, "here")
+        lst.__setitem__(FakeIndex(2), "here")
         self.assertEqual(lst, [5, 6, "here", 8, 9, 10, 11])
-        lst.__delitem__(self.n)
+        lst.__delitem__(FakeIndex(2))
         self.assertEqual(lst, [5, 6, 8, 9, 10, 11])
 
     def test_inplace_repeat(self):
-        self.o.ind = 2
-        self.n.ind = 3
         lst = [6, 4]
-        lst *= self.o
+        lst *= FakeIndex(2)
         self.assertEqual(lst, [6, 4, 6, 4])
-        lst *= self.n
-        self.assertEqual(lst, [6, 4, 6, 4] * 3)
 
         lst = [5, 6, 7, 8, 9, 11]
-        l2 = lst.__imul__(self.n)
+        l2 = lst.__imul__(FakeIndex(2))
         self.assertIs(l2, lst)
-        self.assertEqual(lst, [5, 6, 7, 8, 9, 11] * 3)
+        self.assertEqual(lst, [5, 6, 7, 8, 9, 11] * 2)
 
 
 class NewSeq:
@@ -236,8 +171,7 @@ class NewSeqTestCase(SeqTestCase, unittest.TestCase):
 class RangeTestCase(unittest.TestCase):
 
     def test_range(self):
-        n = newstyle()
-        n.ind = 5
+        n = FakeIndex(5)
         self.assertEqual(range(1, 20)[n], 6)
         self.assertEqual(range(1, 20).__getitem__(n), 6)
 

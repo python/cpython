@@ -121,6 +121,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
+    "FakeIndex", "FakeInt", "FakeFloat", "FakeComplex", "FakePath",
     ]
 
 
@@ -3189,22 +3190,37 @@ def with_pymalloc():
     return _testcapi.WITH_PYMALLOC
 
 
-class FakePath:
-    """Simple implementing of the path protocol.
-    """
-    def __init__(self, path):
-        self.path = path
+class Fake:
+    def __init__(self, value):
+        self.value = value
 
     def __repr__(self):
-        return f'<FakePath {self.path!r}>'
+        return f'<{self.__class__.__name__} {self.value!r}>'
 
-    def __fspath__(self):
-        if (isinstance(self.path, BaseException) or
-            isinstance(self.path, type) and
-                issubclass(self.path, BaseException)):
-            raise self.path
+    def _return(self):
+        if (isinstance(self.value, BaseException) or
+            isinstance(self.value, type) and
+                issubclass(self.value, BaseException)):
+            raise self.value
         else:
-            return self.path
+            return self.value
+
+class FakeIndex(Fake):
+    __index__ = Fake._return
+
+class FakeInt(Fake):
+    __int__ = Fake._return
+
+class FakeFloat(Fake):
+    __float__ = Fake._return
+
+class FakeComplex(Fake):
+    __complex__ = Fake._return
+
+class FakePath(Fake):
+    """Simple implementing of the path protocol.
+    """
+    __fspath__ = Fake._return
 
 
 class _ALWAYS_EQ:

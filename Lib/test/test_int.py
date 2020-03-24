@@ -2,6 +2,7 @@ import sys
 
 import unittest
 from test import support
+from test.support import FakeIndex, FakeInt
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 
@@ -279,21 +280,15 @@ class IntTestCases(unittest.TestCase):
             int('0', 5.0)
 
     def test_int_base_indexable(self):
-        class MyIndexable(object):
-            def __init__(self, value):
-                self.value = value
-            def __index__(self):
-                return self.value
-
         # Check out of range bases.
         for base in 2**100, -2**100, 1, 37:
             with self.assertRaises(ValueError):
                 int('43', base)
 
         # Check in-range bases.
-        self.assertEqual(int('101', base=MyIndexable(2)), 5)
-        self.assertEqual(int('101', base=MyIndexable(10)), 101)
-        self.assertEqual(int('101', base=MyIndexable(36)), 1 + 36**2)
+        self.assertEqual(int('101', base=FakeIndex(2)), 5)
+        self.assertEqual(int('101', base=FakeIndex(10)), 101)
+        self.assertEqual(int('101', base=FakeIndex(36)), 1 + 36**2)
 
     def test_non_numeric_input_types(self):
         # Test possible non-numeric types for the argument x, including
@@ -350,11 +345,7 @@ class IntTestCases(unittest.TestCase):
             pass
         self.assertRaises(TypeError, int, MissingMethods())
 
-        class Foo0:
-            def __int__(self):
-                return 42
-
-        self.assertEqual(int(Foo0()), 42)
+        self.assertEqual(int(FakeInt(42)), 42)
 
         class Classic:
             pass
@@ -459,16 +450,8 @@ class IntTestCases(unittest.TestCase):
         self.assertRaises(TypeError, int, my_int)
 
     def test_int_returns_int_subclass(self):
-        class BadIndex:
-            def __index__(self):
-                return True
-
         class BadIndex2(int):
             def __index__(self):
-                return True
-
-        class BadInt:
-            def __int__(self):
                 return True
 
         class BadInt2(int):
@@ -477,17 +460,17 @@ class IntTestCases(unittest.TestCase):
 
         class TruncReturnsBadIndex:
             def __trunc__(self):
-                return BadIndex()
+                return FakeIndex(True)
 
         class TruncReturnsBadInt:
             def __trunc__(self):
-                return BadInt()
+                return FakeInt(True)
 
         class TruncReturnsIntSubclass:
             def __trunc__(self):
                 return True
 
-        bad_int = BadIndex()
+        bad_int = FakeIndex(True)
         with self.assertWarns(DeprecationWarning):
             n = int(bad_int)
         self.assertEqual(n, 1)
@@ -498,7 +481,7 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(n, 0)
         self.assertIs(type(n), int)
 
-        bad_int = BadInt()
+        bad_int = FakeInt(True)
         with self.assertWarns(DeprecationWarning):
             n = int(bad_int)
         self.assertEqual(n, 1)

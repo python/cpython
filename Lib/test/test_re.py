@@ -1,5 +1,5 @@
 from test.support import (gc_collect, bigmemtest, _2G,
-                          cpython_only, captured_stdout)
+                          cpython_only, captured_stdout, FakeIndex)
 import locale
 import re
 import sre_compile
@@ -418,25 +418,20 @@ class ReTests(unittest.TestCase):
         self.assertEqual(pat.match('ac').group(1, 'b2', 3), ('a', None, 'c'))
 
     def test_group(self):
-        class Index:
-            def __init__(self, value):
-                self.value = value
-            def __index__(self):
-                return self.value
         # A single group
         m = re.match('(a)(b)', 'ab')
         self.assertEqual(m.group(), 'ab')
         self.assertEqual(m.group(0), 'ab')
         self.assertEqual(m.group(1), 'a')
-        self.assertEqual(m.group(Index(1)), 'a')
+        self.assertEqual(m.group(FakeIndex(1)), 'a')
         self.assertRaises(IndexError, m.group, -1)
         self.assertRaises(IndexError, m.group, 3)
         self.assertRaises(IndexError, m.group, 1<<1000)
-        self.assertRaises(IndexError, m.group, Index(1<<1000))
+        self.assertRaises(IndexError, m.group, FakeIndex(1<<1000))
         self.assertRaises(IndexError, m.group, 'x')
         # Multiple groups
         self.assertEqual(m.group(2, 1), ('b', 'a'))
-        self.assertEqual(m.group(Index(2), Index(1)), ('b', 'a'))
+        self.assertEqual(m.group(FakeIndex(2), FakeIndex(1)), ('b', 'a'))
 
     def test_match_getitem(self):
         pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')

@@ -8,6 +8,7 @@ import weakref
 
 from pickle import loads, dumps
 from test import support
+from test.support import FakeIndex
 
 
 def evaluate_slice_index(arg):
@@ -57,16 +58,6 @@ def slice_indices(slice, length):
         stop = max(stop + length, lower) if stop < 0 else min(stop, upper)
 
     return start, stop, step
-
-
-# Class providing an __index__ method.  Used for testing slice.indices.
-
-class MyIndexable(object):
-    def __init__(self, value):
-        self.value = value
-
-    def __index__(self):
-        return self.value
 
 
 class SliceTest(unittest.TestCase):
@@ -219,10 +210,10 @@ class SliceTest(unittest.TestCase):
 
         # ... but it should be fine to use a custom class that provides index.
         self.assertEqual(slice(0, 10, 1).indices(5), (0, 5, 1))
-        self.assertEqual(slice(MyIndexable(0), 10, 1).indices(5), (0, 5, 1))
-        self.assertEqual(slice(0, MyIndexable(10), 1).indices(5), (0, 5, 1))
-        self.assertEqual(slice(0, 10, MyIndexable(1)).indices(5), (0, 5, 1))
-        self.assertEqual(slice(0, 10, 1).indices(MyIndexable(5)), (0, 5, 1))
+        self.assertEqual(slice(FakeIndex(0), 10, 1).indices(5), (0, 5, 1))
+        self.assertEqual(slice(0, FakeIndex(10), 1).indices(5), (0, 5, 1))
+        self.assertEqual(slice(0, 10, FakeIndex(1)).indices(5), (0, 5, 1))
+        self.assertEqual(slice(0, 10, 1).indices(FakeIndex(5)), (0, 5, 1))
 
     def test_setslice_without_getslice(self):
         tmp = []

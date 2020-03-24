@@ -19,7 +19,7 @@ from array import array
 from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
-from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
+from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST, FakeInt
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -5076,15 +5076,9 @@ class Oddballs(unittest.TestCase):
                 x.abc = 1
 
     def test_check_arg_types(self):
-        class Number:
-            def __init__(self, value):
-                self.value = value
-            def __int__(self):
-                return self.value
-
         for xx in [decimal.Decimal(10),
                    decimal.Decimal('10.9'),
-                   Number(10)]:
+                   FakeInt(10)]:
             with self.assertWarns(DeprecationWarning):
                 self.assertEqual(datetime(10, 10, 10, 10, 10, 10, 10),
                                  datetime(xx, xx, xx, xx, xx, xx, xx))
@@ -5093,7 +5087,7 @@ class Oddballs(unittest.TestCase):
                                               r'\(got type str\)$'):
             datetime(10, 10, '10')
 
-        f10 = Number(10.9)
+        f10 = FakeInt(10.9)
         with self.assertRaisesRegex(TypeError, '^__int__ returned non-int '
                                                r'\(type float\)$'):
             datetime(10, 10, f10)

@@ -4,7 +4,7 @@ import unittest
 import sys
 import pickle
 import itertools
-from test.support import ALWAYS_EQ
+from test.support import ALWAYS_EQ, FakeIndex
 
 # pure Python implementations (3 args only), for comparison
 def pyrange(start, stop, step):
@@ -308,37 +308,19 @@ class RangeTest(unittest.TestCase):
     def test_user_index_method(self):
         bignum = 2*sys.maxsize
         smallnum = 42
-
-        # User-defined class with an __index__ method
-        class I:
-            def __init__(self, n):
-                self.n = int(n)
-            def __index__(self):
-                return self.n
-        self.assertEqual(list(range(I(bignum), I(bignum + 1))), [bignum])
-        self.assertEqual(list(range(I(smallnum), I(smallnum + 1))), [smallnum])
-
-        # User-defined class with a failing __index__ method
-        class IX:
-            def __index__(self):
-                raise RuntimeError
-        self.assertRaises(RuntimeError, range, IX())
-
-        # User-defined class with an invalid __index__ method
-        class IN:
-            def __index__(self):
-                return "not a number"
-
-        self.assertRaises(TypeError, range, IN())
+        self.assertEqual(list(range(FakeIndex(bignum), FakeIndex(bignum + 1))), [bignum])
+        self.assertEqual(list(range(FakeIndex(smallnum), FakeIndex(smallnum + 1))), [smallnum])
+        self.assertRaises(RuntimeError, range, FakeIndex(RuntimeError))
+        self.assertRaises(TypeError, range, FakeIndex("not a number"))
 
         # Test use of user-defined classes in slice indices.
-        self.assertEqual(range(10)[:I(5)], range(5))
+        self.assertEqual(range(10)[:FakeIndex(5)], range(5))
 
         with self.assertRaises(RuntimeError):
-            range(0, 10)[:IX()]
+            range(0, 10)[:FakeIndex(RuntimeError)]
 
         with self.assertRaises(TypeError):
-            range(0, 10)[:IN()]
+            range(0, 10)[:FakeIndex("not a number")]
 
     def test_count(self):
         self.assertEqual(range(3).count(-1), 0)

@@ -18,7 +18,7 @@ import unittest
 import test.support
 import test.string_tests
 import test.list_tests
-from test.support import bigaddrspacetest, MAX_Py_ssize_t
+from test.support import bigaddrspacetest, MAX_Py_ssize_t, FakeIndex
 from test.support.script_helper import assert_python_failure
 
 
@@ -33,13 +33,6 @@ else:
     # no-op
     def check_bytes_warnings(func):
         return func
-
-
-class Indexable:
-    def __init__(self, value=0):
-        self.value = value
-    def __index__(self):
-        return self.value
 
 
 class BaseBytesTest:
@@ -133,11 +126,11 @@ class BaseBytesTest:
         self.assertEqual(bytes(a), b'*' * 1000)  # should not crash
 
     def test_from_index(self):
-        b = self.type2test([Indexable(), Indexable(1), Indexable(254),
-                            Indexable(255)])
+        b = self.type2test([FakeIndex(0), FakeIndex(1), FakeIndex(254),
+                            FakeIndex(255)])
         self.assertEqual(list(b), [0, 1, 254, 255])
-        self.assertRaises(ValueError, self.type2test, [Indexable(-1)])
-        self.assertRaises(ValueError, self.type2test, [Indexable(256)])
+        self.assertRaises(ValueError, self.type2test, [FakeIndex(-1)])
+        self.assertRaises(ValueError, self.type2test, [FakeIndex(256)])
 
     def test_from_buffer(self):
         a = self.type2test(array.array('B', [1, 2, 3]))
@@ -208,11 +201,8 @@ class BaseBytesTest:
     def test_constructor_exceptions(self):
         # Issue #34974: bytes and bytearray constructors replace unexpected
         # exceptions.
-        class BadInt:
-            def __index__(self):
-                1/0
-        self.assertRaises(ZeroDivisionError, self.type2test, BadInt())
-        self.assertRaises(ZeroDivisionError, self.type2test, [BadInt()])
+        self.assertRaises(ZeroDivisionError, self.type2test, FakeIndex(ZeroDivisionError))
+        self.assertRaises(ZeroDivisionError, self.type2test, [FakeIndex(ZeroDivisionError)])
 
         class BadIterable:
             def __iter__(self):
@@ -1267,7 +1257,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(b, bytearray([1, 100, 3]))
         b[-1] = 200
         self.assertEqual(b, bytearray([1, 100, 200]))
-        b[0] = Indexable(10)
+        b[0] = FakeIndex(10)
         self.assertEqual(b, bytearray([10, 100, 200]))
         try:
             b[3] = 0
@@ -1285,7 +1275,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         except ValueError:
             pass
         try:
-            b[0] = Indexable(-1)
+            b[0] = FakeIndex(-1)
             self.fail("Didn't raise ValueError")
         except ValueError:
             pass
@@ -1483,7 +1473,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(ValueError, a.extend, [0, 1, 2, -1])
         self.assertEqual(len(a), 0)
         a = bytearray(b'')
-        a.extend([Indexable(ord('a'))])
+        a.extend([FakeIndex(ord('a'))])
         self.assertEqual(a, b'a')
 
     def test_remove(self):
@@ -1500,7 +1490,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b.remove(ord('h'))
         self.assertEqual(b, b'e')
         self.assertRaises(TypeError, lambda: b.remove(b'e'))
-        b.remove(Indexable(ord('e')))
+        b.remove(FakeIndex(ord('e')))
         self.assertEqual(b, b'')
 
         # test values outside of the ascii range: (0, 127)
@@ -1533,7 +1523,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(len(b), 1)
         self.assertRaises(TypeError, lambda: b.append(b'o'))
         b = bytearray()
-        b.append(Indexable(ord('A')))
+        b.append(FakeIndex(ord('A')))
         self.assertEqual(b, b'A')
 
     def test_insert(self):
@@ -1545,7 +1535,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(b, b'mississippi')
         self.assertRaises(TypeError, lambda: b.insert(0, b'1'))
         b = bytearray()
-        b.insert(0, Indexable(ord('A')))
+        b.insert(0, FakeIndex(ord('A')))
         self.assertEqual(b, b'A')
 
     def test_copied(self):

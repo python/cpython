@@ -2,6 +2,7 @@
 # XXXX Should not do tests around zero only
 
 from test.support import run_unittest, verbose, requires_IEEE_754
+from test.support import FakeIndex, FakeFloat
 from test import support
 import unittest
 import itertools
@@ -216,23 +217,8 @@ def result_check(expected, got, ulp_tol=5, abs_tol=0.0):
     else:
         return None
 
-class FloatLike:
-    def __init__(self, value):
-        self.value = value
-
-    def __float__(self):
-        return self.value
-
 class IntSubclass(int):
     pass
-
-# Class providing an __index__ method.
-class MyIndexable(object):
-    def __init__(self, value):
-        self.value = value
-
-    def __index__(self):
-        return self.value
 
 class MathTests(unittest.TestCase):
 
@@ -402,7 +388,7 @@ class MathTests(unittest.TestCase):
             pass
         self.assertEqual(math.ceil(TestCeil()), 42)
         self.assertEqual(math.ceil(FloatCeil()), 42)
-        self.assertEqual(math.ceil(FloatLike(42.5)), 43)
+        self.assertEqual(math.ceil(FakeFloat(42.5)), 43)
         self.assertRaises(TypeError, math.ceil, TestNoCeil())
 
         t = TestNoCeil()
@@ -546,7 +532,7 @@ class MathTests(unittest.TestCase):
             pass
         self.assertEqual(math.floor(TestFloor()), 42)
         self.assertEqual(math.floor(FloatFloor()), 42)
-        self.assertEqual(math.floor(FloatLike(41.9)), 41)
+        self.assertEqual(math.floor(FakeFloat(41.9)), 41)
         self.assertRaises(TypeError, math.floor, TestNoFloor())
 
         t = TestNoFloor()
@@ -731,7 +717,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, gcd, 120.0, 84)
         self.assertRaises(TypeError, gcd, 120, 84.0)
         self.assertRaises(TypeError, gcd, 120, 1, 84.0)
-        self.assertEqual(gcd(MyIndexable(120), MyIndexable(84)), 12)
+        self.assertEqual(gcd(FakeIndex(120), FakeIndex(84)), 12)
 
     def testHypot(self):
         from decimal import Decimal
@@ -949,19 +935,12 @@ class MathTests(unittest.TestCase):
         self.assertIs(type(s), int)
         self.assertEqual(s, 0)
 
-        class IntegerLike(object):
-            def __init__(self, value):
-                self.value = value
-
-            def __index__(self):
-                return self.value
-
-        s = math.isqrt(IntegerLike(1729))
+        s = math.isqrt(FakeIndex(1729))
         self.assertIs(type(s), int)
         self.assertEqual(s, 41)
 
         with self.assertRaises(ValueError):
-            math.isqrt(IntegerLike(-3))
+            math.isqrt(FakeIndex(-3))
 
         # Non-integer-like things
         bad_values = [
@@ -1015,7 +994,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, lcm, 120.0, 84)
         self.assertRaises(TypeError, lcm, 120, 84.0)
         self.assertRaises(TypeError, lcm, 120, 0, 84.0)
-        self.assertEqual(lcm(MyIndexable(120), MyIndexable(84)), 840)
+        self.assertEqual(lcm(FakeIndex(120), FakeIndex(84)), 840)
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
@@ -1502,7 +1481,7 @@ class MathTests(unittest.TestCase):
 
         self.assertRaises(TypeError, math.trunc)
         self.assertRaises(TypeError, math.trunc, 1, 2)
-        self.assertRaises(TypeError, math.trunc, FloatLike(23.5))
+        self.assertRaises(TypeError, math.trunc, FakeFloat(23.5))
         self.assertRaises(TypeError, math.trunc, TestNoTrunc())
 
     def testIsfinite(self):
@@ -1848,10 +1827,10 @@ class MathTests(unittest.TestCase):
             self.assertEqual(perm(n, k), 1)
             self.assertIs(type(perm(n, k)), int)
         self.assertEqual(perm(IntSubclass(5), IntSubclass(2)), 20)
-        self.assertEqual(perm(MyIndexable(5), MyIndexable(2)), 20)
+        self.assertEqual(perm(FakeIndex(5), FakeIndex(2)), 20)
         for k in range(3):
             self.assertIs(type(perm(IntSubclass(5), IntSubclass(k))), int)
-            self.assertIs(type(perm(MyIndexable(5), MyIndexable(k))), int)
+            self.assertIs(type(perm(FakeIndex(5), FakeIndex(k))), int)
 
     def testComb(self):
         comb = math.comb
@@ -1918,10 +1897,10 @@ class MathTests(unittest.TestCase):
             self.assertEqual(comb(n, k), 1)
             self.assertIs(type(comb(n, k)), int)
         self.assertEqual(comb(IntSubclass(5), IntSubclass(2)), 10)
-        self.assertEqual(comb(MyIndexable(5), MyIndexable(2)), 10)
+        self.assertEqual(comb(FakeIndex(5), FakeIndex(2)), 10)
         for k in range(3):
             self.assertIs(type(comb(IntSubclass(5), IntSubclass(k))), int)
-            self.assertIs(type(comb(MyIndexable(5), MyIndexable(k))), int)
+            self.assertIs(type(comb(FakeIndex(5), FakeIndex(k))), int)
 
     @requires_IEEE_754
     def test_nextafter(self):

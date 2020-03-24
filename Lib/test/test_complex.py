@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import FakeIndex, FakeInt, FakeFloat, FakeComplex
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 
@@ -215,19 +216,11 @@ class ComplexTest(unittest.TestCase):
         self.assertClose(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
 
     def test_constructor(self):
-        class OS:
-            def __init__(self, value): self.value = value
-            def __complex__(self): return self.value
-        class NS(object):
-            def __init__(self, value): self.value = value
-            def __complex__(self): return self.value
-        self.assertEqual(complex(OS(1+10j)), 1+10j)
-        self.assertEqual(complex(NS(1+10j)), 1+10j)
-        self.assertRaises(TypeError, complex, OS(None))
-        self.assertRaises(TypeError, complex, NS(None))
+        self.assertEqual(complex(FakeComplex(1+10j)), 1+10j)
+        self.assertRaises(TypeError, complex, FakeComplex(None))
         self.assertRaises(TypeError, complex, {})
-        self.assertRaises(TypeError, complex, NS(1.5))
-        self.assertRaises(TypeError, complex, NS(1))
+        self.assertRaises(TypeError, complex, FakeComplex(1.5))
+        self.assertRaises(TypeError, complex, FakeComplex(1))
 
         self.assertAlmostEqual(complex("1+10j"), 1+10j)
         self.assertAlmostEqual(complex(10), 10+0j)
@@ -351,39 +344,19 @@ class ComplexTest(unittest.TestCase):
         class EvilExc(Exception):
             pass
 
-        class evilcomplex:
-            def __complex__(self):
-                raise EvilExc
+        self.assertRaises(EvilExc, complex, FakeComplex(EvilExc))
 
-        self.assertRaises(EvilExc, complex, evilcomplex())
+        self.assertAlmostEqual(complex(FakeFloat(42.)), 42)
+        self.assertAlmostEqual(complex(real=FakeFloat(17.), imag=FakeFloat(23.)), 17+23j)
+        self.assertRaises(TypeError, complex, FakeFloat(None))
 
-        class float2:
-            def __init__(self, value):
-                self.value = value
-            def __float__(self):
-                return self.value
+        self.assertAlmostEqual(complex(FakeIndex(42)), 42.0+0.0j)
+        self.assertAlmostEqual(complex(123, FakeIndex(42)), 123.0+42.0j)
+        self.assertRaises(OverflowError, complex, FakeIndex(2**2000))
+        self.assertRaises(OverflowError, complex, 123, FakeIndex(2**2000))
 
-        self.assertAlmostEqual(complex(float2(42.)), 42)
-        self.assertAlmostEqual(complex(real=float2(17.), imag=float2(23.)), 17+23j)
-        self.assertRaises(TypeError, complex, float2(None))
-
-        class MyIndex:
-            def __init__(self, value):
-                self.value = value
-            def __index__(self):
-                return self.value
-
-        self.assertAlmostEqual(complex(MyIndex(42)), 42.0+0.0j)
-        self.assertAlmostEqual(complex(123, MyIndex(42)), 123.0+42.0j)
-        self.assertRaises(OverflowError, complex, MyIndex(2**2000))
-        self.assertRaises(OverflowError, complex, 123, MyIndex(2**2000))
-
-        class MyInt:
-            def __int__(self):
-                return 42
-
-        self.assertRaises(TypeError, complex, MyInt())
-        self.assertRaises(TypeError, complex, 123, MyInt())
+        self.assertRaises(TypeError, complex, FakeInt(42))
+        self.assertRaises(TypeError, complex, 123, FakeInt(42))
 
         class complex0(complex):
             """Test usage of __complex__() when inheriting from 'complex'"""

@@ -7,6 +7,7 @@ import struct
 import sys
 
 from test import support
+from test.support import FakeIndex, FakeInt
 from test.support.script_helper import assert_python_ok
 
 ISBIGENDIAN = sys.byteorder == "big"
@@ -260,29 +261,6 @@ class StructTest(unittest.TestCase):
                             self.test_one(x)
 
                 # Some error cases.
-                class NotAnInt:
-                    def __int__(self):
-                        return 42
-
-                # Objects with an '__index__' method should be allowed
-                # to pack as integers.  That is assuming the implemented
-                # '__index__' method returns an 'int'.
-                class Indexable(object):
-                    def __init__(self, value):
-                        self._value = value
-
-                    def __index__(self):
-                        return self._value
-
-                # If the '__index__' method raises a type error, then
-                # '__int__' should be used with a deprecation warning.
-                class BadIndex(object):
-                    def __index__(self):
-                        raise TypeError
-
-                    def __int__(self):
-                        return 42
-
                 self.assertRaises((TypeError, struct.error),
                                   struct.pack, self.format,
                                   "a string")
@@ -294,14 +272,14 @@ class StructTest(unittest.TestCase):
                                   3+42j)
                 self.assertRaises((TypeError, struct.error),
                                   struct.pack, self.format,
-                                  NotAnInt())
+                                  FakeInt(42))
                 self.assertRaises((TypeError, struct.error),
                                   struct.pack, self.format,
-                                  BadIndex())
+                                  FakeIndex(TypeError))
 
                 # Check for legitimate values from '__index__'.
-                for obj in (Indexable(0), Indexable(10), Indexable(17),
-                            Indexable(42), Indexable(100), Indexable(127)):
+                for obj in (FakeIndex(0), FakeIndex(10), FakeIndex(17),
+                            FakeIndex(42), FakeIndex(100), FakeIndex(127)):
                     try:
                         struct.pack(format, obj)
                     except:
@@ -309,8 +287,8 @@ class StructTest(unittest.TestCase):
                                   "with '__index__' method")
 
                 # Check for bogus values from '__index__'.
-                for obj in (Indexable(b'a'), Indexable('b'), Indexable(None),
-                            Indexable({'a': 1}), Indexable([1, 2, 3])):
+                for obj in (FakeIndex(b'a'), FakeIndex('b'), FakeIndex(None),
+                            FakeIndex({'a': 1}), FakeIndex([1, 2, 3])):
                     self.assertRaises((TypeError, struct.error),
                                       struct.pack, self.format,
                                       obj)

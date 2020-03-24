@@ -16,6 +16,7 @@
 import contextlib
 import unittest
 from test import support
+from test.support import FakeIndex, FakeInt
 from itertools import permutations, product
 from random import randrange, sample, choice
 import warnings
@@ -2510,22 +2511,9 @@ class TestBufferProtocol(unittest.TestCase):
         check(memoryview(a), vsize(base_struct + 3 * per_dim))
 
     def test_memoryview_struct_module(self):
-
-        class INT(object):
-            def __init__(self, val):
-                self.val = val
-            def __int__(self):
-                return self.val
-
-        class IDX(object):
-            def __init__(self, val):
-                self.val = val
-            def __index__(self):
-                return self.val
-
         def f(): return 7
 
-        values = [INT(9), IDX(9),
+        values = [FakeInt(9), FakeIndex(9),
                   2.2+3j, Decimal("-21.1"), 12.2, Fraction(5, 2),
                   [1,2,3], {4,5,6}, {7:8}, (), (9,),
                   True, False, None, Ellipsis,
