@@ -776,34 +776,6 @@ class ThreadTests(BaseTestCase):
         """)
         self.assertEqual(out.rstrip(), b"thread_dict.atexit = 'value'")
 
-    def test_warnings_at_exit(self):
-        # bpo-19466: try to call most destructors at Python shutdown before
-        # destroying Python thread states
-        filename = __file__
-        rc, out, err = assert_python_ok("-Wd", "-c", """if 1:
-            import time
-            import threading
-            from test import support
-
-            def open_sleep():
-                # a warning will be emitted when the open file will be
-                # destroyed (without being explicitly closed) while the daemon
-                # thread is destroyed
-                fileobj = open(%a, 'rb')
-                start_event.set()
-                time.sleep(support.LONG_TIMEOUT)
-
-            start_event = threading.Event()
-
-            thread = threading.Thread(target=open_sleep, daemon=True)
-            thread.start()
-
-            # wait until the thread started
-            start_event.wait()
-        """ % filename)
-        self.assertRegex(err.rstrip(),
-                         b"^sys:1: ResourceWarning: unclosed file ")
-
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
