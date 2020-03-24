@@ -6170,37 +6170,40 @@ posix_getgrouplist(PyObject *self, PyObject *args)
         return NULL;
 #endif
 
+    while (1) {
 #ifdef __APPLE__
-    groups = PyMem_New(int, ngroups);
-#else
-    groups = PyMem_New(gid_t, ngroups);
-#endif
-    if (groups == NULL)
-        return PyErr_NoMemory();
-
-#ifdef __APPLE__
-    while (getgrouplist(user, basegid, groups, &ngroups)) {
-        /* On macOS, getgrouplist() returns a non-zero value without setting
-           errno if the group list is too small. Double the list size and call
-           it again in this case. */
-        PyMem_Free(groups);
-
-        if (ngroups > INT_MAX / 2) {
-            return PyErr_NoMemory();
-        }
-        ngroups *= 2;
-
         groups = PyMem_New(int, ngroups);
+#else
+        groups = PyMem_New(gid_t, ngroups);
+#endif
         if (groups == NULL) {
             return PyErr_NoMemory();
         }
+
+        int old_ngroups = ngroups;
+        if (getgrouplist(user, basegid, groups, &ngroups) != -1) {
+            /* Success */
+            break;
+        }
+
+        /* getgrouplist() fails if the group list is too small */
+        PyMem_Free(groups);
+
+        if (ngroups > old_ngroups) {
+            /* If the group list is too small, the glibc implementation of
+               getgrouplist() sets ngroups to the total number of groups and
+               returns -1. */
+        }
+        else {
+            /* Double the group list size */
+            if (ngroups > INT_MAX / 2) {
+                return PyErr_NoMemory();
+            }
+            ngroups *= 2;
+        }
+
+        /* Retry getgrouplist() with a larger group list */
     }
-#else
-    if (getgrouplist(user, basegid, groups, &ngroups) == -1) {
-        PyMem_Del(groups);
-        return posix_error();
-    }
-#endif
 
 #ifdef _Py_MEMORY_SANITIZER
     /* Clang memory sanitizer libc intercepts don't know getgrouplist. */
