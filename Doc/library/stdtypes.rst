@@ -1549,32 +1549,32 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
 
-.. method:: str.cutprefix(prefix, /)
+.. method:: str.removeprefix(prefix, /)
 
    Return a copy of the string with the given prefix removed, if present. ::
 
-      >>> 'BarFooBaz'.cutprefix('Bar')
+      >>> 'BarFooBaz'.removeprefix('Bar')
       'FooBaz'
-      >>> 'BarFooBaz'.cutprefix('Baz')
+      >>> 'BarFooBaz'.removeprefix('Baz')
       'BarFooBaz'
 
-   The expression ``s.cutprefix(pre)`` is roughly equivalent to
+   The expression ``s.removeprefix(pre)`` is roughly equivalent to
    ``s[len(pre):] if s.startswith(pre) else s``.
    Unlike :meth:`~str.startswith`, only one prefix can be passed
    at a time.
 
    .. versionadded:: 3.9
 
-.. method:: str.cutsuffix(suffix, /)
+.. method:: str.removesuffix(suffix, /)
 
    Return a copy of the string with the given suffix removed, if present. ::
 
-      >>> 'BarFooBaz'.cutsuffix('Baz')
+      >>> 'BarFooBaz'.removesuffix('Baz')
       'BarFoo'
-      >>> 'BarFooBaz'.cutsuffix('Bar')
+      >>> 'BarFooBaz'.removesuffix('Bar')
       'BarFooBaz'
 
-   The expression ``s.cutsuffix(suf)`` is roughly equivalent to
+   The expression ``s.removesuffix(suf)`` is roughly equivalent to
    ``s[:-len(suf)] if suf and s.endswith(suf) else s``.
    Unlike :meth:`~str.endswith`, only one suffix can be passed
    at a time.
@@ -1864,7 +1864,7 @@ expression support in the :mod:`re` module).
       >>> 'www.example.com'.lstrip('cmowz.')
       'example.com'
 
-   See :meth:`str.cutprefix` for a method that will remove a single prefix
+   See :meth:`str.removeprefix` for a method that will remove a single prefix
    string rather than all of a set of characters.
 
 
@@ -1947,7 +1947,7 @@ expression support in the :mod:`re` module).
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
 
-   See :meth:`str.cutsuffix` for a method that will remove a single suffix
+   See :meth:`str.removesuffix` for a method that will remove a single suffix
    string rather than all of a set of characters.
 
 .. method:: str.split(sep=None, maxsplit=-1)
@@ -2629,19 +2629,19 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.cutprefix(prefix, /)
-            bytearray.cutprefix(prefix, /)
+.. method:: bytes.removeprefix(prefix, /)
+            bytearray.removeprefix(prefix, /)
 
    Return a copy of the binary data with the given prefix removed,
    if present. ::
 
-      >>> b'BarFooBaz'.cutprefix(b'Bar')
+      >>> b'BarFooBaz'.removeprefix(b'Bar')
       b'FooBaz'
-      >>> b'BarFooBaz'.cutprefix(b'Baz')
+      >>> b'BarFooBaz'.removeprefix(b'Baz')
       b'BarFooBaz'
 
    The *prefix* may be any :term:`bytes-like object`.
-   The expression ``b.cutprefix(pre)`` is roughly equivalent to
+   The expression ``b.removeprefix(pre)`` is roughly equivalent to
    ``b[len(pre):] if b.startswith(pre) else b[:]``.
    Unlike :meth:`~bytes.startswith`, only one prefix can be passed
    at a time.
@@ -2649,19 +2649,19 @@ arbitrary binary data.
    .. versionadded:: 3.9
 
 
-.. method:: bytes.cutsuffix(suffix, /)
-            bytearray.cutsuffix(suffix, /)
+.. method:: bytes.removesuffix(suffix, /)
+            bytearray.removesuffix(suffix, /)
 
    Return a copy of the binary data with the given suffix removed,
    if present. ::
 
-      >>> b'BarFooBaz'.cutsuffix(b'Baz')
+      >>> b'BarFooBaz'.removesuffix(b'Baz')
       b'BarFoo'
-      >>> b'BarFooBaz'.cutsuffix(b'Bar')
+      >>> b'BarFooBaz'.removesuffix(b'Bar')
       b'BarFooBaz'
 
    The *suffix* may be any :term:`bytes-like object`.
-   The expression ``b.cutsuffix(suf)`` is roughly equivalent to
+   The expression ``b.removesuffix(suf)`` is roughly equivalent to
    ``b[:-len(suf)] if suf and b.endswith(suf) else b[:]``.
    Unlike :meth:`~bytes.endswith`, only one suffix can be passed
    at a time.
@@ -2919,7 +2919,7 @@ produce new objects.
       b'example.com'
 
    The binary sequence of byte values to remove may be any
-   :term:`bytes-like object`. See :meth:`~bytes.cutprefix` for a method
+   :term:`bytes-like object`. See :meth:`~bytes.removeprefix` for a method
    that will remove a single prefix string rather than all of a set of
    characters.
 
@@ -2970,7 +2970,7 @@ produce new objects.
       b'mississ'
 
    The binary sequence of byte values to remove may be any
-   :term:`bytes-like object`. See :meth:`~bytes.cutsuffix` for a method
+   :term:`bytes-like object`. See :meth:`~bytes.removesuffix` for a method
    that will remove a single suffix string rather than all of a set of
    characters.
 

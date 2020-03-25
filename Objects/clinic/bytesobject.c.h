@@ -526,8 +526,8 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(bytes_cutprefix__doc__,
-"cutprefix($self, prefix, /)\n"
+PyDoc_STRVAR(bytes_removeprefix__doc__,
+"removeprefix($self, prefix, /)\n"
 "--\n"
 "\n"
 "Remove a specified prefix, if present.\n"
@@ -535,14 +535,14 @@ PyDoc_STRVAR(bytes_cutprefix__doc__,
 "If the bytes starts with the prefix, return b[len(prefix):].\n"
 "Otherwise, return a copy of the original bytes.");
 
-#define BYTES_CUTPREFIX_METHODDEF    \
-    {"cutprefix", (PyCFunction)bytes_cutprefix, METH_O, bytes_cutprefix__doc__},
+#define BYTES_REMOVEPREFIX_METHODDEF    \
+    {"removeprefix", (PyCFunction)bytes_removeprefix, METH_O, bytes_removeprefix__doc__},
 
 static PyObject *
-bytes_cutprefix_impl(PyBytesObject *self, Py_buffer *prefix);
+bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix);
 
 static PyObject *
-bytes_cutprefix(PyBytesObject *self, PyObject *arg)
+bytes_removeprefix(PyBytesObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer prefix = {NULL, NULL};
@@ -551,10 +551,10 @@ bytes_cutprefix(PyBytesObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&prefix, 'C')) {
-        _PyArg_BadArgument("cutprefix", "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("removeprefix", "argument", "contiguous buffer", arg);
         goto exit;
     }
-    return_value = bytes_cutprefix_impl(self, &prefix);
+    return_value = bytes_removeprefix_impl(self, &prefix);
 
 exit:
     /* Cleanup for prefix */
@@ -565,8 +565,8 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(bytes_cutsuffix__doc__,
-"cutsuffix($self, suffix, /)\n"
+PyDoc_STRVAR(bytes_removesuffix__doc__,
+"removesuffix($self, suffix, /)\n"
 "--\n"
 "\n"
 "Remove a specified suffix, if present.\n"
@@ -574,14 +574,14 @@ PyDoc_STRVAR(bytes_cutsuffix__doc__,
 "If the bytes ends with the suffix, return b[:len(b)-len(prefix)].\n"
 "Otherwise, return a copy of the original bytes.");
 
-#define BYTES_CUTSUFFIX_METHODDEF    \
-    {"cutsuffix", (PyCFunction)bytes_cutsuffix, METH_O, bytes_cutsuffix__doc__},
+#define BYTES_REMOVESUFFIX_METHODDEF    \
+    {"removesuffix", (PyCFunction)bytes_removesuffix, METH_O, bytes_removesuffix__doc__},
 
 static PyObject *
-bytes_cutsuffix_impl(PyBytesObject *self, Py_buffer *suffix);
+bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix);
 
 static PyObject *
-bytes_cutsuffix(PyBytesObject *self, PyObject *arg)
+bytes_removesuffix(PyBytesObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer suffix = {NULL, NULL};
@@ -590,10 +590,10 @@ bytes_cutsuffix(PyBytesObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&suffix, 'C')) {
-        _PyArg_BadArgument("cutsuffix", "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("removesuffix", "argument", "contiguous buffer", arg);
         goto exit;
     }
-    return_value = bytes_cutsuffix_impl(self, &suffix);
+    return_value = bytes_removesuffix_impl(self, &suffix);
 
 exit:
     /* Cleanup for suffix */
@@ -833,4 +833,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=377e6c8757a80baa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bff31a7956db2561 input=a9049054013a1b77]*/

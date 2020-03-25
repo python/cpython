@@ -38,8 +38,8 @@ bytearray_copy(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
     return bytearray_copy_impl(self);
 }
 
-PyDoc_STRVAR(bytearray_cutprefix__doc__,
-"cutprefix($self, prefix, /)\n"
+PyDoc_STRVAR(bytearray_removeprefix__doc__,
+"removeprefix($self, prefix, /)\n"
 "--\n"
 "\n"
 "Return a copy of the bytearray with a given prefix removed if present.\n"
@@ -47,14 +47,14 @@ PyDoc_STRVAR(bytearray_cutprefix__doc__,
 "If the bytearray starts with the prefix, return b[len(prefix):].\n"
 "Otherwise, return a copy of the original bytearray.");
 
-#define BYTEARRAY_CUTPREFIX_METHODDEF    \
-    {"cutprefix", (PyCFunction)bytearray_cutprefix, METH_O, bytearray_cutprefix__doc__},
+#define BYTEARRAY_REMOVEPREFIX_METHODDEF    \
+    {"removeprefix", (PyCFunction)bytearray_removeprefix, METH_O, bytearray_removeprefix__doc__},
 
 static PyObject *
-bytearray_cutprefix_impl(PyByteArrayObject *self, Py_buffer *prefix);
+bytearray_removeprefix_impl(PyByteArrayObject *self, Py_buffer *prefix);
 
 static PyObject *
-bytearray_cutprefix(PyByteArrayObject *self, PyObject *arg)
+bytearray_removeprefix(PyByteArrayObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer prefix = {NULL, NULL};
@@ -63,10 +63,10 @@ bytearray_cutprefix(PyByteArrayObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&prefix, 'C')) {
-        _PyArg_BadArgument("cutprefix", "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("removeprefix", "argument", "contiguous buffer", arg);
         goto exit;
     }
-    return_value = bytearray_cutprefix_impl(self, &prefix);
+    return_value = bytearray_removeprefix_impl(self, &prefix);
 
 exit:
     /* Cleanup for prefix */
@@ -77,8 +77,8 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(bytearray_cutsuffix__doc__,
-"cutsuffix($self, suffix, /)\n"
+PyDoc_STRVAR(bytearray_removesuffix__doc__,
+"removesuffix($self, suffix, /)\n"
 "--\n"
 "\n"
 "Return a copy of the bytearray with a given suffix removed if present.\n"
@@ -86,14 +86,14 @@ PyDoc_STRVAR(bytearray_cutsuffix__doc__,
 "If the bytearray ends with the suffix, return b[:len(b)-len(suffix)].\n"
 "Otherwise, return a copy of the original bytearray.");
 
-#define BYTEARRAY_CUTSUFFIX_METHODDEF    \
-    {"cutsuffix", (PyCFunction)bytearray_cutsuffix, METH_O, bytearray_cutsuffix__doc__},
+#define BYTEARRAY_REMOVESUFFIX_METHODDEF    \
+    {"removesuffix", (PyCFunction)bytearray_removesuffix, METH_O, bytearray_removesuffix__doc__},
 
 static PyObject *
-bytearray_cutsuffix_impl(PyByteArrayObject *self, Py_buffer *suffix);
+bytearray_removesuffix_impl(PyByteArrayObject *self, Py_buffer *suffix);
 
 static PyObject *
-bytearray_cutsuffix(PyByteArrayObject *self, PyObject *arg)
+bytearray_removesuffix(PyByteArrayObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer suffix = {NULL, NULL};
@@ -102,10 +102,10 @@ bytearray_cutsuffix(PyByteArrayObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&suffix, 'C')) {
-        _PyArg_BadArgument("cutsuffix", "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("removesuffix", "argument", "contiguous buffer", arg);
         goto exit;
     }
-    return_value = bytearray_cutsuffix_impl(self, &suffix);
+    return_value = bytearray_removesuffix_impl(self, &suffix);
 
 exit:
     /* Cleanup for suffix */
@@ -1089,4 +1089,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=e42aa99e5a589150 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4ea3c2feebafe2d0 input=a9049054013a1b77]*/

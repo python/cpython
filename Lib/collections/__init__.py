@@ -1202,14 +1202,14 @@ class UserString(_collections_abc.Sequence):
         if isinstance(sub, UserString):
             sub = sub.data
         return self.data.count(sub, start, end)
-    def cutprefix(self, prefix, /):
+    def removeprefix(self, prefix, /):
         if isinstance(prefix, UserString):
             prefix = prefix.data
-        return self.__class__(self.data.cutprefix(prefix))
-    def cutsuffix(self, suffix, /):
+        return self.__class__(self.data.removeprefix(prefix))
+    def removesuffix(self, suffix, /):
         if isinstance(suffix, UserString):
             suffix = suffix.data
-        return self.__class__(self.data.cutsuffix(suffix))
+        return self.__class__(self.data.removesuffix(suffix))
     def encode(self, encoding='utf-8', errors='strict'):
         encoding = 'utf-8' if encoding is None else encoding
         errors = 'strict' if errors is None else errors

@@ -12758,7 +12758,7 @@ unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
 }
 
 /*[clinic input]
-str.cutprefix as unicode_cutprefix
+str.removeprefix as unicode_removeprefix
 
     prefix: unicode
     /
@@ -12770,8 +12770,8 @@ Otherwise, return a copy of the original string.
 [clinic start generated code]*/
 
 static PyObject *
-unicode_cutprefix_impl(PyObject *self, PyObject *prefix)
-/*[clinic end generated code: output=885902e3c7f5fae0 input=adf93aba99de6d2b]*/
+unicode_removeprefix_impl(PyObject *self, PyObject *prefix)
+/*[clinic end generated code: output=f1e5945e9763bcb9 input=9aeb1706f08ce2cf]*/
 {
     int match = tailmatch(self, prefix, 0, PY_SSIZE_T_MAX, -1);
     if (match == -1) {
@@ -12785,7 +12785,7 @@ unicode_cutprefix_impl(PyObject *self, PyObject *prefix)
 }
 
 /*[clinic input]
-str.cutsuffix as unicode_cutsuffix
+str.removesuffix as unicode_removesuffix
 
     suffix: unicode
     /
@@ -12797,8 +12797,8 @@ Otherwise, return a copy of the original string.
 [clinic start generated code]*/
 
 static PyObject *
-unicode_cutsuffix_impl(PyObject *self, PyObject *suffix)
-/*[clinic end generated code: output=5e5babcd284e6e6e input=cdfb4cb7d8a27164]*/
+unicode_removesuffix_impl(PyObject *self, PyObject *suffix)
+/*[clinic end generated code: output=d36629e227636822 input=ed89a10ab150499c]*/
 {
     int match = tailmatch(self, suffix, 0, PY_SSIZE_T_MAX, +1);
     if (match == -1) {
@@ -14124,8 +14124,8 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_UPPER_METHODDEF
     {"startswith", (PyCFunction) unicode_startswith, METH_VARARGS, startswith__doc__},
     {"endswith", (PyCFunction) unicode_endswith, METH_VARARGS, endswith__doc__},
-    UNICODE_CUTPREFIX_METHODDEF
-    UNICODE_CUTSUFFIX_METHODDEF
+    UNICODE_REMOVEPREFIX_METHODDEF
+    UNICODE_REMOVESUFFIX_METHODDEF
     UNICODE_ISASCII_METHODDEF
     UNICODE_ISLOWER_METHODDEF
     UNICODE_ISUPPER_METHODDEF

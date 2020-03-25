@@ -2182,7 +2182,7 @@ bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
 /** End DALKE **/
 
 /*[clinic input]
-bytes.cutprefix as bytes_cutprefix
+bytes.removeprefix as bytes_removeprefix
 
     prefix: Py_buffer
     /
@@ -2194,8 +2194,8 @@ Otherwise, return a copy of the original bytes.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_cutprefix_impl(PyBytesObject *self, Py_buffer *prefix)
-/*[clinic end generated code: output=5e5ef0cf576a8a9c input=62efeb5116b52516]*/
+bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix)
+/*[clinic end generated code: output=f006865331a06ab6 input=51ea1fc18687503e]*/
 {
     const char *self_start = PyBytes_AS_STRING(self);
     Py_ssize_t self_len = PyBytes_GET_SIZE(self);
@@ -2219,7 +2219,7 @@ bytes_cutprefix_impl(PyBytesObject *self, Py_buffer *prefix)
 }
 
 /*[clinic input]
-bytes.cutsuffix as bytes_cutsuffix
+bytes.removesuffix as bytes_removesuffix
 
     suffix: Py_buffer
     /
@@ -2231,8 +2231,8 @@ Otherwise, return a copy of the original bytes.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_cutsuffix_impl(PyBytesObject *self, Py_buffer *suffix)
-/*[clinic end generated code: output=303549ce0a999724 input=afec1a85ea98d67f]*/
+bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
+/*[clinic end generated code: output=d887d308e3242eeb input=9f6172d9ddad90cd]*/
 {
     const char *self_start = PyBytes_AS_STRING(self);
     Py_ssize_t self_len = PyBytes_GET_SIZE(self);
@@ -2494,8 +2494,8 @@ bytes_methods[] = {
     BYTES_MAKETRANS_METHODDEF
     BYTES_PARTITION_METHODDEF
     BYTES_REPLACE_METHODDEF
-    BYTES_CUTPREFIX_METHODDEF
-    BYTES_CUTSUFFIX_METHODDEF
+    BYTES_REMOVEPREFIX_METHODDEF
+    BYTES_REMOVESUFFIX_METHODDEF
     {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, _Py_rindex__doc__},
     STRINGLIB_RJUST_METHODDEF

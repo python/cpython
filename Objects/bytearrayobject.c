@@ -1186,7 +1186,7 @@ bytearray_endswith(PyByteArrayObject *self, PyObject *args)
 }
 
 /*[clinic input]
-bytearray.cutprefix as bytearray_cutprefix
+bytearray.removeprefix as bytearray_removeprefix
 
     prefix: Py_buffer
     /
@@ -1198,8 +1198,8 @@ Otherwise, return a copy of the original bytearray.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_cutprefix_impl(PyByteArrayObject *self, Py_buffer *prefix)
-/*[clinic end generated code: output=21632e315d769b4b input=1848afa62344e091]*/
+bytearray_removeprefix_impl(PyByteArrayObject *self, Py_buffer *prefix)
+/*[clinic end generated code: output=6cabc585e7f502e0 input=4b4f34cda54a3c82]*/
 {
     const char *self_start = PyByteArray_AS_STRING(self);
     Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
@@ -1217,7 +1217,7 @@ bytearray_cutprefix_impl(PyByteArrayObject *self, Py_buffer *prefix)
 }
 
 /*[clinic input]
-bytearray.cutsuffix as bytearray_cutsuffix
+bytearray.removesuffix as bytearray_removesuffix
 
     suffix: Py_buffer
     /
@@ -1229,8 +1229,8 @@ Otherwise, return a copy of the original bytearray.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_cutsuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
-/*[clinic end generated code: output=9862e6f256b4e5a0 input=8f8c10709806b42b]*/
+bytearray_removesuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
+/*[clinic end generated code: output=2bc8cfb79de793d3 input=9e99a83e43aa6ed8]*/
 {
     const char *self_start = PyByteArray_AS_STRING(self);
     Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
@@ -2270,8 +2270,8 @@ bytearray_methods[] = {
     BYTEARRAY_POP_METHODDEF
     BYTEARRAY_REMOVE_METHODDEF
     BYTEARRAY_REPLACE_METHODDEF
-    BYTEARRAY_CUTPREFIX_METHODDEF
-    BYTEARRAY_CUTSUFFIX_METHODDEF
+    BYTEARRAY_REMOVEPREFIX_METHODDEF
+    BYTEARRAY_REMOVESUFFIX_METHODDEF
     BYTEARRAY_REVERSE_METHODDEF
     {"rfind", (PyCFunction)bytearray_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytearray_rindex, METH_VARARGS, _Py_rindex__doc__},

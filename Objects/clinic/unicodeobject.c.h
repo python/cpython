@@ -754,8 +754,8 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(unicode_cutprefix__doc__,
-"cutprefix($self, prefix, /)\n"
+PyDoc_STRVAR(unicode_removeprefix__doc__,
+"removeprefix($self, prefix, /)\n"
 "--\n"
 "\n"
 "Remove a specified prefix, if present.\n"
@@ -763,34 +763,34 @@ PyDoc_STRVAR(unicode_cutprefix__doc__,
 "If the string starts with the prefix, return string[len(prefix):].\n"
 "Otherwise, return a copy of the original string.");
 
-#define UNICODE_CUTPREFIX_METHODDEF    \
-    {"cutprefix", (PyCFunction)unicode_cutprefix, METH_O, unicode_cutprefix__doc__},
+#define UNICODE_REMOVEPREFIX_METHODDEF    \
+    {"removeprefix", (PyCFunction)unicode_removeprefix, METH_O, unicode_removeprefix__doc__},
 
 static PyObject *
-unicode_cutprefix_impl(PyObject *self, PyObject *prefix);
+unicode_removeprefix_impl(PyObject *self, PyObject *prefix);
 
 static PyObject *
-unicode_cutprefix(PyObject *self, PyObject *arg)
+unicode_removeprefix(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *prefix;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("cutprefix", "argument", "str", arg);
+        _PyArg_BadArgument("removeprefix", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     prefix = arg;
-    return_value = unicode_cutprefix_impl(self, prefix);
+    return_value = unicode_removeprefix_impl(self, prefix);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(unicode_cutsuffix__doc__,
-"cutsuffix($self, suffix, /)\n"
+PyDoc_STRVAR(unicode_removesuffix__doc__,
+"removesuffix($self, suffix, /)\n"
 "--\n"
 "\n"
 "Remove a specified suffix, if present.\n"
@@ -798,27 +798,27 @@ PyDoc_STRVAR(unicode_cutsuffix__doc__,
 "If the string ends with the suffix, return string[:len(string)-len(suffix)].\n"
 "Otherwise, return a copy of the original string.");
 
-#define UNICODE_CUTSUFFIX_METHODDEF    \
-    {"cutsuffix", (PyCFunction)unicode_cutsuffix, METH_O, unicode_cutsuffix__doc__},
+#define UNICODE_REMOVESUFFIX_METHODDEF    \
+    {"removesuffix", (PyCFunction)unicode_removesuffix, METH_O, unicode_removesuffix__doc__},
 
 static PyObject *
-unicode_cutsuffix_impl(PyObject *self, PyObject *suffix);
+unicode_removesuffix_impl(PyObject *self, PyObject *suffix);
 
 static PyObject *
-unicode_cutsuffix(PyObject *self, PyObject *arg)
+unicode_removesuffix(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *suffix;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("cutsuffix", "argument", "str", arg);
+        _PyArg_BadArgument("removesuffix", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     suffix = arg;
-    return_value = unicode_cutsuffix_impl(self, suffix);
+    return_value = unicode_removesuffix_impl(self, suffix);
 
 exit:
     return return_value;
@@ -1302,4 +1302,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=db94a0ba79ae9c95 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=246ebcf168b1492c input=a9049054013a1b77]*/
