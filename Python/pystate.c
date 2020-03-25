@@ -4,9 +4,10 @@
 #include "Python.h"
 #include "pycore_ceval.h"
 #include "pycore_initconfig.h"
+#include "pycore_pyerrors.h"
+#include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
-#include "pycore_pylifecycle.h"
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -980,19 +981,27 @@ PyThreadState_Swap(PyThreadState *newts)
    and the caller should assume no per-thread state is available. */
 
 PyObject *
+_PyThreadState_GetDict(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    if (tstate->dict == NULL) {
+        tstate->dict = PyDict_New();
+        if (tstate->dict == NULL) {
+            _PyErr_Clear(tstate);
+        }
+    }
+    return tstate->dict;
+}
+
+
+PyObject *
 PyThreadState_GetDict(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate == NULL)
+    if (tstate == NULL) {
         return NULL;
-
-    if (tstate->dict == NULL) {
-        PyObject *d;
-        tstate->dict = d = PyDict_New();
-        if (d == NULL)
-            PyErr_Clear();
     }
-    return tstate->dict;
+    return _PyThreadState_GetDict(tstate);
 }
 
 
