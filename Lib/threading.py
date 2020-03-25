@@ -1358,7 +1358,7 @@ def _register_atexit(func, *arg, **kwargs):
     purpose to `atexit.register()`, but its functions are called prior to
     threading shutdown instead of interpreter shutdown.
 
-    For similarity to atexit, the registed functions are called in reverse.
+    For similarity to atexit, the registered functions are called in reverse.
     """
     global _threading_atexits
     if _threading_atexits is None:
