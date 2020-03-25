@@ -308,12 +308,12 @@ Now some general starred expressions (all fail).
     >>> a, *b, c, *d, e = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: two starred expressions in assignment
+    SyntaxError: more than one starred expressions in assignment
 
     >>> [*b, *c] = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: two starred expressions in assignment
+    SyntaxError: more than one starred expressions in assignment
 
     >>> *a = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
