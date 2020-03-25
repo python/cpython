@@ -315,6 +315,11 @@ Now some general starred expressions (all fail).
       ...
     SyntaxError: more than one starred expressions in assignment
 
+    >>> a,*b,*c,*d = range(4) # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: more than one starred expressions in assignment
+
     >>> *a = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
