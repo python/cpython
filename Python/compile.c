@@ -1876,18 +1876,15 @@ get_ref_type(struct compiler *c, PyObject *name)
         return CELL;
     scope = PyST_GetScope(c->u->u_ste, name);
     if (scope == 0) {
-        char buf[350];
-        PyOS_snprintf(buf, sizeof(buf),
-                      "unknown scope for %.100s in %.100s(%s)\n"
-                      "symbols: %s\nlocals: %s\nglobals: %s",
-                      PyUnicode_AsUTF8(name),
-                      PyUnicode_AsUTF8(c->u->u_name),
-                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_id)),
-                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_symbols)),
-                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_varnames)),
-                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_names))
-        );
-        Py_FatalError(buf);
+        _Py_FatalErrorFormat(__func__,
+           "unknown scope for %.100s in %.100s(%s)\n"
+           "symbols: %s\nlocals: %s\nglobals: %s",
+           PyUnicode_AsUTF8(name),
+           PyUnicode_AsUTF8(c->u->u_name),
+           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_id)),
+           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_symbols)),
+           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_varnames)),
+           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_names)));
     }
 
     return scope;
@@ -1930,7 +1927,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
             else /* (reftype == FREE) */
                 arg = compiler_lookup_arg(c->u->u_freevars, name);
             if (arg == -1) {
-                fprintf(stderr,
+                _Py_FatalErrorFormat(__func__,
                     "lookup %s in %s %d %d\n"
                     "freevars of %s: %s\n",
                     PyUnicode_AsUTF8(PyObject_Repr(name)),
@@ -1938,7 +1935,6 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
                     reftype, arg,
                     PyUnicode_AsUTF8(co->co_name),
                     PyUnicode_AsUTF8(PyObject_Repr(co->co_freevars)));
-                Py_FatalError("compiler_make_closure()");
             }
             ADDOP_I(c, LOAD_CLOSURE, arg);
         }
@@ -5411,8 +5407,8 @@ stackdepth(struct compiler *c)
             struct instr *instr = &b->b_instr[i];
             int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
             if (effect == PY_INVALID_STACK_EFFECT) {
-                fprintf(stderr, "opcode = %d\n", instr->i_opcode);
-                Py_FatalError("PyCompile_OpcodeStackEffect()");
+                _Py_FatalErrorFormat(__func__,
+                    "opcode = %d", instr->i_opcode);
             }
             int new_depth = depth + effect;
             if (new_depth > maxdepth) {
