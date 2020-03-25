@@ -38,7 +38,7 @@ static int
 growable_comment_array_add(growable_comment_array *arr, int lineno, char *comment) {
     if (arr->num_items >= arr->size) {
         arr->size *= 2;
-        void *const new_items_array = realloc(arr->items, arr->size * sizeof(*arr->items));
+        void *new_items_array = realloc(arr->items, arr->size * sizeof(*arr->items));
         if (!new_items_array) {
             return 0;
         }
