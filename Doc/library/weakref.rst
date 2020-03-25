@@ -200,6 +200,9 @@ than needed.
       by the program during iteration may cause items in the dictionary to vanish "by
       magic" (as a side effect of garbage collection).
 
+   .. versionchanged:: 3.9
+      Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.
+
 :class:`WeakValueDictionary` objects have an additional method that has the
 same issues as the :meth:`keyrefs` method of :class:`WeakKeyDictionary`
 objects.
