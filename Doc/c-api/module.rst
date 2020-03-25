@@ -441,7 +441,7 @@ state:
 
    Add an object to *module* as *name*.  This is a convenience function which can
    be used from the module's initialization function.  This steals a reference to
-   *value* on success.  Return ``-1`` on error, ``0`` on success.
+   *value* on success. Return ``-1`` on error, ``0`` on success.
 
    .. note::
 
@@ -483,6 +483,16 @@ state:
 .. c:function:: int PyModule_AddStringMacro(PyObject *module, macro)
 
    Add a string constant to *module*.
+
+.. c:function:: int PyModule_AddType(PyObject *module, PyTypeObject *type)
+
+   Add a type object to *module*.
+   The type object is finalized by calling internally :c:func:`PyType_Ready`.
+   The name of the type object is taken from the last component of
+   :c:member:`~PyTypeObject.tp_name` after dot.
+   Return ``-1`` on error, ``0`` on success.
+
+   .. versionadded:: 3.9
 
 
 Module lookup
