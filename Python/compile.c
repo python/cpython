@@ -561,13 +561,12 @@ compiler_enter_scope(struct compiler *c, identifier name,
     struct compiler_unit *u;
     basicblock *block;
 
-    u = (struct compiler_unit *)PyObject_Malloc(sizeof(
+    u = (struct compiler_unit *)PyObject_Calloc(1, sizeof(
                                             struct compiler_unit));
     if (!u) {
         PyErr_NoMemory();
         return 0;
     }
-    memset(u, 0, sizeof(struct compiler_unit));
     u->u_scope_type = scope_type;
     u->u_argcount = 0;
     u->u_posonlyargcount = 0;
@@ -770,12 +769,11 @@ compiler_new_block(struct compiler *c)
     struct compiler_unit *u;
 
     u = c->u;
-    b = (basicblock *)PyObject_Malloc(sizeof(basicblock));
+    b = (basicblock *)PyObject_Calloc(1, sizeof(basicblock));
     if (b == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memset((void *)b, 0, sizeof(basicblock));
     /* Extend the singly linked list of blocks with new block. */
     b->b_list = u->u_blocks;
     u->u_blocks = b;
@@ -812,15 +810,13 @@ compiler_next_instr(basicblock *b)
 {
     assert(b != NULL);
     if (b->b_instr == NULL) {
-        b->b_instr = (struct instr *)PyObject_Malloc(
-                         sizeof(struct instr) * DEFAULT_BLOCK_SIZE);
+        b->b_instr = (struct instr *)PyObject_Calloc(
+                         DEFAULT_BLOCK_SIZE, sizeof(struct instr));
         if (b->b_instr == NULL) {
             PyErr_NoMemory();
             return -1;
         }
         b->b_ialloc = DEFAULT_BLOCK_SIZE;
-        memset((char *)b->b_instr, 0,
-               sizeof(struct instr) * DEFAULT_BLOCK_SIZE);
     }
     else if (b->b_iused == b->b_ialloc) {
         struct instr *tmp;
