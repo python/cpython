@@ -236,12 +236,13 @@ get_running_loop(PyObject **loop)
         rl = cached_running_holder;  // borrowed
     }
     else {
-        if (ts->dict == NULL) {
+        PyObject *ts_dict = _PyThreadState_GetDict(ts);  // borrowed
+        if (ts_dict == NULL) {
             goto not_found;
         }
 
         rl = _PyDict_GetItemIdWithError(
-            ts->dict, &PyId___asyncio_running_event_loop__);  // borrowed
+            ts_dict, &PyId___asyncio_running_event_loop__);  // borrowed
         if (rl == NULL) {
             if (PyErr_Occurred()) {
                 goto error;
