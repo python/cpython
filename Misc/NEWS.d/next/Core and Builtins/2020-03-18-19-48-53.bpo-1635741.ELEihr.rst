@@ -1,1 +1,0 @@
-Port _heapq module to multiphase initialization.

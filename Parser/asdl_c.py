@@ -774,7 +774,7 @@ static PyType_Slot AST_type_slots[] = {
 };
 
 static PyType_Spec AST_type_spec = {
-    "_ast.AST",
+    "ast.AST",
     sizeof(AST_object),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -800,7 +800,7 @@ make_type(const char *type, PyObject* base, const char* const* fields, int num_f
                     type, base,
                     astmodulestate_global->_fields, fnames,
                     astmodulestate_global->__module__,
-                    astmodulestate_global->_ast,
+                    astmodulestate_global->ast,
                     astmodulestate_global->__doc__, doc);
     Py_DECREF(fnames);
     return result;
@@ -1302,7 +1302,7 @@ def generate_module_def(f, mod):
         visitor_list.add(visitor)
 
     state_strings = {
-        "_ast",
+        "ast",
         "_fields",
         "__doc__",
         "__dict__",

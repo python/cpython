@@ -1736,82 +1736,69 @@ if it is 1, the time is given in the DST time zone;\n\
 if it is -1, mktime() should guess based on the date and time.\n");
 
 
-
-static struct PyModuleDef timemodule = {
-    PyModuleDef_HEAD_INIT,
-    "time",
-    module_doc,
-    -1,
-    time_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_time(void)
+static int
+time_exec(PyObject *module)
 {
-    PyObject *m;
-    m = PyModule_Create(&timemodule);
-    if (m == NULL)
-        return NULL;
-
     /* Set, or reset, module variables like time.timezone */
-    if (init_timezone(m) < 0) {
-        goto error;
+    if (init_timezone(module) < 0) {
+        return -1;
     }
 
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES)
 
 #ifdef CLOCK_REALTIME
-    if (PyModule_AddIntMacro(m, CLOCK_REALTIME) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_REALTIME) < 0) {
+        return -1;
     }
 #endif
 #ifdef CLOCK_MONOTONIC
-    if (PyModule_AddIntMacro(m, CLOCK_MONOTONIC) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC) < 0) {
+        return -1;
     }
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
-    if (PyModule_AddIntMacro(m, CLOCK_MONOTONIC_RAW) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW) < 0) {
+        return -1;
     }
 #endif
 #ifdef CLOCK_HIGHRES
-    if (PyModule_AddIntMacro(m, CLOCK_HIGHRES) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_HIGHRES) < 0) {
+        return -1;
     }
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
-    if (PyModule_AddIntMacro(m, CLOCK_PROCESS_CPUTIME_ID) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_PROCESS_CPUTIME_ID) < 0) {
+        return -1;
     }
 #endif
 #ifdef CLOCK_THREAD_CPUTIME_ID
-    if (PyModule_AddIntMacro(m, CLOCK_THREAD_CPUTIME_ID) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_THREAD_CPUTIME_ID) < 0) {
+        return -1;
     }
 #endif
 #ifdef CLOCK_PROF
-    if (PyModule_AddIntMacro(m, CLOCK_PROF) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_PROF) < 0) {
+        return -1;
     }
 #endif
 #ifdef CLOCK_BOOTTIME
-    if (PyModule_AddIntMacro(m, CLOCK_BOOTTIME) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_BOOTTIME) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_TAI
+    if (PyModule_AddIntMacro(module, CLOCK_TAI) < 0) {
+        return -1;
     }
 #endif
 #ifdef CLOCK_UPTIME
-    if (PyModule_AddIntMacro(m, CLOCK_UPTIME) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_UPTIME) < 0) {
+        return -1;
     }
 #endif
 #ifdef CLOCK_UPTIME_RAW
-    if (PyModule_AddIntMacro(m, CLOCK_UPTIME_RAW) < 0) {
-        goto error;
+    if (PyModule_AddIntMacro(module, CLOCK_UPTIME_RAW) < 0) {
+        return -1;
     }
 #endif
 
@@ -1820,16 +1807,16 @@ PyInit_time(void)
     if (!initialized) {
         if (PyStructSequence_InitType2(&StructTimeType,
                                        &struct_time_type_desc) < 0) {
-            goto error;
+            return -1;
         }
     }
-    if (PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11)) {
-        goto error;
+    if (PyModule_AddIntConstant(module, "_STRUCT_TM_ITEMS", 11)) {
+        return -1;
     }
     Py_INCREF(&StructTimeType);
-    if (PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType)) {
+    if (PyModule_AddObject(module, "struct_time", (PyObject*) &StructTimeType)) {
         Py_DECREF(&StructTimeType);
-        goto error;
+        return -1;
     }
     initialized = 1;
 
@@ -1840,11 +1827,30 @@ PyInit_time(void)
         utc_string = tm.tm_zone;
 #endif
 
-    return m;
+    return 0;
+}
 
-error:
-    Py_DECREF(m);
-    return NULL;
+static struct PyModuleDef_Slot time_slots[] = {
+    {Py_mod_exec, time_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef timemodule = {
+    PyModuleDef_HEAD_INIT,
+    "time",
+    module_doc,
+    0,
+    time_methods,
+    time_slots,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit_time(void)
+{
+    return PyModuleDef_Init(&timemodule);
 }
 
 /* Implement pysleep() for various platforms.
