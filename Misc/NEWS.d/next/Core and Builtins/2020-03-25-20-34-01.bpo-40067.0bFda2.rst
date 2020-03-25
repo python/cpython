@@ -1,2 +1,2 @@
-For multiple star expressions in an assignment, the error message improved.
+Improve the error message for multiple star expressions in an assignment
 Patch by Furkan Onder
