@@ -13,6 +13,7 @@ import threading
 import weakref
 import os
 
+
 _threads_queues = weakref.WeakKeyDictionary()
 _shutdown = False
 # Lock that ensures that new workers are not created while the interpreter is

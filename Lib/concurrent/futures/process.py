@@ -59,6 +59,7 @@ import itertools
 import sys
 import traceback
 
+
 _threads_wakeups = weakref.WeakKeyDictionary()
 _global_shutdown = False
 
