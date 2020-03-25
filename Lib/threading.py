@@ -1348,7 +1348,7 @@ def enumerate():
         return list(_active.values()) + list(_limbo.values())
 
 
-_threading_atexits = None
+_threading_atexits = []
 
 def _register_atexit(func, *arg, **kwargs):
     """CPython internal: register *func* to be called before joining threads.
@@ -1360,9 +1360,6 @@ def _register_atexit(func, *arg, **kwargs):
 
     For similarity to atexit, the registered functions are called in reverse.
     """
-    global _threading_atexits
-    if _threading_atexits is None:
-        _threading_atexits = []
     call = functools.partial(func, *arg, **kwargs)
     _threading_atexits.append(call)
 
@@ -1397,11 +1394,10 @@ def _shutdown():
     tlock.release()
     _main_thread._stop()
 
-    # Call registered threading atexit functions before threads are joined
-    if _threading_atexits is not None:
-        # Order is reversed, similar to atexit.
-        for atexit_call in reversed(_threading_atexits):
-            atexit_call()
+    # Call registered threading atexit functions before threads are joined.
+    # Order is reversed, similar to atexit.
+    for atexit_call in reversed(_threading_atexits):
+        atexit_call()
 
     # Join all non-deamon threads
     while True:
