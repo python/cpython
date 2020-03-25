@@ -376,7 +376,7 @@ characters:
       information on this convention.
 
 ``__*__``
-   System-defined names. These names are defined by the interpreter and its
+   System-defined names, informally known as "dunder" names. These names are defined by the interpreter and its
    implementation (including the standard library).  Current system names are
    discussed in the :ref:`specialnames` section and elsewhere.  More will likely
    be defined in future versions of Python.  *Any* use of ``__*__`` names, in
