@@ -1,0 +1,2 @@
+For multiple star expressions in assignment error messages improved.
+Patch by Furkan Onder
