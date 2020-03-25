@@ -231,7 +231,8 @@ get_running_loop(PyObject **loop)
     PyObject *rl;
 
     PyThreadState *ts = PyThreadState_Get();
-    if (ts->id == cached_running_holder_tsid && cached_running_holder != NULL) {
+    uint64_t ts_id = PyThreadState_GetID(ts);
+    if (ts_id == cached_running_holder_tsid && cached_running_holder != NULL) {
         // Fast path, check the cache.
         rl = cached_running_holder;  // borrowed
     }
@@ -253,7 +254,7 @@ get_running_loop(PyObject **loop)
         }
 
         cached_running_holder = rl;  // borrowed
-        cached_running_holder_tsid = ts->id;
+        cached_running_holder_tsid = ts_id;
     }
 
     assert(Py_IS_TYPE(rl, &PyRunningLoopHolder_Type));
