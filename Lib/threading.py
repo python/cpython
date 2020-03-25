@@ -3,6 +3,7 @@
 import os as _os
 import sys as _sys
 import _thread
+import functools
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -1346,6 +1347,26 @@ def enumerate():
     with _active_limbo_lock:
         return list(_active.values()) + list(_limbo.values())
 
+
+_threading_atexits = None
+
+def _register_atexit(func, *arg, **kwargs):
+    """CPython internal: register *func* to be called before joining threads.
+
+    The registered *func* is called with its arguments just before all
+    non-daemon threads are joined in `_shutdown()`. It provides a similar
+    purpose to `atexit.register()`, but its functions are called prior to
+    threading shutdown instead of interpreter shutdown.
+
+    For similarity to atexit, the registed functions are called in reverse.
+    """
+    global _threading_atexits
+    if _threading_atexits is None:
+        _threading_atexits = []
+    call = functools.partial(func, *arg, **kwargs)
+    _threading_atexits.append(call)
+
+
 from _thread import stack_size
 
 # Create the main thread object,
@@ -1375,6 +1396,12 @@ def _shutdown():
     assert tlock.locked()
     tlock.release()
     _main_thread._stop()
+
+    # Call registered threading atexit functions before threads are joined
+    if _threading_atexits is not None:
+        # Order is reversed, similar to atexit.
+        for atexit_call in reversed(_threading_atexits):
+            atexit_call()
 
     # Join all non-deamon threads
     while True:
