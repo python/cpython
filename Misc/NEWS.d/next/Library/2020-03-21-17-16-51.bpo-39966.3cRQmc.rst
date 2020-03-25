@@ -1,2 +1,2 @@
-Return default value when the magic method is not present in the wrapped
-object.
+:mod:`unittest.mock` objects return a suitable default value when a magic
+method is not defined on the mocked object.
