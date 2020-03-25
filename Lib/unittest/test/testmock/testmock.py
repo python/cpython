@@ -777,8 +777,7 @@ class MockTest(unittest.TestCase):
 
         # use the default value if the attribute is not present
         klass2 = MagicMock(wraps=Bar)
-        obj2 = klass2()
-        self.assertEqual(bool(obj2), True)
+        self.assertTrue(klass2())
 
 
     def test_exceptional_side_effect(self):
