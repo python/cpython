@@ -91,6 +91,7 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 /* New in 3.9 */
 PyAPI_FUNC(PyInterpreterState*) PyThreadState_GetInterpreter(PyThreadState *tstate);
 PyAPI_FUNC(struct _frame*) PyThreadState_GetFrame(PyThreadState *tstate);
+PyAPI_FUNC(uint64_t) PyThreadState_GetID(PyThreadState *tstate);
 #endif
 
 typedef
