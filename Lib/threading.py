@@ -1349,6 +1349,7 @@ def enumerate():
 
 
 _threading_atexits = []
+_SHUTTING_DOWN = False
 
 def _register_atexit(func, *arg, **kwargs):
     """CPython internal: register *func* to be called before joining threads.
@@ -1360,6 +1361,9 @@ def _register_atexit(func, *arg, **kwargs):
 
     For similarity to atexit, the registered functions are called in reverse.
     """
+    if _SHUTTING_DOWN:
+        raise RuntimeError("can't register atexit after shutdown")
+
     call = functools.partial(func, *arg, **kwargs)
     _threading_atexits.append(call)
 
@@ -1385,6 +1389,8 @@ def _shutdown():
         # _shutdown() was already called
         return
 
+    global _SHUTTING_DOWN
+    _SHUTTING_DOWN = True
     # Main thread
     tlock = _main_thread._tstate_lock
     # The main thread isn't finished yet, so its thread state lock can't have
