@@ -98,8 +98,8 @@ This module exports the following functions:
     escape    Backslash all non-alphanumerics in a string.
 
 Each function other than purge and escape can take an optional 'flags' argument
-consisting of one or more of the following module constants, joined by "|". A,
-L, and U are mutually exclusive.
+consisting of one or more of the following module constants, joined by "|".
+A, L, and U are mutually exclusive.
     A  ASCII       For string patterns, make \w, \W, \b, \B, \d, \D
                    match the corresponding ASCII character categories
                    (rather than the whole Unicode categories, which is the
