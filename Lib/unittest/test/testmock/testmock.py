@@ -772,8 +772,7 @@ class MockTest(unittest.TestCase):
 
         # use __bool__ attribute if it is present in the wrapped object
         klass1 = MagicMock(wraps=Foo)
-        obj1 = klass1()
-        self.assertEqual(bool(obj1), False)
+        self.assertFalse(klass1())
 
         # use the default value if the attribute is not present
         klass2 = MagicMock(wraps=Bar)
