@@ -206,12 +206,11 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
-    PyInterpreterState *interp = PyMem_RawMalloc(sizeof(PyInterpreterState));
+    PyInterpreterState *interp = PyMem_RawCalloc(1, sizeof(PyInterpreterState));
     if (interp == NULL) {
         return NULL;
     }
 
-    memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
 
     _PyRuntimeState *runtime = &_PyRuntime;

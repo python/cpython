@@ -911,10 +911,9 @@ faulthandler_register_py(PyObject *self,
         return NULL;
 
     if (user_signals == NULL) {
-        user_signals = PyMem_Malloc(NSIG * sizeof(user_signal_t));
+        user_signals = PyMem_Calloc(NSIG, sizeof(user_signal_t));
         if (user_signals == NULL)
             return PyErr_NoMemory();
-        memset(user_signals, 0, NSIG * sizeof(user_signal_t));
     }
     user = &user_signals[signum];
 
