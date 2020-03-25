@@ -107,7 +107,7 @@ Merge (``|``) and update (``|=``) operators have been added to the built-in
 
 cutprefix and cutsuffix methods for strings
 -------------------------------------------
-``str.cutprefix(prefix)`` and ``str.cutsuffix(suffix)`` have been added to
+``str.removeprefix(prefix)`` and ``str.removesuffix(suffix)`` have been added to
 easily remove an unneeded prefix or a suffix from a string. Corresponding
 ``bytes`` and ``bytearray`` methods have also been added.
 (Contributed by Dennis Sweeney in :issue:`18939`.)
