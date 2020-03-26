@@ -1424,9 +1424,11 @@ _functools_exec(PyObject *module)
         &lru_cache_type
     };
 
-    kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
     if (!kwd_mark) {
-        return -1;
+        kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+        if (!kwd_mark) {
+            return -1;
+        }
     }
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {

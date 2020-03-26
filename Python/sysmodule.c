@@ -1222,10 +1222,12 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                           Py_TYPE(finalizer)->tp_name);
             return NULL;
         }
-        _PyEval_SetAsyncGenFinalizer(finalizer);
+        if (_PyEval_SetAsyncGenFinalizer(finalizer) < 0) {
+            return NULL;
+        }
     }
-    else if (finalizer == Py_None) {
-        _PyEval_SetAsyncGenFinalizer(NULL);
+    else if (finalizer == Py_None && _PyEval_SetAsyncGenFinalizer(NULL) < 0) {
+        return NULL;
     }
 
     if (firstiter && firstiter != Py_None) {
@@ -1235,10 +1237,12 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                           Py_TYPE(firstiter)->tp_name);
             return NULL;
         }
-        _PyEval_SetAsyncGenFirstiter(firstiter);
+        if (_PyEval_SetAsyncGenFirstiter(firstiter) < 0) {
+            return NULL;
+        }
     }
-    else if (firstiter == Py_None) {
-        _PyEval_SetAsyncGenFirstiter(NULL);
+    else if (firstiter == Py_None && _PyEval_SetAsyncGenFirstiter(NULL) < 0) {
+        return NULL;
     }
 
     Py_RETURN_NONE;
