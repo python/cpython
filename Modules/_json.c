@@ -1222,11 +1222,11 @@ static PyType_Slot PyScannerType_slots[] = {
 
 static
 PyType_Spec PyScannerType_spec = {
-    "_json.Scanner",
-    sizeof(PyScannerObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    PyScannerType_slots,
+    .name = "_json.Scanner",
+    .basicsize = sizeof(PyScannerObject),
+    .itemsize =0,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = PyScannerType_slots,
 };
 
 static PyObject *
@@ -1783,11 +1783,11 @@ static PyType_Slot PyEncoderType_slots[] = {
 };
 
 static PyType_Spec PyEncoderType_spec = {
-    "_json.Encoder",
-    sizeof(PyEncoderObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    PyEncoderType_slots
+    .name = "_json.Encoder",
+    .basicsize = sizeof(PyEncoderObject),
+    .itemsize = 0,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = PyEncoderType_slots
 };
 
 static PyMethodDef speedups_methods[] = {
