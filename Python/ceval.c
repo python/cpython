@@ -597,8 +597,8 @@ handle_signals(PyThreadState *tstate)
     }
 
     UNSIGNAL_PENDING_SIGNALS(tstate);
-    if (_PyErr_CheckSignals() < 0) {
-        /* We're not done yet */
+    if (_PyErr_CheckSignalsTstate(tstate) < 0) {
+        /* On failure, re-schedule a call to handle_signals(). */
         SIGNAL_PENDING_SIGNALS(tstate);
         return -1;
     }
