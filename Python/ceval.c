@@ -20,7 +20,6 @@
 #include "pycore_pystate.h"
 #include "pycore_sysmodule.h"
 #include "pycore_tupleobject.h"
-#include "pycore_sysmodule.h"
 
 #include "code.h"
 #include "dictobject.h"
