@@ -42,7 +42,7 @@ def py_encode_basestring(s):
     return '"' + ESCAPE.sub(replace, s) + '"'
 
 
-encode_basestring = (c_encode_basestring or py_encode_basestring)
+encode_basestring = c_encode_basestring or py_encode_basestring
 
 
 def py_encode_basestring_ascii(s):
@@ -67,8 +67,8 @@ def py_encode_basestring_ascii(s):
     return '"' + ESCAPE_ASCII.sub(replace, s) + '"'
 
 
-encode_basestring_ascii = (
-    c_encode_basestring_ascii or py_encode_basestring_ascii)
+encode_basestring_ascii = c_encode_basestring_ascii or py_encode_basestring_ascii
+
 
 class JSONEncoder(object):
     """Extensible JSON <http://json.org> encoder for Python data structures.
@@ -255,6 +255,7 @@ class JSONEncoder(object):
                 self.key_separator, self.item_separator, self.sort_keys,
                 self.skipkeys, _one_shot)
         return _iterencode(o, 0)
+
 
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
