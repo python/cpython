@@ -797,7 +797,8 @@ bail:
 }
 
 static PyObject *
-_parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr) {
+_parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr) 
+{
     /* Read a JSON array from PyUnicode pystr.
     idx is the index of the first character after the opening brace.
     *next_idx_ptr is a return-by-reference index to the first character after
@@ -872,7 +873,8 @@ bail:
 }
 
 static PyObject *
-_parse_constant(PyScannerObject *s, const char *constant, Py_ssize_t idx, Py_ssize_t *next_idx_ptr) {
+_parse_constant(PyScannerObject *s, const char *constant, Py_ssize_t idx, Py_ssize_t *next_idx_ptr) 
+{
     /* Read a JSON constant.
     constant is the constant string that was found
         ("NaN", "Infinity", "-Infinity").
@@ -898,7 +900,8 @@ _parse_constant(PyScannerObject *s, const char *constant, Py_ssize_t idx, Py_ssi
 }
 
 static PyObject *
-_match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_ssize_t *next_idx_ptr) {
+_parse_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_ssize_t *next_idx_ptr) 
+{
     /* Read a JSON number from PyUnicode pystr.
     idx is the index of the first character of the number
     *next_idx_ptr is a return-by-reference index to the first character after
@@ -1067,21 +1070,28 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             return res;
         case 'n':
             /* null */
-            if ((idx + 3 < length) && PyUnicode_READ(kind, str, idx + 1) == 'u' && PyUnicode_READ(kind, str, idx + 2) == 'l' && PyUnicode_READ(kind, str, idx + 3) == 'l') {
+            if ((idx + 3 < length) && 
+                PyUnicode_READ(kind, str, idx + 1) == 'u' && 
+                PyUnicode_READ(kind, str, idx + 2) == 'l' && 
+                PyUnicode_READ(kind, str, idx + 3) == 'l') {
                 *next_idx_ptr = idx + 4;
                 Py_RETURN_NONE;
             }
             break;
         case 't':
             /* true */
-            if ((idx + 3 < length) && PyUnicode_READ(kind, str, idx + 1) == 'r' && PyUnicode_READ(kind, str, idx + 2) == 'u' && PyUnicode_READ(kind, str, idx + 3) == 'e') {
+            if ((idx + 3 < length) && 
+                PyUnicode_READ(kind, str, idx + 1) == 'r' && 
+                PyUnicode_READ(kind, str, idx + 2) == 'u' && 
+                PyUnicode_READ(kind, str, idx + 3) == 'e') {
                 *next_idx_ptr = idx + 4;
                 Py_RETURN_TRUE;
             }
             break;
         case 'f':
             /* false */
-            if ((idx + 4 < length) && PyUnicode_READ(kind, str, idx + 1) == 'a' &&
+            if ((idx + 4 < length) && 
+                PyUnicode_READ(kind, str, idx + 1) == 'a' &&
                 PyUnicode_READ(kind, str, idx + 2) == 'l' &&
                 PyUnicode_READ(kind, str, idx + 3) == 's' &&
                 PyUnicode_READ(kind, str, idx + 4) == 'e') {
@@ -1091,14 +1101,16 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             break;
         case 'N':
             /* NaN */
-            if ((idx + 2 < length) && PyUnicode_READ(kind, str, idx + 1) == 'a' &&
+            if ((idx + 2 < length) && 
+                PyUnicode_READ(kind, str, idx + 1) == 'a' &&
                 PyUnicode_READ(kind, str, idx + 2) == 'N') {
                 return _parse_constant(s, "NaN", idx, next_idx_ptr);
             }
             break;
         case 'I':
             /* Infinity */
-            if ((idx + 7 < length) && PyUnicode_READ(kind, str, idx + 1) == 'n' &&
+            if ((idx + 7 < length) && 
+                PyUnicode_READ(kind, str, idx + 1) == 'n' &&
                 PyUnicode_READ(kind, str, idx + 2) == 'f' &&
                 PyUnicode_READ(kind, str, idx + 3) == 'i' &&
                 PyUnicode_READ(kind, str, idx + 4) == 'n' &&
@@ -1123,7 +1135,7 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             break;
     }
     /* Didn't find a string, object, array, or named constant. Look for a number. */
-    return _match_number_unicode(s, pystr, idx, next_idx_ptr);
+    return _parse_number_unicode(s, pystr, idx, next_idx_ptr);
 }
 
 static PyObject *
