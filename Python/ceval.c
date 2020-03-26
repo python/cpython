@@ -4785,17 +4785,18 @@ _PyEval_GetCoroutineOriginTrackingDepth(void)
     return tstate->coroutine_origin_tracking_depth;
 }
 
-void
+int
 _PyEval_SetAsyncGenFirstiter(PyObject *firstiter)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
     if (PySys_Audit("sys.set_asyncgen_hook_firstiter", NULL) < 0) {
-        return;
+        return -1;
     }
 
     Py_XINCREF(firstiter);
     Py_XSETREF(tstate->async_gen_firstiter, firstiter);
+    return 0;
 }
 
 PyObject *
@@ -4805,17 +4806,18 @@ _PyEval_GetAsyncGenFirstiter(void)
     return tstate->async_gen_firstiter;
 }
 
-void
+int
 _PyEval_SetAsyncGenFinalizer(PyObject *finalizer)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
     if (PySys_Audit("sys.set_asyncgen_hook_finalizer", NULL) < 0) {
-        return;
+        return -1;
     }
 
     Py_XINCREF(finalizer);
     Py_XSETREF(tstate->async_gen_finalizer, finalizer);
+    return 0;
 }
 
 PyObject *
