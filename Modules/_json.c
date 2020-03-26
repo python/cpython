@@ -1122,7 +1122,8 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
             break;
         case '-':
             /* -Infinity */
-            if ((idx + 8 < length) && PyUnicode_READ(kind, str, idx + 1) == 'I' &&
+            if ((idx + 8 < length) && 
+                PyUnicode_READ(kind, str, idx + 1) == 'I' &&
                 PyUnicode_READ(kind, str, idx + 2) == 'n' &&
                 PyUnicode_READ(kind, str, idx + 3) == 'f' &&
                 PyUnicode_READ(kind, str, idx + 4) == 'i' &&
