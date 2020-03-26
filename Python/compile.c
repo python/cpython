@@ -3708,7 +3708,7 @@ assignment_helper(struct compiler *c, asdl_seq *elts)
         }
         else if (elt->kind == Starred_kind) {
             return compiler_error(c,
-                "two starred expressions in assignment");
+                "multiple starred expressions in assignment");
         }
     }
     if (!seen_star) {
