@@ -1156,23 +1156,24 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
-            PyObject *id;
-            int stat;
             struct _frame *frame = t->frame;
-            if (frame == NULL)
+            if (frame == NULL) {
                 continue;
-            id = PyLong_FromUnsignedLong(t->thread_id);
-            if (id == NULL)
-                goto Fail;
-            stat = PyDict_SetItem(result, id, (PyObject *)frame);
+            }
+            PyObject *id = PyLong_FromUnsignedLong(t->thread_id);
+            if (id == NULL) {
+                goto fail;
+            }
+            int stat = PyDict_SetItem(result, id, (PyObject *)frame);
             Py_DECREF(id);
-            if (stat < 0)
-                goto Fail;
+            if (stat < 0) {
+                goto fail;
+            }
         }
     }
     goto done;
 
-Fail:
+fail:
     Py_CLEAR(result);
 
 done:
