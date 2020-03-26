@@ -1134,16 +1134,15 @@ PyThreadState_Next(PyThreadState *tstate) {
 PyObject *
 _PyThread_CurrentFrames(void)
 {
-    PyObject *result;
-    PyInterpreterState *i;
-
-    if (PySys_Audit("sys._current_frames", NULL) < 0) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PySys_Audit(tstate, "sys._current_frames", NULL) < 0) {
         return NULL;
     }
 
-    result = PyDict_New();
-    if (result == NULL)
+    PyObject *result = PyDict_New();
+    if (result == NULL) {
         return NULL;
+    }
 
     /* for i in all interpreters:
      *     for t in all of i's thread states:
@@ -1151,8 +1150,9 @@ _PyThread_CurrentFrames(void)
      * Because these lists can mutate even when the GIL is held, we
      * need to grab head_mutex for the duration.
      */
-    _PyRuntimeState *runtime = &_PyRuntime;
+    _PyRuntimeState *runtime = tstate->interp->runtime;
     HEAD_LOCK(runtime);
+    PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
@@ -1170,13 +1170,14 @@ _PyThread_CurrentFrames(void)
                 goto Fail;
         }
     }
+    goto done;
+
+Fail:
+    Py_CLEAR(result);
+
+done:
     HEAD_UNLOCK(runtime);
     return result;
-
- Fail:
-    HEAD_UNLOCK(runtime);
-    Py_DECREF(result);
-    return NULL;
 }
 
 /* Python "auto thread state" API. */
