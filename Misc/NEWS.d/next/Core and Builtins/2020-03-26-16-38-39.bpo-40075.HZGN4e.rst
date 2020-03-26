@@ -1,0 +1,1 @@
+Fix a crash in ``_tkinter`` on Windows where ``ENTER_PYTHON`` may try to restore a NULL state.
