@@ -427,8 +427,7 @@ int64_t
 PyInterpreterState_GetID(PyInterpreterState *interp)
 {
     if (interp == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        _PyErr_SetString(tstate, PyExc_RuntimeError, "no interpreter provided");
+        PyErr_SetString(PyExc_RuntimeError, "no interpreter provided");
         return -1;
     }
     return interp->id;
@@ -462,12 +461,9 @@ _PyInterpreterState_LookUpID(PY_INT64_T requested_id)
         interp = interp_look_up_id(runtime, requested_id);
         HEAD_UNLOCK(runtime);
     }
-    if (interp == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_Format(tstate, PyExc_RuntimeError,
-                          "unrecognized interpreter ID %lld", requested_id);
-        }
+    if (interp == NULL && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "unrecognized interpreter ID %lld", requested_id);
     }
     return interp;
 }
@@ -481,9 +477,8 @@ _PyInterpreterState_IDInitref(PyInterpreterState *interp)
     }
     interp->id_mutex = PyThread_allocate_lock();
     if (interp->id_mutex == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                         "failed to create init interpreter ID mutex");
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to create init interpreter ID mutex");
         return -1;
     }
     interp->id_refcount = 0;
@@ -542,9 +537,7 @@ PyObject *
 _PyInterpreterState_GetMainModule(PyInterpreterState *interp)
 {
     if (interp->modules == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                         "interpreter not initialized");
+        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
         return NULL;
     }
     return PyMapping_GetItemString(interp->modules, "__main__");
@@ -556,8 +549,7 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
     if (interp->dict == NULL) {
         interp->dict = PyDict_New();
         if (interp->dict == NULL) {
-            PyThreadState *tstate = _PyThreadState_GET();
-            _PyErr_Clear(tstate);
+            PyErr_Clear();
         }
     }
     /* Returning NULL means no per-interpreter dict is available. */
@@ -1441,14 +1433,9 @@ static crossinterpdatafunc
 _lookup_getdata(PyObject *obj)
 {
     crossinterpdatafunc getdata = _PyCrossInterpreterData_Lookup(obj);
-    if (getdata == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (_PyErr_Occurred(tstate) == 0) {
-            _PyErr_Format(tstate,
-                           PyExc_ValueError,
-                           "%S does not support cross-interpreter data", obj);
-        }
-    }
+    if (getdata == NULL && PyErr_Occurred() == 0)
+        PyErr_Format(PyExc_ValueError,
+                     "%S does not support cross-interpreter data", obj);
     return getdata;
 }
 
@@ -1610,13 +1597,12 @@ int
 _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
                                        crossinterpdatafunc getdata)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     if (!PyType_Check(cls)) {
-        _PyErr_Format(tstate, PyExc_ValueError, "only classes may be registered");
+        PyErr_Format(PyExc_ValueError, "only classes may be registered");
         return -1;
     }
     if (getdata == NULL) {
-        _PyErr_Format(tstate, PyExc_ValueError, "missing 'getdata' func");
+        PyErr_Format(PyExc_ValueError, "missing 'getdata' func");
         return -1;
     }
 
@@ -1731,11 +1717,9 @@ _long_shared(PyObject *obj, _PyCrossInterpreterData *data)
      * size of maximum shareable ints on 64-bit.
      */
     Py_ssize_t value = PyLong_AsSsize_t(obj);
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (value == -1 && _PyErr_Occurred(tstate)) {
-        if (_PyErr_ExceptionMatches(tstate, PyExc_OverflowError)) {
-            _PyErr_SetString(tstate, PyExc_OverflowError,
-                             "try sending as bytes");
+    if (value == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError, "try sending as bytes");
         }
         return -1;
     }
