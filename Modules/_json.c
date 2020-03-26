@@ -87,13 +87,13 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx);
 static PyObject *
 scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void
-scanner_dealloc(PyScannerObject *self);
+scanner_dealloc(PyObject *self);
 static int
 scanner_clear(PyScannerObject *self);
 static PyObject *
 encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void
-encoder_dealloc(PyEncoderObject *self);
+encoder_dealloc(PyObject *self);
 static int
 encoder_clear(PyEncoderObject *self);
 static int
@@ -634,14 +634,13 @@ py_encode_basestring(PyObject* Py_UNUSED(self), PyObject *pystr)
 }
 
 static void
-scanner_dealloc(PyScannerObject *self)
+scanner_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    scanner_clear(self);
-    freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
-    free_func(self);
+    scanner_clear((PyScannerObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1735,14 +1734,13 @@ bail:
 }
 
 static void
-encoder_dealloc(PyEncoderObject *self)
+encoder_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    encoder_clear(self);
-    freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
-    free_func(self);
+    encoder_clear((PyEncoderObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1821,6 +1819,7 @@ _json_exec(PyObject *module)
     get_json_state(module)->PyScannerType = PyScannerType;
     Py_INCREF(PyScannerType);
     if (PyModule_AddObject(module, "make_scanner", get_json_state(module)->PyScannerType) < 0) {
+        Py_DECREF((PyObject*)&PyScannerType);
         return -1;
     }
 
@@ -1831,6 +1830,7 @@ _json_exec(PyObject *module)
     get_json_state(module)->PyEncoderType = PyEncoderType;
     Py_INCREF(PyEncoderType);
     if (PyModule_AddObject(module, "make_encoder", get_json_state(module)->PyEncoderType) < 0) {
+        Py_DECREF((PyObject*)&PyEncoderType);
         return -1;
     }
     return 0;
@@ -1839,32 +1839,25 @@ _json_exec(PyObject *module)
 static int
 _jsonmodule_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    _jsonmodulestate *state = (_jsonmodulestate *)PyModule_GetState(module);
-    if (state) {
-        Py_VISIT(get_json_state(module)->PyScannerType);
-        Py_VISIT(get_json_state(module)->PyEncoderType);
-    }
+    _jsonmodulestate *state = get_json_state(module);
+    Py_VISIT(state->PyScannerType);
+    Py_VISIT(state->PyEncoderType);
     return 0;
 }
 
 static int
 _jsonmodule_clear(PyObject *module)
 {
-    _jsonmodulestate *state = (_jsonmodulestate *)PyModule_GetState(module);
-    if (state) {
-        Py_CLEAR(get_json_state(module)->PyScannerType);
-        Py_CLEAR(get_json_state(module)->PyEncoderType);
-    }
+    _jsonmodulestate *state = get_json_state(module);
+    Py_CLEAR(state->PyScannerType);
+    Py_CLEAR(state->PyEncoderType);
     return 0;
 }
 
 static void
 _jsonmodule_free(void *module)
 {
-    _jsonmodulestate *state = (_jsonmodulestate *)PyModule_GetState(module);
-    if (state) {
-        _jsonmodule_clear((PyObject *)module);
-    }
+    _jsonmodule_clear((PyObject *)module);
 }
 
 static PyModuleDef_Slot _json_slots[] = {
