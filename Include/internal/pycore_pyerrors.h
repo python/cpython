@@ -65,6 +65,8 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCauseTstate(
     const char *format,
     ...);
 
+PyAPI_FUNC(int) _PyErr_CheckSignalsTstate(PyThreadState *tstate);
+
 #ifdef __cplusplus
 }
 #endif
