@@ -727,7 +727,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
 
             err = WSAGetLastError();
             if (err != WSAENOTSOCK) {
-                _PyErr_SetExcFromWindowsErr(tstate, PyExc_OSError, err);
+                PyErr_SetExcFromWindowsErr(PyExc_OSError, err);
                 return NULL;
             }
 
