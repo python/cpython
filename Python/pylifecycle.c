@@ -16,6 +16,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
+#include "pycore_sysmodule.h"
 #include "pycore_traceback.h"
 #include "grammar.h"
 #include "node.h"
@@ -1409,11 +1410,7 @@ Py_FinalizeEx(void)
     _PyGC_CollectIfEnabled();
 
     /* Clear all loghooks */
-    /* We want minimal exposure of this function, so define the extern
-     * here. The linker should discover the correct function without
-     * exporting a symbol. */
-    extern void _PySys_ClearAuditHooks(void);
-    _PySys_ClearAuditHooks();
+    _PySys_ClearAuditHooks(tstate);
 
     /* Destroy all modules */
     _PyImport_Cleanup(tstate);
