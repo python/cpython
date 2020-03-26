@@ -270,6 +270,14 @@ static PyThreadState *tcl_tstate = NULL;
     { PyThreadState *tstate = PyEval_SaveThread(); \
         if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate; }
 
+#define ENTER_PYTHON_GIL_STATE(gstate) \
+    if(tcl_lock) PyThread_release_lock(tcl_lock); \
+    gstate = PyGILState_Ensure();
+
+#define LEAVE_PYTHON_GIL_STATE(gstate) \
+    PyGILState_Release(gstate); \
+    if(tcl_lock) PyThread_acquire_lock(tcl_lock, 1);
+
 #define CHECK_TCL_APPARTMENT \
     if (((TkappObject *)self)->threaded && \
         ((TkappObject *)self)->thread_id != Tcl_GetCurrentThread()) { \
@@ -2358,15 +2366,6 @@ typedef struct {
     PyObject *func;
 } PythonCmd_ClientData;
 
-static int
-PythonCmd_Error(Tcl_Interp *interp)
-{
-    errorInCmd = 1;
-    PyErr_Fetch(&excInCmd, &valInCmd, &trbInCmd);
-    LEAVE_PYTHON
-    return TCL_ERROR;
-}
-
 /* This is the Tcl command that acts as a wrapper for Python
  * function or method.
  */
@@ -2378,18 +2377,19 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     PyObject *args, *res;
     int i;
     Tcl_Obj *obj_res;
+    PyGILState_STATE gstate;
 
-    ENTER_PYTHON
+    ENTER_PYTHON_GIL_STATE(gstate)
 
     /* Create argument tuple (objv1, ..., objvN) */
     if (!(args = PyTuple_New(objc - 1)))
-        return PythonCmd_Error(interp);
+        goto error;
 
     for (i = 0; i < (objc - 1); i++) {
         PyObject *s = unicodeFromTclObj(objv[i + 1]);
         if (!s) {
             Py_DECREF(args);
-            return PythonCmd_Error(interp);
+            goto error;
         }
         PyTuple_SET_ITEM(args, i, s);
     }
@@ -2398,19 +2398,25 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     Py_DECREF(args);
 
     if (res == NULL)
-        return PythonCmd_Error(interp);
+        goto error;
 
     obj_res = AsObj(res);
     if (obj_res == NULL) {
         Py_DECREF(res);
-        return PythonCmd_Error(interp);
+        goto error;
     }
     Tcl_SetObjResult(interp, obj_res);
     Py_DECREF(res);
 
-    LEAVE_PYTHON
+    LEAVE_PYTHON_GIL_STATE(gstate)
 
     return TCL_OK;
+
+error:
+    errorInCmd = 1;
+    PyErr_Fetch(&excInCmd, &valInCmd, &trbInCmd);
+    LEAVE_PYTHON_GIL_STATE(gstate)
+    return TCL_ERROR;
 }
 
 
