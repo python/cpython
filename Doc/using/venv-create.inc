@@ -88,7 +88,7 @@ The command, if run with ``-h``, will show the available options::
    script by setting the execution policy for the user. You can do this by
    issuing the following Powershell command from a Powershell command window:
 
-   PS C:\Users\user> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   PS C:\> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
    See `About Execution Policies 
    <https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-7>`_
