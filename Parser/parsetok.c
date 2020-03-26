@@ -2,6 +2,8 @@
 /* Parser-tokenizer link implementation */
 
 #include "Python.h"
+#include "pycore_pyerrors.h"
+#include "pycore_sysmodule.h"
 #include "tokenizer.h"
 #include "node.h"
 #include "grammar.h"
@@ -94,7 +96,8 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
     if (initerr(err_ret, filename) < 0)
         return NULL;
 
-    if (PySys_Audit("compile", "yO", s, err_ret->filename) < 0) {
+    PyThreadState *tstate = PyThreadState_GET();
+    if (_PySys_Audit(tstate, "compile", "yO", s, err_ret->filename) < 0) {
         err_ret->error = E_ERROR;
         return NULL;
     }
@@ -104,7 +107,7 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
     else
         tok = PyTokenizer_FromString(s, exec_input);
     if (tok == NULL) {
-        err_ret->error = PyErr_Occurred() ? E_DECODE : E_NOMEM;
+        err_ret->error = _PyErr_Occurred(tstate) ? E_DECODE : E_NOMEM;
         return NULL;
     }
     if (*flags & PyPARSE_TYPE_COMMENTS) {

@@ -19,6 +19,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
+#include "pycore_sysmodule.h"
 
 #include "code.h"
 #include "dictobject.h"
@@ -4790,7 +4791,7 @@ _PyEval_SetAsyncGenFirstiter(PyObject *firstiter)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    if (PySys_Audit("sys.set_asyncgen_hook_firstiter", NULL) < 0) {
+    if (_PySys_Audit(tstate, "sys.set_asyncgen_hook_firstiter", NULL) < 0) {
         return -1;
     }
 
@@ -4811,7 +4812,7 @@ _PyEval_SetAsyncGenFinalizer(PyObject *finalizer)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    if (PySys_Audit("sys.set_asyncgen_hook_finalizer", NULL) < 0) {
+    if (_PySys_Audit(tstate, "sys.set_asyncgen_hook_finalizer", NULL) < 0) {
         return -1;
     }
 
