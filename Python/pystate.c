@@ -268,9 +268,12 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
 {
     _PyRuntimeState *runtime = interp->runtime;
 
+// FIXME: this crashes for some reason
+#if 0
     if (PySys_Audit("cpython.PyInterpreterState_Clear", NULL) < 0) {
         PyErr_Clear();
     }
+#endif
 
     HEAD_LOCK(runtime);
     for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {

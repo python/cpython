@@ -1332,6 +1332,131 @@ collect(PyThreadState *tstate, int generation,
     return n + m;
 }
 
+#define DEBUG_RUN_FINALIZERS 0
+
+/* Run finalizers before interpreter shutdown.  When calls, all GC tracked 
+ * objects can be considered garbage.  Run the finalizers before we start
+ * tearing things down.
+ *
+ * FIXME: this shares a lot of code with collect().  Merge them somehow?
+ */
+Py_ssize_t
+_PyGC_RunFinalizers(PyThreadState *tstate)
+{
+    int i;
+    int nofail = 0;
+    Py_ssize_t m = 0; /* # objects collected */
+    Py_ssize_t n = 0; /* # unreachable objects that couldn't be collected */
+    PyGC_Head *old; /* oldest generation */
+    PyGC_Head unreachable; /* non-problematic unreachable trash */
+    PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
+    GCState *gcstate = &tstate->interp->gc;
+
+    if (DEBUG_RUN_FINALIZERS) {
+        fprintf(stderr, "_PyGC_RunFinalizers start\n");
+    }
+
+    /* merge younger generations with one we are currently collecting */
+    gc_list_init(&unreachable);
+    for (i = 0; i <= NUM_GENERATIONS - 1; i++) {
+        if (DEBUG_RUN_FINALIZERS) {
+            PySys_FormatStderr("gc: objects in gen %d:%zd\n", i,
+                               gc_list_size(GEN_HEAD(gcstate, i)));
+        }
+        gc_list_merge(GEN_HEAD(gcstate, i), &unreachable);
+    }
+    if (DEBUG_RUN_FINALIZERS) {
+        PySys_FormatStderr("gc: objects in unreachable:%zd\n",
+                           gc_list_size(&unreachable));
+    }
+
+    PyGC_Head *gc, *next;
+    for (gc = GC_NEXT(&unreachable); gc != &unreachable; gc = next) {
+        next = GC_NEXT(gc);
+        gc->_gc_next = NEXT_MASK_UNREACHABLE | gc->_gc_next;
+        //gc_reset_refs(gc, 0); // FIXME: do something with _gc_prev?
+    }
+
+    /* All objects in unreachable are trash, but objects reachable from
+     * legacy finalizers (e.g. tp_del) can't safely be deleted.
+     */
+    gc_list_init(&finalizers);
+    // NEXT_MASK_UNREACHABLE is cleared here.
+    // After move_legacy_finalizers(), unreachable is normal list.
+    move_legacy_finalizers(&unreachable, &finalizers);
+    /* finalizers contains the unreachable objects with a legacy finalizer;
+     * unreachable objects reachable *from* those are also uncollectable,
+     * and we move those into the finalizers list too.
+     */
+    move_legacy_finalizer_reachable(&finalizers);
+
+    if (DEBUG_RUN_FINALIZERS) {
+        PySys_FormatStderr("gc: objects in finalizers:%zd\n",
+                           gc_list_size(&finalizers));
+    }
+
+    validate_list(&finalizers, collecting_clear_unreachable_clear);
+    // FIXME: fails, _gc_next/_gc_prev magic is head-exploding
+    //validate_list(&unreachable, collecting_set_unreachable_clear);
+
+    /* Clear weakrefs and invoke callbacks as necessary. */
+    old = GEN_HEAD(gcstate, NUM_GENERATIONS - 1);
+    m += handle_weakrefs(&unreachable, old);
+
+    validate_list(old, collecting_clear_unreachable_clear);
+    // FIXME: fails, _gc_next/_gc_prev magic is head-exploding
+    //validate_list(&unreachable, collecting_set_unreachable_clear);
+
+    if (DEBUG_RUN_FINALIZERS) {
+        PySys_FormatStderr("gc: objects in unreachable 2:%zd\n",
+                           gc_list_size(&unreachable));
+    }
+
+    /* Call tp_finalize on objects which have one. */
+    finalize_garbage(tstate, &unreachable);
+
+    /* Handle any objects that may have resurrected after the call
+     * to 'finalize_garbage' and continue the collection with the
+     * objects that are still unreachable */
+    PyGC_Head final_unreachable;
+    handle_resurrected_objects(&unreachable, &final_unreachable, old);
+
+    /* Call tp_clear on objects in the final_unreachable set.  This will cause
+    * the reference cycles to be broken.  It may also cause some objects
+    * in finalizers to be freed.
+    */
+    m += gc_list_size(&final_unreachable);
+    //delete_garbage(tstate, gcstate, &final_unreachable, old);
+
+    /* Append instances in the uncollectable set to a Python
+     * reachable list of garbage.  The programmer has to deal with
+     * this if they insist on creating this type of structure.
+     */
+    //handle_legacy_finalizers(tstate, gcstate, &finalizers, old);
+    validate_list(old, collecting_clear_unreachable_clear);
+
+    clear_freelists();
+
+    if (_PyErr_Occurred(tstate)) {
+        if (nofail) {
+            _PyErr_Clear(tstate);
+        }
+        else {
+            if (gc_str == NULL)
+                gc_str = PyUnicode_FromString("garbage collection");
+            PyErr_WriteUnraisable(gc_str);
+            Py_FatalError("unexpected exception during final garbage collection");
+        }
+    }
+
+    if (DEBUG_RUN_FINALIZERS) {
+        fprintf(stderr, "_PyGC_RunFinalizers done\n");
+    }
+
+    assert(!_PyErr_Occurred(tstate));
+    return n + m;
+}
+
 /* Invoke progress callbacks to notify clients that garbage collection
  * is starting or stopping
  */
