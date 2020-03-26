@@ -137,6 +137,7 @@ PySys_SetObject(const char *name, PyObject *v)
     return sys_set_object(tstate, name, v);
 }
 
+
 static int
 should_audit(PyInterpreterState *is)
 {
@@ -151,7 +152,8 @@ should_audit(PyInterpreterState *is)
             || PyDTrace_AUDIT_ENABLED());
 }
 
-int
+
+static int
 sys_audit_tstate(PyThreadState *ts, const char *event,
                  const char *argFormat, va_list vargs)
 {
