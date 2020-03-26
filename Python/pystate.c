@@ -8,6 +8,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
+#include "pycore_sysmodule.h"
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -203,7 +204,10 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 PyInterpreterState *
 PyInterpreterState_New(void)
 {
-    if (PySys_Audit("cpython.PyInterpreterState_New", NULL) < 0) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    /* tstate is NULL when Py_InitializeFromConfig() calls
+       PyInterpreterState_New() to create the main interpreter. */
+    if (_PySys_Audit(tstate, "cpython.PyInterpreterState_New", NULL) < 0) {
         return NULL;
     }
 
@@ -214,6 +218,7 @@ PyInterpreterState_New(void)
 
     interp->id_refcount = -1;
 
+    /* Don't get runtime from tstate since tstate can be NULL */
     _PyRuntimeState *runtime = &_PyRuntime;
     interp->runtime = runtime;
 
@@ -235,8 +240,10 @@ PyInterpreterState_New(void)
     HEAD_LOCK(runtime);
     if (interpreters->next_id < 0) {
         /* overflow or Py_Initialize() not called! */
-        PyErr_SetString(PyExc_RuntimeError,
-                        "failed to get an interpreter ID");
+        if (tstate != NULL) {
+            _PyErr_SetString(tstate, PyExc_RuntimeError,
+                             "failed to get an interpreter ID");
+        }
         PyMem_RawFree(interp);
         interp = NULL;
     }
@@ -268,8 +275,11 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
 {
     _PyRuntimeState *runtime = interp->runtime;
 
-    if (PySys_Audit("cpython.PyInterpreterState_Clear", NULL) < 0) {
-        PyErr_Clear();
+    /* Use the current Python thread state to call audit hooks,
+       not the current Python thread state of 'interp'. */
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PySys_Audit(tstate, "cpython.PyInterpreterState_Clear", NULL) < 0) {
+        _PyErr_Clear(tstate);
     }
 
     HEAD_LOCK(runtime);
@@ -417,7 +427,8 @@ int64_t
 PyInterpreterState_GetID(PyInterpreterState *interp)
 {
     if (interp == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "no interpreter provided");
+        PyThreadState *tstate = _PyThreadState_GET();
+        _PyErr_SetString(tstate, PyExc_RuntimeError, "no interpreter provided");
         return -1;
     }
     return interp->id;
@@ -451,9 +462,12 @@ _PyInterpreterState_LookUpID(PY_INT64_T requested_id)
         interp = interp_look_up_id(runtime, requested_id);
         HEAD_UNLOCK(runtime);
     }
-    if (interp == NULL && !PyErr_Occurred()) {
-        PyErr_Format(PyExc_RuntimeError,
-                     "unrecognized interpreter ID %lld", requested_id);
+    if (interp == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (!_PyErr_Occurred(tstate)) {
+            _PyErr_Format(tstate, PyExc_RuntimeError,
+                          "unrecognized interpreter ID %lld", requested_id);
+        }
     }
     return interp;
 }
@@ -467,8 +481,9 @@ _PyInterpreterState_IDInitref(PyInterpreterState *interp)
     }
     interp->id_mutex = PyThread_allocate_lock();
     if (interp->id_mutex == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "failed to create init interpreter ID mutex");
+        PyThreadState *tstate = _PyThreadState_GET();
+        _PyErr_SetString(tstate, PyExc_RuntimeError,
+                         "failed to create init interpreter ID mutex");
         return -1;
     }
     interp->id_refcount = 0;
@@ -527,7 +542,9 @@ PyObject *
 _PyInterpreterState_GetMainModule(PyInterpreterState *interp)
 {
     if (interp->modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
+        PyThreadState *tstate = _PyThreadState_GET();
+        _PyErr_SetString(tstate, PyExc_RuntimeError,
+                         "interpreter not initialized");
         return NULL;
     }
     return PyMapping_GetItemString(interp->modules, "__main__");
@@ -539,7 +556,8 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
     if (interp->dict == NULL) {
         interp->dict = PyDict_New();
         if (interp->dict == NULL) {
-            PyErr_Clear();
+            PyThreadState *tstate = _PyThreadState_GET();
+            _PyErr_Clear(tstate);
         }
     }
     /* Returning NULL means no per-interpreter dict is available. */
@@ -655,12 +673,13 @@ int
 _PyState_AddModule(PyThreadState *tstate, PyObject* module, struct PyModuleDef* def)
 {
     if (!def) {
-        assert(PyErr_Occurred());
+        assert(_PyErr_Occurred(tstate));
         return -1;
     }
     if (def->m_slots) {
-        PyErr_SetString(PyExc_SystemError,
-                        "PyState_AddModule called on module with slots");
+        _PyErr_SetString(tstate,
+                         PyExc_SystemError,
+                         "PyState_AddModule called on module with slots");
         return -1;
     }
 
@@ -707,28 +726,29 @@ PyState_AddModule(PyObject* module, struct PyModuleDef* def)
 int
 PyState_RemoveModule(struct PyModuleDef* def)
 {
-    PyInterpreterState *state;
-    Py_ssize_t index = def->m_base.m_index;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
+
     if (def->m_slots) {
-        PyErr_SetString(PyExc_SystemError,
-                        "PyState_RemoveModule called on module with slots");
+        _PyErr_SetString(tstate,
+                         PyExc_SystemError,
+                         "PyState_RemoveModule called on module with slots");
         return -1;
     }
-    state = _PyInterpreterState_GET_UNSAFE();
+
+    Py_ssize_t index = def->m_base.m_index;
     if (index == 0) {
         Py_FatalError("invalid module index");
-        return -1;
     }
-    if (state->modules_by_index == NULL) {
+    if (interp->modules_by_index == NULL) {
         Py_FatalError("Interpreters module-list not accessible.");
-        return -1;
     }
-    if (index > PyList_GET_SIZE(state->modules_by_index)) {
+    if (index > PyList_GET_SIZE(interp->modules_by_index)) {
         Py_FatalError("Module index out of bounds.");
-        return -1;
     }
+
     Py_INCREF(Py_None);
-    return PyList_SetItem(state->modules_by_index, index, Py_None);
+    return PyList_SetItem(interp->modules_by_index, index, Py_None);
 }
 
 /* Used by PyImport_Cleanup() */
@@ -1419,9 +1439,14 @@ static crossinterpdatafunc
 _lookup_getdata(PyObject *obj)
 {
     crossinterpdatafunc getdata = _PyCrossInterpreterData_Lookup(obj);
-    if (getdata == NULL && PyErr_Occurred() == 0)
-        PyErr_Format(PyExc_ValueError,
-                     "%S does not support cross-interpreter data", obj);
+    if (getdata == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_PyErr_Occurred(tstate) == 0) {
+            _PyErr_Format(tstate,
+                           PyExc_ValueError,
+                           "%S does not support cross-interpreter data", obj);
+        }
+    }
     return getdata;
 }
 
@@ -1436,19 +1461,19 @@ _PyObject_CheckCrossInterpreterData(PyObject *obj)
 }
 
 static int
-_check_xidata(_PyCrossInterpreterData *data)
+_check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
 {
     // data->data can be anything, including NULL, so we don't check it.
 
     // data->obj may be NULL, so we don't check it.
 
     if (data->interp < 0) {
-        PyErr_SetString(PyExc_SystemError, "missing interp");
+        _PyErr_SetString(tstate, PyExc_SystemError, "missing interp");
         return -1;
     }
 
     if (data->new_object == NULL) {
-        PyErr_SetString(PyExc_SystemError, "missing new_object func");
+        _PyErr_SetString(tstate, PyExc_SystemError, "missing new_object func");
         return -1;
     }
 
@@ -1460,9 +1485,9 @@ _check_xidata(_PyCrossInterpreterData *data)
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    // PyInterpreterState_Get() aborts if lookup fails, so we don't need
-    // to check the result for NULL.
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    // PyThreadState_Get() aborts if tstate is NULL.
+    PyThreadState *tstate = PyThreadState_Get();
+    PyInterpreterState *interp = tstate->interp;
 
     // Reset data before re-populating.
     *data = (_PyCrossInterpreterData){0};
@@ -1483,7 +1508,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 
     // Fill in the blanks and validate the result.
     data->interp = interp->id;
-    if (_check_xidata(data) != 0) {
+    if (_check_xidata(tstate, data) != 0) {
         _PyCrossInterpreterData_Release(data);
         return -1;
     }
@@ -1583,12 +1608,13 @@ int
 _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
                                        crossinterpdatafunc getdata)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     if (!PyType_Check(cls)) {
-        PyErr_Format(PyExc_ValueError, "only classes may be registered");
+        _PyErr_Format(tstate, PyExc_ValueError, "only classes may be registered");
         return -1;
     }
     if (getdata == NULL) {
-        PyErr_Format(PyExc_ValueError, "missing 'getdata' func");
+        _PyErr_Format(tstate, PyExc_ValueError, "missing 'getdata' func");
         return -1;
     }
 
@@ -1703,9 +1729,11 @@ _long_shared(PyObject *obj, _PyCrossInterpreterData *data)
      * size of maximum shareable ints on 64-bit.
      */
     Py_ssize_t value = PyLong_AsSsize_t(obj);
-    if (value == -1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            PyErr_SetString(PyExc_OverflowError, "try sending as bytes");
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (value == -1 && _PyErr_Occurred(tstate)) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_OverflowError)) {
+            _PyErr_SetString(tstate, PyExc_OverflowError,
+                             "try sending as bytes");
         }
         return -1;
     }
