@@ -1222,7 +1222,7 @@ static PyType_Slot PyScannerType_slots[] = {
 static PyType_Spec PyScannerType_spec = {
     .name = "_json.Scanner",
     .basicsize = sizeof(PyScannerObject),
-    .itemsize =0,
+    .itemsize = 0,
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = PyScannerType_slots,
 };
