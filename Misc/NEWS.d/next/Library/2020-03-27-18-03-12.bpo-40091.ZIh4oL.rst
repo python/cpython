@@ -1,0 +1,2 @@
+Fix a crash in the :mod:`logging` module after fork in the process process:
+reset the main logging lock.

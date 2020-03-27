@@ -257,8 +257,8 @@ else:
                 # Similar to what PyErr_WriteUnraisable does.
                 print("Ignoring exception from logging atfork", instance,
                       "._reinit_lock() method:", err, file=sys.stderr)
-        _releaseLock()  # Acquired by os.register_at_fork(before=.
 
+        _lock = threading.RLock()
 
     os.register_at_fork(before=_acquireLock,
                         after_in_child=_after_at_fork_child_reinit_locks,
