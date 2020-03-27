@@ -1,0 +1,2 @@
+Provide a way to compare AST nodes for equality recursively. Patch by Louie
+Lu, Flavian Hautbois and Batuhan Taskaya.
