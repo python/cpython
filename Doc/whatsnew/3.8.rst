@@ -142,12 +142,11 @@ However, these are invalid calls::
 
 One use case for this notation is that it allows pure Python functions
 to fully emulate behaviors of existing C coded functions.  For example,
-the built-in :func:`pow` function does not accept keyword arguments::
+the built-in :func:`divmod` function does not accept keyword arguments::
 
-  def pow(x, y, z=None, /):
-      "Emulate the built in pow() function"
-      r = x ** y
-      return r if z is None else r%z
+  def divmod(a, b, /):
+      "Emulate the built in divmod() function"
+      return (a // b, a % b)
 
 Another use case is to preclude keyword arguments when the parameter
 name is not helpful.  For example, the builtin :func:`len` function has
