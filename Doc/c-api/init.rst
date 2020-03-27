@@ -1119,6 +1119,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Return the interpreter's unique ID.  If there was any error in doing
    so then ``-1`` is returned and an error is set.
 
+   The caller must hold the GIL.
+
    .. versionadded:: 3.7
 
 
