@@ -408,6 +408,17 @@ Constants
 
    .. versionadded:: 3.5
 
+.. data:: CAN_RAW_JOIN_FILTERS
+
+   Joins the applied CAN filters such that only CAN frames that match all
+   given CAN filters are passed to user space.
+
+   This constant is documented in the Linux documentation.
+
+   .. availability:: Linux >= 4.1.
+
+   .. versionadded:: 3.9
+
 .. data:: CAN_ISOTP
 
    CAN_ISOTP, in the CAN protocol family, is the ISO-TP (ISO 15765-2) protocol.
