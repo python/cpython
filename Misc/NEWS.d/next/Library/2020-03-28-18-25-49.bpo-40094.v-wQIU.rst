@@ -1,0 +1,2 @@
+Add :func:`os.waitstatus_to_exitcode` function:
+convert a wait status to an exit code.

@@ -6,15 +6,6 @@ subprocess is unavailable. setup.py is not used on Windows.
 import os
 
 
-def _waitstatus_to_exitcode(status):
-    if os.WIFEXITED(status):
-        return os.WEXITSTATUS(status)
-    elif os.WIFSIGNALED(status):
-        return -os.WTERMSIG(status)
-    else:
-        raise ValueError(f"invalid wait status: {status!r}")
-
-
 # distutils.spawn used by distutils.command.build_ext
 # calls subprocess.Popen().wait()
 class Popen:
@@ -37,7 +28,7 @@ class Popen:
         else:
             # Parent process
             _, status = os.waitpid(pid, 0)
-            self.returncode = _waitstatus_to_exitcode(status)
+            self.returncode = os.waitstatus_to_exitcode(status)
 
         return self.returncode
 
@@ -87,7 +78,7 @@ def check_output(cmd, **kwargs):
     try:
         # system() spawns a shell
         status = os.system(cmd)
-        exitcode = _waitstatus_to_exitcode(status)
+        exitcode = os.waitstatus_to_exitcode(status)
         if exitcode:
             raise ValueError(f"Command {cmd!r} returned non-zero "
                              f"exit status {exitcode!r}")

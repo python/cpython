@@ -8274,6 +8274,62 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+#if (defined(WIFEXITED) || defined(MS_WINDOWS))
+
+PyDoc_STRVAR(os_waitstatus_to_exitcode__doc__,
+"waitstatus_to_exitcode($module, /, status)\n"
+"--\n"
+"\n"
+"Convert a wait status to an exit code.\n"
+"\n"
+"On Unix:\n"
+"\n"
+"* If WIFEXITED(status) is true, return WEXITSTATUS(status).\n"
+"* If WIFSIGNALED(status) is true, return -WTERMSIG(status).\n"
+"* Otherwise, raise a ValueError.\n"
+"\n"
+"On Windows, return status shifted right by 8 bits.\n"
+"\n"
+"On Unix, if the process is being traced or if waitpid() was called with\n"
+"WUNTRACED option, the caller must first check if WIFSTOPPED(status) is true.\n"
+"This function must not be called if WIFSTOPPED(status) is true.");
+
+#define OS_WAITSTATUS_TO_EXITCODE_METHODDEF    \
+    {"waitstatus_to_exitcode", (PyCFunction)(void(*)(void))os_waitstatus_to_exitcode, METH_FASTCALL|METH_KEYWORDS, os_waitstatus_to_exitcode__doc__},
+
+static PyObject *
+os_waitstatus_to_exitcode_impl(PyObject *module, int status);
+
+static PyObject *
+os_waitstatus_to_exitcode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "waitstatus_to_exitcode", 0};
+    PyObject *argsbuf[1];
+    int status;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    status = _PyLong_AsInt(args[0]);
+    if (status == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_waitstatus_to_exitcode_impl(module, status);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(WIFEXITED) || defined(MS_WINDOWS)) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -8809,4 +8865,8 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=5d99f90cead7c0e1 input=a9049054013a1b77]*/
+
+#ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
+    #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
+#endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
+/*[clinic end generated code: output=4e28994a729eddf9 input=a9049054013a1b77]*/
