@@ -1190,10 +1190,12 @@ ast_richcompare(PyObject *self, PyObject *other, int op)
     }
     /* Compare types */
     if (Py_TYPE(self) != Py_TYPE(other)) {
-        if (op == Py_EQ)
+        if (op == Py_EQ) {
             Py_RETURN_FALSE;
-        else
+        }
+        else {
             Py_RETURN_TRUE;
+        }
     }
     /* Compare fields */
     fields = PyObject_GetAttrString(self, "_fields");
@@ -1208,6 +1210,9 @@ ast_richcompare(PyObject *self, PyObject *other, int op)
         if (Py_TYPE(a) != Py_TYPE(b)) {
             if (op == Py_EQ) {
                 Py_RETURN_FALSE;
+            }
+            else {
+                Py_RETURN_TRUE;
             }
         }
         if (op == Py_EQ) {

@@ -1,6 +1,7 @@
 import ast
 import dis
 import os
+import random
 import sys
 import unittest
 import warnings
@@ -666,12 +667,13 @@ class AST_Tests(unittest.TestCase):
     def test_compare_literals(self):
         constants = (-20, 20, 20.0, 1, 1.0, True, 0, False, frozenset(), tuple(), "ABCD", "abcd", "中文字", 1e1000, -1e1000)
         for next_index, constant in enumerate(constants[:-1], 1):
-            self.assertEqual(ast.Constant(constant), ast.Constant(constant))
             next_constant = constants[next_index]
-            self.assertNotEqual(ast.Constant(constant), ast.Constant(next_constant))
+            with self.subTest(literal=constant, next_literal=next_constant):
+                self.assertEqual(ast.Constant(constant), ast.Constant(constant))
+                self.assertNotEqual(ast.Constant(constant), ast.Constant(next_constant))
 
         same_looking_literal_cases = [{1, 1.0, True, 1+0j}, {0, 0.0, False, 0+0j}]
-        for same_looking_literals for same_looking_literal_cases:
+        for same_looking_literals in same_looking_literal_cases:
             for literal in same_looking_literals:
                 for same_looking_literal in same_looking_literals - {literal}:
                     self.assertNotEqual(ast.Constant(literal), ast.Constant(same_looking_literal))
@@ -684,7 +686,7 @@ class AST_Tests(unittest.TestCase):
         self.assertNotEqual(ast.Add(), ast.Constant())
 
     def test_compare_stdlib(self):
-        if test.support.is_resource_enabled("cpu"):
+        if support.is_resource_enabled("cpu"):
             files = STDLIB_FILES
         else:
             files = random.sample(STDLIB_FILES, 10)
