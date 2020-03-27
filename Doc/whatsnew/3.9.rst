@@ -671,7 +671,11 @@ Removed
   module have been removed.  They were deprecated in Python 3.2.
   Use ``iter(x)`` or ``list(x)`` instead of ``x.getchildren()`` and
   ``x.iter()`` or ``list(x.iter())`` instead of ``x.getiterator()``.
-  The ``xml.etree.cElementTree`` module has been removed.
+  The ``xml.etree.cElementTree`` module has been removed,
+  use the :mod:`xml.etree.ElementTree` module instead.
+  Since Python 3.3 the ``xml.etree.cElementTree`` module has been deprecated,
+  the ``xml.etree.ElementTree`` module uses a fast implementation whenever
+  available.
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
 
 * The old :mod:`plistlib` API has been removed, it was deprecated since Python
