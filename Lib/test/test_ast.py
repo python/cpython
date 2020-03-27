@@ -670,6 +670,12 @@ class AST_Tests(unittest.TestCase):
             next_constant = constants[next_index]
             self.assertNotEqual(ast.Constant(constant), ast.Constant(next_constant))
 
+        same_looking_literal_cases = [{1, 1.0, True, 1+0j}, {0, 0.0, False, 0+0j}]
+        for same_looking_literals for same_looking_literal_cases:
+            for literal in same_looking_literals:
+                for same_looking_literal in same_looking_literals - {literal}:
+                    self.assertNotEqual(ast.Constant(literal), ast.Constant(same_looking_literal))
+
     def test_compare_operators(self):
         self.assertEqual(ast.Add(), ast.Add())
         self.assertEqual(ast.Sub(), ast.Sub())
