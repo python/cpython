@@ -208,7 +208,7 @@ kwds[arg_ty]:
     | '**' a=plain_name { a }
 annotation[expr_ty]: expression
 
-decorators[asdl_seq*]: a=('@' f=factor NEWLINE { f })+ { a }
+decorators[asdl_seq*]: a=('@' f=named_expression NEWLINE { f })+ { a }
 
 class_def[stmt_ty]:
     | a=decorators b=class_def_raw { class_def_decorators(p, a, b) }

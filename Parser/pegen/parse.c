@@ -3612,7 +3612,7 @@ annotation_rule(Parser *p)
     return res;
 }
 
-// decorators: (('@' factor NEWLINE))+
+// decorators: (('@' named_expression NEWLINE))+
 static asdl_seq*
 decorators_rule(Parser *p)
 {
@@ -3620,7 +3620,7 @@ decorators_rule(Parser *p)
     if (is_memoized(p, decorators_type, &res))
         return res;
     int mark = p->mark;
-    { // (('@' factor NEWLINE))+
+    { // (('@' named_expression NEWLINE))+
         asdl_seq * a;
         if (
             (a = _loop1_61_rule(p))
@@ -11122,7 +11122,7 @@ _tmp_60_rule(Parser *p)
     return res;
 }
 
-// _loop1_61: ('@' factor NEWLINE)
+// _loop1_61: ('@' named_expression NEWLINE)
 static asdl_seq *
 _loop1_61_rule(Parser *p)
 {
@@ -11137,7 +11137,7 @@ _loop1_61_rule(Parser *p)
     }
     ssize_t children_capacity = 1;
     ssize_t n = 0;
-    { // ('@' factor NEWLINE)
+    { // ('@' named_expression NEWLINE)
         void *_tmp_116_var;
         while (
             (_tmp_116_var = _tmp_116_rule(p))
@@ -13254,7 +13254,7 @@ _tmp_115_rule(Parser *p)
     return res;
 }
 
-// _tmp_116: '@' factor NEWLINE
+// _tmp_116: '@' named_expression NEWLINE
 static void *
 _tmp_116_rule(Parser *p)
 {
@@ -13262,14 +13262,14 @@ _tmp_116_rule(Parser *p)
     if (is_memoized(p, _tmp_116_type, &res))
         return res;
     int mark = p->mark;
-    { // '@' factor NEWLINE
+    { // '@' named_expression NEWLINE
         expr_ty f;
         void *literal;
         void *newline_var;
         if (
             (literal = expect_token(p, 49))
             &&
-            (f = factor_rule(p))
+            (f = named_expression_rule(p))
             &&
             (newline_var = newline_token(p))
         )

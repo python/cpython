@@ -53,6 +53,19 @@ TEST_CASES = [
         class C:
             pass
      '''),
+    ('class_def_decorator_with_expression',
+     '''
+        @lambda x: 42
+        class C:
+            pass
+     '''),
+    ('class_def_decorator_with_expression_and_walrus',
+     '''
+        @x:=lambda x: 42
+        class C:
+            pass
+     '''),
+
     ('class_def_keywords',
      '''
         class C(keyword=a+b, **c):
@@ -100,6 +113,18 @@ TEST_CASES = [
      '''
         @a
         async def d():
+            pass
+     '''),
+    ('decorator_with_expression',
+     '''
+        @lambda x: 42
+        def f():
+            pass
+     '''),
+    ('decorator_with_expression_and_walrus',
+     '''
+        @x:=lambda x: 42
+        def f():
             pass
      '''),
     ('del_attribute', 'del a.b'),
