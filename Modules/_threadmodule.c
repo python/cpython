@@ -213,6 +213,22 @@ lock_repr(lockobject *self)
         self->locked ? "locked" : "unlocked", Py_TYPE(self)->tp_name, self);
 }
 
+#ifdef HAVE_FORK
+static PyObject *
+lock__at_fork_reinit(lockobject *self, PyObject *Py_UNUSED(args))
+{
+    if (_PyThread_at_fork_reinit(&self->lock_lock) < 0) {
+        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
+        return NULL;
+    }
+
+    self->locked = 0;
+
+    Py_RETURN_NONE;
+}
+#endif  /* HAVE_FORK */
+
+
 static PyMethodDef lock_methods[] = {
     {"acquire_lock", (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
@@ -230,6 +246,10 @@ static PyMethodDef lock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
      METH_VARARGS, release_doc},
+#ifdef HAVE_FORK
+    {"_at_fork_reinit",    (PyCFunction)lock__at_fork_reinit,
+     METH_NOARGS, NULL},
+#endif
     {NULL,           NULL}              /* sentinel */
 };
 
@@ -446,22 +466,20 @@ For internal use by `threading.Condition`.");
 static PyObject *
 rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    rlockobject *self;
-
-    self = (rlockobject *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->in_weakreflist = NULL;
-        self->rlock_owner = 0;
-        self->rlock_count = 0;
-
-        self->rlock_lock = PyThread_allocate_lock();
-        if (self->rlock_lock == NULL) {
-            Py_DECREF(self);
-            PyErr_SetString(ThreadError, "can't allocate lock");
-            return NULL;
-        }
+    rlockobject *self = (rlockobject *) type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
     }
+    self->in_weakreflist = NULL;
+    self->rlock_owner = 0;
+    self->rlock_count = 0;
 
+    self->rlock_lock = PyThread_allocate_lock();
+    if (self->rlock_lock == NULL) {
+        Py_DECREF(self);
+        PyErr_SetString(ThreadError, "can't allocate lock");
+        return NULL;
+    }
     return (PyObject *) self;
 }
 
@@ -473,6 +491,23 @@ rlock_repr(rlockobject *self)
         Py_TYPE(self)->tp_name, self->rlock_owner,
         self->rlock_count, self);
 }
+
+
+#ifdef HAVE_FORK
+static PyObject *
+rlock__at_fork_reinit(rlockobject *self, PyObject *Py_UNUSED(args))
+{
+    if (_PyThread_at_fork_reinit(&self->rlock_lock) < 0) {
+        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
+        return NULL;
+    }
+
+    self->rlock_owner = 0;
+    self->rlock_count = 0;
+
+    Py_RETURN_NONE;
+}
+#endif  /* HAVE_FORK */
 
 
 static PyMethodDef rlock_methods[] = {
@@ -490,6 +525,10 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"__exit__",    (PyCFunction)rlock_release,
      METH_VARARGS, rlock_release_doc},
+#ifdef HAVE_FORK
+    {"_at_fork_reinit",    (PyCFunction)rlock__at_fork_reinit,
+     METH_NOARGS, NULL},
+#endif
     {NULL,           NULL}              /* sentinel */
 };
 
