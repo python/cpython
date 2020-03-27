@@ -1810,9 +1810,6 @@ static int
 _json_exec(PyObject *module)
 {
     _jsonmodulestate *state = get_json_state(module);
-    if (state == NULL) {
-        return -1;
-    }
 
     state->PyScannerType = PyType_FromSpec(&PyScannerType_spec);
     if (state->PyScannerType == NULL) {
