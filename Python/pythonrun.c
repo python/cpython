@@ -16,6 +16,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
+#include "pycore_sysmodule.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -696,8 +697,8 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
         }
     }
     hook = _PySys_GetObjectId(&PyId_excepthook);
-    if (PySys_Audit("sys.excepthook", "OOOO", hook ? hook : Py_None,
-                    exception, v, tb) < 0) {
+    if (_PySys_Audit(tstate, "sys.excepthook", "OOOO", hook ? hook : Py_None,
+                     exception, v, tb) < 0) {
         if (PyErr_ExceptionMatches(PyExc_RuntimeError)) {
             PyErr_Clear();
             goto done;
@@ -1100,7 +1101,7 @@ flush_io(void)
 }
 
 static PyObject *
-run_eval_code_obj(PyCodeObject *co, PyObject *globals, PyObject *locals)
+run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, PyObject *locals)
 {
     PyObject *v;
     /*
@@ -1117,14 +1118,14 @@ run_eval_code_obj(PyCodeObject *co, PyObject *globals, PyObject *locals)
 
     /* Set globals['__builtins__'] if it doesn't exist */
     if (globals != NULL && PyDict_GetItemString(globals, "__builtins__") == NULL) {
-        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-        if (PyDict_SetItemString(globals, "__builtins__", interp->builtins) < 0) {
+        if (PyDict_SetItemString(globals, "__builtins__",
+                                 tstate->interp->builtins) < 0) {
             return NULL;
         }
     }
 
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
-    if (!v && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
+    if (!v && _PyErr_Occurred(tstate) == PyExc_KeyboardInterrupt) {
         _Py_UnhandledKeyboardInterrupt = 1;
     }
     return v;
@@ -1134,18 +1135,17 @@ static PyObject *
 run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             PyCompilerFlags *flags, PyArena *arena)
 {
-    PyCodeObject *co;
-    PyObject *v;
-    co = PyAST_CompileObject(mod, filename, flags, -1, arena);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyCodeObject *co = PyAST_CompileObject(mod, filename, flags, -1, arena);
     if (co == NULL)
         return NULL;
 
-    if (PySys_Audit("exec", "O", co) < 0) {
+    if (_PySys_Audit(tstate, "exec", "O", co) < 0) {
         Py_DECREF(co);
         return NULL;
     }
 
-    v = run_eval_code_obj(co, globals, locals);
+    PyObject *v = run_eval_code_obj(tstate, co, globals, locals);
     Py_DECREF(co);
     return v;
 }
@@ -1154,6 +1154,7 @@ static PyObject *
 run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
              PyObject *locals, PyCompilerFlags *flags)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     PyCodeObject *co;
     PyObject *v;
     long magic;
@@ -1182,7 +1183,7 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
     }
     fclose(fp);
     co = (PyCodeObject *)v;
-    v = run_eval_code_obj(co, globals, locals);
+    v = run_eval_code_obj(tstate, co, globals, locals);
     if (v && flags)
         flags->cf_flags |= (co->co_flags & PyCF_MASK);
     Py_DECREF(co);
