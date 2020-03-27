@@ -107,6 +107,8 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj);
 
 #define S_CHAR(c) (c >= ' ' && c <= '~' && c != '\\' && c != '"')
 #define IS_WHITESPACE(c) (((c) == ' ') || ((c) == '\t') || ((c) == '\n') || ((c) == '\r'))
+#define IS_DIGIT(c) (((c) >= '0') && ((c) <= '9'))
+#define IS_ONENINE(c) (((c) >= '1') && ((c) <= '9'))
 
 static Py_ssize_t
 ascii_escape_unichar(Py_UCS4 c, unsigned char *output, Py_ssize_t chars)
@@ -340,7 +342,8 @@ raise_stop_iteration(Py_ssize_t idx)
 }
 
 static PyObject *
-_build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
+_build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) 
+{
     /* return (rval, idx) tuple, stealing reference to rval */
     PyObject *tpl;
     PyObject *pyidx;
@@ -602,7 +605,6 @@ py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr)
     return rval;
 }
 
-
 PyDoc_STRVAR(pydoc_encode_basestring,
     "encode_basestring(string) -> string\n"
     "\n"
@@ -830,7 +832,6 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
     /* only loop if the array is non-empty */
     if (idx > end_idx || PyUnicode_READ(kind, str, idx) != ']') {
         while (1) {
-
             /* read any JSON term  */
             val = scan_once_unicode(s, pystr, idx, &next_idx);
             if (val == NULL)
@@ -937,9 +938,9 @@ _parse_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     }
 
     /* read as many integer digits as we find as long as it doesn't start with 0 */
-    if (PyUnicode_READ(kind, str, idx) >= '1' && PyUnicode_READ(kind, str, idx) <= '9') {
+    if (IS_ONENINE(PyUnicode_READ(kind, str, idx))) {
         idx++;
-        while (idx <= end_idx && PyUnicode_READ(kind, str, idx) >= '0' && PyUnicode_READ(kind, str, idx) <= '9') idx++;
+        while (idx <= end_idx && IS_DIGIT(PyUnicode_READ(kind, str, idx))) idx++;
     }
     /* if it starts with 0 we only expect one integer digit */
     else if (PyUnicode_READ(kind, str, idx) == '0') {
@@ -952,10 +953,10 @@ _parse_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     }
 
     /* if the next char is '.' followed by a digit then read all float digits */
-    if (idx < end_idx && PyUnicode_READ(kind, str, idx) == '.' && PyUnicode_READ(kind, str, idx + 1) >= '0' && PyUnicode_READ(kind, str, idx + 1) <= '9') {
+    if (idx < end_idx && PyUnicode_READ(kind, str, idx) == '.' && IS_DIGIT(PyUnicode_READ(kind, str, idx + 1))) {
         is_float = 1;
         idx += 2;
-        while (idx <= end_idx && PyUnicode_READ(kind, str, idx) >= '0' && PyUnicode_READ(kind, str, idx) <= '9') idx++;
+        while (idx <= end_idx && IS_DIGIT(PyUnicode_READ(kind, str, idx))) idx++;
     }
 
     /* if the next char is 'e' or 'E' then maybe read the exponent (or backtrack) */
@@ -967,10 +968,10 @@ _parse_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
         if (idx < end_idx && (PyUnicode_READ(kind, str, idx) == '-' || PyUnicode_READ(kind, str, idx) == '+')) idx++;
 
         /* read all digits */
-        while (idx <= end_idx && PyUnicode_READ(kind, str, idx) >= '0' && PyUnicode_READ(kind, str, idx) <= '9') idx++;
+        while (idx <= end_idx && IS_DIGIT(PyUnicode_READ(kind, str, idx))) idx++;
 
         /* if we got a digit, then parse as float. if not, backtrack */
-        if (PyUnicode_READ(kind, str, idx - 1) >= '0' && PyUnicode_READ(kind, str, idx - 1) <= '9') {
+        if (IS_DIGIT(PyUnicode_READ(kind, str, idx - 1))) {
             is_float = 1;
         }
         else {
@@ -978,7 +979,7 @@ _parse_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
         }
     }
 
-    if (is_float && s->parse_float != (PyObject *)&PyFloat_Type)
+    if (is_float && s->parse_float != (PyObject *) &PyFloat_Type)
         custom_func = s->parse_float;
     else if (!is_float && s->parse_int != (PyObject *) &PyLong_Type)
         custom_func = s->parse_int;
@@ -1683,7 +1684,6 @@ bail:
     Py_XDECREF(ident);
     return -1;
 }
-
 
 static int
 encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
