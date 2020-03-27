@@ -17,7 +17,7 @@ and :rfc:`7159`) and by
 `ECMA-404 <http://www.ecma-international.org/publications/standards/Ecma-404.htm>`_,
 is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
-(although it is not a strict subset of JavaScript [#rfc-security]_ ).
+(although it is not a strict subset of JavaScript  ).
 
 :mod:`json` exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
@@ -755,10 +755,3 @@ Command line options
    Show the help message.
 
 
-.. rubric:: Footnotes
-
-.. [#rfc-security] As noted in `the security section of RFC 8259
-   <https://tools.ietf.org/html/rfc8259#section-12>`_,
-   JSON permits literal U+2028 (LINE SEPARATOR) and
-   U+2029 (PARAGRAPH SEPARATOR) characters in strings, whereas JavaScript
-   (as of ECMAScript Edition 5.1) does not.
