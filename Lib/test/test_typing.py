@@ -361,10 +361,8 @@ class UnionTests(BaseTestCase):
     def test_etree(self):
         # See https://github.com/python/typing/issues/229
         # (Only relevant for Python 2.)
-        try:
-            from xml.etree.ElementTree import Element
-        except ImportError:
-            raise SkipTest("ElementTree not found")
+        from xml.etree.ElementTree import Element
+        
         Union[Element, str]  # Shouldn't crash
 
         def Elem(*args):
