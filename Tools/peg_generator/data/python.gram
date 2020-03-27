@@ -11,7 +11,7 @@ simple_stmt[asdl_seq*]:
     | a=';'.small_stmt+ [';'] NEWLINE { a }
 # NOTE: assignment MUST precede expression, else parsing a simple assignment
 # will throw a SyntaxError.
-small_stmt[stmt_ty]:
+small_stmt[stmt_ty] (memo):
     | assignment
     | e=expressions { _Py_Expr(e, EXTRA) }
     | &'return' return_stmt
@@ -180,7 +180,7 @@ name_with_optional_default[NameDefaultPair*]:
 names_with_default[asdl_seq*]: a=','.name_with_default+ { a }
 name_with_default[NameDefaultPair*]:
     | n=plain_name '=' e=expression { name_default_pair(p, n, e) }
-plain_names[asdl_seq*]: a=','.(plain_name !'=')+ { a }
+plain_names[asdl_seq*] (memo): a=','.(plain_name !'=')+ { a }
 plain_name[arg_ty]:
     | a=NAME b=[':' z=annotation { z }] { _Py_arg(a->v.Name.id, b, NULL, EXTRA) }
 kwds[arg_ty]:
@@ -199,7 +199,7 @@ class_def_raw[stmt_ty]:
                      (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                      c, NULL, EXTRA) }
 
-block[asdl_seq*]: NEWLINE INDENT a=statements DEDENT { a } | simple_stmt
+block[asdl_seq*] (memo): NEWLINE INDENT a=statements DEDENT { a } | simple_stmt
 
 expressions_list[asdl_seq*]: a=','.star_expression+ [','] { a }
 expressions[expr_ty]:
@@ -207,7 +207,7 @@ expressions[expr_ty]:
         _Py_Tuple(CHECK(seq_insert_in_front(p, a, b)), Load, EXTRA) }
     | a=star_expression ',' { _Py_Tuple(CHECK(singleton_seq(p, a)), Load, EXTRA) }
     | star_expression
-star_expression[expr_ty]:
+star_expression[expr_ty] (memo):
     | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
     | expression
 
@@ -219,7 +219,7 @@ named_expression[expr_ty]:
     | a=NAME ':=' b=expression { _Py_NamedExpr(CHECK(set_expr_context(p, a, Store)), b, EXTRA) }
     | expression
 annotated_rhs[expr_ty]: yield_expr | expressions
-expression[expr_ty]:
+expression[expr_ty] (memo):
     | a=disjunction 'if' b=disjunction 'else' c=expression { _Py_IfExp(b, a, c, EXTRA) }
     | disjunction
     | lambdef
@@ -253,19 +253,19 @@ lambda_plain_names[asdl_seq*]: a=','.(lambda_plain_name !'=')+ { a }
 lambda_plain_name[arg_ty]: a=NAME { _Py_arg(a->v.Name.id, NULL, NULL, EXTRA) }
 lambda_kwds[arg_ty]: '**' a=lambda_plain_name { a }
 
-disjunction[expr_ty]:
+disjunction[expr_ty] (memo):
     | a=conjunction b=('or' c=conjunction { c })+ { _Py_BoolOp(
         Or,
         CHECK(seq_insert_in_front(p, a, b)),
         EXTRA) }
     | conjunction
-conjunction[expr_ty]:
+conjunction[expr_ty] (memo):
     | a=inversion b=('and' c=inversion { c })+ { _Py_BoolOp(
         And,
         CHECK(seq_insert_in_front(p, a, b)),
         EXTRA) }
     | inversion
-inversion[expr_ty]:
+inversion[expr_ty] (memo):
     | 'not' a=inversion { _Py_UnaryOp(Not, a, EXTRA) }
     | comparison
 comparison[expr_ty]:
@@ -319,7 +319,7 @@ term[expr_ty]:
     | a=term '%' b=factor { _Py_BinOp(a, Mod, b, EXTRA) }
     | a=term '@' b=factor { _Py_BinOp(a, MatMult, b, EXTRA) }
     | factor
-factor[expr_ty]:
+factor[expr_ty] (memo):
     | '+' a=factor { _Py_UnaryOp(UAdd, a, EXTRA) }
     | '-' a=factor { _Py_UnaryOp(USub, a, EXTRA) }
     | '~' a=factor { _Py_UnaryOp(Invert, a, EXTRA) }
@@ -327,7 +327,7 @@ factor[expr_ty]:
 power[expr_ty]:
     | a=await_primary '**' b=factor { _Py_BinOp(a, Pow, b, EXTRA) }
     | await_primary
-await_primary[expr_ty]:
+await_primary[expr_ty] (memo):
     | AWAIT a=primary { _Py_Await(a, EXTRA) }
     | primary
 primary[expr_ty]:
@@ -389,7 +389,7 @@ yield_expr[expr_ty]:
     | 'yield' 'from' a=expression { _Py_YieldFrom(a, EXTRA) }
     | 'yield' a=[expressions] { _Py_Yield(a, EXTRA) }
 
-arguments[expr_ty]:
+arguments[expr_ty] (memo):
     | a=args [','] { a }
 args[expr_ty]:
     | a=starred_expression b=[',' c=args { c }] {

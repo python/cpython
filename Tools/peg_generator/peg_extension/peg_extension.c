@@ -93,9 +93,48 @@ error:
     return result;
 }
 
+static PyObject *
+clear_memo_stats()
+{
+    clear_memo_statistics();
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+get_memo_stats()
+{
+    return get_memo_statistics();
+}
+
+// TODO: Write to Python's sys.stdout instead of C's stdout.
+static PyObject *
+dump_memo_stats()
+{
+    PyObject *list = get_memo_statistics();
+    if (list == NULL) {
+        return NULL;
+    }
+    Py_ssize_t len = PyList_Size(list);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        PyObject *value = PyList_GetItem(list, i);  // Borrowed reference.
+        long count = PyLong_AsLong(value);
+        if (count < 0) {
+            break;
+        }
+        if (count > 0) {
+            printf("%4ld %9ld\n", i, count);
+        }
+    }
+    Py_DECREF(list);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef ParseMethods[] = {
     {"parse_file", (PyCFunction)(void(*)(void))parse_file, METH_VARARGS|METH_KEYWORDS, "Parse a file."},
     {"parse_string", (PyCFunction)(void(*)(void))parse_string, METH_VARARGS|METH_KEYWORDS, "Parse a string."},
+    {"clear_memo_stats", clear_memo_stats, METH_NOARGS},
+    {"dump_memo_stats", dump_memo_stats, METH_NOARGS},
+    {"get_memo_stats", get_memo_stats, METH_NOARGS},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

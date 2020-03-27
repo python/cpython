@@ -239,6 +239,43 @@ fill_token(Parser *p)
     return 0;
 }
 
+// Instrumentation to count the effectiveness of memoization.
+// The array counts the number of tokens skipped by memoization,
+// indexed by type.
+
+#define NSTATISTICS 2000
+static long memo_statistics[NSTATISTICS];
+
+void
+clear_memo_statistics()
+{
+    for (int i = 0; i < NSTATISTICS; i++) {
+        memo_statistics[i] = 0;
+    }
+}
+
+PyObject *
+get_memo_statistics()
+{
+    PyObject *ret = PyList_New(NSTATISTICS);
+    if (ret == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < NSTATISTICS; i++) {
+        PyObject *value = PyLong_FromLong(memo_statistics[i]);
+        if (value == NULL) {
+            Py_DECREF(ret);
+            return NULL;
+        }
+        // PyList_SetItem borrows a reference to value.
+        if (PyList_SetItem(ret, i, value) < 0) {
+            Py_DECREF(ret);
+            return NULL;
+        }
+    }
+    return ret;
+}
+
 int  // bool
 is_memoized(Parser *p, int type, void *pres)
 {
@@ -252,6 +289,14 @@ is_memoized(Parser *p, int type, void *pres)
 
     for (Memo *m = t->memo; m != NULL; m = m->next) {
         if (m->type == type) {
+            if (0 <= type && type < NSTATISTICS) {
+                long count = m->mark - p->mark;
+                // A memoized negative result counts for one.
+                if (count <= 0) {
+                    count = 1;
+                }
+                memo_statistics[type] += count;
+            }
             p->mark = m->mark;
             *(void **)(pres) = m->node;
             // fprintf(stderr, "%d < %d: memoized!\n", p->mark, p->fill);

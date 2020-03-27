@@ -50,6 +50,10 @@ parse: peg_extension/parse.c
 check: peg_extension/parse.c
 	$(PYTHON) -c "from peg_extension import parse; t = parse.parse_file('$(TESTFILE)', mode=0)"
 
+stats: peg_extension/parse.c
+	$(PYTHON) -c "from peg_extension import parse; t = parse.parse_file('$(TIMEFILE)', mode=0); parse.dump_memo_stats()" >@data
+	$(PYTHON) scripts/joinstats.py @data
+
 time: time_compile
 
 time_compile: peg_extension/parse.c
@@ -92,7 +96,7 @@ mypy: regen-metaparser
 	$(MYPY)  # For list of files, see mypy.ini
 
 format-python:
-	black pegen test scripts
+	black pegen scripts
 
 bench: cpython
 	$(MAKE) -s test_global 2>/dev/null
