@@ -1,0 +1,2 @@
+This test was skipped because cElementTree was deprecated and removed in Python 3 with 36543. So the skipped test was removed.
+Patch by Furkan Onder
