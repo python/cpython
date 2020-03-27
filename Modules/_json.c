@@ -1166,8 +1166,7 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:make_scanner", kwlist, &ctx))
         return NULL;
 
-    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
-    s = (PyScannerObject *)alloc_func(type, 0);
+    s = (PyScannerObject *)type->tp_alloc(type, 0);
     if (s == NULL) {
         return NULL;
     }
@@ -1220,8 +1219,7 @@ static PyType_Slot PyScannerType_slots[] = {
     {0, 0}
 };
 
-static
-PyType_Spec PyScannerType_spec = {
+static PyType_Spec PyScannerType_spec = {
     .name = "_json.Scanner",
     .basicsize = sizeof(PyScannerObject),
     .itemsize =0,
@@ -1252,8 +1250,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
-    s = (PyEncoderObject *)alloc_func(type, 0);
+    s = (PyEncoderObject *)type->tp_alloc(type, 0);
     if (s == NULL)
         return NULL;
 
@@ -1812,27 +1809,31 @@ PyDoc_STRVAR(module_doc,
 static int
 _json_exec(PyObject *module)
 {
-    PyObject *PyScannerType = PyType_FromSpec(&PyScannerType_spec);
-    if (PyScannerType == NULL) {
-        return -1;
-    }
-    get_json_state(module)->PyScannerType = PyScannerType;
-    Py_INCREF(PyScannerType);
-    if (PyModule_AddObject(module, "make_scanner", get_json_state(module)->PyScannerType) < 0) {
-        Py_DECREF((PyObject*)&PyScannerType);
+    _jsonmodulestate *state = get_json_state(module);
+    if (state == NULL) {
         return -1;
     }
 
-    PyObject *PyEncoderType = PyType_FromSpec(&PyEncoderType_spec);
-    if (PyEncoderType == NULL) {
+    state->PyScannerType = PyType_FromSpec(&PyScannerType_spec);
+    if (state->PyScannerType == NULL) {
         return -1;
     }
-    get_json_state(module)->PyEncoderType = PyEncoderType;
-    Py_INCREF(PyEncoderType);
-    if (PyModule_AddObject(module, "make_encoder", get_json_state(module)->PyEncoderType) < 0) {
-        Py_DECREF((PyObject*)&PyEncoderType);
+    Py_INCREF(state->PyScannerType);
+    if (PyModule_AddObject(module, "make_scanner", state->PyScannerType) < 0) {
+        Py_DECREF((PyObject*)state->PyScannerType);
         return -1;
     }
+
+    state->PyEncoderType = PyType_FromSpec(&PyEncoderType_spec);
+    if (state->PyEncoderType == NULL) {
+        return -1;
+    }
+    Py_INCREF(state->PyEncoderType);
+    if (PyModule_AddObject(module, "make_encoder", state->PyEncoderType) < 0) {
+        Py_DECREF((PyObject*)state->PyEncoderType);
+        return -1;
+    }
+
     return 0;
 }
 
