@@ -1397,5 +1397,55 @@ class InterruptMainTests(unittest.TestCase):
             signal.signal(signal.SIGINT, handler)
 
 
+class AtexitTests(unittest.TestCase):
+
+    def test_atexit_output(self):
+        rc, out, err = assert_python_ok("-c", """if True:
+            import threading
+
+            def run_last():
+                print('parrot')
+
+            threading._register_atexit(run_last)
+        """)
+
+        self.assertFalse(err)
+        self.assertEqual(out.strip(), b'parrot')
+
+    def test_atexit_called_once(self):
+        rc, out, err = assert_python_ok("-c", """if True:
+            import threading
+            from unittest.mock import Mock
+
+            mock = Mock()
+            threading._register_atexit(mock)
+            mock.assert_not_called()
+            # force early shutdown to ensure it was called once
+            threading._shutdown()
+            mock.assert_called_once()
+        """)
+
+        self.assertFalse(err)
+
+    def test_atexit_after_shutdown(self):
+        # The only way to do this is by registering an atexit within
+        # an atexit, which is intended to raise an exception.
+        rc, out, err = assert_python_ok("-c", """if True:
+            import threading
+
+            def func():
+                pass
+
+            def run_last():
+                threading._register_atexit(func)
+
+            threading._register_atexit(run_last)
+        """)
+
+        self.assertTrue(err)
+        self.assertIn("RuntimeError: can't register atexit after shutdown",
+                err.decode())
+
+
 if __name__ == "__main__":
     unittest.main()

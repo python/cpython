@@ -195,6 +195,11 @@ which have not started running, instead of waiting for them to complete before
 shutting down the executor.
 (Contributed by Kyle Stanley in :issue:`39349`.)
 
+Removed daemon threads from :class:`~concurrent.futures.ThreadPoolExecutor`
+and :class:`~concurrent.futures.ProcessPoolExecutor`. This improves
+compatibility with subinterpreters and predictability in their shutdown
+processes. (Contributed by Kyle Stanley in :issue:`39812`.)
+
 curses
 ------
 
