@@ -25,6 +25,9 @@ def to_tuple(t):
         result.append(to_tuple(getattr(t, f)))
     return tuple(result)
 
+STDLIB = os.path.dirname(ast.__file__)
+STDLIB_FILES = [fn for fn in os.listdir(STDLIB) if fn.endswith(".py")]
+STDLIB_FILES.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
 
 # These tests are compiled through "exec"
 # There should be at least one test per statement
@@ -653,6 +656,63 @@ class AST_Tests(unittest.TestCase):
         expressions = [f"     | {node.__doc__}" for node in ast.expr.__subclasses__()]
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
+
+    def test_compare_basis(self):
+        self.assertEqual(ast.parse("x = 10"), ast.parse("x = 10"))
+        self.assertNotEqual(ast.parse("x = 10"), ast.parse(""))
+        self.assertNotEqual(ast.parse("x = 10"), ast.parse("x"))
+        self.assertNotEqual(ast.parse("x = 10;y = 20"), ast.parse("class C:pass"))
+
+    def test_compare_literals(self):
+        constants = (-20, 20, 20.0, 1, 1.0, True, 0, False, frozenset(), tuple(), "ABCD", "abcd", "中文字", 1e1000, -1e1000)
+        for next_index, constant in enumerate(constants[:-1], 1):
+            self.assertEqual(ast.Constant(constant), ast.Constant(constant))
+            next_constant = constants[next_index]
+            self.assertNotEqual(ast.Constant(constant), ast.Constant(next_constant))
+
+    def test_compare_operators(self):
+        self.assertEqual(ast.Add(), ast.Add())
+        self.assertEqual(ast.Sub(), ast.Sub())
+
+        self.assertNotEqual(ast.Add(), ast.Sub())
+        self.assertNotEqual(ast.Add(), ast.Constant())
+
+    def test_compare_stdlib(self):
+        if test.support.is_resource_enabled("cpu"):
+            files = STDLIB_FILES
+        else:
+            files = random.sample(STDLIB_FILES, 10)
+
+        for module in STDLIB_FILES:
+            with self.subTest(module):
+                fn = os.path.join(STDLIB, module)
+                with open(fn) as fp:
+                    source = fp.read()
+                a = ast.parse(source, fn)
+                b = ast.parse(source, fn)
+                self.assertEqual(a, b, f"{ast.dump(a)} != {ast.dump(b)}")
+                self.assertFalse(a != b)
+
+    def test_exec_compare(self):
+        for source in exec_tests:
+            a = ast.parse(source, mode="exec")
+            b = ast.parse(source, mode="exec")
+            self.assertEqual(a, b, f"{ast.dump(a)} != {ast.dump(b)}")
+            self.assertFalse(a != b)
+
+    def test_single_compare(self):
+        for source in single_tests:
+            a = ast.parse(source, mode="single")
+            b = ast.parse(source, mode="single")
+            self.assertEqual(a, b, f"{ast.dump(a)} != {ast.dump(b)}")
+            self.assertFalse(a != b)
+
+    def test_eval_compare(self):
+        for source in eval_tests:
+            a = ast.parse(source, mode="eval")
+            b = ast.parse(source, mode="eval")
+            self.assertEqual(a, b, f"{ast.dump(a)} != {ast.dump(b)}")
+            self.assertFalse(a != b)
 
 
 class ASTHelpers_Test(unittest.TestCase):
@@ -1369,12 +1429,9 @@ class ASTValidatorTests(unittest.TestCase):
         self.expr(ast.NameConstant(4))
 
     def test_stdlib_validates(self):
-        stdlib = os.path.dirname(ast.__file__)
-        tests = [fn for fn in os.listdir(stdlib) if fn.endswith(".py")]
-        tests.extend(["test/test_grammar.py", "test/test_unpack_ex.py"])
-        for module in tests:
+        for module in STDLIB_FILES:
             with self.subTest(module):
-                fn = os.path.join(stdlib, module)
+                fn = os.path.join(STDLIB, module)
                 with open(fn, "r", encoding="utf-8") as fp:
                     source = fp.read()
                 mod = ast.parse(source, fn)

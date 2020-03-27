@@ -1177,6 +1177,56 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     return Py_BuildValue("O()", Py_TYPE(self));
 }
 
+static PyObject *
+ast_richcompare(PyObject *self, PyObject *other, int op)
+{
+    int i, len;
+    PyObject *fields, *key, *a = Py_None, *b = Py_None;
+    /* Check operator */
+    if ((op != Py_EQ && op != Py_NE) ||
+         !PyAST_Check(self) ||
+         !PyAST_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    /* Compare types */
+    if (Py_TYPE(self) != Py_TYPE(other)) {
+        if (op == Py_EQ)
+            Py_RETURN_FALSE;
+        else
+            Py_RETURN_TRUE;
+    }
+    /* Compare fields */
+    fields = PyObject_GetAttrString(self, "_fields");
+    len = PySequence_Size(fields);
+    for (i = 0; i < len; ++i) {
+        key = PySequence_GetItem(fields, i);
+        if (PyObject_HasAttr(self, key))
+            a = PyObject_GetAttr(self, key);
+        if (PyObject_HasAttr(other, key))
+            b = PyObject_GetAttr(other, key);
+        /* Check filed value type */
+        if (Py_TYPE(a) != Py_TYPE(b)) {
+            if (op == Py_EQ) {
+                Py_RETURN_FALSE;
+            }
+        }
+        if (op == Py_EQ) {
+            if (!PyObject_RichCompareBool(a, b, Py_EQ)) {
+                Py_RETURN_FALSE;
+            }
+        }
+        else if (op == Py_NE) {
+            if (PyObject_RichCompareBool(a, b, Py_NE)) {
+                Py_RETURN_TRUE;
+            }
+        }
+    }
+    if (op == Py_EQ)
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
+}
+
 static PyMemberDef ast_type_members[] = {
     {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
     {NULL}  /* Sentinel */
@@ -1205,6 +1255,7 @@ static PyType_Slot AST_type_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, PyType_GenericNew},
     {Py_tp_free, PyObject_GC_Del},
+    {Py_tp_richcompare, ast_richcompare},
     {0, 0},
 };
 
