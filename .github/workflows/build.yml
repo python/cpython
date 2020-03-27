@@ -48,19 +48,19 @@ jobs:
   #   - name: Tests
   #     run: .\PCbuild\rt.bat -x64 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
-  # build_macos:
-  #   name: 'macOS'
-  #   runs-on: macos-latest
-  #   steps:
-  #   - uses: actions/checkout@v1
-  #   - name: Configure CPython
-  #     run: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev
-  #   - name: Build CPython
-  #     run: make -j4
-  #   - name: Display build info
-  #     run: make pythoninfo
-  #   - name: Tests
-  #     run: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+  build_macos:
+    name: 'macOS'
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Configure CPython
+      run: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Tests
+      run: make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
   build_ubuntu:
     name: 'Ubuntu'
