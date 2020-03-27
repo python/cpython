@@ -897,13 +897,17 @@ class ThreadJoinOnShutdown(BaseTestCase):
         # Issue #13817: fork() would deadlock in a multithreaded program with
         # the ad-hoc TLS implementation.
 
+        all_status = []
+
         def do_fork_and_wait():
             # just fork a child process and wait it
             pid = os.fork()
-            if pid > 0:
-                os.waitpid(pid, 0)
-            else:
+            if not pid:
+                # child process: just exit
                 os._exit(0)
+
+            pid, status = os.waitpid(pid, 0)
+            all_status.append(status)
 
         # start a bunch of threads that will fork() child processes
         threads = []
@@ -914,6 +918,10 @@ class ThreadJoinOnShutdown(BaseTestCase):
 
         for t in threads:
             t.join()
+
+        # ensure that all child processes completed successfully (no crash)
+        for status in all_status:
+            self.assertEqual(status, 0)
 
     @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
     def test_clear_threads_states_after_fork(self):

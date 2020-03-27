@@ -1,0 +1,2 @@
+test_reinit_tls_after_fork() of test_threading now checks if a child process
+crashed in os.fork().
