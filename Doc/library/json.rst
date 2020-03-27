@@ -12,11 +12,12 @@
 --------------
 
 `JSON (JavaScript Object Notation) <http://json.org>`_, specified by
-:rfc:`7159` (which obsoletes :rfc:`4627`) and by
+`STD 90 <https://tools.ietf.org/html/std90>`_ or :rfc:`8259` (which obsoletes :rfc:`4627`
+and :rfc:`7159`) and by
 `ECMA-404 <http://www.ecma-international.org/publications/standards/Ecma-404.htm>`_,
 is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
-(although it is not a strict subset of JavaScript [#rfc-errata]_ ).
+(although it is not a strict subset of JavaScript [#rfc-security]_ ).
 
 :mod:`json` exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
@@ -544,7 +545,7 @@ Exceptions
 Standard Compliance and Interoperability
 ----------------------------------------
 
-The JSON format is specified by :rfc:`7159` and by
+The JSON format is specified by :rfc:`8259` and by
 `ECMA-404 <http://www.ecma-international.org/publications/standards/Ecma-404.htm>`_.
 This section details this module's level of compliance with the RFC.
 For simplicity, :class:`JSONEncoder` and :class:`JSONDecoder` subclasses, and
@@ -633,7 +634,7 @@ Top-level Non-Object, Non-Array Values
 The old version of JSON specified by the obsolete :rfc:`4627` required that
 the top-level value of a JSON text must be either a JSON object or array
 (Python :class:`dict` or :class:`list`), and could not be a JSON null,
-boolean, number, or string value.  :rfc:`7159` removed that restriction, and
+boolean, number, or string value.  :rfc:`8259` does not have that restriction, and
 this module does not and has never implemented that restriction in either its
 serializer or its deserializer.
 
@@ -756,8 +757,8 @@ Command line options
 
 .. rubric:: Footnotes
 
-.. [#rfc-errata] As noted in `the errata for RFC 7159
-   <https://www.rfc-editor.org/errata_search.php?rfc=7159>`_,
+.. [#rfc-security] As noted in `the security section of RFC 8259
+   <https://tools.ietf.org/html/rfc8259#section-12>`_,
    JSON permits literal U+2028 (LINE SEPARATOR) and
    U+2029 (PARAGRAPH SEPARATOR) characters in strings, whereas JavaScript
    (as of ECMAScript Edition 5.1) does not.
