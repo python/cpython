@@ -30,117 +30,15 @@ EXTENSION_PREFIX = """\
 """
 
 EXTENSION_SUFFIX = """
-PyObject *
-_build_return_object(mod_ty module, int mode, PyObject *filename_ob, PyArena *arena)
+void *
+parse(Parser *p)
 {
-    if (mode == 2) {
-        return (PyObject *)PyAST_CompileObject(module, filename_ob, NULL, -1, arena);
-    } else if (mode == 1) {
-        return PyAST_mod2obj(module);
-    } else {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
+    // Initialize keywords
+    p->keywords = reserved_keywords;
+    p->n_keyword_lists = n_keyword_lists;
+
+    return start_rule(p);
 }
-
-static PyObject *
-parse_file(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *keywords[] = {"file", "mode", NULL};
-    const char *filename;
-    int mode = %(mode)s;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|i", keywords, &filename, &mode)) {
-        return NULL;
-    }
-    if (mode < 0 || mode > %(mode)s) {
-        return PyErr_Format(PyExc_ValueError, "Bad mode, must be 0 <= mode <= %(mode)s");
-    }
-
-    PyArena *arena = PyArena_New();
-    if (arena == NULL) {
-        return NULL;
-    }
-
-    PyObject *result = NULL;
-
-    PyObject *filename_ob = PyUnicode_FromString(filename);
-    if (filename_ob == NULL) {
-        goto error;
-    }
-
-    mod_ty res = run_parser_from_file(filename, start_rule, filename_ob, arena);
-    if (res == NULL) {
-        goto error;
-    }
-
-    result = _build_return_object(res, mode, filename_ob, arena);
-
-error:
-    Py_XDECREF(filename_ob);
-    PyArena_Free(arena);
-    return result;
-}
-
-static PyObject *
-parse_string(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *keywords[] = {"str", "mode", NULL};
-    const char *the_string;
-    int mode = %(mode)s;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|i", keywords, &the_string, &mode)) {
-        return NULL;
-    }
-    if (mode < 0 || mode > %(mode)s) {
-        return PyErr_Format(PyExc_ValueError, "Bad mode, must be 0 <= mode <= %(mode)s");
-    }
-
-    PyArena *arena = PyArena_New();
-    if (arena == NULL) {
-        return NULL;
-    }
-
-    PyObject *result = NULL;
-
-    PyObject *filename_ob = PyUnicode_FromString("<string>");
-    if (filename_ob == NULL) {
-        goto error;
-    }
-
-    mod_ty res = run_parser_from_string(the_string, start_rule, filename_ob, arena);
-    if (res == NULL) {
-        goto error;
-    }
-    result = _build_return_object(res, mode, filename_ob, arena);
-
-error:
-    Py_XDECREF(filename_ob);
-    PyArena_Free(arena);
-    return result;
-}
-
-static PyMethodDef ParseMethods[] = {
-    {"parse_file", (PyCFunction)(void(*)(void))parse_file, METH_VARARGS|METH_KEYWORDS, "Parse a file."},
-    {"parse_string", (PyCFunction)(void(*)(void))parse_string, METH_VARARGS|METH_KEYWORDS, "Parse a string."},
-    {NULL, NULL, 0, NULL}        /* Sentinel */
-};
-
-static struct PyModuleDef parsemodule = {
-    PyModuleDef_HEAD_INIT,
-    .m_name = "%(modulename)s",
-    .m_doc = "A parser.",
-    .m_methods = ParseMethods,
-};
-
-PyMODINIT_FUNC
-PyInit_%(modulename)s(void)
-{
-    PyObject *m = PyModule_Create(&parsemodule);
-    if (m == NULL)
-        return NULL;
-    return m;
-}
-
-// The end
 """
 
 

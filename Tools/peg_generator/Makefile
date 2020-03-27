@@ -1,4 +1,11 @@
-PYTHON ?= python3.8
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	PYTHON ?= ../../python
+endif
+ifeq ($(UNAME_S),Darwin)
+	PYTHON ?= ../../python.exe
+endif
+
 CPYTHON ?= ../..
 MYPY ?= mypy
 
@@ -8,22 +15,22 @@ TIMEFILE = data/xxl.py
 TESTDIR = .
 TESTFLAGS = --short
 
-build: peg_parser/parse.c
+build: peg_extension/parse.c
 
-peg_parser/parse.c: $(GRAMMAR) pegen/*.py peg_parser/pegen.c peg_parser/parse_string.c peg_parser/*.h pegen/grammar_parser.py
-	$(PYTHON) -m pegen -q -c $(GRAMMAR) -o peg_parser/parse.c --compile-extension
+peg_extension/parse.c: $(GRAMMAR) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen/pegen.c ../../Parser/pegen/parse_string.c ../../Parser/pegen/*.h pegen/grammar_parser.py
+	$(PYTHON) -m pegen -q -c $(GRAMMAR) -o peg_extension/parse.c --compile-extension
 
 clean:
-	-rm -f peg_parser/*.o peg_parser/*.so peg_parser/parse.c
+	-rm -f peg_extension/*.o peg_extension/*.so peg_extension/parse.c
 
-dump: peg_parser/parse.c
+dump: peg_extension/parse.c
 	cat -n $(TESTFILE)
-	$(PYTHON) -c "from peg_parser import parse; import ast; t = parse.parse_file('$(TESTFILE)', mode=1); print(ast.dump(t))"
+	$(PYTHON) -c "from peg_extension import parse; import ast; t = parse.parse_file('$(TESTFILE)', mode=1); print(ast.dump(t))"
 
 regen-metaparser: pegen/metagrammar.gram pegen/*.py
 	$(PYTHON) -m pegen -q -c pegen/metagrammar.gram -o pegen/grammar_parser.py
 
-# Note: These targets really depend on the generated shared object in peg_parser/parse.*.so but
+# Note: These targets really depend on the generated shared object in peg_extension/parse.*.so but
 # this has different names in different systems so we are abusing the implicit dependency on
 # parse.c by the use of --compile-extension.
 
@@ -31,28 +38,28 @@ regen-metaparser: pegen/metagrammar.gram pegen/*.py
 
 test: run
 
-run: peg_parser/parse.c
-	$(PYTHON) -c "from peg_parser import parse; t = parse.parse_file('$(TESTFILE)'); exec(t)"
+run: peg_extension/parse.c
+	$(PYTHON) -c "from peg_extension import parse; t = parse.parse_file('$(TESTFILE)'); exec(t)"
 
-compile: peg_parser/parse.c
-	$(PYTHON) -c "from peg_parser import parse; t = parse.parse_file('$(TESTFILE)', mode=2)"
+compile: peg_extension/parse.c
+	$(PYTHON) -c "from peg_extension import parse; t = parse.parse_file('$(TESTFILE)', mode=2)"
 
-parse: peg_parser/parse.c
-	$(PYTHON) -c "from peg_parser import parse; t = parse.parse_file('$(TESTFILE)', mode=1)"
+parse: peg_extension/parse.c
+	$(PYTHON) -c "from peg_extension import parse; t = parse.parse_file('$(TESTFILE)', mode=1)"
 
-check: peg_parser/parse.c
-	$(PYTHON) -c "from peg_parser import parse; t = parse.parse_file('$(TESTFILE)', mode=0)"
+check: peg_extension/parse.c
+	$(PYTHON) -c "from peg_extension import parse; t = parse.parse_file('$(TESTFILE)', mode=0)"
 
 time: time_compile
 
-time_compile: peg_parser/parse.c
-	/usr/bin/time -l $(PYTHON) -c "from peg_parser import parse; parse.parse_file('$(TIMEFILE)', mode=2)"
+time_compile: peg_extension/parse.c
+	/usr/bin/time -l $(PYTHON) -c "from peg_extension import parse; parse.parse_file('$(TIMEFILE)', mode=2)"
 
-time_parse: peg_parser/parse.c
-	/usr/bin/time -l $(PYTHON) -c "from peg_parser import parse; parse.parse_file('$(TIMEFILE)', mode=1)"
+time_parse: peg_extension/parse.c
+	/usr/bin/time -l $(PYTHON) -c "from peg_extension import parse; parse.parse_file('$(TIMEFILE)', mode=1)"
 
-time_check: peg_parser/parse.c
-	/usr/bin/time -l $(PYTHON) -c "from peg_parser import parse; parse.parse_file('$(TIMEFILE)', mode=0)"
+time_check: peg_extension/parse.c
+	/usr/bin/time -l $(PYTHON) -c "from peg_extension import parse; parse.parse_file('$(TIMEFILE)', mode=0)"
 
 time_stdlib: time_stdlib_compile
 
@@ -92,26 +99,7 @@ bench: cpython
 	$(MAKE) -s test_global 2>/dev/null
 	$(MAKE) -s test_global 2>/dev/null
 
-# To install clang-format:
-#    on mac: "brew install clang-format"
-#    on ubuntu: "apt-get install clang-format"
-#    on arch: "pacman -S clang"
-format-c:
-	clang-format peg_parser/pegen.c -i
-
-# To install clang-tidy:
-#    on mac:
-#       "brew install llvm"
-#       Then, create symlinks to the binaries. For example:
-#       ln -s "$(brew --prefix llvm)/bin/clang-format" "/usr/local/bin/clang-format"
-#       ln -s "$(brew --prefix llvm)/bin/clang-tidy" "/usr/local/bin/clang-tidy"
-#    on ubuntu: "apt-get install clang-tidy"
-#    on arch: "pacman -S clang"
-clang-tidy:
-	$(eval COMPILE_OPTIONS = $(shell python-config --cflags))
-	clang-tidy peg_parser/pegen.c -fix-errors -fix -checks="readability-braces-around-statements" -- $(COMPILE_OPTIONS) 1>/dev/null
-
-format: format-python format-c
+format: format-python
 
 find_max_nesting:
 	$(PYTHON) scripts/find_max_nesting.py

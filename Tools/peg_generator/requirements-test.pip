@@ -1,6 +1,0 @@
--r requirements.pip
-coveralls==1.8.2
-mypy==0.740
-pytest==5.2.2
-pytest-cov==2.8.1
-black==19.10b0

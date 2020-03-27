@@ -6,8 +6,7 @@ import sys
 import textwrap
 import tokenize
 
-from typing import Any, cast, Dict, IO, Type
-from typing_extensions import Final
+from typing import Any, cast, Dict, IO, Type, Final
 
 from pegen.build import compile_c_extension
 from pegen.c_generator import CParserGenerator

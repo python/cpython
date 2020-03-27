@@ -48,11 +48,19 @@ def compile_c_extension(
         Extension(
             extension_name,
             sources=[
-                str(MOD_DIR.parent / "peg_parser" / "pegen.c"),
-                str(MOD_DIR.parent / "peg_parser" / "parse_string.c"),
+                str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
+                str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer.c"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen" / "pegen.c"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen" / "parse_string.c"),
+                str(MOD_DIR.parent / "peg_extension" / "peg_extension.c"),
                 generated_source_path,
             ],
-            include_dirs=[str(MOD_DIR.parent / "peg_parser")],
+            include_dirs=[
+                str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
+                str(MOD_DIR.parent.parent.parent / "Parser"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen"),
+            ],
             extra_compile_args=extra_compile_args,
         )
     ]

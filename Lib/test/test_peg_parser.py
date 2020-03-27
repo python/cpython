@@ -579,6 +579,33 @@ GOOD_BUT_FAIL_TEST_CASES = [
      """),
 ]
 
+FSTRINGS_TRACEBACKS = {
+    'multiline_fstrings_same_line_with_brace': (
+        """
+            f'''
+            {a$b}
+            '''
+        """,
+        '(a$b)',
+    ),
+    'multiline_fstring_brace_on_next_line': (
+        """
+            f'''
+            {a$b
+            }'''
+        """,
+        '(a$b',
+    ),
+    'multiline_fstring_brace_on_previous_line': (
+        """
+            f'''
+            {
+            a$b}'''
+        """,
+        'a$b)',
+    ),
+}
+
 
 def cleanup_source(source: Any) -> str:
     if isinstance(source, str):
@@ -648,3 +675,9 @@ class ASTGenerationTest(unittest.TestCase):
                 ast.dump(expected_ast),
                 f"Wrong AST generation for source: {source}",
             )
+
+    def test_fstring_parse_error_tracebacks(self) -> None:
+        for source, error_text in FSTRINGS_TRACEBACKS.values():
+            with self.assertRaises(SyntaxError) as se:
+                peg_parser.parse_string(dedent(source))
+            self.assertEqual(error_text, se.exception.text)
