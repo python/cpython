@@ -667,7 +667,7 @@ Removed
   Use ``iter(x)`` or ``list(x)`` instead of ``x.getchildren()`` and
   ``x.iter()`` or ``list(x.iter())`` instead of ``x.getiterator()``.
   The ``xml.etree.cElementTree`` module has been removed,
-  use the ``xml.etree.ElementTree`` module instead.
+  use the :mod:`xml.etree.ElementTree` module instead.
   Since Python 3.3 the ``xml.etree.cElementTree`` module has been deprecated,
   the ``xml.etree.ElementTree`` module uses a fast implementation whenever
   available.
