@@ -16,7 +16,7 @@ except ImportError:
 if sys.platform == 'win32':
     try:
         import ctypes
-        PROCESS_SYSTEM_DPI_AWARE = 1
+        PROCESS_SYSTEM_DPI_AWARE = 1  # Int required.
         ctypes.OleDLL('shcore').SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
     except (ImportError, AttributeError, OSError):
         pass
@@ -676,7 +676,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runsource(self, source):
         "Extend base class method: Stuff the source in the line cache first"
         filename = self.stuffsource(source)
-        self.more = 0
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
         # InteractiveInterpreter.runsource() calls its runcode() method,
