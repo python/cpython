@@ -22,7 +22,7 @@ _Py_IDENTIFIER(__subclasshook__);
 
 typedef struct {
     PyObject *_abc_data_type;
-} _abcmodulestate;
+} _abcmodule_state;
 
 /* A global counter that is incremented each time a class is
    registered as a virtual subclass of anything.  It forces the
@@ -31,12 +31,12 @@ typedef struct {
    external code. */
 static unsigned long long abc_invalidation_counter = 0;
 
-static inline _abcmodulestate*
+static inline _abcmodule_state*
 get_abc_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
     assert(state != NULL);
-    return (_abcmodulestate *)state;
+    return (_abcmodule_state *)state;
 }
 
 /* This object stores internal state for ABCs.
@@ -97,7 +97,7 @@ static PyType_Spec _abc_data_type_spec = {
 static _abc_data *
 _get_impl(PyObject *module, PyObject *self)
 {
-    _abcmodulestate *state = get_abc_state(module);
+    _abcmodule_state *state = get_abc_state(module);
     PyObject *impl = _PyObject_GetAttrId(self, &PyId__abc_impl);
     if (impl == NULL) {
         return NULL;
@@ -411,7 +411,7 @@ static PyObject *
 _abc__abc_init(PyObject *module, PyObject *self)
 /*[clinic end generated code: output=594757375714cda1 input=8d7fe470ff77f029]*/
 {
-    _abcmodulestate *state = get_abc_state(module);
+    _abcmodule_state *state = get_abc_state(module);
     PyObject *data;
     if (compute_abstract_methods(self) < 0) {
         return NULL;
@@ -816,7 +816,7 @@ _abc_get_cache_token_impl(PyObject *module)
     return PyLong_FromUnsignedLongLong(abc_invalidation_counter);
 }
 
-static struct PyMethodDef module_functions[] = {
+static struct PyMethodDef _abcmodule_methods[] = {
     _ABC_GET_CACHE_TOKEN_METHODDEF
     _ABC__ABC_INIT_METHODDEF
     _ABC__RESET_REGISTRY_METHODDEF
@@ -831,7 +831,7 @@ static struct PyMethodDef module_functions[] = {
 static int
 _abcmodule_exec(PyObject *module)
 {
-    _abcmodulestate *state = get_abc_state(module);
+    _abcmodule_state *state = get_abc_state(module);
     state->_abc_data_type = PyType_FromSpec(&_abc_data_type_spec);
     if (state->_abc_data_type == NULL) {
         return -1;
@@ -843,7 +843,7 @@ _abcmodule_exec(PyObject *module)
 static int
 _abcmodule_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    _abcmodulestate *state = get_abc_state(module);
+    _abcmodule_state *state = get_abc_state(module);
     Py_VISIT(state->_abc_data_type);
     return 0;
 }
@@ -851,7 +851,7 @@ _abcmodule_traverse(PyObject *module, visitproc visit, void *arg)
 static int
 _abcmodule_clear(PyObject *module)
 {
-    _abcmodulestate *state = get_abc_state(module);
+    _abcmodule_state *state = get_abc_state(module);
     Py_CLEAR(state->_abc_data_type);
     return 0;
 }
@@ -871,8 +871,8 @@ static struct PyModuleDef _abcmodule = {
     PyModuleDef_HEAD_INIT,
     "_abc",
     _abc__doc__,
-    sizeof(_abcmodulestate),
-    module_functions,
+    sizeof(_abcmodule_state),
+    _abcmodule_methods,
     _abcmodule_slots,
     _abcmodule_traverse,
     _abcmodule_clear,
