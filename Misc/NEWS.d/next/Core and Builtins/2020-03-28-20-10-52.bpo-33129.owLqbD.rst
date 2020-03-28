@@ -1,0 +1,1 @@
+Added kwargs support for dataclass' generated init method so that we can more expressively interact with HTTP response body objects by extracting the object members we want and ignoring the rest without raising an TypeError exception.
