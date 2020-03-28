@@ -853,6 +853,7 @@ static PyType_Slot AST_type_slots[] = {
     {Py_tp_new, PyType_GenericNew},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_richcompare, ast_richcompare},
+    {Py_tp_hash, (hashfunc)_Py_HashPointer},
     {0, 0},
 };
 
