@@ -1,0 +1,1 @@
+Fix configure check for "float word ordering". The check did not always use the correct "grep" command.
