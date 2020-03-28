@@ -3173,9 +3173,9 @@ class TestReplace(unittest.TestCase):
             y: int
 
         c = C(1, 2)
-        with self.assertRaisesRegex(TypeError, r"__init__\(\) got an unexpected "
-                                    "keyword argument 'z'"):
+        with self.assertRaisesRegex(AttributeError, r"'C' object has no attribute 'z'"):
             c1 = replace(c, z=3)
+            result = c1.z
 
     def test_invalid_object(self):
         @dataclass(frozen=True)
