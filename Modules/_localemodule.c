@@ -602,7 +602,7 @@ PyLocale_getfirstweekday(PyObject* self)
     start = (week_1stday + first_weekday - 1) % 7;
 #endif
 #endif
-    return Py_BuildValue("i", start);
+    return PyLong_FromLong(start);
 }
 
 #ifdef HAVE_LIBINTL_H
