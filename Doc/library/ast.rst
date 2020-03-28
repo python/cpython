@@ -1748,6 +1748,17 @@ and classes for traversing abstract syntax trees:
       Added the *indent* option.
 
 
+.. function:: compare(a, b, /, *, compare_types=True, compare_fields=True, compare_attributes=False)
+
+    Recursively compare given 2 AST nodes. If *compare_types* is ``False``, the
+    field values won't be checked whether they belong to same type or not. If
+    *compare_fields* is ``True``, members of ``_fields`` attribute on both node's
+    type will be checked. If *compare_attributes* is ``True``, members of
+    ``_attributes`` attribute on both node's will be compared.
+
+   .. versionadded:: 3.9
+
+
 .. _ast-cli:
 
 Command-Line Usage

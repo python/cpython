@@ -368,6 +368,69 @@ def walk(node):
         yield node
 
 
+def compare(
+    a,
+    b,
+    /,
+    *,
+    compare_types=True,
+    compare_fields=True,
+    compare_attributes=False,
+):
+    """
+    Compares recursively given two ast nodes. If *compare_types* is False, the
+    field values won't be checked whether they belong to same type or not. If
+    *compare_fields* is True, members of `_fields` attribute on both node's type
+    will be checked. If *compare_attributes* is True, members of `_attributes`
+    attribute on both node's will be compared.
+    """
+
+    def _compare(a, b):
+        if compare_types and type(a) is not type(b):
+            return False
+        elif isinstance(a, AST):
+            return compare(
+                a,
+                b,
+                compare_attributes=compare_attributes,
+                compare_fields=compare_fields,
+                compare_types=compare_types,
+            )
+        elif isinstance(a, list):
+            if len(a) != len(b):
+                return False
+            for a_item, b_item in zip(a, b):
+                if not _compare(a_item, b_item):
+                    return False
+            else:
+                return True
+        else:
+            return a == b
+
+    def _compare_member(member):
+        for field in getattr(a, member):
+            if not hasattr(a, field) and not hasattr(b, field):
+                continue
+            if not (hasattr(a, field) and hasattr(b, field)):
+                return False
+            a_field = getattr(a, field)
+            b_field = getattr(b, field)
+            if not _compare(a_field, b_field):
+                return False
+        else:
+            return True
+
+    if type(a) is not type(b):
+        return False
+    if compare_fields:
+        if not _compare_member("_fields"):
+            return False
+    if compare_attributes:
+        if not _compare_member("_attributes"):
+            return False
+    return True
+
+
 class NodeVisitor(object):
     """
     A node visitor base class that walks the abstract syntax tree and calls a
