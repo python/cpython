@@ -274,7 +274,7 @@ def ismount(path):
     if _getvolumepathname:
         try:
             return path.rstrip(seps) == _getvolumepathname(path).rstrip(seps)
-        except FileNotFoundError:
+        except OSError:
             return False
     else:
         return False

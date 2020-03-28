@@ -661,7 +661,13 @@ class TestNtpath(NtpathTestCase):
         self.assertTrue(ntpath.ismount(b"\\\\.\\c:\\"))
         self.assertTrue(ntpath.ismount(b"\\\\.\\C:\\"))
 
-        self.assertFalse(ntpath.ismount("C:\\NotExist"))
+        for drive in "DEFGHIJKLMNOPQRSTUVWXYZ":
+            if not ntpath.exists(drive + ":\\"):
+                self.assertFalse(ntpath.ismount(drive + ":\\NotExist"))
+                break
+        else:
+            if support.verbose:
+                print("No missing drive found to test 'ismount'")
 
         with support.temp_dir() as d:
             self.assertFalse(ntpath.ismount(d))

@@ -1,2 +1,2 @@
 Ensure `ismount` return False instead of raising `FileNotFoundError`
-when `path` does not exist.
+when `path` is under a drive that doesn't exist.
