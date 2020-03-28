@@ -526,7 +526,7 @@ def _init_fn(fields, frozen, has_post_init, self_name, globals):
         body_lines = ['pass']
 
     return _create_fn('__init__',
-                      [self_name] + [_init_param(f) for f in fields if f.init],
+                      [self_name] + [_init_param(f) for f in fields if f.init] + ['**kwargs'],
                       body_lines,
                       locals=locals,
                       globals=globals,
