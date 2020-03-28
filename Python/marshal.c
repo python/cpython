@@ -652,7 +652,7 @@ r_string(Py_ssize_t n, RFILE *p)
 
     if (p->ptr != NULL) {
         /* Fast path for loads() */
-        char *res = p->ptr;
+        const char *res = p->ptr;
         Py_ssize_t left = p->end - p->ptr;
         if (left < n) {
             PyErr_SetString(PyExc_EOFError,
@@ -1598,7 +1598,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     w_object(x, &wf);
     w_clear_refs(&wf);
     if (wf.str != NULL) {
-        char *base = PyBytes_AS_STRING((PyBytesObject *)wf.str);
+        const char *base = PyBytes_AS_STRING((PyBytesObject *)wf.str);
         if (wf.ptr - base > PY_SSIZE_T_MAX) {
             Py_DECREF(wf.str);
             PyErr_SetString(PyExc_OverflowError,
