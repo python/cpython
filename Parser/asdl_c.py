@@ -745,51 +745,83 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 static PyObject *
 ast_richcompare(PyObject *self, PyObject *other, int op)
 {
-    int i, len;
-    PyObject *fields, *key, *a = Py_None, *b = Py_None;
+    Py_ssize_t i, numfields = 0;
+    PyObject *fields, *key = NULL;
+
     /* Check operator */
     if ((op != Py_EQ && op != Py_NE) ||
-         !PyAST_Check(self) ||
-         !PyAST_Check(other)) {
+         !PyAST_Check(self) || !PyAST_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
+
     /* Compare types */
     if (Py_TYPE(self) != Py_TYPE(other)) {
-        if (op == Py_EQ)
-            Py_RETURN_FALSE;
-        else
-            Py_RETURN_TRUE;
+        Py_RETURN_RICHCOMPARE(Py_TYPE(self), Py_TYPE(other), op);
     }
+
+    if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), astmodulestate_global->_fields, &fields) < 0) {
+        return NULL;
+    }
+    if (fields) {
+        numfields = PySequence_Size(fields);
+        if (numfields == -1) {
+            goto fail;
+        }
+    }
+
+    PyObject *a, *b;
     /* Compare fields */
-    fields = PyObject_GetAttrString(self, "_fields");
-    len = PySequence_Size(fields);
-    for (i = 0; i < len; ++i) {
+    for (i = 0; i < numfields; i++) {
         key = PySequence_GetItem(fields, i);
-        if (PyObject_HasAttr(self, key))
-            a = PyObject_GetAttr(self, key);
-        if (PyObject_HasAttr(other, key))
-            b = PyObject_GetAttr(other, key);
-        /* Check filed value type */
+        if (!key) {
+            goto fail;
+        }
+        if (!PyObject_HasAttr(self, key) || !PyObject_HasAttr(other, key)) {
+            Py_DECREF(key);
+            goto unsuccessful;
+        }
+        Py_DECREF(key);
+
+        a = PyObject_GetAttr(self, key);
+        b = PyObject_GetAttr(other, key);
+        if (!a || !b) {
+            goto unsuccessful;
+        }
+
+        /* Ensure they belong to the same type */
         if (Py_TYPE(a) != Py_TYPE(b)) {
-            if (op == Py_EQ) {
-                Py_RETURN_FALSE;
-            }
+            goto unsuccessful;
         }
-        if (op == Py_EQ) {
-            if (!PyObject_RichCompareBool(a, b, Py_EQ)) {
-                Py_RETURN_FALSE;
-            }
+
+        if (!PyObject_RichCompareBool(a, b, Py_EQ)) {
+            goto unsuccessful;
         }
-        else if (op == Py_NE) {
-            if (PyObject_RichCompareBool(a, b, Py_NE)) {
-                Py_RETURN_TRUE;
-            }
-        }
+        Py_DECREF(a);
+        Py_DECREF(b);
     }
-    if (op == Py_EQ)
+    Py_DECREF(fields);
+
+    if (op == Py_EQ) {
         Py_RETURN_TRUE;
-    else
+    }
+    else {
         Py_RETURN_FALSE;
+    }
+
+  unsuccessful:
+    Py_XDECREF(a);
+    Py_XDECREF(b);
+    Py_DECREF(fields);
+    if (op == Py_EQ) {
+        Py_RETURN_FALSE;
+    }
+    else {
+        Py_RETURN_TRUE;
+    }
+
+  fail:
+    Py_DECREF(fields);
+    return NULL;
 }
 
 static PyMemberDef ast_type_members[] = {

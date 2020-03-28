@@ -691,7 +691,7 @@ class AST_Tests(unittest.TestCase):
         else:
             files = random.sample(STDLIB_FILES, 10)
 
-        for module in STDLIB_FILES:
+        for module in files:
             with self.subTest(module):
                 fn = os.path.join(STDLIB, module)
                 with open(fn) as fp:
