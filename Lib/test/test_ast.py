@@ -3,6 +3,7 @@ import dis
 import os
 import random
 import sys
+import tokenize
 import unittest
 import warnings
 import weakref
@@ -694,7 +695,7 @@ class AST_Tests(unittest.TestCase):
         for module in files:
             with self.subTest(module):
                 fn = os.path.join(STDLIB, module)
-                with open(fn) as fp:
+                with tokenize.open(fn) as fp:
                     source = fp.read()
                 a = ast.parse(source, fn)
                 b = ast.parse(source, fn)
