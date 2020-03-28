@@ -794,6 +794,8 @@ class TestCase(unittest.TestCase):
             self.assertIs   (param.annotation, float)
             # Don't test for the default, since it's set to MISSING.
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+            param = next(params)
+            self.assertEqual(param.name, 'kwargs')
             self.assertRaises(StopIteration, next, params)
 
 
