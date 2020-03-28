@@ -1,2 +1,2 @@
-Provide a locale.getfirstweekday() function, which returns the integer of
-the first day of week.
+Provide a :func:`locale.getfirstweekday()` function, which returns the integer
+of the first day of week.
