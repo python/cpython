@@ -770,6 +770,14 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(d, original)
 
 
+    def test_patch_dict_stop_without_start(self):
+        d = {'foo': 'bar'}
+        original = d.copy()
+        patcher = patch.dict(d, [('spam', 'eggs')], clear=True)
+        self.assertEqual(patcher.stop(), False)
+        self.assertEqual(d, original)
+
+
     def test_patch_dict_class_decorator(self):
         this = self
         d = {'spam': 'eggs'}

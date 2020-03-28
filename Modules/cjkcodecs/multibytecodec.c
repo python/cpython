@@ -92,7 +92,7 @@ call_error_callback(PyObject *errors, PyObject *exc)
     if (cb == NULL)
         return NULL;
 
-    r = _PyObject_CallOneArg(cb, exc);
+    r = PyObject_CallOneArg(cb, exc);
     Py_DECREF(cb);
     return r;
 }
@@ -1450,7 +1450,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
             PyErr_Format(PyExc_TypeError,
                          "stream function returned a "
                          "non-bytes object (%.100s)",
-                         cres->ob_type->tp_name);
+                         Py_TYPE(cres)->tp_name);
             goto errorexit;
         }
 
@@ -2059,14 +2059,12 @@ static struct PyModuleDef _multibytecodecmodule = {
 PyMODINIT_FUNC
 PyInit__multibytecodec(void)
 {
-    int i;
     PyObject *m;
     PyTypeObject *typelist[] = {
         &MultibyteIncrementalEncoder_Type,
         &MultibyteIncrementalDecoder_Type,
         &MultibyteStreamReader_Type,
-        &MultibyteStreamWriter_Type,
-        NULL
+        &MultibyteStreamWriter_Type
     };
 
     if (PyType_Ready(&MultibyteCodec_Type) < 0)
@@ -2076,12 +2074,10 @@ PyInit__multibytecodec(void)
     if (m == NULL)
         return NULL;
 
-    for (i = 0; typelist[i] != NULL; i++) {
-        if (PyType_Ready(typelist[i]) < 0)
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
+        if (PyModule_AddType(m, typelist[i]) < 0) {
             return NULL;
-        Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, typelist[i]->tp_name,
-                           (PyObject *)typelist[i]);
+        }
     }
 
     if (PyErr_Occurred()) {

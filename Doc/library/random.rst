@@ -343,8 +343,8 @@ Alternative Generator
 Notes on Reproducibility
 ------------------------
 
-Sometimes it is useful to be able to reproduce the sequences given by a pseudo
-random number generator.  By re-using a seed value, the same sequence should be
+Sometimes it is useful to be able to reproduce the sequences given by a
+pseudo-random number generator.  By re-using a seed value, the same sequence should be
 reproducible from run to run as long as multiple threads are not running.
 
 Most of the random module's algorithms and seeding functions are subject to

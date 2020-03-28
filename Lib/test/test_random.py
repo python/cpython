@@ -42,7 +42,7 @@ class TestBasicOps:
             def __hash__(self):
                 return -1729
         for arg in [None, 0, 1, -1, 10**20, -(10**20),
-                    3.14, 'a']:
+                    False, True, 3.14, 'a']:
             self.gen.seed(arg)
 
         for arg in [1+2j, tuple('abc'), MySeed()]:

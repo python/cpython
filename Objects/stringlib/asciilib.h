@@ -18,7 +18,7 @@
 #define STRINGLIB_TODECIMAL      Py_UNICODE_TODECIMAL
 #define STRINGLIB_STR            PyUnicode_1BYTE_DATA
 #define STRINGLIB_LEN            PyUnicode_GET_LENGTH
-#define STRINGLIB_NEW(STR,LEN)   _PyUnicode_FromASCII((char*)(STR),(LEN))
+#define STRINGLIB_NEW(STR,LEN)   _PyUnicode_FromASCII((const char*)(STR),(LEN))
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_CHECK_EXACT    PyUnicode_CheckExact
 

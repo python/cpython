@@ -142,6 +142,8 @@ exec_tests = [
     "@deco1\n@deco2()\n@deco3(1)\nclass C: pass",
     # Decorator with generator argument
     "@deco(a for a in b)\ndef f(): pass",
+    # Decorator with attribute
+    "@a.b.c\ndef f(): pass",
     # Simple assignment expression
     "(a := 1)",
     # Positional-only arguments
@@ -245,6 +247,13 @@ eval_tests = [
 
 class AST_Tests(unittest.TestCase):
 
+    def _is_ast_node(self, name, node):
+        if not isinstance(node, type):
+            return False
+        if "ast" not in node.__module__:
+            return False
+        return name != 'AST' and name[0].isupper()
+
     def _assertTrueorder(self, ast_node, parent_pos):
         if not isinstance(ast_node, ast.AST) or ast_node._fields is None:
             return
@@ -274,7 +283,7 @@ class AST_Tests(unittest.TestCase):
             x.vararg
 
         with self.assertRaises(TypeError):
-            # "_ast.AST constructor takes 0 positional arguments"
+            # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
     def test_AST_garbage_collection(self):
@@ -333,7 +342,11 @@ class AST_Tests(unittest.TestCase):
 
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
-            if isinstance(item, type) and name != 'AST' and name[0].isupper():
+            if self._is_ast_node(name, item):
+                if name == 'Index':
+                    # Index(value) just returns value now.
+                    # The argument is required.
+                    continue
                 x = item()
                 if isinstance(x, ast.AST):
                     self.assertEqual(type(x._fields), tuple)
@@ -344,9 +357,11 @@ class AST_Tests(unittest.TestCase):
                                      'kw_defaults', 'kwarg', 'defaults'))
 
         with self.assertRaises(AttributeError):
-            x.vararg
+            x.args
+        self.assertIsNone(x.vararg)
 
         x = ast.arguments(*range(1, 8))
+        self.assertEqual(x.args, 2)
         self.assertEqual(x.vararg, 3)
 
     def test_field_attr_writable(self):
@@ -558,7 +573,7 @@ class AST_Tests(unittest.TestCase):
         m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("but got <_ast.expr", str(cm.exception))
+        self.assertIn("but got <ast.expr", str(cm.exception))
 
     def test_invalid_identifier(self):
         m = ast.Module([ast.Expr(ast.Name(42, ast.Load()))], [])
@@ -566,6 +581,15 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
         self.assertIn("identifier must be of type str", str(cm.exception))
+
+    def test_invalid_constant(self):
+        for invalid_constant in int, (1, 2, int), frozenset((1, 2, int)):
+            e = ast.Expression(body=ast.Constant(invalid_constant))
+            ast.fix_missing_locations(e)
+            with self.assertRaisesRegex(
+                TypeError, "invalid type in Constant: type"
+            ):
+                compile(e, "<test>", "eval")
 
     def test_empty_yield_from(self):
         # Issue 16546: yield from value is not optional.
@@ -616,6 +640,21 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(grandchild_binop.end_col_offset, 3)
         self.assertEqual(grandchild_binop.end_lineno, 1)
 
+    def test_issue39579_dotted_name_end_col_offset(self):
+        tree = ast.parse('@a.b.c\ndef f(): pass')
+        attr_b = tree.body[0].decorator_list[0].value
+        self.assertEqual(attr_b.end_col_offset, 4)
+
+    def test_ast_asdl_signature(self):
+        self.assertEqual(ast.withitem.__doc__, "withitem(expr context_expr, expr? optional_vars)")
+        self.assertEqual(ast.GtE.__doc__, "GtE")
+        self.assertEqual(ast.Name.__doc__, "Name(identifier id, expr_context ctx)")
+        self.assertEqual(ast.cmpop.__doc__, "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn")
+        expressions = [f"     | {node.__doc__}" for node in ast.expr.__subclasses__()]
+        expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
+        self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
+
+
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
 
@@ -636,18 +675,18 @@ class ASTHelpers_Test(unittest.TestCase):
         node = ast.parse('spam(eggs, "and cheese")')
         self.assertEqual(ast.dump(node),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), "
-            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese', kind=None)], "
+            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')], "
             "keywords=[]))], type_ignores=[])"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
             "Module([Expr(Call(Name('spam', Load()), [Name('eggs', Load()), "
-            "Constant('and cheese', None)], []))], [])"
+            "Constant('and cheese')], []))], [])"
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=4), "
             "args=[Name(id='eggs', ctx=Load(), lineno=1, col_offset=5, "
-            "end_lineno=1, end_col_offset=9), Constant(value='and cheese', kind=None, "
+            "end_lineno=1, end_col_offset=9), Constant(value='and cheese', "
             "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], keywords=[], "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)], type_ignores=[])"
@@ -663,7 +702,7 @@ Module(
             func=Name(id='spam', ctx=Load()),
             args=[
                Name(id='eggs', ctx=Load()),
-               Constant(value='and cheese', kind=None)],
+               Constant(value='and cheese')],
             keywords=[]))],
    type_ignores=[])""")
         self.assertEqual(ast.dump(node, annotate_fields=False, indent='\t'), """\
@@ -674,7 +713,7 @@ Module(
 \t\t\t\tName('spam', Load()),
 \t\t\t\t[
 \t\t\t\t\tName('eggs', Load()),
-\t\t\t\t\tConstant('and cheese', None)],
+\t\t\t\t\tConstant('and cheese')],
 \t\t\t\t[]))],
 \t[])""")
         self.assertEqual(ast.dump(node, include_attributes=True, indent=3), """\
@@ -699,7 +738,6 @@ Module(
                   end_col_offset=9),
                Constant(
                   value='and cheese',
-                  kind=None,
                   lineno=1,
                   col_offset=11,
                   end_lineno=1,
@@ -748,7 +786,7 @@ Module(
         src = ast.parse('1 + 1', mode='eval')
         src.body.right = ast.copy_location(ast.Num(2), src.body.right)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, kind=None, lineno=1, col_offset=0, '
+            'Expression(body=BinOp(left=Constant(value=1, lineno=1, col_offset=0, '
             'end_lineno=1, end_col_offset=1), op=Add(), right=Constant(value=2, '
             'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
             'col_offset=0, end_lineno=1, end_col_offset=5))'
@@ -763,7 +801,7 @@ Module(
         self.assertEqual(ast.dump(src, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), "
-            "args=[Constant(value='spam', kind=None, lineno=1, col_offset=6, end_lineno=1, "
+            "args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, "
             "end_col_offset=12)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), Expr(value=Call(func=Name(id='spam', ctx=Load(), "
@@ -778,8 +816,8 @@ Module(
         src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src, n=3), src)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, kind=None, lineno=4, col_offset=0, '
-            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, kind=None, '
+            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
+            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
@@ -787,8 +825,8 @@ Module(
         src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src.body, n=3), src.body)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, kind=None, lineno=4, col_offset=0, '
-            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, kind=None, '
+            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
+            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
@@ -807,7 +845,7 @@ Module(
         self.assertEqual(next(iterator).value, 23)
         self.assertEqual(next(iterator).value, 42)
         self.assertEqual(ast.dump(next(iterator)),
-            "keyword(arg='eggs', value=Constant(value='leek', kind=None))"
+            "keyword(arg='eggs', value=Constant(value='leek'))"
         )
 
     def test_get_docstring(self):
@@ -1293,11 +1331,11 @@ class ASTValidatorTests(unittest.TestCase):
         self.expr(attr, "must have Load context")
 
     def test_subscript(self):
-        sub = ast.Subscript(ast.Name("x", ast.Store()), ast.Index(ast.Num(3)),
+        sub = ast.Subscript(ast.Name("x", ast.Store()), ast.Num(3),
                             ast.Load())
         self.expr(sub, "must have Load context")
         x = ast.Name("x", ast.Load())
-        sub = ast.Subscript(x, ast.Index(ast.Name("y", ast.Store())),
+        sub = ast.Subscript(x, ast.Name("y", ast.Store()),
                             ast.Load())
         self.expr(sub, "must have Load context")
         s = ast.Name("x", ast.Store())
@@ -1305,9 +1343,9 @@ class ASTValidatorTests(unittest.TestCase):
             sl = ast.Slice(*args)
             self.expr(ast.Subscript(x, sl, ast.Load()),
                       "must have Load context")
-        sl = ast.ExtSlice([])
-        self.expr(ast.Subscript(x, sl, ast.Load()), "empty dims on ExtSlice")
-        sl = ast.ExtSlice([ast.Index(s)])
+        sl = ast.Tuple([], ast.Load())
+        self.expr(ast.Subscript(x, sl, ast.Load()))
+        sl = ast.Tuple([s], ast.Load())
         self.expr(ast.Subscript(x, sl, ast.Load()), "must have Load context")
 
     def test_starred(self):
@@ -1649,11 +1687,11 @@ class EndPositionTests(unittest.TestCase):
         ''').strip()
         i1, i2, im = map(self._parse_value, (s1, s2, sm))
         self._check_content(s1, i1.value, 'f()[1, 2]')
-        self._check_content(s1, i1.value.slice.value, '1, 2')
+        self._check_content(s1, i1.value.slice, '1, 2')
         self._check_content(s2, i2.slice.lower, 'a.b')
         self._check_content(s2, i2.slice.upper, 'c.d')
-        self._check_content(sm, im.slice.dims[0].upper, 'f ()')
-        self._check_content(sm, im.slice.dims[1].lower, 'g ()')
+        self._check_content(sm, im.slice.elts[0].upper, 'f ()')
+        self._check_content(sm, im.slice.elts[1].lower, 'g ()')
         self._check_end_pos(im, 3, 3)
 
     def test_binop(self):
@@ -1699,6 +1737,33 @@ class EndPositionTests(unittest.TestCase):
         call = self._parse_value(s)
         self._check_content(s, call, s)
         self._check_content(s, call.args[0], 'x. y .z')
+
+    def test_redundant_parenthesis(self):
+        s = '( ( ( a + b ) ) )'
+        v = ast.parse(s).body[0].value
+        self.assertEqual(type(v).__name__, 'BinOp')
+        self._check_content(s, v, 'a + b')
+        s2 = 'await ' + s
+        v = ast.parse(s2).body[0].value.value
+        self.assertEqual(type(v).__name__, 'BinOp')
+        self._check_content(s2, v, 'a + b')
+
+    def test_trailers_with_redundant_parenthesis(self):
+        tests = (
+            ('( ( ( a ) ) ) ( )', 'Call'),
+            ('( ( ( a ) ) ) ( b )', 'Call'),
+            ('( ( ( a ) ) ) [ b ]', 'Subscript'),
+            ('( ( ( a ) ) ) . b', 'Attribute'),
+        )
+        for s, t in tests:
+            with self.subTest(s):
+                v = ast.parse(s).body[0].value
+                self.assertEqual(type(v).__name__, t)
+                self._check_content(s, v, s)
+                s2 = 'await ' + s
+                v = ast.parse(s2).body[0].value.value
+                self.assertEqual(type(v).__name__, t)
+                self._check_content(s2, v, s)
 
     def test_displays(self):
         s1 = '[{}, {1, }, {1, 2,} ]'
@@ -1903,6 +1968,7 @@ exec_results = [
 ('Module', [('AsyncFunctionDef', (4, 0, 4, 19), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (4, 15, 4, 19))], [('Name', (1, 1, 1, 6), 'deco1', ('Load',)), ('Call', (2, 1, 2, 8), ('Name', (2, 1, 2, 6), 'deco2', ('Load',)), [], []), ('Call', (3, 1, 3, 9), ('Name', (3, 1, 3, 6), 'deco3', ('Load',)), [('Constant', (3, 7, 3, 8), 1, None)], [])], None, None)], []),
 ('Module', [('ClassDef', (4, 0, 4, 13), 'C', [], [], [('Pass', (4, 9, 4, 13))], [('Name', (1, 1, 1, 6), 'deco1', ('Load',)), ('Call', (2, 1, 2, 8), ('Name', (2, 1, 2, 6), 'deco2', ('Load',)), [], []), ('Call', (3, 1, 3, 9), ('Name', (3, 1, 3, 6), 'deco3', ('Load',)), [('Constant', (3, 7, 3, 8), 1, None)], [])])], []),
 ('Module', [('FunctionDef', (2, 0, 2, 13), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (2, 9, 2, 13))], [('Call', (1, 1, 1, 19), ('Name', (1, 1, 1, 5), 'deco', ('Load',)), [('GeneratorExp', (1, 5, 1, 19), ('Name', (1, 6, 1, 7), 'a', ('Load',)), [('comprehension', ('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 17, 1, 18), 'b', ('Load',)), [], 0)])], [])], None, None)], []),
+('Module', [('FunctionDef', (2, 0, 2, 13), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (2, 9, 2, 13))], [('Attribute', (1, 1, 1, 6), ('Attribute', (1, 1, 1, 4), ('Name', (1, 1, 1, 2), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',))], None, None)], []),
 ('Module', [('Expr', (1, 0, 1, 8), ('NamedExpr', (1, 1, 1, 7), ('Name', (1, 1, 1, 2), 'a', ('Store',)), ('Constant', (1, 6, 1, 7), 1, None)))], []),
 ('Module', [('FunctionDef', (1, 0, 1, 18), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [], None, [], [], None, []), [('Pass', (1, 14, 1, 18))], [], None, None)], []),
 ('Module', [('FunctionDef', (1, 0, 1, 26), 'f', ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 12, 1, 13), 'c', None, None), ('arg', (1, 15, 1, 16), 'd', None, None), ('arg', (1, 18, 1, 19), 'e', None, None)], None, [], [], None, []), [('Pass', (1, 22, 1, 26))], [], None, None)], []),
@@ -1946,13 +2012,13 @@ eval_results = [
 ('Expression', ('Constant', (1, 0, 1, 2), 10, None)),
 ('Expression', ('Constant', (1, 0, 1, 8), 'string', None)),
 ('Expression', ('Attribute', (1, 0, 1, 3), ('Name', (1, 0, 1, 1), 'a', ('Load',)), 'b', ('Load',))),
-('Expression', ('Subscript', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Slice', ('Name', (1, 2, 1, 3), 'b', ('Load',)), ('Name', (1, 4, 1, 5), 'c', ('Load',)), None), ('Load',))),
+('Expression', ('Subscript', (1, 0, 1, 6), ('Name', (1, 0, 1, 1), 'a', ('Load',)), ('Slice', (1, 2, 1, 5), ('Name', (1, 2, 1, 3), 'b', ('Load',)), ('Name', (1, 4, 1, 5), 'c', ('Load',)), None), ('Load',))),
 ('Expression', ('Name', (1, 0, 1, 1), 'v', ('Load',))),
 ('Expression', ('List', (1, 0, 1, 7), [('Constant', (1, 1, 1, 2), 1, None), ('Constant', (1, 3, 1, 4), 2, None), ('Constant', (1, 5, 1, 6), 3, None)], ('Load',))),
 ('Expression', ('List', (1, 0, 1, 2), [], ('Load',))),
 ('Expression', ('Tuple', (1, 0, 1, 5), [('Constant', (1, 0, 1, 1), 1, None), ('Constant', (1, 2, 1, 3), 2, None), ('Constant', (1, 4, 1, 5), 3, None)], ('Load',))),
 ('Expression', ('Tuple', (1, 0, 1, 7), [('Constant', (1, 1, 1, 2), 1, None), ('Constant', (1, 3, 1, 4), 2, None), ('Constant', (1, 5, 1, 6), 3, None)], ('Load',))),
 ('Expression', ('Tuple', (1, 0, 1, 2), [], ('Load',))),
-('Expression', ('Call', (1, 0, 1, 17), ('Attribute', (1, 0, 1, 7), ('Attribute', (1, 0, 1, 5), ('Attribute', (1, 0, 1, 3), ('Name', (1, 0, 1, 1), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',)), 'd', ('Load',)), [('Subscript', (1, 8, 1, 16), ('Attribute', (1, 8, 1, 11), ('Name', (1, 8, 1, 9), 'a', ('Load',)), 'b', ('Load',)), ('Slice', ('Constant', (1, 12, 1, 13), 1, None), ('Constant', (1, 14, 1, 15), 2, None), None), ('Load',))], [])),
+('Expression', ('Call', (1, 0, 1, 17), ('Attribute', (1, 0, 1, 7), ('Attribute', (1, 0, 1, 5), ('Attribute', (1, 0, 1, 3), ('Name', (1, 0, 1, 1), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',)), 'd', ('Load',)), [('Subscript', (1, 8, 1, 16), ('Attribute', (1, 8, 1, 11), ('Name', (1, 8, 1, 9), 'a', ('Load',)), 'b', ('Load',)), ('Slice', (1, 12, 1, 15), ('Constant', (1, 12, 1, 13), 1, None), ('Constant', (1, 14, 1, 15), 2, None), None), ('Load',))], [])),
 ]
 main()

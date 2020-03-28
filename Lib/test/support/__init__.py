@@ -2512,9 +2512,6 @@ def swap_item(obj, item, new_val):
             if item in obj:
                 del obj[item]
 
-requires_type_collecting = unittest.skipIf(hasattr(sys, 'getcounts'),
-                        'types are immortal if COUNT_ALLOCS is defined')
-
 def args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
     settings in sys.flags and sys.warnoptions."""

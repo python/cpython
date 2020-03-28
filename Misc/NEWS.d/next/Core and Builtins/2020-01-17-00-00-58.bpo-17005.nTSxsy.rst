@@ -1,3 +1,0 @@
-Add :class:`functools.TopologicalSorter` to the :mod:`functools` module to
-offers functionality to perform topological sorting of graphs. Patch by
-Pablo Galindo, Tim Peters and Larry Hastings.

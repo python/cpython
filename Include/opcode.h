@@ -117,8 +117,6 @@ extern "C" {
 #define SET_ADD                 146
 #define MAP_ADD                 147
 #define LOAD_CLASSDEREF         148
-#define BUILD_MAP_UNPACK        150
-#define BUILD_MAP_UNPACK_WITH_CALL 151
 #define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156
@@ -127,6 +125,8 @@ extern "C" {
 #define CALL_METHOD             161
 #define LIST_EXTEND             162
 #define SET_UPDATE              163
+#define DICT_MERGE              164
+#define DICT_UPDATE             165
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here

@@ -200,8 +200,7 @@ class BinHex:
         self._writecrc()
 
     def _write(self, data):
-        with _ignore_deprecation_warning():
-            self.crc = binascii.crc_hqx(data, self.crc)
+        self.crc = binascii.crc_hqx(data, self.crc)
         self.ofp.write(data)
 
     def _writecrc(self):
@@ -396,8 +395,7 @@ class HexBin:
 
     def _read(self, len):
         data = self.ifp.read(len)
-        with _ignore_deprecation_warning():
-            self.crc = binascii.crc_hqx(data, self.crc)
+        self.crc = binascii.crc_hqx(data, self.crc)
         return data
 
     def _checkcrc(self):

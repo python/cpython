@@ -1289,7 +1289,7 @@ class PidfdSignalTest(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.EBADF)
         my_pidfd = os.open(f'/proc/{os.getpid()}', os.O_DIRECTORY)
         self.addCleanup(os.close, my_pidfd)
-        with self.assertRaisesRegexp(TypeError, "^siginfo must be None$"):
+        with self.assertRaisesRegex(TypeError, "^siginfo must be None$"):
             signal.pidfd_send_signal(my_pidfd, signal.SIGINT, object(), 0)
         with self.assertRaises(KeyboardInterrupt):
             signal.pidfd_send_signal(my_pidfd, signal.SIGINT)

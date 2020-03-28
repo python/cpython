@@ -33,7 +33,9 @@ jobs:
 - job: macOS_PR_Tests
   displayName: macOS PR Tests
   dependsOn: Prebuild
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  #condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  # bpo-39837: macOS tests on Azure Pipelines are disabled
+  condition: false
 
   variables:
     testRunTitle: '$(system.pullRequest.TargetBranch)-macos'

@@ -328,7 +328,7 @@ class EditorWindow(object):
         text.bind("<<run-module>>", scriptbinding.run_module_event)
         text.bind("<<run-custom>>", scriptbinding.run_custom_event)
         text.bind("<<do-rstrip>>", self.Rstrip(self).do_rstrip)
-        ctip = self.Calltip(self)
+        self.ctip = ctip = self.Calltip(self)
         text.bind("<<try-open-calltip>>", ctip.try_open_calltip_event)
         #refresh-calltip must come after paren-closed to work right
         text.bind("<<refresh-calltip>>", ctip.refresh_calltip_event)
@@ -499,6 +499,7 @@ class EditorWindow(object):
     rmenu = None
 
     def right_menu_event(self, event):
+        self.text.tag_remove("sel", "1.0", "end")
         self.text.mark_set("insert", "@%d,%d" % (event.x, event.y))
         if not self.rmenu:
             self.make_rmenu()
@@ -671,15 +672,16 @@ class EditorWindow(object):
 
     def goto_line_event(self, event):
         text = self.text
-        lineno = tkSimpleDialog.askinteger("Goto",
-                "Go to line number:",parent=text)
-        if lineno is None:
-            return "break"
-        if lineno <= 0:
-            text.bell()
-            return "break"
-        text.mark_set("insert", "%d.0" % lineno)
-        text.see("insert")
+        lineno = query.Goto(
+                text, "Go To Line",
+                "Enter a positive integer\n"
+                "('big' = end of file):"
+                ).result
+        if lineno is not None:
+            text.tag_remove("sel", "1.0", "end")
+            text.mark_set("insert", f'{lineno}.0')
+            text.see("insert")
+            self.set_line_and_column()
         return "break"
 
     def open_module(self):

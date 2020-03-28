@@ -1,2 +1,0 @@
-The previously deprecated ``xpath()`` and ``xgtitle()`` methods of
-:class:`nntplib.NNTP` have been removed.

@@ -1026,6 +1026,96 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test_iter_error_when_changing_os_environ_values(self):
         self._test_environ_iteration(os.environ.values())
 
+    def _test_underlying_process_env(self, var, expected):
+        if not (unix_shell and os.path.exists(unix_shell)):
+            return
+
+        with os.popen(f"{unix_shell} -c 'echo ${var}'") as popen:
+            value = popen.read().strip()
+
+        self.assertEqual(expected, value)
+
+    def test_or_operator(self):
+        overridden_key = '_TEST_VAR_'
+        original_value = 'original_value'
+        os.environ[overridden_key] = original_value
+
+        new_vars_dict = {'_A_': '1', '_B_': '2', overridden_key: '3'}
+        expected = dict(os.environ)
+        expected.update(new_vars_dict)
+
+        actual = os.environ | new_vars_dict
+        self.assertDictEqual(expected, actual)
+        self.assertEqual('3', actual[overridden_key])
+
+        new_vars_items = new_vars_dict.items()
+        self.assertIs(NotImplemented, os.environ.__or__(new_vars_items))
+
+        self._test_underlying_process_env('_A_', '')
+        self._test_underlying_process_env(overridden_key, original_value)
+
+    def test_ior_operator(self):
+        overridden_key = '_TEST_VAR_'
+        os.environ[overridden_key] = 'original_value'
+
+        new_vars_dict = {'_A_': '1', '_B_': '2', overridden_key: '3'}
+        expected = dict(os.environ)
+        expected.update(new_vars_dict)
+
+        os.environ |= new_vars_dict
+        self.assertEqual(expected, os.environ)
+        self.assertEqual('3', os.environ[overridden_key])
+
+        self._test_underlying_process_env('_A_', '1')
+        self._test_underlying_process_env(overridden_key, '3')
+
+    def test_ior_operator_invalid_dicts(self):
+        os_environ_copy = os.environ.copy()
+        with self.assertRaises(TypeError):
+            dict_with_bad_key = {1: '_A_'}
+            os.environ |= dict_with_bad_key
+
+        with self.assertRaises(TypeError):
+            dict_with_bad_val = {'_A_': 1}
+            os.environ |= dict_with_bad_val
+
+        # Check nothing was added.
+        self.assertEqual(os_environ_copy, os.environ)
+
+    def test_ior_operator_key_value_iterable(self):
+        overridden_key = '_TEST_VAR_'
+        os.environ[overridden_key] = 'original_value'
+
+        new_vars_items = (('_A_', '1'), ('_B_', '2'), (overridden_key, '3'))
+        expected = dict(os.environ)
+        expected.update(new_vars_items)
+
+        os.environ |= new_vars_items
+        self.assertEqual(expected, os.environ)
+        self.assertEqual('3', os.environ[overridden_key])
+
+        self._test_underlying_process_env('_A_', '1')
+        self._test_underlying_process_env(overridden_key, '3')
+
+    def test_ror_operator(self):
+        overridden_key = '_TEST_VAR_'
+        original_value = 'original_value'
+        os.environ[overridden_key] = original_value
+
+        new_vars_dict = {'_A_': '1', '_B_': '2', overridden_key: '3'}
+        expected = dict(new_vars_dict)
+        expected.update(os.environ)
+
+        actual = new_vars_dict | os.environ
+        self.assertDictEqual(expected, actual)
+        self.assertEqual(original_value, actual[overridden_key])
+
+        new_vars_items = new_vars_dict.items()
+        self.assertIs(NotImplemented, os.environ.__ror__(new_vars_items))
+
+        self._test_underlying_process_env('_A_', '')
+        self._test_underlying_process_env(overridden_key, original_value)
+
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""

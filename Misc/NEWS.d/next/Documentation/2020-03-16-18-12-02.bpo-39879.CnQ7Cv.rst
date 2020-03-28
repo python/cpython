@@ -1,0 +1,2 @@
+Updated :ref:`datamodel` docs to include :func:`dict` insertion order preservation.
+Patch by Furkan Onder and Samy Lahfa.

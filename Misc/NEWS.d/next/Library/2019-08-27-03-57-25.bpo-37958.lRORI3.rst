@@ -1,2 +1,0 @@
-Added the pstats.Stats.get_profile_dict() method to return the profile
-data as a StatsProfile instance.

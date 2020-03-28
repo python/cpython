@@ -1,4 +1,0 @@
-Improve the displayed error message when incorrect types are passed to ``async
-with`` statements by looking up the :meth:`__aenter__` special method before
-the :meth:`__aexit__` special method when entering an asynchronous context
-manager. Patch by Géry Ogam.

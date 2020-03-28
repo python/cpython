@@ -391,6 +391,7 @@ class FastPath:
 
     def __init__(self, root):
         self.root = root
+        self.base = os.path.basename(root).lower()
 
     def joinpath(self, child):
         return pathlib.Path(self.root, child)
@@ -413,12 +414,11 @@ class FastPath:
             )
 
     def is_egg(self, search):
-        root_n_low = os.path.split(self.root)[1].lower()
-
+        base = self.base
         return (
-            root_n_low == search.normalized + '.egg'
-            or root_n_low.startswith(search.prefix)
-            and root_n_low.endswith('.egg'))
+            base == search.versionless_egg_name
+            or base.startswith(search.prefix)
+            and base.endswith('.egg'))
 
     def search(self, name):
         for child in self.children():
@@ -439,6 +439,7 @@ class Prepared:
     prefix = ''
     suffixes = '.dist-info', '.egg-info'
     exact_matches = [''][:0]
+    versionless_egg_name = ''
 
     def __init__(self, name):
         self.name = name
@@ -448,6 +449,7 @@ class Prepared:
         self.prefix = self.normalized + '-'
         self.exact_matches = [
             self.normalized + suffix for suffix in self.suffixes]
+        self.versionless_egg_name = self.normalized + '.egg'
 
 
 class MetadataPathFinder(DistributionFinder):

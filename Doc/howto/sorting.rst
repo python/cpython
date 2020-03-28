@@ -43,16 +43,18 @@ Key Functions
 =============
 
 Both :meth:`list.sort` and :func:`sorted` have a *key* parameter to specify a
-function to be called on each list element prior to making comparisons.
+function (or other callable) to be called on each list element prior to making
+comparisons.
 
 For example, here's a case-insensitive string comparison:
 
     >>> sorted("This is a test string from Andrew".split(), key=str.lower)
     ['a', 'Andrew', 'from', 'is', 'string', 'test', 'This']
 
-The value of the *key* parameter should be a function that takes a single argument
-and returns a key to use for sorting purposes. This technique is fast because
-the key function is called exactly once for each input record.
+The value of the *key* parameter should be a function (or other callable) that
+takes a single argument and returns a key to use for sorting purposes. This
+technique is fast because the key function is called exactly once for each
+input record.
 
 A common pattern is to sort complex objects using some of the object's indices
 as keys. For example:
