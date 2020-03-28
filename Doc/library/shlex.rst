@@ -37,7 +37,8 @@ The :mod:`shlex` module defines the following functions:
       standard input.
 
    .. deprecated:: 3.9
-      Passing ``None`` for *s* will raise an exception in future Python versions.
+      Passing ``None`` for *s* will raise an exception in future Python
+      versions.
 
 .. function:: join(split_command)
 
