@@ -29,7 +29,7 @@ _bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("compress", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _bz2_BZ2Compressor_compress_impl(self, &data);
@@ -85,7 +85,7 @@ _bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     int compresslevel = 9;
 
-    if ((Py_TYPE(self) == &BZ2Compressor_Type) &&
+    if (Py_IS_TYPE(self, &BZ2Compressor_Type) &&
         !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
         goto exit;
     }
@@ -156,7 +156,7 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("decompress", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -207,11 +207,11 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
 
-    if ((Py_TYPE(self) == &BZ2Decompressor_Type) &&
+    if (Py_IS_TYPE(self, &BZ2Decompressor_Type) &&
         !_PyArg_NoPositional("BZ2Decompressor", args)) {
         goto exit;
     }
-    if ((Py_TYPE(self) == &BZ2Decompressor_Type) &&
+    if (Py_IS_TYPE(self, &BZ2Decompressor_Type) &&
         !_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
         goto exit;
     }
@@ -220,4 +220,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8e123f4eec497655 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f3f1e788fe28ee1 input=a9049054013a1b77]*/

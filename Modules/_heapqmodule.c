@@ -36,7 +36,11 @@ siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
         parent = arr[parentpos];
+        Py_INCREF(newitem);
+        Py_INCREF(parent);
         cmp = PyObject_RichCompareBool(newitem, parent, Py_LT);
+        Py_DECREF(parent);
+        Py_DECREF(newitem);
         if (cmp < 0)
             return -1;
         if (size != PyList_GET_SIZE(heap)) {
@@ -78,10 +82,13 @@ siftup(PyListObject *heap, Py_ssize_t pos)
         /* Set childpos to index of smaller child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
         if (childpos + 1 < endpos) {
-            cmp = PyObject_RichCompareBool(
-                arr[childpos],
-                arr[childpos + 1],
-                Py_LT);
+            PyObject* a = arr[childpos];
+            PyObject* b = arr[childpos + 1];
+            Py_INCREF(a);
+            Py_INCREF(b);
+            cmp = PyObject_RichCompareBool(a, b, Py_LT);
+            Py_DECREF(a);
+            Py_DECREF(b);
             if (cmp < 0)
                 return -1;
             childpos += ((unsigned)cmp ^ 1);   /* increment when cmp==0 */
@@ -264,7 +271,10 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
         return item;
     }
 
-    cmp = PyObject_RichCompareBool(PyList_GET_ITEM(heap, 0), item, Py_LT);
+    PyObject* top = PyList_GET_ITEM(heap, 0);
+    Py_INCREF(top);
+    cmp = PyObject_RichCompareBool(top, item, Py_LT);
+    Py_DECREF(top);
     if (cmp < 0)
         return NULL;
     if (cmp == 0) {
@@ -420,7 +430,11 @@ siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
         parent = arr[parentpos];
+        Py_INCREF(parent);
+        Py_INCREF(newitem);
         cmp = PyObject_RichCompareBool(parent, newitem, Py_LT);
+        Py_DECREF(parent);
+        Py_DECREF(newitem);
         if (cmp < 0)
             return -1;
         if (size != PyList_GET_SIZE(heap)) {
@@ -462,10 +476,13 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
         /* Set childpos to index of smaller child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
         if (childpos + 1 < endpos) {
-            cmp = PyObject_RichCompareBool(
-                arr[childpos + 1],
-                arr[childpos],
-                Py_LT);
+            PyObject* a = arr[childpos + 1];
+            PyObject* b = arr[childpos];
+            Py_INCREF(a);
+            Py_INCREF(b);
+            cmp = PyObject_RichCompareBool(a, b, Py_LT);
+            Py_DECREF(a);
+            Py_DECREF(b);
             if (cmp < 0)
                 return -1;
             childpos += ((unsigned)cmp ^ 1);   /* increment when cmp==0 */
@@ -537,7 +554,6 @@ _heapq__heapify_max(PyObject *module, PyObject *heap)
 {
     return heapify_internal(heap, siftup_max);
 }
-
 
 static PyMethodDef heapq_methods[] = {
     _HEAPQ_HEAPPUSH_METHODDEF
@@ -677,13 +693,29 @@ Believe me, real good tape sorts were quite spectacular to watch!\n\
 From all times, sorting has always been a Great Art! :-)\n");
 
 
+static int
+heapq_exec(PyObject *m)
+{
+    PyObject *about = PyUnicode_FromString(__about__);
+    if (PyModule_AddObject(m, "__about__", about) < 0) {
+        Py_DECREF(about);
+        return -1;
+    }
+    return 0;
+}
+
+static struct PyModuleDef_Slot heapq_slots[] = {
+    {Py_mod_exec, heapq_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef _heapqmodule = {
     PyModuleDef_HEAD_INIT,
     "_heapq",
     module_doc,
-    -1,
+    0,
     heapq_methods,
-    NULL,
+    heapq_slots,
     NULL,
     NULL,
     NULL
@@ -692,13 +724,5 @@ static struct PyModuleDef _heapqmodule = {
 PyMODINIT_FUNC
 PyInit__heapq(void)
 {
-    PyObject *m, *about;
-
-    m = PyModule_Create(&_heapqmodule);
-    if (m == NULL)
-        return NULL;
-    about = PyUnicode_DecodeUTF8(__about__, strlen(__about__), NULL);
-    PyModule_AddObject(m, "__about__", about);
-    return m;
+    return PyModuleDef_Init(&_heapqmodule);
 }
-

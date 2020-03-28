@@ -27,7 +27,7 @@ def hanoi(n, a, b, c, report):
 class Tkhanoi:
 
     # Create our objects
-    def __init__(self, n, bitmap = None):
+    def __init__(self, n, bitmap=None):
         self.n = n
         self.tk = tk = Tk()
         self.canvas = c = Canvas(tk)
@@ -77,7 +77,7 @@ class Tkhanoi:
 
     # Run -- never returns
     def run(self):
-        while 1:
+        while True:
             hanoi(self.n, 0, 1, 2, self.report)
             hanoi(self.n, 1, 2, 0, self.report)
             hanoi(self.n, 2, 0, 1, self.report)
@@ -94,7 +94,7 @@ class Tkhanoi:
 
         # Lift the piece above peg a
         ax1, ay1, ax2, ay2 = c.bbox(self.pegs[a])
-        while 1:
+        while True:
             x1, y1, x2, y2 = c.bbox(p)
             if y2 < ay1: break
             c.move(p, 0, -1)
@@ -103,7 +103,7 @@ class Tkhanoi:
         # Move it towards peg b
         bx1, by1, bx2, by2 = c.bbox(self.pegs[b])
         newcenter = (bx1+bx2)//2
-        while 1:
+        while True:
             x1, y1, x2, y2 = c.bbox(p)
             center = (x1+x2)//2
             if center == newcenter: break
@@ -114,7 +114,7 @@ class Tkhanoi:
         # Move it down on top of the previous piece
         pieceheight = y2-y1
         newbottom = by2 - pieceheight*len(self.pegstate[b]) - 2
-        while 1:
+        while True:
             x1, y1, x2, y2 = c.bbox(p)
             if y2 >= newbottom: break
             c.move(p, 0, 1)

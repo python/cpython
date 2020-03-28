@@ -313,10 +313,10 @@ static PyTypeObject PySimpleQueueType = {
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)simplequeue_dealloc,    /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     0,                                  /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/
@@ -390,11 +390,9 @@ PyInit__queue(void)
     if (PyModule_AddObject(m, "Empty", EmptyError) < 0)
         return NULL;
 
-    if (PyType_Ready(&PySimpleQueueType) < 0)
+    if (PyModule_AddType(m, &PySimpleQueueType) < 0) {
         return NULL;
-    Py_INCREF(&PySimpleQueueType);
-    if (PyModule_AddObject(m, "SimpleQueue", (PyObject *)&PySimpleQueueType) < 0)
-        return NULL;
+    }
 
     return m;
 }

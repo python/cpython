@@ -15,7 +15,11 @@ class HTTPStatus(IntEnum):
         * RFC 7238: Permanent Redirect
         * RFC 2295: Transparent Content Negotiation in HTTP
         * RFC 2774: An HTTP Extension Framework
+        * RFC 7725: An HTTP Status Code to Report Legal Obstacles
         * RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)
+        * RFC 2324: Hyper Text Coffee Pot Control Protocol (HTCPCP/1.0)
+        * RFC 8297: An HTTP Status Code for Indicating Hints
+        * RFC 8470: Using Early Data in HTTP
     """
     def __new__(cls, value, phrase, description=''):
         obj = int.__new__(cls, value)
@@ -30,6 +34,7 @@ class HTTPStatus(IntEnum):
     SWITCHING_PROTOCOLS = (101, 'Switching Protocols',
             'Switching to new protocol; obey Upgrade header')
     PROCESSING = 102, 'Processing'
+    EARLY_HINTS = 103, 'Early Hints'
 
     # success
     OK = 200, 'OK', 'Request fulfilled, document follows'
@@ -59,7 +64,7 @@ class HTTPStatus(IntEnum):
     TEMPORARY_REDIRECT = (307, 'Temporary Redirect',
         'Object moved temporarily -- see URI list')
     PERMANENT_REDIRECT = (308, 'Permanent Redirect',
-        'Object moved temporarily -- see URI list')
+        'Object moved permanently -- see URI list')
 
     # client error
     BAD_REQUEST = (400, 'Bad Request',
@@ -99,11 +104,14 @@ class HTTPStatus(IntEnum):
         'Cannot satisfy request range')
     EXPECTATION_FAILED = (417, 'Expectation Failed',
         'Expect condition could not be satisfied')
+    IM_A_TEAPOT = (418, 'I\'m a Teapot',
+        'Server refuses to brew coffee because it is a teapot.')
     MISDIRECTED_REQUEST = (421, 'Misdirected Request',
         'Server is not able to produce a response')
     UNPROCESSABLE_ENTITY = 422, 'Unprocessable Entity'
     LOCKED = 423, 'Locked'
     FAILED_DEPENDENCY = 424, 'Failed Dependency'
+    TOO_EARLY = 425, 'Too Early'
     UPGRADE_REQUIRED = 426, 'Upgrade Required'
     PRECONDITION_REQUIRED = (428, 'Precondition Required',
         'The origin server requires the request to be conditional')
@@ -114,6 +122,10 @@ class HTTPStatus(IntEnum):
         'Request Header Fields Too Large',
         'The server is unwilling to process the request because its header '
         'fields are too large')
+    UNAVAILABLE_FOR_LEGAL_REASONS = (451,
+        'Unavailable For Legal Reasons',
+        'The server is denying access to the '
+        'resource as a consequence of a legal demand')
 
     # server errors
     INTERNAL_SERVER_ERROR = (500, 'Internal Server Error',

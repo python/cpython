@@ -312,54 +312,6 @@ array_array_tolist(arrayobject *self, PyObject *Py_UNUSED(ignored))
     return array_array_tolist_impl(self);
 }
 
-PyDoc_STRVAR(array_array_fromstring__doc__,
-"fromstring($self, buffer, /)\n"
-"--\n"
-"\n"
-"Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).\n"
-"\n"
-"This method is deprecated. Use frombytes instead.");
-
-#define ARRAY_ARRAY_FROMSTRING_METHODDEF    \
-    {"fromstring", (PyCFunction)array_array_fromstring, METH_O, array_array_fromstring__doc__},
-
-static PyObject *
-array_array_fromstring_impl(arrayobject *self, Py_buffer *buffer);
-
-static PyObject *
-array_array_fromstring(arrayobject *self, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
-
-    if (PyUnicode_Check(arg)) {
-        Py_ssize_t len;
-        const char *ptr = PyUnicode_AsUTF8AndSize(arg, &len);
-        if (ptr == NULL) {
-            goto exit;
-        }
-        PyBuffer_FillInfo(&buffer, arg, (void *)ptr, len, 1, 0);
-    }
-    else { /* any bytes-like object */
-        if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-            _PyArg_BadArgument("fromstring", 0, "contiguous buffer", arg);
-            goto exit;
-        }
-    }
-    return_value = array_array_fromstring_impl(self, &buffer);
-
-exit:
-    /* Cleanup for buffer */
-    if (buffer.obj) {
-       PyBuffer_Release(&buffer);
-    }
-
-    return return_value;
-}
-
 PyDoc_STRVAR(array_array_frombytes__doc__,
 "frombytes($self, buffer, /)\n"
 "--\n"
@@ -382,7 +334,7 @@ array_array_frombytes(arrayobject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("frombytes", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("frombytes", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = array_array_frombytes_impl(self, &buffer);
@@ -412,26 +364,6 @@ static PyObject *
 array_array_tobytes(arrayobject *self, PyObject *Py_UNUSED(ignored))
 {
     return array_array_tobytes_impl(self);
-}
-
-PyDoc_STRVAR(array_array_tostring__doc__,
-"tostring($self, /)\n"
-"--\n"
-"\n"
-"Convert the array to an array of machine values and return the bytes representation.\n"
-"\n"
-"This method is deprecated. Use tobytes instead.");
-
-#define ARRAY_ARRAY_TOSTRING_METHODDEF    \
-    {"tostring", (PyCFunction)array_array_tostring, METH_NOARGS, array_array_tostring__doc__},
-
-static PyObject *
-array_array_tostring_impl(arrayobject *self);
-
-static PyObject *
-array_array_tostring(arrayobject *self, PyObject *Py_UNUSED(ignored))
-{
-    return array_array_tostring_impl(self);
 }
 
 PyDoc_STRVAR(array_array_fromunicode__doc__,
@@ -537,14 +469,14 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
     }
     arraytype = (PyTypeObject *)args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("_array_reconstructor", 2, "a unicode character", args[1]);
+        _PyArg_BadArgument("_array_reconstructor", "argument 2", "a unicode character", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1])) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[1]) != 1) {
-        _PyArg_BadArgument("_array_reconstructor", 2, "a unicode character", args[1]);
+        _PyArg_BadArgument("_array_reconstructor", "argument 2", "a unicode character", args[1]);
         goto exit;
     }
     typecode = PyUnicode_READ_CHAR(args[1], 0);
@@ -599,4 +531,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=c9a40f11f1a866fb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f649fc0bc9f6b13a input=a9049054013a1b77]*/

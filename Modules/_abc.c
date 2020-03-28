@@ -82,7 +82,7 @@ _get_impl(PyObject *self)
     if (impl == NULL) {
         return NULL;
     }
-    if (Py_TYPE(impl) != &_abc_data_type) {
+    if (!Py_IS_TYPE(impl, &_abc_data_type)) {
         PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
         Py_DECREF(impl);
         return NULL;
@@ -514,12 +514,12 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
             }
         }
         /* Fall back to the subclass check. */
-        result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
-                                               subclass, NULL);
+        result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
+                                              subclass);
         goto end;
     }
-    result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
-                                           subclass, NULL);
+    result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
+                                          subclass);
     if (result == NULL) {
         goto end;
     }
@@ -531,8 +531,8 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         break;
     case 0:
         Py_DECREF(result);
-        result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
-                                               subtype, NULL);
+        result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
+                                              subtype);
         break;
     case 1:  // Nothing to do.
         break;
@@ -547,7 +547,7 @@ end:
 }
 
 
-// Return -1 when exception occured.
+// Return -1 when exception occurred.
 // Return 1 when result is set.
 // Return 0 otherwise.
 static int subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
@@ -613,8 +613,8 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* 3. Check the subclass hook. */
-    ok = _PyObject_CallMethodIdObjArgs((PyObject *)self, &PyId___subclasshook__,
-                                       subclass, NULL);
+    ok = _PyObject_CallMethodIdOneArg((PyObject *)self, &PyId___subclasshook__,
+                                      subclass);
     if (ok == NULL) {
         goto end;
     }
@@ -659,7 +659,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     /* 5. Check if it's a subclass of a registered class (recursive). */
     if (subclasscheck_check_registry(impl, subclass, &result)) {
-        // Exception occured or result is set.
+        // Exception occurred or result is set.
         goto end;
     }
 
@@ -807,26 +807,35 @@ static struct PyMethodDef module_functions[] = {
     {NULL,       NULL}          /* sentinel */
 };
 
+static int
+_abc_exec(PyObject *module)
+{
+    if (PyType_Ready(&_abc_data_type) < 0) {
+        return -1;
+    }
+    _abc_data_type.tp_doc = abc_data_doc;
+    return 0;
+}
+
+static PyModuleDef_Slot _abc_slots[] = {
+    {Py_mod_exec, _abc_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef _abcmodule = {
     PyModuleDef_HEAD_INIT,
     "_abc",
     _abc__doc__,
-    -1,
+    0,
     module_functions,
-    NULL,
+    _abc_slots,
     NULL,
     NULL,
     NULL
 };
 
-
 PyMODINIT_FUNC
 PyInit__abc(void)
 {
-    if (PyType_Ready(&_abc_data_type) < 0) {
-        return NULL;
-    }
-    _abc_data_type.tp_doc = abc_data_doc;
-
-    return PyModule_Create(&_abcmodule);
+    return PyModuleDef_Init(&_abcmodule);
 }

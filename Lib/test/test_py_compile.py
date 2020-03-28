@@ -51,7 +51,7 @@ class SourceDateEpochTestMeta(type(unittest.TestCase)):
 class PyCompileTestsBase:
 
     def setUp(self):
-        self.directory = tempfile.mkdtemp()
+        self.directory = tempfile.mkdtemp(dir=os.getcwd())
         self.source_path = os.path.join(self.directory, '_test.py')
         self.pyc_path = self.source_path + 'c'
         self.cache_path = importlib.util.cache_from_source(self.source_path)
@@ -191,6 +191,15 @@ class PyCompileTestsBase:
             flags = importlib._bootstrap_external._classify_pyc(
                 fp.read(), 'test', {})
         self.assertEqual(flags, 0b1)
+
+    def test_quiet(self):
+        bad_coding = os.path.join(os.path.dirname(__file__), 'bad_coding2.py')
+        with support.captured_stderr() as stderr:
+            self.assertIsNone(py_compile.compile(bad_coding, doraise=False, quiet=2))
+            self.assertIsNone(py_compile.compile(bad_coding, doraise=True, quiet=2))
+            self.assertEqual(stderr.getvalue(), '')
+            with self.assertRaises(py_compile.PyCompileError):
+                py_compile.compile(bad_coding, doraise=True, quiet=1)
 
 
 class PyCompileTestsWithSourceEpoch(PyCompileTestsBase,

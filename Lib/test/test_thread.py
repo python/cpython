@@ -133,26 +133,23 @@ class ThreadRunningTests(BasicThreadTest):
                 time.sleep(POLL_SLEEP)
             self.assertEqual(thread._count(), orig)
 
-    def test_save_exception_state_on_error(self):
-        # See issue #14474
+    def test_unraisable_exception(self):
         def task():
             started.release()
-            raise SyntaxError
-        def mywrite(self, *args):
-            try:
-                raise ValueError
-            except ValueError:
-                pass
-            real_write(self, *args)
+            raise ValueError("task failed")
+
         started = thread.allocate_lock()
-        with support.captured_output("stderr") as stderr:
-            real_write = stderr.write
-            stderr.write = mywrite
-            started.acquire()
+        with support.catch_unraisable_exception() as cm:
             with support.wait_threads_exit():
+                started.acquire()
                 thread.start_new_thread(task, ())
                 started.acquire()
-        self.assertIn("Traceback", stderr.getvalue())
+
+            self.assertEqual(str(cm.unraisable.exc_value), "task failed")
+            self.assertIs(cm.unraisable.object, task)
+            self.assertEqual(cm.unraisable.err_msg,
+                             "Exception ignored in thread started by")
+            self.assertIsNotNone(cm.unraisable.exc_traceback)
 
 
 class Barrier:

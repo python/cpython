@@ -82,18 +82,10 @@ class CountLinesTest(unittest.TestCase):
 
 class SqueezerTest(unittest.TestCase):
     """Tests for the Squeezer class."""
-    def tearDown(self):
-        # Clean up the Squeezer class's reference to its instance,
-        # to avoid side-effects from one test case upon another.
-        if Squeezer._instance_weakref is not None:
-            Squeezer._instance_weakref = None
-
     def make_mock_editor_window(self, with_text_widget=False):
         """Create a mock EditorWindow instance."""
         editwin = NonCallableMagicMock()
-        # isinstance(editwin, PyShell) must be true for Squeezer to enable
-        # auto-squeezing; in practice this will always be true.
-        editwin.__class__ = PyShell
+        editwin.width = 80
 
         if with_text_widget:
             editwin.root = get_test_tk_root(self)
@@ -107,7 +99,6 @@ class SqueezerTest(unittest.TestCase):
         if editor_window is None:
             editor_window = self.make_mock_editor_window()
         squeezer = Squeezer(editor_window)
-        squeezer.get_line_width = Mock(return_value=80)
         return squeezer
 
     def make_text_widget(self, root=None):
@@ -143,8 +134,8 @@ class SqueezerTest(unittest.TestCase):
                               line_width=line_width,
                               expected=expected):
                 text = eval(text_code)
-                squeezer.get_line_width.return_value = line_width
-                self.assertEqual(squeezer.count_lines(text), expected)
+                with patch.object(editwin, 'width', line_width):
+                    self.assertEqual(squeezer.count_lines(text), expected)
 
     def test_init(self):
         """Test the creation of Squeezer instances."""
@@ -294,7 +285,6 @@ class SqueezerTest(unittest.TestCase):
         """Test the reload() class-method."""
         editwin = self.make_mock_editor_window(with_text_widget=True)
         squeezer = self.make_squeezer_instance(editwin)
-        squeezer.load_font = Mock()
 
         orig_auto_squeeze_min_lines = squeezer.auto_squeeze_min_lines
 
@@ -307,7 +297,6 @@ class SqueezerTest(unittest.TestCase):
         Squeezer.reload()
         self.assertEqual(squeezer.auto_squeeze_min_lines,
                          new_auto_squeeze_min_lines)
-        squeezer.load_font.assert_called()
 
     def test_reload_no_squeezer_instances(self):
         """Test that Squeezer.reload() runs without any instances existing."""

@@ -688,19 +688,23 @@ The following exceptions are used as warning categories; see the
    Base class for warnings about deprecated features when those warnings are
    intended for other Python developers.
 
+   Ignored by the default warning filters, except in the ``__main__`` module
+   (:pep:`565`). Enabling the :ref:`Python Development Mode <devmode>` shows
+   this warning.
+
 
 .. exception:: PendingDeprecationWarning
 
-   Base class for warnings about features which will be deprecated in the
-   future.
+   Base class for warnings about features which are obsolete and
+   expected to be deprecated in the future, but are not deprecated
+   at the moment.
 
-   .. note::
-      PendingDeprecationWarning was introduced as an "ignored by default"
-      version of DeprecationWarning.  But :exc:`DeprecationWarning` is also
-      ignored by default since Python 2.7 and 3.2.
-      There is not much difference between PendingDeprecationWarning and
-      DeprecationWarning nowadays.  DeprecationWarning is recommended
-      in general.
+   This class is rarely used as emitting a warning about a possible
+   upcoming deprecation is unusual, and :exc:`DeprecationWarning`
+   is preferred for already active deprecations.
+
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
 
 
 .. exception:: SyntaxWarning
@@ -723,6 +727,9 @@ The following exceptions are used as warning categories; see the
 
    Base class for warnings about probable mistakes in module imports.
 
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
+
 
 .. exception:: UnicodeWarning
 
@@ -736,8 +743,10 @@ The following exceptions are used as warning categories; see the
 
 .. exception:: ResourceWarning
 
-   Base class for warnings related to resource usage. Ignored by the default
-   warning filters.
+   Base class for warnings related to resource usage.
+
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
 
    .. versionadded:: 3.2
 
