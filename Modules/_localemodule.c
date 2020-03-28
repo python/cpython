@@ -575,7 +575,7 @@ PyDoc_STRVAR(getfirstweekday__doc__,
 "Return the first day of week. 0 is Monday (the fallback), 6 is Sunday");
 
 static PyObject*
-PyLocale_getfirstweekday(PyObject* self)
+PyLocale_getfirstweekday(PyObject* self, PyObject* args)
 {
     int start = 0;
 #if defined(MS_WINDOWS)
