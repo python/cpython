@@ -1992,14 +1992,14 @@ class TestDocString(unittest.TestCase):
         class C:
             pass
 
-        self.assertDocStrEqual(C.__doc__, "C()")
+        self.assertDocStrEqual(C.__doc__, "C(**kwargs)")
 
     def test_docstring_one_field(self):
         @dataclass
         class C:
             x: int
 
-        self.assertDocStrEqual(C.__doc__, "C(x:int)")
+        self.assertDocStrEqual(C.__doc__, "C(x:int, **kwargs)")
 
     def test_docstring_two_fields(self):
         @dataclass
@@ -2007,7 +2007,7 @@ class TestDocString(unittest.TestCase):
             x: int
             y: int
 
-        self.assertDocStrEqual(C.__doc__, "C(x:int, y:int)")
+        self.assertDocStrEqual(C.__doc__, "C(x:int, y:int, **kwargs)")
 
     def test_docstring_three_fields(self):
         @dataclass
@@ -2016,49 +2016,49 @@ class TestDocString(unittest.TestCase):
             y: int
             z: str
 
-        self.assertDocStrEqual(C.__doc__, "C(x:int, y:int, z:str)")
+        self.assertDocStrEqual(C.__doc__, "C(x:int, y:int, z:str, **kwargs)")
 
     def test_docstring_one_field_with_default(self):
         @dataclass
         class C:
             x: int = 3
 
-        self.assertDocStrEqual(C.__doc__, "C(x:int=3)")
+        self.assertDocStrEqual(C.__doc__, "C(x:int=3, **kwargs)")
 
     def test_docstring_one_field_with_default_none(self):
         @dataclass
         class C:
             x: Union[int, type(None)] = None
 
-        self.assertDocStrEqual(C.__doc__, "C(x:Union[int, NoneType]=None)")
+        self.assertDocStrEqual(C.__doc__, "C(x:Union[int, NoneType]=None, **kwargs)")
 
     def test_docstring_list_field(self):
         @dataclass
         class C:
             x: List[int]
 
-        self.assertDocStrEqual(C.__doc__, "C(x:List[int])")
+        self.assertDocStrEqual(C.__doc__, "C(x:List[int], **kwargs)")
 
     def test_docstring_list_field_with_default_factory(self):
         @dataclass
         class C:
             x: List[int] = field(default_factory=list)
 
-        self.assertDocStrEqual(C.__doc__, "C(x:List[int]=<factory>)")
+        self.assertDocStrEqual(C.__doc__, "C(x:List[int]=<factory>, **kwargs)")
 
     def test_docstring_deque_field(self):
         @dataclass
         class C:
             x: deque
 
-        self.assertDocStrEqual(C.__doc__, "C(x:collections.deque)")
+        self.assertDocStrEqual(C.__doc__, "C(x:collections.deque, **kwargs)")
 
     def test_docstring_deque_field_with_default_factory(self):
         @dataclass
         class C:
             x: deque = field(default_factory=deque)
 
-        self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
+        self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>, **kwargs)")
 
 
 class TestInit(unittest.TestCase):
