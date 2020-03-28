@@ -105,8 +105,8 @@ Merge (``|``) and update (``|=``) operators have been added to the built-in
 :class:`dict` class.  See :pep:`584` for a full description.
 (Contributed by Brandt Bucher in :issue:`36144`.)
 
-cutprefix and cutsuffix methods for strings
--------------------------------------------
+removeprefix and removesuffix methods for strings
+-------------------------------------------------
 ``str.removeprefix(prefix)`` and ``str.removesuffix(suffix)`` have been added to
 easily remove an unneeded prefix or a suffix from a string. Corresponding
 ``bytes`` and ``bytearray`` methods have also been added.
