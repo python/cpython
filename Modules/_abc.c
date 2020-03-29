@@ -24,7 +24,9 @@ typedef struct {
     PyObject *_abc_data_type;
 } _abcmodule_state;
 
-/* A global counter that is incremented each time a class is
+/*
+   FIXME: PEP 573: Move abc_invalidation_counter into _abcmodule_state.
+   A global counter that is incremented each time a class is
    registered as a virtual subclass of anything.  It forces the
    negative cache to be cleared before its next use.
    Note: this counter is private. Use `abc.get_cache_token()` for
