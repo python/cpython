@@ -12,8 +12,7 @@
 --------------
 
 `JSON (JavaScript Object Notation) <http://json.org>`_, specified by
-`STD 90 <https://tools.ietf.org/html/std90>`_ or :rfc:`8259` (which obsoletes :rfc:`4627`
-and :rfc:`7159`) and by
+:rfc:`8259` (which obsoletes :rfc:`4627` and :rfc:`7159`) and by
 `ECMA-404 <http://www.ecma-international.org/publications/standards/Ecma-404.htm>`_,
 is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
@@ -753,5 +752,4 @@ Command line options
 .. cmdoption:: -h, --help
 
    Show the help message.
-
 
