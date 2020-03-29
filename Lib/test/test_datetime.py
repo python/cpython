@@ -5,16 +5,11 @@ from test.support import import_fresh_module, run_unittest
 
 TESTS = 'test.datetimetester'
 
-try:
-    pure_tests = import_fresh_module(TESTS, fresh=['datetime', '_strptime'],
-                                     blocked=['_datetime'])
-    fast_tests = import_fresh_module(TESTS, fresh=['datetime',
-                                                   '_datetime', '_strptime'])
-finally:
-    # XXX: import_fresh_module() is supposed to leave sys.module cache untouched,
-    # XXX: but it does not, so we have to cleanup ourselves.
-    for modname in ['datetime', '_datetime', '_strptime']:
-        sys.modules.pop(modname, None)
+pure_tests = import_fresh_module(TESTS, fresh=['datetime', '_strptime'],
+                                 blocked=['_datetime'])
+fast_tests = import_fresh_module(TESTS, fresh=['datetime',
+                                               '_datetime', '_strptime'])
+
 test_modules = [pure_tests, fast_tests]
 test_suffixes = ["_Pure", "_Fast"]
 # XXX(gb) First run all the _Pure tests, then all the _Fast tests.  You might
