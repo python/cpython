@@ -23,6 +23,7 @@ import tempfile
 import unittest
 
 # Local imports
+from lib2to3 import pytree
 from lib2to3.pgen2 import driver as pgen2_driver
 from lib2to3.pgen2 import tokenize
 from ..pgen2.parse import ParseError
@@ -37,6 +38,11 @@ class TestDriver(support.TestCase):
         self.assertEqual(t.children[0].children[0].type, syms.print_stmt)
         self.assertEqual(t.children[1].children[0].type, syms.print_stmt)
 
+    def test_driver_with_default_convert(self):
+        driver = pgen2_driver.Driver(grammar=support.grammar)
+        driver.parse_string("test\n")
+        driver = pgen2_driver.Driver(grammar=support.grammar, convert=pytree.convert)
+        self.assertEqual(driver.parse_string("test\n").used_names, {"test"})
 
 class TestPgen2Caching(support.TestCase):
     def test_load_grammar_from_txt_file(self):

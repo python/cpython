@@ -201,4 +201,7 @@ class Parser(object):
                 node[-1].append(newnode)
             else:
                 self.rootnode = newnode
-                self.rootnode.used_names = self.used_names
+                try:
+                    self.rootnode.used_names = self.used_names
+                except AttributeError:
+                    pass # skip if an attribute can't be assigned

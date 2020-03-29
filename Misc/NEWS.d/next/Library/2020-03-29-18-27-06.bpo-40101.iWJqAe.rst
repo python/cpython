@@ -1,0 +1,3 @@
+Allow usages of Driver/Parser from :mod:`lib2to3` without a convert
+functionality or a converter that would return unassignable objects. Patch
+by Batuhan Taskaya.
