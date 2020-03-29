@@ -89,6 +89,8 @@ def xpath_tokenizer(pattern, namespaces=None):
             else:
                 yield token
             parsing_attribute = False
+        elif namespaces and '' in namespaces:
+            yield '', "{%s}%s" % (namespaces[''], token[1])
         else:
             yield token
             parsing_attribute = ttype == '@'
