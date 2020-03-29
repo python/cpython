@@ -4419,16 +4419,22 @@ PyInit__elementtree(void)
         "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
         );
     Py_INCREF(st->parseerror_obj);
-    PyModule_AddObject(m, "ParseError", st->parseerror_obj);
+    if (PyModule_AddObject(m, "ParseError", st->parseerror_obj) < 0) {
+        Py_DECREF(st->parseerror_obj);
+        return NULL;
+    }
 
-    Py_INCREF((PyObject *)&Element_Type);
-    PyModule_AddObject(m, "Element", (PyObject *)&Element_Type);
+    PyTypeObject *types[] = {
+        &Element_Type,
+        &TreeBuilder_Type,
+        &XMLParser_Type
+    };
 
-    Py_INCREF((PyObject *)&TreeBuilder_Type);
-    PyModule_AddObject(m, "TreeBuilder", (PyObject *)&TreeBuilder_Type);
-
-    Py_INCREF((PyObject *)&XMLParser_Type);
-    PyModule_AddObject(m, "XMLParser", (PyObject *)&XMLParser_Type);
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
+        if (PyModule_AddType(m, types[i]) < 0) {
+            return NULL;
+        }
+    }
 
     return m;
 }
