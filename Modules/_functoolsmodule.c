@@ -1400,10 +1400,10 @@ static PyTypeObject lru_cache_type = {
 
 /* module level code ********************************************************/
 
-PyDoc_STRVAR(module_doc,
+PyDoc_STRVAR(_functools_doc,
 "Tools that operate on functions.");
 
-static PyMethodDef module_methods[] = {
+static PyMethodDef _functools_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
     {"cmp_to_key",      (PyCFunction)(void(*)(void))functools_cmp_to_key,
      METH_VARARGS | METH_KEYWORDS, functools_cmp_to_key_doc},
@@ -1411,53 +1411,53 @@ static PyMethodDef module_methods[] = {
 };
 
 static void
-module_free(void *m)
+_functools_free(void *m)
 {
     Py_CLEAR(kwd_mark);
 }
 
-static struct PyModuleDef _functoolsmodule = {
+static int
+_functools_exec(PyObject *module)
+{
+    PyTypeObject *typelist[] = {
+        &partial_type,
+        &lru_cache_type
+    };
+
+    if (!kwd_mark) {
+        kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+        if (!kwd_mark) {
+            return -1;
+        }
+    }
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
+        if (PyModule_AddType(module, typelist[i]) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static struct PyModuleDef_Slot _functools_slots[] = {
+    {Py_mod_exec, _functools_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef _functools_module = {
     PyModuleDef_HEAD_INIT,
     "_functools",
-    module_doc,
-    -1,
-    module_methods,
+    _functools_doc,
+    0,
+    _functools_methods,
+    _functools_slots,
     NULL,
     NULL,
-    NULL,
-    module_free,
+    _functools_free,
 };
 
 PyMODINIT_FUNC
 PyInit__functools(void)
 {
-    int i;
-    PyObject *m;
-    const char *name;
-    PyTypeObject *typelist[] = {
-        &partial_type,
-        &lru_cache_type,
-        NULL
-    };
-
-    m = PyModule_Create(&_functoolsmodule);
-    if (m == NULL)
-        return NULL;
-
-    kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
-    if (!kwd_mark) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    for (i=0 ; typelist[i] != NULL ; i++) {
-        if (PyType_Ready(typelist[i]) < 0) {
-            Py_DECREF(m);
-            return NULL;
-        }
-        name = _PyType_Name(typelist[i]);
-        Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
-    }
-    return m;
+    return PyModuleDef_Init(&_functools_module);
 }

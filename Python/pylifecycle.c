@@ -16,6 +16,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
+#include "pycore_sysmodule.h"
 #include "pycore_traceback.h"
 #include "grammar.h"
 #include "node.h"
@@ -548,7 +549,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
        another running thread (see issue #9901).
        Instead we destroy the previously created GIL here, which ensures
        that we can call Py_Initialize / Py_FinalizeEx multiple times. */
-    _PyEval_FiniThreads(&runtime->ceval);
+    _PyEval_FiniThreads(tstate);
 
     /* Auto-thread-state API */
     status = _PyGILState_Init(tstate);
@@ -556,7 +557,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    /* Create the GIL */
+    /* Create the GIL and the pending calls lock */
     status = _PyEval_InitThreads(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1409,11 +1410,7 @@ Py_FinalizeEx(void)
     _PyGC_CollectIfEnabled();
 
     /* Clear all loghooks */
-    /* We want minimal exposure of this function, so define the extern
-     * here. The linker should discover the correct function without
-     * exporting a symbol. */
-    extern void _PySys_ClearAuditHooks(void);
-    _PySys_ClearAuditHooks();
+    _PySys_ClearAuditHooks(tstate);
 
     /* Destroy all modules */
     _PyImport_Cleanup(tstate);
@@ -1579,6 +1576,12 @@ new_interpreter(PyThreadState **tstate_p)
     status = init_interp_main(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
+    }
+
+    /* Create the pending calls lock */
+    status = _PyEval_InitThreads(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     *tstate_p = tstate;
@@ -2170,33 +2173,50 @@ fatal_error_dump_runtime(FILE *stream, _PyRuntimeState *runtime)
 }
 
 
-static void _Py_NO_RETURN
-fatal_error(const char *prefix, const char *msg, int status)
+static inline void _Py_NO_RETURN
+fatal_error_exit(int status)
 {
-    FILE *stream = stderr;
+    if (status < 0) {
+#if defined(MS_WINDOWS) && defined(_DEBUG)
+        DebugBreak();
+#endif
+        abort();
+    }
+    else {
+        exit(status);
+    }
+}
+
+
+static void _Py_NO_RETURN
+fatal_error(FILE *stream, int header, const char *prefix, const char *msg,
+            int status)
+{
     const int fd = fileno(stream);
     static int reentrant = 0;
 
     if (reentrant) {
         /* Py_FatalError() caused a second fatal error.
            Example: flush_std_files() raises a recursion error. */
-        goto exit;
+        fatal_error_exit(status);
     }
     reentrant = 1;
 
-    fprintf(stream, "Fatal Python error: ");
-    if (prefix) {
-        fputs(prefix, stream);
-        fputs(": ", stream);
+    if (header) {
+        fprintf(stream, "Fatal Python error: ");
+        if (prefix) {
+            fputs(prefix, stream);
+            fputs(": ", stream);
+        }
+        if (msg) {
+            fputs(msg, stream);
+        }
+        else {
+            fprintf(stream, "<message not set>");
+        }
+        fputs("\n", stream);
+        fflush(stream);
     }
-    if (msg) {
-        fputs(msg, stream);
-    }
-    else {
-        fprintf(stream, "<message not set>");
-    }
-    fputs("\n", stream);
-    fflush(stream); /* it helps in Windows debug build */
 
     _PyRuntimeState *runtime = &_PyRuntime;
     fatal_error_dump_runtime(stream, runtime);
@@ -2244,31 +2264,59 @@ fatal_error(const char *prefix, const char *msg, int status)
     fatal_output_debug(msg);
 #endif /* MS_WINDOWS */
 
-exit:
-    if (status < 0) {
-#if defined(MS_WINDOWS) && defined(_DEBUG)
-        DebugBreak();
-#endif
-        abort();
-    }
-    else {
-        exit(status);
-    }
+    fatal_error_exit(status);
 }
+
 
 #undef Py_FatalError
 
 void _Py_NO_RETURN
 Py_FatalError(const char *msg)
 {
-    fatal_error(NULL, msg, -1);
+    fatal_error(stderr, 1, NULL, msg, -1);
 }
+
 
 void _Py_NO_RETURN
 _Py_FatalErrorFunc(const char *func, const char *msg)
 {
-    fatal_error(func, msg, -1);
+    fatal_error(stderr, 1, func, msg, -1);
 }
+
+
+void _Py_NO_RETURN
+_Py_FatalErrorFormat(const char *func, const char *format, ...)
+{
+    static int reentrant = 0;
+    if (reentrant) {
+        /* _Py_FatalErrorFormat() caused a second fatal error */
+        fatal_error_exit(-1);
+    }
+    reentrant = 1;
+
+    FILE *stream = stderr;
+    fprintf(stream, "Fatal Python error: ");
+    if (func) {
+        fputs(func, stream);
+        fputs(": ", stream);
+    }
+    fflush(stream);
+
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    vfprintf(stream, format, vargs);
+    va_end(vargs);
+
+    fputs("\n", stream);
+    fflush(stream);
+
+    fatal_error(stream, 0, NULL, NULL, -1);
+}
+
 
 void _Py_NO_RETURN
 Py_ExitStatusException(PyStatus status)
@@ -2277,7 +2325,7 @@ Py_ExitStatusException(PyStatus status)
         exit(status.exitcode);
     }
     else if (_PyStatus_IS_ERROR(status)) {
-        fatal_error(status.func, status.err_msg, 1);
+        fatal_error(stderr, 1, status.func, status.err_msg, 1);
     }
     else {
         Py_FatalError("Py_ExitStatusException() must not be called on success");

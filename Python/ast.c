@@ -71,10 +71,6 @@ expr_context_name(expr_context_ty ctx)
         return "Store";
     case Del:
         return "Del";
-    case AugLoad:
-        return "AugLoad";
-    case AugStore:
-        return "AugStore";
     default:
         Py_UNREACHABLE();
     }
@@ -151,6 +147,11 @@ validate_constant(PyObject *value)
         return 1;
     }
 
+    if (!PyErr_Occurred()) {
+        PyErr_Format(PyExc_TypeError,
+                     "got an invalid type in Constant: %s",
+                     _PyType_Name(Py_TYPE(value)));
+    }
     return 0;
 }
 
@@ -265,9 +266,6 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             validate_keywords(exp->v.Call.keywords);
     case Constant_kind:
         if (!validate_constant(exp->v.Constant.value)) {
-            PyErr_Format(PyExc_TypeError,
-                         "got an invalid type in Constant: %s",
-                         _PyType_Name(Py_TYPE(exp->v.Constant.value)));
             return 0;
         }
         return 1;
@@ -729,11 +727,8 @@ num_stmts(const node *n)
                 return l;
             }
         default: {
-            char buf[128];
-
-            sprintf(buf, "Non-statement found: %d %d",
-                    TYPE(n), NCH(n));
-            Py_FatalError(buf);
+            _Py_FatalErrorFormat(__func__, "Non-statement found: %d %d",
+                                 TYPE(n), NCH(n));
         }
     }
     Py_UNREACHABLE();
@@ -1099,14 +1094,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
 {
     asdl_seq *s = NULL;
 
-    /* The ast defines augmented store and load contexts, but the
-       implementation here doesn't actually use them.  The code may be
-       a little more complex than necessary as a result.  It also means
-       that expressions in an augmented assignment have a Store context.
-       Consider restructuring so that augmented assignment uses
-       set_context(), too.
-    */
-    assert(ctx != AugStore && ctx != AugLoad);
+    /* Expressions in an augmented assignment have a Store context. */
 
     switch (e->kind) {
         case Attribute_kind:
@@ -1673,7 +1661,7 @@ ast_for_decorator(struct compiling *c, const node *n)
     REQ(n, decorator);
     REQ(CHILD(n, 0), AT);
     REQ(CHILD(n, 2), NEWLINE);
-    
+
     return ast_for_expr(c, CHILD(n, 1));
 }
 

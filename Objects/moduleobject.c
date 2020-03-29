@@ -26,16 +26,6 @@ static PyMemberDef module_members[] = {
 };
 
 
-/* Helper for sanity check for traverse not handling m_state == NULL
- * Issue #32374 */
-#ifdef Py_DEBUG
-static int
-bad_traverse_test(PyObject *self, void *arg) {
-    assert(self != NULL);
-    return 0;
-}
-#endif
-
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
@@ -360,16 +350,6 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
         }
     }
 
-    /* Sanity check for traverse not handling m_state == NULL
-     * This doesn't catch all possible cases, but in many cases it should
-     * make many cases of invalid code crash or raise Valgrind issues
-     * sooner than they would otherwise.
-     * Issue #32374 */
-#ifdef Py_DEBUG
-    if (def->m_traverse != NULL) {
-        def->m_traverse(m, bad_traverse_test, NULL);
-    }
-#endif
     Py_DECREF(nameobj);
     return m;
 
@@ -687,8 +667,12 @@ module_dealloc(PyModuleObject *m)
     }
     if (m->md_weaklist != NULL)
         PyObject_ClearWeakRefs((PyObject *) m);
-    if (m->md_def && m->md_def->m_free)
+    /* bpo-39824: Don't call m_free() if m_size > 0 and md_state=NULL */
+    if (m->md_def && m->md_def->m_free
+        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    {
         m->md_def->m_free(m);
+    }
     Py_XDECREF(m->md_dict);
     Py_XDECREF(m->md_name);
     if (m->md_state != NULL)
@@ -770,7 +754,10 @@ module_getattro(PyModuleObject *m, PyObject *name)
 static int
 module_traverse(PyModuleObject *m, visitproc visit, void *arg)
 {
-    if (m->md_def && m->md_def->m_traverse) {
+    /* bpo-39824: Don't call m_traverse() if m_size > 0 and md_state=NULL */
+    if (m->md_def && m->md_def->m_traverse
+        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    {
         int res = m->md_def->m_traverse((PyObject*)m, visit, arg);
         if (res)
             return res;
@@ -782,7 +769,10 @@ module_traverse(PyModuleObject *m, visitproc visit, void *arg)
 static int
 module_clear(PyModuleObject *m)
 {
-    if (m->md_def && m->md_def->m_clear) {
+    /* bpo-39824: Don't call m_clear() if m_size > 0 and md_state=NULL */
+    if (m->md_def && m->md_def->m_clear
+        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    {
         int res = m->md_def->m_clear((PyObject*)m);
         if (PyErr_Occurred()) {
             PySys_FormatStderr("Exception ignored in m_clear of module%s%V\n",
