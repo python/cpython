@@ -2792,8 +2792,7 @@ class PidTests(unittest.TestCase):
         args = [sys.executable, '-c', 'pass']
         # Add an implicit test for PyUnicode_FSConverter().
         pid = os.spawnv(os.P_NOWAIT, FakePath(args[0]), args)
-        status = os.waitpid(pid, 0)
-        self.assertEqual(status, (pid, 0))
+        support.wait_process(pid, exitcode=0)
 
 
 class SpawnTests(unittest.TestCase):
@@ -2877,14 +2876,7 @@ class SpawnTests(unittest.TestCase):
     def test_nowait(self):
         args = self.create_args()
         pid = os.spawnv(os.P_NOWAIT, args[0], args)
-        result = os.waitpid(pid, 0)
-        self.assertEqual(result[0], pid)
-        status = result[1]
-        if hasattr(os, 'WIFEXITED'):
-            self.assertTrue(os.WIFEXITED(status))
-            self.assertEqual(os.WEXITSTATUS(status), self.exitcode)
-        else:
-            self.assertEqual(status, self.exitcode << 8)
+        support.wait_process(pid, exitcode=self.exitcode)
 
     @requires_os_func('spawnve')
     def test_spawnve_bytes(self):
