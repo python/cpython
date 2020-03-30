@@ -8208,14 +8208,14 @@ struct encoding_map {
     PyObject_HEAD
     unsigned char level1[32];
     int count2, count3;
-    unsigned char level23[1];
+    unsigned char level23[];
 };
 
 static PyObject*
 encoding_map_size(PyObject *obj, PyObject* args)
 {
     struct encoding_map *map = (struct encoding_map*)obj;
-    return PyLong_FromLong(sizeof(*map) - 1 + 16*map->count2 +
+    return PyLong_FromLong(sizeof(*map) + 16*map->count2 +
                            128*map->count3);
 }
 
@@ -8347,7 +8347,7 @@ PyUnicode_BuildEncodingMap(PyObject* string)
 
     /* Create a three-level trie */
     result = PyObject_MALLOC(sizeof(struct encoding_map) +
-                             16*count2 + 128*count3 - 1);
+                             16*count2 + 128*count3);
     if (!result)
         return PyErr_NoMemory();
     PyObject_Init(result, &EncodingMapType);
