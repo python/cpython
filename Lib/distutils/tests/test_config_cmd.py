@@ -47,7 +47,7 @@ class ConfigTestCase(support.LoggingSilencer,
         cmd = config(dist)
         cmd._check_compiler()
         compiler = cmd.compiler
-        is_xlc = shutil.which(compiler.preprocessor[0]).startswith("/usr/vac")
+        is_xlc = "xlc" in compiler.preprocessor[0].lower()
         if is_xlc:
             self.skipTest('xlc: The -E option overrides the -P, -o, and -qsyntaxonly options')
 
