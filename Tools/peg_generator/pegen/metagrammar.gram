@@ -49,8 +49,10 @@ rules[RuleList]:
     | rule { [rule] }
 
 rule[Rule]:
-    | rulename memoflag? ":" alts NEWLINE INDENT more_alts DEDENT { Rule(rulename[0], rulename[1], Rhs(alts.alts + more_alts.alts), memo=opt) }
-    | rulename memoflag? ":" NEWLINE INDENT more_alts DEDENT { Rule(rulename[0], rulename[1], more_alts, memo=opt) }
+    | rulename memoflag? ":" alts NEWLINE INDENT more_alts DEDENT {
+          Rule(rulename[0], rulename[1], Rhs(alts.alts + more_alts.alts), memo=opt) }
+    | rulename memoflag? ":" NEWLINE INDENT more_alts DEDENT {
+          Rule(rulename[0], rulename[1], more_alts, memo=opt) }
     | rulename memoflag? ":" alts NEWLINE { Rule(rulename[0], rulename[1], alts, memo=opt) }
 
 rulename[RuleName]:
