@@ -19,6 +19,7 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
+from collections import deque
 
 
 ################################################################################
@@ -484,9 +485,9 @@ def _make_key(args, kwds, typed,
         return key[0]
     return _HashedSeq(key)
 
-def lru_cache(maxsize=128, typed=False):
-    """Least-recently-used cache decorator.
 
+def lru_cache(*args, maxsize=object(), typed=object()):
+    """Least-recently-used cache decorator.
     If *maxsize* is set to None, the LRU features are disabled and the cache
     can grow without bound.
 
@@ -509,24 +510,56 @@ def lru_cache(maxsize=128, typed=False):
     # The internals of the lru_cache are encapsulated for thread safety and
     # to allow the implementation to change (including a possible C version).
 
-    if isinstance(maxsize, int):
-        # Negative maxsize is treated as 0
-        if maxsize < 0:
-            maxsize = 0
-    elif callable(maxsize) and isinstance(typed, bool):
-        # The user_function was passed in directly via the maxsize argument
-        user_function, maxsize = maxsize, 128
-        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
-        return update_wrapper(wrapper, user_function)
-    elif maxsize is not None:
+    _maxsize_default, _typed_default = lru_cache.__kwdefaults__.values()
+    arg_len = len(args)
+    arg_queue = deque(args)
+    user_function = None
+
+    if arg_len > 3:
         raise TypeError(
-            'Expected first argument to be an integer, a callable, or None')
+            "lru_cache requires 0 to 3 positional arguments, but {} were given".format(arg_len)
+        )
+
+    if arg_queue and callable(arg_queue[0]):
+        user_function = arg_queue.popleft()
+    elif arg_len == 3:
+        raise TypeError("expected user_function to be a callable")
+
+    if arg_queue:
+        if maxsize is _maxsize_default:
+            maxsize = arg_queue.popleft()
+        else:
+            raise TypeError("got multiple values for argument 'maxsize'")
+
+    if arg_queue:
+        if typed is _typed_default:
+            typed = arg_queue.popleft()
+        else:
+            raise TypeError("got multiple values for argument 'typed'")
+
+    if maxsize is _maxsize_default:
+        maxsize = 128
+
+    if typed is _typed_default:
+        typed = False
+
+    if not isinstance(maxsize, int) and maxsize is not None:
+        raise TypeError("expected maxsize to be an integer or None")
+
+    if not isinstance(typed, bool):
+        raise TypeError("expected typed to be a boolean")
+
+    if isinstance(maxsize, int):
+        maxsize = max(maxsize, 0)
 
     def decorating_function(user_function):
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
         return update_wrapper(wrapper, user_function)
 
+    if not user_function is None:
+        return decorating_function(user_function)
     return decorating_function
+
 
 def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     # Constants shared by all lru cache instances:
