@@ -28,6 +28,9 @@ _Py_IDENTIFIER(__bytes__);
 
    Using PyBytesObject_SIZE instead of sizeof(PyBytesObject) saves
    3 bytes per string allocation on a typical system.
+
+   The + 1 accounts for the trailing \0 byte that we include as a safety
+   measure for code that treats the underlying char * as a C string.
 */
 #define PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
 
