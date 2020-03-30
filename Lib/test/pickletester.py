@@ -3404,7 +3404,10 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
     def test_multiple_unpicklings_minimal(self):
         # File-like object that doesn't support peek() and readinto()
         # (bpo-39681)
-        self._check_multiple_unpicklings(MinimalIO, seekable=False)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            self._check_multiple_unpicklings(MinimalIO, seekable=False)
 
     def test_unpickling_buffering_readline(self):
         # Issue #12687: the unpickler's buffering logic could fail with

@@ -1384,6 +1384,11 @@ _Unpickler_ReadInto(UnpicklerObject *self, char *buf, Py_ssize_t n)
     if (!self->readinto) {
         /* readinto() not supported on file-like object, fall back to read()
          * and copy into destination buffer (bpo-39681) */
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "file-like object should provide readinto()",
+                         1) < 0) {
+            return -1;
+        }
         PyObject* len = PyLong_FromSsize_t(n);
         if (len == NULL) {
             return -1;
