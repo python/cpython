@@ -24,7 +24,8 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
 #define PyCF_IGNORE_COOKIE 0x0800
 #define PyCF_TYPE_COMMENTS 0x1000
 #define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
-
+#define PyCF_COMPILE_MASK (PyCF_ONLY_AST | PyCF_ALLOW_TOP_LEVEL_AWAIT | \
+                           PyCF_TYPE_COMMENTS | PyCF_DONT_IMPLY_DEDENT)
 #ifndef Py_LIMITED_API
 typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
