@@ -83,7 +83,7 @@ class FutureTest(unittest.TestCase):
             for future in __future__.all_feature_names
         ]
         flags.extend(
-            (ast.PyCF_ALLOW_TOP_LEVEL_AWAIT, ast.PyCF_ONLY_AST, ast.PyCF_TYPE_COMMENTS)
+            getattr(ast, flag) for flag in dir(ast) if flag.startswith("PyCF_")
         )
         self.assertCountEqual(set(flags), flags)
 
