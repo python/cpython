@@ -1197,7 +1197,7 @@ class SizeofTest(unittest.TestCase):
         # EncodingMap
         import codecs, encodings.iso8859_3
         x = codecs.charmap_build(encodings.iso8859_3.decoding_table)
-        check(x, size('32B2iB'))
+        check(x, size('32B2i'))
         # enumerate
         check(enumerate([]), size('n3P'))
         # reverse
