@@ -21,7 +21,7 @@ _Py_IDENTIFIER(__subclasscheck__);
 _Py_IDENTIFIER(__subclasshook__);
 
 typedef struct {
-    PyObject *_abc_data_type;
+    PyTypeObject *_abc_data_type;
 } _abcmodule_state;
 
 /* A global counter that is incremented each time a class is
@@ -102,7 +102,7 @@ _get_impl(PyObject *module, PyObject *self)
     if (impl == NULL) {
         return NULL;
     }
-    if (!Py_IS_TYPE(impl, (PyTypeObject *)state->_abc_data_type)) {
+    if (!Py_IS_TYPE(impl, state->_abc_data_type)) {
         PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
         Py_DECREF(impl);
         return NULL;
@@ -418,7 +418,7 @@ _abc__abc_init(PyObject *module, PyObject *self)
     }
 
     /* Set up inheritance registry. */
-    data = abc_data_new((PyTypeObject *)state->_abc_data_type, NULL, NULL);
+    data = abc_data_new(state->_abc_data_type, NULL, NULL);
     if (data == NULL) {
         return NULL;
     }
@@ -832,7 +832,7 @@ static int
 _abcmodule_exec(PyObject *module)
 {
     _abcmodule_state *state = get_abc_state(module);
-    state->_abc_data_type = PyType_FromSpec(&_abc_data_type_spec);
+    state->_abc_data_type = (PyTypeObject *)PyType_FromSpec(&_abc_data_type_spec);
     if (state->_abc_data_type == NULL) {
         return -1;
     }
