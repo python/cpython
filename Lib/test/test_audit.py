@@ -11,6 +11,7 @@ if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
 
 AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
+
 class AuditTest(unittest.TestCase):
     def do_test(self, *args):
         with subprocess.Popen(
