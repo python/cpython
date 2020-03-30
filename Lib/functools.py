@@ -560,6 +560,7 @@ def lru_cache(*args, maxsize=object(), typed=object()):
         return decorating_function(user_function)
     return decorating_function
 
+lru_cache.__text_signature__ = "(maxsize=128, typed=False)"
 
 def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     # Constants shared by all lru cache instances:
