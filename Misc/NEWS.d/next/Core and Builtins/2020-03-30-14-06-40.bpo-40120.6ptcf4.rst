@@ -1,0 +1,4 @@
+Fixed internal structure definitions for structs such as PyBytesObject and
+unicode's encoding_map to not rely on C undefined behavior for access to
+their trailing unbounded character array in favor of C99 approved flexible
+array member syntax.
