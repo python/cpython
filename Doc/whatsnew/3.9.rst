@@ -195,6 +195,11 @@ which have not started running, instead of waiting for them to complete before
 shutting down the executor.
 (Contributed by Kyle Stanley in :issue:`39349`.)
 
+Removed daemon threads from :class:`~concurrent.futures.ThreadPoolExecutor`
+and :class:`~concurrent.futures.ProcessPoolExecutor`. This improves
+compatibility with subinterpreters and predictability in their shutdown
+processes. (Contributed by Kyle Stanley in :issue:`39812`.)
+
 curses
 ------
 
@@ -429,6 +434,8 @@ Build and C API Changes
   :c:func:`PyInterpreterState_Get` functions to get the interpreter.
   New :c:func:`PyThreadState_GetFrame` function to get the current frame of a
   Python thread state.
+  New :c:func:`PyThreadState_GetID` function: get the unique identifier of a
+  Python thread state.
   (Contributed by Victor Stinner in :issue:`39947`.)
 
 * Add ``--with-platlibdir`` option to the ``configure`` script: name of the
@@ -540,6 +547,11 @@ Build and C API Changes
 
 * The :c:func:`PyModule_AddType` function is added to help adding a type to a module.
   (Contributed by Dong-hee Na in :issue:`40024`.)
+
+* The Windows registry is no longer used to initialize :data:`sys.path` when
+  the ``-E`` option is used. This is significant when embedding Python on
+  Windows.
+  (Contributed by Zackery Spytz in :issue:`8901`.)
 
 Deprecated
 ==========
@@ -664,7 +676,11 @@ Removed
   module have been removed.  They were deprecated in Python 3.2.
   Use ``iter(x)`` or ``list(x)`` instead of ``x.getchildren()`` and
   ``x.iter()`` or ``list(x.iter())`` instead of ``x.getiterator()``.
-  The ``xml.etree.cElementTree`` module has been removed.
+  The ``xml.etree.cElementTree`` module has been removed,
+  use the :mod:`xml.etree.ElementTree` module instead.
+  Since Python 3.3 the ``xml.etree.cElementTree`` module has been deprecated,
+  the ``xml.etree.ElementTree`` module uses a fast implementation whenever
+  available.
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
 
 * The old :mod:`plistlib` API has been removed, it was deprecated since Python

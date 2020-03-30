@@ -212,10 +212,9 @@ parse_filter_spec_lzma(PyObject *spec)
             return NULL;
     }
 
-    options = (lzma_options_lzma *)PyMem_Malloc(sizeof *options);
+    options = (lzma_options_lzma *)PyMem_Calloc(1, sizeof *options);
     if (options == NULL)
         return PyErr_NoMemory();
-    memset(options, 0, sizeof *options);
 
     if (lzma_lzma_preset(options, preset)) {
         PyMem_Free(options);
@@ -257,10 +256,9 @@ parse_filter_spec_delta(PyObject *spec)
         return NULL;
     }
 
-    options = (lzma_options_delta *)PyMem_Malloc(sizeof *options);
+    options = (lzma_options_delta *)PyMem_Calloc(1, sizeof *options);
     if (options == NULL)
         return PyErr_NoMemory();
-    memset(options, 0, sizeof *options);
     options->type = LZMA_DELTA_TYPE_BYTE;
     options->dist = dist;
     return options;
@@ -281,10 +279,9 @@ parse_filter_spec_bcj(PyObject *spec)
         return NULL;
     }
 
-    options = (lzma_options_bcj *)PyMem_Malloc(sizeof *options);
+    options = (lzma_options_bcj *)PyMem_Calloc(1, sizeof *options);
     if (options == NULL)
         return PyErr_NoMemory();
-    memset(options, 0, sizeof *options);
     options->start_offset = start_offset;
     return options;
 }

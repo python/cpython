@@ -10,6 +10,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
+#include "pycore_sysmodule.h"
 #include "errcode.h"
 #include "marshal.h"
 #include "code.h"
@@ -209,7 +210,7 @@ _PyImport_ReInitLock(void)
     if (import_lock != NULL) {
         import_lock = PyThread_allocate_lock();
         if (import_lock == NULL) {
-            Py_FatalError("PyImport_ReInitLock failed to create a new lock");
+            _Py_FatalErrorFunc(__func__, "failed to create a new lock");
         }
     }
     if (import_lock_level > 1) {
@@ -310,7 +311,7 @@ PyImport_GetModuleDict(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     if (interp->modules == NULL) {
-        Py_FatalError("no module dictionary");
+        Py_FatalError("interpreter has no modules dictionary");
     }
     return interp->modules;
 }
@@ -982,7 +983,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
         _Py_IDENTIFIER(_get_sourcefile);
 
         if (interp == NULL) {
-            Py_FatalError("no interpreter!");
+            Py_FatalError("no current interpreter");
         }
 
         external= PyObject_GetAttrString(interp->importlib,
@@ -1735,10 +1736,10 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     PyObject *sys_path = PySys_GetObject("path");
     PyObject *sys_meta_path = PySys_GetObject("meta_path");
     PyObject *sys_path_hooks = PySys_GetObject("path_hooks");
-    if (PySys_Audit("import", "OOOOO",
-                    abs_name, Py_None, sys_path ? sys_path : Py_None,
-                    sys_meta_path ? sys_meta_path : Py_None,
-                    sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
+    if (_PySys_Audit(tstate, "import", "OOOOO",
+                     abs_name, Py_None, sys_path ? sys_path : Py_None,
+                     sys_meta_path ? sys_meta_path : Py_None,
+                     sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
         return NULL;
     }
 
@@ -1762,14 +1763,14 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     }
 
     if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
-        PyDTrace_IMPORT_FIND_LOAD_START((char *)PyUnicode_AsUTF8(abs_name));
+        PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
 
     mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                         &PyId__find_and_load, abs_name,
                                         interp->import_func, NULL);
 
     if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED())
-        PyDTrace_IMPORT_FIND_LOAD_DONE((char *)PyUnicode_AsUTF8(abs_name),
+        PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
                                        mod != NULL);
 
     if (import_time) {

@@ -776,34 +776,6 @@ class ThreadTests(BaseTestCase):
         """)
         self.assertEqual(out.rstrip(), b"thread_dict.atexit = 'value'")
 
-    def test_warnings_at_exit(self):
-        # bpo-19466: try to call most destructors at Python shutdown before
-        # destroying Python thread states
-        filename = __file__
-        rc, out, err = assert_python_ok("-Wd", "-c", """if 1:
-            import time
-            import threading
-            from test import support
-
-            def open_sleep():
-                # a warning will be emitted when the open file will be
-                # destroyed (without being explicitly closed) while the daemon
-                # thread is destroyed
-                fileobj = open(%a, 'rb')
-                start_event.set()
-                time.sleep(support.LONG_TIMEOUT)
-
-            start_event = threading.Event()
-
-            thread = threading.Thread(target=open_sleep, daemon=True)
-            thread.start()
-
-            # wait until the thread started
-            start_event.wait()
-        """ % filename)
-        self.assertRegex(err.rstrip(),
-                         b"^sys:1: ResourceWarning: unclosed file ")
-
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
@@ -1423,6 +1395,56 @@ class InterruptMainTests(unittest.TestCase):
         finally:
             # Restore original handler
             signal.signal(signal.SIGINT, handler)
+
+
+class AtexitTests(unittest.TestCase):
+
+    def test_atexit_output(self):
+        rc, out, err = assert_python_ok("-c", """if True:
+            import threading
+
+            def run_last():
+                print('parrot')
+
+            threading._register_atexit(run_last)
+        """)
+
+        self.assertFalse(err)
+        self.assertEqual(out.strip(), b'parrot')
+
+    def test_atexit_called_once(self):
+        rc, out, err = assert_python_ok("-c", """if True:
+            import threading
+            from unittest.mock import Mock
+
+            mock = Mock()
+            threading._register_atexit(mock)
+            mock.assert_not_called()
+            # force early shutdown to ensure it was called once
+            threading._shutdown()
+            mock.assert_called_once()
+        """)
+
+        self.assertFalse(err)
+
+    def test_atexit_after_shutdown(self):
+        # The only way to do this is by registering an atexit within
+        # an atexit, which is intended to raise an exception.
+        rc, out, err = assert_python_ok("-c", """if True:
+            import threading
+
+            def func():
+                pass
+
+            def run_last():
+                threading._register_atexit(func)
+
+            threading._register_atexit(run_last)
+        """)
+
+        self.assertTrue(err)
+        self.assertIn("RuntimeError: can't register atexit after shutdown",
+                err.decode())
 
 
 if __name__ == "__main__":

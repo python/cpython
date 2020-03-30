@@ -18,6 +18,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
+#include "pycore_sysmodule.h"
 #include "pycore_tupleobject.h"
 
 #include "code.h"
@@ -597,8 +598,8 @@ handle_signals(PyThreadState *tstate)
     }
 
     UNSIGNAL_PENDING_SIGNALS(tstate);
-    if (_PyErr_CheckSignals() < 0) {
-        /* We're not done yet */
+    if (_PyErr_CheckSignalsTstate(tstate) < 0) {
+        /* On failure, re-schedule a call to handle_signals(). */
         SIGNAL_PENDING_SIGNALS(tstate);
         return -1;
     }
@@ -4693,9 +4694,10 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     /* The caller must hold the GIL */
     assert(PyGILState_Check());
 
-    /* Call PySys_Audit() in the context of the current thread state,
+    /* Call _PySys_Audit() in the context of the current thread state,
        even if tstate is not the current thread state. */
-    if (PySys_Audit("sys.setprofile", NULL) < 0) {
+    PyThreadState *current_tstate = _PyThreadState_GET();
+    if (_PySys_Audit(current_tstate, "sys.setprofile", NULL) < 0) {
         return -1;
     }
 
@@ -4721,7 +4723,7 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (_PyEval_SetProfile(tstate, func, arg) < 0) {
-        /* Log PySys_Audit() error */
+        /* Log _PySys_Audit() error */
         _PyErr_WriteUnraisableMsg("in PyEval_SetProfile", NULL);
     }
 }
@@ -4733,9 +4735,10 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     /* The caller must hold the GIL */
     assert(PyGILState_Check());
 
-    /* Call PySys_Audit() in the context of the current thread state,
+    /* Call _PySys_Audit() in the context of the current thread state,
        even if tstate is not the current thread state. */
-    if (PySys_Audit("sys.settrace", NULL) < 0) {
+    PyThreadState *current_tstate = _PyThreadState_GET();
+    if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
         return -1;
     }
 
@@ -4765,7 +4768,7 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (_PyEval_SetTrace(tstate, func, arg) < 0) {
-        /* Log PySys_Audit() error */
+        /* Log _PySys_Audit() error */
         _PyErr_WriteUnraisableMsg("in PyEval_SetTrace", NULL);
     }
 }
@@ -4785,17 +4788,18 @@ _PyEval_GetCoroutineOriginTrackingDepth(void)
     return tstate->coroutine_origin_tracking_depth;
 }
 
-void
+int
 _PyEval_SetAsyncGenFirstiter(PyObject *firstiter)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    if (PySys_Audit("sys.set_asyncgen_hook_firstiter", NULL) < 0) {
-        return;
+    if (_PySys_Audit(tstate, "sys.set_asyncgen_hook_firstiter", NULL) < 0) {
+        return -1;
     }
 
     Py_XINCREF(firstiter);
     Py_XSETREF(tstate->async_gen_firstiter, firstiter);
+    return 0;
 }
 
 PyObject *
@@ -4805,17 +4809,18 @@ _PyEval_GetAsyncGenFirstiter(void)
     return tstate->async_gen_firstiter;
 }
 
-void
+int
 _PyEval_SetAsyncGenFinalizer(PyObject *finalizer)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    if (PySys_Audit("sys.set_asyncgen_hook_finalizer", NULL) < 0) {
-        return;
+    if (_PySys_Audit(tstate, "sys.set_asyncgen_hook_finalizer", NULL) < 0) {
+        return -1;
     }
 
     Py_XINCREF(finalizer);
     Py_XSETREF(tstate->async_gen_finalizer, finalizer);
+    return 0;
 }
 
 PyObject *

@@ -986,7 +986,7 @@ All of the following opcodes use their arguments.
 
    TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
    this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted TOS is popped, and the byte
+   it).  If the iterator indicates it is exhausted, TOS is popped, and the byte
    code counter is incremented by *delta*.
 
 

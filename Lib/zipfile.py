@@ -37,7 +37,8 @@ except ImportError:
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
-           "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile"]
+           "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile",
+           "Path"]
 
 class BadZipFile(Exception):
     pass
