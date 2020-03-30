@@ -962,9 +962,9 @@ class AbstractBasicAuthHandler:
         found_challenge = False
         for mo in AbstractBasicAuthHandler.rx.finditer(header):
             scheme, quote, realm = mo.groups()
-            if quote not in ['"',"'"]:
+            if quote not in ['"', "'"]:
                 warnings.warn("Basic Auth Realm was unquoted",
-                              UserWarning, 2)
+                              UserWarning, 3)
 
             yield (scheme, realm)
 
