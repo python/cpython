@@ -1,0 +1,1 @@
+functools.lru_cache() user_function option now supports optional maxsize argument
