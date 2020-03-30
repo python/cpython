@@ -2719,6 +2719,33 @@ list___init___impl(PyListObject *self, PyObject *iterable)
     return 0;
 }
 
+static PyObject *
+list_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    if (!_PyArg_NoKwnames("list", kwnames)) {
+        return NULL;
+    }
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("list", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    assert(PyType_Check(type));
+    PyObject *list = PyType_GenericAlloc((PyTypeObject *)type, 0);
+    if (list == NULL) {
+        return NULL;
+    }
+    if (nargs) {
+        if (list___init___impl((PyListObject *)list, args[0])) {
+            Py_DECREF(list);
+            return NULL;
+        }
+    }
+    return list;
+}
+
+
 /*[clinic input]
 list.__sizeof__
 
@@ -3034,6 +3061,7 @@ PyTypeObject PyList_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = list_vectorcall,
 };
 
 /*********************** List Iterator **************************/
