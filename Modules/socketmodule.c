@@ -5216,10 +5216,6 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 #else
             proto = 0;
 #endif
-            if (PySys_Audit("socket.__new__", "Oiii", s,
-                            family, type, proto) < 0) {
-                return -1;
-            }
         }
     }
     else {
@@ -5232,11 +5228,6 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
         }
         if (proto == -1) {
             proto = 0;
-        }
-
-        if (PySys_Audit("socket.__new__", "Oiii", s,
-                        family, type, proto) < 0) {
-            return -1;
         }
 
 #ifdef MS_WINDOWS
