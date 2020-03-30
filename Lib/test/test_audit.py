@@ -123,6 +123,8 @@ class AuditTest(unittest.TestCase):
         if returncode:
             self.fail(stderr)
 
+        if support.verbose:
+            print(*events, sep='\n')
         self.assertEqual(events[0][0], "socket.gethostname")
         self.assertEqual(events[1][0], "socket.__new__")
         self.assertEqual(events[2][0], "socket.bind")
