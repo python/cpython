@@ -664,32 +664,32 @@ boolean {0[0]} NO
         cf = self.fromstring(config_string)
         for space_around_delimiters in (True, False):
             output = io.StringIO()
-            cf.write(output, space_around_delimiters=space_around_delimiters, indent=' ')
+            cf.write(output, space_around_delimiters=space_around_delimiters, indent='\t')
             delimiter = self.delimiters[0]
             if space_around_delimiters:
                 delimiter = " {} ".format(delimiter)
             expect_string = (
-                " [{default_section}]\n"
-                " foo{equals}another very\n"
-                " \tlong line\n"
-                " \n"
-                " [Long Line]\n"
-                " foo{equals}this line is much, much longer than my editor\n"
-                " \tlikes it.\n"
-                " \n"
-                " [Long Line - With Comments!]\n"
-                " test{equals}we\n"
-                " \talso\n"
-                " \tcomments\n"
-                " \tmultiline\n"
-                " \n".format(equals=delimiter,
+                "\t[{default_section}]\n"
+                "\tfoo{equals}another very\n"
+                "\t\tlong line\n"
+                "\t\n"
+                "\t[Long Line]\n"
+                "\tfoo{equals}this line is much, much longer than my editor\n"
+                "\t\tlikes it.\n"
+                "\t\n"
+                "\t[Long Line - With Comments!]\n"
+                "\ttest{equals}we\n"
+                "\t\talso\n"
+                "\t\tcomments\n"
+                "\t\tmultiline\n"
+                "\t\n".format(equals=delimiter,
                             default_section=self.default_section)
                 )
             if self.allow_no_value:
                 expect_string += (
-                    " [Valueless]\n"
-                    " option-without-value\n"
-                    " \n"
+                    "\t[Valueless]\n"
+                    "\toption-without-value\n"
+                    "\t\n"
                     )
             self.assertEqual(output.getvalue(), expect_string)
 
