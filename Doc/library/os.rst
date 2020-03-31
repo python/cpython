@@ -4187,8 +4187,6 @@ written in Python, such as a mail server's external command delivery program.
       :func:`WIFEXITED`, :func:`WEXITSTATUS`, :func:`WIFSIGNALED`,
       :func:`WTERMSIG`, :func:`WIFSTOPPED`, :func:`WSTOPSIG` functions.
 
-   .. availability:: Unix, Windows (if :func:`os.waitpid` is available).
-
    .. versionadded:: 3.9
 
 

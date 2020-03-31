@@ -13772,10 +13772,8 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
 #endif
 
 
-/* On Unix, only check if WIFEXITED is available: expect that it comes
-   with WEXITSTATUS, WIFSIGNALED, etc.
-   On Windows, only os.waitpid() returns an exit status (exit code shifted left
-   by 8 bits) and os.waitpid() is only available if HAVE_CWAIT is defined. */
+/* Only check if WIFEXITED is available: expect that it comes
+   with WEXITSTATUS, WIFSIGNALED, etc. */
 #if defined(WIFEXITED) || defined(MS_WINDOWS)
 /*[clinic input]
 os.waitstatus_to_exitcode
@@ -13838,7 +13836,8 @@ os_waitstatus_to_exitcode_impl(PyObject *module, int status)
     }
     return PyLong_FromLong(exitcode);
 #else
-    /* Windows implementation */
+    /* Windows implementation: see os.waitpid() implementation
+       which uses _cwait(). */
     int exitcode = (status >> 8);
     return PyLong_FromLong(exitcode);
 #endif
