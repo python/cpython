@@ -4167,7 +4167,7 @@ used to determine the disposition of a process.
    Return ``True`` if a core dump was generated for the process, otherwise
    return ``False``.
 
-   This function should be employed only if :func:`WIFSIGNALED` returned true.
+   This function should be employed only if :func:`WIFSIGNALED` is true.
 
    .. availability:: Unix.
 
@@ -4215,7 +4215,7 @@ used to determine the disposition of a process.
 
    Return the process exit status.
 
-   This function should be employed only if :func:`WIFEXITED` returned true.
+   This function should be employed only if :func:`WIFEXITED` is true.
 
    .. availability:: Unix.
 
@@ -4224,7 +4224,7 @@ used to determine the disposition of a process.
 
    Return the signal which caused the process to stop.
 
-   This function should be employed only if :func:`WIFSTOPPED` returned true.
+   This function should be employed only if :func:`WIFSTOPPED` is true.
 
    .. availability:: Unix.
 
@@ -4233,7 +4233,7 @@ used to determine the disposition of a process.
 
    Return the number of the signal that caused the process to terminate.
 
-   This function should be employed only if :func:`WIFSIGNALED` returned true.
+   This function should be employed only if :func:`WIFSIGNALED` is true.
 
    .. availability:: Unix.
 
