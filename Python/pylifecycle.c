@@ -2311,7 +2311,7 @@ init_signals(void)
 #ifdef SIGXFSZ
     PyOS_setsig(SIGXFSZ, SIG_IGN);
 #endif
-    PyOS_InitInterrupts(); /* May imply initsignal() */
+    PyOS_InitInterrupts(); /* May imply init_signals() */
     if (PyErr_Occurred()) {
         return _PyStatus_ERR("can't import signal");
     }
