@@ -1846,6 +1846,7 @@ class PtyTests(unittest.TestCase):
             os.close(w)
             self.skipTest("pty.fork() raised {}".format(e))
             raise
+
         if pid == 0:
             # Child
             try:
@@ -1859,9 +1860,11 @@ class PtyTests(unittest.TestCase):
             finally:
                 # We don't want to return to unittest...
                 os._exit(0)
+
         # Parent
         os.close(w)
         os.write(fd, terminal_input)
+
         # Get results from the pipe
         with open(r, "r") as rpipe:
             lines = []
@@ -1871,6 +1874,7 @@ class PtyTests(unittest.TestCase):
                     # The other end was closed => the child exited
                     break
                 lines.append(line)
+
         # Check the result was got and corresponds to the user's terminal input
         if len(lines) != 2:
             # Something went wrong, try to get at stderr
@@ -1888,10 +1892,13 @@ class PtyTests(unittest.TestCase):
             child_output = child_output.decode("ascii", "ignore")
             self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
                       % (len(lines), child_output))
-        os.close(fd)
 
-        # Wait until the child process completes
+        # Wait until the child process completes before closing the PTY to
+        # prevent sending SIGHUP to the child process.
         support.wait_process(pid, exitcode=0)
+
+        # Close the PTY
+        os.close(fd)
 
         return lines
 
