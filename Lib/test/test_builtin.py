@@ -25,6 +25,7 @@ from itertools import product
 from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType
 from operator import neg
+from test import support
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
     maybe_get_event_loop_policy)
@@ -1890,7 +1891,7 @@ class PtyTests(unittest.TestCase):
         os.close(fd)
 
         # Wait until the child process completes
-        os.waitpid(pid, 0)
+        support.wait_process(pid, exitcode=0)
 
         return lines
 
