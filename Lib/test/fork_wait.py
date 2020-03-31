@@ -43,8 +43,8 @@ class ForkWait(unittest.TestCase):
             except OSError:
                 pass
 
-    def wait_impl(self, cpid):
-        support.wait_process(cpid, exitcode=0)
+    def wait_impl(self, cpid, *, exitcode):
+        support.wait_process(cpid, exitcode=exitcode)
 
     def test_wait(self):
         for i in range(NUM_THREADS):
@@ -79,4 +79,4 @@ class ForkWait(unittest.TestCase):
             os._exit(n)
         else:
             # Parent
-            self.wait_impl(cpid)
+            self.wait_impl(cpid, exitcode=0)
