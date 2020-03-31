@@ -340,144 +340,132 @@ resource_methods[] = {
 /* Module initialization */
 
 
-static struct PyModuleDef resourcemodule = {
-    PyModuleDef_HEAD_INIT,
-    "resource",
-    NULL,
-    -1,
-    resource_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_resource(void)
+static int resource_exec(PyObject *module)
 {
-    PyObject *m, *v;
-
-    /* Create the module and add the functions */
-    m = PyModule_Create(&resourcemodule);
-    if (m == NULL)
-        return NULL;
+    PyObject *v;
 
     /* Add some symbolic constants to the module */
     Py_INCREF(PyExc_OSError);
-    PyModule_AddObject(m, "error", PyExc_OSError);
+    if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
+        Py_DECREF(PyExc_OSError);
+        return -1;
+    }
     if (!initialized) {
         if (PyStructSequence_InitType2(&StructRUsageType,
                                        &struct_rusage_desc) < 0)
-            return NULL;
+            return -1;
     }
 
     Py_INCREF(&StructRUsageType);
-    PyModule_AddObject(m, "struct_rusage",
-                       (PyObject*) &StructRUsageType);
+    if (PyModule_AddObject(module, "struct_rusage",
+                           (PyObject*) &StructRUsageType) < 0) {
+        Py_DECREF(&StructRUsageType);
+        return -1;
+    }
 
     /* insert constants */
 #ifdef RLIMIT_CPU
-    PyModule_AddIntMacro(m, RLIMIT_CPU);
+    PyModule_AddIntMacro(module, RLIMIT_CPU);
 #endif
 
 #ifdef RLIMIT_FSIZE
-    PyModule_AddIntMacro(m, RLIMIT_FSIZE);
+    PyModule_AddIntMacro(module, RLIMIT_FSIZE);
 #endif
 
 #ifdef RLIMIT_DATA
-    PyModule_AddIntMacro(m, RLIMIT_DATA);
+    PyModule_AddIntMacro(module, RLIMIT_DATA);
 #endif
 
 #ifdef RLIMIT_STACK
-    PyModule_AddIntMacro(m, RLIMIT_STACK);
+    PyModule_AddIntMacro(module, RLIMIT_STACK);
 #endif
 
 #ifdef RLIMIT_CORE
-    PyModule_AddIntMacro(m, RLIMIT_CORE);
+    PyModule_AddIntMacro(module, RLIMIT_CORE);
 #endif
 
 #ifdef RLIMIT_NOFILE
-    PyModule_AddIntMacro(m, RLIMIT_NOFILE);
+    PyModule_AddIntMacro(module, RLIMIT_NOFILE);
 #endif
 
 #ifdef RLIMIT_OFILE
-    PyModule_AddIntMacro(m, RLIMIT_OFILE);
+    PyModule_AddIntMacro(module, RLIMIT_OFILE);
 #endif
 
 #ifdef RLIMIT_VMEM
-    PyModule_AddIntMacro(m, RLIMIT_VMEM);
+    PyModule_AddIntMacro(module, RLIMIT_VMEM);
 #endif
 
 #ifdef RLIMIT_AS
-    PyModule_AddIntMacro(m, RLIMIT_AS);
+    PyModule_AddIntMacro(module, RLIMIT_AS);
 #endif
 
 #ifdef RLIMIT_RSS
-    PyModule_AddIntMacro(m, RLIMIT_RSS);
+    PyModule_AddIntMacro(module, RLIMIT_RSS);
 #endif
 
 #ifdef RLIMIT_NPROC
-    PyModule_AddIntMacro(m, RLIMIT_NPROC);
+    PyModule_AddIntMacro(module, RLIMIT_NPROC);
 #endif
 
 #ifdef RLIMIT_MEMLOCK
-    PyModule_AddIntMacro(m, RLIMIT_MEMLOCK);
+    PyModule_AddIntMacro(module, RLIMIT_MEMLOCK);
 #endif
 
 #ifdef RLIMIT_SBSIZE
-    PyModule_AddIntMacro(m, RLIMIT_SBSIZE);
+    PyModule_AddIntMacro(module, RLIMIT_SBSIZE);
 #endif
 
 /* Linux specific */
 #ifdef RLIMIT_MSGQUEUE
-    PyModule_AddIntMacro(m, RLIMIT_MSGQUEUE);
+    PyModule_AddIntMacro(module, RLIMIT_MSGQUEUE);
 #endif
 
 #ifdef RLIMIT_NICE
-    PyModule_AddIntMacro(m, RLIMIT_NICE);
+    PyModule_AddIntMacro(module, RLIMIT_NICE);
 #endif
 
 #ifdef RLIMIT_RTPRIO
-    PyModule_AddIntMacro(m, RLIMIT_RTPRIO);
+    PyModule_AddIntMacro(module, RLIMIT_RTPRIO);
 #endif
 
 #ifdef RLIMIT_RTTIME
-    PyModule_AddIntMacro(m, RLIMIT_RTTIME);
+    PyModule_AddIntMacro(module, RLIMIT_RTTIME);
 #endif
 
 #ifdef RLIMIT_SIGPENDING
-    PyModule_AddIntMacro(m, RLIMIT_SIGPENDING);
+    PyModule_AddIntMacro(module, RLIMIT_SIGPENDING);
 #endif
 
 /* target */
 #ifdef RUSAGE_SELF
-    PyModule_AddIntMacro(m, RUSAGE_SELF);
+    PyModule_AddIntMacro(module, RUSAGE_SELF);
 #endif
 
 #ifdef RUSAGE_CHILDREN
-    PyModule_AddIntMacro(m, RUSAGE_CHILDREN);
+    PyModule_AddIntMacro(module, RUSAGE_CHILDREN);
 #endif
 
 #ifdef RUSAGE_BOTH
-    PyModule_AddIntMacro(m, RUSAGE_BOTH);
+    PyModule_AddIntMacro(module, RUSAGE_BOTH);
 #endif
 
 #ifdef RUSAGE_THREAD
-    PyModule_AddIntMacro(m, RUSAGE_THREAD);
+    PyModule_AddIntMacro(module, RUSAGE_THREAD);
 #endif
 
 /* FreeBSD specific */
 
 #ifdef RLIMIT_SWAP
-    PyModule_AddIntMacro(m, RLIMIT_SWAP);
+    PyModule_AddIntMacro(module, RLIMIT_SWAP);
 #endif
 
 #ifdef RLIMIT_SBSIZE
-    PyModule_AddIntMacro(m, RLIMIT_SBSIZE);
+    PyModule_AddIntMacro(module, RLIMIT_SBSIZE);
 #endif
 
 #ifdef RLIMIT_NPTS
-    PyModule_AddIntMacro(m, RLIMIT_NPTS);
+    PyModule_AddIntMacro(module, RLIMIT_NPTS);
 #endif
 
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
@@ -487,8 +475,31 @@ PyInit_resource(void)
         v = PyLong_FromLong((long) RLIM_INFINITY);
     }
     if (v) {
-        PyModule_AddObject(m, "RLIM_INFINITY", v);
+        PyModule_AddObject(module, "RLIM_INFINITY", v);
     }
     initialized = 1;
-    return m;
+    return 0;
+}
+
+static struct PyModuleDef_Slot resource_slots[] = {
+    {Py_mod_exec, resource_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef resourcemodule = {
+    PyModuleDef_HEAD_INIT,
+    "resource",
+    NULL,
+    0,
+    resource_methods,
+    resource_slots,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit_resource(void)
+{
+    return PyModuleDef_Init(&resourcemodule);
 }
