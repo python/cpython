@@ -200,15 +200,7 @@ class TestRandomNameSequence(BaseTestCase):
             child_value = os.read(read_fd, len(parent_value)).decode("ascii")
         finally:
             if pid:
-                # best effort to ensure the process can't bleed out
-                # via any bugs above
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                except OSError:
-                    pass
-
-                # Read the process exit status to avoid zombie process
-                os.waitpid(pid, 0)
+                support.wait_process(pid, exitcode=0)
 
             os.close(read_fd)
             os.close(write_fd)
