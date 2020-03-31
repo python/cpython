@@ -422,12 +422,10 @@ def compare(
 
     if type(a) is not type(b):
         return False
-    if compare_fields:
-        if not _compare_member("_fields"):
-            return False
-    if compare_attributes:
-        if not _compare_member("_attributes"):
-            return False
+    if compare_fields and not _compare_member("_fields"):
+        return False
+    if compare_attributes and not _compare_member("_attributes"):
+        return False
     return True
 
 
