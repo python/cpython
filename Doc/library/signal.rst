@@ -442,7 +442,7 @@ The :mod:`signal` module defines the following functions:
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
 
-   A few signals like :data:`SIGKILL` cannot be blocked.
+   :data:`SIGKILL` and :data:`SIGSTOP` cannot be blocked.
 
    .. availability:: Unix.  See the man page :manpage:`sigprocmask(3)` and
       :manpage:`pthread_sigmask(3)` for further information.
