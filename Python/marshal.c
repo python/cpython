@@ -280,15 +280,12 @@ w_float_bin(double v, WFILE *p)
 static void
 w_float_str(double v, WFILE *p)
 {
-    int n;
     char *buf = PyOS_double_to_string(v, 'g', 17, 0, NULL);
     if (!buf) {
         p->error = WFERR_NOMEMORY;
         return;
     }
-    n = (int)strlen(buf);
-    w_byte(n, p);
-    w_string(buf, n, p);
+    w_short_pstring(buf, strlen(buf), p);
     PyMem_Free(buf);
 }
 
@@ -378,11 +375,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     Py_ssize_t i, n;
 
     if (PyLong_CheckExact(v)) {
-        long x = PyLong_AsLong(v);
-        if ((x == -1)  && PyErr_Occurred()) {
-            PyLongObject *ob = (PyLongObject *)v;
-            PyErr_Clear();
-            w_PyLong(ob, flag, p);
+        int overflow;
+        long x = PyLong_AsLongAndOverflow(v, &overflow);
+        if (overflow) {
+            w_PyLong((PyLongObject *)v, flag, p);
         }
         else {
 #if SIZEOF_LONG > 4
