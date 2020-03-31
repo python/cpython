@@ -91,6 +91,138 @@ The variables defined in the :mod:`signal` module are:
    signal.
 
 
+.. data:: SIGABRT
+
+   Abort signal from :manpage:`abort(3)`.
+
+   Default action is to terminate the process and dump core.
+
+.. data:: SIGALRM
+
+   Timer signal from :manpage:`alarm(2)`.
+
+   Default action is to terminate the process.
+
+   .. availability:: Unix.
+
+.. data:: SIGBREAK
+
+   Interrupt from keyboard (CTRL + BREAK).
+
+   .. availability:: Windows.
+
+.. data:: SIGBUS
+
+   Bus error (bad memory access).
+
+   Default action is to terminate the process and dump core.
+
+   .. availability:: Unix.
+
+.. data:: SIGCHLD
+
+   Child process stopped or terminated.
+
+   Default action is to ignore the signal.
+
+   .. availability:: Windows.
+
+.. data:: SIGCLD
+
+   Alias to :data:`SIGCHLD`.
+
+.. data:: SIGCONT
+
+   Continue if stopped.
+
+   Default action is to continue the process if it is currently stopped.
+
+   .. availability:: Unix.
+
+.. data:: SIGFPE
+
+   Floating-point exception. For example, division by zero.
+
+   Default action is to terminate the process and dump core.
+
+   .. seealso::
+      :exc:`ZeroDivisionError` is raised when the second argument of a division
+      or modulo operation is zero.
+
+.. data:: SIGHUP
+
+   Hangup detected on controlling terminal or death of controlling process.
+
+   Default action is to terminate the process.
+
+   .. availability:: Unix.
+
+.. data:: SIGILL
+
+   Illegal instruction.
+
+   Default action is to terminate the process and dump core.
+
+.. data:: SIGINT
+
+   Interrupt from keyboard (CTRL + C).
+
+   Default action is to raise :exc:`KeyboardInterrupt`.
+
+.. data:: SIGKILL
+
+   Kill signal.
+
+   It cannot be caught, blocked, or ignored.
+
+   Default action is to terminate the process.
+
+   .. availability:: Unix.
+
+.. data:: SIGPIPE
+
+   Broken pipe: write to pipe with no readers.
+
+   Default action is to ignore the signal.
+
+   .. availability:: Unix.
+
+.. data:: SIGSEGV
+
+   Segmentation fault: invalid memory reference.
+
+   Default action is to terminate the process and dump core.
+
+.. data:: SIGTERM
+
+   Termination signal.
+
+   Default action is to terminate the process.
+
+.. data:: SIGUSR1
+
+   User-defined signal 1.
+
+   Default action is to terminate the process.
+
+   .. availability:: Unix.
+
+.. data:: SIGUSR2
+
+   User-defined signal 2.
+
+   Default action is to terminate the process.
+
+   .. availability:: Unix.
+
+.. data:: SIGWINCH
+
+   Window resize signal.
+
+   Default action is to ignore the signal.
+
+   .. availability:: Unix.
+
 .. data:: SIG*
 
    All the signal numbers are defined symbolically.  For example, the hangup signal
@@ -309,6 +441,8 @@ The :mod:`signal` module defines the following functions:
 
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
+
+   A few signals like :data:`SIGKILL` cannot be blocked.
 
    .. availability:: Unix.  See the man page :manpage:`sigprocmask(3)` and
       :manpage:`pthread_sigmask(3)` for further information.
