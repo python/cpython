@@ -9,6 +9,7 @@ import re
 import sys
 import sysconfig
 from glob import glob
+from _bootsubprocess import _waitstatus_to_exitcode as waitstatus_to_exitcode
 
 
 try:
@@ -95,6 +96,11 @@ Topic :: Software Development
 """
 
 
+def run_command(cmd):
+    status = os.system(cmd)
+    return waitstatus_to_exitcode(status)
+
+
 # Set common compiler and linker flags derived from the Makefile,
 # reserved for building the interpreter and the stdlib modules.
 # See bpo-21121 and bpo-35257
@@ -176,10 +182,10 @@ def macosx_sdk_root():
             os.unlink(tmpfile)
         except:
             pass
-        ret = os.system('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
+        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
         in_incdirs = False
         try:
-            if ret >> 8 == 0:
+            if ret == 0:
                 with open(tmpfile) as fp:
                     for line in fp.readlines():
                         if line.startswith("#include <...>"):
@@ -595,11 +601,11 @@ class PyBuildExt(build_ext):
         tmpfile = os.path.join(self.build_temp, 'multiarch')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = os.system(
+        ret = run_command(
             '%s -print-multiarch > %s 2> /dev/null' % (cc, tmpfile))
         multiarch_path_component = ''
         try:
-            if ret >> 8 == 0:
+            if ret == 0:
                 with open(tmpfile) as fp:
                     multiarch_path_component = fp.readline().strip()
         finally:
@@ -620,11 +626,11 @@ class PyBuildExt(build_ext):
         tmpfile = os.path.join(self.build_temp, 'multiarch')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = os.system(
+        ret = run_command(
             'dpkg-architecture %s -qDEB_HOST_MULTIARCH > %s 2> /dev/null' %
             (opt, tmpfile))
         try:
-            if ret >> 8 == 0:
+            if ret == 0:
                 with open(tmpfile) as fp:
                     multiarch_path_component = fp.readline().strip()
                 add_dir_to_list(self.compiler.library_dirs,
@@ -639,12 +645,12 @@ class PyBuildExt(build_ext):
         tmpfile = os.path.join(self.build_temp, 'ccpaths')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = os.system('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
+        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
         is_gcc = False
         is_clang = False
         in_incdirs = False
         try:
-            if ret >> 8 == 0:
+            if ret == 0:
                 with open(tmpfile) as fp:
                     for line in fp.readlines():
                         if line.startswith("gcc version"):
@@ -932,14 +938,14 @@ class PyBuildExt(build_ext):
         # Determine if readline is already linked against curses or tinfo.
         if do_readline:
             if CROSS_COMPILING:
-                ret = os.system("%s -d %s | grep '(NEEDED)' > %s" \
+                ret = run_command("%s -d %s | grep '(NEEDED)' > %s"
                                 % (sysconfig.get_config_var('READELF'),
                                    do_readline, tmpfile))
             elif find_executable('ldd'):
-                ret = os.system("ldd %s > %s" % (do_readline, tmpfile))
+                ret = run_command("ldd %s > %s" % (do_readline, tmpfile))
             else:
-                ret = 256
-            if ret >> 8 == 0:
+                ret = 1
+            if ret == 0:
                 with open(tmpfile) as fp:
                     for ln in fp:
                         if 'curses' in ln:
@@ -1654,9 +1660,9 @@ class PyBuildExt(build_ext):
                              ]
 
             cc = sysconfig.get_config_var('CC').split()[0]
-            ret = os.system(
+            ret = run_command(
                       '"%s" -Werror -Wno-unreachable-code -E -xc /dev/null >/dev/null 2>&1' % cc)
-            if ret >> 8 == 0:
+            if ret == 0:
                 extra_compile_args.append('-Wno-unreachable-code')
 
         self.add(Extension('pyexpat',
@@ -1859,9 +1865,9 @@ class PyBuildExt(build_ext):
         # Note: cannot use os.popen or subprocess here, that
         # requires extensions that are not available here.
         if is_macosx_sdk_path(F):
-            os.system("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(os.path.join(sysroot, F[1:]), tmpfile))
+            run_command("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(os.path.join(sysroot, F[1:]), tmpfile))
         else:
-            os.system("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(F, tmpfile))
+            run_command("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(F, tmpfile))
 
         with open(tmpfile) as fp:
             detected_archs = []
