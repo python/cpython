@@ -91,6 +91,110 @@ The variables defined in the :mod:`signal` module are:
    signal.
 
 
+.. data:: SIGABRT
+
+   Abort signal from :manpage:`abort(3)`.
+
+.. data:: SIGALRM
+
+   Timer signal from :manpage:`alarm(2)`.
+
+   .. availability:: Unix.
+
+.. data:: SIGBREAK
+
+   Interrupt from keyboard (CTRL + BREAK).
+
+   .. availability:: Windows.
+
+.. data:: SIGBUS
+
+   Bus error (bad memory access).
+
+   .. availability:: Unix.
+
+.. data:: SIGCHLD
+
+   Child process stopped or terminated.
+
+   .. availability:: Windows.
+
+.. data:: SIGCLD
+
+   Alias to :data:`SIGCHLD`.
+
+.. data:: SIGCONT
+
+   Continue the process if it is currently stopped
+
+   .. availability:: Unix.
+
+.. data:: SIGFPE
+
+   Floating-point exception. For example, division by zero.
+
+   .. seealso::
+      :exc:`ZeroDivisionError` is raised when the second argument of a division
+      or modulo operation is zero.
+
+.. data:: SIGHUP
+
+   Hangup detected on controlling terminal or death of controlling process.
+
+   .. availability:: Unix.
+
+.. data:: SIGILL
+
+   Illegal instruction.
+
+.. data:: SIGINT
+
+   Interrupt from keyboard (CTRL + C).
+
+   Default action is to raise :exc:`KeyboardInterrupt`.
+
+.. data:: SIGKILL
+
+   Kill signal.
+
+   It cannot be caught, blocked, or ignored.
+
+   .. availability:: Unix.
+
+.. data:: SIGPIPE
+
+   Broken pipe: write to pipe with no readers.
+
+   Default action is to ignore the signal.
+
+   .. availability:: Unix.
+
+.. data:: SIGSEGV
+
+   Segmentation fault: invalid memory reference.
+
+.. data:: SIGTERM
+
+   Termination signal.
+
+.. data:: SIGUSR1
+
+   User-defined signal 1.
+
+   .. availability:: Unix.
+
+.. data:: SIGUSR2
+
+   User-defined signal 2.
+
+   .. availability:: Unix.
+
+.. data:: SIGWINCH
+
+   Window resize signal.
+
+   .. availability:: Unix.
+
 .. data:: SIG*
 
    All the signal numbers are defined symbolically.  For example, the hangup signal
@@ -309,6 +413,8 @@ The :mod:`signal` module defines the following functions:
 
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
+
+   :data:`SIGKILL` and :data:`SIGSTOP` cannot be blocked.
 
    .. availability:: Unix.  See the man page :manpage:`sigprocmask(3)` and
       :manpage:`pthread_sigmask(3)` for further information.
