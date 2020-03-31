@@ -1,1 +1,0 @@
-Improve pathlib.Path compatibility on zipfile.Path and correct performance degradation as found in zipp 3.0.

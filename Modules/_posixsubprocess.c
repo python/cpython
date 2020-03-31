@@ -68,8 +68,15 @@ typedef struct {
 
 static struct PyModuleDef _posixsubprocessmodule;
 
-#define _posixsubprocessstate(o) ((_posixsubprocessstate *)PyModule_GetState(o))
-#define _posixsubprocessstate_global _posixsubprocessstate(PyState_FindModule(&_posixsubprocessmodule))
+static inline _posixsubprocessstate*
+get_posixsubprocess_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_posixsubprocessstate *)state;
+}
+
+#define _posixsubprocessstate_global get_posixsubprocess_state(PyState_FindModule(&_posixsubprocessmodule))
 
 /* If gc was disabled, call gc.enable().  Return 0 on success. */
 static int
@@ -944,16 +951,16 @@ static PyMethodDef module_methods[] = {
 
 
 static int _posixsubprocess_traverse(PyObject *m, visitproc visit, void *arg) {
-    Py_VISIT(_posixsubprocessstate(m)->disable);
-    Py_VISIT(_posixsubprocessstate(m)->enable);
-    Py_VISIT(_posixsubprocessstate(m)->isenabled);
+    Py_VISIT(get_posixsubprocess_state(m)->disable);
+    Py_VISIT(get_posixsubprocess_state(m)->enable);
+    Py_VISIT(get_posixsubprocess_state(m)->isenabled);
     return 0;
 }
 
 static int _posixsubprocess_clear(PyObject *m) {
-    Py_CLEAR(_posixsubprocessstate(m)->disable);
-    Py_CLEAR(_posixsubprocessstate(m)->enable);
-    Py_CLEAR(_posixsubprocessstate(m)->isenabled);
+    Py_CLEAR(get_posixsubprocess_state(m)->disable);
+    Py_CLEAR(get_posixsubprocess_state(m)->enable);
+    Py_CLEAR(get_posixsubprocess_state(m)->isenabled);
     return 0;
 }
 
@@ -989,9 +996,9 @@ PyInit__posixsubprocess(void)
       return NULL;
     }
 
-    _posixsubprocessstate(m)->disable = PyUnicode_InternFromString("disable");
-    _posixsubprocessstate(m)->enable = PyUnicode_InternFromString("enable");
-    _posixsubprocessstate(m)->isenabled = PyUnicode_InternFromString("isenabled");
+    get_posixsubprocess_state(m)->disable = PyUnicode_InternFromString("disable");
+    get_posixsubprocess_state(m)->enable = PyUnicode_InternFromString("enable");
+    get_posixsubprocess_state(m)->isenabled = PyUnicode_InternFromString("isenabled");
 
     PyState_AddModule(m, &_posixsubprocessmodule);
     return m;

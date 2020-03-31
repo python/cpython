@@ -55,6 +55,7 @@ struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
+    /* Borrowed reference to the current frame (it can be NULL) */
     struct _frame *frame;
     int recursion_depth;
     char overflowed; /* The stack has overflowed. Allow 50 more calls
@@ -148,6 +149,8 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
 
+PyAPI_FUNC(PyObject *) _PyThreadState_GetDict(PyThreadState *tstate);
+
 /* PyGILState */
 
 /* Helper/diagnostic function - return 1 if the current thread
@@ -178,8 +181,6 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
-
-typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 
 /* Frame evaluation API */
 

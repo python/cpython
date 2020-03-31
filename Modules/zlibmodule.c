@@ -40,7 +40,14 @@ typedef struct {
     PyObject *ZlibError;
 } _zlibstate;
 
-#define _zlibstate(o) ((_zlibstate *)PyModule_GetState(o))
+static inline _zlibstate*
+get_zlib_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_zlibstate *)state;
+}
+
 #define _zlibstate_global ((_zlibstate *)PyModule_GetState(PyState_FindModule(&zlibmodule)))
 
 typedef struct
@@ -1364,7 +1371,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 static int
 zlib_clear(PyObject *m)
 {
-    _zlibstate *state = _zlibstate(m);
+    _zlibstate *state = get_zlib_state(m);
     Py_CLEAR(state->Comptype);
     Py_CLEAR(state->Decomptype);
     Py_CLEAR(state->ZlibError);
@@ -1374,7 +1381,7 @@ zlib_clear(PyObject *m)
 static int
 zlib_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    _zlibstate *state = _zlibstate(m);
+    _zlibstate *state = get_zlib_state(m);
     Py_VISIT(state->Comptype);
     Py_VISIT(state->Decomptype);
     Py_VISIT(state->ZlibError);
@@ -1415,18 +1422,18 @@ PyInit_zlib(void)
     PyTypeObject *Comptype = (PyTypeObject *)PyType_FromSpec(&Comptype_spec);
     if (Comptype == NULL)
         return NULL;
-    _zlibstate(m)->Comptype = Comptype;
+    get_zlib_state(m)->Comptype = Comptype;
 
     PyTypeObject *Decomptype = (PyTypeObject *)PyType_FromSpec(&Decomptype_spec);
     if (Decomptype == NULL)
         return NULL;
-    _zlibstate(m)->Decomptype = Decomptype;
+    get_zlib_state(m)->Decomptype = Decomptype;
 
     PyObject *ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
     if (ZlibError != NULL) {
         Py_INCREF(ZlibError);
         PyModule_AddObject(m, "error", ZlibError);
-        _zlibstate(m)->ZlibError = ZlibError;
+        get_zlib_state(m)->ZlibError = ZlibError;
     }
     PyModule_AddIntMacro(m, MAX_WBITS);
     PyModule_AddIntMacro(m, DEFLATED);

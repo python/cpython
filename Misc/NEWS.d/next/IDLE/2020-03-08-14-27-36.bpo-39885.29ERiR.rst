@@ -1,2 +1,0 @@
-When a context menu is invoked by clicking outside of a selection,
-clear the selection and move the cursor.

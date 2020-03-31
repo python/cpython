@@ -489,6 +489,7 @@ class NodeTransformer(NodeVisitor):
 # It will be removed in future.
 
 def _getter(self):
+    """Deprecated. Use value instead."""
     return self.value
 
 def _setter(self, value):
@@ -498,6 +499,9 @@ Constant.n = property(_getter, _setter)
 Constant.s = property(_getter, _setter)
 
 class _ABC(type):
+
+    def __init__(cls, *args):
+        cls.__doc__ = """Deprecated AST node class. Use ast.Constant instead"""
 
     def __instancecheck__(cls, inst):
         if not isinstance(inst, Constant):
@@ -564,21 +568,39 @@ _const_node_type_names = {
     type(...): 'Ellipsis',
 }
 
-class Index(AST):
+class slice(AST):
+    """Deprecated AST node class."""
+
+class Index(slice):
+    """Deprecated AST node class. Use the index value directly instead."""
     def __new__(cls, value, **kwargs):
         return value
 
-class ExtSlice(AST):
+class ExtSlice(slice):
+    """Deprecated AST node class. Use ast.Tuple instead."""
     def __new__(cls, dims=(), **kwargs):
         return Tuple(list(dims), Load(), **kwargs)
 
 def _dims_getter(self):
+    """Deprecated. Use elts instead."""
     return self.elts
 
 def _dims_setter(self, value):
     self.elts = value
 
 Tuple.dims = property(_dims_getter, _dims_setter)
+
+class Suite(mod):
+    """Deprecated AST node class.  Unused in Python 3."""
+
+class AugLoad(expr_context):
+    """Deprecated AST node class.  Unused in Python 3."""
+
+class AugStore(expr_context):
+    """Deprecated AST node class.  Unused in Python 3."""
+
+class Param(expr_context):
+    """Deprecated AST node class.  Unused in Python 3."""
 
 
 # Large float and imaginary literals get turned into infinities in the AST.

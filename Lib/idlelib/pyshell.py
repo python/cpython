@@ -16,7 +16,7 @@ except ImportError:
 if sys.platform == 'win32':
     try:
         import ctypes
-        PROCESS_SYSTEM_DPI_AWARE = 1
+        PROCESS_SYSTEM_DPI_AWARE = 1  # Int required.
         ctypes.OleDLL('shcore').SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
     except (ImportError, AttributeError, OSError):
         pass
@@ -676,7 +676,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runsource(self, source):
         "Extend base class method: Stuff the source in the line cache first"
         filename = self.stuffsource(source)
-        self.more = 0
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
         # InteractiveInterpreter.runsource() calls its runcode() method,
@@ -993,12 +992,12 @@ class PyShell(OutputWindow):
     def beginexecuting(self):
         "Helper for ModifiedInterpreter"
         self.resetoutput()
-        self.executing = 1
+        self.executing = True
 
     def endexecuting(self):
         "Helper for ModifiedInterpreter"
-        self.executing = 0
-        self.canceled = 0
+        self.executing = False
+        self.canceled = False
         self.showprompt()
 
     def close(self):
@@ -1075,7 +1074,7 @@ class PyShell(OutputWindow):
     def readline(self):
         save = self.reading
         try:
-            self.reading = 1
+            self.reading = True
             self.top.mainloop()  # nested mainloop()
         finally:
             self.reading = save
@@ -1087,11 +1086,11 @@ class PyShell(OutputWindow):
             line = "\n"
         self.resetoutput()
         if self.canceled:
-            self.canceled = 0
+            self.canceled = False
             if not use_subprocess:
                 raise KeyboardInterrupt
         if self.endoffile:
-            self.endoffile = 0
+            self.endoffile = False
             line = ""
         return line
 
@@ -1109,8 +1108,8 @@ class PyShell(OutputWindow):
             self.interp.write("KeyboardInterrupt\n")
             self.showprompt()
             return "break"
-        self.endoffile = 0
-        self.canceled = 1
+        self.endoffile = False
+        self.canceled = True
         if (self.executing and self.interp.rpcclt):
             if self.interp.getdebugger():
                 self.interp.restart_subprocess()
@@ -1130,8 +1129,8 @@ class PyShell(OutputWindow):
             self.resetoutput()
             self.close()
         else:
-            self.canceled = 0
-            self.endoffile = 1
+            self.canceled = False
+            self.endoffile = True
             self.top.quit()
         return "break"
 
@@ -1303,7 +1302,7 @@ class PyShell(OutputWindow):
             raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
                            # let's find out what they are and be specific.
         if self.canceled:
-            self.canceled = 0
+            self.canceled = False
             if not use_subprocess:
                 raise KeyboardInterrupt
         return count

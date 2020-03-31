@@ -709,13 +709,12 @@ static PyObject *
 tuple_vectorcall(PyObject *type, PyObject * const*args,
                  size_t nargsf, PyObject *kwnames)
 {
-    if (kwnames && PyTuple_GET_SIZE(kwnames) != 0) {
-        PyErr_Format(PyExc_TypeError, "tuple() takes no keyword arguments");
+    if (!_PyArg_NoKwnames("tuple", kwnames)) {
         return NULL;
     }
+
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (nargs > 1) {
-        PyErr_Format(PyExc_TypeError, "tuple() expected at most 1 argument, got %zd", nargs);
+    if (!_PyArg_CheckPositional("tuple", nargs, 0, 1)) {
         return NULL;
     }
 

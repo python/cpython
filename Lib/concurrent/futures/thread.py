@@ -13,19 +13,6 @@ import threading
 import weakref
 import os
 
-# Workers are created as daemon threads. This is done to allow the interpreter
-# to exit when there are still idle threads in a ThreadPoolExecutor's thread
-# pool (i.e. shutdown() was not called). However, allowing workers to die with
-# the interpreter has two undesirable properties:
-#   - The workers would still be running during interpreter shutdown,
-#     meaning that they would fail in unpredictable ways.
-#   - The workers could be killed while evaluating a work item, which could
-#     be bad if the callable being evaluated has external side-effects e.g.
-#     writing to a file.
-#
-# To work around this problem, an exit handler is installed which tells the
-# workers to exit when their work queues are empty and then waits until the
-# threads finish.
 
 _threads_queues = weakref.WeakKeyDictionary()
 _shutdown = False
@@ -43,7 +30,11 @@ def _python_exit():
     for t, q in items:
         t.join()
 
-atexit.register(_python_exit)
+# Register for `_python_exit()` to be called just before joining all
+# non-daemon threads. This is used instead of `atexit.register()` for
+# compatibility with subinterpreters, which no longer support daemon threads.
+# See bpo-39812 for context.
+threading._register_atexit(_python_exit)
 
 
 class _WorkItem(object):
@@ -197,7 +188,6 @@ class ThreadPoolExecutor(_base.Executor):
                                        self._work_queue,
                                        self._initializer,
                                        self._initargs))
-            t.daemon = True
             t.start()
             self._threads.add(t)
             _threads_queues[t] = self._work_queue
