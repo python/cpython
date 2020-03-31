@@ -429,6 +429,11 @@ attributes:
    Return ``True`` if the object is a built-in function or a bound built-in method.
 
 
+.. function:: ismethodwrapper(object)
+
+   Return ``True`` if the object is a method-wrapper.
+
+
 .. function:: isroutine(object)
 
    Return ``True`` if the object is a user-defined or built-in function or method.
