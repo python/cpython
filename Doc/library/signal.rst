@@ -95,13 +95,9 @@ The variables defined in the :mod:`signal` module are:
 
    Abort signal from :manpage:`abort(3)`.
 
-   Default action is to terminate the process and dump core.
-
 .. data:: SIGALRM
 
    Timer signal from :manpage:`alarm(2)`.
-
-   Default action is to terminate the process.
 
    .. availability:: Unix.
 
@@ -115,15 +111,11 @@ The variables defined in the :mod:`signal` module are:
 
    Bus error (bad memory access).
 
-   Default action is to terminate the process and dump core.
-
    .. availability:: Unix.
 
 .. data:: SIGCHLD
 
    Child process stopped or terminated.
-
-   Default action is to ignore the signal.
 
    .. availability:: Windows.
 
@@ -133,17 +125,13 @@ The variables defined in the :mod:`signal` module are:
 
 .. data:: SIGCONT
 
-   Continue if stopped.
-
-   Default action is to continue the process if it is currently stopped.
+   Continue the process if it is currently stopped
 
    .. availability:: Unix.
 
 .. data:: SIGFPE
 
    Floating-point exception. For example, division by zero.
-
-   Default action is to terminate the process and dump core.
 
    .. seealso::
       :exc:`ZeroDivisionError` is raised when the second argument of a division
@@ -153,15 +141,11 @@ The variables defined in the :mod:`signal` module are:
 
    Hangup detected on controlling terminal or death of controlling process.
 
-   Default action is to terminate the process.
-
    .. availability:: Unix.
 
 .. data:: SIGILL
 
    Illegal instruction.
-
-   Default action is to terminate the process and dump core.
 
 .. data:: SIGINT
 
@@ -174,8 +158,6 @@ The variables defined in the :mod:`signal` module are:
    Kill signal.
 
    It cannot be caught, blocked, or ignored.
-
-   Default action is to terminate the process.
 
    .. availability:: Unix.
 
@@ -191,19 +173,13 @@ The variables defined in the :mod:`signal` module are:
 
    Segmentation fault: invalid memory reference.
 
-   Default action is to terminate the process and dump core.
-
 .. data:: SIGTERM
 
    Termination signal.
 
-   Default action is to terminate the process.
-
 .. data:: SIGUSR1
 
    User-defined signal 1.
-
-   Default action is to terminate the process.
 
    .. availability:: Unix.
 
@@ -211,15 +187,11 @@ The variables defined in the :mod:`signal` module are:
 
    User-defined signal 2.
 
-   Default action is to terminate the process.
-
    .. availability:: Unix.
 
 .. data:: SIGWINCH
 
    Window resize signal.
-
-   Default action is to ignore the signal.
 
    .. availability:: Unix.
 
