@@ -832,6 +832,7 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 
    PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void); */
 #if defined(__clang__) || \
+    defined(__xlc__) || \
     (defined(__GNUC__) && \
      ((__GNUC__ >= 3) || \
       (__GNUC__ == 2) && (__GNUC_MINOR__ >= 5)))

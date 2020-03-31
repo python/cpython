@@ -548,6 +548,11 @@ Build and C API Changes
 * The :c:func:`PyModule_AddType` function is added to help adding a type to a module.
   (Contributed by Dong-hee Na in :issue:`40024`.)
 
+* The Windows registry is no longer used to initialize :data:`sys.path` when
+  the ``-E`` option is used. This is significant when embedding Python on
+  Windows.
+  (Contributed by Zackery Spytz in :issue:`8901`.)
+
 Deprecated
 ==========
 
