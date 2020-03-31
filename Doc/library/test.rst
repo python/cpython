@@ -834,8 +834,8 @@ The :mod:`test.support` module defines the following functions:
    *exitcode*.
 
    If the process runs longer than *timeout* seconds (:data:`SHORT_TIMEOUT` by
-   default), kill the process (if :data:`signal.SIGKILL` is available) and
-   raise an :exc:`AssertionError`.
+   default), kill the process and raise an :exc:`AssertionError`. The timeout
+   feature is not available on Windows.
 
    .. versionadded:: 3.9
 

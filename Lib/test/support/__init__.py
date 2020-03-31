@@ -3411,23 +3411,23 @@ def wait_process(pid, *, exitcode, timeout=None):
 
     If the process runs longer than timeout seconds (SHORT_TIMEOUT by default),
     kill the process (if signal.SIGKILL is available) and raise an
-    AssertionError.
+    AssertionError. The timeout feature is not available on Windows.
     """
-    if timeout is None:
-        timeout = SHORT_TIMEOUT
-    t0 = time.monotonic()
-    deadline = t0 + timeout
-    sleep = 0.001
-    max_sleep = 0.1
-    while True:
-        pid2, status = os.waitpid(pid, os.WNOHANG)
-        if pid2 != 0:
-            break
-        # process is still running
+    if os.name != "nt":
+        if timeout is None:
+            timeout = SHORT_TIMEOUT
+        t0 = time.monotonic()
+        deadline = t0 + timeout
+        sleep = 0.001
+        max_sleep = 0.1
+        while True:
+            pid2, status = os.waitpid(pid, os.WNOHANG)
+            if pid2 != 0:
+                break
+            # process is still running
 
-        dt = time.monotonic() - t0
-        if dt > SHORT_TIMEOUT:
-            if hasattr(signal, 'SIGKILL'):
+            dt = time.monotonic() - t0
+            if dt > SHORT_TIMEOUT:
                 try:
                     os.kill(pid, signal.SIGKILL)
                     os.waitpid(pid, 0)
@@ -3435,13 +3435,12 @@ def wait_process(pid, *, exitcode, timeout=None):
                     # Ignore errors like ChildProcessError or PermissionError
                     pass
 
-            raise AssertionError(f"process {pid} is still running "
-                                 f"after {dt:.1f} seconds")
+                raise AssertionError(f"process {pid} is still running "
+                                     f"after {dt:.1f} seconds")
 
-        sleep = min(sleep * 2, max_sleep)
-        time.sleep(sleep)
+            sleep = min(sleep * 2, max_sleep)
+            time.sleep(sleep)
 
-    if os.name != "nt":
         if os.WIFEXITED(status):
             exitcode2 = os.WEXITSTATUS(status)
         elif os.WIFSIGNALED(status):
@@ -3449,11 +3448,14 @@ def wait_process(pid, *, exitcode, timeout=None):
         else:
             raise ValueError(f"invalid wait status: {status!r}")
     else:
+        # Windows implementation
+        pid2, status = os.waitpid(pid, 0)
         exitcode2 = (status >> 8)
 
     if exitcode2 != exitcode:
         raise AssertionError(f"process {pid} exited with code {exitcode2}, "
                              f"but exit code {exitcode} is expected")
+
     # sanity check: it should not fail in practice
     if pid2 != pid:
         raise AssertionError(f"pid {pid2} != pid {pid}")
