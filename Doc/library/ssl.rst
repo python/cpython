@@ -128,7 +128,7 @@ purposes.
    *cafile*, *capath*, *cadata* represent optional CA certificates to
    trust for certificate verification, as in
    :meth:`SSLContext.load_verify_locations`.  If all three are
-   :const:`None`, this function can choose to trust the system's default
+   :const:`None`, this function trusts the system's default
    CA certificates instead.
 
    The settings are: :data:`PROTOCOL_TLS`, :data:`OP_NO_SSLv2`, and
