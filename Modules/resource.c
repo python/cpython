@@ -356,10 +356,7 @@ static int resource_exec(PyObject *module)
             return -1;
     }
 
-    Py_INCREF(&StructRUsageType);
-    if (PyModule_AddObject(module, "struct_rusage",
-                           (PyObject*) &StructRUsageType) < 0) {
-        Py_DECREF(&StructRUsageType);
+    if(PyModule_AddType(module, &StructRUsageType) < 0) {
         return -1;
     }
 
@@ -488,14 +485,10 @@ static struct PyModuleDef_Slot resource_slots[] = {
 
 static struct PyModuleDef resourcemodule = {
     PyModuleDef_HEAD_INIT,
-    "resource",
-    NULL,
-    0,
-    resource_methods,
-    resource_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "resource",
+    .m_size = 0,
+    .m_methods = resource_methods,
+    .m_slots = resource_slots,
 };
 
 PyMODINIT_FUNC
