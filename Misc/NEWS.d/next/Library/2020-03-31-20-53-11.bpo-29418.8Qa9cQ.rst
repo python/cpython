@@ -1,0 +1,1 @@
+Fix, return ``True`` if the object is a method-wrapper add new function named ismethodwrapper. Patch by Hakan Çelik.
