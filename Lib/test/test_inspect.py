@@ -243,6 +243,11 @@ class TestPredicates(IsTestBase):
     def test_isroutine(self):
         self.assertTrue(inspect.isroutine(mod.spam))
         self.assertTrue(inspect.isroutine([].count))
+        # to method-wrapper
+        self.assertTrue(inspect.isroutine(object().__init__))
+        self.assertTrue(inspect.isroutine(object().__str__))
+        self.assertTrue(inspect.isroutine(object().__lt__))
+        self.assertTrue(inspect.isroutine((42).__lt__))
 
     def test_isclass(self):
         self.istest(inspect.isclass, 'mod.StupidGit')
