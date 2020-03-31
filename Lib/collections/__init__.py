@@ -38,8 +38,6 @@ try:
 except ImportError:
     pass
 
-_GenericAlias = type(list[int])
-
 
 def __getattr__(name):
     # For backwards compatibility, continue to make the collections ABCs
