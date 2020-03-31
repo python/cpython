@@ -133,6 +133,9 @@ def _get_module_details(mod_name, error=ImportError):
         # importlib, where the latter raises other errors for cases where
         # pkgutil previously raised ImportError
         msg = "Error while finding module specification for {!r} ({}: {})"
+        if mod_name.endswith(".py"):
+            msg += (f". Try using '{mod_name[:-3]}' instead of "
+                    f"'{mod_name}' as the module name.")
         raise error(msg.format(mod_name, type(ex).__name__, ex)) from ex
     if spec is None:
         raise error("No module named %s" % mod_name)
