@@ -191,7 +191,9 @@ class FlowControlMixin(protocols.Protocol):
         if not self._paused:
             return
         waiter = self._drain_waiter
-        assert waiter is None or waiter.cancelled()
+        assert waiter is None or waiter.cancelled(), (
+            'Another task is waiting for this stream to drain'
+        )
         waiter = self._loop.create_future()
         self._drain_waiter = waiter
         await waiter
