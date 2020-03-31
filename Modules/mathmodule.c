@@ -3422,7 +3422,8 @@ math_ulp_impl(PyObject *module, double x)
 }
 
 static int
-math_exec(PyObject *module) {
+math_exec(PyObject *module)
+{
     if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
