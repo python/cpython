@@ -545,6 +545,9 @@ inspect
 :attr:`inspect.BoundArguments.arguments` is changed from ``OrderedDict`` to regular
 dict.  (Contributed by Inada Naoki in :issue:`36350` and :issue:`39775`.)
 
+Add :func:`inspect.ismethodwrapper` for checking if the object is a method wrapper.
+(Contributed by Hakan Çelik in :issue:`29418`.)
+
 ipaddress
 ---------
 
