@@ -65,7 +65,7 @@ def simple_subprocess(testcase):
     except:
         raise
     finally:
-        support.wait_proces(self, pid, exitcode=72)
+        test.support.wait_process(pid, exitcode=72)
 
 
 class SocketServerTest(unittest.TestCase):
