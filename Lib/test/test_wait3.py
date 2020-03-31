@@ -16,7 +16,7 @@ if not hasattr(os, 'wait3'):
     raise unittest.SkipTest("os.wait3 not defined")
 
 class Wait3Test(ForkWait):
-    def wait_impl(self, cpid):
+    def wait_impl(self, cpid, *, exitcode):
         # This many iterations can be required, since some previously run
         # tests (e.g. test_ctypes) could have spawned a lot of children
         # very quickly.
@@ -30,7 +30,8 @@ class Wait3Test(ForkWait):
             time.sleep(0.1)
 
         self.assertEqual(spid, cpid)
-        self.assertEqual(status, 0, "cause = %d, exit = %d" % (status&0xff, status>>8))
+        self.assertEqual(status, exitcode << 8,
+                         "cause = %d, exit = %d" % (status&0xff, status>>8))
         self.assertTrue(rusage)
 
     def test_wait3_rusage_initialized(self):
