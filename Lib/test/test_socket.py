@@ -49,6 +49,8 @@ except ImportError:
 def get_cid():
     if fcntl is None:
         return None
+    if not hasattr(socket, 'IOCTL_VM_SOCKETS_GET_LOCAL_CID'):
+        return None
     try:
         with open("/dev/vsock", "rb") as f:
             r = fcntl.ioctl(f, socket.IOCTL_VM_SOCKETS_GET_LOCAL_CID, "    ")
