@@ -624,6 +624,9 @@ Deprecated
   by :c:func:`Py_Initialize()` since Python 3.7.
   (Contributed by Victor Stinner in :issue:`39877`.)
 
+* Passing ``None`` as the first argument to the :func:`shlex.split` function
+  has been deprecated.  (Contributed by Zackery Spytz in :issue:`33262`.)
+
 
 Removed
 =======
