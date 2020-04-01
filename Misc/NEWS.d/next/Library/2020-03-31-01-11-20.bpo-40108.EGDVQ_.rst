@@ -1,0 +1,3 @@
+Improve the error message when triying to import a module using :mod:`runpy`
+and incorrently use the ".py" extension at the end of the module name. Patch
+by Pablo Galindo.

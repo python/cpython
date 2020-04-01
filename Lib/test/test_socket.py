@@ -37,7 +37,6 @@ except ImportError:
 HOST = support.HOST
 # test unicode string and carriage return
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
-MAIN_TIMEOUT = 60.0
 
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
@@ -49,6 +48,8 @@ except ImportError:
 
 def get_cid():
     if fcntl is None:
+        return None
+    if not hasattr(socket, 'IOCTL_VM_SOCKETS_GET_LOCAL_CID'):
         return None
     try:
         with open("/dev/vsock", "rb") as f:
@@ -2527,7 +2528,7 @@ class SendrecvmsgBase(ThreadSafeCleanupTestCase):
 
     # Time in seconds to wait before considering a test failed, or
     # None for no timeout.  Not all tests actually set a timeout.
-    fail_timeout = 3.0
+    fail_timeout = support.LOOPBACK_TIMEOUT
 
     def setUp(self):
         self.misc_event = threading.Event()
@@ -4320,7 +4321,7 @@ class InterruptedTimeoutBase(unittest.TestCase):
         self.addCleanup(signal.signal, signal.SIGALRM, orig_alrm_handler)
 
     # Timeout for socket operations
-    timeout = 4.0
+    timeout = support.LOOPBACK_TIMEOUT
 
     # Provide setAlarm() method to schedule delivery of SIGALRM after
     # given number of seconds, or cancel it if zero, and an
@@ -4610,7 +4611,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
         self.event.set()
 
-        read, write, err = select.select([self.serv], [], [], MAIN_TIMEOUT)
+        read, write, err = select.select([self.serv], [], [], support.LONG_TIMEOUT)
         if self.serv not in read:
             self.fail("Error trying to do accept after select.")
 
@@ -4638,7 +4639,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
         self.event.set()
 
-        read, write, err = select.select([conn], [], [], MAIN_TIMEOUT)
+        read, write, err = select.select([conn], [], [], support.LONG_TIMEOUT)
         if conn not in read:
             self.fail("Error during select call to non-blocking socket.")
 
@@ -5064,14 +5065,16 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 
     testFamily = _justAccept
     def _testFamily(self):
-        self.cli = socket.create_connection((HOST, self.port), timeout=30)
+        self.cli = socket.create_connection((HOST, self.port),
+                            timeout=support.LOOPBACK_TIMEOUT)
         self.addCleanup(self.cli.close)
         self.assertEqual(self.cli.family, 2)
 
     testSourceAddress = _justAccept
     def _testSourceAddress(self):
-        self.cli = socket.create_connection((HOST, self.port), timeout=30,
-                source_address=('', self.source_port))
+        self.cli = socket.create_connection((HOST, self.port),
+                            timeout=support.LOOPBACK_TIMEOUT,
+                            source_address=('', self.source_port))
         self.addCleanup(self.cli.close)
         self.assertEqual(self.cli.getsockname()[1], self.source_port)
         # The port number being used is sufficient to show that the bind()
@@ -5838,8 +5841,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     BUFSIZE = 8192
     FILEDATA = b""
-    # bpo-37553: This is taking longer than 2 seconds on Windows ARM32 buildbot
-    TIMEOUT = 10 if sys.platform == 'win32' and platform.machine() == 'ARM' else 2
+    TIMEOUT = support.LOOPBACK_TIMEOUT
 
     @classmethod
     def setUpClass(cls):
@@ -5865,7 +5867,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
         support.unlink(support.TESTFN)
 
     def accept_conn(self):
-        self.serv.settimeout(MAIN_TIMEOUT)
+        self.serv.settimeout(support.LONG_TIMEOUT)
         conn, addr = self.serv.accept()
         conn.settimeout(self.TIMEOUT)
         self.addCleanup(conn.close)
@@ -5961,7 +5963,9 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     def _testCount(self):
         address = self.serv.getsockname()
         file = open(support.TESTFN, 'rb')
-        with socket.create_connection(address, timeout=2) as sock, file as file:
+        sock = socket.create_connection(address,
+                                        timeout=support.LOOPBACK_TIMEOUT)
+        with sock, file:
             count = 5000007
             meth = self.meth_from_sock(sock)
             sent = meth(file, count=count)
@@ -5980,7 +5984,9 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     def _testCountSmall(self):
         address = self.serv.getsockname()
         file = open(support.TESTFN, 'rb')
-        with socket.create_connection(address, timeout=2) as sock, file as file:
+        sock = socket.create_connection(address,
+                                        timeout=support.LOOPBACK_TIMEOUT)
+        with sock, file:
             count = 1
             meth = self.meth_from_sock(sock)
             sent = meth(file, count=count)
@@ -6034,7 +6040,9 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     def _testWithTimeout(self):
         address = self.serv.getsockname()
         file = open(support.TESTFN, 'rb')
-        with socket.create_connection(address, timeout=2) as sock, file as file:
+        sock = socket.create_connection(address,
+                                        timeout=support.LOOPBACK_TIMEOUT)
+        with sock, file:
             meth = self.meth_from_sock(sock)
             sent = meth(file)
             self.assertEqual(sent, self.FILESIZE)
@@ -6369,7 +6377,7 @@ class CreateServerTest(unittest.TestCase):
 
 
 class CreateServerFunctionalTest(unittest.TestCase):
-    timeout = 3
+    timeout = support.LOOPBACK_TIMEOUT
 
     def setUp(self):
         self.thread = None

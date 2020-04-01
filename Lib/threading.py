@@ -3,6 +3,7 @@
 import os as _os
 import sys as _sys
 import _thread
+import functools
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -1346,6 +1347,27 @@ def enumerate():
     with _active_limbo_lock:
         return list(_active.values()) + list(_limbo.values())
 
+
+_threading_atexits = []
+_SHUTTING_DOWN = False
+
+def _register_atexit(func, *arg, **kwargs):
+    """CPython internal: register *func* to be called before joining threads.
+
+    The registered *func* is called with its arguments just before all
+    non-daemon threads are joined in `_shutdown()`. It provides a similar
+    purpose to `atexit.register()`, but its functions are called prior to
+    threading shutdown instead of interpreter shutdown.
+
+    For similarity to atexit, the registered functions are called in reverse.
+    """
+    if _SHUTTING_DOWN:
+        raise RuntimeError("can't register atexit after shutdown")
+
+    call = functools.partial(func, *arg, **kwargs)
+    _threading_atexits.append(call)
+
+
 from _thread import stack_size
 
 # Create the main thread object,
@@ -1367,6 +1389,8 @@ def _shutdown():
         # _shutdown() was already called
         return
 
+    global _SHUTTING_DOWN
+    _SHUTTING_DOWN = True
     # Main thread
     tlock = _main_thread._tstate_lock
     # The main thread isn't finished yet, so its thread state lock can't have
@@ -1375,6 +1399,11 @@ def _shutdown():
     assert tlock.locked()
     tlock.release()
     _main_thread._stop()
+
+    # Call registered threading atexit functions before threads are joined.
+    # Order is reversed, similar to atexit.
+    for atexit_call in reversed(_threading_atexits):
+        atexit_call()
 
     # Join all non-deamon threads
     while True:
@@ -1423,7 +1452,15 @@ def _after_fork():
 
     # fork() only copied the current thread; clear references to others.
     new_active = {}
-    current = current_thread()
+
+    try:
+        current = _active[get_ident()]
+    except KeyError:
+        # fork() was called in a thread which was not spawned
+        # by threading.Thread. For example, a thread spawned
+        # by thread.start_new_thread().
+        current = _MainThread()
+
     _main_thread = current
 
     # reset _shutdown() locks: threads re-register their _tstate_lock below

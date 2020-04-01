@@ -2,7 +2,7 @@
 =======================================================
 
 .. module:: statistics
-   :synopsis: mathematical statistics functions
+   :synopsis: Mathematical statistics functions
 
 .. moduleauthor:: Steven D'Aprano <steve+python@pearwood.info>
 .. sectionauthor:: Steven D'Aprano <steve+python@pearwood.info>
@@ -77,7 +77,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: mean(data)
 
-   Return the sample arithmetic mean of *data* which can be a sequence or iterator.
+   Return the sample arithmetic mean of *data* which can be a sequence or iterable.
 
    The arithmetic mean is the sum of the data divided by the number of data
    points.  It is commonly called "the average", although it is only one of many
@@ -122,7 +122,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    Convert *data* to floats and compute the arithmetic mean.
 
    This runs faster than the :func:`mean` function and it always returns a
-   :class:`float`.  The *data* may be a sequence or iterator.  If the input
+   :class:`float`.  The *data* may be a sequence or iterable.  If the input
    dataset is empty, raises a :exc:`StatisticsError`.
 
    .. doctest::
@@ -143,7 +143,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Raises a :exc:`StatisticsError` if the input dataset is empty,
    if it contains a zero, or if it contains a negative value.
-   The *data* may be a sequence or iterator.
+   The *data* may be a sequence or iterable.
 
    No special efforts are made to achieve exact results.
    (However, this may change in the future.)
@@ -158,13 +158,14 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: harmonic_mean(data)
 
-   Return the harmonic mean of *data*, a sequence or iterator of
+   Return the harmonic mean of *data*, a sequence or iterable of
    real-valued numbers.
 
    The harmonic mean, sometimes called the subcontrary mean, is the
    reciprocal of the arithmetic :func:`mean` of the reciprocals of the
    data. For example, the harmonic mean of three values *a*, *b* and *c*
-   will be equivalent to ``3/(1/a + 1/b + 1/c)``.
+   will be equivalent to ``3/(1/a + 1/b + 1/c)``.  If one of the values
+   is zero, the result will be zero.
 
    The harmonic mean is a type of average, a measure of the central
    location of the data.  It is often appropriate when averaging
@@ -190,6 +191,10 @@ However, for reading convenience, most of the examples show sorted sequences.
    :exc:`StatisticsError` is raised if *data* is empty, or any element
    is less than zero.
 
+   The current algorithm has an early-out when it encounters a zero
+   in the input.  This means that the subsequent inputs are not tested
+   for validity.  (This behavior may change in the future.)
+
    .. versionadded:: 3.6
 
 
@@ -197,7 +202,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return the median (middle value) of numeric data, using the common "mean of
    middle two" method.  If *data* is empty, :exc:`StatisticsError` is raised.
-   *data* can be a sequence or iterator.
+   *data* can be a sequence or iterable.
 
    The median is a robust measure of central location and is less affected by
    the presence of outliers.  When the number of data points is odd, the
@@ -226,7 +231,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: median_low(data)
 
    Return the low median of numeric data.  If *data* is empty,
-   :exc:`StatisticsError` is raised.  *data* can be a sequence or iterator.
+   :exc:`StatisticsError` is raised.  *data* can be a sequence or iterable.
 
    The low median is always a member of the data set.  When the number of data
    points is odd, the middle value is returned.  When it is even, the smaller of
@@ -246,7 +251,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: median_high(data)
 
    Return the high median of data.  If *data* is empty, :exc:`StatisticsError`
-   is raised.  *data* can be a sequence or iterator.
+   is raised.  *data* can be a sequence or iterable.
 
    The high median is always a member of the data set.  When the number of data
    points is odd, the middle value is returned.  When it is even, the larger of
@@ -267,7 +272,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return the median of grouped continuous data, calculated as the 50th
    percentile, using interpolation.  If *data* is empty, :exc:`StatisticsError`
-   is raised.  *data* can be a sequence or iterator.
+   is raised.  *data* can be a sequence or iterable.
 
    .. doctest::
 
@@ -376,7 +381,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: pvariance(data, mu=None)
 
-   Return the population variance of *data*, a non-empty sequence or iterator
+   Return the population variance of *data*, a non-empty sequence or iterable
    of real-valued numbers.  Variance, or second moment about the mean, is a
    measure of the variability (spread or dispersion) of data.  A large
    variance indicates that the data is spread out; a small variance indicates
@@ -729,10 +734,10 @@ of applications in statistics.
 :class:`NormalDist` readily solves classic probability problems.
 
 For example, given `historical data for SAT exams
-<https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
-are normally distributed with a mean of 1060 and a standard deviation of 192,
-determine the percentage of students with test scores between 1100 and
-1200, after rounding to the nearest whole number:
+<https://nces.ed.gov/programs/digest/d17/tables/dt17_226.40.asp>`_ showing
+that scores are normally distributed with a mean of 1060 and a standard
+deviation of 195, determine the percentage of students with test scores
+between 1100 and 1200, after rounding to the nearest whole number:
 
 .. doctest::
 
@@ -766,6 +771,42 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     >>> Z = NormalDist(50, 1.25).samples(n, seed=6582483453)
     >>> quantiles(map(model, X, Y, Z))       # doctest: +SKIP
     [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
+
+Normal distributions can be used to approximate `Binomial
+distributions <http://mathworld.wolfram.com/BinomialDistribution.html>`_
+when the sample size is large and when the probability of a successful
+trial is near 50%.
+
+For example, an open source conference has 750 attendees and two rooms with a
+500 person capacity.  There is a talk about Python and another about Ruby.
+In previous conferences, 65% of the attendees preferred to listen to Python
+talks.  Assuming the population preferences haven't changed, what is the
+probability that the Python room will stay within its capacity limits?
+
+.. doctest::
+
+    >>> n = 750             # Sample size
+    >>> p = 0.65            # Preference for Python
+    >>> q = 1.0 - p         # Preference for Ruby
+    >>> k = 500             # Room capacity
+
+    >>> # Approximation using the cumulative normal distribution
+    >>> from math import sqrt
+    >>> round(NormalDist(mu=n*p, sigma=sqrt(n*p*q)).cdf(k + 0.5), 4)
+    0.8402
+
+    >>> # Solution using the cumulative binomial distribution
+    >>> from math import comb, fsum
+    >>> round(fsum(comb(n, r) * p**r * q**(n-r) for r in range(k+1)), 4)
+    0.8402
+
+    >>> # Approximation using a simulation
+    >>> from random import seed, choices
+    >>> seed(8675309)
+    >>> def trial():
+    ...     return choices(('Python', 'Ruby'), (p, q), k=n).count('Python')
+    >>> mean(trial() <= k for i in range(10_000))
+    0.8398
 
 Normal distributions commonly arise in machine learning problems.
 

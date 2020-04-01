@@ -1,3 +1,0 @@
-An :class:`~argparse.ArgumentParser` with ``allow_abbrev=False`` no longer
-disables grouping of short flags, such as ``-vv``, but only disables
-abbreviation of long flags as documented. Patch by Zac Hatfield-Dodds.

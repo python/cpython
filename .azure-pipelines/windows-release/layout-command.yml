@@ -1,12 +1,20 @@
 steps:
+- task: DownloadPipelineArtifact@1
+  displayName: 'Download artifact: bin_$(HostArch)'
+  condition: and(succeeded(), variables['HostArch'])
+  inputs:
+    artifactName: bin_$(HostArch)
+    targetPath: $(Build.BinariesDirectory)\bin_$(HostArch)
+
 - powershell: >
     Write-Host (
     '##vso[task.setvariable variable=LayoutCmd]&
-    "{0}\bin\python.exe"
+    "$(Python)"
     "{1}\PC\layout"
     -vv
     --source "{1}"
     --build "{0}\bin"
+    --arch "$(Name)"
     --temp "{0}\layout-temp"
     --include-cat "{0}\bin\python.cat"
     --doc-build "{0}\doc"'

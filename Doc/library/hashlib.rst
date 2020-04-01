@@ -82,8 +82,8 @@ library that Python uses on your platform. On most platforms the
 
 .. versionchanged:: 3.9
    All hashlib constructors take a keyword-only argument *usedforsecurity*
-   with default value *True*. A false value allows the use of insecure and
-   blocked hashing algorithms in restricted environments. *False* indicates
+   with default value ``True``. A false value allows the use of insecure and
+   blocked hashing algorithms in restricted environments. ``False`` indicates
    that the hashing algorithm is not used in a security context, e.g. as a
    non-cryptographic one-way compression function.
 

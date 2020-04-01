@@ -10,6 +10,7 @@ import builtins
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
+from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
 
@@ -43,6 +44,25 @@ class TestCase(unittest.TestCase):
 
         o = C(42)
         self.assertEqual(o.x, 42)
+
+    def test_field_default_default_factory_error(self):
+        msg = "cannot specify both default and default_factory"
+        with self.assertRaisesRegex(ValueError, msg):
+            @dataclass
+            class C:
+                x: int = field(default=1, default_factory=int)
+
+    def test_field_repr(self):
+        int_field = field(default=1, init=True, repr=False)
+        int_field.name = "id"
+        repr_output = repr(int_field)
+        expected_output = "Field(name='id',type=None," \
+                           f"default=1,default_factory={MISSING!r}," \
+                           "init=True,repr=False,hash=None," \
+                           "compare=True,metadata=mappingproxy({})," \
+                           "_field_type=None)"
+
+        self.assertEqual(repr_output, expected_output)
 
     def test_named_init_params(self):
         @dataclass
@@ -2925,6 +2945,17 @@ class TestStringAnnotations(unittest.TestCase):
                     # iv4 is interpreted as an InitVar, so it
                     # won't exist on the instance.
                     self.assertNotIn('not_iv4', c.__dict__)
+
+    def test_text_annotations(self):
+        from test import dataclass_textanno
+
+        self.assertEqual(
+            get_type_hints(dataclass_textanno.Bar),
+            {'foo': dataclass_textanno.Foo})
+        self.assertEqual(
+            get_type_hints(dataclass_textanno.Bar.__init__),
+            {'foo': dataclass_textanno.Foo,
+             'return': type(None)})
 
 
 class TestMakeDataclass(unittest.TestCase):

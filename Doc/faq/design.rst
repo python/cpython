@@ -148,6 +148,8 @@ variables and instance variables live in two different namespaces, and you need
 to tell Python which namespace to use.
 
 
+.. _why-can-t-i-use-an-assignment-in-an-expression:
+
 Why can't I use an assignment in an expression?
 -----------------------------------------------
 

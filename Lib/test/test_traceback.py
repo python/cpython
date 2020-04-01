@@ -174,7 +174,6 @@ class TracebackCases(unittest.TestCase):
         # Issue #18960: coding spec should have no effect
         do_test("x=0\n# coding: GBK\n", "h\xe9 ho", 'utf-8', 5)
 
-    @support.requires_type_collecting
     def test_print_traceback_at_exit(self):
         # Issue #22599: Ensure that it is possible to use the traceback module
         # to display an exception at Python exit
@@ -313,7 +312,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_f:
             try:
                 f()
-            except RecursionError as exc:
+            except RecursionError:
                 render_exc()
             else:
                 self.fail("no recursion occurred")
@@ -360,7 +359,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_g:
             try:
                 g()
-            except ValueError as exc:
+            except ValueError:
                 render_exc()
             else:
                 self.fail("no value error was raised")
@@ -396,7 +395,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_h:
             try:
                 h()
-            except ValueError as exc:
+            except ValueError:
                 render_exc()
             else:
                 self.fail("no value error was raised")
@@ -424,7 +423,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_g:
             try:
                 g(traceback._RECURSIVE_CUTOFF)
-            except ValueError as exc:
+            except ValueError:
                 render_exc()
             else:
                 self.fail("no error raised")
@@ -452,7 +451,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_g:
             try:
                 g(traceback._RECURSIVE_CUTOFF + 1)
-            except ValueError as exc:
+            except ValueError:
                 render_exc()
             else:
                 self.fail("no error raised")

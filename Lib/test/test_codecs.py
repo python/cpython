@@ -11,7 +11,7 @@ from test import support
 
 try:
     import _testcapi
-except ImportError as exc:
+except ImportError:
     _testcapi = None
 
 try:
@@ -1142,6 +1142,7 @@ class UTF8SigTest(UTF8Test, unittest.TestCase):
             got = ostream.getvalue()
             self.assertEqual(got, unistring)
 
+
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(codecs.escape_decode(b""), (b"", 0))
@@ -1330,6 +1331,18 @@ class PunycodeTest(unittest.TestCase):
             self.assertEqual(uni, puny.decode("punycode"))
             puny = puny.decode("ascii").encode("ascii")
             self.assertEqual(uni, puny.decode("punycode"))
+
+    def test_decode_invalid(self):
+        testcases = [
+            (b"xn--w&", "strict", UnicodeError()),
+            (b"xn--w&", "ignore", "xn-"),
+        ]
+        for puny, errors, expected in testcases:
+            with self.subTest(puny=puny, errors=errors):
+                if isinstance(expected, Exception):
+                    self.assertRaises(UnicodeError, puny.decode, "punycode", errors)
+                else:
+                    self.assertEqual(puny.decode("punycode", errors), expected)
 
 
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
@@ -1700,6 +1713,14 @@ class CodecsModuleTest(unittest.TestCase):
                 codecs.encode, 'abc', 'undefined', errors)
             self.assertRaises(UnicodeError,
                 codecs.decode, b'abc', 'undefined', errors)
+
+    def test_file_closes_if_lookup_error_raised(self):
+        mock_open = mock.mock_open()
+        with mock.patch('builtins.open', mock_open) as file:
+            with self.assertRaises(LookupError):
+                codecs.open(support.TESTFN, 'wt', 'invalid-encoding')
+
+            file().close.assert_called()
 
 
 class StreamReaderTest(unittest.TestCase):

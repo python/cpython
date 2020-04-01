@@ -1,2 +1,0 @@
-Made :func:`urllib.parse.unquote()` accept bytes in addition to strings.
-Patch by Stein Karlsen.

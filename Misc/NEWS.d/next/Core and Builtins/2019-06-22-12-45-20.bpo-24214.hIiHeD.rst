@@ -1,2 +1,0 @@
-Improved support of the surrogatepass error handler in the UTF-8 and UTF-16
-incremental decoders.

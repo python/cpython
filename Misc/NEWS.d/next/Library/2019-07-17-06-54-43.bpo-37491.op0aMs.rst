@@ -1,2 +1,0 @@
-Fix ``IndexError`` when parsing email headers with unexpectedly ending
-bare-quoted string value. Patch by Abhilash Raj.
