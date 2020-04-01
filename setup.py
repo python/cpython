@@ -9,7 +9,6 @@ import re
 import sys
 import sysconfig
 from glob import glob
-from _bootsubprocess import _waitstatus_to_exitcode as waitstatus_to_exitcode
 
 
 try:
@@ -98,7 +97,7 @@ Topic :: Software Development
 
 def run_command(cmd):
     status = os.system(cmd)
-    return waitstatus_to_exitcode(status)
+    return os.waitstatus_to_exitcode(status)
 
 
 # Set common compiler and linker flags derived from the Makefile,

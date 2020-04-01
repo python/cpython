@@ -3442,18 +3442,11 @@ def wait_process(pid, *, exitcode, timeout=None):
 
             sleep = min(sleep * 2, max_sleep)
             time.sleep(sleep)
-
-        if os.WIFEXITED(status):
-            exitcode2 = os.WEXITSTATUS(status)
-        elif os.WIFSIGNALED(status):
-            exitcode2 = -os.WTERMSIG(status)
-        else:
-            raise ValueError(f"invalid wait status: {status!r}")
     else:
         # Windows implementation
         pid2, status = os.waitpid(pid, 0)
-        exitcode2 = (status >> 8)
 
+    exitcode2 = os.waitstatus_to_exitcode(status)
     if exitcode2 != exitcode:
         raise AssertionError(f"process {pid} exited with code {exitcode2}, "
                              f"but exit code {exitcode} is expected")
