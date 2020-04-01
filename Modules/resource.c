@@ -15,6 +15,13 @@
 
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
 
+#define ADD_INT(module, value)                         \
+    do {                                               \
+        if (PyModule_AddIntMacro(module, value) < 0) { \
+            return -1;                                 \
+        }                                              \
+    } while (0)                                        \
+
 /*[clinic input]
 module resource
 [clinic start generated code]*/
@@ -362,107 +369,107 @@ static int resource_exec(PyObject *module)
 
     /* insert constants */
 #ifdef RLIMIT_CPU
-    PyModule_AddIntMacro(module, RLIMIT_CPU);
+    ADD_INT(module, RLIMIT_CPU);
 #endif
 
 #ifdef RLIMIT_FSIZE
-    PyModule_AddIntMacro(module, RLIMIT_FSIZE);
+    ADD_INT(module, RLIMIT_FSIZE);
 #endif
 
 #ifdef RLIMIT_DATA
-    PyModule_AddIntMacro(module, RLIMIT_DATA);
+    ADD_INT(module, RLIMIT_DATA);
 #endif
 
 #ifdef RLIMIT_STACK
-    PyModule_AddIntMacro(module, RLIMIT_STACK);
+    ADD_INT(module, RLIMIT_STACK);
 #endif
 
 #ifdef RLIMIT_CORE
-    PyModule_AddIntMacro(module, RLIMIT_CORE);
+    ADD_INT(module, RLIMIT_CORE);
 #endif
 
 #ifdef RLIMIT_NOFILE
-    PyModule_AddIntMacro(module, RLIMIT_NOFILE);
+    ADD_INT(module, RLIMIT_NOFILE);
 #endif
 
 #ifdef RLIMIT_OFILE
-    PyModule_AddIntMacro(module, RLIMIT_OFILE);
+    ADD_INT(module, RLIMIT_OFILE);
 #endif
 
 #ifdef RLIMIT_VMEM
-    PyModule_AddIntMacro(module, RLIMIT_VMEM);
+    ADD_INT(module, RLIMIT_VMEM);
 #endif
 
 #ifdef RLIMIT_AS
-    PyModule_AddIntMacro(module, RLIMIT_AS);
+    ADD_INT(module, RLIMIT_AS);
 #endif
 
 #ifdef RLIMIT_RSS
-    PyModule_AddIntMacro(module, RLIMIT_RSS);
+    ADD_INT(module, RLIMIT_RSS);
 #endif
 
 #ifdef RLIMIT_NPROC
-    PyModule_AddIntMacro(module, RLIMIT_NPROC);
+    ADD_INT(module, RLIMIT_NPROC);
 #endif
 
 #ifdef RLIMIT_MEMLOCK
-    PyModule_AddIntMacro(module, RLIMIT_MEMLOCK);
+    ADD_INT(module, RLIMIT_MEMLOCK);
 #endif
 
 #ifdef RLIMIT_SBSIZE
-    PyModule_AddIntMacro(module, RLIMIT_SBSIZE);
+    ADD_INT(module, RLIMIT_SBSIZE);
 #endif
 
 /* Linux specific */
 #ifdef RLIMIT_MSGQUEUE
-    PyModule_AddIntMacro(module, RLIMIT_MSGQUEUE);
+    ADD_INT(module, RLIMIT_MSGQUEUE);
 #endif
 
 #ifdef RLIMIT_NICE
-    PyModule_AddIntMacro(module, RLIMIT_NICE);
+    ADD_INT(module, RLIMIT_NICE);
 #endif
 
 #ifdef RLIMIT_RTPRIO
-    PyModule_AddIntMacro(module, RLIMIT_RTPRIO);
+    ADD_INT(module, RLIMIT_RTPRIO);
 #endif
 
 #ifdef RLIMIT_RTTIME
-    PyModule_AddIntMacro(module, RLIMIT_RTTIME);
+    ADD_INT(module, RLIMIT_RTTIME);
 #endif
 
 #ifdef RLIMIT_SIGPENDING
-    PyModule_AddIntMacro(module, RLIMIT_SIGPENDING);
+    ADD_INT(module, RLIMIT_SIGPENDING);
 #endif
 
 /* target */
 #ifdef RUSAGE_SELF
-    PyModule_AddIntMacro(module, RUSAGE_SELF);
+    ADD_INT(module, RUSAGE_SELF);
 #endif
 
 #ifdef RUSAGE_CHILDREN
-    PyModule_AddIntMacro(module, RUSAGE_CHILDREN);
+    ADD_INT(module, RUSAGE_CHILDREN);
 #endif
 
 #ifdef RUSAGE_BOTH
-    PyModule_AddIntMacro(module, RUSAGE_BOTH);
+    ADD_INT(module, RUSAGE_BOTH);
 #endif
 
 #ifdef RUSAGE_THREAD
-    PyModule_AddIntMacro(module, RUSAGE_THREAD);
+    ADD_INT(module, RUSAGE_THREAD);
 #endif
 
 /* FreeBSD specific */
 
 #ifdef RLIMIT_SWAP
-    PyModule_AddIntMacro(module, RLIMIT_SWAP);
+    ADD_INT(module, RLIMIT_SWAP);
 #endif
 
 #ifdef RLIMIT_SBSIZE
-    PyModule_AddIntMacro(module, RLIMIT_SBSIZE);
+    ADD_INT(module, RLIMIT_SBSIZE);
 #endif
 
 #ifdef RLIMIT_NPTS
-    PyModule_AddIntMacro(module, RLIMIT_NPTS);
+    ADD_INT(module, RLIMIT_NPTS);
 #endif
 
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
@@ -472,7 +479,12 @@ static int resource_exec(PyObject *module)
         v = PyLong_FromLong((long) RLIM_INFINITY);
     }
     if (v) {
-        PyModule_AddObject(module, "RLIM_INFINITY", v);
+        if (PyModule_AddObject(module, "RLIM_INFINITY", v) < 0) {
+            Py_DECREF(v);
+            return -1;
+        }
+    } else {
+        return -1;
     }
     initialized = 1;
     return 0;
