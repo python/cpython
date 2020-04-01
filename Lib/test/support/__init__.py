@@ -3414,6 +3414,8 @@ def wait_process(pid, *, exitcode, timeout=None):
     AssertionError. The timeout feature is not available on Windows.
     """
     if os.name != "nt":
+        import signal
+
         if timeout is None:
             timeout = SHORT_TIMEOUT
         t0 = time.monotonic()
