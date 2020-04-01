@@ -9,9 +9,12 @@ import weakref
 import errno
 
 from test.support import (TESTFN, captured_stderr, check_impl_detail,
-                          check_warnings, cpython_only, gc_collect, run_unittest,
+                          check_warnings, cpython_only, gc_collect,
                           no_tracing, unlink, import_module, script_helper,
                           SuppressCrashReport)
+from test import support
+
+
 class NaiveException(Exception):
     def __init__(self, x):
         self.x = x
@@ -176,17 +179,25 @@ class ExceptionTests(unittest.TestCase):
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
 
     def testSyntaxErrorOffset(self):
-        def check(src, lineno, offset):
+        def check(src, lineno, offset, encoding='utf-8'):
             with self.assertRaises(SyntaxError) as cm:
                 compile(src, '<fragment>', 'exec')
             self.assertEqual(cm.exception.lineno, lineno)
             self.assertEqual(cm.exception.offset, offset)
+            if cm.exception.text is not None:
+                if not isinstance(src, str):
+                    src = src.decode(encoding, 'replace')
+                line = src.split('\n')[lineno-1]
+                self.assertEqual(cm.exception.text.rstrip('\n'), line)
 
         check('def fact(x):\n\treturn x!\n', 2, 10)
         check('1 +\n', 1, 4)
         check('def spam():\n  print(1)\n print(2)', 3, 10)
         check('Python = "Python" +', 1, 20)
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
+        check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
+              2, 19, encoding='cp1251')
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
         check('x = "a', 1, 7)
         check('lambda x: x = 2', 1, 1)
 
@@ -202,6 +213,10 @@ class ExceptionTests(unittest.TestCase):
         check('0010 + 2', 1, 4)
         check('x = 32e-+4', 1, 8)
         check('x = 0o9', 1, 6)
+        check('\u03b1 = 0xI', 1, 6)
+        check(b'\xce\xb1 = 0xI', 1, 6)
+        check(b'# -*- coding: iso8859-7 -*-\n\xe1 = 0xI', 2, 6,
+              encoding='iso8859-7')
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 5)
@@ -979,7 +994,7 @@ class ExceptionTests(unittest.TestCase):
         # finalization of these locals.
         code = """if 1:
             import sys
-            from _testcapi import get_recursion_depth
+            from _testinternalcapi import get_recursion_depth
 
             class MyException(Exception): pass
 
@@ -1063,8 +1078,9 @@ class ExceptionTests(unittest.TestCase):
         """
         with SuppressCrashReport():
             rc, out, err = script_helper.assert_python_failure("-c", code)
-            self.assertIn(b'Fatal Python error: Cannot recover from '
-                          b'MemoryErrors while normalizing exceptions.', err)
+            self.assertIn(b'Fatal Python error: _PyErr_NormalizeException: '
+                          b'Cannot recover from MemoryErrors while '
+                          b'normalizing exceptions.', err)
 
     @cpython_only
     def test_MemoryError(self):
@@ -1181,29 +1197,12 @@ class ExceptionTests(unittest.TestCase):
                 # The following line is included in the traceback report:
                 raise exc
 
-        class BrokenExceptionDel:
-            def __del__(self):
-                exc = BrokenStrException()
-                # The following line is included in the traceback report:
-                raise exc
+        obj = BrokenDel()
+        with support.catch_unraisable_exception() as cm:
+            del obj
 
-        for test_class in (BrokenDel, BrokenExceptionDel):
-            with self.subTest(test_class):
-                obj = test_class()
-                with captured_stderr() as stderr:
-                    del obj
-                report = stderr.getvalue()
-                self.assertIn("Exception ignored", report)
-                self.assertIn(test_class.__del__.__qualname__, report)
-                self.assertIn("test_exceptions.py", report)
-                self.assertIn("raise exc", report)
-                if test_class is BrokenExceptionDel:
-                    self.assertIn("BrokenStrException", report)
-                    self.assertIn("<exception str() failed>", report)
-                else:
-                    self.assertIn("ValueError", report)
-                    self.assertIn("del is broken", report)
-                self.assertTrue(report.endswith("\n"))
+            self.assertEqual(cm.unraisable.object, BrokenDel.__del__)
+            self.assertIsNotNone(cm.unraisable.exc_traceback)
 
     def test_unhandled(self):
         # Check for sensible reporting of unhandled exceptions
@@ -1298,6 +1297,22 @@ class ExceptionTests(unittest.TestCase):
             except:
                 next(i)
                 next(i)
+
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
+    def test_assert_shadowing(self):
+        # Shadowing AssertionError would cause the assert statement to
+        # misbehave.
+        global AssertionError
+        AssertionError = TypeError
+        try:
+            assert False, 'hello'
+        except BaseException as e:
+            del AssertionError
+            self.assertIsInstance(e, AssertionError)
+            self.assertEqual(str(e), 'hello')
+        else:
+            del AssertionError
+            self.fail('Expected exception')
 
 
 class ImportErrorTests(unittest.TestCase):

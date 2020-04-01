@@ -1,5 +1,0 @@
-Debug memory allocators: disable serialno field by default from debug hooks on
-Python memory allocators to reduce the memory footprint by 5%. Enable
-:mod:`tracemalloc` to get the traceback where a memory block has been allocated
-when a fatal memory error is logged to decide where to put a breakpoint.
-Compile Python with ``PYMEM_DEBUG_SERIALNO`` defined to get back the field.

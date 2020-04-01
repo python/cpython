@@ -727,9 +727,13 @@ public: // IBootstrapperApplication
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to load AssociateFiles state: error code 0x%08X", hr);
             }
 
-            _engine->SetVariableNumeric(L"Include_launcher", 1);
+            LONGLONG includeLauncher;
+            if (FAILED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))
+                || includeLauncher == -1) {
+                _engine->SetVariableNumeric(L"Include_launcher", 1);
+                _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
+            }
             _engine->SetVariableNumeric(L"DetectedOldLauncher", 1);
-            _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
         }
         return CheckCanceled() ? IDCANCEL : IDNOACTION;
     }
@@ -796,6 +800,12 @@ public: // IBootstrapperApplication
             }
         }
 
+        LONGLONG includeLauncher;
+        if (SUCCEEDED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))
+            && includeLauncher != -1) {
+            detectedLauncher = FALSE;
+        }
+
         if (detectedLauncher) {
             /* When we detect the current version of the launcher. */
             _engine->SetVariableNumeric(L"Include_launcher", 1);
@@ -817,6 +827,14 @@ public: // IBootstrapperApplication
         if (SUCCEEDED(hrStatus) && _baFunction) {
             BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Running detect complete BA function");
             _baFunction->OnDetectComplete();
+        }
+
+        if (SUCCEEDED(hrStatus)) {
+            LONGLONG includeLauncher;
+            if (SUCCEEDED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))
+                && includeLauncher == -1) {
+                _engine->SetVariableNumeric(L"Include_launcher", 1);
+            }
         }
 
         if (SUCCEEDED(hrStatus)) {
@@ -1451,6 +1469,10 @@ private:
         hr = ParseOverridableVariablesFromXml(pixdManifest);
         BalExitOnFailure(hr, "Failed to read overridable variables.");
 
+        if (_command.action == BOOTSTRAPPER_ACTION_MODIFY) {
+            LoadOptionalFeatureStates(_engine);
+        }
+
         hr = ParseVariablesFromUnattendXml();
         ExitOnFailure(hr, "Failed to read unattend.ini file.");
 
@@ -1477,10 +1499,6 @@ private:
 
         hr = UpdateUIStrings(_command.action);
         BalExitOnFailure(hr, "Failed to load UI strings.");
-
-        if (_command.action == BOOTSTRAPPER_ACTION_MODIFY) {
-            LoadOptionalFeatureStates(_engine);
-        }
 
         GetBundleFileVersion();
         // don't fail if we couldn't get the version info; best-effort only
@@ -2995,8 +3013,8 @@ private:
             } else if (IsWindowsVersionOrGreater(6, 1, 1)) {
                 HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
                 if (hKernel32 && !GetProcAddress(hKernel32, "AddDllDirectory")) {
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2 without KB2533625");
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533625 update is required to continue.");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2 without KB2533623");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533623 update is required to continue.");
                     /* The "MissingSP1" error also specifies updates are required */
                     LocGetString(_wixLoc, L"#(loc.FailureWS2K8R2MissingSP1)", &pLocString);
                 } else {
@@ -3026,8 +3044,8 @@ private:
             } else if (IsWindows7SP1OrGreater()) {
                 HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
                 if (hKernel32 && !GetProcAddress(hKernel32, "AddDllDirectory")) {
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 SP1 without KB2533625");
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533625 update is required to continue.");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 SP1 without KB2533623");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533623 update is required to continue.");
                     /* The "MissingSP1" error also specifies updates are required */
                     LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
                 } else {

@@ -236,27 +236,27 @@ Overridden parameters
     >>> f(x=5, **{'x': 3}, y=2)
     Traceback (most recent call last):
       ...
-    TypeError: f() got multiple values for keyword argument 'x'
+    TypeError: test.test_unpack_ex.f() got multiple values for keyword argument 'x'
 
     >>> f(**{'x': 3}, x=5, y=2)
     Traceback (most recent call last):
       ...
-    TypeError: f() got multiple values for keyword argument 'x'
+    TypeError: test.test_unpack_ex.f() got multiple values for keyword argument 'x'
 
     >>> f(**{'x': 3}, **{'x': 5}, y=2)
     Traceback (most recent call last):
       ...
-    TypeError: f() got multiple values for keyword argument 'x'
+    TypeError: test.test_unpack_ex.f() got multiple values for keyword argument 'x'
 
     >>> f(x=5, **{'x': 3}, **{'x': 2})
     Traceback (most recent call last):
       ...
-    TypeError: f() got multiple values for keyword argument 'x'
+    TypeError: test.test_unpack_ex.f() got multiple values for keyword argument 'x'
 
     >>> f(**{1: 3}, **{1: 5})
     Traceback (most recent call last):
       ...
-    TypeError: f() keywords must be strings
+    TypeError: test.test_unpack_ex.f() got multiple values for keyword argument '1'
 
 Unpacking non-sequence
 
@@ -308,12 +308,17 @@ Now some general starred expressions (all fail).
     >>> a, *b, c, *d, e = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: two starred expressions in assignment
+    SyntaxError: multiple starred expressions in assignment
 
     >>> [*b, *c] = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: two starred expressions in assignment
+    SyntaxError: multiple starred expressions in assignment
+
+    >>> a,*b,*c,*d = range(4) # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: multiple starred expressions in assignment
 
     >>> *a = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):

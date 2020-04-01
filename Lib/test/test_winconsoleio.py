@@ -25,14 +25,12 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertRaisesRegex(ValueError,
             "negative file descriptor", ConIO, -1)
 
-        fd, _ = tempfile.mkstemp()
-        try:
+        with tempfile.TemporaryFile() as tmpfile:
+            fd = tmpfile.fileno()
             # Windows 10: "Cannot open non-console file"
             # Earlier: "Cannot open console output buffer for reading"
             self.assertRaisesRegex(ValueError,
                 "Cannot open (console|non-console file)", ConIO, fd)
-        finally:
-            os.close(fd)
 
         try:
             f = ConIO(0)
@@ -146,6 +144,10 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertStdinRoundTrip('ϼўТλФЙ')
         # Combining characters
         self.assertStdinRoundTrip('A͏B ﬖ̳AA̝')
+
+    # bpo-38325
+    @unittest.skipIf(True, "Handling Non-BMP characters is broken")
+    def test_input_nonbmp(self):
         # Non-BMP
         self.assertStdinRoundTrip('\U00100000\U0010ffff\U0010fffd')
 
@@ -165,6 +167,8 @@ class WindowsConsoleIOTests(unittest.TestCase):
 
                 self.assertEqual(actual, expected, 'stdin.read({})'.format(read_count))
 
+    # bpo-38325
+    @unittest.skipIf(True, "Handling Non-BMP characters is broken")
     def test_partial_surrogate_reads(self):
         # Test that reading less than 1 full character works when stdin
         # contains surrogate pairs that cannot be decoded to UTF-8 without

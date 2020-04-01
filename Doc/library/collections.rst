@@ -33,10 +33,10 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`UserString`     wrapper around string objects for easier string subclassing
 =====================   ====================================================================
 
-.. versionchanged:: 3.3
+.. deprecated-removed:: 3.3 3.10
     Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
     For backwards compatibility, they continue to be visible in this module through
-    Python 3.7.  Subsequently, they will be removed entirely.
+    Python 3.9.
 
 
 :class:`ChainMap` objects
@@ -116,6 +116,9 @@ The class can be used to simulate nested scopes and is useful in templating.
         >>> list(combined)
         ['music', 'art', 'opera']
 
+    .. versionchanged:: 3.9
+       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
+
 .. seealso::
 
     * The `MultiContext class
@@ -162,7 +165,7 @@ environment variables which in turn take precedence over default values::
         parser.add_argument('-u', '--user')
         parser.add_argument('-c', '--color')
         namespace = parser.parse_args()
-        command_line_args = {k:v for k, v in vars(namespace).items() if v}
+        command_line_args = {k: v for k, v in vars(namespace).items() if v is not None}
 
         combined = ChainMap(command_line_args, os.environ, defaults)
         print(combined['color'])
@@ -729,6 +732,10 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         initialized from the first argument to the constructor, if present, or to
         ``None``, if absent.
 
+    .. versionchanged:: 3.9
+       Added merge (``|``) and update (``|=``) operators, specified in
+       :pep:`584`.
+
 
 :class:`defaultdict` Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1017,15 +1024,6 @@ fields:
 .. versionchanged:: 3.5
    Property docstrings became writeable.
 
-Default values can be implemented by using :meth:`~somenamedtuple._replace` to
-customize a prototype instance:
-
-    >>> Account = namedtuple('Account', 'owner balance transaction_count')
-    >>> default_account = Account('<owner name>', 0.0, 0)
-    >>> johns_account = default_account._replace(owner='John')
-    >>> janes_account = default_account._replace(owner='Jane')
-
-
 .. seealso::
 
     * See :class:`typing.NamedTuple` for a way to add type hints for named
@@ -1128,6 +1126,10 @@ anywhere a regular dictionary is used.
    passed to the :class:`OrderedDict` constructor and its :meth:`update`
    method.
 
+.. versionchanged:: 3.9
+    Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
+
+
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1141,7 +1143,7 @@ original insertion position is changed and moved to the end::
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)
-            super().move_to_end(key)
+            self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
 variants of :func:`functools.lru_cache`::
@@ -1149,7 +1151,7 @@ variants of :func:`functools.lru_cache`::
     class LRU(OrderedDict):
         'Limit size, evicting the least recently looked-up key when full'
 
-        def __init__(self, maxsize=128, *args, **kwds):
+        def __init__(self, maxsize=128, /, *args, **kwds):
             self.maxsize = maxsize
             super().__init__(*args, **kwds)
 

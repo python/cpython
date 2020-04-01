@@ -33,56 +33,47 @@
 #ifdef XML_TOK_NS_C
 
 const ENCODING *
-NS(XmlGetUtf8InternalEncoding)(void)
-{
+NS(XmlGetUtf8InternalEncoding)(void) {
   return &ns(internal_utf8_encoding).enc;
 }
 
 const ENCODING *
-NS(XmlGetUtf16InternalEncoding)(void)
-{
-#if BYTEORDER == 1234
+NS(XmlGetUtf16InternalEncoding)(void) {
+#  if BYTEORDER == 1234
   return &ns(internal_little2_encoding).enc;
-#elif BYTEORDER == 4321
+#  elif BYTEORDER == 4321
   return &ns(internal_big2_encoding).enc;
-#else
+#  else
   const short n = 1;
-  return (*(const char *)&n
-          ? &ns(internal_little2_encoding).enc
-          : &ns(internal_big2_encoding).enc);
-#endif
+  return (*(const char *)&n ? &ns(internal_little2_encoding).enc
+                            : &ns(internal_big2_encoding).enc);
+#  endif
 }
 
-static const ENCODING * const NS(encodings)[] = {
-  &ns(latin1_encoding).enc,
-  &ns(ascii_encoding).enc,
-  &ns(utf8_encoding).enc,
-  &ns(big2_encoding).enc,
-  &ns(big2_encoding).enc,
-  &ns(little2_encoding).enc,
-  &ns(utf8_encoding).enc /* NO_ENC */
+static const ENCODING *const NS(encodings)[] = {
+    &ns(latin1_encoding).enc, &ns(ascii_encoding).enc,
+    &ns(utf8_encoding).enc,   &ns(big2_encoding).enc,
+    &ns(big2_encoding).enc,   &ns(little2_encoding).enc,
+    &ns(utf8_encoding).enc /* NO_ENC */
 };
 
 static int PTRCALL
 NS(initScanProlog)(const ENCODING *enc, const char *ptr, const char *end,
-                   const char **nextTokPtr)
-{
-  return initScan(NS(encodings), (const INIT_ENCODING *)enc,
-                  XML_PROLOG_STATE, ptr, end, nextTokPtr);
+                   const char **nextTokPtr) {
+  return initScan(NS(encodings), (const INIT_ENCODING *)enc, XML_PROLOG_STATE,
+                  ptr, end, nextTokPtr);
 }
 
 static int PTRCALL
 NS(initScanContent)(const ENCODING *enc, const char *ptr, const char *end,
-                    const char **nextTokPtr)
-{
-  return initScan(NS(encodings), (const INIT_ENCODING *)enc,
-                  XML_CONTENT_STATE, ptr, end, nextTokPtr);
+                    const char **nextTokPtr) {
+  return initScan(NS(encodings), (const INIT_ENCODING *)enc, XML_CONTENT_STATE,
+                  ptr, end, nextTokPtr);
 }
 
 int
 NS(XmlInitEncoding)(INIT_ENCODING *p, const ENCODING **encPtr,
-                    const char *name)
-{
+                    const char *name) {
   int i = getEncodingIndex(name);
   if (i == UNKNOWN_ENC)
     return 0;
@@ -96,9 +87,8 @@ NS(XmlInitEncoding)(INIT_ENCODING *p, const ENCODING **encPtr,
 }
 
 static const ENCODING *
-NS(findEncoding)(const ENCODING *enc, const char *ptr, const char *end)
-{
-#define ENCODING_MAX 128
+NS(findEncoding)(const ENCODING *enc, const char *ptr, const char *end) {
+#  define ENCODING_MAX 128
   char buf[ENCODING_MAX];
   char *p = buf;
   int i;
@@ -115,28 +105,14 @@ NS(findEncoding)(const ENCODING *enc, const char *ptr, const char *end)
 }
 
 int
-NS(XmlParseXmlDecl)(int isGeneralTextEntity,
-                    const ENCODING *enc,
-                    const char *ptr,
-                    const char *end,
-                    const char **badPtr,
-                    const char **versionPtr,
-                    const char **versionEndPtr,
-                    const char **encodingName,
-                    const ENCODING **encoding,
-                    int *standalone)
-{
-  return doParseXmlDecl(NS(findEncoding),
-                        isGeneralTextEntity,
-                        enc,
-                        ptr,
-                        end,
-                        badPtr,
-                        versionPtr,
-                        versionEndPtr,
-                        encodingName,
-                        encoding,
-                        standalone);
+NS(XmlParseXmlDecl)(int isGeneralTextEntity, const ENCODING *enc,
+                    const char *ptr, const char *end, const char **badPtr,
+                    const char **versionPtr, const char **versionEndPtr,
+                    const char **encodingName, const ENCODING **encoding,
+                    int *standalone) {
+  return doParseXmlDecl(NS(findEncoding), isGeneralTextEntity, enc, ptr, end,
+                        badPtr, versionPtr, versionEndPtr, encodingName,
+                        encoding, standalone);
 }
 
 #endif /* XML_TOK_NS_C */

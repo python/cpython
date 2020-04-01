@@ -1,2 +1,0 @@
-The random module now prefers the lean internal _sha512 module over hashlib
-for seed(version=2) to optimize import time.

@@ -145,44 +145,6 @@ perf_counter(_Py_clock_info_t *info)
     return _PyFloat_FromPyTime(t);
 }
 
-#if (defined(MS_WINDOWS) || defined(HAVE_CLOCK)) && !defined(__VXWORKS__)
-#define PYCLOCK
-static PyObject*
-pyclock(_Py_clock_info_t *info)
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                      "time.clock has been deprecated in Python 3.3 and will "
-                      "be removed from Python 3.8: "
-                      "use time.perf_counter or time.process_time "
-                      "instead", 1) < 0) {
-        return NULL;
-    }
-
-#ifdef MS_WINDOWS
-    return perf_counter(info);
-#else
-    _PyTime_t t;
-    if (_PyTime_GetClockWithInfo(&t, info) < 0) {
-        return NULL;
-    }
-    return _PyFloat_FromPyTime(t);
-#endif
-}
-
-static PyObject *
-time_clock(PyObject *self, PyObject *unused)
-{
-    return pyclock(NULL);
-}
-
-PyDoc_STRVAR(clock_doc,
-"clock() -> floating point number\n\
-\n\
-Return the CPU time or real time since the start of the process or since\n\
-the first call to clock().  This has as much precision as the system\n\
-records.");
-#endif
-
 #ifdef HAVE_CLOCK_GETTIME
 static PyObject *
 time_clock_gettime(PyObject *self, PyObject *args)
@@ -588,7 +550,7 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
     p->tm_wday = (p->tm_wday + 1) % 7;
     p->tm_yday--;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    if (Py_TYPE(args) == &StructTimeType) {
+    if (Py_IS_TYPE(args, &StructTimeType)) {
         PyObject *item;
         item = PyStructSequence_GET_ITEM(args, 9);
         if (item != Py_None) {
@@ -1246,7 +1208,7 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
             return -1;
         }
 
-        _PyTime_t total = utime + utime;
+        _PyTime_t total = utime + stime;
         *tp = total;
         return 0;
     }
@@ -1477,15 +1439,6 @@ time_get_clock_info(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-#ifdef PYCLOCK
-    else if (strcmp(name, "clock") == 0) {
-        obj = pyclock(&info);
-        if (obj == NULL) {
-            return NULL;
-        }
-        Py_DECREF(obj);
-    }
-#endif
     else if (strcmp(name, "monotonic") == 0) {
         if (_PyTime_GetMonotonicClockWithInfo(&t, &info) < 0) {
             return NULL;
@@ -1628,6 +1581,19 @@ init_timezone(PyObject *m)
     PyModule_AddIntConstant(m, "altzone", _Py_timezone-3600);
 #endif
     PyModule_AddIntConstant(m, "daylight", _Py_daylight);
+#ifdef MS_WINDOWS
+    TIME_ZONE_INFORMATION tzinfo = {0};
+    GetTimeZoneInformation(&tzinfo);
+    otz0 = PyUnicode_FromWideChar(tzinfo.StandardName, -1);
+    if (otz0 == NULL) {
+        return -1;
+    }
+    otz1 = PyUnicode_FromWideChar(tzinfo.DaylightName, -1);
+    if (otz1 == NULL) {
+        Py_DECREF(otz0);
+        return -1;
+    }
+#else
     otz0 = PyUnicode_DecodeLocale(_Py_tzname[0], "surrogateescape");
     if (otz0 == NULL) {
         return -1;
@@ -1637,6 +1603,7 @@ init_timezone(PyObject *m)
         Py_DECREF(otz0);
         return -1;
     }
+#endif // MS_WINDOWS
     PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
     if (tzname_obj == NULL) {
         return -1;
@@ -1700,9 +1667,6 @@ init_timezone(PyObject *m)
 static PyMethodDef time_methods[] = {
     {"time",            time_time, METH_NOARGS, time_doc},
     {"time_ns",         time_time_ns, METH_NOARGS, time_ns_doc},
-#ifdef PYCLOCK
-    {"clock",           time_clock, METH_NOARGS, clock_doc},
-#endif
 #ifdef HAVE_CLOCK_GETTIME
     {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
     {"clock_gettime_ns",time_clock_gettime_ns, METH_VARARGS, clock_gettime_ns_doc},
@@ -1772,75 +1736,88 @@ if it is 1, the time is given in the DST time zone;\n\
 if it is -1, mktime() should guess based on the date and time.\n");
 
 
-
-static struct PyModuleDef timemodule = {
-    PyModuleDef_HEAD_INIT,
-    "time",
-    module_doc,
-    -1,
-    time_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_time(void)
+static int
+time_exec(PyObject *module)
 {
-    PyObject *m;
-    m = PyModule_Create(&timemodule);
-    if (m == NULL)
-        return NULL;
-
     /* Set, or reset, module variables like time.timezone */
-    if (init_timezone(m) < 0) {
-        return NULL;
+    if (init_timezone(module) < 0) {
+        return -1;
     }
 
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES)
 
 #ifdef CLOCK_REALTIME
-    PyModule_AddIntMacro(m, CLOCK_REALTIME);
+    if (PyModule_AddIntMacro(module, CLOCK_REALTIME) < 0) {
+        return -1;
+    }
 #endif
 #ifdef CLOCK_MONOTONIC
-    PyModule_AddIntMacro(m, CLOCK_MONOTONIC);
+    if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC) < 0) {
+        return -1;
+    }
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
-    PyModule_AddIntMacro(m, CLOCK_MONOTONIC_RAW);
+    if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW) < 0) {
+        return -1;
+    }
 #endif
 #ifdef CLOCK_HIGHRES
-    PyModule_AddIntMacro(m, CLOCK_HIGHRES);
+    if (PyModule_AddIntMacro(module, CLOCK_HIGHRES) < 0) {
+        return -1;
+    }
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
-    PyModule_AddIntMacro(m, CLOCK_PROCESS_CPUTIME_ID);
+    if (PyModule_AddIntMacro(module, CLOCK_PROCESS_CPUTIME_ID) < 0) {
+        return -1;
+    }
 #endif
 #ifdef CLOCK_THREAD_CPUTIME_ID
-    PyModule_AddIntMacro(m, CLOCK_THREAD_CPUTIME_ID);
+    if (PyModule_AddIntMacro(module, CLOCK_THREAD_CPUTIME_ID) < 0) {
+        return -1;
+    }
 #endif
 #ifdef CLOCK_PROF
-    PyModule_AddIntMacro(m, CLOCK_PROF);
+    if (PyModule_AddIntMacro(module, CLOCK_PROF) < 0) {
+        return -1;
+    }
 #endif
 #ifdef CLOCK_BOOTTIME
-    PyModule_AddIntMacro(m, CLOCK_BOOTTIME);
+    if (PyModule_AddIntMacro(module, CLOCK_BOOTTIME) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_TAI
+    if (PyModule_AddIntMacro(module, CLOCK_TAI) < 0) {
+        return -1;
+    }
 #endif
 #ifdef CLOCK_UPTIME
-    PyModule_AddIntMacro(m, CLOCK_UPTIME);
+    if (PyModule_AddIntMacro(module, CLOCK_UPTIME) < 0) {
+        return -1;
+    }
 #endif
 #ifdef CLOCK_UPTIME_RAW
-    PyModule_AddIntMacro(m, CLOCK_UPTIME_RAW);
+    if (PyModule_AddIntMacro(module, CLOCK_UPTIME_RAW) < 0) {
+        return -1;
+    }
 #endif
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
 
     if (!initialized) {
         if (PyStructSequence_InitType2(&StructTimeType,
-                                       &struct_time_type_desc) < 0)
-            return NULL;
+                                       &struct_time_type_desc) < 0) {
+            return -1;
+        }
+    }
+    if (PyModule_AddIntConstant(module, "_STRUCT_TM_ITEMS", 11)) {
+        return -1;
     }
     Py_INCREF(&StructTimeType);
-    PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11);
-    PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
+    if (PyModule_AddObject(module, "struct_time", (PyObject*) &StructTimeType)) {
+        Py_DECREF(&StructTimeType);
+        return -1;
+    }
     initialized = 1;
 
 #if defined(__linux__) && !defined(__GLIBC__)
@@ -1850,10 +1827,30 @@ PyInit_time(void)
         utc_string = tm.tm_zone;
 #endif
 
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-    return m;
+    return 0;
+}
+
+static struct PyModuleDef_Slot time_slots[] = {
+    {Py_mod_exec, time_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef timemodule = {
+    PyModuleDef_HEAD_INIT,
+    "time",
+    module_doc,
+    0,
+    time_methods,
+    time_slots,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit_time(void)
+{
+    return PyModuleDef_Init(&timemodule);
 }
 
 /* Implement pysleep() for various platforms.

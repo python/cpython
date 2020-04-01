@@ -161,7 +161,8 @@ The :mod:`csv` module defines the following classes:
    If a row has more fields than fieldnames, the remaining data is put in a
    list and stored with the fieldname specified by *restkey* (which defaults
    to ``None``).  If a non-blank row has fewer fields than fieldnames, the
-   missing values are filled-in with ``None``.
+   missing values are filled-in with the value of *restval* (which defaults
+   to ``None``).
 
    All other optional or keyword arguments are passed to the underlying
    :class:`reader` instance.
@@ -443,7 +444,8 @@ read CSV files (assuming they support complex numbers at all).
 .. method:: csvwriter.writerow(row)
 
    Write the *row* parameter to the writer's file object, formatted according to
-   the current dialect.
+   the current dialect. Return the return value of the call to the *write* method
+   of the underlying file object.
 
    .. versionchanged:: 3.5
       Added support of arbitrary iterables.
@@ -467,9 +469,14 @@ DictWriter objects have the following public method:
 
 .. method:: DictWriter.writeheader()
 
-   Write a row with the field names (as specified in the constructor).
+   Write a row with the field names (as specified in the constructor) to
+   the writer's file object, formatted according to the current dialect. Return
+   the return value of the :meth:`csvwriter.writerow` call used internally.
 
    .. versionadded:: 3.2
+   .. versionchanged:: 3.8
+      :meth:`writeheader` now also returns the value returned by
+      the :meth:`csvwriter.writerow` method it uses internally.
 
 
 .. _csv-examples:

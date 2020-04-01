@@ -603,7 +603,7 @@ class MethodProxy(object):
         self.oid = oid
         self.name = name
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, /, *args, **kwargs):
         value = self.sockio.remotecall(self.oid, self.name, args, kwargs)
         return value
 

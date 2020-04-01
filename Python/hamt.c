@@ -6,7 +6,7 @@
 #include "structmember.h"
 
 /*
-This file provides an implemention of an immutable mapping using the
+This file provides an implementation of an immutable mapping using the
 Hash Array Mapped Trie (or HAMT) datastructure.
 
 This design allows to have:
@@ -274,9 +274,9 @@ to introspect the tree:
 */
 
 
-#define IS_ARRAY_NODE(node)     (Py_TYPE(node) == &_PyHamt_ArrayNode_Type)
-#define IS_BITMAP_NODE(node)    (Py_TYPE(node) == &_PyHamt_BitmapNode_Type)
-#define IS_COLLISION_NODE(node) (Py_TYPE(node) == &_PyHamt_CollisionNode_Type)
+#define IS_ARRAY_NODE(node)     Py_IS_TYPE(node, &_PyHamt_ArrayNode_Type)
+#define IS_BITMAP_NODE(node)    Py_IS_TYPE(node, &_PyHamt_BitmapNode_Type)
+#define IS_COLLISION_NODE(node) Py_IS_TYPE(node, &_PyHamt_CollisionNode_Type)
 
 
 /* Return type for 'find' (lookup a key) functions.
@@ -551,7 +551,7 @@ hamt_node_bitmap_new(Py_ssize_t size)
         return NULL;
     }
 
-    Py_SIZE(node) = size;
+    Py_SET_SIZE(node, size);
 
     for (i = 0; i < size; i++) {
         node->b_array[i] = NULL;
@@ -830,7 +830,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
                Instead we start using an Array node, which has
                simpler (faster) implementation at the expense of
-               having prealocated 32 pointers for its keys/values
+               having preallocated 32 pointers for its keys/values
                pairs.
 
                Small hamt objects (<30 keys) usually don't have any
@@ -1176,7 +1176,7 @@ hamt_node_bitmap_dealloc(PyHamtNode_Bitmap *self)
     Py_ssize_t i;
 
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self)
+    Py_TRASHCAN_BEGIN(self, hamt_node_bitmap_dealloc)
 
     if (len > 0) {
         i = len;
@@ -1186,7 +1186,7 @@ hamt_node_bitmap_dealloc(PyHamtNode_Bitmap *self)
     }
 
     Py_TYPE(self)->tp_free((PyObject *)self);
-    Py_TRASHCAN_SAFE_END(self)
+    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1288,7 +1288,7 @@ hamt_node_collision_new(int32_t hash, Py_ssize_t size)
         node->c_array[i] = NULL;
     }
 
-    Py_SIZE(node) = size;
+    Py_SET_SIZE(node, size);
     node->c_hash = hash;
 
     _PyObject_GC_TRACK(node);
@@ -1584,7 +1584,7 @@ hamt_node_collision_dealloc(PyHamtNode_Collision *self)
     Py_ssize_t len = Py_SIZE(self);
 
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self)
+    Py_TRASHCAN_BEGIN(self, hamt_node_collision_dealloc)
 
     if (len > 0) {
 
@@ -1594,7 +1594,7 @@ hamt_node_collision_dealloc(PyHamtNode_Collision *self)
     }
 
     Py_TYPE(self)->tp_free((PyObject *)self);
-    Py_TRASHCAN_SAFE_END(self)
+    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1864,7 +1864,7 @@ hamt_node_array_without(PyHamtNode_Array *self,
                     continue;
                 }
 
-                bitmap |= 1 << i;
+                bitmap |= 1U << i;
 
                 if (IS_BITMAP_NODE(node)) {
                     PyHamtNode_Bitmap *child = (PyHamtNode_Bitmap *)node;
@@ -1969,14 +1969,14 @@ hamt_node_array_dealloc(PyHamtNode_Array *self)
     Py_ssize_t i;
 
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self)
+    Py_TRASHCAN_BEGIN(self, hamt_node_array_dealloc)
 
     for (i = 0; i < HAMT_ARRAY_NODE_SIZE; i++) {
         Py_XDECREF(self->a_array[i]);
     }
 
     Py_TYPE(self)->tp_free((PyObject *)self);
-    Py_TRASHCAN_SAFE_END(self)
+    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG

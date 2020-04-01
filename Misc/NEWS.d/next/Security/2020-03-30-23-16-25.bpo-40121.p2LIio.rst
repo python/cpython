@@ -1,0 +1,1 @@
+Fixes audit events raised on creating a new socket.

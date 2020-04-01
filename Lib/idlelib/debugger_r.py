@@ -299,7 +299,7 @@ class IdbProxy:
         self.conn = conn
         self.shell = shell
 
-    def call(self, methodname, *args, **kwargs):
+    def call(self, methodname, /, *args, **kwargs):
         ##print("*** IdbProxy.call %s %s %s" % (methodname, args, kwargs))
         value = self.conn.remotecall(self.oid, methodname, args, kwargs)
         ##print("*** IdbProxy.call %s returns %r" % (methodname, value))

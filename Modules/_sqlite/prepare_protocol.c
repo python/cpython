@@ -39,10 +39,10 @@ PyTypeObject pysqlite_PrepareProtocolType= {
         sizeof(pysqlite_PrepareProtocol),               /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)pysqlite_prepare_protocol_dealloc,  /* tp_dealloc */
-        0,                                              /* tp_print */
+        0,                                              /* tp_vectorcall_offset */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
-        0,                                              /* tp_reserved */
+        0,                                              /* tp_as_async */
         0,                                              /* tp_repr */
         0,                                              /* tp_as_number */
         0,                                              /* tp_as_sequence */
@@ -78,6 +78,6 @@ PyTypeObject pysqlite_PrepareProtocolType= {
 extern int pysqlite_prepare_protocol_setup_types(void)
 {
     pysqlite_PrepareProtocolType.tp_new = PyType_GenericNew;
-    Py_TYPE(&pysqlite_PrepareProtocolType)= &PyType_Type;
+    Py_SET_TYPE(&pysqlite_PrepareProtocolType, &PyType_Type);
     return PyType_Ready(&pysqlite_PrepareProtocolType);
 }

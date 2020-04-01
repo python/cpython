@@ -317,7 +317,7 @@ know about the mechanics of using sockets. You'll still use the same calls, in
 much the same ways. It's just that, if you do it right, your app will be almost
 inside-out.
 
-In Python, you use ``socket.setblocking(0)`` to make it non-blocking. In C, it's
+In Python, you use ``socket.setblocking(False)`` to make it non-blocking. In C, it's
 more complex, (for one thing, you'll need to choose between the BSD flavor
 ``O_NONBLOCK`` and the almost indistinguishable Posix flavor ``O_NDELAY``, which
 is completely different from ``TCP_NODELAY``), but it's the exact same idea. You
