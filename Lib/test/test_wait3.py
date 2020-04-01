@@ -30,8 +30,7 @@ class Wait3Test(ForkWait):
             time.sleep(0.1)
 
         self.assertEqual(spid, cpid)
-        self.assertEqual(status, exitcode << 8,
-                         "cause = %d, exit = %d" % (status&0xff, status>>8))
+        self.assertEqual(os.waitstatus_to_exitcode(status), exitcode)
         self.assertTrue(rusage)
 
     def test_wait3_rusage_initialized(self):

@@ -2794,6 +2794,35 @@ class PidTests(unittest.TestCase):
         pid = os.spawnv(os.P_NOWAIT, FakePath(args[0]), args)
         support.wait_process(pid, exitcode=0)
 
+    def test_waitstatus_to_exitcode(self):
+        exitcode = 23
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        with open(filename, "w") as fp:
+            print(f'import sys; sys.exit({exitcode})', file=fp)
+            fp.flush()
+        args = [sys.executable, filename]
+        pid = os.spawnv(os.P_NOWAIT, args[0], args)
+
+        pid2, status = os.waitpid(pid, 0)
+        self.assertEqual(os.waitstatus_to_exitcode(status), exitcode)
+        self.assertEqual(pid2, pid)
+
+    # Skip the test on Windows
+    @unittest.skipUnless(hasattr(signal, 'SIGKILL'), 'need signal.SIGKILL')
+    def test_waitstatus_to_exitcode_kill(self):
+        signum = signal.SIGKILL
+        args = [sys.executable, '-c',
+                f'import time; time.sleep({support.LONG_TIMEOUT})']
+        pid = os.spawnv(os.P_NOWAIT, args[0], args)
+
+        os.kill(pid, signum)
+
+        pid2, status = os.waitpid(pid, 0)
+        self.assertEqual(os.waitstatus_to_exitcode(status), -signum)
+        self.assertEqual(pid2, pid)
+
 
 class SpawnTests(unittest.TestCase):
     def create_args(self, *, with_env=False, use_bytes=False):

@@ -3665,6 +3665,11 @@ written in Python, such as a mail server's external command delivery program.
    subprocess was killed.)  On Windows systems, the return value
    contains the signed integer return code from the child process.
 
+   On Unix, :func:`waitstatus_to_exitcode` can be used to convert the ``close``
+   method result (exit status) into an exit code if it is not ``None``. On
+   Windows, the ``close`` method result is directly the exit code
+   (or ``None``).
+
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
@@ -3968,6 +3973,10 @@ written in Python, such as a mail server's external command delivery program.
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
 
+   On Unix, :func:`waitstatus_to_exitcode` can be used to convert the result
+   (exit status) into an exit code. On Windows, the result is directly the exit
+   code.
+
    .. audit-event:: os.system command os.system
 
    .. availability:: Unix, Windows.
@@ -4008,7 +4017,15 @@ written in Python, such as a mail server's external command delivery program.
    number is zero); the high bit of the low byte is set if a core file was
    produced.
 
+   :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
+   exit code.
+
    .. availability:: Unix.
+
+   .. seealso::
+
+      :func:`waitpid` can be used to wait for the completion of a specific
+      child process and has more options.
 
 .. function:: waitid(idtype, id, options)
 
@@ -4105,6 +4122,9 @@ written in Python, such as a mail server's external command delivery program.
    id is known, not necessarily a child process. The :func:`spawn\* <spawnl>`
    functions called with :const:`P_NOWAIT` return suitable process handles.
 
+   :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
+   exit code.
+
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
       exception, the function now retries the system call instead of raising an
@@ -4120,6 +4140,9 @@ written in Python, such as a mail server's external command delivery program.
    information.  The option argument is the same as that provided to
    :func:`waitpid` and :func:`wait4`.
 
+   :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
+   exitcode.
+
    .. availability:: Unix.
 
 
@@ -4131,7 +4154,40 @@ written in Python, such as a mail server's external command delivery program.
    resource usage information.  The arguments to :func:`wait4` are the same
    as those provided to :func:`waitpid`.
 
+   :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
+   exitcode.
+
    .. availability:: Unix.
+
+
+.. function:: waitstatus_to_exitcode(status)
+
+   Convert a wait status to an exit code.
+
+   On Unix:
+
+   * If the process exited normally (if ``WIFEXITED(status)`` is true),
+     return the process exit status (return ``WEXITSTATUS(status)``):
+     result greater than or equal to 0.
+   * If the process was terminated by a signal (if ``WIFSIGNALED(status)`` is
+     true), return ``-signum`` where *signum* is the number of the signal that
+     caused the process to terminate (return ``-WTERMSIG(status)``):
+     result less than 0.
+   * Otherwise, raise a :exc:`ValueError`.
+
+   On Windows, return *status* shifted right by 8 bits.
+
+   On Unix, if the process is being traced or if :func:`waitpid` was called
+   with :data:`WUNTRACED` option, the caller must first check if
+   ``WIFSTOPPED(status)`` is true. This function must not be called if
+   ``WIFSTOPPED(status)`` is true.
+
+   .. seealso::
+
+      :func:`WIFEXITED`, :func:`WEXITSTATUS`, :func:`WIFSIGNALED`,
+      :func:`WTERMSIG`, :func:`WIFSTOPPED`, :func:`WSTOPSIG` functions.
+
+   .. versionadded:: 3.9
 
 
 .. data:: WNOHANG
