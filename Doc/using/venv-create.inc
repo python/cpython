@@ -90,7 +90,7 @@ The command, if run with ``-h``, will show the available options::
 
    PS C:\> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-   See `About Execution Policies 
+   See `About Execution Policies
    <https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-7>`_
    for more information.
 
