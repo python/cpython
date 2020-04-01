@@ -1,0 +1,1 @@
+The incorrect note in the Pickle documentation has been updated.
