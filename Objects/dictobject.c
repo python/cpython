@@ -3363,14 +3363,12 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         }
         args++;
     }
-    if (kwnames == NULL) {
-        return self;
-    }
-
-    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
-        if (PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
-            Py_DECREF(self);
-            return NULL;
+    if (kwnames != NULL) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
+            if (PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
         }
     }
     return self;
