@@ -4167,28 +4167,36 @@ used to determine the disposition of a process.
    Return ``True`` if a core dump was generated for the process, otherwise
    return ``False``.
 
+   This function should be employed only if :func:`WIFSIGNALED` is true.
+
    .. availability:: Unix.
 
 
 .. function:: WIFCONTINUED(status)
 
-   Return ``True`` if the process has been continued from a job control stop,
-   otherwise return ``False``.
+   Return ``True`` if a stopped child has been resumed by delivery of
+   :data:`~signal.SIGCONT` (if the process has been continued from a job
+   control stop), otherwise return ``False``.
+
+   See :data:`WCONTINUED` option.
 
    .. availability:: Unix.
 
 
 .. function:: WIFSTOPPED(status)
 
-   Return ``True`` if the process has been stopped, otherwise return
-   ``False``.
+   Return ``True`` if the process was stopped by delivery of a signal,
+   otherwise return ``False``.
+
+   :func:`WIFSTOPPED` only returns ``True`` if the :func:`waitpid` call was
+   done using :data:`WUNTRACED` option or when the process is being traced (see
+   :manpage:`ptrace(2)`).
 
    .. availability:: Unix.
 
-
 .. function:: WIFSIGNALED(status)
 
-   Return ``True`` if the process exited due to a signal, otherwise return
+   Return ``True`` if the process was terminated by a signal, otherwise return
    ``False``.
 
    .. availability:: Unix.
@@ -4196,7 +4204,8 @@ used to determine the disposition of a process.
 
 .. function:: WIFEXITED(status)
 
-   Return ``True`` if the process exited using the :manpage:`exit(2)` system call,
+   Return ``True`` if the process exited terminated normally, that is,
+   by calling ``exit()`` or ``_exit()``, or by returning from ``main()``;
    otherwise return ``False``.
 
    .. availability:: Unix.
@@ -4204,8 +4213,9 @@ used to determine the disposition of a process.
 
 .. function:: WEXITSTATUS(status)
 
-   If ``WIFEXITED(status)`` is true, return the integer parameter to the
-   :manpage:`exit(2)` system call.  Otherwise, the return value is meaningless.
+   Return the process exit status.
+
+   This function should be employed only if :func:`WIFEXITED` is true.
 
    .. availability:: Unix.
 
@@ -4214,12 +4224,16 @@ used to determine the disposition of a process.
 
    Return the signal which caused the process to stop.
 
+   This function should be employed only if :func:`WIFSTOPPED` is true.
+
    .. availability:: Unix.
 
 
 .. function:: WTERMSIG(status)
 
-   Return the signal which caused the process to exit.
+   Return the number of the signal that caused the process to terminate.
+
+   This function should be employed only if :func:`WIFSIGNALED` is true.
 
    .. availability:: Unix.
 
