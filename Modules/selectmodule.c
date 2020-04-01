@@ -764,6 +764,8 @@ poll_dealloc(pollObject *self)
 
 
 #ifdef HAVE_SYS_DEVPOLL_H
+static PyMethodDef devpoll_methods[];
+
 typedef struct {
     PyObject_HEAD
     int fd_devpoll;
