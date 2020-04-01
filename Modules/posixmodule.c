@@ -13773,7 +13773,11 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
 
 
 /* Only check if WIFEXITED is available: expect that it comes
-   with WEXITSTATUS, WIFSIGNALED, etc. */
+   with WEXITSTATUS, WIFSIGNALED, etc.
+
+   os.waitstatus_to_exitcode() is implemented in C and not in Python, so
+   subprocess can safely call it during late Python finalization without
+   risking that used os attributes were set to None by _PyImport_Cleanup(). */
 #if defined(WIFEXITED) || defined(MS_WINDOWS)
 /*[clinic input]
 os.waitstatus_to_exitcode
