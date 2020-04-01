@@ -80,7 +80,7 @@ static KeywordToken *reserved_keywords[] = {
 #define import_from_as_name_type 1018
 #define dotted_as_names_type 1019
 #define dotted_as_name_type 1020
-#define dotted_name_type 1021
+#define dotted_name_type 1021  // Left-recursive
 #define if_stmt_type 1022
 #define elif_stmt_type 1023
 #define else_block_type 1024
@@ -144,16 +144,16 @@ static KeywordToken *reserved_keywords[] = {
 #define in_bitwise_or_type 1082
 #define isnot_bitwise_or_type 1083
 #define is_bitwise_or_type 1084
-#define bitwise_or_type 1085
-#define bitwise_xor_type 1086
-#define bitwise_and_type 1087
-#define shift_expr_type 1088
-#define sum_type 1089
-#define term_type 1090
+#define bitwise_or_type 1085  // Left-recursive
+#define bitwise_xor_type 1086  // Left-recursive
+#define bitwise_and_type 1087  // Left-recursive
+#define shift_expr_type 1088  // Left-recursive
+#define sum_type 1089  // Left-recursive
+#define term_type 1090  // Left-recursive
 #define factor_type 1091
 #define power_type 1092
 #define await_primary_type 1093
-#define primary_type 1094
+#define primary_type 1094  // Left-recursive
 #define slices_type 1095
 #define slice_type 1096
 #define atom_type 1097
@@ -186,7 +186,7 @@ static KeywordToken *reserved_keywords[] = {
 #define del_t_atom_type 1124
 #define targets_type 1125
 #define target_type 1126
-#define t_primary_type 1127
+#define t_primary_type 1127  // Left-recursive
 #define t_lookahead_type 1128
 #define t_atom_type 1129
 #define _loop1_1_type 1130
@@ -575,8 +575,6 @@ static mod_ty
 start_rule(Parser *p)
 {
     mod_ty res = NULL;
-    if (is_memoized(p, start_type, &res))
-        return res;
     int mark = p->mark;
     { // statements? $
         void *a;
@@ -597,7 +595,6 @@ start_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, start_type, res);
     return res;
 }
 
@@ -606,8 +603,6 @@ static asdl_seq*
 statements_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, statements_type, &res))
-        return res;
     int mark = p->mark;
     { // statement+
         asdl_seq * a;
@@ -625,7 +620,6 @@ statements_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, statements_type, res);
     return res;
 }
 
@@ -634,8 +628,6 @@ static asdl_seq*
 statement_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, statement_type, &res))
-        return res;
     int mark = p->mark;
     { // compound_stmt
         stmt_ty a;
@@ -664,7 +656,6 @@ statement_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, statement_type, res);
     return res;
 }
 
@@ -673,8 +664,6 @@ static asdl_seq*
 simple_stmt_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, simple_stmt_type, &res))
-        return res;
     int mark = p->mark;
     { // small_stmt !';' NEWLINE
         stmt_ty a;
@@ -717,7 +706,6 @@ simple_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, simple_stmt_type, res);
     return res;
 }
 
@@ -970,8 +958,6 @@ static stmt_ty
 compound_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, compound_stmt_type, &res))
-        return res;
     int mark = p->mark;
     { // &('def' | '@' | ASYNC) function_def
         stmt_ty function_def_var;
@@ -1066,7 +1052,6 @@ compound_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, compound_stmt_type, res);
     return res;
 }
 
@@ -1079,8 +1064,6 @@ static void *
 assignment_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, assignment_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -1206,7 +1189,6 @@ assignment_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, assignment_type, res);
     return res;
 }
 
@@ -1228,8 +1210,6 @@ static AugOperator*
 augassign_rule(Parser *p)
 {
     AugOperator* res = NULL;
-    if (is_memoized(p, augassign_type, &res))
-        return res;
     int mark = p->mark;
     { // '+='
         void *literal;
@@ -1415,7 +1395,6 @@ augassign_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, augassign_type, res);
     return res;
 }
 
@@ -1424,8 +1403,6 @@ static stmt_ty
 global_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, global_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -1461,7 +1438,6 @@ global_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, global_stmt_type, res);
     return res;
 }
 
@@ -1470,8 +1446,6 @@ static stmt_ty
 nonlocal_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, nonlocal_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -1507,7 +1481,6 @@ nonlocal_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, nonlocal_stmt_type, res);
     return res;
 }
 
@@ -1516,8 +1489,6 @@ static stmt_ty
 yield_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, yield_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -1550,7 +1521,6 @@ yield_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, yield_stmt_type, res);
     return res;
 }
 
@@ -1559,8 +1529,6 @@ static stmt_ty
 assert_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, assert_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -1599,7 +1567,6 @@ assert_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, assert_stmt_type, res);
     return res;
 }
 
@@ -1608,8 +1575,6 @@ static stmt_ty
 del_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, del_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -1645,7 +1610,6 @@ del_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, del_stmt_type, res);
     return res;
 }
 
@@ -1654,8 +1618,6 @@ static stmt_ty
 import_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, import_stmt_type, &res))
-        return res;
     int mark = p->mark;
     { // import_name
         stmt_ty import_name_var;
@@ -1681,7 +1643,6 @@ import_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, import_stmt_type, res);
     return res;
 }
 
@@ -1690,8 +1651,6 @@ static stmt_ty
 import_name_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, import_name_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -1727,7 +1686,6 @@ import_name_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, import_name_type, res);
     return res;
 }
 
@@ -1738,8 +1696,6 @@ static stmt_ty
 import_from_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, import_from_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -1815,7 +1771,6 @@ import_from_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, import_from_type, res);
     return res;
 }
 
@@ -1824,8 +1779,6 @@ static asdl_seq*
 import_from_targets_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, import_from_targets_type, &res))
-        return res;
     int mark = p->mark;
     { // '(' import_from_as_names ')'
         asdl_seq* a;
@@ -1874,7 +1827,6 @@ import_from_targets_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, import_from_targets_type, res);
     return res;
 }
 
@@ -1883,8 +1835,6 @@ static asdl_seq*
 import_from_as_names_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, import_from_as_names_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.import_from_as_name+ ','?
         asdl_seq * a;
@@ -1905,7 +1855,6 @@ import_from_as_names_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, import_from_as_names_type, res);
     return res;
 }
 
@@ -1914,8 +1863,6 @@ static alias_ty
 import_from_as_name_rule(Parser *p)
 {
     alias_ty res = NULL;
-    if (is_memoized(p, import_from_as_name_type, &res))
-        return res;
     int mark = p->mark;
     { // NAME ['as' NAME]
         expr_ty a;
@@ -1936,7 +1883,6 @@ import_from_as_name_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, import_from_as_name_type, res);
     return res;
 }
 
@@ -1945,8 +1891,6 @@ static asdl_seq*
 dotted_as_names_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, dotted_as_names_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.dotted_as_name+
         asdl_seq * a;
@@ -1964,7 +1908,6 @@ dotted_as_names_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, dotted_as_names_type, res);
     return res;
 }
 
@@ -1973,8 +1916,6 @@ static alias_ty
 dotted_as_name_rule(Parser *p)
 {
     alias_ty res = NULL;
-    if (is_memoized(p, dotted_as_name_type, &res))
-        return res;
     int mark = p->mark;
     { // dotted_name ['as' NAME]
         expr_ty a;
@@ -1995,10 +1936,10 @@ dotted_as_name_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, dotted_as_name_type, res);
     return res;
 }
 
+// Left-recursive
 // dotted_name: dotted_name '.' NAME | NAME
 static expr_ty dotted_name_raw(Parser *);
 static expr_ty
@@ -2072,8 +2013,6 @@ static stmt_ty
 if_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, if_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -2152,7 +2091,6 @@ if_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, if_stmt_type, res);
     return res;
 }
 
@@ -2163,8 +2101,6 @@ static stmt_ty
 elif_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, elif_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -2243,7 +2179,6 @@ elif_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, elif_stmt_type, res);
     return res;
 }
 
@@ -2252,8 +2187,6 @@ static asdl_seq*
 else_block_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, else_block_type, &res))
-        return res;
     int mark = p->mark;
     { // 'else' ':' block
         asdl_seq* b;
@@ -2277,7 +2210,6 @@ else_block_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, else_block_type, res);
     return res;
 }
 
@@ -2286,8 +2218,6 @@ static stmt_ty
 while_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, while_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -2332,7 +2262,6 @@ while_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, while_stmt_type, res);
     return res;
 }
 
@@ -2343,8 +2272,6 @@ static stmt_ty
 for_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, for_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -2438,7 +2365,6 @@ for_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, for_stmt_type, res);
     return res;
 }
 
@@ -2451,8 +2377,6 @@ static stmt_ty
 with_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, with_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -2605,7 +2529,6 @@ with_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, with_stmt_type, res);
     return res;
 }
 
@@ -2614,8 +2537,6 @@ static withitem_ty
 with_item_rule(Parser *p)
 {
     withitem_ty res = NULL;
-    if (is_memoized(p, with_item_type, &res))
-        return res;
     int mark = p->mark;
     { // expression ['as' target]
         expr_ty e;
@@ -2636,7 +2557,6 @@ with_item_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, with_item_type, res);
     return res;
 }
 
@@ -2647,8 +2567,6 @@ static stmt_ty
 try_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, try_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -2727,7 +2645,6 @@ try_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, try_stmt_type, res);
     return res;
 }
 
@@ -2736,8 +2653,6 @@ static excepthandler_ty
 except_block_rule(Parser *p)
 {
     excepthandler_ty res = NULL;
-    if (is_memoized(p, except_block_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -2810,7 +2725,6 @@ except_block_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, except_block_type, res);
     return res;
 }
 
@@ -2819,8 +2733,6 @@ static asdl_seq*
 finally_block_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, finally_block_type, &res))
-        return res;
     int mark = p->mark;
     { // 'finally' ':' block
         asdl_seq* a;
@@ -2844,7 +2756,6 @@ finally_block_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, finally_block_type, res);
     return res;
 }
 
@@ -2853,8 +2764,6 @@ static stmt_ty
 return_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, return_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -2890,7 +2799,6 @@ return_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, return_stmt_type, res);
     return res;
 }
 
@@ -2899,8 +2807,6 @@ static stmt_ty
 raise_stmt_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, raise_stmt_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -2961,7 +2867,6 @@ raise_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, raise_stmt_type, res);
     return res;
 }
 
@@ -2970,8 +2875,6 @@ static stmt_ty
 function_def_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, function_def_type, &res))
-        return res;
     int mark = p->mark;
     { // decorators function_def_raw
         asdl_seq* d;
@@ -3003,7 +2906,6 @@ function_def_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, function_def_type, res);
     return res;
 }
 
@@ -3014,8 +2916,6 @@ static stmt_ty
 function_def_raw_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, function_def_raw_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -3115,7 +3015,6 @@ function_def_raw_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, function_def_raw_type, res);
     return res;
 }
 
@@ -3129,8 +3028,6 @@ static arguments_ty
 parameters_rule(Parser *p)
 {
     arguments_ty res = NULL;
-    if (is_memoized(p, parameters_type, &res))
-        return res;
     int mark = p->mark;
     { // slash_without_default [',' plain_names] [',' names_with_default] [',' star_etc?]
         asdl_seq* a;
@@ -3228,7 +3125,6 @@ parameters_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, parameters_type, res);
     return res;
 }
 
@@ -3237,8 +3133,6 @@ static asdl_seq*
 slash_without_default_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, slash_without_default_type, &res))
-        return res;
     int mark = p->mark;
     { // plain_names ',' '/'
         asdl_seq* a;
@@ -3262,7 +3156,6 @@ slash_without_default_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, slash_without_default_type, res);
     return res;
 }
 
@@ -3271,8 +3164,6 @@ static SlashWithDefault*
 slash_with_default_rule(Parser *p)
 {
     SlashWithDefault* res = NULL;
-    if (is_memoized(p, slash_with_default_type, &res))
-        return res;
     int mark = p->mark;
     { // [plain_names ','] names_with_default ',' '/'
         void *a;
@@ -3299,7 +3190,6 @@ slash_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, slash_with_default_type, res);
     return res;
 }
 
@@ -3311,8 +3201,6 @@ static StarEtc*
 star_etc_rule(Parser *p)
 {
     StarEtc* res = NULL;
-    if (is_memoized(p, star_etc_type, &res))
-        return res;
     int mark = p->mark;
     { // '*' plain_name name_with_optional_default* [',' kwds] ','?
         arg_ty a;
@@ -3382,7 +3270,6 @@ star_etc_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, star_etc_type, res);
     return res;
 }
 
@@ -3391,8 +3278,6 @@ static NameDefaultPair*
 name_with_optional_default_rule(Parser *p)
 {
     NameDefaultPair* res = NULL;
-    if (is_memoized(p, name_with_optional_default_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' plain_name ['=' expression]
         arg_ty a;
@@ -3416,7 +3301,6 @@ name_with_optional_default_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, name_with_optional_default_type, res);
     return res;
 }
 
@@ -3425,8 +3309,6 @@ static asdl_seq*
 names_with_default_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, names_with_default_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.name_with_default+
         asdl_seq * a;
@@ -3444,7 +3326,6 @@ names_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, names_with_default_type, res);
     return res;
 }
 
@@ -3453,8 +3334,6 @@ static NameDefaultPair*
 name_with_default_rule(Parser *p)
 {
     NameDefaultPair* res = NULL;
-    if (is_memoized(p, name_with_default_type, &res))
-        return res;
     int mark = p->mark;
     { // plain_name '=' expression
         expr_ty e;
@@ -3478,7 +3357,6 @@ name_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, name_with_default_type, res);
     return res;
 }
 
@@ -3515,8 +3393,6 @@ static arg_ty
 plain_name_rule(Parser *p)
 {
     arg_ty res = NULL;
-    if (is_memoized(p, plain_name_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -3552,7 +3428,6 @@ plain_name_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, plain_name_type, res);
     return res;
 }
 
@@ -3561,8 +3436,6 @@ static arg_ty
 kwds_rule(Parser *p)
 {
     arg_ty res = NULL;
-    if (is_memoized(p, kwds_type, &res))
-        return res;
     int mark = p->mark;
     { // '**' plain_name
         arg_ty a;
@@ -3583,7 +3456,6 @@ kwds_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, kwds_type, res);
     return res;
 }
 
@@ -3592,8 +3464,6 @@ static expr_ty
 annotation_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, annotation_type, &res))
-        return res;
     int mark = p->mark;
     { // expression
         expr_ty expression_var;
@@ -3608,7 +3478,6 @@ annotation_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, annotation_type, res);
     return res;
 }
 
@@ -3617,8 +3486,6 @@ static asdl_seq*
 decorators_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, decorators_type, &res))
-        return res;
     int mark = p->mark;
     { // (('@' named_expression NEWLINE))+
         asdl_seq * a;
@@ -3636,7 +3503,6 @@ decorators_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, decorators_type, res);
     return res;
 }
 
@@ -3645,8 +3511,6 @@ static stmt_ty
 class_def_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, class_def_type, &res))
-        return res;
     int mark = p->mark;
     { // decorators class_def_raw
         asdl_seq* a;
@@ -3678,7 +3542,6 @@ class_def_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, class_def_type, res);
     return res;
 }
 
@@ -3687,8 +3550,6 @@ static stmt_ty
 class_def_raw_rule(Parser *p)
 {
     stmt_ty res = NULL;
-    if (is_memoized(p, class_def_raw_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -3733,7 +3594,6 @@ class_def_raw_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, class_def_raw_type, res);
     return res;
 }
 
@@ -3790,8 +3650,6 @@ static asdl_seq*
 expressions_list_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, expressions_list_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.star_expression+ ','?
         asdl_seq * a;
@@ -3812,7 +3670,6 @@ expressions_list_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, expressions_list_type, res);
     return res;
 }
 
@@ -3824,8 +3681,6 @@ static expr_ty
 expressions_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, expressions_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -3900,7 +3755,6 @@ expressions_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, expressions_type, res);
     return res;
 }
 
@@ -3966,8 +3820,6 @@ static asdl_seq*
 star_named_expressions_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, star_named_expressions_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.star_named_expression+ ','?
         asdl_seq * a;
@@ -3988,7 +3840,6 @@ star_named_expressions_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, star_named_expressions_type, res);
     return res;
 }
 
@@ -3997,8 +3848,6 @@ static expr_ty
 star_named_expression_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, star_named_expression_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -4045,7 +3894,6 @@ star_named_expression_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, star_named_expression_type, res);
     return res;
 }
 
@@ -4054,8 +3902,6 @@ static expr_ty
 named_expression_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, named_expression_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -4105,7 +3951,6 @@ named_expression_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, named_expression_type, res);
     return res;
 }
 
@@ -4114,8 +3959,6 @@ static expr_ty
 annotated_rhs_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, annotated_rhs_type, &res))
-        return res;
     int mark = p->mark;
     { // yield_expr
         expr_ty yield_expr_var;
@@ -4141,7 +3984,6 @@ annotated_rhs_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, annotated_rhs_type, res);
     return res;
 }
 
@@ -4227,8 +4069,6 @@ static expr_ty
 lambdef_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, lambdef_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -4270,7 +4110,6 @@ lambdef_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambdef_type, res);
     return res;
 }
 
@@ -4284,8 +4123,6 @@ static arguments_ty
 lambda_parameters_rule(Parser *p)
 {
     arguments_ty res = NULL;
-    if (is_memoized(p, lambda_parameters_type, &res))
-        return res;
     int mark = p->mark;
     { // lambda_slash_without_default [',' lambda_plain_names] [',' lambda_names_with_default] [',' lambda_star_etc?]
         asdl_seq* a;
@@ -4383,7 +4220,6 @@ lambda_parameters_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambda_parameters_type, res);
     return res;
 }
 
@@ -4392,8 +4228,6 @@ static asdl_seq*
 lambda_slash_without_default_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, lambda_slash_without_default_type, &res))
-        return res;
     int mark = p->mark;
     { // lambda_plain_names ',' '/'
         asdl_seq* a;
@@ -4417,7 +4251,6 @@ lambda_slash_without_default_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambda_slash_without_default_type, res);
     return res;
 }
 
@@ -4426,8 +4259,6 @@ static SlashWithDefault*
 lambda_slash_with_default_rule(Parser *p)
 {
     SlashWithDefault* res = NULL;
-    if (is_memoized(p, lambda_slash_with_default_type, &res))
-        return res;
     int mark = p->mark;
     { // [lambda_plain_names ','] lambda_names_with_default ',' '/'
         void *a;
@@ -4454,7 +4285,6 @@ lambda_slash_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambda_slash_with_default_type, res);
     return res;
 }
 
@@ -4466,8 +4296,6 @@ static StarEtc*
 lambda_star_etc_rule(Parser *p)
 {
     StarEtc* res = NULL;
-    if (is_memoized(p, lambda_star_etc_type, &res))
-        return res;
     int mark = p->mark;
     { // '*' lambda_plain_name lambda_name_with_optional_default* [',' lambda_kwds] ','?
         arg_ty a;
@@ -4537,7 +4365,6 @@ lambda_star_etc_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambda_star_etc_type, res);
     return res;
 }
 
@@ -4546,8 +4373,6 @@ static NameDefaultPair*
 lambda_name_with_optional_default_rule(Parser *p)
 {
     NameDefaultPair* res = NULL;
-    if (is_memoized(p, lambda_name_with_optional_default_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_plain_name ['=' expression]
         arg_ty a;
@@ -4571,7 +4396,6 @@ lambda_name_with_optional_default_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambda_name_with_optional_default_type, res);
     return res;
 }
 
@@ -4580,8 +4404,6 @@ static asdl_seq*
 lambda_names_with_default_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, lambda_names_with_default_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.lambda_name_with_default+
         asdl_seq * a;
@@ -4599,7 +4421,6 @@ lambda_names_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambda_names_with_default_type, res);
     return res;
 }
 
@@ -4608,8 +4429,6 @@ static NameDefaultPair*
 lambda_name_with_default_rule(Parser *p)
 {
     NameDefaultPair* res = NULL;
-    if (is_memoized(p, lambda_name_with_default_type, &res))
-        return res;
     int mark = p->mark;
     { // lambda_plain_name '=' expression
         expr_ty e;
@@ -4633,7 +4452,6 @@ lambda_name_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambda_name_with_default_type, res);
     return res;
 }
 
@@ -4642,8 +4460,6 @@ static asdl_seq*
 lambda_plain_names_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, lambda_plain_names_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.(lambda_plain_name !'=')+
         asdl_seq * a;
@@ -4661,7 +4477,6 @@ lambda_plain_names_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambda_plain_names_type, res);
     return res;
 }
 
@@ -4670,8 +4485,6 @@ static arg_ty
 lambda_plain_name_rule(Parser *p)
 {
     arg_ty res = NULL;
-    if (is_memoized(p, lambda_plain_name_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -4704,7 +4517,6 @@ lambda_plain_name_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambda_plain_name_type, res);
     return res;
 }
 
@@ -4713,8 +4525,6 @@ static arg_ty
 lambda_kwds_rule(Parser *p)
 {
     arg_ty res = NULL;
-    if (is_memoized(p, lambda_kwds_type, &res))
-        return res;
     int mark = p->mark;
     { // '**' lambda_plain_name
         arg_ty a;
@@ -4735,7 +4545,6 @@ lambda_kwds_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lambda_kwds_type, res);
     return res;
 }
 
@@ -4915,8 +4724,6 @@ static expr_ty
 comparison_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, comparison_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -4963,7 +4770,6 @@ comparison_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, comparison_type, res);
     return res;
 }
 
@@ -4982,8 +4788,6 @@ static CmpopExprPair*
 compare_op_bitwise_or_pair_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, compare_op_bitwise_or_pair_type, &res))
-        return res;
     int mark = p->mark;
     { // eq_bitwise_or
         CmpopExprPair* eq_bitwise_or_var;
@@ -5097,7 +4901,6 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, compare_op_bitwise_or_pair_type, res);
     return res;
 }
 
@@ -5106,8 +4909,6 @@ static CmpopExprPair*
 eq_bitwise_or_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, eq_bitwise_or_type, &res))
-        return res;
     int mark = p->mark;
     { // '==' bitwise_or
         expr_ty a;
@@ -5128,7 +4929,6 @@ eq_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, eq_bitwise_or_type, res);
     return res;
 }
 
@@ -5137,8 +4937,6 @@ static CmpopExprPair*
 noteq_bitwise_or_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, noteq_bitwise_or_type, &res))
-        return res;
     int mark = p->mark;
     { // '!=' bitwise_or
         expr_ty a;
@@ -5159,7 +4957,6 @@ noteq_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, noteq_bitwise_or_type, res);
     return res;
 }
 
@@ -5168,8 +4965,6 @@ static CmpopExprPair*
 lte_bitwise_or_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, lte_bitwise_or_type, &res))
-        return res;
     int mark = p->mark;
     { // '<=' bitwise_or
         expr_ty a;
@@ -5190,7 +4985,6 @@ lte_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lte_bitwise_or_type, res);
     return res;
 }
 
@@ -5199,8 +4993,6 @@ static CmpopExprPair*
 lt_bitwise_or_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, lt_bitwise_or_type, &res))
-        return res;
     int mark = p->mark;
     { // '<' bitwise_or
         expr_ty a;
@@ -5221,7 +5013,6 @@ lt_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, lt_bitwise_or_type, res);
     return res;
 }
 
@@ -5230,8 +5021,6 @@ static CmpopExprPair*
 gte_bitwise_or_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, gte_bitwise_or_type, &res))
-        return res;
     int mark = p->mark;
     { // '>=' bitwise_or
         expr_ty a;
@@ -5252,7 +5041,6 @@ gte_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, gte_bitwise_or_type, res);
     return res;
 }
 
@@ -5261,8 +5049,6 @@ static CmpopExprPair*
 gt_bitwise_or_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, gt_bitwise_or_type, &res))
-        return res;
     int mark = p->mark;
     { // '>' bitwise_or
         expr_ty a;
@@ -5283,7 +5069,6 @@ gt_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, gt_bitwise_or_type, res);
     return res;
 }
 
@@ -5292,8 +5077,6 @@ static CmpopExprPair*
 notin_bitwise_or_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, notin_bitwise_or_type, &res))
-        return res;
     int mark = p->mark;
     { // 'not' 'in' bitwise_or
         expr_ty a;
@@ -5317,7 +5100,6 @@ notin_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, notin_bitwise_or_type, res);
     return res;
 }
 
@@ -5326,8 +5108,6 @@ static CmpopExprPair*
 in_bitwise_or_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, in_bitwise_or_type, &res))
-        return res;
     int mark = p->mark;
     { // 'in' bitwise_or
         expr_ty a;
@@ -5348,7 +5128,6 @@ in_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, in_bitwise_or_type, res);
     return res;
 }
 
@@ -5357,8 +5136,6 @@ static CmpopExprPair*
 isnot_bitwise_or_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, isnot_bitwise_or_type, &res))
-        return res;
     int mark = p->mark;
     { // 'is' 'not' bitwise_or
         expr_ty a;
@@ -5382,7 +5159,6 @@ isnot_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, isnot_bitwise_or_type, res);
     return res;
 }
 
@@ -5391,8 +5167,6 @@ static CmpopExprPair*
 is_bitwise_or_rule(Parser *p)
 {
     CmpopExprPair* res = NULL;
-    if (is_memoized(p, is_bitwise_or_type, &res))
-        return res;
     int mark = p->mark;
     { // 'is' bitwise_or
         expr_ty a;
@@ -5413,10 +5187,10 @@ is_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, is_bitwise_or_type, res);
     return res;
 }
 
+// Left-recursive
 // bitwise_or: bitwise_or '|' bitwise_xor | bitwise_xor
 static expr_ty bitwise_or_raw(Parser *);
 static expr_ty
@@ -5498,6 +5272,7 @@ bitwise_or_raw(Parser *p)
     return res;
 }
 
+// Left-recursive
 // bitwise_xor: bitwise_xor '^' bitwise_and | bitwise_and
 static expr_ty bitwise_xor_raw(Parser *);
 static expr_ty
@@ -5579,6 +5354,7 @@ bitwise_xor_raw(Parser *p)
     return res;
 }
 
+// Left-recursive
 // bitwise_and: bitwise_and '&' shift_expr | shift_expr
 static expr_ty bitwise_and_raw(Parser *);
 static expr_ty
@@ -5660,6 +5436,7 @@ bitwise_and_raw(Parser *p)
     return res;
 }
 
+// Left-recursive
 // shift_expr: shift_expr '<<' sum | shift_expr '>>' sum | sum
 static expr_ty shift_expr_raw(Parser *);
 static expr_ty
@@ -5769,6 +5546,7 @@ shift_expr_raw(Parser *p)
     return res;
 }
 
+// Left-recursive
 // sum: sum '+' term | sum '-' term | term
 static expr_ty sum_raw(Parser *);
 static expr_ty
@@ -5878,6 +5656,7 @@ sum_raw(Parser *p)
     return res;
 }
 
+// Left-recursive
 // term:
 //     | term '*' factor
 //     | term '/' factor
@@ -6189,8 +5968,6 @@ static expr_ty
 power_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, power_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -6240,7 +6017,6 @@ power_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, power_type, res);
     return res;
 }
 
@@ -6301,6 +6077,7 @@ await_primary_rule(Parser *p)
     return res;
 }
 
+// Left-recursive
 // primary:
 //     | primary '.' NAME
 //     | primary genexp
@@ -6479,8 +6256,6 @@ static expr_ty
 slices_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, slices_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -6532,7 +6307,6 @@ slices_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, slices_type, res);
     return res;
 }
 
@@ -6541,8 +6315,6 @@ static expr_ty
 slice_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, slice_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -6598,7 +6370,6 @@ slice_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, slice_type, res);
     return res;
 }
 
@@ -6617,8 +6388,6 @@ static expr_ty
 atom_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, atom_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -6794,7 +6563,6 @@ atom_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, atom_type, res);
     return res;
 }
 
@@ -6803,8 +6571,6 @@ static expr_ty
 list_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, list_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -6843,7 +6609,6 @@ list_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, list_type, res);
     return res;
 }
 
@@ -6852,8 +6617,6 @@ static expr_ty
 listcomp_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, listcomp_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -6895,7 +6658,6 @@ listcomp_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, listcomp_type, res);
     return res;
 }
 
@@ -6904,8 +6666,6 @@ static expr_ty
 tuple_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, tuple_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -6944,7 +6704,6 @@ tuple_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, tuple_type, res);
     return res;
 }
 
@@ -6953,8 +6712,6 @@ static expr_ty
 group_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, group_type, &res))
-        return res;
     int mark = p->mark;
     { // '(' (yield_expr | named_expression) ')'
         void *a;
@@ -6978,7 +6735,6 @@ group_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, group_type, res);
     return res;
 }
 
@@ -6987,8 +6743,6 @@ static expr_ty
 genexp_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, genexp_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7030,7 +6784,6 @@ genexp_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, genexp_type, res);
     return res;
 }
 
@@ -7039,8 +6792,6 @@ static expr_ty
 set_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, set_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7079,7 +6830,6 @@ set_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, set_type, res);
     return res;
 }
 
@@ -7088,8 +6838,6 @@ static expr_ty
 setcomp_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, setcomp_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7131,7 +6879,6 @@ setcomp_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, setcomp_type, res);
     return res;
 }
 
@@ -7140,8 +6887,6 @@ static expr_ty
 dict_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, dict_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7180,7 +6925,6 @@ dict_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, dict_type, res);
     return res;
 }
 
@@ -7189,8 +6933,6 @@ static expr_ty
 dictcomp_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, dictcomp_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7232,7 +6974,6 @@ dictcomp_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, dictcomp_type, res);
     return res;
 }
 
@@ -7241,8 +6982,6 @@ static asdl_seq*
 kvpairs_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, kvpairs_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.kvpair+ ','?
         asdl_seq * a;
@@ -7263,7 +7002,6 @@ kvpairs_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, kvpairs_type, res);
     return res;
 }
 
@@ -7272,8 +7010,6 @@ static KeyValuePair*
 kvpair_rule(Parser *p)
 {
     KeyValuePair* res = NULL;
-    if (is_memoized(p, kvpair_type, &res))
-        return res;
     int mark = p->mark;
     { // '**' bitwise_or
         expr_ty a;
@@ -7314,7 +7050,6 @@ kvpair_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, kvpair_type, res);
     return res;
 }
 
@@ -7323,8 +7058,6 @@ static asdl_seq*
 for_if_clauses_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, for_if_clauses_type, &res))
-        return res;
     int mark = p->mark;
     { // ((ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*))+
         asdl_seq * a;
@@ -7342,7 +7075,6 @@ for_if_clauses_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, for_if_clauses_type, res);
     return res;
 }
 
@@ -7351,8 +7083,6 @@ static expr_ty
 yield_expr_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, yield_expr_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7416,7 +7146,6 @@ yield_expr_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, yield_expr_type, res);
     return res;
 }
 
@@ -7456,8 +7185,6 @@ static expr_ty
 args_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, args_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7540,7 +7267,6 @@ args_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, args_type, res);
     return res;
 }
 
@@ -7549,8 +7275,6 @@ static asdl_seq*
 kwargs_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, kwargs_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.kwarg+
         asdl_seq * a;
@@ -7568,7 +7292,6 @@ kwargs_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, kwargs_type, res);
     return res;
 }
 
@@ -7577,8 +7300,6 @@ static expr_ty
 starred_expression_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, starred_expression_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7614,7 +7335,6 @@ starred_expression_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, starred_expression_type, res);
     return res;
 }
 
@@ -7623,8 +7343,6 @@ static KeywordOrStarred*
 kwarg_rule(Parser *p)
 {
     KeywordOrStarred* res = NULL;
-    if (is_memoized(p, kwarg_type, &res))
-        return res;
     int mark = p->mark;
     { // NAME '=' expression
         expr_ty a;
@@ -7679,7 +7397,6 @@ kwarg_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, kwarg_type, res);
     return res;
 }
 
@@ -7688,8 +7405,6 @@ static expr_ty
 star_targets_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, star_targets_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7744,7 +7459,6 @@ star_targets_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, star_targets_type, res);
     return res;
 }
 
@@ -7753,8 +7467,6 @@ static asdl_seq*
 star_targets_seq_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, star_targets_seq_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.star_target+ ','?
         asdl_seq * a;
@@ -7775,7 +7487,6 @@ star_targets_seq_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, star_targets_seq_type, res);
     return res;
 }
 
@@ -7788,8 +7499,6 @@ static expr_ty
 star_target_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, star_target_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7899,7 +7608,6 @@ star_target_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, star_target_type, res);
     return res;
 }
 
@@ -7912,8 +7620,6 @@ static expr_ty
 star_atom_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, star_atom_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -8014,7 +7720,6 @@ star_atom_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, star_atom_type, res);
     return res;
 }
 
@@ -8026,8 +7731,6 @@ static expr_ty
 inside_paren_ann_assign_target_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, inside_paren_ann_assign_target_type, &res))
-        return res;
     int mark = p->mark;
     { // ann_assign_subscript_attribute_target
         expr_ty ann_assign_subscript_attribute_target_var;
@@ -8076,7 +7779,6 @@ inside_paren_ann_assign_target_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, inside_paren_ann_assign_target_type, res);
     return res;
 }
 
@@ -8087,8 +7789,6 @@ static expr_ty
 ann_assign_subscript_attribute_target_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, ann_assign_subscript_attribute_target_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -8162,7 +7862,6 @@ ann_assign_subscript_attribute_target_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, ann_assign_subscript_attribute_target_type, res);
     return res;
 }
 
@@ -8171,8 +7870,6 @@ static asdl_seq*
 del_targets_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, del_targets_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.del_target+ ','?
         asdl_seq * a;
@@ -8193,7 +7890,6 @@ del_targets_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, del_targets_type, res);
     return res;
 }
 
@@ -8205,8 +7901,6 @@ static expr_ty
 del_target_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, del_target_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -8291,7 +7985,6 @@ del_target_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, del_target_type, res);
     return res;
 }
 
@@ -8300,8 +7993,6 @@ static expr_ty
 del_t_atom_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, del_t_atom_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -8402,7 +8093,6 @@ del_t_atom_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, del_t_atom_type, res);
     return res;
 }
 
@@ -8411,8 +8101,6 @@ static asdl_seq*
 targets_rule(Parser *p)
 {
     asdl_seq* res = NULL;
-    if (is_memoized(p, targets_type, &res))
-        return res;
     int mark = p->mark;
     { // ','.target+ ','?
         asdl_seq * a;
@@ -8433,7 +8121,6 @@ targets_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, targets_type, res);
     return res;
 }
 
@@ -8445,8 +8132,6 @@ static expr_ty
 target_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, target_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -8531,10 +8216,10 @@ target_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, target_type, res);
     return res;
 }
 
+// Left-recursive
 // t_primary:
 //     | t_primary '.' NAME &t_lookahead
 //     | t_primary '[' slices ']' &t_lookahead
@@ -8726,8 +8411,6 @@ static void *
 t_lookahead_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, t_lookahead_type, &res))
-        return res;
     int mark = p->mark;
     { // '('
         void *literal;
@@ -8764,7 +8447,6 @@ t_lookahead_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, t_lookahead_type, res);
     return res;
 }
 
@@ -8773,8 +8455,6 @@ static expr_ty
 t_atom_rule(Parser *p)
 {
     expr_ty res = NULL;
-    if (is_memoized(p, t_atom_type, &res))
-        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -8875,7 +8555,6 @@ t_atom_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, t_atom_type, res);
     return res;
 }
 
@@ -8884,8 +8563,6 @@ static asdl_seq *
 _loop1_1_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_1_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -8905,7 +8582,7 @@ _loop1_1_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_1");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -8934,8 +8611,6 @@ static asdl_seq *
 _loop0_3_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_3_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -8961,7 +8636,7 @@ _loop0_3_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_3");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -8986,8 +8661,6 @@ static asdl_seq *
 _gather_2_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_2_type, &res))
-        return res;
     int mark = p->mark;
     { // small_stmt _loop0_3
         stmt_ty elem;
@@ -9005,7 +8678,6 @@ _gather_2_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_2_type, res);
     return res;
 }
 
@@ -9014,8 +8686,6 @@ static void *
 _tmp_4_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_4_type, &res))
-        return res;
     int mark = p->mark;
     { // 'import'
         void *keyword;
@@ -9041,7 +8711,6 @@ _tmp_4_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_4_type, res);
     return res;
 }
 
@@ -9050,8 +8719,6 @@ static void *
 _tmp_5_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_5_type, &res))
-        return res;
     int mark = p->mark;
     { // 'def'
         void *keyword;
@@ -9088,7 +8755,6 @@ _tmp_5_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_5_type, res);
     return res;
 }
 
@@ -9097,8 +8763,6 @@ static void *
 _tmp_6_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_6_type, &res))
-        return res;
     int mark = p->mark;
     { // 'class'
         void *keyword;
@@ -9124,7 +8788,6 @@ _tmp_6_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_6_type, res);
     return res;
 }
 
@@ -9133,8 +8796,6 @@ static void *
 _tmp_7_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_7_type, &res))
-        return res;
     int mark = p->mark;
     { // 'with'
         void *keyword;
@@ -9160,7 +8821,6 @@ _tmp_7_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_7_type, res);
     return res;
 }
 
@@ -9169,8 +8829,6 @@ static void *
 _tmp_8_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_8_type, &res))
-        return res;
     int mark = p->mark;
     { // 'for'
         void *keyword;
@@ -9196,7 +8854,6 @@ _tmp_8_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_8_type, res);
     return res;
 }
 
@@ -9205,8 +8862,6 @@ static void *
 _tmp_9_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_9_type, &res))
-        return res;
     int mark = p->mark;
     { // '=' annotated_rhs
         expr_ty d;
@@ -9227,7 +8882,6 @@ _tmp_9_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_9_type, res);
     return res;
 }
 
@@ -9236,8 +8890,6 @@ static void *
 _tmp_10_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_10_type, &res))
-        return res;
     int mark = p->mark;
     { // '(' inside_paren_ann_assign_target ')'
         expr_ty b;
@@ -9272,7 +8924,6 @@ _tmp_10_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_10_type, res);
     return res;
 }
 
@@ -9281,8 +8932,6 @@ static void *
 _tmp_11_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_11_type, &res))
-        return res;
     int mark = p->mark;
     { // '=' annotated_rhs
         expr_ty d;
@@ -9303,7 +8952,6 @@ _tmp_11_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_11_type, res);
     return res;
 }
 
@@ -9312,8 +8960,6 @@ static asdl_seq *
 _loop1_12_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_12_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -9333,7 +8979,7 @@ _loop1_12_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_12");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -9362,8 +9008,6 @@ static void *
 _tmp_13_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_13_type, &res))
-        return res;
     int mark = p->mark;
     { // yield_expr
         expr_ty yield_expr_var;
@@ -9389,7 +9033,6 @@ _tmp_13_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_13_type, res);
     return res;
 }
 
@@ -9398,8 +9041,6 @@ static void *
 _tmp_14_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_14_type, &res))
-        return res;
     int mark = p->mark;
     { // yield_expr
         expr_ty yield_expr_var;
@@ -9425,7 +9066,6 @@ _tmp_14_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_14_type, res);
     return res;
 }
 
@@ -9434,8 +9074,6 @@ static asdl_seq *
 _loop0_16_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_16_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -9461,7 +9099,7 @@ _loop0_16_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_16");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -9486,8 +9124,6 @@ static asdl_seq *
 _gather_15_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_15_type, &res))
-        return res;
     int mark = p->mark;
     { // NAME _loop0_16
         expr_ty elem;
@@ -9505,7 +9141,6 @@ _gather_15_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_15_type, res);
     return res;
 }
 
@@ -9514,8 +9149,6 @@ static asdl_seq *
 _loop0_18_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_18_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -9541,7 +9174,7 @@ _loop0_18_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_18");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -9566,8 +9199,6 @@ static asdl_seq *
 _gather_17_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_17_type, &res))
-        return res;
     int mark = p->mark;
     { // NAME _loop0_18
         expr_ty elem;
@@ -9585,7 +9216,6 @@ _gather_17_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_17_type, res);
     return res;
 }
 
@@ -9594,8 +9224,6 @@ static void *
 _tmp_19_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_19_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' expression
         void *literal;
@@ -9616,7 +9244,6 @@ _tmp_19_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_19_type, res);
     return res;
 }
 
@@ -9625,8 +9252,6 @@ static asdl_seq *
 _loop0_20_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_20_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -9646,7 +9271,7 @@ _loop0_20_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_20");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -9671,8 +9296,6 @@ static asdl_seq *
 _loop1_21_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_21_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -9692,7 +9315,7 @@ _loop1_21_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_21");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -9721,8 +9344,6 @@ static asdl_seq *
 _loop0_23_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_23_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -9748,7 +9369,7 @@ _loop0_23_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_23");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -9773,8 +9394,6 @@ static asdl_seq *
 _gather_22_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_22_type, &res))
-        return res;
     int mark = p->mark;
     { // import_from_as_name _loop0_23
         alias_ty elem;
@@ -9792,7 +9411,6 @@ _gather_22_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_22_type, res);
     return res;
 }
 
@@ -9801,8 +9419,6 @@ static void *
 _tmp_24_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_24_type, &res))
-        return res;
     int mark = p->mark;
     { // 'as' NAME
         void *keyword;
@@ -9823,7 +9439,6 @@ _tmp_24_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_24_type, res);
     return res;
 }
 
@@ -9832,8 +9447,6 @@ static asdl_seq *
 _loop0_26_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_26_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -9859,7 +9472,7 @@ _loop0_26_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_26");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -9884,8 +9497,6 @@ static asdl_seq *
 _gather_25_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_25_type, &res))
-        return res;
     int mark = p->mark;
     { // dotted_as_name _loop0_26
         alias_ty elem;
@@ -9903,7 +9514,6 @@ _gather_25_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_25_type, res);
     return res;
 }
 
@@ -9912,8 +9522,6 @@ static void *
 _tmp_27_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_27_type, &res))
-        return res;
     int mark = p->mark;
     { // 'as' NAME
         void *keyword;
@@ -9934,7 +9542,6 @@ _tmp_27_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_27_type, res);
     return res;
 }
 
@@ -9943,8 +9550,6 @@ static asdl_seq *
 _loop0_29_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_29_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -9970,7 +9575,7 @@ _loop0_29_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_29");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -9995,8 +9600,6 @@ static asdl_seq *
 _gather_28_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_28_type, &res))
-        return res;
     int mark = p->mark;
     { // with_item _loop0_29
         withitem_ty elem;
@@ -10014,7 +9617,6 @@ _gather_28_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_28_type, res);
     return res;
 }
 
@@ -10023,8 +9625,6 @@ static asdl_seq *
 _loop0_31_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_31_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -10050,7 +9650,7 @@ _loop0_31_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_31");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -10075,8 +9675,6 @@ static asdl_seq *
 _gather_30_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_30_type, &res))
-        return res;
     int mark = p->mark;
     { // with_item _loop0_31
         withitem_ty elem;
@@ -10094,7 +9692,6 @@ _gather_30_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_30_type, res);
     return res;
 }
 
@@ -10103,8 +9700,6 @@ static asdl_seq *
 _loop0_33_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_33_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -10130,7 +9725,7 @@ _loop0_33_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_33");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -10155,8 +9750,6 @@ static asdl_seq *
 _gather_32_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_32_type, &res))
-        return res;
     int mark = p->mark;
     { // with_item _loop0_33
         withitem_ty elem;
@@ -10174,7 +9767,6 @@ _gather_32_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_32_type, res);
     return res;
 }
 
@@ -10183,8 +9775,6 @@ static asdl_seq *
 _loop0_35_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_35_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -10210,7 +9800,7 @@ _loop0_35_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_35");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -10235,8 +9825,6 @@ static asdl_seq *
 _gather_34_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_34_type, &res))
-        return res;
     int mark = p->mark;
     { // with_item _loop0_35
         withitem_ty elem;
@@ -10254,7 +9842,6 @@ _gather_34_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_34_type, res);
     return res;
 }
 
@@ -10263,8 +9850,6 @@ static void *
 _tmp_36_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_36_type, &res))
-        return res;
     int mark = p->mark;
     { // 'as' target
         void *keyword;
@@ -10285,7 +9870,6 @@ _tmp_36_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_36_type, res);
     return res;
 }
 
@@ -10294,8 +9878,6 @@ static asdl_seq *
 _loop1_37_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_37_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -10315,7 +9897,7 @@ _loop1_37_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_37");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -10344,8 +9926,6 @@ static void *
 _tmp_38_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_38_type, &res))
-        return res;
     int mark = p->mark;
     { // 'as' target
         void *keyword;
@@ -10366,7 +9946,6 @@ _tmp_38_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_38_type, res);
     return res;
 }
 
@@ -10375,8 +9954,6 @@ static void *
 _tmp_39_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_39_type, &res))
-        return res;
     int mark = p->mark;
     { // 'from' expression
         void *keyword;
@@ -10397,7 +9974,6 @@ _tmp_39_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_39_type, res);
     return res;
 }
 
@@ -10406,8 +9982,6 @@ static void *
 _tmp_40_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_40_type, &res))
-        return res;
     int mark = p->mark;
     { // '->' annotation
         void *literal;
@@ -10428,7 +10002,6 @@ _tmp_40_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_40_type, res);
     return res;
 }
 
@@ -10437,8 +10010,6 @@ static void *
 _tmp_41_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_41_type, &res))
-        return res;
     int mark = p->mark;
     { // '->' annotation
         void *literal;
@@ -10459,7 +10030,6 @@ _tmp_41_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_41_type, res);
     return res;
 }
 
@@ -10468,8 +10038,6 @@ static void *
 _tmp_42_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_42_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' plain_names
         void *literal;
@@ -10490,7 +10058,6 @@ _tmp_42_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_42_type, res);
     return res;
 }
 
@@ -10499,8 +10066,6 @@ static void *
 _tmp_43_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_43_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' names_with_default
         void *literal;
@@ -10521,7 +10086,6 @@ _tmp_43_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_43_type, res);
     return res;
 }
 
@@ -10530,8 +10094,6 @@ static void *
 _tmp_44_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_44_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' star_etc?
         void *literal;
@@ -10552,7 +10114,6 @@ _tmp_44_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_44_type, res);
     return res;
 }
 
@@ -10561,8 +10122,6 @@ static void *
 _tmp_45_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_45_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' names_with_default
         void *literal;
@@ -10583,7 +10142,6 @@ _tmp_45_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_45_type, res);
     return res;
 }
 
@@ -10592,8 +10150,6 @@ static void *
 _tmp_46_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_46_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' star_etc?
         void *literal;
@@ -10614,7 +10170,6 @@ _tmp_46_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_46_type, res);
     return res;
 }
 
@@ -10623,8 +10178,6 @@ static void *
 _tmp_47_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_47_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' names_with_default
         void *literal;
@@ -10645,7 +10198,6 @@ _tmp_47_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_47_type, res);
     return res;
 }
 
@@ -10654,8 +10206,6 @@ static void *
 _tmp_48_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_48_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' star_etc?
         void *literal;
@@ -10676,7 +10226,6 @@ _tmp_48_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_48_type, res);
     return res;
 }
 
@@ -10685,8 +10234,6 @@ static void *
 _tmp_49_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_49_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' star_etc?
         void *literal;
@@ -10707,7 +10254,6 @@ _tmp_49_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_49_type, res);
     return res;
 }
 
@@ -10716,8 +10262,6 @@ static void *
 _tmp_50_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_50_type, &res))
-        return res;
     int mark = p->mark;
     { // plain_names ','
         void *literal;
@@ -10738,7 +10282,6 @@ _tmp_50_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_50_type, res);
     return res;
 }
 
@@ -10747,8 +10290,6 @@ static asdl_seq *
 _loop0_51_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_51_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -10768,7 +10309,7 @@ _loop0_51_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_51");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -10793,8 +10334,6 @@ static void *
 _tmp_52_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_52_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' kwds
         arg_ty d;
@@ -10815,7 +10354,6 @@ _tmp_52_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_52_type, res);
     return res;
 }
 
@@ -10824,8 +10362,6 @@ static asdl_seq *
 _loop1_53_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_53_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -10845,7 +10381,7 @@ _loop1_53_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_53");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -10874,8 +10410,6 @@ static void *
 _tmp_54_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_54_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' kwds
         arg_ty d;
@@ -10896,7 +10430,6 @@ _tmp_54_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_54_type, res);
     return res;
 }
 
@@ -10905,8 +10438,6 @@ static void *
 _tmp_55_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_55_type, &res))
-        return res;
     int mark = p->mark;
     { // '=' expression
         expr_ty e;
@@ -10927,7 +10458,6 @@ _tmp_55_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_55_type, res);
     return res;
 }
 
@@ -10936,8 +10466,6 @@ static asdl_seq *
 _loop0_57_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_57_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -10963,7 +10491,7 @@ _loop0_57_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_57");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -10988,8 +10516,6 @@ static asdl_seq *
 _gather_56_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_56_type, &res))
-        return res;
     int mark = p->mark;
     { // name_with_default _loop0_57
         NameDefaultPair* elem;
@@ -11007,7 +10533,6 @@ _gather_56_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_56_type, res);
     return res;
 }
 
@@ -11016,8 +10541,6 @@ static asdl_seq *
 _loop0_59_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_59_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -11043,7 +10566,7 @@ _loop0_59_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_59");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -11068,8 +10591,6 @@ static asdl_seq *
 _gather_58_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_58_type, &res))
-        return res;
     int mark = p->mark;
     { // (plain_name !'=') _loop0_59
         void *elem;
@@ -11087,7 +10608,6 @@ _gather_58_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_58_type, res);
     return res;
 }
 
@@ -11096,8 +10616,6 @@ static void *
 _tmp_60_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_60_type, &res))
-        return res;
     int mark = p->mark;
     { // ':' annotation
         void *literal;
@@ -11118,7 +10636,6 @@ _tmp_60_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_60_type, res);
     return res;
 }
 
@@ -11127,8 +10644,6 @@ static asdl_seq *
 _loop1_61_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_61_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -11148,7 +10663,7 @@ _loop1_61_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_61");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -11177,8 +10692,6 @@ static void *
 _tmp_62_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_62_type, &res))
-        return res;
     int mark = p->mark;
     { // '(' arguments? ')'
         void *literal;
@@ -11202,7 +10715,6 @@ _tmp_62_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_62_type, res);
     return res;
 }
 
@@ -11211,8 +10723,6 @@ static asdl_seq *
 _loop0_64_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_64_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -11238,7 +10748,7 @@ _loop0_64_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_64");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -11263,8 +10773,6 @@ static asdl_seq *
 _gather_63_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_63_type, &res))
-        return res;
     int mark = p->mark;
     { // star_expression _loop0_64
         expr_ty elem;
@@ -11282,7 +10790,6 @@ _gather_63_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_63_type, res);
     return res;
 }
 
@@ -11291,8 +10798,6 @@ static asdl_seq *
 _loop1_65_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_65_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -11312,7 +10817,7 @@ _loop1_65_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_65");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -11341,8 +10846,6 @@ static asdl_seq *
 _loop0_67_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_67_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -11368,7 +10871,7 @@ _loop0_67_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_67");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -11393,8 +10896,6 @@ static asdl_seq *
 _gather_66_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_66_type, &res))
-        return res;
     int mark = p->mark;
     { // star_named_expression _loop0_67
         expr_ty elem;
@@ -11412,7 +10913,6 @@ _gather_66_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_66_type, res);
     return res;
 }
 
@@ -11421,8 +10921,6 @@ static void *
 _tmp_68_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_68_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_plain_names
         void *literal;
@@ -11443,7 +10941,6 @@ _tmp_68_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_68_type, res);
     return res;
 }
 
@@ -11452,8 +10949,6 @@ static void *
 _tmp_69_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_69_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_names_with_default
         void *literal;
@@ -11474,7 +10969,6 @@ _tmp_69_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_69_type, res);
     return res;
 }
 
@@ -11483,8 +10977,6 @@ static void *
 _tmp_70_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_70_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_star_etc?
         void *literal;
@@ -11505,7 +10997,6 @@ _tmp_70_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_70_type, res);
     return res;
 }
 
@@ -11514,8 +11005,6 @@ static void *
 _tmp_71_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_71_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_names_with_default
         void *literal;
@@ -11536,7 +11025,6 @@ _tmp_71_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_71_type, res);
     return res;
 }
 
@@ -11545,8 +11033,6 @@ static void *
 _tmp_72_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_72_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_star_etc?
         void *literal;
@@ -11567,7 +11053,6 @@ _tmp_72_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_72_type, res);
     return res;
 }
 
@@ -11576,8 +11061,6 @@ static void *
 _tmp_73_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_73_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_names_with_default
         void *literal;
@@ -11598,7 +11081,6 @@ _tmp_73_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_73_type, res);
     return res;
 }
 
@@ -11607,8 +11089,6 @@ static void *
 _tmp_74_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_74_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_star_etc?
         void *literal;
@@ -11629,7 +11109,6 @@ _tmp_74_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_74_type, res);
     return res;
 }
 
@@ -11638,8 +11117,6 @@ static void *
 _tmp_75_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_75_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_star_etc?
         void *literal;
@@ -11660,7 +11137,6 @@ _tmp_75_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_75_type, res);
     return res;
 }
 
@@ -11669,8 +11145,6 @@ static void *
 _tmp_76_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_76_type, &res))
-        return res;
     int mark = p->mark;
     { // lambda_plain_names ','
         void *literal;
@@ -11691,7 +11165,6 @@ _tmp_76_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_76_type, res);
     return res;
 }
 
@@ -11700,8 +11173,6 @@ static asdl_seq *
 _loop0_77_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_77_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -11721,7 +11192,7 @@ _loop0_77_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_77");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -11746,8 +11217,6 @@ static void *
 _tmp_78_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_78_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_kwds
         arg_ty d;
@@ -11768,7 +11237,6 @@ _tmp_78_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_78_type, res);
     return res;
 }
 
@@ -11777,8 +11245,6 @@ static asdl_seq *
 _loop1_79_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_79_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -11798,7 +11264,7 @@ _loop1_79_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_79");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -11827,8 +11293,6 @@ static void *
 _tmp_80_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_80_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' lambda_kwds
         arg_ty d;
@@ -11849,7 +11313,6 @@ _tmp_80_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_80_type, res);
     return res;
 }
 
@@ -11858,8 +11321,6 @@ static void *
 _tmp_81_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_81_type, &res))
-        return res;
     int mark = p->mark;
     { // '=' expression
         expr_ty e;
@@ -11880,7 +11341,6 @@ _tmp_81_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_81_type, res);
     return res;
 }
 
@@ -11889,8 +11349,6 @@ static asdl_seq *
 _loop0_83_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_83_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -11916,7 +11374,7 @@ _loop0_83_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_83");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -11941,8 +11399,6 @@ static asdl_seq *
 _gather_82_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_82_type, &res))
-        return res;
     int mark = p->mark;
     { // lambda_name_with_default _loop0_83
         NameDefaultPair* elem;
@@ -11960,7 +11416,6 @@ _gather_82_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_82_type, res);
     return res;
 }
 
@@ -11969,8 +11424,6 @@ static asdl_seq *
 _loop0_85_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_85_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -11996,7 +11449,7 @@ _loop0_85_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_85");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12021,8 +11474,6 @@ static asdl_seq *
 _gather_84_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_84_type, &res))
-        return res;
     int mark = p->mark;
     { // (lambda_plain_name !'=') _loop0_85
         void *elem;
@@ -12040,7 +11491,6 @@ _gather_84_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_84_type, res);
     return res;
 }
 
@@ -12049,8 +11499,6 @@ static asdl_seq *
 _loop1_86_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_86_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12070,7 +11518,7 @@ _loop1_86_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_86");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12099,8 +11547,6 @@ static asdl_seq *
 _loop1_87_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_87_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12120,7 +11566,7 @@ _loop1_87_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_87");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12149,8 +11595,6 @@ static asdl_seq *
 _loop1_88_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_88_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12170,7 +11614,7 @@ _loop1_88_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_88");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12199,8 +11643,6 @@ static asdl_seq *
 _loop0_90_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_90_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12226,7 +11668,7 @@ _loop0_90_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_90");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12251,8 +11693,6 @@ static asdl_seq *
 _gather_89_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_89_type, &res))
-        return res;
     int mark = p->mark;
     { // slice _loop0_90
         expr_ty elem;
@@ -12270,7 +11710,6 @@ _gather_89_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_89_type, res);
     return res;
 }
 
@@ -12279,8 +11718,6 @@ static void *
 _tmp_91_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_91_type, &res))
-        return res;
     int mark = p->mark;
     { // ':' expression?
         void *d;
@@ -12301,7 +11738,6 @@ _tmp_91_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_91_type, res);
     return res;
 }
 
@@ -12310,8 +11746,6 @@ static asdl_seq *
 _loop1_92_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_92_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12331,7 +11765,7 @@ _loop1_92_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_92");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12360,8 +11794,6 @@ static void *
 _tmp_93_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_93_type, &res))
-        return res;
     int mark = p->mark;
     { // tuple
         expr_ty tuple_var;
@@ -12398,7 +11830,6 @@ _tmp_93_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_93_type, res);
     return res;
 }
 
@@ -12407,8 +11838,6 @@ static void *
 _tmp_94_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_94_type, &res))
-        return res;
     int mark = p->mark;
     { // list
         expr_ty list_var;
@@ -12434,7 +11863,6 @@ _tmp_94_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_94_type, res);
     return res;
 }
 
@@ -12443,8 +11871,6 @@ static void *
 _tmp_95_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_95_type, &res))
-        return res;
     int mark = p->mark;
     { // dict
         expr_ty dict_var;
@@ -12492,7 +11918,6 @@ _tmp_95_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_95_type, res);
     return res;
 }
 
@@ -12501,8 +11926,6 @@ static void *
 _tmp_96_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_96_type, &res))
-        return res;
     int mark = p->mark;
     { // star_named_expression ',' star_named_expressions?
         void *literal;
@@ -12526,7 +11949,6 @@ _tmp_96_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_96_type, res);
     return res;
 }
 
@@ -12535,8 +11957,6 @@ static void *
 _tmp_97_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_97_type, &res))
-        return res;
     int mark = p->mark;
     { // yield_expr
         expr_ty yield_expr_var;
@@ -12562,7 +11982,6 @@ _tmp_97_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_97_type, res);
     return res;
 }
 
@@ -12571,8 +11990,6 @@ static asdl_seq *
 _loop0_99_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_99_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12598,7 +12015,7 @@ _loop0_99_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_99");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12623,8 +12040,6 @@ static asdl_seq *
 _gather_98_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_98_type, &res))
-        return res;
     int mark = p->mark;
     { // kvpair _loop0_99
         KeyValuePair* elem;
@@ -12642,7 +12057,6 @@ _gather_98_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_98_type, res);
     return res;
 }
 
@@ -12651,8 +12065,6 @@ static asdl_seq *
 _loop1_100_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop1_100_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12672,7 +12084,7 @@ _loop1_100_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop1_100");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12701,8 +12113,6 @@ static void *
 _tmp_101_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_101_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' args
         expr_ty c;
@@ -12723,7 +12133,6 @@ _tmp_101_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_101_type, res);
     return res;
 }
 
@@ -12732,8 +12141,6 @@ static void *
 _tmp_102_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_102_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' args
         expr_ty c;
@@ -12754,7 +12161,6 @@ _tmp_102_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_102_type, res);
     return res;
 }
 
@@ -12763,8 +12169,6 @@ static asdl_seq *
 _loop0_104_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_104_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12790,7 +12194,7 @@ _loop0_104_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_104");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12815,8 +12219,6 @@ static asdl_seq *
 _gather_103_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_103_type, &res))
-        return res;
     int mark = p->mark;
     { // kwarg _loop0_104
         KeywordOrStarred* elem;
@@ -12834,7 +12236,6 @@ _gather_103_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_103_type, res);
     return res;
 }
 
@@ -12843,8 +12244,6 @@ static asdl_seq *
 _loop0_105_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_105_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12864,7 +12263,7 @@ _loop0_105_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_105");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12889,8 +12288,6 @@ static asdl_seq *
 _loop0_107_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_107_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12916,7 +12313,7 @@ _loop0_107_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_107");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -12941,8 +12338,6 @@ static asdl_seq *
 _gather_106_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_106_type, &res))
-        return res;
     int mark = p->mark;
     { // star_target _loop0_107
         expr_ty elem;
@@ -12960,7 +12355,6 @@ _gather_106_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_106_type, res);
     return res;
 }
 
@@ -12969,8 +12363,6 @@ static asdl_seq *
 _loop0_109_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_109_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -12996,7 +12388,7 @@ _loop0_109_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_109");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -13021,8 +12413,6 @@ static asdl_seq *
 _gather_108_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_108_type, &res))
-        return res;
     int mark = p->mark;
     { // del_target _loop0_109
         expr_ty elem;
@@ -13040,7 +12430,6 @@ _gather_108_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_108_type, res);
     return res;
 }
 
@@ -13049,8 +12438,6 @@ static asdl_seq *
 _loop0_111_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_111_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -13076,7 +12463,7 @@ _loop0_111_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_111");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -13101,8 +12488,6 @@ static asdl_seq *
 _gather_110_rule(Parser *p)
 {
     asdl_seq * res = NULL;
-    if (is_memoized(p, _gather_110_type, &res))
-        return res;
     int mark = p->mark;
     { // target _loop0_111
         expr_ty elem;
@@ -13120,7 +12505,6 @@ _gather_110_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _gather_110_type, res);
     return res;
 }
 
@@ -13129,8 +12513,6 @@ static void *
 _tmp_112_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_112_type, &res))
-        return res;
     int mark = p->mark;
     { // star_targets '='
         void *literal;
@@ -13151,7 +12533,6 @@ _tmp_112_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_112_type, res);
     return res;
 }
 
@@ -13160,8 +12541,6 @@ static void *
 _tmp_113_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_113_type, &res))
-        return res;
     int mark = p->mark;
     { // '.'
         void *literal;
@@ -13187,7 +12566,6 @@ _tmp_113_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_113_type, res);
     return res;
 }
 
@@ -13196,8 +12574,6 @@ static void *
 _tmp_114_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_114_type, &res))
-        return res;
     int mark = p->mark;
     { // '.'
         void *literal;
@@ -13223,7 +12599,6 @@ _tmp_114_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_114_type, res);
     return res;
 }
 
@@ -13232,8 +12607,6 @@ static void *
 _tmp_115_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_115_type, &res))
-        return res;
     int mark = p->mark;
     { // plain_name !'='
         arg_ty plain_name_var;
@@ -13250,7 +12623,6 @@ _tmp_115_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_115_type, res);
     return res;
 }
 
@@ -13259,8 +12631,6 @@ static void *
 _tmp_116_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_116_type, &res))
-        return res;
     int mark = p->mark;
     { // '@' named_expression NEWLINE
         expr_ty f;
@@ -13284,7 +12654,6 @@ _tmp_116_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_116_type, res);
     return res;
 }
 
@@ -13293,8 +12662,6 @@ static void *
 _tmp_117_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_117_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' star_expression
         expr_ty c;
@@ -13315,7 +12682,6 @@ _tmp_117_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_117_type, res);
     return res;
 }
 
@@ -13324,8 +12690,6 @@ static void *
 _tmp_118_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_118_type, &res))
-        return res;
     int mark = p->mark;
     { // lambda_plain_name !'='
         arg_ty lambda_plain_name_var;
@@ -13342,7 +12706,6 @@ _tmp_118_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_118_type, res);
     return res;
 }
 
@@ -13351,8 +12714,6 @@ static void *
 _tmp_119_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_119_type, &res))
-        return res;
     int mark = p->mark;
     { // 'or' conjunction
         expr_ty c;
@@ -13373,7 +12734,6 @@ _tmp_119_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_119_type, res);
     return res;
 }
 
@@ -13382,8 +12742,6 @@ static void *
 _tmp_120_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_120_type, &res))
-        return res;
     int mark = p->mark;
     { // 'and' inversion
         expr_ty c;
@@ -13404,7 +12762,6 @@ _tmp_120_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_120_type, res);
     return res;
 }
 
@@ -13413,8 +12770,6 @@ static void *
 _tmp_121_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_121_type, &res))
-        return res;
     int mark = p->mark;
     { // ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*
         expr_ty a;
@@ -13447,7 +12802,6 @@ _tmp_121_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_121_type, res);
     return res;
 }
 
@@ -13456,8 +12810,6 @@ static void *
 _tmp_122_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_122_type, &res))
-        return res;
     int mark = p->mark;
     { // ',' star_target
         expr_ty c;
@@ -13478,7 +12830,6 @@ _tmp_122_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_122_type, res);
     return res;
 }
 
@@ -13487,8 +12838,6 @@ static asdl_seq *
 _loop0_123_rule(Parser *p)
 {
     void *res = NULL;
-    if (is_memoized(p, _loop0_123_type, &res))
-        return res;
     int mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
@@ -13508,7 +12857,7 @@ _loop0_123_rule(Parser *p)
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
                 if (!children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc _loop0_123");
+                    PyErr_Format(PyExc_MemoryError, "realloc None");
                     return NULL;
                 }
             }
@@ -13533,8 +12882,6 @@ static void *
 _tmp_124_rule(Parser *p)
 {
     void * res = NULL;
-    if (is_memoized(p, _tmp_124_type, &res))
-        return res;
     int mark = p->mark;
     { // 'if' disjunction
         void *keyword;
@@ -13555,7 +12902,6 @@ _tmp_124_rule(Parser *p)
     }
     res = NULL;
   done:
-    insert_memo(p, mark, _tmp_124_type, res);
     return res;
 }
 
