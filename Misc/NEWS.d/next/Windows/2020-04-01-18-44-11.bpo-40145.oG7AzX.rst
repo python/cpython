@@ -1,0 +1,4 @@
+Tweaked the pcbuild options for pyshellext to reduce the size of the binary.
+Since this is a very simple component, there really isn't much benefit of
+optimizing for speed, likely the slowest part of this component's lifetime
+is simply loading it. Total size reduction is approx 40% in release builds.
