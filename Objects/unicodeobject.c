@@ -2517,8 +2517,8 @@ unicode_askind(unsigned int skind, void const *data, Py_ssize_t len, unsigned in
         assert(skind == PyUnicode_1BYTE_KIND);
         _PyUnicode_CONVERT_BYTES(
             Py_UCS1, Py_UCS2,
-            (Py_UCS1 *)data,
-            ((Py_UCS1 *)data) + len,
+            (const Py_UCS1 *)data,
+            ((const Py_UCS1 *)data) + len,
             result);
         return result;
     case PyUnicode_4BYTE_KIND:
@@ -2528,16 +2528,16 @@ unicode_askind(unsigned int skind, void const *data, Py_ssize_t len, unsigned in
         if (skind == PyUnicode_2BYTE_KIND) {
             _PyUnicode_CONVERT_BYTES(
                 Py_UCS2, Py_UCS4,
-                (Py_UCS2 *)data,
-                ((Py_UCS2 *)data) + len,
+                (const Py_UCS2 *)data,
+                ((const Py_UCS2 *)data) + len,
                 result);
         }
         else {
             assert(skind == PyUnicode_1BYTE_KIND);
             _PyUnicode_CONVERT_BYTES(
                 Py_UCS1, Py_UCS4,
-                (Py_UCS1 *)data,
-                ((Py_UCS1 *)data) + len,
+                (const Py_UCS1 *)data,
+                ((const Py_UCS1 *)data) + len,
                 result);
         }
         return result;
