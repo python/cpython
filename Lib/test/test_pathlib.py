@@ -1720,13 +1720,15 @@ class _BasePathTest(object):
         next(it2)
         with p:
             pass
-        # I/O operation on closed path.
-        self.assertRaises(ValueError, next, it)
-        self.assertRaises(ValueError, next, it2)
-        self.assertRaises(ValueError, p.open)
-        self.assertRaises(ValueError, p.resolve)
-        self.assertRaises(ValueError, p.absolute)
-        self.assertRaises(ValueError, p.__enter__)
+        # Using a path as a context manager is a no-op, thus the following
+        # operations should still succeed after the context manage exits.
+        next(it)
+        next(it2)
+        p.exists()
+        p.resolve()
+        p.absolute()
+        with p:
+            pass
 
     def test_chmod(self):
         p = self.cls(BASE) / 'fileA'

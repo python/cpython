@@ -1,0 +1,1 @@
+Add :func:`test.support.wait_process` function.

@@ -200,8 +200,8 @@ class PtyTest(unittest.TestCase):
             ##    raise TestFailed("Unexpected output from child: %r" % line)
 
             (pid, status) = os.waitpid(pid, 0)
-            res = status >> 8
-            debug("Child (%d) exited with status %d (%d)." % (pid, res, status))
+            res = os.waitstatus_to_exitcode(status)
+            debug("Child (%d) exited with code %d (status %d)." % (pid, res, status))
             if res == 1:
                 self.fail("Child raised an unexpected exception in os.setsid()")
             elif res == 2:

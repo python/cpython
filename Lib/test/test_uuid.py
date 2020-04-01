@@ -657,7 +657,7 @@ class BaseTestUUID:
             os.close(fds[1])
             self.addCleanup(os.close, fds[0])
             parent_value = self.uuid.uuid4().hex
-            os.waitpid(pid, 0)
+            support.wait_process(pid, exitcode=0)
             child_value = os.read(fds[0], 100).decode('latin-1')
 
             self.assertNotEqual(parent_value, child_value)
