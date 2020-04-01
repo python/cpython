@@ -322,6 +322,10 @@ The :func:`os.putenv` and :func:`os.unsetenv` functions are now always
 available.
 (Contributed by Victor Stinner in :issue:`39395`.)
 
+Add :func:`os.waitstatus_to_exitcode` function:
+convert a wait status to an exit code.
+(Contributed by Victor Stinner in :issue:`40094`.)
+
 pathlib
 -------
 

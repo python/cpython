@@ -13771,6 +13771,84 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
 
 #endif
 
+
+/* Only check if WIFEXITED is available: expect that it comes
+   with WEXITSTATUS, WIFSIGNALED, etc.
+
+   os.waitstatus_to_exitcode() is implemented in C and not in Python, so
+   subprocess can safely call it during late Python finalization without
+   risking that used os attributes were set to None by _PyImport_Cleanup(). */
+#if defined(WIFEXITED) || defined(MS_WINDOWS)
+/*[clinic input]
+os.waitstatus_to_exitcode
+
+    status: int
+
+Convert a wait status to an exit code.
+
+On Unix:
+
+* If WIFEXITED(status) is true, return WEXITSTATUS(status).
+* If WIFSIGNALED(status) is true, return -WTERMSIG(status).
+* Otherwise, raise a ValueError.
+
+On Windows, return status shifted right by 8 bits.
+
+On Unix, if the process is being traced or if waitpid() was called with
+WUNTRACED option, the caller must first check if WIFSTOPPED(status) is true.
+This function must not be called if WIFSTOPPED(status) is true.
+[clinic start generated code]*/
+
+static PyObject *
+os_waitstatus_to_exitcode_impl(PyObject *module, int status)
+/*[clinic end generated code: output=c7c2265731f79b7a input=edfa5ca5006276fb]*/
+{
+#ifndef MS_WINDOWS
+    WAIT_TYPE wait_status;
+    WAIT_STATUS_INT(wait_status) = status;
+    int exitcode;
+    if (WIFEXITED(wait_status)) {
+        exitcode = WEXITSTATUS(wait_status);
+        /* Sanity check to provide warranty on the function behavior.
+           It should not occur in practice */
+        if (exitcode < 0) {
+            PyErr_Format(PyExc_ValueError, "invalid WEXITSTATUS: %i", exitcode);
+            return NULL;
+        }
+    }
+    else if (WIFSIGNALED(wait_status)) {
+        int signum = WTERMSIG(wait_status);
+        /* Sanity check to provide warranty on the function behavior.
+           It should not occurs in practice */
+        if (signum <= 0) {
+            PyErr_Format(PyExc_ValueError, "invalid WTERMSIG: %i", signum);
+            return NULL;
+        }
+        exitcode = -signum;
+    } else if (WIFSTOPPED(wait_status)) {
+        /* Status only received if the process is being traced
+           or if waitpid() was called with WUNTRACED option. */
+        int signum = WSTOPSIG(wait_status);
+        PyErr_Format(PyExc_ValueError,
+                     "process stopped by delivery of signal %i",
+                     signum);
+        return NULL;
+    }
+    else {
+        PyErr_Format(PyExc_ValueError, "invalid wait status: %i", status);
+        return NULL;
+    }
+    return PyLong_FromLong(exitcode);
+#else
+    /* Windows implementation: see os.waitpid() implementation
+       which uses _cwait(). */
+    int exitcode = (status >> 8);
+    return PyLong_FromLong(exitcode);
+#endif
+}
+#endif
+
+
 static PyMethodDef posix_methods[] = {
 
     OS_STAT_METHODDEF
@@ -13964,6 +14042,7 @@ static PyMethodDef posix_methods[] = {
     OS__ADD_DLL_DIRECTORY_METHODDEF
     OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif
+    OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
