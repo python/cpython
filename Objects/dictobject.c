@@ -3343,6 +3343,38 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+dict_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(type));
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("dict", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    PyObject *self = dict_new((PyTypeObject *)type, NULL, NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (nargs == 1) {
+        if (dict_update_arg(self, args[0]) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        args++;
+    }
+    if (kwnames != NULL) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
+            if (PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+        }
+    }
+    return self;
+}
+
+static PyObject *
 dict_iter(PyDictObject *dict)
 {
     return dictiter_new(dict, &PyDictIterKey_Type);
@@ -3400,6 +3432,7 @@ PyTypeObject PyDict_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     dict_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = dict_vectorcall,
 };
 
 PyObject *
