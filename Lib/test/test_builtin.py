@@ -1837,7 +1837,21 @@ class PtyTests(unittest.TestCase):
     """Tests that use a pseudo terminal to guarantee stdin and stdout are
     terminals in the test environment"""
 
+    @staticmethod
+    def handle_sighup(signum, frame):
+        # bpo-40140: if the process is the session leader, os.close(fd)
+        # of "pid, fd = pty.fork()" can raise SIGHUP signal:
+        # just ignore the signal.
+        pass
+
     def run_child(self, child, terminal_input):
+        old_sighup = signal.signal(signal.SIGHUP, self.handle_sighup)
+        try:
+            return self._run_child(child, terminal_input)
+        finally:
+            signal.signal(signal.SIGHUP, old_sighup)
+
+    def _run_child(self, child, terminal_input):
         r, w = os.pipe()  # Pipe test results from child back to parent
         try:
             pid, fd = pty.fork()
@@ -1893,12 +1907,11 @@ class PtyTests(unittest.TestCase):
             self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
                       % (len(lines), child_output))
 
-        # Wait until the child process completes before closing the PTY to
-        # prevent sending SIGHUP to the child process.
-        support.wait_process(pid, exitcode=0)
-
-        # Close the PTY
+        # bpo-40155: Close the PTY before waiting for the child process
+        # completion, otherwise the child process hangs on AIX.
         os.close(fd)
+
+        support.wait_process(pid, exitcode=0)
 
         return lines
 
