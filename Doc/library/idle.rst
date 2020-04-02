@@ -142,7 +142,9 @@ Replace...
    Open a search-and-replace dialog.
 
 Go to Line
-   Move cursor to the line number requested and make that line visible.
+   Move the cursor to the beginning of the line requested and make that
+   line visible.  A request past the end of the file goes to the end.
+   Clear any selection and update the line and column status.
 
 Show Completions
    Open a scrollable list allowing selection of keywords and attributes. See
@@ -370,7 +372,8 @@ Paste
 
 Editor windows also have breakpoint functions.  Lines with a breakpoint set are
 specially marked.  Breakpoints only have an effect when running under the
-debugger.  Breakpoints for a file are saved in the user's .idlerc directory.
+debugger.  Breakpoints for a file are saved in the user's ``.idlerc``
+directory.
 
 Set Breakpoint
    Set a breakpoint on the current line.
@@ -680,19 +683,22 @@ clash, or cannot or does not want to run as admin, it might be easiest to
 completely remove Python and start over.
 
 A zombie pythonw.exe process could be a problem.  On Windows, use Task
-Manager to detect and stop one.  Sometimes a restart initiated by a program
-crash or Keyboard Interrupt (control-C) may fail to connect.  Dismissing
-the error box or Restart Shell on the Shell menu may fix a temporary problem.
+Manager to check for one and stop it if there is.  Sometimes a restart
+initiated by a program crash or Keyboard Interrupt (control-C) may fail
+to connect.  Dismissing the error box or using Restart Shell on the Shell
+menu may fix a temporary problem.
 
 When IDLE first starts, it attempts to read user configuration files in
-~/.idlerc/ (~ is one's home directory).  If there is a problem, an error
+``~/.idlerc/`` (~ is one's home directory).  If there is a problem, an error
 message should be displayed.  Leaving aside random disk glitches, this can
-be prevented by never editing the files by hand, using the configuration
-dialog, under Options, instead Options.  Once it happens, the solution may
-be to delete one or more of the configuration files.
+be prevented by never editing the files by hand.  Instead, use the
+configuration dialog, under Options.  Once there is an error in a user
+configuration file, the best solution may be to delete it and start over
+with the settings dialog.
 
 If IDLE quits with no message, and it was not started from a console, try
-starting from a console (``python -m idlelib)`` and see if a message appears.
+starting it from a console or terminal (``python -m idlelib``) and see if
+this results in an error message.
 
 Running user code
 ^^^^^^^^^^^^^^^^^
@@ -863,13 +869,13 @@ Or click the TOC (Table of Contents) button and select a section
 header in the opened box.
 
 Help menu entry "Python Docs" opens the extensive sources of help,
-including tutorials, available at docs.python.org/x.y, where 'x.y'
+including tutorials, available at ``docs.python.org/x.y``, where 'x.y'
 is the currently running Python version.  If your system
 has an off-line copy of the docs (this may be an installation option),
 that will be opened instead.
 
 Selected URLs can be added or removed from the help menu at any time using the
-General tab of the Configure IDLE dialog .
+General tab of the Configure IDLE dialog.
 
 .. _preferences:
 
@@ -878,9 +884,9 @@ Setting preferences
 
 The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.
-Non-default user settings are saved in a .idlerc directory in the user's
+Non-default user settings are saved in a ``.idlerc`` directory in the user's
 home directory.  Problems caused by bad user configuration files are solved
-by editing or deleting one or more of the files in .idlerc.
+by editing or deleting one or more of the files in ``.idlerc``.
 
 On the Font tab, see the text sample for the effect of font face and size
 on multiple characters in multiple languages.  Edit the sample to add

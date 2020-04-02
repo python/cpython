@@ -173,8 +173,12 @@ def get_layout(ns):
     if ns.include_stable:
         yield from in_build(PYTHON_STABLE_DLL_NAME)
 
+    found_any = False
     for dest, src in rglob(ns.build, "vcruntime*.dll"):
+        found_any = True
         yield dest, src
+    if not found_any:
+        log_error("Failed to locate vcruntime DLL in the build.")
 
     yield "LICENSE.txt", ns.build / "LICENSE.txt"
 

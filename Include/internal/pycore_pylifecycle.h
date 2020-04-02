@@ -33,14 +33,13 @@ PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 extern PyStatus _PyUnicode_Init(void);
 extern int _PyStructSequence_Init(void);
-extern int _PyLong_Init(void);
+extern int _PyLong_Init(PyThreadState *tstate);
 extern PyStatus _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
 extern PyObject * _PyBuiltin_Init(PyThreadState *tstate);
 extern PyStatus _PySys_Create(
     PyThreadState *tstate,
     PyObject **sysmod_p);
-extern PyStatus _PySys_SetPreliminaryStderr(PyObject *sysdict);
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_InitMain(PyThreadState *tstate);
@@ -52,6 +51,7 @@ extern int _PyFloat_Init(void);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
 extern PyStatus _PyTypes_Init(void);
+extern PyStatus _PyTypes_InitSlotDefs(void);
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 extern PyStatus _PyGC_Init(PyThreadState *tstate);
 
@@ -77,13 +77,13 @@ extern void _PyGC_Fini(PyThreadState *tstate);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(PyThreadState *tstate);
-extern void _PyLong_Fini(void);
+extern void _PyLong_Fini(PyThreadState *tstate);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
 extern void _PyTraceMalloc_Fini(void);
 extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
-extern void _PyGILState_Init(PyThreadState *tstate);
+extern PyStatus _PyGILState_Init(PyThreadState *tstate);
 extern void _PyGILState_Fini(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(PyThreadState *tstate);
@@ -104,7 +104,7 @@ PyAPI_FUNC(void) _PyErr_Print(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyErr_Display(PyObject *file, PyObject *exception,
                                 PyObject *value, PyObject *tb);
 
-PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(struct pyruntimestate *runtime);
+PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

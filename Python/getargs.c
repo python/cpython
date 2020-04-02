@@ -531,7 +531,7 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                       toplevel ? "expected %d arguments, not %.50s" :
                       "must be %d-item sequence, not %.50s",
                   n,
-                  arg == Py_None ? "None" : arg->ob_type->tp_name);
+                  arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
         return msgbuf;
     }
 
@@ -621,7 +621,7 @@ _PyArg_BadArgument(const char *fname, const char *displayname,
     PyErr_Format(PyExc_TypeError,
                  "%.200s() %.200s must be %.50s, not %.50s",
                  fname, displayname, expected,
-                 arg == Py_None ? "None" : arg->ob_type->tp_name);
+                 arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
 }
 
 static const char *
@@ -636,7 +636,7 @@ converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
     else {
         PyOS_snprintf(msgbuf, bufsize,
                       "must be %.50s, not %.50s", expected,
-                      arg == Py_None ? "None" : arg->ob_type->tp_name);
+                      arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
     }
     return msgbuf;
 }
@@ -1331,7 +1331,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             type = va_arg(*p_va, PyTypeObject*);
             p = va_arg(*p_va, PyObject **);
             format++;
-            if (PyType_IsSubtype(arg->ob_type, type))
+            if (PyType_IsSubtype(Py_TYPE(arg), type))
                 *p = arg;
             else
                 return converterr(type->tp_name, arg, msgbuf, bufsize);
@@ -2053,14 +2053,18 @@ find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
     Py_ssize_t i, nkwargs;
 
     nkwargs = PyTuple_GET_SIZE(kwnames);
-    for (i=0; i < nkwargs; i++) {
+    for (i = 0; i < nkwargs; i++) {
         PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
 
-        /* ptr==ptr should match in most cases since keyword keys
-           should be interned strings */
+        /* kwname == key will normally find a match in since keyword keys
+           should be interned strings; if not retry below in a new loop. */
         if (kwname == key) {
             return kwstack[i];
         }
+    }
+
+    for (i = 0; i < nkwargs; i++) {
+        PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
         assert(PyUnicode_Check(kwname));
         if (_PyUnicode_EQ(kwname, key)) {
             return kwstack[i];
@@ -2783,6 +2787,7 @@ _PyArg_UnpackStack(PyObject *const *args, Py_ssize_t nargs, const char *name,
 
 
 #undef _PyArg_NoKeywords
+#undef _PyArg_NoKwnames
 #undef _PyArg_NoPositional
 
 /* For type constructors that don't take keyword args
@@ -2809,7 +2814,6 @@ _PyArg_NoKeywords(const char *funcname, PyObject *kwargs)
     return 0;
 }
 
-
 int
 _PyArg_NoPositional(const char *funcname, PyObject *args)
 {
@@ -2824,6 +2828,23 @@ _PyArg_NoPositional(const char *funcname, PyObject *args)
 
     PyErr_Format(PyExc_TypeError, "%.200s() takes no positional arguments",
                     funcname);
+    return 0;
+}
+
+int
+_PyArg_NoKwnames(const char *funcname, PyObject *kwnames)
+{
+    if (kwnames == NULL) {
+        return 1;
+    }
+
+    assert(PyTuple_CheckExact(kwnames));
+
+    if (PyTuple_GET_SIZE(kwnames) == 0) {
+        return 1;
+    }
+
+    PyErr_Format(PyExc_TypeError, "%s() takes no keyword arguments", funcname);
     return 0;
 }
 

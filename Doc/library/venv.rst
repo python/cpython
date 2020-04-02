@@ -27,7 +27,7 @@ See :pep:`405` for more information about Python virtual environments.
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
+   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
 
 
 Creating virtual environments
@@ -122,7 +122,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     * ``prompt`` -- a String to be used after virtual environment is activated
       (defaults to ``None`` which means directory name of the environment would
-      be used).
+      be used). If the special string ``"."`` is provided, the basename of the
+      current directory is used as the prompt.
 
     * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
 

@@ -148,8 +148,8 @@ available for subclassing as well:
    The sequence must be accessed in strictly sequential order; random access
    and :meth:`~io.TextIOBase.readline` cannot be mixed.
 
-   With *mode* you can specify which file mode will be passed to :func:`open`.
-   It must be ``'r'`` or ``'rb'``.
+   With *mode* you can specify which file mode will be passed to :func:`open`. It
+   must be one of ``'r'``, ``'rU'``, ``'U'`` and ``'rb'``.
 
    The *openhook*, when given, must be a function that takes two arguments,
    *filename* and *mode*, and returns an accordingly opened file-like object. You
@@ -166,14 +166,15 @@ available for subclassing as well:
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
+   .. deprecated:: 3.4
+      The ``'rU'`` and ``'U'`` modes.
+
    .. deprecated:: 3.8
       Support for :meth:`__getitem__` method is deprecated.
 
    .. versionchanged:: 3.8
       The keyword parameter *mode* and *openhook* are now keyword-only.
 
-   .. versionchanged:: 3.9
-      The ``'rU'`` and ``'U'`` modes have been removed.
 
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is

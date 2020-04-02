@@ -468,7 +468,7 @@ class FastCallTests(unittest.TestCase):
                     self.check_result(result, expected)
 
     def test_vectorcall_dict(self):
-        # Test _PyObject_FastCallDict()
+        # Test PyObject_VectorcallDict()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
@@ -487,7 +487,7 @@ class FastCallTests(unittest.TestCase):
                 self.check_result(result, expected)
 
     def test_vectorcall(self):
-        # Test _PyObject_Vectorcall()
+        # Test PyObject_Vectorcall()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
@@ -594,7 +594,7 @@ class TestPEP590(unittest.TestCase):
         # 1. vectorcall using PyVectorcall_Call()
         #   (only for objects that support vectorcall directly)
         # 2. normal call
-        # 3. vectorcall using _PyObject_Vectorcall()
+        # 3. vectorcall using PyObject_Vectorcall()
         # 4. call as bound method
         # 5. call using functools.partial
 

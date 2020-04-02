@@ -2,6 +2,7 @@
 /* Method object implementation */
 
 #include "Python.h"
+#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pymem.h"
@@ -56,7 +57,8 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
             vectorcall = cfunction_vectorcall_O;
             break;
         default:
-            PyErr_SetString(PyExc_SystemError, "bad call flags");
+            PyErr_Format(PyExc_SystemError,
+                         "%s() method: bad call flags", ml->ml_name);
             return NULL;
     }
 
@@ -222,7 +224,7 @@ static PyGetSetDef meth_getsets [] = {
 #define OFF(x) offsetof(PyCFunctionObject, x)
 
 static PyMemberDef meth_members[] = {
-    {"__module__",    T_OBJECT,     OFF(m_module), PY_WRITE_RESTRICTED},
+    {"__module__",    T_OBJECT,     OFF(m_module), 0},
     {NULL}
 };
 
@@ -234,7 +236,7 @@ meth_repr(PyCFunctionObject *m)
                                    m->m_ml->ml_name);
     return PyUnicode_FromFormat("<built-in method %s of %s object at %p>",
                                m->m_ml->ml_name,
-                               m->m_self->ob_type->tp_name,
+                               Py_TYPE(m->m_self)->tp_name,
                                m->m_self);
 }
 
@@ -298,7 +300,7 @@ PyTypeObject PyCFunction_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-    _Py_TPFLAGS_HAVE_VECTORCALL,                /* tp_flags */
+    Py_TPFLAGS_HAVE_VECTORCALL,                 /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)meth_traverse,                /* tp_traverse */
     0,                                          /* tp_clear */

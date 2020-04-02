@@ -2077,6 +2077,7 @@ class TestSignatureObject(unittest.TestCase):
         P = inspect.Parameter
 
         self.assertEqual(str(S()), '()')
+        self.assertEqual(repr(S().parameters), 'mappingproxy(OrderedDict())')
 
         def test(po, pk, pod=42, pkd=100, *args, ko, **kwargs):
             pass
@@ -3180,6 +3181,11 @@ class TestSignatureObject(unittest.TestCase):
         l = list(signature.parameters)
         self.assertEqual(l, unsorted_keyword_only_parameters)
 
+    def test_signater_parameters_is_ordered(self):
+        p1 = inspect.signature(lambda x, y: None).parameters
+        p2 = inspect.signature(lambda y, x: None).parameters
+        self.assertNotEqual(p1, p2)
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
@@ -3681,6 +3687,10 @@ class TestBoundArguments(unittest.TestCase):
         ba.apply_defaults()
         self.assertEqual(list(ba.arguments.items()), [('a', 'spam')])
 
+    def test_signature_bound_arguments_arguments_type(self):
+        def foo(a): pass
+        ba = inspect.signature(foo).bind(1)
+        self.assertIs(type(ba.arguments), dict)
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
     def test_signature_get_bound_param(self):

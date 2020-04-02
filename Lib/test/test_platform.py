@@ -236,9 +236,7 @@ class PlatformTest(unittest.TestCase):
 
         else:
             # parent
-            cpid, sts = os.waitpid(pid, 0)
-            self.assertEqual(cpid, pid)
-            self.assertEqual(sts, 0)
+            support.wait_process(pid, exitcode=0)
 
     def test_libc_ver(self):
         # check that libc_ver(executable) doesn't raise an exception
