@@ -2091,7 +2091,7 @@ class MozillaCookieJar(FileCookieJar):
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
         with open(filename, "w") as f:
-            f.write(self.header)
+            f.write(NETSCAPE_HEADER_TEXT)
             now = time.time()
             for cookie in self:
                 domain = cookie.domain
