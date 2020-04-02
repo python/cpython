@@ -1,0 +1,3 @@
+AttributeError exceptions thrown when getting an attribute before falling
+back to __getattr__ are now shown as the cause. This can prevent some
+important context from being accidentally surpressed.

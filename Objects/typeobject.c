@@ -6649,8 +6649,25 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
         Py_DECREF(getattribute);
     }
     if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
+        /* grab the original error state as we might need to set it as
+           the cause to avoid losing context below.
+           (this clears the error for us) */
+        PyObject *exc_type, *exc_value, *exc_traceback;
+        exc_type = exc_value = exc_traceback = NULL;
+        PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
+
         res = call_attribute(self, getattr, name);
+        /* if both attempts to get the attribute failed, set the
+           original exception as the cause so the full context is
+           preserved */
+        if (res == NULL) {
+            _PyErr_ChainExceptionCause(exc_type, exc_value, exc_traceback);
+        }
+        else {
+            Py_DECREF(exc_type);
+            Py_XDECREF(exc_value);
+            Py_XDECREF(exc_traceback);
+        }
     }
     Py_DECREF(getattr);
     return res;

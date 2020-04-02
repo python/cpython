@@ -502,6 +502,33 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
     }
 }
 
+/* Like PyErr_ChainExceptions except it sets __cause__ instead
+   of context. */
+void
+_PyErr_ChainExceptionCause(PyObject *exc, PyObject *val, PyObject *tb)
+{
+    if (exc == NULL)
+        return;
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PyErr_Occurred(tstate)) {
+        PyObject *exc2, *val2, *tb2;
+        _PyErr_Fetch(tstate, &exc2, &val2, &tb2);
+        _PyErr_NormalizeException(tstate, &exc, &val, &tb);
+        if (tb != NULL) {
+            PyException_SetTraceback(val, tb);
+            Py_DECREF(tb);
+        }
+        Py_DECREF(exc);
+        _PyErr_NormalizeException(tstate, &exc2, &val2, &tb2);
+        PyException_SetCause(val2, val);
+        _PyErr_Restore(tstate, exc2, val2, tb2);
+    }
+    else {
+        _PyErr_Restore(tstate, exc, val, tb);
+    }
+}
+
 static PyObject *
 _PyErr_FormatVFromCause(PyThreadState *tstate, PyObject *exception,
                         const char *format, va_list vargs)

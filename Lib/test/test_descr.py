@@ -2280,6 +2280,31 @@ order (MRO) for bases """
         else:
             self.fail("expected ZeroDivisionError from bad property")
 
+    def test_property_fallback_exception(self):
+        # If a property throws an AttributeError and there's a getattr hook,
+        # make sure that we don't lose the original error context.
+        class A:
+            @property
+            def foo(self):
+                a = 0
+                a.accidental_attribute_error
+                return 42
+            def __getattr__(self, attr):
+                if attr == 'foo':
+                    raise AttributeError("foo not supported in getattr")
+                else:
+                    return 'fallback'
+
+        a = A()
+        self.assertEqual(a.bar, 'fallback')
+        self.assertEqual(a.baz, 'fallback')
+        with self.assertRaises(AttributeError) as raised:
+            x = a.foo
+        self.assertIn("foo not supported in getattr", str(raised.exception))
+        self.assertIsNotNone(raised.exception.__cause__)
+        cause = raised.exception.__cause__
+        self.assertIn("accidental_attribute_error", str(cause))
+
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_properties_doc_attrib(self):
