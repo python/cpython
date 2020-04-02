@@ -15,13 +15,6 @@
 
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
 
-#define ADD_INT(module, value)                         \
-    do {                                               \
-        if (PyModule_AddIntMacro(module, value) < 0) { \
-            return -1;                                 \
-        }                                              \
-    } while (0)                                        \
-
 /*[clinic input]
 module resource
 [clinic start generated code]*/
