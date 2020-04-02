@@ -349,6 +349,13 @@ resource_methods[] = {
 
 static int resource_exec(PyObject *module)
 {
+#define ADD_INT(module, value)                         \
+    do {                                               \
+        if (PyModule_AddIntMacro(module, value) < 0) { \
+            return -1;                                 \
+        }                                              \
+    } while (0)                                        \
+
     PyObject *v;
 
     /* Add some symbolic constants to the module */
@@ -478,16 +485,20 @@ static int resource_exec(PyObject *module)
     {
         v = PyLong_FromLong((long) RLIM_INFINITY);
     }
-    if (v) {
-        if (PyModule_AddObject(module, "RLIM_INFINITY", v) < 0) {
-            Py_DECREF(v);
-            return -1;
-        }
-    } else {
+
+    if (!v) {
         return -1;
     }
+
+    if (PyModule_AddObject(module, "RLIM_INFINITY", v) < 0) {
+        Py_DECREF(v);
+        return -1;
+    }
+
     initialized = 1;
     return 0;
+
+#undef ADD_INT
 }
 
 static struct PyModuleDef_Slot resource_slots[] = {
