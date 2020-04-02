@@ -94,7 +94,106 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DebugFull</GenerateDebugInformation>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</EnableCOMDATFolding>
+      <LinkTimeCodeGeneration Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</EnableCOMDATFolding>
+      <LinkTimeCodeGeneration Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</EnableCOMDATFolding>
+      <LinkTimeCodeGeneration Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">DebugFull</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">DebugFull</GenerateDebugInformation>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</EnableCOMDATFolding>
     </Link>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">AnySuitable</InlineFunctionExpansion>
+    </ClCompile>
+    <ClCompile>
+      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</WholeProgramOptimization>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">/Zo</AdditionalOptions>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">Custom</Optimization>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AnySuitable</InlineFunctionExpansion>
+    </ClCompile>
+    <ClCompile>
+      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</WholeProgramOptimization>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/Zo</AdditionalOptions>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Custom</Optimization>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AnySuitable</InlineFunctionExpansion>
+    </ClCompile>
+    <ClCompile>
+      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</WholeProgramOptimization>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/Zo</AdditionalOptions>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Custom</Optimization>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">/Zo /Gw</AdditionalOptions>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">/Zo /Gw</AdditionalOptions>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">/Zo /Gw</AdditionalOptions>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">/Zo /Gw</AdditionalOptions>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">/Zo /Gw</AdditionalOptions>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">/Zo /Gw</AdditionalOptions>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">/Zo /Gw</AdditionalOptions>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">/Zo /Gw</AdditionalOptions>
+    </ClCompile>
+    <ClCompile>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/Zo /Gw</AdditionalOptions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\overlapped.c" />
