@@ -52,8 +52,15 @@ def _debug(*args):
 
 HTTPONLY_ATTR = "HTTPOnly"
 DEFAULT_HTTP_PORT = str(http.client.HTTP_PORT)
+NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File")
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
+NETSCAPE_HEADER_TEXT =  """\
+# Netscape HTTP Cookie File
+# http://curl.haxx.se/rfc/cookie_spec.html
+# This is a generated file!  Do not edit.
+
+"""
 
 def _warn_unhandled_exception():
     # There are a few catch-all except: statements in this module, for
@@ -2004,20 +2011,11 @@ class MozillaCookieJar(FileCookieJar):
     header by default (Mozilla can cope with that).
 
     """
-    httponly_prefix = "#HttpOnly_"
-    magic_re = re.compile("#( Netscape)? HTTP Cookie File")
-    header = """\
-# Netscape HTTP Cookie File
-# http://curl.haxx.se/rfc/cookie_spec.html
-# This is a generated file!  Do not edit.
-
-"""
 
     def _really_load(self, f, filename, ignore_discard, ignore_expires):
         now = time.time()
 
-        magic = f.readline()
-        if not self.magic_re.search(magic):
+        if not NETSCAPE_MAGIC_RGX.match(f.readline()):
             raise LoadError(
                 "%r does not look like a Netscape format cookies file" %
                 filename)
@@ -2029,10 +2027,12 @@ class MozillaCookieJar(FileCookieJar):
 
                 if line == "": break
 
-                # detect httponly flag if present
-                if line.startswith(self.httponly_prefix):
+                # httponly is a cookie flag as defined in rfc6265
+                # when encoded in a netscape cookie file, 
+                # the line is prepended with "#HttpOnly_"
+                if line.startswith("#HttpOnly_"):
                     rest[HTTPONLY_ATTR] = ""
-                    line = line[len(self.httponly_prefix):]
+                    line = line[10:]
 
                 # last field may be absent, so keep any trailing tab
                 if line.endswith("\n"): line = line[:-1]
