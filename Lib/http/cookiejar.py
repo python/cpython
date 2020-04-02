@@ -51,6 +51,7 @@ def _debug(*args):
     return logger.debug(*args)
 
 HTTPONLY_ATTR = "HTTPOnly"
+HTTPONLY_PREFIX = "#HttpOnly_"
 DEFAULT_HTTP_PORT = str(http.client.HTTP_PORT)
 NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File")
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
@@ -2030,9 +2031,9 @@ class MozillaCookieJar(FileCookieJar):
                 # httponly is a cookie flag as defined in rfc6265
                 # when encoded in a netscape cookie file, 
                 # the line is prepended with "#HttpOnly_"
-                if line.startswith("#HttpOnly_"):
+                if line.startswith(HTTPONLY_PREFIX):
                     rest[HTTPONLY_ATTR] = ""
-                    line = line[10:]
+                    line = line[len(HTTPONLY_PREFIX):]
 
                 # last field may be absent, so keep any trailing tab
                 if line.endswith("\n"): line = line[:-1]
@@ -2117,7 +2118,7 @@ class MozillaCookieJar(FileCookieJar):
                     name = cookie.name
                     value = cookie.value
                 if cookie.has_nonstandard_attr(HTTPONLY_ATTR):
-                    domain = self.httponly_prefix + domain
+                    domain = HTTPONLY_PREFIX + domain
                 f.write(
                     "\t".join([domain, initial_dot, cookie.path,
                                secure, expires, name, value])+
