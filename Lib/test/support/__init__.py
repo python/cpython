@@ -3407,11 +3407,15 @@ def wait_process(pid, *, exitcode, timeout=None):
     Wait until process pid completes and check that the process exit code is
     exitcode.
 
-    Raise an AssertionError if the process exit code is not equal to exitcode.
+    Raise an AssertionError if the process exit code is not equal to
+    exitcode. Use exitcode=None to not check the process exit code. The
+    returned process exit code can be used to check it in the caller.
 
-    If the process runs longer than timeout seconds (SHORT_TIMEOUT by default),
-    kill the process (if signal.SIGKILL is available) and raise an
-    AssertionError. The timeout feature is not available on Windows.
+    If the process runs longer than *timeout* seconds (SHORT_TIMEOUT by
+    default), kill the process and raise an AssertionError. The timeout feature
+    is not available on Windows.
+
+    Return the process exit code.
     """
     if os.name != "nt":
         import signal
@@ -3447,10 +3451,12 @@ def wait_process(pid, *, exitcode, timeout=None):
         pid2, status = os.waitpid(pid, 0)
 
     exitcode2 = os.waitstatus_to_exitcode(status)
-    if exitcode2 != exitcode:
+    if exitcode is not None and exitcode2 != exitcode:
         raise AssertionError(f"process {pid} exited with code {exitcode2}, "
                              f"but exit code {exitcode} is expected")
 
     # sanity check: it should not fail in practice
     if pid2 != pid:
         raise AssertionError(f"pid {pid2} != pid {pid}")
+
+    return exitcode2

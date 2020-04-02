@@ -1893,12 +1893,14 @@ class PtyTests(unittest.TestCase):
             self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
                       % (len(lines), child_output))
 
-        # Wait until the child process completes before closing the PTY to
-        # prevent sending SIGHUP to the child process.
-        support.wait_process(pid, exitcode=0)
-
-        # Close the PTY
+        # bpo-40140, bpo-40155: Close the PTY before waiting for the child
+        # process completion, otherwise the child process blocks on AIX
+        # and Solaris.
         os.close(fd)
+
+        # The child process can be terminated by SIGHUP when the PTY is closed
+        exitcode = support.wait_process(pid, exitcode=None)
+        self.assertIn(exitcode, (0, -signal.SIGHUP))
 
         return lines
 

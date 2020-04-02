@@ -831,11 +831,14 @@ The :mod:`test.support` module defines the following functions:
    *exitcode*.
 
    Raise an :exc:`AssertionError` if the process exit code is not equal to
-   *exitcode*.
+   *exitcode*. Use ``exitcode=None`` to not check the process exit code. The
+   returned process exit code can be used to check it in the caller.
 
    If the process runs longer than *timeout* seconds (:data:`SHORT_TIMEOUT` by
    default), kill the process and raise an :exc:`AssertionError`. The timeout
    feature is not available on Windows.
+
+    Return the process exit code.
 
    .. versionadded:: 3.9
 
