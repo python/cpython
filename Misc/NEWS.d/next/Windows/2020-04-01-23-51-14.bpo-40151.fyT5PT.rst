@@ -1,0 +1,10 @@
+Similarly to bpo-40145, this tweaks build options to reduce the size of the
+_overlapped binary.
+
+_overlapped.pyd   32 bit release size reduction:   -3KB
+
+_overlapped_d.pyd 32 bit debug   size reduction:  -21KB
+
+_overlapped.pyd   64 bit release size reduction:   -3KB
+
+_overlapped_d.pyd 64 bit debug   size reduction:  -33KB
