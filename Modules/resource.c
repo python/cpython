@@ -340,7 +340,8 @@ resource_methods[] = {
 /* Module initialization */
 
 
-static int resource_exec(PyObject *module)
+static int
+resource_exec(PyObject *module)
 {
 #define ADD_INT(module, value)                                    \
     do {                                                          \
@@ -471,14 +472,12 @@ static int resource_exec(PyObject *module)
 #endif
 
     PyObject *v;
-
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
         v = PyLong_FromLongLong((long long) RLIM_INFINITY);
     } else
     {
         v = PyLong_FromLong((long) RLIM_INFINITY);
     }
-
     if (!v) {
         return -1;
     }
