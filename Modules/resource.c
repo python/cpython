@@ -349,8 +349,6 @@ static int resource_exec(PyObject *module)
         }                                                         \
     } while (0)
 
-    PyObject *v;
-
     /* Add some symbolic constants to the module */
     Py_INCREF(PyExc_OSError);
     if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
@@ -471,6 +469,8 @@ static int resource_exec(PyObject *module)
 #ifdef RLIMIT_NPTS
     ADD_INT(module, RLIMIT_NPTS);
 #endif
+
+    PyObject *v;
 
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
         v = PyLong_FromLongLong((long long) RLIM_INFINITY);
