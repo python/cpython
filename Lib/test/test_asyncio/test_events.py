@@ -365,6 +365,8 @@ class EventLoopTestsMixin:
 
         f2 = self.loop.run_in_executor(None, run)
         f2.cancel()
+        self.loop.run_until_complete(
+                self.loop.shutdown_default_executor())
         self.loop.close()
         self.loop.call_soon = patched_call_soon
         self.loop.call_soon_threadsafe = patched_call_soon
