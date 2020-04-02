@@ -1893,12 +1893,18 @@ class PtyTests(unittest.TestCase):
             self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
                       % (len(lines), child_output))
 
-        # Wait until the child process completes before closing the PTY to
-        # prevent sending SIGHUP to the child process.
-        support.wait_process(pid, exitcode=0)
+        if sys.platform == "linux" or not os.name == "posix":
+            # Wait until the child process completes before closing the PTY to
+            # prevent sending SIGHUP to the child process.
+            support.wait_process(pid, exitcode=0)
 
-        # Close the PTY
-        os.close(fd)
+            # Close the PTY
+            os.close(fd)
+        else:
+            # Other posix need to close the pty for the child to exit normally
+            # Close the PTY
+            os.close(fd)
+            support.wait_process(pid, exitcode=0)
 
         return lines
 
