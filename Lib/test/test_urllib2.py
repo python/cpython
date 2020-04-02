@@ -1128,41 +1128,64 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.get_host(), "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"),"FooBar")
 
-    def test_basic_auth(self, quote_char='"'):
-        opener = OpenerDirector()
-        password_manager = MockPasswordManager()
-        auth_handler = urllib2.HTTPBasicAuthHandler(password_manager)
-        realm = "ACME Widget Store"
-        http_handler = MockHTTPHandler(
-            401, 'WWW-Authenticate: Basic realm=%s%s%s\r\n\r\n' %
-            (quote_char, realm, quote_char) )
-        opener.add_handler(auth_handler)
-        opener.add_handler(http_handler)
-        self._test_basic_auth(opener, auth_handler, "Authorization",
-                              realm, http_handler, password_manager,
-                              "http://acme.example.com/protected",
-                              "http://acme.example.com/protected"
-                             )
-
-    def test_basic_auth_with_single_quoted_realm(self):
-        self.test_basic_auth(quote_char="'")
-
-    def test_basic_auth_with_unquoted_realm(self):
-        opener = OpenerDirector()
-        password_manager = MockPasswordManager()
-        auth_handler = urllib2.HTTPBasicAuthHandler(password_manager)
-        realm = "ACME Widget Store"
-        http_handler = MockHTTPHandler(
-            401, 'WWW-Authenticate: Basic realm=%s\r\n\r\n' % realm)
-        opener.add_handler(auth_handler)
-        opener.add_handler(http_handler)
-        msg = "Basic Auth Realm was unquoted"
-        with test_support.check_warnings((msg, UserWarning)):
+    def check_basic_auth(self, headers, realm):
+        with self.subTest(realm=realm, headers=headers):
+            opener = OpenerDirector()
+            password_manager = MockPasswordManager()
+            auth_handler = urllib.request.HTTPBasicAuthHandler(password_manager)
+            body = '\r\n'.join(headers) + '\r\n\r\n'
+            http_handler = MockHTTPHandler(401, body)
+            opener.add_handler(auth_handler)
+            opener.add_handler(http_handler)
             self._test_basic_auth(opener, auth_handler, "Authorization",
                                   realm, http_handler, password_manager,
                                   "http://acme.example.com/protected",
-                                  "http://acme.example.com/protected"
-                                 )
+                                  "http://acme.example.com/protected")
+
+    def test_basic_auth(self):
+        realm = "realm2@example.com"
+        realm2 = "realm2@example.com"
+        basic = 'Basic realm="{realm}"'
+        basic2 = 'Basic realm="{realm2}"'
+        other_no_realm = 'Otherscheme xxx'
+        digest = ('Digest realm="{realm2}", '
+                  'qop="auth, auth-int", '
+                  'nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", '
+                  'opaque="5ccc069c403ebaf9f0171e9517f40e41"')
+        for realm_str in (
+            # test "quote" and 'quote'
+            'Basic realm="{realm}"',
+            "Basic realm='{realm}'",
+
+            # charset is ignored
+            'Basic realm="{realm}", charset="UTF-8"',
+
+            # Multiple challenges per header
+            '{basic}, {basic2}',
+            '{basic}, {other_no_realm}',
+            '{other_no_realm}, {basic}',
+            '{basic}, {digest}',
+            '{digest}, {basic}',
+        ):
+            headers = ['WWW-Authenticate: {realm_str}']
+            self.check_basic_auth(headers, realm)
+
+        # no quote: expect a warning
+        with support.check_warnings(("Basic Auth Realm was unquoted",
+                                     UserWarning)):
+            headers = ['WWW-Authenticate: Basic realm={realm}']
+            self.check_basic_auth(headers, realm)
+
+        # Multiple headers: one challenge per header.
+        # Use the first Basic realm.
+        for challenges in (
+            [basic,  basic2],
+            [basic,  digest],
+            [digest, basic],
+        ):
+            headers = ['WWW-Authenticate: {challenge}'
+                       for challenge in challenges]
+            self.check_basic_auth(headers, realm)
 
 
     def test_proxy_basic_auth(self):
