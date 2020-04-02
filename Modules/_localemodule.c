@@ -764,7 +764,8 @@ _locale_exec(PyObject *module)
 
 #ifdef HAVE_LANGINFO_H
     for (i = 0; langinfo_constants[i].name; i++) {
-        if (PyModule_AddIntConstant(module, langinfo_constants[i].name,
+        if (PyModule_AddIntConstant(module,
+                                    langinfo_constants[i].name,
                                     langinfo_constants[i].value) < 0) {
             return -1;
         }
