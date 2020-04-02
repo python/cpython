@@ -342,12 +342,12 @@ resource_methods[] = {
 
 static int resource_exec(PyObject *module)
 {
-#define ADD_INT(module, value)                         \
-    do {                                               \
-        if (PyModule_AddIntMacro(module, value) < 0) { \
-            return -1;                                 \
-        }                                              \
-    } while (0)                                        \
+#define ADD_INT(module, value)                                    \
+    do {                                                          \
+        if (PyModule_AddIntConstant(module, #value, value) < 0) { \
+            return -1;                                            \
+        }                                                         \
+    } while (0)
 
     PyObject *v;
 
