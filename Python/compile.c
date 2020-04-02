@@ -4057,10 +4057,7 @@ validate_keywords(struct compiler *c, asdl_seq* keywords) {
         if (key->arg == NULL) {
             continue;
         }
-        for (int j = 0; j < nkeywords; j++) {
-            if (i == j) {
-                continue;
-            }
+        for (int j = i+1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
             if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
                 PyObject *msg = PyUnicode_FromFormat("keyword argument repeated: %U", key->arg);
