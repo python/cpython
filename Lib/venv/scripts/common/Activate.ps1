@@ -1,6 +1,6 @@
 <#
 .Synopsis
-Activate a Python virtual environment for the current Powershell session.
+Activate a Python virtual environment for the current PowerShell session.
 
 .Description
 Pushes the python executable for a virtual environment to the front of the
@@ -39,14 +39,13 @@ parentheses) while the virtual environment is active.
 
 .Notes
 On Windows, it may be required to enable this Activate.ps1 script by setting the
-execution policy for the user. You can do this by issuing the following Powershell
-command from a Powershell command window:
+execution policy for the user. You can do this by issuing the following PowerShell
+command:
 
 PS C:\> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-Please see About Execution Policies: 
-https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-7
-for more information.
+For more information on Execution Policies: 
+ttps:/go.microsoft.com/fwlink/?LinkID=135170
 
 #>
 Param(
