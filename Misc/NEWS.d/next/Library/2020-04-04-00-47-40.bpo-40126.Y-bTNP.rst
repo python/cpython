@@ -1,0 +1,3 @@
+Fixed reverting multiple patches in unittest.mock. Patcher's ``__exit__()``
+is now never called if its ``__enter__()`` is failed. Returning true from
+``__exit__()`` silences now the exception.
