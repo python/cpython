@@ -1132,7 +1132,7 @@ checkpath(PyObject* tag)
 
     if (PyUnicode_Check(tag)) {
         const Py_ssize_t len = PyUnicode_GET_LENGTH(tag);
-        void *data = PyUnicode_DATA(tag);
+        const void *data = PyUnicode_DATA(tag);
         unsigned int kind = PyUnicode_KIND(tag);
         if (len >= 3 && PyUnicode_READ(kind, data, 0) == '{' && (
                 PyUnicode_READ(kind, data, 1) == '}' || (

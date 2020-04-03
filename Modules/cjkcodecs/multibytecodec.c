@@ -228,7 +228,7 @@ multibytecodec_encerror(MultibyteCodec *codec,
         Py_ssize_t r;
         Py_ssize_t inpos;
         int kind;
-        void *data;
+        const void *data;
 
         replchar = PyUnicode_FromOrdinal('?');
         if (replchar == NULL)
@@ -457,7 +457,7 @@ multibytecodec_encode(MultibyteCodec *codec,
     Py_ssize_t finalsize, r = 0;
     Py_ssize_t datalen;
     int kind;
-    void *data;
+    const void *data;
 
     if (PyUnicode_READY(text) < 0)
         return NULL;

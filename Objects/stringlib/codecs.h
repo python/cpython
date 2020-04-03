@@ -259,7 +259,7 @@ InvalidContinuation3:
 Py_LOCAL_INLINE(char *)
 STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
                         PyObject *unicode,
-                        STRINGLIB_CHAR *data,
+                        const STRINGLIB_CHAR *data,
                         Py_ssize_t size,
                         _Py_error_handler error_handler,
                         const char *errors)

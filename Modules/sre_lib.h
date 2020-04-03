@@ -13,7 +13,7 @@
 /* This file is included three times, with different character settings */
 
 LOCAL(int)
-SRE(at)(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
+SRE(at)(SRE_STATE* state, const SRE_CHAR* ptr, SRE_CODE at)
 {
     /* check if pointer is at given position */
 
@@ -101,7 +101,7 @@ SRE(at)(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 }
 
 LOCAL(int)
-SRE(charset)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
+SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
 {
     /* check if character is a member of the given set */
 
@@ -188,7 +188,7 @@ SRE(charset)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
 }
 
 LOCAL(int)
-SRE(charset_loc_ignore)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
+SRE(charset_loc_ignore)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
 {
     SRE_CODE lo, up;
     lo = sre_lower_locale(ch);
@@ -199,15 +199,15 @@ SRE(charset_loc_ignore)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
     return up != lo && SRE(charset)(state, set, up);
 }
 
-LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int toplevel);
+LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel);
 
 LOCAL(Py_ssize_t)
-SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
+SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
 {
     SRE_CODE chr;
     SRE_CHAR c;
-    SRE_CHAR* ptr = (SRE_CHAR *)state->ptr;
-    SRE_CHAR* end = (SRE_CHAR *)state->end;
+    const SRE_CHAR* ptr = (const SRE_CHAR *)state->ptr;
+    const SRE_CHAR* end = (const SRE_CHAR *)state->end;
     Py_ssize_t i;
 
     /* adjust end */
@@ -335,14 +335,14 @@ SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
 
 #if 0 /* not used in this release */
 LOCAL(int)
-SRE(info)(SRE_STATE* state, SRE_CODE* pattern)
+SRE(info)(SRE_STATE* state, const SRE_CODE* pattern)
 {
     /* check if an SRE_OP_INFO block matches at the current position.
        returns the number of SRE_CODE objects to skip if successful, 0
        if no match */
 
-    SRE_CHAR* end = (SRE_CHAR*) state->end;
-    SRE_CHAR* ptr = (SRE_CHAR*) state->ptr;
+    const SRE_CHAR* end = (const SRE_CHAR*) state->end;
+    const SRE_CHAR* ptr = (const SRE_CHAR*) state->ptr;
     Py_ssize_t i;
 
     /* check minimal length */
@@ -531,8 +531,8 @@ do { \
 typedef struct {
     Py_ssize_t last_ctx_pos;
     Py_ssize_t jump;
-    SRE_CHAR* ptr;
-    SRE_CODE* pattern;
+    const SRE_CHAR* ptr;
+    const SRE_CODE* pattern;
     Py_ssize_t count;
     Py_ssize_t lastmark;
     Py_ssize_t lastindex;
@@ -546,9 +546,9 @@ typedef struct {
 /* check if string matches the given pattern.  returns <0 for
    error, 0 for failure, and 1 for success */
 LOCAL(Py_ssize_t)
-SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int toplevel)
+SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
 {
-    SRE_CHAR* end = (SRE_CHAR *)state->end;
+    const SRE_CHAR* end = (const SRE_CHAR *)state->end;
     Py_ssize_t alloc_pos, ctx_pos = -1;
     Py_ssize_t i, ret = 0;
     Py_ssize_t jump;

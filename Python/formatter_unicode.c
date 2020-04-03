@@ -62,7 +62,7 @@ get_integer(PyObject *str, Py_ssize_t *ppos, Py_ssize_t end,
     Py_ssize_t accumulator, digitval, pos = *ppos;
     int numdigits;
     int kind = PyUnicode_KIND(str);
-    void *data = PyUnicode_DATA(str);
+    const void *data = PyUnicode_DATA(str);
 
     accumulator = numdigits = 0;
     for (; pos < end; pos++, numdigits++) {
@@ -170,7 +170,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
 {
     Py_ssize_t pos = start;
     int kind = PyUnicode_KIND(format_spec);
-    void *data = PyUnicode_DATA(format_spec);
+    const void *data = PyUnicode_DATA(format_spec);
     /* end-pos is used throughout this code to specify the length of
        the input string */
 #define READ_spec(index) PyUnicode_READ(kind, data, index)
@@ -443,7 +443,7 @@ parse_number(PyObject *s, Py_ssize_t pos, Py_ssize_t end,
 {
     Py_ssize_t remainder;
     int kind = PyUnicode_KIND(s);
-    void *data = PyUnicode_DATA(s);
+    const void *data = PyUnicode_DATA(s);
 
     while (pos<end && Py_ISDIGIT(PyUnicode_READ(kind, data, pos)))
         ++pos;

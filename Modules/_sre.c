@@ -351,7 +351,7 @@ state_reset(SRE_STATE* state)
     data_stack_dealloc(state);
 }
 
-static void*
+static const void*
 getstring(PyObject* string, Py_ssize_t* p_length,
           int* p_isbytes, int* p_charsize,
           Py_buffer *view)
@@ -398,11 +398,11 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     Py_ssize_t length;
     int isbytes, charsize;
-    void* ptr;
+    const void* ptr;
 
     memset(state, 0, sizeof(SRE_STATE));
 
-    state->mark = PyMem_New(void *, pattern->groups * 2);
+    state->mark = PyMem_New(const void *, pattern->groups * 2);
     if (!state->mark) {
         PyErr_NoMemory();
         goto err;
@@ -891,7 +891,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
     Py_ssize_t status;
     Py_ssize_t n;
     Py_ssize_t i;
-    void* last;
+    const void* last;
 
     assert(self->codesize != 0);
 
@@ -984,7 +984,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
     PyObject* item;
     PyObject* filter;
     PyObject* match;
-    void* ptr;
+    const void* ptr;
     Py_ssize_t status;
     Py_ssize_t n;
     Py_ssize_t i, b, e;
@@ -1895,7 +1895,7 @@ match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
     int isbytes, charsize;
     Py_buffer view;
     PyObject *result;
-    void* ptr;
+    const void* ptr;
     Py_ssize_t i, j;
 
     assert(0 <= index && index < self->groups);

@@ -435,7 +435,7 @@ normalize_module(PyObject *filename)
 {
     PyObject *module;
     int kind;
-    void *data;
+    const void *data;
     Py_ssize_t len;
 
     len = PyUnicode_GetLength(filename);
@@ -519,7 +519,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
     /* Print "  source_line\n" */
     if (sourceline) {
         int kind;
-        void *data;
+        const void *data;
         Py_ssize_t i, len;
         Py_UCS4 ch;
         PyObject *truncated;
