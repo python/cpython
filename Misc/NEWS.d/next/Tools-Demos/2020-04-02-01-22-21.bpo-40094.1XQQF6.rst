@@ -1,0 +1,3 @@
+Fix ``which.py`` script exit code: it now uses
+:func:`os.waitstatus_to_exitcode` to convert :func:`os.system` exit status
+into an exit code.

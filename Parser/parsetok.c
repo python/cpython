@@ -37,11 +37,13 @@ growable_comment_array_init(growable_comment_array *arr, size_t initial_size) {
 static int
 growable_comment_array_add(growable_comment_array *arr, int lineno, char *comment) {
     if (arr->num_items >= arr->size) {
-        arr->size *= 2;
-        arr->items = realloc(arr->items, arr->size * sizeof(*arr->items));
-        if (!arr->items) {
+        size_t new_size = arr->size * 2;
+        void *new_items_array = realloc(arr->items, new_size * sizeof(*arr->items));
+        if (!new_items_array) {
             return 0;
         }
+        arr->items = new_items_array;
+        arr->size = new_size;
     }
 
     arr->items[arr->num_items].lineno = lineno;
