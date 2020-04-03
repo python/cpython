@@ -252,6 +252,12 @@ Miscellaneous options
    options).  See also :envvar:`PYTHONDEBUG`.
 
 
+.. cmdoption:: -p old|new
+
+   Use the new PEG parser, if arg is ``new``.  If arg is ``old``, use the old
+   parser.  See also :envvar:`PYTHONPARSER`.
+
+
 .. cmdoption:: -E
 
    Ignore all :envvar:`PYTHON*` environment variables, e.g.
@@ -572,6 +578,13 @@ conflict.
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-d` option.  If set to an integer, it is equivalent to specifying
    :option:`-d` multiple times.
+
+
+.. envvar:: PYTHONPARSER
+
+   If this is set to ``new``, the new PEG parser is used.  If it is set to
+   ``old``, the old parser is used.  Other values are ignored.  See also the
+   :option:`-p` option.
 
 
 .. envvar:: PYTHONINSPECT

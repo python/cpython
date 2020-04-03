@@ -37,6 +37,8 @@ Options and arguments (and corresponding environment variables):\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : debug output from parser; also PYTHONDEBUG=x\n\
+-p arg : use the new PEG parser, if arg is new; if arg is old, use the old\n\
+         parser; also PYTHONPARSER=arg\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
 -h     : print this help message and exit (also --help)\n\
 ";
@@ -642,6 +644,7 @@ config_init_defaults(PyConfig *config)
 
     config->isolated = 0;
     config->use_environment = 1;
+    config->use_peg = 0;
     config->site_import = 1;
     config->bytes_warning = 0;
     config->inspect = 0;
@@ -789,6 +792,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
+    COPY_ATTR(use_peg);
     COPY_ATTR(install_signal_handlers);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
@@ -892,6 +896,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
     SET_ITEM_INT(dev_mode);
+    SET_ITEM_INT(use_peg);
     SET_ITEM_INT(install_signal_handlers);
     SET_ITEM_INT(use_hash_seed);
     SET_ITEM_UINT(hash_seed);
@@ -1317,6 +1322,16 @@ config_read_env_vars(PyConfig *config)
     }
     if (config_get_env(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
+    }
+
+    const char *parser = config_get_env(config, "PYTHONPARSER");
+    if (parser) {
+        if (strcmp(parser, "new") == 0) {
+            config->use_peg = 1;
+        }
+        else if (strcmp(parser, "old") == 0) {
+            config->use_peg = 0;
+        }
     }
 
     if (config->pythonpath_env == NULL) {
@@ -2003,6 +2018,15 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             config->use_hash_seed = 0;
             break;
 
+        case 'p':
+            if (wcscmp(_PyOS_optarg, L"new") == 0) {
+                config->use_peg = 1;
+            }
+            else if (wcscmp(_PyOS_optarg, L"old") == 0) {
+                config->use_peg = 0;
+            }
+            break;
+
         /* This space reserved for other options */
 
         default:
@@ -2505,6 +2529,7 @@ PyConfig_Read(PyConfig *config)
     assert(config->isolated >= 0);
     assert(config->use_environment >= 0);
     assert(config->dev_mode >= 0);
+    assert(config->use_peg >= 0);
     assert(config->install_signal_handlers >= 0);
     assert(config->use_hash_seed >= 0);
     assert(config->faulthandler >= 0);

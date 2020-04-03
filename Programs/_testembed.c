@@ -486,6 +486,9 @@ static int test_init_from_config(void)
 
     config.install_signal_handlers = 0;
 
+    putenv("PYTHONPARSER=");
+    config.use_peg = 1;
+
     /* FIXME: test use_environment */
 
     putenv("PYTHONHASHSEED=42");

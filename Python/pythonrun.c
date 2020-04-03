@@ -1023,6 +1023,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     mod_ty mod;
     PyArena *arena;
     PyObject *filename;
+    int use_peg = _PyInterpreterState_GET_UNSAFE()->config.use_peg;
 
     filename = _PyUnicode_FromId(&PyId_string); /* borrowed */
     if (filename == NULL)
@@ -1032,11 +1033,13 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     if (arena == NULL)
         return NULL;
 
-    // I left this here so when you run 'nm python | grep PyPegen' you can see
-    // that the symbol is included and this function is called.
-    mod = PyPegen_ASTFromString("1+1", arena);
+    if (use_peg) {
+        mod = PyPegen_ASTFromString(str, arena);
+    }
+    else {
+        mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    }
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
     if (mod != NULL)
         ret = run_mod(mod, filename, globals, locals, flags, arena);
     PyArena_Free(arena);
@@ -1051,6 +1054,7 @@ PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globa
     mod_ty mod;
     PyArena *arena = NULL;
     PyObject *filename;
+    int use_peg = _PyInterpreterState_GET_UNSAFE()->config.use_peg;
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
     if (filename == NULL)
@@ -1060,8 +1064,14 @@ PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globa
     if (arena == NULL)
         goto exit;
 
-    mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, 0, 0,
-                                     flags, NULL, arena);
+    if (use_peg) {
+        mod = PyPegen_ASTFromFile(filename_str, arena);
+    }
+    else {
+        mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, 0, 0,
+                                         flags, NULL, arena);
+    }
+
     if (closeit)
         fclose(fp);
     if (mod == NULL) {
