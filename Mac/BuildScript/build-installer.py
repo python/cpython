@@ -25,11 +25,11 @@ Sphinx, build-installer.py should also be converted to use python3!
 For 10.6 or greater deployment targets, build-installer builds and links
 with its own copy of Tcl/Tk 8.6 and the rest of this paragraph does not
 apply.  Otherwise, build-installer requires an installed third-party version
-of Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets) or Tcl/TK 8.5
-(for 10.6 or later) installed in /Library/Frameworks.  When installed,
-the Python built by this script will attempt to dynamically link first to
-Tcl and Tk frameworks in /Library/Frameworks if available otherwise fall
-back to the ones in /System/Library/Framework.  For the build, we recommend
+of Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets) installed in
+/Library/Frameworks.  For 10.4 or 10.5, the Python built by this script
+when installed will attempt to dynamically link first to Tcl and Tk frameworks
+in /Library/Frameworks if available otherwise fall back to the ones in
+/System/Library/Framework.  For 10.4 or 10.5, we recommend
 installing the most recent ActiveTcl 8.5 or 8.4 version, depending
 on the deployment target.  The actual version linked to depends on the
 path of /Library/Frameworks/{Tcl,Tk}.framework/Versions/Current.
@@ -213,9 +213,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.0.2t",
-              url="https://www.openssl.org/source/openssl-1.0.2t.tar.gz",
-              checksum='ef66581b80f06eae42f5268bc0b50c6d',
+              name="OpenSSL 1.0.2u",
+              url="https://www.openssl.org/source/old/1.0.2/openssl-1.0.2u.tar.gz",
+              checksum='cdc2638f789ecc2db2c91488265686c1',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -311,9 +311,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.28.0",
-              url="https://www.sqlite.org/2019/sqlite-autoconf-3280000.tar.gz",
-              checksum='3c68eb400f8354605736cd55400e1572',
+              name="SQLite 3.31.1",
+              url="https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz",
+              checksum='2d0a553534c521504e3ac3ad3b90f125',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
