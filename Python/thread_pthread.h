@@ -701,11 +701,11 @@ _PyThread_at_fork_reinit(PyThread_type_lock *lock)
         return -1;
     }
 
-    /* bpo-6721, bpo-40089: The old lock can be in an inconistent state.
+    /* bpo-6721, bpo-40089: The old lock can be in an inconsistent state.
        fork() can be called in the middle of an operation on the lock done by
        another thread. So don't call PyThread_free_lock(*lock).
 
-       Leak memory on purpose. Don't release the memory neither since the
+       Leak memory on purpose. Don't release the memory either since the
        address of a mutex is relevant. Putting two mutexes at the same address
        can lead to problems. */
 
