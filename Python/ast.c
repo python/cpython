@@ -3096,7 +3096,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 if (!e)
                     return NULL;
                 kw = keyword(key, e, chch->n_lineno, chch->n_col_offset,
-                             chch->n_end_lineno, chch->n_end_col_offset, c->c_arena);
+                             e->end_lineno, e->end_col_offset, c->c_arena);
 
                 if (!kw)
                     return NULL;
