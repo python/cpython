@@ -591,6 +591,9 @@ However, they still can't be compared to standard :class:`Enum` enumerations::
     [0, 1]
 
 
+Note that the :class:`IntEnum` class is defined by mixing in :class:`int` to :class:`Enum`, which has some surprising
+ramifications; see `Others`_ for details.
+
 IntFlag
 ^^^^^^^
 
