@@ -7588,6 +7588,13 @@ kwarg_rule(Parser *p)
 {
     KeywordOrStarred* res = NULL;
     int mark = p->mark;
+    if (p->mark == p->fill && fill_token(p) < 0) {
+        return NULL;
+    }
+    int start_lineno = p->tokens[mark]->lineno;
+    UNUSED(start_lineno); // Only used by EXTRA macro
+    int start_col_offset = p->tokens[mark]->col_offset;
+    UNUSED(start_col_offset); // Only used by EXTRA macro
     { // NAME '=' expression
         expr_ty a;
         expr_ty b;
@@ -7600,7 +7607,15 @@ kwarg_rule(Parser *p)
             (b = expression_rule(p))
         )
         {
-            res = keyword_or_starred ( p , CHECK ( _Py_keyword ( a -> v . Name . id , b , p -> arena ) ) , 1 );
+            Token *token = get_last_nonnwhitespace_token(p);
+            if (token == NULL) {
+                return NULL;
+            }
+            int end_lineno = token->end_lineno;
+            UNUSED(end_lineno); // Only used by EXTRA macro
+            int end_col_offset = token->end_col_offset;
+            UNUSED(end_col_offset); // Only used by EXTRA macro
+            res = keyword_or_starred ( p , CHECK ( _Py_keyword ( a -> v . Name . id , b , EXTRA ) ) , 1 );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
@@ -7631,7 +7646,15 @@ kwarg_rule(Parser *p)
             (a = expression_rule(p))
         )
         {
-            res = keyword_or_starred ( p , CHECK ( _Py_keyword ( NULL , a , p -> arena ) ) , 1 );
+            Token *token = get_last_nonnwhitespace_token(p);
+            if (token == NULL) {
+                return NULL;
+            }
+            int end_lineno = token->end_lineno;
+            UNUSED(end_lineno); // Only used by EXTRA macro
+            int end_col_offset = token->end_col_offset;
+            UNUSED(end_col_offset); // Only used by EXTRA macro
+            res = keyword_or_starred ( p , CHECK ( _Py_keyword ( NULL , a , EXTRA ) ) , 1 );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }

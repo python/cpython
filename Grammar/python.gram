@@ -451,9 +451,9 @@ starred_expression[expr_ty]:
     | '*' a=expression { _Py_Starred(a, Load, EXTRA) }
 kwarg[KeywordOrStarred*]:
     | a=NAME '=' b=expression {
-        keyword_or_starred(p, CHECK(_Py_keyword(a->v.Name.id, b, p->arena)), 1) }
+        keyword_or_starred(p, CHECK(_Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
     | a=starred_expression { keyword_or_starred(p, a, 0) }
-    | '**' a=expression { keyword_or_starred(p, CHECK(_Py_keyword(NULL, a, p->arena)), 1) }
+    | '**' a=expression { keyword_or_starred(p, CHECK(_Py_keyword(NULL, a, EXTRA)), 1) }
 
 # NOTE: star_targets may contain *bitwise_or, targets may not.
 star_targets[expr_ty]:
