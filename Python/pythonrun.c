@@ -1034,7 +1034,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
         return NULL;
 
     if (use_peg) {
-        mod = PyPegen_ASTFromString(str, arena);
+        mod = PyPegen_ASTFromString(str, start, arena);
     }
     else {
         mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
@@ -1065,7 +1065,7 @@ PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globa
         goto exit;
 
     if (use_peg) {
-        mod = PyPegen_ASTFromFile(filename_str, arena);
+        mod = PyPegen_ASTFromFile(filename_str, start, arena);
     }
     else {
         mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, 0, 0,

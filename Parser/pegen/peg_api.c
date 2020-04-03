@@ -4,33 +4,33 @@
 #include "pegen.h"
 
 mod_ty
-PyPegen_ASTFromString(const char *str, PyArena *arena)
+PyPegen_ASTFromString(const char *str, int mode, PyArena *arena)
 {
     PyObject *filename_ob = PyUnicode_FromString("<string>");
     if (filename_ob == NULL) {
         return NULL;
     }
 
-    mod_ty result = run_parser_from_string(str, START, filename_ob, arena);
+    mod_ty result = run_parser_from_string(str, mode, filename_ob, arena);
     Py_XDECREF(filename_ob);
     return result;
 }
 
 mod_ty
-PyPegen_ASTFromFile(const char *filename, PyArena *arena)
+PyPegen_ASTFromFile(const char *filename, int mode, PyArena *arena)
 {
     PyObject *filename_ob = PyUnicode_FromString(filename);
     if (filename_ob == NULL) {
         return NULL;
     }
 
-    mod_ty result = run_parser_from_file(filename, START, filename_ob, arena);
+    mod_ty result = run_parser_from_file(filename, mode, filename_ob, arena);
     Py_XDECREF(filename_ob);
     return result;
 }
 
 PyCodeObject *
-PyPegen_CodeObjectFromString(const char *str)
+PyPegen_CodeObjectFromString(const char *str, int mode)
 {
     PyArena *arena = PyArena_New();
     if (arena == NULL) {
@@ -44,7 +44,7 @@ PyPegen_CodeObjectFromString(const char *str)
         goto error;
     }
 
-    mod_ty res = PyPegen_ASTFromString(str, arena);
+    mod_ty res = PyPegen_ASTFromString(str, mode, arena);
     if (res == NULL) {
         goto error;
     }
@@ -58,7 +58,7 @@ error:
 }
 
 PyCodeObject *
-PyPegen_CodeObjectFromFile(const char *filename)
+PyPegen_CodeObjectFromFile(const char *filename, int mode)
 {
     PyArena *arena = PyArena_New();
     if (arena == NULL) {
@@ -72,7 +72,7 @@ PyPegen_CodeObjectFromFile(const char *filename)
         goto error;
     }
 
-    mod_ty res = PyPegen_ASTFromFile(filename, arena);
+    mod_ty res = PyPegen_ASTFromFile(filename, mode, arena);
     if (res == NULL) {
         goto error;
     }

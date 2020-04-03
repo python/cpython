@@ -11,10 +11,14 @@ parse(Parser *p)
 
     // Run parser
     void *result = NULL;
-    if (p->start_rule_func == START) {
-        result = start_rule(p);
-    } else if (p->start_rule_func == EXPRESSIONS) {
-        result = expressions_rule(p);
+    if (p->start_rule == Py_file_input) {
+        result = file_rule(p);
+    } else if (p->start_rule == Py_single_input) {
+        result = interactive_rule(p);
+    } else if (p->start_rule == Py_eval_input) {
+        result = eval_rule(p);
+    } else if (p->start_rule == Py_fstring_input) {
+        result = fstring_rule(p);
     }
 
     return result;
@@ -22,11 +26,17 @@ parse(Parser *p)
 
 // The end
 '''
+file[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+interactive[mod_ty]: a=statement_newline { Interactive(a, p->arena) }
+eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { Expression(a, p->arena) }
+fstring[expr_ty]: star_expressions
 
-start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
 statements[asdl_seq*]: a=statement+ { seq_flatten(p, a) }
-
 statement[asdl_seq*]: a=compound_stmt { singleton_seq(p, a) } | simple_stmt
+statement_newline[asdl_seq*]:
+    | a=compound_stmt NEWLINE { singleton_seq(p, a) }
+    | simple_stmt
+    | NEWLINE { singleton_seq(p, CHECK(_Py_Pass(EXTRA))) }
 simple_stmt[asdl_seq*]:
     | a=small_stmt !';' NEWLINE { singleton_seq(p, a) } # Not needed, there for speedup
     | a=';'.small_stmt+ [';'] NEWLINE { a }
@@ -34,7 +44,7 @@ simple_stmt[asdl_seq*]:
 # will throw a SyntaxError.
 small_stmt[stmt_ty] (memo):
     | assignment
-    | e=expressions { _Py_Expr(e, EXTRA) }
+    | e=star_expressions { _Py_Expr(e, EXTRA) }
     | &'return' return_stmt
     | &('import' | 'from') import_stmt
     | &'raise' raise_stmt
@@ -62,9 +72,9 @@ assignment:
     | a=('(' b=inside_paren_ann_assign_target ')' { b }
          | ann_assign_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
         _Py_AnnAssign(a, b, c, 0, EXTRA)}
-    | a=(z=star_targets '=' { z })+ b=(yield_expr | expressions) {
+    | a=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) {
          _Py_Assign(a, b, NULL, EXTRA) }
-    | a=target b=augassign c=(yield_expr | expressions) {
+    | a=target b=augassign c=(yield_expr | star_expressions) {
          _Py_AugAssign(a, b->kind, c, EXTRA) }
 
 augassign[AugOperator*]:
@@ -131,9 +141,9 @@ while_stmt[stmt_ty]:
     | 'while' a=named_expression ':' b=block c=[else_block] { _Py_While(a, b, c, EXTRA) }
 
 for_stmt[stmt_ty]:
-    | ASYNC 'for' t=star_targets 'in' ex=expressions ':' b=block el=[else_block] {
+    | ASYNC 'for' t=star_targets 'in' ex=star_expressions ':' b=block el=[else_block] {
         _Py_AsyncFor(t, ex, b, el, NULL, EXTRA) }
-    | 'for' t=star_targets 'in' ex=expressions ':' b=block el=[else_block] {
+    | 'for' t=star_targets 'in' ex=star_expressions ':' b=block el=[else_block] {
         _Py_For(t, ex, b, el, NULL, EXTRA) }
 
 with_stmt[stmt_ty]:
@@ -158,7 +168,7 @@ except_block[excepthandler_ty]:
 finally_block[asdl_seq*]: 'finally' ':' a=block { a }
 
 return_stmt[stmt_ty]:
-    | 'return' a=[expressions] { _Py_Return(a, EXTRA) }
+    | 'return' a=[star_expressions] { _Py_Return(a, EXTRA) }
 
 raise_stmt[stmt_ty]:
     | 'raise' a=expression b=['from' z=expression { z }] { _Py_Raise(a, b, EXTRA) }
@@ -223,7 +233,7 @@ class_def_raw[stmt_ty]:
 block[asdl_seq*] (memo): NEWLINE INDENT a=statements DEDENT { a } | simple_stmt
 
 expressions_list[asdl_seq*]: a=','.star_expression+ [','] { a }
-expressions[expr_ty]:
+star_expressions[expr_ty]:
     | a=star_expression b=(',' c=star_expression { c })+ [','] {
         _Py_Tuple(CHECK(seq_insert_in_front(p, a, b)), Load, EXTRA) }
     | a=star_expression ',' { _Py_Tuple(CHECK(singleton_seq(p, a)), Load, EXTRA) }
@@ -239,7 +249,14 @@ star_named_expression[expr_ty]:
 named_expression[expr_ty]:
     | a=NAME ':=' b=expression { _Py_NamedExpr(CHECK(set_expr_context(p, a, Store)), b, EXTRA) }
     | expression
-annotated_rhs[expr_ty]: yield_expr | expressions
+
+annotated_rhs[expr_ty]: yield_expr | star_expressions
+
+expressions[expr_ty]:
+    | a=expression b=(',' c=expression { c })+ [','] {
+        _Py_Tuple(CHECK(seq_insert_in_front(p, a, b)), Load, EXTRA) }
+    | a=expression ',' { _Py_Tuple(CHECK(singleton_seq(p, a)), Load, EXTRA) }
+    | expression
 expression[expr_ty] (memo):
     | a=disjunction 'if' b=disjunction 'else' c=expression { _Py_IfExp(b, a, c, EXTRA) }
     | disjunction
@@ -408,7 +425,7 @@ for_if_clauses[asdl_seq*]:
 
 yield_expr[expr_ty]:
     | 'yield' 'from' a=expression { _Py_YieldFrom(a, EXTRA) }
-    | 'yield' a=[expressions] { _Py_Yield(a, EXTRA) }
+    | 'yield' a=[star_expressions] { _Py_Yield(a, EXTRA) }
 
 arguments[expr_ty] (memo):
     | a=args [','] { a }

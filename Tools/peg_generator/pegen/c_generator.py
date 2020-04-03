@@ -224,7 +224,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         if self.skip_actions:
             mode = 0
         else:
-            mode = int(self.rules["start"].type == "mod_ty")
+            mode = int(self.rules["start"].type == "mod_ty") if "start" in self.rules else 1
             if mode == 1 and self.grammar.metas.get("bytecode"):
                 mode += 1
         modulename = self.grammar.metas.get("modulename", "parse")

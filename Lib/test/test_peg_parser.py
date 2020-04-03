@@ -631,6 +631,14 @@ FSTRINGS_TRACEBACKS = {
     ),
 }
 
+EXPRESSIONS_TEST_CASES = [
+    ("expression_add", "1+1"),
+    ("expression_add_2", "a+b"),
+    ("expression_call", "f(a, b=2, **kw)"),
+    ("expression_tuple", "1, 2, 3"),
+    ("expression_tuple_one_value", "1,")
+]
+
 
 def cleanup_source(source: Any) -> str:
     if isinstance(source, str):
@@ -661,6 +669,10 @@ GOOD_BUT_FAIL_TEST_IDS, GOOD_BUT_FAIL_SOURCES = prepare_test_cases(
 )
 
 FAIL_TEST_IDS, FAIL_SOURCES = prepare_test_cases(FAIL_TEST_CASES)
+
+EXPRESSIONS_TEST_IDS, EXPRESSIONS_TEST_SOURCES = prepare_test_cases(
+    EXPRESSIONS_TEST_CASES
+)
 
 
 class ASTGenerationTest(unittest.TestCase):
@@ -706,3 +718,13 @@ class ASTGenerationTest(unittest.TestCase):
             with self.assertRaises(SyntaxError) as se:
                 peg_parser.parse_string(dedent(source))
             self.assertEqual(error_text, se.exception.text)
+
+    def test_correct_ast_generatrion_eval(self) -> None:
+        for source in EXPRESSIONS_TEST_SOURCES:
+            actual_ast = peg_parser.parse_string(source, mode='eval')
+            expected_ast = ast.parse(source, mode='eval')
+            self.assertEqual(
+                ast.dump(actual_ast, include_attributes=True),
+                ast.dump(expected_ast, include_attributes=True),
+                f"Wrong AST generation for source: {source}",
+            )

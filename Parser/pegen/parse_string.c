@@ -586,7 +586,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         return NULL;
     }
 
-    Parser *p2 = Parser_New(tok, EXPRESSIONS, STRING_INPUT, p->arena);
+    Parser *p2 = Parser_New(tok, Py_fstring_input, STRING_INPUT, p->arena);
 
     expr = parse(p2);
 

@@ -14,12 +14,6 @@ enum INPUT_MODE {
 };
 typedef enum INPUT_MODE INPUT_MODE;
 
-enum START_RULE {
-    START,
-    EXPRESSIONS
-};
-typedef enum START_RULE START_RULE;
-
 typedef struct _memo {
     int type;
     void *node;
@@ -47,7 +41,7 @@ typedef struct {
     PyArena *arena;
     KeywordToken **keywords;
     int n_keyword_lists;
-    START_RULE start_rule_func;
+    int start_rule;
     INPUT_MODE input_mode;
     jmp_buf error_env;
 } Parser;
@@ -142,10 +136,10 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
 #define CHECK_NULL_ALLOWED(result) CHECK_CALL_NULL_ALLOWED(p, result)
 
 PyObject *new_identifier(Parser *, char *);
-Parser *Parser_New(struct tok_state *, START_RULE, int, PyArena *);
+Parser *Parser_New(struct tok_state *, int, int, PyArena *);
 void Parser_Free(Parser *);
-mod_ty run_parser_from_file(const char *, START_RULE, PyObject *, PyArena *);
-mod_ty run_parser_from_string(const char *, START_RULE, PyObject *, PyArena *);
+mod_ty run_parser_from_file(const char *, int, PyObject *, PyArena *);
+mod_ty run_parser_from_string(const char *, int, PyObject *, PyArena *);
 asdl_seq *singleton_seq(Parser *, void *);
 asdl_seq *seq_insert_in_front(Parser *, void *, asdl_seq *);
 asdl_seq *seq_flatten(Parser *, asdl_seq *);
