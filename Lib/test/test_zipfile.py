@@ -1808,7 +1808,6 @@ class OtherTests(unittest.TestCase):
 
     def test_comments(self):
         """Check that comments on the archive are handled properly."""
-
         # check default comment is empty
         with zipfile.ZipFile(TESTFN, mode="w") as zipf:
             self.assertEqual(zipf.comment, b'')
@@ -1853,13 +1852,18 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zipf.comment, b"an updated comment")
 
         # check that comments are correctly shortened in append mode
+        # and the file is indeed truncated
+        original_comment = b"original comment that's longer"
+        one_byte_shorter_comment =  original_comment[:-1]
         with zipfile.ZipFile(TESTFN,mode="w") as zipf:
-            zipf.comment = b"original comment that's longer"
+            zipf.comment = original_comment
             zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        original_zip_size = os.path.getsize(TESTFN)
         with zipfile.ZipFile(TESTFN,mode="a") as zipf:
-            zipf.comment = b"shorter comment"
+            zipf.comment = one_byte_shorter_comment
+        self.assertEqual(original_zip_size, os.path.getsize(TESTFN) + 1)
         with zipfile.ZipFile(TESTFN,mode="r") as zipf:
-            self.assertEqual(zipf.comment, b"shorter comment")
+            self.assertEqual(zipf.comment, one_byte_shorter_comment)
 
     def test_unicode_comment(self):
         with zipfile.ZipFile(TESTFN, "w", zipfile.ZIP_STORED) as zipf:
