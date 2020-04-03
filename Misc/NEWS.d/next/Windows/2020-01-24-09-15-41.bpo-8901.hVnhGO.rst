@@ -1,1 +1,3 @@
 Ignore the Windows registry when the ``-E`` option is used.
+Add Mingw-w64 64-bit windows machine, fix issue
+in https://bugs.python.org/issue40167
