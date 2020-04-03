@@ -1,2 +1,0 @@
-Replace the dead link to the Tkinter 8.5 reference by John Shipman, New
-Mexico Tech, with a link to the archive.org copy.

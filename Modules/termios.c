@@ -42,8 +42,16 @@ sys.stdin.fileno(), or a file object, such as sys.stdin itself.");
 typedef struct {
   PyObject *TermiosError;
 } termiosmodulestate;
-#define modulestate(o) ((termiosmodulestate *)PyModule_GetState(o))
-#define modulestate_global modulestate(PyState_FindModule(&termiosmodule))
+
+static inline termiosmodulestate*
+get_termios_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (termiosmodulestate *)state;
+}
+
+#define modulestate_global get_termios_state(PyState_FindModule(&termiosmodule))
 
 static int fdconv(PyObject* obj, void* p)
 {
@@ -613,6 +621,39 @@ static struct constant {
 #ifdef B460800
     {"B460800", B460800},
 #endif
+#ifdef B500000
+    {"B500000", B500000},
+#endif
+#ifdef B576000
+    { "B576000", B576000},
+#endif
+#ifdef B921600
+    { "B921600", B921600},
+#endif
+#ifdef B1000000
+    { "B1000000", B1000000},
+#endif
+#ifdef B1152000
+    { "B1152000", B1152000},
+#endif
+#ifdef B1500000
+    { "B1500000", B1500000},
+#endif
+#ifdef B2000000
+    { "B2000000", B2000000},
+#endif
+#ifdef B2500000
+    { "B2500000", B2500000},
+#endif
+#ifdef B3000000
+    { "B3000000", B3000000},
+#endif
+#ifdef B3500000
+    { "B3500000", B3500000},
+#endif
+#ifdef B4000000
+    { "B4000000", B4000000},
+#endif
 #ifdef CBAUD
     {"CBAUD", CBAUD},
 #endif
@@ -943,12 +984,12 @@ static struct constant {
 };
 
 static int termiosmodule_traverse(PyObject *m, visitproc visit, void *arg) {
-    Py_VISIT(modulestate(m)->TermiosError);
+    Py_VISIT(get_termios_state(m)->TermiosError);
     return 0;
 }
 
 static int termiosmodule_clear(PyObject *m) {
-    Py_CLEAR(modulestate(m)->TermiosError);
+    Py_CLEAR(get_termios_state(m)->TermiosError);
     return 0;
 }
 
@@ -983,7 +1024,7 @@ PyInit_termios(void)
         return NULL;
     }
 
-    termiosmodulestate *state = PyModule_GetState(m);
+    termiosmodulestate *state = get_termios_state(m);
     state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);
     if (state->TermiosError == NULL) {
         return NULL;

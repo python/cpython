@@ -1,1 +1,0 @@
-Warn more strongly and clearly about pickle insecurity

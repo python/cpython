@@ -66,6 +66,7 @@ import pkgutil
 import platform
 import re
 import sys
+import sysconfig
 import time
 import tokenize
 import urllib.parse
@@ -392,9 +393,7 @@ class Doc:
 
     docmodule = docclass = docroutine = docother = docproperty = docdata = fail
 
-    def getdocloc(self, object,
-                  basedir=os.path.join(sys.base_exec_prefix, "lib",
-                                       "python%d.%d" %  sys.version_info[:2])):
+    def getdocloc(self, object, basedir=sysconfig.get_path('stdlib')):
         """Return the location of module docs or None"""
 
         try:

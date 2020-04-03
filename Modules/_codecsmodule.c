@@ -1039,13 +1039,17 @@ static PyMethodDef _codecs_functions[] = {
     {NULL, NULL}                /* sentinel */
 };
 
+static PyModuleDef_Slot _codecs_slots[] = {
+    {0, NULL}
+};
+
 static struct PyModuleDef codecsmodule = {
         PyModuleDef_HEAD_INIT,
         "_codecs",
         NULL,
-        -1,
+        0,
         _codecs_functions,
-        NULL,
+        _codecs_slots,
         NULL,
         NULL,
         NULL
@@ -1054,5 +1058,5 @@ static struct PyModuleDef codecsmodule = {
 PyMODINIT_FUNC
 PyInit__codecs(void)
 {
-        return PyModule_Create(&codecsmodule);
+    return PyModuleDef_Init(&codecsmodule);
 }

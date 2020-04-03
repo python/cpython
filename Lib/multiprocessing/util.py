@@ -102,6 +102,29 @@ def log_to_stderr(level=None):
     _log_to_stderr = True
     return _logger
 
+
+# Abstract socket support
+
+def _platform_supports_abstract_sockets():
+    if sys.platform == "linux":
+        return True
+    if hasattr(sys, 'getandroidapilevel'):
+        return True
+    return False
+
+
+def is_abstract_socket_namespace(address):
+    if not address:
+        return False
+    if isinstance(address, bytes):
+        return address[0] == 0
+    elif isinstance(address, str):
+        return address[0] == "\0"
+    raise TypeError('address type of {address!r} unrecognized')
+
+
+abstract_sockets_supported = _platform_supports_abstract_sockets()
+
 #
 # Function returning a temp directory which will be removed on exit
 #
@@ -439,3 +462,28 @@ def close_fds(*fds):
     """Close each file descriptor given as an argument"""
     for fd in fds:
         os.close(fd)
+
+
+def _cleanup_tests():
+    """Cleanup multiprocessing resources when multiprocessing tests
+    completed."""
+
+    from test import support
+
+    # cleanup multiprocessing
+    process._cleanup()
+
+    # Stop the ForkServer process if it's running
+    from multiprocessing import forkserver
+    forkserver._forkserver._stop()
+
+    # Stop the ResourceTracker process if it's running
+    from multiprocessing import resource_tracker
+    resource_tracker._resource_tracker._stop()
+
+    # bpo-37421: Explicitly call _run_finalizers() to remove immediately
+    # temporary directories created by multiprocessing.util.get_temp_dir().
+    _run_finalizers()
+    support.gc_collect()
+
+    support.reap_children()

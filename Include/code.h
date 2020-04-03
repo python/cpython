@@ -115,7 +115,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
-#define PyCode_Check(op) (Py_TYPE(op) == &PyCode_Type)
+#define PyCode_Check(op) Py_IS_TYPE(op, &PyCode_Type)
 #define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
 
 /* Public interface */

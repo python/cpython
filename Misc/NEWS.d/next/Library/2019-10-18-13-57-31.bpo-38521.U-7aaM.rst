@@ -1,1 +1,0 @@
-Fixed erroneous equality comparison in statistics.NormalDist().

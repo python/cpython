@@ -924,59 +924,6 @@ os.close(fd)
             wr.close()
             self.loop.run_until_complete(wr.wait_closed())
 
-    def test_del_stream_before_sock_closing(self):
-        messages = []
-        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-
-        with test_utils.run_test_server() as httpd:
-            with self.assertWarns(DeprecationWarning):
-                rd, wr = self.loop.run_until_complete(
-                    asyncio.open_connection(*httpd.address, loop=self.loop))
-            sock = wr.get_extra_info('socket')
-            self.assertNotEqual(sock.fileno(), -1)
-
-            wr.write(b'GET / HTTP/1.0\r\n\r\n')
-            f = rd.readline()
-            data = self.loop.run_until_complete(f)
-            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
-
-            # drop refs to reader/writer
-            del rd
-            del wr
-            gc.collect()
-            # make a chance to close the socket
-            test_utils.run_briefly(self.loop)
-
-            self.assertEqual(1, len(messages))
-            self.assertEqual(sock.fileno(), -1)
-
-        self.assertEqual(1, len(messages))
-        self.assertEqual('An open stream object is being garbage '
-                         'collected; call "stream.close()" explicitly.',
-                         messages[0]['message'])
-
-    def test_del_stream_before_connection_made(self):
-        messages = []
-        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-
-        with test_utils.run_test_server() as httpd:
-            rd = asyncio.StreamReader(loop=self.loop)
-            pr = asyncio.StreamReaderProtocol(rd, loop=self.loop)
-            del rd
-            gc.collect()
-            tr, _ = self.loop.run_until_complete(
-                self.loop.create_connection(
-                    lambda: pr, *httpd.address))
-
-            sock = tr.get_extra_info('socket')
-            self.assertEqual(sock.fileno(), -1)
-
-        self.assertEqual(1, len(messages))
-        self.assertEqual('An open stream was garbage collected prior to '
-                         'establishing network connection; '
-                         'call "stream.close()" explicitly.',
-                         messages[0]['message'])
-
     def test_async_writer_api(self):
         async def inner(httpd):
             rd, wr = await asyncio.open_connection(*httpd.address)

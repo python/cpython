@@ -3040,6 +3040,8 @@ exit:
     return return_value;
 }
 
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "get_escdelay($module, /)\n"
 "--\n"
@@ -3061,6 +3063,10 @@ _curses_get_escdelay(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_get_escdelay_impl(module);
 }
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
 
 PyDoc_STRVAR(_curses_set_escdelay__doc__,
 "set_escdelay($module, ms, /)\n"
@@ -3102,6 +3108,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+
 PyDoc_STRVAR(_curses_get_tabsize__doc__,
 "get_tabsize($module, /)\n"
 "--\n"
@@ -3122,6 +3132,10 @@ _curses_get_tabsize(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_get_tabsize_impl(module);
 }
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
 
 PyDoc_STRVAR(_curses_set_tabsize__doc__,
 "set_tabsize($module, size, /)\n"
@@ -3161,6 +3175,8 @@ _curses_set_tabsize(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
 
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"
@@ -3921,23 +3937,13 @@ PyDoc_STRVAR(_curses_update_lines_cols__doc__,
 #define _CURSES_UPDATE_LINES_COLS_METHODDEF    \
     {"update_lines_cols", (PyCFunction)_curses_update_lines_cols, METH_NOARGS, _curses_update_lines_cols__doc__},
 
-static int
+static PyObject *
 _curses_update_lines_cols_impl(PyObject *module);
 
 static PyObject *
 _curses_update_lines_cols(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    int _return_value;
-
-    _return_value = _curses_update_lines_cols_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    return return_value;
+    return _curses_update_lines_cols_impl(module);
 }
 
 #endif /* (defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)) */
@@ -4648,6 +4654,22 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define _CURSES_HAS_KEY_METHODDEF
 #endif /* !defined(_CURSES_HAS_KEY_METHODDEF) */
 
+#ifndef _CURSES_GET_ESCDELAY_METHODDEF
+    #define _CURSES_GET_ESCDELAY_METHODDEF
+#endif /* !defined(_CURSES_GET_ESCDELAY_METHODDEF) */
+
+#ifndef _CURSES_SET_ESCDELAY_METHODDEF
+    #define _CURSES_SET_ESCDELAY_METHODDEF
+#endif /* !defined(_CURSES_SET_ESCDELAY_METHODDEF) */
+
+#ifndef _CURSES_GET_TABSIZE_METHODDEF
+    #define _CURSES_GET_TABSIZE_METHODDEF
+#endif /* !defined(_CURSES_GET_TABSIZE_METHODDEF) */
+
+#ifndef _CURSES_SET_TABSIZE_METHODDEF
+    #define _CURSES_SET_TABSIZE_METHODDEF
+#endif /* !defined(_CURSES_SET_TABSIZE_METHODDEF) */
+
 #ifndef _CURSES_IS_TERM_RESIZED_METHODDEF
     #define _CURSES_IS_TERM_RESIZED_METHODDEF
 #endif /* !defined(_CURSES_IS_TERM_RESIZED_METHODDEF) */
@@ -4691,4 +4713,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=985c0849e841acec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b53652f8acafd817 input=a9049054013a1b77]*/

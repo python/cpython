@@ -532,7 +532,7 @@ scripts will wind up in :file:`/usr/local/python/bin`.  If you want them in
 
    python setup.py install --install-scripts=/usr/local/bin
 
-(This performs an installation using the "prefix scheme," where the prefix is
+(This performs an installation using the "prefix scheme", where the prefix is
 whatever your Python interpreter was installed with--- :file:`/usr/local/python`
 in this case.)
 

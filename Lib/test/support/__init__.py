@@ -2096,7 +2096,9 @@ def _run_suite(suite):
 
 # By default, don't filter tests
 _match_test_func = None
-_match_test_patterns = None
+
+_accept_test_patterns = None
+_ignore_test_patterns = None
 
 
 def match_test(test):
@@ -2112,18 +2114,45 @@ def _is_full_match_test(pattern):
     # as a full test identifier.
     # Example: 'test.test_os.FileTests.test_access'.
     #
-    # Reject patterns which contain fnmatch patterns: '*', '?', '[...]'
-    # or '[!...]'. For example, reject 'test_access*'.
+    # ignore patterns which contain fnmatch patterns: '*', '?', '[...]'
+    # or '[!...]'. For example, ignore 'test_access*'.
     return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
 
 
-def set_match_tests(patterns):
-    global _match_test_func, _match_test_patterns
+def set_match_tests(accept_patterns=None, ignore_patterns=None):
+    global _match_test_func, _accept_test_patterns, _ignore_test_patterns
 
-    if patterns == _match_test_patterns:
-        # No change: no need to recompile patterns.
-        return
 
+    if accept_patterns is None:
+        accept_patterns = ()
+    if ignore_patterns is None:
+        ignore_patterns = ()
+
+    accept_func = ignore_func = None
+
+    if accept_patterns != _accept_test_patterns:
+        accept_patterns, accept_func = _compile_match_function(accept_patterns)
+    if ignore_patterns != _ignore_test_patterns:
+        ignore_patterns, ignore_func = _compile_match_function(ignore_patterns)
+
+    # Create a copy since patterns can be mutable and so modified later
+    _accept_test_patterns = tuple(accept_patterns)
+    _ignore_test_patterns = tuple(ignore_patterns)
+
+    if accept_func is not None or ignore_func is not None:
+        def match_function(test_id):
+            accept = True
+            ignore = False
+            if accept_func:
+                accept = accept_func(test_id)
+            if ignore_func:
+                ignore = ignore_func(test_id)
+            return accept and not ignore
+
+        _match_test_func = match_function
+
+
+def _compile_match_function(patterns):
     if not patterns:
         func = None
         # set_match_tests(None) behaves as set_match_tests(())
@@ -2151,10 +2180,7 @@ def set_match_tests(patterns):
 
         func = match_test_regex
 
-    # Create a copy since patterns can be mutable and so modified later
-    _match_test_patterns = tuple(patterns)
-    _match_test_func = func
-
+    return patterns, func
 
 
 def run_unittest(*classes):
@@ -2485,19 +2511,6 @@ def swap_item(obj, item, new_val):
         finally:
             if item in obj:
                 del obj[item]
-
-def strip_python_stderr(stderr):
-    """Strip the stderr of a Python process from potential debug output
-    emitted by the interpreter.
-
-    This will typically be run on the result of the communicate() method
-    of a subprocess.Popen object.
-    """
-    stderr = re.sub(br"\[\d+ refs, \d+ blocks\]\r?\n?", b"", stderr).strip()
-    return stderr
-
-requires_type_collecting = unittest.skipIf(hasattr(sys, 'getcounts'),
-                        'types are immortal if COUNT_ALLOCS is defined')
 
 def args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
@@ -3387,3 +3400,57 @@ class catch_threading_exception:
         del self.exc_value
         del self.exc_traceback
         del self.thread
+
+
+def wait_process(pid, *, exitcode, timeout=None):
+    """
+    Wait until process pid completes and check that the process exit code is
+    exitcode.
+
+    Raise an AssertionError if the process exit code is not equal to exitcode.
+
+    If the process runs longer than timeout seconds (SHORT_TIMEOUT by default),
+    kill the process (if signal.SIGKILL is available) and raise an
+    AssertionError. The timeout feature is not available on Windows.
+    """
+    if os.name != "nt":
+        import signal
+
+        if timeout is None:
+            timeout = SHORT_TIMEOUT
+        t0 = time.monotonic()
+        deadline = t0 + timeout
+        sleep = 0.001
+        max_sleep = 0.1
+        while True:
+            pid2, status = os.waitpid(pid, os.WNOHANG)
+            if pid2 != 0:
+                break
+            # process is still running
+
+            dt = time.monotonic() - t0
+            if dt > SHORT_TIMEOUT:
+                try:
+                    os.kill(pid, signal.SIGKILL)
+                    os.waitpid(pid, 0)
+                except OSError:
+                    # Ignore errors like ChildProcessError or PermissionError
+                    pass
+
+                raise AssertionError(f"process {pid} is still running "
+                                     f"after {dt:.1f} seconds")
+
+            sleep = min(sleep * 2, max_sleep)
+            time.sleep(sleep)
+    else:
+        # Windows implementation
+        pid2, status = os.waitpid(pid, 0)
+
+    exitcode2 = os.waitstatus_to_exitcode(status)
+    if exitcode2 != exitcode:
+        raise AssertionError(f"process {pid} exited with code {exitcode2}, "
+                             f"but exit code {exitcode} is expected")
+
+    # sanity check: it should not fail in practice
+    if pid2 != pid:
+        raise AssertionError(f"pid {pid2} != pid {pid}")

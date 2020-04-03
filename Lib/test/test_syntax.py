@@ -45,7 +45,7 @@ SyntaxError: cannot assign to True
 
 >>> (True := 1)
 Traceback (most recent call last):
-SyntaxError: cannot use named assignment with True
+SyntaxError: cannot use assignment expressions with True
 
 >>> obj.__debug__ = 1
 Traceback (most recent call last):
@@ -588,7 +588,7 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
 >>> f(a=23, a=234)
 Traceback (most recent call last):
    ...
-SyntaxError: keyword argument repeated
+SyntaxError: keyword argument repeated: a
 
 >>> {1, 2, 3} = 42
 Traceback (most recent call last):
