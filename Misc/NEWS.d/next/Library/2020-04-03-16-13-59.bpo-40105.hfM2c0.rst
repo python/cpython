@@ -1,1 +1,1 @@
-`ZipFile`s are truncated when shorter commend is provider in `'a'` mode.
+ZipFiles are truncated when shorter comment is provided in append ("a") mode.
