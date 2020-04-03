@@ -53,8 +53,18 @@ typedef struct {
     PyThread_type_lock lock;
 } BZ2Decompressor;
 
-static PyTypeObject BZ2Compressor_Type;
-static PyTypeObject BZ2Decompressor_Type;
+typedef struct _bz2_state {
+    PyObject *BZ2CompressorType;
+    PyObject *BZ2DecompressorType;
+} _bz2_state;
+
+static inline _bz2_state*
+get_bz2_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_bz2_state *)state;
+}
 
 /* Helper functions. */
 
@@ -343,47 +353,22 @@ static PyMethodDef BZ2Compressor_methods[] = {
 };
 
 
-static PyTypeObject BZ2Compressor_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_bz2.BZ2Compressor",               /* tp_name */
-    sizeof(BZ2Compressor),              /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    (destructor)BZ2Compressor_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash  */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    0,                                  /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    _bz2_BZ2Compressor___init____doc__,  /* tp_doc */
-    0,                                  /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    BZ2Compressor_methods,              /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    _bz2_BZ2Compressor___init__,        /* tp_init */
-    0,                                  /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+static PyType_Slot BZ2CompressorType_slots[] = {
+    {Py_tp_dealloc, BZ2Compressor_dealloc},
+    {Py_tp_doc, _bz2_BZ2Compressor___init____doc__},
+    {Py_tp_methods, BZ2Compressor_methods},
+    {Py_tp_init, _bz2_BZ2Compressor___init__},
+    {Py_tp_new, PyType_GenericNew},
+    {0, 0}
 };
 
+static PyType_Spec BZ2CompressorType_spec = {
+    .name = "_bz2.BZ2Compressor",
+    .basicsize = sizeof(BZ2Compressor),
+    .itemsize = 0,
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = BZ2CompressorType_slots
+};
 
 /* BZ2Decompressor class. */
 
@@ -684,62 +669,71 @@ static PyMemberDef BZ2Decompressor_members[] = {
     {NULL}
 };
 
-static PyTypeObject BZ2Decompressor_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_bz2.BZ2Decompressor",             /* tp_name */
-    sizeof(BZ2Decompressor),            /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    (destructor)BZ2Decompressor_dealloc,/* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash  */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    0,                                  /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    _bz2_BZ2Decompressor___init____doc__,  /* tp_doc */
-    0,                                  /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    BZ2Decompressor_methods,            /* tp_methods */
-    BZ2Decompressor_members,            /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    _bz2_BZ2Decompressor___init__,      /* tp_init */
-    0,                                  /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+static PyType_Slot BZ2DecompressorType_slots[] = {
+    {Py_tp_dealloc, BZ2Decompressor_dealloc},
+    {Py_tp_doc, _bz2_BZ2Decompressor___init____doc__},
+    {Py_tp_methods, BZ2Decompressor_methods},
+    {Py_tp_members, BZ2Decompressor_members},
+    {Py_tp_init, _bz2_BZ2Decompressor___init__},
+    {Py_tp_new, PyType_GenericNew},
+    {0, 0}
 };
 
+static PyType_Spec BZ2DecompressorType_spec = {
+    .name = "_bz2.BZ2Decompressor",
+    .basicsize = sizeof(BZ2Decompressor),
+    .itemsize = 0,
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = BZ2DecompressorType_slots
+};
 
 /* Module initialization. */
 
 static int
 _bz2_exec(PyObject *module)
 {
-    if (PyModule_AddType(module, &BZ2Compressor_Type) < 0) {
+    _bz2_state *state = get_bz2_state(module);
+    state->BZ2CompressorType = PyType_FromSpec(&BZ2CompressorType_spec);
+    if (state->BZ2CompressorType == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->BZ2CompressorType) < 0) {
         return -1;
     }
 
-    if (PyModule_AddType(module, &BZ2Decompressor_Type) < 0) {
+    state->BZ2DecompressorType = PyType_FromSpec(&BZ2DecompressorType_spec);
+    if (state->BZ2DecompressorType == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->BZ2DecompressorType) < 0) {
         return -1;
     }
 
     return 0;
+}
+
+static int
+_bz2_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    _bz2_state *state = get_bz2_state(module);
+    Py_VISIT(state->BZ2CompressorType);
+    Py_VISIT(state->BZ2DecompressorType);
+    return 0;
+}
+
+static int
+_bz2_clear(PyObject *module)
+{
+    _bz2_state *state = get_bz2_state(module);
+    Py_CLEAR(state->BZ2CompressorType);
+    Py_CLEAR(state->BZ2DecompressorType);
+    return 0;
+}
+
+static void
+_bz2_free(void *module)
+{
+    _bz2_clear((PyObject *)module);
 }
 
 static struct PyModuleDef_Slot _bz2_slots[] = {
@@ -751,12 +745,12 @@ static struct PyModuleDef _bz2module = {
     PyModuleDef_HEAD_INIT,
     "_bz2",
     NULL,
-    0,
+    sizeof(_bz2_state),
     NULL,
     _bz2_slots,
-    NULL,
-    NULL,
-    NULL
+    _bz2_traverse,
+    _bz2_clear,
+    _bz2_free 
 };
 
 PyMODINIT_FUNC

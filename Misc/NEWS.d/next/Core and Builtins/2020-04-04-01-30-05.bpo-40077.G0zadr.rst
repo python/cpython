@@ -1,0 +1,1 @@
+Convert _bz2 extension module to use :c:func:`PyType_FromSpec`.
