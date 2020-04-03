@@ -629,6 +629,21 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
+class TestNamedAssignments(GrammarTest):
+
+    def test_named_assignment_if(self):
+        driver.parse_string("if f := x(): pass\n")
+
+    def test_named_assignment_while(self):
+        driver.parse_string("while f := x(): pass\n")
+
+    def test_named_assignment_generator(self):
+        driver.parse_string("any((lastNum := num) == 1 for num in [1, 2, 3])\n")
+
+    def test_named_assignment_listcomp(self):
+        driver.parse_string("[(lastNum := num) == 1 for num in [1, 2, 3]]\n")
+
+
 class TestPickleableException(unittest.TestCase):
     def test_ParseError(self):
         err = ParseError('msg', 2, None, (1, 'context'))
