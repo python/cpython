@@ -134,7 +134,6 @@ typedef struct {
     PyObject *__dict__;
     PyObject *__doc__;
     PyObject *__module__;
-    PyObject *_ast;
     PyObject *_attributes;
     PyObject *_fields;
     PyObject *alias_type;
@@ -145,6 +144,7 @@ typedef struct {
     PyObject *argtypes;
     PyObject *arguments_type;
     PyObject *asname;
+    PyObject *ast;
     PyObject *attr;
     PyObject *bases;
     PyObject *body;
@@ -354,7 +354,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->__dict__);
     Py_CLEAR(astmodulestate(module)->__doc__);
     Py_CLEAR(astmodulestate(module)->__module__);
-    Py_CLEAR(astmodulestate(module)->_ast);
     Py_CLEAR(astmodulestate(module)->_attributes);
     Py_CLEAR(astmodulestate(module)->_fields);
     Py_CLEAR(astmodulestate(module)->alias_type);
@@ -365,6 +364,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->argtypes);
     Py_CLEAR(astmodulestate(module)->arguments_type);
     Py_CLEAR(astmodulestate(module)->asname);
+    Py_CLEAR(astmodulestate(module)->ast);
     Py_CLEAR(astmodulestate(module)->attr);
     Py_CLEAR(astmodulestate(module)->bases);
     Py_CLEAR(astmodulestate(module)->body);
@@ -573,7 +573,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->__dict__);
     Py_VISIT(astmodulestate(module)->__doc__);
     Py_VISIT(astmodulestate(module)->__module__);
-    Py_VISIT(astmodulestate(module)->_ast);
     Py_VISIT(astmodulestate(module)->_attributes);
     Py_VISIT(astmodulestate(module)->_fields);
     Py_VISIT(astmodulestate(module)->alias_type);
@@ -584,6 +583,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->argtypes);
     Py_VISIT(astmodulestate(module)->arguments_type);
     Py_VISIT(astmodulestate(module)->asname);
+    Py_VISIT(astmodulestate(module)->ast);
     Py_VISIT(astmodulestate(module)->attr);
     Py_VISIT(astmodulestate(module)->bases);
     Py_VISIT(astmodulestate(module)->body);
@@ -688,7 +688,6 @@ static int init_identifiers(void)
     if ((state->__dict__ = PyUnicode_InternFromString("__dict__")) == NULL) return 0;
     if ((state->__doc__ = PyUnicode_InternFromString("__doc__")) == NULL) return 0;
     if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return 0;
-    if ((state->_ast = PyUnicode_InternFromString("_ast")) == NULL) return 0;
     if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return 0;
     if ((state->_fields = PyUnicode_InternFromString("_fields")) == NULL) return 0;
     if ((state->annotation = PyUnicode_InternFromString("annotation")) == NULL) return 0;
@@ -696,6 +695,7 @@ static int init_identifiers(void)
     if ((state->args = PyUnicode_InternFromString("args")) == NULL) return 0;
     if ((state->argtypes = PyUnicode_InternFromString("argtypes")) == NULL) return 0;
     if ((state->asname = PyUnicode_InternFromString("asname")) == NULL) return 0;
+    if ((state->ast = PyUnicode_InternFromString("ast")) == NULL) return 0;
     if ((state->attr = PyUnicode_InternFromString("attr")) == NULL) return 0;
     if ((state->bases = PyUnicode_InternFromString("bases")) == NULL) return 0;
     if ((state->body = PyUnicode_InternFromString("body")) == NULL) return 0;
@@ -1060,6 +1060,12 @@ static const char * const arg_fields[]={
     "type_comment",
 };
 static PyObject* ast2obj_keyword(void*);
+static const char * const keyword_attributes[] = {
+    "lineno",
+    "col_offset",
+    "end_lineno",
+    "end_col_offset",
+};
 static const char * const keyword_fields[]={
     "arg",
     "value",
@@ -1209,7 +1215,7 @@ static PyType_Slot AST_type_slots[] = {
 };
 
 static PyType_Spec AST_type_spec = {
-    "_ast.AST",
+    "ast.AST",
     sizeof(AST_object),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -1235,7 +1241,7 @@ make_type(const char *type, PyObject* base, const char* const* fields, int num_f
                     type, base,
                     astmodulestate_global->_fields, fnames,
                     astmodulestate_global->__module__,
-                    astmodulestate_global->_ast,
+                    astmodulestate_global->ast,
                     astmodulestate_global->__doc__, doc);
     Py_DECREF(fnames);
     return result;
@@ -1985,8 +1991,13 @@ static int init_types(void)
                                     2,
         "keyword(identifier? arg, expr value)");
     if (!state->keyword_type) return 0;
-    if (!add_attributes(state->keyword_type, NULL, 0)) return 0;
+    if (!add_attributes(state->keyword_type, keyword_attributes, 4)) return 0;
     if (PyObject_SetAttr(state->keyword_type, state->arg, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->keyword_type, state->end_lineno, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->keyword_type, state->end_col_offset, Py_None)
+        == -1)
         return 0;
     state->alias_type = make_type("alias", state->AST_type, alias_fields, 2,
         "alias(identifier name, identifier? asname)");
@@ -3422,7 +3433,8 @@ arg(identifier arg, expr_ty annotation, string type_comment, int lineno, int
 }
 
 keyword_ty
-keyword(identifier arg, expr_ty value, PyArena *arena)
+keyword(identifier arg, expr_ty value, int lineno, int col_offset, int
+        end_lineno, int end_col_offset, PyArena *arena)
 {
     keyword_ty p;
     if (!value) {
@@ -3435,6 +3447,10 @@ keyword(identifier arg, expr_ty value, PyArena *arena)
         return NULL;
     p->arg = arg;
     p->value = value;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
@@ -4952,6 +4968,27 @@ ast2obj_keyword(void* _o)
     value = ast2obj_expr(o->value);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, astmodulestate_global->value, value) == -1)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->col_offset, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->end_lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->end_col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_col_offset, value)
+        < 0)
         goto failed;
     Py_DECREF(value);
     return result;
@@ -9628,6 +9665,10 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
     PyObject* tmp = NULL;
     identifier arg;
     expr_ty value;
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
 
     if (_PyObject_LookupAttr(obj, astmodulestate_global->arg, &tmp) < 0) {
         return 1;
@@ -9655,7 +9696,63 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = keyword(arg, value, arena);
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->lineno, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from keyword");
+        return 1;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->col_offset, &tmp) < 0)
+        {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from keyword");
+        return 1;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_lineno, &tmp) < 0)
+        {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_lineno = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_col_offset, &tmp)
+        < 0) {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_col_offset = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    *out = keyword(arg, value, lineno, col_offset, end_lineno, end_col_offset,
+                   arena);
     return 0;
 failed:
     Py_XDECREF(tmp);

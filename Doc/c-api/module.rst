@@ -441,7 +441,7 @@ state:
 
    Add an object to *module* as *name*.  This is a convenience function which can
    be used from the module's initialization function.  This steals a reference to
-   *value* on success.  Return ``-1`` on error, ``0`` on success.
+   *value* on success. Return ``-1`` on error, ``0`` on success.
 
    .. note::
 
@@ -484,6 +484,16 @@ state:
 
    Add a string constant to *module*.
 
+.. c:function:: int PyModule_AddType(PyObject *module, PyTypeObject *type)
+
+   Add a type object to *module*.
+   The type object is finalized by calling internally :c:func:`PyType_Ready`.
+   The name of the type object is taken from the last component of
+   :c:member:`~PyTypeObject.tp_name` after dot.
+   Return ``-1`` on error, ``0`` on success.
+
+   .. versionadded:: 3.9
+
 
 Module lookup
 ^^^^^^^^^^^^^
@@ -517,6 +527,8 @@ since multiple such modules can be created from a single definition.
    mechanisms (either by calling it directly, or by referring to its
    implementation for details of the required state updates).
 
+   The caller must hold the GIL.
+
    Return 0 on success or -1 on failure.
 
    .. versionadded:: 3.3
@@ -525,5 +537,7 @@ since multiple such modules can be created from a single definition.
 
    Removes the module object created from *def* from the interpreter state.
    Return 0 on success or -1 on failure.
+
+   The caller must hold the GIL.
 
    .. versionadded:: 3.3

@@ -11,9 +11,9 @@ PyAPI_DATA(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyO
 PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
 PyAPI_FUNC(int) _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
 PyAPI_FUNC(int) _PyEval_GetCoroutineOriginTrackingDepth(void);
-PyAPI_FUNC(void) _PyEval_SetAsyncGenFirstiter(PyObject *);
+PyAPI_FUNC(int) _PyEval_SetAsyncGenFirstiter(PyObject *);
 PyAPI_FUNC(PyObject *) _PyEval_GetAsyncGenFirstiter(void);
-PyAPI_FUNC(void) _PyEval_SetAsyncGenFinalizer(PyObject *);
+PyAPI_FUNC(int) _PyEval_SetAsyncGenFinalizer(PyObject *);
 PyAPI_FUNC(PyObject *) _PyEval_GetAsyncGenFinalizer(void);
 
 /* Helper to look up a builtin object */

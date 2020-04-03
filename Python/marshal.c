@@ -83,7 +83,7 @@ typedef struct {
     int depth;
     PyObject *str;
     char *ptr;
-    char *end;
+    const char *end;
     char *buf;
     _Py_hashtable_t *hashtable;
     int version;
@@ -114,7 +114,7 @@ w_reserve(WFILE *p, Py_ssize_t needed)
     }
     assert(p->str != NULL);
     pos = p->ptr - p->buf;
-    size = PyBytes_Size(p->str);
+    size = PyBytes_GET_SIZE(p->str);
     if (size > 16*1024*1024)
         delta = (size >> 3);            /* 12.5% overallocation */
     else
@@ -126,7 +126,7 @@ w_reserve(WFILE *p, Py_ssize_t needed)
     }
     size += delta;
     if (_PyBytes_Resize(&p->str, size) != 0) {
-        p->ptr = p->buf = p->end = NULL;
+        p->end = p->ptr = p->buf = NULL;
         return 0;
     }
     else {
@@ -138,7 +138,7 @@ w_reserve(WFILE *p, Py_ssize_t needed)
 }
 
 static void
-w_string(const char *s, Py_ssize_t n, WFILE *p)
+w_string(const void *s, Py_ssize_t n, WFILE *p)
 {
     Py_ssize_t m;
     if (!n || p->ptr == NULL)
@@ -194,14 +194,14 @@ w_long(long x, WFILE *p)
 #endif
 
 static void
-w_pstring(const char *s, Py_ssize_t n, WFILE *p)
+w_pstring(const void *s, Py_ssize_t n, WFILE *p)
 {
         W_SIZE(n, p);
         w_string(s, n, p);
 }
 
 static void
-w_short_pstring(const char *s, Py_ssize_t n, WFILE *p)
+w_short_pstring(const void *s, Py_ssize_t n, WFILE *p)
 {
     w_byte(Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char), p);
     w_string(s, n, p);
@@ -274,21 +274,18 @@ w_float_bin(double v, WFILE *p)
         p->error = WFERR_UNMARSHALLABLE;
         return;
     }
-    w_string((const char *)buf, 8, p);
+    w_string(buf, 8, p);
 }
 
 static void
 w_float_str(double v, WFILE *p)
 {
-    int n;
     char *buf = PyOS_double_to_string(v, 'g', 17, 0, NULL);
     if (!buf) {
         p->error = WFERR_NOMEMORY;
         return;
     }
-    n = (int)strlen(buf);
-    w_byte(n, p);
-    w_string(buf, n, p);
+    w_short_pstring(buf, strlen(buf), p);
     PyMem_Free(buf);
 }
 
@@ -378,11 +375,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     Py_ssize_t i, n;
 
     if (PyLong_CheckExact(v)) {
-        long x = PyLong_AsLong(v);
-        if ((x == -1)  && PyErr_Occurred()) {
-            PyLongObject *ob = (PyLongObject *)v;
-            PyErr_Clear();
-            w_PyLong(ob, flag, p);
+        int overflow;
+        long x = PyLong_AsLongAndOverflow(v, &overflow);
+        if (overflow) {
+            w_PyLong((PyLongObject *)v, flag, p);
         }
         else {
 #if SIZEOF_LONG > 4
@@ -433,7 +429,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
                     W_TYPE(TYPE_SHORT_ASCII_INTERNED, p);
                 else
                     W_TYPE(TYPE_SHORT_ASCII, p);
-                w_short_pstring((char *) PyUnicode_1BYTE_DATA(v),
+                w_short_pstring(PyUnicode_1BYTE_DATA(v),
                                 PyUnicode_GET_LENGTH(v), p);
             }
             else {
@@ -441,7 +437,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
                     W_TYPE(TYPE_ASCII_INTERNED, p);
                 else
                     W_TYPE(TYPE_ASCII, p);
-                w_pstring((char *) PyUnicode_1BYTE_DATA(v),
+                w_pstring(PyUnicode_1BYTE_DATA(v),
                           PyUnicode_GET_LENGTH(v), p);
             }
         }
@@ -462,7 +458,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         }
     }
     else if (PyTuple_CheckExact(v)) {
-        n = PyTuple_Size(v);
+        n = PyTuple_GET_SIZE(v);
         if (p->version >= 4 && n < 256) {
             W_TYPE(TYPE_SMALL_TUPLE, p);
             w_byte((unsigned char)n, p);
@@ -496,34 +492,18 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object((PyObject *)NULL, p);
     }
     else if (PyAnySet_CheckExact(v)) {
-        PyObject *value, *it;
+        PyObject *value;
+        Py_ssize_t pos = 0;
+        Py_hash_t hash;
 
-        if (PyObject_TypeCheck(v, &PySet_Type))
-            W_TYPE(TYPE_SET, p);
-        else
+        if (PyFrozenSet_CheckExact(v))
             W_TYPE(TYPE_FROZENSET, p);
-        n = PyObject_Size(v);
-        if (n == -1) {
-            p->depth--;
-            p->error = WFERR_UNMARSHALLABLE;
-            return;
-        }
+        else
+            W_TYPE(TYPE_SET, p);
+        n = PySet_GET_SIZE(v);
         W_SIZE(n, p);
-        it = PyObject_GetIter(v);
-        if (it == NULL) {
-            p->depth--;
-            p->error = WFERR_UNMARSHALLABLE;
-            return;
-        }
-        while ((value = PyIter_Next(it)) != NULL) {
+        while (_PySet_NextEntry(v, &pos, &value, &hash)) {
             w_object(value, p);
-            Py_DECREF(value);
-        }
-        Py_DECREF(it);
-        if (PyErr_Occurred()) {
-            p->depth--;
-            p->error = WFERR_UNMARSHALLABLE;
-            return;
         }
     }
     else if (PyCode_Check(v)) {
@@ -638,8 +618,8 @@ typedef struct {
     FILE *fp;
     int depth;
     PyObject *readable;  /* Stream-like object being read from */
-    char *ptr;
-    char *end;
+    const char *ptr;
+    const char *end;
     char *buf;
     Py_ssize_t buf_size;
     PyObject *refs;  /* a list */
@@ -652,7 +632,7 @@ r_string(Py_ssize_t n, RFILE *p)
 
     if (p->ptr != NULL) {
         /* Fast path for loads() */
-        char *res = p->ptr;
+        const char *res = p->ptr;
         Py_ssize_t left = p->end - p->ptr;
         if (left < n) {
             PyErr_SetString(PyExc_EOFError,
@@ -1564,8 +1544,8 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     PyObject *result;
     rf.fp = NULL;
     rf.readable = NULL;
-    rf.ptr = (char *)str;
-    rf.end = (char *)str + len;
+    rf.ptr = str;
+    rf.end = str + len;
     rf.buf = NULL;
     rf.depth = 0;
     rf.refs = PyList_New(0);
@@ -1587,8 +1567,8 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     wf.str = PyBytes_FromStringAndSize((char *)NULL, 50);
     if (wf.str == NULL)
         return NULL;
-    wf.ptr = wf.buf = PyBytes_AS_STRING((PyBytesObject *)wf.str);
-    wf.end = wf.ptr + PyBytes_Size(wf.str);
+    wf.ptr = wf.buf = PyBytes_AS_STRING(wf.str);
+    wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
     wf.error = WFERR_OK;
     wf.version = version;
     if (w_init_refs(&wf, version)) {
@@ -1598,13 +1578,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     w_object(x, &wf);
     w_clear_refs(&wf);
     if (wf.str != NULL) {
-        char *base = PyBytes_AS_STRING((PyBytesObject *)wf.str);
-        if (wf.ptr - base > PY_SSIZE_T_MAX) {
-            Py_DECREF(wf.str);
-            PyErr_SetString(PyExc_OverflowError,
-                            "too much marshal data for a bytes object");
-            return NULL;
-        }
+        const char *base = PyBytes_AS_STRING(wf.str);
         if (_PyBytes_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
             return NULL;
     }

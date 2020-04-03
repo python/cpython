@@ -370,11 +370,10 @@ getpythonregpath(HKEY keyBase, int skipcore)
     /* Allocate a temp array of char buffers, so we only need to loop
        reading the registry once
     */
-    ppPaths = PyMem_RawMalloc( sizeof(WCHAR *) * numKeys );
+    ppPaths = PyMem_RawCalloc(numKeys, sizeof(WCHAR *));
     if (ppPaths==NULL) {
         goto done;
     }
-    memset(ppPaths, 0, sizeof(WCHAR *) * numKeys);
     /* Loop over all subkeys, allocating a temp sub-buffer. */
     for(index=0;index<numKeys;index++) {
         WCHAR keyBuf[MAX_PATH+1];
@@ -784,8 +783,11 @@ calculate_module_search_path(PyCalculatePath *calculate,
 {
     int skiphome = calculate->home==NULL ? 0 : 1;
 #ifdef Py_ENABLE_SHARED
-    calculate->machine_path = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
-    calculate->user_path = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+    if (!Py_IgnoreEnvironmentFlag) {
+        calculate->machine_path = getpythonregpath(HKEY_LOCAL_MACHINE,
+                                                   skiphome);
+        calculate->user_path = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+    }
 #endif
     /* We only use the default relative PYTHONPATH if we haven't
        anything better to use! */

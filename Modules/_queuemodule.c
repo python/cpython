@@ -390,11 +390,9 @@ PyInit__queue(void)
     if (PyModule_AddObject(m, "Empty", EmptyError) < 0)
         return NULL;
 
-    if (PyType_Ready(&PySimpleQueueType) < 0)
+    if (PyModule_AddType(m, &PySimpleQueueType) < 0) {
         return NULL;
-    Py_INCREF(&PySimpleQueueType);
-    if (PyModule_AddObject(m, "SimpleQueue", (PyObject *)&PySimpleQueueType) < 0)
-        return NULL;
+    }
 
     return m;
 }

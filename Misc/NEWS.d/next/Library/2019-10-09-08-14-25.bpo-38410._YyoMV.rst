@@ -1,0 +1,2 @@
+Properly handle :func:`sys.audit` failures in
+:func:`sys.set_asyncgen_hooks`.

@@ -1746,16 +1746,38 @@ static PyTypeObject methodcaller_type = {
 };
 
 
-/* Initialization function for the module (*must* be called PyInit__operator) */
+static int
+operator_exec(PyObject *module)
+{
+    PyTypeObject *types[] = {
+        &itemgetter_type,
+        &attrgetter_type,
+        &methodcaller_type
+    };
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
+        if (PyModule_AddType(module, types[i]) < 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot operator_slots[] = {
+    {Py_mod_exec, operator_exec},
+    {0, NULL}
+};
 
 
 static struct PyModuleDef operatormodule = {
     PyModuleDef_HEAD_INIT,
     "_operator",
     operator_doc,
-    -1,
+    0,
     operator_methods,
-    NULL,
+    operator_slots,
     NULL,
     NULL,
     NULL
@@ -1764,26 +1786,5 @@ static struct PyModuleDef operatormodule = {
 PyMODINIT_FUNC
 PyInit__operator(void)
 {
-    PyObject *m;
-
-    /* Create the module and add the functions */
-    m = PyModule_Create(&operatormodule);
-    if (m == NULL)
-        return NULL;
-
-    if (PyType_Ready(&itemgetter_type) < 0)
-        return NULL;
-    Py_INCREF(&itemgetter_type);
-    PyModule_AddObject(m, "itemgetter", (PyObject *)&itemgetter_type);
-
-    if (PyType_Ready(&attrgetter_type) < 0)
-        return NULL;
-    Py_INCREF(&attrgetter_type);
-    PyModule_AddObject(m, "attrgetter", (PyObject *)&attrgetter_type);
-
-    if (PyType_Ready(&methodcaller_type) < 0)
-        return NULL;
-    Py_INCREF(&methodcaller_type);
-    PyModule_AddObject(m, "methodcaller", (PyObject *)&methodcaller_type);
-    return m;
+    return PyModuleDef_Init(&operatormodule);
 }

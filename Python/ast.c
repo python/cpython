@@ -727,11 +727,8 @@ num_stmts(const node *n)
                 return l;
             }
         default: {
-            char buf[128];
-
-            sprintf(buf, "Non-statement found: %d %d",
-                    TYPE(n), NCH(n));
-            Py_FatalError(buf);
+            _Py_FatalErrorFormat(__func__, "Non-statement found: %d %d",
+                                 TYPE(n), NCH(n));
         }
     }
     Py_UNREACHABLE();
@@ -1664,7 +1661,7 @@ ast_for_decorator(struct compiling *c, const node *n)
     REQ(n, decorator);
     REQ(CHILD(n, 0), AT);
     REQ(CHILD(n, 2), NEWLINE);
-    
+
     return ast_for_expr(c, CHILD(n, 1));
 }
 
@@ -3016,7 +3013,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 e = ast_for_expr(c, CHILD(ch, 1));
                 if (!e)
                     return NULL;
-                kw = keyword(NULL, e, c->c_arena);
+                kw = keyword(NULL, e, chch->n_lineno, chch->n_col_offset,
+                             e->end_lineno, e->end_col_offset, c->c_arena);
                 asdl_seq_SET(keywords, nkeywords++, kw);
                 ndoublestars++;
             }
@@ -3106,7 +3104,9 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 e = ast_for_expr(c, CHILD(ch, 2));
                 if (!e)
                     return NULL;
-                kw = keyword(key, e, c->c_arena);
+                kw = keyword(key, e, chch->n_lineno, chch->n_col_offset,
+                             chch->n_end_lineno, chch->n_end_col_offset, c->c_arena);
+
                 if (!kw)
                     return NULL;
                 asdl_seq_SET(keywords, nkeywords++, kw);
