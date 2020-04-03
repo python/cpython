@@ -1919,6 +1919,7 @@ class ZipFile:
                              centDirSize, centDirOffset, len(self._comment))
         self.fp.write(endrec)
         self.fp.write(self._comment)
+        self.fp.truncate()
         self.fp.flush()
 
     def _fpclose(self, fp):
