@@ -2850,17 +2850,18 @@ PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
     PyHeapTypeObject *res;
-    PyMemberDef *memb;
     PyObject *modname;
     PyTypeObject *type, *base;
 
-    PyType_Slot *slot;
+    const PyType_Slot *slot;
     Py_ssize_t nmembers, weaklistoffset, dictoffset;
-    char *s, *res_start;
+    const char *s;
+    char *res_start;
 
     nmembers = weaklistoffset = dictoffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot == Py_tp_members) {
+            const PyMemberDef *memb;
             nmembers = 0;
             for (memb = slot->pfunc; memb->name != NULL; memb++) {
                 nmembers++;
@@ -2894,7 +2895,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     /* Set the type name and qualname */
     s = strrchr(spec->name, '.');
     if (s == NULL)
-        s = (char*)spec->name;
+        s = spec->name;
     else
         s++;
 
