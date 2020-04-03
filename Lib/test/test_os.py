@@ -3453,7 +3453,11 @@ class TermsizeTests(unittest.TestCase):
         should work too.
         """
         try:
-            size = subprocess.check_output(['stty', 'size']).decode().split()
+            size = (
+                subprocess.check_output(
+                    ["stty", "size"], stderr=subprocess.DEVNULL, text=True
+                ).split()
+            )
         except (FileNotFoundError, subprocess.CalledProcessError,
                 PermissionError):
             self.skipTest("stty invocation failed")
