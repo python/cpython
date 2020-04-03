@@ -1,0 +1,4 @@
+Fixed an issue in unittest.mock where an unhandled exception can be raised
+by decorate_callable if patched.patchings is cleared during cleanup of
+another decorator. This causes the patching variable to be undefined in the
+exception handler, leading to an UnboundLocalError being raised.

@@ -1244,6 +1244,7 @@ class _patch(object):
         def patched(*args, **keywargs):
             extra_args = []
             entered_patchers = []
+            patching = None
 
             exc_info = tuple()
             try:
