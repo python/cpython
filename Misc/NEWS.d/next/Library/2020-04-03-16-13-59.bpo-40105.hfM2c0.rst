@@ -1,0 +1,1 @@
+`ZipFile`s are truncated when shorter commend is provider in `'a'` mode.
