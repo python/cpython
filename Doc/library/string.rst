@@ -463,6 +463,8 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'X'`` | Hex format. Outputs the number in base 16, using         |
    |         | upper-case letters for the digits above 9.               |
+   |         | Note: In case # is specified, the prefix '0x' will be    |
+   |         | uppercased as well.                                      |
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
