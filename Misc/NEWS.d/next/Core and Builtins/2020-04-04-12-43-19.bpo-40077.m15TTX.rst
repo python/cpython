@@ -1,1 +1,1 @@
-memo of PyScannerObject should be traversed in :mod:`_json`.
+Fix possible refleaks in :mod:`_json`, memo of PyScannerObject should be traversed.
