@@ -7780,6 +7780,8 @@ static expr_ty
 star_target_rule(Parser *p)
 {
     expr_ty res = NULL;
+    if (is_memoized(p, star_target_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -7889,6 +7891,7 @@ star_target_rule(Parser *p)
     }
     res = NULL;
   done:
+    insert_memo(p, mark, star_target_type, res);
     return res;
 }
 
@@ -8182,6 +8185,8 @@ static expr_ty
 del_target_rule(Parser *p)
 {
     expr_ty res = NULL;
+    if (is_memoized(p, del_target_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -8266,6 +8271,7 @@ del_target_rule(Parser *p)
     }
     res = NULL;
   done:
+    insert_memo(p, mark, del_target_type, res);
     return res;
 }
 
@@ -8413,6 +8419,8 @@ static expr_ty
 target_rule(Parser *p)
 {
     expr_ty res = NULL;
+    if (is_memoized(p, target_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
         return NULL;
@@ -8497,6 +8505,7 @@ target_rule(Parser *p)
     }
     res = NULL;
   done:
+    insert_memo(p, mark, target_type, res);
     return res;
 }
 

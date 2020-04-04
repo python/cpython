@@ -462,7 +462,7 @@ star_targets[expr_ty]:
     | a=star_target b=(',' c=star_target { c })* [','] {
         _Py_Tuple(CHECK(seq_insert_in_front(p, a, b)), Store, EXTRA) }
 star_targets_seq[asdl_seq*]: a=','.star_target+ [','] { a }
-star_target[expr_ty]:
+star_target[expr_ty] (memo):
     | '*' a=bitwise_or { _Py_Starred(CHECK(set_expr_context(p, a, Store)), Store, EXTRA) }
     | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
@@ -483,7 +483,7 @@ ann_assign_subscript_attribute_target[expr_ty]:
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
 
 del_targets[asdl_seq*]: a=','.del_target+ [','] { a }
-del_target[expr_ty]:
+del_target[expr_ty] (memo):
     | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Del, EXTRA) }
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Del, EXTRA) }
     | del_t_atom
@@ -494,7 +494,7 @@ del_t_atom[expr_ty]:
     | '[' a=[del_targets] ']' { _Py_List(a, Del, EXTRA) }
 
 targets[asdl_seq*]: a=','.target+ [','] { a }
-target[expr_ty]:
+target[expr_ty] (memo):
     | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
     | t_atom
