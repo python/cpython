@@ -1533,7 +1533,7 @@ class _patch(object):
         del self.target
         exit_stack = self._exit_stack
         del self._exit_stack
-        return exit_stack.__exit__(*sys.exc_info())
+        return exit_stack.__exit__(*exc_info)
 
 
     def start(self):
