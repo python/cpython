@@ -1716,7 +1716,7 @@ _prohibited = frozenset({'__new__', '__init__', '__slots__', '__getnewargs__',
                          '_fields', '_field_defaults',
                          '_make', '_replace', '_asdict', '_source'})
 
-_special = {'__module__', '__name__', '__annotations__'}
+_special = frozenset({'__module__', '__name__', '__annotations__'})
 
 
 class NamedTupleMeta(type):
