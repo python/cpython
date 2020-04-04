@@ -9267,7 +9267,7 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, Py_off_t offset,
                  Py_off_t sbytes, PyObject *headers, PyObject *trailers,
                  int flags)
 /*[clinic end generated code: output=81c4bcd143f5c82b input=b0d72579d4c69afa]*/
-#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 /*[clinic input]
 os.sendfile
 
@@ -9309,6 +9309,9 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
     int async_err = 0;
 
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
+#ifndef __APPLE__
+    off_t sbytes;
+#endif
     Py_buffer *hbuf, *tbuf;
     struct sf_hdtr sf;
 
@@ -9378,7 +9381,7 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
 #ifdef __APPLE__
         ret = sendfile(in_fd, out_fd, offset, &sbytes, &sf, flags);
 #else
-        ret = sendfile(in_fd, out_fd, offset, len, &sf, &sbytes, flags);
+        ret = sendfile(in_fd, out_fd, offset, count, &sf, &sbytes, flags);
 #endif
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
