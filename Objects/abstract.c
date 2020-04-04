@@ -1291,14 +1291,14 @@ PyNumber_Absolute(PyObject *o)
     return type_error("bad operand type for abs(): '%.200s'", o);
 }
 
-#undef PyIndex_Check
 
 int
 PyIndex_Check(PyObject *obj)
 {
-    return Py_TYPE(obj)->tp_as_number != NULL &&
-           Py_TYPE(obj)->tp_as_number->nb_index != NULL;
+    PyNumberMethods *tp_as_number = Py_TYPE(obj)->tp_as_number;
+    return (tp_as_number != NULL && tp_as_number->nb_index != NULL);
 }
+
 
 /* Return a Python int from the object item.
    Raise TypeError if the result is not an int
