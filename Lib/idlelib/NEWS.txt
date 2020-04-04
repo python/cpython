@@ -3,6 +3,9 @@ Released on 2020-10-05?
 ======================================
 
 
+bpo-38689: IDLE will no longer freeze when inspect.signature fails
+when fetching a calltip.
+
 bpo-27115: For 'Go to Line', use a Query entry box subclass with
 IDLE standard behavior and improved error checking.
 
