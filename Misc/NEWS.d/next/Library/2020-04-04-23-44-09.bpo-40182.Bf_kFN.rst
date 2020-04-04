@@ -1,0 +1,2 @@
+Removed the ``_field_types`` attribute of the :class:`typing.NamedTuple`
+class.
