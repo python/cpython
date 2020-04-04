@@ -1728,6 +1728,9 @@ class NamedTupleMeta(type):
     def __new__(cls, typename, bases, ns):
         if ns.get('_root', False):
             return super().__new__(cls, typename, bases, ns)
+        if len(bases) > 1:
+            raise TypeError("Multiple inheritance with NamedTuple is not supported")
+        assert bases[0] is NamedTuple
         types = ns.get('__annotations__', {})
         nm_tpl = _make_nmtuple(typename, types.items())
         defaults = []

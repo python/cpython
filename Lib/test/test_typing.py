@@ -3626,6 +3626,13 @@ class XMethBad2(NamedTuple):
         return 'no chance for this as well'
 """)
 
+    def test_multiple_inheritance(self):
+        class A:
+            pass
+        with self.assertRaises(TypeError):
+            class X(NamedTuple, A):
+                x: int
+
     def test_namedtuple_keyword_usage(self):
         LocalEmployee = NamedTuple("LocalEmployee", name=str, age=int)
         nick = LocalEmployee('Nick', 25)

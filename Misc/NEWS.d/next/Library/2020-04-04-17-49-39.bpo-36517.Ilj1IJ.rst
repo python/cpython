@@ -1,0 +1,2 @@
+Multiple inheritance with :class:`typing.NamedTuple` now raises an error
+instead of silently ignoring other types.
