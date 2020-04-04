@@ -226,7 +226,7 @@ bytes() -> empty bytes object''')
         class CallA(NoCall):
             def __call__(self, ci):  # Bug does not matter.
                 pass
-        class CallB(NoCall):  
+        class CallB(NoCall):
             def __call__(oui, a, b, c):  # Non-standard 'self'.
                 pass
 
@@ -235,6 +235,17 @@ bytes() -> empty bytes object''')
                             (CallB(), '(a, b, c)')):
             with self.subTest(meth=meth, mtip=mtip):
                 self.assertEqual(get_spec(meth), mtip)
+
+    def test_metaclass_class(self):  # Failure case for issue 38689.
+        class Type(type):  # Type() requires 3 type args, returns class.
+            __class__ = property({}.__getitem__, {}.__setitem__)
+        class Object(metaclass=Type):
+            __slots__ = '__class__'
+        for meth, mtip  in ((Type, default_tip), (Object, default_tip),
+                            (Object(), '')):
+            with self.subTest(meth=meth, mtip=mtip):
+                self.assertEqual(get_spec(meth), mtip)
+
 
     def test_non_callables(self):
         for obj in (0, 0.0, '0', b'0', [], {}):
