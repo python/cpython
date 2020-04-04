@@ -1707,16 +1707,13 @@ def _make_nmtuple(name, types, module, defaults = ()):
              for n, t in types}
     nm_tpl = collections.namedtuple(name, fields,
                                     defaults=defaults, module=module)
-    # Prior to PEP 526, only _field_types attribute was assigned.
-    # Now __annotations__ are used and _field_types is deprecated (remove in 3.9)
-    nm_tpl._field_types = types
     nm_tpl.__annotations__ = nm_tpl.__new__.__annotations__ = types
     return nm_tpl
 
 
 # attributes prohibited to set in NamedTuple class syntax
 _prohibited = frozenset({'__new__', '__init__', '__slots__', '__getnewargs__',
-                         '_fields', '_field_defaults', '_field_types',
+                         '_fields', '_field_defaults',
                          '_make', '_replace', '_asdict', '_source'})
 
 _special = {'__module__', '__name__', '__annotations__'}

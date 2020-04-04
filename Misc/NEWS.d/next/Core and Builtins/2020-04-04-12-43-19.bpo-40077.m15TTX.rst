@@ -1,0 +1,1 @@
+Fix possible refleaks in :mod:`_json`, memo of PyScannerObject should be traversed.
