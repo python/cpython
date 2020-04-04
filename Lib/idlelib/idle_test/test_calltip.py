@@ -246,7 +246,6 @@ bytes() -> empty bytes object''')
             with self.subTest(meth=meth, mtip=mtip):
                 self.assertEqual(get_spec(meth), mtip)
 
-
     def test_non_callables(self):
         for obj in (0, 0.0, '0', b'0', [], {}):
             with self.subTest(obj=obj):
