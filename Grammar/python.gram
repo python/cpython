@@ -37,6 +37,7 @@ statement_newline[asdl_seq*]:
     | a=compound_stmt NEWLINE { singleton_seq(p, a) }
     | simple_stmt
     | NEWLINE { singleton_seq(p, CHECK(_Py_Pass(EXTRA))) }
+    | ENDMARKER { interactive_exit(p) }
 simple_stmt[asdl_seq*]:
     | a=small_stmt !';' NEWLINE { singleton_seq(p, a) } # Not needed, there for speedup
     | a=';'.small_stmt+ [';'] NEWLINE { a }

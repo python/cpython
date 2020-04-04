@@ -1,4 +1,5 @@
 #include <Python.h>
+#include <errcode.h>
 #include "../tokenizer.h"
 
 #include "pegen.h"
@@ -57,6 +58,7 @@ raise_syntax_error(Parser *p, const char *errmsg, ...)
     PyObject *loc = NULL;
     PyObject *tmp = NULL;
     Token *t = p->tokens[p->fill - 1];
+    Py_ssize_t col_number = 0;
     va_list va;
 
     va_start(va, errmsg);
@@ -65,25 +67,24 @@ raise_syntax_error(Parser *p, const char *errmsg, ...)
     if (!errstr) {
         goto error;
     }
-    if (p->input_mode == FILE_INPUT) {
+
+    if (p->start_rule == Py_file_input) {
         loc = PyErr_ProgramTextObject(p->tok->filename, t->lineno);
-        if (!loc) {
-            Py_INCREF(Py_None);
-            loc = Py_None;
-        }
+    }
+    else if (p->start_rule == Py_fstring_input || p->start_rule == Py_eval_input) {
+        loc = get_error_line(p->tok->buf);
+    }
+
+    if (loc) {
+        int col_offset = t->col_offset == -1 ? 0 : t->col_offset;
+        col_number = byte_offset_to_character_offset(loc, col_offset) + 1;
     }
     else {
-        assert(p->input_mode == STRING_INPUT);
-        loc = get_error_line(p->tok->buf);
-        if (!loc) {
-            goto error;
-        }
+        Py_INCREF(Py_None);
+        loc = Py_None;
     }
-    // We may receive tokens with the col_offset not initialized (-1) since
-    // emitted by fill_token(). For instance, this can happen in some error
-    // situations involving invalid indentation.
-    int col_offset = t->col_offset == -1 ? 0 : t->col_offset;
-    Py_ssize_t col_number = byte_offset_to_character_offset(loc, col_offset) + 1;
+
+
     tmp = Py_BuildValue("(OiiN)", p->tok->filename, t->lineno, col_number, loc);
     if (!tmp) {
         goto error;
@@ -94,6 +95,7 @@ raise_syntax_error(Parser *p, const char *errmsg, ...)
         goto error;
     }
     PyErr_SetObject(PyExc_SyntaxError, value);
+
     Py_DECREF(errstr);
     Py_DECREF(value);
     return 0;
@@ -546,8 +548,7 @@ Parser_Free(Parser *p)
 }
 
 Parser *
-Parser_New(struct tok_state *tok, int start_rule, int input_mode,
-           PyArena *arena)
+Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena *arena)
 {
     Parser *p = PyMem_Malloc(sizeof(Parser));
     if (p == NULL) {
@@ -556,7 +557,6 @@ Parser_New(struct tok_state *tok, int start_rule, int input_mode,
     }
     assert(tok != NULL);
     p->tok = tok;
-    p->input_mode = input_mode;
     p->keywords = NULL;
     p->n_keyword_lists = -1;
     p->tokens = PyMem_Malloc(sizeof(Token *));
@@ -570,6 +570,7 @@ Parser_New(struct tok_state *tok, int start_rule, int input_mode,
     p->fill = 0;
     p->size = 1;
 
+    p->errcode = errcode;
     p->arena = arena;
     p->start_rule = start_rule;
 
@@ -602,6 +603,35 @@ run_parser(Parser *p)
 }
 
 mod_ty
+run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filename_ob,
+                             const char *enc, const char *ps1, const char *ps2,
+                             int *errcode, PyArena *arena)
+{
+    struct tok_state *tok = PyTokenizer_FromFile(fp, enc, ps1, ps2);
+    if (tok == NULL) {
+        return NULL;
+    }
+    // This transfers the ownership to the tokenizer
+    tok->filename = filename_ob;
+    Py_INCREF(filename_ob);
+
+    // From here on we need to clean up even if there's an error
+    mod_ty result = NULL;
+
+    Parser *p = Parser_New(tok, start_rule, errcode, arena);
+    if (p == NULL) {
+        goto error;
+    }
+
+    result = run_parser(p);
+    Parser_Free(p);
+
+error:
+    PyTokenizer_Free(tok);
+    return result;
+}
+
+mod_ty
 run_parser_from_file(const char *filename, int start_rule,
                      PyObject *filename_ob, PyArena *arena)
 {
@@ -611,28 +641,9 @@ run_parser_from_file(const char *filename, int start_rule,
         return NULL;
     }
 
-    // From here on we need to clean up even if there's an error
-    mod_ty result = NULL;
+    mod_ty result = run_parser_from_file_pointer(fp, start_rule, filename_ob,
+                                                 NULL, NULL, NULL, NULL, arena);
 
-    struct tok_state *tok = PyTokenizer_FromFile(fp, NULL, NULL, NULL);
-    if (tok == NULL) {
-        goto error;
-    }
-    // This transfers the ownership to the tokenizer
-    tok->filename = filename_ob;
-    Py_INCREF(filename_ob);
-
-    Parser *p = Parser_New(tok, start_rule, FILE_INPUT, arena);
-    if (p == NULL) {
-        goto after_tok_error;
-    }
-
-    result = run_parser(p);
-    Parser_Free(p);
-
-after_tok_error:
-    PyTokenizer_Free(tok);
-error:
     fclose(fp);
     return result;
 }
@@ -652,7 +663,7 @@ run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
     // We need to clear up from here on
     mod_ty result = NULL;
 
-    Parser *p = Parser_New(tok, start_rule, STRING_INPUT, arena);
+    Parser *p = Parser_New(tok, start_rule, NULL, arena);
     if (p == NULL) {
         goto error;
     }
@@ -663,6 +674,15 @@ run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
 error:
     PyTokenizer_Free(tok);
     return result;
+}
+
+void *
+interactive_exit(Parser *p)
+{
+    if (p->errcode) {
+        *(p->errcode) = E_EOF;
+    }
+    return NULL;
 }
 
 /* Creates a single-element asdl_seq* that contains a */

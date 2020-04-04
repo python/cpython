@@ -188,6 +188,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     PyArena *arena;
     const char *ps1 = "", *ps2 = "", *enc = NULL;
     int errcode = 0;
+    int use_peg = _PyInterpreterState_GET_UNSAFE()->config.use_peg;
     _Py_IDENTIFIER(encoding);
     _Py_IDENTIFIER(__main__);
 
@@ -240,9 +241,17 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         Py_XDECREF(oenc);
         return -1;
     }
-    mod = PyParser_ASTFromFileObject(fp, filename, enc,
-                                     Py_single_input, ps1, ps2,
-                                     flags, &errcode, arena);
+
+    if (use_peg) {
+        mod = PyPegen_ASTFromFileObject(fp, filename, Py_single_input,
+                                        enc, ps1, ps2, &errcode, arena);
+    }
+    else {
+        mod = PyParser_ASTFromFileObject(fp, filename, enc,
+                                         Py_single_input, ps1, ps2,
+                                         flags, &errcode, arena);
+    }
+
     Py_XDECREF(v);
     Py_XDECREF(w);
     Py_XDECREF(oenc);

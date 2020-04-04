@@ -300,7 +300,7 @@ class TestCParser(unittest.TestCase):
             except SyntaxError as e:
                 tb = traceback.format_exc()
             self.assertTrue('File "<string>", line 1' in tb)
-            self.assertTrue(f"{text}\n        ^" in tb)
+            self.assertTrue(f"SyntaxError: invalid syntax" in tb)
 
     def test_headers_and_trailer(self) -> None:
         grammar_source = """

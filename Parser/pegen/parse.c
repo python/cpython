@@ -753,7 +753,7 @@ statement_rule(Parser *p)
     return res;
 }
 
-// statement_newline: compound_stmt NEWLINE | simple_stmt | NEWLINE
+// statement_newline: compound_stmt NEWLINE | simple_stmt | NEWLINE | $
 static asdl_seq*
 statement_newline_rule(Parser *p)
 {
@@ -809,6 +809,20 @@ statement_newline_rule(Parser *p)
             int end_col_offset = token->end_col_offset;
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = singleton_seq ( p , CHECK ( _Py_Pass ( EXTRA ) ) );
+            if (res == NULL && PyErr_Occurred()) {
+                longjmp(p->error_env, 1);
+            }
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // $
+        void *endmarker_var;
+        if (
+            (endmarker_var = endmarker_token(p))
+        )
+        {
+            res = interactive_exit ( p );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
