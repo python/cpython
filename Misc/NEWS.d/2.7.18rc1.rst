@@ -1,0 +1,89 @@
+.. bpo: 38945
+.. date: 2019-12-01-22-44-40
+.. nonce: ztmNXc
+.. release date: 2020-04-04
+.. section: Security
+
+Newline characters have been escaped when performing uu encoding to prevent
+them from overflowing into to content section of the encoded file. This
+prevents malicious or accidental modification of data during the decoding
+process.
+
+..
+
+.. bpo: 38804
+.. date: 2019-11-15-00-54-42
+.. nonce: vjbM8V
+.. section: Security
+
+Fixes a ReDoS vulnerability in :mod:`http.cookiejar`. Patch by Ben Caller.
+
+..
+
+.. bpo: 38535
+.. date: 2019-10-20-12-43-48
+.. nonce: ESMkVN
+.. section: Core and Builtins
+
+Fixed line numbers and column offsets for AST nodes for calls without
+arguments in decorators.
+
+..
+
+.. bpo: 38576
+.. date: 2020-03-18-01-30-50
+.. nonce: cvI68q
+.. section: Library
+
+Disallow control characters in hostnames in http.client, addressing
+CVE-2019-18348. Such potentially malicious header injection URLs now cause a
+InvalidURL to be raised.
+
+..
+
+.. bpo: 27973
+.. date: 2019-12-30-07-59-34
+.. nonce: mgWXH1
+.. section: Library
+
+Fix urllib.urlretrieve failing on subsequent ftp transfers from the same
+host.
+
+..
+
+.. bpo: 38730
+.. date: 2019-11-06-20-53-54
+.. nonce: UQsW_r
+.. section: Build
+
+Fix problems identified by GCC's ``-Wstringop-truncation`` warning.
+
+..
+
+.. bpo: 37025
+.. date: 2019-10-04-03-46-36
+.. nonce: tLheEe
+.. section: Windows
+
+``AddRefActCtx()`` was needlessly being checked for failure in
+``PC/dl_nt.c``.
+
+..
+
+.. bpo: 38295
+.. date: 2019-12-17-03-43-04
+.. nonce: hgDvlB
+.. section: macOS
+
+Prevent failure of test_relative_path in test_py_compile on macOS Catalina.
+
+..
+
+.. bpo: 38540
+.. date: 2019-10-21-09-24-03
+.. nonce: 314N_T
+.. section: C API
+
+Fixed possible leak in :c:func:`PyArg_Parse` and similar functions for
+format units ``"es#"`` and ``"et#"`` when the macro
+:c:macro:`PY_SSIZE_T_CLEAN` is not defined.

@@ -1,2 +1,0 @@
-Fix urllib.urlretrieve failing on subsequent ftp transfers from the same
-host.

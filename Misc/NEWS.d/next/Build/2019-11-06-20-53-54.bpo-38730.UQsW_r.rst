@@ -1,1 +1,0 @@
-Fix problems identified by GCC's ``-Wstringop-truncation`` warning.

@@ -1,2 +1,0 @@
-``AddRefActCtx()`` was needlessly being checked for failure in
-``PC/dl_nt.c``.
