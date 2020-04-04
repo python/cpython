@@ -1551,7 +1551,9 @@ class _patch(object):
         entered_patchers = self._entered_patchers
         del self._entered_patchers
         for patcher in reversed(entered_patchers):
-            patcher.__exit__(*exc_info)
+            if patcher.__exit__(*exc_info):
+                exc_info = (None, None, None)
+        return exc_info[0] is None
 
 
     def start(self):
@@ -1567,9 +1569,9 @@ class _patch(object):
             self._active_patches.remove(self)
         except ValueError:
             # If the patch hasn't been started this will fail
-            return
+            return None
 
-        return self.__exit__()
+        return self.__exit__(None, None, None)
 
 
 
@@ -1869,9 +1871,9 @@ class _patch_dict(object):
             _patch._active_patches.remove(self)
         except ValueError:
             # If the patch hasn't been started this will fail
-            pass
+            return None
 
-        return self.__exit__()
+        return self.__exit__(None, None, None)
 
 
 def _clear_dict(in_dict):
