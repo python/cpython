@@ -1311,12 +1311,9 @@ class _patch(object):
     @contextlib.contextmanager
     def decoration_helper(self, patched, args, keywargs):
         extra_args = []
-        entered_patchers = []
-        exc_info = (None, None, None)
-        try:
+        with contextlib.ExitStack() as exit_stack:
             for patching in patched.patchings:
-                arg = patching.__enter__()
-                entered_patchers.append(patching)
+                arg = exit_stack.enter_context(patching)
                 if patching.attribute_name is not None:
                     keywargs.update(arg)
                 elif patching.new is DEFAULT:
@@ -1324,19 +1321,6 @@ class _patch(object):
 
             args += tuple(extra_args)
             yield (args, keywargs)
-        except:
-            # Pass the exception to __exit__
-            exc_info = sys.exc_info()
-            for patching in reversed(entered_patchers):
-                if patching.__exit__(*exc_info):
-                    # silence the exception
-                    exc_info = (None, None, None)
-            if exc_info[0] is not None:
-                # re-raise the exception
-                raise
-        else:
-            for patching in reversed(entered_patchers):
-                patching.__exit__(None, None, None)
 
 
     def decorate_callable(self, func):
@@ -1513,7 +1497,7 @@ class _patch(object):
 
         self.temp_original = original
         self.is_local = local
-        self._entered_patchers = []
+        self._exit_stack = contextlib.ExitStack()
         try:
             setattr(self.target, self.attribute, new_attr)
             if self.attribute_name is not None:
@@ -1521,8 +1505,7 @@ class _patch(object):
                 if self.new is DEFAULT:
                     extra_args[self.attribute_name] =  new
                 for patching in self.additional_patchers:
-                    arg = patching.__enter__()
-                    self._entered_patchers.append(patching)
+                    arg = self._exit_stack.enter_context(patching)
                     if patching.new is DEFAULT:
                         extra_args.update(arg)
                 return extra_args
@@ -1548,12 +1531,9 @@ class _patch(object):
         del self.temp_original
         del self.is_local
         del self.target
-        entered_patchers = self._entered_patchers
-        del self._entered_patchers
-        for patcher in reversed(entered_patchers):
-            if patcher.__exit__(*exc_info):
-                exc_info = (None, None, None)
-        return exc_info[0] is None
+        exit_stack = self._exit_stack
+        del self._exit_stack
+        return exit_stack.__exit__(*sys.exc_info())
 
 
     def start(self):
