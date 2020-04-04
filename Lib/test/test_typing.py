@@ -3561,7 +3561,6 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(Emp._fields, ('name', 'id'))
         self.assertEqual(Emp.__annotations__,
                          collections.OrderedDict([('name', str), ('id', int)]))
-        self.assertIs(Emp._field_types, Emp.__annotations__)
 
     def test_namedtuple_pyversion(self):
         if sys.version_info[:2] < (3, 6):
@@ -3581,7 +3580,6 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(CoolEmployee._fields, ('name', 'cool'))
         self.assertEqual(CoolEmployee.__annotations__,
                          collections.OrderedDict(name=str, cool=int))
-        self.assertIs(CoolEmployee._field_types, CoolEmployee.__annotations__)
 
     def test_annotation_usage_with_default(self):
         jelle = CoolEmployeeWithDefault('Jelle')
@@ -3594,7 +3592,8 @@ class NamedTupleTests(BaseTestCase):
 
         self.assertEqual(CoolEmployeeWithDefault.__name__, 'CoolEmployeeWithDefault')
         self.assertEqual(CoolEmployeeWithDefault._fields, ('name', 'cool'))
-        self.assertEqual(CoolEmployeeWithDefault._field_types, dict(name=str, cool=int))
+        self.assertEqual(CoolEmployeeWithDefault.__annotations__,
+                         dict(name=str, cool=int))
         self.assertEqual(CoolEmployeeWithDefault._field_defaults, dict(cool=0))
 
         with self.assertRaises(TypeError):
@@ -3641,7 +3640,6 @@ class XMethBad2(NamedTuple):
         self.assertEqual(LocalEmployee.__name__, 'LocalEmployee')
         self.assertEqual(LocalEmployee._fields, ('name', 'age'))
         self.assertEqual(LocalEmployee.__annotations__, dict(name=str, age=int))
-        self.assertIs(LocalEmployee._field_types, LocalEmployee.__annotations__)
         with self.assertRaises(TypeError):
             NamedTuple('Name', [('x', int)], y=str)
         with self.assertRaises(TypeError):
