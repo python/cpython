@@ -1393,103 +1393,110 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
     return result;
 }
 
-
-/* Module initialization. */
-
-static PyMethodDef module_methods[] = {
-    _LZMA_IS_CHECK_SUPPORTED_METHODDEF
-    _LZMA__ENCODE_FILTER_PROPERTIES_METHODDEF
-    _LZMA__DECODE_FILTER_PROPERTIES_METHODDEF
-    {NULL}
-};
-
-static PyModuleDef _lzmamodule = {
-    PyModuleDef_HEAD_INIT,
-    "_lzma",
-    NULL,
-    -1,
-    module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-};
-
 /* Some of our constants are more than 32 bits wide, so PyModule_AddIntConstant
    would not work correctly on platforms with 32-bit longs. */
 static int
 module_add_int_constant(PyObject *m, const char *name, long long value)
 {
     PyObject *o = PyLong_FromLongLong(value);
-    if (o == NULL)
+    if (o == NULL) {
         return -1;
-    if (PyModule_AddObject(m, name, o) == 0)
-        return 0;
-    Py_DECREF(o);
-    return -1;
+    }
+    if (PyModule_AddObject(m, name, o) < 0) {
+        Py_DECREF(o);
+        return -1;
+    }
+    return 0;
 }
 
 #define ADD_INT_PREFIX_MACRO(m, macro) \
     module_add_int_constant(m, #macro, LZMA_ ## macro)
 
-PyMODINIT_FUNC
-PyInit__lzma(void)
+static int
+lzma_exec(PyObject *module)
 {
-    PyObject *m;
-
     empty_tuple = PyTuple_New(0);
-    if (empty_tuple == NULL)
-        return NULL;
+    if (empty_tuple == NULL) {
+        return -1;
+    }
 
-    m = PyModule_Create(&_lzmamodule);
-    if (m == NULL)
-        return NULL;
-
-    if (PyModule_AddIntMacro(m, FORMAT_AUTO) == -1 ||
-        PyModule_AddIntMacro(m, FORMAT_XZ) == -1 ||
-        PyModule_AddIntMacro(m, FORMAT_ALONE) == -1 ||
-        PyModule_AddIntMacro(m, FORMAT_RAW) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, CHECK_NONE) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, CHECK_CRC32) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, CHECK_CRC64) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, CHECK_SHA256) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, CHECK_ID_MAX) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, CHECK_UNKNOWN) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, FILTER_LZMA1) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, FILTER_LZMA2) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, FILTER_DELTA) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, FILTER_X86) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, FILTER_IA64) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, FILTER_ARM) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, FILTER_ARMTHUMB) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, FILTER_SPARC) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, FILTER_POWERPC) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, MF_HC3) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, MF_HC4) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, MF_BT2) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, MF_BT3) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, MF_BT4) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, MODE_FAST) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, MODE_NORMAL) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, PRESET_DEFAULT) == -1 ||
-        ADD_INT_PREFIX_MACRO(m, PRESET_EXTREME) == -1)
-        return NULL;
+    if (PyModule_AddIntMacro(module, FORMAT_AUTO) == -1 ||
+        PyModule_AddIntMacro(module, FORMAT_XZ) == -1 ||
+        PyModule_AddIntMacro(module, FORMAT_ALONE) == -1 ||
+        PyModule_AddIntMacro(module, FORMAT_RAW) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, CHECK_NONE) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, CHECK_CRC32) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, CHECK_CRC64) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, CHECK_SHA256) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, CHECK_ID_MAX) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, CHECK_UNKNOWN) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, FILTER_LZMA1) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, FILTER_LZMA2) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, FILTER_DELTA) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, FILTER_X86) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, FILTER_IA64) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, FILTER_ARM) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, FILTER_ARMTHUMB) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, FILTER_SPARC) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, FILTER_POWERPC) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, MF_HC3) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, MF_HC4) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, MF_BT2) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, MF_BT3) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, MF_BT4) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, MODE_FAST) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, MODE_NORMAL) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, PRESET_DEFAULT) == -1 ||
+        ADD_INT_PREFIX_MACRO(module, PRESET_EXTREME) == -1) {
+        return -1;
+    }
 
     Error = PyErr_NewExceptionWithDoc(
             "_lzma.LZMAError", "Call to liblzma failed.", NULL, NULL);
-    if (Error == NULL)
-        return NULL;
+    if (Error == NULL) {
+        return -1;
+    }
     Py_INCREF(Error);
-    if (PyModule_AddObject(m, "LZMAError", Error) == -1)
-        return NULL;
-
-    if (PyModule_AddType(m, &Compressor_type) < 0) {
-        return NULL;
+    if (PyModule_AddObject(module, "LZMAError", Error) == -1) {
+        Py_DECREF(Error);
+        return -1;
     }
 
-    if (PyModule_AddType(m, &Decompressor_type) < 0) {
-        return NULL;
+    if (PyModule_AddType(module, &Compressor_type) < 0) {
+        return -1;
     }
 
-    return m;
+    if (PyModule_AddType(module, &Decompressor_type) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+/* Module initialization. */
+
+static PyMethodDef lzma_methods[] = {
+    _LZMA_IS_CHECK_SUPPORTED_METHODDEF
+    _LZMA__ENCODE_FILTER_PROPERTIES_METHODDEF
+    _LZMA__DECODE_FILTER_PROPERTIES_METHODDEF
+    {NULL}
+};
+
+static PyModuleDef_Slot lzma_slots[] = {
+    {Py_mod_exec, lzma_exec},
+    {0, NULL}
+};
+
+static PyModuleDef _lzmamodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_lzma",
+    .m_size = 0,
+    .m_methods = lzma_methods,
+    .m_slots = lzma_slots,
+};
+
+PyMODINIT_FUNC
+PyInit__lzma(void)
+{
+    return PyModuleDef_Init(&_lzmamodule);
 }
