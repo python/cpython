@@ -4108,7 +4108,7 @@ exit:
 
 #endif /* defined(HAVE_WAITPID) */
 
-#if defined(HAVE_CWAIT)
+#if !defined(HAVE_WAITPID) && defined(HAVE_CWAIT)
 
 PyDoc_STRVAR(os_waitpid__doc__,
 "waitpid($module, pid, options, /)\n"
@@ -4144,7 +4144,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CWAIT) */
+#endif /* !defined(HAVE_WAITPID) && defined(HAVE_CWAIT) */
 
 #if defined(HAVE_WAIT)
 
@@ -5323,7 +5323,7 @@ exit:
 
 #endif /* defined(HAVE_SENDFILE) && defined(__APPLE__) */
 
-#if defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__))
+#if defined(HAVE_SENDFILE) && !defined(__APPLE__) && (defined(__FreeBSD__) || defined(__DragonFly__))
 
 PyDoc_STRVAR(os_sendfile__doc__,
 "sendfile($module, /, out_fd, in_fd, offset, count, headers=(),\n"
@@ -5429,9 +5429,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__)) */
+#endif /* defined(HAVE_SENDFILE) && !defined(__APPLE__) && (defined(__FreeBSD__) || defined(__DragonFly__)) */
 
-#if defined(HAVE_SENDFILE) && !(defined(__FreeBSD__) || defined(__DragonFly__))
+#if defined(HAVE_SENDFILE) && !defined(__APPLE__) && !(defined(__FreeBSD__) || defined(__DragonFly__))
 
 PyDoc_STRVAR(os_sendfile__doc__,
 "sendfile($module, /, out_fd, in_fd, offset, count)\n"
@@ -5504,7 +5504,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SENDFILE) && !(defined(__FreeBSD__) || defined(__DragonFly__)) */
+#endif /* defined(HAVE_SENDFILE) && !defined(__APPLE__) && !(defined(__FreeBSD__) || defined(__DragonFly__)) */
 
 #if defined(__APPLE__)
 
@@ -9426,4 +9426,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=cb3ee4b9b5d2ce16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=545c08f76d7a6286 input=a9049054013a1b77]*/
