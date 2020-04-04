@@ -12481,7 +12481,7 @@ os_get_terminal_size_impl(PyObject *module, int fd)
     }
 #endif /* TERMSIZE_USE_CONIO */
 
-    PyObject *TerminalSizeType = get_posix_state(self)->TerminalSizeType;
+    PyObject *TerminalSizeType = get_posix_state(module)->TerminalSizeType;
     termsize = PyStructSequence_New((PyTypeObject *)TerminalSizeType);
     if (termsize == NULL)
         return NULL;
