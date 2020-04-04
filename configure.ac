@@ -3647,55 +3647,55 @@ AC_CHECK_DECL(dirfd,
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
 AC_MSG_CHECKING(for chroot)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=chroot]])],
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=chroot]])],
   [AC_DEFINE(HAVE_CHROOT, 1, Define if you have the 'chroot' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
 AC_MSG_CHECKING(for link)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=link]])],
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=link]])],
   [AC_DEFINE(HAVE_LINK, 1, Define if you have the 'link' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
 AC_MSG_CHECKING(for symlink)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=symlink]])],
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=symlink]])],
   [AC_DEFINE(HAVE_SYMLINK, 1, Define if you have the 'symlink' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
 AC_MSG_CHECKING(for fchdir)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=fchdir]])],
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=fchdir]])],
   [AC_DEFINE(HAVE_FCHDIR, 1, Define if you have the 'fchdir' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
 AC_MSG_CHECKING(for fsync)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=fsync]])],
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=fsync]])],
   [AC_DEFINE(HAVE_FSYNC, 1, Define if you have the 'fsync' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
 AC_MSG_CHECKING(for fdatasync)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=fdatasync]])],
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[void *x=fdatasync]])],
   [AC_DEFINE(HAVE_FDATASYNC, 1, Define if you have the 'fdatasync' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
 AC_MSG_CHECKING(for epoll)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/epoll.h>]], [[void *x=epoll_create]])],
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/epoll.h>]], [[void *x=epoll_create]])],
   [AC_DEFINE(HAVE_EPOLL, 1, Define if you have the 'epoll' functions.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
 AC_MSG_CHECKING(for epoll_create1)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/epoll.h>]], [[void *x=epoll_create1]])],
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/epoll.h>]], [[void *x=epoll_create1]])],
   [AC_DEFINE(HAVE_EPOLL_CREATE1, 1, Define if you have the 'epoll_create1' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
 AC_MSG_CHECKING(for kqueue)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/event.h>
     ]], [[int x=kqueue()]])],
@@ -3704,7 +3704,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   [AC_MSG_RESULT(no)
 ])
 AC_MSG_CHECKING(for prlimit)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/time.h>
 #include <sys/resource.h>
     ]], [[void *x=prlimit]])],
@@ -3714,7 +3714,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ])
 
 AC_MSG_CHECKING(for memfd_create)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
 #endif
@@ -3734,7 +3734,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 # because of the missing prototypes.
 
 AC_MSG_CHECKING(for ctermid_r)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 ]], [[void* p = ctermid_r]])],
   [AC_DEFINE(HAVE_CTERMID_R, 1, Define if you have the 'ctermid_r' function.)
