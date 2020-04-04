@@ -959,7 +959,7 @@ The module defines the following classes, functions and decorators:
    .. versionchanged:: 3.6.1
       Added support for default values, methods, and docstrings.
 
-   .. versionchanged:: 3.8
+   .. deprecated-removed:: 3.8 3.9
       Deprecated the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
 
