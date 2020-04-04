@@ -146,7 +146,8 @@ def get_argspec(ob):
         else:
             argspec = ''
 
-    if '/' in argspec and len(argspec) < _MAX_COLS - len(_argument_positional):        # Add explanation TODO remove after 3.7, before 3.9.
+    if '/' in argspec and len(argspec) < _MAX_COLS - len(_argument_positional):
+        # Add explanation TODO remove after 3.7, before 3.9.
         argspec += _argument_positional
     if isinstance(fob, type) and argspec == '()':
         # If fob has no argument, use default callable argspec.
@@ -155,7 +156,7 @@ def get_argspec(ob):
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
              if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
 
-    # Augment lines from docstring and join to get argspec.
+    # Augment lines from docstring, if any, and join to get argspec.
     if isinstance(ob_call, types.MethodType):
         doc = ob_call.__doc__
     else:
