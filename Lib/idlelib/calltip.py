@@ -130,11 +130,10 @@ def get_argspec(ob):
     the arguments in addition to the return value.
     '''
     argspec = ""
-
     try:
         ob_call = ob.__call__
-    except AttributeError:
-        return _default_callable_argspec
+    except BaseException:  # Buggy user object could raise anything.
+        return argspec
 
     fob = ob_call if isinstance(ob_call, types.MethodType) else ob
 
@@ -145,11 +144,7 @@ def get_argspec(ob):
         if msg.startswith(_invalid_method):
             return _invalid_method
 
-    if (
-        '/' in argspec and
-        len(argspec) < _MAX_COLS - len(_argument_positional)
-    ):
-        # Add explanation TODO remove after 3.7, before 3.9.
+    if '/' in argspec and len(argspec) < _MAX_COLS - len(_argument_positional):        # Add explanation TODO remove after 3.7, before 3.9.
         argspec += _argument_positional
     if isinstance(fob, type) and argspec == '()':
         # If fob has no argument, use default callable argspec.
