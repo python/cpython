@@ -129,20 +129,22 @@ def get_argspec(ob):
     empty line or _MAX_LINES.    For builtins, this typically includes
     the arguments in addition to the return value.
     '''
-    argspec = ""
+    # Determine function object fob to inspect.
     try:
         ob_call = ob.__call__
     except BaseException:  # Buggy user object could raise anything.
-        return argspec
-
+        return ''  # No popup for non-callables.
     fob = ob_call if isinstance(ob_call, types.MethodType) else ob
 
+    # Initialize argspec and wrap it to get lines.
     try:
         argspec = str(inspect.signature(fob))
     except Exception as err:
         msg = str(err)
         if msg.startswith(_invalid_method):
             return _invalid_method
+        else:
+            argspec = ''
 
     if '/' in argspec and len(argspec) < _MAX_COLS - len(_argument_positional):        # Add explanation TODO remove after 3.7, before 3.9.
         argspec += _argument_positional
@@ -153,6 +155,7 @@ def get_argspec(ob):
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
              if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
 
+    # Augment lines from docstring and join to get argspec.
     if isinstance(ob_call, types.MethodType):
         doc = ob_call.__doc__
     else:
