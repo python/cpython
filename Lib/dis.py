@@ -318,7 +318,7 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
     arguments.
 
     """
-    labels = findlabels(code)
+    labels = _findlabels_bytes(code)
     starts_line = None
     for offset, op, arg in _unpack_opargs(code):
         if linestarts is not None:
@@ -429,6 +429,14 @@ def _unpack_opargs(code):
 
 def findlabels(code):
     """Detect all offsets in a byte code which are jump targets.
+
+    Return the list of offsets.
+
+    """
+    return _findlabels_bytes(code.co_code)
+
+def _findlabels_bytes(code):
+    """Detect all offsets in a raw compiled bytecode string which are jump targets.
 
     Return the list of offsets.
 
