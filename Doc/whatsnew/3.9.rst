@@ -734,6 +734,11 @@ Removed
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
+* The ``_field_types`` attribute of the :class:`typing.NamedTuple` class
+  has been removed.  It was deprecated deprecated since Python 3.8.  Use
+  the ``__annotations__`` attribute instead.
+  (Contributed by Serhiy Storchaka in :issue:`40182`.)
+
 
 Porting to Python 3.9
 =====================
