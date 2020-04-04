@@ -1473,8 +1473,6 @@ lzma_exec(PyObject *module)
     return 0;
 }
 
-/* Module initialization. */
-
 static PyMethodDef lzma_methods[] = {
     _LZMA_IS_CHECK_SUPPORTED_METHODDEF
     _LZMA__ENCODE_FILTER_PROPERTIES_METHODDEF
