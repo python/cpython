@@ -1,0 +1,1 @@
+memo of PyScannerObject should be traversed in :mod:`_json`.
