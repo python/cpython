@@ -120,16 +120,24 @@ error:
     return NULL;
 }
 
-// isinstance(obj, TypeVar) without importing typing.py.  If someone
-// names some other class TypeVar, it will be mistaken for a TypeVar.
-// Maybe that's a feature; or maybe we'll have to see if
-// sys.modules['typing'] exists and look for its 'TypeVar' attribute
-// (which is roughly what dataclasses.py uses to recognize ClassVar).
+// isinstance(obj, TypeVar) without importing typing.py.
 static int
 is_typevar(PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
-    return strcmp(type->tp_name, "TypeVar") == 0;
+    if (strcmp(type->tp_name, "TypeVar") != 0) {
+        return 0;
+    }
+    PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
+    if (module == NULL) {
+        // Oops.  (Bubbling up the error would just complicate the callers.)
+        PyErr_Clear();
+        return 0;
+    }
+    int res = PyUnicode_Check(module)
+        && PyUnicode_CompareWithASCIIString(module, "typing") == 0;
+    Py_DECREF(module);
+    return res;
 }
 
 // Index of item in self[:len], or -1 if not found (self is a tuple)
