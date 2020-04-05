@@ -218,12 +218,10 @@ ga_getitem(PyObject *self, PyObject *item)
     gaobject *alias = (gaobject *)self;
     // do a lookup for __parameters__ so it gets populated (if not already)
     if (alias->parameters == NULL) {
-        _Py_IDENTIFIER(__parameters__);
-        PyObject *params = _PyObject_GetAttrId(self, &PyId___parameters__);
-        if (params == NULL) {
+        alias->parameters = make_parameters(alias->args);
+        if (alias->parameters == NULL) {
             return NULL;
         }
-        Py_DECREF(params);
     }
     Py_ssize_t nparams = PyTuple_GET_SIZE(alias->parameters);
     if (nparams == 0) {
@@ -274,7 +272,13 @@ ga_hash(PyObject *self)
     gaobject *alias = (gaobject *)self;
     // TODO: Hash in the hash for the origin
     Py_hash_t h0 = PyObject_Hash(alias->origin);
+    if (h0 == -1) {
+        return -1;
+    }
     Py_hash_t h1 = PyObject_Hash(alias->args);
+    if (h1 == -1) {
+        return -1;
+    }
     return h0 ^ h1;
 }
 
@@ -284,8 +288,13 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
     gaobject *alias = (gaobject *)self;
     PyObject *obj = PyObject_Call(alias->origin, args, kwds);
     if (obj != NULL) {
-        PyObject_SetAttrString(obj, "__orig_class__", self);
-        PyErr_Clear();
+        if (PyObject_SetAttrString(obj, "__orig_class__", self) < 0) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                Py_DECREF(obj);
+                return NULL;
+            }
+            PyErr_Clear();
+        }
     }
     return obj;
 }
@@ -309,7 +318,7 @@ ga_getattro(PyObject *self, PyObject *name)
             if (*p == NULL) {
                 return PyObject_GetAttr(alias->origin, name);
             }
-            if (PyUnicode_CompareWithASCIIString(name, *p) == 0) {
+            if (_PyUnicode_EqualToASCIIString(name, *p)) {
                 break;
             }
         }
@@ -342,13 +351,13 @@ ga_richcompare(PyObject *a, PyObject *b, int op)
 
     gaobject *aa = (gaobject *)a;
     gaobject *bb = (gaobject *)b;
-    PyObject *eq = PyObject_RichCompare(aa->origin, bb->origin, Py_EQ);
-    if (eq == NULL)
+    int eq = PyObject_RichCompareBool(aa->origin, bb->origin, Py_EQ);
+    if (eq < 0) {
         return NULL;
-    if (eq == Py_False) {
-        return eq;
     }
-    Py_DECREF(eq);
+    if (!eq) {
+        Py_RETURN_FALSE;
+    }
     return PyObject_RichCompare(aa->args, bb->args, Py_EQ);
 }
 
@@ -421,10 +430,10 @@ static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
-        return PyErr_Format(PyExc_TypeError, "GenericAlias does not support keyword arguments");
+        return PyErr_SetString(PyExc_TypeError, "GenericAlias does not support keyword arguments");
     }
-    if (PyTuple_Size(args) != 2) {
-        return PyErr_Format(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
+    if (PyTuple_GET_SIZE(args) != 2) {
+        return PyErr_SetString(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
