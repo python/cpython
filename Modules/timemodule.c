@@ -24,6 +24,10 @@
 #  include <pthread.h>
 #endif
 
+#if defined(_AIX)
+#   include <sys/thread.h>
+#endif
+
 #if defined(__WATCOMC__) && !defined(__QNX__)
 #include <i86.h>
 #else
@@ -1341,6 +1345,26 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     /* ktime and utime have a resolution of 100 nanoseconds */
     t = _PyTime_FromNanoseconds((ktime + utime) * 100);
     *tp = t;
+    return 0;
+}
+#elif defined(_AIX)
+#define HAVE_THREAD_TIME
+static int
+_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+{
+    thread_cputime_t tc;
+    if (thread_cputime(-1, &tc) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+
+    if (info) {
+        info->implementation = "thread_cputime()";
+        info->monotonic = 1;
+        info->adjustable = 0;
+        info->resolution = 1e-9;
+    }
+    *tp = _PyTime_FromNanoseconds(tc.stime);
     return 0;
 }
 

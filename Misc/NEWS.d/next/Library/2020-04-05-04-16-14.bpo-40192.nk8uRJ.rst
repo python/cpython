@@ -1,0 +1,2 @@
+Improve :func:`time.thread_time` in AIX to output in nanoseconds and use
+`thread_cputime` backend. Patch by Batuhan Taskaya.
