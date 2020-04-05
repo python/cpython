@@ -644,9 +644,7 @@ class SpooledTemporaryFile:
                                    'encoding': encoding, 'newline': newline,
                                    'dir': dir, 'errors': errors}
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return _types.GenericAlias(cls, item)
+    __class_getitem__ = classmethod(_types.GenericAlias)
 
     def _check(self, file):
         if self._rolled: return

@@ -112,9 +112,7 @@ class Awaitable(metaclass=ABCMeta):
             return _check_methods(C, "__await__")
         return NotImplemented
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return GenericAlias(cls, item)
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class Coroutine(Awaitable):
@@ -175,9 +173,7 @@ class AsyncIterable(metaclass=ABCMeta):
             return _check_methods(C, "__aiter__")
         return NotImplemented
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return GenericAlias(cls, item)
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class AsyncIterator(AsyncIterable):
@@ -265,9 +261,7 @@ class Iterable(metaclass=ABCMeta):
             return _check_methods(C, "__iter__")
         return NotImplemented
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return GenericAlias(cls, item)
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class Iterator(Iterable):
@@ -401,9 +395,7 @@ class Container(metaclass=ABCMeta):
             return _check_methods(C, "__contains__")
         return NotImplemented
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return GenericAlias(cls, item)
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class Collection(Sized, Iterable, Container):
@@ -431,9 +423,7 @@ class Callable(metaclass=ABCMeta):
             return _check_methods(C, "__call__")
         return NotImplemented
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return GenericAlias(cls, item)
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 ### SETS ###
@@ -733,9 +723,7 @@ class MappingView(Sized):
     def __repr__(self):
         return '{0.__class__.__name__}({0._mapping!r})'.format(self)
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return GenericAlias(cls, item)
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class KeysView(MappingView, Set):

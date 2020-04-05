@@ -1080,9 +1080,7 @@ class PathLike(abc.ABC):
             return _check_methods(subclass, '__fspath__')
         return NotImplemented
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return GenericAlias(cls, item)
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 if name == 'nt':

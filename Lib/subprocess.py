@@ -447,9 +447,7 @@ class CompletedProcess(object):
             args.append('stderr={!r}'.format(self.stderr))
         return "{}({})".format(type(self).__name__, ', '.join(args))
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return types.GenericAlias(cls, item)
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
     def check_returncode(self):
@@ -993,9 +991,7 @@ class Popen(object):
             obj_repr = obj_repr[:76] + "...>"
         return obj_repr
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return types.GenericAlias(cls, item)
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     @property
     def universal_newlines(self):

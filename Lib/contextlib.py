@@ -16,8 +16,7 @@ class AbstractContextManager(abc.ABC):
 
     """An abstract base class for context managers."""
 
-    def __class_getitem__(cls, parameters):
-        return GenericAlias(cls, parameters)
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __enter__(self):
         """Return `self` upon entering the runtime context."""
@@ -39,8 +38,7 @@ class AbstractAsyncContextManager(abc.ABC):
 
     """An abstract base class for asynchronous context managers."""
 
-    def __class_getitem__(cls, parameters):
-        return GenericAlias(cls, parameters)
+    __class_getitem__ = classmethod(GenericAlias)
 
     async def __aenter__(self):
         """Return `self` upon entering the runtime context."""

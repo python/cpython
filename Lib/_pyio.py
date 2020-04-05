@@ -8,7 +8,6 @@ import codecs
 import errno
 import stat
 import sys
-import types
 # Import _thread instead of threading to reduce startup cost
 from _thread import allocate_lock as Lock
 if sys.platform in {'win32', 'cygwin'}:
