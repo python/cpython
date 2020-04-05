@@ -11424,6 +11424,9 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_PAGE_SIZE
     {"SC_PAGE_SIZE",    _SC_PAGE_SIZE},
 #endif
+#ifdef _SC_AIX_REALMEM
+    {"SC_AIX_REALMEM", _SC_AIX_REALMEM},
+#endif
 #ifdef _SC_PASS_MAX
     {"SC_PASS_MAX",     _SC_PASS_MAX},
 #endif
