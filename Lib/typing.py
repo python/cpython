@@ -1705,9 +1705,7 @@ def _make_nmtuple(name, types):
     msg = "NamedTuple('Name', [(f0, t0), (f1, t1), ...]); each t must be a type"
     types = [(n, _type_check(t, msg)) for n, t in types]
     nm_tpl = collections.namedtuple(name, [n for n, t in types])
-    # Prior to PEP 526, only _field_types attribute was assigned.
-    # Now __annotations__ are used and _field_types is deprecated (remove in 3.9)
-    nm_tpl.__annotations__ = nm_tpl._field_types = dict(types)
+    nm_tpl.__annotations__ = dict(types)
     try:
         nm_tpl.__module__ = sys._getframe(2).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
@@ -1716,11 +1714,11 @@ def _make_nmtuple(name, types):
 
 
 # attributes prohibited to set in NamedTuple class syntax
-_prohibited = ('__new__', '__init__', '__slots__', '__getnewargs__',
-               '_fields', '_field_defaults', '_field_types',
-               '_make', '_replace', '_asdict', '_source')
+_prohibited = {'__new__', '__init__', '__slots__', '__getnewargs__',
+               '_fields', '_field_defaults',
+               '_make', '_replace', '_asdict', '_source'}
 
-_special = ('__module__', '__name__', '__annotations__')
+_special = {'__module__', '__name__', '__annotations__'}
 
 
 class NamedTupleMeta(type):
@@ -1728,6 +1726,9 @@ class NamedTupleMeta(type):
     def __new__(cls, typename, bases, ns):
         if ns.get('_root', False):
             return super().__new__(cls, typename, bases, ns)
+        if len(bases) > 1:
+            raise TypeError("Multiple inheritance with NamedTuple is not supported")
+        assert bases[0] is NamedTuple
         types = ns.get('__annotations__', {})
         nm_tpl = _make_nmtuple(typename, types.items())
         defaults = []
