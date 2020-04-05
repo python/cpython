@@ -289,7 +289,9 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *obj = PyObject_Call(alias->origin, args, kwds);
     if (obj != NULL) {
         if (PyObject_SetAttrString(obj, "__orig_class__", self) < 0) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError) &&
+                !PyErr_ExceptionMatches(PyExc_TypeError))
+            {
                 Py_DECREF(obj);
                 return NULL;
             }
