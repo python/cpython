@@ -371,17 +371,17 @@ ga_mro_entries(PyObject *self, PyObject *args)
 static PyObject *
 ga_instancecheck(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return PyErr_Format(PyExc_TypeError,
-                        "isinstance() argument 2 cannot be a parameterized generic",
-                        self);
+    PyErr_SetString(PyExc_TypeError,
+                    "isinstance() argument 2 cannot be a parameterized generic");
+    return NULL;
 }
 
 static PyObject *
 ga_subclasscheck(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return PyErr_Format(PyExc_TypeError,
-                        "issubclass() argument 2 cannot be a parameterized generic",
-                        self);
+    PyErr_SetString(PyExc_TypeError,
+                    "issubclass() argument 2 cannot be a parameterized generic");
+    return NULL;
 }
 
 static PyObject *
@@ -413,7 +413,6 @@ ga_parameters(PyObject *self, void *unused)
     if (alias->parameters == NULL) {
         alias->parameters = make_parameters(alias->args);
         if (alias->parameters == NULL) {
-            Py_DECREF(alias->parameters);
             return NULL;
         }
     }
@@ -430,10 +429,12 @@ static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
-        return PyErr_SetString(PyExc_TypeError, "GenericAlias does not support keyword arguments");
+        PyErr_SetString(PyExc_TypeError, "GenericAlias does not support keyword arguments");
+        return NULL;
     }
     if (PyTuple_GET_SIZE(args) != 2) {
-        return PyErr_SetString(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
+        PyErr_SetString(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
+        return NULL;
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
