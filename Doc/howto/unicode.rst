@@ -157,8 +157,8 @@ UTF-8 has several convenient properties:
 References
 ----------
 
-The `Unicode Consortium site <https://www.unicode.org/main.html>`_ has character charts, a
-glossary, and PDF versions of the Unicode specification.  Be prepared for some
+The `Unicode Consortium site <https://www.unicode.org/main.html>`_ has character charts,
+a glossary, and PDF versions of the Unicode specification.  Be prepared for some
 difficult reading.  `A chronology <https://www.unicode.org/history/>`_ of the
 origin and development of Unicode is also available on the site.
 
