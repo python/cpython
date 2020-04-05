@@ -10,7 +10,9 @@ PyPegen_ASTFromString(const char *str, int mode, PyArena *arena)
     if (filename_ob == NULL) {
         return NULL;
     }
-
+    if (PySys_Audit("compile", "yO", str, filename_ob) < 0) {
+        return NULL;
+    }
     mod_ty result = run_parser_from_string(str, mode, filename_ob, arena);
     Py_XDECREF(filename_ob);
     return result;
@@ -34,6 +36,9 @@ PyPegen_ASTFromFileObject(FILE *fp, PyObject *filename_ob, int mode,
                           const char *enc, const char *ps1, const char* ps2,
                           int *errcode, PyArena *arena)
 {
+    if (PySys_Audit("compile", "OO", Py_None, filename_ob) < 0) {
+        return NULL;
+    }
     return run_parser_from_file_pointer(fp, mode, filename_ob, enc, ps1, ps2,
                                         errcode, arena);
 }

@@ -71,7 +71,8 @@ raise_syntax_error(Parser *p, const char *errmsg, ...)
     if (p->start_rule == Py_file_input) {
         loc = PyErr_ProgramTextObject(p->tok->filename, t->lineno);
     }
-    else if (p->start_rule == Py_fstring_input || p->start_rule == Py_eval_input) {
+
+    if (!loc) {
         loc = get_error_line(p->tok->buf);
     }
 
