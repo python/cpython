@@ -36,46 +36,78 @@ ga_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
 {
-    PyObject *qualname = PyObject_GetAttrString(p, "__qualname__");
-    PyErr_Clear();
-    PyObject *module = PyObject_GetAttrString(p, "__module__");
-    PyErr_Clear();
+    _Py_IDENTIFIER(__module__);
+    _Py_IDENTIFIER(__qualname__);
+    _Py_IDENTIFIER(__origin__);
+    _Py_IDENTIFIER(__args__);
+    PyObject *qualname = NULL;
+    PyObject *module = NULL;
     PyObject *r = NULL;
+    PyObject *tmp;
     int err;
-    if (PyObject_HasAttrString(p, "__origin__") &&
-        PyObject_HasAttrString(p, "__args__"))
-    {
-        // It looks like a GenericAlias
-        r = PyObject_Repr(p);
-    }
-    else if (p == Py_Ellipsis) {
+
+    if (p == Py_Ellipsis) {
         // The Ellipsis object
         r = PyUnicode_FromString("...");
+        goto done;
     }
-    else if (qualname != NULL && module != NULL) {
-        // Looks like a class
-        if (PyUnicode_CompareWithASCIIString(module, "builtins") == 0) {
-            // builtins don't need a module name
-            Py_INCREF(qualname);
-            r = qualname;
+
+    if (_PyObject_LookupAttrId(p, &PyId___origin__, &tmp) < 0) {
+        goto done;
+    }
+    if (tmp != NULL) {
+        Py_DECREF(tmp);
+        if (_PyObject_LookupAttrId(p, &PyId___args__, &tmp) < 0) {
+            goto done;
         }
-        else {
-            r = PyUnicode_FromFormat("%U.%U", module, qualname);
+        if (tmp != NULL) {
+            Py_DECREF(tmp);
+            // It looks like a GenericAlias
+            goto use_repr;
         }
+    }
+
+    if (_PyObject_LookupAttrId(p, &PyId___qualname__, &qualname) < 0) {
+        goto done;
+    }
+    if (qualname == NULL) {
+        goto use_repr;
+    }
+    if (_PyObject_LookupAttrId(p, &PyId___module__, &module) < 0) {
+        goto done;
+    }
+    if (module == NULL || module == Py_None) {
+        goto use_repr;
+    }
+
+    // Looks like a class
+    if (PyUnicode_Check(module) &&
+        _PyUnicode_EqualToASCIIString(module, "builtins"))
+    {
+        // builtins don't need a module name
+        Py_INCREF(qualname);
+        r = qualname;
+        goto done;
     }
     else {
-        // fallback
-        r = PyObject_Repr(p);
+        r = PyUnicode_FromFormat("%S.%S", module, qualname);
+        goto done;
     }
+
+use_repr:
+    r = PyObject_Repr(p);
+
+done:
+    Py_XDECREF(qualname);
+    Py_XDECREF(module);
     if (r == NULL) {
         // error if any of the above PyObject_Repr/PyUnicode_From* fail
         err = -1;
-    } else {
-        err = _PyUnicodeWriter_WriteStr(writer, r);
     }
-    Py_XDECREF(qualname);
-    Py_XDECREF(module);
-    Py_XDECREF(r);
+    else {
+        err = _PyUnicodeWriter_WriteStr(writer, r);
+        Py_DECREF(r);
+    }
     return err;
 }
 
