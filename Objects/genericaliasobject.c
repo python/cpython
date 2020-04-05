@@ -115,7 +115,7 @@ static PyObject *
 ga_repr(PyObject *self)
 {
     gaobject *alias = (gaobject *)self;
-    Py_ssize_t len = PyTuple_Size(alias->args);
+    Py_ssize_t len = PyTuple_GET_SIZE(alias->args);
 
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
