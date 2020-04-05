@@ -167,7 +167,7 @@ is_typevar(PyObject *obj)
         return 0;
     }
     int res = PyUnicode_Check(module)
-        && PyUnicode_CompareWithASCIIString(module, "typing") == 0;
+        && _PyUnicode_EqualToASCIIString(module, "typing");
     Py_DECREF(module);
     return res;
 }
