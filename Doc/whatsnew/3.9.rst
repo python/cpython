@@ -371,6 +371,12 @@ finalization crashed with a Python fatal error if a daemon thread was still
 running.
 (Contributed by Victor Stinner in :issue:`37266`.)
 
+time
+----
+
+:func:`~time.thread_time` now output in nanosecond resolution via
+``thread_cputime`` on AIX. (Contributed by Batuhan Taskaya in :issue:`40192`)
+
 sys
 ---
 
