@@ -85,8 +85,7 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         _PyUnicode_EqualToASCIIString(module, "builtins"))
     {
         // builtins don't need a module name
-        Py_INCREF(qualname);
-        r = qualname;
+        r = PyObject_Str(qualname);
         goto done;
     }
     else {
