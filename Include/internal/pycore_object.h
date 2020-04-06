@@ -87,6 +87,13 @@ extern void _Py_PrintReferences(FILE *);
 extern void _Py_PrintReferenceAddresses(FILE *);
 #endif
 
+static inline PyObject **
+_PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
+{
+    Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
+    return (PyObject **)((char *)op + offset);
+}
+
 #ifdef __cplusplus
 }
 #endif
