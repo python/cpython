@@ -1075,7 +1075,8 @@ PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globa
         goto exit;
 
     if (use_peg) {
-        mod = PyPegen_ASTFromFile(filename_str, start, arena);
+        mod = PyPegen_ASTFromFileObject(fp, filename, start, NULL, NULL, NULL,
+                                        NULL, arena);
     }
     else {
         mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, 0, 0,
