@@ -1413,7 +1413,10 @@ static PyMethodDef _functools_methods[] = {
 static void
 _functools_free(void *m)
 {
-    Py_CLEAR(kwd_mark);
+    // FIXME: Do not clear kwd_mark to avoid NULL pointer dereferencing if we have
+    //        other modules instances that could use it. Will fix when PEP-573 land
+    //        and we could move kwd_mark to a per-module state.
+    // Py_CLEAR(kwd_mark);
 }
 
 static int

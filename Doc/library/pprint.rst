@@ -147,7 +147,7 @@ The :mod:`pprint` module also provides several shortcut functions:
 
    .. index:: builtin: eval
 
-   Determine if the formatted representation of *object* is "readable," or can be
+   Determine if the formatted representation of *object* is "readable", or can be
    used to reconstruct the value using :func:`eval`.  This always returns ``False``
    for recursive objects.
 

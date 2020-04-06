@@ -726,12 +726,6 @@ PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
     Py_ssize_t start,
     Py_ssize_t end);
 
-/* --- wchar_t support for platforms which support it --------------------- */
-
-#ifdef HAVE_WCHAR_H
-PyAPI_FUNC(void*) _PyUnicode_AsKind(PyObject *s, unsigned int kind);
-#endif
-
 /* --- Manage the default encoding ---------------------------------------- */
 
 /* Returns a pointer to the default encoding (UTF-8) of the

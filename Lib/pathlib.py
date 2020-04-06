@@ -1041,7 +1041,6 @@ class Path(PurePath):
     """
     __slots__ = (
         '_accessor',
-        '_closed',
     )
 
     def __new__(cls, *args, **kwargs):
@@ -1058,7 +1057,6 @@ class Path(PurePath):
               # Private non-constructor arguments
               template=None,
               ):
-        self._closed = False
         if template is not None:
             self._accessor = template._accessor
         else:
@@ -1071,15 +1069,18 @@ class Path(PurePath):
         return self._from_parsed_parts(self._drv, self._root, parts)
 
     def __enter__(self):
-        if self._closed:
-            self._raise_closed()
         return self
 
     def __exit__(self, t, v, tb):
-        self._closed = True
-
-    def _raise_closed(self):
-        raise ValueError("I/O operation on closed path")
+        # https://bugs.python.org/issue39682
+        # In previous versions of pathlib, this method marked this path as
+        # closed; subsequent attempts to perform I/O would raise an IOError.
+        # This functionality was never documented, and had the effect of
+        # making Path objects mutable, contrary to PEP 428. In Python 3.9 the
+        # _closed attribute was removed, and this method made a no-op.
+        # This method and __enter__()/__exit__() should be deprecated and
+        # removed in the future.
+        pass
 
     def _opener(self, name, flags, mode=0o666):
         # A stub for the opener argument to built-in open()
@@ -1090,8 +1091,6 @@ class Path(PurePath):
         Open the file pointed by this path and return a file descriptor,
         as os.open() does.
         """
-        if self._closed:
-            self._raise_closed()
         return self._accessor.open(self, flags, mode)
 
     # Public API
@@ -1125,15 +1124,11 @@ class Path(PurePath):
         """Iterate over the files in this directory.  Does not yield any
         result for the special paths '.' and '..'.
         """
-        if self._closed:
-            self._raise_closed()
         for name in self._accessor.listdir(self):
             if name in {'.', '..'}:
                 # Yielding a path object for these makes little sense
                 continue
             yield self._make_child_relpath(name)
-            if self._closed:
-                self._raise_closed()
 
     def glob(self, pattern):
         """Iterate over this subtree and yield all existing files (of any
@@ -1170,8 +1165,6 @@ class Path(PurePath):
         Use resolve() to get the canonical path to a file.
         """
         # XXX untested yet!
-        if self._closed:
-            self._raise_closed()
         if self.is_absolute():
             return self
         # FIXME this must defer to the specific flavour (and, under Windows,
@@ -1186,8 +1179,6 @@ class Path(PurePath):
         normalizing it (for example turning slashes into backslashes under
         Windows).
         """
-        if self._closed:
-            self._raise_closed()
         s = self._flavour.resolve(self, strict=strict)
         if s is None:
             # No symlink resolution => for consistency, raise an error if
@@ -1227,8 +1218,6 @@ class Path(PurePath):
         Open the file pointed by this path and return a file object, as
         the built-in open() function does.
         """
-        if self._closed:
-            self._raise_closed()
         return io.open(self, mode, buffering, encoding, errors, newline,
                        opener=self._opener)
 
@@ -1278,8 +1267,6 @@ class Path(PurePath):
         """
         Create this file with the given access mode, if it doesn't exist.
         """
-        if self._closed:
-            self._raise_closed()
         if exist_ok:
             # First try to bump modification time
             # Implementation note: GNU touch uses the UTIME_NOW option of
@@ -1301,8 +1288,6 @@ class Path(PurePath):
         """
         Create a new directory at this given path.
         """
-        if self._closed:
-            self._raise_closed()
         try:
             self._accessor.mkdir(self, mode)
         except FileNotFoundError:
@@ -1320,8 +1305,6 @@ class Path(PurePath):
         """
         Change the permissions of the path, like os.chmod().
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.chmod(self, mode)
 
     def lchmod(self, mode):
@@ -1329,8 +1312,6 @@ class Path(PurePath):
         Like chmod(), except if the path points to a symlink, the symlink's
         permissions are changed, rather than its target's.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.lchmod(self, mode)
 
     def unlink(self, missing_ok=False):
@@ -1338,8 +1319,6 @@ class Path(PurePath):
         Remove this file or link.
         If the path is a directory, use rmdir() instead.
         """
-        if self._closed:
-            self._raise_closed()
         try:
             self._accessor.unlink(self)
         except FileNotFoundError:
@@ -1350,8 +1329,6 @@ class Path(PurePath):
         """
         Remove this directory.  The directory must be empty.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.rmdir(self)
 
     def lstat(self):
@@ -1359,16 +1336,12 @@ class Path(PurePath):
         Like stat(), except if the path points to a symlink, the symlink's
         status information is returned, rather than its target's.
         """
-        if self._closed:
-            self._raise_closed()
         return self._accessor.lstat(self)
 
     def link_to(self, target):
         """
         Create a hard link pointing to a path named target.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.link_to(self, target)
 
     def rename(self, target):
@@ -1376,8 +1349,6 @@ class Path(PurePath):
         Rename this path to the given path,
         and return a new Path instance pointing to the given path.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.rename(self, target)
         return self.__class__(target)
 
@@ -1387,8 +1358,6 @@ class Path(PurePath):
         destination if it exists, and return a new Path instance
         pointing to the given path.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.replace(self, target)
         return self.__class__(target)
 
@@ -1397,8 +1366,6 @@ class Path(PurePath):
         Make this path a symlink pointing to the given path.
         Note the order of arguments (self, target) is the reverse of os.symlink's.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.symlink(target, self, target_is_directory)
 
     # Convenience functions for querying the stat results

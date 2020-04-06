@@ -783,8 +783,11 @@ calculate_module_search_path(PyCalculatePath *calculate,
 {
     int skiphome = calculate->home==NULL ? 0 : 1;
 #ifdef Py_ENABLE_SHARED
-    calculate->machine_path = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
-    calculate->user_path = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+    if (!Py_IgnoreEnvironmentFlag) {
+        calculate->machine_path = getpythonregpath(HKEY_LOCAL_MACHINE,
+                                                   skiphome);
+        calculate->user_path = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+    }
 #endif
     /* We only use the default relative PYTHONPATH if we haven't
        anything better to use! */

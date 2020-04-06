@@ -2208,7 +2208,13 @@ Here's a summary of performance improvements since Python 3.3:
     Timing loop:
         loop_overhead                    0.3     0.5     0.6     0.4     0.3     0.3
 
-    (Measured from the macOS 64-bit builds found at python.org)
+The benchmarks were measured on an
+`Intel® Core™ i7-4960HQ processor
+<https://ark.intel.com/content/www/us/en/ark/products/76088/intel-core-i7-4960hq-processor-6m-cache-up-to-3-80-ghz.html>`_
+running the macOS 64-bit builds found at
+`python.org <https://www.python.org/downloads/mac-osx/>`_.
+The benchmark script displays timings in nanoseconds.
+
 
 Notable changes in Python 3.8.1
 ===============================

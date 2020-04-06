@@ -726,40 +726,49 @@ static struct PyMethodDef PyLocale_Methods[] = {
 };
 
 static int
-_locale_exec(PyObject *m)
+_locale_exec(PyObject *module)
 {
 #ifdef HAVE_LANGINFO_H
     int i;
 #endif
+#define ADD_INT(module, value)                                    \
+    do {                                                          \
+        if (PyModule_AddIntConstant(module, #value, value) < 0) { \
+            return -1;                                            \
+        }                                                         \
+    } while (0)
 
-    PyModule_AddIntMacro(m, LC_CTYPE);
-    PyModule_AddIntMacro(m, LC_TIME);
-    PyModule_AddIntMacro(m, LC_COLLATE);
-    PyModule_AddIntMacro(m, LC_MONETARY);
+    ADD_INT(module, LC_CTYPE);
+    ADD_INT(module, LC_TIME);
+    ADD_INT(module, LC_COLLATE);
+    ADD_INT(module, LC_MONETARY);
 
 #ifdef LC_MESSAGES
-    PyModule_AddIntMacro(m, LC_MESSAGES);
+    ADD_INT(module, LC_MESSAGES);
 #endif /* LC_MESSAGES */
 
-    PyModule_AddIntMacro(m, LC_NUMERIC);
-    PyModule_AddIntMacro(m, LC_ALL);
-    PyModule_AddIntMacro(m, CHAR_MAX);
+    ADD_INT(module, LC_NUMERIC);
+    ADD_INT(module, LC_ALL);
+    ADD_INT(module, CHAR_MAX);
 
-    _locale_state *state = get_locale_state(m);
+    _locale_state *state = get_locale_state(module);
     state->Error = PyErr_NewException("locale.Error", NULL, NULL);
     if (state->Error == NULL) {
         return -1;
     }
-    Py_INCREF(get_locale_state(m)->Error);
-    if (PyModule_AddObject(m, "Error", get_locale_state(m)->Error) < 0) {
-        Py_DECREF(get_locale_state(m)->Error);
+    Py_INCREF(get_locale_state(module)->Error);
+    if (PyModule_AddObject(module, "Error", get_locale_state(module)->Error) < 0) {
+        Py_DECREF(get_locale_state(module)->Error);
         return -1;
     }
 
 #ifdef HAVE_LANGINFO_H
     for (i = 0; langinfo_constants[i].name; i++) {
-        PyModule_AddIntConstant(m, langinfo_constants[i].name,
-                                langinfo_constants[i].value);
+        if (PyModule_AddIntConstant(module,
+                                    langinfo_constants[i].name,
+                                    langinfo_constants[i].value) < 0) {
+            return -1;
+        }
     }
 #endif
 
@@ -767,6 +776,8 @@ _locale_exec(PyObject *m)
         return -1;
     }
     return 0;
+
+#undef ADD_INT
 }
 
 static struct PyModuleDef_Slot _locale_slots[] = {

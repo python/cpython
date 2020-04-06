@@ -652,6 +652,7 @@ scanner_traverse(PyScannerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->parse_float);
     Py_VISIT(self->parse_int);
     Py_VISIT(self->parse_constant);
+    Py_VISIT(self->memo);
     return 0;
 }
 

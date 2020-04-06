@@ -10,7 +10,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.1d
+    - OPENSSL=1.1.1f
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     - CFLAGS="-I${OPENSSL_DIR}/include"

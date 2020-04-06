@@ -1271,7 +1271,7 @@ subtype_dealloc(PyObject *self)
         if (type->tp_weaklistoffset && !base->tp_weaklistoffset) {
             /* Modeled after GET_WEAKREFS_LISTPTR() */
             PyWeakReference **list = (PyWeakReference **) \
-                PyObject_GET_WEAKREFS_LISTPTR(self);
+                _PyObject_GET_WEAKREFS_LISTPTR(self);
             while (*list)
                 _PyWeakref_ClearRef(*list);
         }

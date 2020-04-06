@@ -322,6 +322,10 @@ The :func:`os.putenv` and :func:`os.unsetenv` functions are now always
 available.
 (Contributed by Victor Stinner in :issue:`39395`.)
 
+Add :func:`os.waitstatus_to_exitcode` function:
+convert a wait status to an exit code.
+(Contributed by Victor Stinner in :issue:`40094`.)
+
 pathlib
 -------
 
@@ -548,6 +552,11 @@ Build and C API Changes
 * The :c:func:`PyModule_AddType` function is added to help adding a type to a module.
   (Contributed by Dong-hee Na in :issue:`40024`.)
 
+* The Windows registry is no longer used to initialize :data:`sys.path` when
+  the ``-E`` option is used. This is significant when embedding Python on
+  Windows.
+  (Contributed by Zackery Spytz in :issue:`8901`.)
+
 Deprecated
 ==========
 
@@ -618,6 +627,9 @@ Deprecated
   :c:func:`PyEval_InitThreads` now does nothing. The :term:`GIL` is initialized
   by :c:func:`Py_Initialize()` since Python 3.7.
   (Contributed by Victor Stinner in :issue:`39877`.)
+
+* Passing ``None`` as the first argument to the :func:`shlex.split` function
+  has been deprecated.  (Contributed by Zackery Spytz in :issue:`33262`.)
 
 
 Removed
@@ -721,6 +733,11 @@ Removed
   :c:type:`PyConfig` have been removed. They required a special Python build by
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
+
+* The ``_field_types`` attribute of the :class:`typing.NamedTuple` class
+  has been removed.  It was deprecated deprecated since Python 3.8.  Use
+  the ``__annotations__`` attribute instead.
+  (Contributed by Serhiy Storchaka in :issue:`40182`.)
 
 
 Porting to Python 3.9

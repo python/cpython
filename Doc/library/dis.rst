@@ -244,7 +244,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 .. function:: findlabels(code)
 
-   Detect all offsets in the code object *code* which are jump targets, and
+   Detect all offsets in the raw compiled bytecode string *code* which are jump targets, and
    return a list of these offsets.
 
 

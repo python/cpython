@@ -485,9 +485,7 @@ class ThreadTests(BaseTestCase):
             else:
                 t.join()
 
-                pid, status = os.waitpid(pid, 0)
-                self.assertTrue(os.WIFEXITED(status))
-                self.assertEqual(10, os.WEXITSTATUS(status))
+                support.wait_process(pid, exitcode=10)
 
     def test_main_thread(self):
         main = threading.main_thread()
@@ -507,6 +505,7 @@ class ThreadTests(BaseTestCase):
     def test_main_thread_after_fork(self):
         code = """if 1:
             import os, threading
+            from test import support
 
             pid = os.fork()
             if pid == 0:
@@ -515,7 +514,7 @@ class ThreadTests(BaseTestCase):
                 print(main.ident == threading.current_thread().ident)
                 print(main.ident == threading.get_ident())
             else:
-                os.waitpid(pid, 0)
+                support.wait_process(pid, exitcode=0)
         """
         _, out, err = assert_python_ok("-c", code)
         data = out.decode().replace('\r', '')
@@ -528,6 +527,7 @@ class ThreadTests(BaseTestCase):
     def test_main_thread_after_fork_from_nonmain_thread(self):
         code = """if 1:
             import os, threading, sys
+            from test import support
 
             def f():
                 pid = os.fork()
@@ -540,7 +540,7 @@ class ThreadTests(BaseTestCase):
                     # we have to flush before exit.
                     sys.stdout.flush()
                 else:
-                    os.waitpid(pid, 0)
+                    support.wait_process(pid, exitcode=0)
 
             th = threading.Thread(target=f)
             th.start()
@@ -813,11 +813,15 @@ class ThreadJoinOnShutdown(BaseTestCase):
     def test_2_join_in_forked_process(self):
         # Like the test above, but from a forked interpreter
         script = """if 1:
+            from test import support
+
             childpid = os.fork()
             if childpid != 0:
-                os.waitpid(childpid, 0)
+                # parent process
+                support.wait_process(childpid, exitcode=0)
                 sys.exit(0)
 
+            # child process
             t = threading.Thread(target=joiningfunc,
                                  args=(threading.current_thread(),))
             t.start()
@@ -832,13 +836,17 @@ class ThreadJoinOnShutdown(BaseTestCase):
         # In the forked process, the main Thread object must be marked as stopped.
 
         script = """if 1:
+            from test import support
+
             main_thread = threading.current_thread()
             def worker():
                 childpid = os.fork()
                 if childpid != 0:
-                    os.waitpid(childpid, 0)
+                    # parent process
+                    support.wait_process(childpid, exitcode=0)
                     sys.exit(0)
 
+                # child process
                 t = threading.Thread(target=joiningfunc,
                                      args=(main_thread,))
                 print('end of main')
@@ -901,9 +909,9 @@ class ThreadJoinOnShutdown(BaseTestCase):
             # just fork a child process and wait it
             pid = os.fork()
             if pid > 0:
-                os.waitpid(pid, 0)
+                support.wait_process(pid, exitcode=50)
             else:
-                os._exit(0)
+                os._exit(50)
 
         # start a bunch of threads that will fork() child processes
         threads = []
@@ -930,12 +938,11 @@ class ThreadJoinOnShutdown(BaseTestCase):
         if pid == 0:
             # check that threads states have been cleared
             if len(sys._current_frames()) == 1:
-                os._exit(0)
+                os._exit(51)
             else:
-                os._exit(1)
+                os._exit(52)
         else:
-            _, status = os.waitpid(pid, 0)
-            self.assertEqual(0, status)
+            support.wait_process(pid, exitcode=51)
 
         for t in threads:
             t.join()

@@ -1103,8 +1103,7 @@ class TestModule(unittest.TestCase):
                 child_val = eval(f.read())
             self.assertNotEqual(val, child_val)
 
-            pid, status = os.waitpid(pid, 0)
-            self.assertEqual(status, 0)
+            support.wait_process(pid, exitcode=0)
 
 
 if __name__ == "__main__":

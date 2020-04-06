@@ -5124,7 +5124,7 @@ class TestResourceTracker(unittest.TestCase):
         pid = _resource_tracker._pid
         if pid is not None:
             os.kill(pid, signal.SIGKILL)
-            os.waitpid(pid, 0)
+            support.wait_process(pid, exitcode=-signal.SIGKILL)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             _resource_tracker.ensure_running()

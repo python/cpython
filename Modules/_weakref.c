@@ -1,8 +1,9 @@
 #include "Python.h"
+#include "pycore_object.h"   // _PyObject_GET_WEAKREFS_LISTPTR
 
 
 #define GET_WEAKREFS_LISTPTR(o) \
-        ((PyWeakReference **) PyObject_GET_WEAKREFS_LISTPTR(o))
+        ((PyWeakReference **) _PyObject_GET_WEAKREFS_LISTPTR(o))
 
 /*[clinic input]
 module _weakref

@@ -3013,7 +3013,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 e = ast_for_expr(c, CHILD(ch, 1));
                 if (!e)
                     return NULL;
-                kw = keyword(NULL, e, c->c_arena);
+                kw = keyword(NULL, e, chch->n_lineno, chch->n_col_offset,
+                             e->end_lineno, e->end_col_offset, c->c_arena);
                 asdl_seq_SET(keywords, nkeywords++, kw);
                 ndoublestars++;
             }
@@ -3047,8 +3048,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
             else {
                 /* a keyword argument */
                 keyword_ty kw;
-                identifier key, tmp;
-                int k;
+                identifier key;
 
                 // To remain LL(1), the grammar accepts any test (basically, any
                 // expression) in the keyword slot of a call site.  So, we need
@@ -3092,18 +3092,12 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 if (forbidden_name(c, key, chch, 1)) {
                     return NULL;
                 }
-                for (k = 0; k < nkeywords; k++) {
-                    tmp = ((keyword_ty)asdl_seq_GET(keywords, k))->arg;
-                    if (tmp && !PyUnicode_Compare(tmp, key)) {
-                        ast_error(c, chch,
-                                  "keyword argument repeated");
-                        return NULL;
-                    }
-                }
                 e = ast_for_expr(c, CHILD(ch, 2));
                 if (!e)
                     return NULL;
-                kw = keyword(key, e, c->c_arena);
+                kw = keyword(key, e, chch->n_lineno, chch->n_col_offset,
+                             e->end_lineno, e->end_col_offset, c->c_arena);
+
                 if (!kw)
                     return NULL;
                 asdl_seq_SET(keywords, nkeywords++, kw);

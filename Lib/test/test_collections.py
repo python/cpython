@@ -253,8 +253,9 @@ class TestChainMap(unittest.TestCase):
         # testing behavior between chainmap and iterable key-value pairs
         with self.assertRaises(TypeError):
             cm3 | pairs
+        tmp = cm3.copy()
         cm3 |= pairs
-        self.assertEqual(cm3.maps, [cm3.maps[0] | dict(pairs), *cm3.maps[1:]])
+        self.assertEqual(cm3.maps, [tmp.maps[0] | dict(pairs), *tmp.maps[1:]])
 
         # testing proper return types for ChainMap and it's subclasses
         class Subclass(ChainMap):
