@@ -240,8 +240,10 @@ def _save_and_remove_module(name, orig_modules):
     """
     # try to import the module and raise an error if it can't be imported
     if name not in sys.modules:
+        orig_modules = sys.modules.copy()
         __import__(name)
-        del sys.modules[name]
+        sys.modules.clear()
+        sys.modules.update(orig_modules)
     for modname in list(sys.modules):
         if modname == name or modname.startswith(name + '.'):
             orig_modules[modname] = sys.modules[modname]
