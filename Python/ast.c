@@ -4695,8 +4695,12 @@ fstring_fix_node_location(const node *parent, node *n, char *expr_str)
         if (substr) {
             start = substr;
             while (start > parent->n_str) {
-                if (start[0] == '\n')
+                if (start[0] == '\n') {
+                    /* when the f-string expression is on a new line, clear
+                       old offset and also don't count the `\n` */
+                    cols = -1;
                     break;
+                }
                 start--;
             }
             cols += (int)(substr - start);
@@ -4770,7 +4774,9 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     }
     /* Reuse str to find the correct column offset. */
     str[0] = '{';
-    str[len+1] = '}';
+    /* bpo-35212: if the fstring has a format_spec, it doesn't match a close
+       brace. */
+    str[len+1] = 0;
     fstring_fix_node_location(n, mod_n, str);
     mod = PyAST_FromNode(mod_n, &cf, "<fstring>", c->c_arena);
     PyMem_RawFree(str);

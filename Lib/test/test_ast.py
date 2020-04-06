@@ -645,6 +645,21 @@ class AST_Tests(unittest.TestCase):
         attr_b = tree.body[0].decorator_list[0].value
         self.assertEqual(attr_b.end_col_offset, 4)
 
+    def test_issue35212_fstring_col_offset(self):
+        tree = ast.parse(dedent('''
+            (
+                f"""Some multi-line text.
+                    {a:b}
+                It goes on..."""
+            )
+        ''').strip())
+        fstr = tree.body[0].value
+        value = fstr.values[1].value
+        self.assertEqual(value.col_offset, 9)
+        self.assertEqual(value.lineno, 3)
+        self.assertEqual(value.end_col_offset, 10)
+        self.assertEqual(value.end_lineno, 3)
+
     def test_ast_asdl_signature(self):
         self.assertEqual(ast.withitem.__doc__, "withitem(expr context_expr, expr? optional_vars)")
         self.assertEqual(ast.GtE.__doc__, "GtE")
