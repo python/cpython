@@ -2206,6 +2206,14 @@ _Py_Dealloc(PyObject *op)
     (*dealloc)(op);
 }
 
+
+PyObject **
+PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
+{
+    return _PyObject_GET_WEAKREFS_LISTPTR(op);
+}
+
+
 #ifdef __cplusplus
 }
 #endif
