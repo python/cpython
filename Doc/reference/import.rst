@@ -601,8 +601,8 @@ the module.
    might be missing for certain types of modules, such as C modules that
    are statically linked into the interpreter; for extension modules
    loaded dynamically from a shared library, it is the pathname of the
-   shared libray file. ``__file__`` is optional. If set, this attribute's 
-   value must be a  string. The import system may opt to leave ``__file__`` 
+   shared libray file. ``__file__`` is optional. If set, this attribute'
+   value must be a string.The import system may opt to leave ``__file__``
    unset if it has no semantic meaning (e.g. a module loaded from a database).
 
    If ``__file__`` is set, it may also be appropriate to set the
