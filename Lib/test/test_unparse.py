@@ -11,11 +11,8 @@ import ast
 def read_pyfile(filename):
     """Read and return the contents of a Python source file (as a
     string), taking into account the file encoding."""
-    with open(filename, "rb") as pyfile:
-        encoding = tokenize.detect_encoding(pyfile.readline)[0]
-    with open(filename, "r", encoding=encoding) as pyfile:
-        source = pyfile.read()
-    return source
+    with tokenize.open(filename) as stream:
+        return stream.read()
 
 
 for_else = """\
