@@ -38,6 +38,43 @@ byte_offset_to_character_offset(PyObject *line, int col_offset)
     return size;
 }
 
+static int
+tokenizer_error(Parser *p)
+{
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+
+    const char *msg = NULL;
+
+    switch (p->tok->done) {
+        case E_TOKEN:
+            msg = "invalid token";
+            break;
+        case E_EOFS:
+            msg = "EOF while scanning triple-quoted string literal";
+            break;
+        case E_EOLS:
+            msg = "EOL while scanning string literal";
+            break;
+        case E_EOF:
+            msg = "unexpected EOF while parsing";
+            break;
+        case E_IDENTIFIER:
+            msg = "invalid character in identifier";
+            break;
+        default:
+            msg = "unknown parsing error";
+    }
+
+
+    PyErr_Format(PyExc_SyntaxError, msg);
+    // There is no reliable column information for this error
+    PyErr_SyntaxLocationObject(p->tok->filename, p->tok->lineno, 0);
+
+    return -1;
+}
+
 static inline PyObject *
 get_error_line(char *buffer)
 {
@@ -190,12 +227,7 @@ fill_token(Parser *p)
     const char *start, *end;
     int type = PyTokenizer_Get(p->tok, &start, &end);
     if (type == ERRORTOKEN) {
-        if (!PyErr_Occurred()) {
-            PyErr_Format(PyExc_SyntaxError, "Tokenizer returned error token");
-            // There is no reliable column information for this error
-            PyErr_SyntaxLocationObject(p->tok->filename, p->tok->lineno, 0);
-        }
-        return -1;
+        return tokenizer_error(p);
     }
 
     if (p->fill == p->size) {
