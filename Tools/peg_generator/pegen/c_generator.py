@@ -355,6 +355,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 with self.indent():
                     self.print("return res;")
             self.print("int mark = p->mark;")
+            self.print("int start_mark = p->mark;")
             self.print("void **children = PyMem_Malloc(sizeof(void *));")
             self.out_of_memory_return(f"!children", "NULL")
             self.print("ssize_t children_capacity = 1;")
@@ -378,7 +379,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);")
             self.print("PyMem_Free(children);")
             if node.name:
-                self.print(f"insert_memo(p, mark, {node.name}_type, seq);")
+                self.print(f"insert_memo(p, start_mark, {node.name}_type, seq);")
             self.print("return seq;")
 
     def visit_Rule(self, node: Rule) -> None:

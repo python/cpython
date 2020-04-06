@@ -587,6 +587,7 @@ FAIL_TEST_CASES = [
          a
              a
      """),
+    ("not_terminated_string", "a = 'example"),
 ]
 
 GOOD_BUT_FAIL_TEST_CASES = [

@@ -8854,6 +8854,7 @@ _loop0_1_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -8888,7 +8889,7 @@ _loop0_1_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_1_type, seq);
+    insert_memo(p, start_mark, _loop0_1_type, seq);
     return seq;
 }
 
@@ -8898,6 +8899,7 @@ _loop1_2_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -8936,7 +8938,7 @@ _loop1_2_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_2_type, seq);
+    insert_memo(p, start_mark, _loop1_2_type, seq);
     return seq;
 }
 
@@ -8946,6 +8948,7 @@ _loop0_4_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -8986,7 +8989,7 @@ _loop0_4_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_4_type, seq);
+    insert_memo(p, start_mark, _loop0_4_type, seq);
     return seq;
 }
 
@@ -9295,6 +9298,7 @@ _loop1_13_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -9333,7 +9337,7 @@ _loop1_13_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_13_type, seq);
+    insert_memo(p, start_mark, _loop1_13_type, seq);
     return seq;
 }
 
@@ -9409,6 +9413,7 @@ _loop0_17_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -9449,7 +9454,7 @@ _loop0_17_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_17_type, seq);
+    insert_memo(p, start_mark, _loop0_17_type, seq);
     return seq;
 }
 
@@ -9484,6 +9489,7 @@ _loop0_19_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -9524,7 +9530,7 @@ _loop0_19_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_19_type, seq);
+    insert_memo(p, start_mark, _loop0_19_type, seq);
     return seq;
 }
 
@@ -9587,6 +9593,7 @@ _loop0_21_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -9621,7 +9628,7 @@ _loop0_21_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_21_type, seq);
+    insert_memo(p, start_mark, _loop0_21_type, seq);
     return seq;
 }
 
@@ -9631,6 +9638,7 @@ _loop1_22_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -9669,7 +9677,7 @@ _loop1_22_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_22_type, seq);
+    insert_memo(p, start_mark, _loop1_22_type, seq);
     return seq;
 }
 
@@ -9679,6 +9687,7 @@ _loop0_24_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -9719,7 +9728,7 @@ _loop0_24_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_24_type, seq);
+    insert_memo(p, start_mark, _loop0_24_type, seq);
     return seq;
 }
 
@@ -9782,6 +9791,7 @@ _loop0_27_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -9822,7 +9832,7 @@ _loop0_27_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_27_type, seq);
+    insert_memo(p, start_mark, _loop0_27_type, seq);
     return seq;
 }
 
@@ -9885,6 +9895,7 @@ _loop0_30_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -9925,7 +9936,7 @@ _loop0_30_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_30_type, seq);
+    insert_memo(p, start_mark, _loop0_30_type, seq);
     return seq;
 }
 
@@ -9960,6 +9971,7 @@ _loop0_32_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -10000,7 +10012,7 @@ _loop0_32_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_32_type, seq);
+    insert_memo(p, start_mark, _loop0_32_type, seq);
     return seq;
 }
 
@@ -10035,6 +10047,7 @@ _loop0_34_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -10075,7 +10088,7 @@ _loop0_34_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_34_type, seq);
+    insert_memo(p, start_mark, _loop0_34_type, seq);
     return seq;
 }
 
@@ -10110,6 +10123,7 @@ _loop0_36_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -10150,7 +10164,7 @@ _loop0_36_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_36_type, seq);
+    insert_memo(p, start_mark, _loop0_36_type, seq);
     return seq;
 }
 
@@ -10213,6 +10227,7 @@ _loop1_38_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -10251,7 +10266,7 @@ _loop1_38_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_38_type, seq);
+    insert_memo(p, start_mark, _loop1_38_type, seq);
     return seq;
 }
 
@@ -10625,6 +10640,7 @@ _loop0_52_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -10659,7 +10675,7 @@ _loop0_52_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_52_type, seq);
+    insert_memo(p, start_mark, _loop0_52_type, seq);
     return seq;
 }
 
@@ -10697,6 +10713,7 @@ _loop1_54_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -10735,7 +10752,7 @@ _loop1_54_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_54_type, seq);
+    insert_memo(p, start_mark, _loop1_54_type, seq);
     return seq;
 }
 
@@ -10801,6 +10818,7 @@ _loop0_58_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -10841,7 +10859,7 @@ _loop0_58_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_58_type, seq);
+    insert_memo(p, start_mark, _loop0_58_type, seq);
     return seq;
 }
 
@@ -10876,6 +10894,7 @@ _loop0_60_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -10916,7 +10935,7 @@ _loop0_60_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_60_type, seq);
+    insert_memo(p, start_mark, _loop0_60_type, seq);
     return seq;
 }
 
@@ -10979,6 +10998,7 @@ _loop1_62_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11017,7 +11037,7 @@ _loop1_62_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_62_type, seq);
+    insert_memo(p, start_mark, _loop1_62_type, seq);
     return seq;
 }
 
@@ -11058,6 +11078,7 @@ _loop0_65_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11098,7 +11119,7 @@ _loop0_65_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_65_type, seq);
+    insert_memo(p, start_mark, _loop0_65_type, seq);
     return seq;
 }
 
@@ -11133,6 +11154,7 @@ _loop1_66_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11171,7 +11193,7 @@ _loop1_66_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_66_type, seq);
+    insert_memo(p, start_mark, _loop1_66_type, seq);
     return seq;
 }
 
@@ -11181,6 +11203,7 @@ _loop0_68_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11221,7 +11244,7 @@ _loop0_68_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_68_type, seq);
+    insert_memo(p, start_mark, _loop0_68_type, seq);
     return seq;
 }
 
@@ -11256,6 +11279,7 @@ _loop1_69_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11294,7 +11318,7 @@ _loop1_69_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_69_type, seq);
+    insert_memo(p, start_mark, _loop1_69_type, seq);
     return seq;
 }
 
@@ -11556,6 +11580,7 @@ _loop0_79_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11590,7 +11615,7 @@ _loop0_79_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_79_type, seq);
+    insert_memo(p, start_mark, _loop0_79_type, seq);
     return seq;
 }
 
@@ -11628,6 +11653,7 @@ _loop1_81_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11666,7 +11692,7 @@ _loop1_81_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_81_type, seq);
+    insert_memo(p, start_mark, _loop1_81_type, seq);
     return seq;
 }
 
@@ -11732,6 +11758,7 @@ _loop0_85_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11772,7 +11799,7 @@ _loop0_85_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_85_type, seq);
+    insert_memo(p, start_mark, _loop0_85_type, seq);
     return seq;
 }
 
@@ -11807,6 +11834,7 @@ _loop0_87_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11847,7 +11875,7 @@ _loop0_87_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_87_type, seq);
+    insert_memo(p, start_mark, _loop0_87_type, seq);
     return seq;
 }
 
@@ -11882,6 +11910,7 @@ _loop1_88_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11920,7 +11949,7 @@ _loop1_88_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_88_type, seq);
+    insert_memo(p, start_mark, _loop1_88_type, seq);
     return seq;
 }
 
@@ -11930,6 +11959,7 @@ _loop1_89_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -11968,7 +11998,7 @@ _loop1_89_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_89_type, seq);
+    insert_memo(p, start_mark, _loop1_89_type, seq);
     return seq;
 }
 
@@ -11978,6 +12008,7 @@ _loop1_90_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -12016,7 +12047,7 @@ _loop1_90_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_90_type, seq);
+    insert_memo(p, start_mark, _loop1_90_type, seq);
     return seq;
 }
 
@@ -12026,6 +12057,7 @@ _loop0_92_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -12066,7 +12098,7 @@ _loop0_92_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_92_type, seq);
+    insert_memo(p, start_mark, _loop0_92_type, seq);
     return seq;
 }
 
@@ -12129,6 +12161,7 @@ _loop1_94_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -12167,7 +12200,7 @@ _loop1_94_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_94_type, seq);
+    insert_memo(p, start_mark, _loop1_94_type, seq);
     return seq;
 }
 
@@ -12373,6 +12406,7 @@ _loop0_101_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -12413,7 +12447,7 @@ _loop0_101_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_101_type, seq);
+    insert_memo(p, start_mark, _loop0_101_type, seq);
     return seq;
 }
 
@@ -12448,6 +12482,7 @@ _loop1_102_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -12486,7 +12521,7 @@ _loop1_102_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop1_102_type, seq);
+    insert_memo(p, start_mark, _loop1_102_type, seq);
     return seq;
 }
 
@@ -12552,6 +12587,7 @@ _loop0_106_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -12592,7 +12628,7 @@ _loop0_106_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_106_type, seq);
+    insert_memo(p, start_mark, _loop0_106_type, seq);
     return seq;
 }
 
@@ -12627,6 +12663,7 @@ _loop0_107_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -12661,7 +12698,7 @@ _loop0_107_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_107_type, seq);
+    insert_memo(p, start_mark, _loop0_107_type, seq);
     return seq;
 }
 
@@ -12671,6 +12708,7 @@ _loop0_109_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -12711,7 +12749,7 @@ _loop0_109_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_109_type, seq);
+    insert_memo(p, start_mark, _loop0_109_type, seq);
     return seq;
 }
 
@@ -12746,6 +12784,7 @@ _loop0_111_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -12786,7 +12825,7 @@ _loop0_111_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_111_type, seq);
+    insert_memo(p, start_mark, _loop0_111_type, seq);
     return seq;
 }
 
@@ -12821,6 +12860,7 @@ _loop0_113_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -12861,7 +12901,7 @@ _loop0_113_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_113_type, seq);
+    insert_memo(p, start_mark, _loop0_113_type, seq);
     return seq;
 }
 
@@ -13249,6 +13289,7 @@ _loop0_126_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
+    int start_mark = p->mark;
     void **children = PyMem_Malloc(sizeof(void *));
     if (!children) {
         PyErr_Format(PyExc_MemoryError, "Parser out of memory");
@@ -13283,7 +13324,7 @@ _loop0_126_rule(Parser *p)
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, mark, _loop0_126_type, seq);
+    insert_memo(p, start_mark, _loop0_126_type, seq);
     return seq;
 }
 
