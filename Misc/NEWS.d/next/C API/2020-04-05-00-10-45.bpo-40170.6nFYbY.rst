@@ -1,0 +1,3 @@
+Convert the :c:func:`PyObject_GET_WEAKREFS_LISTPTR` macro to a function to hide
+implementation details: the macro accessed directly to the
+:c:member:`PyTypeObject.tp_weaklistoffset` member.
