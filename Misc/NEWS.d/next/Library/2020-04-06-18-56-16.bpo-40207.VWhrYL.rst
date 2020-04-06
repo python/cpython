@@ -1,0 +1,1 @@
+Expose ``NCURSES_EXT_FUNCS`` under :mod:`curses`. Patch by Batuhan Taskaya.

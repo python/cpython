@@ -261,10 +261,12 @@ class TestCurses(unittest.TestCase):
         curses.putp(b'abc')
         curses.qiflush()
         curses.raw() ; curses.raw(1)
-        curses.set_escdelay(25)
-        self.assertEqual(curses.get_escdelay(), 25)
-        curses.set_tabsize(4)
-        self.assertEqual(curses.get_tabsize(), 4)
+        if getattr(curses, "set_escdelay"):
+            curses.set_escdelay(25)
+            self.assertEqual(curses.get_escdelay(), 25)
+        if getattr(curses, "set_tabsize"):
+            curses.set_tabsize(4)
+            self.assertEqual(curses.get_tabsize(), 4)
         if hasattr(curses, 'setsyx'):
             curses.setsyx(5,5)
         curses.tigetflag('hc')

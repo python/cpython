@@ -4617,6 +4617,9 @@ PyInit__curses(void)
         PyErr_Clear();
     }
 #endif /* NCURSES_VERSION */
+#ifdef NCURSES_EXT_FUNCS
+    SetDictInt("NCURSES_EXT_FUNCS", NCURSES_EXT_FUNCS);
+#endif
 
     SetDictInt("ERR", ERR);
     SetDictInt("OK", OK);
