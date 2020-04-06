@@ -197,7 +197,7 @@ class Symbol(object):
         return bool(self.__scope == GLOBAL_EXPLICIT)
 
     def is_local(self):
-        return bool(self.__flags & DEF_BOUND)
+        return bool(self.__scope in (LOCAL, CELL))
 
     def is_annotated(self):
         return bool(self.__flags & DEF_ANNOT)
