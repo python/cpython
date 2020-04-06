@@ -153,6 +153,7 @@ error:
 }
 
 // isinstance(obj, TypeVar) without importing typing.py.
+// Returns -1 for errors.
 static int
 is_typevar(PyObject *obj)
 {
@@ -162,9 +163,7 @@ is_typevar(PyObject *obj)
     }
     PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
     if (module == NULL) {
-        // Oops.  (Bubbling up the error would just complicate the callers.)
-        PyErr_Clear();
-        return 0;
+        return -1;
     }
     int res = PyUnicode_Check(module)
         && _PyUnicode_EqualToASCIIString(module, "typing");
@@ -195,7 +194,12 @@ make_parameters(PyObject *args)
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < len; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
-        if (is_typevar(t)) {
+        int typevar = is_typevar(t);
+        if (typevar < 0) {
+            Py_XDECREF(parameters);
+            return NULL;
+        }
+        if (typevar) {
             if (tuple_index(parameters, iparam, t) < 0) {
                 Py_INCREF(t);
                 PyTuple_SET_ITEM(parameters, iparam, t);
@@ -243,7 +247,12 @@ ga_getitem(PyObject *self, PyObject *item)
         return NULL;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
-        if (is_typevar(arg)) {
+        int typevar = is_typevar(arg);
+        if (typevar < 0) {
+            Py_DECREF(newargs);
+            return NULL;
+        }
+        if (typevar) {
             Py_ssize_t iparam = tuple_index(alias->parameters, nparams, arg);
             assert(iparam >= 0);
             if (is_tuple) {
