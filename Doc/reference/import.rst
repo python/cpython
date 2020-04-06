@@ -594,18 +594,15 @@ the module.
    Non-package modules should not have a ``__path__`` attribute.
 
 .. attribute:: __file__
-
+.. attribute:: __cached__
    ``__file__`` is the pathname of the file from which the module
    was loaded, if it was loaded from a file. The ``__file__`` attribute
    might be missing for certain types of modules, such as C modules that
    are statically linked into the interpreter; for extension modules
-   loaded dynamically from a shared library, it is the pathname
-   of the shared library file.
-.. attribute:: __cached__
-
-   ``__file__`` is optional. If set, this attribute's value must be a
-   string.  The import system may opt to leave ``__file__`` unset if it
-   has no semantic meaning (e.g. a module loaded from a database).
+   loaded dynamically from a shared library, it is the pathname of the 
+   shared library file.``__file__`` is optional. If set, this attribute's 
+   value must be a string.The import system may opt to leave ``__file__`` 
+   unset if it has no semantic meaning (e.g. a module loaded from a database).
 
    If ``__file__`` is set, it may also be appropriate to set the
    ``__cached__`` attribute which is the path to any compiled version of
