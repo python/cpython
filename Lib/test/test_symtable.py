@@ -92,10 +92,14 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(self.spam.lookup("bar").is_declared_global())
         self.assertFalse(self.internal.lookup("x").is_global())
         self.assertFalse(self.Mine.lookup("instance_var").is_global())
+        self.assertTrue(self.spam.lookup("bar").is_global())
 
     def test_local(self):
         self.assertTrue(self.spam.lookup("x").is_local())
-        self.assertFalse(self.internal.lookup("x").is_local())
+        self.assertFalse(self.spam.lookup("bar").is_local())
+
+    def test_free(self):
+        self.assertTrue(self.internal.lookup("x").is_free())
 
     def test_referenced(self):
         self.assertTrue(self.internal.lookup("x").is_referenced())
