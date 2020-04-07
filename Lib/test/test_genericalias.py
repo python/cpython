@@ -7,6 +7,9 @@ from collections import (
 )
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from contextvars import Token
+from dataclasses import Field
+from mailbox import Mailbox, _PartialFile
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType
@@ -31,6 +34,9 @@ class BaseTest(unittest.TestCase):
                   Reversible,
                   Container, Collection,
                   Callable,
+                  Mailbox, _PartialFile,
+                  Token,
+                  Field,
                   Set, MutableSet,
                   Mapping, MutableMapping, MappingView,
                   KeysView, ItemsView, ValuesView,

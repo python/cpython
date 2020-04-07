@@ -1179,10 +1179,17 @@ static PyGetSetDef PyContextTokenType_getsetlist[] = {
     {NULL}
 };
 
+static PyMethodDef PyContextTokenType_methods[] = {
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    {NULL}
+};
+
 PyTypeObject PyContextToken_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "Token",
     sizeof(PyContextToken),
+    .tp_methods = PyContextTokenType_methods,
     .tp_getset = PyContextTokenType_getsetlist,
     .tp_dealloc = (destructor)token_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
