@@ -1538,5 +1538,30 @@ concatenate_strings(Parser *p, asdl_seq *strings)
 error:
     Py_XDECREF(bytes_str);
     FstringParser_Dealloc(&state);
+    if (PyErr_Occurred()) {
+        const char *errtype = NULL;
+        if (PyErr_ExceptionMatches(PyExc_UnicodeError)) {
+            errtype = "unicode error";
+        }
+        else if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+            errtype = "value error";
+        }
+        if (errtype) {
+            PyObject *type, *value, *tback, *errstr;
+            PyErr_Fetch(&type, &value, &tback);
+            errstr = PyObject_Str(value);
+            if (errstr) {
+                raise_syntax_error(p, "(%s) %U", errtype, errstr);
+                Py_DECREF(errstr);
+            }
+            else {
+                PyErr_Clear();
+                raise_syntax_error(p, "(%s) unknown error", errtype);
+            }
+            Py_XDECREF(type);
+            Py_XDECREF(value);
+            Py_XDECREF(tback);
+        }
+    }
     return NULL;
 }
