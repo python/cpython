@@ -7,6 +7,7 @@ from collections import (
 )
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType
 import typing
@@ -34,7 +35,7 @@ class BaseTest(unittest.TestCase):
                   Mapping, MutableMapping, MappingView,
                   KeysView, ItemsView, ValuesView,
                   Sequence, MutableSequence,
-                  MappingProxyType,
+                  MappingProxyType, DirEntry
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
