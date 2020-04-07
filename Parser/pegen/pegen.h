@@ -98,7 +98,7 @@ void *indent_token(Parser *p);
 void *dedent_token(Parser *p);
 expr_ty number_token(Parser *p);
 void *string_token(Parser *p);
-int raise_syntax_error(Parser *p, const char *errmsg, ...);
+void *raise_syntax_error(Parser *p, const char *errmsg, ...);
 void *CONSTRUCTOR(Parser *p, ...);
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
@@ -164,6 +164,8 @@ KeywordOrStarred *keyword_or_starred(Parser *, void *, int);
 asdl_seq *seq_extract_starred_exprs(Parser *, asdl_seq *);
 asdl_seq *seq_delete_starred_exprs(Parser *, asdl_seq *);
 expr_ty concatenate_strings(Parser *p, asdl_seq *);
+asdl_seq *join_sequences(Parser *, asdl_seq *, asdl_seq *);
+void *arguments_parsing_error(Parser *, expr_ty);
 
 void *parse(Parser *);
 

@@ -590,6 +590,12 @@ FAIL_TEST_CASES = [
     ("not_terminated_string", "a = 'example"),
 ]
 
+FAIL_SPECIALIZED_MESSAGE_CASES = [
+    ("f(x, y, z=1, **b, *a", "iterable argument unpacking follows keyword argument unpacking"),
+    ("f(x, y=1, *z, **a, b", "positional argument follows keyword argument unpacking"),
+    ("f(x, y, z=1, a=2, b", "positional argument follows keyword argument"),
+]
+
 GOOD_BUT_FAIL_TEST_CASES = [
     ('string_concatenation_format', 'f"{hello} world" f"again {and_again}"'),
     ('string_concatenation_multiple',
@@ -691,6 +697,11 @@ class ASTGenerationTest(unittest.TestCase):
     def test_incorrect_ast_generation_on_source_files(self) -> None:
         for source in FAIL_SOURCES:
             with self.assertRaises(SyntaxError, msg=f"Parsing {source} did not raise an exception"):
+                peg_parser.parse_string(source)
+
+    def test_incorrect_ast_generation_with_specialized_errors(self) -> None:
+        for source, error_text in FAIL_SPECIALIZED_MESSAGE_CASES:
+            with self.assertRaisesRegex(SyntaxError, error_text):
                 peg_parser.parse_string(source)
 
     @unittest.expectedFailure

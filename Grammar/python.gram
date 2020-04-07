@@ -419,7 +419,8 @@ yield_expr[expr_ty]:
     | 'yield' a=[star_expressions] { _Py_Yield(a, EXTRA) }
 
 arguments[expr_ty] (memo):
-    | a=args [','] { a }
+    | a=args [','] &')' { a }
+    | incorrect_arguments
 args[expr_ty]:
     | a=starred_expression b=[',' c=args { c }] {
         _Py_Call(CONSTRUCTOR(p),
@@ -437,13 +438,19 @@ args[expr_ty]:
                      : CHECK(singleton_seq(p, a)),
                  (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                  EXTRA) }
-kwargs[asdl_seq*]: a=','.kwarg+ { a }
+kwargs[asdl_seq*]:
+    | a=','.kwarg_or_starred+ ',' b=','.kwarg_or_double_starred+ { join_sequences(p, a, b) }
+    | ','.kwarg_or_starred+
+    | ','.kwarg_or_double_starred+
 starred_expression[expr_ty]:
     | '*' a=expression { _Py_Starred(a, Load, EXTRA) }
-kwarg[KeywordOrStarred*]:
+kwarg_or_starred[KeywordOrStarred*]:
     | a=NAME '=' b=expression {
         keyword_or_starred(p, CHECK(_Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
     | a=starred_expression { keyword_or_starred(p, a, 0) }
+kwarg_or_double_starred[KeywordOrStarred*]:
+    | a=NAME '=' b=expression {
+        keyword_or_starred(p, CHECK(_Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
     | '**' a=expression { keyword_or_starred(p, CHECK(_Py_keyword(NULL, a, EXTRA)), 1) }
 
 # NOTE: star_targets may contain *bitwise_or, targets may not.
@@ -504,3 +511,9 @@ t_atom[expr_ty]:
     | '(' a=target ')' { set_expr_context(p, a, Store) }
     | '(' b=[targets] ')' { _Py_Tuple(b, Store, EXTRA) }
     | '[' b=[targets] ']' { _Py_List(b, Store, EXTRA) }
+
+
+# From here on, there are rules for invalid syntax with specialised error messages
+incorrect_arguments:
+    | args ',' '*' { raise_syntax_error(p, "iterable argument unpacking follows keyword argument unpacking") }
+    | a=args ',' args { arguments_parsing_error(p, a) }

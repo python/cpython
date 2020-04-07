@@ -87,7 +87,7 @@ get_error_line(char *buffer)
     }
 }
 
-int
+void *
 raise_syntax_error(Parser *p, const char *errmsg, ...)
 {
     PyObject *value = NULL;
@@ -136,12 +136,31 @@ raise_syntax_error(Parser *p, const char *errmsg, ...)
 
     Py_DECREF(errstr);
     Py_DECREF(value);
-    return 0;
+    return NULL;
 
 error:
     Py_XDECREF(errstr);
     Py_XDECREF(loc);
-    return -1;
+    return NULL;
+}
+
+void *arguments_parsing_error(Parser *p, expr_ty e) {
+    int kwarg_unpacking = 0;
+    for (int i = 0, l = asdl_seq_LEN(e->v.Call.keywords); i < l; i++) {
+        keyword_ty keyword = asdl_seq_GET(e->v.Call.keywords, i);
+        if (!keyword->arg) {
+            kwarg_unpacking = 1;
+        }
+    }
+
+    const char *msg = NULL;
+    if (kwarg_unpacking) {
+        msg = "positional argument follows keyword argument unpacking";
+    } else {
+        msg = "positional argument follows keyword argument";
+    }
+
+    return raise_syntax_error(p, msg);
 }
 
 #if 0
@@ -1118,8 +1137,8 @@ star_etc(Parser *p, arg_ty vararg, asdl_seq *kwonlyargs, arg_ty kwarg)
     return a;
 }
 
-static asdl_seq *
-_join_seqs(Parser *p, asdl_seq *a, asdl_seq *b)
+asdl_seq *
+join_sequences(Parser *p, asdl_seq *a, asdl_seq *b)
 {
     int first_len = asdl_seq_LEN(a);
     int second_len = asdl_seq_LEN(b);
@@ -1185,7 +1204,7 @@ make_arguments(Parser *p, asdl_seq *slash_without_default,
         if (!slash_with_default_names) {
             return NULL;
         }
-        posonlyargs = _join_seqs(p, slash_with_default->plain_names, slash_with_default_names);
+        posonlyargs = join_sequences(p, slash_with_default->plain_names, slash_with_default_names);
         if (!posonlyargs) {
             return NULL;
         }
@@ -1203,7 +1222,7 @@ make_arguments(Parser *p, asdl_seq *slash_without_default,
         if (!names_with_default_names) {
             return NULL;
         }
-        posargs = _join_seqs(p, plain_names, names_with_default_names);
+        posargs = join_sequences(p, plain_names, names_with_default_names);
         if (!posargs) {
             return NULL;
         }
@@ -1235,7 +1254,7 @@ make_arguments(Parser *p, asdl_seq *slash_without_default,
         if (!names_with_default_values) {
             return NULL;
         }
-        posdefaults = _join_seqs(p, slash_with_default_values, names_with_default_values);
+        posdefaults = join_sequences(p, slash_with_default_values, names_with_default_values);
         if (!posdefaults) {
             return NULL;
         }
