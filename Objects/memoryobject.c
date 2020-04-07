@@ -11,6 +11,7 @@
  */
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
@@ -2421,8 +2422,9 @@ is_multiindex(PyObject *key)
     size = PyTuple_GET_SIZE(key);
     for (i = 0; i < size; i++) {
         PyObject *x = PyTuple_GET_ITEM(key, i);
-        if (!PyIndex_Check(x))
+        if (!_PyIndex_Check(x)) {
             return 0;
+        }
     }
     return 1;
 }
@@ -2459,7 +2461,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
         }
     }
 
-    if (PyIndex_Check(key)) {
+    if (_PyIndex_Check(key)) {
         Py_ssize_t index;
         index = PyNumber_AsSsize_t(key, PyExc_IndexError);
         if (index == -1 && PyErr_Occurred())
@@ -2530,7 +2532,7 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
         }
     }
 
-    if (PyIndex_Check(key)) {
+    if (_PyIndex_Check(key)) {
         Py_ssize_t index;
         if (1 < view->ndim) {
             PyErr_SetString(PyExc_NotImplementedError,
