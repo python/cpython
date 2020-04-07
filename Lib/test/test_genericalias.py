@@ -16,6 +16,9 @@ from itertools import chain
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType, AsyncGeneratorType
+from tempfile import TemporaryDirectory, SpooledTemporaryFile
+from unittest.case import _AssertRaisesContext
+from queue import Queue, SimpleQueue
 import typing
 
 from typing import TypeVar
@@ -49,6 +52,9 @@ class BaseTest(unittest.TestCase):
                   DirEntry,
                   IPv4Network, IPv4Interface, IPv6Network, IPv6Interface,
                   chain,
+                  TemporaryDirectory, SpooledTemporaryFile,
+                  Queue, SimpleQueue,
+                  _AssertRaisesContext,
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
