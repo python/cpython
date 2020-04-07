@@ -390,7 +390,7 @@ PyTypeObject PyHKEY_Type =
 PyObject *
 PyHKEY_New(HKEY hInit)
 {
-    PyHKEYObject *key = PyObject_NEW(PyHKEYObject, &PyHKEY_Type);
+    PyHKEYObject *key = PyObject_New(PyHKEYObject, &PyHKEY_Type);
     if (key)
         key->hkey = hInit;
     return (PyObject *)key;
