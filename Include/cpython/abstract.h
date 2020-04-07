@@ -264,9 +264,7 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 /* === New Buffer API ============================================ */
 
 /* Return 1 if the getbuffer function is available, otherwise return 0. */
-#define PyObject_CheckBuffer(obj) \
-    ((Py_TYPE(obj)->tp_as_buffer != NULL) &&  \
-     (Py_TYPE(obj)->tp_as_buffer->bf_getbuffer != NULL))
+PyAPI_FUNC(int) PyObject_CheckBuffer(PyObject *obj);
 
 /* This is a C-API version of the getbuffer function call.  It checks
    to make sure object has the required function pointer and issues the

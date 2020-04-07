@@ -277,6 +277,16 @@ PyObject_DelItemString(PyObject *o, const char *key)
     return ret;
 }
 
+
+/* Return 1 if the getbuffer function is available, otherwise return 0. */
+int
+PyObject_CheckBuffer(PyObject *obj)
+{
+    PyBufferProcs *tp_as_buffer = Py_TYPE(obj)->tp_as_buffer;
+    return (tp_as_buffer != NULL && tp_as_buffer->bf_getbuffer != NULL);
+}
+
+
 /* We release the buffer right after use of this function which could
    cause issues later on.  Don't use these functions in new code.
  */
