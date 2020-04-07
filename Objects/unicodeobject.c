@@ -451,6 +451,12 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
         return 0;
     }
 
+    /* Disable checks during Python finalization. For example, it allows to
+       call _PyObject_Dump() during finalization for debugging purpose. */
+    if (interp->finalizing) {
+        return 0;
+    }
+
     if (encoding != NULL) {
         PyObject *handler = _PyCodec_Lookup(encoding);
         if (handler == NULL) {
