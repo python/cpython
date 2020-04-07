@@ -1446,6 +1446,8 @@ class IPv4Interface(IPv4Address):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
                           self.hostmask)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 class IPv4Network(_BaseV4, _BaseNetwork):
 
@@ -2153,6 +2155,8 @@ class IPv6Interface(IPv6Address):
     @property
     def is_loopback(self):
         return self._ip == 1 and self.network.is_loopback
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class IPv6Network(_BaseV6, _BaseNetwork):

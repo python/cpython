@@ -7,7 +7,7 @@ from collections import (
 )
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
-from ipaddress import _BaseNetwork
+from ipaddress import IPv4Network, IPv4Interface, IPv6Network, IPv6Interface
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType
@@ -36,8 +36,11 @@ class BaseTest(unittest.TestCase):
                   Mapping, MutableMapping, MappingView,
                   KeysView, ItemsView, ValuesView,
                   Sequence, MutableSequence,
-                  MappingProxyType, DirEntry, _BaseNetwork
-                  ):
+                  MappingProxyType,
+                  DirEntry,
+                  IPv4Network, IPv4Interface,
+                  IPv6Network, IPv6Interface
+            ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]
