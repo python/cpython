@@ -1,0 +1,1 @@
+Expose socket.TCP_NOTSENT_LOWAT on macOS in official builds
