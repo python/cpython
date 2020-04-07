@@ -734,6 +734,8 @@ EXPORTS
   Py_FileSystemDefaultEncoding=python39.Py_FileSystemDefaultEncoding DATA
   Py_Finalize=python39.Py_Finalize
   Py_FinalizeEx=python39.Py_FinalizeEx
+  Py_GenericAlias=python39.Py_GenericAlias
+  Py_GenericAliasType=python39.Py_GenericAliasType
   Py_GetBuildInfo=python39.Py_GetBuildInfo
   Py_GetCompiler=python39.Py_GetCompiler
   Py_GetCopyright=python39.Py_GetCopyright
