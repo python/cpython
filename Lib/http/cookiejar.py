@@ -2029,7 +2029,7 @@ class MozillaCookieJar(FileCookieJar):
                 if line == "": break
 
                 # httponly is a cookie flag as defined in rfc6265
-                # when encoded in a netscape cookie file, 
+                # when encoded in a netscape cookie file,
                 # the line is prepended with "#HttpOnly_"
                 if line.startswith(HTTPONLY_PREFIX):
                     rest[HTTPONLY_ATTR] = ""
