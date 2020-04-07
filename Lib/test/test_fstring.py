@@ -324,8 +324,8 @@ non-important content
         self.assertEqual(binop.lineno, 4)
         self.assertEqual(binop.left.lineno, 4)
         self.assertEqual(binop.right.lineno, 6)
-        self.assertEqual(binop.col_offset, 4)
-        self.assertEqual(binop.left.col_offset, 4)
+        self.assertEqual(binop.col_offset, 3)
+        self.assertEqual(binop.left.col_offset, 3)
         self.assertEqual(binop.right.col_offset, 7)
 
     def test_docstring(self):
