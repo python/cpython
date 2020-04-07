@@ -7,9 +7,10 @@ from collections import (
 )
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from mmap import mmap
 from os import DirEntry
 from re import Pattern, Match
-from types import GenericAlias, MappingProxyType
+from types import GenericAlias, MappingProxyType, AsyncGeneratorType
 import typing
 
 from typing import TypeVar
@@ -19,7 +20,8 @@ class BaseTest(unittest.TestCase):
     """Test basics."""
 
     def test_subscriptable(self):
-        for t in (type, tuple, list, dict, set, frozenset,
+        for t in (type, tuple, list, dict, set, frozenset, enumerate,
+                  mmap,
                   defaultdict, deque,
                   OrderedDict, Counter, UserDict, UserList,
                   Pattern, Match,
@@ -35,7 +37,8 @@ class BaseTest(unittest.TestCase):
                   Mapping, MutableMapping, MappingView,
                   KeysView, ItemsView, ValuesView,
                   Sequence, MutableSequence,
-                  MappingProxyType, DirEntry
+                  MappingProxyType, AsyncGeneratorType,
+                  DirEntry
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
