@@ -393,6 +393,7 @@ OBJECT_OBJS=	\
 		Objects/descrobject.o \
 		Objects/enumobject.o \
 		Objects/exceptions.o \
+		Objects/genericaliasobject.o \
 		Objects/genobject.o \
 		Objects/fileobject.o \
 		Objects/floatobject.o \

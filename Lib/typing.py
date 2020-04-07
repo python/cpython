@@ -26,7 +26,7 @@ import operator
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
-from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType
+from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
 # Please keep __all__ alphabetized within each category.
 __all__ = [
@@ -180,7 +180,8 @@ def _collect_type_vars(types):
     for t in types:
         if isinstance(t, TypeVar) and t not in tvars:
             tvars.append(t)
-        if isinstance(t, _GenericAlias) and not t._special:
+        if ((isinstance(t, _GenericAlias) and not t._special)
+                or isinstance(t, GenericAlias)):
             tvars.extend([t for t in t.__parameters__ if t not in tvars])
     return tuple(tvars)
 
@@ -947,7 +948,7 @@ _TYPING_INTERNALS = ['__parameters__', '__orig_bases__',  '__orig_class__',
 
 _SPECIAL_NAMES = ['__abstractmethods__', '__annotations__', '__dict__', '__doc__',
                   '__init__', '__module__', '__new__', '__slots__',
-                  '__subclasshook__', '__weakref__']
+                  '__subclasshook__', '__weakref__', '__class_getitem__']
 
 # These special attributes will be not collected as protocol members.
 EXCLUDED_ATTRIBUTES = _TYPING_INTERNALS + _SPECIAL_NAMES + ['_MutableMapping__marker']
