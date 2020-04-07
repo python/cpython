@@ -54,7 +54,7 @@ import abc
 from _io import (DEFAULT_BUFFER_SIZE, BlockingIOError, UnsupportedOperation,
                  open, open_code, FileIO, BytesIO, StringIO, BufferedReader,
                  BufferedWriter, BufferedRWPair, BufferedRandom,
-                 IncrementalNewlineDecoder, TextIOWrapper)
+                 IncrementalNewlineDecoder, text_encoding, TextIOWrapper)
 
 OpenWrapper = _io.open # for compatibility with _pyio
 

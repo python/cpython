@@ -33,6 +33,7 @@ PyObject *_PyIO_str_fileno = NULL;
 PyObject *_PyIO_str_flush = NULL;
 PyObject *_PyIO_str_getstate = NULL;
 PyObject *_PyIO_str_isatty = NULL;
+PyObject *_PyIO_str_locale = NULL;
 PyObject *_PyIO_str_newlines = NULL;
 PyObject *_PyIO_str_nl = NULL;
 PyObject *_PyIO_str_peek = NULL;
@@ -504,6 +505,43 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     return NULL;
 }
 
+
+/*[clinic input]
+_io.text_encoding
+    encoding: object = NULL
+    stacklevel: int = 1
+    /
+
+Helper function to choose the text encoding.
+
+When encoding is not None, just return it.
+Otherwise, return the default text encoding ("locale" for now)
+and raise a DeprecationWarning in dev mode.
+
+This function can be used in APIs having encoding=None option.
+But please consider encoding="utf-8" for new APIs.
+[clinic start generated code]*/
+
+static PyObject *
+_io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
+/*[clinic end generated code: output=91b2cfea6934cc0c input=46b896c6a7111a95]*/
+{
+    if (encoding == NULL || encoding == Py_None) {
+        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+        if (interp->config.dev_mode) {
+            PyErr_WarnEx(PyExc_DeprecationWarning,
+                "'encoding' option is not specified. The default encoding "
+                "will be changed to 'utf-8' in the future",
+                stacklevel + 1);
+        }
+        Py_INCREF(_PyIO_str_locale);
+        return _PyIO_str_locale;
+    }
+    Py_INCREF(encoding);
+    return encoding;
+}
+
+
 /*[clinic input]
 _io.open_code
 
@@ -629,6 +667,7 @@ iomodule_free(PyObject *mod) {
 
 static PyMethodDef module_methods[] = {
     _IO_OPEN_METHODDEF
+    _IO_TEXT_ENCODING_METHODDEF
     _IO_OPEN_CODE_METHODDEF
     {NULL, NULL}
 };
@@ -747,6 +786,7 @@ PyInit__io(void)
     ADD_INTERNED(flush)
     ADD_INTERNED(getstate)
     ADD_INTERNED(isatty)
+    ADD_INTERNED(locale)
     ADD_INTERNED(newlines)
     ADD_INTERNED(peek)
     ADD_INTERNED(read)

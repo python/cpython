@@ -272,6 +272,55 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io_text_encoding__doc__,
+"text_encoding($module, encoding=<unrepresentable>, stacklevel=1, /)\n"
+"--\n"
+"\n"
+"Select text encoding for TextIOWrapper.\n"
+"\n"
+"Returns the default text encoding for TextIOWrapper when encoding is None.\n"
+"The default text encoding is \"locale\" for now, but it will be changed\n"
+"to \"utf-8\" in the future.");
+
+#define _IO_TEXT_ENCODING_METHODDEF    \
+    {"text_encoding", (PyCFunction)(void(*)(void))_io_text_encoding, METH_FASTCALL, _io_text_encoding__doc__},
+
+static PyObject *
+_io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel);
+
+static PyObject *
+_io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *encoding = NULL;
+    int stacklevel = 1;
+
+    if (!_PyArg_CheckPositional("text_encoding", nargs, 0, 2)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    encoding = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    stacklevel = _PyLong_AsInt(args[1]);
+    if (stacklevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _io_text_encoding_impl(module, encoding, stacklevel);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_open_code__doc__,
 "open_code($module, /, path)\n"
 "--\n"
