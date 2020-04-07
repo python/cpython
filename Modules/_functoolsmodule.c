@@ -414,6 +414,8 @@ partial_setstate(partialobject *pto, PyObject *state)
 static PyMethodDef partial_methods[] = {
     {"__reduce__", (PyCFunction)partial_reduce, METH_NOARGS},
     {"__setstate__", (PyCFunction)partial_setstate, METH_O},
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1346,6 +1348,8 @@ static PyMethodDef lru_cache_methods[] = {
     {"__reduce__", (PyCFunction)lru_cache_reduce, METH_NOARGS},
     {"__copy__", (PyCFunction)lru_cache_copy, METH_VARARGS},
     {"__deepcopy__", (PyCFunction)lru_cache_deepcopy, METH_VARARGS},
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL}
 };
 

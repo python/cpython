@@ -7,6 +7,7 @@ from collections import (
 )
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from functools import partial, partialmethod, _lru_cache_wrapper, cached_property
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType
@@ -23,6 +24,7 @@ class BaseTest(unittest.TestCase):
                   defaultdict, deque,
                   OrderedDict, Counter, UserDict, UserList,
                   Pattern, Match,
+                  partial, partialmethod, _lru_cache_wrapper, cached_property,
                   AbstractContextManager, AbstractAsyncContextManager,
                   Awaitable, Coroutine,
                   AsyncIterable, AsyncIterator,
