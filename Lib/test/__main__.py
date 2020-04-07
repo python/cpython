@@ -12,8 +12,8 @@ for d in os.environ['PATH'].split(os.pathsep):
     try:
         with os.scandir(d) as sd:
             for de in sd:
-                if de.name == '_sqlite3.dll' and de.is_file():
-                    print('Found _sqlite3.dll at', de.path)
+                if de.name.lower().endswith('sqlite3.dll') and de.is_file():
+                    print('Found [_]sqlite3.dll at', de.path)
                     found = True
     except OSError as e:
         print(e)
