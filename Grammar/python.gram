@@ -142,20 +142,14 @@ while_stmt[stmt_ty]:
     | 'while' a=named_expression ':' b=block c=[else_block] { _Py_While(a, b, c, EXTRA) }
 
 for_stmt[stmt_ty]:
-    | ASYNC 'for' t=star_targets 'in' ex=star_expressions ':' b=block el=[else_block] {
-        _Py_AsyncFor(t, ex, b, el, NULL, EXTRA) }
-    | 'for' t=star_targets 'in' ex=star_expressions ':' b=block el=[else_block] {
-        _Py_For(t, ex, b, el, NULL, EXTRA) }
+    | is_async=[ASYNC] 'for' t=star_targets 'in' ex=star_expressions ':' b=block el=[else_block] {
+        (is_async ? _Py_AsyncFor : _Py_For)(t, ex, b, el, NULL, EXTRA) }
 
 with_stmt[stmt_ty]:
-    | ASYNC 'with' '(' a=','.with_item+ ')' ':' b=block {
-        _Py_AsyncWith(a, b, NULL, EXTRA) }
-    | ASYNC 'with' a=','.with_item+ ':' b=block {
-        _Py_AsyncWith(a, b, NULL, EXTRA) }
-    | 'with' '(' a=','.with_item+ ')' ':' b=block {
-        _Py_With(a, b, NULL, EXTRA) }
-    | 'with' a=','.with_item+ ':' b=block {
-        _Py_With(a, b, NULL, EXTRA) }
+    | is_async=[ASYNC] 'with' '(' a=','.with_item+ ')' ':' b=block {
+        (is_async ? _Py_AsyncWith : _Py_With)(a, b, NULL, EXTRA) }
+    | is_async=[ASYNC] 'with' a=','.with_item+ ':' b=block {
+        (is_async ? _Py_AsyncWith : _Py_With)(a, b, NULL, EXTRA) }
 with_item[withitem_ty]:
     | e=expression o=['as' t=target { t }] { _Py_withitem(e, o, p->arena) }
 
@@ -180,14 +174,10 @@ function_def[stmt_ty]:
     | function_def_raw
 
 function_def_raw[stmt_ty]:
-    | ASYNC 'def' n=NAME '(' params=[parameters] ')' a=['->' z=annotation { z }] ':' b=block {
-        _Py_AsyncFunctionDef(n->v.Name.id,
+    | is_async=[ASYNC] 'def' n=NAME '(' params=[parameters] ')' a=['->' z=annotation { z }] ':' b=block {
+        (is_async ? _Py_AsyncFunctionDef : _Py_FunctionDef)(n->v.Name.id,
                              (params) ? params : CHECK(empty_arguments(p)),
                              b, NULL, a, NULL, EXTRA) }
-    | 'def' n=NAME '(' params=[parameters] ')' a=['->' z=annotation { z }] ':' b=block {
-        _Py_FunctionDef(n->v.Name.id,
-                        (params) ? params : CHECK(empty_arguments(p)),
-                        b, NULL, a, NULL, EXTRA) }
 
 parameters[arguments_ty]:
     | a=slash_without_default b=[',' x=plain_names { x }] c=[',' y=names_with_default { y }] d=[',' z=[star_etc] { z }] {
@@ -422,7 +412,7 @@ kvpair[KeyValuePair*]:
     | a=expression ':' b=expression { key_value_pair(p, a, b) }
 for_if_clauses[asdl_seq*]:
     | a=(y=[ASYNC] 'for' a=star_targets 'in' b=disjunction c=('if' z=disjunction { z })*
-        { _Py_comprehension(a, b, c, (y == NULL) ? 0 : 1, p->arena) })+ { a }
+        { _Py_comprehension(a, b, c, y != NULL, p->arena) })+ { a }
 
 yield_expr[expr_ty]:
     | 'yield' 'from' a=expression { _Py_YieldFrom(a, EXTRA) }
