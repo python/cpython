@@ -7,6 +7,9 @@ from collections import (
 )
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from difflib import SequenceMatcher
+from filecmp import dircmp
+from fileinput import FileInput
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType
@@ -21,6 +24,9 @@ class BaseTest(unittest.TestCase):
     def test_subscriptable(self):
         for t in (type, tuple, list, dict, set, frozenset,
                   defaultdict, deque,
+                  SequenceMatcher,
+                  dircmp,
+                  FileInput,
                   OrderedDict, Counter, UserDict, UserList,
                   Pattern, Match,
                   AbstractContextManager, AbstractAsyncContextManager,
