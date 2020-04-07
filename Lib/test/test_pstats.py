@@ -1,10 +1,12 @@
 import unittest
+
 from test import support
 from io import StringIO
-import pstats
 from pstats import SortKey
 
-
+import pstats
+import time
+import cProfile
 
 class AddCallersTestCase(unittest.TestCase):
     """Tests for pstats.add_callers helper."""
@@ -75,6 +77,24 @@ class StatsTestCase(unittest.TestCase):
                           SortKey.TIME,
                           'calls')
 
+    def test_get_stats_profile(self):
+        def pass1(): pass
+        def pass2(): pass
+        def pass3(): pass
+
+        pr = cProfile.Profile()
+        pr.enable()
+        pass1()
+        pass2()
+        pass3()
+        pr.create_stats()
+        ps = pstats.Stats(pr)
+
+        stats_profile = ps.get_stats_profile()
+        funcs_called = set(stats_profile.func_profiles.keys())
+        self.assertIn('pass1', funcs_called)
+        self.assertIn('pass2', funcs_called)
+        self.assertIn('pass3', funcs_called)
 
 if __name__ == "__main__":
     unittest.main()

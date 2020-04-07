@@ -159,6 +159,7 @@ is the module's name in the Python package namespace.
       message format string, and the *args* are the arguments which are merged into
       *msg* using the string formatting operator. (Note that this means that you can
       use keywords in the format string, together with a single dictionary argument.)
+      No % formatting operation is performed on *msg* when no *args* are supplied.
 
       There are four keyword arguments in *kwargs* which are inspected:
       *exc_info*, *stack_info*, *stacklevel* and *extra*.

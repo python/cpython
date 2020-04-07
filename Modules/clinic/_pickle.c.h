@@ -69,8 +69,9 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "This takes a binary file for writing a pickle data stream.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 3; a backward-incompatible protocol designed for Python 3.\n"
+"protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
+"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
+"with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
 "version supported.  The higher the protocol used, the more recent the\n"
@@ -463,8 +464,8 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "be more efficient.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, it is incompatible\n"
+"protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
+"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -550,8 +551,8 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "Return the pickled representation of the object as a bytes object.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, it is incompatible\n"
+"protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
+"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -835,4 +836,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=de075ec48d4ee0e1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2506823be1960c5 input=a9049054013a1b77]*/

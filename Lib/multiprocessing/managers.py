@@ -1262,8 +1262,12 @@ if HAS_SHMEM:
 
         def __init__(self, *args, **kwargs):
             Server.__init__(self, *args, **kwargs)
+            address = self.address
+            # The address of Linux abstract namespaces can be bytes
+            if isinstance(address, bytes):
+                address = os.fsdecode(address)
             self.shared_memory_context = \
-                _SharedMemoryTracker(f"shmm_{self.address}_{getpid()}")
+                _SharedMemoryTracker(f"shm_{address}_{getpid()}")
             util.debug(f"SharedMemoryServer started by pid {getpid()}")
 
         def create(self, c, typeid, /, *args, **kwargs):

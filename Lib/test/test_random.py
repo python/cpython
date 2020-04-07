@@ -42,7 +42,7 @@ class TestBasicOps:
             def __hash__(self):
                 return -1729
         for arg in [None, 0, 1, -1, 10**20, -(10**20),
-                    3.14, 'a']:
+                    False, True, 3.14, 'a']:
             self.gen.seed(arg)
 
         for arg in [1+2j, tuple('abc'), MySeed()]:
@@ -240,6 +240,11 @@ class TestBasicOps:
         # See https://bugs.python.org/msg275594 for more detail.
         choices = self.gen.choices
         choices(population=[1, 2], weights=[1e-323, 1e-323], k=5000)
+
+    def test_choices_with_all_zero_weights(self):
+        # See issue #38881
+        with self.assertRaises(ValueError):
+            self.gen.choices('AB', [0.0, 0.0])
 
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
@@ -1098,8 +1103,7 @@ class TestModule(unittest.TestCase):
                 child_val = eval(f.read())
             self.assertNotEqual(val, child_val)
 
-            pid, status = os.waitpid(pid, 0)
-            self.assertEqual(status, 0)
+            support.wait_process(pid, exitcode=0)
 
 
 if __name__ == "__main__":

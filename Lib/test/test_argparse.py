@@ -105,7 +105,8 @@ def stderr_to_parser_error(parse_args, *args, **kwargs):
             code = sys.exc_info()[1].code
             stdout = sys.stdout.getvalue()
             stderr = sys.stderr.getvalue()
-            raise ArgumentParserError("SystemExit", stdout, stderr, code)
+            raise ArgumentParserError(
+                "SystemExit", stdout, stderr, code) from None
     finally:
         sys.stdout = old_stdout
         sys.stderr = old_stderr
@@ -810,6 +811,23 @@ class TestOptionalsDisallowLongAbbreviation(ParserTestCase):
     ]
 
 
+class TestOptionalsDisallowLongAbbreviationPrefixChars(ParserTestCase):
+    """Disallowing abbreviations works with alternative prefix characters"""
+
+    parser_signature = Sig(prefix_chars='+', allow_abbrev=False)
+    argument_signatures = [
+        Sig('++foo'),
+        Sig('++foodle', action='store_true'),
+        Sig('++foonly'),
+    ]
+    failures = ['+foon 3', '++foon 3', '++food', '++food ++foo 2']
+    successes = [
+        ('', NS(foo=None, foodle=False, foonly=None)),
+        ('++foo 3', NS(foo='3', foodle=False, foonly=None)),
+        ('++foonly 7 ++foodle ++foo 2', NS(foo='2', foodle=True, foonly='7')),
+    ]
+
+
 class TestDisallowLongAbbreviationAllowsShortGrouping(ParserTestCase):
     """Do not allow abbreviations of long options at all"""
 
@@ -827,6 +845,26 @@ class TestDisallowLongAbbreviationAllowsShortGrouping(ParserTestCase):
         ('-cc -ra', NS(r='a', c=2)),
         ('-ccrcc', NS(r='cc', c=2)),
     ]
+
+
+class TestDisallowLongAbbreviationAllowsShortGroupingPrefix(ParserTestCase):
+    """Short option grouping works with custom prefix and allow_abbrev=False"""
+
+    parser_signature = Sig(prefix_chars='+', allow_abbrev=False)
+    argument_signatures = [
+        Sig('+r'),
+        Sig('+c', action='count'),
+    ]
+    failures = ['+r', '+c +r']
+    successes = [
+        ('', NS(r=None, c=None)),
+        ('+ra', NS(r='a', c=None)),
+        ('+rcc', NS(r='cc', c=None)),
+        ('+cc', NS(r=None, c=2)),
+        ('+cc +ra', NS(r='a', c=2)),
+        ('+ccrcc', NS(r='cc', c=2)),
+    ]
+
 
 # ================
 # Positional tests

@@ -77,6 +77,23 @@ static inline void _PyObject_GC_UNTRACK_impl(const char *filename, int lineno,
 #define _PyObject_GC_UNTRACK(op) \
     _PyObject_GC_UNTRACK_impl(__FILE__, __LINE__, _PyObject_CAST(op))
 
+#ifdef Py_REF_DEBUG
+extern void _PyDebug_PrintTotalRefs(void);
+#endif
+
+#ifdef Py_TRACE_REFS
+extern void _Py_AddToAllObjects(PyObject *op, int force);
+extern void _Py_PrintReferences(FILE *);
+extern void _Py_PrintReferenceAddresses(FILE *);
+#endif
+
+static inline PyObject **
+_PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
+{
+    Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
+    return (PyObject **)((char *)op + offset);
+}
+
 #ifdef __cplusplus
 }
 #endif

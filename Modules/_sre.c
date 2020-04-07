@@ -1002,7 +1002,6 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
         int literal;
         view.buf = NULL;
         ptr = getstring(ptemplate, &n, &isbytes, &charsize, &view);
-        b = charsize;
         if (ptr) {
             if (charsize == 1)
                 literal = memchr(ptr, '\\', n) == NULL;
@@ -1082,7 +1081,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
             match = pattern_new_match(self, &state, 1);
             if (!match)
                 goto error;
-            item = _PyObject_CallOneArg(filter, match);
+            item = PyObject_CallOneArg(filter, match);
             Py_DECREF(match);
             if (!item)
                 goto error;
@@ -2519,7 +2518,7 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    if (Py_TYPE(lefto) != &Pattern_Type || Py_TYPE(righto) != &Pattern_Type) {
+    if (!Py_IS_TYPE(lefto, &Pattern_Type) || !Py_IS_TYPE(righto, &Pattern_Type)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 

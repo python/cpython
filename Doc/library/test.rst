@@ -686,13 +686,6 @@ The :mod:`test.support` module defines the following functions:
    ``sys.stdout`` if it's not set.
 
 
-.. function:: strip_python_strerr(stderr)
-
-   Strip the *stderr* of a Python process from potential debug output
-   emitted by the interpreter.  This will typically be run on the result of
-   :meth:`subprocess.Popen.communicate`.
-
-
 .. function:: args_from_interpreter_flags()
 
    Return a list of command line arguments reproducing the current settings
@@ -830,6 +823,21 @@ The :mod:`test.support` module defines the following functions:
 
    The old value (or ``None`` if it doesn't exist) will be assigned to the
    target of the "as" clause, if there is one.
+
+
+.. function:: wait_process(pid, *, exitcode, timeout=None)
+
+   Wait until process *pid* completes and check that the process exit code is
+   *exitcode*.
+
+   Raise an :exc:`AssertionError` if the process exit code is not equal to
+   *exitcode*.
+
+   If the process runs longer than *timeout* seconds (:data:`SHORT_TIMEOUT` by
+   default), kill the process and raise an :exc:`AssertionError`. The timeout
+   feature is not available on Windows.
+
+   .. versionadded:: 3.9
 
 
 .. function:: wait_threads_exit(timeout=60.0)
@@ -1499,6 +1507,9 @@ script execution tests.
    in a subprocess.  The values can include ``__isolated``, ``__cleanenv``,
    ``__cwd``, and ``TERM``.
 
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
+
 
 .. function:: assert_python_ok(*args, **env_vars)
 
@@ -1512,6 +1523,9 @@ script execution tests.
    Python is started in isolated mode (command line option ``-I``),
    except if the ``__isolated`` keyword is set to ``False``.
 
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
+
 
 .. function:: assert_python_failure(*args, **env_vars)
 
@@ -1520,6 +1534,9 @@ script execution tests.
    stdout, stderr)`` tuple.
 
    See :func:`assert_python_ok` for more options.
+
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
 
 
 .. function:: spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw)
@@ -1575,7 +1592,7 @@ script execution tests.
 The :mod:`test.support.bytecode_helper` module provides support for testing
 and inspecting bytecode generation.
 
-The module defines the follwing class:
+The module defines the following class:
 
 .. class:: BytecodeTestCase(unittest.TestCase)
 

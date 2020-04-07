@@ -21,14 +21,14 @@ Type Objects
 
 .. c:function:: int PyType_Check(PyObject *o)
 
-   Return true if the object *o* is a type object, including instances of types
-   derived from the standard type object.  Return false in all other cases.
+   Return non-zero if the object *o* is a type object, including instances of
+   types derived from the standard type object.  Return 0 in all other cases.
 
 
 .. c:function:: int PyType_CheckExact(PyObject *o)
 
-   Return true if the object *o* is a type object, but not a subtype of the
-   standard type object.  Return false in all other cases.
+   Return non-zero if the object *o* is a type object, but not a subtype of the
+   standard type object.  Return 0 in all other cases.
 
 
 .. c:function:: unsigned int PyType_ClearCache()
@@ -57,8 +57,8 @@ Type Objects
 
 .. c:function:: int PyType_HasFeature(PyTypeObject *o, int feature)
 
-   Return true if the type object *o* sets the feature *feature*.  Type features
-   are denoted by single bit flags.
+   Return non-zero if the type object *o* sets the feature *feature*.
+   Type features are denoted by single bit flags.
 
 
 .. c:function:: int PyType_IS_GC(PyTypeObject *o)

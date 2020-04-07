@@ -106,7 +106,7 @@ enum machine_format_code {
 #include "clinic/arraymodule.c.h"
 
 #define array_Check(op) PyObject_TypeCheck(op, &Arraytype)
-#define array_CheckExact(op) (Py_TYPE(op) == &Arraytype)
+#define array_CheckExact(op) Py_IS_TYPE(op, &Arraytype)
 
 static int
 array_resize(arrayobject *self, Py_ssize_t newsize)
@@ -128,14 +128,14 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     if (self->allocated >= newsize &&
         Py_SIZE(self) < newsize + 16 &&
         self->ob_item != NULL) {
-        Py_SIZE(self) = newsize;
+        Py_SET_SIZE(self, newsize);
         return 0;
     }
 
     if (newsize == 0) {
         PyMem_FREE(self->ob_item);
         self->ob_item = NULL;
-        Py_SIZE(self) = 0;
+        Py_SET_SIZE(self, 0);
         self->allocated = 0;
         return 0;
     }
@@ -165,7 +165,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
         return -1;
     }
     self->ob_item = items;
-    Py_SIZE(self) = newsize;
+    Py_SET_SIZE(self, newsize);
     self->allocated = _new_size;
     return 0;
 }
@@ -593,7 +593,7 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *des
     op->ob_descr = descr;
     op->allocated = size;
     op->weakreflist = NULL;
-    Py_SIZE(op) = size;
+    Py_SET_SIZE(op, size);
     if (size <= 0) {
         op->ob_item = NULL;
     }
@@ -1624,27 +1624,6 @@ frombytes(arrayobject *self, Py_buffer *buffer)
 }
 
 /*[clinic input]
-array.array.fromstring
-
-    buffer: Py_buffer(accept={str, buffer})
-    /
-
-Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).
-
-This method is deprecated. Use frombytes instead.
-[clinic start generated code]*/
-
-static PyObject *
-array_array_fromstring_impl(arrayobject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=31c4baa779df84ce input=a3341a512e11d773]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "fromstring() is deprecated. Use frombytes() instead.", 2) != 0)
-        return NULL;
-    return frombytes(self, buffer);
-}
-
-/*[clinic input]
 array.array.frombytes
 
     buffer: Py_buffer
@@ -1676,24 +1655,6 @@ array_array_tobytes_impl(arrayobject *self)
     } else {
         return PyErr_NoMemory();
     }
-}
-
-/*[clinic input]
-array.array.tostring
-
-Convert the array to an array of machine values and return the bytes representation.
-
-This method is deprecated. Use tobytes instead.
-[clinic start generated code]*/
-
-static PyObject *
-array_array_tostring_impl(arrayobject *self)
-/*[clinic end generated code: output=7d6bd92745a2c8f3 input=b6c0ddee7b30457e]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "tostring() is deprecated. Use tobytes() instead.", 2) != 0)
-        return NULL;
-    return array_array_tobytes_impl(self);
 }
 
 /*[clinic input]
@@ -2283,7 +2244,6 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_EXTEND_METHODDEF
     ARRAY_ARRAY_FROMFILE_METHODDEF
     ARRAY_ARRAY_FROMLIST_METHODDEF
-    ARRAY_ARRAY_FROMSTRING_METHODDEF
     ARRAY_ARRAY_FROMBYTES_METHODDEF
     ARRAY_ARRAY_FROMUNICODE_METHODDEF
     ARRAY_ARRAY_INDEX_METHODDEF
@@ -2294,7 +2254,6 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_REVERSE_METHODDEF
     ARRAY_ARRAY_TOFILE_METHODDEF
     ARRAY_ARRAY_TOLIST_METHODDEF
-    ARRAY_ARRAY_TOSTRING_METHODDEF
     ARRAY_ARRAY_TOBYTES_METHODDEF
     ARRAY_ARRAY_TOUNICODE_METHODDEF
     ARRAY_ARRAY___SIZEOF___METHODDEF
@@ -2737,7 +2696,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         return NULL;
                     }
                     self->ob_item = item;
-                    Py_SIZE(self) = n / sizeof(Py_UNICODE);
+                    Py_SET_SIZE(self, n / sizeof(Py_UNICODE));
                     memcpy(item, ustr, n);
                     self->allocated = Py_SIZE(self);
                 }
@@ -3032,12 +2991,11 @@ array_modexec(PyObject *m)
 {
     char buffer[Py_ARRAY_LENGTH(descriptors)], *p;
     PyObject *typecodes;
-    Py_ssize_t size = 0;
     const struct arraydescr *descr;
 
     if (PyType_Ready(&Arraytype) < 0)
         return -1;
-    Py_TYPE(&PyArrayIter_Type) = &PyType_Type;
+    Py_SET_TYPE(&PyArrayIter_Type, &PyType_Type);
 
     Py_INCREF((PyObject *)&Arraytype);
     if (PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype) < 0) {
@@ -3048,10 +3006,6 @@ array_modexec(PyObject *m)
     if (PyModule_AddObject(m, "array", (PyObject *)&Arraytype) < 0) {
         Py_DECREF((PyObject *)&Arraytype);
         return -1;
-    }
-
-    for (descr=descriptors; descr->typecode != '\0'; descr++) {
-        size++;
     }
 
     p = buffer;

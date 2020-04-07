@@ -1,0 +1,1 @@
+Port _weakref extension module to multiphase initialization (:pep:`489`).

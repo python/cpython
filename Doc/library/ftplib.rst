@@ -72,6 +72,9 @@ The module defines the following items:
    .. versionchanged:: 3.3
       *source_address* parameter was added.
 
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket
 
 .. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None)
 
@@ -104,6 +107,10 @@ The module defines the following items:
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
+
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket
 
    Here's a sample session using the :class:`FTP_TLS` class::
 

@@ -355,6 +355,9 @@ Edge and Level Trigger Polling (epoll) Objects
 
    Remove a registered file descriptor from the epoll object.
 
+   .. versionchanged:: 3.9
+      The method no longer ignores the :data:`~errno.EBADF` error.
+
 
 .. method:: epoll.poll(timeout=None, maxevents=-1)
 

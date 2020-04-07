@@ -496,6 +496,11 @@ All methods are executed atomically.
 
       There is no return value.
 
+   .. method:: locked()
+
+      Return true if the lock is acquired.
+
+
 
 .. _rlock-objects:
 

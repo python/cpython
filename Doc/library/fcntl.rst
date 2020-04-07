@@ -63,6 +63,8 @@ The module defines the following functions:
 
    If the :c:func:`fcntl` fails, an :exc:`OSError` is raised.
 
+   .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
+
 
 .. function:: ioctl(fd, request, arg=0, mutate_flag=True)
 
@@ -112,6 +114,8 @@ The module defines the following functions:
       >>> buf
       array('h', [13341])
 
+   .. audit-event:: fcntl.ioctl fd,request,arg fcntl.ioctl
+
 
 .. function:: flock(fd, operation)
 
@@ -121,6 +125,8 @@ The module defines the following functions:
    using :c:func:`fcntl`.)
 
    If the :c:func:`flock` fails, an :exc:`OSError` exception is raised.
+
+   .. audit-event:: fcntl.flock fd,operation fcntl.flock
 
 
 .. function:: lockf(fd, cmd, len=0, start=0, whence=0, /, open_file_descriptor=False)
@@ -154,10 +160,11 @@ The module defines the following functions:
    The default for *start* is 0, which means to start at the beginning of the file.
    The default for *len* is 0 which means to lock to the end of the file.  The
    default for *whence* is also 0.
-
    The default for *open_file_descriptor* is False, if *open_file_descriptor* is
    set to True, open file description locks are used. Note that open file description
    locks features are supported on Linux(>=3.15) otherwise it will raise :exc:`NotImplementedError`
+
+   .. audit-event:: fcntl.lockf fd,cmd,len,start,whence fcntl.lockf
 
    .. versionchanged:: 3.9
       The *open_file_descriptor* keyword argument was added.

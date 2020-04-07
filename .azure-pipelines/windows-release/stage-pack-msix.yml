@@ -3,7 +3,7 @@ jobs:
   displayName: Pack MSIX bundles
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   workspace:
     clean: all
@@ -17,6 +17,16 @@ jobs:
         ShouldSign: true
       amd64_store:
         Name: amd64
+        Artifact: appxstore
+        Suffix: -store
+        Upload: true
+      arm64:
+        Name: arm64
+        Artifact: appx
+        Suffix:
+        ShouldSign: true
+      arm64_store:
+        Name: arm64
         Artifact: appxstore
         Suffix: -store
         Upload: true

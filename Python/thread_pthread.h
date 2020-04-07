@@ -51,6 +51,16 @@
 #undef  THREAD_STACK_SIZE
 #define THREAD_STACK_SIZE       0x200000
 #endif
+/* bpo-38852: test_threading.test_recursion_limit() checks that 1000 recursive
+   Python calls (default recursion limit) doesn't crash, but raise a regular
+   RecursionError exception. In debug mode, Python function calls allocates
+   more memory on the stack, so use a stack of 8 MiB. */
+#if defined(__ANDROID__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
+#   ifdef Py_DEBUG
+#   undef  THREAD_STACK_SIZE
+#   define THREAD_STACK_SIZE    0x800000
+#   endif
+#endif
 /* for safety, ensure a viable minimum stacksize */
 #define THREAD_STACK_MIN        0x8000  /* 32 KiB */
 #else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
@@ -537,9 +547,8 @@ PyThread_allocate_lock(void)
     if (!initialized)
         PyThread_init_thread();
 
-    lock = (pthread_lock *) PyMem_RawMalloc(sizeof(pthread_lock));
+    lock = (pthread_lock *) PyMem_RawCalloc(1, sizeof(pthread_lock));
     if (lock) {
-        memset((void *)lock, '\0', sizeof(pthread_lock));
         lock->locked = 0;
 
         status = pthread_mutex_init(&lock->mut, NULL);

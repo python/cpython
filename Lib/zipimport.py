@@ -608,7 +608,7 @@ def _unmarshal_code(self, pathname, fullpath, fullname, data):
                 )
 
                 try:
-                    _boostrap_external._validate_hash_pyc(
+                    _bootstrap_external._validate_hash_pyc(
                         data, source_hash, fullname, exc_details)
                 except ImportError:
                     return None

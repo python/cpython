@@ -388,15 +388,33 @@ example::
      File "<stdin>", line 2, in <module>
    KeyboardInterrupt
 
-If a :keyword:`finally` clause is present, the :keyword:`finally` clause will execute as the last task before the :keyword:`try` statement completes. The :keyword:`finally` clause runs whether or not the :keyword:`try` statement produces an exception. The following points discuss more complex cases when an exception occurs:
+If a :keyword:`finally` clause is present, the :keyword:`!finally`
+clause will execute as the last task before the :keyword:`try`
+statement completes. The :keyword:`!finally` clause runs whether or
+not the :keyword:`!try` statement produces an exception. The following
+points discuss more complex cases when an exception occurs:
 
-* If an exception occurs during execution of the :keyword:`!try` clause, the exception may be handled by an :keyword:`except` clause. If the exception is not handled by an :keyword:`except` clause, the exception is re-raised after the :keyword:`!finally` clause has been executed.
+* If an exception occurs during execution of the :keyword:`!try`
+  clause, the exception may be handled by an :keyword:`except`
+  clause. If the exception is not handled by an :keyword:`!except`
+  clause, the exception is re-raised after the :keyword:`!finally`
+  clause has been executed.
 
-* An exception could occur during execution of an :keyword:`!except` or :keyword:`!else` clause. Again, the exception is re-raised after the :keyword:`!finally` clause has been executed.
+* An exception could occur during execution of an :keyword:`!except`
+  or :keyword:`!else` clause. Again, the exception is re-raised after
+  the :keyword:`!finally` clause has been executed.
 
-* If the :keyword:`!try` statement reaches a :keyword:`break`, :keyword:`continue` or :keyword:`return` statement, the :keyword:`finally` clause will execute just prior to the :keyword:`break`, :keyword:`continue` or :keyword:`return` statement's execution.
+* If the :keyword:`!try` statement reaches a :keyword:`break`,
+  :keyword:`continue` or :keyword:`return` statement, the
+  :keyword:`!finally` clause will execute just prior to the
+  :keyword:`!break`, :keyword:`!continue` or :keyword:`!return`
+  statement's execution.
 
-* If a :keyword:`finally` clause includes a :keyword:`return` statement, the :keyword:`finally` clause's :keyword:`return` statement will execute before, and instead of, the :keyword:`return` statement in a :keyword:`try` clause.
+* If a :keyword:`!finally` clause includes a :keyword:`!return`
+  statement, the returned value will be the one from the
+  :keyword:`!finally` clause's :keyword:`!return` statement, not the
+  value from the :keyword:`!try` clause's :keyword:`!return`
+  statement.
 
 For example::
 

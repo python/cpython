@@ -460,7 +460,7 @@ class GrammarTests(unittest.TestCase):
 
     def test_funcdef(self):
         ### [decorators] 'def' NAME parameters ['->' test] ':' suite
-        ### decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
+        ### decorator: '@' namedexpr_test NEWLINE
         ### decorators: decorator+
         ### parameters: '(' [typedargslist] ')'
         ### typedargslist: ((tfpdef ['=' test] ',')*
@@ -665,6 +665,20 @@ class GrammarTests(unittest.TestCase):
         @null
         def f(x) -> list: pass
         self.assertEqual(f.__annotations__, {'return': list})
+
+        # Test expressions as decorators (PEP 614):
+        @False or null
+        def f(x): pass
+        @d := null
+        def f(x): pass
+        @lambda f: null(f)
+        def f(x): pass
+        @[..., null, ...][1]
+        def f(x): pass
+        @null(null)(null)
+        def f(x): pass
+        @[null][0].__call__.__call__
+        def f(x): pass
 
         # test closures with a variety of opargs
         closure = 1
@@ -1515,12 +1529,26 @@ class GrammarTests(unittest.TestCase):
             def meth2(self, arg): pass
             def meth3(self, a1, a2): pass
 
-        # decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
+        # decorator: '@' namedexpr_test NEWLINE
         # decorators: decorator+
         # decorated: decorators (classdef | funcdef)
         def class_decorator(x): return x
         @class_decorator
         class G: pass
+
+        # Test expressions as decorators (PEP 614):
+        @False or class_decorator
+        class H: pass
+        @d := class_decorator
+        class I: pass
+        @lambda c: class_decorator(c)
+        class J: pass
+        @[..., class_decorator, ...][1]
+        class K: pass
+        @class_decorator(class_decorator)(class_decorator)
+        class L: pass
+        @[class_decorator][0].__call__.__call__
+        class M: pass
 
     def test_dictcomps(self):
         # dictorsetmaker: ( (test ':' test (comp_for |
