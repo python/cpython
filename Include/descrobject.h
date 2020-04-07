@@ -101,11 +101,6 @@ PyAPI_FUNC(PyObject *) PyWrapper_New(PyObject *, PyObject *);
 
 
 PyAPI_DATA(PyTypeObject) PyProperty_Type;
-
-// Experimental code to implement PEP 585 (list[int] etc.)
-PyAPI_FUNC(PyObject *) Py_GenericAlias(PyObject *, PyObject *);
-PyAPI_DATA(PyTypeObject) Py_GenericAliasType;
-
 #ifdef __cplusplus
 }
 #endif
