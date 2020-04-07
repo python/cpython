@@ -8228,6 +8228,11 @@ PyInit__socket(void)
 #ifdef  TCP_USER_TIMEOUT
     PyModule_AddIntMacro(m, TCP_USER_TIMEOUT);
 #endif
+#ifndef TCP_NOTSENT_LOWAT
+# ifdef __APPLE__
+#  define TCP_NOTSENT_LOWAT 0x201
+# endif
+#endif
 #ifdef  TCP_NOTSENT_LOWAT
     PyModule_AddIntMacro(m, TCP_NOTSENT_LOWAT);
 #endif
