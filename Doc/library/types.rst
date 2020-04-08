@@ -349,8 +349,7 @@ Additional Utility Classes and Functions
                self.__dict__.update(kwargs)
 
            def __repr__(self):
-               keys = sorted(self.__dict__)
-               items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+               items = ("{}={!r}".format(k, v) for k, v in self.__dict__.items())
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
@@ -362,6 +361,8 @@ Additional Utility Classes and Functions
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.9
+      Attributes are no longer sorted in the repr.
 
 .. function:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
 
