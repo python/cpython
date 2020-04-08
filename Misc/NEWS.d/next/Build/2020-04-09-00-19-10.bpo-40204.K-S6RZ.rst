@@ -1,0 +1,1 @@
+Pin Sphinx version to 1.8.2 in ``Doc/Makefile``.
