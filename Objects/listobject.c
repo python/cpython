@@ -1,6 +1,7 @@
 /* List object implementation */
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
@@ -2800,7 +2801,7 @@ static PySequenceMethods list_as_sequence = {
 static PyObject *
 list_subscript(PyListObject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i;
         i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
@@ -2855,7 +2856,7 @@ list_subscript(PyListObject* self, PyObject* item)
 static int
 list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return -1;
