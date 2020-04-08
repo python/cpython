@@ -98,6 +98,7 @@ void *indent_token(Parser *p);
 void *dedent_token(Parser *p);
 expr_ty number_token(Parser *p);
 void *string_token(Parser *p);
+const char *get_expr_name(expr_ty);
 void *raise_syntax_error(Parser *p, const char *errmsg, ...);
 void *CONSTRUCTOR(Parser *p, ...);
 

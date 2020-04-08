@@ -239,7 +239,8 @@ star_named_expression[expr_ty]:
     | named_expression
 named_expression[expr_ty]:
     | a=NAME ':=' b=expression { _Py_NamedExpr(CHECK(set_expr_context(p, a, Store)), b, EXTRA) }
-    | expression
+    | expression !':='
+    | invalid_named_expression
 
 annotated_rhs[expr_ty]: yield_expr | star_expressions
 
@@ -517,3 +518,6 @@ t_atom[expr_ty]:
 incorrect_arguments:
     | args ',' '*' { raise_syntax_error(p, "iterable argument unpacking follows keyword argument unpacking") }
     | a=args ',' args { arguments_parsing_error(p, a) }
+invalid_named_expression:
+    | a=expression ':=' {
+        raise_syntax_error(p, "cannot use assignment expressions with %s", get_expr_name(a)) }
