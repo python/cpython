@@ -78,27 +78,21 @@ typedef enum kind {
 
 #define BITS_PER_BLOCK 3
 
-int64_t push_block(int64_t stack, Kind kind) {
+static inline int64_t
+push_block(int64_t stack, Kind kind) {
     assert(stack < ((int64_t)1)<<(BITS_PER_BLOCK*CO_MAXBLOCKS));
     return (stack << BITS_PER_BLOCK) | kind;
 }
 
-int64_t pop_block(int64_t stack) {
+static inline int64_t
+pop_block(int64_t stack) {
     assert(stack > 0);
     return stack >> BITS_PER_BLOCK;
 }
 
-Kind top_block(int64_t stack) {
+static inline Kind
+top_block(int64_t stack) {
     return stack & ((1<<BITS_PER_BLOCK)-1);
-}
-
-int block_stack_depth(int64_t stack) {
-    int result = 0;
-    while (stack) {
-        stack >>= BITS_PER_BLOCK;
-        result++;
-    }
-    return result;
 }
 
 static int64_t *
@@ -209,7 +203,8 @@ markblocks(PyCodeObject *code_obj, int len)
     return blocks;
 }
 
-int compatible_block_stack(int64_t from_stack, int64_t to_stack) {
+static int
+compatible_block_stack(int64_t from_stack, int64_t to_stack) {
     if (to_stack < 0) {
         return 0;
     }
@@ -219,7 +214,8 @@ int compatible_block_stack(int64_t from_stack, int64_t to_stack) {
     return from_stack == to_stack;
 }
 
-const char *explain_incompatible_block_stack(int64_t to_stack) {
+static const char *
+explain_incompatible_block_stack(int64_t to_stack) {
     Kind target_kind = top_block(to_stack);
     switch(target_kind) {
         case Except:
