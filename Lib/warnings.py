@@ -143,9 +143,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
         raise ValueError(f"invalid action: {action!r}")
     if not isinstance(message, str):
         raise TypeError("message must be a string")
-    if not isinstance(category, type):
-        raise TypeError("category must be a class")
-    if not issubclass(category, Warning):
+    if not isinstance(category, type) or not issubclass(category, Warning):
         raise TypeError("category must be a Warning subclass")
     if not isinstance(module, str):
         raise TypeError("module must be a string")
