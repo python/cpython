@@ -547,18 +547,6 @@ _PyEval_AddPendingCall(PyThreadState *tstate,
     assert(pending->lock != NULL);
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-    if (pending->finishing) {
-        PyThread_release_lock(pending->lock);
-
-        PyObject *exc, *val, *tb;
-        _PyErr_Fetch(tstate, &exc, &val, &tb);
-        _PyErr_SetString(tstate, PyExc_SystemError,
-                         "Py_AddPendingCall: cannot add pending calls "
-                         "(Python shutting down)");
-        _PyErr_Print(tstate);
-        _PyErr_Restore(tstate, exc, val, tb);
-        return -1;
-    }
     int result = _push_pending_call(pending, func, arg);
     PyThread_release_lock(pending->lock);
 
@@ -665,10 +653,6 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
     assert(PyGILState_Check());
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
-
-    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-    pending->finishing = 1;
-    PyThread_release_lock(pending->lock);
 
     if (!_Py_atomic_load_relaxed(&(pending->calls_to_do))) {
         return;
