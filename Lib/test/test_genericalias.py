@@ -6,7 +6,14 @@ from collections import (
     defaultdict, deque, OrderedDict, Counter, UserDict, UserList
 )
 from collections.abc import *
+from concurrent.futures import Future
+from concurrent.futures.thread import _WorkItem
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from http.cookies import Morsel
+from multiprocessing.managers import ValueProxy
+from multiprocessing.pool import ApplyResult
+from multiprocessing.shared_memory import ShareableList
+from multiprocessing.queues import SimpleQueue
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType
@@ -35,7 +42,11 @@ class BaseTest(unittest.TestCase):
                   Mapping, MutableMapping, MappingView,
                   KeysView, ItemsView, ValuesView,
                   Sequence, MutableSequence,
-                  MappingProxyType, DirEntry
+                  MappingProxyType, DirEntry,
+                  ValueProxy, ApplyResult,
+                  ShareableList, SimpleQueue,
+                  Future, _WorkItem,
+                  Morsel
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
