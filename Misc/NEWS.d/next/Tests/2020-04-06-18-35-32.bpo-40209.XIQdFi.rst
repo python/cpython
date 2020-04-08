@@ -1,2 +1,0 @@
-Refactor ``Lib/test/test_unparse.py``'s ``read_pyfile`` with
-:func:`tokenize.open`. Patch by Hakan Celik.
