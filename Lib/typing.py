@@ -1792,44 +1792,20 @@ def _namedtuple_mro_entries(bases):
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
-def _dict_new(cls, /, *args, **kwargs):
-    return dict(*args, **kwargs)
-
-
-def _typeddict_new(cls, typename, fields=None, /, *, total=True, **kwargs):
-    if fields is None:
-        fields = kwargs
-    elif kwargs:
-        raise TypeError("TypedDict takes either a dict or keyword arguments,"
-                        " but not both")
-
-    ns = {'__annotations__': dict(fields), '__total__': total}
-    try:
-        # Setting correct module is necessary to make typed dict classes pickleable.
-        ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
-    except (AttributeError, ValueError):
-        pass
-
-    return _TypedDictMeta(typename, (), ns)
-
-
-def _check_fails(cls, other):
-    # Typed dicts are only for static structural subtyping.
-    raise TypeError('TypedDict does not support instance and class checks')
-
-
 class _TypedDictMeta(type):
     def __new__(cls, name, bases, ns, total=True):
         """Create new typed dict class object.
 
-        This method is called directly when TypedDict is subclassed,
-        or via _typeddict_new when TypedDict is instantiated. This way
+        This method is called when TypedDict is subclassed,
+        or when TypedDict is instantiated. This way
         TypedDict supports all three syntax forms described in its docstring.
-        Subclasses and instances of TypedDict return actual dictionaries
-        via _dict_new.
+        Subclasses and instances of TypedDict return actual dictionaries.
         """
-        ns['__new__'] = _typeddict_new if name == 'TypedDict' else _dict_new
-        tp_dict = super(_TypedDictMeta, cls).__new__(cls, name, (dict,), ns)
+        for base in bases:
+            if type(base) is not _TypedDictMeta:
+                raise TypeError('cannot inherit from both a TypedDict type '
+                                'and a non-TypedDict base class')
+        tp_dict = type.__new__(_TypedDictMeta, name, (dict,), ns)
 
         annotations = {}
         own_annotations = ns.get('__annotations__', {})
@@ -1859,10 +1835,16 @@ class _TypedDictMeta(type):
             tp_dict.__total__ = total
         return tp_dict
 
-    __instancecheck__ = __subclasscheck__ = _check_fails
+    __call__ = dict  # static method
+
+    def __subclasscheck__(cls, other):
+        # Typed dicts are only for static structural subtyping.
+        raise TypeError('TypedDict does not support instance and class checks')
+
+    __instancecheck__ = __subclasscheck__
 
 
-class TypedDict(dict, metaclass=_TypedDictMeta):
+def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type that expects all of its
@@ -1904,6 +1886,23 @@ class TypedDict(dict, metaclass=_TypedDictMeta):
     The class syntax is only supported in Python 3.6+, while two other
     syntax forms work for Python 2.7 and 3.2+
     """
+    if fields is None:
+        fields = kwargs
+    elif kwargs:
+        raise TypeError("TypedDict takes either a dict or keyword arguments,"
+                        " but not both")
+
+    ns = {'__annotations__': dict(fields), '__total__': total}
+    try:
+        # Setting correct module is necessary to make typed dict classes pickleable.
+        ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
+    except (AttributeError, ValueError):
+        pass
+
+    return _TypedDictMeta(typename, (), ns)
+
+_TypedDict = type.__new__(_TypedDictMeta, 'TypedDict', (), {})
+TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
 
 
 def NewType(name, tp):
