@@ -1309,8 +1309,6 @@ PyNumber_Absolute(PyObject *o)
 }
 
 
-#undef PyIndex_Check
-
 int
 PyIndex_Check(PyObject *obj)
 {
