@@ -7,9 +7,11 @@ from collections import (
 )
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from ctypes import Array, LibraryLoader
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType
+from urllib.parse import SplitResult, ParseResult
 import typing
 
 from typing import TypeVar
@@ -35,7 +37,9 @@ class BaseTest(unittest.TestCase):
                   Mapping, MutableMapping, MappingView,
                   KeysView, ItemsView, ValuesView,
                   Sequence, MutableSequence,
-                  MappingProxyType, DirEntry
+                  MappingProxyType, DirEntry,
+                  Array, LibraryLoader,
+                  SplitResult, ParseResult
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
