@@ -76,9 +76,7 @@ def _modeStackPop():
 def save(fd=None, key=None):
     """
     Save terminal mode.
-    
     Saves without keys can only be accessed through restores without keys.
-    
     Saves with keys can be accessed both ways.
     """
     fd = _checkfd(fd)
@@ -94,9 +92,7 @@ def save(fd=None, key=None):
 def restore(fd=None, key=None, when=TCSAFLUSH):
     """
     Restore terminal mode.
-    
     Any restoration with keys will be ONE NEW STEP in history;
-    
     Sequential restoration without keys go BACK in history ONE STEP a time.
     """
     fd = _checkfd(fd)
@@ -110,9 +106,7 @@ def restore(fd=None, key=None, when=TCSAFLUSH):
 def setdefaultfd(fd):
     """
     Set default fd.
-    
     This affects ONLY `save` and `restore`
-    
     This does NOT affect `setraw` and `setcbreak` for compatibility.
     """
     global default_fd
