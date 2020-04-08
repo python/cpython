@@ -1,0 +1,9 @@
+I modified tty.setraw() a bit to support choosing between a blocking (default) and an unblocking terminal raw mode. I personally find it very useful when I want a mainloop to continue running even if I'm not typing.
+
+Also, I added save and restore features to the tty module, because I usually find saving terminal modes and restoring the right one at the right time a bit of pain for me.
+
+I changed the documentation reST to match my changes in the code. You can see that below.
+
+Oh, and I created that issue for this pull request, but since this is my first time doing this, I was pretty confused and might have got things wrong. I apologize here if I did get something messed up.
+
+Thank you!
