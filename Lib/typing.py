@@ -26,7 +26,7 @@ import operator
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
-from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType
+from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
 # Please keep __all__ alphabetized within each category.
 __all__ = [
@@ -180,7 +180,8 @@ def _collect_type_vars(types):
     for t in types:
         if isinstance(t, TypeVar) and t not in tvars:
             tvars.append(t)
-        if isinstance(t, _GenericAlias) and not t._special:
+        if ((isinstance(t, _GenericAlias) and not t._special)
+                or isinstance(t, GenericAlias)):
             tvars.extend([t for t in t.__parameters__ if t not in tvars])
     return tuple(tvars)
 
@@ -947,7 +948,7 @@ _TYPING_INTERNALS = ['__parameters__', '__orig_bases__',  '__orig_class__',
 
 _SPECIAL_NAMES = ['__abstractmethods__', '__annotations__', '__dict__', '__doc__',
                   '__init__', '__module__', '__new__', '__slots__',
-                  '__subclasshook__', '__weakref__']
+                  '__subclasshook__', '__weakref__', '__class_getitem__']
 
 # These special attributes will be not collected as protocol members.
 EXCLUDED_ATTRIBUTES = _TYPING_INTERNALS + _SPECIAL_NAMES + ['_MutableMapping__marker']
@@ -1701,51 +1702,41 @@ class SupportsRound(Protocol[T_co]):
         pass
 
 
-def _make_nmtuple(name, types):
-    msg = "NamedTuple('Name', [(f0, t0), (f1, t1), ...]); each t must be a type"
-    types = [(n, _type_check(t, msg)) for n, t in types]
-    nm_tpl = collections.namedtuple(name, [n for n, t in types])
-    nm_tpl.__annotations__ = dict(types)
-    try:
-        nm_tpl.__module__ = sys._getframe(2).f_globals.get('__name__', '__main__')
-    except (AttributeError, ValueError):
-        pass
+def _make_nmtuple(name, types, module, defaults = ()):
+    fields = [n for n, t in types]
+    types = {n: _type_check(t, f"field {n} annotation must be a type")
+             for n, t in types}
+    nm_tpl = collections.namedtuple(name, fields,
+                                    defaults=defaults, module=module)
+    nm_tpl.__annotations__ = nm_tpl.__new__.__annotations__ = types
     return nm_tpl
 
 
 # attributes prohibited to set in NamedTuple class syntax
-_prohibited = {'__new__', '__init__', '__slots__', '__getnewargs__',
-               '_fields', '_field_defaults',
-               '_make', '_replace', '_asdict', '_source'}
+_prohibited = frozenset({'__new__', '__init__', '__slots__', '__getnewargs__',
+                         '_fields', '_field_defaults',
+                         '_make', '_replace', '_asdict', '_source'})
 
-_special = {'__module__', '__name__', '__annotations__'}
+_special = frozenset({'__module__', '__name__', '__annotations__'})
 
 
 class NamedTupleMeta(type):
 
     def __new__(cls, typename, bases, ns):
-        if ns.get('_root', False):
-            return super().__new__(cls, typename, bases, ns)
-        if len(bases) > 1:
-            raise TypeError("Multiple inheritance with NamedTuple is not supported")
-        assert bases[0] is NamedTuple
+        assert bases[0] is _NamedTuple
         types = ns.get('__annotations__', {})
-        nm_tpl = _make_nmtuple(typename, types.items())
-        defaults = []
-        defaults_dict = {}
+        default_names = []
         for field_name in types:
             if field_name in ns:
-                default_value = ns[field_name]
-                defaults.append(default_value)
-                defaults_dict[field_name] = default_value
-            elif defaults:
-                raise TypeError("Non-default namedtuple field {field_name} cannot "
-                                "follow default field(s) {default_names}"
-                                .format(field_name=field_name,
-                                        default_names=', '.join(defaults_dict.keys())))
-        nm_tpl.__new__.__annotations__ = dict(types)
-        nm_tpl.__new__.__defaults__ = tuple(defaults)
-        nm_tpl._field_defaults = defaults_dict
+                default_names.append(field_name)
+            elif default_names:
+                raise TypeError(f"Non-default namedtuple field {field_name} "
+                                f"cannot follow default field"
+                                f"{'s' if len(default_names) > 1 else ''} "
+                                f"{', '.join(default_names)}")
+        nm_tpl = _make_nmtuple(typename, types.items(),
+                               defaults=[ns[n] for n in default_names],
+                               module=ns['__module__'])
         # update from user namespace without overriding special namedtuple attributes
         for key in ns:
             if key in _prohibited:
@@ -1755,7 +1746,7 @@ class NamedTupleMeta(type):
         return nm_tpl
 
 
-class NamedTuple(metaclass=NamedTupleMeta):
+def NamedTuple(typename, fields=None, /, **kwargs):
     """Typed version of namedtuple.
 
     Usage in Python versions >= 3.6::
@@ -1779,55 +1770,42 @@ class NamedTuple(metaclass=NamedTupleMeta):
 
         Employee = NamedTuple('Employee', [('name', str), ('id', int)])
     """
-    _root = True
-
-    def __new__(cls, typename, fields=None, /, **kwargs):
-        if fields is None:
-            fields = kwargs.items()
-        elif kwargs:
-            raise TypeError("Either list of fields or keywords"
-                            " can be provided to NamedTuple, not both")
-        return _make_nmtuple(typename, fields)
-
-
-def _dict_new(cls, /, *args, **kwargs):
-    return dict(*args, **kwargs)
-
-
-def _typeddict_new(cls, typename, fields=None, /, *, total=True, **kwargs):
     if fields is None:
-        fields = kwargs
+        fields = kwargs.items()
     elif kwargs:
-        raise TypeError("TypedDict takes either a dict or keyword arguments,"
-                        " but not both")
-
-    ns = {'__annotations__': dict(fields), '__total__': total}
+        raise TypeError("Either list of fields or keywords"
+                        " can be provided to NamedTuple, not both")
     try:
-        # Setting correct module is necessary to make typed dict classes pickleable.
-        ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
+        module = sys._getframe(1).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
-        pass
+        module = None
+    return _make_nmtuple(typename, fields, module=module)
 
-    return _TypedDictMeta(typename, (), ns)
+_NamedTuple = type.__new__(NamedTupleMeta, 'NamedTuple', (), {})
 
+def _namedtuple_mro_entries(bases):
+    if len(bases) > 1:
+        raise TypeError("Multiple inheritance with NamedTuple is not supported")
+    assert bases[0] is NamedTuple
+    return (_NamedTuple,)
 
-def _check_fails(cls, other):
-    # Typed dicts are only for static structural subtyping.
-    raise TypeError('TypedDict does not support instance and class checks')
+NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
 class _TypedDictMeta(type):
     def __new__(cls, name, bases, ns, total=True):
         """Create new typed dict class object.
 
-        This method is called directly when TypedDict is subclassed,
-        or via _typeddict_new when TypedDict is instantiated. This way
+        This method is called when TypedDict is subclassed,
+        or when TypedDict is instantiated. This way
         TypedDict supports all three syntax forms described in its docstring.
-        Subclasses and instances of TypedDict return actual dictionaries
-        via _dict_new.
+        Subclasses and instances of TypedDict return actual dictionaries.
         """
-        ns['__new__'] = _typeddict_new if name == 'TypedDict' else _dict_new
-        tp_dict = super(_TypedDictMeta, cls).__new__(cls, name, (dict,), ns)
+        for base in bases:
+            if type(base) is not _TypedDictMeta:
+                raise TypeError('cannot inherit from both a TypedDict type '
+                                'and a non-TypedDict base class')
+        tp_dict = type.__new__(_TypedDictMeta, name, (dict,), ns)
 
         annotations = {}
         own_annotations = ns.get('__annotations__', {})
@@ -1857,10 +1835,16 @@ class _TypedDictMeta(type):
             tp_dict.__total__ = total
         return tp_dict
 
-    __instancecheck__ = __subclasscheck__ = _check_fails
+    __call__ = dict  # static method
+
+    def __subclasscheck__(cls, other):
+        # Typed dicts are only for static structural subtyping.
+        raise TypeError('TypedDict does not support instance and class checks')
+
+    __instancecheck__ = __subclasscheck__
 
 
-class TypedDict(dict, metaclass=_TypedDictMeta):
+def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type that expects all of its
@@ -1902,6 +1886,23 @@ class TypedDict(dict, metaclass=_TypedDictMeta):
     The class syntax is only supported in Python 3.6+, while two other
     syntax forms work for Python 2.7 and 3.2+
     """
+    if fields is None:
+        fields = kwargs
+    elif kwargs:
+        raise TypeError("TypedDict takes either a dict or keyword arguments,"
+                        " but not both")
+
+    ns = {'__annotations__': dict(fields), '__total__': total}
+    try:
+        # Setting correct module is necessary to make typed dict classes pickleable.
+        ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
+    except (AttributeError, ValueError):
+        pass
+
+    return _TypedDictMeta(typename, (), ns)
+
+_TypedDict = type.__new__(_TypedDictMeta, 'TypedDict', (), {})
+TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
 
 
 def NewType(name, tp):

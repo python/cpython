@@ -10,6 +10,7 @@ import re
 import warnings
 import contextlib
 import stat
+import types
 import weakref
 from unittest import mock
 
@@ -1222,8 +1223,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertEqual(os.fstat(f.fileno()).st_size, 20)
 
     def test_class_getitem(self):
-        self.assertIs(tempfile.SpooledTemporaryFile[bytes],
-                      tempfile.SpooledTemporaryFile)
+        self.assertIsInstance(tempfile.SpooledTemporaryFile[bytes],
+                      types.GenericAlias)
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
 

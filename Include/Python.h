@@ -120,6 +120,7 @@
 #include "iterobject.h"
 #include "genobject.h"
 #include "descrobject.h"
+#include "genericaliasobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
 #include "structseq.h"
