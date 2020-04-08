@@ -17,8 +17,8 @@ struct _frame;
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
-extern void _PyEval_InitState(struct _ceval_state *);
-extern void _PyEval_FiniThreads(PyThreadState *tstate);
+extern int _PyEval_InitState(struct _ceval_state *ceval);
+extern void _PyEval_FiniState(struct _ceval_state *ceval);
 PyAPI_FUNC(void) _PyEval_SignalReceived(PyThreadState *tstate);
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyThreadState *tstate,
@@ -51,7 +51,8 @@ extern PyObject *_PyEval_EvalCode(
     PyObject *name, PyObject *qualname);
 
 extern int _PyEval_ThreadsInitialized(_PyRuntimeState *runtime);
-extern PyStatus _PyEval_InitThreads(PyThreadState *tstate);
+extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
+extern void _PyEval_FiniGIL(PyThreadState *tstate);
 
 extern void _PyEval_ReleaseLock(PyThreadState *tstate);
 
