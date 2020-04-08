@@ -246,7 +246,8 @@ fill_token(Parser *p)
     const char *start, *end;
     int type = PyTokenizer_Get(p->tok, &start, &end);
     if (type == ERRORTOKEN) {
-        return tokenizer_error(p);
+        tokenizer_error(p);
+        longjmp(p->error_env, 1);
     }
 
     if (p->fill == p->size) {
