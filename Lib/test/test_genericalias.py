@@ -7,6 +7,7 @@ from collections import (
 )
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from ctypes import Array, LibraryLoader
 from difflib import SequenceMatcher
 from filecmp import dircmp
 from fileinput import FileInput
@@ -17,6 +18,7 @@ from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType, AsyncGeneratorType
 from tempfile import TemporaryDirectory, SpooledTemporaryFile
+from urllib.parse import SplitResult, ParseResult
 from unittest.case import _AssertRaisesContext
 from queue import Queue, SimpleQueue
 import typing
@@ -55,6 +57,8 @@ class BaseTest(unittest.TestCase):
                   TemporaryDirectory, SpooledTemporaryFile,
                   Queue, SimpleQueue,
                   _AssertRaisesContext,
+                  Array, LibraryLoader,
+                  SplitResult, ParseResult,
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
