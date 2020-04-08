@@ -1,1 +1,2 @@
-read_pyfile function in Lib/test/test_unparse.py refactor with open function in tokenize module
+Refactor ``Lib/test/test_unparse.py``'s ``read_pyfile`` with
+:func:`tokenize.open`. Patch by Hakan Celik.
