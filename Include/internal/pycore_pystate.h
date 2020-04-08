@@ -310,9 +310,9 @@ _Py_IsMainInterpreter(PyThreadState* tstate)
 
 /* Only handle signals on the main thread of the main interpreter. */
 static inline int
-_Py_ThreadCanHandleSignals(PyThreadState *tstate)
+_Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 {
-    return (_Py_IsMainThread() && _Py_IsMainInterpreter(tstate));
+    return (_Py_IsMainThread() && interp == _PyRuntime.interpreters.main);
 }
 
 
@@ -340,7 +340,9 @@ static inline PyThreadState* _PyRuntimeState_GetThreadState(_PyRuntimeState *run
    The caller must hold the GIL.
 
    See also PyThreadState_Get() and PyThreadState_GET(). */
-#define _PyThreadState_GET() _PyRuntimeState_GetThreadState(&_PyRuntime)
+static inline PyThreadState *_PyThreadState_GET(void) {
+    return _PyRuntimeState_GetThreadState(&_PyRuntime);
+}
 
 /* Redefine PyThreadState_GET() as an alias to _PyThreadState_GET() */
 #undef PyThreadState_GET
@@ -354,7 +356,10 @@ static inline PyThreadState* _PyRuntimeState_GetThreadState(_PyRuntimeState *run
 
    See also _PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
-#define _PyInterpreterState_GET_UNSAFE() (_PyThreadState_GET()->interp)
+static inline PyInterpreterState* _PyInterpreterState_GET_UNSAFE(void) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    return tstate->interp;
+}
 
 
 /* Other */
