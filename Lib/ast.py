@@ -509,7 +509,7 @@ def _new(cls, *args, **kwargs):
             if pos < len(args):
                 raise TypeError(f"{cls.__name__} got multiple values for argument {key!r}")
         except ValueError:
-            # arbitrary keyword arguments are accepted 
+            # arbitrary keyword arguments are accepted
             pass
     if cls in _const_types:
         return Constant(*args, **kwargs)
