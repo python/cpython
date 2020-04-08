@@ -6,6 +6,8 @@ from collections import (
     defaultdict, deque, OrderedDict, Counter, UserDict, UserList
 )
 from collections.abc import *
+from concurrent.futures import Future
+from concurrent.futures.thread import _WorkItem
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from ctypes import Array, LibraryLoader
 from difflib import SequenceMatcher
@@ -14,6 +16,11 @@ from fileinput import FileInput
 from mmap import mmap
 from ipaddress import IPv4Network, IPv4Interface, IPv6Network, IPv6Interface
 from itertools import chain
+from http.cookies import Morsel
+from multiprocessing.managers import ValueProxy
+from multiprocessing.pool import ApplyResult
+from multiprocessing.shared_memory import ShareableList
+from multiprocessing.queues import SimpleQueue
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType, AsyncGeneratorType
@@ -59,6 +66,10 @@ class BaseTest(unittest.TestCase):
                   _AssertRaisesContext,
                   Array, LibraryLoader,
                   SplitResult, ParseResult,
+                  ValueProxy, ApplyResult,
+                  ShareableList, SimpleQueue,
+                  Future, _WorkItem,
+                  Morsel,
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
