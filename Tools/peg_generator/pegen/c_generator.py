@@ -268,7 +268,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def _set_up_token_start_metadata_extraction(self) -> None:
         self.print("if (p->mark == p->fill && fill_token(p) < 0) {")
         with self.indent():
-            self.print("return NULL;")
+            self.print("longjmp(p->error_env, 1);")
         self.print("}")
         self.print("int start_lineno = p->tokens[mark]->lineno;")
         self.print("UNUSED(start_lineno); // Only used by EXTRA macro")

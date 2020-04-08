@@ -766,7 +766,7 @@ statement_newline_rule(Parser *p)
     asdl_seq* res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -913,7 +913,7 @@ small_stmt_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1248,7 +1248,7 @@ assignment_rule(Parser *p)
     void * res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1587,7 +1587,7 @@ global_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1630,7 +1630,7 @@ nonlocal_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1673,7 +1673,7 @@ yield_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1713,7 +1713,7 @@ assert_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1759,7 +1759,7 @@ del_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1835,7 +1835,7 @@ import_name_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1880,7 +1880,7 @@ import_from_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2197,7 +2197,7 @@ if_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2285,7 +2285,7 @@ elif_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2402,7 +2402,7 @@ while_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2454,7 +2454,7 @@ for_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2517,7 +2517,7 @@ with_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2639,7 +2639,7 @@ try_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2725,7 +2725,7 @@ except_block_rule(Parser *p)
     excepthandler_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2836,7 +2836,7 @@ return_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2879,7 +2879,7 @@ raise_stmt_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2986,7 +2986,7 @@ function_def_raw_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3420,7 +3420,7 @@ plain_name_rule(Parser *p)
     arg_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3577,7 +3577,7 @@ class_def_raw_rule(Parser *p)
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3708,7 +3708,7 @@ star_expressions_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3792,7 +3792,7 @@ star_expression_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3875,7 +3875,7 @@ star_named_expression_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3929,7 +3929,7 @@ named_expression_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4019,7 +4019,7 @@ expressions_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4103,7 +4103,7 @@ expression_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4178,7 +4178,7 @@ lambdef_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4594,7 +4594,7 @@ lambda_plain_name_rule(Parser *p)
     arg_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4664,7 +4664,7 @@ disjunction_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4721,7 +4721,7 @@ conjunction_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4778,7 +4778,7 @@ inversion_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4833,7 +4833,7 @@ comparison_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5329,7 +5329,7 @@ bitwise_or_raw(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5411,7 +5411,7 @@ bitwise_xor_raw(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5493,7 +5493,7 @@ bitwise_and_raw(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5575,7 +5575,7 @@ shift_expr_raw(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5685,7 +5685,7 @@ sum_raw(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5801,7 +5801,7 @@ term_raw(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5972,7 +5972,7 @@ factor_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6077,7 +6077,7 @@ power_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6136,7 +6136,7 @@ await_primary_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6221,7 +6221,7 @@ primary_raw(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6365,7 +6365,7 @@ slices_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6424,7 +6424,7 @@ slice_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6497,7 +6497,7 @@ atom_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6680,7 +6680,7 @@ list_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6726,7 +6726,7 @@ listcomp_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6775,7 +6775,7 @@ tuple_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6852,7 +6852,7 @@ genexp_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6901,7 +6901,7 @@ set_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6947,7 +6947,7 @@ setcomp_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6996,7 +6996,7 @@ dict_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7042,7 +7042,7 @@ dictcomp_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7192,7 +7192,7 @@ yield_expr_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7307,7 +7307,7 @@ args_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7420,29 +7420,23 @@ kwargs_rule(Parser *p)
         p->mark = mark;
     }
     { // ','.kwarg_or_starred+
-        asdl_seq * a;
+        asdl_seq * _gather_104_var;
         if (
-            (a = _gather_104_rule(p))
+            (_gather_104_var = _gather_104_rule(p))
         )
         {
-            res = a;
-            if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
-            }
+            res = _gather_104_var;
             goto done;
         }
         p->mark = mark;
     }
     { // ','.kwarg_or_double_starred+
-        asdl_seq * b;
+        asdl_seq * _gather_106_var;
         if (
-            (b = _gather_106_rule(p))
+            (_gather_106_var = _gather_106_rule(p))
         )
         {
-            res = b;
-            if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
-            }
+            res = _gather_106_var;
             goto done;
         }
         p->mark = mark;
@@ -7459,7 +7453,7 @@ starred_expression_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7502,7 +7496,7 @@ kwarg_or_starred_rule(Parser *p)
     KeywordOrStarred* res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7562,7 +7556,7 @@ kwarg_or_double_starred_rule(Parser *p)
     KeywordOrStarred* res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7633,7 +7627,7 @@ star_targets_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7729,7 +7723,7 @@ star_target_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7851,7 +7845,7 @@ star_atom_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8020,7 +8014,7 @@ ann_assign_subscript_attribute_target_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8134,7 +8128,7 @@ del_target_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8227,7 +8221,7 @@ del_t_atom_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8368,7 +8362,7 @@ target_rule(Parser *p)
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8491,7 +8485,7 @@ t_primary_raw(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8692,7 +8686,7 @@ t_atom_rule(Parser *p)
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && fill_token(p) < 0) {
-        return NULL;
+        longjmp(p->error_env, 1);
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro

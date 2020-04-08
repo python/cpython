@@ -740,3 +740,9 @@ class ASTGenerationTest(unittest.TestCase):
                 ast.dump(expected_ast, include_attributes=True),
                 f"Wrong AST generation for source: {source}",
             )
+
+    def test_tokenizer_errors_are_propagated(self) -> None:
+        n=201
+        with self.assertRaisesRegex(SyntaxError, "too many nested parentheses"):
+            peg_parser.parse_string(n*'(' + ')'*n)
+
