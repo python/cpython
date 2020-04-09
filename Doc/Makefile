@@ -127,7 +127,7 @@ clean:
 
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb
+	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==1.8.2 blurb
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
