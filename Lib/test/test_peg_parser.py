@@ -594,6 +594,12 @@ FAIL_SPECIALIZED_MESSAGE_CASES = [
     ("f(x, y, z=1, **b, *a", "iterable argument unpacking follows keyword argument unpacking"),
     ("f(x, y=1, *z, **a, b", "positional argument follows keyword argument unpacking"),
     ("f(x, y, z=1, a=2, b", "positional argument follows keyword argument"),
+    ("True = 1", "cannot assign to True"),
+    ("a() = 1", "cannot assign to function call"),
+    ("(a, b): int", "only single target (not tuple) can be annotated"),
+    ("[a, b]: int", "only single target (not list) can be annotated"),
+    ("a(): int", "illegal target for annotation"),
+    ("1 += 1", "cannot assign to literal"),
 ]
 
 GOOD_BUT_FAIL_TEST_CASES = [
@@ -701,8 +707,12 @@ class ASTGenerationTest(unittest.TestCase):
 
     def test_incorrect_ast_generation_with_specialized_errors(self) -> None:
         for source, error_text in FAIL_SPECIALIZED_MESSAGE_CASES:
-            with self.assertRaisesRegex(SyntaxError, error_text):
+            with self.assertRaises(SyntaxError) as se:
                 peg_parser.parse_string(source)
+            self.assertTrue(
+                error_text in se.exception.msg,
+                f"Actual error message does not match expexted for {source}"
+            )
 
     @unittest.expectedFailure
     def test_correct_but_known_to_fail_ast_generation_on_source_files(self) -> None:

@@ -77,6 +77,7 @@ assignment:
          _Py_Assign(a, b, NULL, EXTRA) }
     | a=target b=augassign c=(yield_expr | star_expressions) {
          _Py_AugAssign(a, b->kind, c, EXTRA) }
+    | invalid_assignment
 
 augassign[AugOperator*]:
     | '+=' {augoperator(p, Add)}
@@ -521,3 +522,8 @@ incorrect_arguments:
 invalid_named_expression:
     | a=expression ':=' {
         raise_syntax_error(p, "cannot use assignment expressions with %s", get_expr_name(a)) }
+invalid_assignment:
+    | list ':' { raise_syntax_error(p, "only single target (not list) can be annotated") }
+    | tuple ':' { raise_syntax_error(p, "only single target (not tuple) can be annotated") }
+    | expression ':' { raise_syntax_error(p, "illegal target for annotation") }
+    | a=expression ('=' | augassign) { raise_syntax_error(p, "cannot assign to %s", get_expr_name(a)) }
