@@ -416,8 +416,7 @@ _PyEval_ReInitThreads(_PyRuntimeState *runtime)
     take_gil(tstate);
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
-    pending->lock = PyThread_allocate_lock();
-    if (pending->lock == NULL) {
+    if (_PyThread_at_fork_reinit(&pending->lock) < 0) {
         Py_FatalError("Can't initialize threads for pending calls");
     }
 
