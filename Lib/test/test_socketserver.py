@@ -65,9 +65,7 @@ def simple_subprocess(testcase):
     except:
         raise
     finally:
-        pid2, status = os.waitpid(pid, 0)
-        testcase.assertEqual(pid2, pid)
-        testcase.assertEqual(72 << 8, status)
+        test.support.wait_process(pid, exitcode=72)
 
 
 class SocketServerTest(unittest.TestCase):

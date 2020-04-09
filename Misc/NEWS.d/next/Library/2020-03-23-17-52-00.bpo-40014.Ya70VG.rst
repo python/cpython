@@ -1,0 +1,4 @@
+Fix ``os.getgrouplist()``: if ``getgrouplist()`` function fails because the
+group list is too small, retry with a larger group list. On failure, the glibc
+implementation of ``getgrouplist()`` sets ``ngroups`` to the total number of
+groups. For other implementations, double the group list size.

@@ -129,13 +129,17 @@ static PyMethodDef statistics_methods[] = {
 PyDoc_STRVAR(statistics_doc,
 "Accelerators for the statistics module.\n");
 
+static struct PyModuleDef_Slot _statisticsmodule_slots[] = {
+    {0, NULL}
+};
+
 static struct PyModuleDef statisticsmodule = {
         PyModuleDef_HEAD_INIT,
         "_statistics",
         statistics_doc,
-        -1,
+        0,
         statistics_methods,
-        NULL,
+        _statisticsmodule_slots,
         NULL,
         NULL,
         NULL
@@ -144,5 +148,5 @@ static struct PyModuleDef statisticsmodule = {
 PyMODINIT_FUNC
 PyInit__statistics(void)
 {
-    return PyModule_Create(&statisticsmodule);
+    return PyModuleDef_Init(&statisticsmodule);
 }

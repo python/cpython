@@ -171,6 +171,9 @@ be used to unparse an :class:`ast.AST` object and produce a string with code
 that would produce an equivalent :class:`ast.AST` object when parsed.
 (Contributed by Pablo Galindo and Batuhan Taskaya in :issue:`38870`.)
 
+Added docstrings to AST nodes that contains the ASDL signature used to
+construct that node. (Contributed by Batuhan Taskaya in :issue:`39638`.)
+
 asyncio
 -------
 
@@ -198,6 +201,11 @@ Added a new *cancel_futures* parameter to
 which have not started running, instead of waiting for them to complete before
 shutting down the executor.
 (Contributed by Kyle Stanley in :issue:`39349`.)
+
+Removed daemon threads from :class:`~concurrent.futures.ThreadPoolExecutor`
+and :class:`~concurrent.futures.ProcessPoolExecutor`. This improves
+compatibility with subinterpreters and predictability in their shutdown
+processes. (Contributed by Kyle Stanley in :issue:`39812`.)
 
 curses
 ------
@@ -238,6 +246,12 @@ unreachable. (Contributed by Pablo Galindo and Tim Peters in :issue:`38379`.)
 Added a new function :func:`gc.is_finalized` to check if an object has been
 finalized by the garbage collector. (Contributed by Pablo Galindo in
 :issue:`39322`.)
+
+http
+----
+
+HTTP status codes ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` are added to
+:class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509` and Ross Rhodes in :issue:`39507`.)
 
 imaplib
 -------
@@ -315,6 +329,10 @@ The :func:`os.putenv` and :func:`os.unsetenv` functions are now always
 available.
 (Contributed by Victor Stinner in :issue:`39395`.)
 
+Add :func:`os.waitstatus_to_exitcode` function:
+convert a wait status to an exit code.
+(Contributed by Victor Stinner in :issue:`40094`.)
+
 pathlib
 -------
 
@@ -351,6 +369,13 @@ a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 :class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
 (Contributed by Dong-hee Na in :issue:`39329`.)
 
+socket
+------
+
+The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
+constant on Linux 4.1 and greater.
+(Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
+
 threading
 ---------
 
@@ -360,6 +385,17 @@ finalization crashed with a Python fatal error if a daemon thread was still
 running.
 (Contributed by Victor Stinner in :issue:`37266`.)
 
+sys
+---
+
+Add a new :attr:`sys.platlibdir` attribute: name of the platform-specific
+library directory. It is used to build the path of platform-specific dynamic
+libraries and the path of the standard library. It is equal to ``"lib"`` on
+most platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit
+platforms.
+(Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
+
+
 typing
 ------
 
@@ -367,6 +403,11 @@ typing
 types with context-specific metadata and new ``include_extras`` parameter to
 :func:`typing.get_type_hints` to access the metadata at runtime. (Contributed
 by Till Varoquaux and Konstantin Kashin.)
+
+unicodedata
+-----------
+
+The Unicode database has been updated to version 13.0.0. (:issue:`39926`).
 
 venv
 ----
@@ -393,9 +434,32 @@ Optimizations
 
   (Contributed by Serhiy Storchaka in :issue:`32856`.)
 
+* Optimize signal handling in multithreaded applications. If a thread different
+  than the main thread gets a signal, the bytecode evaluation loop is no longer
+  interrupted at each bytecode instruction to check for pending signals which
+  cannot be handled. Only the main thread of the main interpreter can handle
+  signals.
+
+  Previously, the bytecode evaluation loop was interrupted at each instruction
+  until the main thread handles signals.
+  (Contributed by Victor Stinner in :issue:`40010`.)
+
 
 Build and C API Changes
 =======================
+
+* New :c:func:`PyThreadState_GetInterpreter` and
+  :c:func:`PyInterpreterState_Get` functions to get the interpreter.
+  New :c:func:`PyThreadState_GetFrame` function to get the current frame of a
+  Python thread state.
+  New :c:func:`PyThreadState_GetID` function: get the unique identifier of a
+  Python thread state.
+  (Contributed by Victor Stinner in :issue:`39947`.)
+
+* Add ``--with-platlibdir`` option to the ``configure`` script: name of the
+  platform-specific library directory, stored in the new :attr:`sys.platlibdir`
+  attribute. See :attr:`sys.platlibdir` attribute for more information.
+  (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
 
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
   calls a callable Python object without any arguments. It is the most efficient
@@ -473,6 +537,39 @@ Build and C API Changes
 
   (Contributed by Victor Stinner in :issue:`38644` and :issue:`39542`.)
 
+* ``PyInterpreterState.eval_frame`` (:pep:`523`) now requires a new mandatory
+  *tstate* parameter (``PyThreadState*``).
+  (Contributed by Victor Stinner in :issue:`38500`.)
+
+* Extension modules: :c:member:`~PyModuleDef.m_traverse`,
+  :c:member:`~PyModuleDef.m_clear` and :c:member:`~PyModuleDef.m_free`
+  functions of :c:type:`PyModuleDef` are no longer called if the module state
+  was requested but is not allocated yet. This is the case immediately after
+  the module is created and before the module is executed
+  (:c:data:`Py_mod_exec` function). More precisely, these functions are not called
+  if :c:member:`~PyModuleDef.m_size` is greater than 0 and the module state (as
+  returned by :c:func:`PyModule_GetState`) is ``NULL``.
+
+  Extension modules without module state (``m_size <= 0``) are not affected.
+
+* If :c:func:`Py_AddPendingCall` is called in a subinterpreter, the function is
+  now scheduled to be called from the subinterpreter, rather than being called
+  from the main interpreter. Each subinterpreter now has its own list of
+  scheduled calls.
+  (Contributed by Victor Stinner in :issue:`39984`.)
+
+* Remove ``_PyRuntime.getframe`` hook and remove ``_PyThreadState_GetFrame``
+  macro which was an alias to ``_PyRuntime.getframe``. They were only exposed
+  by the internal C API. Remove also ``PyThreadFrameGetter`` type.
+  (Contributed by Victor Stinner in :issue:`39946`.)
+
+* The :c:func:`PyModule_AddType` function is added to help adding a type to a module.
+  (Contributed by Dong-hee Na in :issue:`40024`.)
+
+* The Windows registry is no longer used to initialize :data:`sys.path` when
+  the ``-E`` option is used. This is significant when embedding Python on
+  Windows.
+  (Contributed by Zackery Spytz in :issue:`8901`.)
 
 Deprecated
 ==========
@@ -526,11 +623,27 @@ Deprecated
 
   (Contributed by Victor Stinner in :issue:`39353`.)
 
+* :mod:`ast` classes ``slice``, ``Index`` and ``ExtSlice`` are considered deprecated
+  and will be removed in future Python versions.  ``value`` itself should be
+  used instead of ``Index(value)``.  ``Tuple(slices, Load())`` should be
+  used instead of ``ExtSlice(slices)``.
+  (Contributed by Serhiy Storchaka in :issue:`32892`.)
+
+* :mod:`ast` classes ``Suite``, ``Param``, ``AugLoad`` and ``AugStore``
+  are considered deprecated and will be removed in future Python versions.
+  They were not generated by the parser and not accepted by the code
+  generator in Python 3.
+  (Contributed by Batuhan Taskaya in :issue:`39639` and :issue:`39969`
+  and Serhiy Storchaka in :issue:`39988`.)
+
 * The :c:func:`PyEval_InitThreads` and :c:func:`PyEval_ThreadsInitialized`
   functions are now deprecated and will be removed in Python 3.11. Calling
   :c:func:`PyEval_InitThreads` now does nothing. The :term:`GIL` is initialized
   by :c:func:`Py_Initialize()` since Python 3.7.
   (Contributed by Victor Stinner in :issue:`39877`.)
+
+* Passing ``None`` as the first argument to the :func:`shlex.split` function
+  has been deprecated.  (Contributed by Zackery Spytz in :issue:`33262`.)
 
 
 Removed
@@ -578,10 +691,17 @@ Removed
   Use :meth:`~threading.Thread.is_alive()` instead.
   (Contributed by Dong-hee Na in :issue:`37804`.)
 
-* Methods ``getchildren()`` and ``getiterator()`` in the
-  :mod:`~xml.etree.ElementTree` module have been removed.  They were
-  deprecated in Python 3.2.  Use functions :func:`list` and :func:`iter`
-  instead.  The ``xml.etree.cElementTree`` module has been removed.
+* Methods ``getchildren()`` and ``getiterator()`` of classes
+  :class:`~xml.etree.ElementTree.ElementTree` and
+  :class:`~xml.etree.ElementTree.Element` in the :mod:`~xml.etree.ElementTree`
+  module have been removed.  They were deprecated in Python 3.2.
+  Use ``iter(x)`` or ``list(x)`` instead of ``x.getchildren()`` and
+  ``x.iter()`` or ``list(x.iter())`` instead of ``x.getiterator()``.
+  The ``xml.etree.cElementTree`` module has been removed,
+  use the :mod:`xml.etree.ElementTree` module instead.
+  Since Python 3.3 the ``xml.etree.cElementTree`` module has been deprecated,
+  the ``xml.etree.ElementTree`` module uses a fast implementation whenever
+  available.
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
 
 * The old :mod:`plistlib` API has been removed, it was deprecated since Python
@@ -628,8 +748,10 @@ Removed
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
-* The ``ast.Suite`` node class has been removed due to no longer being needed.
-  (Contributed by Batuhan Taskaya in :issue:`39639`.)
+* The ``_field_types`` attribute of the :class:`typing.NamedTuple` class
+  has been removed.  It was deprecated deprecated since Python 3.8.  Use
+  the ``__annotations__`` attribute instead.
+  (Contributed by Serhiy Storchaka in :issue:`40182`.)
 
 
 Porting to Python 3.9
@@ -658,9 +780,16 @@ Changes in the Python API
   since the *buffering* parameter has been removed.
   (Contributed by Victor Stinner in :issue:`39357`.)
 
+* Simplified AST for subscription. Simple indices will be represented by
+  their value, extended slices will be represented as tuples.
+  ``Index(value)`` will return a ``value`` itself, ``ExtSlice(slices)``
+  will return ``Tuple(slices, Load())``.
+  (Contributed by Serhiy Storchaka in :issue:`34822`.)
+
 * The :mod:`importlib` module now ignores the :envvar:`PYTHONCASEOK`
   environment variable when the :option:`-E` or :option:`-I` command line
   options are being used.
+
 
 CPython bytecode changes
 ------------------------

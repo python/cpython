@@ -316,7 +316,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/12.1.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/13.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -376,11 +376,11 @@ characters:
       information on this convention.
 
 ``__*__``
-   System-defined names. These names are defined by the interpreter and its
-   implementation (including the standard library).  Current system names are
-   discussed in the :ref:`specialnames` section and elsewhere.  More will likely
-   be defined in future versions of Python.  *Any* use of ``__*__`` names, in
-   any context, that does not follow explicitly documented use, is subject to
+   System-defined names, informally known as "dunder" names. These names are
+   defined by the interpreter and its implementation (including the standard library).
+   Current system names are discussed in the :ref:`specialnames` section and elsewhere.
+   More will likely be defined in future versions of Python.  *Any* use of ``__*__`` names,
+   in any context, that does not follow explicitly documented use, is subject to
    breakage without warning.
 
 ``__*``
@@ -934,4 +934,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt

@@ -443,11 +443,11 @@ class NodeTransformer(NodeVisitor):
        class RewriteName(NodeTransformer):
 
            def visit_Name(self, node):
-               return copy_location(Subscript(
+               return Subscript(
                    value=Name(id='data', ctx=Load()),
-                   slice=Index(value=Str(s=node.id)),
+                   slice=Constant(value=node.id),
                    ctx=node.ctx
-               ), node)
+               )
 
     Keep in mind that if the node you're operating on has child nodes you must
     either transform the child nodes yourself or call the :meth:`generic_visit`
@@ -489,6 +489,7 @@ class NodeTransformer(NodeVisitor):
 # It will be removed in future.
 
 def _getter(self):
+    """Deprecated. Use value instead."""
     return self.value
 
 def _setter(self, value):
@@ -498,6 +499,9 @@ Constant.n = property(_getter, _setter)
 Constant.s = property(_getter, _setter)
 
 class _ABC(type):
+
+    def __init__(cls, *args):
+        cls.__doc__ = """Deprecated AST node class. Use ast.Constant instead"""
 
     def __instancecheck__(cls, inst):
         if not isinstance(inst, Constant):
@@ -552,6 +556,7 @@ _const_types = {
 _const_types_not = {
     Num: (bool,),
 }
+
 _const_node_type_names = {
     bool: 'NameConstant',  # should be before int
     type(None): 'NameConstant',
@@ -562,6 +567,41 @@ _const_node_type_names = {
     bytes: 'Bytes',
     type(...): 'Ellipsis',
 }
+
+class slice(AST):
+    """Deprecated AST node class."""
+
+class Index(slice):
+    """Deprecated AST node class. Use the index value directly instead."""
+    def __new__(cls, value, **kwargs):
+        return value
+
+class ExtSlice(slice):
+    """Deprecated AST node class. Use ast.Tuple instead."""
+    def __new__(cls, dims=(), **kwargs):
+        return Tuple(list(dims), Load(), **kwargs)
+
+def _dims_getter(self):
+    """Deprecated. Use elts instead."""
+    return self.elts
+
+def _dims_setter(self, value):
+    self.elts = value
+
+Tuple.dims = property(_dims_getter, _dims_setter)
+
+class Suite(mod):
+    """Deprecated AST node class.  Unused in Python 3."""
+
+class AugLoad(expr_context):
+    """Deprecated AST node class.  Unused in Python 3."""
+
+class AugStore(expr_context):
+    """Deprecated AST node class.  Unused in Python 3."""
+
+class Param(expr_context):
+    """Deprecated AST node class.  Unused in Python 3."""
+
 
 # Large float and imaginary literals get turned into infinities in the AST.
 # We unparse those infinities to INFSTR.
@@ -722,6 +762,15 @@ class _Unparser(NodeVisitor):
 
     def visit_Module(self, node):
         self._write_docstring_and_traverse_body(node)
+
+    def visit_FunctionType(self, node):
+        with self.delimit("(", ")"):
+            self.interleave(
+                lambda: self.write(", "), self.traverse, node.argtypes
+            )
+
+        self.write(" -> ")
+        self.traverse(node.returns)
 
     def visit_Expr(self, node):
         self.fill()
@@ -1268,10 +1317,8 @@ class _Unparser(NodeVisitor):
         self.set_precedence(_Precedence.ATOM, node.value)
         self.traverse(node.value)
         with self.delimit("[", "]"):
-            if (isinstance(node.slice, Index)
-                    and isinstance(node.slice.value, Tuple)
-                    and node.slice.value.elts):
-                self.items_view(self.traverse, node.slice.value.elts)
+            if isinstance(node.slice, Tuple) and node.slice.elts:
+                self.items_view(self.traverse, node.slice.elts)
             else:
                 self.traverse(node.slice)
 
@@ -1283,10 +1330,6 @@ class _Unparser(NodeVisitor):
     def visit_Ellipsis(self, node):
         self.write("...")
 
-    def visit_Index(self, node):
-        self.set_precedence(_Precedence.TUPLE, node.value)
-        self.traverse(node.value)
-
     def visit_Slice(self, node):
         if node.lower:
             self.traverse(node.lower)
@@ -1296,9 +1339,6 @@ class _Unparser(NodeVisitor):
         if node.step:
             self.write(":")
             self.traverse(node.step)
-
-    def visit_ExtSlice(self, node):
-        self.items_view(self.traverse, node.dims)
 
     def visit_arg(self, node):
         self.write(node.arg)

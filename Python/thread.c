@@ -92,7 +92,7 @@ PyThread_init_thread(void)
 size_t
 PyThread_get_stacksize(void)
 {
-    return _PyInterpreterState_Get()->pythread_stacksize;
+    return _PyInterpreterState_GET_UNSAFE()->pythread_stacksize;
 }
 
 /* Only platforms defining a THREAD_SET_STACKSIZE() macro

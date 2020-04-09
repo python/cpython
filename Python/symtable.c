@@ -202,7 +202,6 @@ static int symtable_visit_excepthandler(struct symtable *st, excepthandler_ty);
 static int symtable_visit_alias(struct symtable *st, alias_ty);
 static int symtable_visit_comprehension(struct symtable *st, comprehension_ty);
 static int symtable_visit_keyword(struct symtable *st, keyword_ty);
-static int symtable_visit_slice(struct symtable *st, slice_ty);
 static int symtable_visit_params(struct symtable *st, asdl_seq *args);
 static int symtable_visit_argannotations(struct symtable *st, asdl_seq *args);
 static int symtable_implicit_arg(struct symtable *st, int pos);
@@ -1632,10 +1631,18 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Subscript_kind:
         VISIT(st, expr, e->v.Subscript.value);
-        VISIT(st, slice, e->v.Subscript.slice);
+        VISIT(st, expr, e->v.Subscript.slice);
         break;
     case Starred_kind:
         VISIT(st, expr, e->v.Starred.value);
+        break;
+    case Slice_kind:
+        if (e->v.Slice.lower)
+            VISIT(st, expr, e->v.Slice.lower)
+        if (e->v.Slice.upper)
+            VISIT(st, expr, e->v.Slice.upper)
+        if (e->v.Slice.step)
+            VISIT(st, expr, e->v.Slice.step)
         break;
     case Name_kind:
         if (!symtable_add_def(st, e->v.Name.id,
@@ -1840,28 +1847,6 @@ symtable_visit_keyword(struct symtable *st, keyword_ty k)
     return 1;
 }
 
-
-static int
-symtable_visit_slice(struct symtable *st, slice_ty s)
-{
-    switch (s->kind) {
-    case Slice_kind:
-        if (s->v.Slice.lower)
-            VISIT(st, expr, s->v.Slice.lower)
-        if (s->v.Slice.upper)
-            VISIT(st, expr, s->v.Slice.upper)
-        if (s->v.Slice.step)
-            VISIT(st, expr, s->v.Slice.step)
-        break;
-    case ExtSlice_kind:
-        VISIT_SEQ(st, slice, s->v.ExtSlice.dims)
-        break;
-    case Index_kind:
-        VISIT(st, expr, s->v.Index.value)
-        break;
-    }
-    return 1;
-}
 
 static int
 symtable_handle_comprehension(struct symtable *st, expr_ty e,

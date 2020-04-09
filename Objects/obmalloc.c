@@ -2361,26 +2361,22 @@ _PyMem_DebugRealloc(void *ctx, void *ptr, size_t nbytes)
 static void
 _PyMem_DebugCheckAddress(const char *func, char api, const void *p)
 {
+    assert(p != NULL);
+
     const uint8_t *q = (const uint8_t *)p;
-    char msgbuf[64];
-    const char *msg;
     size_t nbytes;
     const uint8_t *tail;
     int i;
     char id;
 
-    if (p == NULL) {
-        msg = "didn't expect a NULL pointer";
-        goto error;
-    }
-
     /* Check the API id */
     id = (char)q[-SST];
     if (id != api) {
-        msg = msgbuf;
-        snprintf(msgbuf, sizeof(msgbuf), "bad ID: Allocated using API '%c', verified using API '%c'", id, api);
-        msgbuf[sizeof(msgbuf)-1] = 0;
-        goto error;
+        _PyObject_DebugDumpAddress(p);
+        _Py_FatalErrorFormat(func,
+                             "bad ID: Allocated using API '%c', "
+                             "verified using API '%c'",
+                             id, api);
     }
 
     /* Check the stuff at the start of p first:  if there's underwrite
@@ -2389,8 +2385,8 @@ _PyMem_DebugCheckAddress(const char *func, char api, const void *p)
      */
     for (i = SST-1; i >= 1; --i) {
         if (*(q-i) != PYMEM_FORBIDDENBYTE) {
-            msg = "bad leading pad byte";
-            goto error;
+            _PyObject_DebugDumpAddress(p);
+            _Py_FatalErrorFunc(func, "bad leading pad byte");
         }
     }
 
@@ -2398,16 +2394,10 @@ _PyMem_DebugCheckAddress(const char *func, char api, const void *p)
     tail = q + nbytes;
     for (i = 0; i < SST; ++i) {
         if (tail[i] != PYMEM_FORBIDDENBYTE) {
-            msg = "bad trailing pad byte";
-            goto error;
+            _PyObject_DebugDumpAddress(p);
+            _Py_FatalErrorFunc(func, "bad trailing pad byte");
         }
     }
-
-    return;
-
-error:
-    _PyObject_DebugDumpAddress(p);
-    _Py_FatalErrorFunc(func, msg);
 }
 
 /* Display info to stderr about the memory block at p. */

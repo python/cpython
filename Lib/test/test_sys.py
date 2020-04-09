@@ -241,7 +241,7 @@ class SysModuleTest(unittest.TestCase):
         # mark". Otherwise, it may not be possible anymore to
         # reset the overflowed flag to 0.
 
-        from _testcapi import get_recursion_depth
+        from _testinternalcapi import get_recursion_depth
 
         def set_recursion_limit_at_depth(depth, limit):
             recursion_depth = get_recursion_depth()

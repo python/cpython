@@ -46,7 +46,8 @@ _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
                               "%s returned NULL without setting an error",
                               where);
 #ifdef Py_DEBUG
-            /* Ensure that the bug is caught in debug mode */
+            /* Ensure that the bug is caught in debug mode.
+               Py_FatalError() logs the SystemError exception raised above. */
             Py_FatalError("a function returned NULL without setting an error");
 #endif
             return NULL;
@@ -67,7 +68,8 @@ _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
                     "%s returned a result with an error set", where);
             }
 #ifdef Py_DEBUG
-            /* Ensure that the bug is caught in debug mode */
+            /* Ensure that the bug is caught in debug mode.
+               Py_FatalError() logs the SystemError exception raised above. */
             Py_FatalError("a function returned a result with an error set");
 #endif
             return NULL;

@@ -1029,6 +1029,10 @@ find and load modules.
     Only class methods are defined by this class to alleviate the need for
     instantiation.
 
+    .. versionchanged:: 3.4
+       Gained :meth:`~Loader.create_module` and :meth:`~Loader.exec_module`
+       methods.
+
 
 .. class:: WindowsRegistryFinder
 

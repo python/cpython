@@ -547,7 +547,7 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
             encoding = "utf-8";
     }
 
-    wo = PyObject_NEW(PyCursesWindowObject, &PyCursesWindow_Type);
+    wo = PyObject_New(PyCursesWindowObject, &PyCursesWindow_Type);
     if (wo == NULL) return NULL;
     wo->win = win;
     wo->encoding = _PyMem_Strdup(encoding);
@@ -4740,7 +4740,8 @@ PyInit__curses(void)
         SetDictInt("KEY_MAX", KEY_MAX);
     }
 
-    Py_INCREF(&PyCursesWindow_Type);
-    PyModule_AddObject(m, "window", (PyObject *)&PyCursesWindow_Type);
+    if (PyModule_AddType(m, &PyCursesWindow_Type) < 0) {
+        return NULL;
+    }
     return m;
 }

@@ -2787,6 +2787,7 @@ _PyArg_UnpackStack(PyObject *const *args, Py_ssize_t nargs, const char *name,
 
 
 #undef _PyArg_NoKeywords
+#undef _PyArg_NoKwnames
 #undef _PyArg_NoPositional
 
 /* For type constructors that don't take keyword args
@@ -2813,7 +2814,6 @@ _PyArg_NoKeywords(const char *funcname, PyObject *kwargs)
     return 0;
 }
 
-
 int
 _PyArg_NoPositional(const char *funcname, PyObject *args)
 {
@@ -2828,6 +2828,23 @@ _PyArg_NoPositional(const char *funcname, PyObject *args)
 
     PyErr_Format(PyExc_TypeError, "%.200s() takes no positional arguments",
                     funcname);
+    return 0;
+}
+
+int
+_PyArg_NoKwnames(const char *funcname, PyObject *kwnames)
+{
+    if (kwnames == NULL) {
+        return 1;
+    }
+
+    assert(PyTuple_CheckExact(kwnames));
+
+    if (PyTuple_GET_SIZE(kwnames) == 0) {
+        return 1;
+    }
+
+    PyErr_Format(PyExc_TypeError, "%s() takes no keyword arguments", funcname);
     return 0;
 }
 

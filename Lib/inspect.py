@@ -2733,7 +2733,7 @@ class Signature:
 
     A Signature object has the following public attributes and methods:
 
-    * parameters : dict
+    * parameters : OrderedDict
         An ordered mapping of parameters' names to the corresponding
         Parameter objects (keyword-only arguments are in the same order
         as listed in `code.co_varnames`).
@@ -2763,10 +2763,10 @@ class Signature:
         """
 
         if parameters is None:
-            params = {}
+            params = OrderedDict()
         else:
             if __validate_parameters__:
-                params = {}
+                params = OrderedDict()
                 top_kind = _POSITIONAL_ONLY
                 kind_defaults = False
 
@@ -2805,7 +2805,7 @@ class Signature:
 
                     params[name] = param
             else:
-                params = {param.name: param for param in parameters}
+                params = OrderedDict((param.name, param) for param in parameters)
 
         self._parameters = types.MappingProxyType(params)
         self._return_annotation = return_annotation

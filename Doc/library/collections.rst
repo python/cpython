@@ -116,6 +116,9 @@ The class can be used to simulate nested scopes and is useful in templating.
         >>> list(combined)
         ['music', 'art', 'opera']
 
+    .. versionchanged:: 3.9
+       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
+
 .. seealso::
 
     * The `MultiContext class
@@ -1122,6 +1125,10 @@ anywhere a regular dictionary is used.
    With the acceptance of :pep:`468`, order is retained for keyword arguments
    passed to the :class:`OrderedDict` constructor and its :meth:`update`
    method.
+
+.. versionchanged:: 3.9
+    Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
+
 
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

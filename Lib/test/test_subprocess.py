@@ -11,6 +11,7 @@ import errno
 import tempfile
 import time
 import traceback
+import types
 import selectors
 import sysconfig
 import select
@@ -682,7 +683,6 @@ class ProcessTestCase(BaseTestCase):
             # on adding even when the environment in exec is empty.
             # Gentoo sandboxes also force LD_PRELOAD and SANDBOX_* to exist.
             return ('VERSIONER' in n or '__CF' in n or  # MacOS
-                    '__PYVENV_LAUNCHER__' in n or # MacOS framework build
                     n == 'LD_PRELOAD' or n.startswith('SANDBOX') or # Gentoo
                     n == 'LC_CTYPE') # Locale coercion triggered
 
@@ -1436,8 +1436,8 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(c.exception.filename, '/some/nonexistent/directory')
 
     def test_class_getitems(self):
-        self.assertIs(subprocess.Popen[bytes], subprocess.Popen)
-        self.assertIs(subprocess.CompletedProcess[str], subprocess.CompletedProcess)
+        self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
+        self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
@@ -3115,12 +3115,10 @@ class POSIXProcessTestCase(BaseTestCase):
         proc = subprocess.Popen(args)
 
         # Wait until the real process completes to avoid zombie process
-        pid = proc.pid
-        pid, status = os.waitpid(pid, 0)
-        self.assertEqual(status, 0)
+        support.wait_process(proc.pid, exitcode=0)
 
         status = _testcapi.W_STOPCODE(3)
-        with mock.patch('subprocess.os.waitpid', return_value=(pid, status)):
+        with mock.patch('subprocess.os.waitpid', return_value=(proc.pid, status)):
             returncode = proc.wait()
 
         self.assertEqual(returncode, -3)
@@ -3131,10 +3129,7 @@ class POSIXProcessTestCase(BaseTestCase):
         proc = subprocess.Popen(ZERO_RETURN_CMD)
 
         # wait until the process completes without using the Popen APIs.
-        pid, status = os.waitpid(proc.pid, 0)
-        self.assertEqual(pid, proc.pid)
-        self.assertTrue(os.WIFEXITED(status), status)
-        self.assertEqual(os.WEXITSTATUS(status), 0)
+        support.wait_process(proc.pid, exitcode=0)
 
         # returncode is still None but the process completed.
         self.assertIsNone(proc.returncode)

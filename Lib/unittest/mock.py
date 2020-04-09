@@ -2171,7 +2171,7 @@ class AsyncMockMixin(Base):
         # This is nearly just like super(), except for special handling
         # of coroutines
 
-        _call = self.call_args
+        _call = _Call((args, kwargs), two=True)
         self.await_count += 1
         self.await_args = _call
         self.await_args_list.append(_call)

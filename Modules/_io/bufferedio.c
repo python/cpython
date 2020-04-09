@@ -292,12 +292,11 @@ _enter_buffered_busy(buffered *self)
     }
     Py_END_ALLOW_THREADS
     if (relax_locking && st != PY_LOCK_ACQUIRED) {
-        PyObject *msgobj = PyUnicode_FromFormat(
-            "could not acquire lock for %A at interpreter "
+        PyObject *ascii = PyObject_ASCII((PyObject*)self);
+        _Py_FatalErrorFormat(__func__,
+            "could not acquire lock for %s at interpreter "
             "shutdown, possibly due to daemon threads",
-            (PyObject *) self);
-        const char *msg = PyUnicode_AsUTF8(msgobj);
-        Py_FatalError(msg);
+            ascii ? PyUnicode_AsUTF8(ascii) : "<ascii(self) failed>");
     }
     return 1;
 }

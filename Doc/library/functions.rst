@@ -1311,7 +1311,7 @@ are always available.  They are listed here in alphabetical order.
       the second argument to be negative, permitting computation of modular
       inverses.
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.8
       Allow keyword arguments.  Formerly, only positional arguments were
       supported.
 

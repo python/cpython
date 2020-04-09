@@ -62,7 +62,8 @@ class CAPITest(unittest.TestCase):
         # This used to cause an infinite loop.
         self.assertTrue(err.rstrip().startswith(
                          b'Fatal Python error: '
-                         b'PyThreadState_Get: no current thread'))
+                         b'PyThreadState_Get: '
+                         b'current thread state is NULL (released GIL?)'))
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)

@@ -6386,18 +6386,20 @@ PyInit__datetime(void)
     if (m == NULL)
         return NULL;
 
-    if (PyType_Ready(&PyDateTime_DateType) < 0)
-        return NULL;
-    if (PyType_Ready(&PyDateTime_DateTimeType) < 0)
-        return NULL;
-    if (PyType_Ready(&PyDateTime_DeltaType) < 0)
-        return NULL;
-    if (PyType_Ready(&PyDateTime_TimeType) < 0)
-        return NULL;
-    if (PyType_Ready(&PyDateTime_TZInfoType) < 0)
-        return NULL;
-    if (PyType_Ready(&PyDateTime_TimeZoneType) < 0)
-        return NULL;
+    PyTypeObject *types[] = {
+        &PyDateTime_DateType,
+        &PyDateTime_DateTimeType,
+        &PyDateTime_TimeType,
+        &PyDateTime_DeltaType,
+        &PyDateTime_TZInfoType,
+        &PyDateTime_TimeZoneType
+    };
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
+        if (PyModule_AddType(m, types[i]) < 0) {
+            return NULL;
+        }
+    }
 
     /* timedelta values */
     d = PyDateTime_DeltaType.tp_dict;
@@ -6514,25 +6516,6 @@ PyInit__datetime(void)
     /* module initialization */
     PyModule_AddIntMacro(m, MINYEAR);
     PyModule_AddIntMacro(m, MAXYEAR);
-
-    Py_INCREF(&PyDateTime_DateType);
-    PyModule_AddObject(m, "date", (PyObject *) &PyDateTime_DateType);
-
-    Py_INCREF(&PyDateTime_DateTimeType);
-    PyModule_AddObject(m, "datetime",
-                       (PyObject *)&PyDateTime_DateTimeType);
-
-    Py_INCREF(&PyDateTime_TimeType);
-    PyModule_AddObject(m, "time", (PyObject *) &PyDateTime_TimeType);
-
-    Py_INCREF(&PyDateTime_DeltaType);
-    PyModule_AddObject(m, "timedelta", (PyObject *) &PyDateTime_DeltaType);
-
-    Py_INCREF(&PyDateTime_TZInfoType);
-    PyModule_AddObject(m, "tzinfo", (PyObject *) &PyDateTime_TZInfoType);
-
-    Py_INCREF(&PyDateTime_TimeZoneType);
-    PyModule_AddObject(m, "timezone", (PyObject *) &PyDateTime_TimeZoneType);
 
     x = PyCapsule_New(&CAPI, PyDateTime_CAPSULE_NAME, NULL);
     if (x == NULL)

@@ -960,12 +960,13 @@ The module defines the following classes, functions and decorators:
       Added support for default values, methods, and docstrings.
 
    .. versionchanged:: 3.8
-      Deprecated the ``_field_types`` attribute in favor of the more
-      standard ``__annotations__`` attribute which has the same information.
-
-   .. versionchanged:: 3.8
       The ``_field_types`` and ``__annotations__`` attributes are
       now regular dictionaries instead of instances of ``OrderedDict``.
+
+   .. versionchanged:: 3.9
+      Removed the ``_field_types`` attribute in favor of the more
+      standard ``__annotations__`` attribute which has the same information.
+
 
 .. class:: TypedDict(dict)
 

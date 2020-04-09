@@ -156,10 +156,9 @@ _ctypes_get_errobj(int **pspace)
         Py_INCREF(errobj);
     }
     else if (!PyErr_Occurred()) {
-        void *space = PyMem_Malloc(sizeof(int) * 2);
+        void *space = PyMem_Calloc(2, sizeof(int));
         if (space == NULL)
             return NULL;
-        memset(space, 0, sizeof(int) * 2);
         errobj = PyCapsule_New(space, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
         if (errobj == NULL) {
             PyMem_Free(space);
@@ -1712,10 +1711,9 @@ resize(PyObject *self, PyObject *args)
     if (!_CDataObject_HasExternalBuffer(obj)) {
         /* We are currently using the objects default buffer, but it
            isn't large enough any more. */
-        void *ptr = PyMem_Malloc(size);
+        void *ptr = PyMem_Calloc(1, size);
         if (ptr == NULL)
             return PyErr_NoMemory();
-        memset(ptr, 0, size);
         memmove(ptr, obj->b_ptr, obj->b_size);
         obj->b_ptr = ptr;
         obj->b_size = size;

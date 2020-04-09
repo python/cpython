@@ -293,6 +293,24 @@ class OrderedDict(dict):
             return dict.__eq__(self, other) and all(map(_eq, self, other))
         return dict.__eq__(self, other)
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if not isinstance(other, dict):
+            return NotImplemented
+        new = self.__class__(self)
+        new.update(other)
+        return new
+
+    def __ror__(self, other):
+        if not isinstance(other, dict):
+            return NotImplemented
+        new = self.__class__(other)
+        new.update(self)
+        return new
+
 
 try:
     from _collections import OrderedDict
@@ -960,6 +978,25 @@ class ChainMap(_collections_abc.MutableMapping):
     def clear(self):
         'Clear maps[0], leaving maps[1:] intact.'
         self.maps[0].clear()
+
+    def __ior__(self, other):
+        self.maps[0] |= other
+        return self
+
+    def __or__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            m = self.maps[0].copy()
+            m.update(other)
+            return self.__class__(m, *self.maps[1:])
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            m = dict(other)
+            for child in reversed(self.maps):
+                m.update(child)
+            return self.__class__(m)
+        return NotImplemented
 
 
 ################################################################################

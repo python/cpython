@@ -731,24 +731,11 @@ static PyTypeObject BZ2Decompressor_Type = {
 static int
 _bz2_exec(PyObject *module)
 {
-    if (PyType_Ready(&BZ2Compressor_Type) < 0) {
-        return -1;
-    }
-    if (PyType_Ready(&BZ2Decompressor_Type) < 0) {
+    if (PyModule_AddType(module, &BZ2Compressor_Type) < 0) {
         return -1;
     }
 
-    Py_INCREF(&BZ2Compressor_Type);
-    if (PyModule_AddObject(module, "BZ2Compressor",
-                           (PyObject *)&BZ2Compressor_Type) < 0) {
-        Py_DECREF(&BZ2Compressor_Type);
-        return -1;
-    }
-
-    Py_INCREF(&BZ2Decompressor_Type);
-    if (PyModule_AddObject(module, "BZ2Decompressor",
-                           (PyObject *)&BZ2Decompressor_Type) < 0) {
-        Py_INCREF(&BZ2Decompressor_Type);
+    if (PyModule_AddType(module, &BZ2Decompressor_Type) < 0) {
         return -1;
     }
 
