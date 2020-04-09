@@ -209,9 +209,16 @@ void
 _PyImport_ReInitLock(void)
 {
     if (import_lock != NULL) {
+#ifdef HAVE_FORK
         if (_PyThread_at_fork_reinit(&import_lock) < 0) {
             _Py_FatalErrorFunc(__func__, "failed to create a new lock");
         }
+#else
+        import_lock = PyThread_allocate_lock();
+        if (import_lock == NULL) {
+            _Py_FatalErrorFunc(__func__, "failed to create a new lock");
+        }
+#endif
     }
     if (import_lock_level > 1) {
         /* Forked as a side effect of import */
