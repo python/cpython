@@ -113,6 +113,46 @@ get_expr_name(expr_ty e)
 }
 
 static int
+non_terminated_string_error(Parser *p)
+{
+    PyObject *errstr = NULL;
+    PyObject *value = NULL;
+    const char *msg = NULL;
+    int col_number = p->tok->cur - p->tok->buf;
+
+    if (p->tok->done == E_EOLS) {
+        msg = "EOL while scanning string literal";
+    }
+    else if (p->tok->done == E_EOFS) {
+        msg = "EOF while scanning triple-quoted string literal";
+    }
+    assert(msg != NULL);
+
+    errstr = PyUnicode_FromString(msg);
+    if (!errstr) {
+        return -1;
+    }
+
+    PyObject *tmp = Py_BuildValue("(Oiis)", p->tok->filename, p->tok->lineno,
+                                  col_number, p->tok->buf);
+    if (!tmp) {
+        goto error;
+    }
+
+    value = PyTuple_Pack(2, errstr, tmp);
+    Py_DECREF(tmp);
+    if (!value) {
+        goto error;
+    }
+    PyErr_SetObject(PyExc_SyntaxError, value);
+
+error:
+    Py_XDECREF(errstr);
+    Py_XDECREF(value);
+    return -1;
+}
+
+static int
 tokenizer_error(Parser *p)
 {
     if (PyErr_Occurred()) {
@@ -125,18 +165,15 @@ tokenizer_error(Parser *p)
         case E_TOKEN:
             msg = "invalid token";
             break;
-        case E_EOFS:
-            msg = "EOF while scanning triple-quoted string literal";
-            break;
-        case E_EOLS:
-            msg = "EOL while scanning string literal";
-            break;
         case E_EOF:
             msg = "unexpected EOF while parsing";
             break;
         case E_IDENTIFIER:
             msg = "invalid character in identifier";
             break;
+        case E_EOFS:
+        case E_EOLS:
+            return non_terminated_string_error(p);
         default:
             msg = "unknown parsing error";
     }
