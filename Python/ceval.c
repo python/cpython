@@ -4513,6 +4513,20 @@ unpack_iterable(PyThreadState *tstate, PyObject *v,
             return 1;
         }
         Py_DECREF(w);
+        /* Get the length of the iterable for better diagnostics message. */
+        Py_ssize_t length = PySequence_Length(v);
+        if (length != -1) {
+            _PyErr_Format(tstate, PyExc_ValueError,
+                "too many values to unpack (expected %d, got %zi)",
+                argcnt, length);
+            goto Error;
+        }
+        else {
+            /* Ignore any errors from the len() call, if we can't call it
+               then no harm. We just try to provide it best-effort. */
+            PyErr_Clear();
+        }
+
         _PyErr_Format(tstate, PyExc_ValueError,
                       "too many values to unpack (expected %d)",
                       argcnt);

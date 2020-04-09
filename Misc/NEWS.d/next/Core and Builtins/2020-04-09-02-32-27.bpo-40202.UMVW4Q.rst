@@ -1,0 +1,3 @@
+Improve the error message when unpacking too many values from an iterable.
+We now show both the expected number of elements and the actual number of
+elements when possible.

@@ -62,14 +62,14 @@ Unpacking tuple of wrong size
     >>> a, b = t
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 2)
+    ValueError: too many values to unpack (expected 2, got 3)
 
 Unpacking tuple of wrong size
 
     >>> a, b = l
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 2)
+    ValueError: too many values to unpack (expected 2, got 3)
 
 Unpacking sequence too short
 
@@ -136,7 +136,7 @@ Unpacking to an empty iterable should raise ValueError
     >>> () = [42]
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 0)
+    ValueError: too many values to unpack (expected 0, got 1)
 
 """
 
