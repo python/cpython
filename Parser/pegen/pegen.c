@@ -704,7 +704,7 @@ Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena *arena)
     return p;
 }
 
-mod_ty
+void *
 run_parser(Parser *p)
 {
     int error = setjmp(p->error_env);
@@ -712,7 +712,7 @@ run_parser(Parser *p)
         return NULL;
     }
 
-    mod_ty res = parse(p);
+    void *res = parse(p);
     if (res == NULL) {
         if (PyErr_Occurred()) {
             return NULL;

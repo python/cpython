@@ -135,6 +135,7 @@ Parser *Parser_New(struct tok_state *, int, int *, PyArena *);
 void Parser_Free(Parser *);
 mod_ty run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
                                     const char *, const char *, int *, PyArena *);
+void *run_parser(Parser *);
 mod_ty run_parser_from_file(const char *, int, PyObject *, PyArena *);
 mod_ty run_parser_from_string(const char *, int, PyObject *, PyArena *);
 void *interactive_exit(Parser *);

@@ -588,10 +588,9 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 
     Parser *p2 = Parser_New(tok, Py_fstring_input, NULL, p->arena);
 
-    expr = parse(p2);
+    expr = run_parser(p2);
 
-    if (expr == NULL){
-        raise_syntax_error(p2, "invalid syntax");
+    if (expr == NULL) {
         goto exit;
     }
 
