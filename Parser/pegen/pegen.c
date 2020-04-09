@@ -687,6 +687,7 @@ Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena *arena)
     p->n_keyword_lists = -1;
     p->tokens = PyMem_Malloc(sizeof(Token *));
     if (!p->tokens) {
+        PyMem_Free(p);
         PyErr_Format(PyExc_MemoryError, "Out of memory for tokens");
         return NULL;
     }
