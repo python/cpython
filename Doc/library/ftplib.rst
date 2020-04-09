@@ -43,17 +43,17 @@ Here's a sample session using the :mod:`ftplib` module::
 
 The module defines the following items:
 
-.. class:: FTP(host='', user='', passwd='', acct='', encoding='utf-8', timeout=None, source_address=None)
+.. class:: FTP(host='', user='', passwd='', acct='', timeout=None, source_address=None, *, encoding='utf-8')
 
    Return a new instance of the :class:`FTP` class.  When *host* is given, the
    method call ``connect(host)`` is made.  When *user* is given, additionally
    the method call ``login(user, passwd, acct)`` is made (where *passwd* and
-   *acct* default to the empty string when not given). The *encoding* parameter
-   specifies the encoding for directories and filenames. The optional *timeout*
+   *acct* default to the empty string when not given). The optional *timeout*
    parameter specifies a timeout in seconds for blocking operations like the
    connection attempt (if is not specified, the global default timeout setting
    will be used). *source_address* is a 2-tuple ``(host, port)`` for the socket
-   to bind to as its source address before connecting.
+   to bind to as its source address before connecting. The *encoding* parameter
+   specifies the encoding for directories and filenames.
 
    The :class:`FTP` class supports the :keyword:`with` statement, e.g.:
 
@@ -81,7 +81,7 @@ The module defines the following items:
       The *encoding* parameter was added, and the default was changed from
       Latin-1 to UTF-8.
 
-.. class:: FTP_TLS(host='', user='', passwd='', acct='', encoding='utf-8', keyfile=None, certfile=None, context=None, timeout=None, source_address=None)
+.. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None, *, encoding='utf-8')
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.

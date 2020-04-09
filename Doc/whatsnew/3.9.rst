@@ -748,6 +748,8 @@ Changes in the Python API
   environment variable when the :option:`-E` or :option:`-I` command line
   options are being used.
 
+* The *encoding* parameter has been added to the classes :class:`ftplib.FTP` and
+  :class:`ftplib.FTP_TLS` as a keyword-only parameter.
 
 CPython bytecode changes
 ------------------------
