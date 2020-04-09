@@ -408,8 +408,7 @@ class BasicSocketTests(unittest.TestCase):
         else:
             os.close(wfd)
             self.addCleanup(os.close, rfd)
-            _, status = os.waitpid(pid, 0)
-            self.assertEqual(status, 0)
+            support.wait_process(pid, exitcode=0)
 
             child_random = os.read(rfd, 16)
             self.assertEqual(len(child_random), 16)

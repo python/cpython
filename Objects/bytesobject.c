@@ -3,11 +3,12 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_bytes_methods.h"
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 
-#include "bytes_methods.h"
 #include "pystrhex.h"
 #include <stddef.h>
 
@@ -1579,7 +1580,7 @@ bytes_hash(PyBytesObject *a)
 static PyObject*
 bytes_subscript(PyBytesObject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
@@ -2259,7 +2260,7 @@ bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
 {
     PyObject *result = _PyBytes_FromHex(string, 0);
     if (type != &PyBytes_Type && result != NULL) {
-        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 }
@@ -2536,7 +2537,7 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     /* Is it an integer? */
-    if (PyIndex_Check(x)) {
+    if (_PyIndex_Check(x)) {
         size = PyNumber_AsSsize_t(x, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
             if (!PyErr_ExceptionMatches(PyExc_TypeError))
@@ -2762,7 +2763,7 @@ PyBytes_FromObject(PyObject *x)
 
     PyErr_Format(PyExc_TypeError,
                  "cannot convert '%.200s' object to bytes",
-                 x->ob_type->tp_name);
+                 Py_TYPE(x)->tp_name);
     return NULL;
 }
 
@@ -2963,7 +2964,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     }
     _Py_NewReference(*pv);
     sv = (PyBytesObject *) *pv;
-    Py_SIZE(sv) = newsize;
+    Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
     sv->ob_shash = -1;          /* invalidate cached hash value */
     return 0;

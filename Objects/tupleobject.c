@@ -2,6 +2,7 @@
 /* Tuple object implementation */
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_accu.h"
@@ -153,7 +154,7 @@ int
 PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
 {
     PyObject **p;
-    if (!PyTuple_Check(op) || op->ob_refcnt != 1) {
+    if (!PyTuple_Check(op) || Py_REFCNT(op) != 1) {
         Py_XDECREF(newitem);
         PyErr_BadInternalCall();
         return -1;
@@ -237,7 +238,7 @@ tupledealloc(PyTupleObject *op)
 #if PyTuple_MAXSAVESIZE > 0
         if (len < PyTuple_MAXSAVESIZE &&
             numfree[len] < PyTuple_MAXFREELIST &&
-            Py_TYPE(op) == &PyTuple_Type)
+            Py_IS_TYPE(op, &PyTuple_Type))
         {
             op->ob_item[0] = (PyObject *) free_list[len];
             numfree[len]++;
@@ -706,6 +707,25 @@ tuple_new_impl(PyTypeObject *type, PyObject *iterable)
 }
 
 static PyObject *
+tuple_vectorcall(PyObject *type, PyObject * const*args,
+                 size_t nargsf, PyObject *kwnames)
+{
+    if (!_PyArg_NoKwnames("tuple", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("tuple", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    if (nargs) {
+        return tuple_new_impl((PyTypeObject *)type, args[0]);
+    }
+    return PyTuple_New(0);
+}
+
+static PyObject *
 tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
 {
     PyObject *tmp, *newobj, *item;
@@ -717,8 +737,10 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
         return NULL;
     assert(PyTuple_Check(tmp));
     newobj = type->tp_alloc(type, n = PyTuple_GET_SIZE(tmp));
-    if (newobj == NULL)
+    if (newobj == NULL) {
+        Py_DECREF(tmp);
         return NULL;
+    }
     for (i = 0; i < n; i++) {
         item = PyTuple_GET_ITEM(tmp, i);
         Py_INCREF(item);
@@ -742,7 +764,7 @@ static PySequenceMethods tuple_as_sequence = {
 static PyObject*
 tuplesubscript(PyTupleObject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
@@ -811,6 +833,7 @@ static PyMethodDef tuple_methods[] = {
     TUPLE___GETNEWARGS___METHODDEF
     TUPLE_INDEX_METHODDEF
     TUPLE_COUNT_METHODDEF
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -863,6 +886,7 @@ PyTypeObject PyTuple_Type = {
     0,                                          /* tp_alloc */
     tuple_new,                                  /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = tuple_vectorcall,
 };
 
 /* The following function breaks the notion that tuples are immutable:
@@ -881,7 +905,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     Py_ssize_t oldsize;
 
     v = (PyTupleObject *) *pv;
-    if (v == NULL || Py_TYPE(v) != &PyTuple_Type ||
+    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
         (Py_SIZE(v) != 0 && Py_REFCNT(v) != 1)) {
         *pv = 0;
         Py_XDECREF(v);

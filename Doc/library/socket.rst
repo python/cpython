@@ -78,15 +78,15 @@ created.  Socket addresses are represented as follows:
     Python programs.
 
 - For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
-  scopeid)`` is used, where *flowinfo* and *scopeid* represent the ``sin6_flowinfo``
+  scope_id)`` is used, where *flowinfo* and *scope_id* represent the ``sin6_flowinfo``
   and ``sin6_scope_id`` members in :const:`struct sockaddr_in6` in C.  For
-  :mod:`socket` module methods, *flowinfo* and *scopeid* can be omitted just for
-  backward compatibility.  Note, however, omission of *scopeid* can cause problems
+  :mod:`socket` module methods, *flowinfo* and *scope_id* can be omitted just for
+  backward compatibility.  Note, however, omission of *scope_id* can cause problems
   in manipulating scoped IPv6 addresses.
 
   .. versionchanged:: 3.7
-     For multicast addresses (with *scopeid* meaningful) *address* may not contain
-     ``%scope`` (or ``zone id``) part. This information is superfluous and may
+     For multicast addresses (with *scope_id* meaningful) *address* may not contain
+     ``%scope_id`` (or ``zone id``) part. This information is superfluous and may
      be safely omitted (recommended).
 
 - :const:`AF_NETLINK` sockets are represented as pairs ``(pid, groups)``.
@@ -738,7 +738,7 @@ The :mod:`socket` module also offers various network-related services:
    :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
    will be empty.  *sockaddr* is a tuple describing a socket address, whose
    format depends on the returned *family* (a ``(address, port)`` 2-tuple for
-   :const:`AF_INET`, a ``(address, port, flow info, scope id)`` 4-tuple for
+   :const:`AF_INET`, a ``(address, port, flowinfo, scope_id)`` 4-tuple for
    :const:`AF_INET6`), and is meant to be passed to the :meth:`socket.connect`
    method.
 
@@ -759,7 +759,7 @@ The :mod:`socket` module also offers various network-related services:
 
    .. versionchanged:: 3.7
       for IPv6 multicast addresses, string representing an address will not
-      contain ``%scope`` part.
+      contain ``%scope_id`` part.
 
 .. function:: getfqdn([name])
 
@@ -827,8 +827,8 @@ The :mod:`socket` module also offers various network-related services:
    or numeric address representation in *host*.  Similarly, *port* can contain a
    string port name or a numeric port number.
 
-   For IPv6 addresses, ``%scope`` is appended to the host part if *sockaddr*
-   contains meaningful *scopeid*. Usually this happens for multicast addresses.
+   For IPv6 addresses, ``%scope_id`` is appended to the host part if *sockaddr*
+   contains meaningful *scope_id*. Usually this happens for multicast addresses.
 
    For more information about *flags* you can consult :manpage:`getnameinfo(3)`.
 
@@ -1354,7 +1354,7 @@ to sockets.
 
    .. versionchanged:: 3.7
       For multicast IPv6 address, first item of *address* does not contain
-      ``%scope`` part anymore. In order to get full IPv6 address use
+      ``%scope_id`` part anymore. In order to get full IPv6 address use
       :func:`getnameinfo`.
 
 .. method:: socket.recvmsg(bufsize[, ancbufsize[, flags]])

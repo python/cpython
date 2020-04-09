@@ -825,6 +825,21 @@ The :mod:`test.support` module defines the following functions:
    target of the "as" clause, if there is one.
 
 
+.. function:: wait_process(pid, *, exitcode, timeout=None)
+
+   Wait until process *pid* completes and check that the process exit code is
+   *exitcode*.
+
+   Raise an :exc:`AssertionError` if the process exit code is not equal to
+   *exitcode*.
+
+   If the process runs longer than *timeout* seconds (:data:`SHORT_TIMEOUT` by
+   default), kill the process and raise an :exc:`AssertionError`. The timeout
+   feature is not available on Windows.
+
+   .. versionadded:: 3.9
+
+
 .. function:: wait_threads_exit(timeout=60.0)
 
    Context manager to wait until all threads created in the ``with`` statement

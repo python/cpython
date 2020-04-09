@@ -25,6 +25,7 @@ import sysconfig
 import tempfile
 import threading
 import time
+import types
 import unittest
 import uuid
 import warnings
@@ -1025,6 +1026,96 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     def test_iter_error_when_changing_os_environ_values(self):
         self._test_environ_iteration(os.environ.values())
+
+    def _test_underlying_process_env(self, var, expected):
+        if not (unix_shell and os.path.exists(unix_shell)):
+            return
+
+        with os.popen(f"{unix_shell} -c 'echo ${var}'") as popen:
+            value = popen.read().strip()
+
+        self.assertEqual(expected, value)
+
+    def test_or_operator(self):
+        overridden_key = '_TEST_VAR_'
+        original_value = 'original_value'
+        os.environ[overridden_key] = original_value
+
+        new_vars_dict = {'_A_': '1', '_B_': '2', overridden_key: '3'}
+        expected = dict(os.environ)
+        expected.update(new_vars_dict)
+
+        actual = os.environ | new_vars_dict
+        self.assertDictEqual(expected, actual)
+        self.assertEqual('3', actual[overridden_key])
+
+        new_vars_items = new_vars_dict.items()
+        self.assertIs(NotImplemented, os.environ.__or__(new_vars_items))
+
+        self._test_underlying_process_env('_A_', '')
+        self._test_underlying_process_env(overridden_key, original_value)
+
+    def test_ior_operator(self):
+        overridden_key = '_TEST_VAR_'
+        os.environ[overridden_key] = 'original_value'
+
+        new_vars_dict = {'_A_': '1', '_B_': '2', overridden_key: '3'}
+        expected = dict(os.environ)
+        expected.update(new_vars_dict)
+
+        os.environ |= new_vars_dict
+        self.assertEqual(expected, os.environ)
+        self.assertEqual('3', os.environ[overridden_key])
+
+        self._test_underlying_process_env('_A_', '1')
+        self._test_underlying_process_env(overridden_key, '3')
+
+    def test_ior_operator_invalid_dicts(self):
+        os_environ_copy = os.environ.copy()
+        with self.assertRaises(TypeError):
+            dict_with_bad_key = {1: '_A_'}
+            os.environ |= dict_with_bad_key
+
+        with self.assertRaises(TypeError):
+            dict_with_bad_val = {'_A_': 1}
+            os.environ |= dict_with_bad_val
+
+        # Check nothing was added.
+        self.assertEqual(os_environ_copy, os.environ)
+
+    def test_ior_operator_key_value_iterable(self):
+        overridden_key = '_TEST_VAR_'
+        os.environ[overridden_key] = 'original_value'
+
+        new_vars_items = (('_A_', '1'), ('_B_', '2'), (overridden_key, '3'))
+        expected = dict(os.environ)
+        expected.update(new_vars_items)
+
+        os.environ |= new_vars_items
+        self.assertEqual(expected, os.environ)
+        self.assertEqual('3', os.environ[overridden_key])
+
+        self._test_underlying_process_env('_A_', '1')
+        self._test_underlying_process_env(overridden_key, '3')
+
+    def test_ror_operator(self):
+        overridden_key = '_TEST_VAR_'
+        original_value = 'original_value'
+        os.environ[overridden_key] = original_value
+
+        new_vars_dict = {'_A_': '1', '_B_': '2', overridden_key: '3'}
+        expected = dict(new_vars_dict)
+        expected.update(os.environ)
+
+        actual = new_vars_dict | os.environ
+        self.assertDictEqual(expected, actual)
+        self.assertEqual(original_value, actual[overridden_key])
+
+        new_vars_items = new_vars_dict.items()
+        self.assertIs(NotImplemented, os.environ.__ror__(new_vars_items))
+
+        self._test_underlying_process_env('_A_', '')
+        self._test_underlying_process_env(overridden_key, original_value)
 
 
 class WalkTests(unittest.TestCase):
@@ -2702,8 +2793,36 @@ class PidTests(unittest.TestCase):
         args = [sys.executable, '-c', 'pass']
         # Add an implicit test for PyUnicode_FSConverter().
         pid = os.spawnv(os.P_NOWAIT, FakePath(args[0]), args)
-        status = os.waitpid(pid, 0)
-        self.assertEqual(status, (pid, 0))
+        support.wait_process(pid, exitcode=0)
+
+    def test_waitstatus_to_exitcode(self):
+        exitcode = 23
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        with open(filename, "w") as fp:
+            print(f'import sys; sys.exit({exitcode})', file=fp)
+            fp.flush()
+        args = [sys.executable, filename]
+        pid = os.spawnv(os.P_NOWAIT, args[0], args)
+
+        pid2, status = os.waitpid(pid, 0)
+        self.assertEqual(os.waitstatus_to_exitcode(status), exitcode)
+        self.assertEqual(pid2, pid)
+
+    # Skip the test on Windows
+    @unittest.skipUnless(hasattr(signal, 'SIGKILL'), 'need signal.SIGKILL')
+    def test_waitstatus_to_exitcode_kill(self):
+        signum = signal.SIGKILL
+        args = [sys.executable, '-c',
+                f'import time; time.sleep({support.LONG_TIMEOUT})']
+        pid = os.spawnv(os.P_NOWAIT, args[0], args)
+
+        os.kill(pid, signum)
+
+        pid2, status = os.waitpid(pid, 0)
+        self.assertEqual(os.waitstatus_to_exitcode(status), -signum)
+        self.assertEqual(pid2, pid)
 
 
 class SpawnTests(unittest.TestCase):
@@ -2787,14 +2906,7 @@ class SpawnTests(unittest.TestCase):
     def test_nowait(self):
         args = self.create_args()
         pid = os.spawnv(os.P_NOWAIT, args[0], args)
-        result = os.waitpid(pid, 0)
-        self.assertEqual(result[0], pid)
-        status = result[1]
-        if hasattr(os, 'WIFEXITED'):
-            self.assertTrue(os.WIFEXITED(status))
-            self.assertEqual(os.WEXITSTATUS(status), self.exitcode)
-        else:
-            self.assertEqual(status, self.exitcode << 8)
+        support.wait_process(pid, exitcode=self.exitcode)
 
     @requires_os_func('spawnve')
     def test_spawnve_bytes(self):
@@ -4080,7 +4192,7 @@ class TestPEP519(unittest.TestCase):
         self.assertTrue(issubclass(FakePath, os.PathLike))
 
     def test_pathlike_class_getitem(self):
-        self.assertIs(os.PathLike[bytes], os.PathLike)
+        self.assertIsInstance(os.PathLike[bytes], types.GenericAlias)
 
 
 class TimesTests(unittest.TestCase):

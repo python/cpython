@@ -540,7 +540,7 @@ faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_XSETREF(fatal_error.file, file);
     fatal_error.fd = fd;
     fatal_error.all_threads = all_threads;
-    fatal_error.interp = tstate->interp;
+    fatal_error.interp = PyThreadState_GetInterpreter(tstate);
 
     if (faulthandler_enable() < 0) {
         return NULL;
@@ -756,7 +756,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     /* the downcast is safe: we check that 0 < timeout_us < PY_TIMEOUT_MAX */
     thread.timeout_us = (PY_TIMEOUT_T)timeout_us;
     thread.repeat = repeat;
-    thread.interp = tstate->interp;
+    thread.interp = PyThreadState_GetInterpreter(tstate);
     thread.exit = exit;
     thread.header = header;
     thread.header_len = header_len;
@@ -911,10 +911,9 @@ faulthandler_register_py(PyObject *self,
         return NULL;
 
     if (user_signals == NULL) {
-        user_signals = PyMem_Malloc(NSIG * sizeof(user_signal_t));
+        user_signals = PyMem_Calloc(NSIG, sizeof(user_signal_t));
         if (user_signals == NULL)
             return PyErr_NoMemory();
-        memset(user_signals, 0, NSIG * sizeof(user_signal_t));
     }
     user = &user_signals[signum];
 
@@ -939,7 +938,7 @@ faulthandler_register_py(PyObject *self,
     user->fd = fd;
     user->all_threads = all_threads;
     user->chain = chain;
-    user->interp = tstate->interp;
+    user->interp = PyThreadState_GetInterpreter(tstate);
     user->enabled = 1;
 
     Py_RETURN_NONE;

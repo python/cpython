@@ -296,7 +296,7 @@ try_complex_special_method(PyObject *op)
         if (!PyComplex_Check(res)) {
             PyErr_Format(PyExc_TypeError,
                 "__complex__ returned non-complex (type %.200s)",
-                res->ob_type->tp_name);
+                Py_TYPE(res)->tp_name);
             Py_DECREF(res);
             return NULL;
         }
@@ -305,7 +305,7 @@ try_complex_special_method(PyObject *op)
                 "__complex__ returned non-complex (type %.200s).  "
                 "The ability to return an instance of a strict subclass of complex "
                 "is deprecated, and may be removed in a future version of Python.",
-                res->ob_type->tp_name)) {
+                Py_TYPE(res)->tp_name)) {
             Py_DECREF(res);
             return NULL;
         }
@@ -958,7 +958,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         return NULL;
     }
 
-    nbr = r->ob_type->tp_as_number;
+    nbr = Py_TYPE(r)->tp_as_number;
     if (nbr == NULL || (nbr->nb_float == NULL && nbr->nb_index == NULL)) {
         PyErr_Format(PyExc_TypeError,
                      "complex() first argument must be a string or a number, "
@@ -970,7 +970,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         return NULL;
     }
     if (i != NULL) {
-        nbi = i->ob_type->tp_as_number;
+        nbi = Py_TYPE(i)->tp_as_number;
         if (nbi == NULL || (nbi->nb_float == NULL && nbi->nb_index == NULL)) {
             PyErr_Format(PyExc_TypeError,
                          "complex() second argument must be a number, "

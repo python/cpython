@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
@@ -28,12 +29,12 @@ _Py_IDENTIFIER(__name__);
 
 /* Given a module object, get its per-module state. */
 static WarningsState *
-_Warnings_GetState()
+warnings_get_state(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         _PyErr_SetString(tstate, PyExc_RuntimeError,
-                          "_Warnings_GetState: could not identify "
+                          "warnings_get_state: could not identify "
                           "current interpreter");
         return NULL;
     }
@@ -42,7 +43,7 @@ _Warnings_GetState()
 
 /* Clear the given warnings module state. */
 static void
-_Warnings_ClearState(WarningsState *st)
+warnings_clear_state(WarningsState *st)
 {
     Py_CLEAR(st->filters);
     Py_CLEAR(st->once_registry);
@@ -112,7 +113,7 @@ init_filters(void)
 
 /* Initialize the given warnings module state. */
 static int
-_Warnings_InitState(WarningsState *st)
+warnings_init_state(WarningsState *st)
 {
     if (st->filters == NULL) {
         st->filters = init_filters();
@@ -140,7 +141,7 @@ _Warnings_InitState(WarningsState *st)
     return 0;
 
 error:
-    _Warnings_ClearState(st);
+    warnings_clear_state(st);
     return -1;
 }
 
@@ -286,7 +287,7 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
     Py_ssize_t i;
     PyObject *warnings_filters;
     _Py_IDENTIFIER(filters);
-    WarningsState *st = _Warnings_GetState();
+    WarningsState *st = warnings_get_state();
     if (st == NULL) {
         return NULL;
     }
@@ -388,7 +389,7 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
     if (key == NULL)
         return -1;
 
-    WarningsState *st = _Warnings_GetState();
+    WarningsState *st = warnings_get_state();
     if (st == NULL) {
         return -1;
     }
@@ -490,8 +491,9 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 
     name = _PyObject_GetAttrId(category, &PyId___name__);
-    if (name == NULL)  /* XXX Can an object lack a '__name__' attribute? */
+    if (name == NULL) {
         goto error;
+    }
 
     f_stderr = _PySys_GetObjectId(&PyId_stderr);
     if (f_stderr == NULL) {
@@ -593,7 +595,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
     if (msg == NULL)
         goto error;
 
-    res = _PyObject_CallOneArg(show_fn, msg);
+    res = PyObject_CallOneArg(show_fn, msg);
     Py_DECREF(show_fn);
     Py_DECREF(msg);
 
@@ -650,11 +652,11 @@ warn_explicit(PyObject *category, PyObject *message,
         text = PyObject_Str(message);
         if (text == NULL)
             goto cleanup;
-        category = (PyObject*)message->ob_type;
+        category = (PyObject*)Py_TYPE(message);
     }
     else {
         text = message;
-        message = _PyObject_CallOneArg(category, message);
+        message = PyObject_CallOneArg(category, message);
         if (message == NULL)
             goto cleanup;
     }
@@ -706,7 +708,7 @@ warn_explicit(PyObject *category, PyObject *message,
 
         if (_PyUnicode_EqualToASCIIString(action, "once")) {
             if (registry == NULL || registry == Py_None) {
-                WarningsState *st = _Warnings_GetState();
+                WarningsState *st = warnings_get_state();
                 if (st == NULL) {
                     goto cleanup;
                 }
@@ -858,11 +860,11 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         int rc;
 
         if (PyErr_Occurred()) {
-            return 0;
+            goto handle_error;
         }
         *registry = PyDict_New();
         if (*registry == NULL)
-            return 0;
+            goto handle_error;
 
          rc = _PyDict_SetItemId(globals, &PyId___warningregistry__, *registry);
          if (rc < 0)
@@ -888,10 +890,9 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     return 1;
 
  handle_error:
-    /* filename not XDECREF'ed here as there is no way to jump here with a
-       dangling reference. */
     Py_XDECREF(*registry);
     Py_XDECREF(*module);
+    Py_DECREF(*filename);
     return 0;
 }
 
@@ -906,7 +907,7 @@ get_category(PyObject *message, PyObject *category)
         return NULL;
 
     if (rc == 1)
-        category = (PyObject*)message->ob_type;
+        category = (PyObject*)Py_TYPE(message);
     else if (category == NULL || category == Py_None)
         category = PyExc_UserWarning;
 
@@ -997,7 +998,7 @@ get_source_line(PyObject *module_globals, int lineno)
         return NULL;
     }
     /* Call get_source() to get the source code. */
-    source = _PyObject_CallOneArg(get_source, module_name);
+    source = PyObject_CallOneArg(get_source, module_name);
     Py_DECREF(get_source);
     Py_DECREF(module_name);
     if (!source) {
@@ -1066,7 +1067,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 warnings_filters_mutated(PyObject *self, PyObject *args)
 {
-    WarningsState *st = _Warnings_GetState();
+    WarningsState *st = warnings_get_state();
     if (st == NULL) {
         return NULL;
     }
@@ -1124,6 +1125,23 @@ PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level,
     va_start(vargs);
 #endif
     res = _PyErr_WarnFormatV(NULL, category, stack_level, format, vargs);
+    va_end(vargs);
+    return res;
+}
+
+static int
+_PyErr_WarnFormat(PyObject *source, PyObject *category, Py_ssize_t stack_level,
+                  const char *format, ...)
+{
+    int res;
+    va_list vargs;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    res = _PyErr_WarnFormatV(source, category, stack_level, format, vargs);
     va_end(vargs);
     return res;
 }
@@ -1284,7 +1302,7 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     int warned = 0;
     PyObject *fn = get_warnings_attr(&PyId__warn_unawaited_coroutine, 1);
     if (fn) {
-        PyObject *res = _PyObject_CallOneArg(fn, coro);
+        PyObject *res = PyObject_CallOneArg(fn, coro);
         Py_DECREF(fn);
         if (res || PyErr_ExceptionMatches(PyExc_RuntimeWarning)) {
             warned = 1;
@@ -1296,9 +1314,9 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
         PyErr_WriteUnraisable(coro);
     }
     if (!warned) {
-        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
-                             "coroutine '%.50S' was never awaited",
-                             ((PyCoroObject *)coro)->cr_qualname) < 0)
+        if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
+                              "coroutine '%S' was never awaited",
+                              ((PyCoroObject *)coro)->cr_qualname) < 0)
         {
             PyErr_WriteUnraisable(coro);
         }
@@ -1333,6 +1351,16 @@ static struct PyModuleDef warningsmodule = {
 };
 
 
+PyStatus
+_PyWarnings_InitState(PyThreadState *tstate)
+{
+    if (warnings_init_state(&tstate->interp->warnings) < 0) {
+        return _PyStatus_ERR("can't initialize warnings");
+    }
+    return _PyStatus_OK();
+}
+
+
 PyMODINIT_FUNC
 _PyWarnings_Init(void)
 {
@@ -1343,11 +1371,11 @@ _PyWarnings_Init(void)
         return NULL;
     }
 
-    WarningsState *st = _Warnings_GetState();
+    WarningsState *st = warnings_get_state();
     if (st == NULL) {
         goto error;
     }
-    if (_Warnings_InitState(st) < 0) {
+    if (warnings_init_state(st) < 0) {
         goto error;
     }
 
@@ -1370,7 +1398,7 @@ _PyWarnings_Init(void)
 
 error:
     if (st != NULL) {
-        _Warnings_ClearState(st);
+        warnings_clear_state(st);
     }
     Py_DECREF(m);
     return NULL;
@@ -1380,5 +1408,5 @@ error:
 void
 _PyWarnings_Fini(PyInterpreterState *interp)
 {
-    _Warnings_ClearState(&interp->warnings);
+    warnings_clear_state(&interp->warnings);
 }

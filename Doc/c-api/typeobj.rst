@@ -684,15 +684,15 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    a more efficient alternative
    of the simpler :c:member:`~PyTypeObject.tp_call`.
 
-   This field is only used if the flag :const:`_Py_TPFLAGS_HAVE_VECTORCALL`
+   This field is only used if the flag :const:`Py_TPFLAGS_HAVE_VECTORCALL`
    is set. If so, this must be a positive integer containing the offset in the
    instance of a :c:type:`vectorcallfunc` pointer.
 
    The *vectorcallfunc* pointer may be ``NULL``, in which case the instance behaves
-   as if :const:`_Py_TPFLAGS_HAVE_VECTORCALL` was not set: calling the instance
+   as if :const:`Py_TPFLAGS_HAVE_VECTORCALL` was not set: calling the instance
    falls back to :c:member:`~PyTypeObject.tp_call`.
 
-   Any class that sets ``_Py_TPFLAGS_HAVE_VECTORCALL`` must also set
+   Any class that sets ``Py_TPFLAGS_HAVE_VECTORCALL`` must also set
    :c:member:`~PyTypeObject.tp_call` and make sure its behaviour is consistent
    with the *vectorcallfunc* function.
    This can be done by setting *tp_call* to :c:func:`PyVectorcall_Call`.
@@ -719,7 +719,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    **Inheritance:**
 
    This field is always inherited.
-   However, the :const:`_Py_TPFLAGS_HAVE_VECTORCALL` flag is not
+   However, the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is not
    always inherited. If it's not, then the subclass won't use
    :ref:`vectorcall <vectorcall>`, except when
    :c:func:`PyVectorcall_Call` is explicitly called.
@@ -1153,7 +1153,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
          type structure.
 
 
-   .. data:: _Py_TPFLAGS_HAVE_VECTORCALL
+   .. data:: Py_TPFLAGS_HAVE_VECTORCALL
 
       This bit is set when the class implements
       the :ref:`vectorcall protocol <vectorcall>`.
@@ -1163,15 +1163,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       This bit is inherited for *static* subtypes if
       :c:member:`~PyTypeObject.tp_call` is also inherited.
-      `Heap types`_ do not inherit ``_Py_TPFLAGS_HAVE_VECTORCALL``.
+      `Heap types`_ do not inherit ``Py_TPFLAGS_HAVE_VECTORCALL``.
 
-      .. note::
-
-         This flag is provisional and expected to become public in Python 3.9,
-         with a different name and, possibly, changed semantics.
-         If you use vectorcall, plan for updating your code for Python 3.9.
-
-      .. versionadded:: 3.8
+      .. versionadded:: 3.9
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -1198,7 +1192,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    The :c:member:`~PyTypeObject.tp_traverse` pointer is used by the garbage collector to detect
    reference cycles. A typical implementation of a :c:member:`~PyTypeObject.tp_traverse` function
    simply calls :c:func:`Py_VISIT` on each of the instance's members that are Python
-   objects.  For example, this is function :c:func:`local_traverse` from the
+   objects that the instance owns. For example, this is function :c:func:`local_traverse` from the
    :mod:`_thread` extension module::
 
       static int
@@ -1217,6 +1211,18 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    On the other hand, even if you know a member can never be part of a cycle, as a
    debugging aid you may want to visit it anyway just so the :mod:`gc` module's
    :func:`~gc.get_referents` function will include it.
+
+   .. warning::
+       When implementing :c:member:`~PyTypeObject.tp_traverse`, only the members
+       that the instance *owns* (by having strong references to them) must be
+       visited. For instance, if an object supports weak references via the
+       :c:member:`~PyTypeObject.tp_weaklist` slot, the pointer supporting
+       the linked list (what *tp_weaklist* points to) must **not** be
+       visited as the instance does not directly own the weak references to itself
+       (the weakreference list is there to support the weak reference machinery,
+       but the instance has no strong reference to the elements inside it, as they
+       are allowed to be removed even if the instance is still alive).
+
 
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
    :c:func:`local_traverse` to have these specific names; don't name them just

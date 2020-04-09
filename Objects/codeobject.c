@@ -219,7 +219,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
             cell2arg = NULL;
         }
     }
-    co = PyObject_NEW(PyCodeObject, &PyCode_Type);
+    co = PyObject_New(PyCodeObject, &PyCode_Type);
     if (co == NULL) {
         if (cell2arg)
             PyMem_FREE(cell2arg);
@@ -416,7 +416,7 @@ validate_and_copy_tuple(PyObject *tup)
                 PyExc_TypeError,
                 "name tuples must contain only "
                 "strings, not '%.500s'",
-                item->ob_type->tp_name);
+                Py_TYPE(item)->tp_name);
             Py_DECREF(newtuple);
             return NULL;
         }

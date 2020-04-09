@@ -190,7 +190,7 @@ typedef struct {
  * backwards-compatibility */
 typedef Py_ssize_t printfunc;
 
-typedef struct _typeobject {
+struct _typeobject {
     PyObject_VAR_HEAD
     const char *tp_name; /* For printing, in format "<module>.<name>" */
     Py_ssize_t tp_basicsize, tp_itemsize; /* For allocation */
@@ -271,7 +271,7 @@ typedef struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
-} PyTypeObject;
+};
 
 /* The *real* layout of a type object when allocated on the heap */
 typedef struct _heaptypeobject {
@@ -384,11 +384,6 @@ PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
  * Defined in object.c.
  */
 PyAPI_DATA(int) _Py_SwappedOp[];
-
-/* This is the old private API, invoked by the macros before 3.2.4.
-   Kept for binary compatibility of extensions using the stable ABI. */
-PyAPI_FUNC(void) _PyTrash_deposit_object(PyObject*);
-PyAPI_FUNC(void) _PyTrash_destroy_chain(void);
 
 PyAPI_FUNC(void)
 _PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
@@ -507,9 +502,22 @@ partially-deallocated object. To check this, the tp_dealloc function must be
 passed as second argument to Py_TRASHCAN_BEGIN().
 */
 
-/* The new thread-safe private API, invoked by the macros below. */
+/* This is the old private API, invoked by the macros before 3.2.4.
+   Kept for binary compatibility of extensions using the stable ABI. */
+PyAPI_FUNC(void) _PyTrash_deposit_object(PyObject*);
+PyAPI_FUNC(void) _PyTrash_destroy_chain(void);
+
+/* This is the old private API, invoked by the macros before 3.9.
+   Kept for binary compatibility of extensions using the stable ABI. */
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyObject*);
 PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(void);
+
+/* Forward declarations for PyThreadState */
+struct _ts;
+
+/* Python 3.9 private API, invoked by the macros below. */
+PyAPI_FUNC(int) _PyTrash_begin(struct _ts *tstate, PyObject *op);
+PyAPI_FUNC(void) _PyTrash_end(struct _ts *tstate);
 
 #define PyTrash_UNWIND_LEVEL 50
 
@@ -520,24 +528,19 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(void);
          * is run normally without involving the trashcan */ \
         if (cond) { \
             _tstate = PyThreadState_GET(); \
-            if (_tstate->trash_delete_nesting >= PyTrash_UNWIND_LEVEL) { \
-                /* Store the object (to be deallocated later) and jump past \
-                 * Py_TRASHCAN_END, skipping the body of the deallocator */ \
-                _PyTrash_thread_deposit_object(_PyObject_CAST(op)); \
+            if (_PyTrash_begin(_tstate, _PyObject_CAST(op))) { \
                 break; \
             } \
-            ++_tstate->trash_delete_nesting; \
         }
         /* The body of the deallocator is here. */
 #define Py_TRASHCAN_END \
         if (_tstate) { \
-            --_tstate->trash_delete_nesting; \
-            if (_tstate->trash_delete_later && _tstate->trash_delete_nesting <= 0) \
-                _PyTrash_thread_destroy_chain(); \
+            _PyTrash_end(_tstate); \
         } \
     } while (0);
 
-#define Py_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_BEGIN_CONDITION(op, \
+#define Py_TRASHCAN_BEGIN(op, dealloc) \
+    Py_TRASHCAN_BEGIN_CONDITION(op, \
         Py_TYPE(op)->tp_dealloc == (destructor)(dealloc))
 
 /* For backwards compatibility, these macros enable the trashcan

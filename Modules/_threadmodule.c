@@ -213,6 +213,22 @@ lock_repr(lockobject *self)
         self->locked ? "locked" : "unlocked", Py_TYPE(self)->tp_name, self);
 }
 
+#ifdef HAVE_FORK
+static PyObject *
+lock__at_fork_reinit(lockobject *self, PyObject *Py_UNUSED(args))
+{
+    if (_PyThread_at_fork_reinit(&self->lock_lock) < 0) {
+        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
+        return NULL;
+    }
+
+    self->locked = 0;
+
+    Py_RETURN_NONE;
+}
+#endif  /* HAVE_FORK */
+
+
 static PyMethodDef lock_methods[] = {
     {"acquire_lock", (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
@@ -230,6 +246,10 @@ static PyMethodDef lock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
      METH_VARARGS, release_doc},
+#ifdef HAVE_FORK
+    {"_at_fork_reinit",    (PyCFunction)lock__at_fork_reinit,
+     METH_NOARGS, NULL},
+#endif
     {NULL,           NULL}              /* sentinel */
 };
 
@@ -446,22 +466,20 @@ For internal use by `threading.Condition`.");
 static PyObject *
 rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    rlockobject *self;
-
-    self = (rlockobject *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->in_weakreflist = NULL;
-        self->rlock_owner = 0;
-        self->rlock_count = 0;
-
-        self->rlock_lock = PyThread_allocate_lock();
-        if (self->rlock_lock == NULL) {
-            Py_DECREF(self);
-            PyErr_SetString(ThreadError, "can't allocate lock");
-            return NULL;
-        }
+    rlockobject *self = (rlockobject *) type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
     }
+    self->in_weakreflist = NULL;
+    self->rlock_owner = 0;
+    self->rlock_count = 0;
 
+    self->rlock_lock = PyThread_allocate_lock();
+    if (self->rlock_lock == NULL) {
+        Py_DECREF(self);
+        PyErr_SetString(ThreadError, "can't allocate lock");
+        return NULL;
+    }
     return (PyObject *) self;
 }
 
@@ -473,6 +491,23 @@ rlock_repr(rlockobject *self)
         Py_TYPE(self)->tp_name, self->rlock_owner,
         self->rlock_count, self);
 }
+
+
+#ifdef HAVE_FORK
+static PyObject *
+rlock__at_fork_reinit(rlockobject *self, PyObject *Py_UNUSED(args))
+{
+    if (_PyThread_at_fork_reinit(&self->rlock_lock) < 0) {
+        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
+        return NULL;
+    }
+
+    self->rlock_owner = 0;
+    self->rlock_count = 0;
+
+    Py_RETURN_NONE;
+}
+#endif  /* HAVE_FORK */
 
 
 static PyMethodDef rlock_methods[] = {
@@ -490,6 +525,10 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"__exit__",    (PyCFunction)rlock_release,
      METH_VARARGS, rlock_release_doc},
+#ifdef HAVE_FORK
+    {"_at_fork_reinit",    (PyCFunction)rlock__at_fork_reinit,
+     METH_NOARGS, NULL},
+#endif
     {NULL,           NULL}              /* sentinel */
 };
 
@@ -844,7 +883,7 @@ _ldict(localobject *self)
         }
     }
     else {
-        assert(Py_TYPE(dummy) == &localdummytype);
+        assert(Py_IS_TYPE(dummy, &localdummytype));
         ldict = ((localdummyobject *) dummy)->localdict;
     }
 
@@ -938,7 +977,7 @@ local_getattro(localobject *self, PyObject *name)
     if (r == -1)
         return NULL;
 
-    if (Py_TYPE(self) != &localtype)
+    if (!Py_IS_TYPE(self, &localtype))
         /* use generic lookup for subtypes */
         return _PyObject_GenericGetAttrWithDict(
             (PyObject *)self, name, ldict, 0);
@@ -1001,10 +1040,8 @@ t_bootstrap(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
     PyThreadState *tstate;
-    _PyRuntimeState *runtime;
     PyObject *res;
 
-    runtime = boot->runtime;
     tstate = boot->tstate;
     tstate->thread_id = PyThread_get_thread_ident();
     _PyThreadState_Init(tstate);
@@ -1028,7 +1065,7 @@ t_bootstrap(void *boot_raw)
     PyMem_DEL(boot_raw);
     tstate->interp->num_threads--;
     PyThreadState_Clear(tstate);
-    _PyThreadState_DeleteCurrent(runtime);
+    _PyThreadState_DeleteCurrent(tstate);
     PyThread_exit_thread();
 }
 
@@ -1061,7 +1098,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     boot = PyMem_NEW(struct bootstate, 1);
     if (boot == NULL)
         return PyErr_NoMemory();
-    boot->interp = _PyInterpreterState_Get();
+    boot->interp = _PyInterpreterState_GET_UNSAFE();
     boot->func = func;
     boot->args = args;
     boot->keyw = keyw;
@@ -1074,7 +1111,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     Py_INCREF(func);
     Py_INCREF(args);
     Py_XINCREF(keyw);
-    PyEval_InitThreads(); /* Start the interpreter's thread-awareness */
+
     ident = PyThread_start_new_thread(t_bootstrap, (void*) boot);
     if (ident == PYTHREAD_INVALID_THREAD_ID) {
         PyErr_SetString(ThreadError, "can't start new thread");
@@ -1183,7 +1220,7 @@ particular thread within a system.");
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     return PyLong_FromLong(interp->num_threads);
 }
 
@@ -1209,7 +1246,7 @@ release_sentinel(void *wr_raw)
     PyObject *obj = PyWeakref_GET_OBJECT(wr);
     lockobject *lock;
     if (obj != Py_None) {
-        assert(Py_TYPE(obj) == &Locktype);
+        assert(Py_IS_TYPE(obj, &Locktype));
         lock = (lockobject *) obj;
         if (lock->locked) {
             PyThread_release_lock(lock->lock_lock);
@@ -1400,7 +1437,7 @@ static PyStructSequence_Desc ExceptHookArgs_desc = {
 static PyObject *
 thread_excepthook(PyObject *self, PyObject *args)
 {
-    if (Py_TYPE(args) != &ExceptHookArgsType) {
+    if (!Py_IS_TYPE(args, &ExceptHookArgsType)) {
         PyErr_SetString(PyExc_TypeError,
                         "_thread.excepthook argument type "
                         "must be ExceptHookArgs");
@@ -1542,7 +1579,7 @@ PyInit__thread(void)
     PyObject *m, *d, *v;
     double time_max;
     double timeout_max;
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
 
     /* Initialize types: */
     if (PyType_Ready(&localdummytype) < 0)

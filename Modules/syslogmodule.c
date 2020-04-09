@@ -144,6 +144,10 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
             return NULL;
     }
 
+    if (PySys_Audit("syslog.openlog", "sll", ident, logopt, facility) < 0) {
+        return NULL;
+    }
+
     openlog(ident, logopt, facility);
     S_log_open = 1;
 
@@ -170,6 +174,10 @@ syslog_syslog(PyObject * self, PyObject * args)
     if (message == NULL)
         return NULL;
 
+    if (PySys_Audit("syslog.syslog", "is", priority, message) < 0) {
+        return NULL;
+    }
+
     /*  if log is not opened, open it now  */
     if (!S_log_open) {
         PyObject *openargs;
@@ -194,6 +202,9 @@ syslog_syslog(PyObject * self, PyObject * args)
 static PyObject *
 syslog_closelog(PyObject *self, PyObject *unused)
 {
+    if (PySys_Audit("syslog.closelog", NULL) < 0) {
+        return NULL;
+    }
     if (S_log_open) {
         closelog();
         Py_CLEAR(S_ident_o);
@@ -209,6 +220,9 @@ syslog_setlogmask(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "l;mask for priority", &maskpri))
         return NULL;
+    if (PySys_Audit("syslog.setlogmask", "(O)", args ? args : Py_None) < 0) {
+        return NULL;
+    }
     omaskpri = setlogmask(maskpri);
     return PyLong_FromLong(omaskpri);
 }

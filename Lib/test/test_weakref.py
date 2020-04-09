@@ -1609,6 +1609,43 @@ class MappingTestCase(TestBase):
             self.assertEqual(list(d.keys()), [kw])
             self.assertEqual(d[kw], o)
 
+    def test_weak_valued_union_operators(self):
+        a = C()
+        b = C()
+        c = C()
+        wvd1 = weakref.WeakValueDictionary({1: a})
+        wvd2 = weakref.WeakValueDictionary({1: b, 2: a})
+        wvd3 = wvd1.copy()
+        d1 = {1: c, 3: b}
+        pairs = [(5, c), (6, b)]
+
+        tmp1 = wvd1 | wvd2 # Between two WeakValueDictionaries
+        self.assertEqual(dict(tmp1), dict(wvd1) | dict(wvd2))
+        self.assertIs(type(tmp1), weakref.WeakValueDictionary)
+        wvd1 |= wvd2
+        self.assertEqual(wvd1, tmp1)
+
+        tmp2 = wvd2 | d1 # Between WeakValueDictionary and mapping
+        self.assertEqual(dict(tmp2), dict(wvd2) | d1)
+        self.assertIs(type(tmp2), weakref.WeakValueDictionary)
+        wvd2 |= d1
+        self.assertEqual(wvd2, tmp2)
+
+        tmp3 = wvd3.copy() # Between WeakValueDictionary and iterable key, value
+        tmp3 |= pairs
+        self.assertEqual(dict(tmp3), dict(wvd3) | dict(pairs))
+        self.assertIs(type(tmp3), weakref.WeakValueDictionary)
+
+        tmp4 = d1 | wvd3 # Testing .__ror__
+        self.assertEqual(dict(tmp4), d1 | dict(wvd3))
+        self.assertIs(type(tmp4), weakref.WeakValueDictionary)
+
+        del a
+        self.assertNotIn(2, tmp1)
+        self.assertNotIn(2, tmp2)
+        self.assertNotIn(1, tmp3)
+        self.assertNotIn(1, tmp4)
+
     def test_weak_keyed_dict_update(self):
         self.check_update(weakref.WeakKeyDictionary,
                           {C(): 1, C(): 2, C(): 3})
@@ -1623,6 +1660,43 @@ class MappingTestCase(TestBase):
         del d[o1]
         self.assertEqual(len(d), 1)
         self.assertEqual(list(d.keys()), [o2])
+
+    def test_weak_keyed_union_operators(self):
+        o1 = C()
+        o2 = C()
+        o3 = C()
+        wkd1 = weakref.WeakKeyDictionary({o1: 1, o2: 2})
+        wkd2 = weakref.WeakKeyDictionary({o3: 3, o1: 4})
+        wkd3 = wkd1.copy()
+        d1 = {o2: '5', o3: '6'}
+        pairs = [(o2, 7), (o3, 8)]
+
+        tmp1 = wkd1 | wkd2 # Between two WeakKeyDictionaries
+        self.assertEqual(dict(tmp1), dict(wkd1) | dict(wkd2))
+        self.assertIs(type(tmp1), weakref.WeakKeyDictionary)
+        wkd1 |= wkd2
+        self.assertEqual(wkd1, tmp1)
+
+        tmp2 = wkd2 | d1 # Between WeakKeyDictionary and mapping
+        self.assertEqual(dict(tmp2), dict(wkd2) | d1)
+        self.assertIs(type(tmp2), weakref.WeakKeyDictionary)
+        wkd2 |= d1
+        self.assertEqual(wkd2, tmp2)
+
+        tmp3 = wkd3.copy() # Between WeakKeyDictionary and iterable key, value
+        tmp3 |= pairs
+        self.assertEqual(dict(tmp3), dict(wkd3) | dict(pairs))
+        self.assertIs(type(tmp3), weakref.WeakKeyDictionary)
+
+        tmp4 = d1 | wkd3 # Testing .__ror__
+        self.assertEqual(dict(tmp4), d1 | dict(wkd3))
+        self.assertIs(type(tmp4), weakref.WeakKeyDictionary)
+
+        del o1
+        self.assertNotIn(4, tmp1.values())
+        self.assertNotIn(4, tmp2.values())
+        self.assertNotIn(1, tmp3.values())
+        self.assertNotIn(1, tmp4.values())
 
     def test_weak_valued_delitem(self):
         d = weakref.WeakValueDictionary()

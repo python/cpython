@@ -1,0 +1,2 @@
+IDLE will no longer freeze when inspect.signature fails when fetching
+a calltip.
