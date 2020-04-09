@@ -209,7 +209,8 @@ def _sendback_result(result_queue, work_id, result=None, exception=None):
         result_queue.put(_ResultItem(work_id, exception=exc))
 
 
-def _process_worker(call_queue, result_queue, initializer, initargs):
+def _process_worker(call_queue, result_queue, initializer, initargs,
+                    idle_worker_semaphore):
     """Evaluates calls from call_queue and places the results in result_queue.
 
     This worker is run in a separate process.
@@ -221,6 +222,8 @@ def _process_worker(call_queue, result_queue, initializer, initargs):
             to by the worker.
         initializer: A callable initializer, or None
         initargs: A tuple of args for the initializer
+        idle_worker_semaphore: A multiprocessing.Semaphore that is used to
+            prevent new workers from being spawned when there are idle workers.
     """
     if initializer is not None:
         try:
@@ -249,6 +252,8 @@ def _process_worker(call_queue, result_queue, initializer, initargs):
         # open files or shared memory that is not needed anymore
         del call_item
 
+        # increment idle process count after worker finishes job
+        idle_worker_semaphore.release()
 
 class _ExecutorManagerThread(threading.Thread):
     """Manages the communication between this process and the worker processes.
@@ -601,6 +606,7 @@ class ProcessPoolExecutor(_base.Executor):
         # Shutdown is a two-step process.
         self._shutdown_thread = False
         self._shutdown_lock = threading.Lock()
+        self._idle_worker_semaphore = mp_context.Semaphore(0)
         self._broken = False
         self._queue_count = 0
         self._pending_work_items = {}
@@ -633,20 +639,25 @@ class ProcessPoolExecutor(_base.Executor):
     def _start_executor_manager_thread(self):
         if self._executor_manager_thread is None:
             # Start the processes so that their sentinels are known.
-            self._adjust_process_count()
             self._executor_manager_thread = _ExecutorManagerThread(self)
             self._executor_manager_thread.start()
             _threads_wakeups[self._executor_manager_thread] = \
                 self._executor_manager_thread_wakeup
 
     def _adjust_process_count(self):
-        for _ in range(len(self._processes), self._max_workers):
+        # if there's an idle process, we don't need to spawn a new one.
+        if self._idle_worker_semaphore.acquire(block=False):
+            return
+
+        process_count = len(self._processes)
+        if process_count < self._max_workers:
             p = self._mp_context.Process(
                 target=_process_worker,
                 args=(self._call_queue,
                       self._result_queue,
                       self._initializer,
-                      self._initargs))
+                      self._initargs,
+                      self._idle_worker_semaphore))
             p.start()
             self._processes[p.pid] = p
 
@@ -669,6 +680,7 @@ class ProcessPoolExecutor(_base.Executor):
             # Wake up queue management thread
             self._executor_manager_thread_wakeup.wakeup()
 
+            self._adjust_process_count()
             self._start_executor_manager_thread()
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
