@@ -209,7 +209,7 @@ void
 _PyImport_ReInitLock(void)
 {
     if (import_lock != NULL) {
-        if (_PyThread_at_fork_reinit(&import_lock)) {
+        if (_PyThread_at_fork_reinit(&import_lock) < 0) {
             _Py_FatalErrorFunc(__func__, "failed to create a new lock");
         }
     }
