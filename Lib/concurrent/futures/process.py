@@ -209,8 +209,7 @@ def _sendback_result(result_queue, work_id, result=None, exception=None):
         result_queue.put(_ResultItem(work_id, exception=exc))
 
 
-def _process_worker(call_queue, result_queue, initializer, initargs,
-                    idle_worker_semaphore):
+def _process_worker(call_queue, result_queue, initializer, initargs):
     """Evaluates calls from call_queue and places the results in result_queue.
 
     This worker is run in a separate process.
@@ -222,8 +221,6 @@ def _process_worker(call_queue, result_queue, initializer, initargs,
             to by the worker.
         initializer: A callable initializer, or None
         initargs: A tuple of args for the initializer
-        idle_worker_semaphore: A multiprocessing.Semaphore that is used to
-            prevent new workers from being spawned when there are idle workers.
     """
     if initializer is not None:
         try:
@@ -252,8 +249,6 @@ def _process_worker(call_queue, result_queue, initializer, initargs,
         # open files or shared memory that is not needed anymore
         del call_item
 
-        # increment idle process count after worker finishes job
-        idle_worker_semaphore.release()
 
 class _ExecutorManagerThread(threading.Thread):
     """Manages the communication between this process and the worker processes.
@@ -322,6 +317,12 @@ class _ExecutorManagerThread(threading.Thread):
                 # Delete reference to result_item to avoid keeping references
                 # while waiting on new results.
                 del result_item
+
+                # attempt to increment idle process count
+                executor = self.executor_reference()
+                if executor is not None:
+                    executor._idle_worker_semaphore.release()
+                del executor
 
             if self.is_shutting_down():
                 self.flag_executor_shutting_down()
@@ -656,8 +657,7 @@ class ProcessPoolExecutor(_base.Executor):
                 args=(self._call_queue,
                       self._result_queue,
                       self._initializer,
-                      self._initargs,
-                      self._idle_worker_semaphore))
+                      self._initargs))
             p.start()
             self._processes[p.pid] = p
 
@@ -730,7 +730,6 @@ class ProcessPoolExecutor(_base.Executor):
         self._call_queue = None
         self._result_queue = None
         self._processes = None
-        self._idle_worker_semaphore = None
 
         if self._executor_manager_thread_wakeup:
             self._executor_manager_thread_wakeup = None
