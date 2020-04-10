@@ -2312,3 +2312,23 @@ PyObject_GC_Del(void *op)
     }
     PyObject_FREE(g);
 }
+
+int
+PyObject_GC_IsTracked(void* op_raw)
+{
+    PyObject *obj = _PyObject_CAST(op_raw);
+    if (PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj)) {
+        return 1;
+    }
+    return 0;
+}
+
+int
+PyObject_GC_IsFinalized(void *op_raw)
+{
+    PyObject *obj = _PyObject_CAST(op_raw);
+    if (PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+         return 1;
+    }
+    return 0;
+}
