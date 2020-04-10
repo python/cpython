@@ -829,3 +829,5 @@ class TemporaryDirectory(object):
     def cleanup(self):
         if self._finalizer.detach():
             self._rmtree(self.name)
+
+    __class_getitem__ = classmethod(_types.GenericAlias)
