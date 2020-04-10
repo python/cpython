@@ -140,7 +140,7 @@ _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
 _tg_utilities = ['write_docstringdict', 'done']
 
 __all__ = (_tg_classes + _tg_screen_functions + _tg_turtle_functions +
-           _tg_utilities + ['Terminator']) # + _math_functions)
+           _tg_utilities) # + _math_functions)
 
 _alias_list = ['addshape', 'backward', 'bk', 'fd', 'ht', 'lt', 'pd', 'pos',
                'pu', 'rt', 'seth', 'setpos', 'setposition', 'st',
@@ -854,13 +854,6 @@ class TurtleScreenBase(object):
 ##############################################################################
 
 
-class Terminator (Exception):
-    """Will be raised in TurtleScreen.update, if _RUNNING becomes False.
-
-    This stops execution of a turtle graphics script.
-    Main purpose: use in the Demo-Viewer turtle.Demo.py.
-    """
-    pass
 
 
 class TurtleGraphicsError(Exception):
@@ -1289,7 +1282,6 @@ class TurtleScreen(TurtleScreenBase):
         """Increment update counter."""
         if not TurtleScreen._RUNNING:
             TurtleScreen._RUNNING = True
-            raise Terminator
         if self._tracing > 0:
             self._updatecounter += 1
             self._updatecounter %= self._tracing
@@ -3944,14 +3936,12 @@ def {name}{paramslist}:
     if {obj} is None:
         if not TurtleScreen._RUNNING:
             TurtleScreen._RUNNING = True
-            raise Terminator
         {obj} = {init}
     try:
         return {obj}.{name}{argslist}
     except TK.TclError:
         if not TurtleScreen._RUNNING:
             TurtleScreen._RUNNING = True
-            raise Terminator
         raise
 """
 
