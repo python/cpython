@@ -12,6 +12,7 @@ __version__ = '1.0'
 
 
 import functools
+import types
 
 IPV4LENGTH = 32
 IPV6LENGTH = 128
@@ -1124,6 +1125,7 @@ class _BaseNetwork(_IPAddressBase):
         return (self.network_address.is_loopback and
                 self.broadcast_address.is_loopback)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 class _BaseV4:
 
@@ -1443,6 +1445,8 @@ class IPv4Interface(IPv4Address):
     def with_hostmask(self):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
                           self.hostmask)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class IPv4Network(_BaseV4, _BaseNetwork):
@@ -2151,6 +2155,8 @@ class IPv6Interface(IPv6Address):
     @property
     def is_loopback(self):
         return self._ip == 1 and self.network.is_loopback
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class IPv6Network(_BaseV6, _BaseNetwork):

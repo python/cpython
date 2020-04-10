@@ -788,7 +788,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 
         /* It supports weakrefs.  Does it have any? */
         wrlist = (PyWeakReference **)
-                                PyObject_GET_WEAKREFS_LISTPTR(op);
+                                _PyObject_GET_WEAKREFS_LISTPTR(op);
 
         /* `op` may have some weakrefs.  March over the list, clear
          * all the weakrefs, and move the weakrefs with callbacks

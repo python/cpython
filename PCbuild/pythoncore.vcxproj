@@ -161,6 +161,7 @@
     <ClInclude Include="..\Include\graminit.h" />
     <ClInclude Include="..\Include\grammar.h" />
     <ClInclude Include="..\Include\import.h" />
+    <ClInclude Include="..\Include\internal\pycore_abstract.h" />
     <ClInclude Include="..\Include\internal\pycore_accu.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic.h" />
     <ClInclude Include="..\Include\internal\pycore_bytes_methods.h" />
@@ -383,6 +384,7 @@
     <ClCompile Include="..\Objects\floatobject.c" />
     <ClCompile Include="..\Objects\frameobject.c" />
     <ClCompile Include="..\Objects\funcobject.c" />
+    <ClCompile Include="..\Objects\genericaliasobject.c" />
     <ClCompile Include="..\Objects\genobject.c" />
     <ClCompile Include="..\Objects\interpreteridobject.c" />
     <ClCompile Include="..\Objects\iterobject.c" />

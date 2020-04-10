@@ -40,6 +40,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
 #include "pycore_fileutils.h"
 #include "pycore_initconfig.h"
@@ -448,6 +449,12 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
     /* Avoid calling _PyCodec_Lookup() and PyCodec_LookupError() before the
        codec registry is ready: before_PyUnicode_InitEncodings() is called. */
     if (!interp->fs_codec.encoding) {
+        return 0;
+    }
+
+    /* Disable checks during Python finalization. For example, it allows to
+       call _PyObject_Dump() during finalization for debugging purpose. */
+    if (interp->finalizing) {
         return 0;
     }
 
@@ -14126,7 +14133,7 @@ unicode_subscript(PyObject* self, PyObject* item)
     if (PyUnicode_READY(self) == -1)
         return NULL;
 
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;

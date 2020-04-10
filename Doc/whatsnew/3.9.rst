@@ -362,6 +362,13 @@ a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 :class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
 (Contributed by Dong-hee Na in :issue:`39329`.)
 
+socket
+------
+
+The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
+constant on Linux 4.1 and greater.
+(Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
+
 threading
 ---------
 
@@ -733,6 +740,11 @@ Removed
   :c:type:`PyConfig` have been removed. They required a special Python build by
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
+
+* The ``_field_types`` attribute of the :class:`typing.NamedTuple` class
+  has been removed.  It was deprecated deprecated since Python 3.8.  Use
+  the ``__annotations__`` attribute instead.
+  (Contributed by Serhiy Storchaka in :issue:`40182`.)
 
 
 Porting to Python 3.9

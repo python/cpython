@@ -4050,14 +4050,15 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 }
 
 static int
-validate_keywords(struct compiler *c, asdl_seq* keywords) {
-    int nkeywords = asdl_seq_LEN(keywords);
-    for (int i = 0; i < nkeywords; i++) {
+validate_keywords(struct compiler *c, asdl_seq *keywords)
+{
+    Py_ssize_t nkeywords = asdl_seq_LEN(keywords);
+    for (Py_ssize_t i = 0; i < nkeywords; i++) {
         keyword_ty key = ((keyword_ty)asdl_seq_GET(keywords, i));
         if (key->arg == NULL) {
             continue;
         }
-        for (int j = i+1; j < nkeywords; j++) {
+        for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
             if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
                 PyObject *msg = PyUnicode_FromFormat("keyword argument repeated: %U", key->arg);

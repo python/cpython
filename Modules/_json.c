@@ -652,6 +652,7 @@ scanner_traverse(PyScannerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->parse_float);
     Py_VISIT(self->parse_int);
     Py_VISIT(self->parse_constant);
+    Py_VISIT(self->memo);
     return 0;
 }
 
@@ -1817,7 +1818,7 @@ _json_exec(PyObject *module)
     }
     Py_INCREF(state->PyScannerType);
     if (PyModule_AddObject(module, "make_scanner", state->PyScannerType) < 0) {
-        Py_DECREF((PyObject*)state->PyScannerType);
+        Py_DECREF(state->PyScannerType);
         return -1;
     }
 
@@ -1827,7 +1828,7 @@ _json_exec(PyObject *module)
     }
     Py_INCREF(state->PyEncoderType);
     if (PyModule_AddObject(module, "make_encoder", state->PyEncoderType) < 0) {
-        Py_DECREF((PyObject*)state->PyEncoderType);
+        Py_DECREF(state->PyEncoderType);
         return -1;
     }
 

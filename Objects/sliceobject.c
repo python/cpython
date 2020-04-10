@@ -14,6 +14,7 @@ this type and there is exactly one in existence.
 */
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
@@ -354,7 +355,7 @@ static PyMemberDef slice_members[] = {
 static PyObject*
 evaluate_slice_index(PyObject *v)
 {
-    if (PyIndex_Check(v)) {
+    if (_PyIndex_Check(v)) {
         return PyNumber_Index(v);
     }
     else {

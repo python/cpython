@@ -491,7 +491,8 @@ register_at_forker(PyObject **lst, PyObject *func)
     }
     return PyList_Append(*lst, func);
 }
-#endif
+#endif  /* HAVE_FORK */
+
 
 /* Legacy wrapper */
 void
@@ -11424,6 +11425,9 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_PAGE_SIZE
     {"SC_PAGE_SIZE",    _SC_PAGE_SIZE},
 #endif
+#ifdef _SC_AIX_REALMEM
+    {"SC_AIX_REALMEM", _SC_AIX_REALMEM},
+#endif
 #ifdef _SC_PASS_MAX
     {"SC_PASS_MAX",     _SC_PASS_MAX},
 #endif
@@ -12972,6 +12976,8 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_STAT_METHODDEF
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF
+    {"__class_getitem__",       (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,          PyDoc_STR("See PEP 585")},
     {NULL}
 };
 
