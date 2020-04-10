@@ -1818,7 +1818,7 @@ _json_exec(PyObject *module)
     }
     Py_INCREF(state->PyScannerType);
     if (PyModule_AddObject(module, "make_scanner", state->PyScannerType) < 0) {
-        Py_DECREF((PyObject*)state->PyScannerType);
+        Py_DECREF(state->PyScannerType);
         return -1;
     }
 
@@ -1828,7 +1828,7 @@ _json_exec(PyObject *module)
     }
     Py_INCREF(state->PyEncoderType);
     if (PyModule_AddObject(module, "make_encoder", state->PyEncoderType) < 0) {
-        Py_DECREF((PyObject*)state->PyEncoderType);
+        Py_DECREF(state->PyEncoderType);
         return -1;
     }
 

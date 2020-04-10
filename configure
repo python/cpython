@@ -11307,6 +11307,36 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAN_RAW_JOIN_FILTERS" >&5
+$as_echo_n "checking for CAN_RAW_JOIN_FILTERS... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <linux/can/raw.h>
+int
+main ()
+{
+int can_raw_join_filters = CAN_RAW_JOIN_FILTERS;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+
+$as_echo "#define HAVE_LINUX_CAN_RAW_JOIN_FILTERS 1" >>confdefs.h
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 # Check for --with-doc-strings
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-doc-strings" >&5
 $as_echo_n "checking for --with-doc-strings... " >&6; }

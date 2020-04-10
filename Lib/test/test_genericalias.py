@@ -10,9 +10,12 @@ from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from difflib import SequenceMatcher
 from filecmp import dircmp
 from fileinput import FileInput
+from mmap import mmap
+from ipaddress import IPv4Network, IPv4Interface, IPv6Network, IPv6Interface
+from itertools import chain
 from os import DirEntry
 from re import Pattern, Match
-from types import GenericAlias, MappingProxyType
+from types import GenericAlias, MappingProxyType, AsyncGeneratorType
 import typing
 
 from typing import TypeVar
@@ -22,7 +25,8 @@ class BaseTest(unittest.TestCase):
     """Test basics."""
 
     def test_subscriptable(self):
-        for t in (type, tuple, list, dict, set, frozenset,
+        for t in (type, tuple, list, dict, set, frozenset, enumerate,
+                  mmap,
                   defaultdict, deque,
                   SequenceMatcher,
                   dircmp,
@@ -41,7 +45,10 @@ class BaseTest(unittest.TestCase):
                   Mapping, MutableMapping, MappingView,
                   KeysView, ItemsView, ValuesView,
                   Sequence, MutableSequence,
-                  MappingProxyType, DirEntry
+                  MappingProxyType, AsyncGeneratorType,
+                  DirEntry,
+                  IPv4Network, IPv4Interface, IPv6Network, IPv6Interface,
+                  chain,
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
