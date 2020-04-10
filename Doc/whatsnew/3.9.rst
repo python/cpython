@@ -369,15 +369,6 @@ The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
 constant on Linux 4.1 and greater.
 (Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
 
-threading
----------
-
-In a subinterpreter, spawning a daemon thread now raises a :exc:`RuntimeError`. Daemon
-threads were never supported in subinterpreters. Previously, the subinterpreter
-finalization crashed with a Python fatal error if a daemon thread was still
-running.
-(Contributed by Victor Stinner in :issue:`37266`.)
-
 sys
 ---
 
