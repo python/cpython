@@ -730,6 +730,7 @@ class ProcessPoolExecutor(_base.Executor):
         self._call_queue = None
         self._result_queue = None
         self._processes = None
+        self._idle_worker_semaphore = None
 
         if self._executor_manager_thread_wakeup:
             self._executor_manager_thread_wakeup = None
