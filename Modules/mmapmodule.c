@@ -816,6 +816,8 @@ static struct PyMethodDef mmap_object_methods[] = {
 #ifdef MS_WINDOWS
     {"__sizeof__",      (PyCFunction) mmap__sizeof__method,     METH_NOARGS},
 #endif
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("See PEP 585")},
     {NULL,         NULL}       /* sentinel */
 };
 
