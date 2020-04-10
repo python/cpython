@@ -111,8 +111,7 @@ class CoreTestCase(support.EnvironGuard, unittest.TestCase):
             self.write_setup(setup_prints_cwd, path=setup_py))
 
         output = sys.stdout.getvalue()
-        if output.endswith("\n"):
-            output = output[:-1]
+        output = output.removesuffix("\n")
         self.assertEqual(cwd, output)
 
     def test_debug_mode(self):

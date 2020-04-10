@@ -184,12 +184,10 @@ def create_executor_tests(mixin, bases=(BaseTestCase,),
                                            ProcessPoolForkserverMixin,
                                            ProcessPoolSpawnMixin)):
     def strip_mixin(name):
-        if name.endswith(('Mixin', 'Tests')):
-            return name[:-5]
-        elif name.endswith('Test'):
-            return name[:-4]
-        else:
-            return name
+        name = name.removesuffix('Mixin')
+        name = name.removesuffix('Tests')
+        name = name.removesuffix('Test')
+        return name
 
     for exe in executor_mixins:
         name = ("%s%sTest"

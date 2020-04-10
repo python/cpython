@@ -104,8 +104,7 @@ def shift_path_info(environ):
 
     script_name = environ.get('SCRIPT_NAME','')
     script_name = posixpath.normpath(script_name+'/'+name)
-    if script_name.endswith('/'):
-        script_name = script_name[:-1]
+    script_name = script_name.removesuffix('/')
     if not name and not script_name.endswith('/'):
         script_name += '/'
 

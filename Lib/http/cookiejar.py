@@ -450,11 +450,7 @@ def join_header_words(lists):
     return ", ".join(headers)
 
 def strip_quotes(text):
-    if text.startswith('"'):
-        text = text[1:]
-    if text.endswith('"'):
-        text = text[:-1]
-    return text
+    return text.removeprefix('"').removesuffix('"')
 
 def parse_ns_headers(ns_headers):
     """Ad-hoc parser for Netscape protocol cookie-attributes.
@@ -2027,7 +2023,7 @@ class MozillaCookieJar(FileCookieJar):
                 if line == "": break
 
                 # last field may be absent, so keep any trailing tab
-                if line.endswith("\n"): line = line[:-1]
+                line = line.removesuffix("\n")
 
                 # skip comments and blank lines XXX what is $ for?
                 if (line.strip().startswith(("#", "$")) or

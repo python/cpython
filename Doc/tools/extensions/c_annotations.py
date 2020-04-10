@@ -82,8 +82,7 @@ class Annotations(dict):
             if not par[0].has_key('names') or not par[0]['names']:
                 continue
             name = par[0]['names'][0]
-            if name.startswith("c."):
-                name = name[2:]
+            name = name.removeprefix("c.")
             entry = self.get(name)
             if not entry:
                 continue

@@ -97,10 +97,7 @@ def test_compiler_recursion():
 
 def check_limit(n, test_func_name):
     sys.setrecursionlimit(n)
-    if test_func_name.startswith("test_"):
-        print(test_func_name[5:])
-    else:
-        print(test_func_name)
+    print(test_func_name.removeprefix("test_"))
     test_func = globals()[test_func_name]
     try:
         test_func()

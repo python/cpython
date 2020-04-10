@@ -2543,8 +2543,7 @@ def _url_handler(url, content_type="text/html"):
     def get_html_page(url):
         """Generate an HTML page for url."""
         complete_url = url
-        if url.endswith('.html'):
-            url = url[:-5]
+        url = url.removesuffix('.html')
         try:
             if url in ("", "index"):
                 title, content = html_index()
@@ -2582,8 +2581,7 @@ def _url_handler(url, content_type="text/html"):
             title, content = html_error(complete_url, exc)
         return html.page(title, content)
 
-    if url.startswith('/'):
-        url = url[1:]
+    url = url.removeprefix('/')
     if content_type == 'text/css':
         path_here = os.path.dirname(os.path.realpath(__file__))
         css_path = os.path.join(path_here, url)

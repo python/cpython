@@ -277,8 +277,7 @@ def query_vcvarsall(version, arch="x86"):
             key, value = line.split('=', 1)
             key = key.lower()
             if key in interesting:
-                if value.endswith(os.pathsep):
-                    value = value[:-1]
+                value = value.removesuffix(os.pathsep)
                 result[key] = removeDuplicates(value)
 
     finally:
