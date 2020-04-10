@@ -62,22 +62,20 @@ Constructors for container types must conform to two rules:
 
 .. c:function:: int PyObject_GC_IsTracked(PyObject *op)
 
-   Returns 1 if the object *op* is being currently tracked by the garbage
-   collector and 0 otherwise.
+   Returns 1 if the object type of *op* implements the GC protocol and *op* is being
+   currently tracked by the garbage collector and 0 otherwise.
 
-   This function will return 0 for objects that do not have implemented support
-   for the garbage collector.
+   This is analogous to the Python function :func:`gc.is_tracked`.
 
    .. versionadded:: 3.9
 
 
 .. c:function:: int PyObject_GC_IsFinalized(PyObject *op)
 
-   Returns 1 if the object *op* has been already finalized by the garbage
-   collector and 0 otherwise.
+   Returns 1 if the object type of *op* implements the GC protocol and *op* has been
+   already finalized by the garbage collector and 0 otherwise.
 
-   This function will return 0 for objects that do not have implemented support
-   for the garbage collector.
+   This is analogous to the Python function :func:`gc.is_finalized`.
 
    .. versionadded:: 3.9
 
