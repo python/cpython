@@ -1,2 +1,2 @@
-Convert :c:fun:`PyObject_IS_GC` macro to a function to hide
+Convert :c:func:`PyObject_IS_GC` macro to a function to hide
 implementation details: the macro test an object have GC head or not.
