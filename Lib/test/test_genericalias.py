@@ -7,11 +7,12 @@ from collections import (
 )
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from mmap import mmap
 from ipaddress import IPv4Network, IPv4Interface, IPv6Network, IPv6Interface
 from itertools import chain
 from os import DirEntry
 from re import Pattern, Match
-from types import GenericAlias, MappingProxyType
+from types import GenericAlias, MappingProxyType, AsyncGeneratorType
 import typing
 
 from typing import TypeVar
@@ -21,7 +22,8 @@ class BaseTest(unittest.TestCase):
     """Test basics."""
 
     def test_subscriptable(self):
-        for t in (type, tuple, list, dict, set, frozenset,
+        for t in (type, tuple, list, dict, set, frozenset, enumerate,
+                  mmap,
                   defaultdict, deque,
                   OrderedDict, Counter, UserDict, UserList,
                   Pattern, Match,
@@ -37,10 +39,9 @@ class BaseTest(unittest.TestCase):
                   Mapping, MutableMapping, MappingView,
                   KeysView, ItemsView, ValuesView,
                   Sequence, MutableSequence,
-                  MappingProxyType,
+                  MappingProxyType, AsyncGeneratorType,
                   DirEntry,
                   IPv4Network, IPv4Interface, IPv6Network, IPv6Interface,
-                  MappingProxyType, DirEntry,
                   chain,
                   ):
             tname = t.__name__
