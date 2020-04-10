@@ -78,7 +78,7 @@ class FTP:
             host, user, passwd, acct, timeout, source_address, encoding
 
     The first four arguments are all strings, and have default value ''.
-    The fifth parameter ´timeout´ must be numeric and defaults to None if not
+    The parameter ´timeout´ must be numeric and defaults to None if not
     passed, meaning that no timeout will be set on any ftp socket(s).
     If a timeout is passed, then this is now the default timeout for all ftp
     socket operations for this instance.

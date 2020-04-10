@@ -79,7 +79,7 @@ The module defines the following items:
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket.
       The *encoding* parameter was added, and the default was changed from
-      Latin-1 to UTF-8.
+      Latin-1 to UTF-8 to follow :rfc:`2640`.
 
 .. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None, *, encoding='utf-8')
 
@@ -117,7 +117,7 @@ The module defines the following items:
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket.
       The *encoding* parameter was added, and the default was changed from
-      Latin-1 to UTF-8.
+      Latin-1 to UTF-8 to follow :rfc:`2640`.
 
    Here's a sample session using the :class:`FTP_TLS` class::
 
