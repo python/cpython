@@ -1,0 +1,3 @@
+Use flock(LOCK_SH) on TemporaryDirectory files as per `the official systemd
+recommendations <https://systemd.io/TEMPORARY_DIRECTORIES.html#automatic-clean-up>`_ in order to
+avoid systemd-tmpfiles from cleaning up the contents of a TemporaryDirectory before ready.
