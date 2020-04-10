@@ -8,6 +8,7 @@ from collections import (
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from mmap import mmap
+from itertools import chain
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType, AsyncGeneratorType
@@ -38,7 +39,8 @@ class BaseTest(unittest.TestCase):
                   KeysView, ItemsView, ValuesView,
                   Sequence, MutableSequence,
                   MappingProxyType, AsyncGeneratorType,
-                  DirEntry
+                  DirEntry,
+                  chain,
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
