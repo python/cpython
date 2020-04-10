@@ -1519,33 +1519,17 @@ setint(PyObject *d, const char *name, long value)
     }
 }
 
-
-static struct PyModuleDef mmapmodule = {
-    PyModuleDef_HEAD_INIT,
-    "mmap",
-    NULL,
-    -1,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_mmap(void)
+static int
+mmap_exec(PyObject *module)
 {
-    PyObject *dict, *module;
+    if (PyType_Ready(&mmap_object_type) < 0) {
+        return -1;
+    }
 
-    if (PyType_Ready(&mmap_object_type) < 0)
-        return NULL;
-
-    module = PyModule_Create(&mmapmodule);
-    if (module == NULL)
-        return NULL;
-    dict = PyModule_GetDict(module);
-    if (!dict)
-        return NULL;
+    PyObject *dict = PyModule_GetDict(module);
+    if (!dict) {
+        return -1;
+    }
     PyDict_SetItemString(dict, "error", PyExc_OSError);
     PyDict_SetItemString(dict, "mmap", (PyObject*) &mmap_object_type);
 #ifdef PROT_EXEC
@@ -1660,6 +1644,23 @@ PyInit_mmap(void)
     setint(dict, "MADV_PROTECT", MADV_PROTECT);
 #endif
 #endif // HAVE_MADVISE
+    return 0;
+}
 
-    return module;
+static PyModuleDef_Slot mmap_slots[] = {
+    {Py_mod_exec, mmap_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef mmapmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "mmap",
+    .m_size = 0,
+    .m_slots = mmap_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_mmap(void)
+{
+    return PyModuleDef_Init(&mmapmodule);
 }
