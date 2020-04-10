@@ -2855,7 +2855,6 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
     const PyType_Slot *slot;
     Py_ssize_t nmembers, weaklistoffset, dictoffset;
-    const char *s;
     char *res_start;
 
     nmembers = weaklistoffset = dictoffset = 0;
@@ -2892,7 +2891,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     }
 
     /* Set the type name and qualname */
-    s = strrchr(spec->name, '.');
+    const char *s = strrchr(spec->name, '.');
     if (s == NULL)
         s = spec->name;
     else
