@@ -8,6 +8,7 @@ from collections import (
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from mmap import mmap
+from ipaddress import IPv4Network, IPv4Interface, IPv6Network, IPv6Interface
 from itertools import chain
 from os import DirEntry
 from re import Pattern, Match
@@ -40,6 +41,7 @@ class BaseTest(unittest.TestCase):
                   Sequence, MutableSequence,
                   MappingProxyType, AsyncGeneratorType,
                   DirEntry,
+                  IPv4Network, IPv4Interface, IPv6Network, IPv6Interface,
                   chain,
                   ):
             tname = t.__name__
