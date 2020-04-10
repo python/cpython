@@ -1338,7 +1338,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 
     n = PyList_GET_SIZE(code);
     /* coverity[ampersand_in_size] */
-    self = PyObject_NEW_VAR(PatternObject, &Pattern_Type, n);
+    self = PyObject_NewVar(PatternObject, &Pattern_Type, n);
     if (!self)
         return NULL;
     self->weakreflist = NULL;
@@ -2327,8 +2327,8 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
 
         /* create match object (with room for extra group marks) */
         /* coverity[ampersand_in_size] */
-        match = PyObject_NEW_VAR(MatchObject, &Match_Type,
-                                 2*(pattern->groups+1));
+        match = PyObject_NewVar(MatchObject, &Match_Type,
+                                2*(pattern->groups+1));
         if (!match)
             return NULL;
 
@@ -2468,7 +2468,7 @@ pattern_scanner(PatternObject *self, PyObject *string, Py_ssize_t pos, Py_ssize_
     ScannerObject* scanner;
 
     /* create scanner object */
-    scanner = PyObject_NEW(ScannerObject, &Scanner_Type);
+    scanner = PyObject_New(ScannerObject, &Scanner_Type);
     if (!scanner)
         return NULL;
     scanner->pattern = NULL;

@@ -8,6 +8,7 @@ from collections import (
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from ipaddress import IPv4Network, IPv4Interface, IPv6Network, IPv6Interface
+from itertools import chain
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType
@@ -38,9 +39,10 @@ class BaseTest(unittest.TestCase):
                   Sequence, MutableSequence,
                   MappingProxyType,
                   DirEntry,
-                  IPv4Network, IPv4Interface,
-                  IPv6Network, IPv6Interface,
-            ):
+                  IPv4Network, IPv4Interface, IPv6Network, IPv6Interface,
+                  MappingProxyType, DirEntry,
+                  chain,
+                  ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]
