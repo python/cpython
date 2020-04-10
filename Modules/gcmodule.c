@@ -2203,6 +2203,16 @@ PyObject_GC_UnTrack(void *op_raw)
     }
 }
 
+/* Test if an object has a GC head */
+int
+PyObject_IS_GC(PyObject *obj)
+{
+    if (PyType_IS_GC(Py_TYPE(obj))) {
+        return (Py_TYPE(obj)->tp_is_gc == NULL || Py_TYPE(obj)->tp_is_gc(obj));
+    }
+    return 0;
+}
+
 static PyObject *
 _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
 {

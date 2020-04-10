@@ -121,9 +121,7 @@ PyAPI_FUNC(Py_ssize_t) _PyGC_CollectIfEnabled(void);
 
 
 /* Test if an object has a GC head */
-#define PyObject_IS_GC(o) \
-    (PyType_IS_GC(Py_TYPE(o)) \
-     && (Py_TYPE(o)->tp_is_gc == NULL || Py_TYPE(o)->tp_is_gc(o)))
+PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
 
 /* GC information is stored BEFORE the object structure. */
 typedef struct {

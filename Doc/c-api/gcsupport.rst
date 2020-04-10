@@ -60,6 +60,12 @@ Constructors for container types must conform to two rules:
    followed by the :c:member:`~PyTypeObject.tp_traverse` handler become valid, usually near the
    end of the constructor.
 
+.. c:function:: int PyObject_IS_GC(PyObject *obj)
+
+   Return non-zero if the object have GC head. Return zero otherwise.
+
+   .. versionadded:: 3.9
+
 
 Similarly, the deallocator for the object must conform to a similar pair of
 rules:
