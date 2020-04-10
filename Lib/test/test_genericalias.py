@@ -39,7 +39,7 @@ class BaseTest(unittest.TestCase):
                   MappingProxyType,
                   DirEntry,
                   IPv4Network, IPv4Interface,
-                  IPv6Network, IPv6Interface
+                  IPv6Network, IPv6Interface,
             ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
