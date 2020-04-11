@@ -999,7 +999,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         executor.submit(mul, 33, 25)
         executor.submit(mul, 25, 26).result()
         executor.submit(mul, 18, 29)
-        self.assertEqual(len(executor._processes), 2)
+        self.assertTrue(len(executor._processes) <= 2)
         executor.shutdown()
 
 create_executor_tests(ProcessPoolExecutorTest,
