@@ -1825,7 +1825,7 @@ _Py_NewReference(PyObject *op)
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-    Py_SET_REFCNT(op, 1);
+    op->ob_refcnt = 1;
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif
