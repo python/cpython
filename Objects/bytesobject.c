@@ -1265,12 +1265,14 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
     Py_ssize_t i, length = Py_SIZE(op);
     Py_ssize_t newsize, squotes, dquotes;
     PyObject *v;
-    unsigned char quote, *s, *p;
+    unsigned char quote;
+    const unsigned char *s;
+    Py_UCS1 *p;
 
     /* Compute size of output string */
     squotes = dquotes = 0;
     newsize = 3; /* b'' */
-    s = (unsigned char*)op->ob_sval;
+    s = (const unsigned char*)op->ob_sval;
     for (i = 0; i < length; i++) {
         Py_ssize_t incr = 1;
         switch(s[i]) {
@@ -2271,7 +2273,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     char *buf;
     Py_ssize_t hexlen, invalid_char;
     unsigned int top, bot;
-    Py_UCS1 *str, *end;
+    const Py_UCS1 *str, *end;
     _PyBytesWriter writer;
 
     _PyBytesWriter_Init(&writer);
@@ -2283,7 +2285,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     hexlen = PyUnicode_GET_LENGTH(string);
 
     if (!PyUnicode_IS_ASCII(string)) {
-        void *data = PyUnicode_DATA(string);
+        const void *data = PyUnicode_DATA(string);
         unsigned int kind = PyUnicode_KIND(string);
         Py_ssize_t i;
 

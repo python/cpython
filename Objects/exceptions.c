@@ -1428,7 +1428,7 @@ my_basename(PyObject *name)
 {
     Py_ssize_t i, size, offset;
     int kind;
-    void *data;
+    const void *data;
 
     if (PyUnicode_READY(name))
         return NULL;
@@ -2953,7 +2953,7 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     static PyObject *exec_prefix = NULL;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text), match;
     int kind = PyUnicode_KIND(self->text);
-    void *data = PyUnicode_DATA(self->text);
+    const void *data = PyUnicode_DATA(self->text);
 
     /* Ignore leading whitespace */
     while (start < text_len) {
