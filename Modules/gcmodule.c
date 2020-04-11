@@ -2013,8 +2013,7 @@ gc_immortalize_heap_impl(PyObject *module)
          * not be in the permanent generation. So it is possible for immortal
          * objects to enter GC collection. Currently what happens in that case
          * is that their immortal bit makes it look like they have a very large
-         * refcount, so they are not collected.
-         */
+         * refcount, so they are not collected. */
         Py_TYPE(FROM_GC(gc))->tp_traverse(
               FROM_GC(gc), (visitproc)immortalize_object, NULL);
     }
