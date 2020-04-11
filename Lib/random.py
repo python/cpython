@@ -106,11 +106,12 @@ class Random(_random.Random):
     StateVersion = Literal[2, 3]
     State = Tuple[StateVersion, Tuple[int], Union[None, float]]
     T = TypeVar('T')  # Can be anything
+    Seed = Union[int, float, str, bytes, bytearray]
 
     # constants
     VERSION: StateVersion = 3     # used by getstate/setstate
 
-    def __init__(self, x=None):
+    def __init__(self, x: Optional[Seed] = None):
         """Initialize an instance.
 
         Optional argument x controls seeding, as for Random.seed().
@@ -141,7 +142,7 @@ class Random(_random.Random):
 
     def seed(
             self,
-            a: Optional[Union[int, float, str, bytes, bytearray]] = None,
+            a: Optional[Seed] = None,
             version: Literal[1, 2] = 2
     ):
         """Initialize internal state from a seed.
