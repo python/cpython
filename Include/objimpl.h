@@ -186,6 +186,8 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
 #define PyObject_GC_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
 
+PyAPI_FUNC(int) PyObject_GC_IsTracked(PyObject *);
+PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
 
 /* Utility macro to help write tp_traverse functions.
  * To use this macro, the tp_traverse function must name its arguments
