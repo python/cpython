@@ -1066,7 +1066,7 @@ class GCImmortalizeTests(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code)
         self.assertEqual(out.strip(), b'False')
 
-    @unittest.skipIf(sys.platform == 'win32', 'needs fix under Windows')
+    @unittest.skipIf("win" in sys.platform, 'needs fix under Windows')
     def test_become_tracked_after_immortalize(self):
         code = """if 1:
             import gc
