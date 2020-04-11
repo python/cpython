@@ -44,6 +44,19 @@ from os import urandom as _urandom
 from _collections_abc import Set as _Set, Sequence as _Sequence
 from itertools import accumulate as _accumulate, repeat as _repeat
 from bisect import bisect as _bisect
+from typing import (
+    Union,
+    Literal,
+    Tuple,
+    Optional,
+    Sequence,
+    Any,
+    MutableSequence,
+    Callable,
+    Set,
+    List,
+    TypeVar
+)
 import os as _os
 
 try:
@@ -89,7 +102,13 @@ class Random(_random.Random):
 
     """
 
-    VERSION = 3     # used by getstate/setstate
+    # type aliases used in this class
+    StateVersion = Literal[2, 3]
+    State = Tuple[StateVersion, Tuple[int], Union[None, float]]
+    T = TypeVar('T')  # Can be anything
+
+    # constants
+    VERSION: StateVersion = 3     # used by getstate/setstate
 
     def __init__(self, x=None):
         """Initialize an instance.
@@ -98,7 +117,7 @@ class Random(_random.Random):
         """
 
         self.seed(x)
-        self.gauss_next = None
+        self.gauss_next: Union[None, float] = None
 
     def __init_subclass__(cls, /, **kwargs):
         """Control how subclasses generate random integers.
@@ -120,7 +139,11 @@ class Random(_random.Random):
                 cls._randbelow = cls._randbelow_without_getrandbits
                 break
 
-    def seed(self, a=None, version=2):
+    def seed(
+            self,
+            a: Optional[Union[int, float, str, bytes, bytearray]] = None,
+            version: Literal[1, 2] = 2
+    ):
         """Initialize internal state from a seed.
 
         The only supported seed types are None, int, float,
@@ -132,7 +155,7 @@ class Random(_random.Random):
         If *a* is an int, all bits are used.
 
         For version 2 (the default), all of the bits are used if *a* is a str,
-        bytes, or bytearray.  For version 1 (provided for reproducing random
+        bytes, or bytearray. For version 1 (provided for reproducing random
         sequences from older versions of Python), the algorithm for str and
         bytes generates a narrower range of seeds.
 
@@ -163,11 +186,11 @@ class Random(_random.Random):
         super().seed(a)
         self.gauss_next = None
 
-    def getstate(self):
+    def getstate(self) -> State:
         """Return internal state; can be passed to setstate() later."""
         return self.VERSION, super().getstate(), self.gauss_next
 
-    def setstate(self, state):
+    def setstate(self, state: State):
         """Restore internal state from object returned by getstate()."""
         version = state[0]
         if version == 3:
@@ -208,7 +231,13 @@ class Random(_random.Random):
 
 ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1, _int=int):
+    def randrange(
+            self,
+            start: int,
+            stop: Optional[int] = None,
+            step: int = 1,
+            _int=int
+    ) -> int:
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
@@ -252,7 +281,7 @@ class Random(_random.Random):
 
         return istart + istep*self._randbelow(n)
 
-    def randint(self, a, b):
+    def randint(self, a: int, b: int) -> int:
         """Return random integer in range [a, b], including both end points.
         """
 
@@ -293,7 +322,7 @@ class Random(_random.Random):
 
 ## -------------------- sequence methods  -------------------
 
-    def choice(self, seq):
+    def choice(self, seq: Sequence[T]) -> T:
         """Choose a random element from a non-empty sequence."""
         try:
             i = self._randbelow(len(seq))
@@ -301,7 +330,11 @@ class Random(_random.Random):
             raise IndexError('Cannot choose from an empty sequence') from None
         return seq[i]
 
-    def shuffle(self, x, random=None):
+    def shuffle(
+            self,
+            x: MutableSequence[Any],
+            random: Optional[Callable[[], float]] = None
+    ) -> None:
         """Shuffle list x in place, and return None.
 
         Optional argument random is a 0-argument function returning a
@@ -323,7 +356,7 @@ class Random(_random.Random):
                 j = _int(random() * (i+1))
                 x[i], x[j] = x[j], x[i]
 
-    def sample(self, population, k):
+    def sample(self, population: Union[Sequence[T], Set[T]], k: int) -> List[T]:
         """Chooses k unique random elements from a population sequence or set.
 
         Returns a new list containing elements from the population while
@@ -394,7 +427,14 @@ class Random(_random.Random):
                 result[i] = population[j]
         return result
 
-    def choices(self, population, weights=None, *, cum_weights=None, k=1):
+    def choices(
+            self,
+            population: List[T],
+            weights: Optional[List[float]] = None,
+            *,
+            cum_weights: Optional[List[float]] = None,
+            k: int = 1
+    ) -> List[T]:
         """Return a k sized list of population elements chosen with replacement.
 
         If the relative weights or cumulative weights are not specified,
@@ -425,13 +465,18 @@ class Random(_random.Random):
 
 ## -------------------- uniform distribution -------------------
 
-    def uniform(self, a, b):
-        "Get a random number in the range [a, b) or [a, b] depending on rounding."
+    def uniform(self, a: float, b: float) -> float:
+        """Get a random number in the range [a, b) or [a, b] depending on rounding."""
         return a + (b-a) * self.random()
 
 ## -------------------- triangular --------------------
 
-    def triangular(self, low=0.0, high=1.0, mode=None):
+    def triangular(
+            self,
+            low: float = 0.0,
+            high: float = 1.0,
+            mode: Optional[float] = None
+    ) -> float:
         """Triangular distribution.
 
         Continuous distribution bounded by given lower and upper limits,
@@ -453,7 +498,7 @@ class Random(_random.Random):
 
 ## -------------------- normal distribution --------------------
 
-    def normalvariate(self, mu, sigma):
+    def normalvariate(self, mu: float, sigma: float) -> float:
         """Normal distribution.
 
         mu is the mean, and sigma is the standard deviation.
@@ -478,7 +523,7 @@ class Random(_random.Random):
 
 ## -------------------- lognormal distribution --------------------
 
-    def lognormvariate(self, mu, sigma):
+    def lognormvariate(self, mu: float, sigma: float) -> float:
         """Log normal distribution.
 
         If you take the natural logarithm of this distribution, you'll get a
@@ -490,7 +535,7 @@ class Random(_random.Random):
 
 ## -------------------- exponential distribution --------------------
 
-    def expovariate(self, lambd):
+    def expovariate(self, lambd: float) -> float:
         """Exponential distribution.
 
         lambd is 1.0 divided by the desired mean.  It should be
@@ -509,7 +554,7 @@ class Random(_random.Random):
 
 ## -------------------- von Mises distribution --------------------
 
-    def vonmisesvariate(self, mu, kappa):
+    def vonmisesvariate(self, mu: float, kappa: float) -> float:
         """Circular data distribution.
 
         mu is the mean angle, expressed in radians between 0 and 2*pi, and
@@ -557,7 +602,7 @@ class Random(_random.Random):
 
 ## -------------------- gamma distribution --------------------
 
-    def gammavariate(self, alpha, beta):
+    def gammavariate(self, alpha: float, beta: float) -> float:
         """Gamma distribution.  Not the gamma function!
 
         Conditions on the parameters are alpha > 0 and beta > 0.
@@ -626,7 +671,7 @@ class Random(_random.Random):
 
 ## -------------------- Gauss (faster alternative) --------------------
 
-    def gauss(self, mu, sigma):
+    def gauss(self, mu: float, sigma: float) -> float:
         """Gaussian distribution.
 
         mu is the mean, and sigma is the standard deviation.  This is
@@ -679,7 +724,7 @@ class Random(_random.Random):
 ##
 ## was dead wrong, and how it probably got that way.
 
-    def betavariate(self, alpha, beta):
+    def betavariate(self, alpha: float, beta: float) -> float:
         """Beta distribution.
 
         Conditions on the parameters are alpha > 0 and beta > 0.
@@ -697,7 +742,7 @@ class Random(_random.Random):
 
 ## -------------------- Pareto --------------------
 
-    def paretovariate(self, alpha):
+    def paretovariate(self, alpha: float) -> float:
         """Pareto distribution.  alpha is the shape parameter."""
         # Jain, pg. 495
 
@@ -706,7 +751,7 @@ class Random(_random.Random):
 
 ## -------------------- Weibull --------------------
 
-    def weibullvariate(self, alpha, beta):
+    def weibullvariate(self, alpha: float, beta: float) -> float:
         """Weibull distribution.
 
         alpha is the scale parameter and beta is the shape parameter.
@@ -727,11 +772,11 @@ class SystemRandom(Random):
      Not available on all systems (see os.urandom() for details).
     """
 
-    def random(self):
+    def random(self) -> float:
         """Get the next random number in the range [0.0, 1.0)."""
         return (int.from_bytes(_urandom(7), 'big') >> 3) * RECIP_BPF
 
-    def getrandbits(self, k):
+    def getrandbits(self, k: int) -> int:
         """getrandbits(k) -> x.  Generates an int with k random bits."""
         if k <= 0:
             raise ValueError('number of bits must be greater than zero')
@@ -792,7 +837,7 @@ def _test(N=2000):
 
 # Create one instance, seeded from current time, and export its methods
 # as module-level functions.  The functions share state across all uses
-#(both in the user's code and in the Python libraries), but that's fine
+# (both in the user's code and in the Python libraries), but that's fine
 # for most programs and is easier for the casual user than making them
 # instantiate their own Random() instance.
 
