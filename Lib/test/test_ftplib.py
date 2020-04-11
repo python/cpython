@@ -22,7 +22,7 @@ from test import support
 from test.support import HOST, HOSTv6
 
 TIMEOUT = support.LOOPBACK_TIMEOUT
-ENCODING = 'utf-8'
+DEFAULT_ENCODING = 'utf-8'
 # the dummy data returned by server over the data channel when
 # RETR, LIST, NLST, MLSD commands are issued
 RETR_DATA = 'abcde12345\r\n' * 1000 + 'non-ascii char \xAE\r\n'
@@ -54,10 +54,10 @@ class DummyDTPHandler(asynchat.async_chat):
         asynchat.async_chat.__init__(self, conn)
         self.baseclass = baseclass
         self.baseclass.last_received_data = ''
-        self.encoding = ENCODING
+        self.encoding = baseclass.encoding
 
     def handle_read(self):
-        new_data = self.recv(1024).decode(self.encoding)
+        new_data = self.recv(1024).decode(self.encoding, 'replace')
         self.baseclass.last_received_data += new_data
 
     def handle_close(self):
@@ -85,7 +85,7 @@ class DummyFTPHandler(asynchat.async_chat):
 
     dtp_handler = DummyDTPHandler
 
-    def __init__(self, conn):
+    def __init__(self, conn, encoding=DEFAULT_ENCODING):
         asynchat.async_chat.__init__(self, conn)
         # tells the socket to handle urgent data inline (ABOR command)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_OOBINLINE, 1)
@@ -99,7 +99,7 @@ class DummyFTPHandler(asynchat.async_chat):
         self.rest = None
         self.next_retr_data = RETR_DATA
         self.push('220 welcome')
-        self.encoding = ENCODING
+        self.encoding = encoding
 
     def collect_incoming_data(self, data):
         self.in_buffer.append(data)
@@ -257,7 +257,7 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
 
     handler = DummyFTPHandler
 
-    def __init__(self, address, af=socket.AF_INET):
+    def __init__(self, address, af=socket.AF_INET, encoding=DEFAULT_ENCODING):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
         self.daemon = True
@@ -268,6 +268,7 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
         self.active_lock = threading.Lock()
         self.host, self.port = self.socket.getsockname()[:2]
         self.handler_instance = None
+        self.encoding = encoding
 
     def start(self):
         assert not self.active
@@ -290,7 +291,7 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
         self.join()
 
     def handle_accepted(self, conn, addr):
-        self.handler_instance = self.handler(conn)
+        self.handler_instance = self.handler(conn, encoding=self.encoding)
 
     def handle_connect(self):
         self.close()
@@ -427,8 +428,8 @@ if ssl is not None:
 
         dtp_handler = DummyTLS_DTPHandler
 
-        def __init__(self, conn):
-            DummyFTPHandler.__init__(self, conn)
+        def __init__(self, conn, encoding=DEFAULT_ENCODING):
+            DummyFTPHandler.__init__(self, conn, encoding=encoding)
             self.secure_data_channel = False
             self._ccc = False
 
@@ -468,10 +469,10 @@ if ssl is not None:
 
 class TestFTPClass(TestCase):
 
-    def setUp(self):
-        self.server = DummyFTPServer((HOST, 0))
+    def setUp(self, encoding=DEFAULT_ENCODING):
+        self.server = DummyFTPServer((HOST, 0), encoding=encoding)
         self.server.start()
-        self.client = ftplib.FTP(timeout=TIMEOUT, encoding=ENCODING)
+        self.client = ftplib.FTP(timeout=TIMEOUT, encoding=encoding)
         self.client.connect(self.server.host, self.server.port)
 
     def tearDown(self):
@@ -798,14 +799,32 @@ class TestFTPClass(TestCase):
         f = io.BytesIO(b'x' * self.client.maxline * 2)
         self.assertRaises(ftplib.Error, self.client.storlines, 'stor', f)
 
+    def test_encoding_param(self):
+        encodings = ['latin-1', 'utf-8']
+        for encoding in encodings:
+            with self.subTest(encoding=encoding):
+                self.tearDown()
+                self.setUp(encoding=encoding)
+                self.assertEqual(encoding, self.client.encoding)
+                self.test_retrbinary()
+                self.test_storbinary()
+                self.test_retrlines()
+                new_dir = self.client.mkd('/non-ascii dir \xAE')
+                self.check_data(new_dir, '/non-ascii dir \xAE')
+        # Check default encoding
+        client = ftplib.FTP(timeout=TIMEOUT)
+        self.assertEqual(DEFAULT_ENCODING, client.encoding)
+
 
 @skipUnless(support.IPV6_ENABLED, "IPv6 not enabled")
 class TestIPv6Environment(TestCase):
 
     def setUp(self):
-        self.server = DummyFTPServer((HOSTv6, 0), af=socket.AF_INET6)
+        self.server = DummyFTPServer((HOSTv6, 0),
+                                     af=socket.AF_INET6,
+                                     encoding=DEFAULT_ENCODING)
         self.server.start()
-        self.client = ftplib.FTP(timeout=TIMEOUT, encoding=ENCODING)
+        self.client = ftplib.FTP(timeout=TIMEOUT, encoding=DEFAULT_ENCODING)
         self.client.connect(self.server.host, self.server.port)
 
     def tearDown(self):
@@ -849,10 +868,10 @@ class TestTLS_FTPClassMixin(TestFTPClass):
     and data connections first.
     """
 
-    def setUp(self):
-        self.server = DummyTLS_FTPServer((HOST, 0))
+    def setUp(self, encoding=DEFAULT_ENCODING):
+        self.server = DummyTLS_FTPServer((HOST, 0), encoding=encoding)
         self.server.start()
-        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, encoding=ENCODING)
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, encoding=encoding)
         self.client.connect(self.server.host, self.server.port)
         # enable TLS
         self.client.auth()
@@ -863,10 +882,10 @@ class TestTLS_FTPClassMixin(TestFTPClass):
 class TestTLS_FTPClass(TestCase):
     """Specific TLS_FTP class tests."""
 
-    def setUp(self):
-        self.server = DummyTLS_FTPServer((HOST, 0))
+    def setUp(self, encoding=DEFAULT_ENCODING):
+        self.server = DummyTLS_FTPServer((HOST, 0), encoding=encoding)
         self.server.start()
-        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, encoding=ENCODING)
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
 
     def tearDown(self):

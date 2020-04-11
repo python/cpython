@@ -48,7 +48,7 @@ The module defines the following items:
    Return a new instance of the :class:`FTP` class.  When *host* is given, the
    method call ``connect(host)`` is made.  When *user* is given, additionally
    the method call ``login(user, passwd, acct)`` is made (where *passwd* and
-   *acct* default to the empty string when not given). The optional *timeout*
+   *acct* default to the empty string when not given).  The optional *timeout*
    parameter specifies a timeout in seconds for blocking operations like the
    connection attempt (if is not specified, the global default timeout setting
    will be used). *source_address* is a 2-tuple ``(host, port)`` for the socket
@@ -266,9 +266,10 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.retrlines(cmd, callback=None)
 
-   Retrieve a file or directory listing in ASCII transfer mode.  *cmd* should be
-   an appropriate ``RETR`` command (see :meth:`retrbinary`) or a command such as
-   ``LIST`` or ``NLST`` (usually just the string ``'LIST'``).
+   Retrieve a file or directory listing in the encoding specified by the
+   *encoding* parameter at initialization.
+   *cmd* should be an appropriate ``RETR`` command (see :meth:`retrbinary`) or
+   a command such as ``LIST`` or ``NLST`` (usually just the string ``'LIST'``).
    ``LIST`` retrieves a list of files and information about those files.
    ``NLST`` retrieves a list of file names.
    The *callback* function is called for each line with a string argument
@@ -298,7 +299,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.storlines(cmd, fp, callback=None)
 
-   Store a file in ASCII transfer mode.  *cmd* should be an appropriate
+   Store a file in line mode.  *cmd* should be an appropriate
    ``STOR`` command (see :meth:`storbinary`).  Lines are read until EOF from the
    :term:`file object` *fp* (opened in binary mode) using its :meth:`~io.IOBase.readline`
    method to provide the data to be stored.  *callback* is an optional single
@@ -316,10 +317,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    If optional *rest* is given, a ``REST`` command is sent to the server, passing
    *rest* as an argument.  *rest* is usually a byte offset into the requested file,
    telling the server to restart sending the file's bytes at the requested offset,
-   skipping over the initial bytes.  Note however that :rfc:`959` requires only that
-   *rest* be a string containing characters in the printable range from ASCII code
-   33 to ASCII code 126.  The :meth:`transfercmd` method, therefore, converts
-   *rest* to a string, but no check is performed on the string's contents.  If the
+   skipping over the initial bytes.  Note however that the :meth:`transfercmd`
+   method converts *rest* to a string with the *encoding* parameter specified
+   at initialization, but no check is performed on the string's contents.  If the
    server does not recognize the ``REST`` command, an :exc:`error_reply` exception
    will be raised.  If this happens, simply call :meth:`transfercmd` without a
    *rest* argument.
