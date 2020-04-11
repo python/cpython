@@ -439,8 +439,7 @@ class TestRetrievingSourceCode(GetSourceBase):
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_getdoc_inherited(self):
-        self.assertEqual(inspect.getdoc(mod.FesteringGob),
-                         'A longer,\n\nindented\n\ndocstring.')
+        self.assertIsNone(inspect.getdoc(mod.FesteringGob))
         self.assertEqual(inspect.getdoc(mod.FesteringGob.abuse),
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
         self.assertEqual(inspect.getdoc(mod.FesteringGob().abuse),
@@ -449,9 +448,19 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'The automatic gainsaying.')
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
+    def test_getowndoc(self):
+        getowndoc = inspect._getowndoc
+        self.assertEqual(getowndoc(type), type.__doc__)
+        self.assertEqual(getowndoc(int), int.__doc__)
+        self.assertEqual(getowndoc(int.to_bytes), int.to_bytes.__doc__)
+        self.assertEqual(getowndoc(int().to_bytes), int.to_bytes.__doc__)
+        self.assertEqual(getowndoc(int.from_bytes), int.from_bytes.__doc__)
+        self.assertEqual(getowndoc(int.real), int.real.__doc__)
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
     def test_finddoc(self):
         finddoc = inspect._finddoc
-        self.assertEqual(finddoc(int), int.__doc__)
+        self.assertIsNone(finddoc(int))
         self.assertEqual(finddoc(int.to_bytes), int.to_bytes.__doc__)
         self.assertEqual(finddoc(int().to_bytes), int.to_bytes.__doc__)
         self.assertEqual(finddoc(int.from_bytes), int.from_bytes.__doc__)
