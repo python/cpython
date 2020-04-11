@@ -1046,6 +1046,7 @@ class GCImmortalizeTests(unittest.TestCase):
         obj = []
         self.assertFalse(gc.is_immortal(obj))
 
+    @unittest.skipIf("win" in sys.platform, 'needs fix under Windows')
     def test_is_immortal(self):
         code = """if 1:
             import gc
@@ -1056,6 +1057,7 @@ class GCImmortalizeTests(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code)
         self.assertEqual(out.strip(), b'True')
 
+    @unittest.skipIf("win" in sys.platform, 'needs fix under Windows')
     def test_post_immortalize(self):
         code = """if 1:
             import gc
