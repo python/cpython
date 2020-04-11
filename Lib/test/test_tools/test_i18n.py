@@ -100,11 +100,7 @@ class Test_pygettext(unittest.TestCase):
             with open('messages.pot') as fp:
                 data = fp.read()
             header = self.get_header(data)
-            creationDate = header['POT-Creation-Date']
-
-            # peel off the escaped newline at the end of string
-            if creationDate.endswith('\\n'):
-                creationDate = creationDate[:-len('\\n')]
+            creationDate = header['POT-Creation-Date'].removesuffix('\\n')
 
             # This will raise if the date format does not exactly match.
             datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
