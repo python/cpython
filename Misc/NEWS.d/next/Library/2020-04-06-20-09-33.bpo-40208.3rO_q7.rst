@@ -1,1 +1,1 @@
-Remove deprecated :meth:`SymbolTable.has_exec`.
+Remove deprecated :meth:`symtable.SymbolTable.has_exec`.
