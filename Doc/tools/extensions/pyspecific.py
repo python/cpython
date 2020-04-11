@@ -26,7 +26,7 @@ try:
     from sphinx.errors import NoUri
 except ImportError:
     from sphinx.environment import NoUri
-from sphinx.locale import translators
+from sphinx.locale import get_translation
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
@@ -41,6 +41,8 @@ except ImportError:
 # Support for checking for suspicious markup
 
 import suspicious
+
+_ = get_translation('sphinx')
 
 
 ISSUE_URI = 'https://bugs.python.org/issue%s'
@@ -83,13 +85,12 @@ class ImplementationDetail(Directive):
     final_argument_whitespace = True
 
     # This text is copied to templates/dummy.html
-    label_text = 'CPython implementation detail:'
+    label_text = _('CPython implementation detail:')
 
     def run(self):
         pnode = nodes.compound(classes=['impl-detail'])
-        label = translators['sphinx'].gettext(self.label_text)
         content = self.content
-        add_text = nodes.strong(label, label)
+        add_text = nodes.strong(self.label_text, self.label_text)
         if self.arguments:
             n, m = self.state.inline_text(self.arguments[0], self.lineno)
             pnode.append(nodes.paragraph('', '', *(n + m)))
@@ -171,9 +172,9 @@ class AuditEvent(Directive):
     final_argument_whitespace = True
 
     _label = [
-        "Raises an :ref:`auditing event <auditing>` {name} with no arguments.",
-        "Raises an :ref:`auditing event <auditing>` {name} with argument {args}.",
-        "Raises an :ref:`auditing event <auditing>` {name} with arguments {args}.",
+        _("Raises an :ref:`auditing event <auditing>` {name} with no arguments."),
+        _("Raises an :ref:`auditing event <auditing>` {name} with argument {args}."),
+        _("Raises an :ref:`auditing event <auditing>` {name} with arguments {args}."),
     ]
 
     @property
@@ -189,7 +190,7 @@ class AuditEvent(Directive):
         else:
             args = []
 
-        label = translators['sphinx'].gettext(self._label[min(2, len(args))])
+        label = self._label[min(2, len(args))]
         text = label.format(name="``{}``".format(name),
                             args=", ".join("``{}``".format(a) for a in args if a))
 
@@ -351,8 +352,8 @@ class DeprecatedRemoved(Directive):
     final_argument_whitespace = True
     option_spec = {}
 
-    _deprecated_label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
-    _removed_label = 'Deprecated since version {deprecated}, removed in version {removed}'
+    _deprecated_label = _('Deprecated since version {deprecated}, will be removed in version {removed}')
+    _removed_label = _('Deprecated since version {deprecated}, removed in version {removed}')
 
     def run(self):
         node = addnodes.versionmodified()
@@ -367,8 +368,6 @@ class DeprecatedRemoved(Directive):
             label = self._deprecated_label
         else:
             label = self._removed_label
-
-        label = translators['sphinx'].gettext(label)
         text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
