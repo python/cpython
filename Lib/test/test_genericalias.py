@@ -19,7 +19,11 @@ from itertools import chain
 from http.cookies import Morsel
 from multiprocessing.managers import ValueProxy
 from multiprocessing.pool import ApplyResult
-from multiprocessing.shared_memory import ShareableList
+try:
+    from multiprocessing.shared_memory import ShareableList
+except ImportError:
+    # multiprocessing.shared_memory is not available on e.g. Android
+    ShareableList = None
 from multiprocessing.queues import SimpleQueue
 from os import DirEntry
 from re import Pattern, Match
@@ -71,6 +75,8 @@ class BaseTest(unittest.TestCase):
                   Future, _WorkItem,
                   Morsel,
                   ):
+            if t is None:
+                continue
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]
