@@ -1,0 +1,2 @@
+This introduces Immortal Instances which allows the user to bypass reference
+counting and avoid CoW on forked processes.

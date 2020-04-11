@@ -1939,7 +1939,6 @@ gc_get_freeze_count_impl(PyObject *module)
     return gc_list_size(&gcstate->permanent_generation.head);
 }
 
-#ifdef Py_IMMORTAL_INSTANCES
 
 /*[clinic input]
 gc.is_immortal -> bool
@@ -1954,10 +1953,15 @@ static int
 gc_is_immortal_impl(PyObject *module, PyObject *instance)
 /*[clinic end generated code: output=743a163cb6aaf384 input=815182ca5c5d81e4]*/
 {
+#ifdef Py_IMMORTAL_INSTANCES
     return _Py_IsImmortal(instance);
+#else
+    return 0;
+#endif  /* Py_IMMORTAL_INSTANCES */
 }
 
 
+#ifdef Py_IMMORTAL_INSTANCES
 static int
 immortalize_object(PyObject *obj, PyObject *Py_UNUSED(ignored))
 {
@@ -1977,6 +1981,7 @@ immortalize_object(PyObject *obj, PyObject *Py_UNUSED(ignored))
     }
     return 0;
 }
+#endif  /* Py_IMMORTAL_INSTANCES */
 
 /*[clinic input]
 gc.immortalize_heap
@@ -1988,6 +1993,7 @@ static PyObject *
 gc_immortalize_heap_impl(PyObject *module)
 /*[clinic end generated code: output=a7bb85fe2e27e4ae input=ca1709e4667c0623]*/
 {
+#ifdef Py_IMMORTAL_INSTANCES
     PyGC_Head *gc, *list;
     PyThreadState *tstate = _PyThreadState_GET();
     GCState *gcstate = &tstate->interp->gc;
@@ -2012,10 +2018,10 @@ gc_immortalize_heap_impl(PyObject *module)
         Py_TYPE(FROM_GC(gc))->tp_traverse(
               FROM_GC(gc), (visitproc)immortalize_object, NULL);
     }
+#endif  /* Py_IMMORTAL_INSTANCES */
     Py_RETURN_NONE;
 }
 
-#endif  /* Py_IMMORTAL_INSTANCES */
 
 PyDoc_STRVAR(gc__doc__,
 "This module provides access to the garbage collector for reference cycles.\n"
@@ -2035,10 +2041,8 @@ PyDoc_STRVAR(gc__doc__,
 "is_finalized() -- Returns true if a given object has been already finalized.\n"
 "get_referrers() -- Return the list of objects that refer to an object.\n"
 "get_referents() -- Return the list of objects that an object refers to.\n"
-#ifdef Py_IMMORTAL_INSTANCES
 "immortalize_heap() -- Immortalize all instances accessible through the GC roots.\n"
 "is_immortal() -- Check if an object has been immortalized.\n"
-#endif  /* Py_IMMORTAL_INSTANCES */
 "freeze() -- Freeze all tracked objects and ignore them for future collections.\n"
 "unfreeze() -- Unfreeze all objects in the permanent generation.\n"
 "get_freeze_count() -- Return the number of objects in the permanent generation.\n");
@@ -2064,10 +2068,8 @@ static PyMethodDef GcMethods[] = {
     GC_FREEZE_METHODDEF
     GC_UNFREEZE_METHODDEF
     GC_GET_FREEZE_COUNT_METHODDEF
-#ifdef Py_IMMORTAL_INSTANCES
     GC_IMMORTALIZE_HEAP_METHODDEF
     GC_IS_IMMORTAL_METHODDEF
-#endif
     {NULL,      NULL}           /* Sentinel */
 };
 
