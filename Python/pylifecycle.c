@@ -524,6 +524,31 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 
 
 static PyStatus
+init_interp_create_gil(PyThreadState *tstate)
+{
+    PyStatus status;
+
+    /* finalize_interp_delete() comment explains why _PyEval_FiniGIL() is
+       only called here. */
+    _PyEval_FiniGIL(tstate);
+
+    /* Auto-thread-state API */
+    status = _PyGILState_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    /* Create the GIL and take it */
+    status = _PyEval_InitGIL(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    return _PyStatus_OK();
+}
+
+
+static PyStatus
 pycore_create_interpreter(_PyRuntimeState *runtime,
                           const PyConfig *config,
                           PyThreadState **tstate_p)
@@ -544,21 +569,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
     (void) PyThreadState_Swap(tstate);
 
-    /* We can't call _PyEval_FiniThreads() in Py_FinalizeEx because
-       destroying the GIL might fail when it is being referenced from
-       another running thread (see issue #9901).
-       Instead we destroy the previously created GIL here, which ensures
-       that we can call Py_Initialize / Py_FinalizeEx multiple times. */
-    _PyEval_FiniThreads(tstate);
-
-    /* Auto-thread-state API */
-    status = _PyGILState_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    /* Create the GIL and the pending calls lock */
-    status = _PyEval_InitThreads(tstate);
+    status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1323,6 +1334,12 @@ finalize_interp_delete(PyThreadState *tstate)
         _PyGILState_Fini(tstate);
     }
 
+    /* We can't call _PyEval_FiniGIL() here because destroying the GIL lock can
+       fail when it is being awaited by another running daemon thread (see
+       bpo-9901). Instead pycore_create_interpreter() destroys the previously
+       created GIL, which ensures that Py_Initialize / Py_FinalizeEx can be
+       called multiple times. */
+
     PyInterpreterState_Delete(tstate->interp);
 }
 
@@ -1578,8 +1595,7 @@ new_interpreter(PyThreadState **tstate_p)
         goto error;
     }
 
-    /* Create the pending calls lock */
-    status = _PyEval_InitThreads(tstate);
+    status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
