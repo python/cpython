@@ -429,14 +429,14 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
 static inline void _Py_INCREF(PyObject *op)
 {
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
 #ifdef Py_IMMORTAL_INSTANCES
     if (_Py_IsImmortal(op)) {
         return;
     }
 #endif  /* Py_IMMORTAL_INSTANCES */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
     op->ob_refcnt++;
 }
 
@@ -448,14 +448,14 @@ static inline void _Py_DECREF(
 #endif
     PyObject *op)
 {
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
 #ifdef Py_IMMORTAL_INSTANCES
     if (_Py_IsImmortal(op)) {
         return;
     }
 #endif  /* Py_IMMORTAL_INSTANCES */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
         if (op->ob_refcnt < 0) {

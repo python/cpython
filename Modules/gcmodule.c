@@ -1939,6 +1939,8 @@ gc_get_freeze_count_impl(PyObject *module)
     return gc_list_size(&gcstate->permanent_generation.head);
 }
 
+#ifdef Py_IMMORTAL_INSTANCES
+
 /*[clinic input]
 gc.is_immortal -> bool
 
@@ -2013,6 +2015,8 @@ gc_immortalize_heap_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+#endif  /* Py_IMMORTAL_INSTANCES */
+
 PyDoc_STRVAR(gc__doc__,
 "This module provides access to the garbage collector for reference cycles.\n"
 "\n"
@@ -2034,7 +2038,7 @@ PyDoc_STRVAR(gc__doc__,
 #ifdef Py_IMMORTAL_INSTANCES
 "immortalize_heap() -- Immortalize all instances accessible through the GC roots.\n"
 "is_immortal() -- Check if an object has been immortalized.\n"
-#endif
+#endif  /* Py_IMMORTAL_INSTANCES */
 "freeze() -- Freeze all tracked objects and ignore them for future collections.\n"
 "unfreeze() -- Unfreeze all objects in the permanent generation.\n"
 "get_freeze_count() -- Return the number of objects in the permanent generation.\n");
