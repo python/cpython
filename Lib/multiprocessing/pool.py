@@ -20,6 +20,7 @@ import queue
 import threading
 import time
 import traceback
+import types
 import warnings
 from queue import Empty
 
@@ -779,6 +780,8 @@ class ApplyResult(object):
         self._event.set()
         del self._cache[self._job]
         self._pool = None
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 AsyncResult = ApplyResult       # create alias -- see #17805
 
