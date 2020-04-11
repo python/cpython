@@ -1066,18 +1066,6 @@ class GCImmortalizeTests(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code)
         self.assertEqual(out.strip(), b'False')
 
-    def test_become_tracked_after_immortalize(self):
-        code = """if 1:
-            import gc
-            d = {}  # untracked by gc
-            gc.immortalize_heap()
-            d["foo"] = []  # now becomes gc-tracked
-            gc.collect()  # gc should not collect immortal objects
-            print(len(d))
-            """
-        rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(out.strip(), b'1')
-
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
