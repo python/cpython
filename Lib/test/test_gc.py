@@ -1039,6 +1039,46 @@ class GCTests(unittest.TestCase):
         gc.enable()
 
 
+# These tests need to be run in a separate process since gc.immortalize_heap
+# will mess up with the reference count of other tests
+class GCImmortalizeTests(unittest.TestCase):
+    def test_not_immortal(self):
+        obj = []
+        self.assertFalse(gc.is_immortal(obj))
+
+    def test_is_immortal(self):
+        code = """if 1:
+            import gc
+            obj = []
+            gc.immortalize_heap()
+            print(gc.is_immortal(obj))
+            """
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertEqual(out.strip(), b'True')
+
+    def test_post_immortalize(self):
+        code = """if 1:
+            import gc
+            gc.immortalize_heap()
+            obj = []
+            print(gc.is_immortal(obj))
+            """
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertEqual(out.strip(), b'False')
+
+    def test_become_tracked_after_immortalize(self):
+        code = """if 1:
+            import gc
+            d = {}  # untracked by gc
+            gc.immortalize_heap()
+            d["foo"] = []  # now becomes gc-tracked
+            gc.collect()  # gc should not collect immortal objects
+            print(len(d))
+            """
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertEqual(out.strip(), b'1')
+
+
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
         # Save gc state and disable it.
@@ -1369,7 +1409,8 @@ def test_main():
 
     try:
         gc.collect() # Delete 2nd generation garbage
-        run_unittest(GCTests, GCTogglingTests, GCCallbackTests)
+        run_unittest(
+            GCTests, GCTogglingTests, GCCallbackTests, GCImmortalizeTests)
     finally:
         gc.set_debug(debug)
         # test gc.enable() even if GC is disabled by default

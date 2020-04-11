@@ -124,12 +124,45 @@ typedef struct {
 #define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
 #define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
 
+
+/* [RFC] Should we enable Immortal Instances by Default? */
+#define Py_IMMORTAL_INSTANCES
+
+/* Immortalizing causes the instance to not participate in reference counting.
+ * Thus, an immortal object will be kept alive until the runtime finalization.
+ * This avoids an unnecessary copy-on-write for applications that share
+ * a common python heap across many processes. */
+#ifdef Py_IMMORTAL_INSTANCES
+
+/* The GC bit-shifts refcounts left by two, and after that shift we still
+ * need this to be >> 0, so leave three high zero bits (the sign bit and
+ * room for a shift of two.) */
+static const Py_ssize_t kImmortalBit = 1L << (8 * sizeof(Py_ssize_t) - 4);
+
+static inline int _Py_IsImmortal(PyObject *op)
+{
+    return (op->ob_refcnt & kImmortalBit) != 0;
+}
+
+static inline void _Py_SetImmortal(PyObject *op)
+{
+    op->ob_refcnt = kImmortalBit;
+}
+
+#endif  /* Py_IMMORTAL_INSTANCES */
+
+
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
     return ob->ob_type == type;
 }
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+#ifdef Py_IMMORTAL_INSTANCES
+    if (_Py_IsImmortal(ob)) {
+        return;
+    }
+#endif  /* Py_IMMORTAL_INSTANCES */
     ob->ob_refcnt = refcnt;
 }
 #define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST(ob), refcnt)
@@ -358,7 +391,6 @@ given type object has a specified feature.
 /* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
 
-
 /*
 The macros Py_INCREF(op) and Py_DECREF(op) are used to increment or decrement
 reference counts.  Py_DECREF calls the object's deallocator function when
@@ -397,6 +429,11 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
 static inline void _Py_INCREF(PyObject *op)
 {
+#ifdef Py_IMMORTAL_INSTANCES
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+#endif  /* Py_IMMORTAL_INSTANCES */
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
@@ -411,6 +448,11 @@ static inline void _Py_DECREF(
 #endif
     PyObject *op)
 {
+#ifdef Py_IMMORTAL_INSTANCES
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+#endif  /* Py_IMMORTAL_INSTANCES */
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
