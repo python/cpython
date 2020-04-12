@@ -3818,7 +3818,7 @@ xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
         else
             goto generic;
 
-        if (!res && !check_xmlparser(self)) {
+        if (!res && !_check_xmlparser(self)) {
              return NULL;
         }
         Py_INCREF(res);
