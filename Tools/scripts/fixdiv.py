@@ -369,10 +369,7 @@ def scanline(g):
     return startlineno, endlineno, slashes
 
 def chop(line):
-    if line.endswith("\n"):
-        return line[:-1]
-    else:
-        return line
+    return line.removesuffix("\n")
 
 if __name__ == "__main__":
     sys.exit(main())

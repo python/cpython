@@ -205,8 +205,7 @@ class SharedMemory:
         "Unique name that identifies the shared memory block."
         reported_name = self._name
         if _USE_POSIX and self._prepend_leading_slash:
-            if self._name.startswith("/"):
-                reported_name = self._name[1:]
+            return reported_name.removeprefix("/")
         return reported_name
 
     @property

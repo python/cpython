@@ -715,9 +715,8 @@ def extractArchive(builddir, archiveName):
         os.chdir(builddir)
         if archiveName.endswith('.tar.gz'):
             retval = os.path.basename(archiveName[:-7])
-            if ((retval.startswith('tcl') or retval.startswith('tk'))
-                    and retval.endswith('-src')):
-                retval = retval[:-4]
+            if retval.startswith(('tcl', 'tk')):
+                retval = retval.removesuffix('-src')
             if os.path.exists(retval):
                 shutil.rmtree(retval)
             fp = os.popen("tar zxf %s 2>&1"%(shellQuote(archiveName),), 'r')
