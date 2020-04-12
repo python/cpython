@@ -75,16 +75,16 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
         }
     } else if (milliseconds != 0) {
         /* wait at least until the target */
-        DWORD now, target = GetTickCount() + milliseconds;
+        ULONGLONG now, target = GetTickCount64() + milliseconds;
         while (mutex->locked) {
             if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, (long long)milliseconds*1000) < 0) {
                 result = WAIT_FAILED;
                 break;
             }
-            now = GetTickCount();
+            now = GetTickCount64();
             if (target <= now)
                 break;
-            milliseconds = target-now;
+            milliseconds = (DWORD)(target-now);
         }
     }
     if (!mutex->locked) {

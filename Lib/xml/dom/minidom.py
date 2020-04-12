@@ -43,10 +43,11 @@ class Node(xml.dom.Node):
     def __bool__(self):
         return True
 
-    def toxml(self, encoding=None):
-        return self.toprettyxml("", "", encoding)
+    def toxml(self, encoding=None, standalone=None):
+        return self.toprettyxml("", "", encoding, standalone)
 
-    def toprettyxml(self, indent="\t", newl="\n", encoding=None):
+    def toprettyxml(self, indent="\t", newl="\n", encoding=None,
+                    standalone=None):
         if encoding is None:
             writer = io.StringIO()
         else:
@@ -56,7 +57,7 @@ class Node(xml.dom.Node):
                                       newline='\n')
         if self.nodeType == Node.DOCUMENT_NODE:
             # Can pass encoding only to document, to put it into XML header
-            self.writexml(writer, "", indent, newl, encoding)
+            self.writexml(writer, "", indent, newl, encoding, standalone)
         else:
             self.writexml(writer, "", indent, newl)
         if encoding is None:
@@ -1787,12 +1788,17 @@ class Document(Node, DocumentLS):
             raise xml.dom.NotSupportedErr("cannot import document type nodes")
         return _clone_node(node, deep, self)
 
-    def writexml(self, writer, indent="", addindent="", newl="", encoding=None):
-        if encoding is None:
-            writer.write('<?xml version="1.0" ?>'+newl)
-        else:
-            writer.write('<?xml version="1.0" encoding="%s"?>%s' % (
-                encoding, newl))
+    def writexml(self, writer, indent="", addindent="", newl="", encoding=None,
+                 standalone=None):
+        declarations = []
+
+        if encoding:
+            declarations.append(f'encoding="{encoding}"')
+        if standalone is not None:
+            declarations.append(f'standalone="{"yes" if standalone else "no"}"')
+
+        writer.write(f'<?xml version="1.0" {" ".join(declarations)}?>{newl}')
+
         for node in self.childNodes:
             node.writexml(writer, indent, addindent, newl)
 

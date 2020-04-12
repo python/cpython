@@ -44,7 +44,7 @@ static PyTypeObject Dbmtype;
 
 #include "clinic/_gdbmmodule.c.h"
 
-#define is_dbmobject(v) (Py_TYPE(v) == &Dbmtype)
+#define is_dbmobject(v) Py_IS_TYPE(v, &Dbmtype)
 #define check_dbmobject_open(v) if ((v)->di_dbm == NULL) \
     { PyErr_SetString(DbmError, "GDBM object has already been closed"); \
       return NULL; }
@@ -349,7 +349,7 @@ dbm_contains(PyObject *self, PyObject *arg)
     else if (!PyBytes_Check(arg)) {
         PyErr_Format(PyExc_TypeError,
                      "gdbm key must be bytes or string, not %.100s",
-                     arg->ob_type->tp_name);
+                     Py_TYPE(arg)->tp_name);
         return -1;
     }
     else {

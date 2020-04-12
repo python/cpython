@@ -604,9 +604,11 @@ class BaseTaskTests:
             return 12
 
         t = self.new_task(loop, task())
+        self.assertFalse(t.cancelled())
         self.assertRaises(
             asyncio.CancelledError, loop.run_until_complete, t)
         self.assertTrue(t.done())
+        self.assertTrue(t.cancelled())
         self.assertFalse(t._must_cancel)  # White-box test.
         self.assertFalse(t.cancel())
 
@@ -621,9 +623,11 @@ class BaseTaskTests:
             return 12
 
         t = self.new_task(loop, task())
+        self.assertFalse(t.cancelled())
         self.assertRaises(
             asyncio.CancelledError, loop.run_until_complete, t)
         self.assertTrue(t.done())
+        self.assertTrue(t.cancelled())
         self.assertFalse(t._must_cancel)  # White-box test.
         self.assertFalse(t.cancel())
 
@@ -975,12 +979,12 @@ class BaseTaskTests:
             def coro(s):
                 return s
         c = coro('test')
-
-        task =self.new_task(
+        task = self.new_task(
             self.loop,
             asyncio.wait([c, c, coro('spam')]))
 
-        done, pending = self.loop.run_until_complete(task)
+        with self.assertWarns(DeprecationWarning):
+            done, pending = self.loop.run_until_complete(task)
 
         self.assertFalse(pending)
         self.assertEqual(set(f.result() for f in done), {'test', 'spam'})
@@ -1342,7 +1346,9 @@ class BaseTaskTests:
             futs = list(asyncio.as_completed(fs, loop=loop))
         self.assertEqual(len(futs), 2)
         waiter = asyncio.wait(futs)
-        done, pending = loop.run_until_complete(waiter)
+        # Deprecation from passing coros in futs to asyncio.wait()
+        with self.assertWarns(DeprecationWarning):
+            done, pending = loop.run_until_complete(waiter)
         self.assertEqual(set(f.result() for f in done), {'a', 'b'})
 
     def test_as_completed_duplicate_coroutines(self):
@@ -1747,7 +1753,8 @@ class BaseTaskTests:
 
         async def outer():
             nonlocal proof
-            d, p = await asyncio.wait([inner()])
+            with self.assertWarns(DeprecationWarning):
+                d, p = await asyncio.wait([inner()])
             proof += 100
 
         f = asyncio.ensure_future(outer(), loop=self.loop)
@@ -3232,6 +3239,8 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         self.loop.set_exception_handler(callback)
 
         # Set corrupted task factory
+        self.addCleanup(self.loop.set_task_factory,
+                        self.loop.get_task_factory())
         self.loop.set_task_factory(task_factory)
 
         # Run event loop
@@ -3300,6 +3309,17 @@ class WaitTests(test_utils.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.loop.run_until_complete(
                 asyncio.wait_for(coroutine_function(), 0.01, loop=self.loop))
+
+    def test_coro_is_deprecated_in_wait(self):
+        # Remove test when passing coros to asyncio.wait() is removed in 3.11
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(
+                asyncio.wait([coroutine_function()]))
+
+        task = self.loop.create_task(coroutine_function())
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(
+                asyncio.wait([task, coroutine_function()]))
 
 
 class CompatibilityTests(test_utils.TestCase):

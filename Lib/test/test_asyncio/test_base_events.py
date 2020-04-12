@@ -91,28 +91,26 @@ class BaseEventTests(test_utils.TestCase):
         self.assertIsNone(
             base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, 0, 0))
 
-        if not support.IPV6_ENABLED:
-            return
+        if support.IPV6_ENABLED:
+            # IPv4 address with family IPv6.
+            self.assertIsNone(
+                base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
 
-        # IPv4 address with family IPv6.
-        self.assertIsNone(
-            base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
+            self.assertEqual(
+                (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
+                base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
 
-        self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
-            base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
+            self.assertEqual(
+                (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
+                base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
 
-        self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
-            base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
+            # IPv6 address with family IPv4.
+            self.assertIsNone(
+                base_events._ipaddr_info('::3', 1, INET, STREAM, TCP))
 
-        # IPv6 address with family IPv4.
-        self.assertIsNone(
-            base_events._ipaddr_info('::3', 1, INET, STREAM, TCP))
-
-        # IPv6 address with zone index.
-        self.assertIsNone(
-            base_events._ipaddr_info('::3%lo0', 1, INET6, STREAM, TCP))
+            # IPv6 address with zone index.
+            self.assertIsNone(
+                base_events._ipaddr_info('::3%lo0', 1, INET6, STREAM, TCP))
 
     def test_port_parameter_types(self):
         # Test obscure kinds of arguments for "port".
@@ -218,6 +216,9 @@ class BaseEventLoopTests(test_utils.TestCase):
                 raise NotImplementedError(
                     'cannot submit into a dummy executor')
 
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+
         executor = DummyExecutor()
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
@@ -227,6 +228,9 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         with self.assertWarns(DeprecationWarning):
             self.loop.set_default_executor(executor)
+
+        # Avoid cleaning up the executor mock
+        self.loop._default_executor = None
 
     def test_call_soon(self):
         def cb():
@@ -1284,25 +1288,24 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             t.close()
             test_utils.run_briefly(self.loop)  # allow transport to close
 
-        if not support.IPV6_ENABLED:
-            return
-
-        sock.family = socket.AF_INET6
-        coro = self.loop.create_connection(asyncio.Protocol, '::1', 80)
-        t, p = self.loop.run_until_complete(coro)
-        try:
-            # Without inet_pton we use getaddrinfo, which transforms ('::1', 80)
-            # to ('::1', 80, 0, 0). The last 0s are flow info, scope id.
-            [address] = sock.connect.call_args[0]
-            host, port = address[:2]
-            self.assertRegex(host, r'::(0\.)*1')
-            self.assertEqual(port, 80)
-            _, kwargs = m_socket.socket.call_args
-            self.assertEqual(kwargs['family'], m_socket.AF_INET6)
-            self.assertEqual(kwargs['type'], m_socket.SOCK_STREAM)
-        finally:
-            t.close()
-            test_utils.run_briefly(self.loop)  # allow transport to close
+        if support.IPV6_ENABLED:
+            sock.family = socket.AF_INET6
+            coro = self.loop.create_connection(asyncio.Protocol, '::1', 80)
+            t, p = self.loop.run_until_complete(coro)
+            try:
+                # Without inet_pton we use getaddrinfo, which transforms
+                # ('::1', 80) to ('::1', 80, 0, 0). The last 0s are flow info,
+                # scope id.
+                [address] = sock.connect.call_args[0]
+                host, port = address[:2]
+                self.assertRegex(host, r'::(0\.)*1')
+                self.assertEqual(port, 80)
+                _, kwargs = m_socket.socket.call_args
+                self.assertEqual(kwargs['family'], m_socket.AF_INET6)
+                self.assertEqual(kwargs['type'], m_socket.SOCK_STREAM)
+            finally:
+                t.close()
+                test_utils.run_briefly(self.loop)  # allow transport to close
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'no IPv6 support')
     @unittest.skipIf(sys.platform.startswith('aix'),
@@ -1697,7 +1700,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @support.skip_unless_bind_unix_socket
     def test_create_datagram_endpoint_existing_sock_unix(self):
         with test_utils.unix_socket_path() as path:
             sock = socket.socket(socket.AF_UNIX, type=socket.SOCK_DGRAM)
@@ -1736,10 +1739,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, reuse_address=True, sock=FakeSock())
-        self.assertRaises(ValueError, self.loop.run_until_complete, fut)
-
-        fut = self.loop.create_datagram_endpoint(
             MyDatagramProto, reuse_port=True, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
@@ -1749,7 +1748,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     def test_create_datagram_endpoint_sockopts(self):
         # Socket options should not be applied unless asked for.
-        # SO_REUSEADDR defaults to on for UNIX.
         # SO_REUSEPORT is not available on all platforms.
 
         coro = self.loop.create_datagram_endpoint(
@@ -1758,18 +1756,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         transport, protocol = self.loop.run_until_complete(coro)
         sock = transport.get_extra_info('socket')
 
-        reuse_address_default_on = (
-            os.name == 'posix' and sys.platform != 'cygwin')
         reuseport_supported = hasattr(socket, 'SO_REUSEPORT')
 
-        if reuse_address_default_on:
-            self.assertTrue(
-                sock.getsockopt(
-                    socket.SOL_SOCKET, socket.SO_REUSEADDR))
-        else:
-            self.assertFalse(
-                sock.getsockopt(
-                    socket.SOL_SOCKET, socket.SO_REUSEADDR))
         if reuseport_supported:
             self.assertFalse(
                 sock.getsockopt(
@@ -1785,13 +1773,12 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         coro = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(create_future=True, loop=self.loop),
             local_addr=('127.0.0.1', 0),
-            reuse_address=True,
             reuse_port=reuseport_supported,
             allow_broadcast=True)
         transport, protocol = self.loop.run_until_complete(coro)
         sock = transport.get_extra_info('socket')
 
-        self.assertTrue(
+        self.assertFalse(
             sock.getsockopt(
                 socket.SOL_SOCKET, socket.SO_REUSEADDR))
         if reuseport_supported:
@@ -1806,6 +1793,32 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
 
+    def test_create_datagram_endpoint_reuse_address_error(self):
+        # bpo-37228: Ensure that explicit passing of `reuse_address=True`
+        # raises an error, as it is not safe to use SO_REUSEADDR when using UDP
+
+        coro = self.loop.create_datagram_endpoint(
+            lambda: MyDatagramProto(create_future=True, loop=self.loop),
+            local_addr=('127.0.0.1', 0),
+            reuse_address=True)
+
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(coro)
+
+    def test_create_datagram_endpoint_reuse_address_warning(self):
+        # bpo-37228: Deprecate *reuse_address* parameter
+
+        coro = self.loop.create_datagram_endpoint(
+            lambda: MyDatagramProto(create_future=True, loop=self.loop),
+            local_addr=('127.0.0.1', 0),
+            reuse_address=False)
+
+        with self.assertWarns(DeprecationWarning):
+            transport, protocol = self.loop.run_until_complete(coro)
+            transport.close()
+            self.loop.run_until_complete(protocol.done)
+            self.assertEqual('CLOSED', protocol.state)
+
     @patch_socket
     def test_create_datagram_endpoint_nosoreuseport(self, m_socket):
         del m_socket.SO_REUSEPORT
@@ -1814,7 +1827,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         coro = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(loop=self.loop),
             local_addr=('127.0.0.1', 0),
-            reuse_address=False,
             reuse_port=True)
 
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
@@ -1833,7 +1845,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         coro = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(loop=self.loop),
             local_addr=('1.2.3.4', 0),
-            reuse_address=False,
             reuse_port=reuseport_supported)
 
         t, p = self.loop.run_until_complete(coro)

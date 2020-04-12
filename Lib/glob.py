@@ -48,7 +48,6 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False):
     return it
 
 def _iglob(pathname, root_dir, dir_fd, recursive, dironly):
-    sys.audit("glob.glob", pathname, recursive)
     dirname, basename = os.path.split(pathname)
     if not has_magic(pathname):
         assert not dironly

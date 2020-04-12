@@ -10,6 +10,8 @@
 # the same way as the original. Thus, a substantial part of the
 # memoryview tests is now in this module.
 #
+# Written and designed by Stefan Krah for Python 3.3.
+#
 
 import contextlib
 import unittest
@@ -969,8 +971,6 @@ class TestBufferProtocol(unittest.TestCase):
             m.tobytes()  # Releasing mm didn't release m
 
     def verify_getbuf(self, orig_ex, ex, req, sliced=False):
-        def simple_fmt(ex):
-            return ex.format == '' or ex.format == 'B'
         def match(req, flag):
             return ((req&flag) == flag)
 
@@ -2528,7 +2528,7 @@ class TestBufferProtocol(unittest.TestCase):
         values = [INT(9), IDX(9),
                   2.2+3j, Decimal("-21.1"), 12.2, Fraction(5, 2),
                   [1,2,3], {4,5,6}, {7:8}, (), (9,),
-                  True, False, None, NotImplemented,
+                  True, False, None, Ellipsis,
                   b'a', b'abc', bytearray(b'a'), bytearray(b'abc'),
                   'a', 'abc', r'a', r'abc',
                   f, lambda x: x]
@@ -2754,6 +2754,10 @@ class TestBufferProtocol(unittest.TestCase):
         # be 1D, at least one format must be 'c', 'b' or 'B'.
         for _tshape in gencastshapes():
             for char in fmtdict['@']:
+                # Casts to _Bool are undefined if the source contains values
+                # other than 0 or 1.
+                if char == "?":
+                    continue
                 tfmt = ('', '@')[randrange(2)] + char
                 tsize = struct.calcsize(tfmt)
                 n = prod(_tshape) * tsize

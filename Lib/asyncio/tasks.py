@@ -175,6 +175,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._loop.call_exception_handler(context)
         super().__del__()
 
+    def __class_getitem__(cls, type):
+        return cls
+
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
 
@@ -284,7 +287,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             if self._must_cancel:
                 # Task is cancelled right before coro stops.
                 self._must_cancel = False
-                super().set_exception(exceptions.CancelledError())
+                super().cancel()
             else:
                 super().set_result(exc.value)
         except exceptions.CancelledError:
@@ -419,6 +422,12 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     else:
         warnings.warn("The loop argument is deprecated since Python 3.8, "
                       "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
+
+    if any(coroutines.iscoroutine(f) for f in set(fs)):
+        warnings.warn("The explicit passing of coroutine objects to "
+                      "asyncio.wait() is deprecated since Python 3.8, and "
+                      "scheduled for removal in Python 3.11.",
                       DeprecationWarning, stacklevel=2)
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}

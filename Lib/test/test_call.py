@@ -74,7 +74,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, bool, x=2)
 
     def test_varargs4_kw(self):
-        msg = r"^index\(\) takes no keyword arguments$"
+        msg = r"^list[.]index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, [].index, x=2)
 
     def test_varargs5_kw(self):
@@ -90,19 +90,19 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, next, x=2)
 
     def test_varargs8_kw(self):
-        msg = r"^pack\(\) takes no keyword arguments$"
+        msg = r"^_struct[.]pack\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.pack, x=2)
 
     def test_varargs9_kw(self):
-        msg = r"^pack_into\(\) takes no keyword arguments$"
+        msg = r"^_struct[.]pack_into\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.pack_into, x=2)
 
     def test_varargs10_kw(self):
-        msg = r"^index\(\) takes no keyword arguments$"
+        msg = r"^deque[.]index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, collections.deque().index, x=2)
 
     def test_varargs11_kw(self):
-        msg = r"^pack\(\) takes no keyword arguments$"
+        msg = r"^Struct[.]pack\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.Struct.pack, struct.Struct(""), x=2)
 
     def test_varargs12_kw(self):
@@ -468,7 +468,7 @@ class FastCallTests(unittest.TestCase):
                     self.check_result(result, expected)
 
     def test_vectorcall_dict(self):
-        # Test _PyObject_FastCallDict()
+        # Test PyObject_VectorcallDict()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
@@ -487,7 +487,7 @@ class FastCallTests(unittest.TestCase):
                 self.check_result(result, expected)
 
     def test_vectorcall(self):
-        # Test _PyObject_Vectorcall()
+        # Test PyObject_Vectorcall()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
@@ -594,7 +594,7 @@ class TestPEP590(unittest.TestCase):
         # 1. vectorcall using PyVectorcall_Call()
         #   (only for objects that support vectorcall directly)
         # 2. normal call
-        # 3. vectorcall using _PyObject_Vectorcall()
+        # 3. vectorcall using PyObject_Vectorcall()
         # 4. call as bound method
         # 5. call using functools.partial
 

@@ -503,6 +503,26 @@ class TestPlistlib(unittest.TestCase):
                 pl2 = plistlib.loads(data)
                 self.assertEqual(dict(pl), dict(pl2))
 
+    def test_dump_invalid_format(self):
+        with self.assertRaises(ValueError):
+            plistlib.dumps({}, fmt="blah")
+
+    def test_load_invalid_file(self):
+        with self.assertRaises(plistlib.InvalidFileException):
+            plistlib.loads(b"these are not plist file contents")
+
+    def test_modified_uid_negative(self):
+        neg_uid = UID(1)
+        neg_uid.data = -1  # dodge the negative check in the constructor
+        with self.assertRaises(ValueError):
+            plistlib.dumps(neg_uid, fmt=plistlib.FMT_BINARY)
+
+    def test_modified_uid_huge(self):
+        huge_uid = UID(1)
+        huge_uid.data = 2 ** 64  # dodge the size check in the constructor
+        with self.assertRaises(OverflowError):
+            plistlib.dumps(huge_uid, fmt=plistlib.FMT_BINARY)
+
 
 class TestBinaryPlistlib(unittest.TestCase):
 
@@ -655,9 +675,5 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, plistlib, blacklist=blacklist)
 
 
-def test_main():
-    support.run_unittest(TestPlistlib, TestKeyedArchive, MiscTestCase)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

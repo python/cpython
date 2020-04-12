@@ -13,22 +13,22 @@ objects.
 
 .. c:function:: void Py_INCREF(PyObject *o)
 
-   Increment the reference count for object *o*.  The object must not be *NULL*; if
-   you aren't sure that it isn't *NULL*, use :c:func:`Py_XINCREF`.
+   Increment the reference count for object *o*.  The object must not be ``NULL``; if
+   you aren't sure that it isn't ``NULL``, use :c:func:`Py_XINCREF`.
 
 
 .. c:function:: void Py_XINCREF(PyObject *o)
 
-   Increment the reference count for object *o*.  The object may be *NULL*, in
+   Increment the reference count for object *o*.  The object may be ``NULL``, in
    which case the macro has no effect.
 
 
 .. c:function:: void Py_DECREF(PyObject *o)
 
-   Decrement the reference count for object *o*.  The object must not be *NULL*; if
-   you aren't sure that it isn't *NULL*, use :c:func:`Py_XDECREF`.  If the reference
+   Decrement the reference count for object *o*.  The object must not be ``NULL``; if
+   you aren't sure that it isn't ``NULL``, use :c:func:`Py_XDECREF`.  If the reference
    count reaches zero, the object's type's deallocation function (which must not be
-   *NULL*) is invoked.
+   ``NULL``) is invoked.
 
    .. warning::
 
@@ -44,18 +44,18 @@ objects.
 
 .. c:function:: void Py_XDECREF(PyObject *o)
 
-   Decrement the reference count for object *o*.  The object may be *NULL*, in
+   Decrement the reference count for object *o*.  The object may be ``NULL``, in
    which case the macro has no effect; otherwise the effect is the same as for
    :c:func:`Py_DECREF`, and the same warning applies.
 
 
 .. c:function:: void Py_CLEAR(PyObject *o)
 
-   Decrement the reference count for object *o*.  The object may be *NULL*, in
+   Decrement the reference count for object *o*.  The object may be ``NULL``, in
    which case the macro has no effect; otherwise the effect is the same as for
-   :c:func:`Py_DECREF`, except that the argument is also set to *NULL*.  The warning
+   :c:func:`Py_DECREF`, except that the argument is also set to ``NULL``.  The warning
    for :c:func:`Py_DECREF` does not apply with respect to the object passed because
-   the macro carefully uses a temporary variable and sets the argument to *NULL*
+   the macro carefully uses a temporary variable and sets the argument to ``NULL``
    before decrementing its reference count.
 
    It is a good idea to use this macro whenever decrementing the reference

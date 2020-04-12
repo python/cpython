@@ -77,13 +77,12 @@ class LockTests(BaseTest):
         async def test(lock):
             await asyncio.sleep(0.01)
             self.assertFalse(lock.locked())
-            with self.assertWarns(DeprecationWarning):
-                with await lock as _lock:
-                    self.assertIs(_lock, None)
-                    self.assertTrue(lock.locked())
-                    await asyncio.sleep(0.01)
-                    self.assertTrue(lock.locked())
-                self.assertFalse(lock.locked())
+            with self.assertRaisesRegex(
+                TypeError,
+                "can't be used in 'await' expression"
+            ):
+                with await lock:
+                    pass
 
         for primitive in primitives:
             self.loop.run_until_complete(test(primitive))
@@ -95,11 +94,9 @@ class StreamReaderTests(BaseTest):
     def test_readline(self):
         DATA = b'line1\nline2\nline3'
 
-        stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
-                                loop=self.loop,
-                                _asyncio_internal=True)
-        stream._feed_data(DATA)
-        stream._feed_eof()
+        stream = asyncio.StreamReader(loop=self.loop)
+        stream.feed_data(DATA)
+        stream.feed_eof()
 
         async def reader():
             data = []
