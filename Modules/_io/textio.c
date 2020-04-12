@@ -2640,7 +2640,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     Py_ssize_t chars_to_skip, chars_decoded;
     Py_ssize_t skip_bytes, skip_back;
     PyObject *saved_state = NULL;
-    char *input, *input_end;
+    const char *input, *input_end;
     Py_ssize_t dec_buffer_len;
     int dec_flags;
 

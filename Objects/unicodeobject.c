@@ -3887,7 +3887,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
     PyObject *path = NULL;
     PyObject *output = NULL;
     Py_ssize_t size;
-    void *data;
+    const char *data;
     if (arg == NULL) {
         Py_DECREF(*(PyObject**)addr);
         *(PyObject**)addr = NULL;
@@ -4718,7 +4718,7 @@ _PyUnicode_EncodeUTF7(PyObject *str,
     unsigned int base64bits = 0;
     unsigned long base64buffer = 0;
     char * out;
-    char * start;
+    const char * start;
 
     if (PyUnicode_READY(str) == -1)
         return NULL;
@@ -5446,7 +5446,7 @@ unicode_fill_utf8(PyObject *unicode)
         return -1;
     }
 
-    char *start = writer.use_small_buffer ? writer.small_buffer :
+    const char *start = writer.use_small_buffer ? writer.small_buffer :
                     PyBytes_AS_STRING(writer.buffer);
     Py_ssize_t len = end - start;
 

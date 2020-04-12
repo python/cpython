@@ -637,7 +637,7 @@ PyDoc_STRVAR(bindtextdomain__doc__,
 static PyObject*
 PyIntl_bindtextdomain(PyObject* self, PyObject*args)
 {
-    char *domain, *dirname, *current_dirname;
+    const char *domain, *dirname, *current_dirname;
     PyObject *dirname_obj, *dirname_bytes = NULL, *result;
 
     if (!PyArg_ParseTuple(args, "sO", &domain, &dirname_obj))
