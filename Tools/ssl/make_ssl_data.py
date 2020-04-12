@@ -76,7 +76,9 @@ if __name__ == "__main__":
 
     w("static struct py_ssl_library_code library_codes[] = {")
     for mnemo, (libcode, _, _) in sorted(error_libraries.items()):
+        w(f'#ifdef {libcode}')
         w('    {"%s", %s},' % (mnemo, libcode))
+        w('#endif')
     w('    { NULL }')
     w('};')
     w("")
