@@ -10,7 +10,7 @@ try:
 except ImportError:
     gc = None
 
-from test.libregrtest.refleak import warm_caches
+from test.libregrtest.utils import setup_unraisable_hook
 
 
 def setup_tests(ns):
@@ -57,31 +57,11 @@ def setup_tests(ns):
         if hasattr(module, '__path__'):
             for index, path in enumerate(module.__path__):
                 module.__path__[index] = os.path.abspath(path)
-        if hasattr(module, '__file__'):
+        if getattr(module, '__file__', None):
             module.__file__ = os.path.abspath(module.__file__)
-
-    # MacOSX (a.k.a. Darwin) has a default stack size that is too small
-    # for deeply recursive regular expressions.  We see this as crashes in
-    # the Python test suite when running test_re.py and test_sre.py.  The
-    # fix is to set the stack limit to 2048.
-    # This approach may also be useful for other Unixy platforms that
-    # suffer from small default stack limits.
-    if sys.platform == 'darwin':
-        try:
-            import resource
-        except ImportError:
-            pass
-        else:
-            soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
-            newsoft = min(hard, max(soft, 1024*2048))
-            resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
 
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
-
-        # Avoid false positives due to various caches
-        # filling slowly with random data:
-        warm_caches()
 
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)
@@ -89,29 +69,53 @@ def setup_tests(ns):
     if ns.threshold is not None:
         gc.set_threshold(ns.threshold)
 
+    suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
+
+    support.use_resources = ns.use_resources
+
+    if hasattr(sys, 'addaudithook'):
+        # Add an auditing hook for all tests to ensure PySys_Audit is tested
+        def _test_audit_hook(name, args):
+            pass
+        sys.addaudithook(_test_audit_hook)
+
+    setup_unraisable_hook()
+
+    if ns.timeout is not None:
+        # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
+        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, ns.timeout / 40)
+        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, ns.timeout / 4)
+
+        # If --timeout is short: reduce timeouts
+        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, ns.timeout)
+        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, ns.timeout)
+        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
+        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
+
+
+def suppress_msvcrt_asserts(verbose):
     try:
         import msvcrt
     except ImportError:
-        pass
-    else:
-        msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                            msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                            msvcrt.SEM_NOGPFAULTERRORBOX|
-                            msvcrt.SEM_NOOPENFILEERRORBOX)
-        try:
-            msvcrt.CrtSetReportMode
-        except AttributeError:
-            # release build
-            pass
-        else:
-            for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                if ns.verbose and ns.verbose >= 2:
-                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-                else:
-                    msvcrt.CrtSetReportMode(m, 0)
+        return
 
-    support.use_resources = ns.use_resources
+    msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
+                        msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
+                        msvcrt.SEM_NOGPFAULTERRORBOX|
+                        msvcrt.SEM_NOOPENFILEERRORBOX)
+    try:
+        msvcrt.CrtSetReportMode
+    except AttributeError:
+        # release build
+        return
+
+    for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
+        if verbose:
+            msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
+            msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+        else:
+            msvcrt.CrtSetReportMode(m, 0)
+
 
 
 def replace_stdout():

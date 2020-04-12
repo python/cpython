@@ -10,30 +10,8 @@ import operator
 import re
 import sys
 
-__all__ = ['Fraction', 'gcd']
+__all__ = ['Fraction']
 
-
-
-def gcd(a, b):
-    """Calculate the Greatest Common Divisor of a and b.
-
-    Unless b==0, the result will have the same sign as b (so that when
-    b is divided by it, the result comes out positive).
-    """
-    import warnings
-    warnings.warn('fractions.gcd() is deprecated. Use math.gcd() instead.',
-                  DeprecationWarning, 2)
-    if type(a) is int is type(b):
-        if (b or a) < 0:
-            return -math.gcd(a, b)
-        return math.gcd(a, b)
-    return _gcd(a, b)
-
-def _gcd(a, b):
-    # Supports non-integers for backward compatibility.
-    while b:
-        a, b = b, a%b
-    return a
 
 # Constants related to the hash implementation;  hash(x) is based
 # on the reduction of x modulo the prime _PyHASH_MODULUS.
@@ -177,13 +155,9 @@ class Fraction(numbers.Rational):
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
         if _normalize:
-            if type(numerator) is int is type(denominator):
-                # *very* normal case
-                g = math.gcd(numerator, denominator)
-                if denominator < 0:
-                    g = -g
-            else:
-                g = _gcd(numerator, denominator)
+            g = math.gcd(numerator, denominator)
+            if denominator < 0:
+                g = -g
             numerator //= g
             denominator //= g
         self._numerator = numerator
@@ -215,6 +189,14 @@ class Fraction(numbers.Rational):
                 "%s.from_decimal() only takes Decimals, not %r (%s)" %
                 (cls.__name__, dec, type(dec).__name__))
         return cls(*dec.as_integer_ratio())
+
+    def as_integer_ratio(self):
+        """Return the integer ratio as a tuple.
+
+        Return a tuple of two integers, whose ratio is equal to the
+        Fraction and with a positive denominator.
+        """
+        return (self._numerator, self._denominator)
 
     def limit_denominator(self, max_denominator=1000000):
         """Closest Fraction to self with denominator at most max_denominator.
@@ -427,23 +409,26 @@ class Fraction(numbers.Rational):
 
     __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
 
-    def __floordiv__(a, b):
+    def _floordiv(a, b):
         """a // b"""
-        return math.floor(a / b)
+        return (a.numerator * b.denominator) // (a.denominator * b.numerator)
 
-    def __rfloordiv__(b, a):
-        """a // b"""
-        return math.floor(a / b)
+    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv)
 
-    def __mod__(a, b):
+    def _divmod(a, b):
+        """(a // b, a % b)"""
+        da, db = a.denominator, b.denominator
+        div, n_mod = divmod(a.numerator * db, da * b.numerator)
+        return div, Fraction(n_mod, da * db)
+
+    __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod)
+
+    def _mod(a, b):
         """a % b"""
-        div = a // b
-        return a - b * div
+        da, db = a.denominator, b.denominator
+        return Fraction((a.numerator * db) % (b.numerator * da), da * db)
 
-    def __rmod__(b, a):
-        """a % b"""
-        div = a // b
-        return a - b * div
+    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod)
 
     def __pow__(a, b):
         """a ** b
@@ -509,16 +494,16 @@ class Fraction(numbers.Rational):
             return a._numerator // a._denominator
 
     def __floor__(a):
-        """Will be math.floor(a) in 3.0."""
+        """math.floor(a)"""
         return a.numerator // a.denominator
 
     def __ceil__(a):
-        """Will be math.ceil(a) in 3.0."""
+        """math.ceil(a)"""
         # The negations cleverly convince floordiv to return the ceiling.
         return -(-a.numerator // a.denominator)
 
     def __round__(self, ndigits=None):
-        """Will be round(self, ndigits) in 3.0.
+        """round(self, ndigits)
 
         Rounds half toward even.
         """
@@ -545,23 +530,34 @@ class Fraction(numbers.Rational):
     def __hash__(self):
         """hash(self)"""
 
-        # XXX since this method is expensive, consider caching the result
+        # To make sure that the hash of a Fraction agrees with the hash
+        # of a numerically equal integer, float or Decimal instance, we
+        # follow the rules for numeric hashes outlined in the
+        # documentation.  (See library docs, 'Built-in Types').
 
-        # In order to make sure that the hash of a Fraction agrees
-        # with the hash of a numerically equal integer, float or
-        # Decimal instance, we follow the rules for numeric hashes
-        # outlined in the documentation.  (See library docs, 'Built-in
-        # Types').
-
-        # dinv is the inverse of self._denominator modulo the prime
-        # _PyHASH_MODULUS, or 0 if self._denominator is divisible by
-        # _PyHASH_MODULUS.
-        dinv = pow(self._denominator, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
-        if not dinv:
+        try:
+            dinv = pow(self._denominator, -1, _PyHASH_MODULUS)
+        except ValueError:
+            # ValueError means there is no modular inverse.
             hash_ = _PyHASH_INF
         else:
-            hash_ = abs(self._numerator) * dinv % _PyHASH_MODULUS
-        result = hash_ if self >= 0 else -hash_
+            # The general algorithm now specifies that the absolute value of
+            # the hash is
+            #    (|N| * dinv) % P
+            # where N is self._numerator and P is _PyHASH_MODULUS.  That's
+            # optimized here in two ways:  first, for a non-negative int i,
+            # hash(i) == i % P, but the int hash implementation doesn't need
+            # to divide, and is faster than doing % P explicitly.  So we do
+            #    hash(|N| * dinv)
+            # instead.  Second, N is unbounded, so its product with dinv may
+            # be arbitrarily expensive to compute.  The final answer is the
+            # same if we use the bounded |N| % P instead, which can again
+            # be done with an int hash() call.  If 0 <= i < P, hash(i) == i,
+            # so this nested hash() call wastes a bit of time making a
+            # redundant copy when |N| < P, but can save an arbitrarily large
+            # amount of computation for large |N|.
+            hash_ = hash(hash(abs(self._numerator)) * dinv)
+        result = hash_ if self._numerator >= 0 else -hash_
         return -2 if result == -1 else result
 
     def __eq__(a, b):
@@ -625,7 +621,9 @@ class Fraction(numbers.Rational):
 
     def __bool__(a):
         """a != 0"""
-        return a._numerator != 0
+        # bpo-39274: Use bool() because (a._numerator != 0) can return an
+        # object which is not a bool.
+        return bool(a._numerator)
 
     # support for pickling, copy, and deepcopy
 

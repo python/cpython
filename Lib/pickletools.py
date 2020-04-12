@@ -565,6 +565,41 @@ bytes8 = ArgumentDescriptor(
               the number of bytes, and the second argument is that many bytes.
               """)
 
+
+def read_bytearray8(f):
+    r"""
+    >>> import io, struct, sys
+    >>> read_bytearray8(io.BytesIO(b"\x00\x00\x00\x00\x00\x00\x00\x00abc"))
+    bytearray(b'')
+    >>> read_bytearray8(io.BytesIO(b"\x03\x00\x00\x00\x00\x00\x00\x00abcdef"))
+    bytearray(b'abc')
+    >>> bigsize8 = struct.pack("<Q", sys.maxsize//3)
+    >>> read_bytearray8(io.BytesIO(bigsize8 + b"abcdef"))  #doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    ValueError: expected ... bytes in a bytearray8, but only 6 remain
+    """
+
+    n = read_uint8(f)
+    assert n >= 0
+    if n > sys.maxsize:
+        raise ValueError("bytearray8 byte count > sys.maxsize: %d" % n)
+    data = f.read(n)
+    if len(data) == n:
+        return bytearray(data)
+    raise ValueError("expected %d bytes in a bytearray8, but only %d remain" %
+                     (n, len(data)))
+
+bytearray8 = ArgumentDescriptor(
+              name="bytearray8",
+              n=TAKEN_FROM_ARGUMENT8U,
+              reader=read_bytearray8,
+              doc="""A counted bytearray.
+
+              The first argument is an 8-byte little-endian unsigned int giving
+              the number of bytes, and the second argument is that many bytes.
+              """)
+
 def read_unicodestringnl(f):
     r"""
     >>> import io
@@ -970,6 +1005,11 @@ pybytes = StackObject(
     obtype=bytes,
     doc="A Python bytes object.")
 
+pybytearray = StackObject(
+    name='bytearray',
+    obtype=bytearray,
+    doc="A Python bytearray object.")
+
 pyunicode = StackObject(
     name='str',
     obtype=str,
@@ -1004,6 +1044,11 @@ pyfrozenset = StackObject(
     name="frozenset",
     obtype=set,
     doc="A Python frozenset object.")
+
+pybuffer = StackObject(
+    name='buffer',
+    obtype=object,
+    doc="A Python buffer-like object.")
 
 anyobject = StackObject(
     name='any',
@@ -1265,7 +1310,7 @@ opcodes = [
       object instead.
       """),
 
-    # Bytes (protocol 3 only; older protocols don't support bytes at all)
+    # Bytes (protocol 3 and higher)
 
     I(name='BINBYTES',
       code='B',
@@ -1306,6 +1351,39 @@ opcodes = [
       which are taken literally as the string content.
       """),
 
+    # Bytearray (protocol 5 and higher)
+
+    I(name='BYTEARRAY8',
+      code='\x96',
+      arg=bytearray8,
+      stack_before=[],
+      stack_after=[pybytearray],
+      proto=5,
+      doc="""Push a Python bytearray object.
+
+      There are two arguments:  the first is an 8-byte unsigned int giving
+      the number of bytes in the bytearray, and the second is that many bytes,
+      which are taken literally as the bytearray content.
+      """),
+
+    # Out-of-band buffer (protocol 5 and higher)
+
+    I(name='NEXT_BUFFER',
+      code='\x97',
+      arg=None,
+      stack_before=[],
+      stack_after=[pybuffer],
+      proto=5,
+      doc="Push an out-of-band buffer object."),
+
+    I(name='READONLY_BUFFER',
+      code='\x98',
+      arg=None,
+      stack_before=[pybuffer],
+      stack_after=[pybuffer],
+      proto=5,
+      doc="Make an out-of-band buffer object read-only."),
+
     # Ways to spell None.
 
     I(name='NONE',
@@ -1325,9 +1403,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pybool],
       proto=2,
-      doc="""True.
-
-      Push True onto the stack."""),
+      doc="Push True onto the stack."),
 
     I(name='NEWFALSE',
       code='\x89',
@@ -1335,9 +1411,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pybool],
       proto=2,
-      doc="""True.
-
-      Push False onto the stack."""),
+      doc="Push False onto the stack."),
 
     # Ways to spell Unicode strings.
 
@@ -2279,7 +2353,7 @@ def optimize(p):
             if arg > proto:
                 proto = arg
             if pos == 0:
-                protoheader = p[pos: end_pos]
+                protoheader = p[pos:end_pos]
             else:
                 opcodes.append((pos, end_pos))
         else:
@@ -2295,6 +2369,7 @@ def optimize(p):
         pickler.framer.start_framing()
     idx = 0
     for op, arg in opcodes:
+        frameless = False
         if op is put:
             if arg not in newids:
                 continue
@@ -2305,8 +2380,12 @@ def optimize(p):
             data = pickler.get(newids[arg])
         else:
             data = p[op:arg]
-        pickler.framer.commit_frame()
-        pickler.write(data)
+            frameless = len(data) > pickler.framer._FRAME_SIZE_TARGET
+        pickler.framer.commit_frame(force=frameless)
+        if frameless:
+            pickler.framer.file_write(data)
+        else:
+            pickler.write(data)
     pickler.framer.end_framing()
     return out.getvalue()
 
@@ -2480,35 +2559,35 @@ _dis_test = r"""
     0: (    MARK
     1: l        LIST       (MARK at 0)
     2: p    PUT        0
-    5: L    LONG       1
-    9: a    APPEND
-   10: L    LONG       2
-   14: a    APPEND
-   15: (    MARK
-   16: L        LONG       3
-   20: L        LONG       4
-   24: t        TUPLE      (MARK at 15)
-   25: p    PUT        1
-   28: a    APPEND
-   29: (    MARK
-   30: d        DICT       (MARK at 29)
-   31: p    PUT        2
-   34: c    GLOBAL     '_codecs encode'
-   50: p    PUT        3
-   53: (    MARK
-   54: V        UNICODE    'abc'
-   59: p        PUT        4
-   62: V        UNICODE    'latin1'
-   70: p        PUT        5
-   73: t        TUPLE      (MARK at 53)
-   74: p    PUT        6
-   77: R    REDUCE
-   78: p    PUT        7
-   81: V    UNICODE    'def'
-   86: p    PUT        8
-   89: s    SETITEM
-   90: a    APPEND
-   91: .    STOP
+    5: I    INT        1
+    8: a    APPEND
+    9: I    INT        2
+   12: a    APPEND
+   13: (    MARK
+   14: I        INT        3
+   17: I        INT        4
+   20: t        TUPLE      (MARK at 13)
+   21: p    PUT        1
+   24: a    APPEND
+   25: (    MARK
+   26: d        DICT       (MARK at 25)
+   27: p    PUT        2
+   30: c    GLOBAL     '_codecs encode'
+   46: p    PUT        3
+   49: (    MARK
+   50: V        UNICODE    'abc'
+   55: p        PUT        4
+   58: V        UNICODE    'latin1'
+   66: p        PUT        5
+   69: t        TUPLE      (MARK at 49)
+   70: p    PUT        6
+   73: R    REDUCE
+   74: p    PUT        7
+   77: V    UNICODE    'def'
+   82: p    PUT        8
+   85: s    SETITEM
+   86: a    APPEND
+   87: .    STOP
 highest protocol among opcodes = 0
 
 Try again with a "binary" pickle.
@@ -2577,13 +2656,13 @@ highest protocol among opcodes = 0
    93: p    PUT        6
    96: V    UNICODE    'value'
   103: p    PUT        7
-  106: L    LONG       42
-  111: s    SETITEM
-  112: b    BUILD
-  113: a    APPEND
-  114: g    GET        5
-  117: a    APPEND
-  118: .    STOP
+  106: I    INT        42
+  110: s    SETITEM
+  111: b    BUILD
+  112: a    APPEND
+  113: g    GET        5
+  116: a    APPEND
+  117: .    STOP
 highest protocol among opcodes = 0
 
 >>> dis(pickle.dumps(x, 1))

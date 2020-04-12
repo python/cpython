@@ -1172,10 +1172,10 @@ class FormatTest(unittest.TestCase):
         decimal_point = locale.localeconv()['decimal_point']
         thousands_sep = locale.localeconv()['thousands_sep']
         if decimal_point != '\u066b':
-            self.skipTest('inappropriate decimal point separator'
+            self.skipTest('inappropriate decimal point separator '
                           '({!a} not {!a})'.format(decimal_point, '\u066b'))
         if thousands_sep != '\u066c':
-            self.skipTest('inappropriate thousands separator'
+            self.skipTest('inappropriate thousands separator '
                           '({!a} not {!a})'.format(thousands_sep, '\u066c'))
 
         self.assertEqual(format(Decimal('100000000.123'), 'n'),
@@ -4454,19 +4454,19 @@ class Coverage(unittest.TestCase):
     def test_round(self):
         # Python3 behavior: round() returns Decimal
         Decimal = self.decimal.Decimal
-        getcontext = self.decimal.getcontext
+        localcontext = self.decimal.localcontext
 
-        c = getcontext()
-        c.prec = 28
+        with localcontext() as c:
+            c.prec = 28
 
-        self.assertEqual(str(Decimal("9.99").__round__()), "10")
-        self.assertEqual(str(Decimal("9.99e-5").__round__()), "0")
-        self.assertEqual(str(Decimal("1.23456789").__round__(5)), "1.23457")
-        self.assertEqual(str(Decimal("1.2345").__round__(10)), "1.2345000000")
-        self.assertEqual(str(Decimal("1.2345").__round__(-10)), "0E+10")
+            self.assertEqual(str(Decimal("9.99").__round__()), "10")
+            self.assertEqual(str(Decimal("9.99e-5").__round__()), "0")
+            self.assertEqual(str(Decimal("1.23456789").__round__(5)), "1.23457")
+            self.assertEqual(str(Decimal("1.2345").__round__(10)), "1.2345000000")
+            self.assertEqual(str(Decimal("1.2345").__round__(-10)), "0E+10")
 
-        self.assertRaises(TypeError, Decimal("1.23").__round__, "5")
-        self.assertRaises(TypeError, Decimal("1.23").__round__, 5, 8)
+            self.assertRaises(TypeError, Decimal("1.23").__round__, "5")
+            self.assertRaises(TypeError, Decimal("1.23").__round__, 5, 8)
 
     def test_create_decimal(self):
         c = self.decimal.Context()
@@ -5410,7 +5410,7 @@ class CWhitebox(unittest.TestCase):
 
             # SSIZE_MIN
             x = (1, (), -sys.maxsize-1)
-            self.assertEqual(str(c.create_decimal(x)), '-0E-1000026')
+            self.assertEqual(str(c.create_decimal(x)), '-0E-1000007')
             self.assertRaises(InvalidOperation, Decimal, x)
 
             x = (1, (0, 1, 2), -sys.maxsize-1)
@@ -5475,6 +5475,41 @@ class CWhitebox(unittest.TestCase):
         for cls in X, Y, Z:
             self.assertEqual(Decimal.from_float(cls(101.1)),
                              Decimal.from_float(101.1))
+
+    def test_maxcontext_exact_arith(self):
+
+        # Make sure that exact operations do not raise MemoryError due
+        # to huge intermediate values when the context precision is very
+        # large.
+
+        # The following functions fill the available precision and are
+        # therefore not suitable for large precisions (by design of the
+        # specification).
+        MaxContextSkip = ['logical_invert', 'next_minus', 'next_plus',
+                          'logical_and', 'logical_or', 'logical_xor',
+                          'next_toward', 'rotate', 'shift']
+
+        Decimal = C.Decimal
+        Context = C.Context
+        localcontext = C.localcontext
+
+        # Here only some functions that are likely candidates for triggering a
+        # MemoryError are tested.  deccheck.py has an exhaustive test.
+        maxcontext = Context(prec=C.MAX_PREC, Emin=C.MIN_EMIN, Emax=C.MAX_EMAX)
+        with localcontext(maxcontext):
+            self.assertEqual(Decimal(0).exp(), 1)
+            self.assertEqual(Decimal(1).ln(), 0)
+            self.assertEqual(Decimal(1).log10(), 0)
+            self.assertEqual(Decimal(10**2).log10(), 2)
+            self.assertEqual(Decimal(10**223).log10(), 223)
+            self.assertEqual(Decimal(10**19).logb(), 19)
+            self.assertEqual(Decimal(4).sqrt(), 2)
+            self.assertEqual(Decimal("40E9").sqrt(), Decimal('2.0E+5'))
+            self.assertEqual(divmod(Decimal(10), 3), (3, 1))
+            self.assertEqual(Decimal(10) // 3, 3)
+            self.assertEqual(Decimal(4) / 2, 2)
+            self.assertEqual(Decimal(400) ** -1, Decimal('0.0025'))
+
 
 @requires_docstrings
 @unittest.skipUnless(C, "test requires C version")
@@ -5600,13 +5635,13 @@ class SignatureTest(unittest.TestCase):
                     args, kwds = mkargs(C, c_sig)
                     try:
                         getattr(c_type(9), attr)(*args, **kwds)
-                    except Exception as err:
+                    except Exception:
                         raise TestFailed("invalid signature for %s: %s %s" % (c_func, args, kwds))
 
                     args, kwds = mkargs(P, p_sig)
                     try:
                         getattr(p_type(9), attr)(*args, **kwds)
-                    except Exception as err:
+                    except Exception:
                         raise TestFailed("invalid signature for %s: %s %s" % (p_func, args, kwds))
 
         doit('Decimal')

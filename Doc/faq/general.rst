@@ -117,7 +117,7 @@ programming), software engineering (unit testing, logging, profiling, parsing
 Python code), and operating system interfaces (system calls, filesystems, TCP/IP
 sockets).  Look at the table of contents for :ref:`library-index` to get an idea
 of what's available.  A wide variety of third-party extensions are also
-available.  Consult `the Python Package Index <https://pypi.python.org/pypi>`_ to
+available.  Consult `the Python Package Index <https://pypi.org>`_ to
 find packages of interest to you.
 
 
@@ -268,14 +268,8 @@ Python references; or perhaps search for "Python" and "language".
 Where in the world is www.python.org located?
 ---------------------------------------------
 
-The Python project's infrastructure is located all over the world.
-`www.python.org <https://www.python.org>`_ is graciously hosted by `Rackspace
-<https://www.rackspace.com>`_, with CDN caching provided by `Fastly
-<https://www.fastly.com>`_.  `Upfront Systems
-<http://www.upfrontsystems.co.za/>`_ hosts `bugs.python.org
-<https://bugs.python.org>`_.  Many other Python services like `the Wiki
-<https://wiki.python.org>`_ are hosted by `Oregon State
-University Open Source Lab <https://osuosl.org>`_.
+The Python project's infrastructure is located all over the world and is managed
+by the Python Infrastructure Team. Details `here <http://infra.psf.io>`__.
 
 
 Why is it called Python?
@@ -306,18 +300,16 @@ usually around 18 months between major releases.
 
 The developers issue "bugfix" releases of older versions, so the stability of
 existing releases gradually improves.  Bugfix releases, indicated by a third
-component of the version number (e.g. 2.5.3, 2.6.2), are managed for stability;
+component of the version number (e.g. 3.5.3, 3.6.2), are managed for stability;
 only fixes for known problems are included in a bugfix release, and it's
 guaranteed that interfaces will remain the same throughout a series of bugfix
 releases.
 
 The latest stable releases can always be found on the `Python download page
-<https://www.python.org/downloads/>`_.  There are two recommended production-ready
-versions at this point in time, because at the moment there are two branches of
-stable releases: 2.x and 3.x.  Python 3.x may be less useful than 2.x, since
-currently there is more third party software available for Python 2 than for
-Python 3.  Python 2 code will generally not run unchanged in Python 3.
-
+<https://www.python.org/downloads/>`_.  There are two production-ready versions
+of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
+most widely used libraries.  Although 2.x is still widely used, `it will not
+be maintained after January 1, 2020 <https://www.python.org/dev/peps/pep-0373/>`_.
 
 How many people are using Python?
 ---------------------------------

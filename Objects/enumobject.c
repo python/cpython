@@ -122,7 +122,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
     }
     en->en_longindex = stepped_up;
 
-    if (result->ob_refcnt == 1) {
+    if (Py_REFCNT(result) == 1) {
         Py_INCREF(result);
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
@@ -167,7 +167,7 @@ enum_next(enumobject *en)
     }
     en->en_index++;
 
-    if (result->ob_refcnt == 1) {
+    if (Py_REFCNT(result) == 1) {
         Py_INCREF(result);
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
@@ -189,7 +189,7 @@ enum_next(enumobject *en)
 }
 
 static PyObject *
-enum_reduce(enumobject *en)
+enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
 {
     if (en->en_longindex != NULL)
         return Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
@@ -201,6 +201,8 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef enum_methods[] = {
     {"__reduce__", (PyCFunction)enum_reduce, METH_NOARGS, reduce_doc},
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -211,10 +213,10 @@ PyTypeObject PyEnum_Type = {
     0,                              /* tp_itemsize */
     /* methods */
     (destructor)enum_dealloc,       /* tp_dealloc */
-    0,                              /* tp_print */
+    0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
+    0,                              /* tp_as_async */
     0,                              /* tp_repr */
     0,                              /* tp_as_number */
     0,                              /* tp_as_sequence */
@@ -349,7 +351,7 @@ reversed_next(reversedobject *ro)
 }
 
 static PyObject *
-reversed_len(reversedobject *ro)
+reversed_len(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t position, seqsize;
 
@@ -365,7 +367,7 @@ reversed_len(reversedobject *ro)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-reversed_reduce(reversedobject *ro)
+reversed_reduce(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 {
     if (ro->seq)
         return Py_BuildValue("O(O)n", Py_TYPE(ro), ro->seq, ro->index);
@@ -408,10 +410,10 @@ PyTypeObject PyReversed_Type = {
     0,                              /* tp_itemsize */
     /* methods */
     (destructor)reversed_dealloc,   /* tp_dealloc */
-    0,                              /* tp_print */
+    0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
+    0,                              /* tp_as_async */
     0,                              /* tp_repr */
     0,                              /* tp_as_number */
     0,                              /* tp_as_sequence */

@@ -11,6 +11,7 @@ This software comes with no warranty. Use at your own risk.
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_fileutils.h"
 
 #include <stdio.h>
 #include <locale.h>
@@ -40,7 +41,17 @@ This software comes with no warranty. Use at your own risk.
 
 PyDoc_STRVAR(locale__doc__, "Support for POSIX locales.");
 
-static PyObject *Error;
+typedef struct _locale_state {
+    PyObject *Error;
+} _locale_state;
+
+static inline _locale_state*
+get_locale_state(PyObject *m)
+{
+    void *state = PyModule_GetState(m);
+    assert(state != NULL);
+    return (_locale_state *)state;
+}
 
 /* support functions for formatting floating point numbers */
 
@@ -70,19 +81,12 @@ copy_grouping(const char* s)
     do {
         i++;
         val = PyLong_FromLong(s[i]);
-        if (!val)
-            break;
-        if (PyList_SetItem(result, i, val)) {
-            Py_DECREF(val);
-            val = NULL;
-            break;
+        if (val == NULL) {
+            Py_DECREF(result);
+            return NULL;
         }
+        PyList_SET_ITEM(result, i, val);
     } while (s[i] != '\0' && s[i] != CHAR_MAX);
-
-    if (!val) {
-        Py_DECREF(result);
-        return NULL;
-    }
 
     return result;
 }
@@ -100,7 +104,8 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
 #if defined(MS_WINDOWS)
     if (category < LC_MIN || category > LC_MAX)
     {
-        PyErr_SetString(Error, "invalid locale category");
+        PyErr_SetString(get_locale_state(self)->Error,
+                        "invalid locale category");
         return NULL;
     }
 #endif
@@ -110,7 +115,8 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
         result = setlocale(category, locale);
         if (!result) {
             /* operation failed, no setting was changed */
-            PyErr_SetString(Error, "unsupported locale setting");
+            PyErr_SetString(get_locale_state(self)->Error,
+                            "unsupported locale setting");
             return NULL;
         }
         result_object = PyUnicode_DecodeLocale(result, NULL);
@@ -120,7 +126,8 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
         /* get locale */
         result = setlocale(category, NULL);
         if (!result) {
-            PyErr_SetString(Error, "locale query failed");
+            PyErr_SetString(get_locale_state(self)->Error,
+                            "locale query failed");
             return NULL;
         }
         result_object = PyUnicode_DecodeLocale(result, NULL);
@@ -128,22 +135,99 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
     return result_object;
 }
 
+static int
+locale_is_ascii(const char *str)
+{
+    return (strlen(str) == 1 && ((unsigned char)str[0]) <= 127);
+}
+
+static int
+locale_decode_monetary(PyObject *dict, struct lconv *lc)
+{
+    int change_locale;
+    change_locale = (!locale_is_ascii(lc->int_curr_symbol)
+                     || !locale_is_ascii(lc->currency_symbol)
+                     || !locale_is_ascii(lc->mon_decimal_point)
+                     || !locale_is_ascii(lc->mon_thousands_sep));
+
+    /* Keep a copy of the LC_CTYPE locale */
+    char *oldloc = NULL, *loc = NULL;
+    if (change_locale) {
+        oldloc = setlocale(LC_CTYPE, NULL);
+        if (!oldloc) {
+            PyErr_SetString(PyExc_RuntimeWarning,
+                            "failed to get LC_CTYPE locale");
+            return -1;
+        }
+
+        oldloc = _PyMem_Strdup(oldloc);
+        if (!oldloc) {
+            PyErr_NoMemory();
+            return -1;
+        }
+
+        loc = setlocale(LC_MONETARY, NULL);
+        if (loc != NULL && strcmp(loc, oldloc) == 0) {
+            loc = NULL;
+        }
+
+        if (loc != NULL) {
+            /* Only set the locale temporarily the LC_CTYPE locale
+               to the LC_MONETARY locale if the two locales are different and
+               at least one string is non-ASCII. */
+            setlocale(LC_CTYPE, loc);
+        }
+    }
+
+    int res = -1;
+
+#define RESULT_STRING(ATTR) \
+    do { \
+        PyObject *obj; \
+        obj = PyUnicode_DecodeLocale(lc->ATTR, NULL); \
+        if (obj == NULL) { \
+            goto done; \
+        } \
+        if (PyDict_SetItemString(dict, Py_STRINGIFY(ATTR), obj) < 0) { \
+            Py_DECREF(obj); \
+            goto done; \
+        } \
+        Py_DECREF(obj); \
+    } while (0)
+
+    RESULT_STRING(int_curr_symbol);
+    RESULT_STRING(currency_symbol);
+    RESULT_STRING(mon_decimal_point);
+    RESULT_STRING(mon_thousands_sep);
+#undef RESULT_STRING
+
+    res = 0;
+
+done:
+    if (loc != NULL) {
+        setlocale(LC_CTYPE, oldloc);
+    }
+    PyMem_Free(oldloc);
+    return res;
+}
+
 PyDoc_STRVAR(localeconv__doc__,
 "() -> dict. Returns numeric and monetary locale-specific parameters.");
 
 static PyObject*
-PyLocale_localeconv(PyObject* self)
+PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     PyObject* result;
-    struct lconv *l;
+    struct lconv *lc;
     PyObject *x;
 
     result = PyDict_New();
-    if (!result)
+    if (!result) {
         return NULL;
+    }
 
     /* if LC_NUMERIC is different in the C library, use saved value */
-    l = localeconv();
+    lc = localeconv();
 
     /* hopefully, the localeconv result survives the C library calls
        involved herein */
@@ -161,28 +245,21 @@ PyLocale_localeconv(PyObject* self)
 
 #define RESULT_STRING(s)\
     do { \
-        x = PyUnicode_DecodeLocale(l->s, NULL); \
+        x = PyUnicode_DecodeLocale(lc->s, NULL); \
         RESULT(#s, x); \
     } while (0)
 
 #define RESULT_INT(i)\
     do { \
-        x = PyLong_FromLong(l->i); \
+        x = PyLong_FromLong(lc->i); \
         RESULT(#i, x); \
     } while (0)
 
-    /* Numeric information */
-    RESULT_STRING(decimal_point);
-    RESULT_STRING(thousands_sep);
-    x = copy_grouping(l->grouping);
-    RESULT("grouping", x);
-
-    /* Monetary information */
-    RESULT_STRING(int_curr_symbol);
-    RESULT_STRING(currency_symbol);
-    RESULT_STRING(mon_decimal_point);
-    RESULT_STRING(mon_thousands_sep);
-    x = copy_grouping(l->mon_grouping);
+    /* Monetary information: LC_MONETARY encoding */
+    if (locale_decode_monetary(result, lc) < 0) {
+        goto failed;
+    }
+    x = copy_grouping(lc->mon_grouping);
     RESULT("mon_grouping", x);
 
     RESULT_STRING(positive_sign);
@@ -195,11 +272,38 @@ PyLocale_localeconv(PyObject* self)
     RESULT_INT(n_sep_by_space);
     RESULT_INT(p_sign_posn);
     RESULT_INT(n_sign_posn);
+
+    /* Numeric information: LC_NUMERIC encoding */
+    PyObject *decimal_point, *thousands_sep;
+    if (_Py_GetLocaleconvNumeric(lc, &decimal_point, &thousands_sep) < 0) {
+        goto failed;
+    }
+
+    if (PyDict_SetItemString(result, "decimal_point", decimal_point) < 0) {
+        Py_DECREF(decimal_point);
+        Py_DECREF(thousands_sep);
+        goto failed;
+    }
+    Py_DECREF(decimal_point);
+
+    if (PyDict_SetItemString(result, "thousands_sep", thousands_sep) < 0) {
+        Py_DECREF(thousands_sep);
+        goto failed;
+    }
+    Py_DECREF(thousands_sep);
+
+    x = copy_grouping(lc->grouping);
+    RESULT("grouping", x);
+
     return result;
 
   failed:
-    Py_XDECREF(result);
+    Py_DECREF(result);
     return NULL;
+
+#undef RESULT
+#undef RESULT_STRING
+#undef RESULT_INT
 }
 
 #if defined(HAVE_WCSCOLL)
@@ -296,12 +400,12 @@ exit:
 
 #if defined(MS_WINDOWS)
 static PyObject*
-PyLocale_getdefaultlocale(PyObject* self)
+PyLocale_getdefaultlocale(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
-    char encoding[100];
+    char encoding[20];
     char locale[100];
 
-    PyOS_snprintf(encoding, sizeof(encoding), "cp%d", GetACP());
+    PyOS_snprintf(encoding, sizeof(encoding), "cp%u", GetACP());
 
     if (GetLocaleInfo(LOCALE_USER_DEFAULT,
                       LOCALE_SISO639LANGNAME,
@@ -531,14 +635,16 @@ PyDoc_STRVAR(bindtextdomain__doc__,
 "Bind the C library's domain to dir.");
 
 static PyObject*
-PyIntl_bindtextdomain(PyObject* self,PyObject*args)
+PyIntl_bindtextdomain(PyObject* self, PyObject*args)
 {
-    char *domain, *dirname, *current_dirname;
+    const char *domain, *dirname, *current_dirname;
     PyObject *dirname_obj, *dirname_bytes = NULL, *result;
+
     if (!PyArg_ParseTuple(args, "sO", &domain, &dirname_obj))
         return 0;
     if (!strlen(domain)) {
-        PyErr_SetString(Error, "domain must be a non-empty string");
+        PyErr_SetString(get_locale_state(self)->Error,
+                        "domain must be a non-empty string");
         return 0;
     }
     if (dirname_obj != Py_None) {
@@ -572,8 +678,9 @@ PyIntl_bind_textdomain_codeset(PyObject* self,PyObject*args)
     if (!PyArg_ParseTuple(args, "sz", &domain, &codeset))
         return NULL;
     codeset = bind_textdomain_codeset(domain, codeset);
-    if (codeset)
+    if (codeset) {
         return PyUnicode_DecodeLocale(codeset, NULL);
+    }
     Py_RETURN_NONE;
 }
 #endif
@@ -583,8 +690,7 @@ PyIntl_bind_textdomain_codeset(PyObject* self,PyObject*args)
 static struct PyMethodDef PyLocale_Methods[] = {
   {"setlocale", (PyCFunction) PyLocale_setlocale,
    METH_VARARGS, setlocale__doc__},
-  {"localeconv", (PyCFunction) PyLocale_localeconv,
-   METH_NOARGS, localeconv__doc__},
+  {"localeconv", PyLocale_localeconv, METH_NOARGS, localeconv__doc__},
 #ifdef HAVE_WCSCOLL
   {"strcoll", (PyCFunction) PyLocale_strcoll,
    METH_VARARGS, strcoll__doc__},
@@ -594,7 +700,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
    METH_VARARGS, strxfrm__doc__},
 #endif
 #if defined(MS_WINDOWS)
-  {"_getdefaultlocale", (PyCFunction) PyLocale_getdefaultlocale, METH_NOARGS},
+  {"_getdefaultlocale", PyLocale_getdefaultlocale, METH_NOARGS},
 #endif
 #ifdef HAVE_LANGINFO_H
   {"nl_langinfo", (PyCFunction) PyLocale_nl_langinfo,
@@ -619,63 +725,104 @@ static struct PyMethodDef PyLocale_Methods[] = {
   {NULL, NULL}
 };
 
+static int
+_locale_exec(PyObject *module)
+{
+#ifdef HAVE_LANGINFO_H
+    int i;
+#endif
+#define ADD_INT(module, value)                                    \
+    do {                                                          \
+        if (PyModule_AddIntConstant(module, #value, value) < 0) { \
+            return -1;                                            \
+        }                                                         \
+    } while (0)
+
+    ADD_INT(module, LC_CTYPE);
+    ADD_INT(module, LC_TIME);
+    ADD_INT(module, LC_COLLATE);
+    ADD_INT(module, LC_MONETARY);
+
+#ifdef LC_MESSAGES
+    ADD_INT(module, LC_MESSAGES);
+#endif /* LC_MESSAGES */
+
+    ADD_INT(module, LC_NUMERIC);
+    ADD_INT(module, LC_ALL);
+    ADD_INT(module, CHAR_MAX);
+
+    _locale_state *state = get_locale_state(module);
+    state->Error = PyErr_NewException("locale.Error", NULL, NULL);
+    if (state->Error == NULL) {
+        return -1;
+    }
+    Py_INCREF(get_locale_state(module)->Error);
+    if (PyModule_AddObject(module, "Error", get_locale_state(module)->Error) < 0) {
+        Py_DECREF(get_locale_state(module)->Error);
+        return -1;
+    }
+
+#ifdef HAVE_LANGINFO_H
+    for (i = 0; langinfo_constants[i].name; i++) {
+        if (PyModule_AddIntConstant(module,
+                                    langinfo_constants[i].name,
+                                    langinfo_constants[i].value) < 0) {
+            return -1;
+        }
+    }
+#endif
+
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+    return 0;
+
+#undef ADD_INT
+}
+
+static struct PyModuleDef_Slot _locale_slots[] = {
+    {Py_mod_exec, _locale_exec},
+    {0, NULL}
+};
+
+static int
+locale_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    _locale_state *state = get_locale_state(module);
+    Py_VISIT(state->Error);
+    return 0;
+}
+
+static int
+locale_clear(PyObject *module)
+{
+    _locale_state *state = get_locale_state(module);
+    Py_CLEAR(state->Error);
+    return 0;
+}
+
+static void
+locale_free(PyObject *module)
+{
+    locale_clear(module);
+}
 
 static struct PyModuleDef _localemodule = {
     PyModuleDef_HEAD_INIT,
     "_locale",
     locale__doc__,
-    -1,
+    sizeof(_locale_state),
     PyLocale_Methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    _locale_slots,
+    locale_traverse,
+    locale_clear,
+    (freefunc)locale_free,
 };
 
 PyMODINIT_FUNC
 PyInit__locale(void)
 {
-    PyObject *m;
-#ifdef HAVE_LANGINFO_H
-    int i;
-#endif
-
-    m = PyModule_Create(&_localemodule);
-    if (m == NULL)
-        return NULL;
-
-    PyModule_AddIntMacro(m, LC_CTYPE);
-    PyModule_AddIntMacro(m, LC_TIME);
-    PyModule_AddIntMacro(m, LC_COLLATE);
-    PyModule_AddIntMacro(m, LC_MONETARY);
-
-#ifdef LC_MESSAGES
-    PyModule_AddIntMacro(m, LC_MESSAGES);
-#endif /* LC_MESSAGES */
-
-    PyModule_AddIntMacro(m, LC_NUMERIC);
-    PyModule_AddIntMacro(m, LC_ALL);
-    PyModule_AddIntMacro(m, CHAR_MAX);
-
-    Error = PyErr_NewException("locale.Error", NULL, NULL);
-    if (Error == NULL) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    PyModule_AddObject(m, "Error", Error);
-
-#ifdef HAVE_LANGINFO_H
-    for (i = 0; langinfo_constants[i].name; i++) {
-        PyModule_AddIntConstant(m, langinfo_constants[i].name,
-                                langinfo_constants[i].value);
-    }
-#endif
-
-    if (PyErr_Occurred()) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    return m;
+    return PyModuleDef_Init(&_localemodule);
 }
 
 /*

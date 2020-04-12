@@ -18,7 +18,7 @@ authentication, redirections, cookies and more.
 
 .. seealso::
 
-    The `Requests package <http://docs.python-requests.org/>`_
+    The `Requests package <https://requests.readthedocs.io/en/master/>`_
     is recommended for a higher-level HTTP client interface.
 
 
@@ -55,16 +55,8 @@ The :mod:`urllib.request` module defines the following functions:
    The *cadefault* parameter is ignored.
 
    This function always returns an object which can work as a
-   :term:`context manager` and has methods such as
-
-   * :meth:`~urllib.response.addinfourl.geturl` --- return the URL of the resource retrieved,
-     commonly used to determine if a redirect was followed
-
-   * :meth:`~urllib.response.addinfourl.info` --- return the meta-information of the page, such as headers,
-     in the form of an :func:`email.message_from_string` instance (see
-     `Quick Reference to HTTP Headers <https://www.cs.tut.fi/~jkorpela/http.html>`_)
-
-   * :meth:`~urllib.response.addinfourl.getcode` -- return the HTTP status code of the response.
+   :term:`context manager` and has the properties *url*, *headers*, and *status*.
+   See :class:`urllib.response.addinfourl` for more detail on these properties.
 
    For HTTP and HTTPS URLs, this function returns a
    :class:`http.client.HTTPResponse` object slightly modified. In addition
@@ -95,6 +87,12 @@ The :mod:`urllib.request` module defines the following functions:
    parameter to ``urllib.urlopen``, can be obtained by using
    :class:`ProxyHandler` objects.
 
+   .. audit-event:: urllib.Request fullurl,data,headers,method urllib.request.urlopen
+
+      The default opener raises an :ref:`auditing event <auditing>`
+      ``urllib.Request`` with arguments ``fullurl``, ``data``, ``headers``,
+      ``method`` taken from the request object.
+
    .. versionchanged:: 3.2
       *cafile* and *capath* were added.
 
@@ -117,6 +115,7 @@ The :mod:`urllib.request` module defines the following functions:
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
+
 
 .. function:: install_opener(opener)
 
@@ -192,8 +191,8 @@ The following classes are provided:
    *data* must be an object specifying additional data to send to the
    server, or ``None`` if no such data is needed.  Currently HTTP
    requests are the only ones that use *data*.  The supported object
-   types include bytes, file-like objects, and iterables.  If no
-   ``Content-Length`` nor ``Transfer-Encoding`` header field
+   types include bytes, file-like objects, and iterables of bytes-like objects.
+   If no ``Content-Length`` nor ``Transfer-Encoding`` header field
    has been provided, :class:`HTTPHandler` will set these headers according
    to the type of *data*.  ``Content-Length`` will be used to send
    bytes objects, while ``Transfer-Encoding: chunked`` as specified in
@@ -220,7 +219,7 @@ The following classes are provided:
    is not None, ``Content-Type: application/x-www-form-urlencoded`` will
    be added as a default.
 
-   The final two arguments are only of interest for correct handling
+   The next two arguments are only of interest for correct handling
    of third-party HTTP cookies:
 
    *origin_req_host* should be the request-host of the origin
@@ -232,7 +231,7 @@ The following classes are provided:
    containing the image.
 
    *unverifiable* should indicate whether the request is unverifiable,
-   as defined by RFC 2965.  It defaults to ``False``.  An unverifiable
+   as defined by :rfc:`2965`.  It defaults to ``False``.  An unverifiable
    request is one whose URL the user did not have the option to
    approve.  For example, if the request is for an image in an HTML
    document, and the user had no option to approve the automatic
@@ -297,7 +296,7 @@ The following classes are provided:
    Cause requests to go through a proxy. If *proxies* is given, it must be a
    dictionary mapping protocol names to URLs of proxies. The default is to read
    the list of proxies from the environment variables
-   :envvar:`<protocol>_proxy`.  If no proxy environment variables are set, then
+   ``<protocol>_proxy``.  If no proxy environment variables are set, then
    in a Windows environment proxy settings are obtained from the registry's
    Internet Settings section, and in a Mac OS X environment proxy information
    is retrieved from the OS X System Configuration Framework.
@@ -504,7 +503,7 @@ request.
 .. attribute:: Request.unverifiable
 
    boolean, indicates whether the request is unverifiable as defined
-   by RFC 2965.
+   by :rfc:`2965`.
 
 .. attribute:: Request.method
 
@@ -608,23 +607,39 @@ OpenerDirector Objects
 
    *handler* should be an instance of :class:`BaseHandler`.  The following methods
    are searched, and added to the possible chains (note that HTTP errors are a
-   special case).
+   special case).  Note that, in the following, *protocol* should be replaced
+   with the actual protocol to handle, for example :meth:`http_response` would
+   be the HTTP protocol response handler.  Also *type* should be replaced with
+   the actual HTTP code, for example :meth:`http_error_404` would handle HTTP
+   404 errors.
 
-   * :meth:`protocol_open` --- signal that the handler knows how to open *protocol*
+   * :meth:`<protocol>_open` --- signal that the handler knows how to open *protocol*
      URLs.
 
-   * :meth:`http_error_type` --- signal that the handler knows how to handle HTTP
+     See |protocol_open|_ for more information.
+
+   * :meth:`http_error_\<type\>` --- signal that the handler knows how to handle HTTP
      errors with HTTP error code *type*.
 
-   * :meth:`protocol_error` --- signal that the handler knows how to handle errors
+     See |http_error_nnn|_ for more information.
+
+   * :meth:`<protocol>_error` --- signal that the handler knows how to handle errors
      from (non-\ ``http``) *protocol*.
 
-   * :meth:`protocol_request` --- signal that the handler knows how to pre-process
+   * :meth:`<protocol>_request` --- signal that the handler knows how to pre-process
      *protocol* requests.
 
-   * :meth:`protocol_response` --- signal that the handler knows how to
+     See |protocol_request|_ for more information.
+
+   * :meth:`<protocol>_response` --- signal that the handler knows how to
      post-process *protocol* responses.
 
+     See |protocol_response|_ for more information.
+
+.. |protocol_open| replace:: :meth:`BaseHandler.<protocol>_open`
+.. |http_error_nnn| replace:: :meth:`BaseHandler.http_error_\<nnn\>`
+.. |protocol_request| replace:: :meth:`BaseHandler.<protocol>_request`
+.. |protocol_response| replace:: :meth:`BaseHandler.<protocol>_response`
 
 .. method:: OpenerDirector.open(url, data=None[, timeout])
 
@@ -643,7 +658,7 @@ OpenerDirector Objects
    Handle an error of the given protocol.  This will call the registered error
    handlers for the given protocol with the given arguments (which are protocol
    specific).  The HTTP protocol is a special case which uses the HTTP response
-   code to determine the specific error handler; refer to the :meth:`http_error_\*`
+   code to determine the specific error handler; refer to the :meth:`http_error_\<type\>`
    methods of the handler classes.
 
    Return values and exceptions raised are the same as those of :func:`urlopen`.
@@ -653,17 +668,17 @@ OpenerDirector objects open URLs in three stages:
 The order in which these methods are called within each stage is determined by
 sorting the handler instances.
 
-#. Every handler with a method named like :meth:`protocol_request` has that
+#. Every handler with a method named like :meth:`<protocol>_request` has that
    method called to pre-process the request.
 
-#. Handlers with a method named like :meth:`protocol_open` are called to handle
+#. Handlers with a method named like :meth:`<protocol>_open` are called to handle
    the request. This stage ends when a handler either returns a non-\ :const:`None`
    value (ie. a response), or raises an exception (usually
    :exc:`~urllib.error.URLError`).  Exceptions are allowed to propagate.
 
    In fact, the above algorithm is first tried for methods named
    :meth:`default_open`.  If all such methods return :const:`None`, the algorithm
-   is repeated for methods named like :meth:`protocol_open`.  If all such methods
+   is repeated for methods named like :meth:`<protocol>_open`.  If all such methods
    return :const:`None`, the algorithm is repeated for methods named
    :meth:`unknown_open`.
 
@@ -671,7 +686,7 @@ sorting the handler instances.
    :class:`OpenerDirector` instance's :meth:`~OpenerDirector.open` and
    :meth:`~OpenerDirector.error` methods.
 
-#. Every handler with a method named like :meth:`protocol_response` has that
+#. Every handler with a method named like :meth:`<protocol>_response` has that
    method called to post-process the response.
 
 
@@ -700,7 +715,7 @@ The following attribute and methods should only be used by classes derived from
 .. note::
 
    The convention has been adopted that subclasses defining
-   :meth:`protocol_request` or :meth:`protocol_response` methods are named
+   :meth:`<protocol>_request` or :meth:`<protocol>_response` methods are named
    :class:`\*Processor`; all others are named :class:`\*Handler`.
 
 
@@ -725,7 +740,8 @@ The following attribute and methods should only be used by classes derived from
    This method will be called before any protocol-specific open method.
 
 
-.. method:: BaseHandler.protocol_open(req)
+.. _protocol_open:
+.. method:: BaseHandler.<protocol>_open(req)
    :noindex:
 
    This method is *not* defined in :class:`BaseHandler`, but subclasses should
@@ -762,7 +778,8 @@ The following attribute and methods should only be used by classes derived from
    :func:`urlopen`.
 
 
-.. method:: BaseHandler.http_error_nnn(req, fp, code, msg, hdrs)
+.. _http_error_nnn:
+.. method:: BaseHandler.http_error_<nnn>(req, fp, code, msg, hdrs)
 
    *nnn* should be a three-digit HTTP error code.  This method is also not defined
    in :class:`BaseHandler`, but will be called, if it exists, on an instance of a
@@ -774,7 +791,8 @@ The following attribute and methods should only be used by classes derived from
    :meth:`http_error_default`.
 
 
-.. method:: BaseHandler.protocol_request(req)
+.. _protocol_request:
+.. method:: BaseHandler.<protocol>_request(req)
    :noindex:
 
    This method is *not* defined in :class:`BaseHandler`, but subclasses should
@@ -785,7 +803,8 @@ The following attribute and methods should only be used by classes derived from
    :class:`Request` object.
 
 
-.. method:: BaseHandler.protocol_response(req, response)
+.. _protocol_response:
+.. method:: BaseHandler.<protocol>_response(req, response)
    :noindex:
 
    This method is *not* defined in :class:`BaseHandler`, but subclasses should
@@ -873,10 +892,10 @@ ProxyHandler Objects
 --------------------
 
 
-.. method:: ProxyHandler.protocol_open(request)
+.. method:: ProxyHandler.<protocol>_open(request)
    :noindex:
 
-   The :class:`ProxyHandler` will have a method :meth:`protocol_open` for every
+   The :class:`ProxyHandler` will have a method :meth:`<protocol>_open` for every
    *protocol* which has a proxy in the *proxies* dictionary given in the
    constructor.  The method will modify requests to go through the proxy, by
    calling ``request.set_proxy()``, and call the next handler in the chain to
@@ -1125,19 +1144,19 @@ UnknownHandler Objects
 HTTPErrorProcessor Objects
 --------------------------
 
-.. method:: HTTPErrorProcessor.http_response()
+.. method:: HTTPErrorProcessor.http_response(request, response)
 
    Process HTTP error responses.
 
    For 200 error codes, the response object is returned immediately.
 
    For non-200 error codes, this simply passes the job on to the
-   :meth:`protocol_error_code` handler methods, via :meth:`OpenerDirector.error`.
+   :meth:`http_error_\<type\>` handler methods, via :meth:`OpenerDirector.error`.
    Eventually, :class:`HTTPDefaultErrorHandler` will raise an
    :exc:`~urllib.error.HTTPError` if no other handler handles the error.
 
 
-.. method:: HTTPErrorProcessor.https_response()
+.. method:: HTTPErrorProcessor.https_response(request, response)
 
    Process HTTPS error responses.
 
@@ -1339,9 +1358,9 @@ some point in the future.
 
    The second argument, if present, specifies the file location to copy to (if
    absent, the location will be a tempfile with a generated name). The third
-   argument, if present, is a hook function that will be called once on
+   argument, if present, is a callable that will be called once on
    establishment of the network connection and once after each block read
-   thereafter.  The hook will be passed three arguments; a count of blocks
+   thereafter.  The callable will be passed three arguments; a count of blocks
    transferred so far, a block size in bytes, and the total size of the file.  The
    third argument may be ``-1`` on older FTP servers which do not return a file
    size in response to a retrieval request.
@@ -1415,6 +1434,7 @@ some point in the future.
       The *data* argument has the same meaning as the *data* argument of
       :func:`urlopen`.
 
+      This method always quotes *fullurl* using :func:`~urllib.parse.quote`.
 
    .. method:: open_unknown(fullurl, data=None)
 
@@ -1557,9 +1577,42 @@ some point in the future.
    :synopsis: Response classes used by urllib.
 
 The :mod:`urllib.response` module defines functions and classes which define a
-minimal file like interface, including ``read()`` and ``readline()``. The
-typical response object is an addinfourl instance, which defines an ``info()``
-method and that returns headers and a ``geturl()`` method that returns the url.
-Functions defined by this module are used internally by the
-:mod:`urllib.request` module.
+minimal file-like interface, including ``read()`` and ``readline()``.
+Functions defined by this module are used internally by the :mod:`urllib.request` module.
+The typical response object is a :class:`urllib.response.addinfourl` instance:
 
+.. class:: addinfourl
+
+   .. attribute:: url
+
+      URL of the resource retrieved, commonly used to determine if a redirect was followed.
+
+   .. attribute:: headers
+
+      Returns the headers of the response in the form of an :class:`~email.message.EmailMessage` instance.
+
+   .. attribute:: status
+
+      .. versionadded:: 3.9
+
+      Status code returned by server.
+
+   .. method:: geturl()
+
+      .. deprecated:: 3.9
+         Deprecated in favor of :attr:`~addinfourl.url`.
+
+   .. method:: info()
+
+      .. deprecated:: 3.9
+         Deprecated in favor of :attr:`~addinfourl.headers`.
+
+   .. attribute:: code
+
+      .. deprecated:: 3.9
+         Deprecated in favor of :attr:`~addinfourl.status`.
+
+   .. method:: getstatus()
+
+      .. deprecated:: 3.9
+         Deprecated in favor of :attr:`~addinfourl.status`.

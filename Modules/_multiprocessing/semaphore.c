@@ -141,7 +141,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
     default:
         PyErr_Format(PyExc_RuntimeError, "WaitForSingleObject() or "
                      "WaitForMultipleObjects() gave unrecognized "
-                     "value %d", res);
+                     "value %u", res);
         return NULL;
     }
 }
@@ -268,11 +268,8 @@ static PyObject *
 semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
 {
     int blocking = 1, res, err = 0;
-    double timeout;
     PyObject *timeout_obj = Py_None;
     struct timespec deadline = {0};
-    struct timeval now;
-    long sec, nsec;
 
     static char *kwlist[] = {"block", "timeout", NULL};
 
@@ -285,38 +282,52 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
         Py_RETURN_TRUE;
     }
 
-    if (timeout_obj != Py_None) {
-        timeout = PyFloat_AsDouble(timeout_obj);
-        if (PyErr_Occurred())
+    int use_deadline = (timeout_obj != Py_None);
+    if (use_deadline) {
+        double timeout = PyFloat_AsDouble(timeout_obj);
+        if (PyErr_Occurred()) {
             return NULL;
-        if (timeout < 0.0)
+        }
+        if (timeout < 0.0) {
             timeout = 0.0;
+        }
 
+        struct timeval now;
         if (gettimeofday(&now, NULL) < 0) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
-        sec = (long) timeout;
-        nsec = (long) (1e9 * (timeout - sec) + 0.5);
+        long sec = (long) timeout;
+        long nsec = (long) (1e9 * (timeout - sec) + 0.5);
         deadline.tv_sec = now.tv_sec + sec;
         deadline.tv_nsec = now.tv_usec * 1000 + nsec;
         deadline.tv_sec += (deadline.tv_nsec / 1000000000);
         deadline.tv_nsec %= 1000000000;
     }
 
+    /* Check whether we can acquire without releasing the GIL and blocking */
     do {
-        Py_BEGIN_ALLOW_THREADS
-        if (blocking && timeout_obj == Py_None)
-            res = sem_wait(self->handle);
-        else if (!blocking)
-            res = sem_trywait(self->handle);
-        else
-            res = sem_timedwait(self->handle, &deadline);
-        Py_END_ALLOW_THREADS
+        res = sem_trywait(self->handle);
         err = errno;
-        if (res == MP_EXCEPTION_HAS_BEEN_SET)
-            break;
     } while (res < 0 && errno == EINTR && !PyErr_CheckSignals());
+    errno = err;
+
+    if (res < 0 && errno == EAGAIN && blocking) {
+        /* Couldn't acquire immediately, need to block */
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            if (!use_deadline) {
+                res = sem_wait(self->handle);
+            }
+            else {
+                res = sem_timedwait(self->handle, &deadline);
+            }
+            Py_END_ALLOW_THREADS
+            err = errno;
+            if (res == MP_EXCEPTION_HAS_BEEN_SET)
+                break;
+        } while (res < 0 && errno == EINTR && !PyErr_CheckSignals());
+    }
 
     if (res < 0) {
         errno = err;
@@ -439,8 +450,9 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (!unlink) {
         name_copy = PyMem_Malloc(strlen(name) + 1);
-        if (name_copy == NULL)
-            goto failure;
+        if (name_copy == NULL) {
+            return PyErr_NoMemory();
+        }
         strcpy(name_copy, name);
     }
 
@@ -463,7 +475,9 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (handle != SEM_FAILED)
         SEM_CLOSE(handle);
     PyMem_Free(name_copy);
-    _PyMp_SetError(NULL, MP_STANDARD_ERROR);
+    if (!PyErr_Occurred()) {
+        _PyMp_SetError(NULL, MP_STANDARD_ERROR);
+    }
     return NULL;
 }
 
@@ -508,20 +522,20 @@ semlock_dealloc(SemLockObject* self)
 }
 
 static PyObject *
-semlock_count(SemLockObject *self)
+semlock_count(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong((long)self->count);
 }
 
 static PyObject *
-semlock_ismine(SemLockObject *self)
+semlock_ismine(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
     /* only makes sense for a lock */
     return PyBool_FromLong(ISMINE(self));
 }
 
 static PyObject *
-semlock_getvalue(SemLockObject *self)
+semlock_getvalue(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
 #ifdef HAVE_BROKEN_SEM_GETVALUE
     PyErr_SetNone(PyExc_NotImplementedError);
@@ -539,7 +553,7 @@ semlock_getvalue(SemLockObject *self)
 }
 
 static PyObject *
-semlock_iszero(SemLockObject *self)
+semlock_iszero(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
 #ifdef HAVE_BROKEN_SEM_GETVALUE
     if (sem_trywait(self->handle) < 0) {
@@ -560,7 +574,7 @@ semlock_iszero(SemLockObject *self)
 }
 
 static PyObject *
-semlock_afterfork(SemLockObject *self)
+semlock_afterfork(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
     self->count = 0;
     Py_RETURN_NONE;
@@ -571,11 +585,11 @@ semlock_afterfork(SemLockObject *self)
  */
 
 static PyMethodDef semlock_methods[] = {
-    {"acquire", (PyCFunction)semlock_acquire, METH_VARARGS | METH_KEYWORDS,
+    {"acquire", (PyCFunction)(void(*)(void))semlock_acquire, METH_VARARGS | METH_KEYWORDS,
      "acquire the semaphore/lock"},
     {"release", (PyCFunction)semlock_release, METH_NOARGS,
      "release the semaphore/lock"},
-    {"__enter__", (PyCFunction)semlock_acquire, METH_VARARGS | METH_KEYWORDS,
+    {"__enter__", (PyCFunction)(void(*)(void))semlock_acquire, METH_VARARGS | METH_KEYWORDS,
      "enter the semaphore/lock"},
     {"__exit__", (PyCFunction)semlock_release, METH_VARARGS,
      "exit the semaphore/lock"},
@@ -620,10 +634,10 @@ PyTypeObject _PyMp_SemLockType = {
     /* tp_basicsize      */ sizeof(SemLockObject),
     /* tp_itemsize       */ 0,
     /* tp_dealloc        */ (destructor)semlock_dealloc,
-    /* tp_print          */ 0,
+    /* tp_vectorcall_offset */ 0,
     /* tp_getattr        */ 0,
     /* tp_setattr        */ 0,
-    /* tp_reserved       */ 0,
+    /* tp_as_async       */ 0,
     /* tp_repr           */ 0,
     /* tp_as_number      */ 0,
     /* tp_as_sequence    */ 0,

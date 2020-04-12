@@ -8,7 +8,9 @@
 
 import array
 from binascii import unhexlify
+import functools
 import hashlib
+import importlib
 import itertools
 import os
 import sys
@@ -17,6 +19,7 @@ import unittest
 import warnings
 from test import support
 from test.support import _4G, bigmemtest, import_fresh_module
+from test.support import requires_hashdigest
 from http.client import HTTPException
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
@@ -24,6 +27,11 @@ COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
 c_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
 py_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
+
+try:
+    from _hashlib import HASH
+except ImportError:
+    HASH = None
 
 try:
     import _blake2
@@ -83,11 +91,11 @@ class HashLibTestCase(unittest.TestCase):
     def _conditional_import_module(self, module_name):
         """Import a module and return a reference to it or None on failure."""
         try:
-            exec('import '+module_name)
-        except ImportError as error:
+            return importlib.import_module(module_name)
+        except ModuleNotFoundError as error:
             if self._warn_on_extension_import:
                 warnings.warn('Did a C extension fail to compile? %s' % error)
-        return locals().get(module_name)
+        return None
 
     def __init__(self, *args, **kwargs):
         algorithms = set()
@@ -113,6 +121,7 @@ class HashLibTestCase(unittest.TestCase):
             constructors.add(_test_algorithm_via_hashlib_new)
 
         _hashlib = self._conditional_import_module('_hashlib')
+        self._hashlib = _hashlib
         if _hashlib:
             # These two algorithms should always be present when this module
             # is compiled.  If not, something was compiled wrong.
@@ -121,7 +130,13 @@ class HashLibTestCase(unittest.TestCase):
             for algorithm, constructors in self.constructors_to_test.items():
                 constructor = getattr(_hashlib, 'openssl_'+algorithm, None)
                 if constructor:
-                    constructors.add(constructor)
+                    try:
+                        constructor()
+                    except ValueError:
+                        # default constructor blocked by crypto policy
+                        pass
+                    else:
+                        constructors.add(constructor)
 
         def add_builtin_constructor(name):
             constructor = getattr(hashlib, "__get_builtin_constructor")(name)
@@ -179,9 +194,24 @@ class HashLibTestCase(unittest.TestCase):
         self.assertTrue(set(hashlib.algorithms_guaranteed).
                             issubset(hashlib.algorithms_available))
 
+    def test_usedforsecurity(self):
+        for cons in self.hash_constructors:
+            cons(usedforsecurity=True)
+            cons(usedforsecurity=False)
+            cons(b'', usedforsecurity=True)
+            cons(b'', usedforsecurity=False)
+        hashlib.new("sha256", usedforsecurity=True)
+        hashlib.new("sha256", usedforsecurity=False)
+        if self._hashlib is not None:
+            self._hashlib.new("md5", usedforsecurity=False)
+            self._hashlib.openssl_md5(usedforsecurity=False)
+
     def test_unknown_hash(self):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
         self.assertRaises(TypeError, hashlib.new, 1)
+
+    def test_new_upper_to_lower(self):
+        self.assertEqual(hashlib.new("SHA256").name, "sha256")
 
     def test_get_builtin_constructor(self):
         get_builtin_constructor = getattr(hashlib,
@@ -192,7 +222,7 @@ class HashLibTestCase(unittest.TestCase):
         try:
             import _md5
         except ImportError:
-            pass
+            self.skipTest("_md5 module not available")
         # This forces an ImportError for "import _md5" statements
         sys.modules['_md5'] = None
         # clear the cache
@@ -218,6 +248,19 @@ class HashLibTestCase(unittest.TestCase):
             else:
                 self.assertIsInstance(h.digest(), bytes)
                 self.assertEqual(hexstr(h.digest()), h.hexdigest())
+
+    def test_digest_length_overflow(self):
+        # See issue #34922
+        large_sizes = (2**29, 2**32-10, 2**32+10, 2**61, 2**64-10, 2**64+10)
+        for cons in self.hash_constructors:
+            h = cons()
+            if h.name not in self.shakes:
+                continue
+            for digest in h.digest, h.hexdigest:
+                self.assertRaises(ValueError, digest, -10)
+                for length in large_sizes:
+                    with self.assertRaises((ValueError, OverflowError)):
+                        digest(length)
 
     def test_name_attribute(self):
         for cons in self.hash_constructors:
@@ -350,6 +393,9 @@ class HashLibTestCase(unittest.TestCase):
         constructors = self.constructors_to_test[name]
         for hash_object_constructor in constructors:
             m = hash_object_constructor()
+            if HASH is not None and isinstance(m, HASH):
+                # _hashopenssl's variant does not have extra SHA3 attributes
+                continue
             self.assertEqual(capacity + rate, 1600)
             self.assertEqual(m._capacity_bits, capacity)
             self.assertEqual(m._rate_bits, rate)
@@ -549,16 +595,20 @@ class HashLibTestCase(unittest.TestCase):
 
         constructor(leaf_size=0)
         constructor(leaf_size=(1<<32)-1)
-        self.assertRaises(OverflowError, constructor, leaf_size=-1)
+        self.assertRaises(ValueError, constructor, leaf_size=-1)
         self.assertRaises(OverflowError, constructor, leaf_size=1<<32)
 
         constructor(node_offset=0)
         constructor(node_offset=max_offset)
-        self.assertRaises(OverflowError, constructor, node_offset=-1)
+        self.assertRaises(ValueError, constructor, node_offset=-1)
         self.assertRaises(OverflowError, constructor, node_offset=max_offset+1)
 
+        self.assertRaises(TypeError, constructor, data=b'')
+        self.assertRaises(TypeError, constructor, string=b'')
+        self.assertRaises(TypeError, constructor, '')
+
         constructor(
-            string=b'',
+            b'',
             key=b'',
             salt=b'',
             person=b'',
@@ -616,6 +666,24 @@ class HashLibTestCase(unittest.TestCase):
           "7d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923")
 
     @requires_blake2
+    def test_case_blake2b_all_parameters(self):
+        # This checks that all the parameters work in general, and also that
+        # parameter byte order doesn't get confused on big endian platforms.
+        self.check('blake2b', b"foo",
+          "920568b0c5873b2f0ab67bedb6cf1b2b",
+          digest_size=16,
+          key=b"bar",
+          salt=b"baz",
+          person=b"bing",
+          fanout=2,
+          depth=3,
+          leaf_size=4,
+          node_offset=5,
+          node_depth=6,
+          inner_size=7,
+          last_node=True)
+
+    @requires_blake2
     def test_blake2b_vectors(self):
         for msg, key, md in read_vectors('blake2b'):
             key = bytes.fromhex(key)
@@ -639,6 +707,24 @@ class HashLibTestCase(unittest.TestCase):
     def test_case_blake2s_1(self):
         self.check('blake2s', b"abc",
           "508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982")
+
+    @requires_blake2
+    def test_case_blake2s_all_parameters(self):
+        # This checks that all the parameters work in general, and also that
+        # parameter byte order doesn't get confused on big endian platforms.
+        self.check('blake2s', b"foo",
+          "bf2a8f7fe3c555012a6f8046e646bc75",
+          digest_size=16,
+          key=b"bar",
+          salt=b"baz",
+          person=b"bing",
+          fanout=2,
+          depth=3,
+          leaf_size=4,
+          node_offset=5,
+          node_depth=6,
+          inner_size=7,
+          last_node=True)
 
     @requires_blake2
     def test_blake2s_vectors(self):
@@ -908,6 +994,10 @@ class KDFTests(unittest.TestCase):
             with self.assertRaises((ValueError, OverflowError, TypeError)):
                 hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1,
                                dklen=dklen)
+
+    def test_normalized_name(self):
+        self.assertNotIn("blake2b512", hashlib.algorithms_available)
+        self.assertNotIn("sha3-512", hashlib.algorithms_available)
 
 
 if __name__ == "__main__":

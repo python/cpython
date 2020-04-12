@@ -10,6 +10,10 @@ typedef struct {
     PyObject            *x_attr;        /* Attributes dictionary */
 } ExampleObject;
 
+typedef struct {
+    PyObject *integer;
+} testmultiphase_state;
+
 /* Example methods */
 
 static int
@@ -19,11 +23,10 @@ Example_traverse(ExampleObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
+static void
 Example_finalize(ExampleObject *self)
 {
     Py_CLEAR(self->x_attr);
-    return 0;
 }
 
 static PyObject *
@@ -50,10 +53,13 @@ static PyObject *
 Example_getattro(ExampleObject *self, PyObject *name)
 {
     if (self->x_attr != NULL) {
-        PyObject *v = PyDict_GetItem(self->x_attr, name);
+        PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
             Py_INCREF(v);
             return v;
+        }
+        else if (PyErr_Occurred()) {
+            return NULL;
         }
     }
     return PyObject_GenericGetAttr((PyObject *)self, name);
@@ -69,7 +75,7 @@ Example_setattr(ExampleObject *self, const char *name, PyObject *v)
     }
     if (v == NULL) {
         int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0)
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Example attribute");
         return rv;
@@ -92,7 +98,7 @@ static PyType_Spec Example_Type_spec = {
     "_testimportexec.Example",
     sizeof(ExampleObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     Example_Type_slots
 };
 
@@ -218,6 +224,7 @@ static int execfunc(PyObject *m)
 }
 
 /* Helper for module definitions; there'll be a lot of them */
+
 #define TEST_MODULE_DEF(name, slots, methods) { \
     PyModuleDef_HEAD_INIT,                      /* m_base */ \
     name,                                       /* m_name */ \
@@ -230,7 +237,7 @@ static int execfunc(PyObject *m)
     NULL,                                       /* m_free */ \
 }
 
-PyModuleDef_Slot main_slots[] = {
+static PyModuleDef_Slot main_slots[] = {
     {Py_mod_exec, execfunc},
     {0, NULL},
 };
@@ -480,7 +487,7 @@ createfunc_null(PyObject *spec, PyModuleDef *def)
     return NULL;
 }
 
-PyModuleDef_Slot slots_create_null[] = {
+static PyModuleDef_Slot slots_create_null[] = {
     {Py_mod_create, createfunc_null},
     {0, NULL},
 };
@@ -622,3 +629,4 @@ PyInit_imp_dummy(PyObject *spec)
 {
     return PyModuleDef_Init(&imp_dummy_def);
 }
+

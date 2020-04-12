@@ -1,1 +1,0 @@
-On Windows, faulthandler.enable() now ignores MSC and COM exceptions.

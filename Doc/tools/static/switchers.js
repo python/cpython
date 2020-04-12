@@ -10,7 +10,9 @@
     '(?:release/\\d.\\d[\\x\\d\\.]*)'];
 
   var all_versions = {
-    '3.7': 'dev (3.7)',
+    '3.9': 'dev (3.9)',
+    '3.8': '3.8',
+    '3.7': '3.7',
     '3.6': '3.6',
     '3.5': '3.5',
     '2.7': '2.7',
@@ -20,6 +22,9 @@
       'en': 'English',
       'fr': 'French',
       'ja': 'Japanese',
+      'ko': 'Korean',
+      'pt-br': 'Brazilian Portuguese',
+      'zh-cn': 'Simplified Chinese',
   };
 
   function build_version_select(current_version, current_release) {
@@ -47,6 +52,12 @@
       else
         buf.push('<option value="' + language + '">' + title + '</option>');
     });
+    if (!(current_language in all_languages)) {
+        // In case we're browsing a language that is not yet in all_languages.
+        buf.push('<option value="' + current_language + '" selected="selected">' +
+                 current_language + '</option>');
+        all_languages[current_language] = current_language;
+    }
     buf.push('</select>');
     return buf.join('');
   }

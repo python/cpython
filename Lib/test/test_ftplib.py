@@ -21,7 +21,7 @@ from unittest import TestCase, skipUnless
 from test import support
 from test.support import HOST, HOSTv6
 
-TIMEOUT = 3
+TIMEOUT = support.LOOPBACK_TIMEOUT
 # the dummy data returned by server over the data channel when
 # RETR, LIST, NLST, MLSD commands are issued
 RETR_DATA = 'abcde12345\r\n' * 1000
@@ -132,9 +132,7 @@ class DummyFTPHandler(asynchat.async_chat):
         self.push('200 active data connection established')
 
     def cmd_pasv(self, arg):
-        with socket.socket() as sock:
-            sock.bind((self.socket.getsockname()[0], 0))
-            sock.listen()
+        with socket.create_server((self.socket.getsockname()[0], 0)) as sock:
             sock.settimeout(TIMEOUT)
             ip, port = sock.getsockname()[:2]
             ip = ip.replace('.', ','); p1 = port / 256; p2 = port % 256
@@ -150,9 +148,8 @@ class DummyFTPHandler(asynchat.async_chat):
         self.push('200 active data connection established')
 
     def cmd_epsv(self, arg):
-        with socket.socket(socket.AF_INET6) as sock:
-            sock.bind((self.socket.getsockname()[0], 0))
-            sock.listen()
+        with socket.create_server((self.socket.getsockname()[0], 0),
+                                  family=socket.AF_INET6) as sock:
             sock.settimeout(TIMEOUT)
             port = sock.getsockname()[1]
             self.push('229 entering extended passive mode (|||%d|)' %port)
@@ -257,6 +254,7 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
     def __init__(self, address, af=socket.AF_INET):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
+        self.daemon = True
         self.create_socket(af, socket.SOCK_STREAM)
         self.bind(address)
         self.listen(5)
@@ -330,6 +328,9 @@ if ssl is not None:
                     return
                 elif err.args[0] == ssl.SSL_ERROR_EOF:
                     return self.handle_close()
+                # TODO: SSLError does not expose alert information
+                elif "SSLV3_ALERT_BAD_CERTIFICATE" in err.args[1]:
+                    return self.handle_close()
                 raise
             except OSError as err:
                 if err.args[0] == errno.ECONNABORTED:
@@ -345,7 +346,7 @@ if ssl is not None:
                 if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
                                    ssl.SSL_ERROR_WANT_WRITE):
                     return
-            except OSError as err:
+            except OSError:
                 # Any "socket error" corresponds to a SSL_ERROR_SYSCALL return
                 # from OpenSSL's SSL_shutdown(), corresponding to a
                 # closed socket condition. See also:
@@ -400,7 +401,7 @@ if ssl is not None:
 
         def close(self):
             if (isinstance(self.socket, ssl.SSLSocket) and
-                self.socket._sslobj is not None):
+                    self.socket._sslobj is not None):
                 self._do_ssl_shutdown()
             else:
                 super(SSLConnection, self).close()
@@ -876,18 +877,23 @@ class TestTLS_FTPClass(TestCase):
         # clear text
         with self.client.transfercmd('list') as sock:
             self.assertNotIsInstance(sock, ssl.SSLSocket)
+            self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
         # secured, after PROT P
         self.client.prot_p()
         with self.client.transfercmd('list') as sock:
             self.assertIsInstance(sock, ssl.SSLSocket)
+            # consume from SSL socket to finalize handshake and avoid
+            # "SSLError [SSL] shutdown while in init"
+            self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
         # PROT C is issued, the connection must be in cleartext again
         self.client.prot_c()
         with self.client.transfercmd('list') as sock:
             self.assertNotIsInstance(sock, ssl.SSLSocket)
+            self.assertEqual(sock.recv(1024), LIST_DATA.encode('ascii'))
         self.assertEqual(self.client.voidresp(), "226 transfer complete")
 
     def test_login(self):
@@ -933,6 +939,7 @@ class TestTLS_FTPClass(TestCase):
         self.client.ccc()
         self.assertRaises(ValueError, self.client.sock.unwrap)
 
+    @skipUnless(False, "FIXME: bpo-32706")
     def test_check_hostname(self):
         self.client.quit()
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -972,6 +979,7 @@ class TestTimeouts(TestCase):
         self.sock.settimeout(20)
         self.port = support.bind_port(self.sock)
         self.server_thread = threading.Thread(target=self.server)
+        self.server_thread.daemon = True
         self.server_thread.start()
         # Wait for the server to be ready.
         self.evt.wait()
@@ -1036,6 +1044,10 @@ class TestTimeouts(TestCase):
         self.assertEqual(ftp.sock.gettimeout(), 30)
         self.evt.wait()
         ftp.close()
+
+        # bpo-39259
+        with self.assertRaises(ValueError):
+            ftplib.FTP(HOST, timeout=0)
 
     def testTimeoutConnect(self):
         ftp = ftplib.FTP()

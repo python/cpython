@@ -38,15 +38,21 @@ General notes on the underlying Mersenne Twister core generator:
 """
 
 from warnings import warn as _warn
-from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethodType
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from os import urandom as _urandom
 from _collections_abc import Set as _Set, Sequence as _Sequence
-from hashlib import sha512 as _sha512
-import itertools as _itertools
-import bisect as _bisect
+from itertools import accumulate as _accumulate, repeat as _repeat
+from bisect import bisect as _bisect
 import os as _os
+
+try:
+    # hashlib is pretty heavy to load, try lean internal module first
+    from _sha512 import sha512 as _sha512
+except ImportError:
+    # fallback to official implementation
+    from hashlib import sha512 as _sha512
+
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -94,8 +100,31 @@ class Random(_random.Random):
         self.seed(x)
         self.gauss_next = None
 
+    def __init_subclass__(cls, /, **kwargs):
+        """Control how subclasses generate random integers.
+
+        The algorithm a subclass can use depends on the random() and/or
+        getrandbits() implementation available to it and determines
+        whether it can generate random integers from arbitrarily large
+        ranges.
+        """
+
+        for c in cls.__mro__:
+            if '_randbelow' in c.__dict__:
+                # just inherit it
+                break
+            if 'getrandbits' in c.__dict__:
+                cls._randbelow = cls._randbelow_with_getrandbits
+                break
+            if 'random' in c.__dict__:
+                cls._randbelow = cls._randbelow_without_getrandbits
+                break
+
     def seed(self, a=None, version=2):
-        """Initialize internal state from hashable object.
+        """Initialize internal state from a seed.
+
+        The only supported seed types are None, int, float,
+        str, bytes, and bytearray.
 
         None or no argument seeds from current time or from an operating
         system specific randomness source if available.
@@ -117,11 +146,19 @@ class Random(_random.Random):
             x ^= len(a)
             a = -2 if x == -1 else x
 
-        if version == 2 and isinstance(a, (str, bytes, bytearray)):
+        elif version == 2 and isinstance(a, (str, bytes, bytearray)):
             if isinstance(a, str):
                 a = a.encode()
             a += _sha512(a).digest()
             a = int.from_bytes(a, 'big')
+
+        elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
+            _warn('Seeding based on hashing is deprecated\n'
+                  'since Python 3.9 and will be removed in a subsequent '
+                  'version. The only \n'
+                  'supported seed types are: None, '
+                  'int, float, str, bytes, and bytearray.',
+                  DeprecationWarning, 2)
 
         super().seed(a)
         self.gauss_next = None
@@ -197,7 +234,7 @@ class Random(_random.Random):
         if step == 1 and width > 0:
             return istart + self._randbelow(width)
         if step == 1:
-            raise ValueError("empty range for randrange() (%d,%d, %d)" % (istart, istop, width))
+            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
 
         # Non-unit step argument supplied.
         istep = _int(step)
@@ -221,33 +258,38 @@ class Random(_random.Random):
 
         return self.randrange(a, b+1)
 
-    def _randbelow(self, n, int=int, maxsize=1<<BPF, type=type,
-                   Method=_MethodType, BuiltinMethod=_BuiltinMethodType):
+    def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Raises ValueError if n==0."
 
-        random = self.random
         getrandbits = self.getrandbits
-        # Only call self.getrandbits if the original random() builtin method
-        # has not been overridden or if a new getrandbits() was supplied.
-        if type(random) is BuiltinMethod or type(getrandbits) is Method:
-            k = n.bit_length()  # don't use (n-1) here because n can be 1
-            r = getrandbits(k)          # 0 <= r < 2**k
-            while r >= n:
-                r = getrandbits(k)
-            return r
-        # There's an overridden random() method but no new getrandbits() method,
-        # so we can only use random() from here.
+        k = n.bit_length()  # don't use (n-1) here because n can be 1
+        r = getrandbits(k)          # 0 <= r < 2**k
+        while r >= n:
+            r = getrandbits(k)
+        return r
+
+    def _randbelow_without_getrandbits(self, n, int=int, maxsize=1<<BPF):
+        """Return a random int in the range [0,n).  Raises ValueError if n==0.
+
+        The implementation does not use getrandbits, but only random.
+        """
+
+        random = self.random
         if n >= maxsize:
             _warn("Underlying random() generator does not supply \n"
                 "enough bits to choose from a population range this large.\n"
                 "To remove the range limitation, add a getrandbits() method.")
             return int(random() * n)
+        if n == 0:
+            raise ValueError("Boundary cannot be zero")
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
         r = random()
         while r >= limit:
             r = random()
         return int(r*maxsize) % n
+
+    _randbelow = _randbelow_with_getrandbits
 
 ## -------------------- sequence methods  -------------------
 
@@ -309,6 +351,19 @@ class Random(_random.Random):
         # preferred since the list takes less space than the
         # set and it doesn't suffer from frequent reselections.
 
+        # The number of calls to _randbelow() is kept at or near k, the
+        # theoretical minimum.  This is important because running time
+        # is dominated by _randbelow() and because it extracts the
+        # least entropy from the underlying random number generators.
+
+        # Memory requirements are kept to the smaller of a k-length
+        # set or an n-length list.
+
+        # There are other sampling algorithms that do not require
+        # auxiliary memory, but they were rejected because they made
+        # too many calls to _randbelow(), making them slower and
+        # causing them to eat more entropy than necessary.
+
         if isinstance(population, _Set):
             population = tuple(population)
         if not isinstance(population, _Sequence):
@@ -347,19 +402,24 @@ class Random(_random.Random):
 
         """
         random = self.random
+        n = len(population)
         if cum_weights is None:
             if weights is None:
                 _int = int
-                total = len(population)
-                return [population[_int(random() * total)] for i in range(k)]
-            cum_weights = list(_itertools.accumulate(weights))
+                n += 0.0    # convert to float for a small speed improvement
+                return [population[_int(random() * n)] for i in _repeat(None, k)]
+            cum_weights = list(_accumulate(weights))
         elif weights is not None:
             raise TypeError('Cannot specify both weights and cumulative weights')
-        if len(cum_weights) != len(population):
+        if len(cum_weights) != n:
             raise ValueError('The number of weights does not match the population')
-        bisect = _bisect.bisect
-        total = cum_weights[-1]
-        return [population[bisect(cum_weights, random() * total)] for i in range(k)]
+        total = cum_weights[-1] + 0.0   # convert to float
+        if total <= 0.0:
+            raise ValueError('Total of weights must be greater than zero')
+        bisect = _bisect
+        hi = n - 1
+        return [population[bisect(cum_weights, random() * total, 0, hi)]
+                for i in _repeat(None, k)]
 
 ## -------------------- real-valued distributions  -------------------
 
@@ -542,10 +602,7 @@ class Random(_random.Random):
 
         elif alpha == 1.0:
             # expovariate(1/beta)
-            u = random()
-            while u <= 1e-7:
-                u = random()
-            return -_log(u) * beta
+            return -_log(1.0 - random()) * beta
 
         else:   # alpha is between 0 and 1 (exclusive)
 
@@ -678,8 +735,6 @@ class SystemRandom(Random):
         """getrandbits(k) -> x.  Generates an int with k random bits."""
         if k <= 0:
             raise ValueError('number of bits must be greater than zero')
-        if k != int(k):
-            raise TypeError('number of bits should be an integer')
         numbytes = (k + 7) // 8                       # bits / 8 and rounded up
         x = int.from_bytes(_urandom(numbytes), 'big')
         return x >> (numbytes * 8 - k)                # trim excess bits
@@ -702,14 +757,14 @@ def _test_generator(n, func, args):
     sqsum = 0.0
     smallest = 1e10
     largest = -1e10
-    t0 = time.time()
+    t0 = time.perf_counter()
     for i in range(n):
         x = func(*args)
         total += x
         sqsum = sqsum + x*x
         smallest = min(x, smallest)
         largest = max(x, largest)
-    t1 = time.time()
+    t1 = time.perf_counter()
     print(round(t1-t0, 3), 'sec,', end=' ')
     avg = total/n
     stddev = _sqrt(sqsum/n - avg*avg)

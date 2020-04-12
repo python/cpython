@@ -41,9 +41,7 @@ except OSError as e:
 class TestEPoll(unittest.TestCase):
 
     def setUp(self):
-        self.serverSocket = socket.socket()
-        self.serverSocket.bind(('127.0.0.1', 0))
-        self.serverSocket.listen()
+        self.serverSocket = socket.create_server(('127.0.0.1', 0))
         self.connections = [self.serverSocket]
 
     def tearDown(self):
@@ -74,11 +72,11 @@ class TestEPoll(unittest.TestCase):
         ep.close()
         self.assertTrue(ep.closed)
         self.assertRaises(ValueError, ep.fileno)
+
         if hasattr(select, "EPOLL_CLOEXEC"):
-            select.epoll(select.EPOLL_CLOEXEC).close()
+            select.epoll(-1, select.EPOLL_CLOEXEC).close()
             select.epoll(flags=select.EPOLL_CLOEXEC).close()
             select.epoll(flags=0).close()
-            self.assertRaises(OSError, select.epoll, flags=12356)
 
     def test_badcreate(self):
         self.assertRaises(TypeError, select.epoll, 1, 2, 3)
@@ -87,6 +85,13 @@ class TestEPoll(unittest.TestCase):
         self.assertRaises(TypeError, select.epoll, ())
         self.assertRaises(TypeError, select.epoll, ['foo'])
         self.assertRaises(TypeError, select.epoll, {})
+
+        self.assertRaises(ValueError, select.epoll, 0)
+        self.assertRaises(ValueError, select.epoll, -2)
+        self.assertRaises(ValueError, select.epoll, sizehint=-2)
+
+        if hasattr(select, "EPOLL_CLOEXEC"):
+            self.assertRaises(OSError, select.epoll, flags=12356)
 
     def test_context_manager(self):
         with select.epoll(16) as ep:
@@ -117,37 +122,36 @@ class TestEPoll(unittest.TestCase):
         try:
             # TypeError: argument must be an int, or have a fileno() method.
             self.assertRaises(TypeError, ep.register, object(),
-                select.EPOLLIN | select.EPOLLOUT)
+                              select.EPOLLIN | select.EPOLLOUT)
             self.assertRaises(TypeError, ep.register, None,
-                select.EPOLLIN | select.EPOLLOUT)
+                              select.EPOLLIN | select.EPOLLOUT)
             # ValueError: file descriptor cannot be a negative integer (-1)
             self.assertRaises(ValueError, ep.register, -1,
-                select.EPOLLIN | select.EPOLLOUT)
+                              select.EPOLLIN | select.EPOLLOUT)
             # OSError: [Errno 9] Bad file descriptor
             self.assertRaises(OSError, ep.register, 10000,
-                select.EPOLLIN | select.EPOLLOUT)
+                              select.EPOLLIN | select.EPOLLOUT)
             # registering twice also raises an exception
             ep.register(server, select.EPOLLIN | select.EPOLLOUT)
             self.assertRaises(OSError, ep.register, server,
-                select.EPOLLIN | select.EPOLLOUT)
+                              select.EPOLLIN | select.EPOLLOUT)
         finally:
             ep.close()
 
     def test_fromfd(self):
         server, client = self._connected_pair()
 
-        ep = select.epoll(2)
-        ep2 = select.epoll.fromfd(ep.fileno())
+        with select.epoll(2) as ep:
+            ep2 = select.epoll.fromfd(ep.fileno())
 
-        ep2.register(server.fileno(), select.EPOLLIN | select.EPOLLOUT)
-        ep2.register(client.fileno(), select.EPOLLIN | select.EPOLLOUT)
+            ep2.register(server.fileno(), select.EPOLLIN | select.EPOLLOUT)
+            ep2.register(client.fileno(), select.EPOLLIN | select.EPOLLOUT)
 
-        events = ep.poll(1, 4)
-        events2 = ep2.poll(0.9, 4)
-        self.assertEqual(len(events), 2)
-        self.assertEqual(len(events2), 2)
+            events = ep.poll(1, 4)
+            events2 = ep2.poll(0.9, 4)
+            self.assertEqual(len(events), 2)
+            self.assertEqual(len(events2), 2)
 
-        ep.close()
         try:
             ep2.poll(1, 4)
         except OSError as e:
@@ -160,9 +164,9 @@ class TestEPoll(unittest.TestCase):
 
         ep = select.epoll(16)
         ep.register(server.fileno(),
-                   select.EPOLLIN | select.EPOLLOUT | select.EPOLLET)
+                    select.EPOLLIN | select.EPOLLOUT | select.EPOLLET)
         ep.register(client.fileno(),
-                   select.EPOLLIN | select.EPOLLOUT | select.EPOLLET)
+                    select.EPOLLIN | select.EPOLLOUT | select.EPOLLET)
 
         now = time.monotonic()
         events = ep.poll(1, 4)
@@ -221,7 +225,10 @@ class TestEPoll(unittest.TestCase):
         self.assertFalse(then - now > 0.01)
 
         server.close()
-        ep.unregister(fd)
+
+        with self.assertRaises(OSError) as cm:
+            ep.unregister(fd)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_close(self):
         open_file = open(__file__, "rb")

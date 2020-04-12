@@ -16,7 +16,6 @@ if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
 
-TIMEOUT = 3
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
 
 class dummysocket:
@@ -70,8 +69,8 @@ def capture_server(evt, buf, serv):
         pass
     else:
         n = 200
-        start = time.time()
-        while n > 0 and time.time() - start < 3.0:
+        start = time.monotonic()
+        while n > 0 and time.monotonic() - start < 3.0:
             r, w, e = select.select([conn], [], [], 0.1)
             if r:
                 n -= 1
@@ -360,7 +359,7 @@ class DispatcherWithSendTests(unittest.TestCase):
 
             self.assertEqual(cap.getvalue(), data*2)
         finally:
-            support.join_thread(t, timeout=TIMEOUT)
+            support.join_thread(t)
 
 
 @unittest.skipUnless(hasattr(asyncore, 'file_wrapper'),
@@ -726,14 +725,10 @@ class BaseTestAPI:
     def test_create_socket(self):
         s = asyncore.dispatcher()
         s.create_socket(self.family)
+        self.assertEqual(s.socket.type, socket.SOCK_STREAM)
         self.assertEqual(s.socket.family, self.family)
-        SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
-        sock_type = socket.SOCK_STREAM | SOCK_NONBLOCK
-        if hasattr(socket, 'SOCK_CLOEXEC'):
-            self.assertIn(s.socket.type,
-                          (sock_type | socket.SOCK_CLOEXEC, sock_type))
-        else:
-            self.assertEqual(s.socket.type, sock_type)
+        self.assertEqual(s.socket.gettimeout(), 0)
+        self.assertFalse(s.socket.get_inheritable())
 
     def test_bind(self):
         if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
@@ -792,7 +787,7 @@ class BaseTestAPI:
                 except OSError:
                     pass
         finally:
-            support.join_thread(t, timeout=TIMEOUT)
+            support.join_thread(t)
 
 class TestAPI_UseIPv4Sockets(BaseTestAPI):
     family = socket.AF_INET

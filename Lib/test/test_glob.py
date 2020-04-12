@@ -49,10 +49,10 @@ class GlobTests(unittest.TestCase):
             pattern = os.path.join(*parts)
         p = os.path.join(self.tempdir, pattern)
         res = glob.glob(p, **kwargs)
-        self.assertEqual(list(glob.iglob(p, **kwargs)), res)
+        self.assertCountEqual(glob.iglob(p, **kwargs), res)
         bres = [os.fsencode(x) for x in res]
-        self.assertEqual(glob.glob(os.fsencode(p), **kwargs), bres)
-        self.assertEqual(list(glob.iglob(os.fsencode(p), **kwargs)), bres)
+        self.assertCountEqual(glob.glob(os.fsencode(p), **kwargs), bres)
+        self.assertCountEqual(glob.iglob(os.fsencode(p), **kwargs), bres)
         return res
 
     def assertSequencesEqual_noorder(self, l1, l2):
@@ -263,6 +263,23 @@ class GlobTests(unittest.TestCase):
             if can_symlink():
                 expect += [join('sym3', 'EF')]
             eq(glob.glob(join('**', 'EF'), recursive=True), expect)
+
+    def test_glob_many_open_files(self):
+        depth = 30
+        base = os.path.join(self.tempdir, 'deep')
+        p = os.path.join(base, *(['d']*depth))
+        os.makedirs(p)
+        pattern = os.path.join(base, *(['*']*depth))
+        iters = [glob.iglob(pattern, recursive=True) for j in range(100)]
+        for it in iters:
+            self.assertEqual(next(it), p)
+        pattern = os.path.join(base, '**', 'd')
+        iters = [glob.iglob(pattern, recursive=True) for j in range(100)]
+        p = base
+        for i in range(depth):
+            p = os.path.join(p, 'd')
+            for it in iters:
+                self.assertEqual(next(it), p)
 
 
 @skip_unless_symlink
