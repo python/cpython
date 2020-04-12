@@ -311,6 +311,7 @@ def open(filename, mode="rb", compresslevel=9,
     binary_file = BZ2File(filename, bz_mode, compresslevel=compresslevel)
 
     if "t" in mode:
+        encoding = io.text_encoding(encoding)
         return io.TextIOWrapper(binary_file, encoding, errors, newline)
     else:
         return binary_file

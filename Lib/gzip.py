@@ -62,6 +62,7 @@ def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
         raise TypeError("filename must be a str or bytes object, or a file")
 
     if "t" in mode:
+        encoding = io.text_encoding(encoding)
         return io.TextIOWrapper(binary_file, encoding, errors, newline)
     else:
         return binary_file
