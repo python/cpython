@@ -8,14 +8,6 @@
 #include "structmember.h" /* offsetof */
 #include "pythread.h"
 
-#include "clinic/_threadmodule.c.h"
-
-/*[clinic input]
-module _thread
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=be8dbe5cc4b16df7]*/
-
-
 static PyObject *ThreadError;
 static PyObject *str_dict;
 
@@ -1493,21 +1485,6 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
-/*[clinic input]
-_thread._is_main_interpreter
-
-Return True if the current interpreter is the main Python interpreter.
-[clinic start generated code]*/
-
-static PyObject *
-_thread__is_main_interpreter_impl(PyObject *module)
-/*[clinic end generated code: output=7dd82e1728339adc input=cc1eb00fd4598915]*/
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    int is_main = _Py_IsMainInterpreter(tstate);
-    return PyBool_FromLong(is_main);
-}
-
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1537,7 +1514,6 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _set_sentinel_doc},
     {"_excepthook",              thread_excepthook,
      METH_O, excepthook_doc},
-    _THREAD__IS_MAIN_INTERPRETER_METHODDEF
     {NULL,                      NULL}           /* sentinel */
 };
 
