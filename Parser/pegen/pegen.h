@@ -137,7 +137,7 @@ mod_ty run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
                                     const char *, const char *, int *, PyArena *);
 void *run_parser(Parser *);
 mod_ty run_parser_from_file(const char *, int, PyObject *, PyArena *);
-mod_ty run_parser_from_string(const char *, int, PyObject *, PyArena *);
+mod_ty run_parser_from_string(const char *, int, PyObject *, int, PyArena *);
 void *interactive_exit(Parser *);
 asdl_seq *singleton_seq(Parser *, void *);
 asdl_seq *seq_insert_in_front(Parser *, void *, asdl_seq *);

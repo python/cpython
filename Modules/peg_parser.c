@@ -73,7 +73,10 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyObject *result = NULL;
 
-    mod_ty res = PyPegen_ASTFromString(the_string, mode, arena);
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    flags.cf_flags = PyCF_IGNORE_COOKIE;
+
+    mod_ty res = PyPegen_ASTFromString(the_string, mode, &flags, arena);
     if (res == NULL) {
         goto error;
     }

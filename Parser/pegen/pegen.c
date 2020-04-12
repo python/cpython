@@ -814,9 +814,14 @@ run_parser_from_file(const char *filename, int start_rule,
 
 mod_ty
 run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
-                       PyArena *arena)
+                       int iflags, PyArena *arena)
 {
-    struct tok_state *tok = PyTokenizer_FromString(str, 1);
+    struct tok_state *tok;
+    if (iflags & PyCF_IGNORE_COOKIE) {
+        tok = PyTokenizer_FromUTF8(str, 1);
+    } else {
+        tok = PyTokenizer_FromString(str, 1);
+    }
     if (tok == NULL) {
         return NULL;
     }

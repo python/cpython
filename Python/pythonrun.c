@@ -1044,7 +1044,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
         return NULL;
 
     if (use_peg) {
-        mod = PyPegen_ASTFromString(str, start, arena);
+        mod = PyPegen_ASTFromString(str, start, flags, arena);
     }
     else {
         mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);

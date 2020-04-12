@@ -4,7 +4,7 @@
 #include "pegen.h"
 
 mod_ty
-PyPegen_ASTFromString(const char *str, int mode, PyArena *arena)
+PyPegen_ASTFromString(const char *str, int mode, PyCompilerFlags *flags, PyArena *arena)
 {
     PyObject *filename_ob = PyUnicode_FromString("<string>");
     if (filename_ob == NULL) {
@@ -13,7 +13,9 @@ PyPegen_ASTFromString(const char *str, int mode, PyArena *arena)
     if (PySys_Audit("compile", "yO", str, filename_ob) < 0) {
         return NULL;
     }
-    mod_ty result = run_parser_from_string(str, mode, filename_ob, arena);
+
+    int iflags = flags != NULL ? flags->cf_flags : PyCF_IGNORE_COOKIE;
+    mod_ty result = run_parser_from_string(str, mode, filename_ob, iflags, arena);
     Py_XDECREF(filename_ob);
     return result;
 }
@@ -44,7 +46,7 @@ PyPegen_ASTFromFileObject(FILE *fp, PyObject *filename_ob, int mode,
 }
 
 PyCodeObject *
-PyPegen_CodeObjectFromString(const char *str, int mode)
+PyPegen_CodeObjectFromString(const char *str, int mode, PyCompilerFlags *flags)
 {
     PyArena *arena = PyArena_New();
     if (arena == NULL) {
@@ -58,7 +60,7 @@ PyPegen_CodeObjectFromString(const char *str, int mode)
         goto error;
     }
 
-    mod_ty res = PyPegen_ASTFromString(str, mode, arena);
+    mod_ty res = PyPegen_ASTFromString(str, mode, flags, arena);
     if (res == NULL) {
         goto error;
     }
