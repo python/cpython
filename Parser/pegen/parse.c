@@ -876,6 +876,7 @@ simple_stmt_rule(Parser *p)
         asdl_seq * a;
         void *newline_var;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = _gather_3_rule(p))
             &&
@@ -2039,6 +2040,7 @@ import_from_as_names_rule(Parser *p)
     { // ','.import_from_as_name+ ','?
         asdl_seq * a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = _gather_23_rule(p))
             &&
@@ -3251,6 +3253,7 @@ star_etc_rule(Parser *p)
         void *c;
         void *literal;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (literal = expect_token(p, 16))
             &&
@@ -3276,6 +3279,7 @@ star_etc_rule(Parser *p)
         void *c;
         void *literal;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (literal = expect_token(p, 16))
             &&
@@ -3297,6 +3301,7 @@ star_etc_rule(Parser *p)
     { // kwds ','?
         arg_ty a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = kwds_rule(p))
             &&
@@ -3697,6 +3702,7 @@ expressions_list_rule(Parser *p)
     { // ','.star_expression+ ','?
         asdl_seq * a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = _gather_59_rule(p))
             &&
@@ -3736,6 +3742,7 @@ star_expressions_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = star_expression_rule(p))
             &&
@@ -3867,6 +3874,7 @@ star_named_expressions_rule(Parser *p)
     { // ','.star_named_expression+ ','?
         asdl_seq * a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = _gather_62_rule(p))
             &&
@@ -4060,6 +4068,7 @@ expressions_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = expression_rule(p))
             &&
@@ -4441,6 +4450,7 @@ lambda_star_etc_rule(Parser *p)
         void *c;
         void *literal;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (literal = expect_token(p, 16))
             &&
@@ -4466,6 +4476,7 @@ lambda_star_etc_rule(Parser *p)
         void *c;
         void *literal;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (literal = expect_token(p, 16))
             &&
@@ -4487,6 +4498,7 @@ lambda_star_etc_rule(Parser *p)
     { // lambda_kwds ','?
         arg_ty a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = lambda_kwds_rule(p))
             &&
@@ -6421,6 +6433,7 @@ slices_rule(Parser *p)
     { // ','.slice+ ','?
         asdl_seq * a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = _gather_86_rule(p))
             &&
@@ -7124,6 +7137,7 @@ kvpairs_rule(Parser *p)
     { // ','.kvpair+ ','?
         asdl_seq * a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = _gather_95_rule(p))
             &&
@@ -7298,6 +7312,7 @@ arguments_rule(Parser *p)
     { // args ','? &')'
         expr_ty a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = args_rule(p))
             &&
@@ -7684,6 +7699,7 @@ star_targets_rule(Parser *p)
         expr_ty a;
         asdl_seq * b;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = star_target_rule(p))
             &&
@@ -7722,6 +7738,7 @@ star_targets_seq_rule(Parser *p)
     { // ','.star_target+ ','?
         asdl_seq * a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = _gather_109_rule(p))
             &&
@@ -8128,6 +8145,7 @@ del_targets_rule(Parser *p)
     { // ','.del_target+ ','?
         asdl_seq * a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = _gather_111_rule(p))
             &&
@@ -8362,6 +8380,7 @@ targets_rule(Parser *p)
     { // ','.target+ ','?
         asdl_seq * a;
         void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = _gather_113_rule(p))
             &&

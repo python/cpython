@@ -537,6 +537,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 if v == "cut_var":
                     v += " = 0"  # cut_var must be initialized
                 self.print(f"{var_type}{v};")
+                if v == "opt_var":
+                    self.print("UNUSED(opt_var); // Silence compiler warnings")
+
 
             names: List[str] = []
             if is_loop:
