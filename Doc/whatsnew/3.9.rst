@@ -412,6 +412,15 @@ customization consistently by always using the value specified by
 case), and one used ``__VENV_NAME__`` instead.
 (Contributed by Brett Cannon in :issue:`37663`.)
 
+xml
+---
+
+White space characters within attributes are now preserved when serializing
+:mod:`xml.etree.ElementTree` to XML file. EOLNs are no longer normalized
+to "\n". This is the result of discussion about how to interpret
+section 2.11 of XML spec.
+(Contributed by Mefistotelis in :issue:`39011`.)
+
 
 Optimizations
 =============
@@ -563,6 +572,13 @@ Build and C API Changes
   the ``-E`` option is used. This is significant when embedding Python on
   Windows.
   (Contributed by Zackery Spytz in :issue:`8901`.)
+
+* Add the functions :c:func:`PyObject_GC_IsTracked` and
+  :c:func:`PyObject_GC_IsFinalized` to the public API to allow to query if
+  Python objects are being currently tracked or have been already finalized by
+  the garbage collector respectively. (Contributed by Pablo Galindo in
+  :issue:`40241`.)
+
 
 Deprecated
 ==========

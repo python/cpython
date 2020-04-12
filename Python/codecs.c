@@ -701,8 +701,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
 
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         PyObject *res;
-        int kind;
-        void *data;
+        Py_UCS1 *outp;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
         if (PyUnicodeEncodeError_GetEnd(exc, &end))
@@ -711,10 +710,10 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         res = PyUnicode_New(len, '?');
         if (res == NULL)
             return NULL;
-        kind = PyUnicode_KIND(res);
-        data = PyUnicode_DATA(res);
+        assert(PyUnicode_KIND(res) == PyUnicode_1BYTE_KIND);
+        outp = PyUnicode_1BYTE_DATA(res);
         for (i = 0; i < len; ++i)
-            PyUnicode_WRITE(kind, data, i, '?');
+            outp[i] = '?';
         assert(_PyUnicode_CheckConsistency(res, 1));
         return Py_BuildValue("(Nn)", res, end);
     }
@@ -727,8 +726,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
         PyObject *res;
-        int kind;
-        void *data;
+        Py_UCS2 *outp;
         if (PyUnicodeTranslateError_GetStart(exc, &start))
             return NULL;
         if (PyUnicodeTranslateError_GetEnd(exc, &end))
@@ -737,10 +735,10 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         res = PyUnicode_New(len, Py_UNICODE_REPLACEMENT_CHARACTER);
         if (res == NULL)
             return NULL;
-        kind = PyUnicode_KIND(res);
-        data = PyUnicode_DATA(res);
-        for (i=0; i < len; i++)
-            PyUnicode_WRITE(kind, data, i, Py_UNICODE_REPLACEMENT_CHARACTER);
+        assert(PyUnicode_KIND(res) == PyUnicode_2BYTE_KIND);
+        outp = PyUnicode_2BYTE_DATA(res);
+        for (i = 0; i < len; i++)
+            outp[i] = Py_UNICODE_REPLACEMENT_CHARACTER;
         assert(_PyUnicode_CheckConsistency(res, 1));
         return Py_BuildValue("(Nn)", res, end);
     }
@@ -759,7 +757,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         Py_ssize_t start;
         Py_ssize_t end;
         PyObject *res;
-        unsigned char *outp;
+        Py_UCS1 *outp;
         Py_ssize_t ressize;
         Py_UCS4 ch;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
@@ -855,7 +853,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     Py_ssize_t start;
     Py_ssize_t end;
     PyObject *res;
-    unsigned char *outp;
+    Py_UCS1 *outp;
     int ressize;
     Py_UCS4 c;
 
@@ -966,7 +964,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         Py_ssize_t start;
         Py_ssize_t end;
         PyObject *res;
-        unsigned char *outp;
+        Py_UCS1 *outp;
         Py_ssize_t ressize;
         int replsize;
         Py_UCS4 c;

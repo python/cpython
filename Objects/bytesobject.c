@@ -1265,12 +1265,14 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
     Py_ssize_t i, length = Py_SIZE(op);
     Py_ssize_t newsize, squotes, dquotes;
     PyObject *v;
-    unsigned char quote, *s, *p;
+    unsigned char quote;
+    const unsigned char *s;
+    Py_UCS1 *p;
 
     /* Compute size of output string */
     squotes = dquotes = 0;
     newsize = 3; /* b'' */
-    s = (unsigned char*)op->ob_sval;
+    s = (const unsigned char*)op->ob_sval;
     for (i = 0; i < length; i++) {
         Py_ssize_t incr = 1;
         switch(s[i]) {
@@ -1596,7 +1598,7 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, i;
         size_t cur;
-        char* source_buf;
+        const char* source_buf;
         char* result_buf;
         PyObject* result;
 
@@ -1861,7 +1863,7 @@ Py_LOCAL_INLINE(PyObject *)
 do_xstrip(PyBytesObject *self, int striptype, PyObject *sepobj)
 {
     Py_buffer vsep;
-    char *s = PyBytes_AS_STRING(self);
+    const char *s = PyBytes_AS_STRING(self);
     Py_ssize_t len = PyBytes_GET_SIZE(self);
     char *sep;
     Py_ssize_t seplen;
@@ -1901,7 +1903,7 @@ do_xstrip(PyBytesObject *self, int striptype, PyObject *sepobj)
 Py_LOCAL_INLINE(PyObject *)
 do_strip(PyBytesObject *self, int striptype)
 {
-    char *s = PyBytes_AS_STRING(self);
+    const char *s = PyBytes_AS_STRING(self);
     Py_ssize_t len = PyBytes_GET_SIZE(self), i, j;
 
     i = 0;
@@ -2018,7 +2020,8 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
                      PyObject *deletechars)
 /*[clinic end generated code: output=43be3437f1956211 input=0ecdf159f654233c]*/
 {
-    char *input, *output;
+    const char *input;
+    char *output;
     Py_buffer table_view = {NULL, NULL};
     Py_buffer del_table_view = {NULL, NULL};
     const char *table_chars;
@@ -2271,7 +2274,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     char *buf;
     Py_ssize_t hexlen, invalid_char;
     unsigned int top, bot;
-    Py_UCS1 *str, *end;
+    const Py_UCS1 *str, *end;
     _PyBytesWriter writer;
 
     _PyBytesWriter_Init(&writer);
@@ -2283,7 +2286,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     hexlen = PyUnicode_GET_LENGTH(string);
 
     if (!PyUnicode_IS_ASCII(string)) {
-        void *data = PyUnicode_DATA(string);
+        const void *data = PyUnicode_DATA(string);
         unsigned int kind = PyUnicode_KIND(string);
         Py_ssize_t i;
 
@@ -2369,7 +2372,7 @@ static PyObject *
 bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
 /*[clinic end generated code: output=1f134da504064139 input=f1238d3455990218]*/
 {
-    char* argbuf = PyBytes_AS_STRING(self);
+    const char *argbuf = PyBytes_AS_STRING(self);
     Py_ssize_t arglen = PyBytes_GET_SIZE(self);
     return _Py_strhex_with_sep(argbuf, arglen, sep, bytes_per_sep);
 }
@@ -3186,7 +3189,7 @@ _PyBytesWriter_AsString(_PyBytesWriter *writer)
 Py_LOCAL_INLINE(Py_ssize_t)
 _PyBytesWriter_GetSize(_PyBytesWriter *writer, char *str)
 {
-    char *start = _PyBytesWriter_AsString(writer);
+    const char *start = _PyBytesWriter_AsString(writer);
     assert(str != NULL);
     assert(str >= start);
     assert(str - start <= writer->allocated);
@@ -3197,7 +3200,7 @@ _PyBytesWriter_GetSize(_PyBytesWriter *writer, char *str)
 Py_LOCAL_INLINE(int)
 _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
 {
-    char *start, *end;
+    const char *start, *end;
 
     if (writer->use_small_buffer) {
         assert(writer->buffer == NULL);
