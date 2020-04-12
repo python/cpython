@@ -1153,7 +1153,7 @@ checkpath(PyObject* tag)
         return 0;
     }
     if (PyBytes_Check(tag)) {
-        char *p = PyBytes_AS_STRING(tag);
+        const char *p = PyBytes_AS_STRING(tag);
         const Py_ssize_t len = PyBytes_GET_SIZE(tag);
         if (len >= 3 && p[0] == '{' && (
                 p[1] == '}' || (p[1] == '*' && p[2] == '}'))) {

@@ -1283,7 +1283,7 @@ s_get(void *ptr, Py_ssize_t size)
 static PyObject *
 s_set(void *ptr, PyObject *value, Py_ssize_t length)
 {
-    char *data;
+    const char *data;
     Py_ssize_t size;
 
     if(!PyBytes_Check(value)) {
@@ -1321,7 +1321,7 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
         return value;
     }
     if (PyBytes_Check(value)) {
-        *(char **)ptr = PyBytes_AsString(value);
+        *(const char **)ptr = PyBytes_AsString(value);
         Py_INCREF(value);
         return value;
     } else if (PyLong_Check(value)) {
