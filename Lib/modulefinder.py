@@ -80,7 +80,7 @@ def _find_module(name, path=None):
 
     if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
         kind = _PY_SOURCE
-        mode = "r"
+        mode = "rb"
 
     elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
         kind = _C_EXTENSION
@@ -160,14 +160,14 @@ class ModuleFinder:
 
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
-        with open(pathname) as fp:
+        with open(pathname, "rb") as fp:
             stuff = ("", "r", _PY_SOURCE)
             self.load_module('__main__', fp, pathname, stuff)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
-        with open(pathname) as fp:
+        with open(pathname, "rb") as fp:
             stuff = (ext, "r", _PY_SOURCE)
             self.load_module(name, fp, pathname, stuff)
 
@@ -340,7 +340,7 @@ class ModuleFinder:
             self.msgout(2, "load_module ->", m)
             return m
         if type == _PY_SOURCE:
-            co = compile(fp.read()+'\n', pathname, 'exec')
+            co = compile(fp.read()+b'\n', pathname, 'exec')
         elif type == _PY_COMPILED:
             try:
                 data = fp.read()
