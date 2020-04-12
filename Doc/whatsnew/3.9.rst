@@ -412,6 +412,15 @@ customization consistently by always using the value specified by
 case), and one used ``__VENV_NAME__`` instead.
 (Contributed by Brett Cannon in :issue:`37663`.)
 
+xml
+---
+
+White space characters within attributes are now preserved when serializing
+:mod:`xml.etree.ElementTree` to XML file. EOLNs are no longer normalized
+to "\n". This is the result of discussion about how to interpret
+section 2.11 of XML spec.
+(Contributed by Mefistotelis in :issue:`39011`.)
+
 
 Optimizations
 =============
