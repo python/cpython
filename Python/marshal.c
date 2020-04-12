@@ -183,7 +183,6 @@ w_long(long x, WFILE *p)
 #if SIZEOF_SIZE_T > 4
 # define W_SIZE(n, p)  do {                     \
         if ((n) > SIZE32_MAX) {                 \
-            (p)->depth--;                       \
             (p)->error = WFERR_UNMARSHALLABLE;  \
             return;                             \
         }                                       \
@@ -245,7 +244,6 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
         l++;
     } while (d != 0);
     if (l > SIZE32_MAX) {
-        p->depth--;
         p->error = WFERR_UNMARSHALLABLE;
         return;
     }
@@ -445,7 +443,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             PyObject *utf8;
             utf8 = PyUnicode_AsEncodedString(v, "utf8", "surrogatepass");
             if (utf8 == NULL) {
-                p->depth--;
                 p->error = WFERR_UNMARSHALLABLE;
                 return;
             }
@@ -531,7 +528,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         Py_buffer view;
         if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) != 0) {
             w_byte(TYPE_UNKNOWN, p);
-            p->depth--;
             p->error = WFERR_UNMARSHALLABLE;
             return;
         }
