@@ -4222,6 +4222,29 @@ class MiscIOTest(unittest.TestCase):
         proc = assert_python_failure('-X', 'dev', '-c', code)
         self.assertEqual(proc.rc, 10, proc)
 
+    def test_check_encoding_warning(self):
+        # PEP 597: Raise warning when encoding is not specified
+        # and dev mode is enabled.
+        mod = self.io.__name__
+        filename = __file__
+        code = textwrap.dedent(f'''\
+            import sys
+            from {mod} import open, TextIOWrapper
+            import pathlib
+
+            with open({filename!r}) as f:           # line 5
+                pass
+
+            pathlib.Path({filename!r}).read_text()  # line 8
+        ''')
+        proc = assert_python_ok('-X', 'dev', '-c', code)
+        warnings = proc.err.splitlines()
+        self.assertEqual(len(warnings), 2)
+        self.assertTrue(
+            warnings[0].startswith(b"<string>:5: DeprecationWarning: "))
+        self.assertTrue(
+            warnings[1].startswith(b"<string>:8: DeprecationWarning: "))
+
 
 class CMiscIOTest(MiscIOTest):
     io = io
