@@ -1329,12 +1329,11 @@ PyGILState_GetThisThreadState(void)
 int
 PyGILState_Check(void)
 {
-
-    if (!_PyGILState_check_enabled) {
+    struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
+    if (!gilstate->check_enabled) {
         return 1;
     }
 
-    struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
     if (!PyThread_tss_is_created(&gilstate->autoTSSkey)) {
         return 1;
     }

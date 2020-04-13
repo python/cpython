@@ -1553,7 +1553,7 @@ new_interpreter(PyThreadState **tstate_p)
 
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
-    _PyGILState_check_enabled = 0;
+    runtime->gilstate.check_enabled = 0;
 
     PyInterpreterState *interp = PyInterpreterState_New();
     if (interp == NULL) {
