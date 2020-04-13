@@ -46,7 +46,7 @@ class BaseTest(unittest.TestCase):
                   FileInput,
                   OrderedDict, Counter, UserDict, UserList,
                   Pattern, Match,
-                  partial, partialmethod, _lru_cache_wrapper, cached_property,
+                  partial, partialmethod, cached_property,
                   AbstractContextManager, AbstractAsyncContextManager,
                   Awaitable, Coroutine,
                   AsyncIterable, AsyncIterator,
