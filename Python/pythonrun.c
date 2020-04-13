@@ -96,7 +96,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     int nomem_count = 0;
 #ifdef Py_REF_DEBUG
-    int show_ref_count = _PyInterpreterState_GET_UNSAFE()->config.show_ref_count;
+    int show_ref_count = _Py_GetConfig()->show_ref_count;
 #endif
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
@@ -584,7 +584,7 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
 int
 _Py_HandleSystemExit(int *exitcode_p)
 {
-    int inspect = _PyInterpreterState_GET_UNSAFE()->config.inspect;
+    int inspect = _Py_GetConfig()->inspect;
     if (inspect) {
         /* Don't exit if -i flag was given. This flag is set to 0
          * when entering interactive mode for inspecting. */
