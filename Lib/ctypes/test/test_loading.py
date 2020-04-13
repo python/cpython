@@ -134,17 +134,13 @@ class LoaderTest(unittest.TestCase):
             shutil.copy(src, target)
             shutil.copy(os.path.join(os.path.dirname(src), "sqlite3" + ext),
                         os.path.join(tmp, "sqlite3" + ext))
-            env = {
-                **os.environ,
-                "PATH": os.path.expandvars(r"%SystemRoot%\System32;%SystemRoot%"),
-            }
 
             def should_pass(command):
                 with self.subTest(command):
                     subprocess.check_output(
                         [sys.executable, "-c",
                          "from ctypes import *; import nt;" + command],
-                        cwd=tmp, env=env,
+                        cwd=tmp,
                     )
 
             def should_fail(command):
@@ -153,7 +149,7 @@ class LoaderTest(unittest.TestCase):
                         subprocess.check_output(
                             [sys.executable, "-c",
                              "from ctypes import *; import nt;" + command],
-                            cwd=tmp, env=env, stderr=subprocess.STDOUT,
+                            cwd=tmp, stderr=subprocess.STDOUT,
                         )
 
             # Default load should not find this in CWD
