@@ -1392,6 +1392,10 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         if (nonascii && !verify_identifier(tok)) {
             return ERRORTOKEN;
         }
+        if (c == '"' || c == '\'') {
+            tok->done = E_BADPREFIX;
+            return ERRORTOKEN;
+        }
         *p_start = tok->start;
         *p_end = tok->cur;
 

@@ -222,7 +222,10 @@ PyInterpreterState_New(void)
     _PyRuntimeState *runtime = &_PyRuntime;
     interp->runtime = runtime;
 
-    _PyEval_InitState(&interp->ceval);
+    if (_PyEval_InitState(&interp->ceval) < 0) {
+        goto out_of_memory;
+    }
+
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
 
@@ -267,6 +270,14 @@ PyInterpreterState_New(void)
     interp->audit_hooks = NULL;
 
     return interp;
+
+out_of_memory:
+    if (tstate != NULL) {
+        _PyErr_NoMemory(tstate);
+    }
+
+    PyMem_RawFree(interp);
+    return NULL;
 }
 
 
@@ -335,6 +346,8 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     struct pyinterpreters *interpreters = &runtime->interpreters;
     zapthreads(interp, 0);
 
+    _PyEval_FiniState(&interp->ceval);
+
     /* Delete current thread. After this, many C API calls become crashy. */
     _PyThreadState_Swap(&runtime->gilstate, NULL);
 
@@ -352,6 +365,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
         Py_FatalError("remaining threads");
     }
     *p = interp->next;
+
     if (interpreters->main == interp) {
         interpreters->main = NULL;
         if (interpreters->head != NULL) {
@@ -359,6 +373,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
         }
     }
     HEAD_UNLOCK(runtime);
+
     if (interp->id_mutex != NULL) {
         PyThread_free_lock(interp->id_mutex);
     }
@@ -775,7 +790,7 @@ _PyInterpreterState_ClearModules(PyInterpreterState *interp)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
-    int verbose = tstate->interp->config.verbose;
+    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
     if (verbose && tstate->frame != NULL) {
         /* bpo-20526: After the main thread calls
@@ -1198,6 +1213,12 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
 PyStatus
 _PyGILState_Init(PyThreadState *tstate)
 {
+    if (!_Py_IsMainInterpreter(tstate)) {
+        /* Currently, PyGILState is shared by all interpreters. The main
+         * interpreter is responsible to initialize it. */
+        return _PyStatus_OK();
+    }
+
     /* must init with valid states */
     assert(tstate != NULL);
     assert(tstate->interp != NULL);
@@ -1785,6 +1806,30 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
                                      _PyFrameEvalFunction eval_frame)
 {
     interp->eval_frame = eval_frame;
+}
+
+
+const PyConfig*
+_PyInterpreterState_GetConfig(PyInterpreterState *interp)
+{
+    return &interp->config;
+}
+
+
+PyStatus
+_PyInterpreterState_SetConfig(PyInterpreterState *interp,
+                              const PyConfig *config)
+{
+    return _PyConfig_Copy(&interp->config, config);
+}
+
+
+const PyConfig*
+_Py_GetConfig(void)
+{
+    assert(PyGILState_Check());
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyInterpreterState_GetConfig(tstate->interp);
 }
 
 #ifdef __cplusplus

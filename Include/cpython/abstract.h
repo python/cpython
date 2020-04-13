@@ -335,12 +335,6 @@ PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
     (Py_TYPE(obj)->tp_iternext != NULL && \
      Py_TYPE(obj)->tp_iternext != &_PyObject_NextNotImplemented)
 
-/* === Number Protocol ================================================== */
-
-#define PyIndex_Check(obj)                              \
-    (Py_TYPE(obj)->tp_as_number != NULL &&            \
-     Py_TYPE(obj)->tp_as_number->nb_index != NULL)
-
 /* === Sequence protocol ================================================ */
 
 /* Assume tp_as_sequence and sq_item exist and that 'i' does not

@@ -362,14 +362,12 @@ a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 :class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
 (Contributed by Dong-hee Na in :issue:`39329`.)
 
-threading
----------
+socket
+------
 
-In a subinterpreter, spawning a daemon thread now raises a :exc:`RuntimeError`. Daemon
-threads were never supported in subinterpreters. Previously, the subinterpreter
-finalization crashed with a Python fatal error if a daemon thread was still
-running.
-(Contributed by Victor Stinner in :issue:`37266`.)
+The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
+constant on Linux 4.1 and greater.
+(Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
 
 sys
 ---
@@ -404,6 +402,15 @@ customization consistently by always using the value specified by
 ``__VENV_PROMPT__``, others only if it happened to be set (which was the default
 case), and one used ``__VENV_NAME__`` instead.
 (Contributed by Brett Cannon in :issue:`37663`.)
+
+xml
+---
+
+White space characters within attributes are now preserved when serializing
+:mod:`xml.etree.ElementTree` to XML file. EOLNs are no longer normalized
+to "\n". This is the result of discussion about how to interpret
+section 2.11 of XML spec.
+(Contributed by Mefistotelis in :issue:`39011`.)
 
 
 Optimizations
@@ -556,6 +563,13 @@ Build and C API Changes
   the ``-E`` option is used. This is significant when embedding Python on
   Windows.
   (Contributed by Zackery Spytz in :issue:`8901`.)
+
+* Add the functions :c:func:`PyObject_GC_IsTracked` and
+  :c:func:`PyObject_GC_IsFinalized` to the public API to allow to query if
+  Python objects are being currently tracked or have been already finalized by
+  the garbage collector respectively. (Contributed by Pablo Galindo in
+  :issue:`40241`.)
+
 
 Deprecated
 ==========

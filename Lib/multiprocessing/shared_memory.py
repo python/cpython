@@ -14,6 +14,7 @@ import os
 import errno
 import struct
 import secrets
+import types
 
 if os.name == "nt":
     import _winapi
@@ -508,3 +509,5 @@ class ShareableList:
                 return position
         else:
             raise ValueError(f"{value!r} not in this container")
+
+    __class_getitem__ = classmethod(types.GenericAlias)

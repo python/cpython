@@ -301,7 +301,7 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
 
 
 static int
-pymain_run_file(PyConfig *config, PyCompilerFlags *cf)
+pymain_run_file(const PyConfig *config, PyCompilerFlags *cf)
 {
     const wchar_t *filename = config->run_filename;
     if (PySys_Audit("cpython.run_file", "u", filename) < 0) {
@@ -499,7 +499,7 @@ pymain_run_python(int *exitcode)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     /* pymain_run_stdin() modify the config */
-    PyConfig *config = &interp->config;
+    PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
 
     PyObject *main_importer_path = NULL;
     if (config->run_filename != NULL) {

@@ -1,0 +1,3 @@
+Always declare :c:func:`PyIndex_Check` as an opaque function to hide
+implementation details: remove ``PyIndex_Check()`` macro. The macro accessed
+directly the :c:member:`PyTypeObject.tp_as_number` member.
