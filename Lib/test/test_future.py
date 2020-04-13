@@ -5,6 +5,7 @@ from test import support
 from textwrap import dedent
 import os
 import re
+import sys
 
 rx = re.compile(r'\((\S+).py, line (\d+)')
 
@@ -307,6 +308,19 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
         self.assertAnnotationEqual("f'{x=!a}'", expected="f'x={x!a}'")
         self.assertAnnotationEqual("f'{x=!s:*^20}'", expected="f'x={x!s:*^20}'")
+
+    def test_infinity_numbers(self):
+        inf = "1e" + repr(sys.float_info.max_10_exp + 1)
+        infj = f"{inf}j"
+        self.assertAnnotationEqual("1e1000", expected=inf)
+        self.assertAnnotationEqual("1e1000j", expected=infj)
+        self.assertAnnotationEqual("-1e1000", expected=f"-{inf}")
+        self.assertAnnotationEqual("3+1e1000j", expected=f"3 + {infj}")
+        self.assertAnnotationEqual("(1e1000, 1e1000j)", expected=f"({inf}, {infj})")
+        self.assertAnnotationEqual("'inf'")
+        self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)", expected=f"('inf', {inf}, 'infxxx', {infj})")
+        self.assertAnnotationEqual("(1e1000, (1e1000j,))", expected=f"({inf}, ({infj},))")
+
 
 if __name__ == "__main__":
     unittest.main()
