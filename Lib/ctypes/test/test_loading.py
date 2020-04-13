@@ -125,7 +125,7 @@ class LoaderTest(unittest.TestCase):
         else:
             ext = ".dll"
 
-        with test.support.temp_dir() as tmp:
+        with test.support.temp_dir("ctypes-test-dir") as tmp:
             # We copy two files and load _sqlite3.dll (formerly .pyd),
             # which has a dependency on sqlite3.dll. Then we test
             # loading it in subprocesses to avoid it starting in memory
@@ -159,7 +159,6 @@ class LoaderTest(unittest.TestCase):
             should_pass("WinDLL('./_sqlite3.dll')")
 
             # Insecure load flags should succeed
-            should_pass("WinDLL('_sqlite3.dll', winmode=1)")
             should_pass("WinDLL('_sqlite3.dll', winmode=0)")
 
             # Full path load without DLL_LOAD_DIR shouldn't find dependency
