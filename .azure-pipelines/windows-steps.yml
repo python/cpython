@@ -21,11 +21,21 @@ steps:
   displayName: 'Display build info'
   condition: and(succeeded(), variables['testRunPlatform'])
 
-- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results.xml" --tempdir="$(Build.BinariesDirectory)\test"
+- powershell: |
+    iwr https://live.sysinternals.com/procmon.exe -OutFile procmon.exe
+    mkdir -Force procmonlog
+    .\procmon.exe /AcceptEula /Quiet /BackingFile procmonlog\data.pml /LoadConfig .\.azure-pipelines\win32.pmc
+
+- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results.xml" --tempdir="$(Build.BinariesDirectory)\test" test_ctypes -m test_load_dll_with_flags
   displayName: 'Tests'
   condition: and(succeeded(), variables['testRunPlatform'])
   env:
     PREFIX: $(Py_OutDir)\$(arch)
+
+- powershell: .\procmon.exe /Terminate
+
+- publish: procmonlog
+  artifact: procmon
 
 - task: PublishTestResults@2
   displayName: 'Publish Test Results'

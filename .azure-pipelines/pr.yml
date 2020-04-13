@@ -53,7 +53,7 @@ jobs:
 - job: Ubuntu_PR_Tests
   displayName: Ubuntu PR Tests
   dependsOn: Prebuild
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  condition: false # and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
     vmImage: ubuntu-16.04
@@ -137,19 +137,19 @@ jobs:
 
   strategy:
     matrix:
-      win32:
-        arch: win32
-        buildOpt:
-        testRunTitle: '$(System.PullRequest.TargetBranch)-win32'
-        testRunPlatform: win32
+      #win32:
+      #  arch: win32
+      #  buildOpt:
+      #  testRunTitle: '$(System.PullRequest.TargetBranch)-win32'
+      #  testRunPlatform: win32
       win64:
         arch: amd64
         buildOpt: '-p x64'
         testRunTitle: '$(System.PullRequest.TargetBranch)-win64'
         testRunPlatform: win64
-      winarm64:
-        arch: arm64
-        buildOpt: '-p arm64'
+      #winarm64:
+      #  arch: arm64
+      #  buildOpt: '-p arm64'
     maxParallel: 4
 
   steps:
