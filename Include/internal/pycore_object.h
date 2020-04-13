@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_pystate.h"   /* PyInterpreterState.gc */
+#include "pycore_gc.h"         // _PyObject_GC_IS_TRACKED()
+#include "pycore_interp.h"     // PyInterpreterState.gc
+#include "pycore_pystate.h"    // _PyThreadState_GET()
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);

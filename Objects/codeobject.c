@@ -5,7 +5,8 @@
 #include "opcode.h"
 #include "structmember.h"
 #include "pycore_code.h"
-#include "pycore_pystate.h"
+#include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
+#include "pycore_pystate.h"       // _PyInterpreterState_GET_UNSAFE()
 #include "pycore_tupleobject.h"
 #include "clinic/codeobject.c.h"
 

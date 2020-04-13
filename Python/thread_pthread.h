@@ -1,3 +1,4 @@
+#include "pycore_interp.h"    // _PyInterpreterState.pythread_stacksize
 
 /* Posix threads interface */
 

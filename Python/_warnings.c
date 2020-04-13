@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
+#include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
