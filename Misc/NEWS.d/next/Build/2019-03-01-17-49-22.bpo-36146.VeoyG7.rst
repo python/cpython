@@ -1,2 +1,0 @@
-Add ``TEST_EXTENSIONS`` constant to ``setup.py`` to allow to not build test
-extensions like ``_testcapi``.

@@ -14,6 +14,7 @@ this type and there is exactly one in existence.
 */
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
@@ -53,10 +54,10 @@ PyTypeObject PyEllipsis_Type = {
     0,                                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
     0, /*never called*/                 /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     ellipsis_repr,                      /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -100,7 +101,8 @@ PyObject _Py_EllipsisObject = {
  * created and then deleted again
  */
 static PySliceObject *slice_cache = NULL;
-void PySlice_Fini(void)
+
+void _PySlice_Fini(void)
 {
     PySliceObject *obj = slice_cache;
     if (obj != NULL) {
@@ -353,7 +355,7 @@ static PyMemberDef slice_members[] = {
 static PyObject*
 evaluate_slice_index(PyObject *v)
 {
-    if (PyIndex_Check(v)) {
+    if (_PyIndex_Check(v)) {
         return PyNumber_Index(v);
     }
     else {
@@ -625,10 +627,10 @@ PyTypeObject PySlice_Type = {
     sizeof(PySliceObject),      /* Basic object size */
     0,                          /* Item size for varobject */
     (destructor)slice_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)slice_repr,                       /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

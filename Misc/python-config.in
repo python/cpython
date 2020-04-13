@@ -9,7 +9,8 @@ import sys
 import sysconfig
 
 valid_opts = ['prefix', 'exec-prefix', 'includes', 'libs', 'cflags',
-              'ldflags', 'extension-suffix', 'help', 'abiflags', 'configdir']
+              'ldflags', 'extension-suffix', 'help', 'abiflags', 'configdir',
+              'embed']
 
 def exit_with_usage(code=1):
     print("Usage: {0} [{1}]".format(
@@ -24,8 +25,8 @@ except getopt.error:
 if not opts:
     exit_with_usage()
 
-pyver = sysconfig.get_config_var('VERSION')
 getvar = sysconfig.get_config_var
+pyver = getvar('VERSION')
 
 opt_flags = [flag for (flag, val) in opts]
 
@@ -34,10 +35,10 @@ if '--help' in opt_flags:
 
 for opt in opt_flags:
     if opt == '--prefix':
-        print(sysconfig.get_config_var('prefix'))
+        print(getvar('prefix'))
 
     elif opt == '--exec-prefix':
-        print(sysconfig.get_config_var('exec_prefix'))
+        print(getvar('exec_prefix'))
 
     elif opt in ('--includes', '--cflags'):
         flags = ['-I' + sysconfig.get_path('include'),
@@ -47,23 +48,27 @@ for opt in opt_flags:
         print(' '.join(flags))
 
     elif opt in ('--libs', '--ldflags'):
-        libs = ['-lpython' + pyver + sys.abiflags]
-        libs += getvar('LIBS').split()
-        libs += getvar('SYSLIBS').split()
+        libs = []
+        if '--embed' in opt_flags:
+            libs.append('-lpython' + pyver + sys.abiflags)
+        else:
+            libpython = getvar('LIBPYTHON')
+            if libpython:
+                libs.append(libpython)
+        libs.extend(getvar('LIBS').split() + getvar('SYSLIBS').split())
+
         # add the prefix/lib/pythonX.Y/config dir, but only if there is no
         # shared library in prefix/lib/.
         if opt == '--ldflags':
             if not getvar('Py_ENABLE_SHARED'):
                 libs.insert(0, '-L' + getvar('LIBPL'))
-            if not getvar('PYTHONFRAMEWORK'):
-                libs.extend(getvar('LINKFORSHARED').split())
         print(' '.join(libs))
 
     elif opt == '--extension-suffix':
-        print(sysconfig.get_config_var('EXT_SUFFIX'))
+        print(getvar('EXT_SUFFIX'))
 
     elif opt == '--abiflags':
         print(sys.abiflags)
 
     elif opt == '--configdir':
-        print(sysconfig.get_config_var('LIBPL'))
+        print(getvar('LIBPL'))

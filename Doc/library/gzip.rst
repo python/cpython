@@ -59,6 +59,14 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+.. exception:: BadGzipFile
+
+   An exception raised for invalid gzip files.  It inherits :exc:`OSError`.
+   :exc:`EOFError` and :exc:`zlib.error` can also be raised for invalid gzip
+   files.
+
+   .. versionadded:: 3.8
+
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the
@@ -80,7 +88,8 @@ The module defines the following items:
    The *mode* argument can be any of ``'r'``, ``'rb'``, ``'a'``, ``'ab'``, ``'w'``,
    ``'wb'``, ``'x'``, or ``'xb'``, depending on whether the file will be read or
    written.  The default is the mode of *fileobj* if discernible; otherwise, the
-   default is ``'rb'``.
+   default is ``'rb'``.  In future Python releases the mode of *fileobj* will
+   not be used.  It is better to always specify *mode* for writing.
 
    Note that the file is always opened in binary mode. To open a compressed file
    in text mode, use :func:`.open` (or wrap your :class:`GzipFile` with an
@@ -155,6 +164,10 @@ The module defines the following items:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. deprecated:: 3.9
+      Opening :class:`GzipFile` for writing without specifying the *mode*
+      argument is deprecated.
 
 
 .. function:: compress(data, compresslevel=9, *, mtime=None)

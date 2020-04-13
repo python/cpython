@@ -61,16 +61,16 @@ class ModuleBrowserTest(unittest.TestCase):
 # Nested tree same as in test_pyclbr.py except for supers on C0. C1.
 mb = pyclbr
 module, fname = 'test', 'test.py'
-f0 = mb.Function(module, 'f0', fname, 1)
-f1 = mb._nest_function(f0, 'f1', 2)
-f2 = mb._nest_function(f1, 'f2', 3)
-c1 = mb._nest_class(f0, 'c1', 5)
-C0 = mb.Class(module, 'C0', ['base'], fname, 6)
-F1 = mb._nest_function(C0, 'F1', 8)
-C1 = mb._nest_class(C0, 'C1', 11, [''])
-C2 = mb._nest_class(C1, 'C2', 12)
-F3 = mb._nest_function(C2, 'F3', 14)
-mock_pyclbr_tree = {'f0': f0, 'C0': C0}
+C0 = mb.Class(module, 'C0', ['base'], fname, 1)
+F1 = mb._nest_function(C0, 'F1', 3)
+C1 = mb._nest_class(C0, 'C1', 6, [''])
+C2 = mb._nest_class(C1, 'C2', 7)
+F3 = mb._nest_function(C2, 'F3', 9)
+f0 = mb.Function(module, 'f0', fname, 11)
+f1 = mb._nest_function(f0, 'f1', 12)
+f2 = mb._nest_function(f1, 'f2', 13)
+c1 = mb._nest_class(f0, 'c1', 15)
+mock_pyclbr_tree = {'C0': C0, 'f0': f0}
 
 # Adjust C0.name, C1.name so tests do not depend on order.
 browser.transform_children(mock_pyclbr_tree, 'test')  # C0(base)
@@ -87,12 +87,12 @@ class TransformChildrenTest(unittest.TestCase):
         transform = browser.transform_children
         # Parameter matches tree module.
         tcl = list(transform(mock_pyclbr_tree, 'test'))
-        eq(tcl, [f0, C0])
-        eq(tcl[0].name, 'f0')
-        eq(tcl[1].name, 'C0(base)')
+        eq(tcl, [C0, f0])
+        eq(tcl[0].name, 'C0(base)')
+        eq(tcl[1].name, 'f0')
         # Check that second call does not change suffix.
         tcl = list(transform(mock_pyclbr_tree, 'test'))
-        eq(tcl[1].name, 'C0(base)')
+        eq(tcl[0].name, 'C0(base)')
         # Nothing to traverse if parameter name isn't same as tree module.
         tcl = list(transform(mock_pyclbr_tree, 'different name'))
         eq(tcl, [])

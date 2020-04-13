@@ -123,6 +123,13 @@ class DateTimeTests(unittest.TestCase):
                               "http2time(%s) is not None\n"
                               "http2time(test) %s" % (test, http2time(test)))
 
+    def test_http2time_redos_regression_actually_completes(self):
+        # LOOSE_HTTP_DATE_RE was vulnerable to malicious input which caused catastrophic backtracking (REDoS).
+        # If we regress to cubic complexity, this test will take a very long time to succeed.
+        # If fixed, it should complete within a fraction of a second.
+        http2time("01 Jan 1970{}00:00:00 GMT!".format(" " * 10 ** 5))
+        http2time("01 Jan 1970 00:00:00{}GMT!".format(" " * 10 ** 5))
+
     def test_iso2time(self):
         def parse_date(text):
             return time.gmtime(iso2time(text))[:6]
@@ -179,6 +186,12 @@ class DateTimeTests(unittest.TestCase):
             ]:
             self.assertIsNone(iso2time(test),
                               "iso2time(%r)" % test)
+
+    def test_iso2time_performance_regression(self):
+        # If ISO_DATE_RE regresses to quadratic complexity, this test will take a very long time to succeed.
+        # If fixed, it should complete within a fraction of a second.
+        iso2time('1994-02-03{}14:15:29 -0100!'.format(' '*10**6))
+        iso2time('1994-02-03 14:15:29{}-0100!'.format(' '*10**6))
 
 
 class HeaderTests(unittest.TestCase):
@@ -440,6 +453,7 @@ class CookieTests(unittest.TestCase):
             ("http://foo.bar.com/", ".foo.bar.com", True),
             ("http://foo.bar.com/", "foo.bar.com", True),
             ("http://foo.bar.com/", ".bar.com", True),
+            ("http://foo.bar.com/", "bar.com", True),
             ("http://foo.bar.com/", "com", True),
             ("http://foo.com/", "rhubarb.foo.com", False),
             ("http://foo.com/", ".foo.com", True),
@@ -450,6 +464,8 @@ class CookieTests(unittest.TestCase):
             ("http://foo/", "foo", True),
             ("http://foo/", "foo.local", True),
             ("http://foo/", ".local", True),
+            ("http://barfoo.com", ".foo.com", False),
+            ("http://barfoo.com", "foo.com", False),
             ]:
             request = urllib.request.Request(url)
             r = pol.domain_return_ok(domain, request)
@@ -582,6 +598,15 @@ class CookieTests(unittest.TestCase):
         # if expires is in future, keep cookie...
         c = CookieJar()
         future = time2netscape(time.time()+3600)
+
+        with test.support.check_no_warnings(self):
+            headers = [f"Set-Cookie: FOO=BAR; path=/; expires={future}"]
+            req = urllib.request.Request("http://www.coyote.com/")
+            res = FakeResponse(headers, "http://www.coyote.com/")
+            cookies = c.make_cookies(res, req)
+            self.assertEqual(len(cookies), 1)
+            self.assertEqual(time2netscape(cookies[0].expires), future)
+
         interact_netscape(c, "http://www.acme.com/", 'spam="bar"; expires=%s' %
                           future)
         self.assertEqual(len(c), 1)
@@ -716,6 +741,30 @@ class CookieTests(unittest.TestCase):
         # missing final slash
         req = urllib.request.Request("http://www.example.com")
         self.assertEqual(request_path(req), "/")
+
+    def test_path_prefix_match(self):
+        pol = DefaultCookiePolicy()
+        strict_ns_path_pol = DefaultCookiePolicy(strict_ns_set_path=True)
+
+        c = CookieJar(pol)
+        base_url = "http://bar.com"
+        interact_netscape(c, base_url, 'spam=eggs; Path=/foo')
+        cookie = c._cookies['bar.com']['/foo']['spam']
+
+        for path, ok in [('/foo', True),
+                         ('/foo/', True),
+                         ('/foo/bar', True),
+                         ('/', False),
+                         ('/foobad/foo', False)]:
+            url = f'{base_url}{path}'
+            req = urllib.request.Request(url)
+            h = interact_netscape(c, url)
+            if ok:
+                self.assertIn('spam=eggs', h, f"cookie not set for {path}")
+                self.assertTrue(strict_ns_path_pol.set_ok_path(cookie, req))
+            else:
+                self.assertNotIn('spam=eggs', h, f"cookie set for {path}")
+                self.assertFalse(strict_ns_path_pol.set_ok_path(cookie, req))
 
     def test_request_port(self):
         req = urllib.request.Request("http://www.acme.com:1234/",
@@ -981,6 +1030,33 @@ class CookieTests(unittest.TestCase):
         c.set_cookie(cookies[0])
         self.assertEqual(len(c), 2)
         # ... and check is doesn't get returned
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        c.clear()
+
+        pol.set_blocked_domains([])
+        req = urllib.request.Request("http://acme.com/")
+        res = FakeResponse(headers, "http://acme.com/")
+        cookies = c.make_cookies(res, req)
+        c.extract_cookies(res, req)
+        self.assertEqual(len(c), 1)
+
+        req = urllib.request.Request("http://acme.com/")
+        c.add_cookie_header(req)
+        self.assertTrue(req.has_header("Cookie"))
+
+        req = urllib.request.Request("http://badacme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(pol.return_ok(cookies[0], req))
+        self.assertFalse(req.has_header("Cookie"))
+
+        p = pol.set_blocked_domains(["acme.com"])
+        req = urllib.request.Request("http://acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        req = urllib.request.Request("http://badacme.com/")
         c.add_cookie_header(req)
         self.assertFalse(req.has_header("Cookie"))
 

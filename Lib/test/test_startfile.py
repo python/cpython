@@ -10,6 +10,7 @@
 import unittest
 from test import support
 import os
+import platform
 import sys
 from os import path
 
@@ -20,6 +21,7 @@ class TestCase(unittest.TestCase):
     def test_nonexisting(self):
         self.assertRaises(OSError, startfile, "nonexisting.vbs")
 
+    @unittest.skipIf(platform.win32_is_iot(), "starting files is not supported on Windows IoT Core or nanoserver")
     def test_empty(self):
         # We need to make sure the child process starts in a directory
         # we're not about to delete. If we're running under -j, that

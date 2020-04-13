@@ -287,6 +287,67 @@ The :mod:`test.support` module defines the following constants:
    Set to a filename containing the :data:`FS_NONASCII` character.
 
 
+.. data:: LOOPBACK_TIMEOUT
+
+   Timeout in seconds for tests using a network server listening on the network
+   local loopback interface like ``127.0.0.1``.
+
+   The timeout is long enough to prevent test failure: it takes into account
+   that the client and the server can run in different threads or even
+   different processes.
+
+   The timeout should be long enough for :meth:`~socket.socket.connect`,
+   :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` methods of
+   :class:`socket.socket`.
+
+   Its default value is 5 seconds.
+
+   See also :data:`INTERNET_TIMEOUT`.
+
+
+.. data:: INTERNET_TIMEOUT
+
+   Timeout in seconds for network requests going to the Internet.
+
+   The timeout is short enough to prevent a test to wait for too long if the
+   Internet request is blocked for whatever reason.
+
+   Usually, a timeout using :data:`INTERNET_TIMEOUT` should not mark a test as
+   failed, but skip the test instead: see
+   :func:`~test.support.transient_internet`.
+
+   Its default value is 1 minute.
+
+   See also :data:`LOOPBACK_TIMEOUT`.
+
+
+.. data:: SHORT_TIMEOUT
+
+   Timeout in seconds to mark a test as failed if the test takes "too long".
+
+   The timeout value depends on the regrtest ``--timeout`` command line option.
+
+   If a test using :data:`SHORT_TIMEOUT` starts to fail randomly on slow
+   buildbots, use :data:`LONG_TIMEOUT` instead.
+
+   Its default value is 30 seconds.
+
+
+.. data:: LONG_TIMEOUT
+
+   Timeout in seconds to detect when a test hangs.
+
+   It is long enough to reduce the risk of test failure on the slowest Python
+   buildbots. It should not be used to mark a test as failed if the test takes
+   "too long".  The timeout value depends on the regrtest ``--timeout`` command
+   line option.
+
+   Its default value is 5 minutes.
+
+   See also :data:`LOOPBACK_TIMEOUT`, :data:`INTERNET_TIMEOUT` and
+   :data:`SHORT_TIMEOUT`.
+
+
 .. data:: IPV6_ENABLED
 
     Set to ``True`` if IPV6 is enabled on this host, ``False`` otherwise.
@@ -356,10 +417,33 @@ The :mod:`test.support` module defines the following constants:
 
    Check for presence of docstrings.
 
+
 .. data:: TEST_HTTP_URL
 
    Define the URL of a dedicated HTTP server for the network tests.
 
+
+.. data:: ALWAYS_EQ
+
+   Object that is equal to anything.  Used to test mixed type comparison.
+
+
+.. data:: NEVER_EQ
+
+   Object that is not equal to anything (even to :data:`ALWAYS_EQ`).
+   Used to test mixed type comparison.
+
+
+.. data:: LARGEST
+
+   Object that is greater than anything (except itself).
+   Used to test mixed type comparison.
+
+
+.. data:: SMALLEST
+
+   Object that is less than anything (except itself).
+   Used to test mixed type comparison.
 
 
 The :mod:`test.support` module defines the following functions:
@@ -602,13 +686,6 @@ The :mod:`test.support` module defines the following functions:
    ``sys.stdout`` if it's not set.
 
 
-.. function:: strip_python_strerr(stderr)
-
-   Strip the *stderr* of a Python process from potential debug output
-   emitted by the interpreter.  This will typically be run on the result of
-   :meth:`subprocess.Popen.communicate`.
-
-
 .. function:: args_from_interpreter_flags()
 
    Return a list of command line arguments reproducing the current settings
@@ -746,6 +823,21 @@ The :mod:`test.support` module defines the following functions:
 
    The old value (or ``None`` if it doesn't exist) will be assigned to the
    target of the "as" clause, if there is one.
+
+
+.. function:: wait_process(pid, *, exitcode, timeout=None)
+
+   Wait until process *pid* completes and check that the process exit code is
+   *exitcode*.
+
+   Raise an :exc:`AssertionError` if the process exit code is not equal to
+   *exitcode*.
+
+   If the process runs longer than *timeout* seconds (:data:`SHORT_TIMEOUT` by
+   default), kill the process and raise an :exc:`AssertionError`. The timeout
+   feature is not available on Windows.
+
+   .. versionadded:: 3.9
 
 
 .. function:: wait_threads_exit(timeout=60.0)
@@ -1081,6 +1173,67 @@ The :mod:`test.support` module defines the following functions:
    :exc:`PermissionError` is raised.
 
 
+.. function:: catch_threading_exception()
+
+   Context manager catching :class:`threading.Thread` exception using
+   :func:`threading.excepthook`.
+
+   Attributes set when an exception is catched:
+
+   * ``exc_type``
+   * ``exc_value``
+   * ``exc_traceback``
+   * ``thread``
+
+   See :func:`threading.excepthook` documentation.
+
+   These attributes are deleted at the context manager exit.
+
+   Usage::
+
+       with support.catch_threading_exception() as cm:
+           # code spawning a thread which raises an exception
+           ...
+
+           # check the thread exception, use cm attributes:
+           # exc_type, exc_value, exc_traceback, thread
+           ...
+
+       # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
+       # exists at this point
+       # (to avoid reference cycles)
+
+   .. versionadded:: 3.8
+
+
+.. function:: catch_unraisable_exception()
+
+   Context manager catching unraisable exception using
+   :func:`sys.unraisablehook`.
+
+   Storing the exception value (``cm.unraisable.exc_value``) creates a
+   reference cycle. The reference cycle is broken explicitly when the context
+   manager exits.
+
+   Storing the object (``cm.unraisable.object``) can resurrect it if it is set
+   to an object which is being finalized. Exiting the context manager clears
+   the stored object.
+
+   Usage::
+
+       with support.catch_unraisable_exception() as cm:
+           # code creating an "unraisable exception"
+           ...
+
+           # check the unraisable exception: use cm.unraisable
+           ...
+
+       # cm.unraisable attribute no longer exists at this point
+       # (to break a reference cycle)
+
+   .. versionadded:: 3.8
+
+
 .. function:: find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM)
 
    Returns an unused port that should be suitable for binding.  This is
@@ -1354,6 +1507,9 @@ script execution tests.
    in a subprocess.  The values can include ``__isolated``, ``__cleanenv``,
    ``__cwd``, and ``TERM``.
 
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
+
 
 .. function:: assert_python_ok(*args, **env_vars)
 
@@ -1367,6 +1523,9 @@ script execution tests.
    Python is started in isolated mode (command line option ``-I``),
    except if the ``__isolated`` keyword is set to ``False``.
 
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
+
 
 .. function:: assert_python_failure(*args, **env_vars)
 
@@ -1375,6 +1534,9 @@ script execution tests.
    stdout, stderr)`` tuple.
 
    See :func:`assert_python_ok` for more options.
+
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
 
 
 .. function:: spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw)
@@ -1419,3 +1581,33 @@ script execution tests.
    containing the *source*.  If *compiled* is ``True``, both source files will
    be compiled and added to the zip package.  Return a tuple of the full zip
    path and the archive name for the zip file.
+
+
+:mod:`test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
+=============================================================================================
+
+.. module:: test.support.bytecode_helper
+   :synopsis: Support tools for testing correct bytecode generation.
+
+The :mod:`test.support.bytecode_helper` module provides support for testing
+and inspecting bytecode generation.
+
+The module defines the following class:
+
+.. class:: BytecodeTestCase(unittest.TestCase)
+
+   This class has custom assertion methods for inspecting bytecode.
+
+.. method:: BytecodeTestCase.get_disassembly_as_string(co)
+
+   Return the disassembly of *co* as string.
+
+
+.. method:: BytecodeTestCase.assertInBytecode(x, opname, argval=_UNSPECIFIED)
+
+   Return instr if *opname* is found, otherwise throws :exc:`AssertionError`.
+
+
+.. method:: BytecodeTestCase.assertNotInBytecode(x, opname, argval=_UNSPECIFIED)
+
+   Throws :exc:`AssertionError` if *opname* is found.

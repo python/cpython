@@ -31,6 +31,7 @@ Interface summary:
 
    Raised for module specific errors.
 
+.. _shallow_vs_deep_copy:
 
 The difference between shallow and deep copying is only relevant for compound
 objects (objects that contain other objects, like lists or class instances):

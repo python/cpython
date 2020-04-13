@@ -1,3 +1,0 @@
-Changes urlsplit() to raise ValueError when the URL contains characters that
-decompose under IDNA encoding (NFKC-normalization) into characters that
-affect how the URL is parsed.

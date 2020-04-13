@@ -37,10 +37,8 @@ class FixApply(fixer_base.BaseFix):
         # I feel like we should be able to express this logic in the
         # PATTERN above but I don't know how to do it so...
         if args:
-            if args.type == self.syms.star_expr:
-                return  # Make no change.
             if (args.type == self.syms.argument and
-                args.children[0].value == '**'):
+                args.children[0].value in {'**', '*'}):
                 return  # Make no change.
         if kwds and (kwds.type == self.syms.argument and
                      kwds.children[0].value == '**'):

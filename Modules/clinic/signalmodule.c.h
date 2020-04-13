@@ -590,7 +590,7 @@ signal_pthread_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyLong_Check(args[0])) {
-        _PyArg_BadArgument("pthread_kill", 1, "int", args[0]);
+        _PyArg_BadArgument("pthread_kill", "argument 1", "int", args[0]);
         goto exit;
     }
     thread_id = PyLong_AsUnsignedLongMask(args[0]);
@@ -610,6 +610,76 @@ exit:
 }
 
 #endif /* defined(HAVE_PTHREAD_KILL) */
+
+#if (defined(__linux__) && defined(__NR_pidfd_send_signal))
+
+PyDoc_STRVAR(signal_pidfd_send_signal__doc__,
+"pidfd_send_signal($module, pidfd, signalnum, siginfo=None, flags=0, /)\n"
+"--\n"
+"\n"
+"Send a signal to a process referred to by a pid file descriptor.");
+
+#define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF    \
+    {"pidfd_send_signal", (PyCFunction)(void(*)(void))signal_pidfd_send_signal, METH_FASTCALL, signal_pidfd_send_signal__doc__},
+
+static PyObject *
+signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
+                              PyObject *siginfo, int flags);
+
+static PyObject *
+signal_pidfd_send_signal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int pidfd;
+    int signalnum;
+    PyObject *siginfo = Py_None;
+    int flags = 0;
+
+    if (!_PyArg_CheckPositional("pidfd_send_signal", nargs, 2, 4)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    pidfd = _PyLong_AsInt(args[0]);
+    if (pidfd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(args[1]);
+    if (signalnum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    siginfo = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[3]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = signal_pidfd_send_signal_impl(module, pidfd, signalnum, siginfo, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(__linux__) && defined(__NR_pidfd_send_signal)) */
 
 #ifndef SIGNAL_ALARM_METHODDEF
     #define SIGNAL_ALARM_METHODDEF
@@ -658,4 +728,8 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=f0d3a5703581da76 input=a9049054013a1b77]*/
+
+#ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
+    #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
+#endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
+/*[clinic end generated code: output=b41b4b6bd9ad4da2 input=a9049054013a1b77]*/

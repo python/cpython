@@ -223,6 +223,21 @@ class GeneralFloatCases(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIs(type(FloatSubclass(F())), FloatSubclass)
 
+        class MyIndex:
+            def __init__(self, value):
+                self.value = value
+            def __index__(self):
+                return self.value
+
+        self.assertEqual(float(MyIndex(42)), 42.0)
+        self.assertRaises(OverflowError, float, MyIndex(2**2000))
+
+        class MyInt:
+            def __int__(self):
+                return 42
+
+        self.assertRaises(TypeError, float, MyInt())
+
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             float(x='3.14')
@@ -296,6 +311,34 @@ class GeneralFloatCases(unittest.TestCase):
         # the only difference from assertEqual is that this test
         # distinguishes -0.0 and 0.0.
         self.assertEqual((a, copysign(1.0, a)), (b, copysign(1.0, b)))
+
+    def test_float_floor(self):
+        self.assertIsInstance(float(0.5).__floor__(), int)
+        self.assertEqual(float(0.5).__floor__(), 0)
+        self.assertEqual(float(1.0).__floor__(), 1)
+        self.assertEqual(float(1.5).__floor__(), 1)
+        self.assertEqual(float(-0.5).__floor__(), -1)
+        self.assertEqual(float(-1.0).__floor__(), -1)
+        self.assertEqual(float(-1.5).__floor__(), -2)
+        self.assertEqual(float(1.23e167).__floor__(), 1.23e167)
+        self.assertEqual(float(-1.23e167).__floor__(), -1.23e167)
+        self.assertRaises(ValueError, float("nan").__floor__)
+        self.assertRaises(OverflowError, float("inf").__floor__)
+        self.assertRaises(OverflowError, float("-inf").__floor__)
+
+    def test_float_ceil(self):
+        self.assertIsInstance(float(0.5).__ceil__(), int)
+        self.assertEqual(float(0.5).__ceil__(), 1)
+        self.assertEqual(float(1.0).__ceil__(), 1)
+        self.assertEqual(float(1.5).__ceil__(), 2)
+        self.assertEqual(float(-0.5).__ceil__(), 0)
+        self.assertEqual(float(-1.0).__ceil__(), -1)
+        self.assertEqual(float(-1.5).__ceil__(), -1)
+        self.assertEqual(float(1.23e167).__ceil__(), 1.23e167)
+        self.assertEqual(float(-1.23e167).__ceil__(), -1.23e167)
+        self.assertRaises(ValueError, float("nan").__ceil__)
+        self.assertRaises(OverflowError, float("inf").__ceil__)
+        self.assertRaises(OverflowError, float("-inf").__ceil__)
 
     @support.requires_IEEE_754
     def test_float_mod(self):

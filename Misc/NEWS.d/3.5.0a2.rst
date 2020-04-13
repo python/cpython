@@ -112,7 +112,6 @@ Lawrence.
 .. section: Library
 
 Corrected pure python implementation of timedelta division.
-
 Eliminated OverflowError from ``timedelta * float`` for some floats;
 Corrected rounding in timedelta true division.
 
