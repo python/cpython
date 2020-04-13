@@ -901,6 +901,8 @@ imaginary literals::
    complex number can be created directly from its real and imaginary parts
    using ``complex``::
 
+      >>> complex(0.0, -1.0)
+      -1j
       >>> complex(-0.0, 1.0)
       (-0+1j)
 
