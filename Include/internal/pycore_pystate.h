@@ -380,6 +380,10 @@ PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 /* Used by _PyImport_Cleanup() */
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 
+extern PyStatus _PyInterpreterState_SetConfig(
+    PyInterpreterState *interp,
+    const PyConfig *config);
+
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
 
 
