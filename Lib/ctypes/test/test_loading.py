@@ -125,7 +125,7 @@ class LoaderTest(unittest.TestCase):
         else:
             ext = ".dll"
 
-        with test.support.temp_dir("ctypes-test-dir") as tmp:
+        with test.support.temp_dir() as tmp:
             # We copy two files and load _sqlite3.dll (formerly .pyd),
             # which has a dependency on sqlite3.dll. Then we test
             # loading it in subprocesses to avoid it starting in memory
@@ -135,8 +135,13 @@ class LoaderTest(unittest.TestCase):
             shutil.copy(os.path.join(os.path.dirname(src), "sqlite3" + ext),
                         os.path.join(tmp, "sqlite3" + ext))
 
+            if test.support.verbose:
+                print("PRE TEST", tmp, os.listdir(tmp))
+
             def should_pass(command):
                 with self.subTest(command):
+                    if test.support.verbose:
+                        print(command, tmp, os.listdir(tmp))
                     subprocess.check_output(
                         [sys.executable, "-c",
                          "from ctypes import *; import nt;" + command],
@@ -145,6 +150,8 @@ class LoaderTest(unittest.TestCase):
 
             def should_fail(command):
                 with self.subTest(command):
+                    if test.support.verbose:
+                        print(command, tmp, os.listdir(tmp))
                     with self.assertRaises(subprocess.CalledProcessError):
                         subprocess.check_output(
                             [sys.executable, "-c",
