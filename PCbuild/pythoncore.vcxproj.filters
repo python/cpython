@@ -255,6 +255,9 @@
     <ClInclude Include="..\Include\internal\pycore_pystate.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_runtime.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h">
       <Filter>Include</Filter>
     </ClInclude>
