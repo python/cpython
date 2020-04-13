@@ -33,9 +33,11 @@ steps:
     PREFIX: $(Py_OutDir)\$(arch)
 
 - powershell: .\procmon.exe /Terminate
+  condition: true
 
 - publish: procmonlog
   artifact: procmon
+  condition: true
 
 - task: PublishTestResults@2
   displayName: 'Publish Test Results'
