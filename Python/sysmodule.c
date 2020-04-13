@@ -1679,7 +1679,7 @@ _PySys_GetSizeOf(PyObject *o)
     }
 
     /* add gc_head size */
-    if (PyObject_IS_GC(o))
+    if (_PyObject_IS_GC(o))
         return ((size_t)size) + sizeof(PyGC_Head);
     return (size_t)size;
 }
