@@ -177,6 +177,7 @@
     <ClInclude Include="..\Include\internal\pycore_hamt.h" />
     <ClInclude Include="..\Include\internal\pycore_import.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
+    <ClInclude Include="..\Include\internal\pycore_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
@@ -184,6 +185,7 @@
     <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
+    <ClInclude Include="..\Include\internal\pycore_runtime.h" />
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
     <ClInclude Include="..\Include\internal\pycore_tupleobject.h" />

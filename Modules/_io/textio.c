@@ -9,6 +9,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -996,7 +997,7 @@ io_check_errors(PyObject *errors)
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
 #ifndef Py_DEBUG
     /* In release mode, only check in development mode (-X dev) */
-    if (!interp->config.dev_mode) {
+    if (!_PyInterpreterState_GetConfig(interp)->dev_mode) {
         return 0;
     }
 #else
@@ -2640,7 +2641,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     Py_ssize_t chars_to_skip, chars_decoded;
     Py_ssize_t skip_bytes, skip_back;
     PyObject *saved_state = NULL;
-    char *input, *input_end;
+    const char *input, *input_end;
     Py_ssize_t dec_buffer_len;
     int dec_flags;
 
