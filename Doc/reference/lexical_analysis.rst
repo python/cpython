@@ -899,7 +899,7 @@ imaginary literals::
 
    To avoid these and similar difficulties related to signs of zeros, a
    complex number can be created directly from its real and imaginary parts
-   using ``complex``::
+   using the :func:`complex` constructor::
 
       >>> complex(0.0, -1.0)
       -1j
