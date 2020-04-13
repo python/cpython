@@ -28,6 +28,7 @@ from tempfile import TemporaryDirectory, SpooledTemporaryFile
 from urllib.parse import SplitResult, ParseResult
 from unittest.case import _AssertRaisesContext
 from queue import Queue, SimpleQueue
+from weakref import WeakSet, ReferenceType, ref
 import typing
 
 from typing import TypeVar
@@ -67,6 +68,7 @@ class BaseTest(unittest.TestCase):
                   Array, LibraryLoader,
                   SplitResult, ParseResult,
                   ValueProxy, ApplyResult,
+                  WeakSet, ReferenceType, ref,
                   ShareableList, SimpleQueue,
                   Future, _WorkItem,
                   Morsel,
