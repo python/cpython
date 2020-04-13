@@ -4588,7 +4588,7 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
         if (*s & 0x80) { /* XXX inefficient */
             PyObject *w;
             int kind;
-            void *data;
+            const void *data;
             Py_ssize_t len, i;
             w = decode_utf8(c, &s, end);
             if (w == NULL) {

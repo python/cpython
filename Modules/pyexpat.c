@@ -1060,7 +1060,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     static unsigned char template_buffer[256] = {0};
     PyObject* u;
     int i;
-    void *data;
+    const void *data;
     unsigned int kind;
 
     if (PyErr_Occurred())

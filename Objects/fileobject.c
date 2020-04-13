@@ -76,7 +76,7 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n < 0 && result != NULL && PyBytes_Check(result)) {
-        char *s = PyBytes_AS_STRING(result);
+        const char *s = PyBytes_AS_STRING(result);
         Py_ssize_t len = PyBytes_GET_SIZE(result);
         if (len == 0) {
             Py_DECREF(result);

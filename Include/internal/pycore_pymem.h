@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pymem.h"   /* PyMemAllocatorName */
+#include "pymem.h"      // PyMemAllocatorName
+#include "pycore_gc.h"  // PyGC_Head
 
 
 /* GC runtime state */
