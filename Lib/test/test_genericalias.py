@@ -9,7 +9,7 @@ from collections.abc import *
 from concurrent.futures import Future
 from concurrent.futures.thread import _WorkItem
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
-from contextvars import Token
+from contextvars import ContextVar, Token
 from dataclasses import Field
 from mailbox import Mailbox, _PartialFile
 from ctypes import Array, LibraryLoader
@@ -57,7 +57,7 @@ class BaseTest(unittest.TestCase):
                   Container, Collection,
                   Callable,
                   Mailbox, _PartialFile,
-                  Token,
+                  ContextVar, Token,
                   Field,
                   Set, MutableSet,
                   Mapping, MutableMapping, MappingView,
