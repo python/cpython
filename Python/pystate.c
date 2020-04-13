@@ -790,7 +790,7 @@ _PyInterpreterState_ClearModules(PyInterpreterState *interp)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
-    int verbose = tstate->interp->config.verbose;
+    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
     if (verbose && tstate->frame != NULL) {
         /* bpo-20526: After the main thread calls
@@ -1806,6 +1806,30 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
                                      _PyFrameEvalFunction eval_frame)
 {
     interp->eval_frame = eval_frame;
+}
+
+
+const PyConfig*
+_PyInterpreterState_GetConfig(PyInterpreterState *interp)
+{
+    return &interp->config;
+}
+
+
+PyStatus
+_PyInterpreterState_SetConfig(PyInterpreterState *interp,
+                              const PyConfig *config)
+{
+    return _PyConfig_Copy(&interp->config, config);
+}
+
+
+const PyConfig*
+_Py_GetConfig(void)
+{
+    assert(PyGILState_Check());
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyInterpreterState_GetConfig(tstate->interp);
 }
 
 #ifdef __cplusplus
