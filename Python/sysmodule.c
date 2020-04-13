@@ -23,7 +23,6 @@ Data members:
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
-#include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
 #include "pythread.h"
 #include "pydtrace.h"
@@ -337,7 +336,7 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
         return;
     }
 
-    const PyConfig *config = &ts->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(ts->interp);
     if (config->verbose) {
         PySys_WriteStderr("# clear sys.audit hooks\n");
     }
@@ -846,8 +845,8 @@ static PyObject *
 sys_getfilesystemencoding_impl(PyObject *module)
 /*[clinic end generated code: output=1dc4bdbe9be44aa7 input=8475f8649b8c7d8c]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    const PyConfig *config = &tstate->interp->config;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
@@ -861,8 +860,8 @@ static PyObject *
 sys_getfilesystemencodeerrors_impl(PyObject *module)
 /*[clinic end generated code: output=ba77b36bbf7c96f5 input=22a1e8365566f1e5]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    const PyConfig *config = &tstate->interp->config;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
@@ -2455,7 +2454,7 @@ make_flags(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
     const PyPreConfig *preconfig = &interp->runtime->preconfig;
-    const PyConfig *config = &interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
     PyObject *seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL) {
@@ -2889,7 +2888,7 @@ int
 _PySys_InitMain(PyThreadState *tstate)
 {
     PyObject *sysdict = tstate->interp->sysdict;
-    const PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     int res;
 
 #define COPY_LIST(KEY, VALUE) \

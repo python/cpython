@@ -2,6 +2,7 @@
 /* Tuple object implementation */
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_accu.h"
@@ -763,7 +764,7 @@ static PySequenceMethods tuple_as_sequence = {
 static PyObject*
 tuplesubscript(PyTupleObject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;

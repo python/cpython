@@ -21,6 +21,7 @@ import signal
 import array
 import queue
 import time
+import types
 import os
 from os import getpid
 
@@ -1128,6 +1129,8 @@ class ValueProxy(BaseProxy):
     def set(self, value):
         return self._callmethod('set', (value,))
     value = property(get, set)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 BaseListProxy = MakeProxyType('BaseListProxy', (

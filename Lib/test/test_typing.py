@@ -3598,11 +3598,9 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(CoolEmployeeWithDefault._field_defaults, dict(cool=0))
 
         with self.assertRaises(TypeError):
-            exec("""
-class NonDefaultAfterDefault(NamedTuple):
-    x: int = 3
-    y: int
-""")
+            class NonDefaultAfterDefault(NamedTuple):
+                x: int = 3
+                y: int
 
     def test_annotation_usage_with_methods(self):
         self.assertEqual(XMeth(1).double(), 2)
@@ -3611,20 +3609,16 @@ class NonDefaultAfterDefault(NamedTuple):
         self.assertEqual(XRepr(1, 2) + XRepr(3), 0)
 
         with self.assertRaises(AttributeError):
-            exec("""
-class XMethBad(NamedTuple):
-    x: int
-    def _fields(self):
-        return 'no chance for this'
-""")
+            class XMethBad(NamedTuple):
+                x: int
+                def _fields(self):
+                    return 'no chance for this'
 
         with self.assertRaises(AttributeError):
-            exec("""
-class XMethBad2(NamedTuple):
-    x: int
-    def _source(self):
-        return 'no chance for this as well'
-""")
+            class XMethBad2(NamedTuple):
+                x: int
+                def _source(self):
+                    return 'no chance for this as well'
 
     def test_multiple_inheritance(self):
         class A:
