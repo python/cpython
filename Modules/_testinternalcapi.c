@@ -10,6 +10,7 @@
 
 #include "Python.h"
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
+#include "pycore_gc.h"           // PyGC_Head
 
 
 static PyObject *
@@ -52,5 +53,19 @@ static struct PyModuleDef _testcapimodule = {
 PyMODINIT_FUNC
 PyInit__testinternalcapi(void)
 {
-    return PyModule_Create(&_testcapimodule);
+    PyObject *module = PyModule_Create(&_testcapimodule);
+    if (module == NULL) {
+        return NULL;
+    }
+
+    if (PyModule_AddObject(module, "SIZEOF_PYGC_HEAD",
+                           PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+        goto error;
+    }
+
+    return module;
+
+error:
+    Py_DECREF(module);
+    return NULL;
 }
