@@ -753,6 +753,10 @@ Removed
   the ``__annotations__`` attribute instead.
   (Contributed by Serhiy Storchaka in :issue:`40182`.)
 
+* The :meth:`symtable.SymbolTable.has_exec` method has been removed. It was
+  deprecated since 2006, and only returning ``False`` when it's called.
+  (Contributed by Batuhan Taskaya in :issue:`40208`)
+
 
 Porting to Python 3.9
 =====================
