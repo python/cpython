@@ -234,6 +234,9 @@
     <ClInclude Include="..\Include\internal\pycore_initconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_interp.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object.h">
       <Filter>Include</Filter>
     </ClInclude>
