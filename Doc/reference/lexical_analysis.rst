@@ -878,6 +878,32 @@ imaginary literals::
 
    3.14j   10.j    10j     .001j   1e100j   3.14e-10j   3.14_15_93j
 
+.. note::
+
+   An imaginary literal cannot include a leading ``-`` sign. The expression
+   ``-1j`` is interpreted as the unary minus operator applied to the literal
+   ``1j``. The unary minus negates both the real and imaginary parts,
+   so ``-1j`` is a complex number with real part ``-0.0`` and imaginary
+   part ``-1.0``::
+
+      >>> -1j
+      (-0-1j)
+
+   Similarly, in the addition ``-0.0 + 1j``, the left addend ``-0.0`` is
+   promoted to a complex number with real part ``-0.0`` and imaginary part
+   ``0.0``, while ``1j`` has real part ``0.0``. The sum of the real parts is
+   thus ``0.0``, not ``-0.0``::
+
+      >>> -0.0 + 1j
+      1j
+
+   To avoid these and similar difficulties related to signs of zeros, a
+   complex number can be created directly from its real and imaginary parts
+   using ``complex``::
+
+      >>> complex(-0.0, 1.0)
+      (-0+1j)
+
 
 .. _operators:
 
