@@ -16010,7 +16010,7 @@ int
 _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    PyConfig *config = (PyConfig *)_PyInterpreterState_GetConfig(interp);
 
     /* Set the filesystem encoding to mbcs/replace (PEP 529) */
     wchar_t *encoding = _PyMem_RawWcsdup(L"mbcs");
