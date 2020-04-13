@@ -325,8 +325,10 @@ static KeywordToken *reserved_keywords[] = {
 #define _tmp_125_type 1263
 #define _tmp_126_type 1264
 #define _tmp_127_type 1265
-#define _loop0_128_type 1266
+#define _tmp_128_type 1266
 #define _tmp_129_type 1267
+#define _loop0_130_type 1268
+#define _tmp_131_type 1269
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -594,8 +596,10 @@ static void *_tmp_124_rule(Parser *p);
 static void *_tmp_125_rule(Parser *p);
 static void *_tmp_126_rule(Parser *p);
 static void *_tmp_127_rule(Parser *p);
-static asdl_seq *_loop0_128_rule(Parser *p);
+static void *_tmp_128_rule(Parser *p);
 static void *_tmp_129_rule(Parser *p);
+static asdl_seq *_loop0_130_rule(Parser *p);
+static void *_tmp_131_rule(Parser *p);
 
 
 // file: statements? $
@@ -8888,19 +8892,22 @@ incorrect_arguments_rule(Parser *p)
     return res;
 }
 
-// invalid_named_expression: expression ':='
+// invalid_named_expression: expression ':=' expression
 static void *
 invalid_named_expression_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
-    { // expression ':='
+    { // expression ':=' expression
         expr_ty a;
+        expr_ty expression_var;
         void *literal;
         if (
             (a = expression_rule(p))
             &&
             (literal = expect_token(p, 53))
+            &&
+            (expression_var = expression_rule(p))
         )
         {
             res = raise_syntax_error ( p , "cannot use assignment expressions with %s" , get_expr_name ( a ) );
@@ -8919,8 +8926,8 @@ invalid_named_expression_rule(Parser *p)
 // invalid_assignment:
 //     | list ':'
 //     | tuple ':'
-//     | expression ':'
-//     | expression ('=' | augassign)
+//     | expression ':' expression ['=' annotated_rhs]
+//     | expression ('=' | augassign) (yield_expr | star_expressions)
 static void *
 invalid_assignment_rule(Parser *p)
 {
@@ -8960,13 +8967,20 @@ invalid_assignment_rule(Parser *p)
         }
         p->mark = mark;
     }
-    { // expression ':'
+    { // expression ':' expression ['=' annotated_rhs]
         expr_ty expression_var;
+        expr_ty expression_var_1;
         void *literal;
+        void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (expression_var = expression_rule(p))
             &&
             (literal = expect_token(p, 11))
+            &&
+            (expression_var_1 = expression_rule(p))
+            &&
+            (opt_var = _tmp_115_rule(p), 1)
         )
         {
             res = raise_syntax_error ( p , "illegal target for annotation" );
@@ -8977,13 +8991,16 @@ invalid_assignment_rule(Parser *p)
         }
         p->mark = mark;
     }
-    { // expression ('=' | augassign)
-        void *_tmp_115_var;
+    { // expression ('=' | augassign) (yield_expr | star_expressions)
+        void *_tmp_116_var;
+        void *_tmp_117_var;
         expr_ty a;
         if (
             (a = expression_rule(p))
             &&
-            (_tmp_115_var = _tmp_115_rule(p))
+            (_tmp_116_var = _tmp_116_rule(p))
+            &&
+            (_tmp_117_var = _tmp_117_rule(p))
         )
         {
             res = raise_syntax_error ( p , "cannot assign to %s" , get_expr_name ( a ) );
@@ -9458,12 +9475,12 @@ _loop1_13_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // (star_targets '=')
-        void *_tmp_116_var;
+        void *_tmp_118_var;
         while (
-            (_tmp_116_var = _tmp_116_rule(p))
+            (_tmp_118_var = _tmp_118_rule(p))
         )
         {
-            res = _tmp_116_var;
+            res = _tmp_118_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -9753,12 +9770,12 @@ _loop0_21_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('.' | '...')
-        void *_tmp_117_var;
+        void *_tmp_119_var;
         while (
-            (_tmp_117_var = _tmp_117_rule(p))
+            (_tmp_119_var = _tmp_119_rule(p))
         )
         {
-            res = _tmp_117_var;
+            res = _tmp_119_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -9798,12 +9815,12 @@ _loop1_22_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('.' | '...')
-        void *_tmp_118_var;
+        void *_tmp_120_var;
         while (
-            (_tmp_118_var = _tmp_118_rule(p))
+            (_tmp_120_var = _tmp_120_rule(p))
         )
         {
-            res = _tmp_118_var;
+            res = _tmp_120_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -10879,7 +10896,7 @@ _loop0_55_rule(Parser *p)
         while (
             (literal = expect_token(p, 12))
             &&
-            (elem = _tmp_119_rule(p))
+            (elem = _tmp_121_rule(p))
         )
         {
             res = elem;
@@ -10920,7 +10937,7 @@ _gather_54_rule(Parser *p)
         void *elem;
         asdl_seq * seq;
         if (
-            (elem = _tmp_119_rule(p))
+            (elem = _tmp_121_rule(p))
             &&
             (seq = _loop0_55_rule(p))
         )
@@ -10978,12 +10995,12 @@ _loop1_57_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('@' named_expression NEWLINE)
-        void *_tmp_120_var;
+        void *_tmp_122_var;
         while (
-            (_tmp_120_var = _tmp_120_rule(p))
+            (_tmp_122_var = _tmp_122_rule(p))
         )
         {
-            res = _tmp_120_var;
+            res = _tmp_122_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -11134,12 +11151,12 @@ _loop1_61_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // (',' star_expression)
-        void *_tmp_121_var;
+        void *_tmp_123_var;
         while (
-            (_tmp_121_var = _tmp_121_rule(p))
+            (_tmp_123_var = _tmp_123_rule(p))
         )
         {
-            res = _tmp_121_var;
+            res = _tmp_123_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -11259,12 +11276,12 @@ _loop1_64_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // (',' expression)
-        void *_tmp_122_var;
+        void *_tmp_124_var;
         while (
-            (_tmp_122_var = _tmp_122_rule(p))
+            (_tmp_124_var = _tmp_124_rule(p))
         )
         {
-            res = _tmp_122_var;
+            res = _tmp_124_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -11819,7 +11836,7 @@ _loop0_82_rule(Parser *p)
         while (
             (literal = expect_token(p, 12))
             &&
-            (elem = _tmp_123_rule(p))
+            (elem = _tmp_125_rule(p))
         )
         {
             res = elem;
@@ -11860,7 +11877,7 @@ _gather_81_rule(Parser *p)
         void *elem;
         asdl_seq * seq;
         if (
-            (elem = _tmp_123_rule(p))
+            (elem = _tmp_125_rule(p))
             &&
             (seq = _loop0_82_rule(p))
         )
@@ -11890,12 +11907,12 @@ _loop1_83_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('or' conjunction)
-        void *_tmp_124_var;
+        void *_tmp_126_var;
         while (
-            (_tmp_124_var = _tmp_124_rule(p))
+            (_tmp_126_var = _tmp_126_rule(p))
         )
         {
-            res = _tmp_124_var;
+            res = _tmp_126_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -11939,12 +11956,12 @@ _loop1_84_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('and' inversion)
-        void *_tmp_125_var;
+        void *_tmp_127_var;
         while (
-            (_tmp_125_var = _tmp_125_rule(p))
+            (_tmp_127_var = _tmp_127_rule(p))
         )
         {
-            res = _tmp_125_var;
+            res = _tmp_127_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -12462,12 +12479,12 @@ _loop1_97_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // (ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*)
-        void *_tmp_126_var;
+        void *_tmp_128_var;
         while (
-            (_tmp_126_var = _tmp_126_rule(p))
+            (_tmp_128_var = _tmp_128_rule(p))
         )
         {
-            res = _tmp_126_var;
+            res = _tmp_128_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -12871,12 +12888,12 @@ _loop0_108_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // (',' star_target)
-        void *_tmp_127_var;
+        void *_tmp_129_var;
         while (
-            (_tmp_127_var = _tmp_127_rule(p))
+            (_tmp_129_var = _tmp_129_rule(p))
         )
         {
-            res = _tmp_127_var;
+            res = _tmp_129_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -13129,9 +13146,34 @@ _gather_113_rule(Parser *p)
     return res;
 }
 
-// _tmp_115: '=' | augassign
+// _tmp_115: '=' annotated_rhs
 static void *
 _tmp_115_rule(Parser *p)
+{
+    void * res = NULL;
+    int mark = p->mark;
+    { // '=' annotated_rhs
+        expr_ty annotated_rhs_var;
+        void *literal;
+        if (
+            (literal = expect_token(p, 22))
+            &&
+            (annotated_rhs_var = annotated_rhs_rule(p))
+        )
+        {
+            res = CONSTRUCTOR(p, literal, annotated_rhs_var);
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// _tmp_116: '=' | augassign
+static void *
+_tmp_116_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13162,9 +13204,42 @@ _tmp_115_rule(Parser *p)
     return res;
 }
 
-// _tmp_116: star_targets '='
+// _tmp_117: yield_expr | star_expressions
 static void *
-_tmp_116_rule(Parser *p)
+_tmp_117_rule(Parser *p)
+{
+    void * res = NULL;
+    int mark = p->mark;
+    { // yield_expr
+        expr_ty yield_expr_var;
+        if (
+            (yield_expr_var = yield_expr_rule(p))
+        )
+        {
+            res = yield_expr_var;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // star_expressions
+        expr_ty star_expressions_var;
+        if (
+            (star_expressions_var = star_expressions_rule(p))
+        )
+        {
+            res = star_expressions_var;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// _tmp_118: star_targets '='
+static void *
+_tmp_118_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13190,75 +13265,75 @@ _tmp_116_rule(Parser *p)
     return res;
 }
 
-// _tmp_117: '.' | '...'
-static void *
-_tmp_117_rule(Parser *p)
-{
-    void * res = NULL;
-    int mark = p->mark;
-    { // '.'
-        void *literal;
-        if (
-            (literal = expect_token(p, 23))
-        )
-        {
-            res = literal;
-            goto done;
-        }
-        p->mark = mark;
-    }
-    { // '...'
-        void *literal;
-        if (
-            (literal = expect_token(p, 52))
-        )
-        {
-            res = literal;
-            goto done;
-        }
-        p->mark = mark;
-    }
-    res = NULL;
-  done:
-    return res;
-}
-
-// _tmp_118: '.' | '...'
-static void *
-_tmp_118_rule(Parser *p)
-{
-    void * res = NULL;
-    int mark = p->mark;
-    { // '.'
-        void *literal;
-        if (
-            (literal = expect_token(p, 23))
-        )
-        {
-            res = literal;
-            goto done;
-        }
-        p->mark = mark;
-    }
-    { // '...'
-        void *literal;
-        if (
-            (literal = expect_token(p, 52))
-        )
-        {
-            res = literal;
-            goto done;
-        }
-        p->mark = mark;
-    }
-    res = NULL;
-  done:
-    return res;
-}
-
-// _tmp_119: plain_name !'='
+// _tmp_119: '.' | '...'
 static void *
 _tmp_119_rule(Parser *p)
+{
+    void * res = NULL;
+    int mark = p->mark;
+    { // '.'
+        void *literal;
+        if (
+            (literal = expect_token(p, 23))
+        )
+        {
+            res = literal;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // '...'
+        void *literal;
+        if (
+            (literal = expect_token(p, 52))
+        )
+        {
+            res = literal;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// _tmp_120: '.' | '...'
+static void *
+_tmp_120_rule(Parser *p)
+{
+    void * res = NULL;
+    int mark = p->mark;
+    { // '.'
+        void *literal;
+        if (
+            (literal = expect_token(p, 23))
+        )
+        {
+            res = literal;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // '...'
+        void *literal;
+        if (
+            (literal = expect_token(p, 52))
+        )
+        {
+            res = literal;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// _tmp_121: plain_name !'='
+static void *
+_tmp_121_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13280,9 +13355,9 @@ _tmp_119_rule(Parser *p)
     return res;
 }
 
-// _tmp_120: '@' named_expression NEWLINE
+// _tmp_122: '@' named_expression NEWLINE
 static void *
-_tmp_120_rule(Parser *p)
+_tmp_122_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13311,9 +13386,9 @@ _tmp_120_rule(Parser *p)
     return res;
 }
 
-// _tmp_121: ',' star_expression
+// _tmp_123: ',' star_expression
 static void *
-_tmp_121_rule(Parser *p)
+_tmp_123_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13339,9 +13414,9 @@ _tmp_121_rule(Parser *p)
     return res;
 }
 
-// _tmp_122: ',' expression
+// _tmp_124: ',' expression
 static void *
-_tmp_122_rule(Parser *p)
+_tmp_124_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13367,9 +13442,9 @@ _tmp_122_rule(Parser *p)
     return res;
 }
 
-// _tmp_123: lambda_plain_name !'='
+// _tmp_125: lambda_plain_name !'='
 static void *
-_tmp_123_rule(Parser *p)
+_tmp_125_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13391,9 +13466,9 @@ _tmp_123_rule(Parser *p)
     return res;
 }
 
-// _tmp_124: 'or' conjunction
+// _tmp_126: 'or' conjunction
 static void *
-_tmp_124_rule(Parser *p)
+_tmp_126_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13419,9 +13494,9 @@ _tmp_124_rule(Parser *p)
     return res;
 }
 
-// _tmp_125: 'and' inversion
+// _tmp_127: 'and' inversion
 static void *
-_tmp_125_rule(Parser *p)
+_tmp_127_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13447,9 +13522,9 @@ _tmp_125_rule(Parser *p)
     return res;
 }
 
-// _tmp_126: ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*
+// _tmp_128: ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*
 static void *
-_tmp_126_rule(Parser *p)
+_tmp_128_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13471,7 +13546,7 @@ _tmp_126_rule(Parser *p)
             &&
             (b = disjunction_rule(p))
             &&
-            (c = _loop0_128_rule(p))
+            (c = _loop0_130_rule(p))
         )
         {
             res = _Py_comprehension ( a , b , c , y != NULL , p -> arena );
@@ -13487,9 +13562,9 @@ _tmp_126_rule(Parser *p)
     return res;
 }
 
-// _tmp_127: ',' star_target
+// _tmp_129: ',' star_target
 static void *
-_tmp_127_rule(Parser *p)
+_tmp_129_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13515,9 +13590,9 @@ _tmp_127_rule(Parser *p)
     return res;
 }
 
-// _loop0_128: ('if' disjunction)
+// _loop0_130: ('if' disjunction)
 static asdl_seq *
-_loop0_128_rule(Parser *p)
+_loop0_130_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
@@ -13530,12 +13605,12 @@ _loop0_128_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('if' disjunction)
-        void *_tmp_129_var;
+        void *_tmp_131_var;
         while (
-            (_tmp_129_var = _tmp_129_rule(p))
+            (_tmp_131_var = _tmp_131_rule(p))
         )
         {
-            res = _tmp_129_var;
+            res = _tmp_131_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -13551,18 +13626,18 @@ _loop0_128_rule(Parser *p)
     }
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_128");
+        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_130");
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    insert_memo(p, start_mark, _loop0_128_type, seq);
+    insert_memo(p, start_mark, _loop0_130_type, seq);
     return seq;
 }
 
-// _tmp_129: 'if' disjunction
+// _tmp_131: 'if' disjunction
 static void *
-_tmp_129_rule(Parser *p)
+_tmp_131_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;

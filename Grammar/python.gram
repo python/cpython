@@ -520,10 +520,12 @@ incorrect_arguments:
     | args ',' '*' { raise_syntax_error(p, "iterable argument unpacking follows keyword argument unpacking") }
     | a=args ',' args { arguments_parsing_error(p, a) }
 invalid_named_expression:
-    | a=expression ':=' {
+    | a=expression ':=' expression {
         raise_syntax_error(p, "cannot use assignment expressions with %s", get_expr_name(a)) }
 invalid_assignment:
     | list ':' { raise_syntax_error(p, "only single target (not list) can be annotated") }
     | tuple ':' { raise_syntax_error(p, "only single target (not tuple) can be annotated") }
-    | expression ':' { raise_syntax_error(p, "illegal target for annotation") }
-    | a=expression ('=' | augassign) { raise_syntax_error(p, "cannot assign to %s", get_expr_name(a)) }
+    | expression ':' expression ['=' annotated_rhs] {
+        raise_syntax_error(p, "illegal target for annotation") }
+    | a=expression ('=' | augassign) (yield_expr | star_expressions) {
+        raise_syntax_error(p, "cannot assign to %s", get_expr_name(a)) }
