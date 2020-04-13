@@ -134,13 +134,17 @@ class LoaderTest(unittest.TestCase):
             shutil.copy(src, target)
             shutil.copy(os.path.join(os.path.dirname(src), "sqlite3" + ext),
                         os.path.join(tmp, "sqlite3" + ext))
+            env = {
+                **os.environ,
+                "PATH": os.path.expandvars(r"%SystemRoot%\System32;%SystemRoot%"),
+            }
 
             def should_pass(command):
                 with self.subTest(command):
                     subprocess.check_output(
                         [sys.executable, "-c",
                          "from ctypes import *; import nt;" + command],
-                        cwd=tmp
+                        cwd=tmp, env=env,
                     )
 
             def should_fail(command):
@@ -149,7 +153,7 @@ class LoaderTest(unittest.TestCase):
                         subprocess.check_output(
                             [sys.executable, "-c",
                              "from ctypes import *; import nt;" + command],
-                            cwd=tmp, stderr=subprocess.STDOUT,
+                            cwd=tmp, env=env, stderr=subprocess.STDOUT,
                         )
 
             # Default load should not find this in CWD
@@ -158,11 +162,8 @@ class LoaderTest(unittest.TestCase):
             # Relative path (but not just filename) should succeed
             should_pass("WinDLL('./_sqlite3.dll')")
 
-            # XXX: This test has started failing on Azure Pipelines CI.  See
-            #      bpo-40214 for more information.
-            if 0:
-                # Insecure load flags should succeed
-                should_pass("WinDLL('_sqlite3.dll', winmode=0)")
+            # Insecure load flags should succeed
+            should_pass("WinDLL('_sqlite3.dll', winmode=0)")
 
             # Full path load without DLL_LOAD_DIR shouldn't find dependency
             should_fail("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +
