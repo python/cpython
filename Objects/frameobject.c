@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_gc.h"       // _PyObject_GC_IS_TRACKED()
 
 #include "code.h"
 #include "frameobject.h"

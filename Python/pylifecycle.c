@@ -6,7 +6,7 @@
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_ceval.h"
 #include "pycore_context.h"
-#include "pycore_import.h"   /* _PyImport_FindBuiltin */
+#include "pycore_import.h"        // _PyImport_Cleanup()
 #include "pycore_initconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_hamt.h"
@@ -15,7 +15,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"
 #include "pycore_traceback.h"
 #include "grammar.h"

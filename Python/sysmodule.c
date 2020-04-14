@@ -18,13 +18,12 @@ Data members:
 #include "code.h"
 #include "frameobject.h"
 #include "pycore_ceval.h"        // _Py_RecursionLimitLowerWaterMark()
-#include "pycore_pystate.h"      // _PyThreadState_GET()
-#include "pycore_tupleobject.h"
 #include "pycore_initconfig.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
+#include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
 #include "pythread.h"
 #include "pydtrace.h"

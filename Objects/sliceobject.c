@@ -17,7 +17,6 @@ this type and there is exactly one in existence.
 #include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
 #include "pycore_pymem.h"
-#include "pycore_pystate.h"
 #include "structmember.h"
 
 static PyObject *

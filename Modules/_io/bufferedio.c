@@ -10,7 +10,6 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pystate.h"
 #include "structmember.h"
 #include "pythread.h"
 #include "_iomodule.h"
