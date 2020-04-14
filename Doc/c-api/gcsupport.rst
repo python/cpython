@@ -67,7 +67,7 @@ Constructors for container types must conform to two rules:
    Otherwise, return non-zero if object type does not implement tp_is_gc slot or
    if tp_is_gc(obj) is non-zero.
 
-   For example, if *obj* is a type(`PyTypeObject`), check if *obj* has
+   For example, if *obj* is a type (:c:type:`PyTypeObject`), check if *obj* has
    the :c:data:`Py_TPFLAGS_HEAPTYPE` flag.
 
    If the function returns non-zero, you can use :c:func:`PyObject_GC_ISTracked`
