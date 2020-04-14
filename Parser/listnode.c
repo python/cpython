@@ -3,7 +3,7 @@
 
 #include "Python.h"
 #include "pycore_interp.h"   // PyInterpreterState.parser
-#include "pycore_pystate.h"  // _PyInterpreterState_GET_UNSAFE
+#include "pycore_pystate.h"  // _PyInterpreterState_GET
 #include "token.h"
 #include "node.h"
 
@@ -20,7 +20,7 @@ PyNode_ListTree(node *n)
 static void
 listnode(FILE *fp, node *n)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     interp->parser.listnode.level = 0;
     interp->parser.listnode.atbol = 1;
@@ -40,7 +40,7 @@ list1node(FILE *fp, node *n)
             list1node(fp, CHILD(n, i));
     }
     else if (ISTERMINAL(TYPE(n))) {
-        interp = _PyInterpreterState_GET_UNSAFE();
+        interp = _PyInterpreterState_GET();
         switch (TYPE(n)) {
         case INDENT:
             interp->parser.listnode.level++;

@@ -310,7 +310,7 @@ _PyImport_Fini2(void)
 PyObject *
 PyImport_GetModuleDict(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->modules == NULL) {
         Py_FatalError("interpreter has no modules dictionary");
     }
@@ -644,7 +644,7 @@ long
 PyImport_GetMagicNumber(void)
 {
     long res;
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *external, *pyc_magic;
 
     external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
@@ -980,7 +980,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
             goto error;
     }
     else if (cpathobj != NULL) {
-        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+        PyInterpreterState *interp = _PyInterpreterState_GET();
         _Py_IDENTIFIER(_get_sourcefile);
 
         if (interp == NULL) {

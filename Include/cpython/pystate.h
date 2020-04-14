@@ -165,7 +165,7 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    This function doesn't check for error. Return NULL before _PyGILState_Init()
    is called and after _PyGILState_Fini() is called.
 
-   See also _PyInterpreterState_Get() and _PyInterpreterState_GET_UNSAFE(). */
+   See also _PyInterpreterState_Get() and _PyInterpreterState_GET(). */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 
 /* The implementation of sys._current_frames()  Returns a dict mapping

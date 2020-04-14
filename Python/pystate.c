@@ -661,7 +661,7 @@ PyObject*
 PyState_FindModule(struct PyModuleDef* module)
 {
     Py_ssize_t index = module->m_base.m_index;
-    PyInterpreterState *state = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *state = _PyInterpreterState_GET();
     PyObject *res;
     if (module->m_slots) {
         return NULL;

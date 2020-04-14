@@ -347,7 +347,7 @@ set_main_loader(PyObject *d, const char *filename, const char *loader_name)
     filename_obj = PyUnicode_DecodeFSDefault(filename);
     if (filename_obj == NULL)
         return -1;
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     bootstrap = PyObject_GetAttrString(interp->importlib,
                                        "_bootstrap_external");
     if (bootstrap != NULL) {
