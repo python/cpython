@@ -10,7 +10,7 @@
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
-#include "pycore_abstract.h"     // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_code.h"
@@ -18,7 +18,8 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"      // _PyInterpreterState_GET()
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"
 #include "pycore_tupleobject.h"
 
