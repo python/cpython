@@ -2,6 +2,7 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
+#include "pycore_interp.h"    // _PyInterpreterState.dlopenflags
 #include "pycore_pystate.h"   // _PyInterpreterState_GET_UNSAFE()
 #include "importdl.h"
 

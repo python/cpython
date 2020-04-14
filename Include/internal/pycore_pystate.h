@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_interp.h"    /* PyInterpreterState */
-#include "pycore_runtime.h"   /* PyRuntimestate */
+#include "pycore_runtime.h"   /* PyRuntimeState */
 
 
 /* Check if the current thread is the main thread.
