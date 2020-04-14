@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_interp.h"     // _PyInterpreterState_LookUpID()
 #include "pycore_pystate.h"
 #include "interpreteridobject.h"
 

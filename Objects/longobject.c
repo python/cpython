@@ -3,7 +3,8 @@
 /* XXX The functional organization of this file is terrible */
 
 #include "Python.h"
-#include "pycore_pystate.h"   /* _Py_IsMainInterpreter() */
+#include "pycore_interp.h"    // _PY_NSMALLPOSINTS
+#include "pycore_pystate.h"   // _Py_IsMainInterpreter()
 #include "longintrepr.h"
 
 #include <float.h>

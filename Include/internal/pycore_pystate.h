@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_interp.h"    /* PyInterpreterState */
-#include "pycore_runtime.h"   /* PyRuntimestate */
+#include "pycore_runtime.h"   /* PyRuntimeState */
 
 
 /* Check if the current thread is the main thread.
@@ -79,8 +78,9 @@ static inline PyThreadState *_PyThreadState_GET(void) {
 
    See also _PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
-static inline PyInterpreterState* _PyInterpreterState_GET_UNSAFE(void) {
+static inline PyInterpreterState* _PyInterpreterState_GET(void) {
     PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate != NULL);
     return tstate->interp;
 }
 

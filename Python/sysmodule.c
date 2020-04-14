@@ -17,7 +17,9 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"        // _Py_RecursionLimitLowerWaterMark()
+#include "pycore_pystate.h"      // _PyThreadState_GET()
+#include "pycore_tupleobject.h"
 #include "pycore_initconfig.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
@@ -845,7 +847,7 @@ static PyObject *
 sys_getfilesystemencoding_impl(PyObject *module)
 /*[clinic end generated code: output=1dc4bdbe9be44aa7 input=8475f8649b8c7d8c]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
@@ -860,7 +862,7 @@ static PyObject *
 sys_getfilesystemencodeerrors_impl(PyObject *module)
 /*[clinic end generated code: output=ba77b36bbf7c96f5 input=22a1e8365566f1e5]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }

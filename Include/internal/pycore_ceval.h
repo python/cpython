@@ -13,7 +13,7 @@ struct pyruntimestate;
 struct _ceval_runtime_state;
 struct _frame;
 
-#include "pycore_pystate.h"   /* PyInterpreterState.eval_frame */
+#include "pycore_interp.h"   /* PyInterpreterState.eval_frame */
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
@@ -50,7 +50,7 @@ extern PyObject *_PyEval_EvalCode(
     PyObject *kwdefs, PyObject *closure,
     PyObject *name, PyObject *qualname);
 
-extern int _PyEval_ThreadsInitialized(_PyRuntimeState *runtime);
+extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
 extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
 extern void _PyEval_FiniGIL(PyThreadState *tstate);
 

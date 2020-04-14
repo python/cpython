@@ -753,6 +753,10 @@ Removed
   the ``__annotations__`` attribute instead.
   (Contributed by Serhiy Storchaka in :issue:`40182`.)
 
+* The :meth:`symtable.SymbolTable.has_exec` method has been removed. It was
+  deprecated since 2006, and only returning ``False`` when it's called.
+  (Contributed by Batuhan Taskaya in :issue:`40208`)
+
 
 Porting to Python 3.9
 =====================
@@ -790,6 +794,9 @@ Changes in the Python API
   environment variable when the :option:`-E` or :option:`-I` command line
   options are being used.
 
+* The *encoding* parameter has been added to the classes :class:`ftplib.FTP` and
+  :class:`ftplib.FTP_TLS` as a keyword-only parameter, and the default encoding
+  is changed from Latin-1 to UTF-8 to follow :rfc:`2640`.
 
 CPython bytecode changes
 ------------------------

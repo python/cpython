@@ -1,0 +1,3 @@
+Add the encoding in :class:`ftplib.FTP` and :class:`ftplib.FTP_TLS` to the
+constructor as keyword-only and change the default from ``latin-1`` to ``utf-8``
+to follow :rfc:`2640`.
