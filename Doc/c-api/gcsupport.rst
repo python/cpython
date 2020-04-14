@@ -63,16 +63,9 @@ Constructors for container types must conform to two rules:
 
 .. c:function:: int PyObject_IS_GC(PyObject *obj)
 
-   Return 0 if the object type does not have the :c:data:`Py_TPFLAGS_HAVE_GC` flag.
-   Otherwise, return non-zero if object type does not implement ``tp_is_gc`` slot or
-   if ``tp_is_gc(obj)`` is non-zero.
-
-   For example, if *obj* is a type (:c:type:`PyTypeObject`), check if *obj* has
-   the :c:data:`Py_TPFLAGS_HEAPTYPE` flag.
-
-   If the function returns non-zero, you can use :c:func:`PyObject_GC_ISTracked`
-   to check if the object is currently tracked by the GC.
-   Notice that if this function return zero, the object cannot be tracked the GC.
+   Returns non-zero if the object implements the garbage collector protocol,
+   otherwise returns 0. The object cannot be tracked by the garbage collector
+   if this function return 0.
 
 
 .. c:function:: int PyObject_GC_IsTracked(PyObject *op)

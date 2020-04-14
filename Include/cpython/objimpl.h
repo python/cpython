@@ -127,10 +127,9 @@ PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
 static inline int
 _PyObject_IS_GC(PyObject *obj)
 {
-    if (PyType_IS_GC(Py_TYPE(obj))) {
-        return (Py_TYPE(obj)->tp_is_gc == NULL || Py_TYPE(obj)->tp_is_gc(obj));
-    }
-    return 0;
+    return (PyType_IS_GC(Py_TYPE(obj))
+            && (Py_TYPE(obj)->tp_is_gc == NULL
+                || Py_TYPE(obj)->tp_is_gc(obj)));
 }
 
 /* Code built with Py_BUILD_CORE must include pycore_gc.h instead which

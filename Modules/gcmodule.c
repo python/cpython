@@ -2203,7 +2203,6 @@ PyObject_GC_UnTrack(void *op_raw)
     }
 }
 
-/* Test if an object has a GC head */
 int
 PyObject_IS_GC(PyObject *obj)
 {
