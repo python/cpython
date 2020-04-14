@@ -359,13 +359,13 @@ _pythread_nt_set_stacksize(size_t size)
 {
     /* set to default */
     if (size == 0) {
-        _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = 0;
+        _PyInterpreterState_GET()->pythread_stacksize = 0;
         return 0;
     }
 
     /* valid range? */
     if (size >= THREAD_MIN_STACKSIZE && size < THREAD_MAX_STACKSIZE) {
-        _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = size;
+        _PyInterpreterState_GET()->pythread_stacksize = size;
         return 0;
     }
 
