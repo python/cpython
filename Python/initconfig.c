@@ -1,25 +1,25 @@
 #include "Python.h"
-#include "osdefs.h"       /* DELIM */
+#include "osdefs.h"               // DELIM
 #include "pycore_fileutils.h"
 #include "pycore_getopt.h"
 #include "pycore_initconfig.h"
-#include "pycore_interp.h"    // _PyInterpreterState.runtime
+#include "pycore_interp.h"        // _PyInterpreterState.runtime
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
-#include "pycore_pystate.h"   /* _PyRuntime */
-#include <locale.h>       /* setlocale() */
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include <locale.h>               // setlocale()
 #ifdef HAVE_LANGINFO_H
-#  include <langinfo.h>   /* nl_langinfo(CODESET) */
+#  include <langinfo.h>           // nl_langinfo(CODESET)
 #endif
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
-#  include <windows.h>    /* GetACP() */
+#  include <windows.h>            // GetACP()
 #  ifdef HAVE_IO_H
 #    include <io.h>
 #  endif
 #  ifdef HAVE_FCNTL_H
-#    include <fcntl.h>    /* O_BINARY */
+#    include <fcntl.h>            // O_BINARY
 #  endif
 #endif
 

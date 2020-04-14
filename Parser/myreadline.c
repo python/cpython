@@ -10,10 +10,10 @@
 */
 
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"   // _PyThreadState_GET()
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include "windows.h"
+#  define WIN32_LEAN_AND_MEAN
+#  include "windows.h"
 #endif /* MS_WINDOWS */
 
 

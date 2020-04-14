@@ -26,13 +26,14 @@
 #include "Python.h"
 #include "pycore_context.h"
 #include "pycore_initconfig.h"
+#include "pycore_interp.h"      // PyInterpreterState.gc
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
+#include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "frameobject.h"        /* for PyFrame_ClearFreeList */
+#include "frameobject.h"        // PyFrame_ClearFreeList
 #include "pydtrace.h"
-#include "pytime.h"             /* for _PyTime_GetMonotonicClock() */
+#include "pytime.h"             // _PyTime_GetMonotonicClock()
 
 typedef struct _gc_runtime_state GCState;
 

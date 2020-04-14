@@ -4,7 +4,7 @@
 #include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_ceval.h"      // _Py_EnterRecursiveCall()
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"    // _PyThreadState_GET()
 #include <ctype.h>
 #include "structmember.h" /* we need the offsetof() macro from there */
 #include "longintrepr.h"

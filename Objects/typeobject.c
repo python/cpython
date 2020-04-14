@@ -5,7 +5,7 @@
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "frameobject.h"
 #include "structmember.h"
 

@@ -32,8 +32,7 @@
 */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_object.h"   // _PyObject_GC_UNTRACK()
 #include "structmember.h"
 
 /* Object used as dummy key to fill deleted entries */

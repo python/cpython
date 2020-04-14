@@ -2,13 +2,13 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_context.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
