@@ -2355,7 +2355,7 @@ Py_ExitStatusException(PyStatus status)
 /* For the atexit module. */
 void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
-    PyInterpreterState *is = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *is = _PyInterpreterState_GET();
 
     /* Guard against API misuse (see bpo-17852) */
     assert(is->pyexitfunc == NULL || is->pyexitfunc == func);

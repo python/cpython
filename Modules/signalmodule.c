@@ -1784,7 +1784,7 @@ PyOS_FiniInterrupts(void)
 int
 PyOS_InterruptOccurred(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!_Py_ThreadCanHandleSignals(interp)) {
         return 0;
     }
@@ -1821,7 +1821,7 @@ _PySignal_AfterFork(void)
 int
 _PyOS_IsMainThread(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     return _Py_ThreadCanHandleSignals(interp);
 }
 

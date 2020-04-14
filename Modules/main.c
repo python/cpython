@@ -498,7 +498,7 @@ pymain_repl(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
 static void
 pymain_run_python(int *exitcode)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     /* pymain_run_stdin() modify the config */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
 
