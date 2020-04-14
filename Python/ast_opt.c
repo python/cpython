@@ -19,6 +19,7 @@ make_const(expr_ty node, PyObject *val, PyArena *arena)
         return 0;
     }
     node->kind = Constant_kind;
+    node->v.Constant.kind = NULL;
     node->v.Constant.value = val;
     return 1;
 }
