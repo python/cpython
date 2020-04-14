@@ -9,6 +9,7 @@ from collections.abc import *
 from concurrent.futures import Future
 from concurrent.futures.thread import _WorkItem
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+from functools import partial, partialmethod, _lru_cache_wrapper, cached_property
 from ctypes import Array, LibraryLoader
 from difflib import SequenceMatcher
 from filecmp import dircmp
@@ -49,6 +50,7 @@ class BaseTest(unittest.TestCase):
                   FileInput,
                   OrderedDict, Counter, UserDict, UserList,
                   Pattern, Match,
+                  partial, partialmethod, cached_property,
                   AbstractContextManager, AbstractAsyncContextManager,
                   Awaitable, Coroutine,
                   AsyncIterable, AsyncIterator,
