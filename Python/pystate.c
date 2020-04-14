@@ -132,6 +132,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
+#ifdef HAVE_FORK
 /* This function is called from PyOS_AfterFork_Child to ensure that
  * newly created child processes do not share locks with the parent.
  */
@@ -147,24 +148,25 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    runtime->interpreters.mutex = PyThread_allocate_lock();
-    runtime->interpreters.main->id_mutex = PyThread_allocate_lock();
-    runtime->xidregistry.mutex = PyThread_allocate_lock();
+    int interp_mutex = _PyThread_at_fork_reinit(&runtime->interpreters.mutex);
+    int main_interp_id_mutex = _PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex);
+    int xidregistry_mutex = _PyThread_at_fork_reinit(&runtime->xidregistry.mutex);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    if (runtime->interpreters.mutex == NULL) {
+    if (interp_mutex < 0) {
         Py_FatalError("Can't initialize lock for runtime interpreters");
     }
 
-    if (runtime->interpreters.main->id_mutex == NULL) {
+    if (main_interp_id_mutex < 0) {
         Py_FatalError("Can't initialize ID lock for main interpreter");
     }
 
-    if (runtime->xidregistry.mutex == NULL) {
+    if (xidregistry_mutex < 0) {
         Py_FatalError("Can't initialize lock for cross-interpreter data registry");
     }
 }
+#endif
 
 #define HEAD_LOCK(runtime) \
     PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)

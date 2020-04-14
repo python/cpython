@@ -200,6 +200,7 @@ _PyImport_ReleaseLock(void)
     return 1;
 }
 
+#ifdef HAVE_FORK
 /* This function is called from PyOS_AfterFork_Child to ensure that newly
    created child processes do not share locks with the parent.
    We now acquire the import lock around fork() calls but on some platforms
@@ -209,8 +210,7 @@ void
 _PyImport_ReInitLock(void)
 {
     if (import_lock != NULL) {
-        import_lock = PyThread_allocate_lock();
-        if (import_lock == NULL) {
+        if (_PyThread_at_fork_reinit(&import_lock) < 0) {
             _Py_FatalErrorFunc(__func__, "failed to create a new lock");
         }
     }
@@ -229,6 +229,7 @@ _PyImport_ReInitLock(void)
         import_lock_level = 0;
     }
 }
+#endif
 
 /*[clinic input]
 _imp.lock_held

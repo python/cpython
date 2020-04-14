@@ -117,8 +117,9 @@ PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 PyAPI_FUNC(PyStatus) _PyRuntimeState_Init(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *runtime);
 
+#ifdef HAVE_FORK
 PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime);
-
+#endif
 
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
