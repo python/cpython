@@ -1194,6 +1194,103 @@ For example:
     the data in the pipe is likely to become corrupted, because it may become
     impossible to be sure where the message boundaries lie.
 
+Custom Reduction
+~~~~~~~~~~~~~~~~
+
+.. currentmodule:: multiprocessing
+
+Several primitives of the :mod:`multiprocessing` module such as
+:class:`multiprocessing.Queue`, :class:`multiprocessing.connection.Listener` or
+:class:`multiprocessing.connection.Server` need to serialize and deserialize Python
+objects to communicate between processes. Sometimes it is useful to control what
+serialization is to be used for the transport of data in order to support communication
+with different versions of Python, use more performant third party tools or custom
+strategies.
+
+For this purpose a set of hooks is available to provide alternate implementations of
+the reduction mechanism:
+
+.. currentmodule:: multiprocessing.reduction
+
+.. class:: AbstractPickler(file, protocol)
+
+   Base class that can be implemented in order to override
+   serialization methods of the reduction machinery used by multiprocessing.
+
+   .. method:: dump(obj)
+
+      Write a pickled representation of obj to the open file.
+
+      Defaults to :meth:`pickle.Pickler.dump`
+
+.. class:: AbstractUnpickler(bytes_object, *, fix_imports=True, encoding="ASCII", errors="strict")
+
+   Base class that can be implemented in order to override
+   multiprocessing's default unserialization mechanism.
+
+   .. method:: load()
+
+      Read a pickled object hierarchy from the open file and return the
+      reconstituted object hierarchy specified therein.
+
+      Defaults to :meth:`pickle.Unpickler.load`
+
+.. class:: AbstractReducer()
+
+   Base class providing access to custom ``Pickler`` and ``Unpickler``
+   classes to be used by ``multiprocessing`` when serializing objects.
+
+   .. method:: get_pickler_class():
+
+      This method must return an subclass of :class:`AbstractPickler` to be used
+      by ``multiprocessing`` when serializing objects.
+
+   .. method:: get_unpickler_class():
+
+      This method must return an subclass of :class:`AbstractUnpickler` to be used
+      by ``multiprocessing`` when unserializing objects.
+
+
+Note that both methods of the :class:`AbstractReducer` are optional. If
+:meth:`get_pickler_class` (resp.  :meth:`get_unpickler_class`) is not
+implemented, multiprocessing will fallback to the :class:`pickle.Pickler`
+(resp. :class:`pickle.Unpickler`) class to serialize objects.
+
+.. currentmodule:: multiprocessing
+
+.. method:: set_reducer(reduction)
+
+   Sets a reduction instance to be used for serialization and deserialization
+   by the module primitive internals. **reduction** must be an instance of a
+   subclass of :class:`AbstractReducer`.
+
+.. method:: get_reducer()
+
+   Gets the current reduction class in use by the module's primitive internals.
+
+For example, substituting the reducer class to use the :mod:`pickle` protocol
+version 2 to be able to communicate with a Python 2.x programs.::
+
+   import multiprocessing
+   from multiprocessing.reduction import AbstractReducer, AbstractPickler
+
+   class PicklerProtocol2(AbstractPickler):
+       def __init__(self, file, protocol=2, **kwargs):
+           super().__init__(file, protocol, **kwargs)
+
+       def dump(self, obj):
+           return super().dump(obj)
+
+
+   class PickleProtocol2Reducer(AbstractReducer):
+       def get_pickler_class(self):
+           return PicklerProtocol2
+
+   multiprocessing.set_reducer(PickleProtocol2Reducer())
+
+Notice that using :meth:`multiprocessing.set_reducer` changes the reducer globally. If
+changing this setting globally is undesirable you could call :meth:`context.set_reducer`,
+where *context* is a context object obtained by calling :func:`get_context`.
 
 Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -34,6 +34,7 @@ _multiprocessing = test.support.import_module('_multiprocessing')
 test.support.import_module('multiprocessing.synchronize')
 import threading
 
+import multiprocessing
 import multiprocessing.connection
 import multiprocessing.dummy
 import multiprocessing.heap
@@ -5513,6 +5514,342 @@ class MiscTestCase(unittest.TestCase):
         # Just make sure names in blacklist are excluded
         support.check__all__(self, multiprocessing, extra=multiprocessing.__all__,
                              blacklist=['SUBDEBUG', 'SUBWARNING'])
+
+
+class SpyReducerBase(reduction.AbstractReducer):
+    def __init__(self):
+        self.spy = {'load': 0, 'dump': 0}
+
+
+class SpyReducerWithPickler(SpyReducerBase):
+    """Custom reducer that records the call to the Pickler
+    class it returns. Mocks are not used because they do not
+    play good with pickling"""
+    def get_pickler_class(self):
+        spy = self.spy
+        class Pickler(multiprocessing.reduction.AbstractPickler):
+            def dump(self, obj, protocol=None):
+                spy["dump"] = 1
+                super().dump(obj)
+        return Pickler
+
+
+class SpyReducerWithUnpickler(SpyReducerBase):
+    """Custom reducer that records the call to the Unpickler class it returns.
+    """
+    def get_unpickler_class(self):
+        spy = self.spy
+
+        class Unpickler(multiprocessing.reduction.AbstractUnpickler):
+            def load(self):
+                spy["load"] = 1
+                return super().load()
+        return Unpickler
+
+class SpyReducerWithPicklerAndUnpickler(SpyReducerWithUnpickler,
+                                        SpyReducerWithPickler):
+    pass
+
+
+class _TestCustomReducer(BaseTestCase):
+    """Test custom reducer usage.
+
+    The goal of these tests is to make sure that multiprocessing actually uses
+    the Reducer given as input of the set_reducer() methods of multiprocessing
+    and of context objects. This is done by counting each call of load/dump
+    methods of the custom pickler/unpickler classes returned by the reducer,
+    and making sure, when expected, that these counts are greater than 0 at the
+    end.
+    """
+
+    ALLOWED_TYPES = ('processes',)
+
+    def setUp(self):
+        self.context = multiprocessing.get_context()
+        self.original_reducer = multiprocessing.get_reducer()
+
+    def tearDown(self):
+        self.context.set_reducer(self.original_reducer)
+
+    def _check_pickler_hits(self, reducer):
+        custom_pickler = (
+            reducer.get_pickler_class() is not reduction.AbstractPickler)
+        custom_unpickler = (
+            reducer.get_unpickler_class() is not reduction.AbstractUnpickler)
+
+        self.assertEqual(reducer.spy['dump'], int(custom_pickler))
+        self.assertEqual(reducer.spy['load'], int(custom_unpickler))
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_connection_custom_reducer(self):
+        for reducer_cls in [
+                SpyReducerWithPickler,
+                SpyReducerWithUnpickler,
+                SpyReducerWithPicklerAndUnpickler
+        ]:
+            with self.subTest(reducer_cls=reducer_cls):
+                with self.connection.Listener() as l:
+                    reducer = reducer_cls()
+                    self.context.set_reducer(reducer)
+                    with self.connection.Client(l.address) as c:
+                        with l.accept() as d:
+                            c.send(1729)
+                            self.assertEqual(d.recv(), 1729)
+
+                if self.TYPE == 'processes':
+                    self.assertRaises(OSError, l.accept)
+
+                self._check_pickler_hits(reducer)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_process_custom_reducer(self):
+        sm = multiprocessing.get_start_method()
+        if sm == 'fork':
+            # The fork method does send data to new Process objects
+            self.skipTest('test not appropriate for {}'.format(sm))
+
+        # It is not possible to customize unpickling of Process objects data
+        # -- we would need to send to the new process which Unpickler to use,
+        # which itself would require to unpickle this information before
+        # unpickling anyting else... using which Unpickler?
+        # Thus, just test the SpyReducer that customizes pickling.
+        reducer = SpyReducerWithPickler()
+        self.context.set_reducer(reducer)
+        p = self.context.Process(target=id, args=(2, ))
+        p.start()
+        p.join()
+        self.assertEqual(p.exitcode, 0)
+        self._check_pickler_hits(reducer)
+
+    @classmethod
+    def _put_and_get_in_queue(cls, queue,):
+        queue.put("Something")
+        queue.get(timeout=support.SHORT_TIMEOUT)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_queue_custom_reducer(self):
+        for reducer_cls in [
+                SpyReducerWithPickler,
+                SpyReducerWithUnpickler,
+                SpyReducerWithPicklerAndUnpickler
+        ]:
+            with self.subTest(reducer_cls=reducer_cls):
+                reducer = reducer_cls()
+                self.context.set_reducer(reducer)
+                queue = self.Queue()
+                p = self.Process(target=self._put_and_get_in_queue,
+                                 args=(queue,))
+                p.start()
+                element = queue.get(timeout=support.SHORT_TIMEOUT)
+                self.assertEqual(element, "Something")
+                queue.put("Other_Something")
+                close_queue(queue)
+                p.join(timeout=support.SHORT_TIMEOUT)
+                p.terminate()
+                self.assertEqual(element, "Something")
+                self.assertEqual(p.exitcode, 0)
+                self._check_pickler_hits(reducer)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_listener_custom_reduction(self):
+        for reducer_cls in [
+                SpyReducerWithPickler,
+                SpyReducerWithUnpickler,
+                SpyReducerWithPicklerAndUnpickler
+        ]:
+            with self.subTest(reducer_cls=reducer_cls):
+                reducer = reducer_cls()
+                self.context.set_reducer(reducer)
+                with self.connection.Listener() as l:
+                    with self.connection.Client(l.address) as c:
+                        with l.accept() as d:
+                            c.send(1729)
+                            self.assertEqual(d.recv(), 1729)
+
+                if self.TYPE == 'processes':
+                    self.assertRaises(OSError, l.accept)
+
+                self._check_pickler_hits(reducer)
+
+
+class CustomContext(multiprocessing.context.BaseContext):
+    _name = "custom"
+    _Process = multiprocessing.Process
+
+
+class _TestCustomReducerWithContext(BaseTestCase):
+    """Test case for per-context reducers"""
+
+    ALLOWED_TYPES = ('processes',)
+
+    def setUp(self):
+        self.custom_ctx = CustomContext()
+        self.default_ctx = multiprocessing.get_context()
+        self.original_custom_reducer = self.custom_ctx.get_reducer()
+        self.original_default_reducer = self.default_ctx.get_reducer()
+
+    def tearDown(self):
+        self.custom_ctx.set_reducer(self.original_custom_reducer)
+        self.default_ctx.set_reducer(self.original_default_reducer)
+
+    def _check_pickler_hits(self, reducer, alternative_reducer):
+        custom_pickler = (
+            reducer.get_pickler_class() is not reduction.AbstractPickler)
+        custom_unpickler = (
+            reducer.get_unpickler_class() is not reduction.AbstractUnpickler)
+
+        self.assertEqual(reducer.spy['dump'], int(custom_pickler))
+        self.assertEqual(reducer.spy['load'], int(custom_unpickler))
+
+        self.assertEqual(alternative_reducer.spy['dump'], 0)
+        self.assertEqual(alternative_reducer.spy['load'], 0)
+
+    @classmethod
+    def _put_and_get_in_queue(cls, queue):
+        queue.put("Something")
+        queue.get(timeout=support.SHORT_TIMEOUT)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_process_custom_reducer_over_custom_context(self):
+        sm = multiprocessing.get_start_method()
+        if sm == 'fork':
+            # The fork method does send data to new Process objects
+            self.skipTest('test not appropriate for {}'.format(sm))
+
+        default_reducer = SpyReducerWithPickler()
+        custom_reducer = SpyReducerWithPickler()
+
+        self.default_ctx.set_reducer(default_reducer)
+        self.custom_ctx.set_reducer(custom_reducer)
+        p = self.custom_ctx.Process(target=id, args=(2, ))
+        p.start()
+        p.join()
+        self.assertEqual(p.exitcode, 0)
+        self._check_pickler_hits(custom_reducer, default_reducer)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_queue_custom_reducer_over_custom_context(self):
+        for reducer_cls in [
+                SpyReducerWithPickler,
+                SpyReducerWithUnpickler,
+                SpyReducerWithPicklerAndUnpickler
+        ]:
+            with self.subTest(reducer_cls=reducer_cls):
+                default_reducer = reducer_cls()
+                custom_reducer = reducer_cls()
+
+                self.default_ctx.set_reducer(default_reducer)
+                self.custom_ctx.set_reducer(custom_reducer)
+
+                queue = self.custom_ctx.Queue()
+                p = self.custom_ctx.Process(target=self._put_and_get_in_queue,
+                                            args=(queue,))
+                p.start()
+                element = queue.get(timeout=support.SHORT_TIMEOUT)
+                self.assertEqual(element, "Something")
+                queue.put("Other_Something")
+                close_queue(queue)
+                p.join(timeout=support.SHORT_TIMEOUT)
+                p.terminate()
+                self.assertEqual(p.exitcode, 0)
+                self.assertEqual(element, "Something")
+                self._check_pickler_hits(custom_reducer, default_reducer)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_listener_custom_reduction_custom_context(self):
+        for reducer_cls in [
+                SpyReducerWithPickler,
+                SpyReducerWithUnpickler,
+                SpyReducerWithPicklerAndUnpickler
+        ]:
+            with self.subTest(reducer_cls=reducer_cls):
+                custom_reducer = reducer_cls()
+                default_reducer = reducer_cls()
+                self.default_ctx.set_reducer(default_reducer)
+                self.custom_ctx.set_reducer(custom_reducer)
+
+                with self.custom_ctx.Listener() as l:
+                    with self.custom_ctx.Client(l.address) as c:
+                        with l.accept() as d:
+                            c.send(1729)
+                            self.assertEqual(d.recv(), 1729)
+
+                if self.TYPE == 'processes':
+                    self.assertRaises(OSError, l.accept)
+                self._check_pickler_hits(custom_reducer, default_reducer)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_queue_custom_reducer_over_default_context(self):
+        for reducer_cls in [
+                SpyReducerWithPickler,
+                SpyReducerWithUnpickler,
+                SpyReducerWithPicklerAndUnpickler
+        ]:
+            with self.subTest(reducer_cls=reducer_cls):
+                default_reducer = reducer_cls()
+                custom_reducer = reducer_cls()
+
+                self.default_ctx.set_reducer(default_reducer)
+                self.custom_ctx.set_reducer(custom_reducer)
+
+                queue = self.default_ctx.Queue()
+                p = self.default_ctx.Process(target=self._put_and_get_in_queue,
+                    args=(queue, ))
+                p.start()
+                element = queue.get(timeout=support.SHORT_TIMEOUT)
+                self.assertEqual(element, "Something")
+                queue.put("Other_Something")
+                p.join(timeout=support.SHORT_TIMEOUT)
+                self.assertEqual(p.exitcode, 0)
+                self.assertEqual(element, "Something")
+                close_queue(queue)
+                self._check_pickler_hits(default_reducer, custom_reducer)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_process_custom_reducer_over_default_context(self):
+        sm = multiprocessing.get_start_method()
+        if sm == 'fork':
+            # The fork method does send data to new Process objects
+            self.skipTest('test not appropriate for {}'.format(sm))
+
+        default_reducer = SpyReducerWithPickler()
+        custom_reducer = SpyReducerWithPickler()
+        self.default_ctx.set_reducer(default_reducer)
+        p = self.default_ctx.Process(target=id, args=(2, ))
+        p.start()
+        p.join()
+        self.assertEqual(p.exitcode, 0)
+        self._check_pickler_hits(default_reducer, custom_reducer)
+
+class _TestCustomReducerInvalidParameters(BaseTestCase):
+    def test_setting_invalid_reducer(self):
+        class BadReducer():
+            def get_pickler_class(self):
+                return
+
+        class BadReducerUnpickler():
+            def get_unpickler_class(self):
+                return
+
+        with self.assertRaises(TypeError):
+            multiprocessing.set_reducer(BadReducer())
+
+        with self.assertRaises(TypeError):
+            multiprocessing.set_reducer(BadReducerUnpickler())
+
+
+    def test_setting_valid_reducer_that_returns_invalid_pickler(self):
+
+        class PicklerClass:
+            pass
+
+        class BadReducer(reduction.AbstractReducer):
+            def get_pickler_class(self):
+                return PicklerClass
+
+        with self.assertRaises(TypeError):
+            multiprocessing.set_reducer(BadReducer())
+
 #
 # Mixins
 #

@@ -23,8 +23,8 @@ import _multiprocessing
 from . import util
 
 from . import AuthenticationError, BufferTooShort
-from .context import reduction
-_ForkingPickler = reduction.ForkingPickler
+from . import context
+from . import get_context
 
 try:
     import _winapi
@@ -119,7 +119,8 @@ def address_type(address):
 class _ConnectionBase:
     _handle = None
 
-    def __init__(self, handle, readable=True, writable=True):
+    def __init__(self, handle, readable=True, writable=True, ctx=None):
+        self._ctx = ctx or get_context()
         handle = handle.__index__()
         if handle < 0:
             raise ValueError("invalid handle")
@@ -208,7 +209,7 @@ class _ConnectionBase:
         """Send a (picklable) object"""
         self._check_closed()
         self._check_writable()
-        self._send_bytes(_ForkingPickler.dumps(obj))
+        self._send_bytes(self._ctx.get_reducer().dumps(obj))
 
     def recv_bytes(self, maxlength=None):
         """
@@ -253,7 +254,7 @@ class _ConnectionBase:
         self._check_closed()
         self._check_readable()
         buf = self._recv_bytes()
-        return _ForkingPickler.loads(buf.getbuffer())
+        return self._ctx.get_reducer().loads(buf.getbuffer())
 
     def poll(self, timeout=0.0):
         """Whether there is any input available to be read"""
@@ -441,16 +442,16 @@ class Listener(object):
     This is a wrapper for a bound socket which is 'listening' for
     connections, or for a Windows named pipe.
     '''
-    def __init__(self, address=None, family=None, backlog=1, authkey=None):
+    def __init__(self, address=None, family=None, backlog=1, authkey=None, *, ctx=None):
         family = family or (address and address_type(address)) \
                  or default_family
         address = address or arbitrary_address(family)
 
         _validate_family(family)
         if family == 'AF_PIPE':
-            self._listener = PipeListener(address, backlog)
+            self._listener = PipeListener(address, backlog, ctx=ctx)
         else:
-            self._listener = SocketListener(address, family, backlog)
+            self._listener = SocketListener(address, family, backlog, ctx=ctx)
 
         if authkey is not None and not isinstance(authkey, bytes):
             raise TypeError('authkey should be a byte string')
@@ -495,16 +496,16 @@ class Listener(object):
         self.close()
 
 
-def Client(address, family=None, authkey=None):
+def Client(address, family=None, authkey=None, *, ctx=None):
     '''
     Returns a connection to the address of a `Listener`
     '''
     family = family or address_type(address)
     _validate_family(family)
     if family == 'AF_PIPE':
-        c = PipeClient(address)
+        c = PipeClient(address, ctx=ctx)
     else:
-        c = SocketClient(address)
+        c = SocketClient(address, ctx=ctx)
 
     if authkey is not None and not isinstance(authkey, bytes):
         raise TypeError('authkey should be a byte string')
@@ -585,7 +586,7 @@ class SocketListener(object):
     '''
     Representation of a socket which is bound to an address and listening
     '''
-    def __init__(self, address, family, backlog=1):
+    def __init__(self, address, family, backlog=1, *, ctx=None):
         self._socket = socket.socket(getattr(socket, family))
         try:
             # SO_REUSEADDR has different semantics on Windows (issue #2550).
@@ -609,11 +610,12 @@ class SocketListener(object):
                 )
         else:
             self._unlink = None
+        self._ctx = ctx
 
     def accept(self):
         s, self._last_accepted = self._socket.accept()
         s.setblocking(True)
-        return Connection(s.detach())
+        return Connection(s.detach(), ctx=self._ctx)
 
     def close(self):
         try:
@@ -625,7 +627,7 @@ class SocketListener(object):
                 unlink()
 
 
-def SocketClient(address):
+def SocketClient(address, *, ctx=None):
     '''
     Return a connection object connected to the socket given by `address`
     '''
@@ -633,7 +635,7 @@ def SocketClient(address):
     with socket.socket( getattr(socket, family) ) as s:
         s.setblocking(True)
         s.connect(address)
-        return Connection(s.detach())
+        return Connection(s.detach(), ctx=ctx)
 
 #
 # Definitions for connections based on named pipes
@@ -645,7 +647,7 @@ if sys.platform == 'win32':
         '''
         Representation of a named pipe
         '''
-        def __init__(self, address, backlog=None):
+        def __init__(self, address, backlog=None, *, ctx=None):
             self._address = address
             self._handle_queue = [self._new_handle(first=True)]
 
@@ -655,6 +657,7 @@ if sys.platform == 'win32':
                 self, PipeListener._finalize_pipe_listener,
                 args=(self._handle_queue, self._address), exitpriority=0
                 )
+            self._ctx = ctx
 
         def _new_handle(self, first=False):
             flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
@@ -689,7 +692,7 @@ if sys.platform == 'win32':
                 finally:
                     _, err = ov.GetOverlappedResult(True)
                     assert err == 0
-            return PipeConnection(handle)
+            return PipeConnection(handle, ctx=self._ctx)
 
         @staticmethod
         def _finalize_pipe_listener(queue, address):
@@ -697,7 +700,7 @@ if sys.platform == 'win32':
             for handle in queue:
                 _winapi.CloseHandle(handle)
 
-    def PipeClient(address):
+    def PipeClient(address, *, ctx=None):
         '''
         Return a connection object connected to the pipe given by `address`
         '''
@@ -722,7 +725,7 @@ if sys.platform == 'win32':
         _winapi.SetNamedPipeHandleState(
             h, _winapi.PIPE_READMODE_MESSAGE, None, None
             )
-        return PipeConnection(h)
+        return PipeConnection(h, ctx=ctx)
 
 #
 # Authentication stuff
@@ -956,23 +959,23 @@ if sys.platform == 'win32':
     def rebuild_connection(ds, readable, writable):
         sock = ds.detach()
         return Connection(sock.detach(), readable, writable)
-    reduction.register(Connection, reduce_connection)
+    context.reduction.register(Connection, reduce_connection)
 
     def reduce_pipe_connection(conn):
         access = ((_winapi.FILE_GENERIC_READ if conn.readable else 0) |
                   (_winapi.FILE_GENERIC_WRITE if conn.writable else 0))
-        dh = reduction.DupHandle(conn.fileno(), access)
+        dh = context.reduction.DupHandle(conn.fileno(), access)
         return rebuild_pipe_connection, (dh, conn.readable, conn.writable)
     def rebuild_pipe_connection(dh, readable, writable):
         handle = dh.detach()
         return PipeConnection(handle, readable, writable)
-    reduction.register(PipeConnection, reduce_pipe_connection)
+    context.reduction.register(PipeConnection, reduce_pipe_connection)
 
 else:
     def reduce_connection(conn):
-        df = reduction.DupFd(conn.fileno())
+        df = context.reduction.DupFd(conn.fileno())
         return rebuild_connection, (df, conn.readable, conn.writable)
     def rebuild_connection(df, readable, writable):
         fd = df.detach()
         return Connection(fd, readable, writable)
-    reduction.register(Connection, reduce_connection)
+    context.reduction.register(Connection, reduce_connection)

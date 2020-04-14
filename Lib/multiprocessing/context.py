@@ -5,6 +5,8 @@ import threading
 from . import process
 from . import reduction
 
+original_reducer = reduction
+
 __all__ = ()
 
 #
@@ -37,6 +39,7 @@ class BaseContext(object):
     current_process = staticmethod(process.current_process)
     parent_process = staticmethod(process.parent_process)
     active_children = staticmethod(process.active_children)
+    _reducer = None
 
     def cpu_count(self):
         '''Returns the number of CPUs in the system'''
@@ -45,6 +48,18 @@ class BaseContext(object):
             raise NotImplementedError('cannot determine number of cpus')
         else:
             return num
+
+    @property
+    def Process(self):
+        if self._reducer is None:
+            # Ensure backward compatibility by returning a class when no
+            # custom reducer was specified
+            return self._Process
+        else:
+            return self._process
+
+    def _process(self, *args, **kwargs):
+        return self._Process(*args, reducer=self.get_reducer(), **kwargs)
 
     def Manager(self):
         '''Returns a manager associated with a running server process
@@ -61,6 +76,16 @@ class BaseContext(object):
         '''Returns two connection object connected by a pipe'''
         from .connection import Pipe
         return Pipe(duplex)
+
+    def Listener(self, *args, **kwargs):
+        '''Returns a connection Listener object'''
+        from .connection import Listener
+        return Listener(*args, ctx=self.get_context(), **kwargs)
+
+    def Client(self, *args, **kwargs):
+        '''Returns a connection Client object'''
+        from .connection import Client
+        return Client(*args, ctx=self.get_context(), **kwargs)
 
     def Lock(self):
         '''Returns a non-recursive lock object'''
@@ -200,15 +225,34 @@ class BaseContext(object):
     def set_start_method(self, method, force=False):
         raise ValueError('cannot set start method of concrete context')
 
-    @property
-    def reducer(self):
+    def get_reducer(self):
         '''Controls how objects will be reduced to a form that can be
         shared with other processes.'''
-        return globals().get('reduction')
+        reducer = self._reducer
+        if reducer is None:
+            return reduction
+        return reducer
 
-    @reducer.setter
-    def reducer(self, reduction):
-        globals()['reduction'] = reduction
+    def set_reducer(self, reduction):
+        if reduction is original_reducer:
+            self._reducer = None
+            return
+
+        if not isinstance(reduction, original_reducer.AbstractReducer):
+            raise TypeError("Custom reducers must be instances of a "
+                            "subclass of multiprocessing.reduction.AbstractReducer")
+        if not issubclass(reduction.get_pickler_class(), original_reducer.AbstractPickler):
+            raise TypeError("Custom reducers must return an subclass of "
+                            "multiprocessing.reduction.AbstractPickler "
+                            "in the get_pickler_class() method")
+        if not issubclass(reduction.get_unpickler_class(),
+                          original_reducer.AbstractUnpickler):
+            raise TypeError(
+                "Custom reducers must return an subclass of "
+                "multiprocessing.reduction.AbstractUnpickler in the "
+                "get_unpickler_class() method")
+
+        self._reducer = reduction
 
     def _check_available(self):
         pass
@@ -221,10 +265,10 @@ class Process(process.BaseProcess):
     _start_method = None
     @staticmethod
     def _Popen(process_obj):
-        return _default_context.get_context().Process._Popen(process_obj)
+        return _default_context.get_context()._Process._Popen(process_obj)
 
 class DefaultContext(BaseContext):
-    Process = Process
+    _Process = Process
 
     def __init__(self, context):
         self._default_context = context
@@ -291,15 +335,15 @@ if sys.platform != 'win32':
 
     class ForkContext(BaseContext):
         _name = 'fork'
-        Process = ForkProcess
+        _Process = ForkProcess
 
     class SpawnContext(BaseContext):
         _name = 'spawn'
-        Process = SpawnProcess
+        _Process = SpawnProcess
 
     class ForkServerContext(BaseContext):
         _name = 'forkserver'
-        Process = ForkServerProcess
+        _Process = ForkServerProcess
         def _check_available(self):
             if not reduction.HAVE_SEND_HANDLE:
                 raise ValueError('forkserver start method not available')
@@ -327,7 +371,7 @@ else:
 
     class SpawnContext(BaseContext):
         _name = 'spawn'
-        Process = SpawnProcess
+        _Process = SpawnProcess
 
     _concrete_contexts = {
         'spawn': SpawnContext(),

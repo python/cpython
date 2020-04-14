@@ -15,7 +15,7 @@ import sys
 import threading
 
 from . import process
-from .context import reduction
+from . import context
 from . import util
 
 __all__ = ['stop']
@@ -47,7 +47,7 @@ else:
         def __init__(self, fd):
             new_fd = os.dup(fd)
             def send(conn, pid):
-                reduction.send_handle(conn, new_fd, pid)
+                context.reduction.send_handle(conn, new_fd, pid)
             def close():
                 os.close(new_fd)
             self._id = _resource_sharer.register(send, close)
@@ -55,7 +55,7 @@ else:
         def detach(self):
             '''Get the fd.  This should only be called once.'''
             with _resource_sharer.get_connection(self._id) as conn:
-                return reduction.recv_handle(conn)
+                return context.reduction.recv_handle(conn)
 
 
 class _ResourceSharer(object):

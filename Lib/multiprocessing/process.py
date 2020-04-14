@@ -21,6 +21,7 @@ import itertools
 import threading
 from _weakrefset import WeakSet
 
+from . import context
 #
 #
 #
@@ -78,7 +79,7 @@ class BaseProcess(object):
         raise NotImplementedError
 
     def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
-                 *, daemon=None):
+                 *, daemon=None, reducer=None):
         assert group is None, 'group argument must be None for now'
         count = next(_process_counter)
         self._identity = _current_process._identity + (count,)
@@ -95,10 +96,15 @@ class BaseProcess(object):
         if daemon is not None:
             self.daemon = daemon
         _dangling.add(self)
+        self._reducer = reducer
 
     def _check_closed(self):
         if self._closed:
             raise ValueError("process object is closed")
+
+    @property
+    def reducer(self):
+        return self._reducer or context.reduction
 
     def run(self):
         '''
