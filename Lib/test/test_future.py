@@ -153,6 +153,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq = self.assertAnnotationEqual
         eq('...')
         eq("'some_string'")
+        eq("u'some_string'")
         eq("b'\\xa3'")
         eq('Name')
         eq('None')
