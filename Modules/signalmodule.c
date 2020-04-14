@@ -104,8 +104,6 @@ class sigset_t_converter(CConverter):
    may not be the thread that received the signal.
 */
 
-#include "pythread.h"
-
 static volatile struct {
     _Py_atomic_int tripped;
     PyObject *func;

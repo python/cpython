@@ -9,7 +9,6 @@
 
 #include "Python.h"
 #include "structmember.h"
-#include "pythread.h"
 
 #include <stdarg.h>
 #include <string.h>

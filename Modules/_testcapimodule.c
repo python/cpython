@@ -17,7 +17,6 @@
 #include "Python.h"
 #include "datetime.h"
 #include "marshal.h"
-#include "pythread.h"
 #include "structmember.h"
 #include <float.h>
 #include <signal.h>

@@ -6,7 +6,6 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_interp.h"       // _PyInterpreterState.num_threads
 #include "pycore_pystate.h"      // _PyThreadState_Init()
-#include "pythread.h"
 #include <stddef.h>              // offsetof()
 
 static PyObject *ThreadError;
