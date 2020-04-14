@@ -390,7 +390,7 @@ atom[expr_ty]:
     | &'{' (dict | set | dictcomp | setcomp)
     | '...' { _Py_Constant(Py_Ellipsis, NULL, EXTRA) }
 
-strings[asdl_seq*] (memo): a=STRING+ { concatenate_strings(p, a) }
+strings[expr_ty] (memo): a=STRING+ { concatenate_strings(p, a) }
 list[expr_ty]:
     | '[' a=[star_named_expressions] ']' { _Py_List(a, Load, EXTRA) }
 listcomp[expr_ty]:

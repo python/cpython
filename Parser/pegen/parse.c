@@ -434,7 +434,7 @@ static expr_ty primary_rule(Parser *p);
 static expr_ty slices_rule(Parser *p);
 static expr_ty slice_rule(Parser *p);
 static expr_ty atom_rule(Parser *p);
-static asdl_seq* strings_rule(Parser *p);
+static expr_ty strings_rule(Parser *p);
 static expr_ty list_rule(Parser *p);
 static expr_ty listcomp_rule(Parser *p);
 static expr_ty tuple_rule(Parser *p);
@@ -6631,7 +6631,7 @@ atom_rule(Parser *p)
         p->mark = mark;
     }
     { // &STRING strings
-        asdl_seq* strings_var;
+        expr_ty strings_var;
         if (
             lookahead(1, string_token, p)
             &&
@@ -6721,10 +6721,10 @@ atom_rule(Parser *p)
 }
 
 // strings: STRING+
-static asdl_seq*
+static expr_ty
 strings_rule(Parser *p)
 {
-    asdl_seq* res = NULL;
+    expr_ty res = NULL;
     if (is_memoized(p, strings_type, &res))
         return res;
     int mark = p->mark;
