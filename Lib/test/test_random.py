@@ -291,6 +291,22 @@ class TestBasicOps:
         k = sum(randrange(6755399441055744) % 3 == 2 for i in range(n))
         self.assertTrue(0.30 < k/n < .37, (k/n))
 
+    def test_randbytes(self):
+        # Verify ranges
+        for n in range(1, 10):
+            data = self.gen.randbytes(n)
+            self.assertEqual(type(data), bytes)
+            self.assertEqual(len(data), n)
+
+        self.assertEqual(self.gen.randbytes(0), b'')
+
+        # Verify argument checking
+        self.assertRaises(TypeError, self.gen.randbytes)
+        self.assertRaises(TypeError, self.gen.randbytes, 1, 2)
+        self.assertRaises(ValueError, self.gen.randbytes, -1)
+        self.assertRaises(TypeError, self.gen.randbytes, 1.0)
+
+
 try:
     random.SystemRandom().random()
 except NotImplementedError:
@@ -746,6 +762,41 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.gen.seed(9035768)
         c = self.gen.choices(population, cum_weights=cum_weights, k=10000)
         self.assertEqual(a, c)
+
+    def test_randbytes(self):
+        super().test_randbytes()
+
+        # Mersenne Twister randbytes() is deterministic
+        # and does not depend on the endian and bitness.
+        seed = 8675309
+        expected = b'f\xf9\xa836\xd0\xa4\xf4\x82\x9f\x8f\x19\xf0eo\x02'
+
+        self.gen.seed(seed)
+        self.assertEqual(self.gen.randbytes(16), expected)
+
+        # randbytes(0) must not consume any entropy
+        self.gen.seed(seed)
+        self.assertEqual(self.gen.randbytes(0), b'')
+        self.assertEqual(self.gen.randbytes(16), expected)
+
+        # Four randbytes(4) calls give the same output than randbytes(16)
+        self.gen.seed(seed)
+        self.assertEqual(b''.join([self.gen.randbytes(4) for _ in range(4)]),
+                         expected)
+
+        # Each randbytes(2) or randbytes(3) call consumes 4 bytes of entropy
+        self.gen.seed(seed)
+        expected2 = b''.join(expected[i:i + 2]
+                             for i in range(0, len(expected), 4))
+        self.assertEqual(b''.join(self.gen.randbytes(2) for _ in range(4)),
+                         expected2)
+
+        self.gen.seed(seed)
+        expected3 = b''.join(expected[i:i + 3]
+                             for i in range(0, len(expected), 4))
+        self.assertEqual(b''.join(self.gen.randbytes(3) for _ in range(4)),
+                         expected3)
+
 
 def gamma(z, sqrt2pi=(2.0*pi)**0.5):
     # Reflection to right half of complex plane
