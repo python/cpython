@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "Python-ast.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 typedef struct {
     int initialized;

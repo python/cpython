@@ -2,9 +2,9 @@
 /* Module object implementation */
 
 #include "Python.h"
-#include "pycore_interp.h"    // PyInterpreterState.importlib
-#include "pycore_pystate.h"   // _PyInterpreterState_GET()
-#include "structmember.h"
+#include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "structmember.h"         // PyMemberDef
 
 static Py_ssize_t max_module_number;
 

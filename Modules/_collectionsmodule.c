@@ -1,10 +1,10 @@
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
 #else
-#include <sys/types.h>          /* For size_t */
+#include <sys/types.h>            // size_t
 #endif
 
 /*[clinic input]

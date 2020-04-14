@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "code.h"
 #include "opcode.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "pycore_code.h"
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
