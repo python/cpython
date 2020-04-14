@@ -19,6 +19,7 @@ Data members:
 #include "frameobject.h"
 #include "pycore_ceval.h"
 #include "pycore_initconfig.h"
+#include "pycore_object.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"

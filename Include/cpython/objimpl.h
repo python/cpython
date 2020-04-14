@@ -120,17 +120,9 @@ PyAPI_FUNC(Py_ssize_t) _PyGC_CollectNoFail(void);
 PyAPI_FUNC(Py_ssize_t) _PyGC_CollectIfEnabled(void);
 
 
-/* Test if an object has a GC head */
+/* Test if an object implements the garbage collector protocol */
 PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
 
-/* Fast inlined version of PyObject_IS_GC() */
-static inline int
-_PyObject_IS_GC(PyObject *obj)
-{
-    return (PyType_IS_GC(Py_TYPE(obj))
-            && (Py_TYPE(obj)->tp_is_gc == NULL
-                || Py_TYPE(obj)->tp_is_gc(obj)));
-}
 
 /* Code built with Py_BUILD_CORE must include pycore_gc.h instead which
    defines a different _PyGC_FINALIZED() macro. */
