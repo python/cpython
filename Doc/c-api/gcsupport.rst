@@ -66,7 +66,7 @@ Constructors for container types must conform to two rules:
    Returns non-zero if the object implements the garbage collector protocol,
    otherwise returns 0.
    
-   The object cannot be tracked by the garbage collector if this function return 0.
+   The object cannot be tracked by the garbage collector if this function returns 0.
 
 
 .. c:function:: int PyObject_GC_IsTracked(PyObject *op)
