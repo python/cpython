@@ -1,0 +1,2 @@
+The in-built sqlite extension on Windows is now compiled with the json
+extension. This allows the use of functions such as ``json_object``.
