@@ -19,6 +19,7 @@ Data members:
 #include "frameobject.h"
 #include "pycore_ceval.h"        // _Py_RecursionLimitLowerWaterMark()
 #include "pycore_initconfig.h"
+#include "pycore_object.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
@@ -1679,7 +1680,7 @@ _PySys_GetSizeOf(PyObject *o)
     }
 
     /* add gc_head size */
-    if (PyObject_IS_GC(o))
+    if (_PyObject_IS_GC(o))
         return ((size_t)size) + sizeof(PyGC_Head);
     return (size_t)size;
 }
