@@ -3,6 +3,7 @@
 #include "pycore_fileutils.h"
 #include "pycore_getopt.h"
 #include "pycore_initconfig.h"
+#include "pycore_interp.h"    // _PyInterpreterState.runtime
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"

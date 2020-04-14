@@ -9,6 +9,7 @@
 #include "pycore_pyhash.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
+#include "pycore_interp.h"       // _PyInterpreterState_ClearModules()
 #include "pycore_pystate.h"
 #include "pycore_sysmodule.h"
 #include "errcode.h"

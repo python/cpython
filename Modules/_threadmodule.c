@@ -4,9 +4,10 @@
 
 #include "Python.h"
 #include "pycore_pylifecycle.h"
+#include "pycore_interp.h"       // _PyInterpreterState.num_threads
 #include "pycore_pystate.h"
-#include "structmember.h" /* offsetof */
 #include "pythread.h"
+#include <stddef.h>              // offsetof()
 
 static PyObject *ThreadError;
 static PyObject *str_dict;
