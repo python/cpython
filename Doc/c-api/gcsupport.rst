@@ -60,6 +60,15 @@ Constructors for container types must conform to two rules:
    followed by the :c:member:`~PyTypeObject.tp_traverse` handler become valid, usually near the
    end of the constructor.
 
+
+.. c:function:: int PyObject_IS_GC(PyObject *obj)
+
+   Returns non-zero if the object implements the garbage collector protocol,
+   otherwise returns 0.
+
+   The object cannot be tracked by the garbage collector if this function returns 0.
+
+
 .. c:function:: int PyObject_GC_IsTracked(PyObject *op)
 
    Returns 1 if the object type of *op* implements the GC protocol and *op* is being
