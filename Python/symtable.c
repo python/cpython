@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"   // _PyThreadState_GET()
 #include "symtable.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "structmember.h"

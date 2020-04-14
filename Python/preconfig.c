@@ -2,7 +2,7 @@
 #include "pycore_getopt.h"
 #include "pycore_initconfig.h"
 #include "pycore_pymem.h"      // _PyMem_GetAllocatorName()
-#include "pycore_pystate.h"    // _PyRuntime_Initialize()
+#include "pycore_runtime.h"    // _PyRuntime_Initialize()
 #include <locale.h>            // setlocale()
 
 

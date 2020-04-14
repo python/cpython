@@ -1,10 +1,11 @@
 #include "Python.h"
 
 #include "pycore_context.h"
+#include "pycore_gc.h"            // _PyObject_GC_MAY_BE_TRACKED()
 #include "pycore_hamt.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"
 
 

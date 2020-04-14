@@ -2,11 +2,11 @@
 /* Method object implementation */
 
 #include "Python.h"
-#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"     // _Py_EnterRecursiveCall()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"   // _PyThreadState_GET()
 #include "structmember.h"
 
 /* undefine macro trampoline to PyCFunction_NewEx */

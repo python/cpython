@@ -6,7 +6,6 @@
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"
-#include "pycore_pystate.h"
 #include <wchar.h>
 
 #ifdef __cplusplus

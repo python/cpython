@@ -40,14 +40,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_abstract.h"       // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
 #include "pycore_fileutils.h"
 #include "pycore_initconfig.h"
+#include "pycore_interp.h"         // PyInterpreterState.fs_codec
 #include "pycore_object.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"        // _PyInterpreterState_GET()
 #include "ucnhash.h"
 #include "stringlib/eq.h"
 

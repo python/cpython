@@ -9,8 +9,8 @@ Copyright (c) Corporation for National Research Initiatives.
    ------------------------------------------------------------------------ */
 
 #include "Python.h"
-#include "pycore_interp.h"     // PyInterpreterState.codec_search_path
-#include "pycore_pystate.h"
+#include "pycore_interp.h"        // PyInterpreterState.codec_search_path
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "ucnhash.h"
 #include <ctype.h>
 

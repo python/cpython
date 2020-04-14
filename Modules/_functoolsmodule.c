@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
 #include "structmember.h"
 
