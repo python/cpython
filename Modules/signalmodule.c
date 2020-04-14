@@ -8,7 +8,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"    // _PyThreadState_GET()
 
 #ifndef MS_WINDOWS
 #include "posixmodule.h"

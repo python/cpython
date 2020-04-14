@@ -7,7 +7,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"
 
 /* --------------------------------------------------------------------------

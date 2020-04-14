@@ -1,9 +1,9 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
-#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"        // _Py_EnterRecursiveCall()
 #include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
 #include "structmember.h" /* Why is this not included in Python.h? */
 
