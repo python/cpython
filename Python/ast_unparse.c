@@ -875,6 +875,8 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         if (e->v.Constant.value == Py_Ellipsis) {
             APPEND_STR_FINISH("...");
         }
+        APPEND_STR_IF(e->v.Constant.kind != NULL,
+                      PyUnicode_AS_DATA(e->v.Constant.kind));
         return append_ast_constant(writer, e->v.Constant.value);
     case JoinedStr_kind:
         return append_joinedstr(writer, e, false);
