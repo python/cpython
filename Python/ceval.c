@@ -397,6 +397,7 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     drop_gil(&runtime->ceval, tstate);
 }
 
+#ifdef HAVE_FORK
 /* This function is called from PyOS_AfterFork_Child to destroy all threads
  * which are not running in the child process, and clear internal locks
  * which might be held by those threads.
@@ -416,14 +417,14 @@ _PyEval_ReInitThreads(_PyRuntimeState *runtime)
     take_gil(tstate);
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
-    pending->lock = PyThread_allocate_lock();
-    if (pending->lock == NULL) {
+    if (_PyThread_at_fork_reinit(&pending->lock) < 0) {
         Py_FatalError("Can't initialize threads for pending calls");
     }
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(runtime, tstate);
 }
+#endif
 
 /* This function is used to signal that async exceptions are waiting to be
    raised. */
