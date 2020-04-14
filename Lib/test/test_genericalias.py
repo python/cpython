@@ -11,6 +11,7 @@ from concurrent.futures.thread import _WorkItem
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from contextvars import ContextVar, Token
 from dataclasses import Field
+from functools import partial, partialmethod, cached_property
 from mailbox import Mailbox, _PartialFile
 from ctypes import Array, LibraryLoader
 from difflib import SequenceMatcher
@@ -22,7 +23,11 @@ from itertools import chain
 from http.cookies import Morsel
 from multiprocessing.managers import ValueProxy
 from multiprocessing.pool import ApplyResult
-from multiprocessing.shared_memory import ShareableList
+try:
+    from multiprocessing.shared_memory import ShareableList
+except ImportError:
+    # multiprocessing.shared_memory is not available on e.g. Android
+    ShareableList = None
 from multiprocessing.queues import SimpleQueue
 from os import DirEntry
 from re import Pattern, Match
@@ -31,6 +36,7 @@ from tempfile import TemporaryDirectory, SpooledTemporaryFile
 from urllib.parse import SplitResult, ParseResult
 from unittest.case import _AssertRaisesContext
 from queue import Queue, SimpleQueue
+from weakref import WeakSet, ReferenceType, ref
 import typing
 
 from typing import TypeVar
@@ -48,6 +54,7 @@ class BaseTest(unittest.TestCase):
                   FileInput,
                   OrderedDict, Counter, UserDict, UserList,
                   Pattern, Match,
+                  partial, partialmethod, cached_property,
                   AbstractContextManager, AbstractAsyncContextManager,
                   Awaitable, Coroutine,
                   AsyncIterable, AsyncIterator,
@@ -73,10 +80,13 @@ class BaseTest(unittest.TestCase):
                   Array, LibraryLoader,
                   SplitResult, ParseResult,
                   ValueProxy, ApplyResult,
+                  WeakSet, ReferenceType, ref,
                   ShareableList, SimpleQueue,
                   Future, _WorkItem,
                   Morsel,
                   ):
+            if t is None:
+                continue
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]

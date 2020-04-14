@@ -20,6 +20,7 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
+from types import GenericAlias
 
 
 ################################################################################
@@ -656,6 +657,9 @@ class partialmethod(object):
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 # Helper functions
 
 def _unwrap_partial(func):
@@ -1208,3 +1212,5 @@ class cached_property:
                         )
                         raise TypeError(msg) from None
         return val
+
+    __class_getitem__ = classmethod(GenericAlias)
