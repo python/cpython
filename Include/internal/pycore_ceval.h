@@ -25,8 +25,10 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
     int (*func)(void *),
     void *arg);
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyThreadState *tstate);
+#ifdef HAVE_FORK
 PyAPI_FUNC(void) _PyEval_ReInitThreads(
     struct pyruntimestate *runtime);
+#endif
 PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
     PyThreadState *tstate,
     int new_depth);
