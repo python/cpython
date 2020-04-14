@@ -21,7 +21,7 @@ class PwdTest(unittest.TestCase):
             self.assertEqual(e[3], e.pw_gid)
             self.assertIsInstance(e.pw_gid, int)
             self.assertEqual(e[4], e.pw_gecos)
-            self.assertIsInstance(e.pw_gecos, str)
+            self.assertIn(type(e.pw_gecos), (str, type(None)))
             self.assertEqual(e[5], e.pw_dir)
             self.assertIsInstance(e.pw_dir, str)
             self.assertEqual(e[6], e.pw_shell)
