@@ -5,6 +5,7 @@ import importlib._bootstrap_external
 import importlib.machinery
 import marshal
 import os
+import io
 import sys
 import types
 import warnings
@@ -68,35 +69,32 @@ def _find_module(name, path=None):
     # Some special cases:
 
     if spec.loader is importlib.machinery.BuiltinImporter:
-        return None, None, ("", "", _C_BUILTIN)
+        return None, None, ("", _C_BUILTIN)
 
     if spec.loader is importlib.machinery.FrozenImporter:
-        return None, None, ("", "", _PY_FROZEN)
+        return None, None, ("", _PY_FROZEN)
 
     file_path = spec.origin
 
     if spec.loader.is_package(name):
-        return None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY)
+        return None, os.path.dirname(file_path), ("", _PKG_DIRECTORY)
 
     if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
         kind = _PY_SOURCE
-        mode = "r"
 
     elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
         kind = _C_EXTENSION
-        mode = "rb"
 
     elif isinstance(spec.loader, importlib.machinery.SourcelessFileLoader):
         kind = _PY_COMPILED
-        mode = "rb"
 
     else:  # Should never happen.
-        return None, None, ("", "", _SEARCH_ERROR)
+        return None, None, ("", _SEARCH_ERROR)
 
-    file = open(file_path, mode)
+    file = io.open_code(file_path)
     suffix = os.path.splitext(file_path)[-1]
 
-    return file, file_path, (suffix, mode, kind)
+    return file, file_path, (suffix, kind)
 
 
 class Module:
@@ -160,15 +158,15 @@ class ModuleFinder:
 
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
-        with open(pathname) as fp:
-            stuff = ("", "r", _PY_SOURCE)
+        with io.open_code(pathname) as fp:
+            stuff = ("", _PY_SOURCE)
             self.load_module('__main__', fp, pathname, stuff)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
-        with open(pathname) as fp:
-            stuff = (ext, "r", _PY_SOURCE)
+        with io.open_code(pathname) as fp:
+            stuff = (ext, _PY_SOURCE)
             self.load_module(name, fp, pathname, stuff)
 
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
@@ -333,14 +331,14 @@ class ModuleFinder:
         return m
 
     def load_module(self, fqname, fp, pathname, file_info):
-        suffix, mode, type = file_info
+        suffix, type = file_info
         self.msgin(2, "load_module", fqname, fp and "fp", pathname)
         if type == _PKG_DIRECTORY:
             m = self.load_package(fqname, pathname)
             self.msgout(2, "load_module ->", m)
             return m
         if type == _PY_SOURCE:
-            co = compile(fp.read()+'\n', pathname, 'exec')
+            co = compile(fp.read()+b'\n', pathname, 'exec')
         elif type == _PY_COMPILED:
             try:
                 data = fp.read()
@@ -504,7 +502,7 @@ class ModuleFinder:
 
         if path is None:
             if name in sys.builtin_module_names:
-                return (None, None, ("", "", _C_BUILTIN))
+                return (None, None, ("", _C_BUILTIN))
 
             path = self.path
 
