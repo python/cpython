@@ -201,7 +201,6 @@ _PyImport_ReleaseLock(void)
 }
 
 #ifdef HAVE_FORK
-
 /* This function is called from PyOS_AfterFork_Child to ensure that newly
    created child processes do not share locks with the parent.
    We now acquire the import lock around fork() calls but on some platforms

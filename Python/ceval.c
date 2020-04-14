@@ -398,7 +398,6 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 }
 
 #ifdef HAVE_FORK
-
 /* This function is called from PyOS_AfterFork_Child to destroy all threads
  * which are not running in the child process, and clear internal locks
  * which might be held by those threads.
