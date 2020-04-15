@@ -6,7 +6,7 @@
 #include "code.h"
 #include "frameobject.h"
 #include "structmember.h"         // PyMemberDef
-#include "osdefs.h"
+#include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
