@@ -93,7 +93,7 @@ typedef struct _typeobject PyTypeObject;
 /* The GC bit-shifts refcounts left by two, and after that shift we still
  * need this to be >> 0, so leave three high zero bits (the sign bit and
  * room for a shift of two.) */
-static const Py_ssize_t _Py_IMMORTAL_BIT = 1L << (8 * sizeof(Py_ssize_t) - 4);
+#define _Py_IMMORTAL_BIT 1L << (8 * sizeof(Py_ssize_t) - 4)
 
 #endif  /* Py_IMMORTAL_OBJECTS */
 
