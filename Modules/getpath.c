@@ -1,11 +1,10 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
-#include "pycore_initconfig.h"
-#include "osdefs.h"
 #include "pycore_fileutils.h"
+#include "pycore_initconfig.h"
 #include "pycore_pathconfig.h"
-#include "pycore_pystate.h"
+#include "osdefs.h"               // DELIM
 
 #include <sys/types.h>
 #include <string.h>

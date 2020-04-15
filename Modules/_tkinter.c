@@ -26,8 +26,6 @@ Copyright (C) 1994 Steen Lumholt.
 #include "Python.h"
 #include <ctype.h>
 
-#include "pythread.h"
-
 #ifdef MS_WINDOWS
 #include <windows.h>
 #endif

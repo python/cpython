@@ -2,8 +2,8 @@
 /* List a node on a file */
 
 #include "Python.h"
-#include "pycore_interp.h"   // PyInterpreterState.parser
-#include "pycore_pystate.h"  // _PyInterpreterState_GET
+#include "pycore_interp.h"        // PyInterpreterState.parser
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "token.h"
 #include "node.h"
 

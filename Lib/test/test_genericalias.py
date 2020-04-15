@@ -9,7 +9,10 @@ from collections.abc import *
 from concurrent.futures import Future
 from concurrent.futures.thread import _WorkItem
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
-from functools import partial, partialmethod, _lru_cache_wrapper, cached_property
+from contextvars import ContextVar, Token
+from dataclasses import Field
+from functools import partial, partialmethod, cached_property
+from mailbox import Mailbox, _PartialFile
 from ctypes import Array, LibraryLoader
 from difflib import SequenceMatcher
 from filecmp import dircmp
@@ -60,6 +63,9 @@ class BaseTest(unittest.TestCase):
                   Reversible,
                   Container, Collection,
                   Callable,
+                  Mailbox, _PartialFile,
+                  ContextVar, Token,
+                  Field,
                   Set, MutableSet,
                   Mapping, MutableMapping, MappingView,
                   KeysView, ItemsView, ValuesView,

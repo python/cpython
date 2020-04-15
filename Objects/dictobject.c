@@ -111,10 +111,11 @@ converting the dict to the combined table.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
+#include "pycore_gc.h"       // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"  // _PyThreadState_GET()
 #include "dict-common.h"
-#include "stringlib/eq.h"    /* to get unicode_eq() */
+#include "stringlib/eq.h"    // unicode_eq()
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"

@@ -35,11 +35,10 @@
 #  include <windows.h>
 #endif
 
-#include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
-#include "pycore_import.h"    /* _PyImport_ReInitLock() */
-#include "pycore_pystate.h"   /* _PyRuntime */
-#include "pythread.h"
-#include "structmember.h"
+#include "pycore_ceval.h"         // _PyEval_ReInitThreads()
+#include "pycore_import.h"        // _PyImport_ReInitLock()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
 #else
@@ -313,11 +312,11 @@ extern char        *ctermid_r(char *);
 #ifndef IO_REPARSE_TAG_MOUNT_POINT
 #define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
 #endif
-#include "osdefs.h"
+#include "osdefs.h"               // SEP
 #include <malloc.h>
 #include <windows.h>
-#include <shellapi.h>   /* for ShellExecute() */
-#include <lmcons.h>     /* for UNLEN */
+#include <shellapi.h>             // ShellExecute()
+#include <lmcons.h>               // UNLEN
 #define HAVE_SYMLINK
 #endif /* _MSC_VER */
 

@@ -10,7 +10,7 @@
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_code.h"
@@ -18,7 +18,8 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"
 #include "pycore_tupleobject.h"
 
@@ -28,7 +29,6 @@
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
-#include "structmember.h"
 
 #include <ctype.h>
 
@@ -239,7 +239,6 @@ UNSIGNAL_ASYNC_EXC(PyInterpreterState *interp)
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
-#include "pythread.h"
 #include "ceval_gil.h"
 
 static void
@@ -397,6 +396,7 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     drop_gil(&runtime->ceval, tstate);
 }
 
+#ifdef HAVE_FORK
 /* This function is called from PyOS_AfterFork_Child to destroy all threads
  * which are not running in the child process, and clear internal locks
  * which might be held by those threads.
@@ -416,14 +416,14 @@ _PyEval_ReInitThreads(_PyRuntimeState *runtime)
     take_gil(tstate);
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
-    pending->lock = PyThread_allocate_lock();
-    if (pending->lock == NULL) {
+    if (_PyThread_at_fork_reinit(&pending->lock) < 0) {
         Py_FatalError("Can't initialize threads for pending calls");
     }
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(runtime, tstate);
 }
+#endif
 
 /* This function is used to signal that async exceptions are waiting to be
    raised. */
