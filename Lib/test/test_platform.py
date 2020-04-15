@@ -172,7 +172,7 @@ class PlatformTest(unittest.TestCase):
             expect = subprocess.check_output(['uname', '-p'], text=True).strip()
 
         if expect == 'unknown':
-            return
+            expect = ''
 
         self.assertEqual(platform.uname().processor, expect)
 
