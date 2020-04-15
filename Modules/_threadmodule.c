@@ -254,7 +254,7 @@ static PyMethodDef lock_methods[] = {
 };
 
 static PyTypeObject Locktype = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "_thread.lock",                     /*tp_name*/
     sizeof(lockobject),                 /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
@@ -534,7 +534,7 @@ static PyMethodDef rlock_methods[] = {
 
 
 static PyTypeObject RLocktype = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "_thread.RLock",                    /*tp_name*/
     sizeof(rlockobject),                /*tp_basicsize*/
     0,                                  /*tp_itemsize*/

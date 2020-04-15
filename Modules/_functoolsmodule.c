@@ -511,7 +511,7 @@ static PyObject *
 keyobject_richcompare(PyObject *ko, PyObject *other, int op);
 
 static PyTypeObject keyobject_type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "functools.KeyWrapper",             /* tp_name */
     sizeof(keyobject),                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -745,7 +745,7 @@ lru_list_elem_dealloc(lru_list_elem *link)
 }
 
 static PyTypeObject lru_list_elem_type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "functools._lru_list_elem",         /* tp_name */
     sizeof(lru_list_elem),              /* tp_basicsize */
     0,                                  /* tp_itemsize */
