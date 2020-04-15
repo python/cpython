@@ -1,22 +1,22 @@
 /* Python interpreter main program */
 
 #include "Python.h"
-#include "pycore_initconfig.h"
-#include "pycore_interp.h"       // _PyInterpreterState.sysdict
-#include "pycore_pathconfig.h"
-#include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"      // _PyInterpreterState_GET()
+#include "pycore_initconfig.h"    // _PyArgv
+#include "pycore_interp.h"        // _PyInterpreterState.sysdict
+#include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
+#include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 /* Includes for exit_sigint() */
-#include <stdio.h>      /* perror() */
+#include <stdio.h>                // perror()
 #ifdef HAVE_SIGNAL_H
-#  include <signal.h>   /* SIGINT */
+#  include <signal.h>             // SIGINT
 #endif
 #if defined(HAVE_GETPID) && defined(HAVE_UNISTD_H)
-#  include <unistd.h>   /* getpid() */
+#  include <unistd.h>             // getpid()
 #endif
 #ifdef MS_WINDOWS
-#  include <windows.h>  /* STATUS_CONTROL_C_EXIT */
+#  include <windows.h>            // STATUS_CONTROL_C_EXIT
 #endif
 /* End of includes for exit_sigint() */
 
