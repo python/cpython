@@ -30,7 +30,6 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"     // _PyThreadState_GET()
-#include "pycore_pymem.h"
 #include "frameobject.h"        // PyFrame_ClearFreeList
 #include "pydtrace.h"
 #include "pytime.h"             // _PyTime_GetMonotonicClock()

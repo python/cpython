@@ -2,7 +2,6 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
 
 typedef struct {
     PyObject_HEAD
