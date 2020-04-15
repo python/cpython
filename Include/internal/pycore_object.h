@@ -111,6 +111,14 @@ _PyObject_IS_GC(PyObject *obj)
                 || Py_TYPE(obj)->tp_is_gc(obj)));
 }
 
+// Fast inlined version of PyObject_CheckBuffer()
+static inline int
+_PyObject_CheckBuffer(PyObject *obj)
+{
+    PyBufferProcs *tp_as_buffer = Py_TYPE(obj)->tp_as_buffer;
+    return (tp_as_buffer != NULL && tp_as_buffer->bf_getbuffer != NULL);
+}
+
 // Fast inlined version of PyType_IS_GC()
 #define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 

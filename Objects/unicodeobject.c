@@ -3936,7 +3936,7 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
         return 1;
     }
 
-    is_buffer = PyObject_CheckBuffer(arg);
+    is_buffer = _PyObject_CheckBuffer(arg);
     if (!is_buffer) {
         path = PyOS_FSPath(arg);
         if (path == NULL) {

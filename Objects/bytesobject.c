@@ -561,7 +561,7 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
         return result;
     }
     /* does it support buffer protocol? */
-    if (PyObject_CheckBuffer(v)) {
+    if (_PyObject_CheckBuffer(v)) {
         /* maybe we can avoid making a copy of the buffer object here? */
         result = _PyBytes_FromBuffer(v);
         if (result == NULL)
@@ -2740,7 +2740,7 @@ PyBytes_FromObject(PyObject *x)
     }
 
     /* Use the modern buffer interface */
-    if (PyObject_CheckBuffer(x))
+    if (_PyObject_CheckBuffer(x))
         return _PyBytes_FromBuffer(x);
 
     if (PyList_CheckExact(x))

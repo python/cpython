@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
+#include "pycore_object.h"
 
 PyDoc_STRVAR_shared(_Py_isspace__doc__,
 "B.isspace() -> bool\n\
@@ -462,7 +463,7 @@ parse_args_finds_byte(const char *function_name, PyObject *args,
                                    start, end))
         return 0;
 
-    if (PyObject_CheckBuffer(tmp_subobj)) {
+    if (_PyObject_CheckBuffer(tmp_subobj)) {
         *subobj = tmp_subobj;
         return 1;
     }

@@ -829,7 +829,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     }
 
     /* Use the buffer API */
-    if (PyObject_CheckBuffer(arg)) {
+    if (_PyObject_CheckBuffer(arg)) {
         Py_ssize_t size;
         Py_buffer view;
         if (PyObject_GetBuffer(arg, &view, PyBUF_FULL_RO) < 0)
@@ -1614,7 +1614,7 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
     char *buf;
 
     /* bytearray_setslice code only accepts something supporting PEP 3118. */
-    if (PyObject_CheckBuffer(iterable_of_ints)) {
+    if (_PyObject_CheckBuffer(iterable_of_ints)) {
         if (bytearray_setslice(self, Py_SIZE(self), Py_SIZE(self), iterable_of_ints) == -1)
             return NULL;
 

@@ -689,7 +689,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
             else {
                 Py_buffer view;
 
-                if (!PyObject_CheckBuffer(value)) {
+                if (!_PyObject_CheckBuffer(value)) {
                     PyErr_Format(PyExc_TypeError,
                         "Objects of type '%s' can not "
                         "be used as binary registry values",

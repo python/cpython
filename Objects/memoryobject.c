@@ -800,7 +800,7 @@ PyMemoryView_FromObject(PyObject *v)
         CHECK_RELEASED(mv);
         return mbuf_add_view(mv->mbuf, &mv->view);
     }
-    else if (PyObject_CheckBuffer(v)) {
+    else if (_PyObject_CheckBuffer(v)) {
         PyObject *ret;
         mbuf = (_PyManagedBufferObject *)_PyManagedBuffer_FromObject(v);
         if (mbuf == NULL)

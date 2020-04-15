@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <ctype.h>
@@ -283,8 +284,7 @@ PyObject_DelItemString(PyObject *o, const char *key)
 int
 PyObject_CheckBuffer(PyObject *obj)
 {
-    PyBufferProcs *tp_as_buffer = Py_TYPE(obj)->tp_as_buffer;
-    return (tp_as_buffer != NULL && tp_as_buffer->bf_getbuffer != NULL);
+    return _PyObject_CheckBuffer(obj);
 }
 
 
@@ -615,8 +615,8 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
     Py_ssize_t *indices, elements;
     char *dptr, *sptr;
 
-    if (!PyObject_CheckBuffer(dest) ||
-        !PyObject_CheckBuffer(src)) {
+    if (!_PyObject_CheckBuffer(dest) ||
+        !_PyObject_CheckBuffer(src)) {
         PyErr_SetString(PyExc_TypeError,
                         "both destination and source must be "\
                         "bytes-like objects");

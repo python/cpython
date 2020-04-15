@@ -9,6 +9,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_object.h"
 #include "longintrepr.h"
 #include "code.h"
 #include "marshal.h"
@@ -526,7 +527,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_long(co->co_firstlineno, p);
         w_object(co->co_lnotab, p);
     }
-    else if (PyObject_CheckBuffer(v)) {
+    else if (_PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
         Py_buffer view;
         if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) != 0) {
