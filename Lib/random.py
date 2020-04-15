@@ -295,11 +295,10 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        try:
-            i = self._randbelow(len(seq))
-        except ValueError:
-            raise IndexError('Cannot choose from an empty sequence') from None
-        return seq[i]
+        n = len(seq)
+        if n == 0:
+            raise IndexError('Cannot choose from an empty sequence')
+        return seq[self._randbelow(n)]
 
     def shuffle(self, x, random=None):
         """Shuffle list x in place, and return None.
@@ -733,8 +732,8 @@ class SystemRandom(Random):
 
     def getrandbits(self, k):
         """getrandbits(k) -> x.  Generates an int with k random bits."""
-        if k <= 0:
-            raise ValueError('number of bits must be greater than zero')
+        if k < 0:
+            raise ValueError('number of bits must be positive')
         numbytes = (k + 7) // 8                       # bits / 8 and rounded up
         x = int.from_bytes(_urandom(numbytes), 'big')
         return x >> (numbytes * 8 - k)                # trim excess bits
