@@ -240,7 +240,6 @@ UNSIGNAL_ASYNC_EXC(PyInterpreterState *interp)
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
-#include "pythread.h"
 #include "ceval_gil.h"
 
 static void

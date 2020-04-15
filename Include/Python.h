@@ -131,6 +131,7 @@
 #include "pyerrors.h"
 
 #include "cpython/initconfig.h"
+#include "pythread.h"
 #include "pystate.h"
 #include "context.h"
 

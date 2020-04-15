@@ -234,13 +234,8 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #define RELEASE_GETADDRINFO_LOCK
 #endif
 
-#if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
-# include "pythread.h"
-#endif
-
-
 #if defined(__APPLE__) || defined(__CYGWIN__) || defined(__NetBSD__)
-# include <sys/ioctl.h>
+#  include <sys/ioctl.h>
 #endif
 
 

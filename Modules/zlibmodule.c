@@ -10,7 +10,6 @@
 #include "zlib.h"
 
 
-#include "pythread.h"
 #define ENTER_ZLIB(obj) \
     Py_BEGIN_ALLOW_THREADS; \
     PyThread_acquire_lock((obj)->lock, 1); \

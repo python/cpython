@@ -26,7 +26,6 @@ Data members:
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
-#include "pythread.h"
 #include "pydtrace.h"
 
 #include "osdefs.h"
