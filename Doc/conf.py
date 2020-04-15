@@ -17,6 +17,7 @@ extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
               'pyspecific', 'c_annotations', 'escape4chm',
               'hoverxref.extension']
 
+hoverxref_auto_ref = True
 
 doctest_global_setup = '''
 try:
