@@ -542,17 +542,6 @@ def _findclass(func):
     return cls
 
 def _finddoc(obj):
-    if isclass(obj):
-        for base in obj.__mro__:
-            if base is not object:
-                try:
-                    doc = base.__doc__
-                except AttributeError:
-                    continue
-                if doc is not None:
-                    return doc
-        return None
-
     if ismethod(obj):
         name = obj.__func__.__name__
         self = obj.__self__
@@ -596,12 +585,27 @@ def _finddoc(obj):
         return None
     for base in cls.__mro__:
         try:
-            doc = getattr(base, name).__doc__
+            doc = _getowndoc(getattr(base, name))
         except AttributeError:
             continue
         if doc is not None:
             return doc
     return None
+
+def _getowndoc(obj):
+    """Get the documentation string for an object if it is not
+    inherited from its class."""
+    try:
+        doc = object.__getattribute__(obj, '__doc__')
+        if doc is None:
+            return None
+        if obj is not type:
+            typedoc = type(obj).__doc__
+            if isinstance(typedoc, str) and typedoc == doc:
+                return None
+        return doc
+    except AttributeError:
+        return None
 
 def getdoc(object):
     """Get the documentation string for an object.
@@ -609,10 +613,7 @@ def getdoc(object):
     All tabs are expanded to spaces.  To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
     uniformly removed from the second line onwards is removed."""
-    try:
-        doc = object.__doc__
-    except AttributeError:
-        return None
+    doc = _getowndoc(object)
     if doc is None:
         try:
             doc = _finddoc(object)
