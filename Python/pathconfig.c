@@ -5,7 +5,7 @@
 #include "pycore_initconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
-#include "pycore_pymem.h"
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH

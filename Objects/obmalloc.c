@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_pymem.h"
+#include "pycore_pymem.h"         // _PyTraceMalloc_Config
 
 #include <stdbool.h>
 

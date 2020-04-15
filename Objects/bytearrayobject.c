@@ -5,7 +5,6 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
 #include "bytesobject.h"
 #include "pystrhex.h"
 
