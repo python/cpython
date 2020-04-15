@@ -82,7 +82,7 @@ typedef struct _typeobject PyTypeObject;
 #define PyObject_HEAD                   PyObject ob_base;
 
 /* [RFC] Should we enable Immortal Instances by Default? */
-#define Py_IMMORTAL_OBJECTS
+// #define Py_IMMORTAL_OBJECTS
 
 /* Immortalizing causes the instance to not participate in reference counting.
  * Thus, an immortal object will be kept alive until the runtime finalization.
@@ -93,8 +93,7 @@ typedef struct _typeobject PyTypeObject;
 /* The GC bit-shifts refcounts left by two, and after that shift we still
  * need this to be >> 0, so leave three high zero bits (the sign bit and
  * room for a shift of two.) */
-static const Py_ssize_t _Py_IMMORTAL_BIT_POS = 4;
-static const Py_ssize_t _Py_IMMORTAL_BIT = 1L << (8 * sizeof(Py_ssize_t) - _Py_IMMORTAL_BIT_POS);
+static const Py_ssize_t _Py_IMMORTAL_BIT = 1L << (8 * sizeof(Py_ssize_t) - 4);
 
 #endif  /* Py_IMMORTAL_OBJECTS */
 
