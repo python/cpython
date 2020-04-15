@@ -16,7 +16,6 @@
 #include "marshal.h"
 #include "code.h"
 #include "frameobject.h"
-#include "osdefs.h"
 #include "importdl.h"
 #include "pydtrace.h"
 

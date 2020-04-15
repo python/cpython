@@ -26,9 +26,9 @@ Data members:
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
-#include "pydtrace.h"
 
-#include "osdefs.h"
+#include "pydtrace.h"
+#include "osdefs.h"               // DELIM
 #include <locale.h>
 
 #ifdef MS_WINDOWS

@@ -4,7 +4,6 @@
 #include "pycore_traceback.h"
 #include "hashtable.h"
 #include "frameobject.h"
-#include "osdefs.h"
 
 #include "clinic/_tracemalloc.c.h"
 /*[clinic input]

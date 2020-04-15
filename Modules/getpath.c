@@ -4,7 +4,7 @@
 #include "pycore_fileutils.h"
 #include "pycore_initconfig.h"
 #include "pycore_pathconfig.h"
-#include "osdefs.h"
+#include "osdefs.h"               // DELIM
 
 #include <sys/types.h>
 #include <string.h>
