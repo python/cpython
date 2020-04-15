@@ -5,8 +5,6 @@
 #include "Python.h"
 #include "structmember.h"
 
-#include "pythread.h"
-
 #include <bzlib.h>
 #include <stdio.h>
 

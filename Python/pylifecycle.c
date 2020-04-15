@@ -2350,8 +2350,6 @@ Py_ExitStatusException(PyStatus status)
 
 /* Clean up and exit */
 
-#  include "pythread.h"
-
 /* For the atexit module. */
 void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
