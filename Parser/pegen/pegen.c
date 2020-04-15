@@ -113,7 +113,7 @@ get_expr_name(expr_ty e)
 }
 
 static int
-non_terminated_string_error(Parser *p)
+tokenizer_string_error(Parser *p)
 {
     PyObject *errstr = NULL;
     PyObject *value = NULL;
@@ -125,6 +125,9 @@ non_terminated_string_error(Parser *p)
     }
     else if (p->tok->done == E_EOFS) {
         msg = "EOF while scanning triple-quoted string literal";
+    }
+    else if (p->tok->done == E_BADPREFIX) {
+        msg = "invalid string prefix";
     }
     assert(msg != NULL);
 
@@ -171,9 +174,10 @@ tokenizer_error(Parser *p)
         case E_IDENTIFIER:
             msg = "invalid character in identifier";
             break;
+        case E_BADPREFIX:
         case E_EOFS:
         case E_EOLS:
-            return non_terminated_string_error(p);
+            return tokenizer_string_error(p);
         default:
             msg = "unknown parsing error";
     }
