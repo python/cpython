@@ -81,10 +81,8 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    PyCompilerFlags flags = _PyCompilerFlags_INIT;
-    flags.cf_flags = PyCF_IGNORE_COOKIE;
-
-    mod_ty res = run_parser_from_string(the_string, Py_file_input, filename_ob, &flags, arena);
+    mod_ty res = run_parser_from_string(the_string, Py_file_input, filename_ob,
+                                        PyCF_IGNORE_COOKIE, arena);
     if (res == NULL) {
         goto error;
     }

@@ -6,10 +6,10 @@ ifeq ($(UNAME_S),Darwin)
 	PYTHON ?= ../../python.exe
 endif
 
-CPYTHON ?= ../..
+CPYTHON ?= ../../Lib
 MYPY ?= mypy
 
-GRAMMAR = data/python.gram
+GRAMMAR = ../../Grammar/python.gram
 TESTFILE = data/cprog.py
 TIMEFILE = data/xxl.py
 TESTDIR = .
@@ -57,25 +57,25 @@ stats: peg_extension/parse.c
 time: time_compile
 
 time_compile: peg_extension/parse.c
-	/usr/bin/time -l $(PYTHON) -c "from peg_extension import parse; parse.parse_file('$(TIMEFILE)', mode=2)"
+	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl compile
 
 time_parse: peg_extension/parse.c
-	/usr/bin/time -l $(PYTHON) -c "from peg_extension import parse; parse.parse_file('$(TIMEFILE)', mode=1)"
+	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl parse
 
 time_check: peg_extension/parse.c
-	/usr/bin/time -l $(PYTHON) -c "from peg_extension import parse; parse.parse_file('$(TIMEFILE)', mode=0)"
+	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl check
 
 time_stdlib: time_stdlib_compile
 
 time_stdlib_compile:
-	/usr/bin/time -l $(PYTHON) -c "import ast; compile(open('$(TIMEFILE)').read(), '$(TIMEFILE)', 'exec')"
+	$(PYTHON) scripts/benchmark.py --parser=cpython --target=xxl compile
 
 time_stdlib_parse:
-	/usr/bin/time -l $(PYTHON) -c "import ast; ast.parse(open('$(TIMEFILE)').read())"
+	$(PYTHON) scripts/benchmark.py --parser=cpython --target=xxl parse
 
 test_local:
 	$(PYTHON) scripts/test_parse_directory.py \
-		-g data/python.gram \
+		-g $(GRAMMAR) \
 		-d $(TESTDIR) \
 		$(TESTFLAGS) \
 		--exclude "*/failset/*" \
@@ -84,7 +84,7 @@ test_local:
 
 test_global: $(CPYTHON)
 	$(PYTHON) scripts/test_parse_directory.py \
-		-g data/python.gram \
+		-g $(GRAMMAR) \
 		-d $(CPYTHON) \
 		$(TESTFLAGS) \
 		--exclude "*/test2to3/*" \
@@ -98,10 +98,8 @@ mypy: regen-metaparser
 format-python:
 	black pegen scripts
 
-bench: cpython
-	$(MAKE) -s test_global 2>/dev/null
-	$(MAKE) -s test_global 2>/dev/null
-	$(MAKE) -s test_global 2>/dev/null
+bench:
+	$(PYTHON) scripts/benchmark.py --parser=pegen --target=stdlib check
 
 format: format-python
 

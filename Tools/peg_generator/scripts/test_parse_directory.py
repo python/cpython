@@ -120,7 +120,13 @@ def parse_directory(
     tree_arg: int,
     short: bool,
     extension: Any,
+    mode: int,
+    parser: str,
 ) -> int:
+    if parser == "cpython" and (tree_arg or mode == 0):
+        print("Cannot specify tree argument or mode=0 with the cpython parser.", file=sys.stderr)
+        return 1
+
     if not directory:
         print("You must specify a directory of files to test.", file=sys.stderr)
         return 1
@@ -131,10 +137,10 @@ def parse_directory(
             return 1
 
         try:
-            if not extension:
+            if not extension and parser == "pegen":
                 build_parser_and_generator(
                     grammar_file,
-                    "peg_parser/parse.c",
+                    "peg_extension/parse.c",
                     compile_extension=True,
                     skip_actions=skip_actions,
                 )
@@ -150,14 +156,15 @@ def parse_directory(
     else:
         print("A grammar file was not provided - attempting to use existing file...\n")
 
-    try:
-        from peg_parser import parse  # type: ignore
-    except:
-        print(
-            "An existing parser was not found. Please run `make` or specify a grammar file with the `-g` flag.",
-            file=sys.stderr,
-        )
-        return 1
+    if parser == "pegen":
+        try:
+            from peg_extension import parse  # type: ignore
+        except:
+            print(
+                "An existing parser was not found. Please run `make` or specify a grammar file with the `-g` flag.",
+                file=sys.stderr,
+            )
+            return 1
 
     # For a given directory, traverse files and attempt to parse each one
     # - Output success/failure for each file
@@ -177,10 +184,18 @@ def parse_directory(
         if not should_exclude_file:
             try:
                 if tree_arg:
-                    tree = parse.parse_file(file, mode=1)
-                    trees[file] = tree
+                    mode = 1
+                if parser == "cpython":
+                    with open(file, "r") as f:
+                        source = f.read()
+                        if mode == 2:
+                            compile(source, file, "exec")
+                        elif mode == 1:
+                            ast.parse(source, file, "exec")
                 else:
-                    parse.parse_file(file, mode=0)
+                    tree = parse.parse_file(file, mode=mode)
+                if tree_arg:
+                    trees[file] = tree
                 if not short:
                     report_status(succeeded=True, file=file, verbose=verbose)
             except Exception as error:
@@ -218,11 +233,12 @@ def parse_directory(
             f"or {total_bytes / total_seconds :,.0f} bytes/sec.",
         )
 
-    # Dump memo stats to @data.
-    with open("@data", "w") as datafile:
-        for i, count in enumerate(parse.get_memo_stats()):
-            if count:
-                datafile.write(f"{i:4d} {count:9d}\n")
+    if parser == "pegen":
+        # Dump memo stats to @data.
+        with open("@data", "w") as datafile:
+            for i, count in enumerate(parse.get_memo_stats()):
+                if count:
+                    datafile.write(f"{i:4d} {count:9d}\n")
 
     if short:
         print_memstats()
@@ -255,7 +271,16 @@ def main() -> None:
     short = args.short
     sys.exit(
         parse_directory(
-            directory, grammar_file, verbose, excluded_files, skip_actions, tree, short, None
+            directory,
+            grammar_file,
+            verbose,
+            excluded_files,
+            skip_actions,
+            tree,
+            short,
+            None,
+            0,
+            "pegen",
         )
     )
 
