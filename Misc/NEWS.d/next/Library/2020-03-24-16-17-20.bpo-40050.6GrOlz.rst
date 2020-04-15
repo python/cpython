@@ -1,0 +1,3 @@
+Fix ``importlib._bootstrap_external``: avoid creating a new ``winreg`` builtin
+module if it's already available in :data:`sys.modules`, and remove redundant
+imports.

@@ -417,6 +417,9 @@ class GNUTranslations(NullTranslations):
                     item = b_item.decode().strip()
                     if not item:
                         continue
+                    # Skip over comment lines:
+                    if item.startswith('#-#-#-#-#') and item.endswith('#-#-#-#-#'):
+                        continue
                     k = v = None
                     if ':' in item:
                         k, v = item.split(':', 1)

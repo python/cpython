@@ -40,7 +40,8 @@ a/module.py
                                 from c import something
 b/__init__.py
                                 from sys import *
-"""]
+""",
+]
 
 maybe_test_new = [
     "a.module",
@@ -218,6 +219,75 @@ bytecode_test = [
     ""
 ]
 
+syntax_error_test = [
+    "a.module",
+    ["a", "a.module", "b"],
+    ["b.module"], [],
+    """\
+a/__init__.py
+a/module.py
+                                import b.module
+b/__init__.py
+b/module.py
+                                ?  # SyntaxError: invalid syntax
+"""]
+
+
+same_name_as_bad_test = [
+    "a.module",
+    ["a", "a.module", "b", "b.c"],
+    ["c"], [],
+    """\
+a/__init__.py
+a/module.py
+                                import c
+                                from b import c
+b/__init__.py
+b/c.py
+"""]
+
+coding_default_utf8_test = [
+    "a_utf8",
+    ["a_utf8", "b_utf8"],
+    [], [],
+    """\
+a_utf8.py
+                                # use the default of utf8
+                                print('Unicode test A code point 2090 \u2090 that is not valid in cp1252')
+                                import b_utf8
+b_utf8.py
+                                # use the default of utf8
+                                print('Unicode test B code point 2090 \u2090 that is not valid in cp1252')
+"""]
+
+coding_explicit_utf8_test = [
+    "a_utf8",
+    ["a_utf8", "b_utf8"],
+    [], [],
+    """\
+a_utf8.py
+                                # coding=utf8
+                                print('Unicode test A code point 2090 \u2090 that is not valid in cp1252')
+                                import b_utf8
+b_utf8.py
+                                # use the default of utf8
+                                print('Unicode test B code point 2090 \u2090 that is not valid in cp1252')
+"""]
+
+coding_explicit_cp1252_test = [
+    "a_cp1252",
+    ["a_cp1252", "b_utf8"],
+    [], [],
+    b"""\
+a_cp1252.py
+                                # coding=cp1252
+                                # 0xe2 is not allowed in utf8
+                                print('CP1252 test P\xe2t\xe9')
+                                import b_utf8
+b_utf8.py
+                                # use the default of utf8
+                                print('Unicode test A code point 2090 \u2090 that is not valid in cp1252')
+"""]
 
 def open_file(path):
     dirname = os.path.dirname(path)
@@ -226,18 +296,22 @@ def open_file(path):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
-    return open(path, "w")
+    return open(path, 'wb')
 
 
 def create_package(source):
     ofi = None
     try:
         for line in source.splitlines():
-            if line.startswith(" ") or line.startswith("\t"):
-                ofi.write(line.strip() + "\n")
+            if type(line) != bytes:
+                line = line.encode('utf-8')
+            if line.startswith(b' ') or line.startswith(b'\t'):
+                ofi.write(line.strip() + b'\n')
             else:
                 if ofi:
                     ofi.close()
+                if type(line) == bytes:
+                    line = line.decode('utf-8')
                 ofi = open_file(os.path.join(TEST_DIR, line.strip()))
     finally:
         if ofi:
@@ -299,12 +373,18 @@ class ModuleFinderTest(unittest.TestCase):
     def test_relative_imports_4(self):
         self._do_test(relative_import_test_4)
 
+    def test_syntax_error(self):
+        self._do_test(syntax_error_test)
+
+    def test_same_name_as_bad(self):
+        self._do_test(same_name_as_bad_test)
+
     def test_bytecode(self):
         base_path = os.path.join(TEST_DIR, 'a')
         source_path = base_path + importlib.machinery.SOURCE_SUFFIXES[0]
         bytecode_path = base_path + importlib.machinery.BYTECODE_SUFFIXES[0]
         with open_file(source_path) as file:
-            file.write('testing_modulefinder = True\n')
+            file.write('testing_modulefinder = True\n'.encode('utf-8'))
         py_compile.compile(source_path, cfile=bytecode_path)
         os.remove(source_path)
         self._do_test(bytecode_test)
@@ -332,6 +412,14 @@ b.py
 """ % list(range(2**16))]  # 2**16 constants
         self._do_test(extended_opargs_test)
 
+    def test_coding_default_utf8(self):
+        self._do_test(coding_default_utf8_test)
+
+    def test_coding_explicit_utf8(self):
+        self._do_test(coding_explicit_utf8_test)
+
+    def test_coding_explicit_cp1252(self):
+        self._do_test(coding_explicit_cp1252_test)
 
 if __name__ == "__main__":
     unittest.main()

@@ -23,6 +23,7 @@ extern PyObject* PyInit__sha1(void);
 extern PyObject* PyInit__sha256(void);
 extern PyObject* PyInit__sha512(void);
 extern PyObject* PyInit__sha3(void);
+extern PyObject* PyInit__statistics(void);
 extern PyObject* PyInit__blake2(void);
 extern PyObject* PyInit_time(void);
 extern PyObject* PyInit__thread(void);
@@ -103,6 +104,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_blake2", PyInit__blake2},
     {"time", PyInit_time},
     {"_thread", PyInit__thread},
+    {"_statistics", PyInit__statistics},
 #ifdef WIN32
     {"msvcrt", PyInit_msvcrt},
     {"_locale", PyInit__locale},

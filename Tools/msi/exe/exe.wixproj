@@ -11,6 +11,9 @@
         <SuppressICEs>ICE43</SuppressICEs>
     </PropertyGroup>
     <Import Project="..\msi.props" />
+    <PropertyGroup Condition="exists('$(BuildPath)vcruntime140_1.dll')">
+        <DefineConstants>$(DefineConstants);Include_Vcruntime140_1_dll=1</DefineConstants>
+    </PropertyGroup>
     <ItemGroup>
         <Compile Include="exe.wxs" />
         <Compile Include="exe_files.wxs" />
@@ -20,25 +23,6 @@
         <EmbeddedResource Include="*.wxl" />
         <WxlTemplate Include="*.wxl_template" />
     </ItemGroup>
-    
-    <Target Name="_GenerateLicense" AfterTargets="PrepareForBuild">
-        <ItemGroup>
-            <LicenseFiles Include="$(PySourcePath)LICENSE;
-                                   crtlicense.txt;
-                                   $(bz2Dir)LICENSE;
-                                   $(opensslOutDir)LICENSE;
-                                   $(tcltkDir)tcllicense.terms;
-                                   $(tcltkDir)tklicense.terms;
-                                   $(tcltkDir)tixlicense.terms" />
-            <_LicenseFiles Include="@(LicenseFiles)">
-                <Content>$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
-            </_LicenseFiles>
-        </ItemGroup>
-        
-        <WriteLinesToFile File="$(BuildPath)LICENSE"
-                          Overwrite="true"
-                          Lines="@(_LicenseFiles->'%(Content)')" />
-    </Target>
     
     <Target Name="_CopyMiscNews" AfterTargets="PrepareForBuild" Condition="Exists('$(PySourcePath)Misc\NEWS')">
         <Copy SourceFiles="$(PySourcePath)Misc\NEWS" DestinationFiles="$(BuildPath)NEWS.txt" />

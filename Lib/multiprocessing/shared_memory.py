@@ -14,6 +14,7 @@ import os
 import errno
 import struct
 import secrets
+import types
 
 if os.name == "nt":
     import _winapi
@@ -112,6 +113,9 @@ class SharedMemory:
             except OSError:
                 self.unlink()
                 raise
+
+            from .resource_tracker import register
+            register(self._name, "shared_memory")
 
         else:
 
@@ -231,7 +235,9 @@ class SharedMemory:
         called once (and only once) across all processes which have access
         to the shared memory block."""
         if _USE_POSIX and self._name:
+            from .resource_tracker import unregister
             _posixshmem.shm_unlink(self._name)
+            unregister(self._name, "shared_memory")
 
 
 _encoding = "utf8"
@@ -503,3 +509,5 @@ class ShareableList:
                 return position
         else:
             raise ValueError(f"{value!r} not in this container")
+
+    __class_getitem__ = classmethod(types.GenericAlias)

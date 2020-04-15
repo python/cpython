@@ -1,7 +1,5 @@
 /* strdup() replacement (from stdwin, if you must know) */
 
-#include "pgenheaders.h"
-
 char *
 strdup(const char *str)
 {
