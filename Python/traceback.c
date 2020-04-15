@@ -2,12 +2,11 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "pycore_pystate.h"
 
 #include "code.h"
 #include "frameobject.h"
-#include "structmember.h"
-#include "osdefs.h"
+#include "structmember.h"         // PyMemberDef
+#include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif

@@ -12,37 +12,34 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
-#include "pycore_object.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
-#include "pycore_sysmodule.h"
-#include "grammar.h"
-#include "node.h"
-#include "token.h"
-#include "parsetok.h"
-#include "errcode.h"
-#include "code.h"
-#include "symtable.h"
-#include "ast.h"
-#include "marshal.h"
-#include "osdefs.h"
-#include <locale.h>
 
-#include <pegen_interface.h>
+#include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
+#include "pycore_pyerrors.h"      // _PyErr_Fetch
+#include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_sysmodule.h"     // _PySys_Audit()
 
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
+#include "node.h"                 // node
+#include "token.h"                // INDENT
+#include "parsetok.h"             // perrdetail
+#include "errcode.h"              // E_EOF
+#include "code.h"                 // PyCodeObject
+#include "symtable.h"             // PySymtable_BuildObject()
+#include "ast.h"                  // PyAST_FromNodeObject()
+#include "marshal.h"              // PyMarshal_ReadLongFromFile()
+
+#include <pegen_interface.h>      // PyPegen_ASTFrom*
+
+#ifdef MS_WINDOWS
+#  include "malloc.h"             // alloca()
 #endif
 
 #ifdef MS_WINDOWS
-#include "malloc.h" /* for alloca */
+#  undef BYTE
+#  include "windows.h"
 #endif
 
-#ifdef MS_WINDOWS
-#undef BYTE
-#include "windows.h"
-#endif
 
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(excepthook);
@@ -98,7 +95,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     int nomem_count = 0;
 #ifdef Py_REF_DEBUG
-    int show_ref_count = _PyInterpreterState_GET_UNSAFE()->config.show_ref_count;
+    int show_ref_count = _Py_GetConfig()->show_ref_count;
 #endif
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
@@ -358,7 +355,7 @@ set_main_loader(PyObject *d, const char *filename, const char *loader_name)
     filename_obj = PyUnicode_DecodeFSDefault(filename);
     if (filename_obj == NULL)
         return -1;
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     bootstrap = PyObject_GetAttrString(interp->importlib,
                                        "_bootstrap_external");
     if (bootstrap != NULL) {
@@ -595,7 +592,7 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
 int
 _Py_HandleSystemExit(int *exitcode_p)
 {
-    int inspect = _PyInterpreterState_GET_UNSAFE()->config.inspect;
+    int inspect = _Py_GetConfig()->inspect;
     if (inspect) {
         /* Don't exit if -i flag was given. This flag is set to 0
          * when entering interactive mode for inspecting. */

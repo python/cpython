@@ -3,6 +3,8 @@ import platform
 import subprocess
 import sys
 import unittest
+import collections
+import contextlib
 from unittest import mock
 
 from test import support
@@ -159,6 +161,18 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[3], res.version)
         self.assertEqual(res[4], res.machine)
         self.assertEqual(res[5], res.processor)
+
+    @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
+    def test_uname_processor(self):
+        """
+        On some systems, the processor must match the output
+        of 'uname -p'. See Issue 35967 for rationale.
+        """
+        with contextlib.suppress(subprocess.CalledProcessError):
+            self.assertEqual(
+                platform.uname().processor,
+                subprocess.check_output(['uname', '-p'], text=True).strip(),
+            )
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_ARCHITEW6432(self):

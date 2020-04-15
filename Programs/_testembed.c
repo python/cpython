@@ -6,10 +6,9 @@
 #undef NDEBUG
 
 #include <Python.h>
-#include "pycore_initconfig.h"   /* _PyConfig_InitCompatConfig() */
-#include "pycore_pystate.h"      /* _PyRuntime */
+#include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
+#include "pycore_runtime.h"       // _PyRuntime
 #include <Python.h>
-#include "pythread.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <wchar.h>

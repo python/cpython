@@ -18,8 +18,6 @@
 
 #include "Python.h"
 
-#include "pythread.h"
-
 /* Redefined below for Windows debug builds after important #includes */
 #define _PySSL_FIX_ERRNO
 

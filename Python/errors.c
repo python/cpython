@@ -4,7 +4,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"    // _PyThreadState_GET()
 #include "pycore_sysmodule.h"
 #include "pycore_traceback.h"
 
