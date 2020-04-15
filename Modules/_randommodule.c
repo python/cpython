@@ -475,7 +475,8 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
     PyObject *result;
 
     if (k < 0) {
-        PyErr_SetString(PyExc_ValueError, "number of bits must be positive");
+        PyErr_SetString(PyExc_ValueError,
+                        "number of bits must be non-negative");
         return NULL;
     }
 
