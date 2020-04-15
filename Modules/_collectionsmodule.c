@@ -2493,6 +2493,14 @@ tuplegetter_reduce(_tuplegetterobject *self, PyObject *Py_UNUSED(ignored))
     return Py_BuildValue("(O(nO))", (PyObject*) Py_TYPE(self), self->index, self->doc);
 }
 
+static PyObject*
+tuplegetter_repr(_tuplegetterobject *self)
+{
+    return PyUnicode_FromFormat("%s(%zd, %R)",
+                                _PyType_Name(Py_TYPE(self)),
+                                self->index, self->doc);
+}
+
 
 static PyMemberDef tuplegetter_members[] = {
     {"__doc__",  T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
@@ -2515,7 +2523,7 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)tuplegetter_repr,                 /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
