@@ -2316,31 +2316,20 @@ class Path:
         self.root = FastLookup.make(root)
         self.at = at
 
-    def open(self, mode='r', *args, **kwargs):
-        """
-        Open this entry as text or binary following the semantics
-        of ``pathlib.Path.open()`` by passing arguments through
-        to io.TextIOWrapper().
-        """
-        pwd = kwargs.pop('pwd', None)
-        zip_mode = mode[0]
-        stream = self.root.open(self.at, zip_mode, pwd=pwd)
-        if 'b' in mode:
-            if args or kwargs:
-                raise ValueError("encoding args invalid for binary operation")
-            return stream
-        return io.TextIOWrapper(stream, *args, **kwargs)
+    @property
+    def open(self):
+        return functools.partial(self.root.open, self.at)
 
     @property
     def name(self):
         return posixpath.basename(self.at.rstrip("/"))
 
     def read_text(self, *args, **kwargs):
-        with self.open('r', *args, **kwargs) as strm:
-            return strm.read()
+        with self.open() as strm:
+            return io.TextIOWrapper(strm, *args, **kwargs).read()
 
     def read_bytes(self):
-        with self.open('rb') as strm:
+        with self.open() as strm:
             return strm.read()
 
     def _is_child(self, path):
