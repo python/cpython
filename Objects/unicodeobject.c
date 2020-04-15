@@ -15334,7 +15334,7 @@ errors defaults to 'strict'.");
 static PyObject *unicode_iter(PyObject *seq);
 
 PyTypeObject PyUnicode_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "str",                        /* tp_name */
     sizeof(PyUnicodeObject),      /* tp_basicsize */
     0,                            /* tp_itemsize */
@@ -15655,7 +15655,7 @@ static PyMethodDef unicodeiter_methods[] = {
 };
 
 PyTypeObject PyUnicodeIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "str_iterator",         /* tp_name */
     sizeof(unicodeiterobject),      /* tp_basicsize */
     0,                  /* tp_itemsize */

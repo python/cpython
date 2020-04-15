@@ -364,7 +364,7 @@ static PyMemberDef weakref_members[] = {
 
 PyTypeObject
 _PyWeakref_RefType = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "weakref",
     sizeof(PyWeakReference),
     0,
@@ -726,7 +726,7 @@ static PyMappingMethods proxy_as_mapping = {
 
 PyTypeObject
 _PyWeakref_ProxyType = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "weakproxy",
     sizeof(PyWeakReference),
     0,
@@ -760,7 +760,7 @@ _PyWeakref_ProxyType = {
 
 PyTypeObject
 _PyWeakref_CallableProxyType = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "weakcallableproxy",
     sizeof(PyWeakReference),
     0,

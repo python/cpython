@@ -696,7 +696,7 @@ static PyMemberDef range_members[] = {
 };
 
 PyTypeObject PyRange_Type = {
-        PyVarObject_HEAD_INIT(&PyType_Type, 0)
+        PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
         "range",                /* Name of this type */
         sizeof(rangeobject),    /* Basic object size */
         0,                      /* Item size for varobject */
@@ -831,7 +831,7 @@ static PyMethodDef rangeiter_methods[] = {
 };
 
 PyTypeObject PyRangeIter_Type = {
-        PyVarObject_HEAD_INIT(&PyType_Type, 0)
+        PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
         "range_iterator",                        /* tp_name */
         sizeof(rangeiterobject),                /* tp_basicsize */
         0,                                      /* tp_itemsize */
@@ -1033,7 +1033,7 @@ longrangeiter_next(longrangeiterobject *r)
 }
 
 PyTypeObject PyLongRangeIter_Type = {
-        PyVarObject_HEAD_INIT(&PyType_Type, 0)
+        PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
         "longrange_iterator",                   /* tp_name */
         sizeof(longrangeiterobject),            /* tp_basicsize */
         0,                                      /* tp_itemsize */

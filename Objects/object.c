@@ -1583,7 +1583,7 @@ static PyNumberMethods none_as_number = {
 };
 
 PyTypeObject _PyNone_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "NoneType",
     0,
     0,
@@ -1625,7 +1625,12 @@ PyTypeObject _PyNone_Type = {
 
 PyObject _Py_NoneStruct = {
   _PyObject_EXTRA_INIT
-  1, &_PyNone_Type
+#ifdef Py_IMMORTAL_OBJECTS
+  _Py_IMMORTAL_BIT,
+#else
+  1,
+#endif  /* Py_IMMORTAL_OBJECTS */
+  &_PyNone_Type
 };
 
 /* NotImplemented is an object that can be used to signal that an
@@ -1684,7 +1689,7 @@ static PyNumberMethods notimplemented_as_number = {
 };
 
 PyTypeObject _PyNotImplemented_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "NotImplementedType",
     0,
     0,

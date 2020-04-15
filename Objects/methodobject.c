@@ -280,7 +280,7 @@ meth_hash(PyCFunctionObject *a)
 
 
 PyTypeObject PyCFunction_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "builtin_function_or_method",
     sizeof(PyCFunctionObject),
     0,
