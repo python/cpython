@@ -8,7 +8,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pyhash.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"
