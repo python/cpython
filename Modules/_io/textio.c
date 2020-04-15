@@ -8,10 +8,10 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_interp.h"      // PyInterpreterState.fs_codec
+#include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_object.h"
-#include "pycore_pystate.h"     // _PyInterpreterState_GET()
-#include "structmember.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "structmember.h"         // PyMemberDef
 #include "_iomodule.h"
 
 /*[clinic input]

@@ -2,7 +2,7 @@
 #include "pycore_pystate.h"   // _PyThreadState_GET()
 #include "symtable.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 /* error strings used for warnings */
 #define GLOBAL_PARAM \

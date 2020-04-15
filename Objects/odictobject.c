@@ -466,7 +466,7 @@ later:
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 #include "dict-common.h"
 #include <stddef.h>
 

@@ -35,10 +35,10 @@
 #  include <windows.h>
 #endif
 
-#include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
-#include "pycore_import.h"    /* _PyImport_ReInitLock() */
-#include "pycore_pystate.h"   /* _PyInterpreterState_GET() */
-#include "structmember.h"
+#include "pycore_ceval.h"         // _PyEval_ReInitThreads()
+#include "pycore_import.h"        // _PyImport_ReInitLock()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
 #else

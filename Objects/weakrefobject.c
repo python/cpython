@@ -1,6 +1,6 @@
 #include "Python.h"
-#include "pycore_object.h"   // _PyObject_GET_WEAKREFS_LISTPTR
-#include "structmember.h"
+#include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR()
+#include "structmember.h"         // PyMemberDef
 
 
 #define GET_WEAKREFS_LISTPTR(o) \

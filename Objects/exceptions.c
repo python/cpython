@@ -9,7 +9,7 @@
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pymem.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "osdefs.h"
 
 

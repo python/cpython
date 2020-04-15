@@ -5,7 +5,7 @@
 #include "pycore_object.h"
 #include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
-#include "structmember.h" /* Why is this not included in Python.h? */
+#include "structmember.h"         // PyMemberDef
 
 _Py_IDENTIFIER(getattr);
 

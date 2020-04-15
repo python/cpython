@@ -28,7 +28,6 @@
 
 #include <Python.h>
 #include "longintrepr.h"
-#include "structmember.h"
 #include "complexobject.h"
 #include "mpdecimal.h"
 
