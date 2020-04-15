@@ -346,6 +346,13 @@ pprint
 :mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
 (Contributed by Carl Bordum Hansen in :issue:`37376`.)
 
+pydoc
+-----
+
+The documentation string is now shown not only for class, function,
+method etc, but for any object that has its own ``__doc__`` attribute.
+(Contributed by Serhiy Storchaka in :issue:`40257`.)
+
 signal
 ------
 
@@ -797,6 +804,12 @@ Changes in the Python API
 * The *encoding* parameter has been added to the classes :class:`ftplib.FTP` and
   :class:`ftplib.FTP_TLS` as a keyword-only parameter, and the default encoding
   is changed from Latin-1 to UTF-8 to follow :rfc:`2640`.
+
+* :func:`inspect.getdoc` no longer returns docstring inherited from the type
+  of the object or from parent class if it is a class if it is not defined
+  in the object itself.
+  (Contributed by Serhiy Storchaka in :issue:`40257`.)
+
 
 CPython bytecode changes
 ------------------------
