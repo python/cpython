@@ -18,6 +18,7 @@ extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
               'hoverxref.extension']
 
 hoverxref_auto_ref = True
+hoverxref_domains = ['py']
 
 doctest_global_setup = '''
 try:
