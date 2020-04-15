@@ -265,8 +265,9 @@ class TestBasicOps:
 
     def test_getrandbits(self):
         # Verify ranges
-        for k in range(0, 1000):
+        for k in range(1, 1000):
             self.assertTrue(0 <= self.gen.getrandbits(k) < 2**k)
+        self.assertEqual(self.gen.getrandbits(0), 0)
 
         # Verify all bits active
         getbits = self.gen.getrandbits
