@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 typedef struct {
     PyObject_HEAD
@@ -118,7 +118,7 @@ ga_repr(PyObject *self)
 
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
-    
+
     if (ga_repr_item(&writer, alias->origin) < 0) {
         goto error;
     }

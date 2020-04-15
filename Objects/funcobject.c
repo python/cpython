@@ -6,7 +6,7 @@
 #include "pycore_pymem.h"
 #include "pycore_tupleobject.h"
 #include "code.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)

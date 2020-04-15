@@ -1428,7 +1428,7 @@ def main(srcfile, dump_module=False):
             f.write('\n')
             f.write('#include "Python.h"\n')
             f.write('#include "%s-ast.h"\n' % mod.name)
-            f.write('#include "structmember.h"\n')
+            f.write('#include "structmember.h"         // PyMemberDef\n')
             f.write('\n')
 
             generate_module_def(f, mod)
