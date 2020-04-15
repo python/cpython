@@ -5,7 +5,6 @@
 #include "pycore_interp.h"       // _PyInterpreterState.sysdict
 #include "pycore_pathconfig.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
 #include "pycore_pystate.h"      // _PyInterpreterState_GET()
 
 /* Includes for exit_sigint() */
