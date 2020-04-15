@@ -1988,7 +1988,7 @@ Immortalize all instances accessible through the GC roots.
 [clinic start generated code]*/
 
 static PyObject *
-gc_immortalize_heap_impl(PyObject *Py_UNUSED(ignored))
+gc_immortalize_heap_impl(PyObject *module)
 /*[clinic end generated code: output=a7bb85fe2e27e4ae input=ca1709e4667c0623]*/
 {
     return _PyGC_ImmortalizeHeap();
