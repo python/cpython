@@ -38,7 +38,6 @@
 #include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
 #include "pycore_import.h"    /* _PyImport_ReInitLock() */
 #include "pycore_pystate.h"   /* _PyInterpreterState_GET() */
-#include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"

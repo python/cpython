@@ -11,7 +11,6 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "structmember.h"
-#include "pythread.h"
 #include "_iomodule.h"
 
 /*[clinic input]

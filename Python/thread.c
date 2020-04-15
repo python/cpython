@@ -23,8 +23,6 @@
 
 #include <stdlib.h>
 
-#include "pythread.h"
-
 #ifndef _POSIX_THREADS
 
 /* Check if we're running on HP-UX and _SC_THREADS is defined. If so, then

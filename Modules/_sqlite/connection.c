@@ -30,8 +30,6 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
-#include "pythread.h"
-
 #define ACTION_FINALIZE 1
 #define ACTION_RESET 2
 
