@@ -1,14 +1,15 @@
 #include "Python.h"
-#include "osdefs.h"               // DELIM
-#include "pycore_fileutils.h"
-#include "pycore_getopt.h"
-#include "pycore_initconfig.h"
+#include "pycore_fileutils.h"     // _Py_HasFileSystemDefaultEncodeErrors
+#include "pycore_getopt.h"        // _PyOS_GetOpt()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _PyInterpreterState.runtime
-#include "pycore_pathconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
+#include "pycore_pathconfig.h"    // _Py_path_config
+#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+
+#include "osdefs.h"               // DELIM
 #include <locale.h>               // setlocale()
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>           // nl_langinfo(CODESET)
