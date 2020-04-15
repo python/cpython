@@ -15,7 +15,7 @@ sys.path.append(os.path.abspath('includes'))
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
               'pyspecific', 'c_annotations', 'escape4chm',
-              'hoverxref.extension']
+              'hoverxref.extension', 'sphinx_search.extension']
 
 hoverxref_auto_ref = True
 hoverxref_domains = ['py']

@@ -4,3 +4,5 @@ sphinx==2.2.0
 blurb
 python-docs-theme
 git+https://github.com/readthedocs/sphinx-hoverxref@master
+git+https://github.com/readthedocs/readthedocs-sphinx-search@master
+
