@@ -6,7 +6,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "multibytecodec.h"
 #include "clinic/multibytecodec.c.h"
 
@@ -1246,7 +1246,7 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
     PyObject *buffer;
     PyLongObject *statelong;
     Py_ssize_t buffersize;
-    char *bufferstr;
+    const char *bufferstr;
     unsigned char statebytes[8];
 
     if (!PyArg_ParseTuple(state, "SO!;setstate(): illegal state argument",

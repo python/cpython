@@ -1,0 +1,1 @@
+Report a specialized error message, `invalid string prefix`, when the tokenizer encounters a string with an invalid prefix.

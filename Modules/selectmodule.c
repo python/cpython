@@ -9,7 +9,7 @@
 #endif
 
 #include "Python.h"
-#include <structmember.h>
+#include "structmember.h"         // PyMemberDef
 
 #ifdef HAVE_SYS_DEVPOLL_H
 #include <sys/resource.h>

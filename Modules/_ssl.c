@@ -18,8 +18,6 @@
 
 #include "Python.h"
 
-#include "pythread.h"
-
 /* Redefined below for Windows debug builds after important #includes */
 #define _PySSL_FIX_ERRNO
 
@@ -4037,7 +4035,7 @@ error:
 /* internal helper function, returns -1 on error
  */
 static int
-_add_ca_certs(PySSLContext *self, void *data, Py_ssize_t len,
+_add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
               int filetype)
 {
     BIO *biobuf = NULL;

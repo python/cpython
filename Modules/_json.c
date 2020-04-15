@@ -9,7 +9,7 @@
 #endif
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "pycore_accu.h"
 
 typedef struct {

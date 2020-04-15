@@ -709,7 +709,7 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "addstr";
         if (use_xy)
             rtn = mvwaddstr(self->win,y,x,str);
@@ -792,7 +792,7 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "addnstr";
         if (use_xy)
             rtn = mvwaddnstr(self->win,y,x,str,n);
@@ -1710,7 +1710,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "insstr";
         if (use_xy)
             rtn = mvwinsstr(self->win,y,x,str);
@@ -1795,7 +1795,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "insnstr";
         if (use_xy)
             rtn = mvwinsnstr(self->win,y,x,str,n);

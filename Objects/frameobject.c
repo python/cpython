@@ -2,12 +2,12 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_gc.h"       // _PyObject_GC_IS_TRACKED()
 
 #include "code.h"
 #include "frameobject.h"
 #include "opcode.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #define OFF(x) offsetof(PyFrameObject, x)
 

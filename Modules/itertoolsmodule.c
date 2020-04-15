@@ -2,7 +2,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_tupleobject.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>

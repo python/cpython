@@ -102,7 +102,7 @@ bytes(cdata)
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -1310,7 +1310,7 @@ CharArray_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 static int
 CharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
-    char *ptr;
+    const char *ptr;
     Py_ssize_t size;
 
     if (value == NULL) {

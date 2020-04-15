@@ -1,24 +1,26 @@
 #include "Python.h"
-#include "osdefs.h"       /* DELIM */
-#include "pycore_fileutils.h"
-#include "pycore_getopt.h"
-#include "pycore_initconfig.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"   /* _PyRuntime */
-#include <locale.h>       /* setlocale() */
+#include "pycore_fileutils.h"     // _Py_HasFileSystemDefaultEncodeErrors
+#include "pycore_getopt.h"        // _PyOS_GetOpt()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp.h"        // _PyInterpreterState.runtime
+#include "pycore_pathconfig.h"    // _Py_path_config
+#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
+#include "osdefs.h"               // DELIM
+#include <locale.h>               // setlocale()
 #ifdef HAVE_LANGINFO_H
-#  include <langinfo.h>   /* nl_langinfo(CODESET) */
+#  include <langinfo.h>           // nl_langinfo(CODESET)
 #endif
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
-#  include <windows.h>    /* GetACP() */
+#  include <windows.h>            // GetACP()
 #  ifdef HAVE_IO_H
 #    include <io.h>
 #  endif
 #  ifdef HAVE_FCNTL_H
-#    include <fcntl.h>    /* O_BINARY */
+#    include <fcntl.h>            // O_BINARY
 #  endif
 #endif
 
@@ -2595,7 +2597,7 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* core config */
-    const PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     dict = config_as_dict(config);
     if (dict == NULL) {
         goto error;
@@ -2662,7 +2664,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
             PySys_WriteStderr("\n"); \
         } while (0)
 
-    PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     DUMP_CONFIG("PYTHONHOME", home);
     DUMP_CONFIG("PYTHONPATH", pythonpath_env);
     DUMP_CONFIG("program name", program_name);
