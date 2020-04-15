@@ -174,7 +174,7 @@ class PlatformTest(unittest.TestCase):
         if expect == 'unknown':
             return
 
-        self.assertEqual(expect, platform.uname().processor)
+        self.assertEqual(platform.uname().processor, expect)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_ARCHITEW6432(self):
