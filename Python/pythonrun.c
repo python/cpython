@@ -27,7 +27,6 @@
 #include "symtable.h"
 #include "ast.h"
 #include "marshal.h"
-#include "osdefs.h"
 #include <locale.h>
 
 #ifdef HAVE_SIGNAL_H

@@ -312,11 +312,11 @@ extern char        *ctermid_r(char *);
 #ifndef IO_REPARSE_TAG_MOUNT_POINT
 #define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
 #endif
-#include "osdefs.h"
+#include "osdefs.h"               // SEP
 #include <malloc.h>
 #include <windows.h>
-#include <shellapi.h>   /* for ShellExecute() */
-#include <lmcons.h>     /* for UNLEN */
+#include <shellapi.h>             // ShellExecute()
+#include <lmcons.h>               // UNLEN
 #define HAVE_SYMLINK
 #endif /* _MSC_VER */
 

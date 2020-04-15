@@ -80,9 +80,9 @@
 
 
 #include "Python.h"
-#include "pycore_initconfig.h"   /* PyStatus */
-#include "pycore_pathconfig.h"   /* _PyPathConfig */
-#include "osdefs.h"
+#include "pycore_initconfig.h"    // PyStatus
+#include "pycore_pathconfig.h"    // _PyPathConfig
+#include "osdefs.h"               // SEP, ALTSEP
 #include <wchar.h>
 
 #ifndef MS_WINDOWS
