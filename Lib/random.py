@@ -261,6 +261,8 @@ class Random(_random.Random):
     def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Raises ValueError if n==0."
 
+        if n == 0:
+            raise ValueError("Boundary cannot be zero")
         getrandbits = self.getrandbits
         k = n.bit_length()  # don't use (n-1) here because n can be 1
         r = getrandbits(k)          # 0 <= r < 2**k
