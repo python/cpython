@@ -41,6 +41,9 @@ get_small_int(sdigit ival)
     assert(IS_SMALL_INT(ival));
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *v = (PyObject*)tstate->interp->small_ints[ival + NSMALLNEGINTS];
+#ifndef Py_IMMORTAL_OBJECTS
+    Py_INCREF(v);
+#endif  /* Py_IMMORTAL_OBJECTS */
     return v;
 }
 
