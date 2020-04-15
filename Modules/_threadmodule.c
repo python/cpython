@@ -4,9 +4,9 @@
 
 #include "Python.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_interp.h"       // _PyInterpreterState.num_threads
-#include "pycore_pystate.h"      // _PyThreadState_Init()
-#include <stddef.h>              // offsetof()
+#include "pycore_interp.h"        // _PyInterpreterState.num_threads
+#include "pycore_pystate.h"       // _PyThreadState_Init()
+#include <stddef.h>               // offsetof()
 
 static PyObject *ThreadError;
 static PyObject *str_dict;
@@ -586,8 +586,6 @@ newlockobject(void)
 }
 
 /* Thread-local objects */
-
-#include "structmember.h"
 
 /* Quick overview:
 

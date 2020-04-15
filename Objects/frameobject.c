@@ -7,7 +7,7 @@
 #include "code.h"
 #include "frameobject.h"
 #include "opcode.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #define OFF(x) offsetof(PyFrameObject, x)
 

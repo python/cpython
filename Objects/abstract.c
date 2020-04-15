@@ -1,12 +1,12 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
-#include "pycore_ceval.h"      // _Py_EnterRecursiveCall()
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"    // _PyThreadState_GET()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <ctype.h>
-#include "structmember.h" /* we need the offsetof() macro from there */
+#include <stddef.h>               // offsetof()
 #include "longintrepr.h"
 
 

@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "structmember.h" /* offsetof */
+#include <stddef.h>               // offsetof()
 
 /*[clinic input]
 module _queue
