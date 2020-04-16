@@ -945,7 +945,6 @@ struct pool_header {
     uint szidx;                         /* block size class index        */
     uint nextoffset;                    /* bytes to virgin block         */
     uint maxnextoffset;                 /* largest valid nextoffset      */
-    uint is_immortal;                   /* Do not modify the pool        */
 };
 
 typedef struct pool_header *poolp;
@@ -1332,43 +1331,6 @@ new_arena(void)
     return arenaobj;
 }
 
-/* Immortalize all the existing arenas to reduce copy on writes */
-void
-PyObject_ImmortalizeArenas()
-{
-    uintptr_t current_pool, limit;
-
-    /* Immortalize all the pools in the existing arenas */
-    for (uint i = 0; i < maxarenas; i++) {
-    /* Non allocated arena */
-    current_pool = arenas[i].address;
-    if (current_pool == (uintptr_t)NULL) {
-        continue;
-    }
-
-       /* Address alignment */
-       if (current_pool & (uintptr_t)POOL_SIZE_MASK) {
-           current_pool &= ~(uintptr_t)POOL_SIZE_MASK;
-           current_pool += POOL_SIZE;
-       }
-
-       /* Immortalize all the pools in the arena */
-       limit = (uintptr_t)arenas[i].pool_address;
-       for (uint j = 0; current_pool < limit; j++) {
-           poolp header = (poolp)current_pool;
-           header->is_immortal = 1;
-           current_pool += POOL_SIZE;
-       }
-
-       /* Mark the arena as full */
-       arenas[i].nfreepools = 0;
-    }
-
-    /* Clear the list of current available arenas */
-    usable_arenas = NULL;
-    unused_arena_objects = NULL;
-}
-
 /*
 address_in_range(P, POOL)
 
@@ -1590,7 +1552,6 @@ allocate_from_new_pool(uint size)
     next->nextpool = pool;
     next->prevpool = pool;
     pool->ref.count = 1;
-    pool->is_immortal = 0;
     if (pool->szidx == size) {
         /* Luckily, this pool last contained blocks
          * of the same size class, so its header
@@ -1905,11 +1866,6 @@ pymalloc_free(void *ctx, void *p)
         return 0;
     }
     /* We allocated this address. */
-
-    /* Ignore immortalized pools */
-    if (pool->is_immortal == 1) {
-        return 1;
-    }
 
     /* Link p to the start of the pool's freeblock list.  Since
      * the pool had at least the p block outstanding, the pool
