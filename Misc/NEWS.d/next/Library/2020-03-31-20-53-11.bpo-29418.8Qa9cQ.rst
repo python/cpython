@@ -1,1 +1,1 @@
-Fix, return ``True`` if the object is a method-wrapper add new function named ismethodwrapper. Patch by Hakan Çelik.
+Implement :func:`inspect.ismethodwrapper` and :fix:'inspect:isroutine' for cases where methodwrapper is given. Patch by Hakan Çelik.
