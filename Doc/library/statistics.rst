@@ -704,7 +704,7 @@ of applications in statistics.
         above or below the mean of the normal distribution:
         ``(x - mean) / stdev``.
 
-        .. versionadded:: 3.8
+        .. versionadded:: 3.9
 
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
