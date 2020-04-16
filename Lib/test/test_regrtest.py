@@ -20,7 +20,6 @@ import unittest
 from test import libregrtest
 from test import support
 from test.libregrtest import utils
-from test import support
 
 
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
@@ -905,6 +904,7 @@ class ArgsTestCase(BaseTestCase):
             reflog = fp.read()
             self.assertIn(line2, reflog)
 
+    @support.refcount_test
     @unittest.skipUnless(Py_DEBUG, 'need a debug build')
     def test_huntrleaks(self):
         # test --huntrleaks
