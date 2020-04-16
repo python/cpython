@@ -1042,13 +1042,13 @@ class GCTests(unittest.TestCase):
 # These tests need to be run in a separate process since gc.immortalize_heap
 # will mess up with the reference count of other tests
 class GCImmortalizeTests(unittest.TestCase):
-    @unittest.skipUnless(hasattr(gc, "is_immortal"))
+    @unittest.skipUnless(hasattr(gc, "is_immortal"), 'needs immortal build')
     def test_not_immortal(self):
         obj = []
         self.assertFalse(gc.is_immortal(obj))
 
     @unittest.skipIf("win" in sys.platform, 'needs fix under Windows')
-    @unittest.skipUnless(hasattr(gc, "is_immortal"))
+    @unittest.skipUnless(hasattr(gc, "is_immortal"), 'needs immortal build')
     def test_is_immortal(self):
         code = """if 1:
             import gc
@@ -1060,7 +1060,7 @@ class GCImmortalizeTests(unittest.TestCase):
         self.assertEqual(out.strip(), b'True')
 
     @unittest.skipIf("win" in sys.platform, 'needs fix under Windows')
-    @unittest.skipUnless(hasattr(gc, "is_immortal"))
+    @unittest.skipUnless(hasattr(gc, "is_immortal"), 'needs immortal build')
     def test_post_immortalize(self):
         code = """if 1:
             import gc
@@ -1072,7 +1072,7 @@ class GCImmortalizeTests(unittest.TestCase):
         self.assertEqual(out.strip(), b'False')
 
     @unittest.skipIf("win" in sys.platform, 'needs fix under Windows')
-    @unittest.skipUnless(hasattr(gc, "is_immortal"))
+    @unittest.skipUnless(hasattr(gc, "is_immortal"), 'needs immortal build')
     def test_become_tracked_after_immortalize(self):
         code = """if 1:
             import gc
