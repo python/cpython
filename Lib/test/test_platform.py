@@ -4,7 +4,6 @@ import subprocess
 import sys
 import unittest
 import collections
-import contextlib
 from unittest import mock
 
 from test import support
@@ -168,12 +167,8 @@ class PlatformTest(unittest.TestCase):
         On some systems, the processor must match the output
         of 'uname -p'. See Issue 35967 for rationale.
         """
-        with contextlib.suppress(subprocess.CalledProcessError):
-            expect = subprocess.check_output(['uname', '-p'], text=True).strip()
-
-        if expect == 'unknown':
-            expect = ''
-
+        proc_res = subprocess.check_output(['uname', '-p'], text=True).strip()
+        expect = platform._unknown_as_blank(proc_res)
         self.assertEqual(platform.uname().processor, expect)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
