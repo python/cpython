@@ -20,6 +20,7 @@ import unittest
 from test import libregrtest
 from test import support
 from test.libregrtest import utils
+from test import support
 
 
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
