@@ -273,6 +273,8 @@ a = A(destroyed)"""
         self.assertEqual(set(lines), {
             b"x = a",
             b"x = b",
+            b"final_a.x = a",
+            b"final_b.x = b",
             b"len = len",
             b"shutil.rmtree = rmtree"})
 
