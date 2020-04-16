@@ -170,7 +170,6 @@ typedef struct {
 #ifdef Py_IMMORTAL_OBJECTS
 
 PyAPI_FUNC(PyObject *) _PyGC_ImmortalizeHeap(void);
-PyAPI_FUNC(void) PyObject_ImmortalizeArenas(void);
 
 static inline int _Py_IsImmortal(PyObject *op)
 {
