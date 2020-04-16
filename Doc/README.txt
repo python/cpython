@@ -110,8 +110,7 @@ Deprecation header
 You can define the ``outdated`` variable in ``html_context`` to show a
 red banner on each page redirecting to the "latest" version.
 
-The link points to the same page on ``/3/``, sadly for the moment the
-language is lost during the process.
+Each page links to the corresponding page on ``/3/``.
 
 
 Contributing
