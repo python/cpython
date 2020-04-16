@@ -12,7 +12,7 @@ PyDoc_STRVAR(select_select__doc__,
 "rlist -- wait until ready for reading\n"
 "wlist -- wait until ready for writing\n"
 "xlist -- wait for an \"exceptional condition\"\n"
-"If only one kind of condition is required, pass empty iterables for the other lists.\n"
+"If only one kind of condition is required, pass [] for the other lists.\n"
 "\n"
 "A file descriptor is either a socket or file object, or a small integer\n"
 "gotten from a fileno() method call on one of those.\n"
@@ -1215,4 +1215,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=cd816b2887de18c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=029f23fbe000d7f7 input=a9049054013a1b77]*/

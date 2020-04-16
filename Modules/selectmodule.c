@@ -236,7 +236,7 @@ The first three arguments are iterables of file descriptors to be waited for:
 rlist -- wait until ready for reading
 wlist -- wait until ready for writing
 xlist -- wait for an "exceptional condition"
-If only one kind of condition is required, pass empty iterables for the other lists.
+If only one kind of condition is required, pass [] for the other lists.
 
 A file descriptor is either a socket or file object, or a small integer
 gotten from a fileno() method call on one of those.
@@ -257,7 +257,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=fc219cac9803bb5f]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=e467f5d68033de00]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
