@@ -69,15 +69,15 @@ def _find_module(name, path=None):
     # Some special cases:
 
     if spec.loader is importlib.machinery.BuiltinImporter:
-        return None, None, ("", _C_BUILTIN)
+        return None, None, ("", "", _C_BUILTIN)
 
     if spec.loader is importlib.machinery.FrozenImporter:
-        return None, None, ("", _PY_FROZEN)
+        return None, None, ("", "", _PY_FROZEN)
 
     file_path = spec.origin
 
     if spec.loader.is_package(name):
-        return None, os.path.dirname(file_path), ("", _PKG_DIRECTORY)
+        return None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY)
 
     if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
         kind = _PY_SOURCE
@@ -89,12 +89,12 @@ def _find_module(name, path=None):
         kind = _PY_COMPILED
 
     else:  # Should never happen.
-        return None, None, ("", _SEARCH_ERROR)
+        return None, None, ("", "", _SEARCH_ERROR)
 
     file = io.open_code(file_path)
     suffix = os.path.splitext(file_path)[-1]
 
-    return file, file_path, (suffix, kind)
+    return file, file_path, (suffix, "rb", kind)
 
 
 class Module:
@@ -159,14 +159,14 @@ class ModuleFinder:
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
         with io.open_code(pathname) as fp:
-            stuff = ("", _PY_SOURCE)
+            stuff = ("", "rb", _PY_SOURCE)
             self.load_module('__main__', fp, pathname, stuff)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
         with io.open_code(pathname) as fp:
-            stuff = (ext, _PY_SOURCE)
+            stuff = (ext, "rb", _PY_SOURCE)
             self.load_module(name, fp, pathname, stuff)
 
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
@@ -320,6 +320,7 @@ class ModuleFinder:
         except ImportError:
             self.msgout(3, "import_module ->", None)
             return None
+
         try:
             m = self.load_module(fqname, fp, pathname, stuff)
         finally:
@@ -331,7 +332,7 @@ class ModuleFinder:
         return m
 
     def load_module(self, fqname, fp, pathname, file_info):
-        suffix, type = file_info
+        suffix, mode, type = file_info
         self.msgin(2, "load_module", fqname, fp and "fp", pathname)
         if type == _PKG_DIRECTORY:
             m = self.load_package(fqname, pathname)
@@ -502,7 +503,7 @@ class ModuleFinder:
 
         if path is None:
             if name in sys.builtin_module_names:
-                return (None, None, ("", _C_BUILTIN))
+                return (None, None, ("", "", _C_BUILTIN))
 
             path = self.path
 
