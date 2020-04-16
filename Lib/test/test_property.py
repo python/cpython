@@ -1,6 +1,7 @@
 # Test case for property
 # more tests are in test_descr
 
+import gc
 import sys
 import unittest
 from test import support
@@ -175,7 +176,6 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(sub.__class__.spam.__doc__, 'Spam')
 
     @support.refcount_test
-    @unittest.skipIf(hasattr(gc, "is_immortal"))
     def test_refleaks_in___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
         fake_prop = property('fget', 'fset', 'fdel', 'doc')

@@ -52,7 +52,7 @@ class PythonAPITestCase(unittest.TestCase):
         import gc
         res = pythonapi.PyLong_AsLong(42)
         if hasattr(gc, "is_immortal"):
-            # Small int refcnts don't chan
+            # Small int refcnts don't change
             self.assertEqual(grc(res), ref42)
         else:
             self.assertEqual(grc(res), ref42 + 1)

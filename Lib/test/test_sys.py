@@ -350,7 +350,11 @@ class SysModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, sys.getrefcount)
         c = sys.getrefcount(None)
         n = None
-        self.assertEqual(sys.getrefcount(None), c+1)
+        if hasattr(gc, "is_immortal"):
+            # Singleton refcnts don't change
+            self.assertEqual(sys.getrefcount(None), c)
+        else:
+            self.assertEqual(sys.getrefcount(None), c+1)
         del n
         self.assertEqual(sys.getrefcount(None), c)
         if hasattr(sys, "gettotalrefcount"):
