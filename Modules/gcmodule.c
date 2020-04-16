@@ -2044,10 +2044,6 @@ PyDoc_STRVAR(gc__doc__,
 "is_finalized() -- Returns true if a given object has been already finalized.\n"
 "get_referrers() -- Return the list of objects that refer to an object.\n"
 "get_referents() -- Return the list of objects that an object refers to.\n"
-#ifdef Py_IMMORTAL_OBJECTS
-"immortalize_heap() -- Immortalize all instances accessible through the GC roots.\n"
-"is_immortal() -- Check if an object has been immortalized.\n"
-#endif  /* Py_IMMORTAL_OBJECTS */
 "freeze() -- Freeze all tracked objects and ignore them for future collections.\n"
 "unfreeze() -- Unfreeze all objects in the permanent generation.\n"
 "get_freeze_count() -- Return the number of objects in the permanent generation.\n");
