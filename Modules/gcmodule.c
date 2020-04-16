@@ -2021,6 +2021,10 @@ _PyGC_ImmortalizeHeap(void) {
         Py_TYPE(FROM_GC(gc))->tp_traverse(
               FROM_GC(gc), (visitproc)immortalize_object, NULL);
     }
+
+    /* Immortalize all the existing pymalloc arenas */
+    PyObject_ImmortalizeArenas();
+
     Py_RETURN_NONE;
 }
 #endif  /* Py_IMMORTAL_OBJECTS */
