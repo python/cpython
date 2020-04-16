@@ -82,10 +82,7 @@ typedef struct _typeobject PyTypeObject;
 #define PyObject_HEAD                   PyObject ob_base;
 
 /* [RFC] Should we enable Immortal Instances by Default? */
-/* TODO(eduardo-elizondo): Fix broken MS_WINDOWS builds */
-#if !defined(MS_WINDOWS)
 #define Py_IMMORTAL_OBJECTS
-#endif  /* MS_WINDOWS */
 
 /* Immortalizing causes the instance to not participate in reference counting.
  * Thus, an immortal object will be kept alive until the runtime finalization.
