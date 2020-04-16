@@ -2952,6 +2952,31 @@ class _TestRemoteManager(BaseTestCase):
         # Make queue finalizer run before the server is stopped
         del queue
 
+    def test_client_propagation(self):
+        authkey = os.urandom(32)
+
+        manager = QueueManager(
+            address=(test.support.HOST, 0), authkey=authkey, serializer=SERIALIZER
+            )
+        manager.start()
+        self.addCleanup(manager.shutdown)
+
+        manager2 = QueueManager2(
+            address=manager.address, authkey=authkey, serializer=SERIALIZER
+            )
+
+        def MyXmlClient(*args, **kwargs):
+            return manager._Client(*args, **kwargs)
+
+        manager2._Client = MyXmlClient
+        manager2.connect()
+        queue = manager2.get_queue()
+
+        self.assertIsNot(queue._Client, manager._Client)
+        self.assertIs(queue._Client, manager2._Client)
+
+        del queue
+
 class _TestManagerRestart(BaseTestCase):
 
     @classmethod
