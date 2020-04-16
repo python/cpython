@@ -1648,6 +1648,9 @@ pymalloc_alloc(void *ctx, size_t nbytes)
     block *bp;
 
     if (LIKELY(pool != pool->nextpool)) {
+        /* No immortal pools should ever exist in usedpools */
+        assert(pool->is_immortal != 1);
+
         /*
          * There is a used pool for this size class.
          * Pick up the head block of its free list.
