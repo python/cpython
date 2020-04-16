@@ -247,6 +247,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = libregrtest._parse_args([opt])
                 self.assertTrue(ns.runleaks)
 
+    @support.refcount_test
     def test_huntrleaks(self):
         for opt in '-R', '--huntrleaks':
             with self.subTest(opt=opt):
