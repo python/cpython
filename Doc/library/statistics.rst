@@ -696,6 +696,16 @@ of applications in statistics.
         Set *n* to 100 for percentiles which gives the 99 cuts points that
         separate the normal distribution into 100 equal sized groups.
 
+    .. method:: NormalDist.zscore(x)
+
+        Compute the
+        `Standard Score <https://www.statisticshowto.com/probability-and-statistics/z-score/>`_
+        describing *x* in terms of the number of standard deviations
+        above or below the mean of the normal distribution:
+        ``(x - mean) / stdev``.
+
+        .. versionadded:: 3.9
+
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
     are used for translation and scaling.  For example:
