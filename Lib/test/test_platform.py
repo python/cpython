@@ -169,10 +169,12 @@ class PlatformTest(unittest.TestCase):
         of 'uname -p'. See Issue 35967 for rationale.
         """
         with contextlib.suppress(subprocess.CalledProcessError):
-            self.assertEqual(
-                platform.uname().processor,
-                subprocess.check_output(['uname', '-p'], text=True).strip(),
-            )
+            expect = subprocess.check_output(['uname', '-p'], text=True).strip()
+
+        if expect == 'unknown':
+            expect = ''
+
+        self.assertEqual(platform.uname().processor, expect)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_ARCHITEW6432(self):

@@ -473,11 +473,14 @@ Retrieving source code
 
    Get the documentation string for an object, cleaned up with :func:`cleandoc`.
    If the documentation string for an object is not provided and the object is
-   a class, a method, a property or a descriptor, retrieve the documentation
+   a method, a property or a descriptor, retrieve the documentation
    string from the inheritance hierarchy.
 
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
+
+   .. versionchanged:: 3.9
+      Documentation strings for classes are no longer inherited.
 
 
 .. function:: getcomments(object)
