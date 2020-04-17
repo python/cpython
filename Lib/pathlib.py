@@ -1131,7 +1131,7 @@ class Path(PurePath):
         try:
             other_st = other_path.stat()
         except AttributeError:
-            other_st = os.stat(other_path)
+            other_st = self._accessor.stat(other_path)
         return os.path.samestat(st, other_st)
 
     def iterdir(self):
