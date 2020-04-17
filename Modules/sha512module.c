@@ -59,9 +59,8 @@ typedef struct {
 static void longReverse(SHA_INT64 *buffer, int byteCount)
 {
     byteCount /= sizeof(*buffer);
-    while (byteCount--) {
-        SHA_INT64 value = _Py_bswap64(*buffer);
-        *buffer++ = value;
+    for (; byteCount--; buffer++) {
+        *buffer = _Py_bswap64(*buffer);
     }
 }
 #endif
