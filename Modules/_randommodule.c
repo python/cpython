@@ -234,7 +234,7 @@ init_by_array(RandomObject *self, uint32_t init_key[], size_t key_length)
 static int
 random_seed_urandom(RandomObject *self)
 {
-    PY_UINT32_T key[N];
+    uint32_t key[N];
 
     if (_PyOS_URandomNonblock(key, sizeof(key)) < 0) {
         return -1;
@@ -250,14 +250,14 @@ random_seed_time_pid(RandomObject *self)
     uint32_t key[5];
 
     now = _PyTime_GetSystemClock();
-    key[0] = (PY_UINT32_T)(now & 0xffffffffU);
-    key[1] = (PY_UINT32_T)(now >> 32);
+    key[0] = (uint32_t)(now & 0xffffffffU);
+    key[1] = (uint32_t)(now >> 32);
 
-    key[2] = (PY_UINT32_T)getpid();
+    key[2] = (uint32_t)getpid();
 
     now = _PyTime_GetMonotonicClock();
-    key[3] = (PY_UINT32_T)(now & 0xffffffffU);
-    key[4] = (PY_UINT32_T)(now >> 32);
+    key[3] = (uint32_t)(now & 0xffffffffU);
+    key[4] = (uint32_t)(now >> 32);
 
     init_by_array(self, key, Py_ARRAY_LENGTH(key));
 }
