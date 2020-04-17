@@ -341,7 +341,7 @@
     <ClCompile Include="..\Modules\_opcode.c" />
     <ClCompile Include="..\Modules\_operator.c" />
     <ClCompile Include="..\Modules\parsermodule.c" />
-    <ClCompile Include="..\Modules\peg_parser.c" />
+    <ClCompile Include="..\Modules\_peg_parser.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\rotatingtree.c" />
     <ClCompile Include="..\Modules\sha1module.c" />

@@ -19,7 +19,7 @@ from tempfile import TemporaryDirectory
 from pathlib import Path
 from typing import Any
 
-from peg_parser import parse_string
+from _peg_parser import parse_string
 
 GRAMMAR_FILE = "data/python.gram"
 INITIAL_NESTING_DEPTH = 10

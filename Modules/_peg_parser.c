@@ -101,7 +101,7 @@ static struct PyModuleDef parsemodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_peg_parser(void)
+PyInit__peg_parser(void)
 {
     return PyModule_Create(&parsemodule);
 }
