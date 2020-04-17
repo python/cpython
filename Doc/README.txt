@@ -107,10 +107,9 @@ see the make targets above).
 Deprecation header
 ==================
 
-You can define the ``outdated`` variable in ``html_context`` to show a
-red banner on each page redirecting to the "latest" version.
-
-Each page links to the corresponding page on ``https://docs.python.org/3/``.
+Following the sunsetting of Python 2.7, a red banner displays at the
+top of each page redirecting to the corresponding page on
+``https://docs.python.org/3/``.
 
 
 Contributing
