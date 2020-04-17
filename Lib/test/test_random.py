@@ -263,6 +263,31 @@ class TestBasicOps:
             self.assertEqual(x1, x2)
             self.assertEqual(y1, y2)
 
+    def test_getrandbits(self):
+        # Verify ranges
+        for k in range(1, 1000):
+            self.assertTrue(0 <= self.gen.getrandbits(k) < 2**k)
+        self.assertEqual(self.gen.getrandbits(0), 0)
+
+        # Verify all bits active
+        getbits = self.gen.getrandbits
+        for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
+            all_bits = 2**span-1
+            cum = 0
+            cpl_cum = 0
+            for i in range(100):
+                v = getbits(span)
+                cum |= v
+                cpl_cum |= all_bits ^ v
+            self.assertEqual(cum, all_bits)
+            self.assertEqual(cpl_cum, all_bits)
+
+        # Verify argument checking
+        self.assertRaises(TypeError, self.gen.getrandbits)
+        self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
+        self.assertRaises(ValueError, self.gen.getrandbits, -1)
+        self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
+
     def test_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             state = pickle.dumps(self.gen, proto)
@@ -389,26 +414,6 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         # Zero and non-integer step
         raises(0, 42, 0)
         raises(0, 42, 3.14159)
-
-    def test_genrandbits(self):
-        # Verify ranges
-        for k in range(1, 1000):
-            self.assertTrue(0 <= self.gen.getrandbits(k) < 2**k)
-
-        # Verify all bits active
-        getbits = self.gen.getrandbits
-        for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
-            cum = 0
-            for i in range(100):
-                cum |= getbits(span)
-            self.assertEqual(cum, 2**span-1)
-
-        # Verify argument checking
-        self.assertRaises(TypeError, self.gen.getrandbits)
-        self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
-        self.assertRaises(ValueError, self.gen.getrandbits, 0)
-        self.assertRaises(ValueError, self.gen.getrandbits, -1)
-        self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
 
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1
@@ -629,34 +634,18 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             self.assertEqual(set(range(start,stop)),
                 set([self.gen.randrange(start,stop) for i in range(100)]))
 
-    def test_genrandbits(self):
+    def test_getrandbits(self):
+        super().test_getrandbits()
+
         # Verify cross-platform repeatability
         self.gen.seed(1234567)
         self.assertEqual(self.gen.getrandbits(100),
                          97904845777343510404718956115)
-        # Verify ranges
-        for k in range(1, 1000):
-            self.assertTrue(0 <= self.gen.getrandbits(k) < 2**k)
-
-        # Verify all bits active
-        getbits = self.gen.getrandbits
-        for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
-            cum = 0
-            for i in range(100):
-                cum |= getbits(span)
-            self.assertEqual(cum, 2**span-1)
-
-        # Verify argument checking
-        self.assertRaises(TypeError, self.gen.getrandbits)
-        self.assertRaises(TypeError, self.gen.getrandbits, 'a')
-        self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
-        self.assertRaises(ValueError, self.gen.getrandbits, 0)
-        self.assertRaises(ValueError, self.gen.getrandbits, -1)
 
     def test_randrange_uses_getrandbits(self):
         # Verify use of getrandbits by randrange
         # Use same seed as in the cross-platform repeatability test
-        # in test_genrandbits above.
+        # in test_getrandbits above.
         self.gen.seed(1234567)
         # If randrange uses getrandbits, it should pick getrandbits(100)
         # when called with a 100-bits stop argument.
