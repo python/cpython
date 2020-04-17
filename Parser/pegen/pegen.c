@@ -6,7 +6,7 @@
 #include "parse_string.h"
 
 PyObject *
-new_identifier(Parser *p, char *identifier)
+_PyPegen_new_identifier(Parser *p, char *identifier)
 {
     PyObject *id = PyUnicode_FromString(identifier);
     if (id == NULL) {
@@ -22,7 +22,7 @@ new_identifier(Parser *p, char *identifier)
 static PyObject *
 _create_dummy_identifier(Parser *p)
 {
-    return new_identifier(p, "");
+    return _PyPegen_new_identifier(p, "");
 }
 
 static inline Py_ssize_t
@@ -39,7 +39,7 @@ byte_offset_to_character_offset(PyObject *line, int col_offset)
 }
 
 const char *
-get_expr_name(expr_ty e)
+_PyPegen_get_expr_name(expr_ty e)
 {
     switch (e->kind) {
         case Attribute_kind:
@@ -203,7 +203,7 @@ get_error_line(char *buffer)
 }
 
 void *
-raise_syntax_error(Parser *p, const char *errmsg, ...)
+_PyPegen_raise_syntax_error(Parser *p, const char *errmsg, ...)
 {
     PyObject *value = NULL;
     PyObject *errstr = NULL;
@@ -259,7 +259,7 @@ error:
     return NULL;
 }
 
-void *arguments_parsing_error(Parser *p, expr_ty e) {
+void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
     int kwarg_unpacking = 0;
     for (int i = 0, l = asdl_seq_LEN(e->v.Call.keywords); i < l; i++) {
         keyword_ty keyword = asdl_seq_GET(e->v.Call.keywords, i);
@@ -275,7 +275,7 @@ void *arguments_parsing_error(Parser *p, expr_ty e) {
         msg = "positional argument follows keyword argument";
     }
 
-    return raise_syntax_error(p, msg);
+    return _PyPegen_raise_syntax_error(p, msg);
 }
 
 #if 0
@@ -292,7 +292,7 @@ token_name(int type)
 // Here, mark is the start of the node, while p->mark is the end.
 // If node==NULL, they should be the same.
 int
-insert_memo(Parser *p, int mark, int type, void *node)
+_PyPegen_insert_memo(Parser *p, int mark, int type, void *node)
 {
     // Insert in front
     Memo *m = PyArena_Malloc(p->arena, sizeof(Memo));
@@ -307,9 +307,9 @@ insert_memo(Parser *p, int mark, int type, void *node)
     return 0;
 }
 
-// Like insert_memo(), but updates an existing node if found.
+// Like _PyPegen_insert_memo(), but updates an existing node if found.
 int
-update_memo(Parser *p, int mark, int type, void *node)
+_PyPegen_update_memo(Parser *p, int mark, int type, void *node)
 {
     for (Memo *m = p->tokens[mark]->memo; m != NULL; m = m->next) {
         if (m->type == type) {
@@ -320,12 +320,12 @@ update_memo(Parser *p, int mark, int type, void *node)
         }
     }
     // Insert new node.
-    return insert_memo(p, mark, type, node);
+    return _PyPegen_insert_memo(p, mark, type, node);
 }
 
 // Return dummy NAME.
 void *
-CONSTRUCTOR(Parser *p, ...)
+_PyPegen_dummy_name(Parser *p, ...)
 {
     static void *cache = NULL;
 
@@ -356,7 +356,7 @@ _get_keyword_or_name_type(Parser *p, const char *name, int name_len)
 }
 
 int
-fill_token(Parser *p)
+_PyPegen_fill_token(Parser *p)
 {
     const char *start, *end;
     int type = PyTokenizer_Get(p->tok, &start, &end);
@@ -416,7 +416,7 @@ fill_token(Parser *p)
 static long memo_statistics[NSTATISTICS];
 
 void
-clear_memo_statistics()
+_PyPegen_clear_memo_statistics()
 {
     for (int i = 0; i < NSTATISTICS; i++) {
         memo_statistics[i] = 0;
@@ -424,7 +424,7 @@ clear_memo_statistics()
 }
 
 PyObject *
-get_memo_statistics()
+_PyPegen_get_memo_statistics()
 {
     PyObject *ret = PyList_New(NSTATISTICS);
     if (ret == NULL) {
@@ -446,10 +446,10 @@ get_memo_statistics()
 }
 
 int  // bool
-is_memoized(Parser *p, int type, void *pres)
+_PyPegen_is_memoized(Parser *p, int type, void *pres)
 {
     if (p->mark == p->fill) {
-        if (fill_token(p) < 0) {
+        if (_PyPegen_fill_token(p) < 0) {
             return -1;
         }
     }
@@ -477,7 +477,7 @@ is_memoized(Parser *p, int type, void *pres)
 }
 
 int
-lookahead_with_string(int positive, void *(func)(Parser *, const char *), Parser *p,
+_PyPegen_lookahead_with_string(int positive, void *(func)(Parser *, const char *), Parser *p,
                       const char *arg)
 {
     int mark = p->mark;
@@ -487,7 +487,7 @@ lookahead_with_string(int positive, void *(func)(Parser *, const char *), Parser
 }
 
 int
-lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int arg)
+_PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int arg)
 {
     int mark = p->mark;
     void *res = func(p, arg);
@@ -496,7 +496,7 @@ lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int ar
 }
 
 int
-lookahead(int positive, void *(func)(Parser *), Parser *p)
+_PyPegen_lookahead(int positive, void *(func)(Parser *), Parser *p)
 {
     int mark = p->mark;
     void *res = func(p);
@@ -505,10 +505,10 @@ lookahead(int positive, void *(func)(Parser *), Parser *p)
 }
 
 Token *
-expect_token(Parser *p, int type)
+_PyPegen_expect_token(Parser *p, int type)
 {
     if (p->mark == p->fill) {
-        if (fill_token(p) < 0) {
+        if (_PyPegen_fill_token(p) < 0) {
             return NULL;
         }
     }
@@ -525,7 +525,7 @@ expect_token(Parser *p, int type)
 }
 
 Token *
-get_last_nonnwhitespace_token(Parser *p)
+_PyPegen_get_last_nonnwhitespace_token(Parser *p)
 {
     assert(p->mark >= 0);
     Token *token = NULL;
@@ -539,27 +539,27 @@ get_last_nonnwhitespace_token(Parser *p)
 }
 
 void *
-async_token(Parser *p)
+_PyPegen_async_token(Parser *p)
 {
-    return expect_token(p, ASYNC);
+    return _PyPegen_expect_token(p, ASYNC);
 }
 
 void *
-await_token(Parser *p)
+_PyPegen_await_token(Parser *p)
 {
-    return expect_token(p, AWAIT);
+    return _PyPegen_expect_token(p, AWAIT);
 }
 
 void *
-endmarker_token(Parser *p)
+_PyPegen_endmarker_token(Parser *p)
 {
-    return expect_token(p, ENDMARKER);
+    return _PyPegen_expect_token(p, ENDMARKER);
 }
 
 expr_ty
-name_token(Parser *p)
+_PyPegen_name_token(Parser *p)
 {
-    Token *t = expect_token(p, NAME);
+    Token *t = _PyPegen_expect_token(p, NAME);
     if (t == NULL) {
         return NULL;
     }
@@ -576,33 +576,33 @@ name_token(Parser *p)
         Py_DECREF(id);
         return NULL;
     }
-    // TODO: What new_identifier() does.
+    // TODO: What _PyPegen_new_identifier() does.
     return Name(id, Load, t->lineno, t->col_offset, t->end_lineno, t->end_col_offset,
                 p->arena);
 }
 
 void *
-string_token(Parser *p)
+_PyPegen_string_token(Parser *p)
 {
-    return expect_token(p, STRING);
+    return _PyPegen_expect_token(p, STRING);
 }
 
 void *
-newline_token(Parser *p)
+_PyPegen_newline_token(Parser *p)
 {
-    return expect_token(p, NEWLINE);
+    return _PyPegen_expect_token(p, NEWLINE);
 }
 
 void *
-indent_token(Parser *p)
+_PyPegen_indent_token(Parser *p)
 {
-    return expect_token(p, INDENT);
+    return _PyPegen_expect_token(p, INDENT);
 }
 
 void *
-dedent_token(Parser *p)
+_PyPegen_dedent_token(Parser *p)
 {
-    return expect_token(p, DEDENT);
+    return _PyPegen_expect_token(p, DEDENT);
 }
 
 static PyObject *
@@ -676,9 +676,9 @@ parsenumber(const char *s)
 }
 
 expr_ty
-number_token(Parser *p)
+_PyPegen_number_token(Parser *p)
 {
-    Token *t = expect_token(p, NUMBER);
+    Token *t = _PyPegen_expect_token(p, NUMBER);
     if (t == NULL) {
         return NULL;
     }
@@ -705,7 +705,7 @@ number_token(Parser *p)
 }
 
 void
-Parser_Free(Parser *p)
+_PyPegen_Parser_Free(Parser *p)
 {
     for (int i = 0; i < p->size; i++) {
         PyMem_Free(p->tokens[i]);
@@ -715,7 +715,7 @@ Parser_Free(Parser *p)
 }
 
 Parser *
-Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena *arena)
+_PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena *arena)
 {
     Parser *p = PyMem_Malloc(sizeof(Parser));
     if (p == NULL) {
@@ -746,23 +746,23 @@ Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena *arena)
 }
 
 void *
-run_parser(Parser *p)
+_PyPegen_run_parser(Parser *p)
 {
     int error = setjmp(p->error_env);
     if (error) {
         return NULL;
     }
 
-    void *res = parse(p);
+    void *res = _PyPegen_parse(p);
     if (res == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
         }
         if (p->fill == 0) {
-            raise_syntax_error(p, "error at start before reading any input");
+            _PyPegen_raise_syntax_error(p, "error at start before reading any input");
         }
         else {
-            raise_syntax_error(p, "invalid syntax");
+            _PyPegen_raise_syntax_error(p, "invalid syntax");
         }
         return NULL;
     }
@@ -771,7 +771,7 @@ run_parser(Parser *p)
 }
 
 mod_ty
-run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filename_ob,
+_PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filename_ob,
                              const char *enc, const char *ps1, const char *ps2,
                              int *errcode, PyArena *arena)
 {
@@ -786,13 +786,13 @@ run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filename_ob,
     // From here on we need to clean up even if there's an error
     mod_ty result = NULL;
 
-    Parser *p = Parser_New(tok, start_rule, errcode, arena);
+    Parser *p = _PyPegen_Parser_New(tok, start_rule, errcode, arena);
     if (p == NULL) {
         goto error;
     }
 
-    result = run_parser(p);
-    Parser_Free(p);
+    result = _PyPegen_run_parser(p);
+    _PyPegen_Parser_Free(p);
 
 error:
     PyTokenizer_Free(tok);
@@ -800,7 +800,7 @@ error:
 }
 
 mod_ty
-run_parser_from_file(const char *filename, int start_rule,
+_PyPegen_run_parser_from_file(const char *filename, int start_rule,
                      PyObject *filename_ob, PyArena *arena)
 {
     FILE *fp = fopen(filename, "rb");
@@ -809,7 +809,7 @@ run_parser_from_file(const char *filename, int start_rule,
         return NULL;
     }
 
-    mod_ty result = run_parser_from_file_pointer(fp, start_rule, filename_ob,
+    mod_ty result = _PyPegen_run_parser_from_file_pointer(fp, start_rule, filename_ob,
                                                  NULL, NULL, NULL, NULL, arena);
 
     fclose(fp);
@@ -817,7 +817,7 @@ run_parser_from_file(const char *filename, int start_rule,
 }
 
 mod_ty
-run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
+_PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
                        int iflags, PyArena *arena)
 {
     struct tok_state *tok;
@@ -836,13 +836,13 @@ run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
     // We need to clear up from here on
     mod_ty result = NULL;
 
-    Parser *p = Parser_New(tok, start_rule, NULL, arena);
+    Parser *p = _PyPegen_Parser_New(tok, start_rule, NULL, arena);
     if (p == NULL) {
         goto error;
     }
 
-    result = run_parser(p);
-    Parser_Free(p);
+    result = _PyPegen_run_parser(p);
+    _PyPegen_Parser_Free(p);
 
 error:
     PyTokenizer_Free(tok);
@@ -850,7 +850,7 @@ error:
 }
 
 void *
-interactive_exit(Parser *p)
+_PyPegen_interactive_exit(Parser *p)
 {
     if (p->errcode) {
         *(p->errcode) = E_EOF;
@@ -860,7 +860,7 @@ interactive_exit(Parser *p)
 
 /* Creates a single-element asdl_seq* that contains a */
 asdl_seq *
-singleton_seq(Parser *p, void *a)
+_PyPegen_singleton_seq(Parser *p, void *a)
 {
     assert(a != NULL);
     asdl_seq *seq = _Py_asdl_seq_new(1, p->arena);
@@ -873,11 +873,11 @@ singleton_seq(Parser *p, void *a)
 
 /* Creates a copy of seq and prepends a to it */
 asdl_seq *
-seq_insert_in_front(Parser *p, void *a, asdl_seq *seq)
+_PyPegen_seq_insert_in_front(Parser *p, void *a, asdl_seq *seq)
 {
     assert(a != NULL);
     if (!seq) {
-        return singleton_seq(p, a);
+        return _PyPegen_singleton_seq(p, a);
     }
 
     asdl_seq *new_seq = _Py_asdl_seq_new(asdl_seq_LEN(seq) + 1, p->arena);
@@ -905,7 +905,7 @@ _get_flattened_seq_size(asdl_seq *seqs)
 
 /* Flattens an asdl_seq* of asdl_seq*s */
 asdl_seq *
-seq_flatten(Parser *p, asdl_seq *seqs)
+_PyPegen_seq_flatten(Parser *p, asdl_seq *seqs)
 {
     int flattened_seq_size = _get_flattened_seq_size(seqs);
     assert(flattened_seq_size > 0);
@@ -929,7 +929,7 @@ seq_flatten(Parser *p, asdl_seq *seqs)
 
 /* Creates a new name of the form <first_name>.<second_name> */
 expr_ty
-join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
+_PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
 {
     assert(first_name != NULL && second_name != NULL);
     PyObject *first_identifier = first_name->v.Name.id;
@@ -984,7 +984,7 @@ join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
 
 /* Counts the total number of dots in seq's tokens */
 int
-seq_count_dots(asdl_seq *seq)
+_PyPegen_seq_count_dots(asdl_seq *seq)
 {
     int number_of_dots = 0;
     for (int i = 0, l = asdl_seq_LEN(seq); i < l; i++) {
@@ -1006,7 +1006,7 @@ seq_count_dots(asdl_seq *seq)
 
 /* Creates an alias with '*' as the identifier name */
 alias_ty
-alias_for_star(Parser *p)
+_PyPegen_alias_for_star(Parser *p)
 {
     PyObject *str = PyUnicode_InternFromString("*");
     if (!str) {
@@ -1021,7 +1021,7 @@ alias_for_star(Parser *p)
 
 /* Creates a new asdl_seq* with the identifiers of all the names in seq */
 asdl_seq *
-map_names_to_ids(Parser *p, asdl_seq *seq)
+_PyPegen_map_names_to_ids(Parser *p, asdl_seq *seq)
 {
     int len = asdl_seq_LEN(seq);
     assert(len > 0);
@@ -1039,7 +1039,7 @@ map_names_to_ids(Parser *p, asdl_seq *seq)
 
 /* Constructs a CmpopExprPair */
 CmpopExprPair *
-cmpop_expr_pair(Parser *p, cmpop_ty cmpop, expr_ty expr)
+_PyPegen_cmpop_expr_pair(Parser *p, cmpop_ty cmpop, expr_ty expr)
 {
     assert(expr != NULL);
     CmpopExprPair *a = PyArena_Malloc(p->arena, sizeof(CmpopExprPair));
@@ -1052,7 +1052,7 @@ cmpop_expr_pair(Parser *p, cmpop_ty cmpop, expr_ty expr)
 }
 
 asdl_int_seq *
-get_cmpops(Parser *p, asdl_seq *seq)
+_PyPegen_get_cmpops(Parser *p, asdl_seq *seq)
 {
     int len = asdl_seq_LEN(seq);
     assert(len > 0);
@@ -1069,7 +1069,7 @@ get_cmpops(Parser *p, asdl_seq *seq)
 }
 
 asdl_seq *
-get_exprs(Parser *p, asdl_seq *seq)
+_PyPegen_get_exprs(Parser *p, asdl_seq *seq)
 {
     int len = asdl_seq_LEN(seq);
     assert(len > 0);
@@ -1100,7 +1100,7 @@ _set_seq_context(Parser *p, asdl_seq *seq, expr_context_ty ctx)
     }
     for (int i = 0; i < len; i++) {
         expr_ty e = asdl_seq_GET(seq, i);
-        asdl_seq_SET(new_seq, i, set_expr_context(p, e, ctx));
+        asdl_seq_SET(new_seq, i, _PyPegen_set_expr_context(p, e, ctx));
     }
     return new_seq;
 }
@@ -1135,15 +1135,15 @@ _set_attribute_context(Parser *p, expr_ty e, expr_context_ty ctx)
     return _Py_Attribute(e->v.Attribute.value, e->v.Attribute.attr, ctx, EXTRA_EXPR(e, e));
 }
 
-expr_ty
+static expr_ty
 _set_starred_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _Py_Starred(set_expr_context(p, e->v.Starred.value, ctx), ctx, EXTRA_EXPR(e, e));
+    return _Py_Starred(_PyPegen_set_expr_context(p, e->v.Starred.value, ctx), ctx, EXTRA_EXPR(e, e));
 }
 
 /* Creates an `expr_ty` equivalent to `expr` but with `ctx` as context */
 expr_ty
-set_expr_context(Parser *p, expr_ty expr, expr_context_ty ctx)
+_PyPegen_set_expr_context(Parser *p, expr_ty expr, expr_context_ty ctx)
 {
     assert(expr != NULL);
 
@@ -1175,7 +1175,7 @@ set_expr_context(Parser *p, expr_ty expr, expr_context_ty ctx)
 
 /* Constructs a KeyValuePair that is used when parsing a dict's key value pairs */
 KeyValuePair *
-key_value_pair(Parser *p, expr_ty key, expr_ty value)
+_PyPegen_key_value_pair(Parser *p, expr_ty key, expr_ty value)
 {
     KeyValuePair *a = PyArena_Malloc(p->arena, sizeof(KeyValuePair));
     if (!a) {
@@ -1188,7 +1188,7 @@ key_value_pair(Parser *p, expr_ty key, expr_ty value)
 
 /* Extracts all keys from an asdl_seq* of KeyValuePair*'s */
 asdl_seq *
-get_keys(Parser *p, asdl_seq *seq)
+_PyPegen_get_keys(Parser *p, asdl_seq *seq)
 {
     int len = asdl_seq_LEN(seq);
     asdl_seq *new_seq = _Py_asdl_seq_new(len, p->arena);
@@ -1204,7 +1204,7 @@ get_keys(Parser *p, asdl_seq *seq)
 
 /* Extracts all values from an asdl_seq* of KeyValuePair*'s */
 asdl_seq *
-get_values(Parser *p, asdl_seq *seq)
+_PyPegen_get_values(Parser *p, asdl_seq *seq)
 {
     int len = asdl_seq_LEN(seq);
     asdl_seq *new_seq = _Py_asdl_seq_new(len, p->arena);
@@ -1220,7 +1220,7 @@ get_values(Parser *p, asdl_seq *seq)
 
 /* Constructs a NameDefaultPair */
 NameDefaultPair *
-name_default_pair(Parser *p, arg_ty arg, expr_ty value)
+_PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value)
 {
     NameDefaultPair *a = PyArena_Malloc(p->arena, sizeof(NameDefaultPair));
     if (!a) {
@@ -1233,7 +1233,7 @@ name_default_pair(Parser *p, arg_ty arg, expr_ty value)
 
 /* Constructs a SlashWithDefault */
 SlashWithDefault *
-slash_with_default(Parser *p, asdl_seq *plain_names, asdl_seq *names_with_defaults)
+_PyPegen_slash_with_default(Parser *p, asdl_seq *plain_names, asdl_seq *names_with_defaults)
 {
     SlashWithDefault *a = PyArena_Malloc(p->arena, sizeof(SlashWithDefault));
     if (!a) {
@@ -1246,7 +1246,7 @@ slash_with_default(Parser *p, asdl_seq *plain_names, asdl_seq *names_with_defaul
 
 /* Constructs a StarEtc */
 StarEtc *
-star_etc(Parser *p, arg_ty vararg, asdl_seq *kwonlyargs, arg_ty kwarg)
+_PyPegen_star_etc(Parser *p, arg_ty vararg, asdl_seq *kwonlyargs, arg_ty kwarg)
 {
     StarEtc *a = PyArena_Malloc(p->arena, sizeof(StarEtc));
     if (!a) {
@@ -1259,7 +1259,7 @@ star_etc(Parser *p, arg_ty vararg, asdl_seq *kwonlyargs, arg_ty kwarg)
 }
 
 asdl_seq *
-join_sequences(Parser *p, asdl_seq *a, asdl_seq *b)
+_PyPegen_join_sequences(Parser *p, asdl_seq *a, asdl_seq *b)
 {
     int first_len = asdl_seq_LEN(a);
     int second_len = asdl_seq_LEN(b);
@@ -1311,9 +1311,9 @@ _get_defaults(Parser *p, asdl_seq *names_with_defaults)
 
 /* Constructs an arguments_ty object out of all the parsed constructs in the parameters rule */
 arguments_ty
-make_arguments(Parser *p, asdl_seq *slash_without_default,
-               SlashWithDefault *slash_with_default, asdl_seq *plain_names,
-               asdl_seq *names_with_default, StarEtc *star_etc)
+_PyPegen_make_arguments(Parser *p, asdl_seq *slash_without_default,
+                        SlashWithDefault *slash_with_default, asdl_seq *plain_names,
+                        asdl_seq *names_with_default, StarEtc *star_etc)
 {
     asdl_seq *posonlyargs;
     if (slash_without_default != NULL) {
@@ -1325,7 +1325,7 @@ make_arguments(Parser *p, asdl_seq *slash_without_default,
         if (!slash_with_default_names) {
             return NULL;
         }
-        posonlyargs = join_sequences(p, slash_with_default->plain_names, slash_with_default_names);
+        posonlyargs = _PyPegen_join_sequences(p, slash_with_default->plain_names, slash_with_default_names);
         if (!posonlyargs) {
             return NULL;
         }
@@ -1343,7 +1343,7 @@ make_arguments(Parser *p, asdl_seq *slash_without_default,
         if (!names_with_default_names) {
             return NULL;
         }
-        posargs = join_sequences(p, plain_names, names_with_default_names);
+        posargs = _PyPegen_join_sequences(p, plain_names, names_with_default_names);
         if (!posargs) {
             return NULL;
         }
@@ -1375,7 +1375,7 @@ make_arguments(Parser *p, asdl_seq *slash_without_default,
         if (!names_with_default_values) {
             return NULL;
         }
-        posdefaults = join_sequences(p, slash_with_default_values, names_with_default_values);
+        posdefaults = _PyPegen_join_sequences(p, slash_with_default_values, names_with_default_values);
         if (!posdefaults) {
             return NULL;
         }
@@ -1444,7 +1444,7 @@ make_arguments(Parser *p, asdl_seq *slash_without_default,
 /* Constructs an empty arguments_ty object, that gets used when a function accepts no
  * arguments. */
 arguments_ty
-empty_arguments(Parser *p)
+_PyPegen_empty_arguments(Parser *p)
 {
     asdl_seq *posonlyargs = _Py_asdl_seq_new(0, p->arena);
     if (!posonlyargs) {
@@ -1473,7 +1473,7 @@ empty_arguments(Parser *p)
 
 /* Encapsulates the value of an operator_ty into an AugOperator struct */
 AugOperator *
-augoperator(Parser *p, operator_ty kind)
+_PyPegen_augoperator(Parser *p, operator_ty kind)
 {
     AugOperator *a = PyArena_Malloc(p->arena, sizeof(AugOperator));
     if (!a) {
@@ -1485,7 +1485,7 @@ augoperator(Parser *p, operator_ty kind)
 
 /* Construct a FunctionDef equivalent to function_def, but with decorators */
 stmt_ty
-function_def_decorators(Parser *p, asdl_seq *decorators, stmt_ty function_def)
+_PyPegen_function_def_decorators(Parser *p, asdl_seq *decorators, stmt_ty function_def)
 {
     assert(function_def != NULL);
     if (function_def->kind == AsyncFunctionDef_kind) {
@@ -1507,7 +1507,7 @@ function_def_decorators(Parser *p, asdl_seq *decorators, stmt_ty function_def)
 
 /* Construct a ClassDef equivalent to class_def, but with decorators */
 stmt_ty
-class_def_decorators(Parser *p, asdl_seq *decorators, stmt_ty class_def)
+_PyPegen_class_def_decorators(Parser *p, asdl_seq *decorators, stmt_ty class_def)
 {
     assert(class_def != NULL);
     return _Py_ClassDef(class_def->v.ClassDef.name, class_def->v.ClassDef.bases,
@@ -1518,7 +1518,7 @@ class_def_decorators(Parser *p, asdl_seq *decorators, stmt_ty class_def)
 
 /* Construct a KeywordOrStarred */
 KeywordOrStarred *
-keyword_or_starred(Parser *p, void *element, int is_keyword)
+_PyPegen_keyword_or_starred(Parser *p, void *element, int is_keyword)
 {
     KeywordOrStarred *a = PyArena_Malloc(p->arena, sizeof(KeywordOrStarred));
     if (!a) {
@@ -1545,7 +1545,7 @@ _seq_number_of_starred_exprs(asdl_seq *seq)
 
 /* Extract the starred expressions of an asdl_seq* of KeywordOrStarred*s */
 asdl_seq *
-seq_extract_starred_exprs(Parser *p, asdl_seq *kwargs)
+_PyPegen_seq_extract_starred_exprs(Parser *p, asdl_seq *kwargs)
 {
     int new_len = _seq_number_of_starred_exprs(kwargs);
     if (new_len == 0) {
@@ -1568,7 +1568,7 @@ seq_extract_starred_exprs(Parser *p, asdl_seq *kwargs)
 
 /* Return a new asdl_seq* with only the keywords in kwargs */
 asdl_seq *
-seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
+_PyPegen_seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
 {
     int len = asdl_seq_LEN(kwargs);
     int new_len = len - _seq_number_of_starred_exprs(kwargs);
@@ -1591,7 +1591,7 @@ seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
 }
 
 expr_ty
-concatenate_strings(Parser *p, asdl_seq *strings)
+_PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
 {
     int len = asdl_seq_LEN(strings);
     assert(len > 0);
@@ -1603,7 +1603,7 @@ concatenate_strings(Parser *p, asdl_seq *strings)
     PyObject *bytes_str = NULL;
 
     FstringParser state;
-    FstringParser_Init(&state);
+    _PyPegen_FstringParser_Init(&state);
 
     for (int i = 0; i < len; i++) {
         Token *t = asdl_seq_GET(strings, i);
@@ -1619,13 +1619,13 @@ concatenate_strings(Parser *p, asdl_seq *strings)
             goto error;
         }
 
-        if (parsestr(p, this_str, &this_bytesmode, &this_rawmode, &s, &fstr, &fstrlen) != 0) {
+        if (_PyPegen_parsestr(p, this_str, &this_bytesmode, &this_rawmode, &s, &fstr, &fstrlen) != 0) {
             goto error;
         }
 
         /* Check that we are not mixing bytes with unicode. */
         if (i != 0 && bytesmode != this_bytesmode) {
-            raise_syntax_error(p, "cannot mix bytes and nonbytes literals");
+            _PyPegen_raise_syntax_error(p, "cannot mix bytes and nonbytes literals");
             Py_XDECREF(s);
             goto error;
         }
@@ -1634,7 +1634,7 @@ concatenate_strings(Parser *p, asdl_seq *strings)
         if (fstr != NULL) {
             assert(s == NULL && !bytesmode);
 
-            int result = FstringParser_ConcatFstring(p, &state, &fstr, fstr + fstrlen,
+            int result = _PyPegen_FstringParser_ConcatFstring(p, &state, &fstr, fstr + fstrlen,
                                                      this_rawmode, 0, first, t, last);
             if (result < 0) {
                 goto error;
@@ -1658,7 +1658,7 @@ concatenate_strings(Parser *p, asdl_seq *strings)
             }
             else {
                 /* This is a regular string. Concatenate it. */
-                if (FstringParser_ConcatAndDel(&state, s) < 0) {
+                if (_PyPegen_FstringParser_ConcatAndDel(&state, s) < 0) {
                     goto error;
                 }
             }
@@ -1673,11 +1673,11 @@ concatenate_strings(Parser *p, asdl_seq *strings)
                         last->end_col_offset, p->arena);
     }
 
-    return FstringParser_Finish(p, &state, first, last);
+    return _PyPegen_FstringParser_Finish(p, &state, first, last);
 
 error:
     Py_XDECREF(bytes_str);
-    FstringParser_Dealloc(&state);
+    _PyPegen_FstringParser_Dealloc(&state);
     if (PyErr_Occurred()) {
         const char *errtype = NULL;
         if (PyErr_ExceptionMatches(PyExc_UnicodeError)) {
@@ -1691,12 +1691,12 @@ error:
             PyErr_Fetch(&type, &value, &tback);
             errstr = PyObject_Str(value);
             if (errstr) {
-                raise_syntax_error(p, "(%s) %U", errtype, errstr);
+                _PyPegen_raise_syntax_error(p, "(%s) %U", errtype, errstr);
                 Py_DECREF(errstr);
             }
             else {
                 PyErr_Clear();
-                raise_syntax_error(p, "(%s) unknown error", errtype);
+                _PyPegen_raise_syntax_error(p, "(%s) unknown error", errtype);
             }
             Py_XDECREF(type);
             Py_XDECREF(value);

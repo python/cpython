@@ -43,7 +43,7 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    mod_ty res = run_parser_from_file(filename, Py_file_input, filename_ob, arena);
+    mod_ty res = _PyPegen_run_parser_from_file(filename, Py_file_input, filename_ob, arena);
     if (res == NULL) {
         goto error;
     }
@@ -81,7 +81,7 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    mod_ty res = run_parser_from_string(the_string, Py_file_input, filename_ob,
+    mod_ty res = _PyPegen_run_parser_from_string(the_string, Py_file_input, filename_ob,
                                         PyCF_IGNORE_COOKIE, arena);
     if (res == NULL) {
         goto error;
@@ -97,21 +97,21 @@ error:
 static PyObject *
 clear_memo_stats()
 {
-    clear_memo_statistics();
+    _PyPegen_clear_memo_statistics();
     Py_RETURN_NONE;
 }
 
 static PyObject *
 get_memo_stats()
 {
-    return get_memo_statistics();
+    return _PyPegen_get_memo_statistics();
 }
 
 // TODO: Write to Python's sys.stdout instead of C's stdout.
 static PyObject *
 dump_memo_stats()
 {
-    PyObject *list = get_memo_statistics();
+    PyObject *list = _PyPegen_get_memo_statistics();
     if (list == NULL) {
         return NULL;
     }

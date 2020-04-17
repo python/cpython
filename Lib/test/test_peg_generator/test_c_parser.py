@@ -205,10 +205,10 @@ class TestCParser(unittest.TestCase):
     def test_if_stmt_action(self) -> None:
         grammar = """
         start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
-        statements[asdl_seq*]: a=statement+ { seq_flatten(p, a) }
-        statement[asdl_seq*]:  a=compound_stmt { singleton_seq(p, a) } | simple_stmt
+        statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
+        statement[asdl_seq*]:  a=compound_stmt { _PyPegen_singleton_seq(p, a) } | simple_stmt
 
-        simple_stmt[asdl_seq*]: a=small_stmt b=further_small_stmt* [';'] NEWLINE { seq_insert_in_front(p, a, b) }
+        simple_stmt[asdl_seq*]: a=small_stmt b=further_small_stmt* [';'] NEWLINE { _PyPegen_seq_insert_in_front(p, a, b) }
         further_small_stmt[stmt_ty]: ';' a=small_stmt { a }
 
         block: simple_stmt | NEWLINE INDENT a=statements DEDENT { a }
@@ -249,15 +249,15 @@ class TestCParser(unittest.TestCase):
     def test_with_stmt_with_paren(self) -> None:
         grammar_source = """
         start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
-        statements[asdl_seq*]: a=statement+ { seq_flatten(p, a) }
-        statement[asdl_seq*]: a=compound_stmt { singleton_seq(p, a) }
+        statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
+        statement[asdl_seq*]: a=compound_stmt { _PyPegen_singleton_seq(p, a) }
         compound_stmt[stmt_ty]: with_stmt
         with_stmt[stmt_ty]: (
             a='with' '(' b=','.with_item+ ')' ':' c=block {
-                _Py_With(b, singleton_seq(p, c), NULL, EXTRA) }
+                _Py_With(b, _PyPegen_singleton_seq(p, c), NULL, EXTRA) }
         )
         with_item[withitem_ty]: (
-            e=NAME o=['as' t=NAME { t }] { _Py_withitem(e, set_expr_context(p, o, Store), p->arena) }
+            e=NAME o=['as' t=NAME { t }] { _Py_withitem(e, _PyPegen_set_expr_context(p, o, Store), p->arena) }
         )
         block[stmt_ty]: a=pass_stmt NEWLINE { a } | NEWLINE INDENT a=pass_stmt DEDENT { a }
         pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA) }
@@ -274,7 +274,7 @@ class TestCParser(unittest.TestCase):
     def test_ternary_operator(self) -> None:
         grammar_source = """
         start[mod_ty]: a=expr ENDMARKER { Module(a, NULL, p->arena) }
-        expr[asdl_seq*]: a=listcomp NEWLINE { singleton_seq(p, _Py_Expr(a, EXTRA)) }
+        expr[asdl_seq*]: a=listcomp NEWLINE { _PyPegen_singleton_seq(p, _Py_Expr(a, EXTRA)) }
         listcomp[expr_ty]: (
             a='[' b=NAME c=for_if_clauses d=']' { _Py_ListComp(b, c, EXTRA) }
         )

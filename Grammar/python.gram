@@ -3,7 +3,7 @@
 @bytecode True
 @trailer '''
 void *
-parse(Parser *p)
+_PyPegen_parse(Parser *p)
 {
     // Initialize keywords
     p->keywords = reserved_keywords;
@@ -31,15 +31,15 @@ interactive[mod_ty]: a=statement_newline { Interactive(a, p->arena) }
 eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { Expression(a, p->arena) }
 fstring[expr_ty]: star_expressions
 
-statements[asdl_seq*]: a=statement+ { seq_flatten(p, a) }
-statement[asdl_seq*]: a=compound_stmt { singleton_seq(p, a) } | simple_stmt
+statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
+statement[asdl_seq*]: a=compound_stmt { _PyPegen_singleton_seq(p, a) } | simple_stmt
 statement_newline[asdl_seq*]:
-    | a=compound_stmt NEWLINE { singleton_seq(p, a) }
+    | a=compound_stmt NEWLINE { _PyPegen_singleton_seq(p, a) }
     | simple_stmt
-    | NEWLINE { singleton_seq(p, CHECK(_Py_Pass(EXTRA))) }
-    | ENDMARKER { interactive_exit(p) }
+    | NEWLINE { _PyPegen_singleton_seq(p, CHECK(_Py_Pass(EXTRA))) }
+    | ENDMARKER { _PyPegen_interactive_exit(p) }
 simple_stmt[asdl_seq*]:
-    | a=small_stmt !';' NEWLINE { singleton_seq(p, a) } # Not needed, there for speedup
+    | a=small_stmt !';' NEWLINE { _PyPegen_singleton_seq(p, a) } # Not needed, there for speedup
     | a=';'.small_stmt+ [';'] NEWLINE { a }
 # NOTE: assignment MUST precede expression, else parsing a simple assignment
 # will throw a SyntaxError.
@@ -69,7 +69,7 @@ compound_stmt[stmt_ty]:
 # NOTE: annotated_rhs may start with 'yield'; yield_expr must start with 'yield'
 assignment:
     | a=NAME ':' b=expression c=['=' d=annotated_rhs { d }] {
-        _Py_AnnAssign(CHECK(set_expr_context(p, a, Store)), b, c, 1, EXTRA) }
+        _Py_AnnAssign(CHECK(_PyPegen_set_expr_context(p, a, Store)), b, c, 1, EXTRA) }
     | a=('(' b=inside_paren_ann_assign_target ')' { b }
          | ann_assign_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
         _Py_AnnAssign(a, b, c, 0, EXTRA)}
@@ -80,22 +80,24 @@ assignment:
     | invalid_assignment
 
 augassign[AugOperator*]:
-    | '+=' {augoperator(p, Add)}
-    | '-=' {augoperator(p, Sub)}
-    | '*=' {augoperator(p, Mult)}
-    | '@=' {augoperator(p, MatMult)}
-    | '/=' {augoperator(p, Div)}
-    | '%=' {augoperator(p, Mod)}
-    | '&=' {augoperator(p, BitAnd)}
-    | '|=' {augoperator(p, BitOr)}
-    | '^=' {augoperator(p, BitXor)}
-    | '<<=' {augoperator(p, LShift)}
-    | '>>=' {augoperator(p, RShift)}
-    | '**=' {augoperator(p, Pow)}
-    | '//=' {augoperator(p, FloorDiv)}
+    | '+=' {_PyPegen_augoperator(p, Add)}
+    | '-=' {_PyPegen_augoperator(p, Sub)}
+    | '*=' {_PyPegen_augoperator(p, Mult)}
+    | '@=' {_PyPegen_augoperator(p, MatMult)}
+    | '/=' {_PyPegen_augoperator(p, Div)}
+    | '%=' {_PyPegen_augoperator(p, Mod)}
+    | '&=' {_PyPegen_augoperator(p, BitAnd)}
+    | '|=' {_PyPegen_augoperator(p, BitOr)}
+    | '^=' {_PyPegen_augoperator(p, BitXor)}
+    | '<<=' {_PyPegen_augoperator(p, LShift)}
+    | '>>=' {_PyPegen_augoperator(p, RShift)}
+    | '**=' {_PyPegen_augoperator(p, Pow)}
+    | '//=' {_PyPegen_augoperator(p, FloorDiv)}
 
-global_stmt[stmt_ty]: 'global' a=','.NAME+ { _Py_Global(CHECK(map_names_to_ids(p, a)), EXTRA) }
-nonlocal_stmt[stmt_ty]: 'nonlocal' a=','.NAME+ { _Py_Nonlocal(CHECK(map_names_to_ids(p, a)), EXTRA) }
+global_stmt[stmt_ty]: 'global' a=','.NAME+ {
+    _Py_Global(CHECK(_PyPegen_map_names_to_ids(p, a)), EXTRA) }
+nonlocal_stmt[stmt_ty]: 'nonlocal' a=','.NAME+ {
+    _Py_Nonlocal(CHECK(_PyPegen_map_names_to_ids(p, a)), EXTRA) }
 
 yield_stmt[stmt_ty]: y=yield_expr { _Py_Expr(y, EXTRA) }
 
@@ -108,13 +110,13 @@ import_name[stmt_ty]: 'import' a=dotted_as_names { _Py_Import(a, EXTRA) }
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from[stmt_ty]:
     | 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
-        _Py_ImportFrom(b->v.Name.id, c, seq_count_dots(a), EXTRA) }
+        _Py_ImportFrom(b->v.Name.id, c, _PyPegen_seq_count_dots(a), EXTRA) }
     | 'from' a=('.' | '...')+ 'import' b=import_from_targets {
-        _Py_ImportFrom(NULL, b, seq_count_dots(a), EXTRA) }
+        _Py_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), EXTRA) }
 import_from_targets[asdl_seq*]:
     | '(' a=import_from_as_names ')' { a }
     | import_from_as_names
-    | '*' { singleton_seq(p, CHECK(alias_for_star(p))) }
+    | '*' { _PyPegen_singleton_seq(p, CHECK(_PyPegen_alias_for_star(p))) }
 import_from_as_names[asdl_seq*]:
     | a=','.import_from_as_name+ [','] { a }
 import_from_as_name[alias_ty]:
@@ -128,14 +130,14 @@ dotted_as_name[alias_ty]:
                                                       (b) ? ((expr_ty) b)->v.Name.id : NULL,
                                                       p->arena) }
 dotted_name[expr_ty]:
-    | a=dotted_name '.' b=NAME { join_names_with_dot(p, a, b) }
+    | a=dotted_name '.' b=NAME { _PyPegen_join_names_with_dot(p, a, b) }
     | NAME
 
 if_stmt[stmt_ty]:
-    | 'if' a=named_expression ':' b=block c=elif_stmt { _Py_If(a, b, CHECK(singleton_seq(p, c)), EXTRA) }
+    | 'if' a=named_expression ':' b=block c=elif_stmt { _Py_If(a, b, CHECK(_PyPegen_singleton_seq(p, c)), EXTRA) }
     | 'if' a=named_expression ':' b=block c=[else_block] { _Py_If(a, b, c, EXTRA) }
 elif_stmt[stmt_ty]:
-    | 'elif' a=named_expression ':' b=block c=elif_stmt { _Py_If(a, b, CHECK(singleton_seq(p, c)), EXTRA) }
+    | 'elif' a=named_expression ':' b=block c=elif_stmt { _Py_If(a, b, CHECK(_PyPegen_singleton_seq(p, c)), EXTRA) }
     | 'elif' a=named_expression ':' b=block c=[else_block] { _Py_If(a, b, c, EXTRA) }
 else_block[asdl_seq*]: 'else' ':' b=block { b }
 
@@ -171,38 +173,38 @@ raise_stmt[stmt_ty]:
     | 'raise' { _Py_Raise(NULL, NULL, EXTRA) }
 
 function_def[stmt_ty]:
-    | d=decorators f=function_def_raw { function_def_decorators(p, d, f) }
+    | d=decorators f=function_def_raw { _PyPegen_function_def_decorators(p, d, f) }
     | function_def_raw
 
 function_def_raw[stmt_ty]:
     | is_async=[ASYNC] 'def' n=NAME '(' params=[parameters] ')' a=['->' z=annotation { z }] ':' b=block {
         (is_async ? _Py_AsyncFunctionDef : _Py_FunctionDef)(n->v.Name.id,
-                             (params) ? params : CHECK(empty_arguments(p)),
+                             (params) ? params : CHECK(_PyPegen_empty_arguments(p)),
                              b, NULL, a, NULL, EXTRA) }
 
 parameters[arguments_ty]:
     | a=slash_without_default b=[',' x=plain_names { x }] c=[',' y=names_with_default { y }] d=[',' z=[star_etc] { z }] {
-        make_arguments(p, a, NULL, b, c, d) }
+        _PyPegen_make_arguments(p, a, NULL, b, c, d) }
     | a=slash_with_default b=[',' y=names_with_default { y }] c=[',' z=[star_etc] { z }] {
-        make_arguments(p, NULL, a, NULL, b, c) }
+        _PyPegen_make_arguments(p, NULL, a, NULL, b, c) }
     | a=plain_names b=[',' y=names_with_default { y }] c=[',' z=[star_etc] { z }] {
-        make_arguments(p, NULL, NULL, a, b, c) }
-    | a=names_with_default b=[',' z=[star_etc] { z }] { make_arguments(p, NULL, NULL, NULL, a, b)}
-    | a=star_etc { make_arguments(p, NULL, NULL, NULL, NULL, a) }
+        _PyPegen_make_arguments(p, NULL, NULL, a, b, c) }
+    | a=names_with_default b=[',' z=[star_etc] { z }] { _PyPegen_make_arguments(p, NULL, NULL, NULL, a, b)}
+    | a=star_etc { _PyPegen_make_arguments(p, NULL, NULL, NULL, NULL, a) }
 slash_without_default[asdl_seq*]: a=plain_names ',' '/' { a }
 slash_with_default[SlashWithDefault*]: a=[n=plain_names ',' { n }] b=names_with_default ',' '/' {
-    slash_with_default(p, a, b) }
+    _PyPegen_slash_with_default(p, a, b) }
 star_etc[StarEtc*]:
     | '*' a=plain_name b=name_with_optional_default* c=[',' d=kwds { d }] [','] {
-        star_etc(p, a, b, c) }
+        _PyPegen_star_etc(p, a, b, c) }
     | '*' b=name_with_optional_default+ c=[',' d=kwds { d }] [','] {
-        star_etc(p, NULL, b, c) }
-    | a=kwds [','] { star_etc(p, NULL, NULL, a) }
+        _PyPegen_star_etc(p, NULL, b, c) }
+    | a=kwds [','] { _PyPegen_star_etc(p, NULL, NULL, a) }
 name_with_optional_default[NameDefaultPair*]:
-    | ',' a=plain_name b=['=' e=expression { e }] { name_default_pair(p, a, b) }
+    | ',' a=plain_name b=['=' e=expression { e }] { _PyPegen_name_default_pair(p, a, b) }
 names_with_default[asdl_seq*]: a=','.name_with_default+ { a }
 name_with_default[NameDefaultPair*]:
-    | n=plain_name '=' e=expression { name_default_pair(p, n, e) }
+    | n=plain_name '=' e=expression { _PyPegen_name_default_pair(p, n, e) }
 plain_names[asdl_seq*] (memo): a=','.(plain_name !'=')+ { a }
 plain_name[arg_ty]:
     | a=NAME b=[':' z=annotation { z }] { _Py_arg(a->v.Name.id, b, NULL, EXTRA) }
@@ -213,7 +215,7 @@ annotation[expr_ty]: expression
 decorators[asdl_seq*]: a=('@' f=named_expression NEWLINE { f })+ { a }
 
 class_def[stmt_ty]:
-    | a=decorators b=class_def_raw { class_def_decorators(p, a, b) }
+    | a=decorators b=class_def_raw { _PyPegen_class_def_decorators(p, a, b) }
     | class_def_raw
 class_def_raw[stmt_ty]:
     | 'class' a=NAME b=['(' z=[arguments] ')' { z }] ':' c=block {
@@ -227,8 +229,8 @@ block[asdl_seq*] (memo): NEWLINE INDENT a=statements DEDENT { a } | simple_stmt
 expressions_list[asdl_seq*]: a=','.star_expression+ [','] { a }
 star_expressions[expr_ty]:
     | a=star_expression b=(',' c=star_expression { c })+ [','] {
-        _Py_Tuple(CHECK(seq_insert_in_front(p, a, b)), Load, EXTRA) }
-    | a=star_expression ',' { _Py_Tuple(CHECK(singleton_seq(p, a)), Load, EXTRA) }
+        _Py_Tuple(CHECK(_PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
+    | a=star_expression ',' { _Py_Tuple(CHECK(_PyPegen_singleton_seq(p, a)), Load, EXTRA) }
     | star_expression
 star_expression[expr_ty] (memo):
     | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
@@ -239,7 +241,7 @@ star_named_expression[expr_ty]:
     | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
     | named_expression
 named_expression[expr_ty]:
-    | a=NAME ':=' b=expression { _Py_NamedExpr(CHECK(set_expr_context(p, a, Store)), b, EXTRA) }
+    | a=NAME ':=' b=expression { _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
     | expression !':='
     | invalid_named_expression
 
@@ -247,8 +249,8 @@ annotated_rhs[expr_ty]: yield_expr | star_expressions
 
 expressions[expr_ty]:
     | a=expression b=(',' c=expression { c })+ [','] {
-        _Py_Tuple(CHECK(seq_insert_in_front(p, a, b)), Load, EXTRA) }
-    | a=expression ',' { _Py_Tuple(CHECK(singleton_seq(p, a)), Load, EXTRA) }
+        _Py_Tuple(CHECK(_PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
+    | a=expression ',' { _Py_Tuple(CHECK(_PyPegen_singleton_seq(p, a)), Load, EXTRA) }
     | expression
 expression[expr_ty] (memo):
     | a=disjunction 'if' b=disjunction 'else' c=expression { _Py_IfExp(b, a, c, EXTRA) }
@@ -256,30 +258,30 @@ expression[expr_ty] (memo):
     | lambdef
 
 lambdef[expr_ty]:
-    | 'lambda' a=[lambda_parameters] ':' b=expression { _Py_Lambda((a) ? a : CHECK(empty_arguments(p)), b, EXTRA) }
+    | 'lambda' a=[lambda_parameters] ':' b=expression { _Py_Lambda((a) ? a : CHECK(_PyPegen_empty_arguments(p)), b, EXTRA) }
 lambda_parameters[arguments_ty]:
     | a=lambda_slash_without_default b=[',' x=lambda_plain_names { x }] c=[',' y=lambda_names_with_default { y }] d=[',' z=[lambda_star_etc] { z }] {
-        make_arguments(p, a, NULL, b, c, d) }
+        _PyPegen_make_arguments(p, a, NULL, b, c, d) }
     | a=lambda_slash_with_default b=[',' y=lambda_names_with_default { y }] c=[',' z=[lambda_star_etc] { z }] {
-        make_arguments(p, NULL, a, NULL, b, c) }
+        _PyPegen_make_arguments(p, NULL, a, NULL, b, c) }
     | a=lambda_plain_names b=[',' y=lambda_names_with_default { y }] c=[',' z=[lambda_star_etc] { z }] {
-        make_arguments(p, NULL, NULL, a, b, c) }
-    | a=lambda_names_with_default b=[',' z=[lambda_star_etc] { z }] { make_arguments(p, NULL, NULL, NULL, a, b)}
-    | a=lambda_star_etc { make_arguments(p, NULL, NULL, NULL, NULL, a) }
+        _PyPegen_make_arguments(p, NULL, NULL, a, b, c) }
+    | a=lambda_names_with_default b=[',' z=[lambda_star_etc] { z }] { _PyPegen_make_arguments(p, NULL, NULL, NULL, a, b)}
+    | a=lambda_star_etc { _PyPegen_make_arguments(p, NULL, NULL, NULL, NULL, a) }
 lambda_slash_without_default[asdl_seq*]: a=lambda_plain_names ',' '/' { a }
 lambda_slash_with_default[SlashWithDefault*]: a=[n=lambda_plain_names ',' { n }] b=lambda_names_with_default ',' '/' {
-    slash_with_default(p, a, b) }
+    _PyPegen_slash_with_default(p, a, b) }
 lambda_star_etc[StarEtc*]:
     | '*' a=lambda_plain_name b=lambda_name_with_optional_default* c=[',' d=lambda_kwds { d }] [','] {
-        star_etc(p, a, b, c) }
+        _PyPegen_star_etc(p, a, b, c) }
     | '*' b=lambda_name_with_optional_default+ c=[',' d=lambda_kwds { d }] [','] {
-        star_etc(p, NULL, b, c) }
-    | a=lambda_kwds [','] { star_etc(p, NULL, NULL, a) }
+        _PyPegen_star_etc(p, NULL, b, c) }
+    | a=lambda_kwds [','] { _PyPegen_star_etc(p, NULL, NULL, a) }
 lambda_name_with_optional_default[NameDefaultPair*]:
-    | ',' a=lambda_plain_name b=['=' e=expression { e }] { name_default_pair(p, a, b) }
+    | ',' a=lambda_plain_name b=['=' e=expression { e }] { _PyPegen_name_default_pair(p, a, b) }
 lambda_names_with_default[asdl_seq*]: a=','.lambda_name_with_default+ { a }
 lambda_name_with_default[NameDefaultPair*]:
-    | n=lambda_plain_name '=' e=expression { name_default_pair(p, n, e) }
+    | n=lambda_plain_name '=' e=expression { _PyPegen_name_default_pair(p, n, e) }
 lambda_plain_names[asdl_seq*]: a=','.(lambda_plain_name !'=')+ { a }
 lambda_plain_name[arg_ty]: a=NAME { _Py_arg(a->v.Name.id, NULL, NULL, EXTRA) }
 lambda_kwds[arg_ty]: '**' a=lambda_plain_name { a }
@@ -287,13 +289,13 @@ lambda_kwds[arg_ty]: '**' a=lambda_plain_name { a }
 disjunction[expr_ty] (memo):
     | a=conjunction b=('or' c=conjunction { c })+ { _Py_BoolOp(
         Or,
-        CHECK(seq_insert_in_front(p, a, b)),
+        CHECK(_PyPegen_seq_insert_in_front(p, a, b)),
         EXTRA) }
     | conjunction
 conjunction[expr_ty] (memo):
     | a=inversion b=('and' c=inversion { c })+ { _Py_BoolOp(
         And,
-        CHECK(seq_insert_in_front(p, a, b)),
+        CHECK(_PyPegen_seq_insert_in_front(p, a, b)),
         EXTRA) }
     | inversion
 inversion[expr_ty] (memo):
@@ -301,7 +303,7 @@ inversion[expr_ty] (memo):
     | comparison
 comparison[expr_ty]:
     | a=bitwise_or b=compare_op_bitwise_or_pair+ {
-        _Py_Compare(a, CHECK(get_cmpops(p, b)), CHECK(get_exprs(p, b)), EXTRA) }
+        _Py_Compare(a, CHECK(_PyPegen_get_cmpops(p, b)), CHECK(_PyPegen_get_exprs(p, b)), EXTRA) }
     | bitwise_or
 compare_op_bitwise_or_pair[CmpopExprPair*]:
     | eq_bitwise_or
@@ -314,16 +316,16 @@ compare_op_bitwise_or_pair[CmpopExprPair*]:
     | in_bitwise_or
     | isnot_bitwise_or
     | is_bitwise_or
-eq_bitwise_or[CmpopExprPair*]: '==' a=bitwise_or { cmpop_expr_pair(p, Eq, a) }
-noteq_bitwise_or[CmpopExprPair*]: '!=' a=bitwise_or { cmpop_expr_pair(p, NotEq, a) }
-lte_bitwise_or[CmpopExprPair*]: '<=' a=bitwise_or { cmpop_expr_pair(p, LtE, a) }
-lt_bitwise_or[CmpopExprPair*]: '<' a=bitwise_or { cmpop_expr_pair(p, Lt, a) }
-gte_bitwise_or[CmpopExprPair*]: '>=' a=bitwise_or { cmpop_expr_pair(p, GtE, a) }
-gt_bitwise_or[CmpopExprPair*]: '>' a=bitwise_or { cmpop_expr_pair(p, Gt, a) }
-notin_bitwise_or[CmpopExprPair*]: 'not' 'in' a=bitwise_or { cmpop_expr_pair(p, NotIn, a) }
-in_bitwise_or[CmpopExprPair*]: 'in' a=bitwise_or { cmpop_expr_pair(p, In, a) }
-isnot_bitwise_or[CmpopExprPair*]: 'is' 'not' a=bitwise_or { cmpop_expr_pair(p, IsNot, a) }
-is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { cmpop_expr_pair(p, Is, a) }
+eq_bitwise_or[CmpopExprPair*]: '==' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Eq, a) }
+noteq_bitwise_or[CmpopExprPair*]: '!=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotEq, a) }
+lte_bitwise_or[CmpopExprPair*]: '<=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, LtE, a) }
+lt_bitwise_or[CmpopExprPair*]: '<' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Lt, a) }
+gte_bitwise_or[CmpopExprPair*]: '>=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, GtE, a) }
+gt_bitwise_or[CmpopExprPair*]: '>' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Gt, a) }
+notin_bitwise_or[CmpopExprPair*]: 'not' 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotIn, a) }
+in_bitwise_or[CmpopExprPair*]: 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
+isnot_bitwise_or[CmpopExprPair*]: 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
+is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
 
 bitwise_or[expr_ty]:
     | a=bitwise_or '|' b=bitwise_xor { _Py_BinOp(a, BitOr, b, EXTRA) }
@@ -363,7 +365,7 @@ await_primary[expr_ty] (memo):
     | primary
 primary[expr_ty]:
     | a=primary '.' b=NAME { _Py_Attribute(a, b->v.Name.id, Load, EXTRA) }
-    | a=primary b=genexp { _Py_Call(a, CHECK(singleton_seq(p, b)), NULL, EXTRA) }
+    | a=primary b=genexp { _Py_Call(a, CHECK(_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
     | a=primary '(' b=[arguments] ')' {
         _Py_Call(a,
                  (b) ? ((expr_ty) b)->v.Call.args : NULL,
@@ -390,13 +392,13 @@ atom[expr_ty]:
     | &'{' (dict | set | dictcomp | setcomp)
     | '...' { _Py_Constant(Py_Ellipsis, NULL, EXTRA) }
 
-strings[expr_ty] (memo): a=STRING+ { concatenate_strings(p, a) }
+strings[expr_ty] (memo): a=STRING+ { _PyPegen_concatenate_strings(p, a) }
 list[expr_ty]:
     | '[' a=[star_named_expressions] ']' { _Py_List(a, Load, EXTRA) }
 listcomp[expr_ty]:
     | '[' a=named_expression b=for_if_clauses ']' { _Py_ListComp(a, b, EXTRA) }
 tuple[expr_ty]:
-    | '(' a=[y=star_named_expression ',' z=[star_named_expressions] { seq_insert_in_front(p, y, z) } ] ')' {
+    | '(' a=[y=star_named_expression ',' z=[star_named_expressions] { _PyPegen_seq_insert_in_front(p, y, z) } ] ')' {
         _Py_Tuple(a, Load, EXTRA) }
 group[expr_ty]: '(' a=(yield_expr | named_expression) ')' { a }
 genexp[expr_ty]:
@@ -405,14 +407,14 @@ set[expr_ty]: '{' a=expressions_list '}' { _Py_Set(a, EXTRA) }
 setcomp[expr_ty]:
     | '{' a=expression b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
 dict[expr_ty]:
-    | '{' a=[kvpairs] '}' { _Py_Dict(CHECK(get_keys(p, a)),
-                                     CHECK(get_values(p, a)), EXTRA) }
+    | '{' a=[kvpairs] '}' { _Py_Dict(CHECK(_PyPegen_get_keys(p, a)),
+                                     CHECK(_PyPegen_get_values(p, a)), EXTRA) }
 dictcomp[expr_ty]:
     | '{' a=kvpair b=for_if_clauses '}' { _Py_DictComp(a->key, a->value, b, EXTRA) }
 kvpairs[asdl_seq*]: a=','.kvpair+ [','] { a }
 kvpair[KeyValuePair*]:
-    | '**' a=bitwise_or { key_value_pair(p, NULL, a) }
-    | a=expression ':' b=expression { key_value_pair(p, a, b) }
+    | '**' a=bitwise_or { _PyPegen_key_value_pair(p, NULL, a) }
+    | a=expression ':' b=expression { _PyPegen_key_value_pair(p, a, b) }
 for_if_clauses[asdl_seq*]:
     | a=(y=[ASYNC] 'for' a=star_targets 'in' b=disjunction c=('if' z=disjunction { z })*
         { _Py_comprehension(a, b, c, y != NULL, p->arena) })+ { a }
@@ -426,56 +428,56 @@ arguments[expr_ty] (memo):
     | incorrect_arguments
 args[expr_ty]:
     | a=starred_expression b=[',' c=args { c }] {
-        _Py_Call(CONSTRUCTOR(p),
-                 (b) ? CHECK(seq_insert_in_front(p, a, ((expr_ty) b)->v.Call.args))
-                     : CHECK(singleton_seq(p, a)),
+        _Py_Call(_PyPegen_dummy_name(p),
+                 (b) ? CHECK(_PyPegen_seq_insert_in_front(p, a, ((expr_ty) b)->v.Call.args))
+                     : CHECK(_PyPegen_singleton_seq(p, a)),
                  (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                  EXTRA) }
-    | a=kwargs { _Py_Call(CONSTRUCTOR(p),
-                          CHECK_NULL_ALLOWED(seq_extract_starred_exprs(p, a)),
-                          CHECK_NULL_ALLOWED(seq_delete_starred_exprs(p, a)),
+    | a=kwargs { _Py_Call(_PyPegen_dummy_name(p),
+                          CHECK_NULL_ALLOWED(_PyPegen_seq_extract_starred_exprs(p, a)),
+                          CHECK_NULL_ALLOWED(_PyPegen_seq_delete_starred_exprs(p, a)),
                           EXTRA) }
     | a=named_expression b=[',' c=args { c }] {
-        _Py_Call(CONSTRUCTOR(p),
-                 (b) ? CHECK(seq_insert_in_front(p, a, ((expr_ty) b)->v.Call.args))
-                     : CHECK(singleton_seq(p, a)),
+        _Py_Call(_PyPegen_dummy_name(p),
+                 (b) ? CHECK(_PyPegen_seq_insert_in_front(p, a, ((expr_ty) b)->v.Call.args))
+                     : CHECK(_PyPegen_singleton_seq(p, a)),
                  (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                  EXTRA) }
 kwargs[asdl_seq*]:
-    | a=','.kwarg_or_starred+ ',' b=','.kwarg_or_double_starred+ { join_sequences(p, a, b) }
+    | a=','.kwarg_or_starred+ ',' b=','.kwarg_or_double_starred+ { _PyPegen_join_sequences(p, a, b) }
     | ','.kwarg_or_starred+
     | ','.kwarg_or_double_starred+
 starred_expression[expr_ty]:
     | '*' a=expression { _Py_Starred(a, Load, EXTRA) }
 kwarg_or_starred[KeywordOrStarred*]:
     | a=NAME '=' b=expression {
-        keyword_or_starred(p, CHECK(_Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
-    | a=starred_expression { keyword_or_starred(p, a, 0) }
+        _PyPegen_keyword_or_starred(p, CHECK(_Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
+    | a=starred_expression { _PyPegen_keyword_or_starred(p, a, 0) }
 kwarg_or_double_starred[KeywordOrStarred*]:
     | a=NAME '=' b=expression {
-        keyword_or_starred(p, CHECK(_Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
-    | '**' a=expression { keyword_or_starred(p, CHECK(_Py_keyword(NULL, a, EXTRA)), 1) }
+        _PyPegen_keyword_or_starred(p, CHECK(_Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
+    | '**' a=expression { _PyPegen_keyword_or_starred(p, CHECK(_Py_keyword(NULL, a, EXTRA)), 1) }
 
 # NOTE: star_targets may contain *bitwise_or, targets may not.
 star_targets[expr_ty]:
     | a=star_target !',' { a }
     | a=star_target b=(',' c=star_target { c })* [','] {
-        _Py_Tuple(CHECK(seq_insert_in_front(p, a, b)), Store, EXTRA) }
+        _Py_Tuple(CHECK(_PyPegen_seq_insert_in_front(p, a, b)), Store, EXTRA) }
 star_targets_seq[asdl_seq*]: a=','.star_target+ [','] { a }
 star_target[expr_ty] (memo):
-    | '*' a=bitwise_or { _Py_Starred(CHECK(set_expr_context(p, a, Store)), Store, EXTRA) }
+    | '*' a=bitwise_or { _Py_Starred(CHECK(_PyPegen_set_expr_context(p, a, Store)), Store, EXTRA) }
     | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
     | star_atom
 star_atom[expr_ty]:
-    | a=NAME { set_expr_context(p, a, Store) }
-    | '(' a=star_target ')' { set_expr_context(p, a, Store) }
+    | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
+    | '(' a=star_target ')' { _PyPegen_set_expr_context(p, a, Store) }
     | '(' a=[star_targets_seq] ')' { _Py_Tuple(a, Store, EXTRA) }
     | '[' a=[star_targets_seq] ']' { _Py_List(a, Store, EXTRA) }
 
 inside_paren_ann_assign_target[expr_ty]:
     | ann_assign_subscript_attribute_target
-    | a=NAME { set_expr_context(p, a, Store) }
+    | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
     | '(' a=inside_paren_ann_assign_target ')' { a }
 
 ann_assign_subscript_attribute_target[expr_ty]:
@@ -488,8 +490,8 @@ del_target[expr_ty] (memo):
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Del, EXTRA) }
     | del_t_atom
 del_t_atom[expr_ty]:
-    | a=NAME { set_expr_context(p, a, Del) }
-    | '(' a=del_target ')' { set_expr_context(p, a, Del) }
+    | a=NAME { _PyPegen_set_expr_context(p, a, Del) }
+    | '(' a=del_target ')' { _PyPegen_set_expr_context(p, a, Del) }
     | '(' a=[del_targets] ')' { _Py_Tuple(a, Del, EXTRA) }
     | '[' a=[del_targets] ']' { _Py_List(a, Del, EXTRA) }
 
@@ -501,7 +503,7 @@ target[expr_ty] (memo):
 t_primary[expr_ty]:
     | a=t_primary '.' b=NAME &t_lookahead { _Py_Attribute(a, b->v.Name.id, Load, EXTRA) }
     | a=t_primary '[' b=slices ']' &t_lookahead { _Py_Subscript(a, b, Load, EXTRA) }
-    | a=t_primary b=genexp &t_lookahead { _Py_Call(a, CHECK(singleton_seq(p, b)), NULL, EXTRA) }
+    | a=t_primary b=genexp &t_lookahead { _Py_Call(a, CHECK(_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
     | a=t_primary '(' b=[arguments] ')' &t_lookahead {
         _Py_Call(a,
                  (b) ? ((expr_ty) b)->v.Call.args : NULL,
@@ -510,23 +512,23 @@ t_primary[expr_ty]:
     | a=atom &t_lookahead { a }
 t_lookahead: '(' | '[' | '.'
 t_atom[expr_ty]:
-    | a=NAME { set_expr_context(p, a, Store) }
-    | '(' a=target ')' { set_expr_context(p, a, Store) }
+    | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
+    | '(' a=target ')' { _PyPegen_set_expr_context(p, a, Store) }
     | '(' b=[targets] ')' { _Py_Tuple(b, Store, EXTRA) }
     | '[' b=[targets] ']' { _Py_List(b, Store, EXTRA) }
 
 
 # From here on, there are rules for invalid syntax with specialised error messages
 incorrect_arguments:
-    | args ',' '*' { raise_syntax_error(p, "iterable argument unpacking follows keyword argument unpacking") }
-    | a=args ',' args { arguments_parsing_error(p, a) }
+    | args ',' '*' { _PyPegen_raise_syntax_error(p, "iterable argument unpacking follows keyword argument unpacking") }
+    | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_named_expression:
     | a=expression ':=' expression {
-        raise_syntax_error(p, "cannot use assignment expressions with %s", get_expr_name(a)) }
+        _PyPegen_raise_syntax_error(p, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
 invalid_assignment:
-    | list ':' { raise_syntax_error(p, "only single target (not list) can be annotated") }
-    | tuple ':' { raise_syntax_error(p, "only single target (not tuple) can be annotated") }
+    | list ':' { _PyPegen_raise_syntax_error(p, "only single target (not list) can be annotated") }
+    | tuple ':' { _PyPegen_raise_syntax_error(p, "only single target (not tuple) can be annotated") }
     | expression ':' expression ['=' annotated_rhs] {
-        raise_syntax_error(p, "illegal target for annotation") }
+        _PyPegen_raise_syntax_error(p, "illegal target for annotation") }
     | a=expression ('=' | augassign) (yield_expr | star_expressions) {
-        raise_syntax_error(p, "cannot assign to %s", get_expr_name(a)) }
+        _PyPegen_raise_syntax_error(p, "cannot assign to %s", _PyPegen_get_expr_name(a)) }

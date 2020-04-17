@@ -9,7 +9,7 @@
 // These functions are ported directly from Python/ast.c with some modifications
 // to account for the use of "Parser *p", the fact that don't have parser nodes
 // to pass around and the usage of some specialized APIs present only in this
-// file (like "raise_syntax_error").
+// file (like "_PyPegen_raise_syntax_error").
 
 static int
 warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char)
@@ -25,7 +25,7 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char)
             /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
-            raise_syntax_error(p, "invalid escape sequence \\%c", first_invalid_escape_char);
+            _PyPegen_raise_syntax_error(p, "invalid escape sequence \\%c", first_invalid_escape_char);
         }
         Py_DECREF(msg);
         return -1;
@@ -142,11 +142,11 @@ decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len)
 
 /* s must include the bracketing quote characters, and r, b, u,
    &/or f prefixes (if any), and embedded escape sequences (if any).
-   parsestr parses it, and sets *result to decoded Python string object.
+   _PyPegen_parsestr parses it, and sets *result to decoded Python string object.
    If the string is an f-string, set *fstr and *fstrlen to the unparsed
    string object.  Return 0 if no errors occurred.  */
 int
-parsestr(Parser *p, const char *s, int *bytesmode, int *rawmode, PyObject **result,
+_PyPegen_parsestr(Parser *p, const char *s, int *bytesmode, int *rawmode, PyObject **result,
          const char **fstr, Py_ssize_t *fstrlen)
 {
     size_t len;
@@ -228,7 +228,7 @@ parsestr(Parser *p, const char *s, int *bytesmode, int *rawmode, PyObject **resu
         const char *ch;
         for (ch = s; *ch; ch++) {
             if (Py_CHARMASK(*ch) >= 0x80) {
-                raise_syntax_error(p,
+                _PyPegen_raise_syntax_error(p,
                                    "bytes can only contain ASCII "
                                    "literal characters.");
                 return -1;
@@ -559,7 +559,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         }
     }
     if (s == expr_end) {
-        raise_syntax_error(p, "f-string: empty expression not allowed");
+        _PyPegen_raise_syntax_error(p, "f-string: empty expression not allowed");
         return NULL;
     }
 
@@ -586,9 +586,9 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         return NULL;
     }
 
-    Parser *p2 = Parser_New(tok, Py_fstring_input, NULL, p->arena);
+    Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, NULL, p->arena);
 
-    expr = run_parser(p2);
+    expr = _PyPegen_run_parser(p2);
 
     if (expr == NULL) {
         goto exit;
@@ -602,7 +602,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     result = expr;
 
 exit:
-    Parser_Free(p2);
+    _PyPegen_Parser_Free(p2);
     PyTokenizer_Free(tok);
     return result;
 }
@@ -662,7 +662,7 @@ fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
                    single '}' is not allowed. */
                 if (ch == '}') {
                     *str = s - 1;
-                    raise_syntax_error(p, "f-string: single '}' is not allowed");
+                    _PyPegen_raise_syntax_error(p, "f-string: single '}' is not allowed");
                     return -1;
                 }
             }
@@ -742,7 +742,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
 
     /* Can only nest one level deep. */
     if (recurse_lvl >= 2) {
-        raise_syntax_error(p, "f-string: expressions nested too deeply");
+        _PyPegen_raise_syntax_error(p, "f-string: expressions nested too deeply");
         goto error;
     }
 
@@ -768,7 +768,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         if (ch == '\\') {
             /* Error: can't include a backslash character, inside
                parens or strings or not. */
-            raise_syntax_error(p,
+            _PyPegen_raise_syntax_error(p,
                       "f-string expression part "
                       "cannot include a backslash");
             goto error;
@@ -815,7 +815,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
             quote_char = ch;
         } else if (ch == '[' || ch == '{' || ch == '(') {
             if (nested_depth >= MAXLEVEL) {
-                raise_syntax_error(p, "f-string: too many nested parenthesis");
+                _PyPegen_raise_syntax_error(p, "f-string: too many nested parenthesis");
                 goto error;
             }
             parenstack[nested_depth] = ch;
@@ -823,7 +823,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         } else if (ch == '#') {
             /* Error: can't include a comment character, inside parens
                or not. */
-            raise_syntax_error(p, "f-string expression part cannot include '#'");
+            _PyPegen_raise_syntax_error(p, "f-string expression part cannot include '#'");
             goto error;
         } else if (nested_depth == 0 &&
                    (ch == '!' || ch == ':' || ch == '}' ||
@@ -854,7 +854,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
             break;
         } else if (ch == ']' || ch == '}' || ch == ')') {
             if (!nested_depth) {
-                raise_syntax_error(p, "f-string: unmatched '%c'", ch);
+                _PyPegen_raise_syntax_error(p, "f-string: unmatched '%c'", ch);
                 goto error;
             }
             nested_depth--;
@@ -863,7 +863,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                   (opening == '[' && ch == ']') ||
                   (opening == '{' && ch == '}')))
             {
-                raise_syntax_error(p,
+                _PyPegen_raise_syntax_error(p,
                           "f-string: closing parenthesis '%c' "
                           "does not match opening parenthesis '%c'",
                           ch, opening);
@@ -879,12 +879,12 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
        expression. But, we can produce a better error message, so
        let's just do that.*/
     if (quote_char) {
-        raise_syntax_error(p, "f-string: unterminated string");
+        _PyPegen_raise_syntax_error(p, "f-string: unterminated string");
         goto error;
     }
     if (nested_depth) {
         int opening = parenstack[nested_depth - 1];
-        raise_syntax_error(p, "f-string: unmatched '%c'", opening);
+        _PyPegen_raise_syntax_error(p, "f-string: unmatched '%c'", opening);
         goto error;
     }
 
@@ -928,7 +928,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
 
         /* Validate the conversion. */
         if (!(conversion == 's' || conversion == 'r' || conversion == 'a')) {
-            raise_syntax_error(p,
+            _PyPegen_raise_syntax_error(p,
                       "f-string: invalid conversion character: "
                       "expected 's', 'r', or 'a'");
             goto error;
@@ -978,7 +978,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     return 0;
 
 unexpected_end_of_string:
-    raise_syntax_error(p, "f-string: expecting '}'");
+    _PyPegen_raise_syntax_error(p, "f-string: expecting '}'");
     /* Falls through to error. */
 
 error:
@@ -1167,7 +1167,7 @@ FstringParser_check_invariants(FstringParser *state)
 #endif
 
 void
-FstringParser_Init(FstringParser *state)
+_PyPegen_FstringParser_Init(FstringParser *state)
 {
     state->last_str = NULL;
     state->fmode = 0;
@@ -1176,7 +1176,7 @@ FstringParser_Init(FstringParser *state)
 }
 
 void
-FstringParser_Dealloc(FstringParser *state)
+_PyPegen_FstringParser_Dealloc(FstringParser *state)
 {
     FstringParser_check_invariants(state);
 
@@ -1198,7 +1198,7 @@ make_str_node_and_del(Parser *p, PyObject **str, Token* first_token, Token *last
     }
     const char* the_str = PyBytes_AsString(first_token->bytes);
     if (the_str && the_str[0] == 'u') {
-        kind = new_identifier(p, "u");
+        kind = _PyPegen_new_identifier(p, "u");
     }
 
     if (kind == NULL && PyErr_Occurred()) {
@@ -1214,7 +1214,7 @@ make_str_node_and_del(Parser *p, PyObject **str, Token* first_token, Token *last
 /* Add a non-f-string (that is, a regular literal string). str is
    decref'd. */
 int
-FstringParser_ConcatAndDel(FstringParser *state, PyObject *str)
+_PyPegen_FstringParser_ConcatAndDel(FstringParser *state, PyObject *str)
 {
     FstringParser_check_invariants(state);
 
@@ -1241,7 +1241,7 @@ FstringParser_ConcatAndDel(FstringParser *state, PyObject *str)
 /* Parse an f-string. The f-string is in *str to end, with no
    'f' or quotes. */
 int
-FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char **str,
+_PyPegen_FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char **str,
                             const char *end, int raw, int recurse_lvl,
                             Token *first_token, Token* t, Token *last_token)
 {
@@ -1265,12 +1265,12 @@ FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char **str,
             return -1;
 
         /* Add the literal, if any. */
-        if (literal && FstringParser_ConcatAndDel(state, literal) < 0) {
+        if (literal && _PyPegen_FstringParser_ConcatAndDel(state, literal) < 0) {
             Py_XDECREF(expr_text);
             return -1;
         }
         /* Add the expr_text, if any. */
-        if (expr_text && FstringParser_ConcatAndDel(state, expr_text) < 0) {
+        if (expr_text && _PyPegen_FstringParser_ConcatAndDel(state, expr_text) < 0) {
             return -1;
         }
 
@@ -1307,11 +1307,11 @@ FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char **str,
        string. Otherwise, we must be at a right brace. */
 
     if (recurse_lvl == 0 && *str < end-1) {
-        raise_syntax_error(p, "f-string: unexpected end of string");
+        _PyPegen_raise_syntax_error(p, "f-string: unexpected end of string");
         return -1;
     }
     if (recurse_lvl != 0 && **str != '}') {
-        raise_syntax_error(p, "f-string: expecting '}'");
+        _PyPegen_raise_syntax_error(p, "f-string: expecting '}'");
         return -1;
     }
 
@@ -1322,7 +1322,7 @@ FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char **str,
 /* Convert the partial state reflected in last_str and expr_list to an
    expr_ty. The expr_ty can be a Constant, or a JoinedStr. */
 expr_ty
-FstringParser_Finish(Parser *p, FstringParser *state, Token* first_token,
+_PyPegen_FstringParser_Finish(Parser *p, FstringParser *state, Token* first_token,
                      Token *last_token)
 {
     asdl_seq *seq;
@@ -1360,7 +1360,7 @@ FstringParser_Finish(Parser *p, FstringParser *state, Token* first_token,
                          last_token->end_lineno, last_token->end_col_offset, p->arena);
 
 error:
-    FstringParser_Dealloc(state);
+    _PyPegen_FstringParser_Dealloc(state);
     return NULL;
 }
 
@@ -1373,12 +1373,12 @@ fstring_parse(Parser *p, const char **str, const char *end, int raw,
 {
     FstringParser state;
 
-    FstringParser_Init(&state);
-    if (FstringParser_ConcatFstring(p, &state, str, end, raw, recurse_lvl,
+    _PyPegen_FstringParser_Init(&state);
+    if (_PyPegen_FstringParser_ConcatFstring(p, &state, str, end, raw, recurse_lvl,
                                     first_token, t, last_token) < 0) {
-        FstringParser_Dealloc(&state);
+        _PyPegen_FstringParser_Dealloc(&state);
         return NULL;
     }
 
-    return FstringParser_Finish(p, &state, t, t);
+    return _PyPegen_FstringParser_Finish(p, &state, t, t);
 }

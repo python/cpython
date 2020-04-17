@@ -15,7 +15,7 @@ PyPegen_ASTFromString(const char *str, int mode, PyCompilerFlags *flags, PyArena
     }
 
     int iflags = flags != NULL ? flags->cf_flags : PyCF_IGNORE_COOKIE;
-    mod_ty result = run_parser_from_string(str, mode, filename_ob, iflags, arena);
+    mod_ty result = _PyPegen_run_parser_from_string(str, mode, filename_ob, iflags, arena);
     Py_XDECREF(filename_ob);
     return result;
 }
@@ -28,7 +28,7 @@ PyPegen_ASTFromFile(const char *filename, int mode, PyArena *arena)
         return NULL;
     }
 
-    mod_ty result = run_parser_from_file(filename, mode, filename_ob, arena);
+    mod_ty result = _PyPegen_run_parser_from_file(filename, mode, filename_ob, arena);
     Py_XDECREF(filename_ob);
     return result;
 }
@@ -41,7 +41,7 @@ PyPegen_ASTFromFileObject(FILE *fp, PyObject *filename_ob, int mode,
     if (PySys_Audit("compile", "OO", Py_None, filename_ob) < 0) {
         return NULL;
     }
-    return run_parser_from_file_pointer(fp, mode, filename_ob, enc, ps1, ps2,
+    return _PyPegen_run_parser_from_file_pointer(fp, mode, filename_ob, enc, ps1, ps2,
                                         errcode, arena);
 }
 
