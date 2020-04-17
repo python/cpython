@@ -1,0 +1,2 @@
+Add :func:`random.randbytes` function and
+:meth:`random.Random.randbytes` method to generate random bytes.

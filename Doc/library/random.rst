@@ -112,6 +112,13 @@ Bookkeeping functions
    :meth:`randrange` to handle arbitrarily large ranges.
 
 
+.. function:: randbytes(n)
+
+   Generate *n* random bytes.
+
+   .. versionadded:: 3.9
+
+
 Functions for integers
 ----------------------
 
