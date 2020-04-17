@@ -2135,7 +2135,7 @@ static PyObject *
 interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Currently, 0 is always the main interpreter.
-    PY_INT64_T id = 0;
+    int64_t id = 0;
     return _PyInterpreterID_New(id);
 }
 
