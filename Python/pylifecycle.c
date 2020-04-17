@@ -2354,7 +2354,7 @@ int _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 
     is->pyexitfunc[n] = func;
     is->pyexitmodule[n] = module;
-    return 0;
+    return is->nexitmodule;
 }
 
 static void
