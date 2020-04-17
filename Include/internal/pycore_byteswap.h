@@ -39,8 +39,8 @@ _Py_bswap16(uint16_t word)
     return _byteswap_ushort(word);
 #else
     // Portable implementation which doesn't rely on circular bit shift
-    return ( ((word >> 8) & UINT16_C(0x00FF))
-           | ((word << 8) & UINT16_C(0xFF00)));
+    return ( ((word & UINT16_C(0x00FF)) << 8)
+           | ((word & UINT16_C(0xFF00)) >> 8));
 #endif
 }
 
