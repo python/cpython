@@ -24,29 +24,29 @@ on:
     - '**/*.rst'
 
 jobs:
-  # build_win32:
-  #   name: 'Windows (x86)'
-  #   runs-on: windows-latest
-  #   steps:
-  #   - uses: actions/checkout@v1
-  #   - name: Build CPython
-  #     run: .\PCbuild\build.bat -e -p Win32
-  #   - name: Display build info
-  #     run: .\python.bat -m test.pythoninfo
-  #   - name: Tests
-  #     run: .\PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+  build_win32:
+    name: 'Windows (x86)'
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build CPython
+      run: .\PCbuild\build.bat -e -p Win32
+    - name: Display build info
+      run: .\python.bat -m test.pythoninfo
+    - name: Tests
+      run: .\PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
-  # build_win_amd64:
-  #   name: 'Windows (x64)'
-  #   runs-on: windows-latest
-  #   steps:
-  #   - uses: actions/checkout@v1
-  #   - name: Build CPython
-  #     run: .\PCbuild\build.bat -e -p x64
-  #   - name: Display build info
-  #     run: .\python.bat -m test.pythoninfo
-  #   - name: Tests
-  #     run: .\PCbuild\rt.bat -x64 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+  build_win_amd64:
+    name: 'Windows (x64)'
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build CPython
+      run: .\PCbuild\build.bat -e -p x64
+    - name: Display build info
+      run: .\python.bat -m test.pythoninfo
+    - name: Tests
+      run: .\PCbuild\rt.bat -x64 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
   build_macos:
     name: 'macOS'

@@ -261,7 +261,7 @@ error:
 
 void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
     int kwarg_unpacking = 0;
-    for (int i = 0, l = asdl_seq_LEN(e->v.Call.keywords); i < l; i++) {
+    for (Py_ssize_t i = 0, l = asdl_seq_LEN(e->v.Call.keywords); i < l; i++) {
         keyword_ty keyword = asdl_seq_GET(e->v.Call.keywords, i);
         if (!keyword->arg) {
             kwarg_unpacking = 1;
@@ -896,7 +896,7 @@ static int
 _get_flattened_seq_size(asdl_seq *seqs)
 {
     int size = 0;
-    for (int i = 0, l = asdl_seq_LEN(seqs); i < l; i++) {
+    for (Py_ssize_t i = 0, l = asdl_seq_LEN(seqs); i < l; i++) {
         asdl_seq *inner_seq = asdl_seq_GET(seqs, i);
         size += asdl_seq_LEN(inner_seq);
     }
@@ -916,7 +916,7 @@ _PyPegen_seq_flatten(Parser *p, asdl_seq *seqs)
     }
 
     int flattened_seq_idx = 0;
-    for (int i = 0, l = asdl_seq_LEN(seqs); i < l; i++) {
+    for (Py_ssize_t i = 0, l = asdl_seq_LEN(seqs); i < l; i++) {
         asdl_seq *inner_seq = asdl_seq_GET(seqs, i);
         for (int j = 0, li = asdl_seq_LEN(inner_seq); j < li; j++) {
             asdl_seq_SET(flattened_seq, flattened_seq_idx++, asdl_seq_GET(inner_seq, j));
@@ -987,7 +987,7 @@ int
 _PyPegen_seq_count_dots(asdl_seq *seq)
 {
     int number_of_dots = 0;
-    for (int i = 0, l = asdl_seq_LEN(seq); i < l; i++) {
+    for (Py_ssize_t i = 0, l = asdl_seq_LEN(seq); i < l; i++) {
         Token *current_expr = asdl_seq_GET(seq, i);
         switch (current_expr->type) {
             case ELLIPSIS:
@@ -1030,7 +1030,7 @@ _PyPegen_map_names_to_ids(Parser *p, asdl_seq *seq)
     if (!new_seq) {
         return NULL;
     }
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty e = asdl_seq_GET(seq, i);
         asdl_seq_SET(new_seq, i, e->v.Name.id);
     }
@@ -1061,7 +1061,7 @@ _PyPegen_get_cmpops(Parser *p, asdl_seq *seq)
     if (!new_seq) {
         return NULL;
     }
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         CmpopExprPair *pair = asdl_seq_GET(seq, i);
         asdl_seq_SET(new_seq, i, pair->cmpop);
     }
@@ -1078,7 +1078,7 @@ _PyPegen_get_exprs(Parser *p, asdl_seq *seq)
     if (!new_seq) {
         return NULL;
     }
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         CmpopExprPair *pair = asdl_seq_GET(seq, i);
         asdl_seq_SET(new_seq, i, pair->expr);
     }
@@ -1098,7 +1098,7 @@ _set_seq_context(Parser *p, asdl_seq *seq, expr_context_ty ctx)
     if (!new_seq) {
         return NULL;
     }
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty e = asdl_seq_GET(seq, i);
         asdl_seq_SET(new_seq, i, _PyPegen_set_expr_context(p, e, ctx));
     }
@@ -1195,7 +1195,7 @@ _PyPegen_get_keys(Parser *p, asdl_seq *seq)
     if (!new_seq) {
         return NULL;
     }
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         KeyValuePair *pair = asdl_seq_GET(seq, i);
         asdl_seq_SET(new_seq, i, pair->key);
     }
@@ -1211,7 +1211,7 @@ _PyPegen_get_values(Parser *p, asdl_seq *seq)
     if (!new_seq) {
         return NULL;
     }
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         KeyValuePair *pair = asdl_seq_GET(seq, i);
         asdl_seq_SET(new_seq, i, pair->value);
     }
@@ -1269,10 +1269,10 @@ _PyPegen_join_sequences(Parser *p, asdl_seq *a, asdl_seq *b)
     }
 
     int k = 0;
-    for (int i = 0; i < first_len; i++) {
+    for (Py_ssize_t i = 0; i < first_len; i++) {
         asdl_seq_SET(new_seq, k++, asdl_seq_GET(a, i));
     }
-    for (int i = 0; i < second_len; i++) {
+    for (Py_ssize_t i = 0; i < second_len; i++) {
         asdl_seq_SET(new_seq, k++, asdl_seq_GET(b, i));
     }
 
@@ -1287,7 +1287,7 @@ _get_names(Parser *p, asdl_seq *names_with_defaults)
     if (!seq) {
         return NULL;
     }
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         NameDefaultPair *pair = asdl_seq_GET(names_with_defaults, i);
         asdl_seq_SET(seq, i, pair->arg);
     }
@@ -1302,7 +1302,7 @@ _get_defaults(Parser *p, asdl_seq *names_with_defaults)
     if (!seq) {
         return NULL;
     }
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         NameDefaultPair *pair = asdl_seq_GET(names_with_defaults, i);
         asdl_seq_SET(seq, i, pair->value);
     }
@@ -1534,7 +1534,7 @@ static int
 _seq_number_of_starred_exprs(asdl_seq *seq)
 {
     int n = 0;
-    for (int i = 0, l = asdl_seq_LEN(seq); i < l; i++) {
+    for (Py_ssize_t i = 0, l = asdl_seq_LEN(seq); i < l; i++) {
         KeywordOrStarred *k = asdl_seq_GET(seq, i);
         if (!k->is_keyword) {
             n++;
@@ -1557,7 +1557,7 @@ _PyPegen_seq_extract_starred_exprs(Parser *p, asdl_seq *kwargs)
     }
 
     int idx = 0;
-    for (int i = 0, len = asdl_seq_LEN(kwargs); i < len; i++) {
+    for (Py_ssize_t i = 0, len = asdl_seq_LEN(kwargs); i < len; i++) {
         KeywordOrStarred *k = asdl_seq_GET(kwargs, i);
         if (!k->is_keyword) {
             asdl_seq_SET(new_seq, idx++, k->element);
@@ -1581,7 +1581,7 @@ _PyPegen_seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
     }
 
     int idx = 0;
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         KeywordOrStarred *k = asdl_seq_GET(kwargs, i);
         if (k->is_keyword) {
             asdl_seq_SET(new_seq, idx++, k->element);
@@ -1605,7 +1605,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
     FstringParser state;
     _PyPegen_FstringParser_Init(&state);
 
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         Token *t = asdl_seq_GET(strings, i);
 
         int this_bytesmode;

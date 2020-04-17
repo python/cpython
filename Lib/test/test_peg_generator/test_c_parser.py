@@ -1,8 +1,10 @@
 import ast
+import contextlib
 import traceback
 import tempfile
 import shutil
 import unittest
+import sys
 
 from test import test_tools
 from test.test_peg_generator.ast_dump import ast_dump
@@ -24,7 +26,8 @@ class TestCParser(unittest.TestCase):
         self.tmp_path = tempfile.mkdtemp()
 
     def tearDown(self):
-        shutil.rmtree(self.tmp_path)
+        with contextlib.suppress(PermissionError):
+            shutil.rmtree(self.tmp_path)
 
     def check_input_strings_for_grammar(
         self,

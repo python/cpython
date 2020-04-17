@@ -212,6 +212,8 @@
     <ClInclude Include="..\Include\parsetok.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
     <ClInclude Include="..\Include\picklebufobject.h" />
+    <ClInclude Include="..\Include\pegen_interface.h" />
+    <ClInclude Include="..\Include\pyhash.h" />
     <ClInclude Include="..\Include\pyhash.h" />
     <ClInclude Include="..\Include\py_curses.h" />
     <ClInclude Include="..\Include\pyarena.h" />
@@ -275,6 +277,8 @@
     <ClInclude Include="..\Objects\unicodetype_db.h" />
     <ClInclude Include="..\Parser\parser.h" />
     <ClInclude Include="..\Parser\tokenizer.h" />
+    <ClInclude Include="..\Parser\pegen\parse_string.h" />
+    <ClInclude Include="..\Parser\pegen\pegen.h" />
     <ClInclude Include="..\PC\errmap.h" />
     <ClInclude Include="..\PC\pyconfig.h" />
     <ClInclude Include="..\Python\ceval_gil.h" />
@@ -337,6 +341,7 @@
     <ClCompile Include="..\Modules\_opcode.c" />
     <ClCompile Include="..\Modules\_operator.c" />
     <ClCompile Include="..\Modules\parsermodule.c" />
+    <ClCompile Include="..\Modules\peg_parser.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\rotatingtree.c" />
     <ClCompile Include="..\Modules\sha1module.c" />
@@ -418,6 +423,10 @@
     <ClCompile Include="..\Parser\parsetok.c" />
     <ClCompile Include="..\Parser\tokenizer.c" />
     <ClCompile Include="..\Parser\token.c" />
+    <ClCompile Include="..\Parser\pegen\pegen.c" />
+    <ClCompile Include="..\Parser\pegen\parse.c" />
+    <ClCompile Include="..\Parser\pegen\parse_string.c" />
+    <ClCompile Include="..\Parser\pegen\peg_api.c" />
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\winreg.c" />
     <ClCompile Include="..\PC\config.c" />
