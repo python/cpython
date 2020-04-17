@@ -739,6 +739,12 @@ class SystemRandom(Random):
         x = int.from_bytes(_urandom(numbytes), 'big')
         return x >> (numbytes * 8 - k)                # trim excess bits
 
+    def randbytes(self, n):
+        """Generate n random bytes."""
+        # os.urandom(n) fails with ValueError for n < 0
+        # and returns an empty bytes string for n == 0.
+        return _urandom(n)
+
     def seed(self, *args, **kwds):
         "Stub method.  Not used for a system random number generator."
         return None
@@ -819,6 +825,7 @@ weibullvariate = _inst.weibullvariate
 getstate = _inst.getstate
 setstate = _inst.setstate
 getrandbits = _inst.getrandbits
+randbytes = _inst.randbytes
 
 if hasattr(_os, "fork"):
     _os.register_at_fork(after_in_child=_inst.seed)
