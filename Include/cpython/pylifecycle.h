@@ -42,7 +42,7 @@ PyAPI_FUNC(void) _Py_NO_RETURN Py_ExitStatusException(PyStatus err);
 /* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level
  * exit functions.
  */
-PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(PyObject *), PyObject *);
+PyAPI_FUNC(int) _Py_PyAtExit(void (*func)(PyObject *), PyObject *);
 
 /* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL. */
 PyAPI_FUNC(void) _Py_RestoreSignals(void);

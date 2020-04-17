@@ -327,7 +327,9 @@ atexit_exec(PyObject *m) {
     if (modstate->atexit_callbacks == NULL)
         return -1;
 
-    _Py_PyAtExit(atexit_callfuncs, m);
+    if (_Py_PyAtExit(atexit_callfuncs, m) < 0) {
+        return -1;
+    }
     return 0;
 }
 

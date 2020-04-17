@@ -2340,25 +2340,33 @@ Py_ExitStatusException(PyStatus status)
 /* Clean up and exit */
 
 /* For the atexit module. */
-void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
+int _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
     PyInterpreterState *is = _PyInterpreterState_GET();
-
+#define NEXITMODULE 32
+    if (is->nexitmodule >= NEXITMODULE) {
+        PyErr_SetString(PyExc_ImportError, "atexit module can not be loaded more than 32");
+        return -1;
+    }
+    int n = is->nexitmodule++;
     /* Guard against API misuse (see bpo-17852) */
-    assert(is->pyexitfunc == NULL || is->pyexitfunc == func);
+    assert(is->pyexitfunc[n] == NULL || is->pyexitfunc[n] == func);
 
-    is->pyexitfunc = func;
-    is->pyexitmodule = module;
+    is->pyexitfunc[n] = func;
+    is->pyexitmodule[n] = module;
+    return 0;
 }
 
 static void
 call_py_exitfuncs(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    if (interp->pyexitfunc == NULL)
-        return;
-
-    (*interp->pyexitfunc)(interp->pyexitmodule);
+    for (int i = interp->nexitmodule -1; i >= 0; i--) {
+        if (interp->pyexitfunc[i] == NULL) {
+            continue;
+        }
+        (*interp->pyexitfunc[i])(interp->pyexitmodule[i]);
+    }
     _PyErr_Clear(tstate);
 }
 

@@ -267,6 +267,7 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
+    interp->nexitmodule = 0;
     interp->tstate_next_unique_id = 0;
 
     interp->audit_hooks = NULL;
