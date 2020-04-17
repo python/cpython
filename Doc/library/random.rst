@@ -112,7 +112,7 @@ Bookkeeping functions
    :meth:`randrange` to handle arbitrarily large ranges.
 
    .. versionchanged:: 3.9
-      This method now accepts ``0`` for *k*.
+      This method now accepts zero for *k*.
 
 
 Functions for integers
