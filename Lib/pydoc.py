@@ -1445,7 +1445,7 @@ location listed above.
         if not doc:
             doc = getdoc(object)
         if doc:
-            line += '\n' + self.indent(str(doc))
+            line += '\n' + self.indent(str(doc)) + '\n'
         return line
 
 class _PlainTextDoc(TextDoc):
