@@ -1991,6 +1991,13 @@ case "$CC" in
     ;;
 esac
 
+# -fwrapv for new icc versions
+case "$CC" in
+*icc*)
+    CFLAGS_NODIST="$CFLAGS_NODIST -fwrapv"
+    ;;
+esac
+
 if test "$assertions" = 'true'; then
   :
 else
