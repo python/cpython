@@ -743,7 +743,7 @@ STRINGLIB(SWAB4)(STRINGLIB_CHAR ch)
     return (word << 24);
 #elif STRINGLIB_SIZEOF_CHAR == 2
     /* high bytes are zero */
-    return ((word & 0x00FFu) << 24) + ((word & 0xFF00u) << 8);
+    return ((word & 0x00FFu) << 24) | ((word & 0xFF00u) << 8);
 #else
     return _Py_bswap32(word);
 #endif
