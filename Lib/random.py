@@ -261,6 +261,8 @@ class Random(_random.Random):
     def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Raises ValueError if n==0."
 
+        if not n:
+            raise ValueError("Boundary cannot be zero")
         getrandbits = self.getrandbits
         k = n.bit_length()  # don't use (n-1) here because n can be 1
         r = getrandbits(k)          # 0 <= r < 2**k
@@ -733,8 +735,8 @@ class SystemRandom(Random):
 
     def getrandbits(self, k):
         """getrandbits(k) -> x.  Generates an int with k random bits."""
-        if k <= 0:
-            raise ValueError('number of bits must be greater than zero')
+        if k < 0:
+            raise ValueError('number of bits must be non-negative')
         numbytes = (k + 7) // 8                       # bits / 8 and rounded up
         x = int.from_bytes(_urandom(numbytes), 'big')
         return x >> (numbytes * 8 - k)                # trim excess bits

@@ -474,11 +474,14 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
     uint32_t *wordarray;
     PyObject *result;
 
-    if (k <= 0) {
+    if (k < 0) {
         PyErr_SetString(PyExc_ValueError,
-                        "number of bits must be greater than zero");
+                        "number of bits must be non-negative");
         return NULL;
     }
+
+    if (k == 0)
+        return PyLong_FromLong(0);
 
     if (k <= 32)  /* Fast path */
         return PyLong_FromUnsignedLong(genrand_uint32(self) >> (32 - k));
