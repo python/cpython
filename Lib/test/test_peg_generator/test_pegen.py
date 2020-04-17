@@ -726,4 +726,3 @@ class TestGrammarVisualizer(unittest.TestCase):
         )
 
         self.assertEqual(output, expected_output)
-

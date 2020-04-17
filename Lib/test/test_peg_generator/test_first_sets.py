@@ -62,7 +62,7 @@ class TestFirstSets(unittest.TestCase):
     def test_optional_literal(self) -> None:
         grammar = """
         start: sum NEWLINE
-        sum: '+' ? term 
+        sum: '+' ? term
         term: NUMBER
         """
         self.assertEqual(self.calculate_first_sets(grammar), {

@@ -755,4 +755,3 @@ class ASTGenerationTest(unittest.TestCase):
         n=201
         with self.assertRaisesRegex(SyntaxError, "too many nested parentheses"):
             peg_parser.parse_string(n*'(' + ')'*n)
-
