@@ -15,6 +15,9 @@ TIMEFILE = data/xxl.py
 TESTDIR = .
 TESTFLAGS = --short
 
+data/xxl.py:
+	$(PYTHON) -m zipfile -e data/xxl.zip data
+
 build: peg_extension/parse.c
 
 peg_extension/parse.c: $(GRAMMAR) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen/pegen.c ../../Parser/pegen/parse_string.c ../../Parser/pegen/*.h pegen/grammar_parser.py
@@ -22,6 +25,7 @@ peg_extension/parse.c: $(GRAMMAR) pegen/*.py peg_extension/peg_extension.c ../..
 
 clean:
 	-rm -f peg_extension/*.o peg_extension/*.so peg_extension/parse.c
+	-rm -f data/xxl.py
 
 dump: peg_extension/parse.c
 	cat -n $(TESTFILE)
@@ -50,27 +54,27 @@ parse: peg_extension/parse.c
 check: peg_extension/parse.c
 	$(PYTHON) -c "from peg_extension import parse; t = parse.parse_file('$(TESTFILE)', mode=0)"
 
-stats: peg_extension/parse.c
+stats: peg_extension/parse.c data/xxl.py
 	$(PYTHON) -c "from peg_extension import parse; t = parse.parse_file('$(TIMEFILE)', mode=0); parse.dump_memo_stats()" >@data
 	$(PYTHON) scripts/joinstats.py @data
 
 time: time_compile
 
-time_compile: peg_extension/parse.c
+time_compile: peg_extension/parse.c data/xxl.py
 	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl compile
 
-time_parse: peg_extension/parse.c
+time_parse: peg_extension/parse.c data/xxl.py
 	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl parse
 
-time_check: peg_extension/parse.c
+time_check: peg_extension/parse.c data/xxl.py
 	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl check
 
 time_stdlib: time_stdlib_compile
 
-time_stdlib_compile:
+time_stdlib_compile: data/xxl.py
 	$(PYTHON) scripts/benchmark.py --parser=cpython --target=xxl compile
 
-time_stdlib_parse:
+time_stdlib_parse: data/xxl.py
 	$(PYTHON) scripts/benchmark.py --parser=cpython --target=xxl parse
 
 test_local:
