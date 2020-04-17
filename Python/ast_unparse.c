@@ -829,7 +829,7 @@ append_named_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     APPEND_STR_IF(level > PR_TUPLE, "(");
     APPEND_EXPR(e->v.NamedExpr.target, PR_ATOM);
-    APPEND_STR(":=");
+    APPEND_STR(" := ");
     APPEND_EXPR(e->v.NamedExpr.value, PR_ATOM);
     APPEND_STR_IF(level > PR_TUPLE, ")");
     return 0;

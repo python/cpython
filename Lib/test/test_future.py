@@ -296,8 +296,8 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('f((x for x in a), 2)')
         eq('(((a)))', 'a')
         eq('(((a, b)))', '(a, b)')
-        eq("(x:=10)")
-        eq("f'{(x:=10):=10}'")
+        eq("(x := 10)")
+        eq("f'{(x := 10):=10}'")
         eq("1 + 2 + 3")
 
     def test_fstring_debug_annotations(self):
