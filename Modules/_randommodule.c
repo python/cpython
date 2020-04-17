@@ -534,31 +534,25 @@ _random_Random_randbytes_impl(RandomObject *self, Py_ssize_t n)
         return NULL;
     }
 
-    if (n == 0) {
-        /* Don't consume any entropy */
-        return PyBytes_FromStringAndSize(NULL, 0);
-    }
-
     PyObject *bytes = PyBytes_FromStringAndSize(NULL, n);
     if (bytes == NULL) {
         return NULL;
     }
     uint8_t *ptr = (uint8_t *)PyBytes_AS_STRING(bytes);
 
-    do {
+    for (; n; ptr += 4, n -= 4) {
         uint32_t word = genrand_uint32(self);
-#if PY_LITTLE_ENDIAN
-        /* Convert to big endian */
+#if PY_BIG_ENDIAN
+        /* Convert to little endian */
         word = _Py_bswap32(word);
 #endif
         if (n < 4) {
-            memcpy(ptr, &word, n);
+            /* Drop least significant bits */
+            memcpy(ptr, (uint8_t *)&word + (4 - n), n);
             break;
         }
         memcpy(ptr, &word, 4);
-        ptr += 4;
-        n -= 4;
-    } while (n);
+    }
 
     return bytes;
 }
