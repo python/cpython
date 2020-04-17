@@ -808,7 +808,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_datetime', ['_datetimemodule.c'],
                            libraries=['m']))
         # random number generator implemented in C
-        self.add(Extension("_random", ["_randommodule.c"]))
+        self.add(Extension("_random", ["_randommodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # bisect
         self.add(Extension("_bisect", ["_bisectmodule.c"]))
         # heapq

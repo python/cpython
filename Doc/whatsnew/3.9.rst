@@ -353,6 +353,12 @@ The documentation string is now shown not only for class, function,
 method etc, but for any object that has its own ``__doc__`` attribute.
 (Contributed by Serhiy Storchaka in :issue:`40257`.)
 
+random
+------
+
+Add a new :attr:`random.Random.randbytes` method: generate random bytes.
+(Contributed by Victor Stinner in :issue:`40286`.)
+
 signal
 ------
 
