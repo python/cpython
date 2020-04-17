@@ -80,6 +80,10 @@ htmlhelp_basename = 'python' + release.replace('.', '')
 # Split the index
 html_split_index = True
 
+html_context = {
+    'outdated': True
+}
+
 
 # Options for LaTeX output
 # ------------------------
