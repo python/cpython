@@ -110,7 +110,7 @@ Deprecation header
 You can define the ``outdated`` variable in ``html_context`` to show a
 red banner on each page redirecting to the "latest" version.
 
-Each page links to the corresponding page on ``/3/``.
+Each page links to the corresponding page on ``https://docs.python.org/3/``.
 
 
 Contributing
