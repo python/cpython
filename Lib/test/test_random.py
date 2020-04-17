@@ -758,7 +758,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         # Mersenne Twister randbytes() is deterministic
         # and does not depend on the endian and bitness.
         seed = 8675309
-        expected = b'f\xf9\xa836\xd0\xa4\xf4\x82\x9f\x8f\x19\xf0eo\x02'
+        expected = b'3\xa8\xf9f\xf4\xa4\xd06\x19\x8f\x9f\x82\x02oe\xf0'
 
         self.gen.seed(seed)
         self.assertEqual(self.gen.randbytes(16), expected)
@@ -773,18 +773,34 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual(b''.join([self.gen.randbytes(4) for _ in range(4)]),
                          expected)
 
-        # Each randbytes(2) or randbytes(3) call consumes 4 bytes of entropy
+        # Each randbytes(1), randbytes(2) or randbytes(3) call consumes
+        # 4 bytes of entropy
         self.gen.seed(seed)
-        expected2 = b''.join(expected[i:i + 2]
+        expected1 = expected[3::4]
+        self.assertEqual(b''.join(self.gen.randbytes(1) for _ in range(4)),
+                         expected1)
+
+        self.gen.seed(seed)
+        expected2 = b''.join(expected[i + 2: i + 4]
                              for i in range(0, len(expected), 4))
         self.assertEqual(b''.join(self.gen.randbytes(2) for _ in range(4)),
                          expected2)
 
         self.gen.seed(seed)
-        expected3 = b''.join(expected[i:i + 3]
+        expected3 = b''.join(expected[i + 1: i + 4]
                              for i in range(0, len(expected), 4))
         self.assertEqual(b''.join(self.gen.randbytes(3) for _ in range(4)),
                          expected3)
+
+    def test_randbytes_getrandbits(self):
+        # There is a simple relation between randbytes() and getrandbits()
+        seed = 2849427419
+        gen2 = random.Random()
+        self.gen.seed(seed)
+        gen2.seed(seed)
+        for n in range(9):
+            self.assertEqual(self.gen.randbytes(n),
+                             gen2.getrandbits(n * 8).to_bytes(n, 'little'))
 
 
 def gamma(z, sqrt2pi=(2.0*pi)**0.5):
