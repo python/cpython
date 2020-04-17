@@ -39,7 +39,8 @@ Options and arguments (and corresponding environment variables):\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : debug output from parser; also PYTHONDEBUG=x\n\
--p arg : use the new PEG parser, if arg is new; if arg is old, use the old\n\
+-p arg : select what parser to use: if arg is 'new' use the new PEG parser and\n\
+         if arg is 'old' use the traditional parser. Default is 'new'.\n\
          parser; also PYTHONPARSER=arg\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
 -h     : print this help message and exit (also --help)\n\
@@ -636,6 +637,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
+    config->use_peg = 1;
 }
 
 
@@ -646,7 +648,6 @@ config_init_defaults(PyConfig *config)
 
     config->isolated = 0;
     config->use_environment = 1;
-    config->use_peg = 0;
     config->site_import = 1;
     config->bytes_warning = 0;
     config->inspect = 0;

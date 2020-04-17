@@ -347,7 +347,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'isolated': 0,
         'use_environment': 1,
         'dev_mode': 0,
-        'use_peg': 0,
+        'use_peg': 1,
 
         'install_signal_handlers': 1,
         'use_hash_seed': 0,

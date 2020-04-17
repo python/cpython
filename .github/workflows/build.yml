@@ -51,6 +51,8 @@ jobs:
   build_macos:
     name: 'macOS'
     runs-on: macos-latest
+    env:
+      PYTHONPARSER: old
     steps:
     - uses: actions/checkout@v1
     - name: Configure CPython
@@ -65,8 +67,6 @@ jobs:
   build_macos_pegen:
     name: 'macOS - Pegen'
     runs-on: macos-latest
-    env:
-      PYTHONPARSER: new
     steps:
     - uses: actions/checkout@v1
     - name: Configure CPython
@@ -83,6 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OPENSSL_VER: 1.1.1f
+      PYTHONPARSER: old
     steps:
     - uses: actions/checkout@v1
     - name: Install Dependencies
@@ -110,7 +111,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OPENSSL_VER: 1.1.1f
-      PYTHONPARSER: new
     steps:
     - uses: actions/checkout@v1
     - name: Install Dependencies
