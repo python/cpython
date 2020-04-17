@@ -327,10 +327,6 @@ class _SpecialForm(_Final, _Immutable, _root=True):
     def __doc__(self):
         return self._doc
 
-    @__doc__.setter
-    def __doc__(self, value):
-        self._doc = value
-
     def __eq__(self, other):
         if not isinstance(other, _SpecialForm):
             return NotImplemented
