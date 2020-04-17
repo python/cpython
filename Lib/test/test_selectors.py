@@ -543,6 +543,19 @@ class KqueueSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
         with self.assertRaises(KeyError):
             s.get_key(bad_f)
 
+    def test_empty_select_timeout(self):
+        # Issues #23009, #29255: Make sure timeout is applied when no fds
+        # are registered.
+        s = self.SELECTOR()
+        self.addCleanup(s.close)
+
+        t0 = time()
+        self.assertEqual(s.select(1), [])
+        t1 = time()
+        dt = t1 - t0
+        # Tolerate 2.0 seconds for very slow buildbots
+        self.assertTrue(0.8 <= dt <= 2.0, dt)
+
 
 @unittest.skipUnless(hasattr(selectors, 'DevpollSelector'),
                      "Test needs selectors.DevpollSelector")

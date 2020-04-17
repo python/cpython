@@ -685,7 +685,7 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.stat()
 
-   Return information about this path (similarly to :func:`os.stat`).
+   Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
    The result is looked up at each call to this method.
 
    ::
@@ -762,6 +762,8 @@ call fails (for example because the path doesn't exist).
    .. note::
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
+
+   .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
 
 .. method:: Path.group()
@@ -1024,6 +1026,8 @@ call fails (for example because the path doesn't exist).
        PosixPath('pathlib.py'),
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
+
+   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
 
 .. method:: Path.rmdir()

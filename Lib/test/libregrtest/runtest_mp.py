@@ -352,7 +352,11 @@ class MultiprocessTestRunner:
         self.output = queue.Queue()
         self.pending = MultiprocessIterator(self.regrtest.tests)
         if self.ns.timeout is not None:
-            self.worker_timeout = self.ns.timeout * 1.5
+            # Rely on faulthandler to kill a worker process. This timouet is
+            # when faulthandler fails to kill a worker process. Give a maximum
+            # of 5 minutes to faulthandler to kill the worker.
+            self.worker_timeout = min(self.ns.timeout * 1.5,
+                                      self.ns.timeout + 5 * 60)
         else:
             self.worker_timeout = None
         self.workers = None
@@ -360,8 +364,12 @@ class MultiprocessTestRunner:
     def start_workers(self):
         self.workers = [TestWorkerProcess(index, self)
                         for index in range(1, self.ns.use_mp + 1)]
-        self.log("Run tests in parallel using %s child processes"
-                 % len(self.workers))
+        msg = f"Run tests in parallel using {len(self.workers)} child processes"
+        if self.ns.timeout:
+            msg += (" (timeout: %s, worker timeout: %s)"
+                    % (format_duration(self.ns.timeout),
+                       format_duration(self.worker_timeout)))
+        self.log(msg)
         for worker in self.workers:
             worker.start()
 

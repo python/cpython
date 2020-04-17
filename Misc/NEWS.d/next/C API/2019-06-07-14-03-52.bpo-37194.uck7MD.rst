@@ -1,6 +1,0 @@
-Add a new public :c:func:`PyObject_CallNoArgs` function to the C API: call a
-callable Python object without any arguments. It is the most efficient way to
-call a callback without any argument. On x86-64, for example,
-``PyObject_CallFunctionObjArgs(func, NULL)`` allocates 960 bytes on the stack
-per call, whereas ``PyObject_CallNoArgs(func)`` only allocates 624 bytes per
-call.

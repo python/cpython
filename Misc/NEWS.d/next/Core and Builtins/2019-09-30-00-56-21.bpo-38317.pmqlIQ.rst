@@ -1,2 +1,0 @@
-Fix warnings options priority: ``PyConfig.warnoptions`` has the highest
-priority, as stated in the :pep:`587`.

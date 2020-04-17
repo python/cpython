@@ -1,2 +1,0 @@
-On Windows, :func:`os.dup` no longer creates an inheritable fd when handling
-a character file.

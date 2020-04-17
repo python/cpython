@@ -2838,7 +2838,7 @@ PyDoc_STRVAR(os_sched_param__doc__,
 "sched_param(sched_priority)\n"
 "--\n"
 "\n"
-"Current has only one field: sched_priority\");\n"
+"Currently has only one field: sched_priority\n"
 "\n"
 "  sched_priority\n"
 "    A scheduling parameter.");
@@ -3962,6 +3962,44 @@ os_wait(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 #endif /* defined(HAVE_WAIT) */
+
+#if (defined(__linux__) && defined(__NR_pidfd_open))
+
+PyDoc_STRVAR(os_pidfd_open__doc__,
+"pidfd_open($module, /, pid, flags=0)\n"
+"--\n"
+"\n"
+"Return a file descriptor referring to the process *pid*.\n"
+"\n"
+"The descriptor can be used to perform process management without races and\n"
+"signals.");
+
+#define OS_PIDFD_OPEN_METHODDEF    \
+    {"pidfd_open", (PyCFunction)(void(*)(void))os_pidfd_open, METH_FASTCALL|METH_KEYWORDS, os_pidfd_open__doc__},
+
+static PyObject *
+os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags);
+
+static PyObject *
+os_pidfd_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"pid", "flags", NULL};
+    static _PyArg_Parser _parser = {"" _Py_PARSE_PID "|O&:pidfd_open", _keywords, 0};
+    pid_t pid;
+    unsigned int flags = 0;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &pid, _PyLong_UnsignedInt_Converter, &flags)) {
+        goto exit;
+    }
+    return_value = os_pidfd_open_impl(module, pid, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(__linux__) && defined(__NR_pidfd_open)) */
 
 #if (defined(HAVE_READLINK) || defined(MS_WINDOWS))
 
@@ -5996,7 +6034,7 @@ exit:
 
 #endif /* (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)) */
 
-#if defined(HAVE_PUTENV) && defined(MS_WINDOWS)
+#if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_putenv__doc__,
 "putenv($module, name, value, /)\n"
@@ -6042,9 +6080,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_PUTENV) && defined(MS_WINDOWS) */
+#endif /* defined(MS_WINDOWS) */
 
-#if defined(HAVE_PUTENV) && !defined(MS_WINDOWS)
+#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_putenv__doc__,
 "putenv($module, name, value, /)\n"
@@ -6085,9 +6123,45 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_PUTENV) && !defined(MS_WINDOWS) */
+#endif /* !defined(MS_WINDOWS) */
 
-#if defined(HAVE_UNSETENV)
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_unsetenv__doc__,
+"unsetenv($module, name, /)\n"
+"--\n"
+"\n"
+"Delete an environment variable.");
+
+#define OS_UNSETENV_METHODDEF    \
+    {"unsetenv", (PyCFunction)os_unsetenv, METH_O, os_unsetenv__doc__},
+
+static PyObject *
+os_unsetenv_impl(PyObject *module, PyObject *name);
+
+static PyObject *
+os_unsetenv(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *name;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("unsetenv", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    name = arg;
+    return_value = os_unsetenv_impl(module, name);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_unsetenv__doc__,
 "unsetenv($module, name, /)\n"
@@ -6119,7 +6193,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_UNSETENV) */
+#endif /* !defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os_strerror__doc__,
 "strerror($module, code, /)\n"
@@ -8200,6 +8274,62 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+#if (defined(WIFEXITED) || defined(MS_WINDOWS))
+
+PyDoc_STRVAR(os_waitstatus_to_exitcode__doc__,
+"waitstatus_to_exitcode($module, /, status)\n"
+"--\n"
+"\n"
+"Convert a wait status to an exit code.\n"
+"\n"
+"On Unix:\n"
+"\n"
+"* If WIFEXITED(status) is true, return WEXITSTATUS(status).\n"
+"* If WIFSIGNALED(status) is true, return -WTERMSIG(status).\n"
+"* Otherwise, raise a ValueError.\n"
+"\n"
+"On Windows, return status shifted right by 8 bits.\n"
+"\n"
+"On Unix, if the process is being traced or if waitpid() was called with\n"
+"WUNTRACED option, the caller must first check if WIFSTOPPED(status) is true.\n"
+"This function must not be called if WIFSTOPPED(status) is true.");
+
+#define OS_WAITSTATUS_TO_EXITCODE_METHODDEF    \
+    {"waitstatus_to_exitcode", (PyCFunction)(void(*)(void))os_waitstatus_to_exitcode, METH_FASTCALL|METH_KEYWORDS, os_waitstatus_to_exitcode__doc__},
+
+static PyObject *
+os_waitstatus_to_exitcode_impl(PyObject *module, int status);
+
+static PyObject *
+os_waitstatus_to_exitcode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"status", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "waitstatus_to_exitcode", 0};
+    PyObject *argsbuf[1];
+    int status;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    status = _PyLong_AsInt(args[0]);
+    if (status == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_waitstatus_to_exitcode_impl(module, status);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(WIFEXITED) || defined(MS_WINDOWS)) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -8480,6 +8610,10 @@ exit:
     #define OS_WAIT_METHODDEF
 #endif /* !defined(OS_WAIT_METHODDEF) */
 
+#ifndef OS_PIDFD_OPEN_METHODDEF
+    #define OS_PIDFD_OPEN_METHODDEF
+#endif /* !defined(OS_PIDFD_OPEN_METHODDEF) */
+
 #ifndef OS_READLINK_METHODDEF
     #define OS_READLINK_METHODDEF
 #endif /* !defined(OS_READLINK_METHODDEF) */
@@ -8731,4 +8865,8 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=fe7897441fed5402 input=a9049054013a1b77]*/
+
+#ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
+    #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
+#endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
+/*[clinic end generated code: output=4e28994a729eddf9 input=a9049054013a1b77]*/

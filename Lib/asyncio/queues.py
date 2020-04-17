@@ -76,6 +76,9 @@ class Queue:
     def __str__(self):
         return f'<{type(self).__name__} {self._format()}>'
 
+    def __class_getitem__(cls, type):
+        return cls
+
     def _format(self):
         result = f'maxsize={self._maxsize!r}'
         if getattr(self, '_queue', None):

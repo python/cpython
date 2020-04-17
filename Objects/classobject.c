@@ -2,9 +2,9 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_pyerrors.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "structmember.h"         // PyMemberDef
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
 
@@ -36,26 +36,29 @@ static PyObject *
 method_vectorcall(PyObject *method, PyObject *const *args,
                   size_t nargsf, PyObject *kwnames)
 {
-    assert(Py_TYPE(method) == &PyMethod_Type);
-    PyObject *self, *func, *result;
-    self = PyMethod_GET_SELF(method);
-    func = PyMethod_GET_FUNCTION(method);
+    assert(Py_IS_TYPE(method, &PyMethod_Type));
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *self = PyMethod_GET_SELF(method);
+    PyObject *func = PyMethod_GET_FUNCTION(method);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
+    PyObject *result;
     if (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET) {
         /* PY_VECTORCALL_ARGUMENTS_OFFSET is set, so we are allowed to mutate the vector */
         PyObject **newargs = (PyObject**)args - 1;
         nargs += 1;
         PyObject *tmp = newargs[0];
         newargs[0] = self;
-        result = _PyObject_Vectorcall(func, newargs, nargs, kwnames);
+        result = _PyObject_VectorcallTstate(tstate, func, newargs,
+                                            nargs, kwnames);
         newargs[0] = tmp;
     }
     else {
         Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
         Py_ssize_t totalargs = nargs + nkwargs;
         if (totalargs == 0) {
-            return _PyObject_Vectorcall(func, &self, 1, NULL);
+            return _PyObject_VectorcallTstate(tstate, func, &self, 1, NULL);
         }
 
         PyObject *newargs_stack[_PY_FASTCALL_SMALL_STACK];
@@ -66,7 +69,7 @@ method_vectorcall(PyObject *method, PyObject *const *args,
         else {
             newargs = PyMem_Malloc((totalargs+1) * sizeof(PyObject *));
             if (newargs == NULL) {
-                PyErr_NoMemory();
+                _PyErr_NoMemory(tstate);
                 return NULL;
             }
         }
@@ -77,7 +80,8 @@ method_vectorcall(PyObject *method, PyObject *const *args,
          * undefined behaviour. */
         assert(args != NULL);
         memcpy(newargs + 1, args, totalargs * sizeof(PyObject *));
-        result = _PyObject_Vectorcall(func, newargs, nargs+1, kwnames);
+        result = _PyObject_VectorcallTstate(tstate, func,
+                                            newargs, nargs+1, kwnames);
         if (newargs != newargs_stack) {
             PyMem_Free(newargs);
         }
@@ -140,9 +144,9 @@ static PyMethodDef method_methods[] = {
 #define MO_OFF(x) offsetof(PyMethodObject, x)
 
 static PyMemberDef method_memberlist[] = {
-    {"__func__", T_OBJECT, MO_OFF(im_func), READONLY|RESTRICTED,
+    {"__func__", T_OBJECT, MO_OFF(im_func), READONLY,
      "the function (or other callable) implementing a method"},
-    {"__self__", T_OBJECT, MO_OFF(im_self), READONLY|RESTRICTED,
+    {"__self__", T_OBJECT, MO_OFF(im_self), READONLY,
      "the instance to which a method is bound"},
     {NULL}      /* Sentinel */
 };
@@ -173,7 +177,7 @@ static PyObject *
 method_getattro(PyObject *obj, PyObject *name)
 {
     PyMethodObject *im = (PyMethodObject *)obj;
-    PyTypeObject *tp = obj->ob_type;
+    PyTypeObject *tp = Py_TYPE(obj);
     PyObject *descr = NULL;
 
     {
@@ -185,9 +189,9 @@ method_getattro(PyObject *obj, PyObject *name)
     }
 
     if (descr != NULL) {
-        descrgetfunc f = TP_DESCR_GET(descr->ob_type);
+        descrgetfunc f = TP_DESCR_GET(Py_TYPE(descr));
         if (f != NULL)
-            return f(descr, obj, (PyObject *)obj->ob_type);
+            return f(descr, obj, (PyObject *)Py_TYPE(obj));
         else {
             Py_INCREF(descr);
             return descr;
@@ -345,7 +349,7 @@ PyTypeObject PyMethod_Type = {
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-    _Py_TPFLAGS_HAVE_VECTORCALL,                /* tp_flags */
+    Py_TPFLAGS_HAVE_VECTORCALL,                 /* tp_flags */
     method_doc,                                 /* tp_doc */
     (traverseproc)method_traverse,              /* tp_traverse */
     0,                                          /* tp_clear */
@@ -365,20 +369,6 @@ PyTypeObject PyMethod_Type = {
     0,                                          /* tp_alloc */
     method_new,                                 /* tp_new */
 };
-
-/* Clear out the free list */
-
-int
-PyMethod_ClearFreeList(void)
-{
-    return 0;
-}
-
-void
-_PyMethod_Fini(void)
-{
-    (void)PyMethod_ClearFreeList();
-}
 
 /* ------------------------------------------------------------------------
  * instance method
@@ -409,7 +399,7 @@ PyInstanceMethod_Function(PyObject *im)
 #define IMO_OFF(x) offsetof(PyInstanceMethodObject, x)
 
 static PyMemberDef instancemethod_memberlist[] = {
-    {"__func__", T_OBJECT, IMO_OFF(func), READONLY|RESTRICTED,
+    {"__func__", T_OBJECT, IMO_OFF(func), READONLY,
      "the function (or other callable) implementing a method"},
     {NULL}      /* Sentinel */
 };
@@ -434,7 +424,7 @@ static PyGetSetDef instancemethod_getset[] = {
 static PyObject *
 instancemethod_getattro(PyObject *self, PyObject *name)
 {
-    PyTypeObject *tp = self->ob_type;
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject *descr = NULL;
 
     if (tp->tp_dict == NULL) {
@@ -444,9 +434,9 @@ instancemethod_getattro(PyObject *self, PyObject *name)
     descr = _PyType_Lookup(tp, name);
 
     if (descr != NULL) {
-        descrgetfunc f = TP_DESCR_GET(descr->ob_type);
+        descrgetfunc f = TP_DESCR_GET(Py_TYPE(descr));
         if (f != NULL)
-            return f(descr, self, (PyObject *)self->ob_type);
+            return f(descr, self, (PyObject *)Py_TYPE(self));
         else {
             Py_INCREF(descr);
             return descr;

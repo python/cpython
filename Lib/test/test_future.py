@@ -5,6 +5,7 @@ from test import support
 from textwrap import dedent
 import os
 import re
+import sys
 
 rx = re.compile(r'\((\S+).py, line (\d+)')
 
@@ -111,6 +112,10 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             ...
         def g(arg: {ann}) -> None:
             ...
+        async def f2() -> {ann}:
+            ...
+        async def g2(arg: {ann}) -> None:
+            ...
         var: {ann}
         var2: {ann} = None
         """
@@ -121,9 +126,13 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         exec(self.template.format(ann=annotation), {}, scope)
         func_ret_ann = scope['f'].__annotations__['return']
         func_arg_ann = scope['g'].__annotations__['arg']
+        async_func_ret_ann = scope['f2'].__annotations__['return']
+        async_func_arg_ann = scope['g2'].__annotations__['arg']
         var_ann1 = scope['__annotations__']['var']
         var_ann2 = scope['__annotations__']['var2']
         self.assertEqual(func_ret_ann, func_arg_ann)
+        self.assertEqual(func_ret_ann, async_func_ret_ann)
+        self.assertEqual(func_ret_ann, async_func_arg_ann)
         self.assertEqual(func_ret_ann, var_ann1)
         self.assertEqual(func_ret_ann, var_ann2)
         return func_ret_ann
@@ -144,6 +153,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq = self.assertAnnotationEqual
         eq('...')
         eq("'some_string'")
+        eq("u'some_string'")
         eq("b'\\xa3'")
         eq('Name')
         eq('None')
@@ -256,6 +266,11 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("slice[:-1]")
         eq("slice[1:]")
         eq("slice[::-1]")
+        eq("slice[:,]")
+        eq("slice[1:2,]")
+        eq("slice[1:2:3,]")
+        eq("slice[1:2, 1]")
+        eq("slice[1:2, 2, 3]")
         eq("slice[()]")
         eq("slice[a, b:c, d:e:f]")
         eq("slice[(x for x in a)]")
@@ -283,6 +298,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('(((a, b)))', '(a, b)')
         eq("(x:=10)")
         eq("f'{(x:=10):=10}'")
+        eq("1 + 2 + 3")
 
     def test_fstring_debug_annotations(self):
         # f-strings with '=' don't round trip very well, so set the expected
@@ -293,6 +309,18 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
         self.assertAnnotationEqual("f'{x=!a}'", expected="f'x={x!a}'")
         self.assertAnnotationEqual("f'{x=!s:*^20}'", expected="f'x={x!s:*^20}'")
+
+    def test_infinity_numbers(self):
+        inf = "1e" + repr(sys.float_info.max_10_exp + 1)
+        infj = f"{inf}j"
+        self.assertAnnotationEqual("1e1000", expected=inf)
+        self.assertAnnotationEqual("1e1000j", expected=infj)
+        self.assertAnnotationEqual("-1e1000", expected=f"-{inf}")
+        self.assertAnnotationEqual("3+1e1000j", expected=f"3 + {infj}")
+        self.assertAnnotationEqual("(1e1000, 1e1000j)", expected=f"({inf}, {infj})")
+        self.assertAnnotationEqual("'inf'")
+        self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)", expected=f"('inf', {inf}, 'infxxx', {infj})")
+        self.assertAnnotationEqual("(1e1000, (1e1000j,))", expected=f"({inf}, ({infj},))")
 
 
 if __name__ == "__main__":

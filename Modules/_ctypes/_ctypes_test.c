@@ -131,6 +131,119 @@ _testfunc_array_in_struct2a(Test3B in)
     return result;
 }
 
+typedef union {
+    long a_long;
+    struct {
+        int an_int;
+        int another_int;
+    } a_struct;
+} Test4;
+
+typedef struct {
+    int an_int;
+    struct {
+        int an_int;
+        Test4 a_union;
+    } nested;
+    int another_int;
+} Test5;
+
+EXPORT(long)
+_testfunc_union_by_value1(Test4 in) {
+    long result = in.a_long + in.a_struct.an_int + in.a_struct.another_int;
+
+    /* As the union/struct are passed by value, changes to them shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_value2(Test5 in) {
+    long result = in.an_int + in.nested.an_int;
+
+    /* As the union/struct are passed by value, changes to them shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference1(Test4 *in) {
+    long result = in->a_long;
+
+    memset(in, 0, sizeof(Test4));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference2(Test4 *in) {
+    long result = in->a_struct.an_int + in->a_struct.another_int;
+
+    memset(in, 0, sizeof(Test4));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference3(Test5 *in) {
+    long result = in->an_int + in->nested.an_int + in->another_int;
+
+    memset(in, 0, sizeof(Test5));
+    return result;
+}
+
+typedef struct {
+    signed int A: 1, B:2, C:3, D:2;
+} Test6;
+
+EXPORT(long)
+_testfunc_bitfield_by_value1(Test6 in) {
+    long result = in.A + in.B + in.C + in.D;
+
+    /* As the struct is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_bitfield_by_reference1(Test6 *in) {
+    long result = in->A + in->B + in->C + in->D;
+
+    memset(in, 0, sizeof(Test6));
+    return result;
+}
+
+typedef struct {
+    unsigned int A: 1, B:2, C:3, D:2;
+} Test7;
+
+EXPORT(long)
+_testfunc_bitfield_by_reference2(Test7 *in) {
+    long result = in->A + in->B + in->C + in->D;
+
+    memset(in, 0, sizeof(Test7));
+    return result;
+}
+
+typedef union {
+    signed int A: 1, B:2, C:3, D:2;
+} Test8;
+
+EXPORT(long)
+_testfunc_bitfield_by_value2(Test8 in) {
+    long result = in.A + in.B + in.C + in.D;
+
+    /* As the struct is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
 EXPORT(void)testfunc_array(int values[4])
 {
     printf("testfunc_array %d %d %d %d\n",
@@ -919,14 +1032,17 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 #endif
 
+static struct PyModuleDef_Slot _ctypes_test_slots[] = {
+    {0, NULL}
+}; 
 
 static struct PyModuleDef _ctypes_testmodule = {
     PyModuleDef_HEAD_INIT,
     "_ctypes_test",
     NULL,
-    -1,
+    0,
     module_methods,
-    NULL,
+    _ctypes_test_slots,
     NULL,
     NULL,
     NULL
@@ -935,5 +1051,5 @@ static struct PyModuleDef _ctypes_testmodule = {
 PyMODINIT_FUNC
 PyInit__ctypes_test(void)
 {
-    return PyModule_Create(&_ctypes_testmodule);
+    return PyModuleDef_Init(&_ctypes_testmodule);
 }

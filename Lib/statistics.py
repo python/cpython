@@ -744,7 +744,7 @@ def variance(data, xbar=None):
 def pvariance(data, mu=None):
     """Return the population variance of ``data``.
 
-    data should be a sequence or iterator of Real-valued numbers, with at least one
+    data should be a sequence or iterable of Real-valued numbers, with at least one
     value. The optional argument mu, if given, should be the mean of
     the data. If it is missing or None, the mean is automatically calculated.
 
@@ -998,6 +998,17 @@ class NormalDist:
         x1 = (a + b) / dv
         x2 = (a - b) / dv
         return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
+
+    def zscore(self, x):
+        """Compute the Standard Score.  (x - mean) / stdev
+
+        Describes *x* in terms of the number of standard deviations
+        above or below the mean of the normal distribution.
+        """
+        # https://www.statisticshowto.com/probability-and-statistics/z-score/
+        if not self._sigma:
+            raise StatisticsError('zscore() not defined when sigma is zero')
+        return (x - self._mu) / self._sigma
 
     @property
     def mean(self):

@@ -1,8 +1,8 @@
-:mod:`pyclbr` --- Python class browser support
-==============================================
+:mod:`pyclbr` --- Python module browser support
+===============================================
 
 .. module:: pyclbr
-   :synopsis: Supports information extraction for a Python class browser.
+   :synopsis: Supports information extraction for a Python module browser.
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
@@ -28,6 +28,9 @@ modules.
    to read; it may be the name of a module within a package.  If given,
    *path* is a sequence of directory paths prepended to ``sys.path``,
    which is used to locate the module source code.
+
+   This function is the original interface and is only kept for back
+   compatibility.  It returns a filtered version of the following.
 
 
 .. function:: readmodule_ex(module, path=None)

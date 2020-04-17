@@ -314,10 +314,7 @@ class TestTracemallocEnabled(unittest.TestCase):
             finally:
                 os._exit(exitcode)
         else:
-            pid2, status = os.waitpid(pid, 0)
-            self.assertTrue(os.WIFEXITED(status))
-            exitcode = os.WEXITSTATUS(status)
-            self.assertEqual(exitcode, 0)
+            support.wait_process(pid, exitcode=0)
 
 
 class TestSnapshot(unittest.TestCase):

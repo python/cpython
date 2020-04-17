@@ -542,17 +542,6 @@ def _findclass(func):
     return cls
 
 def _finddoc(obj):
-    if isclass(obj):
-        for base in obj.__mro__:
-            if base is not object:
-                try:
-                    doc = base.__doc__
-                except AttributeError:
-                    continue
-                if doc is not None:
-                    return doc
-        return None
-
     if ismethod(obj):
         name = obj.__func__.__name__
         self = obj.__self__
@@ -596,12 +585,27 @@ def _finddoc(obj):
         return None
     for base in cls.__mro__:
         try:
-            doc = getattr(base, name).__doc__
+            doc = _getowndoc(getattr(base, name))
         except AttributeError:
             continue
         if doc is not None:
             return doc
     return None
+
+def _getowndoc(obj):
+    """Get the documentation string for an object if it is not
+    inherited from its class."""
+    try:
+        doc = object.__getattribute__(obj, '__doc__')
+        if doc is None:
+            return None
+        if obj is not type:
+            typedoc = type(obj).__doc__
+            if isinstance(typedoc, str) and typedoc == doc:
+                return None
+        return doc
+    except AttributeError:
+        return None
 
 def getdoc(object):
     """Get the documentation string for an object.
@@ -609,10 +613,7 @@ def getdoc(object):
     All tabs are expanded to spaces.  To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
     uniformly removed from the second line onwards is removed."""
-    try:
-        doc = object.__doc__
-    except AttributeError:
-        return None
+    doc = _getowndoc(object)
     if doc is None:
         try:
             doc = _finddoc(object)
@@ -741,7 +742,7 @@ def getmodule(object, _filename=None):
         return sys.modules.get(modulesbyfile[file])
     # Update the filename to module name cache and check yet again
     # Copy sys.modules in order to cope with changes while iterating
-    for modname, module in list(sys.modules.items()):
+    for modname, module in sys.modules.copy().items():
         if ismodule(module) and hasattr(module, '__file__'):
             f = module.__file__
             if f == _filesbymodname.get(modname, None):
@@ -1136,7 +1137,6 @@ def getfullargspec(func):
     varkw = None
     posonlyargs = []
     kwonlyargs = []
-    defaults = ()
     annotations = {}
     defaults = ()
     kwdefaults = {}
@@ -2603,7 +2603,7 @@ class BoundArguments:
 
     Has the following public attributes:
 
-    * arguments : OrderedDict
+    * arguments : dict
         An ordered mutable mapping of parameters' names to arguments' values.
         Does not contain arguments' default values.
     * signature : Signature
@@ -2703,7 +2703,7 @@ class BoundArguments:
                     # Signature.bind_partial().
                     continue
                 new_arguments.append((name, val))
-        self.arguments = OrderedDict(new_arguments)
+        self.arguments = dict(new_arguments)
 
     def __eq__(self, other):
         if self is other:
@@ -2771,7 +2771,7 @@ class Signature:
                 top_kind = _POSITIONAL_ONLY
                 kind_defaults = False
 
-                for idx, param in enumerate(parameters):
+                for param in parameters:
                     kind = param.kind
                     name = param.name
 
@@ -2806,8 +2806,7 @@ class Signature:
 
                     params[name] = param
             else:
-                params = OrderedDict(((param.name, param)
-                                                for param in parameters))
+                params = OrderedDict((param.name, param) for param in parameters)
 
         self._parameters = types.MappingProxyType(params)
         self._return_annotation = return_annotation
@@ -2889,7 +2888,7 @@ class Signature:
     def _bind(self, args, kwargs, *, partial=False):
         """Private method. Don't use directly."""
 
-        arguments = OrderedDict()
+        arguments = {}
 
         parameters = iter(self.parameters.values())
         parameters_ex = ()

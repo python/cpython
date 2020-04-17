@@ -190,7 +190,7 @@ PyType_stgdict(PyObject *obj)
 StgDictObject *
 PyObject_stgdict(PyObject *self)
 {
-    PyTypeObject *type = self->ob_type;
+    PyTypeObject *type = Py_TYPE(self);
     if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
         return NULL;
     return (StgDictObject *)type->tp_dict;
@@ -231,7 +231,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
             Py_DECREF(fieldlist);
             return -1;
         }
-        if (Py_TYPE(fdescr) != &PyCField_Type) {
+        if (!Py_IS_TYPE(fdescr, &PyCField_Type)) {
             PyErr_SetString(PyExc_TypeError, "unexpected type");
             Py_DECREF(fdescr);
             Py_DECREF(fieldlist);
@@ -254,7 +254,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
             Py_DECREF(fieldlist);
             return -1;
         }
-        assert(Py_TYPE(new_descr) == &PyCField_Type);
+        assert(Py_IS_TYPE(new_descr, &PyCField_Type));
         new_descr->size = fdescr->size;
         new_descr->offset = fdescr->offset + offset;
         new_descr->index = fdescr->index + index;
@@ -304,7 +304,7 @@ MakeAnonFields(PyObject *type)
             Py_DECREF(anon_names);
             return -1;
         }
-        if (Py_TYPE(descr) != &PyCField_Type) {
+        if (!Py_IS_TYPE(descr, &PyCField_Type)) {
             PyErr_Format(PyExc_AttributeError,
                          "'%U' is specified in _anonymous_ but not in "
                          "_fields_",
@@ -440,6 +440,13 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         PyMem_Free(stgdict->ffi_type_pointer.elements);
 
     basedict = PyType_stgdict((PyObject *)((PyTypeObject *)type)->tp_base);
+    if (basedict) {
+        stgdict->flags |= (basedict->flags &
+                           (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD));
+    }
+    if (!isStruct) {
+        stgdict->flags |= TYPEFLAG_HASUNION;
+    }
     if (basedict && !use_broken_old_ctypes_semantics) {
         size = offset = basedict->size;
         align = basedict->align;
@@ -515,8 +522,10 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         stgdict->ffi_type_pointer.elements[ffi_ofs + i] = &dict->ffi_type_pointer;
         if (dict->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
             stgdict->flags |= TYPEFLAG_HASPOINTER;
+        stgdict->flags |= dict->flags & (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD);
         dict->flags |= DICTFLAG_FINAL; /* mark field type final */
         if (PyTuple_Size(pair) == 3) { /* bits specified */
+            stgdict->flags |= TYPEFLAG_HASBITFIELD;
             switch(dict->ffi_type_pointer.type) {
             case FFI_TYPE_UINT8:
             case FFI_TYPE_UINT16:

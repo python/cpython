@@ -61,6 +61,14 @@ def normcase(s):
 def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
+    # Paths beginning with \\?\ are always absolute, but do not
+    # necessarily contain a drive.
+    if isinstance(s, bytes):
+        if s.replace(b'/', b'\\').startswith(b'\\\\?\\'):
+            return True
+    else:
+        if s.replace('/', '\\').startswith('\\\\?\\'):
+            return True
     s = splitdrive(s)[1]
     return len(s) > 0 and s[0] in _get_bothseps(s)
 
@@ -526,10 +534,7 @@ except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
     realpath = abspath
 else:
-    def _readlink_deep(path, seen=None):
-        if seen is None:
-            seen = set()
-
+    def _readlink_deep(path):
         # These error codes indicate that we should stop reading links and
         # return the path we currently have.
         # 1: ERROR_INVALID_FUNCTION
@@ -546,10 +551,22 @@ else:
         # 4393: ERROR_REPARSE_TAG_INVALID
         allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 67, 87, 4390, 4392, 4393
 
+        seen = set()
         while normcase(path) not in seen:
             seen.add(normcase(path))
             try:
+                old_path = path
                 path = _nt_readlink(path)
+                # Links may be relative, so resolve them against their
+                # own location
+                if not isabs(path):
+                    # If it's something other than a symlink, we don't know
+                    # what it's actually going to be resolved against, so
+                    # just return the old path.
+                    if not islink(old_path):
+                        path = old_path
+                        break
+                    path = normpath(join(dirname(old_path), path))
             except OSError as ex:
                 if ex.winerror in allowed_winerror:
                     break
@@ -579,23 +596,31 @@ else:
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
         tail = ''
-        seen = set()
         while path:
             try:
-                path = _readlink_deep(path, seen)
                 path = _getfinalpathname(path)
                 return join(path, tail) if tail else path
             except OSError as ex:
                 if ex.winerror not in allowed_winerror:
                     raise
+                try:
+                    # The OS could not resolve this path fully, so we attempt
+                    # to follow the link ourselves. If we succeed, join the tail
+                    # and return.
+                    new_path = _readlink_deep(path)
+                    if new_path != path:
+                        return join(new_path, tail) if tail else new_path
+                except OSError:
+                    # If we fail to readlink(), let's keep traversing
+                    pass
                 path, name = split(path)
                 # TODO (bpo-38186): Request the real file name from the directory
                 # entry using FindFirstFileW. For now, we will return the path
                 # as best we have it
                 if path and not name:
-                    return abspath(path + tail)
+                    return path + tail
                 tail = join(name, tail) if tail else name
-        return abspath(tail)
+        return tail
 
     def realpath(path):
         path = normpath(path)
@@ -604,12 +629,20 @@ else:
             unc_prefix = b'\\\\?\\UNC\\'
             new_unc_prefix = b'\\\\'
             cwd = os.getcwdb()
+            # bpo-38081: Special case for realpath(b'nul')
+            if normcase(path) == normcase(os.fsencode(devnull)):
+                return b'\\\\.\\NUL'
         else:
             prefix = '\\\\?\\'
             unc_prefix = '\\\\?\\UNC\\'
             new_unc_prefix = '\\\\'
             cwd = os.getcwd()
+            # bpo-38081: Special case for realpath('nul')
+            if normcase(path) == normcase(devnull):
+                return '\\\\.\\NUL'
         had_prefix = path.startswith(prefix)
+        if not had_prefix and not isabs(path):
+            path = join(cwd, path)
         try:
             path = _getfinalpathname(path)
             initial_winerror = 0

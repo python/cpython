@@ -1,13 +1,15 @@
 /* Path configuration like module_search_path (sys.path) */
 
 #include "Python.h"
-#include "osdefs.h"
+#include "osdefs.h"               // DELIM
 #include "pycore_initconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
+#ifdef MS_WINDOWS
+#  include <windows.h>            // GetFullPathNameW(), MAX_PATH
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,7 +152,7 @@ _PyWideStringList_Join(const PyWideStringList *list, wchar_t sep)
 static PyStatus
 _PyPathConfig_InitDLLPath(void)
 {
-    if (_Py_dll_path == NULL) {
+    if (_Py_dll_path != NULL) {
         /* Already set: nothing to do */
         return _PyStatus_OK();
     }
@@ -240,9 +242,8 @@ config_init_module_search_paths(PyConfig *config, _PyPathConfig *pathconfig)
 
     const wchar_t *sys_path = pathconfig->module_search_path;
     const wchar_t delim = DELIM;
-    const wchar_t *p = sys_path;
     while (1) {
-        p = wcschr(sys_path, delim);
+        const wchar_t *p = wcschr(sys_path, delim);
         if (p == NULL) {
             p = sys_path + wcslen(sys_path); /* End of string */
         }
@@ -485,6 +486,12 @@ pathconfig_global_init(void)
 
 /* External interface */
 
+static void _Py_NO_RETURN
+path_out_of_memory(const char *func)
+{
+    _Py_FatalErrorFunc(func, "out of memory");
+}
+
 void
 Py_SetPath(const wchar_t *path)
 {
@@ -516,7 +523,7 @@ Py_SetPath(const wchar_t *path)
         || _Py_path_config.exec_prefix == NULL
         || _Py_path_config.module_search_path == NULL)
     {
-        Py_FatalError("Py_SetPath() failed: out of memory");
+        path_out_of_memory(__func__);
     }
 }
 
@@ -537,7 +544,7 @@ Py_SetPythonHome(const wchar_t *home)
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (_Py_path_config.home == NULL) {
-        Py_FatalError("Py_SetPythonHome() failed: out of memory");
+        path_out_of_memory(__func__);
     }
 }
 
@@ -558,7 +565,7 @@ Py_SetProgramName(const wchar_t *program_name)
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (_Py_path_config.program_name == NULL) {
-        Py_FatalError("Py_SetProgramName() failed: out of memory");
+        path_out_of_memory(__func__);
     }
 }
 
@@ -578,7 +585,7 @@ _Py_SetProgramFullPath(const wchar_t *program_full_path)
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (_Py_path_config.program_full_path == NULL) {
-        Py_FatalError("_Py_SetProgramFullPath() failed: out of memory");
+        path_out_of_memory(__func__);
     }
 }
 

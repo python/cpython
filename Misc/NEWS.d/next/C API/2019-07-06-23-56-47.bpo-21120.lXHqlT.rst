@@ -1,1 +1,0 @@
-Exclude Python-ast.h, ast.h and asdl.h from the limited API.

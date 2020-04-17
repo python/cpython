@@ -1,2 +1,0 @@
-pathlib.Path instance's rename and replace methods now return the new Path
-instance.
