@@ -4,19 +4,18 @@ import unittest
 import os
 from test.support import TESTFN, TESTFN_NONASCII, unlink
 
+try:
+    from _gdbm import _GDBM_VERSION as gdbm_version
+except ImportError:
+    gdbm_version = None
 
 filename = TESTFN
 
 class TestGdbm(unittest.TestCase):
     @staticmethod
     def setUpClass():
-        if support.verbose:
-            try:
-                from _gdbm import _GDBM_VERSION as version
-            except ImportError:
-                pass
-            else:
-                print(f"gdbm version: {version}")
+        if support.verbose and gdbm_version:
+            print(f"gdbm version: {gdbm_version}")
 
     def setUp(self):
         self.g = None
@@ -161,6 +160,21 @@ class TestGdbm(unittest.TestCase):
             gdbm.open(nonexisting_file)
         self.assertIn(nonexisting_file, str(cm.exception))
         self.assertEqual(cm.exception.filename, nonexisting_file)
+
+    @unittest.skipUnless(gdbm_version and gdbm_version >= (1, 11, 0),
+                         'needs >= 1.11')
+    def test_count(self):
+        self.g = gdbm.open(filename, 'c')
+        self.assertEqual(self.g.count(), 0)
+
+        self.g['a'] = 'a'
+        self.assertEqual(self.g.count(), 1)
+        self.g['b'] = 'b'
+        self.assertEqual(self.g.count(), 2)
+        del self.g['a']
+        self.assertEqual(self.g.count(), 1)
+        del self.g['b']
+        self.assertEqual(self.g.count(), 0)
 
 
 if __name__ == '__main__':

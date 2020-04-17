@@ -486,6 +486,32 @@ _gdbm_gdbm_sync_impl(dbmobject *self)
     Py_RETURN_NONE;
 }
 
+#if GDBM_VERSION_MAJOR >= 1 && GDBM_VERSION_MINOR >= 11
+/*[clinic input]
+_gdbm.gdbm.count
+
+Count the number of records in the database.
+[clinic start generated code]*/
+
+static PyObject *
+_gdbm_gdbm_count_impl(dbmobject *self)
+/*[clinic end generated code: output=8b62b02ae4c2fcee input=1b9d3f0877315a04]*/
+{
+    gdbm_count_t count;
+    check_dbmobject_open(self);
+    if (gdbm_count(self->di_dbm, &count) == -1) {
+        if (errno != 0) {
+            PyErr_SetFromErrno(DbmError);
+        }
+        else {
+            PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
+        }
+        return NULL;
+    }
+    return PyLong_FromUnsignedLongLong(count);
+}
+#endif
+
 static PyObject *
 dbm__enter__(PyObject *self, PyObject *args)
 {
@@ -509,6 +535,7 @@ static PyMethodDef dbm_methods[] = {
     _GDBM_GDBM_SYNC_METHODDEF
     _GDBM_GDBM_GET_METHODDEF
     _GDBM_GDBM_SETDEFAULT_METHODDEF
+    _GDBM_GDBM_COUNT_METHODDEF
     {"__enter__", dbm__enter__, METH_NOARGS, NULL},
     {"__exit__",  dbm__exit__, METH_VARARGS, NULL},
     {NULL,              NULL}           /* sentinel */

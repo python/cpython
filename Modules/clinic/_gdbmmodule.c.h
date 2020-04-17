@@ -211,6 +211,28 @@ _gdbm_gdbm_sync(dbmobject *self, PyObject *Py_UNUSED(ignored))
     return _gdbm_gdbm_sync_impl(self);
 }
 
+#if (GDBM_VERSION_MAJOR >= 1 && GDBM_VERSION_MINOR >= 11)
+
+PyDoc_STRVAR(_gdbm_gdbm_count__doc__,
+"count($self, /)\n"
+"--\n"
+"\n"
+"Count the number of records in the database.");
+
+#define _GDBM_GDBM_COUNT_METHODDEF    \
+    {"count", (PyCFunction)_gdbm_gdbm_count, METH_NOARGS, _gdbm_gdbm_count__doc__},
+
+static PyObject *
+_gdbm_gdbm_count_impl(dbmobject *self);
+
+static PyObject *
+_gdbm_gdbm_count(dbmobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _gdbm_gdbm_count_impl(self);
+}
+
+#endif /* (GDBM_VERSION_MAJOR >= 1 && GDBM_VERSION_MINOR >= 11) */
+
 PyDoc_STRVAR(dbmopen__doc__,
 "open($module, filename, flags=\'r\', mode=0o666, /)\n"
 "--\n"
@@ -298,4 +320,8 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2766471b2fa1a816 input=a9049054013a1b77]*/
+
+#ifndef _GDBM_GDBM_COUNT_METHODDEF
+    #define _GDBM_GDBM_COUNT_METHODDEF
+#endif /* !defined(_GDBM_GDBM_COUNT_METHODDEF) */
+/*[clinic end generated code: output=0373bfdb5c23b602 input=a9049054013a1b77]*/

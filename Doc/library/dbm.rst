@@ -237,6 +237,13 @@ supported.
 
       Close the ``gdbm`` database.
 
+   .. method:: gdbm.count()
+
+      Count the number of records in the database.  This method requires GNU
+      DBM version 1.11 or greater.
+
+      .. versionadded:: 3.9
+
 :mod:`dbm.ndbm` --- Interface based on ndbm
 -------------------------------------------
 

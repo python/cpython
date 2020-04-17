@@ -1,0 +1,2 @@
+Add :meth:`gdbm.count` to wrap the ``gdbm_count()`` function added in GDBM
+1.11.
