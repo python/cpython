@@ -1,0 +1,1 @@
+Re-enable :func:`os.posix_fallocate` and :func:`os.posix_fadvise` on AIX.
