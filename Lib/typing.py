@@ -323,6 +323,10 @@ class _SpecialForm(_Final, _Immutable, _root=True):
         self._name = name
         self._doc = doc
 
+    @property
+    def __doc__(self):
+        return self._doc
+
     def __eq__(self, other):
         if not isinstance(other, _SpecialForm):
             return NotImplemented
@@ -672,6 +676,8 @@ class _GenericAlias(_Final, _root=True):
         self.__slots__ = None  # This is not documented.
         if not name:
             self.__module__ = origin.__module__
+        if special:
+            self.__doc__ = f'A generic version of {origin.__module__}.{origin.__qualname__}'
 
     @_tp_cache
     def __getitem__(self, params):

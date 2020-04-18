@@ -1255,7 +1255,8 @@ cm(x) method of builtins.type instance
         X.attr.__doc__ = 'Custom descriptor'
         self.assertEqual(self._get_summary_lines(X.attr), """\
 <test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>
-    Custom descriptor""")
+    Custom descriptor
+""")
 
         X.attr.__name__ = 'foo'
         self.assertEqual(self._get_summary_lines(X.attr), """\
