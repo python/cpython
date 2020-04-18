@@ -536,7 +536,7 @@ _channelend_find(_channelend *first, int64_t interp, _channelend **pprev)
 
 typedef struct _channelassociations {
     // Note that the list entries are never removed for interpreter
-    // for which the channel is closed.  This should be a problem in
+    // for which the channel is closed.  This should not be a problem in
     // practice.  Also, a channel isn't automatically closed when an
     // interpreter is destroyed.
     int64_t numsendopen;
@@ -625,27 +625,6 @@ _channelends_associate(_channelends *ends, int64_t interp, int send)
         return -1;
     }
     return 0;
-}
-
-static int64_t *
-_channelends_list_interpreters(_channelends *ends, int64_t *count, int send)
-{
-    int64_t numopen = send ? ends->numsendopen : ends->numrecvopen;
-
-    int64_t *ids = PyMem_NEW(int64_t, (Py_ssize_t)numopen);
-    if (ids == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    _channelend *ref = send ? ends->send : ends->recv;
-    for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
-        ids[i] = ref->interp;
-    }
-
-    *count = numopen;
-
-    return ids;
 }
 
 static int
@@ -1407,6 +1386,21 @@ static int
 _channel_close(_channels *channels, int64_t id, int end, int force)
 {
     return _channels_close(channels, id, NULL, end, force);
+}
+
+static int
+_channel_is_associated(_channels *channels, int64_t cid, int64_t interp,
+                       int send)
+{
+    _PyChannelState *chan = _channels_lookup(channels, cid, NULL);
+    if (chan == NULL) {
+        return -1;
+    }
+
+    _channelend *end = _channelend_find(send ? chan->ends->send : chan->ends->recv,
+                                        interp, NULL);
+
+    return (end != NULL && end->open);
 }
 
 /* ChannelID class */
@@ -2339,14 +2333,15 @@ PyDoc_STRVAR(channel_list_all_doc,
 \n\
 Return the list of all IDs for active channels.");
 
-
 static PyObject *
 channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "send", NULL};
     int64_t cid;            /* Channel ID */
     int send = 0;           /* Send or receive end? */
-    PyObject *ret = NULL;
+    int64_t id;
+    PyObject *ids, *id_obj;
+    PyInterpreterState *interp;
 
     if (!PyArg_ParseTupleAndKeywords(
             args, kwds, "O&$p:channel_list_interpreters",
@@ -2354,39 +2349,40 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    _PyChannelState *chan = _channels_lookup(&_globals.channels, cid, NULL);
-    if (chan == NULL) {
-        return NULL;
-    }
-
-    int64_t count = 0;  /* Number of interpreters */
-    int64_t *ids = _channelends_list_interpreters(chan->ends, &count, send);
+    ids = PyList_New(0);
     if (ids == NULL) {
         goto except;
     }
 
-    ret = PyList_New((Py_ssize_t)count);
-    if (ret == NULL) {
-        goto except;
-    }
-
-    for (int64_t i=0; i < count; i++) {
-        PyObject *id_obj = _PyInterpreterID_New(ids[i]);
-        if (id_obj == NULL) {
+    interp = PyInterpreterState_Head();
+    while (interp != NULL) {
+        id = PyInterpreterState_GetID(interp);
+        assert(id >= 0);
+        int res = _channel_is_associated(&_globals.channels, cid, id, send);
+        if (res < 0) {
             goto except;
         }
-        PyList_SET_ITEM(ret, i, id_obj);
+        if (res) {
+            id_obj = _PyInterpreterState_GetIDObject(interp);
+            if (id_obj == NULL) {
+                goto except;
+            }
+            res = PyList_Insert(ids, 0, id_obj);
+            if (res < 0) {
+                goto except;
+            }
+        }
+        interp = PyInterpreterState_Next(interp);
     }
 
     goto finally;
 
 except:
-    Py_XDECREF(ret);
-    ret = NULL;
+    Py_XDECREF(ids);
+    ids = NULL;
 
 finally:
-    PyMem_Free(ids);
-    return ret;
+    return ids;
 }
 
 PyDoc_STRVAR(channel_list_interpreters_doc,

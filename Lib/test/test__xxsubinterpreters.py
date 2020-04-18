@@ -1260,7 +1260,6 @@ class ChannelTests(TestBase):
         self.assertEqual(set(send_interps), {interp0, interp1})
         self.assertEqual(set(recv_interps), {interp2, interp3})
 
-    @unittest.skip("Failing due to handling of destroyed interpreters")
     def test_channel_list_interpreters_destroyed(self):
         """Test listing channel interpreters with a destroyed interpreter."""
         interp0 = interpreters.get_main()
@@ -1310,10 +1309,10 @@ class ChannelTests(TestBase):
 
         # Release the main interpreter from the send end.
         interpreters.channel_release(cid, send=True)
-        # Send end should raise an error for the main interpreter.
-        with self.assertRaises(interpreters.ChannelClosedError):
-            send_interps = interpreters.channel_list_interpreters(cid, send=True)
+        # Send end should have no associated interpreters.
+        send_interps = interpreters.channel_list_interpreters(cid, send=True)
         recv_interps = interpreters.channel_list_interpreters(cid, send=False)
+        self.assertEqual(len(send_interps), 0)
         self.assertEqual(len(recv_interps), 2)
 
         # Release one of the subinterpreters from the receive end.
@@ -1324,7 +1323,7 @@ class ChannelTests(TestBase):
         # Receive end should have the released interpreter removed.
         send_interps = interpreters.channel_list_interpreters(cid, send=True)
         recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(len(send_interps), 1)
+        self.assertEqual(len(send_interps), 0)
         self.assertEqual(recv_interps, [interp1])
 
     def test_channel_list_interpreters_closed(self):
