@@ -3,7 +3,6 @@ import platform
 import subprocess
 import sys
 import unittest
-import collections
 from unittest import mock
 
 from test import support
@@ -56,6 +55,7 @@ class PlatformTest(unittest.TestCase):
         sys.version = self.save_version
         sys._git = self.save_git
         sys.platform = self.save_platform
+        self.clear_caches()
 
     def test_sys_version(self):
         # Old test.
@@ -172,24 +172,24 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(platform.uname().processor, expect)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
+    def test_uname_win32_ARCHITECTURE(self):
+        with support.EnvironmentVarGuard() as environ:
+            if 'PROCESSOR_ARCHITEW6432' in environ:
+                del environ['PROCESSOR_ARCHITEW6432']
+            environ['PROCESSOR_ARCHITECTURE'] = 'foo'
+            system, node, release, version, machine, processor = platform.uname()
+            self.assertEqual(machine, 'foo')
+
+    @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_ARCHITEW6432(self):
         # Issue 7860: make sure we get architecture from the correct variable
         # on 64 bit Windows: if PROCESSOR_ARCHITEW6432 exists we should be
         # using it, per
         # http://blogs.msdn.com/david.wang/archive/2006/03/26/HOWTO-Detect-Process-Bitness.aspx
         with support.EnvironmentVarGuard() as environ:
-            if 'PROCESSOR_ARCHITEW6432' in environ:
-                del environ['PROCESSOR_ARCHITEW6432']
-            environ['PROCESSOR_ARCHITECTURE'] = 'foo'
-            platform.uname.cache_clear()
-            system, node, release, version, machine, processor = platform.uname()
-            self.assertEqual(machine, 'foo')
             environ['PROCESSOR_ARCHITEW6432'] = 'bar'
-            platform.uname.cache_clear()
             system, node, release, version, machine, processor = platform.uname()
             self.assertEqual(machine, 'bar')
-
-        self.addCleanup(self.clear_caches)
 
     def test_java_ver(self):
         res = platform.java_ver()
@@ -334,8 +334,6 @@ class PlatformTest(unittest.TestCase):
 
 
     def test_macos(self):
-        self.addCleanup(self.clear_caches)
-
         uname = ('Darwin', 'hostname', '17.7.0',
                  ('Darwin Kernel Version 17.7.0: '
                   'Thu Jun 21 22:53:14 PDT 2018; '
