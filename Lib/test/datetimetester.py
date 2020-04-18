@@ -2719,6 +2719,23 @@ class TestDateTime(TestDate):
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
 
+    def test_zero(self):
+        cls = self.theclass
+        args = [1, 2, 3, 4, 5, 6, 7]
+        base = cls(*args)
+        i = 3
+        for name in ('hour', 'minute', 'second', 'microsecond'):
+            newargs = args[:]
+            newargs[i:7] = [0]*(7-i)
+            expected = cls(*newargs)
+            got = base.zero(name)
+            self.assertEqual(expected, got)
+            i += 1
+        self.assertRaises(ValueError, base.zero, 'year')
+        self.assertRaises(ValueError, base.zero, 'month')
+        self.assertRaises(ValueError, base.zero, 'day')
+        self.assertRaises(ValueError, base.zero, 'other')
+
     @support.run_with_tz('EDT4')
     def test_astimezone(self):
         dt = self.theclass.now()
@@ -3389,6 +3406,23 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(ValueError, base.replace, minute=-1)
         self.assertRaises(ValueError, base.replace, second=100)
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
+
+    def test_zero(self):
+        cls = self.theclass
+        args = [1, 2, 3, 4]
+        base = cls(*args)
+        i = 0
+        for name in ('hour', 'minute', 'second', 'microsecond'):
+            newargs = args[:]
+            newargs[i:4] = [0]*(4-i)
+            expected = cls(*newargs)
+            got = base.zero(name)
+            self.assertEqual(expected, got)
+            i += 1
+        self.assertRaises(ValueError, base.zero, 'year')
+        self.assertRaises(ValueError, base.zero, 'month')
+        self.assertRaises(ValueError, base.zero, 'day')
+        self.assertRaises(ValueError, base.zero, 'other')
 
     def test_subclass_replace(self):
         class TimeSubclass(self.theclass):
