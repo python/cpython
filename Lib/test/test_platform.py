@@ -177,20 +177,19 @@ class PlatformTest(unittest.TestCase):
         # on 64 bit Windows: if PROCESSOR_ARCHITEW6432 exists we should be
         # using it, per
         # http://blogs.msdn.com/david.wang/archive/2006/03/26/HOWTO-Detect-Process-Bitness.aspx
-        try:
-            with support.EnvironmentVarGuard() as environ:
-                if 'PROCESSOR_ARCHITEW6432' in environ:
-                    del environ['PROCESSOR_ARCHITEW6432']
-                environ['PROCESSOR_ARCHITECTURE'] = 'foo'
-                platform.uname.cache_clear()
-                system, node, release, version, machine, processor = platform.uname()
-                self.assertEqual(machine, 'foo')
-                environ['PROCESSOR_ARCHITEW6432'] = 'bar'
-                platform.uname.cache_clear()
-                system, node, release, version, machine, processor = platform.uname()
-                self.assertEqual(machine, 'bar')
-        finally:
+        with support.EnvironmentVarGuard() as environ:
+            if 'PROCESSOR_ARCHITEW6432' in environ:
+                del environ['PROCESSOR_ARCHITEW6432']
+            environ['PROCESSOR_ARCHITECTURE'] = 'foo'
             platform.uname.cache_clear()
+            system, node, release, version, machine, processor = platform.uname()
+            self.assertEqual(machine, 'foo')
+            environ['PROCESSOR_ARCHITEW6432'] = 'bar'
+            platform.uname.cache_clear()
+            system, node, release, version, machine, processor = platform.uname()
+            self.assertEqual(machine, 'bar')
+
+        self.addCleanup(self.clear_caches)
 
     def test_java_ver(self):
         res = platform.java_ver()
