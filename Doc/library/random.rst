@@ -111,6 +111,16 @@ Bookkeeping functions
    as an optional part of the API. When available, :meth:`getrandbits` enables
    :meth:`randrange` to handle arbitrarily large ranges.
 
+   .. versionchanged:: 3.9
+      This method now accepts zero for *k*.
+
+
+.. function:: randbytes(n)
+
+   Generate *n* random bytes.
+
+   .. versionadded:: 3.9
+
 
 Functions for integers
 ----------------------

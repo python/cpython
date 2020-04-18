@@ -808,7 +808,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_datetime', ['_datetimemodule.c'],
                            libraries=['m']))
         # random number generator implemented in C
-        self.add(Extension("_random", ["_randommodule.c"]))
+        self.add(Extension("_random", ["_randommodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # bisect
         self.add(Extension("_bisect", ["_bisectmodule.c"]))
         # heapq
@@ -2044,7 +2045,7 @@ class PyBuildExt(build_ext):
         # Thomas Heller's _ctypes module
         self.use_system_libffi = False
         include_dirs = []
-        extra_compile_args = []
+        extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         extra_link_args = []
         sources = ['_ctypes/_ctypes.c',
                    '_ctypes/callbacks.c',
@@ -2298,8 +2299,10 @@ class PyBuildExt(build_ext):
         # It's harmless and the object code is tiny (40-50 KiB per module,
         # only loaded when actually used).
         self.add(Extension('_sha256', ['sha256module.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                            depends=['hashlib.h']))
         self.add(Extension('_sha512', ['sha512module.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                            depends=['hashlib.h']))
         self.add(Extension('_md5', ['md5module.c'],
                            depends=['hashlib.h']))
