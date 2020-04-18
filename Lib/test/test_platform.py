@@ -15,10 +15,11 @@ class PlatformTest(unittest.TestCase):
         platform.uname.cache_clear()
 
     def test_architecture(self):
-        res = platform.architecture()
+        platform.architecture()
 
     @support.skip_unless_symlink
-    def test_architecture_via_symlink(self): # issue3762
+    def test_architecture_via_symlink(self):
+        # issue3762
         with support.PythonSymlink() as py:
             cmd = "-c", "import platform; print(platform.architecture())"
             self.assertEqual(py.call_real(*cmd), py.call_link(*cmd))
@@ -26,25 +27,25 @@ class PlatformTest(unittest.TestCase):
     def test_platform(self):
         for aliased in (False, True):
             for terse in (False, True):
-                res = platform.platform(aliased, terse)
+                platform.platform(aliased, terse)
 
     def test_system(self):
-        res = platform.system()
+        platform.system()
 
     def test_node(self):
-        res = platform.node()
+        platform.node()
 
     def test_release(self):
-        res = platform.release()
+        platform.release()
 
     def test_version(self):
-        res = platform.version()
+        platform.version()
 
     def test_machine(self):
-        res = platform.machine()
+        platform.machine()
 
     def test_processor(self):
-        res = platform.processor()
+        platform.processor()
 
     def setUp(self):
         self.save_version = sys.version
@@ -82,7 +83,7 @@ class PlatformTest(unittest.TestCase):
              ('CPython', '2.4.3', '', '', 'truncation', '', 'GCC')),
             ('2.4.3 (truncation) \n[GCC]',
              ('CPython', '2.4.3', '', '', 'truncation', '', 'GCC')),
-            ):
+        ):
             # branch and revision are not "parsed", but fetched
             # from sys._git.  Ignore them
             (name, version, branch, revision, buildno, builddate, compiler) \
@@ -145,7 +146,7 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(platform.python_compiler(), info[5])
 
     def test_system_alias(self):
-        res = platform.system_alias(
+        platform.system_alias(
             platform.system(),
             platform.release(),
             platform.version(),
@@ -197,7 +198,7 @@ class PlatformTest(unittest.TestCase):
             self.assertTrue(all(res))
 
     def test_win32_ver(self):
-        res = platform.win32_ver()
+        platform.win32_ver()
 
     def test_mac_ver(self):
         res = platform.mac_ver()
@@ -231,7 +232,6 @@ class PlatformTest(unittest.TestCase):
             else:
                 self.assertEqual(res[2], 'PowerPC')
 
-
     @unittest.skipUnless(sys.platform == 'darwin', "OSX only test")
     def test_mac_ver_with_fork(self):
         # Issue7895: platform.mac_ver() crashes when using fork without exec
@@ -241,7 +241,7 @@ class PlatformTest(unittest.TestCase):
         pid = os.fork()
         if pid == 0:
             # child
-            info = platform.mac_ver()
+            platform.mac_ver()
             os._exit(0)
 
         else:
@@ -292,7 +292,7 @@ class PlatformTest(unittest.TestCase):
         with open(filename, 'wb') as f:
             # test match at chunk boundary
             f.write(b'x'*(chunksize - 10))
-            f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
+            f.write(b'GLIBC_1.23.4\x00GLIBC_1.9\x00GLIBC_1.21\x00')
         self.assertEqual(platform.libc_ver(filename, chunksize=chunksize),
                          ('glibc', '1.23.4'))
 
@@ -332,7 +332,6 @@ class PlatformTest(unittest.TestCase):
         self.assertLess(V('1.13++'), V('5.5.kw'))
         self.assertLess(V('0.960923'), V('2.2beta29'))
 
-
     def test_macos(self):
         uname = ('Darwin', 'hostname', '17.7.0',
                  ('Darwin Kernel Version 17.7.0: '
@@ -341,7 +340,7 @@ class PlatformTest(unittest.TestCase):
                  'x86_64', 'i386')
         arch = ('64bit', '')
         with mock.patch.object(platform, 'uname', return_value=uname), \
-             mock.patch.object(platform, 'architecture', return_value=arch):
+                mock.patch.object(platform, 'architecture', return_value=arch):
             for mac_ver, expected_terse, expected in [
                 # darwin: mac_ver() returns empty strings
                 (('', '', ''),
