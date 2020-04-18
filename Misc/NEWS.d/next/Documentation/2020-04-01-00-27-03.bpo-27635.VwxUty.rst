@@ -1,0 +1,2 @@
+The pickle documentation incorrectly claimed that ``__new__`` isn't called by
+default when unpickling.
