@@ -1445,7 +1445,7 @@ location listed above.
         if not doc:
             doc = getdoc(object)
         if doc:
-            line += '\n' + self.indent(str(doc))
+            line += '\n' + self.indent(str(doc)) + '\n'
         return line
 
 class _PlainTextDoc(TextDoc):
@@ -1672,8 +1672,11 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
               inspect.getdoc(object)):
         # If the passed object is a piece of data or an instance,
         # document its available methods instead of its value.
-        object = type(object)
-        desc += ' object'
+        if hasattr(object, '__origin__'):
+            object = object.__origin__
+        else:
+            object = type(object)
+            desc += ' object'
     return title % desc + '\n\n' + renderer.document(object, name)
 
 def doc(thing, title='Python Library Documentation: %s', forceload=0,

@@ -142,6 +142,12 @@ Other Language Changes
   grammar was much more restrictive.  See :pep:`614` for details.
   (Contributed by Brandt Bucher in :issue:`39702`.)
 
+* Improved help for the :mod:`typing` module. Docstrings are now shown for
+  all special forms and special generic aliases (like ``Union`` and ``List``).
+  Using :func:`help` with generic alias like ``List[int]`` will show the help
+  for the correspondent concrete type (``list`` in this case).
+  (Contributed by Serhiy Storchaka in :issue:`40257`.)
+
 
 New Modules
 ===========
