@@ -972,21 +972,20 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
     def test_saturation(self):
         executor = self.executor_type(4)
-        def acquire_lock(lock):
-            lock.aquire()
-
         mp_context = get_context()
         sem = mp_context.Semaphore(0)
         job_count = 15 * executor._max_workers
-        for _ in range(job_count):
-            executor.submit(acquire_lock, sem)
-        self.assertEqual(len(executor._processes), executor._max_workers)
-        for _ in range(job_count):
-            sem.release()
-        executor.shutdown()
+        try:
+            for _ in range(job_count):
+                executor.submit(sem.acquire)
+            self.assertEqual(len(executor._processes), executor._max_workers)
+            for _ in range(job_count):
+                sem.release()
+        finally:
+            executor.shutdown()
 
     def test_idle_process_reuse_one(self):
-        executor = self.executor_type()
+        executor = self.executor_type(4)
         executor.submit(mul, 21, 2).result()
         executor.submit(mul, 6, 7).result()
         executor.submit(mul, 3, 14).result()
@@ -994,12 +993,12 @@ class ProcessPoolExecutorTest(ExecutorTest):
         executor.shutdown()
 
     def test_idle_process_reuse_multiple(self):
-        executor = self.executor_type()
+        executor = self.executor_type(4)
         executor.submit(mul, 12, 7).result()
         executor.submit(mul, 33, 25)
         executor.submit(mul, 25, 26).result()
         executor.submit(mul, 18, 29)
-        self.assertTrue(len(executor._processes) <= 2)
+        self.assertLessEqual(len(executor._processes), 2)
         executor.shutdown()
 
 create_executor_tests(ProcessPoolExecutorTest,
