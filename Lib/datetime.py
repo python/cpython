@@ -1519,6 +1519,16 @@ class time:
             fold = self._fold
         return type(self)(hour, minute, second, microsecond, tzinfo, fold=fold)
 
+    def zero(self, time_unit):
+        """Return a new date with zero values for fields with a resolution greater equal than the specified time unit.
+        The valid time units are 'hour', 'minute', 'second' and 'microsecond'.
+        Any other time unit will raise a ValueError.
+        """
+        time_units = {'hour': 0, 'minute': 1, 'second': 2, 'microsecond': 3}
+        if time_unit not in time_units:
+            raise ValueError("Invalid time unit: {}".format(time_unit))
+        return self.replace(**{u: 0 for u in time_units if time_units[u] >= time_units[time_unit]})
+
     # Pickle support.
 
     def _getstate(self, protocol=3):
@@ -1843,6 +1853,16 @@ class datetime(date):
             fold = self.fold
         return type(self)(year, month, day, hour, minute, second,
                           microsecond, tzinfo, fold=fold)
+
+    def zero(self, time_unit):
+        """Return a new date with zero values for fields with a resolution greater equal than the specified time unit.
+        The valid time units are 'hour', 'minute', 'second' and 'microsecond'.
+        Any other time unit will raise a ValueError.
+        """
+        time_units = {'hour': 0, 'minute': 1, 'second': 2, 'microsecond': 3}
+        if time_unit not in time_units:
+            raise ValueError("Invalid time unit: {}".format(time_unit))
+        return self.replace(**{u: 0 for u in time_units if time_units[u] >= time_units[time_unit]})
 
     def _local_timezone(self):
         if self.tzinfo is None:
