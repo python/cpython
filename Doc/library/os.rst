@@ -1266,7 +1266,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 
 .. function:: sendfile(out_fd, in_fd, offset, count)
-              sendfile(out_fd, in_fd, offset, count, [headers], [trailers], flags=0)
+              sendfile(out_fd, in_fd, offset, count, headers=(), trailers=(), flags=0)
 
    Copy *count* bytes from file descriptor *in_fd* to file descriptor *out_fd*
    starting at *offset*.
