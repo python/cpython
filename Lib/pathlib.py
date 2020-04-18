@@ -1071,6 +1071,9 @@ class Path(PurePath):
         self._init()
         return self
 
+    def __init__(self, *_):
+        pass  # bpo-29847
+
     def _init(self,
               # Private non-constructor arguments
               template=None,

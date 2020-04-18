@@ -2312,6 +2312,21 @@ class PathTest(_BasePathTest, unittest.TestCase):
         self.assertIs(type(p),
             pathlib.WindowsPath if os.name == 'nt' else pathlib.PosixPath)
 
+    def test_kwargs(self):
+        with self.assertRaisesRegex(TypeError, 'got an unexpected keyword argument'):
+            self.cls(arg=None)
+
+    def test_subclass_kwargs(self):
+        class _PathSubclass(self.cls):
+            _flavour = self.cls()._flavour
+
+            def __init__(self, *args, **kwargs):
+                self.kwargs = kwargs
+
+        _kwargs = {"a": 1, "b": 2}
+        p = _PathSubclass(**_kwargs)
+        self.assertEqual(p.kwargs, _kwargs)
+
     def test_unsupported_flavour(self):
         if os.name == 'nt':
             self.assertRaises(NotImplementedError, pathlib.PosixPath)
