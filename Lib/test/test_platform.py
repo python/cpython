@@ -13,7 +13,7 @@ class PlatformTest(unittest.TestCase):
     def clear_caches(self):
         platform._platform_cache.clear()
         platform._sys_version_cache.clear()
-        platform._uname_cache = None
+        platform.uname.cache_clear()
 
     def test_architecture(self):
         res = platform.architecture()
@@ -182,15 +182,15 @@ class PlatformTest(unittest.TestCase):
                 if 'PROCESSOR_ARCHITEW6432' in environ:
                     del environ['PROCESSOR_ARCHITEW6432']
                 environ['PROCESSOR_ARCHITECTURE'] = 'foo'
-                platform._uname_cache = None
+                platform.uname.cache_clear()
                 system, node, release, version, machine, processor = platform.uname()
                 self.assertEqual(machine, 'foo')
                 environ['PROCESSOR_ARCHITEW6432'] = 'bar'
-                platform._uname_cache = None
+                platform.uname.cache_clear()
                 system, node, release, version, machine, processor = platform.uname()
                 self.assertEqual(machine, 'bar')
         finally:
-            platform._uname_cache = None
+            platform.uname.cache_clear()
 
     def test_java_ver(self):
         res = platform.java_ver()
