@@ -476,6 +476,7 @@ class PydocDocTest(unittest.TestCase):
     def test_non_str_name(self):
         # issue14638
         # Treat illegal (non-str) name like no name
+
         class A:
             __name__ = 42
         class B:
