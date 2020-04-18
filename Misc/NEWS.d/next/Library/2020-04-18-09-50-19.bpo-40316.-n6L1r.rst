@@ -1,0 +1,1 @@
+Added datetime.datetime.zero, datetime.time.zero to limit a datetime to a certain resolution by replacing fields with zero.
