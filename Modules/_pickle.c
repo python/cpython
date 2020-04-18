@@ -9,7 +9,7 @@
 #endif
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
@@ -2581,7 +2581,7 @@ raw_unicode_escape(PyObject *obj)
 {
     char *p;
     Py_ssize_t i, size;
-    void *data;
+    const void *data;
     unsigned int kind;
     _PyBytesWriter writer;
 

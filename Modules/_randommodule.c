@@ -11,7 +11,7 @@
     * renamed genrand_res53() to random_random() and wrapped
       in python calling/return code.
 
-    * genrand_int32() and the helper functions, init_genrand()
+    * genrand_uint32() and the helper functions, init_genrand()
       and init_by_array(), were declared static, wrapped in
       Python calling/return code.  also, their global data
       references were replaced with structure references.
@@ -67,9 +67,9 @@
 /* ---------------------------------------------------------------*/
 
 #include "Python.h"
-#include <time.h>               /* for seeding to current time */
+#include "pycore_byteswap.h"      // _Py_bswap32()
 #ifdef HAVE_PROCESS_H
-#  include <process.h>          /* needed for getpid() */
+#  include <process.h>            // getpid()
 #endif
 
 /* Period parameters -- These are all magic.  Don't change. */
@@ -116,7 +116,7 @@ class _random.Random "RandomObject *" "&Random_Type"
 
 /* generates a random number on [0,0xffffffff]-interval */
 static uint32_t
-genrand_int32(RandomObject *self)
+genrand_uint32(RandomObject *self)
 {
     uint32_t y;
     static const uint32_t mag01[2] = {0x0U, MATRIX_A};
@@ -171,7 +171,7 @@ static PyObject *
 _random_Random_random_impl(RandomObject *self)
 /*[clinic end generated code: output=117ff99ee53d755c input=afb2a59cbbb00349]*/
 {
-    uint32_t a=genrand_int32(self)>>5, b=genrand_int32(self)>>6;
+    uint32_t a=genrand_uint32(self)>>5, b=genrand_uint32(self)>>6;
     return PyFloat_FromDouble((a*67108864.0+b)*(1.0/9007199254740992.0));
 }
 
@@ -234,7 +234,7 @@ init_by_array(RandomObject *self, uint32_t init_key[], size_t key_length)
 static int
 random_seed_urandom(RandomObject *self)
 {
-    PY_UINT32_T key[N];
+    uint32_t key[N];
 
     if (_PyOS_URandomNonblock(key, sizeof(key)) < 0) {
         return -1;
@@ -250,14 +250,14 @@ random_seed_time_pid(RandomObject *self)
     uint32_t key[5];
 
     now = _PyTime_GetSystemClock();
-    key[0] = (PY_UINT32_T)(now & 0xffffffffU);
-    key[1] = (PY_UINT32_T)(now >> 32);
+    key[0] = (uint32_t)(now & 0xffffffffU);
+    key[1] = (uint32_t)(now >> 32);
 
-    key[2] = (PY_UINT32_T)getpid();
+    key[2] = (uint32_t)getpid();
 
     now = _PyTime_GetMonotonicClock();
-    key[3] = (PY_UINT32_T)(now & 0xffffffffU);
-    key[4] = (PY_UINT32_T)(now >> 32);
+    key[3] = (uint32_t)(now & 0xffffffffU);
+    key[4] = (uint32_t)(now >> 32);
 
     init_by_array(self, key, Py_ARRAY_LENGTH(key));
 }
@@ -474,14 +474,17 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
     uint32_t *wordarray;
     PyObject *result;
 
-    if (k <= 0) {
+    if (k < 0) {
         PyErr_SetString(PyExc_ValueError,
-                        "number of bits must be greater than zero");
+                        "number of bits must be non-negative");
         return NULL;
     }
 
+    if (k == 0)
+        return PyLong_FromLong(0);
+
     if (k <= 32)  /* Fast path */
-        return PyLong_FromUnsignedLong(genrand_int32(self) >> (32 - k));
+        return PyLong_FromUnsignedLong(genrand_uint32(self) >> (32 - k));
 
     words = (k - 1) / 32 + 1;
     wordarray = (uint32_t *)PyMem_Malloc(words * 4);
@@ -498,7 +501,7 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
     for (i = words - 1; i >= 0; i--, k -= 32)
 #endif
     {
-        r = genrand_int32(self);
+        r = genrand_uint32(self);
         if (k < 32)
             r >>= (32 - k);  /* Drop least significant bits */
         wordarray[i] = r;
@@ -508,6 +511,50 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
                                    PY_LITTLE_ENDIAN, 0 /* unsigned */);
     PyMem_Free(wordarray);
     return result;
+}
+
+/*[clinic input]
+
+_random.Random.randbytes
+
+  self: self(type="RandomObject *")
+  n: Py_ssize_t
+  /
+
+Generate n random bytes.
+[clinic start generated code]*/
+
+static PyObject *
+_random_Random_randbytes_impl(RandomObject *self, Py_ssize_t n)
+/*[clinic end generated code: output=67a28548079a17ea input=7ba658a24150d233]*/
+{
+    if (n < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "number of bytes must be non-negative");
+        return NULL;
+    }
+
+    PyObject *bytes = PyBytes_FromStringAndSize(NULL, n);
+    if (bytes == NULL) {
+        return NULL;
+    }
+    uint8_t *ptr = (uint8_t *)PyBytes_AS_STRING(bytes);
+
+    for (; n; ptr += 4, n -= 4) {
+        uint32_t word = genrand_uint32(self);
+#if PY_BIG_ENDIAN
+        /* Convert to little endian */
+        word = _Py_bswap32(word);
+#endif
+        if (n < 4) {
+            /* Drop least significant bits */
+            memcpy(ptr, (uint8_t *)&word + (4 - n), n);
+            break;
+        }
+        memcpy(ptr, &word, 4);
+    }
+
+    return bytes;
 }
 
 static PyObject *
@@ -539,6 +586,7 @@ static PyMethodDef random_methods[] = {
     _RANDOM_RANDOM_GETSTATE_METHODDEF
     _RANDOM_RANDOM_SETSTATE_METHODDEF
     _RANDOM_RANDOM_GETRANDBITS_METHODDEF
+    _RANDOM_RANDOM_RANDBYTES_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

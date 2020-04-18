@@ -2,11 +2,9 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
 #include "bytesobject.h"
 #include "pystrhex.h"
 
@@ -391,7 +389,7 @@ bytearray_getitem(PyByteArrayObject *self, Py_ssize_t i)
 static PyObject *
 bytearray_subscript(PyByteArrayObject *self, PyObject *index)
 {
-    if (PyIndex_Check(index)) {
+    if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
 
         if (i == -1 && PyErr_Occurred())
@@ -610,7 +608,7 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
     char *buf, *bytes;
     buf = PyByteArray_AS_STRING(self);
 
-    if (PyIndex_Check(index)) {
+    if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
 
         if (i == -1 && PyErr_Occurred())
@@ -809,7 +807,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     }
 
     /* Is it an int? */
-    if (PyIndex_Check(arg)) {
+    if (_PyIndex_Check(arg)) {
         count = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (count == -1 && PyErr_Occurred()) {
             if (!PyErr_ExceptionMatches(PyExc_TypeError))
@@ -996,8 +994,7 @@ bytearray_repr(PyByteArrayObject *self)
 static PyObject *
 bytearray_str(PyObject *op)
 {
-    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
-    if (config->bytes_warning) {
+    if (_Py_GetConfig()->bytes_warning) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
                          "str() on a bytearray instance", 1)) {
                 return NULL;
@@ -1022,8 +1019,7 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
     if (rc < 0)
         return NULL;
     if (rc) {
-        PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
-        if (config->bytes_warning && (op == Py_EQ || op == Py_NE)) {
+        if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
             if (PyErr_WarnEx(PyExc_BytesWarning,
                             "Comparison between bytearray and string", 1))
                 return NULL;

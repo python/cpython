@@ -142,6 +142,12 @@ Other Language Changes
   grammar was much more restrictive.  See :pep:`614` for details.
   (Contributed by Brandt Bucher in :issue:`39702`.)
 
+* Improved help for the :mod:`typing` module. Docstrings are now shown for
+  all special forms and special generic aliases (like ``Union`` and ``List``).
+  Using :func:`help` with generic alias like ``List[int]`` will show the help
+  for the correspondent concrete type (``list`` in this case).
+  (Contributed by Serhiy Storchaka in :issue:`40257`.)
+
 
 New Modules
 ===========
@@ -346,6 +352,19 @@ pprint
 :mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
 (Contributed by Carl Bordum Hansen in :issue:`37376`.)
 
+pydoc
+-----
+
+The documentation string is now shown not only for class, function,
+method etc, but for any object that has its own ``__doc__`` attribute.
+(Contributed by Serhiy Storchaka in :issue:`40257`.)
+
+random
+------
+
+Add a new :attr:`random.Random.randbytes` method: generate random bytes.
+(Contributed by Victor Stinner in :issue:`40286`.)
+
 signal
 ------
 
@@ -362,14 +381,12 @@ a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 :class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
 (Contributed by Dong-hee Na in :issue:`39329`.)
 
-threading
----------
+socket
+------
 
-In a subinterpreter, spawning a daemon thread now raises a :exc:`RuntimeError`. Daemon
-threads were never supported in subinterpreters. Previously, the subinterpreter
-finalization crashed with a Python fatal error if a daemon thread was still
-running.
-(Contributed by Victor Stinner in :issue:`37266`.)
+The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
+constant on Linux 4.1 and greater.
+(Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
 
 sys
 ---
@@ -404,6 +421,15 @@ customization consistently by always using the value specified by
 ``__VENV_PROMPT__``, others only if it happened to be set (which was the default
 case), and one used ``__VENV_NAME__`` instead.
 (Contributed by Brett Cannon in :issue:`37663`.)
+
+xml
+---
+
+White space characters within attributes are now preserved when serializing
+:mod:`xml.etree.ElementTree` to XML file. EOLNs are no longer normalized
+to "\n". This is the result of discussion about how to interpret
+section 2.11 of XML spec.
+(Contributed by Mefistotelis in :issue:`39011`.)
 
 
 Optimizations
@@ -556,6 +582,13 @@ Build and C API Changes
   the ``-E`` option is used. This is significant when embedding Python on
   Windows.
   (Contributed by Zackery Spytz in :issue:`8901`.)
+
+* Add the functions :c:func:`PyObject_GC_IsTracked` and
+  :c:func:`PyObject_GC_IsFinalized` to the public API to allow to query if
+  Python objects are being currently tracked or have been already finalized by
+  the garbage collector respectively. (Contributed by Pablo Galindo in
+  :issue:`40241`.)
+
 
 Deprecated
 ==========
@@ -734,6 +767,15 @@ Removed
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
+* The ``_field_types`` attribute of the :class:`typing.NamedTuple` class
+  has been removed.  It was deprecated deprecated since Python 3.8.  Use
+  the ``__annotations__`` attribute instead.
+  (Contributed by Serhiy Storchaka in :issue:`40182`.)
+
+* The :meth:`symtable.SymbolTable.has_exec` method has been removed. It was
+  deprecated since 2006, and only returning ``False`` when it's called.
+  (Contributed by Batuhan Taskaya in :issue:`40208`)
+
 
 Porting to Python 3.9
 =====================
@@ -770,6 +812,15 @@ Changes in the Python API
 * The :mod:`importlib` module now ignores the :envvar:`PYTHONCASEOK`
   environment variable when the :option:`-E` or :option:`-I` command line
   options are being used.
+
+* The *encoding* parameter has been added to the classes :class:`ftplib.FTP` and
+  :class:`ftplib.FTP_TLS` as a keyword-only parameter, and the default encoding
+  is changed from Latin-1 to UTF-8 to follow :rfc:`2640`.
+
+* :func:`inspect.getdoc` no longer returns docstring inherited from the type
+  of the object or from parent class if it is a class if it is not defined
+  in the object itself.
+  (Contributed by Serhiy Storchaka in :issue:`40257`.)
 
 
 CPython bytecode changes

@@ -17,8 +17,7 @@
 #include "Python.h"
 #include "datetime.h"
 #include "marshal.h"
-#include "pythread.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include <float.h>
 #include <signal.h>
 
@@ -3588,7 +3587,7 @@ slot_tp_del(PyObject *self)
         _Py_NewReference(self);
         Py_SET_REFCNT(self, refcnt);
     }
-    assert(!PyType_IS_GC(Py_TYPE(self)) || _PyObject_GC_IS_TRACKED(self));
+    assert(!PyType_IS_GC(Py_TYPE(self)) || PyObject_GC_IsTracked(self));
     /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
        _Py_RefTotal, so we need to undo that. */
 #ifdef Py_REF_DEBUG
@@ -6716,7 +6715,6 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
-    PyModule_AddObject(m, "SIZEOF_PYGC_HEAD", PyLong_FromSsize_t(sizeof(PyGC_Head)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);

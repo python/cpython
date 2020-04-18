@@ -1,0 +1,2 @@
+Fix the signal handler: it now always uses the main interpreter, rather than
+trying to get the current Python thread state.

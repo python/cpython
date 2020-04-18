@@ -713,7 +713,7 @@ non-important content
 
         # lambda doesn't work without parens, because the colon
         #  makes the parser think it's a format_spec
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
+        self.assertAllRaise(SyntaxError, 'invalid syntax',
                             ["f'{lambda x:x}'",
                              ])
 
@@ -841,8 +841,7 @@ non-important content
         self.assertEqual(f'{f"{y}"*3}', '555')
 
     def test_invalid_string_prefixes(self):
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
-                            ["fu''",
+        single_quote_cases = ["fu''",
                              "uf''",
                              "Fu''",
                              "fU''",
@@ -863,8 +862,10 @@ non-important content
                              "bf''",
                              "bF''",
                              "Bf''",
-                             "BF''",
-                             ])
+                             "BF''",]
+        double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
+        self.assertAllRaise(SyntaxError, 'invalid string prefix',
+                            single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):
         self.assertEqual(f'{ 3}', '3')

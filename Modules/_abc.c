@@ -1,7 +1,6 @@
 /* ABCMeta implementation */
 
 #include "Python.h"
-#include "structmember.h"
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -51,13 +50,29 @@ typedef struct {
     unsigned long long _abc_negative_cache_version;
 } _abc_data;
 
+static int
+abc_data_traverse(_abc_data *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->_abc_registry);
+    Py_VISIT(self->_abc_cache);
+    Py_VISIT(self->_abc_negative_cache);
+    return 0;
+}
+
+static int
+abc_data_clear(_abc_data *self)
+{
+    Py_CLEAR(self->_abc_registry);
+    Py_CLEAR(self->_abc_cache);
+    Py_CLEAR(self->_abc_negative_cache);
+    return 0;
+}
+
 static void
 abc_data_dealloc(_abc_data *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    Py_XDECREF(self->_abc_registry);
-    Py_XDECREF(self->_abc_cache);
-    Py_XDECREF(self->_abc_negative_cache);
+    (void)abc_data_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -84,13 +99,15 @@ static PyType_Slot _abc_data_type_spec_slots[] = {
     {Py_tp_doc, (void *)abc_data_doc},
     {Py_tp_new, abc_data_new},
     {Py_tp_dealloc, abc_data_dealloc},
+    {Py_tp_traverse, abc_data_traverse},
+    {Py_tp_clear, abc_data_clear},
     {0, 0}
 };
 
 static PyType_Spec _abc_data_type_spec = {
     .name = "_abc._abc_data",
     .basicsize = sizeof(_abc_data),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = _abc_data_type_spec_slots,
 };
 

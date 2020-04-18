@@ -14,6 +14,7 @@ import os
 import threading
 import collections
 import time
+import types
 import weakref
 import errno
 
@@ -48,8 +49,7 @@ class Queue(object):
         self._sem = ctx.BoundedSemaphore(maxsize)
         # For use by concurrent.futures
         self._ignore_epipe = False
-
-        self._after_fork()
+        self._reset()
 
         if sys.platform != 'win32':
             register_after_fork(self, Queue._after_fork)
@@ -62,11 +62,17 @@ class Queue(object):
     def __setstate__(self, state):
         (self._ignore_epipe, self._maxsize, self._reader, self._writer,
          self._rlock, self._wlock, self._sem, self._opid) = state
-        self._after_fork()
+        self._reset()
 
     def _after_fork(self):
         debug('Queue._after_fork()')
-        self._notempty = threading.Condition(threading.Lock())
+        self._reset(after_fork=True)
+
+    def _reset(self, after_fork=False):
+        if after_fork:
+            self._notempty._at_fork_reinit()
+        else:
+            self._notempty = threading.Condition(threading.Lock())
         self._buffer = collections.deque()
         self._thread = None
         self._jointhread = None
@@ -366,3 +372,5 @@ class SimpleQueue(object):
         else:
             with self._wlock:
                 self._writer.send_bytes(obj)
+
+    __class_getitem__ = classmethod(types.GenericAlias)

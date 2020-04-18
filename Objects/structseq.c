@@ -10,7 +10,7 @@
 #include "Python.h"
 #include "pycore_tupleobject.h"
 #include "pycore_object.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";

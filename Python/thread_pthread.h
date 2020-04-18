@@ -1,3 +1,4 @@
+#include "pycore_interp.h"    // _PyInterpreterState.pythread_stacksize
 
 /* Posix threads interface */
 
@@ -694,6 +695,26 @@ PyThread_release_lock(PyThread_type_lock lock)
 #endif /* USE_SEMAPHORES */
 
 int
+_PyThread_at_fork_reinit(PyThread_type_lock *lock)
+{
+    PyThread_type_lock new_lock = PyThread_allocate_lock();
+    if (new_lock == NULL) {
+        return -1;
+    }
+
+    /* bpo-6721, bpo-40089: The old lock can be in an inconsistent state.
+       fork() can be called in the middle of an operation on the lock done by
+       another thread. So don't call PyThread_free_lock(*lock).
+
+       Leak memory on purpose. Don't release the memory either since the
+       address of a mutex is relevant. Putting two mutexes at the same address
+       can lead to problems. */
+
+    *lock = new_lock;
+    return 0;
+}
+
+int
 PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
 {
     return PyThread_acquire_lock_timed(lock, waitflag ? -1 : 0, /*intr_flag=*/0);
@@ -714,7 +735,7 @@ _pythread_pthread_set_stacksize(size_t size)
 
     /* set to default */
     if (size == 0) {
-        _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = 0;
+        _PyInterpreterState_GET()->pythread_stacksize = 0;
         return 0;
     }
 
@@ -731,7 +752,7 @@ _pythread_pthread_set_stacksize(size_t size)
             rc = pthread_attr_setstacksize(&attrs, size);
             pthread_attr_destroy(&attrs);
             if (rc == 0) {
-                _PyInterpreterState_GET_UNSAFE()->pythread_stacksize = size;
+                _PyInterpreterState_GET()->pythread_stacksize = size;
                 return 0;
             }
         }

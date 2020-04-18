@@ -6,7 +6,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include <ctype.h>
 
 /*[clinic input]
@@ -1785,7 +1785,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset, char*
             if (e->format == 's') {
                 Py_ssize_t n;
                 int isstring;
-                void *p;
+                const void *p;
                 isstring = PyBytes_Check(v);
                 if (!isstring && !PyByteArray_Check(v)) {
                     PyErr_SetString(_structmodulestate_global->StructError,
@@ -1807,7 +1807,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset, char*
             } else if (e->format == 'p') {
                 Py_ssize_t n;
                 int isstring;
-                void *p;
+                const void *p;
                 isstring = PyBytes_Check(v);
                 if (!isstring && !PyByteArray_Check(v)) {
                     PyErr_SetString(_structmodulestate_global->StructError,

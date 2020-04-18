@@ -55,7 +55,7 @@
  */
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #ifdef MS_WIN32
 #include <windows.h>
@@ -751,7 +751,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 #if defined(MS_WIN32) && !defined(_WIN32_WCE)
 /*
 Per: https://msdn.microsoft.com/en-us/library/7572ztz4.aspx
-To be returned by value in RAX, user-defined types must have a length 
+To be returned by value in RAX, user-defined types must have a length
 of 1, 2, 4, 8, 16, 32, or 64 bits
 */
 int can_return_struct_as_int(size_t s)
@@ -1384,7 +1384,7 @@ copy_com_pointer(PyObject *self, PyObject *args)
 static PyObject *py_dl_open(PyObject *self, PyObject *args)
 {
     PyObject *name, *name2;
-    char *name_str;
+    const char *name_str;
     void * handle;
 #if HAVE_DECL_RTLD_LOCAL
     int mode = RTLD_NOW | RTLD_LOCAL;

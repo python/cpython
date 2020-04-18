@@ -4,17 +4,9 @@
 
 #include "Python.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
-#include "structmember.h" /* offsetof */
-#include "pythread.h"
-
-#include "clinic/_threadmodule.c.h"
-
-/*[clinic input]
-module _thread
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=be8dbe5cc4b16df7]*/
-
+#include "pycore_interp.h"        // _PyInterpreterState.num_threads
+#include "pycore_pystate.h"       // _PyThreadState_Init()
+#include <stddef.h>               // offsetof()
 
 static PyObject *ThreadError;
 static PyObject *str_dict;
@@ -213,6 +205,22 @@ lock_repr(lockobject *self)
         self->locked ? "locked" : "unlocked", Py_TYPE(self)->tp_name, self);
 }
 
+#ifdef HAVE_FORK
+static PyObject *
+lock__at_fork_reinit(lockobject *self, PyObject *Py_UNUSED(args))
+{
+    if (_PyThread_at_fork_reinit(&self->lock_lock) < 0) {
+        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
+        return NULL;
+    }
+
+    self->locked = 0;
+
+    Py_RETURN_NONE;
+}
+#endif  /* HAVE_FORK */
+
+
 static PyMethodDef lock_methods[] = {
     {"acquire_lock", (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
@@ -230,6 +238,10 @@ static PyMethodDef lock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
      METH_VARARGS, release_doc},
+#ifdef HAVE_FORK
+    {"_at_fork_reinit",    (PyCFunction)lock__at_fork_reinit,
+     METH_NOARGS, NULL},
+#endif
     {NULL,           NULL}              /* sentinel */
 };
 
@@ -446,22 +458,20 @@ For internal use by `threading.Condition`.");
 static PyObject *
 rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    rlockobject *self;
-
-    self = (rlockobject *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->in_weakreflist = NULL;
-        self->rlock_owner = 0;
-        self->rlock_count = 0;
-
-        self->rlock_lock = PyThread_allocate_lock();
-        if (self->rlock_lock == NULL) {
-            Py_DECREF(self);
-            PyErr_SetString(ThreadError, "can't allocate lock");
-            return NULL;
-        }
+    rlockobject *self = (rlockobject *) type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
     }
+    self->in_weakreflist = NULL;
+    self->rlock_owner = 0;
+    self->rlock_count = 0;
 
+    self->rlock_lock = PyThread_allocate_lock();
+    if (self->rlock_lock == NULL) {
+        Py_DECREF(self);
+        PyErr_SetString(ThreadError, "can't allocate lock");
+        return NULL;
+    }
     return (PyObject *) self;
 }
 
@@ -473,6 +483,23 @@ rlock_repr(rlockobject *self)
         Py_TYPE(self)->tp_name, self->rlock_owner,
         self->rlock_count, self);
 }
+
+
+#ifdef HAVE_FORK
+static PyObject *
+rlock__at_fork_reinit(rlockobject *self, PyObject *Py_UNUSED(args))
+{
+    if (_PyThread_at_fork_reinit(&self->rlock_lock) < 0) {
+        PyErr_SetString(ThreadError, "failed to reinitialize lock at fork");
+        return NULL;
+    }
+
+    self->rlock_owner = 0;
+    self->rlock_count = 0;
+
+    Py_RETURN_NONE;
+}
+#endif  /* HAVE_FORK */
 
 
 static PyMethodDef rlock_methods[] = {
@@ -490,6 +517,10 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"__exit__",    (PyCFunction)rlock_release,
      METH_VARARGS, rlock_release_doc},
+#ifdef HAVE_FORK
+    {"_at_fork_reinit",    (PyCFunction)rlock__at_fork_reinit,
+     METH_NOARGS, NULL},
+#endif
     {NULL,           NULL}              /* sentinel */
 };
 
@@ -555,8 +586,6 @@ newlockobject(void)
 }
 
 /* Thread-local objects */
-
-#include "structmember.h"
 
 /* Quick overview:
 
@@ -1059,7 +1088,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     boot = PyMem_NEW(struct bootstate, 1);
     if (boot == NULL)
         return PyErr_NoMemory();
-    boot->interp = _PyInterpreterState_GET_UNSAFE();
+    boot->interp = _PyInterpreterState_GET();
     boot->func = func;
     boot->args = args;
     boot->keyw = keyw;
@@ -1181,7 +1210,7 @@ particular thread within a system.");
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     return PyLong_FromLong(interp->num_threads);
 }
 
@@ -1454,21 +1483,6 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
-/*[clinic input]
-_thread._is_main_interpreter
-
-Return True if the current interpreter is the main Python interpreter.
-[clinic start generated code]*/
-
-static PyObject *
-_thread__is_main_interpreter_impl(PyObject *module)
-/*[clinic end generated code: output=7dd82e1728339adc input=cc1eb00fd4598915]*/
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    int is_main = _Py_IsMainInterpreter(tstate);
-    return PyBool_FromLong(is_main);
-}
-
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1498,7 +1512,6 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _set_sentinel_doc},
     {"_excepthook",              thread_excepthook,
      METH_O, excepthook_doc},
-    _THREAD__IS_MAIN_INTERPRETER_METHODDEF
     {NULL,                      NULL}           /* sentinel */
 };
 
@@ -1540,7 +1553,7 @@ PyInit__thread(void)
     PyObject *m, *d, *v;
     double time_max;
     double timeout_max;
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* Initialize types: */
     if (PyType_Ready(&localdummytype) < 0)

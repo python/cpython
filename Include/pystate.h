@@ -7,8 +7,6 @@
 extern "C" {
 #endif
 
-#include "pythread.h"
-
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
 #define MAX_CO_EXTRA_USERS 255

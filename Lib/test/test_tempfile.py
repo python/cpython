@@ -10,6 +10,7 @@ import re
 import warnings
 import contextlib
 import stat
+import types
 import weakref
 from unittest import mock
 
@@ -1017,7 +1018,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         # Verify writelines with a SpooledTemporaryFile
         f = self.do_create()
         f.writelines((b'x', b'y', b'z'))
-        f.seek(0)
+        pos = f.seek(0)
+        self.assertEqual(pos, 0)
         buf = f.read()
         self.assertEqual(buf, b'xyz')
 
@@ -1035,7 +1037,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         # when that occurs
         f = self.do_create(max_size=30)
         self.assertFalse(f._rolled)
-        f.seek(100, 0)
+        pos = f.seek(100, 0)
+        self.assertEqual(pos, 100)
         self.assertFalse(f._rolled)
         f.write(b'x')
         self.assertTrue(f._rolled)
@@ -1222,8 +1225,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertEqual(os.fstat(f.fileno()).st_size, 20)
 
     def test_class_getitem(self):
-        self.assertIs(tempfile.SpooledTemporaryFile[bytes],
-                      tempfile.SpooledTemporaryFile)
+        self.assertIsInstance(tempfile.SpooledTemporaryFile[bytes],
+                      types.GenericAlias)
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
 

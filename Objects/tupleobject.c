@@ -2,9 +2,10 @@
 /* Tuple object implementation */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_accu.h"
+#include "pycore_gc.h"         // _PyObject_GC_IS_TRACKED()
+#include "pycore_object.h"
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -763,7 +764,7 @@ static PySequenceMethods tuple_as_sequence = {
 static PyObject*
 tuplesubscript(PyTupleObject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
@@ -832,6 +833,7 @@ static PyMethodDef tuple_methods[] = {
     TUPLE___GETNEWARGS___METHODDEF
     TUPLE_INDEX_METHODDEF
     TUPLE_COUNT_METHODDEF
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 

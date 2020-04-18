@@ -1,0 +1,1 @@
+Implement traverse and clear slots in _abc._abc_data type.

@@ -25,6 +25,7 @@ import sysconfig
 import tempfile
 import threading
 import time
+import types
 import unittest
 import uuid
 import warnings
@@ -4191,7 +4192,7 @@ class TestPEP519(unittest.TestCase):
         self.assertTrue(issubclass(FakePath, os.PathLike))
 
     def test_pathlike_class_getitem(self):
-        self.assertIs(os.PathLike[bytes], os.PathLike)
+        self.assertIsInstance(os.PathLike[bytes], types.GenericAlias)
 
 
 class TimesTests(unittest.TestCase):

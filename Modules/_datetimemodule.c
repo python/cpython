@@ -9,7 +9,7 @@
 
 #include "Python.h"
 #include "datetime.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #include <time.h>
 

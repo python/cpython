@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 
 
 /*[clinic input]
@@ -3271,6 +3271,8 @@ module_free(void *m)
     Py_CLEAR(context_kwname);
 
     module_free_freelists();
+
+    module_initialized = 0;
 }
 
 static int
