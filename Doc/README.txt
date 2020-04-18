@@ -104,6 +104,13 @@ Then, from the ``Doc`` directory, run ::
 where ``<builder>`` is one of html, text, latex, or htmlhelp (for explanations
 see the make targets above).
 
+Deprecation header
+==================
+
+Following the sunsetting of Python 2.7, a red banner displays at the
+top of each page redirecting to the corresponding page on
+``https://docs.python.org/3/``.
+
 
 Contributing
 ============
