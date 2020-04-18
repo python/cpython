@@ -167,8 +167,11 @@ class PlatformTest(unittest.TestCase):
         On some systems, the processor must match the output
         of 'uname -p'. See Issue 35967 for rationale.
         """
-        proc_res = subprocess.check_output(['uname', '-p'], text=True).strip()
-        expect = platform._unknown_as_blank(proc_res)
+        try:
+            proc_res = subprocess.check_output(['uname', '-p'], text=True).strip()
+            expect = platform._unknown_as_blank(proc_res)
+        except (OSError, subprocess.CalledProcessError):
+            expect = ''
         self.assertEqual(platform.uname().processor, expect)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
