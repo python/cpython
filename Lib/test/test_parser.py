@@ -903,7 +903,7 @@ class ParserStackLimitTestCase(unittest.TestCase):
     @unittest.skipIf(sys.flags.use_peg, "Pegen does not trigger memory error with this many parenthesis")
     def test_trigger_memory_error(self):
         e = self._nested_expression(100)
-        rc, out, err = assert_python_failure('-pold', '-c', e)
+        rc, out, err = assert_python_failure('-Xoldparser', '-c', e)
         # parsing the expression will result in an error message
         # followed by a MemoryError (see #11963)
         self.assertIn(b's_push: parser stack overflow', err)

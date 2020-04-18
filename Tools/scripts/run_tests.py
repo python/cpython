@@ -26,7 +26,7 @@ def main(regrtest_args):
             '-W', 'default',      # Warnings set to 'default'
             '-bb',                # Warnings about bytes/bytearray
             ]
-    if 'PYTHONPARSER' not in os.environ:
+    if 'PYTHONOLDPARSER' not in os.environ:
         args.append('-E')         # Ignore environment variables
 
     # Allow user-specified interpreter options to override our defaults.

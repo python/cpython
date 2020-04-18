@@ -136,7 +136,6 @@ typedef struct {
     int isolated;         /* Isolated mode? see PyPreConfig.isolated */
     int use_environment;  /* Use environment variables? see PyPreConfig.use_environment */
     int dev_mode;         /* Python Development Mode? See PyPreConfig.dev_mode */
-    int use_peg;          /* Use the new PEG-based parser */
 
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
@@ -147,6 +146,10 @@ typedef struct {
     /* Enable faulthandler?
        Set to 1 by -X faulthandler and PYTHONFAULTHANDLER. -1 means unset. */
     int faulthandler;
+
+    /* Enable PEG parser?
+       1 by default, set to 0 by -X oldparser and PYTHONOLDPARSER */
+    int use_peg;
 
     /* Enable tracemalloc?
        Set by -X tracemalloc=N and PYTHONTRACEMALLOC. -1 means unset */

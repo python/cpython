@@ -52,7 +52,7 @@ jobs:
     name: 'macOS'
     runs-on: macos-latest
     env:
-      PYTHONPARSER: old
+      PYTHONOLDPARSER: old
     steps:
     - uses: actions/checkout@v1
     - name: Configure CPython
@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OPENSSL_VER: 1.1.1f
-      PYTHONPARSER: old
+      PYTHONOLDPARSER: old
     steps:
     - uses: actions/checkout@v1
     - name: Install Dependencies

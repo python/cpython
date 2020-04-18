@@ -39,9 +39,6 @@ Options and arguments (and corresponding environment variables):\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : debug output from parser; also PYTHONDEBUG=x\n\
--p arg : select what parser to use: if arg is 'new' use the new PEG parser and\n\
-         if arg is 'old' use the traditional parser. Default is 'new'.\n\
-         parser; also PYTHONPARSER=arg\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
 -h     : print this help message and exit (also --help)\n\
 ";
@@ -71,6 +68,7 @@ static const char usage_3[] = "\
 -X opt : set implementation-specific option. The following options are available:\n\
 \n\
          -X faulthandler: enable faulthandler\n\
+         -X oldparser: enable the traditional LL(1) parser; also PYTHONOLDPARSER\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
              interactive interpreter. This only works on debug builds\n\
@@ -1327,16 +1325,6 @@ config_read_env_vars(PyConfig *config)
         config->malloc_stats = 1;
     }
 
-    const char *parser = config_get_env(config, "PYTHONPARSER");
-    if (parser) {
-        if (strcmp(parser, "new") == 0) {
-            config->use_peg = 1;
-        }
-        else if (strcmp(parser, "old") == 0) {
-            config->use_peg = 0;
-        }
-    }
-
     if (config->pythonpath_env == NULL) {
         status = CONFIG_GET_ENV_DUP(config, &config->pythonpath_env,
                                     L"PYTHONPATH", "PYTHONPATH");
@@ -1442,6 +1430,11 @@ config_read_complex_options(PyConfig *config)
     if (config_get_env(config, "PYTHONPROFILEIMPORTTIME")
        || config_get_xoption(config, L"importtime")) {
         config->import_time = 1;
+    }
+
+    if (config_get_env(config, "PYTHONOLDPARSER")
+       || config_get_xoption(config, L"oldparser")) {
+        config->use_peg = 0;
     }
 
     PyStatus status;
@@ -2019,15 +2012,6 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
 
         case 'R':
             config->use_hash_seed = 0;
-            break;
-
-        case 'p':
-            if (wcscmp(_PyOS_optarg, L"new") == 0) {
-                config->use_peg = 1;
-            }
-            else if (wcscmp(_PyOS_optarg, L"old") == 0) {
-                config->use_peg = 0;
-            }
             break;
 
         /* This space reserved for other options */

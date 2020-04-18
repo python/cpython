@@ -252,12 +252,6 @@ Miscellaneous options
    options).  See also :envvar:`PYTHONDEBUG`.
 
 
-.. cmdoption:: -p old|new
-
-   Use the new PEG parser, if arg is ``new``.  If arg is ``old``, use the old
-   parser.  See also :envvar:`PYTHONPARSER`.
-
-
 .. cmdoption:: -E
 
    Ignore all :envvar:`PYTHON*` environment variables, e.g.
@@ -432,6 +426,8 @@ Miscellaneous options
    defines the following possible values:
 
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
+   * ``-X oldparser``: enable the traditional LL(1) parser.  See also
+     :envvar:`PYTHONOLDPARSER`.
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
      interactive interpreter. This only works on debug builds.
@@ -580,11 +576,10 @@ conflict.
    :option:`-d` multiple times.
 
 
-.. envvar:: PYTHONPARSER
+.. envvar:: PYTHONOLDPARSER
 
-   If this is set to ``new``, the new PEG parser is used.  If it is set to
-   ``old``, the old parser is used.  Other values are ignored.  See also the
-   :option:`-p` option.
+   If this is set it is equivalent to specifying the :option:`-X`
+   ``oldparser`` option.
 
 
 .. envvar:: PYTHONINSPECT

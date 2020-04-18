@@ -729,7 +729,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'show_ref_count': 1,
             'malloc_stats': 1,
-            'use_peg': 1,
+            'use_peg': 0,
 
             'stdio_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
