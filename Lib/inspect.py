@@ -779,32 +779,48 @@ class ClassFoundException(Exception):
 class _ClassFinder(ast.NodeVisitor):
 
     def __init__(self, qualname):
-        self.stack = []
-        self.qualname = qualname
+        self.qualname = qualname.split('.')
+        self.level = 0
 
     def visit_FunctionDef(self, node):
-        self.stack.append(node.name)
-        self.stack.append('<locals>')
-        self.generic_visit(node)
-        self.stack.pop()
-        self.stack.pop()
+        if self.qualname[self.level: self.level + 2] == [node.name, '<locals>']:
+            self.level += 2
+            super().generic_visit(node)
+            self.level -= 2
 
     visit_AsyncFunctionDef = visit_FunctionDef
 
     def visit_ClassDef(self, node):
-        self.stack.append(node.name)
-        if self.qualname == '.'.join(self.stack):
-            # Return the decorator for the class if present
-            if node.decorator_list:
-                line_number = node.decorator_list[0].lineno
-            else:
-                line_number = node.lineno
+        if self.qualname[self.level: self.level + 1] == [node.name]:
+            self.level += 1
+            if self.level == len(self.qualname):
+                # Return the decorator for the class if present
+                if node.decorator_list:
+                    line_number = node.decorator_list[0].lineno
+                else:
+                    line_number = node.lineno
 
-            # decrement by one since lines starts with indexing by zero
-            line_number -= 1
-            raise ClassFoundException(line_number)
-        self.generic_visit(node)
-        self.stack.pop()
+                # decrement by one since lines starts with indexing by zero
+                line_number -= 1
+                raise ClassFoundException(line_number)
+
+            super().generic_visit(node)
+            self.level -= 1
+
+    # For optimization, visit only nodes which can contain a function
+    # or class definition.
+    visit_Module = ast.NodeVisitor.generic_visit
+    visit_AsyncFor = ast.NodeVisitor.generic_visit
+    visit_AsyncWith = ast.NodeVisitor.generic_visit
+    visit_For = ast.NodeVisitor.generic_visit
+    visit_If = ast.NodeVisitor.generic_visit
+    visit_Try = ast.NodeVisitor.generic_visit
+    visit_While = ast.NodeVisitor.generic_visit
+    visit_With = ast.NodeVisitor.generic_visit
+    visit_ExceptHandler = ast.NodeVisitor.generic_visit
+
+    def generic_visit(self, node):
+        pass
 
 
 def findsource(object):
