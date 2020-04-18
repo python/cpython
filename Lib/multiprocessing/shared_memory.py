@@ -294,14 +294,11 @@ class ShareableList:
             ]
             self._list_len = len(_formats)
             assert sum(len(fmt) <= 8 for fmt in _formats) == self._list_len
-            sum_allocated_bytes = 0
-            self._allocated_bytes = tuple(
-                (sum_allocated_bytes := sum_allocated_bytes + (
-                        self._alignment if fmt[-1] != "s" else int(fmt[:-1])
-                    )
-                 )
-                for fmt in _formats
-            )
+            offset = 0
+            self._allocated_bytes = []
+            for fmt in _formats:
+                offset += self._alignment if fmt[-1] != "s" else int(fmt[:-1])
+                self._allocated_bytes.append(offset)
             _recreation_codes = [
                 self._extract_recreation_code(item) for item in sequence
             ]
@@ -350,10 +347,12 @@ class ShareableList:
 
         else:
             self._list_len = len(self)  # Obtains size from offset 0 in buffer.
-            self._allocated_bytes = struct.unpack_from(
-                self._format_size_metainfo,
-                self.shm.buf,
-                1 * 8
+            self._allocated_bytes = list(
+                struct.unpack_from(
+                    self._format_size_metainfo,
+                    self.shm.buf,
+                    1 * 8
+                )
             )
 
     def _get_packing_format(self, position):
