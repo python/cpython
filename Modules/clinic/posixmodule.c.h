@@ -3900,7 +3900,7 @@ exit:
 
 #endif /* defined(HAVE_WAITPID) */
 
-#if defined(HAVE_CWAIT)
+#if !defined(HAVE_WAITPID) && defined(HAVE_CWAIT)
 
 PyDoc_STRVAR(os_waitpid__doc__,
 "waitpid($module, pid, options, /)\n"
@@ -3936,7 +3936,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CWAIT) */
+#endif /* !defined(HAVE_WAITPID) && defined(HAVE_CWAIT) */
 
 #if defined(HAVE_WAIT)
 
@@ -8869,4 +8869,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=4e28994a729eddf9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca63e471c11dc6e7 input=a9049054013a1b77]*/
