@@ -803,9 +803,7 @@ class uname_result(
         return super().__getitem__(key)
 
 
-_uname_cache = None
-
-
+@functools.lru_cache
 def uname():
 
     """ Fairly portable uname interface. Returns a tuple
@@ -818,11 +816,6 @@ def uname():
         Entries which cannot be determined are set to ''.
 
     """
-    global _uname_cache
-
-    if _uname_cache is not None:
-        return _uname_cache
-
     # Get some infos from the builtin os.uname API...
     try:
         system, node, release, version, machine = infos = os.uname()
