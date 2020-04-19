@@ -57,7 +57,6 @@ __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
 __unittest = True
 
 from .result import TestResult
-from .async_case import IsolatedAsyncioTestCase
 from .case import (addModuleCleanup, TestCase, FunctionTestCase, SkipTest, skip,
                    skipIf, skipUnless, expectedFailure)
 from .suite import BaseTestSuite, TestSuite
@@ -78,3 +77,9 @@ def load_tests(loader, tests, pattern):
     # top level directory cached on loader instance
     this_dir = os.path.dirname(__file__)
     return loader.discover(start_dir=this_dir, pattern=pattern)
+
+def __getattr__(name):
+    if name == 'IsolatedAsyncioTestCase':
+        global IsolatedAsyncioTestCase
+        from .async_case import IsolatedAsyncioTestCase
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
