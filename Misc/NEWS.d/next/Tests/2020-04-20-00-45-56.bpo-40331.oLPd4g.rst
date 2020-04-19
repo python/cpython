@@ -1,0 +1,1 @@
+Increase the coverage for the :mod:`statistics` module by 1%.
