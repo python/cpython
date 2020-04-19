@@ -367,9 +367,12 @@ class Random(_random.Random):
         # causing them to eat more entropy than necessary.
 
         if isinstance(population, _Set):
+            _warn('Sampling from a set deprecated\n'
+                  'since Python 3.9 and will be removed in a subsequent version.',
+                  DeprecationWarning, 2)
             population = tuple(population)
         if not isinstance(population, _Sequence):
-            raise TypeError("Population must be a sequence or set.  For dicts, use list(d).")
+            raise TypeError("Population must be a sequence.  For dicts or sets, use sorted(d).")
         randbelow = self._randbelow
         n = len(population)
         if not 0 <= k <= n:

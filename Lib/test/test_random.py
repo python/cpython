@@ -147,7 +147,6 @@ class TestBasicOps:
 
     def test_sample_inputs(self):
         # SF bug #801342 -- population can be any iterable defining __len__()
-        self.gen.sample(set(range(20)), 2)
         self.gen.sample(range(20), 2)
         self.gen.sample(range(20), 2)
         self.gen.sample(str('abcdefghijklmnopqrst'), 2)
@@ -155,6 +154,11 @@ class TestBasicOps:
 
     def test_sample_on_dicts(self):
         self.assertRaises(TypeError, self.gen.sample, dict.fromkeys('abcdef'), 2)
+
+    def test_sample_on_sets(self):
+        with self.assertWarns(DeprecationWarning):
+            population = {10, 20, 30, 40, 50, 60, 70}
+            self.gen.sample(population, k=5)
 
     def test_choices(self):
         choices = self.gen.choices

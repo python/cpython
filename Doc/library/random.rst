@@ -230,6 +230,13 @@ Functions for sequences
    If the sample size is larger than the population size, a :exc:`ValueError`
    is raised.
 
+   .. deprecated:: 3.9
+      In the future, the *population* must be a sequence.  Instances of
+      :class:`set` are no longer supported.  The set must first be converted
+      to a :class:`list` or :class:`tuple`, preferably in a deterministic
+      order so that the sample is reproducible.
+
+
 Real-valued distributions
 -------------------------
 
