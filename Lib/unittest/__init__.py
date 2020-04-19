@@ -78,8 +78,13 @@ def load_tests(loader, tests, pattern):
     this_dir = os.path.dirname(__file__)
     return loader.discover(start_dir=this_dir, pattern=pattern)
 
+
+def __dir__():
+    return globals().keys() | {'IsolatedAsyncioTestCase'}
+
 def __getattr__(name):
     if name == 'IsolatedAsyncioTestCase':
         global IsolatedAsyncioTestCase
         from .async_case import IsolatedAsyncioTestCase
+        return IsolatedAsyncioTestCase
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
