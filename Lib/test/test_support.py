@@ -14,6 +14,7 @@ import time
 import unittest
 from test import support
 from test.support import script_helper
+from test.support import socket_helper
 
 TESTFN = support.TESTFN
 
@@ -91,17 +92,17 @@ class TestSupport(unittest.TestCase):
             support.rmtree('__pycache__')
 
     def test_HOST(self):
-        s = socket.create_server((support.HOST, 0))
+        s = socket.create_server((socket_helper.HOST, 0))
         s.close()
 
     def test_find_unused_port(self):
-        port = support.find_unused_port()
-        s = socket.create_server((support.HOST, port))
+        port = socket_helper.find_unused_port()
+        s = socket.create_server((socket_helper.HOST, port))
         s.close()
 
     def test_bind_port(self):
         s = socket.socket()
-        support.bind_port(s)
+        socket_helper.bind_port(s)
         s.listen()
         s.close()
 

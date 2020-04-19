@@ -1,4 +1,5 @@
 from test import support
+from test.support import socket_helper
 
 from contextlib import contextmanager
 import imaplib
@@ -82,7 +83,7 @@ class TestImaplib(unittest.TestCase):
                 pass
 
         # This is the exception that should be raised.
-        expected_errnos = support.get_socket_conn_refused_errs()
+        expected_errnos = socket_helper.get_socket_conn_refused_errs()
         with self.assertRaises(OSError) as cm:
             imaplib.IMAP4()
         self.assertIn(cm.exception.errno, expected_errnos)
@@ -210,7 +211,7 @@ class NewIMAPTestsMixin():
                 raise
 
         self.addCleanup(self._cleanup)
-        self.server = self.server_class((support.HOST, 0), imap_handler)
+        self.server = self.server_class((socket_helper.HOST, 0), imap_handler)
         self.thread = threading.Thread(
             name=self._testMethodName+'-server',
             target=self.server.serve_forever,
@@ -600,7 +601,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
     @contextmanager
     def reaped_server(self, hdlr):
-        server, thread = self.make_server((support.HOST, 0), hdlr)
+        server, thread = self.make_server((socket_helper.HOST, 0), hdlr)
         try:
             yield server
         finally:

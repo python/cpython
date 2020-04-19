@@ -13,8 +13,9 @@ import threading
 
 from unittest import TestCase, skipUnless
 from test import support as test_support
+from test.support import socket_helper
 
-HOST = test_support.HOST
+HOST = socket_helper.HOST
 PORT = 0
 
 SUPPORTS_SSL = False
@@ -480,7 +481,7 @@ class TestTimeouts(TestCase):
         self.evt = threading.Event()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(60)  # Safety net. Look issue 11812
-        self.port = test_support.bind_port(self.sock)
+        self.port = socket_helper.bind_port(self.sock)
         self.thread = threading.Thread(target=self.server, args=(self.evt, self.sock))
         self.thread.daemon = True
         self.thread.start()
