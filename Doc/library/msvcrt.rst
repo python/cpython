@@ -77,7 +77,8 @@ File Operations
    Create a C runtime file descriptor from the file handle *handle*.  The *flags*
    parameter should be a bitwise OR of :const:`os.O_APPEND`, :const:`os.O_RDONLY`,
    and :const:`os.O_TEXT`.  The returned file descriptor may be used as a parameter
-   to :func:`os.fdopen` to create a file object.
+   to :func:`os.fdopen` to create a file object.  The open_osfhandle call transfers 
+   ownership of the OS file handle to the file descriptor.
 
    .. audit-event:: msvcrt.open_osfhandle handle,flags msvcrt.open_osfhandle
 
@@ -85,7 +86,8 @@ File Operations
 .. function:: get_osfhandle(fd)
 
    Return the file handle for the file descriptor *fd*.  Raises :exc:`OSError` if
-   *fd* is not recognized.
+   *fd* is not recognized.  The underlying OS file handle remains owned by the *fd*
+   file descriptor.
 
    .. audit-event:: msvcrt.get_osfhandle fd msvcrt.get_osfhandle
 
