@@ -1652,7 +1652,7 @@ class ChannelTests(TestBase):
                     import _xxsubinterpreters as _interpreters
 
                     rc = _interpreters.channel_send_wait({cid}, b"send")
-                    assert rc
+                    assert not rc
                     """))
             except Exception as e:
                 nonlocal thread_exc
