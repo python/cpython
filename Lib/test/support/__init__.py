@@ -108,8 +108,6 @@ __all__ = [
     "bind_unix_socket",
     # processes
     'temp_umask', "reap_children",
-    # logging
-    "TestHandler",
     # threads
     "threading_setup", "threading_cleanup", "reap_threads", "start_threads",
     # miscellaneous
