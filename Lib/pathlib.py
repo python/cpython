@@ -870,6 +870,10 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
+    def with_stem(self, stem):
+        """Return a new path with the stem changed."""
+        return self.with_name(stem + self.suffix)
+
     def with_suffix(self, suffix):
         """Return a new path with the file suffix changed.  If the path
         has no suffix, add given suffix.  If the given suffix is an empty
