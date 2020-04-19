@@ -46,9 +46,13 @@ if __name__ == "__main__":
             continue
         mnemonic = base[:-5].upper()
         if mnemonic == "":
-            # Skip err.h.
-            continue
-        error_libraries[mnemonic] = (f'ERR_LIB_{mnemonic}', f'{mnemonic}_R_', error_header)
+            # err.h
+            lib_codes = {
+                code: num
+                for (code, (_, _, num)) in parse_error_codes(error_header, 'ERR_LIB_', None)
+            }
+        else:
+            error_libraries[mnemonic] = (f'ERR_LIB_{mnemonic}', f'{mnemonic}_R_', error_header)
 
     # Read codes from libraries
     new_codes = []
@@ -76,7 +80,9 @@ if __name__ == "__main__":
 
     w("static struct py_ssl_library_code library_codes[] = {")
     for mnemo, (libcode, _, _) in sorted(error_libraries.items()):
+        w(f'#ifdef {libcode}')
         w('    {"%s", %s},' % (mnemo, libcode))
+        w('#endif')
     w('    { NULL }')
     w('};')
     w("")
@@ -86,7 +92,7 @@ if __name__ == "__main__":
         w('  #ifdef %s' % (errcode))
         w('    {"%s", %s, %s},' % (name, libcode, errcode))
         w('  #else')
-        w('    {"%s", %s, %d},' % (name, libcode, num))
+        w('    {"%s", %s, %d},' % (name, lib_codes[libcode], num))
         w('  #endif')
     w('    { NULL }')
     w('};')

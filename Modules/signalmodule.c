@@ -8,7 +8,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"    // _PyThreadState_GET()
 
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
@@ -103,8 +103,6 @@ class sigset_t_converter(CConverter):
    only oddity is that the thread executing the Python signal handler
    may not be the thread that received the signal.
 */
-
-#include "pythread.h"
 
 static volatile struct {
     _Py_atomic_int tripped;
@@ -1784,7 +1782,7 @@ PyOS_FiniInterrupts(void)
 int
 PyOS_InterruptOccurred(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!_Py_ThreadCanHandleSignals(interp)) {
         return 0;
     }
@@ -1821,7 +1819,7 @@ _PySignal_AfterFork(void)
 int
 _PyOS_IsMainThread(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     return _Py_ThreadCanHandleSignals(interp);
 }
 

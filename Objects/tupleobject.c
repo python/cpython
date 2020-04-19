@@ -3,9 +3,9 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
-#include "pycore_object.h"
-#include "pycore_pystate.h"
 #include "pycore_accu.h"
+#include "pycore_gc.h"         // _PyObject_GC_IS_TRACKED()
+#include "pycore_object.h"
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"

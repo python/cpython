@@ -82,10 +82,6 @@ class SymbolTable(object):
     def has_children(self):
         return bool(self._table.children)
 
-    def has_exec(self):
-        """Return true if the scope uses exec.  Deprecated method."""
-        return False
-
     def get_identifiers(self):
         return self._table.symbols.keys()
 

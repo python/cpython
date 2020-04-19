@@ -35,7 +35,7 @@
 /* See http://www.python.org/2.4/license for licensing details. */
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #define WINDOWS_LEAN_AND_MEAN
 #include "windows.h"
@@ -1110,8 +1110,8 @@ _winapi_CreateProcess_impl(PyObject *module,
         }
     }
     else if (command_line != Py_None) {
-        PyErr_Format(PyExc_TypeError, 
-                     "CreateProcess() argument 2 must be str or None, not %s", 
+        PyErr_Format(PyExc_TypeError,
+                     "CreateProcess() argument 2 must be str or None, not %s",
                      Py_TYPE(command_line)->tp_name);
         goto cleanup;
     }

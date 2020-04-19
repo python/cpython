@@ -1,0 +1,1 @@
+Fix the tokenizer to display the correct error message, when there is a SyntaxError on the last input character and no newline follows. It used to be `unexpected EOF while parsing`, while it should be `invalid syntax`.

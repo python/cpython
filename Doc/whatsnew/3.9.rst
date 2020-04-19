@@ -346,6 +346,13 @@ pprint
 :mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
 (Contributed by Carl Bordum Hansen in :issue:`37376`.)
 
+pydoc
+-----
+
+The documentation string is now shown not only for class, function,
+method etc, but for any object that has its own ``__doc__`` attribute.
+(Contributed by Serhiy Storchaka in :issue:`40257`.)
+
 signal
 ------
 
@@ -368,15 +375,6 @@ socket
 The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
 constant on Linux 4.1 and greater.
 (Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
-
-threading
----------
-
-In a subinterpreter, spawning a daemon thread now raises a :exc:`RuntimeError`. Daemon
-threads were never supported in subinterpreters. Previously, the subinterpreter
-finalization crashed with a Python fatal error if a daemon thread was still
-running.
-(Contributed by Victor Stinner in :issue:`37266`.)
 
 sys
 ---
@@ -762,6 +760,10 @@ Removed
   the ``__annotations__`` attribute instead.
   (Contributed by Serhiy Storchaka in :issue:`40182`.)
 
+* The :meth:`symtable.SymbolTable.has_exec` method has been removed. It was
+  deprecated since 2006, and only returning ``False`` when it's called.
+  (Contributed by Batuhan Taskaya in :issue:`40208`)
+
 
 Porting to Python 3.9
 =====================
@@ -798,6 +800,15 @@ Changes in the Python API
 * The :mod:`importlib` module now ignores the :envvar:`PYTHONCASEOK`
   environment variable when the :option:`-E` or :option:`-I` command line
   options are being used.
+
+* The *encoding* parameter has been added to the classes :class:`ftplib.FTP` and
+  :class:`ftplib.FTP_TLS` as a keyword-only parameter, and the default encoding
+  is changed from Latin-1 to UTF-8 to follow :rfc:`2640`.
+
+* :func:`inspect.getdoc` no longer returns docstring inherited from the type
+  of the object or from parent class if it is a class if it is not defined
+  in the object itself.
+  (Contributed by Serhiy Storchaka in :issue:`40257`.)
 
 
 CPython bytecode changes

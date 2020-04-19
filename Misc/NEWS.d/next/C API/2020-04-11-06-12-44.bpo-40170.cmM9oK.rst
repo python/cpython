@@ -1,0 +1,2 @@
+Convert :c:func:`PyObject_IS_GC` macro to a function to hide
+implementation details.

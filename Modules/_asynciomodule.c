@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 
 
 /*[clinic input]

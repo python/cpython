@@ -1764,12 +1764,12 @@ _TPFLAGS_HAVE_GC = 1<<14
 _TPFLAGS_HEAPTYPE = 1<<9
 
 def check_sizeof(test, o, size):
-    import _testcapi
+    import _testinternalcapi
     result = sys.getsizeof(o)
     # add GC header size
     if ((type(o) == type) and (o.__flags__ & _TPFLAGS_HEAPTYPE) or\
         ((type(o) != type) and (type(o).__flags__ & _TPFLAGS_HAVE_GC))):
-        size += _testcapi.SIZEOF_PYGC_HEAD
+        size += _testinternalcapi.SIZEOF_PYGC_HEAD
     msg = 'wrong size for %s: got %d, expected %d' \
             % (type(o), result, size)
     test.assertEqual(result, size, msg)
