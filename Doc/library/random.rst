@@ -364,6 +364,11 @@ Sometimes it is useful to be able to reproduce the sequences given by a
 pseudo-random number generator.  By re-using a seed value, the same sequence should be
 reproducible from run to run as long as multiple threads are not running.
 
+Hash randomization, which is enabled by default since version 3.3, is not affected by
+the :math:`~Random.seed` method. For this reason, code that relies on such salted
+hashes, e.g. the ordering of :class:`set` or :class:`dict`, might be non-reproducible,
+unless hash randomization is disabled or seeded (see: :envvar:`PYTHONHASHSEED`).
+
 Most of the random module's algorithms and seeding functions are subject to
 change across Python versions, but two aspects are guaranteed not to change:
 
