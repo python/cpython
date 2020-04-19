@@ -3,7 +3,6 @@
 if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
-import asyncio.events
 import collections.abc
 import contextlib
 import errno
@@ -3254,10 +3253,6 @@ class _SMALLEST:
         return False
 
 SMALLEST = _SMALLEST()
-
-def maybe_get_event_loop_policy():
-    """Return the global event loop policy if one is set, else return None."""
-    return asyncio.events._event_loop_policy
 
 # Helpers for testing hashing.
 NHASHBITS = sys.hash_info.width # number of bits in hash() result

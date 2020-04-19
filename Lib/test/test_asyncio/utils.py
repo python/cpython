@@ -34,6 +34,7 @@ from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
+from test.support.asyncioutils import maybe_get_event_loop_policy
 
 
 def data_file(filename):
@@ -515,7 +516,7 @@ class TestCase(unittest.TestCase):
             else:
                 loop._default_executor.shutdown(wait=True)
         loop.close()
-        policy = support.maybe_get_event_loop_policy()
+        policy = maybe_get_event_loop_policy()
         if policy is not None:
             try:
                 watcher = policy.get_child_watcher()

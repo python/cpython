@@ -10,6 +10,7 @@ import threading
 import urllib.request
 import warnings
 from test import support
+from test.support.asyncioutils import maybe_get_event_loop_policy
 from test.libregrtest.utils import print_warning
 try:
     import _multiprocessing, multiprocessing.process
@@ -84,7 +85,7 @@ class saved_test_environment:
         urllib.request._opener = opener
 
     def get_asyncio_events__event_loop_policy(self):
-        return support.maybe_get_event_loop_policy()
+        return maybe_get_event_loop_policy()
     def restore_asyncio_events__event_loop_policy(self, policy):
         asyncio.set_event_loop_policy(policy)
 
