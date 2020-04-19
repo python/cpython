@@ -1,0 +1,1 @@
+Deprecatated support for set objects in random.sample().
