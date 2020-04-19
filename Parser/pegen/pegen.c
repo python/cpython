@@ -363,6 +363,13 @@ _PyPegen_fill_token(Parser *p)
     if (type == ERRORTOKEN) {
         return tokenizer_error(p);
     }
+    if (type == ENDMARKER && p->start_rule == Py_single_input && p->parsing_started) {
+        type = NEWLINE; /* Add an extra newline */
+        p->parsing_started = 0;
+    }
+    else {
+        p->parsing_started = 1;
+    }
 
     if (p->fill == p->size) {
         int newsize = p->size * 2;
@@ -741,6 +748,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
     p->errcode = errcode;
     p->arena = arena;
     p->start_rule = start_rule;
+    p->parsing_started = 0;
 
     return p;
 }
