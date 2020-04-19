@@ -252,6 +252,15 @@ class ShareableList:
     packing format for any storable value must require no more than 8
     characters to describe its format."""
 
+    # The shared memory area is organized as follows:
+    # - 8 bytes: number of items (N) as a 64-bit integer
+    # - (N + 1) * 8 bytes: offsets of each element from the start of the
+    #                      data area
+    # - K bytes: the data area storing item values (with encoding and size
+    #            depending on their respective types)
+    # - N * 8 bytes: `struct` format string for each element
+    # - N bytes: index into _back_transforms_mapping for each element
+    #            (for reconstructing the corresponding Python value)
     _types_mapping = {
         int: "q",
         float: "d",
@@ -283,7 +292,8 @@ class ShareableList:
             return 3  # NoneType
 
     def __init__(self, sequence=None, *, name=None):
-        if sequence is not None:
+        if name is None or sequence is not None:
+            sequence = sequence or ()
             _formats = [
                 self._types_mapping[type(item)]
                     if not isinstance(item, (str, bytes))
@@ -294,10 +304,14 @@ class ShareableList:
             ]
             self._list_len = len(_formats)
             assert sum(len(fmt) <= 8 for fmt in _formats) == self._list_len
-            self._allocated_bytes = tuple(
-                    self._alignment if fmt[-1] != "s" else int(fmt[:-1])
-                    for fmt in _formats
-            )
+            offset = 0
+            # The offsets of each list element into the shared memory's
+            # data area (0 meaning the start of the data area, not the start
+            # of the shared memory area).
+            self._allocated_offsets = [0]
+            for fmt in _formats:
+                offset += self._alignment if fmt[-1] != "s" else int(fmt[:-1])
+                self._allocated_offsets.append(offset)
             _recreation_codes = [
                 self._extract_recreation_code(item) for item in sequence
             ]
@@ -308,13 +322,9 @@ class ShareableList:
                 self._format_back_transform_codes
             )
 
-        else:
-            requested_size = 8  # Some platforms require > 0.
-
-        if name is not None and sequence is None:
-            self.shm = SharedMemory(name)
-        else:
             self.shm = SharedMemory(name, create=True, size=requested_size)
+        else:
+            self.shm = SharedMemory(name)
 
         if sequence is not None:
             _enc = _encoding
@@ -323,7 +333,7 @@ class ShareableList:
                 self.shm.buf,
                 0,
                 self._list_len,
-                *(self._allocated_bytes)
+                *(self._allocated_offsets)
             )
             struct.pack_into(
                 "".join(_formats),
@@ -346,10 +356,12 @@ class ShareableList:
 
         else:
             self._list_len = len(self)  # Obtains size from offset 0 in buffer.
-            self._allocated_bytes = struct.unpack_from(
-                self._format_size_metainfo,
-                self.shm.buf,
-                1 * 8
+            self._allocated_offsets = list(
+                struct.unpack_from(
+                    self._format_size_metainfo,
+                    self.shm.buf,
+                    1 * 8
+                )
             )
 
     def _get_packing_format(self, position):
@@ -371,7 +383,6 @@ class ShareableList:
     def _get_back_transform(self, position):
         "Gets the back transformation function for a single value."
 
-        position = position if position >= 0 else position + self._list_len
         if (position >= self._list_len) or (self._list_len < 0):
             raise IndexError("Requested position out of range.")
 
@@ -388,7 +399,6 @@ class ShareableList:
         """Sets the packing format and back transformation code for a
         single value in the list at the specified position."""
 
-        position = position if position >= 0 else position + self._list_len
         if (position >= self._list_len) or (self._list_len < 0):
             raise IndexError("Requested position out of range.")
 
@@ -408,9 +418,9 @@ class ShareableList:
         )
 
     def __getitem__(self, position):
+        position = position if position >= 0 else position + self._list_len
         try:
-            offset = self._offset_data_start \
-                     + sum(self._allocated_bytes[:position])
+            offset = self._offset_data_start + self._allocated_offsets[position]
             (v,) = struct.unpack_from(
                 self._get_packing_format(position),
                 self.shm.buf,
@@ -425,9 +435,10 @@ class ShareableList:
         return v
 
     def __setitem__(self, position, value):
+        position = position if position >= 0 else position + self._list_len
         try:
-            offset = self._offset_data_start \
-                     + sum(self._allocated_bytes[:position])
+            item_offset = self._allocated_offsets[position]
+            offset = self._offset_data_start + item_offset
             current_format = self._get_packing_format(position)
         except IndexError:
             raise IndexError("assignment index out of range")
@@ -435,13 +446,15 @@ class ShareableList:
         if not isinstance(value, (str, bytes)):
             new_format = self._types_mapping[type(value)]
         else:
-            if len(value) > self._allocated_bytes[position]:
+            allocated_length = self._allocated_offsets[position + 1] - item_offset
+
+            if len(value) > allocated_length:
                 raise ValueError("exceeds available storage for existing str")
             if current_format[-1] == "s":
                 new_format = current_format
             else:
                 new_format = self._types_mapping[str] % (
-                    self._allocated_bytes[position],
+                    allocated_length,
                 )
 
         self._set_packing_format_and_transform(
@@ -463,33 +476,35 @@ class ShareableList:
 
     @property
     def format(self):
-        "The struct packing format used by all currently stored values."
+        "The struct packing format used by all currently stored items."
         return "".join(
             self._get_packing_format(i) for i in range(self._list_len)
         )
 
     @property
     def _format_size_metainfo(self):
-        "The struct packing format used for metainfo on storage sizes."
-        return f"{self._list_len}q"
+        "The struct packing format used for the items' storage offsets."
+        return "q" * (self._list_len + 1)
 
     @property
     def _format_packing_metainfo(self):
-        "The struct packing format used for the values' packing formats."
+        "The struct packing format used for the items' packing formats."
         return "8s" * self._list_len
 
     @property
     def _format_back_transform_codes(self):
-        "The struct packing format used for the values' back transforms."
+        "The struct packing format used for the items' back transforms."
         return "b" * self._list_len
 
     @property
     def _offset_data_start(self):
-        return (self._list_len + 1) * 8  # 8 bytes per "q"
+        # - 8 bytes for the list length
+        # - (N + 1) * 8 bytes for the element offsets
+        return (self._list_len + 2) * 8
 
     @property
     def _offset_packing_formats(self):
-        return self._offset_data_start + sum(self._allocated_bytes)
+        return self._offset_data_start + self._allocated_offsets[-1]
 
     @property
     def _offset_back_transform_codes(self):
