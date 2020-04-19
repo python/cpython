@@ -25,6 +25,7 @@
     :license: Python License.
 """
 import sys
+import unicodedata
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto
@@ -646,7 +647,8 @@ class _Unparser(NodeVisitor):
     output source code for the abstract syntax; original formatting
     is disregarded."""
 
-    def __init__(self):
+    def __init__(self, avoid_backslashes=False):
+        self.avoid_backslashes = avoid_backslashes
         self._source = []
         self._buffer = []
         self._precedences = {}
@@ -1046,15 +1048,39 @@ class _Unparser(NodeVisitor):
         with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
 
+    def _write_str_avoiding_backslashes(self, value):
+        """Write string literal value with a best effort attempt to avoid backslashes."""
+        # str.__repr__ will escape backslashes, quotes, \n, \r, \t and non-printable characters
+        # We'll handle quotes, \n, \t and space, using triple quotes if necessary, but we'll
+        # just let repr handle any other unicode control and separator characters.
+        def should_use_repr(c):
+            return c == '\\' or (
+                # This logic for determining non-printable characters is based
+                # on that in Tools/unicode/makeunicodedata.py
+                c not in (' ', '\n', '\t') and unicodedata.category(c)[0] in ("C", "Z")
+            )
+
+        if not any(should_use_repr(c) for c in value):
+            if "\n" in value:
+                quote_types = ["'''", '"""']
+            else:
+                quote_types = ["'", '"', '"""', "'''"]
+
+            for quote_type in quote_types:
+                if quote_type not in value:
+                    self.write(f"{quote_type}{value}{quote_type}")
+                    return
+        self.write(repr(value))
+
     def visit_JoinedStr(self, node):
         self.write("f")
         self._fstring_JoinedStr(node, self.buffer_writer)
-        self.write(repr(self.buffer))
+        self._write_str_avoiding_backslashes(self.buffer)
 
     def visit_FormattedValue(self, node):
         self.write("f")
         self._fstring_FormattedValue(node, self.buffer_writer)
-        self.write(repr(self.buffer))
+        self._write_str_avoiding_backslashes(self.buffer)
 
     def _fstring_JoinedStr(self, node, write):
         for value in node.values:
@@ -1069,11 +1095,13 @@ class _Unparser(NodeVisitor):
 
     def _fstring_FormattedValue(self, node, write):
         write("{")
-        unparser = type(self)()
+        unparser = type(self)(avoid_backslashes=True)
         unparser.set_precedence(_Precedence.TEST.next(), node.value)
         expr = unparser.visit(node.value)
         if expr.startswith("{"):
             write(" ")  # Separate pair of opening brackets as "{ {"
+        if "\\" in expr:
+            raise ValueError("Unable to avoid backslash in f-string expression part")
         write(expr)
         if node.conversion != -1:
             conversion = chr(node.conversion)
@@ -1117,6 +1145,8 @@ class _Unparser(NodeVisitor):
         if isinstance(value, (float, complex)):
             # Substitute overflowing decimal literal for AST infinities.
             self.write(repr(value).replace("inf", _INFSTR))
+        elif self.avoid_backslashes and isinstance(value, str):
+            self._write_str_avoiding_backslashes(value)
         else:
             self.write(repr(value))
 

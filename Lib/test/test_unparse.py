@@ -153,6 +153,15 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip(r"""f'{f"{0}"*3}'""")
         self.check_ast_roundtrip(r"""f'{f"{y}"*3}'""")
 
+    def test_fstrings_complicated(self):
+        # See issue 28002
+        self.check_ast_roundtrip("""f'''{"'"}'''""")
+        self.check_ast_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
+        self.check_ast_roundtrip('f"""{\'\'\'\n\'\'\'}"""')
+        self.check_ast_roundtrip('f"""{g(\'\'\'\n\'\'\')}"""')
+        self.check_ast_roundtrip('''f"a\\r\\nb"''')
+        self.check_ast_roundtrip('''f"\\u2028{'x'}"''')
+
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
         self.check_ast_roundtrip("r'foo'")
@@ -308,6 +317,9 @@ class UnparseTestCase(ASTTestCase):
             )
         )
 
+    def test_invalid_fstring_backslash(self):
+        self.check_invalid(ast.FormattedValue(value=ast.Constant(value="\\\\")))
+
     def test_invalid_set(self):
         self.check_invalid(ast.Set(elts=[]))
 
@@ -413,7 +425,6 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("call((yield x))")
         self.check_src_roundtrip("return x + (yield x)")
 
-
     def test_class_bases_and_keywords(self):
         self.check_src_roundtrip("class X:\n    pass")
         self.check_src_roundtrip("class X(A):\n    pass")
@@ -425,6 +436,10 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("class X(A, **kw):\n    pass")
         self.check_src_roundtrip("class X(*args):\n    pass")
         self.check_src_roundtrip("class X(*args, **kwargs):\n    pass")
+
+    def test_fstrings(self):
+        self.check_src_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
+        self.check_src_roundtrip('''f"\\u2028{'x'}"''')
 
     def test_docstrings(self):
         docstrings = (
@@ -475,7 +490,6 @@ class DirectoryTestCase(ASTTestCase):
 
     lib_dir = pathlib.Path(__file__).parent / ".."
     test_directories = (lib_dir, lib_dir / "test")
-    skip_files = {"test_fstring.py"}
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
                         "test_ast.py", "test_asdl_parser.py"}
 
@@ -516,14 +530,6 @@ class DirectoryTestCase(ASTTestCase):
         for item in self.files_to_test():
             if test.support.verbose:
                 print(f"Testing {item.absolute()}")
-
-            # Some f-strings are not correctly round-tripped by
-            # Tools/parser/unparse.py.  See issue 28002 for details.
-            # We need to skip files that contain such f-strings.
-            if item.name in self.skip_files:
-                if test.support.verbose:
-                    print(f"Skipping {item.absolute()}: see issue 28002")
-                continue
 
             with self.subTest(filename=item):
                 source = read_pyfile(item)
