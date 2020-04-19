@@ -32,7 +32,6 @@ import threading
 import time
 import types
 import unittest
-import urllib.error
 import warnings
 
 from .testresult import get_test_runner
@@ -1433,6 +1432,7 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
     with the Internet connection manifest themselves as exceptions."""
     import socket
     import nntplib
+    import urllib.error
     if timeout is _NOT_SET:
         timeout = INTERNET_TIMEOUT
 
