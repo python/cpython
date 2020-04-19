@@ -1,5 +1,6 @@
 import errno
 import socket
+import unittest
 
 HOST = "localhost"
 HOSTv4 = "127.0.0.1"
