@@ -347,6 +347,13 @@ channel_exceptions_init(PyObject *ns)
     return 0;
 }
 
+//typedef struct _channelitem_track {
+//    PyThread_type_lock lock;
+//    int lock_has_been_freed;
+//    PyThread_type_lock mutex;
+//    int released_by_channel_closing;
+//}
+
 /* the channel queue */
 
 struct _channelitem;
@@ -354,7 +361,7 @@ struct _channelitem;
 typedef struct _channelitem {
     _PyCrossInterpreterData *data;
     /* The lock is owned by the sender. */
-    PyThread_type_lock lock;
+    void *lock;
     struct _channelitem *next;
 } _channelitem;
 
@@ -389,6 +396,61 @@ _channelitem_free(_channelitem *item)
     PyMem_Free(item);
 }
 
+static void *
+_channelitem_lock_allocate(void)
+{
+    PyThread_type_lock *lock = calloc(sizeof(*lock), 0);
+    *lock = PyThread_allocate_lock();
+    assert(*lock != NULL);
+
+    return lock;
+}
+
+static void
+_channelitem_lock_acquire(void *channelitem_lock)
+{
+    PyThread_type_lock *lock = (PyThread_type_lock *)channelitem_lock;
+
+    assert(lock != NULL && *lock != NULL);
+    PyThread_acquire_lock(*lock, WAIT_LOCK);
+}
+
+static PyLockStatus
+_channelitem_lock_acquire_timed(void * channelitem_lock, int timeout)
+{
+    PyThread_type_lock *lock = (PyThread_type_lock *)channelitem_lock;
+
+    assert(lock != NULL && *lock != NULL);
+    PyLockStatus lock_rc;
+    Py_BEGIN_ALLOW_THREADS
+    lock_rc = PyThread_acquire_lock_timed(*lock, timeout, 0);
+    Py_END_ALLOW_THREADS
+
+    PyThread_free_lock(*lock);
+    *lock = NULL;
+
+    if (lock_rc == PY_LOCK_ACQUIRED) {
+        free(lock);
+        lock = NULL;
+    }
+
+    return lock_rc;
+}
+
+static void
+_channelitem_lock_release(void *channelitem_lock)
+{
+    PyThread_type_lock *lock = (PyThread_type_lock *)channelitem_lock;
+
+    assert(lock != NULL);
+    if (*lock != NULL) {
+        PyThread_release_lock(*lock);
+    } else {
+        free(lock);
+        lock = NULL;
+    }
+}
+
 static void
 _channelitem_free_all(_channelitem *item)
 {
@@ -396,7 +458,7 @@ _channelitem_free_all(_channelitem *item)
         _channelitem *last = item;
         item = item->next;
         if (last->lock != NULL) {
-            PyThread_release_lock(last->lock);
+            _channelitem_lock_release(last->lock);
         }
         _channelitem_free(last);
     }
@@ -408,7 +470,7 @@ _channelitem_popped(_channelitem *item)
     _PyCrossInterpreterData *data = item->data;
     item->data = NULL;
     if (item->lock != NULL) {
-        PyThread_release_lock(item->lock);
+        _channelitem_lock_release(item->lock);
     }
     _channelitem_free(item);
     return data;
@@ -452,16 +514,16 @@ _channelqueue_free(_channelqueue *queue)
 
 static int
 _channelqueue_put(_channelqueue *queue, _PyCrossInterpreterData *data,
-                  PyThread_type_lock lock)
+                  void *channelitem_lock)
 {
     _channelitem *item = _channelitem_new();
     if (item == NULL) {
         return -1;
     }
     item->data = data;
-    item->lock = lock;
-    if (lock != NULL) {
-        PyThread_acquire_lock(item->lock, WAIT_LOCK);
+    item->lock = channelitem_lock;
+    if (item->lock != NULL) {
+        _channelitem_lock_acquire(item->lock);
     }
 
     queue->count += 1;
@@ -774,7 +836,7 @@ _channel_free(_PyChannelState *chan)
 
 static int
 _channel_add(_PyChannelState *chan, int64_t interp,
-             _PyCrossInterpreterData *data, PyThread_type_lock lock)
+             _PyCrossInterpreterData *data, void *channelitem_lock)
 {
     int res = -1;
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
@@ -787,7 +849,7 @@ _channel_add(_PyChannelState *chan, int64_t interp,
         goto done;
     }
 
-    if (_channelqueue_put(chan->queue, data, lock) != 0) {
+    if (_channelqueue_put(chan->queue, data, channelitem_lock) != 0) {
         goto done;
     }
 
@@ -1299,7 +1361,7 @@ _channel_destroy(_channels *channels, int64_t id)
 
 static int
 _channel_send(_channels *channels, int64_t id, PyObject *obj,
-              PyThread_type_lock lock)
+              void *channelitem_lock)
 {
     PyInterpreterState *interp = _get_current();
     if (interp == NULL) {
@@ -1333,7 +1395,7 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj,
     }
 
     // Add the data to the channel.
-    int res = _channel_add(chan, PyInterpreterState_GetID(interp), data, lock);
+    int res = _channel_add(chan, PyInterpreterState_GetID(interp), data, channelitem_lock);
     PyThread_release_lock(mutex);
     if (res != 0) {
         _PyCrossInterpreterData_Release(data);
@@ -2381,32 +2443,28 @@ channel_send_wait(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"cid", "obj", "timeout", NULL};
     int64_t cid;
     PyObject *obj;
-    int64_t timeout = 0;
+    int64_t timeout = -1;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|l:channel_send_wait",
                                      kwlist, channel_id_converter,
-                                     &cid, &obj)) {
+                                     &cid, &obj, &timeout)) {
         return NULL;
     }
 
     // Create the lock that will be released when the data is recieved.
-    PyThread_type_lock lock = PyThread_allocate_lock();
+    void *lock = _channelitem_lock_allocate();
     if (_channel_send(&_globals.channels, cid, obj, lock) != 0) {
         return NULL;
     }
 
     long long microseconds;
-    if (timeout > 0) {
+    if (timeout >= 0) {
         microseconds = timeout * 1000000;
     }
     else {
         microseconds = -1;
     }
-    PyLockStatus lock_rc;
-    Py_BEGIN_ALLOW_THREADS
-    lock_rc = PyThread_acquire_lock_timed(lock, microseconds, 0);
-    Py_END_ALLOW_THREADS
+    PyLockStatus lock_rc = _channelitem_lock_acquire_timed(lock, microseconds);
 
-    PyThread_free_lock(lock);
     if (lock_rc == PY_LOCK_ACQUIRED) {
         Py_RETURN_TRUE;
     }

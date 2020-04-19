@@ -1337,36 +1337,127 @@ class ChannelTests(TestBase):
         self.assertEqual(obj, b'spam')
         self.assertEqual(out.strip(), 'send')
 
-    def test_send_wait_revc(self):
+    def test_channel_send_wait_same_interpreter(self):
+        cid = interpreters.channel_create()
+
+        received = interpreters.channel_send_wait(cid, b"send", timeout=0)
+        self.assertFalse(received)
+
+        obj = interpreters.channel_recv(cid)
+        self.assertEqual(obj, b"send")
+
+    def test_channel_send_wait_different_interpreters(self):
         cid = interpreters.channel_create()
         interp = interpreters.create()
+
+        _run_output(interp, dedent(f"""
+            import _xxsubinterpreters as _interpreters
+            import time
+            import math
+
+            start = time.time()
+            rc = _interpreters.channel_send_wait({cid}, b"send", timeout=1)
+            end = time.time()
+
+            assert not rc
+            assert math.floor(end-start) == 1
+            """))
+
+        obj = interpreters.channel_recv(cid)
+        self.assertEqual(obj, b"send")
+
+    def test_channel_send_wait_different_threads_and_interpreters(self):
+        cid = interpreters.channel_create()
+        interp = interpreters.create()
+
+        thread_exc = None
         def run():
-            _run_output(interp, dedent(f"""
-                import _xxsubinterpreters as _interpreters
-                import time
-                _interpreters.channel_send_wait({cid}, b"send")
-                #assert False
-                #while True:
-                #    try:
-                #        obj = _interpreters.channel_recv({cid})
-                #        break
-                #    except _interpreters.ChannelEmptyError:
-                #        time.sleep(0.1)
-                """))
-        t = threading.Thread(target=run)
-        #import pdb; pdb.set_trace()
-        t.start()
-        #interpreters.channel_send_wait(cid, b"send", timeout=1)
-        #import pdb; pdb.set_trace()
-        while True:
             try:
-                obj = interpreters.channel_recv(cid)
-                #import pdb; pdb.set_trace()
-                assert obj == b"send"
-                break
-            except interpreters.ChannelEmptyError:
-                time.sleep(1)
+                out = _run_output(interp, dedent(f"""
+                    import _xxsubinterpreters as _interpreters
+                    import time
+
+                    rc = _interpreters.channel_send_wait({cid}, b"send")
+                    assert rc
+                    """))
+            except Exception as e:
+                nonlocal thread_exc
+                thread_exc = e
+        t = threading.Thread(target=run)
+        t.start()
+        time.sleep(0.5)
+
+        obj = interpreters.channel_recv(cid)
+        self.assertEqual(obj, b"send")
         t.join()
+        assert thread_exc is None, f"{thread_exc}"
+
+    def test_channel_send_wait_no_timeout(self):
+        cid = interpreters.channel_create()
+        interp = interpreters.create()
+
+        thread_exc = None
+        def run():
+            try:
+                out = _run_output(interp, dedent(f"""
+                    import _xxsubinterpreters as _interpreters
+                    import time
+
+                    rc = _interpreters.channel_send_wait({cid}, b"send", timeout=10)
+                    assert rc
+                    """))
+            except Exception as e:
+                nonlocal thread_exc
+                thread_exc = e
+        t = threading.Thread(target=run)
+        t.start()
+        time.sleep(0.5)
+
+        obj = interpreters.channel_recv(cid)
+        self.assertEqual(obj, b"send")
+        t.join()
+        assert thread_exc is None, f"{thread_exc}"
+
+    def test_invalid_channel_send_wait(self):
+        does_not_exist_cid = 1000
+        closed_cid = interpreters.channel_create()
+        interpreters.channel_close(closed_cid)
+
+        with self.assertRaises(interpreters.ChannelNotFoundError):
+            interpreters.channel_send_wait(does_not_exist_cid, b"error")
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_send_wait(closed_cid, b"error")
+
+        #cid = interpreters.channel_create()
+        #interp = interpreters.create()
+        #def run():
+        #    _run_output(interp, dedent(f"""
+        #        import _xxsubinterpreters as _interpreters
+        #        import time
+        #        _interpreters.channel_send_wait({cid}, b"send")
+        #        #assert False
+        #        #while True:
+        #        #    try:
+        #        #        obj = _interpreters.channel_recv({cid})
+        #        #        break
+        #        #    except _interpreters.ChannelEmptyError:
+        #        #        time.sleep(0.1)
+        #        """))
+        #t = threading.Thread(target=run)
+        ##import pdb; pdb.set_trace()
+        #t.start()
+        ##interpreters.channel_send_wait(cid, b"send", timeout=1)
+        ##import pdb; pdb.set_trace()
+        #while True:
+        #    try:
+        #        obj = interpreters.channel_recv(cid)
+        #        #import pdb; pdb.set_trace()
+        #        assert obj == b"send"
+        #        break
+        #    except interpreters.ChannelEmptyError:
+        #        time.sleep(1)
+        #t.join()
 
     # close
 
@@ -1549,6 +1640,30 @@ class ChannelTests(TestBase):
             interpreters.channel_send(cid, b'eggs')
         with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_recv(cid)
+
+    def test_close_while_sender_waiting(self):
+        cid = interpreters.channel_create()
+        interp = interpreters.create()
+
+        thread_exc = None
+        def run():
+            try:
+                out = _run_output(interp, dedent(f"""
+                    import _xxsubinterpreters as _interpreters
+
+                    rc = _interpreters.channel_send_wait({cid}, b"send")
+                    assert rc
+                    """))
+            except Exception as e:
+                nonlocal thread_exc
+                thread_exc = e
+
+        t = threading.Thread(target=run)
+        t.start()
+        time.sleep(0.1)
+        interpreters.channel_close(cid, force=True)
+        t.join()
+        assert thread_exc is None, f"{thread_exc}"
 
 
 class ChannelReleaseTests(TestBase):
