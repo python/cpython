@@ -1,0 +1,8 @@
+.. bpo: 0
+.. date: 2020-04-19
+.. no changes: True
+.. nonce: -vRRLE
+.. release date: 2020-04-19
+.. section: Library
+
+There were no new changes in version 2.7.18.
