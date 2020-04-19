@@ -1337,6 +1337,37 @@ class ChannelTests(TestBase):
         self.assertEqual(obj, b'spam')
         self.assertEqual(out.strip(), 'send')
 
+    def test_send_wait_revc(self):
+        cid = interpreters.channel_create()
+        interp = interpreters.create()
+        def run():
+            _run_output(interp, dedent(f"""
+                import _xxsubinterpreters as _interpreters
+                import time
+                _interpreters.channel_send_wait({cid}, b"send")
+                #assert False
+                #while True:
+                #    try:
+                #        obj = _interpreters.channel_recv({cid})
+                #        break
+                #    except _interpreters.ChannelEmptyError:
+                #        time.sleep(0.1)
+                """))
+        t = threading.Thread(target=run)
+        #import pdb; pdb.set_trace()
+        t.start()
+        #interpreters.channel_send_wait(cid, b"send", timeout=1)
+        #import pdb; pdb.set_trace()
+        while True:
+            try:
+                obj = interpreters.channel_recv(cid)
+                #import pdb; pdb.set_trace()
+                assert obj == b"send"
+                break
+            except interpreters.ChannelEmptyError:
+                time.sleep(1)
+        t.join()
+
     # close
 
     def test_close_single_user(self):
