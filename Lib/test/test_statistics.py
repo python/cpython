@@ -1004,6 +1004,9 @@ class ConvertTest(unittest.TestCase):
             x = statistics._convert(nan, type(nan))
             self.assertTrue(_nan_equal(x, nan))
 
+    def test_raise_type_error(self):
+        self.assertRaises(TypeError, statistics._convert, None, float)
+
 
 class FailNegTest(unittest.TestCase):
     """Test _fail_neg private function."""
@@ -1031,6 +1034,45 @@ class FailNegTest(unittest.TestCase):
         else:
             self.fail("expected exception, but it didn't happen")
         self.assertEqual(errmsg, msg)
+
+
+class FindLteqTest(unittest.TestCase):
+    # Test _find_lteq private function.
+
+    def test_raise_value_error(self):
+        for a, x in [
+            ([], 1),        # empty a triggers `i != len(a)`
+            ([1, 2], 3),    # non-existing max value triggers `i != len(a)`
+            ([1, 3], 2)     # non-existing value triggers `a[i] == x`
+        ]:
+            self.assertRaises(ValueError, statistics._find_lteq, a, x)
+
+    def test_locate_successfully(self):
+        for a, x, expected_i in [
+            ([1, 1, 1, 2, 3], 1, 0),
+            ([0, 1, 1, 1, 2, 3], 1, 1),
+            ([1, 2, 3, 3, 3], 3, 2)
+        ]:
+            self.assertEqual(expected_i, statistics._find_lteq(a, x))
+
+
+class FindRteqTest(unittest.TestCase):
+    # Test _find_rteq private function.
+
+    def test_raise_value_error(self):
+        for a, l, x in [
+            ([1], 2, 1),    # when l=len(a)+1 triggers `i != (len(a)+1)`
+            ([1, 3], 0, 2)  # non-existing value triggers `a[i-1] == x`
+        ]:
+            self.assertRaises(ValueError, statistics._find_rteq, a, l, x)
+
+    def test_locate_successfully(self):
+        for a, l, x, expected_i in [
+            ([1, 1, 1, 2, 3], 0, 1, 2),
+            ([0, 1, 1, 1, 2, 3], 0, 1, 3),
+            ([1, 2, 3, 3, 3], 0, 3, 4)
+        ]:
+            self.assertEqual(expected_i, statistics._find_rteq(a, l, x))
 
 
 # === Tests for public functions ===
@@ -1453,6 +1495,9 @@ class TestMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
 class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
     def setUp(self):
         self.func = statistics.harmonic_mean
+
+    def test_single_value_unsupported_type(self):
+        self.assertRaises(TypeError, self.func, ['3.14'])
 
     def prepare_data(self):
         # Override mixin method.

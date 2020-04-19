@@ -267,7 +267,7 @@ def _convert(value, T):
 
 
 def _find_lteq(a, x):
-    'Locate the leftmost value exactly equal to x'
+    """Locate the leftmost value exactly equal to x"""
     i = bisect_left(a, x)
     if i != len(a) and a[i] == x:
         return i
@@ -275,7 +275,7 @@ def _find_lteq(a, x):
 
 
 def _find_rteq(a, l, x):
-    'Locate the rightmost value exactly equal to x'
+    """Locate the rightmost value exactly equal to x"""
     i = bisect_right(a, x, lo=l)
     if i != (len(a)+1) and a[i-1] == x:
         return i-1
