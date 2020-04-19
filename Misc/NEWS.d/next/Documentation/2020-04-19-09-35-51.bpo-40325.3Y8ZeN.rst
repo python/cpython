@@ -1,0 +1,1 @@
+Updated :mod:`random` Notes on Reproducibility to mention hash randomization.
