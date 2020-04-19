@@ -206,6 +206,11 @@ and :class:`~concurrent.futures.ProcessPoolExecutor`. This improves
 compatibility with subinterpreters and predictability in their shutdown
 processes. (Contributed by Kyle Stanley in :issue:`39812`.)
 
+Workers in :class:`~concurrent.futures.ProcessPoolExecutor` are now spawned on
+demand, only when there are no available idle workers to reuse. This optimizes
+startup overhead and reduces the amount of lost CPU time to idle workers.
+(Contributed by Kyle Stanley in :issue:`39207`.)
+
 curses
 ------
 
