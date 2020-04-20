@@ -317,13 +317,12 @@ def create_package(source):
         if ofi:
             ofi.close()
 
-
 class ModuleFinderTest(unittest.TestCase):
-    def _do_test(self, info, report=False, debug=0, replace_paths=[]):
+    def _do_test(self, info, report=False, debug=0, replace_paths=[], modulefinder_class=modulefinder.ModuleFinder):
         import_this, modules, missing, maybe_missing, source = info
         create_package(source)
         try:
-            mf = modulefinder.ModuleFinder(path=TEST_PATH, debug=debug,
+            mf = modulefinder_class(path=TEST_PATH, debug=debug,
                                            replace_paths=replace_paths)
             mf.import_hook(import_this)
             if report:
@@ -420,6 +419,18 @@ b.py
 
     def test_coding_explicit_cp1252(self):
         self._do_test(coding_explicit_cp1252_test)
+
+    def test_load_module_api(self):
+        class CheckLoadModuleApi(modulefinder.ModuleFinder):
+            def __init__(self, *args, **kwds):
+                super().__init__(*args, **kwds)
+
+            def load_module(self, fqname, fp, pathname, file_info):
+                # confirm that the fileinfo is a tuple of 3 elements
+                suffix, mode, type = file_info
+                return super().load_module(fqname, fp, pathname, file_info)
+
+        self._do_test(absolute_import_test, modulefinder_class=CheckLoadModuleApi)
 
 if __name__ == "__main__":
     unittest.main()
