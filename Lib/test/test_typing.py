@@ -222,10 +222,10 @@ class TypeVarTests(BaseTestCase):
             TypeVar('X', str, float, bound=Employee)
 
     def test_missing__name__(self):
-        code = """if 1:
-        import typing
-        T = typing.TypeVar("T")
-        """
+        # See bpo-39942
+        code = ("import typing\n"
+                "T = typing.TypeVar('T')\n"
+                )
         exec(code, {})
 
     def test_no_bivariant(self):
