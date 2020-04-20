@@ -1422,6 +1422,9 @@ The :mod:`test.support` module defines the following classes:
 
 The :mod:`test.support.socket_helper` module provides support for socket tests.
 
+.. versionadded:: 3.9
+
+
 .. data:: IPV6_ENABLED
 
     Set to ``True`` if IPv6 is enabled on this host, ``False`` otherwise.
