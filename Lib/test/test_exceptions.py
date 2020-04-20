@@ -188,7 +188,7 @@ class ExceptionTests(unittest.TestCase):
                 if not isinstance(src, str):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
-                self.assertIn(line, cm.exception.text.rstrip('\n'))
+                self.assertIn(line, cm.exception.text)
 
         check('def fact(x):\n\treturn x!\n', 2, 10)
         check('1 +\n', 1, 4)
