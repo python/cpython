@@ -114,11 +114,11 @@ import_from[stmt_ty]:
     | 'from' a=('.' | '...')+ 'import' b=import_from_targets {
         _Py_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), EXTRA) }
 import_from_targets[asdl_seq*]:
-    | '(' a=import_from_as_names ')' { a }
+    | '(' a=import_from_as_names [','] ')' { a }
     | import_from_as_names
     | '*' { _PyPegen_singleton_seq(p, CHECK(_PyPegen_alias_for_star(p))) }
 import_from_as_names[asdl_seq*]:
-    | a=','.import_from_as_name+ [','] { a }
+    | a=','.import_from_as_name+ { a }
 import_from_as_name[alias_ty]:
     | a=NAME b=['as' z=NAME { z }] { _Py_alias(a->v.Name.id,
                                                (b) ? ((expr_ty) b)->v.Name.id : NULL,

@@ -11,6 +11,8 @@ extern "C" {
 PyAPI_FUNC(mod_ty) PyPegen_ASTFromFile(const char *filename, int mode, PyArena *arena);
 PyAPI_FUNC(mod_ty) PyPegen_ASTFromString(const char *str, int mode, PyCompilerFlags *flags,
                                          PyArena *arena);
+PyAPI_FUNC(mod_ty) PyPegen_ASTFromStringObject(const char *str, PyObject* filename, int mode,
+                                               PyCompilerFlags *flags, PyArena *arena);
 PyAPI_FUNC(mod_ty) PyPegen_ASTFromFileObject(FILE *fp, PyObject *filename_ob,
                                              int mode, const char *enc, const char *ps1,
                                              const char *ps2, int *errcode, PyArena *arena);
