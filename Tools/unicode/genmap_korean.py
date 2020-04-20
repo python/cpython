@@ -19,7 +19,7 @@ MAPPINGS_CP949 = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/
 
 
 def main():
-    mapfile = open_mapping_file('data/CP949.TXT', MAPPINGS_CP949)
+    mapfile = open_mapping_file('python-mappings/CP949.TXT', MAPPINGS_CP949)
     print("Loading Mapping File...")
     decmap = loadmap(mapfile)
     uhcdecmap, ksx1001decmap, cp949encmap = {}, {}, {}

@@ -53,9 +53,9 @@ def parse_gb18030map(fo):
 
 def main():
     print("Loading Mapping File...")
-    gb2312map = open_mapping_file('data/GB2312.TXT', MAPPINGS_GB2312)
-    cp936map = open_mapping_file('data/CP936.TXT', MAPPINGS_CP936)
-    gb18030map = open_mapping_file('data/gb-18030-2000.xml', MAPPINGS_GB18030)
+    gb2312map = open_mapping_file('python-mappings/GB2312.TXT', MAPPINGS_GB2312)
+    cp936map = open_mapping_file('python-mappings/CP936.TXT', MAPPINGS_CP936)
+    gb18030map = open_mapping_file('python-mappings/gb-18030-2000.xml', MAPPINGS_GB18030)
 
     gb18030decmap, gb18030unilinear = parse_gb18030map(gb18030map)
     gbkdecmap = loadmap(cp936map)

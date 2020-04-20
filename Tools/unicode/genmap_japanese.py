@@ -73,10 +73,10 @@ def loadmap_jisx0213(fo):
 
 
 def main():
-    jisx0208file = open_mapping_file('data/JIS0208.TXT', MAPPINGS_JIS0208)
-    jisx0212file = open_mapping_file('data/JIS0212.TXT', MAPPINGS_JIS0212)
-    cp932file = open_mapping_file('data/CP932.TXT', MAPPINGS_CP932)
-    jisx0213file = open_mapping_file('data/jisx0213-2004-std.txt', MAPPINGS_JISX0213_2004)
+    jisx0208file = open_mapping_file('python-mappings/JIS0208.TXT', MAPPINGS_JIS0208)
+    jisx0212file = open_mapping_file('python-mappings/JIS0212.TXT', MAPPINGS_JIS0212)
+    cp932file = open_mapping_file('python-mappings/CP932.TXT', MAPPINGS_CP932)
+    jisx0213file = open_mapping_file('python-mappings/jisx0213-2004-std.txt', MAPPINGS_JISX0213_2004)
 
     print("Loading Mapping File...")
 
