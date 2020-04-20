@@ -53,4 +53,4 @@ with open('mappings_kr.h', 'w') as omap:
     genmap_encode(filler, "cp949", cp949encmap)
     print_encmap(omap, filler, "cp949", cp949encmap)
 
-print("\nDone!")
+print("Done!")
