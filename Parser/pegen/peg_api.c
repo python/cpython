@@ -10,13 +10,20 @@ PyPegen_ASTFromString(const char *str, int mode, PyCompilerFlags *flags, PyArena
     if (filename_ob == NULL) {
         return NULL;
     }
-    if (PySys_Audit("compile", "yO", str, filename_ob) < 0) {
+    mod_ty result = PyPegen_ASTFromStringObject(str, filename_ob, mode, flags, arena);
+    Py_XDECREF(filename_ob);
+    return result;
+}
+
+mod_ty
+PyPegen_ASTFromStringObject(const char *str, PyObject* filename, int mode, PyCompilerFlags *flags, PyArena *arena)
+{
+    if (PySys_Audit("compile", "yO", str, filename) < 0) {
         return NULL;
     }
 
     int iflags = flags != NULL ? flags->cf_flags : PyCF_IGNORE_COOKIE;
-    mod_ty result = _PyPegen_run_parser_from_string(str, mode, filename_ob, iflags, arena);
-    Py_XDECREF(filename_ob);
+    mod_ty result = _PyPegen_run_parser_from_string(str, mode, filename, iflags, arena);
     return result;
 }
 

@@ -1041,7 +1041,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
         return NULL;
 
     if (use_peg) {
-        mod = PyPegen_ASTFromString(str, start, flags, arena);
+        mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
     }
     else {
         mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
@@ -1323,13 +1323,19 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename, int start, Py
 {
     struct symtable *st;
     mod_ty mod;
+    int use_peg = _PyInterpreterState_GET()->config.use_peg;
     PyArena *arena;
 
     arena = PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    if (use_peg) {
+        mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
+    }
+    else {
+        mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    }
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
