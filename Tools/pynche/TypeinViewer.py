@@ -94,10 +94,7 @@ class TypeinViewer:
             contents = '0' + contents
         # Figure out the contents in the current base.
         try:
-            if self.__hexp.get():
-                v = int(contents, 16)
-            else:
-                v = int(contents)
+            v = int(contents, 16) if self.__hexp.get() else int(contents)
         except ValueError:
             v = None
         # If value is not legal, or empty, delete the last character inserted
