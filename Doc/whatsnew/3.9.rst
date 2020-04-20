@@ -827,7 +827,7 @@ Changes in the Python API
   in the object itself.
   (Contributed by Serhiy Storchaka in :issue:`40257`.)
 
-* The constant values of future flags in the :mod:`future` module
+* The constant values of future flags in the :mod:`__future__` module
   is updated in order to prevent collision with compiler flags.
   (Contributed by Batuhan Taskaya in :issue:`39562`)
 

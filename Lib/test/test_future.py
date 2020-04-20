@@ -78,13 +78,14 @@ class FutureTest(unittest.TestCase):
         self.check_syntax_error(cm.exception, "badsyntax_future10", 3)
 
     def test_ensure_flags_dont_clash(self):
-        # test that future flags and compiler flags doesn't clash
-        # obtain future flags (CO_****) from future module
+        # bpo-39562: test that future flags and compiler flags doesn't clash
+
+        # obtain future flags (CO_***) from the __future__ module
         flags = [
             getattr(__future__, future).compiler_flag
             for future in __future__.all_feature_names
         ]
-        # obtain some of the exported compiler flags (PyCF_****) from ast
+        # obtain some of the exported compiler flags (PyCF_***) from the ast module
         flags.extend(
             getattr(ast, flag) for flag in dir(ast) if flag.startswith("PyCF_")
         )

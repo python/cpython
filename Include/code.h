@@ -89,8 +89,8 @@ typedef struct {
 #define CO_ASYNC_GENERATOR      0x0200
 
 /* These are no longer used. */
-/* These values are changed in 3.9 to prevent collision with
-   compiler flags. See issue 39562 for more details. */
+/* bpo-39562: These constant values are changed in Python 3.9
+              to prevent collision with compiler flags. */
 #define CO_FUTURE_DIVISION      0x20000
 #define CO_FUTURE_ABSOLUTE_IMPORT 0x40000 /* do absolute imports by default */
 #define CO_FUTURE_WITH_STATEMENT  0x80000
