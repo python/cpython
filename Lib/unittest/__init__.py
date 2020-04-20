@@ -65,6 +65,7 @@ from .loader import (TestLoader, defaultTestLoader, makeSuite, getTestCaseNames,
 from .main import TestProgram, main
 from .runner import TextTestRunner, TextTestResult
 from .signals import installHandler, registerResult, removeResult, removeHandler
+# IsolatedAsyncioTestCase will be imported lazily.
 
 # deprecated
 _TextTestResult = TextTestResult
@@ -78,6 +79,10 @@ def load_tests(loader, tests, pattern):
     this_dir = os.path.dirname(__file__)
     return loader.discover(start_dir=this_dir, pattern=pattern)
 
+
+# Lazy import of IsolatedAsyncioTestCase from .async_case
+# It imports asyncio, which is relatively heavy, but most tests
+# do not need it.
 
 def __dir__():
     return globals().keys() | {'IsolatedAsyncioTestCase'}
