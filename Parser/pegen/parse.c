@@ -1981,20 +1981,24 @@ import_from_rule(Parser *p)
     return res;
 }
 
-// import_from_targets: '(' import_from_as_names ')' | import_from_as_names | '*'
+// import_from_targets: '(' import_from_as_names ','? ')' | import_from_as_names | '*'
 static asdl_seq*
 import_from_targets_rule(Parser *p)
 {
     asdl_seq* res = NULL;
     int mark = p->mark;
-    { // '(' import_from_as_names ')'
+    { // '(' import_from_as_names ','? ')'
         asdl_seq* a;
         void *literal;
         void *literal_1;
+        void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (literal = _PyPegen_expect_token(p, 7))
             &&
             (a = import_from_as_names_rule(p))
+            &&
+            (opt_var = _PyPegen_expect_token(p, 12), 1)
             &&
             (literal_1 = _PyPegen_expect_token(p, 8))
         )
@@ -2037,20 +2041,16 @@ import_from_targets_rule(Parser *p)
     return res;
 }
 
-// import_from_as_names: ','.import_from_as_name+ ','?
+// import_from_as_names: ','.import_from_as_name+
 static asdl_seq*
 import_from_as_names_rule(Parser *p)
 {
     asdl_seq* res = NULL;
     int mark = p->mark;
-    { // ','.import_from_as_name+ ','?
+    { // ','.import_from_as_name+
         asdl_seq * a;
-        void *opt_var;
-        UNUSED(opt_var); // Silence compiler warnings
         if (
             (a = _gather_23_rule(p))
-            &&
-            (opt_var = _PyPegen_expect_token(p, 12), 1)
         )
         {
             res = a;

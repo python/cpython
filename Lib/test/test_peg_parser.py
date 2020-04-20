@@ -298,6 +298,7 @@ TEST_CASES = [
     ('import_from_one_dot_alias', 'from .a import b as c'),
     ('import_from_star', 'from a import *'),
     ('import_from_three_dots', 'from ...a import b'),
+    ('import_from_trailing_comma', 'from a import (b,)'),
     ('kwarg',
      '''
         def f(**a):
@@ -579,6 +580,7 @@ FAIL_TEST_CASES = [
     ("f-string_singe_brace", "f'{'"),
     ("f-string_single_closing_brace", "f'}'"),
     ("from_import_invalid", "from import import a"),
+    ("from_import_trailing_comma", "from a import b,"),
     # This test case checks error paths involving tokens with uninitialized
     # values of col_offset and end_col_offset.
     ("invalid indentation",
