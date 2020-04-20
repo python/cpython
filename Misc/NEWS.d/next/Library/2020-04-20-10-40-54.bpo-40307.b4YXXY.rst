@@ -1,0 +1,1 @@
+``multiprocessing.Manager`` and its proxies, are going to use the client picked at the time the manager was created to guarantee consistent behaviour across the while manager life span.
