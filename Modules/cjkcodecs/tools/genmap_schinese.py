@@ -97,9 +97,8 @@ with open('mappings_cn.h', 'w') as omap:
     print_decmap(omap, filler, "gbkext", gbkdecmap)
 
     print("Generating GB2312 && GBK encode map...")
-    filler = BufferedFiller()
-    genmap_encode(filler, "gbcommon", gb2312_gbkencmap)
-    print_encmap(omap, filler, "gbcommon", gb2312_gbkencmap)
+    writer = EncodeMapWriter(omap, "gbcommon", gb2312_gbkencmap)
+    writer.generate()
 
     print("Generating GB18030 extension decode map...")
     filler = BufferedFiller()
@@ -110,9 +109,8 @@ with open('mappings_cn.h', 'w') as omap:
     print_decmap(omap, filler, "gb18030ext", gb18030decmap)
 
     print("Generating GB18030 extension encode map...")
-    filler = BufferedFiller()
-    genmap_encode(filler, "gb18030ext", gb18030encmap)
-    print_encmap(omap, filler, "gb18030ext", gb18030encmap)
+    writer = EncodeMapWriter(omap, "gb18030ext", gb18030encmap)
+    writer.generate()
 
     print("Generating GB18030 Unicode BMP Mapping Ranges...")
     ranges = [[-1, -1, -1]]

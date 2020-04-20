@@ -171,9 +171,8 @@ with open("mappings_jp.h", "w") as omap:
     print_decmap(omap, filler, "jisx0212", jisx0212decmap)
 
     print("Generating JIS X 0208 && JIS X 0212 encode map...")
-    filler = BufferedFiller()
-    genmap_encode(filler, "jisxcommon", jisx0208_0212encmap)
-    print_encmap(omap, filler, "jisxcommon", jisx0208_0212encmap)
+    writer = EncodeMapWriter(omap, "jisxcommon", jisx0208_0212encmap)
+    writer.generate()
 
     print("Generating CP932 Extension decode map...")
     filler = BufferedFiller()
@@ -183,9 +182,8 @@ with open("mappings_jp.h", "w") as omap:
     print_decmap(omap, filler, "cp932ext", cp932decmap)
 
     print("Generating CP932 Extension encode map...")
-    filler = BufferedFiller()
-    genmap_encode(filler, "cp932ext", cp932encmap)
-    print_encmap(omap, filler, "cp932ext", cp932encmap)
+    writer = EncodeMapWriter(omap, "cp932ext", cp932encmap)
+    writer.generate()
 
     print("Generating JIS X 0213 Plane 1 BMP decode map...")
     filler = BufferedFiller()
@@ -198,9 +196,8 @@ with open("mappings_jp.h", "w") as omap:
     print_decmap(omap, filler, "jisx0213_2_bmp", jis4decmap)
 
     print("Generating JIS X 0213 BMP encode map...")
-    filler = BufferedFiller()
-    genmap_encode(filler, "jisx0213_bmp", jisx0213bmpencmap)
-    print_encmap(omap, filler, "jisx0213_bmp", jisx0213bmpencmap)
+    writer = EncodeMapWriter(omap, "jisx0213_bmp", jisx0213bmpencmap)
+    writer.generate()
 
     print("Generating JIS X 0213 Plane 1 EMP decode map...")
     filler = BufferedFiller()
@@ -215,9 +212,8 @@ with open("mappings_jp.h", "w") as omap:
     print_decmap(omap, filler, "jisx0213_2_emp", jis4_2_decmap)
 
     print("Generating JIS X 0213 EMP encode map...")
-    filler = BufferedFiller()
-    genmap_encode(filler, "jisx0213_emp", jisx0213empencmap)
-    print_encmap(omap, filler, "jisx0213_emp", jisx0213empencmap)
+    writer = EncodeMapWriter(omap, "jisx0213_emp", jisx0213empencmap)
+    writer.generate()
 
 with open('mappings_jisx0213_pair.h', 'w') as omap:
     print_autogen(omap, os.path.basename(__file__))

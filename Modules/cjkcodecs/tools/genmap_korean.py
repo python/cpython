@@ -49,8 +49,8 @@ with open('mappings_kr.h', 'w') as omap:
     print_decmap(omap, filler, "cp949ext", uhcdecmap)
 
     print("Generating CP949 (includes KS X 1001) encode map...")
-    filler = BufferedFiller()
-    genmap_encode(filler, "cp949", cp949encmap)
-    print_encmap(omap, filler, "cp949", cp949encmap)
+    writer = EncodeMapWriter(omap, "cp949", cp949encmap)
+    writer.generate()
+
 
 print("Done!")

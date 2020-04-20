@@ -61,6 +61,7 @@ class UCMReader:
     def parsedata(self, data):
         return eval('"'+data.split()[0]+'"')
 
+
 class EncodeMapWriter:
     filler_class = BufferedFiller
     elemtype = 'DBCHAR'
@@ -69,9 +70,12 @@ class EncodeMapWriter:
     def __init__(self, fp, prefix, m):
         self.file = fp
         self.prefix = prefix
+        self.m = m
         self.filler = self.filler_class()
-        self.buildmap(m)
-        self.printmap(m)
+
+    def generate(self):
+        self.buildmap(self.m)
+        self.printmap(self.m)
 
     def buildmap(self, emap):
         for c1 in range(0, 256):
@@ -97,6 +101,7 @@ class EncodeMapWriter:
                     self.write_multic(c2map[v])
                 else:
                     raise ValueError
+
     def write_nochar(self):
         self.filler.write('N,')
 
@@ -109,7 +114,7 @@ class EncodeMapWriter:
     def printmap(self, fmap):
         self.file.write(f"static const {self.elemtype} __{self.prefix}_encmap[{len(self.filler)}] = {{\n")
         self.filler.printout(self.file)
-        self.file.write("};\n")
+        self.file.write("};\n\n")
         self.file.write(f"static const {self.indextype} {self.prefix}_encmap[256] = {{\n")
 
         for i in range(256):
@@ -124,32 +129,6 @@ class EncodeMapWriter:
         self.filler.printout(self.file)
         self.file.write("};\n\n")
 
-# XXX: convert all usages of this function to EncodeMapWriter
-def genmap_encode(filler, prefix, emap):
-    for c1 in range(0, 256):
-        if c1 not in emap:
-            continue
-        c2map = emap[c1]
-        rc2values = [k for k in c2map.keys()]
-        rc2values.sort()
-        if not rc2values:
-            continue
-
-        c2map[prefix] = True
-        c2map['min'] = rc2values[0]
-        c2map['max'] = rc2values[-1]
-        c2map['midx'] = len(filler)
-
-        for v in range(rc2values[0], rc2values[-1] + 1):
-            if v not in c2map:
-                filler.write('N,')
-            elif isinstance(c2map[v], int):
-                filler.write(str(c2map[v]) + ',')
-            elif isinstance(c2map[v], tuple):
-                filler.write('M,')
-            else:
-                raise ValueError
-
 def open_mapping_file(path, source):
     try:
         f = open(path)
@@ -159,28 +138,6 @@ def open_mapping_file(path, source):
 
 def print_autogen(fo, source):
     fo.write(f'// AUTO-GENERATED FILE FROM {source}: DO NOT EDIT\n')
-
-def print_encmap(fo, filler, fmapprefix, fmap, f2map={}, f2mapprefix=''):
-    fo.write(f"static const DBCHAR __{fmapprefix}_encmap[{len(filler)}] = {{\n")
-    filler.printout(fo)
-    fo.write("};\n\n")
-    fo.write(f"static const struct unim_index {fmapprefix}_encmap[256] = {{\n")
-
-    for i in range(256):
-        if i in fmap and fmapprefix in fmap[i]:
-            m = fmap
-            prefix = fmapprefix
-        elif i in f2map and f2mapprefix in f2map[i]:
-            m = f2map
-            prefix = f2mapprefix
-        else:
-            filler.write("{", "0,", "0,", "0", "},")
-            continue
-
-        filler.write("{", "__%s_encmap" % prefix, "+", "%d" % m[i]['midx'],
-                     ",", "%d," % m[i]['min'], "%d" % m[i]['max'], "},")
-    filler.printout(fo)
-    fo.write("};\n\n")
 
 def genmap_decode(filler, prefix, c1range, c2range, dmap, onlymask=(),
                   wide=0):
