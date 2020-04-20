@@ -4006,6 +4006,10 @@ class _TestSharedMemory(BaseTestCase):
                                     "exceeds available storage"):
             sl[0] = 'encodées'  # Exactly 9 bytes of UTF-8 data
         self.assertEqual(sl[1], b'HoWdY')
+        with self.assertRaisesRegex(ValueError,
+                                    "exceeds available storage"):
+            sl[1] = b'123456789'
+        self.assertEqual(sl[1], b'HoWdY')
 
         # Exercise count().
         with warnings.catch_warnings():
