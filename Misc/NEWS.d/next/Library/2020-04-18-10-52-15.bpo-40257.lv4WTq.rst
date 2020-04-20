@@ -1,0 +1,4 @@
+Improved help for the :mod:`typing` module. Docstrings are now shown for all
+special forms and special generic aliases (like ``Union`` and ``List``).
+Using ``help()`` with generic alias like ``List[int]`` will show the help
+for the correspondent concrete type (``list`` in this case).

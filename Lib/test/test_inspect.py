@@ -439,8 +439,7 @@ class TestRetrievingSourceCode(GetSourceBase):
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_getdoc_inherited(self):
-        self.assertEqual(inspect.getdoc(mod.FesteringGob),
-                         'A longer,\n\nindented\n\ndocstring.')
+        self.assertIsNone(inspect.getdoc(mod.FesteringGob))
         self.assertEqual(inspect.getdoc(mod.FesteringGob.abuse),
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
         self.assertEqual(inspect.getdoc(mod.FesteringGob().abuse),
@@ -449,9 +448,19 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'The automatic gainsaying.')
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
+    def test_getowndoc(self):
+        getowndoc = inspect._getowndoc
+        self.assertEqual(getowndoc(type), type.__doc__)
+        self.assertEqual(getowndoc(int), int.__doc__)
+        self.assertEqual(getowndoc(int.to_bytes), int.to_bytes.__doc__)
+        self.assertEqual(getowndoc(int().to_bytes), int.to_bytes.__doc__)
+        self.assertEqual(getowndoc(int.from_bytes), int.from_bytes.__doc__)
+        self.assertEqual(getowndoc(int.real), int.real.__doc__)
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
     def test_finddoc(self):
         finddoc = inspect._finddoc
-        self.assertEqual(finddoc(int), int.__doc__)
+        self.assertIsNone(finddoc(int))
         self.assertEqual(finddoc(int.to_bytes), int.to_bytes.__doc__)
         self.assertEqual(finddoc(int().to_bytes), int.to_bytes.__doc__)
         self.assertEqual(finddoc(int.from_bytes), int.from_bytes.__doc__)
@@ -464,6 +473,7 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getcomments(self):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
         self.assertEqual(inspect.getcomments(mod.StupidGit), '# line 20\n')
+        self.assertEqual(inspect.getcomments(mod2.cls160), '# line 159\n')
         # If the object source file is not available, return None.
         co = compile('x=1', '_non_existing_filename.py', 'exec')
         self.assertIsNone(inspect.getcomments(co))
@@ -700,6 +710,45 @@ class TestBuggyCases(GetSourceBase):
     def test_nested_func(self):
         self.assertSourceEqual(mod2.cls135.func136, 136, 139)
 
+    def test_class_definition_in_multiline_string_definition(self):
+        self.assertSourceEqual(mod2.cls149, 149, 152)
+
+    def test_class_definition_in_multiline_comment(self):
+        self.assertSourceEqual(mod2.cls160, 160, 163)
+
+    def test_nested_class_definition_indented_string(self):
+        self.assertSourceEqual(mod2.cls173.cls175, 175, 176)
+
+    def test_nested_class_definition(self):
+        self.assertSourceEqual(mod2.cls183, 183, 188)
+        self.assertSourceEqual(mod2.cls183.cls185, 185, 188)
+
+    def test_class_decorator(self):
+        self.assertSourceEqual(mod2.cls196, 194, 201)
+        self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
+
+    def test_class_inside_conditional(self):
+        self.assertSourceEqual(mod2.cls238, 238, 240)
+        self.assertSourceEqual(mod2.cls238.cls239, 239, 240)
+
+    def test_multiple_children_classes(self):
+        self.assertSourceEqual(mod2.cls203, 203, 209)
+        self.assertSourceEqual(mod2.cls203.cls204, 204, 206)
+        self.assertSourceEqual(mod2.cls203.cls204.cls205, 205, 206)
+        self.assertSourceEqual(mod2.cls203.cls207, 207, 209)
+        self.assertSourceEqual(mod2.cls203.cls207.cls205, 208, 209)
+
+    def test_nested_class_definition_inside_function(self):
+        self.assertSourceEqual(mod2.func212(), 213, 214)
+        self.assertSourceEqual(mod2.cls213, 218, 222)
+        self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
+
+    def test_nested_class_definition_inside_async_function(self):
+        import asyncio
+        self.addCleanup(asyncio.set_event_loop_policy, None)
+        self.assertSourceEqual(asyncio.run(mod2.func225()), 226, 227)
+        self.assertSourceEqual(mod2.cls226, 231, 235)
+        self.assertSourceEqual(asyncio.run(mod2.cls226().func232()), 233, 234)
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):

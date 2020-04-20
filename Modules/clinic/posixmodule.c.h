@@ -3247,6 +3247,118 @@ os_getpid(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_GETPID) */
 
+#if defined(HAVE_GETGROUPLIST) && defined(__APPLE__)
+
+PyDoc_STRVAR(os_getgrouplist__doc__,
+"getgrouplist($module, user, group, /)\n"
+"--\n"
+"\n"
+"Returns a list of groups to which a user belongs.\n"
+"\n"
+"  user\n"
+"    username to lookup\n"
+"  group\n"
+"    base group id of the user");
+
+#define OS_GETGROUPLIST_METHODDEF    \
+    {"getgrouplist", (PyCFunction)(void(*)(void))os_getgrouplist, METH_FASTCALL, os_getgrouplist__doc__},
+
+static PyObject *
+os_getgrouplist_impl(PyObject *module, const char *user, int basegid);
+
+static PyObject *
+os_getgrouplist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *user;
+    int basegid;
+
+    if (!_PyArg_CheckPositional("getgrouplist", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("getgrouplist", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t user_length;
+    user = PyUnicode_AsUTF8AndSize(args[0], &user_length);
+    if (user == NULL) {
+        goto exit;
+    }
+    if (strlen(user) != (size_t)user_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    basegid = _PyLong_AsInt(args[1]);
+    if (basegid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_getgrouplist_impl(module, user, basegid);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_GETGROUPLIST) && defined(__APPLE__) */
+
+#if defined(HAVE_GETGROUPLIST) && !defined(__APPLE__)
+
+PyDoc_STRVAR(os_getgrouplist__doc__,
+"getgrouplist($module, user, group, /)\n"
+"--\n"
+"\n"
+"Returns a list of groups to which a user belongs.\n"
+"\n"
+"  user\n"
+"    username to lookup\n"
+"  group\n"
+"    base group id of the user");
+
+#define OS_GETGROUPLIST_METHODDEF    \
+    {"getgrouplist", (PyCFunction)(void(*)(void))os_getgrouplist, METH_FASTCALL, os_getgrouplist__doc__},
+
+static PyObject *
+os_getgrouplist_impl(PyObject *module, const char *user, gid_t basegid);
+
+static PyObject *
+os_getgrouplist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    const char *user;
+    gid_t basegid;
+
+    if (!_PyArg_CheckPositional("getgrouplist", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("getgrouplist", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t user_length;
+    user = PyUnicode_AsUTF8AndSize(args[0], &user_length);
+    if (user == NULL) {
+        goto exit;
+    }
+    if (strlen(user) != (size_t)user_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[1], &basegid)) {
+        goto exit;
+    }
+    return_value = os_getgrouplist_impl(module, user, basegid);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_GETGROUPLIST) && !defined(__APPLE__) */
+
 #if defined(HAVE_GETGROUPS)
 
 PyDoc_STRVAR(os_getgroups__doc__,
@@ -3268,6 +3380,102 @@ os_getgroups(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 #endif /* defined(HAVE_GETGROUPS) */
+
+#if defined(HAVE_INITGROUPS) && defined(__APPLE__)
+
+PyDoc_STRVAR(os_initgroups__doc__,
+"initgroups($module, username, gid, /)\n"
+"--\n"
+"\n"
+"Initialize the group access list.\n"
+"\n"
+"Call the system initgroups() to initialize the group access list with all of\n"
+"the groups of which the specified username is a member, plus the specified\n"
+"group id.");
+
+#define OS_INITGROUPS_METHODDEF    \
+    {"initgroups", (PyCFunction)(void(*)(void))os_initgroups, METH_FASTCALL, os_initgroups__doc__},
+
+static PyObject *
+os_initgroups_impl(PyObject *module, PyObject *oname, int gid);
+
+static PyObject *
+os_initgroups(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *oname = NULL;
+    int gid;
+
+    if (!_PyArg_CheckPositional("initgroups", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &oname)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    gid = _PyLong_AsInt(args[1]);
+    if (gid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_initgroups_impl(module, oname, gid);
+
+exit:
+    /* Cleanup for oname */
+    Py_XDECREF(oname);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_INITGROUPS) && defined(__APPLE__) */
+
+#if defined(HAVE_INITGROUPS) && !defined(__APPLE__)
+
+PyDoc_STRVAR(os_initgroups__doc__,
+"initgroups($module, username, gid, /)\n"
+"--\n"
+"\n"
+"Initialize the group access list.\n"
+"\n"
+"Call the system initgroups() to initialize the group access list with all of\n"
+"the groups of which the specified username is a member, plus the specified\n"
+"group id.");
+
+#define OS_INITGROUPS_METHODDEF    \
+    {"initgroups", (PyCFunction)(void(*)(void))os_initgroups, METH_FASTCALL, os_initgroups__doc__},
+
+static PyObject *
+os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid);
+
+static PyObject *
+os_initgroups(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *oname = NULL;
+    gid_t gid;
+
+    if (!_PyArg_CheckPositional("initgroups", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &oname)) {
+        goto exit;
+    }
+    if (!_Py_Gid_Converter(args[1], &gid)) {
+        goto exit;
+    }
+    return_value = os_initgroups_impl(module, oname, gid);
+
+exit:
+    /* Cleanup for oname */
+    Py_XDECREF(oname);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_INITGROUPS) && !defined(__APPLE__) */
 
 #if defined(HAVE_GETPGID)
 
@@ -3900,7 +4108,7 @@ exit:
 
 #endif /* defined(HAVE_WAITPID) */
 
-#if defined(HAVE_CWAIT)
+#if !defined(HAVE_WAITPID) && defined(HAVE_CWAIT)
 
 PyDoc_STRVAR(os_waitpid__doc__,
 "waitpid($module, pid, options, /)\n"
@@ -3936,7 +4144,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CWAIT) */
+#endif /* !defined(HAVE_WAITPID) && defined(HAVE_CWAIT) */
 
 #if defined(HAVE_WAIT)
 
@@ -5020,6 +5228,283 @@ exit:
 
     return return_value;
 }
+
+#if defined(HAVE_SENDFILE) && defined(__APPLE__)
+
+PyDoc_STRVAR(os_sendfile__doc__,
+"sendfile($module, /, out_fd, in_fd, offset, count, headers=(),\n"
+"         trailers=(), flags=0)\n"
+"--\n"
+"\n"
+"Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
+
+#define OS_SENDFILE_METHODDEF    \
+    {"sendfile", (PyCFunction)(void(*)(void))os_sendfile, METH_FASTCALL|METH_KEYWORDS, os_sendfile__doc__},
+
+static PyObject *
+os_sendfile_impl(PyObject *module, int out_fd, int in_fd, Py_off_t offset,
+                 Py_off_t sbytes, PyObject *headers, PyObject *trailers,
+                 int flags);
+
+static PyObject *
+os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", "headers", "trailers", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
+    PyObject *argsbuf[7];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
+    int out_fd;
+    int in_fd;
+    Py_off_t offset;
+    Py_off_t sbytes;
+    PyObject *headers = NULL;
+    PyObject *trailers = NULL;
+    int flags = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 7, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    out_fd = _PyLong_AsInt(args[0]);
+    if (out_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    in_fd = _PyLong_AsInt(args[1]);
+    if (in_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &offset)) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[3], &sbytes)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[4]) {
+        headers = args[4];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[5]) {
+        trailers = args[5];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[6])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[6]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_sendfile_impl(module, out_fd, in_fd, offset, sbytes, headers, trailers, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SENDFILE) && defined(__APPLE__) */
+
+#if defined(HAVE_SENDFILE) && !defined(__APPLE__) && (defined(__FreeBSD__) || defined(__DragonFly__))
+
+PyDoc_STRVAR(os_sendfile__doc__,
+"sendfile($module, /, out_fd, in_fd, offset, count, headers=(),\n"
+"         trailers=(), flags=0)\n"
+"--\n"
+"\n"
+"Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
+
+#define OS_SENDFILE_METHODDEF    \
+    {"sendfile", (PyCFunction)(void(*)(void))os_sendfile, METH_FASTCALL|METH_KEYWORDS, os_sendfile__doc__},
+
+static PyObject *
+os_sendfile_impl(PyObject *module, int out_fd, int in_fd, Py_off_t offset,
+                 Py_ssize_t count, PyObject *headers, PyObject *trailers,
+                 int flags);
+
+static PyObject *
+os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", "headers", "trailers", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
+    PyObject *argsbuf[7];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
+    int out_fd;
+    int in_fd;
+    Py_off_t offset;
+    Py_ssize_t count;
+    PyObject *headers = NULL;
+    PyObject *trailers = NULL;
+    int flags = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 7, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    out_fd = _PyLong_AsInt(args[0]);
+    if (out_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    in_fd = _PyLong_AsInt(args[1]);
+    if (in_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[2], &offset)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[3]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[4]) {
+        headers = args[4];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[5]) {
+        trailers = args[5];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[6])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[6]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_sendfile_impl(module, out_fd, in_fd, offset, count, headers, trailers, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SENDFILE) && !defined(__APPLE__) && (defined(__FreeBSD__) || defined(__DragonFly__)) */
+
+#if defined(HAVE_SENDFILE) && !defined(__APPLE__) && !(defined(__FreeBSD__) || defined(__DragonFly__))
+
+PyDoc_STRVAR(os_sendfile__doc__,
+"sendfile($module, /, out_fd, in_fd, offset, count)\n"
+"--\n"
+"\n"
+"Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
+
+#define OS_SENDFILE_METHODDEF    \
+    {"sendfile", (PyCFunction)(void(*)(void))os_sendfile, METH_FASTCALL|METH_KEYWORDS, os_sendfile__doc__},
+
+static PyObject *
+os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
+                 Py_ssize_t count);
+
+static PyObject *
+os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"out_fd", "in_fd", "offset", "count", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sendfile", 0};
+    PyObject *argsbuf[4];
+    int out_fd;
+    int in_fd;
+    PyObject *offobj;
+    Py_ssize_t count;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 4, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    out_fd = _PyLong_AsInt(args[0]);
+    if (out_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    in_fd = _PyLong_AsInt(args[1]);
+    if (in_fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    offobj = args[2];
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[3]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+    return_value = os_sendfile_impl(module, out_fd, in_fd, offobj, count);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SENDFILE) && !defined(__APPLE__) && !(defined(__FreeBSD__) || defined(__DragonFly__)) */
 
 #if defined(__APPLE__)
 
@@ -7568,6 +8053,62 @@ exit:
 
 #endif /* defined(HAVE_MEMFD_CREATE) */
 
+#if (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL))
+
+PyDoc_STRVAR(os_get_terminal_size__doc__,
+"get_terminal_size($module, fd=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Return the size of the terminal window as (columns, lines).\n"
+"\n"
+"The optional argument fd (default standard output) specifies\n"
+"which file descriptor should be queried.\n"
+"\n"
+"If the file descriptor is not connected to a terminal, an OSError\n"
+"is thrown.\n"
+"\n"
+"This function will only be defined if an implementation is\n"
+"available for this system.\n"
+"\n"
+"shutil.get_terminal_size is the high-level function which should\n"
+"normally be used, os.get_terminal_size is the low-level implementation.");
+
+#define OS_GET_TERMINAL_SIZE_METHODDEF    \
+    {"get_terminal_size", (PyCFunction)(void(*)(void))os_get_terminal_size, METH_FASTCALL, os_get_terminal_size__doc__},
+
+static PyObject *
+os_get_terminal_size_impl(PyObject *module, int fd);
+
+static PyObject *
+os_get_terminal_size(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd = fileno(stdout);
+
+    if (!_PyArg_CheckPositional("get_terminal_size", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = os_get_terminal_size_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL)) */
+
 PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
 "--\n"
@@ -8522,9 +9063,17 @@ exit:
     #define OS_GETPID_METHODDEF
 #endif /* !defined(OS_GETPID_METHODDEF) */
 
+#ifndef OS_GETGROUPLIST_METHODDEF
+    #define OS_GETGROUPLIST_METHODDEF
+#endif /* !defined(OS_GETGROUPLIST_METHODDEF) */
+
 #ifndef OS_GETGROUPS_METHODDEF
     #define OS_GETGROUPS_METHODDEF
 #endif /* !defined(OS_GETGROUPS_METHODDEF) */
+
+#ifndef OS_INITGROUPS_METHODDEF
+    #define OS_INITGROUPS_METHODDEF
+#endif /* !defined(OS_INITGROUPS_METHODDEF) */
 
 #ifndef OS_GETPGID_METHODDEF
     #define OS_GETPGID_METHODDEF
@@ -8661,6 +9210,10 @@ exit:
 #ifndef OS_PREADV_METHODDEF
     #define OS_PREADV_METHODDEF
 #endif /* !defined(OS_PREADV_METHODDEF) */
+
+#ifndef OS_SENDFILE_METHODDEF
+    #define OS_SENDFILE_METHODDEF
+#endif /* !defined(OS_SENDFILE_METHODDEF) */
 
 #ifndef OS__FCOPYFILE_METHODDEF
     #define OS__FCOPYFILE_METHODDEF
@@ -8838,6 +9391,10 @@ exit:
     #define OS_MEMFD_CREATE_METHODDEF
 #endif /* !defined(OS_MEMFD_CREATE_METHODDEF) */
 
+#ifndef OS_GET_TERMINAL_SIZE_METHODDEF
+    #define OS_GET_TERMINAL_SIZE_METHODDEF
+#endif /* !defined(OS_GET_TERMINAL_SIZE_METHODDEF) */
+
 #ifndef OS_GET_HANDLE_INHERITABLE_METHODDEF
     #define OS_GET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_GET_HANDLE_INHERITABLE_METHODDEF) */
@@ -8869,4 +9426,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=4e28994a729eddf9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=545c08f76d7a6286 input=a9049054013a1b77]*/

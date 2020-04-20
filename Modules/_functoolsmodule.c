@@ -1195,6 +1195,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->maxsize = maxsize;
     Py_INCREF(cache_info_type);
     obj->cache_info_type = cache_info_type;
+    obj->dict = NULL;
     return (PyObject *)obj;
 }
 

@@ -1,0 +1,4 @@
+Workers in :class:`~concurrent.futures.ProcessPoolExecutor` are now spawned on
+demand, only when there are no available idle workers to reuse. This optimizes
+startup overhead and reduces the amount of lost CPU time to idle workers.
+Patch by Kyle Stanley.

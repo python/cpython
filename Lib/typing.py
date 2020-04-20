@@ -323,6 +323,10 @@ class _SpecialForm(_Final, _Immutable, _root=True):
         self._name = name
         self._doc = doc
 
+    @property
+    def __doc__(self):
+        return self._doc
+
     def __eq__(self, other):
         if not isinstance(other, _SpecialForm):
             return NotImplemented
@@ -602,7 +606,10 @@ class TypeVar(_Final, _Immutable, _root=True):
             self.__bound__ = _type_check(bound, "Bound must be a type.")
         else:
             self.__bound__ = None
-        def_mod = sys._getframe(1).f_globals['__name__']  # for pickling
+        try:
+            def_mod = sys._getframe(1).f_globals.get('__name__', '__main__')  # for pickling
+        except (AttributeError, ValueError):
+            def_mod = None
         if def_mod != 'typing':
             self.__module__ = def_mod
 
@@ -672,6 +679,8 @@ class _GenericAlias(_Final, _root=True):
         self.__slots__ = None  # This is not documented.
         if not name:
             self.__module__ = origin.__module__
+        if special:
+            self.__doc__ = f'A generic version of {origin.__module__}.{origin.__qualname__}'
 
     @_tp_cache
     def __getitem__(self, params):
