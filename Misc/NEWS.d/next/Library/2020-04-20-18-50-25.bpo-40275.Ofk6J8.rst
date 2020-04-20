@@ -1,0 +1,2 @@
+The :class:`unittest.IsolatedAsyncioTestCase` class is now imported lazily
+to avoid importing a large :mod:`asyncio` package when tests do not need it.
