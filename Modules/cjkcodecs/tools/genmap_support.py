@@ -40,27 +40,6 @@ class BufferedFiller:
     def __len__(self):
         return self.count
 
-class UCMReader:
-    def __init__(self, fp):
-        self.file = fp
-
-    def itertokens(self):
-        isincharmap = False
-        for line in self.file:
-            body = line.split('#', 1)[0].strip()
-            if body == 'CHARMAP':
-                isincharmap = True
-            elif body == 'END CHARMAP':
-                isincharmap = False
-            elif isincharmap:
-                index, data = body.split(None, 1)
-                index = int(index[2:-1], 16)
-                data = self.parsedata(data)
-                yield index, data
-
-    def parsedata(self, data):
-        return eval('"'+data.split()[0]+'"')
-
 
 class EncodeMapWriter:
     filler_class = BufferedFiller
