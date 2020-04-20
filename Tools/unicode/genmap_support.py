@@ -48,7 +48,7 @@ class DecodeMapWriter:
         self.fp = fp
         self.prefix = prefix
         self.decode_map = decode_map
-        self.filler = self.filler_class() 
+        self.filler = self.filler_class()
 
     def update_decode_map(self, c1range, c2range, onlymask=(), wide=0):
         c2values = range(c2range[0], c2range[1] + 1)
@@ -98,7 +98,7 @@ class DecodeMapWriter:
                               ",", "%d," % m[i]['min'], "%d" % m[i]['max'], "},")
         self.filler.printout(self.fp)
         self.fp.write("};\n\n")
-    
+
 
 class EncodeMapWriter:
     filler_class = BufferedFiller

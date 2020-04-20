@@ -249,4 +249,3 @@ static const struct pair_encodemap *jisx0213_pair_encmap;
 
 if __name__ == '__main__':
     main()
-
