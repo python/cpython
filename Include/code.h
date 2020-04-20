@@ -88,7 +88,6 @@ typedef struct {
 #define CO_ITERABLE_COROUTINE   0x0100
 #define CO_ASYNC_GENERATOR      0x0200
 
-/* These are no longer used. */
 /* bpo-39562: These constant values are changed in Python 3.9
               to prevent collision with compiler flags. */
 #define CO_FUTURE_DIVISION      0x20000
