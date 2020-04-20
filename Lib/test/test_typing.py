@@ -221,6 +221,13 @@ class TypeVarTests(BaseTestCase):
         with self.assertRaises(TypeError):
             TypeVar('X', str, float, bound=Employee)
 
+    def test_missing__name__(self):
+        code = """if 1:
+        import typing
+        T = typing.TypeVar("T")
+        """
+        exec(code, {})
+
     def test_no_bivariant(self):
         with self.assertRaises(ValueError):
             TypeVar('T', covariant=True, contravariant=True)
