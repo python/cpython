@@ -139,4 +139,4 @@ static const struct _gb18030_to_unibmp_ranges {
         ranges[-1][2] + ranges[-1][1] - ranges[-1][0] + 1), '}', '};')
     filler.printout(omap)
 
-print("\nDone!")
+print("Done!")
