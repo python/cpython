@@ -1,1 +1,0 @@
-Fix: :mod:`modulefinder` revert file_info tuple changes
