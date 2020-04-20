@@ -93,8 +93,8 @@ for c1, m in cp932decmap.items():
         cp932encmap.setdefault(code >> 8, {})
         if (code & 0xff) not in cp932encmap[code >> 8]:
             cp932encmap[code >> 8][code & 0xff] = c1 << 8 | c2
-for c1, m in [e for e in cp932encmap.items()]:
-    for c2, code in [e for e in m.items()]:
+for c1, m in cp932encmap.copy().items():
+    for c2, code in m.copy().items():
         if c1 in sjisencmap and c2 in sjisencmap[c1] and sjisencmap[c1][c2] == code:
             del cp932encmap[c1][c2]
             if not cp932encmap[c1]:
@@ -123,8 +123,8 @@ for c1, m in jisx0212decmap.items():
         jisx0208_0212encmap[code >> 8][code & 0xff] = 0x8000 | c1 << 8 | c2
 
 jisx0213bmpencmap = {}
-for c1, m in [e for e in jis3decmap.items()]:
-    for c2, code in [e for e in m.items()]:
+for c1, m in jis3decmap.copy().items():
+    for c2, code in m.copy().items():
         if c1 in jisx0208decmap and c2 in jisx0208decmap[c1]:
             if code in jis3_pairdecmap:
                 jisx0213bmpencmap[code >> 8][code & 0xff] = (0,) # pair

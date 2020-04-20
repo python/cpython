@@ -82,60 +82,61 @@ for c1, m in gb18030decmap.items():
         gb18030encmap.setdefault(code >> 8, {})
         gb18030encmap[code >> 8][code & 0xff] = c1 << 8 | c2
 
-omap = open('mappings_cn.h', 'w')
-print_autogen(omap, os.path.basename(__file__))
+with open('mappings_cn.h', 'w') as omap:
+    print_autogen(omap, os.path.basename(__file__))
 
-print("Generating GB2312 decode map...")
-filler = BufferedFiller()
-genmap_decode(filler, "gb2312", GB2312_C1, GB2312_C2, gb2312decmap)
-print_decmap(omap, filler, "gb2312", gb2312decmap)
+    print("Generating GB2312 decode map...")
+    filler = BufferedFiller()
+    genmap_decode(filler, "gb2312", GB2312_C1, GB2312_C2, gb2312decmap)
+    print_decmap(omap, filler, "gb2312", gb2312decmap)
 
-print("Generating GBK decode map...")
-filler = BufferedFiller()
-genmap_decode(filler, "gbkext", GBKL1_C1, GBKL1_C2, gbkdecmap)
-genmap_decode(filler, "gbkext", GBKL2_C1, GBKL2_C2, gbkdecmap)
-print_decmap(omap, filler, "gbkext", gbkdecmap)
+    print("Generating GBK decode map...")
+    filler = BufferedFiller()
+    genmap_decode(filler, "gbkext", GBKL1_C1, GBKL1_C2, gbkdecmap)
+    genmap_decode(filler, "gbkext", GBKL2_C1, GBKL2_C2, gbkdecmap)
+    print_decmap(omap, filler, "gbkext", gbkdecmap)
 
-print("Generating GB2312 && GBK encode map...")
-filler = BufferedFiller()
-genmap_encode(filler, "gbcommon", gb2312_gbkencmap)
-print_encmap(omap, filler, "gbcommon", gb2312_gbkencmap)
+    print("Generating GB2312 && GBK encode map...")
+    filler = BufferedFiller()
+    genmap_encode(filler, "gbcommon", gb2312_gbkencmap)
+    print_encmap(omap, filler, "gbcommon", gb2312_gbkencmap)
 
-print("Generating GB18030 extension decode map...")
-filler = BufferedFiller()
-for i in range(1, 6):
-    genmap_decode(filler, "gb18030ext", eval("GB18030EXTP%d_C1" % i),
-                    eval("GB18030EXTP%d_C2" % i), gb18030decmap)
-print_decmap(omap, filler, "gb18030ext", gb18030decmap)
+    print("Generating GB18030 extension decode map...")
+    filler = BufferedFiller()
+    for i in range(1, 6):
+        genmap_decode(filler, "gb18030ext", eval("GB18030EXTP%d_C1" % i),
+                        eval("GB18030EXTP%d_C2" % i), gb18030decmap)
 
-print("Generating GB18030 extension encode map...")
-filler = BufferedFiller()
-genmap_encode(filler, "gb18030ext", gb18030encmap)
-print_encmap(omap, filler, "gb18030ext", gb18030encmap)
+    print_decmap(omap, filler, "gb18030ext", gb18030decmap)
 
-print("Generating GB18030 Unicode BMP Mapping Ranges...")
-ranges = [[-1, -1, -1]]
-gblinnum = 0
-omap.write("""
+    print("Generating GB18030 extension encode map...")
+    filler = BufferedFiller()
+    genmap_encode(filler, "gb18030ext", gb18030encmap)
+    print_encmap(omap, filler, "gb18030ext", gb18030encmap)
+
+    print("Generating GB18030 Unicode BMP Mapping Ranges...")
+    ranges = [[-1, -1, -1]]
+    gblinnum = 0
+    omap.write("""
 static const struct _gb18030_to_unibmp_ranges {
     Py_UCS4   first, last;
     DBCHAR       base;
 } gb18030_to_unibmp_ranges[] = {
 """)
 
-for uni in gb18030unilinear:
-    if uni == ranges[-1][1] + 1:
-        ranges[-1][1] = uni
-    else:
-        ranges.append([uni, uni, gblinnum])
-    gblinnum += 1
+    for uni in gb18030unilinear:
+        if uni == ranges[-1][1] + 1:
+            ranges[-1][1] = uni
+        else:
+            ranges.append([uni, uni, gblinnum])
+        gblinnum += 1
 
-filler = BufferedFiller()
-for first, last, base in ranges[1:]:
-    filler.write('{', str(first), ',', str(last), ',', str(base), '},')
+    filler = BufferedFiller()
+    for first, last, base in ranges[1:]:
+        filler.write('{', str(first), ',', str(last), ',', str(base), '},')
 
-filler.write('{', '0,', '0,', str(
-    ranges[-1][2] + ranges[-1][1] - ranges[-1][0] + 1), '}', '};')
-filler.printout(omap)
+    filler.write('{', '0,', '0,', str(
+        ranges[-1][2] + ranges[-1][1] - ranges[-1][0] + 1), '}', '};')
+    filler.printout(omap)
 
 print("\nDone!")
