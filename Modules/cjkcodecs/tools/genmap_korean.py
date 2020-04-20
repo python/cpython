@@ -15,10 +15,11 @@ UHCL1_C1 = (0x81, 0xa0)
 UHCL1_C2 = (0x41, 0xfe)
 UHCL2_C1 = (0xa1, 0xfe)
 UHCL2_C2 = (0x41, 0xa0)
+MAPPINGS_CP949 = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP949.TXT'
 
 
 def main():
-    mapfile = open_mapping_file('data/CP949.TXT', 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP949.TXT')
+    mapfile = open_mapping_file('data/CP949.TXT', MAPPINGS_CP949)
     print("Loading Mapping File...")
     decmap = loadmap(mapfile)
     uhcdecmap, ksx1001decmap, cp949encmap = {}, {}, {}
@@ -36,23 +37,24 @@ def main():
                 cp949encmap.setdefault(code >> 8, {})  # MSB set
                 cp949encmap[code >> 8][code & 0xFF] = (c1 << 8 | c2)
 
-    with open('mappings_kr.h', 'w') as omap:
-        print_autogen(omap, os.path.basename(__file__))
+    with open('mappings_kr.h', 'w') as fp:
+        print_autogen(fp, os.path.basename(__file__))
 
         print("Generating KS X 1001 decode map...")
-        filler = BufferedFiller()
-        genmap_decode(filler, "ksx1001", KSX1001_C1, KSX1001_C2, ksx1001decmap)
-        print_decmap(omap, filler, "ksx1001", ksx1001decmap)
+        writer = DecodeMapWriter(fp, "ksx1001", ksx1001decmap)
+        writer.update_decode_map(KSX1001_C1, KSX1001_C2)
+        writer.generate()
 
         print("Generating UHC decode map...")
-        filler = BufferedFiller()
-        genmap_decode(filler, "cp949ext", UHCL1_C1, UHCL1_C2, uhcdecmap)
-        genmap_decode(filler, "cp949ext", UHCL2_C1, UHCL2_C2, uhcdecmap)
-        print_decmap(omap, filler, "cp949ext", uhcdecmap)
+        writer = DecodeMapWriter(fp, "cp949ext", uhcdecmap)
+        writer.update_decode_map(UHCL1_C1, UHCL1_C2)
+        writer.update_decode_map(UHCL2_C1, UHCL2_C2)
+        writer.generate()
 
         print("Generating CP949 (includes KS X 1001) encode map...")
-        writer = EncodeMapWriter(omap, "cp949", cp949encmap)
+        writer = EncodeMapWriter(fp, "cp949", cp949encmap)
         writer.generate()
+
     print("Done!")
 
 

@@ -41,26 +41,85 @@ class BufferedFiller:
         return self.count
 
 
+class DecodeMapWriter:
+    filler_class = BufferedFiller
+
+    def __init__(self, fp, prefix, decode_map):
+        self.fp = fp
+        self.prefix = prefix
+        self.decode_map = decode_map
+        self.filler = self.filler_class() 
+
+    def update_decode_map(self, c1range, c2range, onlymask=(), wide=0):
+        c2values = range(c2range[0], c2range[1] + 1)
+
+        for c1 in range(c1range[0], c1range[1] + 1):
+            if c1 not in self.decode_map or (onlymask and c1 not in onlymask):
+                continue
+            c2map = self.decode_map[c1]
+            rc2values = [n for n in c2values if n in c2map]
+            if not rc2values:
+                continue
+
+            c2map[self.prefix] = True
+            c2map['min'] = rc2values[0]
+            c2map['max'] = rc2values[-1]
+            c2map['midx'] = len(self.filler)
+
+            for v in range(rc2values[0], rc2values[-1] + 1):
+                if v in c2map:
+                    self.filler.write('%d,' % c2map[v])
+                else:
+                    self.filler.write('U,')
+
+    def generate(self, wide=False):
+        if not wide:
+            self.fp.write(f"static const ucs2_t __{self.prefix}_decmap[{len(self.filler)}] = {{\n")
+        else:
+            self.fp.write(f"static const Py_UCS4 __{self.prefix}_decmap[{len(self.filler)}] = {{\n")
+
+        self.filler.printout(self.fp)
+        self.fp.write("};\n\n")
+
+        if not wide:
+            self.fp.write(f"static const struct dbcs_index {self.prefix}_decmap[256] = {{\n")
+        else:
+            self.fp.write(f"static const struct widedbcs_index {self.prefix}_decmap[256] = {{\n")
+
+        for i in range(256):
+            if i in self.decode_map and self.prefix in self.decode_map[i]:
+                m = self.decode_map
+                prefix = self.prefix
+            else:
+                self.filler.write("{", "0,", "0,", "0", "},")
+                continue
+
+            self.filler.write("{", "__%s_decmap" % prefix, "+", "%d" % m[i]['midx'],
+                              ",", "%d," % m[i]['min'], "%d" % m[i]['max'], "},")
+        self.filler.printout(self.fp)
+        self.fp.write("};\n\n")
+    
+
 class EncodeMapWriter:
     filler_class = BufferedFiller
     elemtype = 'DBCHAR'
     indextype = 'struct unim_index'
 
-    def __init__(self, fp, prefix, m):
-        self.file = fp
+    def __init__(self, fp, prefix, encode_map):
+        self.fp = fp
         self.prefix = prefix
-        self.m = m
+        self.encode_map = encode_map
         self.filler = self.filler_class()
 
     def generate(self):
-        self.buildmap(self.m)
-        self.printmap(self.m)
+        self.buildmap()
+        self.printmap()
 
-    def buildmap(self, emap):
+    def buildmap(self):
         for c1 in range(0, 256):
-            if c1 not in emap:
+            if c1 not in self.encode_map:
                 continue
-            c2map = emap[c1]
+            c2map = self.encode_map[c1]
             rc2values = [k for k in c2map.keys()]
             rc2values.sort()
             if not rc2values:
@@ -90,23 +149,24 @@ class EncodeMapWriter:
     def write_char(self, point):
         self.filler.write(str(point) + ',')
 
-    def printmap(self, fmap):
-        self.file.write(f"static const {self.elemtype} __{self.prefix}_encmap[{len(self.filler)}] = {{\n")
-        self.filler.printout(self.file)
-        self.file.write("};\n\n")
-        self.file.write(f"static const {self.indextype} {self.prefix}_encmap[256] = {{\n")
+    def printmap(self):
+        self.fp.write(f"static const {self.elemtype} __{self.prefix}_encmap[{len(self.filler)}] = {{\n")
+        self.filler.printout(self.fp)
+        self.fp.write("};\n\n")
+        self.fp.write(f"static const {self.indextype} {self.prefix}_encmap[256] = {{\n")
 
         for i in range(256):
-            if i in fmap and self.prefix in fmap[i]:
+            if i in self.encode_map and self.prefix in self.encode_map[i]:
                 self.filler.write("{", "__%s_encmap" % self.prefix, "+",
-                                  "%d" % fmap[i]['midx'], ",",
-                                  "%d," % fmap[i]['min'],
-                                  "%d" % fmap[i]['max'], "},")
+                                  "%d" % self.encode_map[i]['midx'], ",",
+                                  "%d," % self.encode_map[i]['min'],
+                                  "%d" % self.encode_map[i]['max'], "},")
             else:
                 self.filler.write("{", "0,", "0,", "0", "},")
                 continue
-        self.filler.printout(self.file)
-        self.file.write("};\n\n")
+        self.filler.printout(self.fp)
+        self.fp.write("};\n\n")
+
 
 def open_mapping_file(path, source):
     try:
@@ -115,64 +175,10 @@ def open_mapping_file(path, source):
         raise SystemExit(f'{source} is needed')
     return f
 
+
 def print_autogen(fo, source):
     fo.write(f'// AUTO-GENERATED FILE FROM {source}: DO NOT EDIT\n')
 
-def genmap_decode(filler, prefix, c1range, c2range, dmap, onlymask=(),
-                  wide=0):
-    c2width  = c2range[1] - c2range[0] + 1
-    c2values = range(c2range[0], c2range[1] + 1)
-
-    for c1 in range(c1range[0], c1range[1] + 1):
-        if c1 not in dmap or (onlymask and c1 not in onlymask):
-            continue
-        c2map = dmap[c1]
-        rc2values = [n for n in c2values if n in c2map]
-        if not rc2values:
-            continue
-
-        c2map[prefix] = True
-        c2map['min'] = rc2values[0]
-        c2map['max'] = rc2values[-1]
-        c2map['midx'] = len(filler)
-
-        for v in range(rc2values[0], rc2values[-1] + 1):
-            if v in c2map:
-                filler.write('%d,' % c2map[v])
-            else:
-                filler.write('U,')
-
-def print_decmap(fo, filler, fmapprefix, fmap, f2map={}, f2mapprefix='',
-                 wide=0):
-    if not wide:
-        fo.write(f"static const ucs2_t __{fmapprefix}_decmap[{len(filler)}] = {{\n")
-        width = 8
-    else:
-        fo.write(f"static const Py_UCS4 __{fmapprefix}_decmap[{len(filler)}] = {{\n")
-        width = 4
-    filler.printout(fo)
-    fo.write("};\n\n")
-
-    if not wide:
-        fo.write(f"static const struct dbcs_index {fmapprefix}_decmap[256] = {{\n")
-    else:
-        fo.write(f"static const struct widedbcs_index {fmapprefix}_decmap[256] = {{\n")
-
-    for i in range(256):
-        if i in fmap and fmapprefix in fmap[i]:
-            m = fmap
-            prefix = fmapprefix
-        elif i in f2map and f2mapprefix in f2map[i]:
-            m = f2map
-            prefix = f2mapprefix
-        else:
-            filler.write("{", "0,", "0,", "0", "},")
-            continue
-
-        filler.write("{", "__%s_decmap" % prefix, "+", "%d" % m[i]['midx'],
-                     ",", "%d," % m[i]['min'], "%d" % m[i]['max'], "},")
-    filler.printout(fo)
-    fo.write("};\n\n")
 
 def loadmap(fo, natcol=0, unicol=1, sbcs=0):
     print("Loading from", fo)
