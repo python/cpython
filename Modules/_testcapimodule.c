@@ -6831,6 +6831,7 @@ test_buildvalue_issue38913(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
+    (void) res; /* silence unused-but-set-variable warning */
     PyErr_Clear();
     Py_RETURN_NONE;
 }
