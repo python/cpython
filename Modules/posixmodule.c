@@ -1,4 +1,3 @@
-
 /* POSIX module implementation */
 
 /* This file is also used for Windows NT/MS-Win.  In that case the
@@ -7,8 +6,6 @@
    assumes that for Windows NT, the macro 'MS_WINDOWS' is defined independent
    of the compiler used.  Different compilers define their own feature
    test macro, e.g. '_MSC_VER'. */
-
-
 
 #ifdef __APPLE__
    /*
@@ -35,11 +32,10 @@
 #  include <windows.h>
 #endif
 
-#include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
-#include "pycore_import.h"    /* _PyImport_ReInitLock() */
-#include "pycore_pystate.h"   /* _PyRuntime */
-#include "pythread.h"
-#include "structmember.h"
+#include "pycore_ceval.h"         // _PyEval_ReInitThreads()
+#include "pycore_import.h"        // _PyImport_ReInitLock()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
 #else
@@ -49,7 +45,7 @@
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
 #ifdef __ANDROID__
-#undef HAVE_FACCESSAT
+#  undef HAVE_FACCESSAT
 #endif
 
 #include <stdio.h>  /* needed for ctermid() */
@@ -66,89 +62,89 @@ corresponding Unix manual entries for more information on calls.");
 
 
 #ifdef HAVE_SYS_UIO_H
-#include <sys/uio.h>
+#  include <sys/uio.h>
 #endif
 
 #ifdef HAVE_SYS_SYSMACROS_H
 /* GNU C Library: major(), minor(), makedev() */
-#include <sys/sysmacros.h>
+#  include <sys/sysmacros.h>
 #endif
 
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
 
 #ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
+#  include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H */
 
 #ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>           /* For WNOHANG */
+#  include <sys/wait.h>           // WNOHANG
 #endif
 #ifdef HAVE_LINUX_WAIT_H
-#include <linux/wait.h> // For P_PIDFD
+#  include <linux/wait.h>         // P_PIDFD
 #endif
 
 #ifdef HAVE_SIGNAL_H
-#include <signal.h>
+#  include <signal.h>
 #endif
 
 #ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif /* HAVE_FCNTL_H */
+#  include <fcntl.h>
+#endif
 
 #ifdef HAVE_GRP_H
-#include <grp.h>
+#  include <grp.h>
 #endif
 
 #ifdef HAVE_SYSEXITS_H
-#include <sysexits.h>
-#endif /* HAVE_SYSEXITS_H */
+#  include <sysexits.h>
+#endif
 
 #ifdef HAVE_SYS_LOADAVG_H
-#include <sys/loadavg.h>
+#  include <sys/loadavg.h>
 #endif
 
 #ifdef HAVE_SYS_SENDFILE_H
-#include <sys/sendfile.h>
+#  include <sys/sendfile.h>
 #endif
 
 #if defined(__APPLE__)
-#include <copyfile.h>
+#  include <copyfile.h>
 #endif
 
 #ifdef HAVE_SCHED_H
-#include <sched.h>
+#  include <sched.h>
 #endif
 
 #ifdef HAVE_COPY_FILE_RANGE
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
-#undef HAVE_SCHED_SETAFFINITY
+#  undef HAVE_SCHED_SETAFFINITY
 #endif
 
 #if defined(HAVE_SYS_XATTR_H) && defined(__GLIBC__) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
-#define USE_XATTRS
+#  define USE_XATTRS
 #endif
 
 #ifdef USE_XATTRS
-#include <sys/xattr.h>
+#  include <sys/xattr.h>
 #endif
 
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
+#  ifdef HAVE_SYS_SOCKET_H
+#    include <sys/socket.h>
+#  endif
 #endif
 
 #ifdef HAVE_DLFCN_H
-#include <dlfcn.h>
+#  include <dlfcn.h>
 #endif
 
 #ifdef __hpux
-#include <sys/mpctl.h>
+#  include <sys/mpctl.h>
 #endif
 
 #if defined(__DragonFly__) || \
@@ -156,7 +152,7 @@ corresponding Unix manual entries for more information on calls.");
     defined(__FreeBSD__)   || \
     defined(__NetBSD__)    || \
     defined(__APPLE__)
-#include <sys/sysctl.h>
+#  include <sys/sysctl.h>
 #endif
 
 #ifdef HAVE_LINUX_RANDOM_H
@@ -181,43 +177,44 @@ corresponding Unix manual entries for more information on calls.");
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into pyconfig.h */
 #if defined(__WATCOMC__) && !defined(__QNX__)           /* Watcom compiler */
-#define HAVE_OPENDIR    1
-#define HAVE_SYSTEM     1
-#include <process.h>
+#  define HAVE_OPENDIR    1
+#  define HAVE_SYSTEM     1
+#  include <process.h>
 #else
-#ifdef _MSC_VER         /* Microsoft compiler */
-#define HAVE_GETPPID    1
-#define HAVE_GETLOGIN   1
-#define HAVE_SPAWNV     1
-#define HAVE_EXECV      1
-#define HAVE_WSPAWNV    1
-#define HAVE_WEXECV     1
-#define HAVE_PIPE       1
-#define HAVE_SYSTEM     1
-#define HAVE_CWAIT      1
-#define HAVE_FSYNC      1
-#define fsync _commit
-#else
-/* Unix functions that the configure script doesn't check for */
-#ifndef __VXWORKS__
-#define HAVE_EXECV      1
-#define HAVE_FORK       1
-#if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
-#define HAVE_FORK1      1
-#endif
-#endif
-#define HAVE_GETEGID    1
-#define HAVE_GETEUID    1
-#define HAVE_GETGID     1
-#define HAVE_GETPPID    1
-#define HAVE_GETUID     1
-#define HAVE_KILL       1
-#define HAVE_OPENDIR    1
-#define HAVE_PIPE       1
-#define HAVE_SYSTEM     1
-#define HAVE_WAIT       1
-#define HAVE_TTYNAME    1
-#endif  /* _MSC_VER */
+#  ifdef _MSC_VER
+     /* Microsoft compiler */
+#    define HAVE_GETPPID    1
+#    define HAVE_GETLOGIN   1
+#    define HAVE_SPAWNV     1
+#    define HAVE_EXECV      1
+#    define HAVE_WSPAWNV    1
+#    define HAVE_WEXECV     1
+#    define HAVE_PIPE       1
+#    define HAVE_SYSTEM     1
+#    define HAVE_CWAIT      1
+#    define HAVE_FSYNC      1
+#    define fsync _commit
+#  else
+     /* Unix functions that the configure script doesn't check for */
+#    ifndef __VXWORKS__
+#      define HAVE_EXECV      1
+#      define HAVE_FORK       1
+#      if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
+#        define HAVE_FORK1      1
+#      endif
+#    endif
+#    define HAVE_GETEGID    1
+#    define HAVE_GETEUID    1
+#    define HAVE_GETGID     1
+#    define HAVE_GETPPID    1
+#    define HAVE_GETUID     1
+#    define HAVE_KILL       1
+#    define HAVE_OPENDIR    1
+#    define HAVE_PIPE       1
+#    define HAVE_SYSTEM     1
+#    define HAVE_WAIT       1
+#    define HAVE_TTYNAME    1
+#  endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
 _Py_IDENTIFIER(__fspath__);
@@ -239,123 +236,119 @@ extern char        *ctermid_r(char *);
 #endif /* !_MSC_VER */
 
 #if defined(__VXWORKS__)
-#include <vxCpuLib.h>
-#include <rtpLib.h>
-#include <wait.h>
-#include <taskLib.h>
-#ifndef _P_WAIT
-#define _P_WAIT          0
-#define _P_NOWAIT        1
-#define _P_NOWAITO       1
-#endif
+#  include <vxCpuLib.h>
+#  include <rtpLib.h>
+#  include <wait.h>
+#  include <taskLib.h>
+#  ifndef _P_WAIT
+#    define _P_WAIT          0
+#    define _P_NOWAIT        1
+#    define _P_NOWAITO       1
+#  endif
 #endif /* __VXWORKS__ */
 
 #ifdef HAVE_POSIX_SPAWN
-#include <spawn.h>
+#  include <spawn.h>
 #endif
 
 #ifdef HAVE_UTIME_H
-#include <utime.h>
+#  include <utime.h>
 #endif /* HAVE_UTIME_H */
 
 #ifdef HAVE_SYS_UTIME_H
-#include <sys/utime.h>
-#define HAVE_UTIME_H /* pretend we do for the rest of this file */
+#  include <sys/utime.h>
+#  define HAVE_UTIME_H /* pretend we do for the rest of this file */
 #endif /* HAVE_SYS_UTIME_H */
 
 #ifdef HAVE_SYS_TIMES_H
-#include <sys/times.h>
+#  include <sys/times.h>
 #endif /* HAVE_SYS_TIMES_H */
 
 #ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
+#  include <sys/param.h>
 #endif /* HAVE_SYS_PARAM_H */
 
 #ifdef HAVE_SYS_UTSNAME_H
-#include <sys/utsname.h>
+#  include <sys/utsname.h>
 #endif /* HAVE_SYS_UTSNAME_H */
 
 #ifdef HAVE_DIRENT_H
-#include <dirent.h>
-#define NAMLEN(dirent) strlen((dirent)->d_name)
+#  include <dirent.h>
+#  define NAMLEN(dirent) strlen((dirent)->d_name)
 #else
-#if defined(__WATCOMC__) && !defined(__QNX__)
-#include <direct.h>
-#define NAMLEN(dirent) strlen((dirent)->d_name)
-#else
-#define dirent direct
-#define NAMLEN(dirent) (dirent)->d_namlen
-#endif
-#ifdef HAVE_SYS_NDIR_H
-#include <sys/ndir.h>
-#endif
-#ifdef HAVE_SYS_DIR_H
-#include <sys/dir.h>
-#endif
-#ifdef HAVE_NDIR_H
-#include <ndir.h>
-#endif
+#  if defined(__WATCOMC__) && !defined(__QNX__)
+#    include <direct.h>
+#    define NAMLEN(dirent) strlen((dirent)->d_name)
+#  else
+#    define dirent direct
+#    define NAMLEN(dirent) (dirent)->d_namlen
+#  endif
+#  ifdef HAVE_SYS_NDIR_H
+#    include <sys/ndir.h>
+#  endif
+#  ifdef HAVE_SYS_DIR_H
+#    include <sys/dir.h>
+#  endif
+#  ifdef HAVE_NDIR_H
+#    include <ndir.h>
+#  endif
 #endif
 
 #ifdef _MSC_VER
-#ifdef HAVE_DIRECT_H
-#include <direct.h>
-#endif
-#ifdef HAVE_IO_H
-#include <io.h>
-#endif
-#ifdef HAVE_PROCESS_H
-#include <process.h>
-#endif
-#ifndef IO_REPARSE_TAG_SYMLINK
-#define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
-#endif
-#ifndef IO_REPARSE_TAG_MOUNT_POINT
-#define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
-#endif
-#include "osdefs.h"
-#include <malloc.h>
-#include <windows.h>
-#include <shellapi.h>   /* for ShellExecute() */
-#include <lmcons.h>     /* for UNLEN */
-#define HAVE_SYMLINK
+#  ifdef HAVE_DIRECT_H
+#    include <direct.h>
+#  endif
+#  ifdef HAVE_IO_H
+#    include <io.h>
+#  endif
+#  ifdef HAVE_PROCESS_H
+#    include <process.h>
+#  endif
+#  ifndef IO_REPARSE_TAG_SYMLINK
+#    define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
+#  endif
+#  ifndef IO_REPARSE_TAG_MOUNT_POINT
+#    define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
+#  endif
+#  include "osdefs.h"             // SEP
+#  include <malloc.h>
+#  include <windows.h>
+#  include <shellapi.h>           // ShellExecute()
+#  include <lmcons.h>             // UNLEN
+#  define HAVE_SYMLINK
 #endif /* _MSC_VER */
 
 #ifndef MAXPATHLEN
-#if defined(PATH_MAX) && PATH_MAX > 1024
-#define MAXPATHLEN PATH_MAX
-#else
-#define MAXPATHLEN 1024
-#endif
+#  if defined(PATH_MAX) && PATH_MAX > 1024
+#    define MAXPATHLEN PATH_MAX
+#  else
+#    define MAXPATHLEN 1024
+#  endif
 #endif /* MAXPATHLEN */
 
 #ifdef UNION_WAIT
-/* Emulate some macros on systems that have a union instead of macros */
-
-#ifndef WIFEXITED
-#define WIFEXITED(u_wait) (!(u_wait).w_termsig && !(u_wait).w_coredump)
-#endif
-
-#ifndef WEXITSTATUS
-#define WEXITSTATUS(u_wait) (WIFEXITED(u_wait)?((u_wait).w_retcode):-1)
-#endif
-
-#ifndef WTERMSIG
-#define WTERMSIG(u_wait) ((u_wait).w_termsig)
-#endif
-
-#define WAIT_TYPE union wait
-#define WAIT_STATUS_INT(s) (s.w_status)
-
-#else /* !UNION_WAIT */
-#define WAIT_TYPE int
-#define WAIT_STATUS_INT(s) (s)
+   /* Emulate some macros on systems that have a union instead of macros */
+#  ifndef WIFEXITED
+#    define WIFEXITED(u_wait) (!(u_wait).w_termsig && !(u_wait).w_coredump)
+#  endif
+#  ifndef WEXITSTATUS
+#    define WEXITSTATUS(u_wait) (WIFEXITED(u_wait)?((u_wait).w_retcode):-1)
+#  endif
+#  ifndef WTERMSIG
+#    define WTERMSIG(u_wait) ((u_wait).w_termsig)
+#  endif
+#  define WAIT_TYPE union wait
+#  define WAIT_STATUS_INT(s) (s.w_status)
+#else
+   /* !UNION_WAIT */
+#  define WAIT_TYPE int
+#  define WAIT_STATUS_INT(s) (s)
 #endif /* UNION_WAIT */
 
 /* Don't use the "_r" form if we don't need it (also, won't have a
    prototype for it, at least on Solaris -- maybe others as well?). */
 #if defined(HAVE_CTERMID_R)
-#define USE_CTERMID_R
+#  define USE_CTERMID_R
 #endif
 
 /* choose the appropriate stat and fstat functions and return structs */
@@ -363,56 +356,56 @@ extern char        *ctermid_r(char *);
 #undef FSTAT
 #undef STRUCT_STAT
 #ifdef MS_WINDOWS
-#       define STAT win32_stat
-#       define LSTAT win32_lstat
-#       define FSTAT _Py_fstat_noraise
-#       define STRUCT_STAT struct _Py_stat_struct
+#  define STAT win32_stat
+#  define LSTAT win32_lstat
+#  define FSTAT _Py_fstat_noraise
+#  define STRUCT_STAT struct _Py_stat_struct
 #else
-#       define STAT stat
-#       define LSTAT lstat
-#       define FSTAT fstat
-#       define STRUCT_STAT struct stat
+#  define STAT stat
+#  define LSTAT lstat
+#  define FSTAT fstat
+#  define STRUCT_STAT struct stat
 #endif
 
 #if defined(MAJOR_IN_MKDEV)
-#include <sys/mkdev.h>
+#  include <sys/mkdev.h>
 #else
-#if defined(MAJOR_IN_SYSMACROS)
-#include <sys/sysmacros.h>
-#endif
-#if defined(HAVE_MKNOD) && defined(HAVE_SYS_MKDEV_H)
-#include <sys/mkdev.h>
-#endif
+#  if defined(MAJOR_IN_SYSMACROS)
+#    include <sys/sysmacros.h>
+#  endif
+#  if defined(HAVE_MKNOD) && defined(HAVE_SYS_MKDEV_H)
+#    include <sys/mkdev.h>
+#  endif
 #endif
 
 #ifdef MS_WINDOWS
-#define INITFUNC PyInit_nt
-#define MODNAME "nt"
+#  define INITFUNC PyInit_nt
+#  define MODNAME "nt"
 #else
-#define INITFUNC PyInit_posix
-#define MODNAME "posix"
+#  define INITFUNC PyInit_posix
+#  define MODNAME "posix"
 #endif
 
 #if defined(__sun)
 /* Something to implement in autoconf, not present in autoconf 2.69 */
-#define HAVE_STRUCT_STAT_ST_FSTYPE 1
+#  define HAVE_STRUCT_STAT_ST_FSTYPE 1
 #endif
 
 /* memfd_create is either defined in sys/mman.h or sys/memfd.h
  * linux/memfd.h defines additional flags
  */
 #ifdef HAVE_SYS_MMAN_H
-#include <sys/mman.h>
+#  include <sys/mman.h>
 #endif
 #ifdef HAVE_SYS_MEMFD_H
-#include <sys/memfd.h>
+#  include <sys/memfd.h>
 #endif
 #ifdef HAVE_LINUX_MEMFD_H
-#include <linux/memfd.h>
+#  include <linux/memfd.h>
 #endif
 
 #ifdef _Py_MEMORY_SANITIZER
-# include <sanitizer/msan_interface.h>
+#  include <sanitizer/msan_interface.h>
 #endif
 
 #ifdef HAVE_FORK
@@ -451,7 +444,7 @@ run_at_forkers(PyObject *lst, int reverse)
 void
 PyOS_BeforeFork(void)
 {
-    run_at_forkers(_PyInterpreterState_GET_UNSAFE()->before_forkers, 1);
+    run_at_forkers(_PyInterpreterState_GET()->before_forkers, 1);
 
     _PyImport_AcquireLock();
 }
@@ -462,7 +455,7 @@ PyOS_AfterFork_Parent(void)
     if (_PyImport_ReleaseLock() <= 0)
         Py_FatalError("failed releasing import lock after fork");
 
-    run_at_forkers(_PyInterpreterState_GET_UNSAFE()->after_forkers_parent, 0);
+    run_at_forkers(_PyInterpreterState_GET()->after_forkers_parent, 0);
 }
 
 void
@@ -476,7 +469,7 @@ PyOS_AfterFork_Child(void)
     _PyRuntimeState_ReInitThreads(runtime);
     _PyInterpreterState_DeleteExceptMain(runtime);
 
-    run_at_forkers(_PyInterpreterState_GET_UNSAFE()->after_forkers_child, 0);
+    run_at_forkers(_PyInterpreterState_GET()->after_forkers_child, 0);
 }
 
 static int
@@ -491,7 +484,8 @@ register_at_forker(PyObject **lst, PyObject *func)
     }
     return PyList_Append(*lst, func);
 }
-#endif
+#endif  /* HAVE_FORK */
+
 
 /* Legacy wrapper */
 void
@@ -6184,7 +6178,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
         check_null_or_callable(after_in_parent, "after_in_parent")) {
         return NULL;
     }
-    interp = _PyInterpreterState_GET_UNSAFE();
+    interp = _PyInterpreterState_GET();
 
     if (register_at_forker(&interp->before_forkers, before)) {
         return NULL;
@@ -6215,7 +6209,7 @@ os_fork1_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (_PyInterpreterState_GET_UNSAFE() != PyInterpreterState_Main()) {
+    if (_PyInterpreterState_GET() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -6250,7 +6244,7 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
 
-    if (_PyInterpreterState_GET_UNSAFE() != PyInterpreterState_Main()) {
+    if (_PyInterpreterState_GET() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -6858,7 +6852,7 @@ os_forkpty_impl(PyObject *module)
     int master_fd = -1;
     pid_t pid;
 
-    if (_PyInterpreterState_GET_UNSAFE() != PyInterpreterState_Main()) {
+    if (_PyInterpreterState_GET() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
@@ -6953,23 +6947,46 @@ os_getpid_impl(PyObject *module)
 
 #ifdef HAVE_GETGROUPLIST
 
-/* AC 3.5: funny apple logic below */
-PyDoc_STRVAR(posix_getgrouplist__doc__,
-"getgrouplist(user, group) -> list of groups to which a user belongs\n\n\
-Returns a list of groups to which a user belongs.\n\n\
-    user: username to lookup\n\
-    group: base group id of the user");
+#ifdef __APPLE__
+/*[clinic input]
+os.getgrouplist
+
+    user: str
+        username to lookup
+    group as basegid: int
+        base group id of the user
+    /
+
+Returns a list of groups to which a user belongs.
+[clinic start generated code]*/
 
 static PyObject *
-posix_getgrouplist(PyObject *self, PyObject *args)
+os_getgrouplist_impl(PyObject *module, const char *user, int basegid)
+/*[clinic end generated code: output=6e734697b8c26de0 input=f8d870374b09a490]*/
+#else
+/*[clinic input]
+os.getgrouplist
+
+    user: str
+        username to lookup
+    group as basegid: gid_t
+        base group id of the user
+    /
+
+Returns a list of groups to which a user belongs.
+[clinic start generated code]*/
+
+static PyObject *
+os_getgrouplist_impl(PyObject *module, const char *user, gid_t basegid)
+/*[clinic end generated code: output=0ebd7fb70115575b input=cc61d5c20b08958d]*/
+#endif
 {
-    const char *user;
     int i, ngroups;
     PyObject *list;
 #ifdef __APPLE__
-    int *groups, basegid;
+    int *groups;
 #else
-    gid_t *groups, basegid;
+    gid_t *groups;
 #endif
 
     /*
@@ -6981,15 +6998,6 @@ posix_getgrouplist(PyObject *self, PyObject *args)
      * user belongs to.
      */
     ngroups = 1 + MAX_GROUPS;
-
-#ifdef __APPLE__
-    if (!PyArg_ParseTuple(args, "si:getgrouplist", &user, &basegid))
-        return NULL;
-#else
-    if (!PyArg_ParseTuple(args, "sO&:getgrouplist", &user,
-                          _Py_Gid_Converter, &basegid))
-        return NULL;
-#endif
 
     while (1) {
 #ifdef __APPLE__
@@ -7161,40 +7169,47 @@ os_getgroups_impl(PyObject *module)
 #endif /* HAVE_GETGROUPS */
 
 #ifdef HAVE_INITGROUPS
-PyDoc_STRVAR(posix_initgroups__doc__,
-"initgroups(username, gid) -> None\n\n\
-Call the system initgroups() to initialize the group access list with all of\n\
-the groups of which the specified username is a member, plus the specified\n\
-group id.");
+#ifdef __APPLE__
+/*[clinic input]
+os.initgroups
 
-/* AC 3.5: funny apple logic */
+    username as oname: FSConverter
+    gid: int
+    /
+
+Initialize the group access list.
+
+Call the system initgroups() to initialize the group access list with all of
+the groups of which the specified username is a member, plus the specified
+group id.
+[clinic start generated code]*/
+
 static PyObject *
-posix_initgroups(PyObject *self, PyObject *args)
+os_initgroups_impl(PyObject *module, PyObject *oname, int gid)
+/*[clinic end generated code: output=7f074d30a425fd3a input=df3d54331b0af204]*/
+#else
+/*[clinic input]
+os.initgroups
+
+    username as oname: FSConverter
+    gid: gid_t
+    /
+
+Initialize the group access list.
+
+Call the system initgroups() to initialize the group access list with all of
+the groups of which the specified username is a member, plus the specified
+group id.
+[clinic start generated code]*/
+
+static PyObject *
+os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid)
+/*[clinic end generated code: output=59341244521a9e3f input=0cb91bdc59a4c564]*/
+#endif
 {
-    PyObject *oname;
-    const char *username;
-    int res;
-#ifdef __APPLE__
-    int gid;
-#else
-    gid_t gid;
-#endif
+    const char *username = PyBytes_AS_STRING(oname);
 
-#ifdef __APPLE__
-    if (!PyArg_ParseTuple(args, "O&i:initgroups",
-                          PyUnicode_FSConverter, &oname,
-                          &gid))
-#else
-    if (!PyArg_ParseTuple(args, "O&O&:initgroups",
-                          PyUnicode_FSConverter, &oname,
-                          _Py_Gid_Converter, &gid))
-#endif
-        return NULL;
-    username = PyBytes_AS_STRING(oname);
-
-    res = initgroups(username, gid);
-    Py_DECREF(oname);
-    if (res == -1)
+    if (initgroups(username, gid) == -1)
         return PyErr_SetFromErrno(PyExc_OSError);
 
     Py_RETURN_NONE;
@@ -9226,46 +9241,77 @@ os_write_impl(PyObject *module, int fd, Py_buffer *data)
 }
 
 #ifdef HAVE_SENDFILE
-PyDoc_STRVAR(posix_sendfile__doc__,
-"sendfile(out_fd, in_fd, offset, count) -> byteswritten\n\
-sendfile(out_fd, in_fd, offset, count[, headers][, trailers], flags=0)\n\
-            -> byteswritten\n\
-Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
+#ifdef __APPLE__
+/*[clinic input]
+os.sendfile
 
-/* AC 3.5: don't bother converting, has optional group*/
+    out_fd: int
+    in_fd: int
+    offset: Py_off_t
+    count as sbytes: Py_off_t
+    headers: object(c_default="NULL") = ()
+    trailers: object(c_default="NULL") = ()
+    flags: int = 0
+
+Copy count bytes from file descriptor in_fd to file descriptor out_fd.
+[clinic start generated code]*/
+
 static PyObject *
-posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
+os_sendfile_impl(PyObject *module, int out_fd, int in_fd, Py_off_t offset,
+                 Py_off_t sbytes, PyObject *headers, PyObject *trailers,
+                 int flags)
+/*[clinic end generated code: output=81c4bcd143f5c82b input=b0d72579d4c69afa]*/
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+/*[clinic input]
+os.sendfile
+
+    out_fd: int
+    in_fd: int
+    offset: Py_off_t
+    count: Py_ssize_t
+    headers: object(c_default="NULL") = ()
+    trailers: object(c_default="NULL") = ()
+    flags: int = 0
+
+Copy count bytes from file descriptor in_fd to file descriptor out_fd.
+[clinic start generated code]*/
+
+static PyObject *
+os_sendfile_impl(PyObject *module, int out_fd, int in_fd, Py_off_t offset,
+                 Py_ssize_t count, PyObject *headers, PyObject *trailers,
+                 int flags)
+/*[clinic end generated code: output=329ea009bdd55afc input=338adb8ff84ae8cd]*/
+#else
+/*[clinic input]
+os.sendfile
+
+    out_fd: int
+    in_fd: int
+    offset as offobj: object
+    count: Py_ssize_t
+
+Copy count bytes from file descriptor in_fd to file descriptor out_fd.
+[clinic start generated code]*/
+
+static PyObject *
+os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
+                 Py_ssize_t count)
+/*[clinic end generated code: output=ae81216e40f167d8 input=76d64058c74477ba]*/
+#endif
 {
-    int in, out;
     Py_ssize_t ret;
     int async_err = 0;
-    off_t offset;
 
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
 #ifndef __APPLE__
-    Py_ssize_t len;
-#endif
-    PyObject *headers = NULL, *trailers = NULL;
-    Py_buffer *hbuf, *tbuf;
     off_t sbytes;
+#endif
+    Py_buffer *hbuf, *tbuf;
     struct sf_hdtr sf;
-    int flags = 0;
-    static char *keywords[] = {"out_fd", "in_fd",
-                                "offset", "count",
-                                "headers", "trailers", "flags", NULL};
 
     sf.headers = NULL;
     sf.trailers = NULL;
 
-#ifdef __APPLE__
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&O&|OOi:sendfile",
-        keywords, &out, &in, Py_off_t_converter, &offset, Py_off_t_converter, &sbytes,
-#else
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&n|OOi:sendfile",
-        keywords, &out, &in, Py_off_t_converter, &offset, &len,
-#endif
-                &headers, &trailers, &flags))
-            return NULL;
     if (headers != NULL) {
         if (!PySequence_Check(headers)) {
             PyErr_SetString(PyExc_TypeError,
@@ -9327,9 +9373,9 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     do {
         Py_BEGIN_ALLOW_THREADS
 #ifdef __APPLE__
-        ret = sendfile(in, out, offset, &sbytes, &sf, flags);
+        ret = sendfile(in_fd, out_fd, offset, &sbytes, &sf, flags);
 #else
-        ret = sendfile(in, out, offset, len, &sf, &sbytes, flags);
+        ret = sendfile(in_fd, out_fd, offset, count, &sf, &sbytes, flags);
 #endif
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
@@ -9364,18 +9410,11 @@ done:
     #endif
 
 #else
-    Py_ssize_t count;
-    PyObject *offobj;
-    static char *keywords[] = {"out_fd", "in_fd",
-                                "offset", "count", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiOn:sendfile",
-            keywords, &out, &in, &offobj, &count))
-        return NULL;
 #ifdef __linux__
     if (offobj == Py_None) {
         do {
             Py_BEGIN_ALLOW_THREADS
-            ret = sendfile(out, in, NULL, count);
+            ret = sendfile(out_fd, in_fd, NULL, count);
             Py_END_ALLOW_THREADS
         } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
         if (ret < 0)
@@ -9383,12 +9422,13 @@ done:
         return Py_BuildValue("n", ret);
     }
 #endif
+    off_t offset;
     if (!Py_off_t_converter(offobj, &offset))
         return NULL;
 
     do {
         Py_BEGIN_ALLOW_THREADS
-        ret = sendfile(out, in, &offset, count);
+        ret = sendfile(out_fd, in_fd, &offset, count);
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (ret < 0)
@@ -11424,6 +11464,9 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_PAGE_SIZE
     {"SC_PAGE_SIZE",    _SC_PAGE_SIZE},
 #endif
+#ifdef _SC_AIX_REALMEM
+    {"SC_AIX_REALMEM", _SC_AIX_REALMEM},
+#endif
 #ifdef _SC_PASS_MAX
     {"SC_PASS_MAX",     _SC_PASS_MAX},
 #endif
@@ -12363,29 +12406,34 @@ static PyStructSequence_Desc TerminalSize_desc = {
 };
 
 #if defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL)
-/* AC 3.5: fd should accept None */
-PyDoc_STRVAR(termsize__doc__,
-    "Return the size of the terminal window as (columns, lines).\n"        \
-    "\n"                                                                   \
-    "The optional argument fd (default standard output) specifies\n"       \
-    "which file descriptor should be queried.\n"                           \
-    "\n"                                                                   \
-    "If the file descriptor is not connected to a terminal, an OSError\n"  \
-    "is thrown.\n"                                                         \
-    "\n"                                                                   \
-    "This function will only be defined if an implementation is\n"         \
-    "available for this system.\n"                                         \
-    "\n"                                                                   \
-    "shutil.get_terminal_size is the high-level function which should\n"  \
-    "normally be used, os.get_terminal_size is the low-level implementation.");
+/*[clinic input]
+os.get_terminal_size
 
-static PyObject*
-get_terminal_size(PyObject *self, PyObject *args)
+    fd: int(c_default="fileno(stdout)", py_default="<unrepresentable>") = -1
+    /
+
+Return the size of the terminal window as (columns, lines).
+
+The optional argument fd (default standard output) specifies
+which file descriptor should be queried.
+
+If the file descriptor is not connected to a terminal, an OSError
+is thrown.
+
+This function will only be defined if an implementation is
+available for this system.
+
+shutil.get_terminal_size is the high-level function which should
+normally be used, os.get_terminal_size is the low-level implementation.
+[clinic start generated code]*/
+
+static PyObject *
+os_get_terminal_size_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=fbab93acef980508 input=ead5679b82ddb920]*/
 {
     int columns, lines;
     PyObject *termsize;
 
-    int fd = fileno(stdout);
     /* Under some conditions stdout may not be connected and
      * fileno(stdout) may point to an invalid file descriptor. For example
      * GUI apps don't have valid standard streams by default.
@@ -12393,9 +12441,6 @@ get_terminal_size(PyObject *self, PyObject *args)
      * If this happens, and the optional fd argument is not present,
      * the ioctl below will fail returning EBADF. This is what we want.
      */
-
-    if (!PyArg_ParseTuple(args, "|i", &fd))
-        return NULL;
 
 #ifdef TERMSIZE_USE_IOCTL
     {
@@ -12436,7 +12481,7 @@ get_terminal_size(PyObject *self, PyObject *args)
     }
 #endif /* TERMSIZE_USE_CONIO */
 
-    PyObject *TerminalSizeType = get_posix_state(self)->TerminalSizeType;
+    PyObject *TerminalSizeType = get_posix_state(module)->TerminalSizeType;
     termsize = PyStructSequence_New((PyTypeObject *)TerminalSizeType);
     if (termsize == NULL)
         return NULL;
@@ -12972,6 +13017,8 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_STAT_METHODDEF
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF
+    {"__class_getitem__",       (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,          PyDoc_STR("See PEP 585")},
     {NULL}
 };
 
@@ -13913,9 +13960,7 @@ static PyMethodDef posix_methods[] = {
     OS_GETEGID_METHODDEF
     OS_GETEUID_METHODDEF
     OS_GETGID_METHODDEF
-#ifdef HAVE_GETGROUPLIST
-    {"getgrouplist",    posix_getgrouplist, METH_VARARGS, posix_getgrouplist__doc__},
-#endif
+    OS_GETGROUPLIST_METHODDEF
     OS_GETGROUPS_METHODDEF
     OS_GETPID_METHODDEF
     OS_GETPGRP_METHODDEF
@@ -13925,9 +13970,7 @@ static PyMethodDef posix_methods[] = {
     OS_KILL_METHODDEF
     OS_KILLPG_METHODDEF
     OS_PLOCK_METHODDEF
-#ifdef MS_WINDOWS
     OS_STARTFILE_METHODDEF
-#endif
     OS_SETUID_METHODDEF
     OS_SETEUID_METHODDEF
     OS_SETREUID_METHODDEF
@@ -13935,9 +13978,7 @@ static PyMethodDef posix_methods[] = {
     OS_SETEGID_METHODDEF
     OS_SETREGID_METHODDEF
     OS_SETGROUPS_METHODDEF
-#ifdef HAVE_INITGROUPS
-    {"initgroups",      posix_initgroups, METH_VARARGS, posix_initgroups__doc__},
-#endif /* HAVE_INITGROUPS */
+    OS_INITGROUPS_METHODDEF
     OS_GETPGID_METHODDEF
     OS_SETPGRP_METHODDEF
     OS_WAIT_METHODDEF
@@ -13967,10 +14008,7 @@ static PyMethodDef posix_methods[] = {
     OS_WRITEV_METHODDEF
     OS_PWRITE_METHODDEF
     OS_PWRITEV_METHODDEF
-#ifdef HAVE_SENDFILE
-    {"sendfile",        (PyCFunction)(void(*)(void))posix_sendfile, METH_VARARGS | METH_KEYWORDS,
-                            posix_sendfile__doc__},
-#endif
+    OS_SENDFILE_METHODDEF
     OS_FSTAT_METHODDEF
     OS_ISATTY_METHODDEF
     OS_PIPE_METHODDEF
@@ -14022,26 +14060,20 @@ static PyMethodDef posix_methods[] = {
     OS_REMOVEXATTR_METHODDEF
     OS_LISTXATTR_METHODDEF
 
-#if defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL)
-    {"get_terminal_size", get_terminal_size, METH_VARARGS, termsize__doc__},
-#endif
+    OS_GET_TERMINAL_SIZE_METHODDEF
     OS_CPU_COUNT_METHODDEF
     OS_GET_INHERITABLE_METHODDEF
     OS_SET_INHERITABLE_METHODDEF
     OS_GET_HANDLE_INHERITABLE_METHODDEF
     OS_SET_HANDLE_INHERITABLE_METHODDEF
-#ifndef MS_WINDOWS
     OS_GET_BLOCKING_METHODDEF
     OS_SET_BLOCKING_METHODDEF
-#endif
     OS_SCANDIR_METHODDEF
     OS_FSPATH_METHODDEF
     OS_GETRANDOM_METHODDEF
     OS_MEMFD_CREATE_METHODDEF
-#ifdef MS_WINDOWS
     OS__ADD_DLL_DIRECTORY_METHODDEF
     OS__REMOVE_DLL_DIRECTORY_METHODDEF
-#endif
     OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };

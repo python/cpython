@@ -1,0 +1,3 @@
+Fix linear runtime behaviour of the `__getitem__` and `__setitem__` methods in
+:class:`multiprocessing.shared_memory.ShareableList`. This avoids quadratic
+performance when iterating a `ShareableList`. Patch by Thomas Krennwallner.

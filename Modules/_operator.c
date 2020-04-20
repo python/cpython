@@ -1170,7 +1170,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     for (idx = 0; idx < nattrs; ++idx) {
         PyObject *item = PyTuple_GET_ITEM(args, idx);
         Py_ssize_t item_len;
-        void *data;
+        const void *data;
         unsigned int kind;
         int dot_count;
 

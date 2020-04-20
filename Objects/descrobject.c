@@ -1,11 +1,11 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
-#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"        // _Py_EnterRecursiveCall()
 #include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
-#include "structmember.h" /* Why is this not included in Python.h? */
+#include "structmember.h"         // PyMemberDef
 
 _Py_IDENTIFIER(getattr);
 
@@ -1092,6 +1092,8 @@ static PyMethodDef mappingproxy_methods[] = {
      PyDoc_STR("D.items() -> list of D's (key, value) pairs, as 2-tuples")},
     {"copy",      (PyCFunction)mappingproxy_copy,       METH_NOARGS,
      PyDoc_STR("D.copy() -> a shallow copy of D")},
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("See PEP 585")},
     {0}
 };
 

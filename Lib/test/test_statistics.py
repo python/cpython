@@ -2602,6 +2602,21 @@ class TestNormalDist:
         with self.assertRaises(self.module.StatisticsError):
             NormalDist(1, 0).overlap(X)             # left operand sigma is zero
 
+    def test_zscore(self):
+        NormalDist = self.module.NormalDist
+        X = NormalDist(100, 15)
+        self.assertEqual(X.zscore(142), 2.8)
+        self.assertEqual(X.zscore(58), -2.8)
+        self.assertEqual(X.zscore(100), 0.0)
+        with self.assertRaises(TypeError):
+            X.zscore()                              # too few arguments
+        with self.assertRaises(TypeError):
+            X.zscore(1, 1)                          # too may arguments
+        with self.assertRaises(TypeError):
+            X.zscore(None)                          # non-numeric type
+        with self.assertRaises(self.module.StatisticsError):
+            NormalDist(1, 0).zscore(100)            # sigma is zero
+
     def test_properties(self):
         X = self.module.NormalDist(100, 15)
         self.assertEqual(X.mean, 100)

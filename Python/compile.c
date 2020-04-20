@@ -23,7 +23,6 @@
 
 #include "Python.h"
 
-#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "Python-ast.h"
 #include "ast.h"
 #include "code.h"
@@ -323,7 +322,6 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     int merged;
-    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
 
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
@@ -350,7 +348,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
-    c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
+    c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c.c_nestlevel = 0;
     c.c_do_not_emit_bytecode = 0;
 
@@ -4050,6 +4048,32 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 }
 
 static int
+validate_keywords(struct compiler *c, asdl_seq *keywords)
+{
+    Py_ssize_t nkeywords = asdl_seq_LEN(keywords);
+    for (Py_ssize_t i = 0; i < nkeywords; i++) {
+        keyword_ty key = ((keyword_ty)asdl_seq_GET(keywords, i));
+        if (key->arg == NULL) {
+            continue;
+        }
+        for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
+            keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
+            if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
+                PyObject *msg = PyUnicode_FromFormat("keyword argument repeated: %U", key->arg);
+                if (msg == NULL) {
+                    return -1;
+                }
+                c->u->u_col_offset = other->col_offset;
+                compiler_error(c, PyUnicode_AsUTF8(msg));
+                Py_DECREF(msg);
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+static int
 compiler_call(struct compiler *c, expr_ty e)
 {
     int ret = maybe_optimize_method_call(c, e);
@@ -4164,6 +4188,10 @@ compiler_call_helper(struct compiler *c,
                      asdl_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
+
+    if (validate_keywords(c, keywords) == -1) {
+        return 0;
+    }
 
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);

@@ -2,8 +2,9 @@
 /* Module object implementation */
 
 #include "Python.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "structmember.h"         // PyMemberDef
 
 static Py_ssize_t max_module_number;
 
@@ -164,7 +165,7 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
-    if (!_PyImport_IsInitialized(_PyInterpreterState_GET_UNSAFE())) {
+    if (!_PyImport_IsInitialized(_PyInterpreterState_GET())) {
         PyErr_SetString(PyExc_SystemError,
                         "Python import machinery not initialized");
         return NULL;
@@ -572,7 +573,7 @@ _PyModule_ClearDict(PyObject *d)
     Py_ssize_t pos;
     PyObject *key, *value;
 
-    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
+    int verbose = _Py_GetConfig()->verbose;
 
     /* First, clear only names starting with a single underscore */
     pos = 0;
@@ -659,7 +660,7 @@ module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
 static void
 module_dealloc(PyModuleObject *m)
 {
-    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
+    int verbose = _Py_GetConfig()->verbose;
 
     PyObject_GC_UnTrack(m);
     if (verbose && m->md_name) {
@@ -683,7 +684,7 @@ module_dealloc(PyModuleObject *m)
 static PyObject *
 module_repr(PyModuleObject *m)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
 }

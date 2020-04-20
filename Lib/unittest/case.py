@@ -241,6 +241,8 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
                      expected_regex.pattern, str(exc_value)))
         return True
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 class _AssertWarnsContext(_AssertRaisesBaseContext):
     """A context manager used to implement TestCase.assertWarns* methods."""

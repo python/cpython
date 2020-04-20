@@ -70,7 +70,7 @@ class PtyTest(unittest.TestCase):
         self.addCleanup(signal.signal, signal.SIGALRM, old_alarm)
 
         old_sighup = signal.signal(signal.SIGHUP, self.handle_sighup)
-        self.addCleanup(signal.signal, signal.SIGHUP, old_alarm)
+        self.addCleanup(signal.signal, signal.SIGHUP, old_sighup)
 
         # isatty() and close() can hang on some platforms. Set an alarm
         # before running the test to make sure we don't hang forever.
@@ -81,8 +81,8 @@ class PtyTest(unittest.TestCase):
         self.fail("isatty hung")
 
     @staticmethod
-    def handle_sighup(sig, frame):
-        # if the process is the session leader, os.close(master_fd)
+    def handle_sighup(signum, frame):
+        # bpo-38547: if the process is the session leader, os.close(master_fd)
         # of "master_fd, slave_name = pty.master_open()" raises SIGHUP
         # signal: just ignore the signal.
         pass

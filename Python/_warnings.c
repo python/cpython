@@ -1,7 +1,8 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
+#include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "clinic/_warnings.c.h"
 
@@ -211,7 +212,7 @@ get_warnings_attr(_Py_Identifier *attr_id, int try_import)
            gone, then we can't even use PyImport_GetModule without triggering
            an interpreter abort.
         */
-        if (!_PyInterpreterState_GET_UNSAFE()->modules) {
+        if (!_PyInterpreterState_GET()->modules) {
             return NULL;
         }
         warnings_module = PyImport_GetModule(warnings_str);
@@ -435,7 +436,7 @@ normalize_module(PyObject *filename)
 {
     PyObject *module;
     int kind;
-    void *data;
+    const void *data;
     Py_ssize_t len;
 
     len = PyUnicode_GetLength(filename);
@@ -519,7 +520,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
     /* Print "  source_line\n" */
     if (sourceline) {
         int kind;
-        void *data;
+        const void *data;
         Py_ssize_t i, len;
         Py_UCS4 ch;
         PyObject *truncated;
@@ -839,7 +840,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
 
     if (f == NULL) {
-        globals = _PyInterpreterState_GET_UNSAFE()->sysdict;
+        globals = _PyInterpreterState_GET()->sysdict;
         *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }

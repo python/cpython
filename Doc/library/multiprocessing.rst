@@ -439,7 +439,8 @@ process which created it.
       >>> def f(x):
       ...     return x*x
       ...
-      >>> p.map(f, [1,2,3])
+      >>> with p:
+      ...   p.map(f, [1,2,3])
       Process PoolWorker-1:
       Process PoolWorker-2:
       Process PoolWorker-3:
@@ -2126,6 +2127,16 @@ with the :class:`Pool` class.
 
    Note that the methods of the pool object should only be called by
    the process which created the pool.
+
+   .. warning::
+      :class:`multiprocessing.pool` objects have internal resources that need to be
+      properly managed (like any other resource) by using the pool as a context manager
+      or by calling :meth:`close` and :meth:`terminate` manually. Failure to do this
+      can lead to the process hanging on finalization.
+
+      Note that is **not correct** to rely on the garbage colletor to destroy the pool
+      as CPython does not assure that the finalizer of the pool will be called
+      (see :meth:`object.__del__` for more information).
 
    .. versionadded:: 3.2
       *maxtasksperchild*

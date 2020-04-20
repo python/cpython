@@ -4,51 +4,40 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
-#include "pycore_ceval.h"
-#include "pycore_context.h"
-#include "pycore_import.h"   /* _PyImport_FindBuiltin */
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
-#include "pycore_hamt.h"
-#include "pycore_object.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "pycore_sysmodule.h"
-#include "pycore_traceback.h"
-#include "grammar.h"
-#include "node.h"
-#include "token.h"
-#include "parsetok.h"
-#include "errcode.h"
-#include "code.h"
-#include "symtable.h"
-#include "ast.h"
-#include "marshal.h"
-#include "osdefs.h"
-#include <locale.h>
+
+#include "pycore_ceval.h"         // _PyEval_FiniGIL()
+#include "pycore_context.h"       // _PyContext_Init()
+#include "pycore_fileutils.h"     // _Py_ResetForceASCII()
+#include "pycore_import.h"        // _PyImport_Cleanup()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
+#include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_pylifecycle.h"   // _PyErr_Print()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
+#include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+
+#include "grammar.h"              // PyGrammar_RemoveAccelerators()
+#include <locale.h>               // setlocale()
 
 #ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-
-#ifdef MS_WINDOWS
-#include "malloc.h" /* for alloca */
+#  include <signal.h>             // SIG_IGN
 #endif
 
 #ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
+#  include <langinfo.h>           // nl_langinfo(CODESET)
 #endif
 
 #ifdef MS_WINDOWS
-#undef BYTE
-#include "windows.h"
+#  undef BYTE
+#  include "windows.h"
 
-extern PyTypeObject PyWindowsConsoleIO_Type;
-#define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
+   extern PyTypeObject PyWindowsConsoleIO_Type;
+#  define PyWindowsConsoleIO_Check(op) \
+       (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
 #endif
+
 
 _Py_IDENTIFIER(flush);
 _Py_IDENTIFIER(name);
@@ -157,7 +146,7 @@ init_importlib(PyThreadState *tstate, PyObject *sysmod)
     PyObject *impmod;
     PyObject *value;
     PyInterpreterState *interp = tstate->interp;
-    int verbose = interp->config.verbose;
+    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
@@ -473,11 +462,11 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
 
     _PyConfig_Write(config, runtime);
 
-    status = _PyConfig_Copy(&interp->config, config);
+    status = _PyInterpreterState_SetConfig(interp, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    config = &interp->config;
+    config = _PyInterpreterState_GetConfig(interp);
 
     if (config->_install_importlib) {
         status = _PyConfig_WritePathConfig(config);
@@ -524,6 +513,31 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 
 
 static PyStatus
+init_interp_create_gil(PyThreadState *tstate)
+{
+    PyStatus status;
+
+    /* finalize_interp_delete() comment explains why _PyEval_FiniGIL() is
+       only called here. */
+    _PyEval_FiniGIL(tstate);
+
+    /* Auto-thread-state API */
+    status = _PyGILState_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    /* Create the GIL and take it */
+    status = _PyEval_InitGIL(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    return _PyStatus_OK();
+}
+
+
+static PyStatus
 pycore_create_interpreter(_PyRuntimeState *runtime,
                           const PyConfig *config,
                           PyThreadState **tstate_p)
@@ -533,7 +547,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return _PyStatus_ERR("can't make main interpreter");
     }
 
-    PyStatus status = _PyConfig_Copy(&interp->config, config);
+    PyStatus status = _PyInterpreterState_SetConfig(interp, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -544,21 +558,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
     (void) PyThreadState_Swap(tstate);
 
-    /* We can't call _PyEval_FiniThreads() in Py_FinalizeEx because
-       destroying the GIL might fail when it is being referenced from
-       another running thread (see issue #9901).
-       Instead we destroy the previously created GIL here, which ensures
-       that we can call Py_Initialize / Py_FinalizeEx multiple times. */
-    _PyEval_FiniThreads(tstate);
-
-    /* Auto-thread-state API */
-    status = _PyGILState_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    /* Create the GIL and the pending calls lock */
-    status = _PyEval_InitThreads(tstate);
+    status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -681,7 +681,7 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
         return status;
     }
 
-    const PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     if (_Py_IsMainInterpreter(tstate)) {
         /* Initialize _warnings. */
         status = _PyWarnings_InitState(tstate);
@@ -942,7 +942,7 @@ done:
 static PyStatus
 _Py_ReconfigureMainInterpreter(PyThreadState *tstate)
 {
-    PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
 
     PyObject *argv = _PyWideStringList_AsList(&config->argv);
     if (argv == NULL) {
@@ -966,7 +966,7 @@ init_interp_main(PyThreadState *tstate)
     PyStatus status;
     int is_main_interp = _Py_IsMainInterpreter(tstate);
     PyInterpreterState *interp = tstate->interp;
-    PyConfig *config = &interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
     if (!config->_install_importlib) {
         /* Special mode for freeze_importlib: run with no import system
@@ -1135,7 +1135,7 @@ Py_InitializeFromConfig(const PyConfig *config)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    config = &tstate->interp->config;
+    config = _PyInterpreterState_GetConfig(tstate->interp);
 
     if (config->_init_main) {
         status = pyinit_main(tstate);
@@ -1322,6 +1322,12 @@ finalize_interp_delete(PyThreadState *tstate)
         /* Cleanup auto-thread-state */
         _PyGILState_Fini(tstate);
     }
+
+    /* We can't call _PyEval_FiniGIL() here because destroying the GIL lock can
+       fail when it is being awaited by another running daemon thread (see
+       bpo-9901). Instead pycore_create_interpreter() destroys the previously
+       created GIL, which ensures that Py_Initialize / Py_FinalizeEx can be
+       called multiple times. */
 
     PyInterpreterState_Delete(tstate->interp);
 }
@@ -1536,7 +1542,7 @@ new_interpreter(PyThreadState **tstate_p)
 
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
-    _PyGILState_check_enabled = 0;
+    runtime->gilstate.check_enabled = 0;
 
     PyInterpreterState *interp = PyInterpreterState_New();
     if (interp == NULL) {
@@ -1554,16 +1560,16 @@ new_interpreter(PyThreadState **tstate_p)
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
     /* Copy the current interpreter config into the new interpreter */
-    PyConfig *config;
+    const PyConfig *config;
     if (save_tstate != NULL) {
-        config = &save_tstate->interp->config;
+        config = _PyInterpreterState_GetConfig(save_tstate->interp);
     } else {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = PyInterpreterState_Main();
-        config = &main_interp->config;
+        config = _PyInterpreterState_GetConfig(main_interp);
     }
 
-    status = _PyConfig_Copy(&interp->config, config);
+    status = _PyInterpreterState_SetConfig(interp, config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
@@ -1578,8 +1584,7 @@ new_interpreter(PyThreadState **tstate_p)
         goto error;
     }
 
-    /* Create the pending calls lock */
-    status = _PyEval_InitThreads(tstate);
+    status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1937,7 +1942,7 @@ init_sys_streams(PyThreadState *tstate)
     int fd;
     PyObject * encoding_attr;
     PyStatus res = _PyStatus_OK();
-    const PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
 
     /* Check that stdin is not a directory
        Using shell redirection, you can redirect stdin to a directory,
@@ -2334,12 +2339,10 @@ Py_ExitStatusException(PyStatus status)
 
 /* Clean up and exit */
 
-#  include "pythread.h"
-
 /* For the atexit module. */
 void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
-    PyInterpreterState *is = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *is = _PyInterpreterState_GET();
 
     /* Guard against API misuse (see bpo-17852) */
     assert(is->pyexitfunc == NULL || is->pyexitfunc == func);

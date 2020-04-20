@@ -10,6 +10,7 @@ from concurrent.futures import _base
 import itertools
 import queue
 import threading
+import types
 import weakref
 import os
 
@@ -56,6 +57,8 @@ class _WorkItem(object):
             self = None
         else:
             self.future.set_result(result)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 def _worker(executor_reference, work_queue, initializer, initargs):

@@ -28,8 +28,6 @@
 
 #include <Python.h>
 #include "longintrepr.h"
-#include "pythread.h"
-#include "structmember.h"
 #include "complexobject.h"
 #include "mpdecimal.h"
 
@@ -1878,7 +1876,7 @@ dec_dealloc(PyObject *dec)
 /******************************************************************************/
 
 Py_LOCAL_INLINE(int)
-is_space(enum PyUnicode_Kind kind, void *data, Py_ssize_t pos)
+is_space(enum PyUnicode_Kind kind, const void *data, Py_ssize_t pos)
 {
     Py_UCS4 ch = PyUnicode_READ(kind, data, pos);
     return Py_UNICODE_ISSPACE(ch);
@@ -1896,7 +1894,7 @@ static char *
 numeric_as_ascii(const PyObject *u, int strip_ws, int ignore_underscores)
 {
     enum PyUnicode_Kind kind;
-    void *data;
+    const void *data;
     Py_UCS4 ch;
     char *res, *cp;
     Py_ssize_t j, len;

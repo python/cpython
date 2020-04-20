@@ -186,10 +186,16 @@
     <ClInclude Include="..\Include\import.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_abstract.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_accu.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_byteswap.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_bytes_methods.h">
@@ -231,6 +237,9 @@
     <ClInclude Include="..\Include\internal\pycore_initconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_interp.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -250,6 +259,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pystate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_runtime.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h">

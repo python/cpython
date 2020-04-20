@@ -486,10 +486,16 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         pass
 
     def test_processes_terminate(self):
-        self.executor.submit(mul, 21, 2)
-        self.executor.submit(mul, 6, 7)
-        self.executor.submit(mul, 3, 14)
-        self.assertEqual(len(self.executor._processes), 5)
+        def acquire_lock(lock):
+            lock.acquire()
+
+        mp_context = get_context()
+        sem = mp_context.Semaphore(0)
+        for _ in range(3):
+            self.executor.submit(acquire_lock, sem)
+        self.assertEqual(len(self.executor._processes), 3)
+        for _ in range(3):
+            sem.release()
         processes = self.executor._processes
         self.executor.shutdown()
 
@@ -964,6 +970,36 @@ class ProcessPoolExecutorTest(ExecutorTest):
         mgr.shutdown()
         mgr.join()
 
+    def test_saturation(self):
+        executor = self.executor_type(4)
+        mp_context = get_context()
+        sem = mp_context.Semaphore(0)
+        job_count = 15 * executor._max_workers
+        try:
+            for _ in range(job_count):
+                executor.submit(sem.acquire)
+            self.assertEqual(len(executor._processes), executor._max_workers)
+            for _ in range(job_count):
+                sem.release()
+        finally:
+            executor.shutdown()
+
+    def test_idle_process_reuse_one(self):
+        executor = self.executor_type(4)
+        executor.submit(mul, 21, 2).result()
+        executor.submit(mul, 6, 7).result()
+        executor.submit(mul, 3, 14).result()
+        self.assertEqual(len(executor._processes), 1)
+        executor.shutdown()
+
+    def test_idle_process_reuse_multiple(self):
+        executor = self.executor_type(4)
+        executor.submit(mul, 12, 7).result()
+        executor.submit(mul, 33, 25)
+        executor.submit(mul, 25, 26).result()
+        executor.submit(mul, 18, 29)
+        self.assertLessEqual(len(executor._processes), 2)
+        executor.shutdown()
 
 create_executor_tests(ProcessPoolExecutorTest,
                       executor_mixins=(ProcessPoolForkMixin,

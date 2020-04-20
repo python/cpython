@@ -111,10 +111,11 @@ converting the dict to the combined table.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
+#include "pycore_gc.h"       // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"  // _PyThreadState_GET()
 #include "dict-common.h"
-#include "stringlib/eq.h"    /* to get unicode_eq() */
+#include "stringlib/eq.h"    // unicode_eq()
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
@@ -3252,6 +3253,7 @@ static PyMethodDef mapp_methods[] = {
     {"copy",            (PyCFunction)dict_copy,         METH_NOARGS,
      copy__doc__},
     DICT___REVERSED___METHODDEF
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -3343,6 +3345,38 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+dict_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(type));
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("dict", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    PyObject *self = dict_new((PyTypeObject *)type, NULL, NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (nargs == 1) {
+        if (dict_update_arg(self, args[0]) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        args++;
+    }
+    if (kwnames != NULL) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
+            if (PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+        }
+    }
+    return self;
+}
+
+static PyObject *
 dict_iter(PyDictObject *dict)
 {
     return dictiter_new(dict, &PyDictIterKey_Type);
@@ -3400,6 +3434,7 @@ PyTypeObject PyDict_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     dict_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = dict_vectorcall,
 };
 
 PyObject *

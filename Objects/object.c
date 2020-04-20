@@ -2,13 +2,14 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_context.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -161,11 +162,12 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
 PyObject *
 _PyObject_New(PyTypeObject *tp)
 {
-    PyObject *op;
-    op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
-    if (op == NULL)
+    PyObject *op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
+    if (op == NULL) {
         return PyErr_NoMemory();
-    return PyObject_INIT(op, tp);
+    }
+    PyObject_INIT(op, tp);
+    return op;
 }
 
 PyVarObject *
@@ -187,11 +189,11 @@ PyObject_CallFinalizer(PyObject *self)
     if (tp->tp_finalize == NULL)
         return;
     /* tp_finalize should only be called once. */
-    if (PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
+    if (_PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
         return;
 
     tp->tp_finalize(self);
-    if (PyType_IS_GC(tp)) {
+    if (_PyType_IS_GC(tp)) {
         _PyGC_SET_FINALIZED(self);
     }
 }
@@ -228,7 +230,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     Py_SET_REFCNT(self, refcnt);
 
     _PyObject_ASSERT(self,
-                     (!PyType_IS_GC(Py_TYPE(self))
+                     (!_PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
     /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
        _Py_RefTotal, so we need to undo that. */
@@ -1103,7 +1105,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     descr = _PyType_Lookup(tp, name);
     if (descr != NULL) {
         Py_INCREF(descr);
-        if (PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+        if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             meth_found = 1;
         } else {
             f = Py_TYPE(descr)->tp_descr_get;
@@ -2029,7 +2031,7 @@ _PyTrash_deposit_object(PyObject *op)
     PyThreadState *tstate = _PyThreadState_GET();
     struct _gc_runtime_state *gcstate = &tstate->interp->gc;
 
-    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), gcstate->trash_delete_later);
@@ -2041,7 +2043,7 @@ void
 _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);
@@ -2176,7 +2178,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
            to crash than dumping the traceback. */
         void *ptr;
         PyTypeObject *type = Py_TYPE(obj);
-        if (PyType_IS_GC(type)) {
+        if (_PyType_IS_GC(type)) {
             ptr = (void *)((char *)obj - sizeof(PyGC_Head));
         }
         else {
@@ -2205,6 +2207,14 @@ _Py_Dealloc(PyObject *op)
 #endif
     (*dealloc)(op);
 }
+
+
+PyObject **
+PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
+{
+    return _PyObject_GET_WEAKREFS_LISTPTR(op);
+}
+
 
 #ifdef __cplusplus
 }

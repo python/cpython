@@ -161,8 +161,10 @@
     <ClInclude Include="..\Include\graminit.h" />
     <ClInclude Include="..\Include\grammar.h" />
     <ClInclude Include="..\Include\import.h" />
+    <ClInclude Include="..\Include\internal\pycore_abstract.h" />
     <ClInclude Include="..\Include\internal\pycore_accu.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic.h" />
+    <ClInclude Include="..\Include\internal\pycore_byteswap.h" />
     <ClInclude Include="..\Include\internal\pycore_bytes_methods.h" />
     <ClInclude Include="..\Include\internal\pycore_call.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval.h" />
@@ -176,6 +178,7 @@
     <ClInclude Include="..\Include\internal\pycore_hamt.h" />
     <ClInclude Include="..\Include\internal\pycore_import.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
+    <ClInclude Include="..\Include\internal\pycore_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
@@ -183,6 +186,7 @@
     <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
+    <ClInclude Include="..\Include\internal\pycore_runtime.h" />
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
     <ClInclude Include="..\Include\internal\pycore_tupleobject.h" />
@@ -383,6 +387,7 @@
     <ClCompile Include="..\Objects\floatobject.c" />
     <ClCompile Include="..\Objects\frameobject.c" />
     <ClCompile Include="..\Objects\funcobject.c" />
+    <ClCompile Include="..\Objects\genericaliasobject.c" />
     <ClCompile Include="..\Objects\genobject.c" />
     <ClCompile Include="..\Objects\interpreteridobject.c" />
     <ClCompile Include="..\Objects\iterobject.c" />
