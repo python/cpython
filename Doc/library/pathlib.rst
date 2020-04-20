@@ -553,8 +553,7 @@ Pure paths provide the following methods and properties:
           .format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
 
-
-   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure. 
+   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
 
 
 .. method:: PurePath.with_name(name)
