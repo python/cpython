@@ -4571,3 +4571,14 @@ def _test():
 
 if __name__ == '__main__':
     _test()
+    
+# Change color
+from tkinter import *
+window = Tk()
+window.geometry('800x200')
+window.resizable(width=False, height=False)
+window['bg'] = '#990ccc'
+window.wm_attributes('-alpha', 0.9)
+
+window.mainloop()
+
