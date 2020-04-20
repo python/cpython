@@ -89,9 +89,8 @@ typedef struct {
 #define CO_ASYNC_GENERATOR      0x0200
 
 /* These are no longer used. */
-#if 0
-#define CO_GENERATOR_ALLOWED    0x10000
-#endif
+/* These values are changed in 3.9 to prevent collision with
+   compiler flags. See issue 39562 for more details. */
 #define CO_FUTURE_DIVISION      0x20000
 #define CO_FUTURE_ABSOLUTE_IMPORT 0x40000 /* do absolute imports by default */
 #define CO_FUTURE_WITH_STATEMENT  0x80000
