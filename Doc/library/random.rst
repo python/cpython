@@ -33,11 +33,8 @@ The functions supplied by this module are actually bound methods of a hidden
 instance of the :class:`random.Random` class.  You can instantiate your own
 instances of :class:`Random` to get generators that don't share state.
 
-Class :class:`Random` can also be subclassed if you want to use a different
-basic generator of your own devising: in that case, override the :meth:`~Random.random`,
-:meth:`~Random.seed`, :meth:`~Random.getstate`, and :meth:`~Random.setstate` methods.
-Optionally, a new generator can supply a :meth:`~Random.getrandbits` method --- this
-allows :meth:`randrange` to produce selections over an arbitrarily large range.
+The base class :class:`BaseRandom` can be subclassed if you want to use a
+different basic generator of your own devising.
 
 The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
@@ -301,6 +298,7 @@ be found in any statistics text.
    deviation.  This is slightly faster than the :func:`normalvariate` function
    defined below.
 
+   This function is not thread-safe.
 
 .. function:: lognormvariate(mu, sigma)
 
@@ -337,24 +335,70 @@ be found in any statistics text.
 Alternative Generator
 ---------------------
 
+.. class:: BaseRandom
+
+   Random number generator base class.
+
+   A subclass must only implement a single method: :meth:`getrandbits`.
+
+   Optionally, the following methods can also be implemented if the generator
+   has a state:
+
+   * :meth:`~BaseRandom.seed`,
+   * :meth:`~BaseRandom.getstate`
+   * :meth:`~BaseRandom.setstate`
+
+   .. versionadded:: 3.9
+
+   .. method:: getrandbits(k)
+
+      Returns a Python integer with *k* random bits.
+
+   .. method:: seed([a])
+
+      Initialize the random number generator.
+
+   .. method:: getstate()
+
+      Return an object capturing the current internal state of the generator.
+      This object can be passed to :meth:`setstate` to restore the state.
+
+   .. method:: setstate(state)
+
+      *state* should have been obtained from a previous call to
+      :meth:`getstate`, and :meth:`setstate` restores the internal state of the
+      generator to what it was at the time :meth:`getstate` was called.
+
+
 .. class:: Random([seed])
 
-   Class that implements the default pseudo-random number generator used by the
-   :mod:`random` module.
+   Mersenne Twister pseudo-random number generator.
+
+   It is used by the bound module functions.
+
+   You can instantiate your own instances of :class:`Random` to get generators
+   that don't share state.
+
+   Inherit from :class:`BaseRandom`.
 
    .. deprecated:: 3.9
       In the future, the *seed* must be one of the following types:
       :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
-.. class:: SystemRandom([seed])
 
-   Class that uses the :func:`os.urandom` function for generating random numbers
-   from sources provided by the operating system. Not available on all systems.
-   Does not rely on software state, and sequences are not reproducible. Accordingly,
-   the :meth:`seed` method has no effect and is ignored.
+.. class:: SystemRandom
+
+   Random number generator which uses the system function :func:`os.random` to
+   generate random numbers from sources provided by the operating system.
+
+   Does not rely on software state, and sequences are not reproducible.
+   Accordingly, the :meth:`seed` method has no effect and is ignored.
+
    The :meth:`getstate` and :meth:`setstate` methods raise
    :exc:`NotImplementedError` if called.
+
+   Inherit from :class:`BaseRandom`.
 
 
 Notes on Reproducibility
@@ -370,7 +414,7 @@ change across Python versions, but two aspects are guaranteed not to change:
 * If a new seeding method is added, then a backward compatible seeder will be
   offered.
 
-* The generator's :meth:`~Random.random` method will continue to produce the same
+* The generator's :meth:`~BaseRandom.random` method will continue to produce the same
   sequence when the compatible seeder is given the same seed.
 
 .. _random-examples:

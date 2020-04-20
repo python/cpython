@@ -334,6 +334,7 @@ class TestBasicOps:
         self.assertRaises(TypeError, self.gen.randbytes, 1, 2)
         self.assertRaises(ValueError, self.gen.randbytes, -1)
         self.assertRaises(TypeError, self.gen.randbytes, 1.0)
+        self.assertRaises(TypeError, self.gen.randbytes, n=4)
 
 
 try:
@@ -1164,6 +1165,110 @@ class TestModule(unittest.TestCase):
             self.assertNotEqual(val, child_val)
 
             support.wait_process(pid, exitcode=0)
+
+
+class TestBaseRandom(unittest.TestCase):
+    def test_getrandbits(self):
+        # Subclass which only implements getrandbits()
+        class SimpleLCG(random.BaseRandom):
+            _lcg = 123
+            calls = []
+
+            def _rand_uint32(self):
+                # Numerical Recipes LCG: generate 32 bits of entropy
+                self._lcg = (self._lcg * 1664525 + 1013904223) % (2 ** 32)
+                return self._lcg
+
+            def getrandbits(self, n):
+                self.calls.append(n)
+                x = self._rand_uint32()
+                for _ in range((n + 31) // 32 - 1):
+                    x <<= 32
+                    x += self._rand_uint32()
+                if n % 32:
+                    x >>= (32 - (n % 32))
+                return x
+
+        rng = SimpleLCG()
+        self.assertEqual([rng.randint(1, 10_000) for _ in range(5)],
+                         [4649, 7130, 634, 3619, 5889])
+        self.assertEqual(rng.calls, [14] * 5)
+
+    def test_full(self):
+        # Subclass which implements getrandbits(), seed(), getstate() and
+        # setstate(), but don't override random() or randbytes().
+        class FullLCG(random.BaseRandom):
+            def __init__(self, x=0, /):
+                self.seed(x)
+
+            def _rand_uint32(self):
+                # Numerical Recipes LCG: generate 32 bits of entropy
+                self._lcg = (self._lcg * 1664525 + 1013904223) % (2 ** 32)
+                return self._lcg
+
+            def getrandbits(self, n):
+                x = self._rand_uint32()
+                for _ in range((n + 31) // 32 - 1):
+                    x <<= 32
+                    x += self._rand_uint32()
+                if n % 32:
+                    x >>= (32 - (n % 32))
+                return x
+
+            def seed(self, a=None, /):
+                self._lcg = int(a % (2 ** 32))
+
+            def getstate(self):
+                return self._lcg
+
+            def setstate(self, state):
+                self.seed(state)
+
+        rng = FullLCG()
+
+        # getrandbits
+        rng.seed(123)
+        self.assertEqual([rng.getrandbits(32) for _ in range(10)],
+                         [1218640798,
+                          1868869221,
+                          166005888,
+                          948671967,
+                          1543727538,
+                          2535079273,
+                          1551689652,
+                          1403809667,
+                          342478598,
+                          2782976685])
+
+        # randint, random, randbytes
+        rng.seed(123)
+        self.assertEqual([rng.randint(1, 10_000) for _ in range(5)],
+                         [4649, 7130, 634, 3619, 5889])
+
+        rng.seed(123)
+        self.assertEqual([rng.random() for _ in range(5)],
+                          [0.28373692148251684,
+                           0.03865125780479972,
+                           0.35942707643617033,
+                           0.36128090050230954,
+                           0.0797395125608803])
+
+        rng.seed(123)
+        self.assertEqual([rng.randbytes(10) for _ in range(5)],
+                         [b'\xe5\te\xaedo\x9e\xfb\xa2H',
+                          b'\x1a\x97\xb2i\x03\\\xdf\x95\x8b8',
+                          b'i\x14\x83o\xacS\xb4\xe7|\\',
+                          b'.\xf8(\xfc\xdf\x9a\xad\xda\xe0\xa5',
+                          b'G\x171Jl\xf5\x9a\xff\x8b\xc4'])
+
+        # getstate, setstate
+        rng.seed(123)
+        self.assertEqual(rng.getstate(), 123)
+
+        rng.seed(0)
+        rng.setstate(123)
+        self.assertEqual([rng.getrandbits(32) for _ in range(3)],
+                         [1218640798, 1868869221, 166005888])
 
 
 if __name__ == "__main__":

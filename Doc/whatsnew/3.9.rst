@@ -380,6 +380,15 @@ random
 Add a new :attr:`random.Random.randbytes` method: generate random bytes.
 (Contributed by Victor Stinner in :issue:`40286`.)
 
+Add a new :attr:`random.BaseRandom` class: random number generator base class.
+A :attr:`random.BaseRandom` subclass must only implement a single method:
+:meth:`~random.BaseRandom.getrandbits`, whereas a :class:`random.Random`
+subclass must override 6 methods (:meth:`~random.Random.getrandbits`,
+:meth:`~random.Random.random`, :meth:`~random.Random.randbytes`
+:meth:`~random.Random.seed`, :meth:`~random.Random.getstate` and
+:meth:`~random.Random.setstate`).
+(Contributed by Victor Stinner in :issue:`40346`.)
+
 signal
 ------
 
@@ -846,6 +855,16 @@ Changes in the Python API
   is updated in order to prevent collision with compiler flags. Previously
   ``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
   (Contributed by Batuhan Taskaya in :issue:`39562`)
+
+* Subclasses of :class:`random.Random` should now override the
+  :meth:`~random.Random.randbytes` method in addition to the 5 methods:
+  :meth:`~random.Random.getrandbits`, :meth:`~random.Random.random`,
+  :meth:`~random.Random.seed`, :meth:`~random.Random.getstate` and
+  :meth:`~random.Random.setstate`. Or the new :attr:`random.BaseRandom` base
+  class can be used, a subclass must only implement a single method:
+  :meth:`~random.BaseRandom.getrandbits`.
+  (Contributed by Victor Stinner in :issue:`40346`.)
+
 
 CPython bytecode changes
 ------------------------

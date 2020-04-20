@@ -45,6 +45,7 @@ from _collections_abc import Set as _Set, Sequence as _Sequence
 from itertools import accumulate as _accumulate, repeat as _repeat
 from bisect import bisect as _bisect
 import os as _os
+import _random
 
 try:
     # hashlib is pretty heavy to load, try lean internal module first
@@ -73,32 +74,8 @@ RECIP_BPF = 2**-BPF
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
 # the Mersenne Twister  and os.urandom() core generators.
 
-import _random
-
-class Random(_random.Random):
-    """Random number generator base class used by bound module functions.
-
-    Used to instantiate instances of Random to get generators that don't
-    share state.
-
-    Class Random can also be subclassed if you want to use a different basic
-    generator of your own devising: in that case, override the following
-    methods:  random(), seed(), getstate(), and setstate().
-    Optionally, implement a getrandbits() method so that randrange()
-    can cover arbitrarily large ranges.
-
-    """
-
-    VERSION = 3     # used by getstate/setstate
-
-    def __init__(self, x=None):
-        """Initialize an instance.
-
-        Optional argument x controls seeding, as for Random.seed().
-        """
-
-        self.seed(x)
-        self.gauss_next = None
+class BaseRandom:
+    """Random number generator base class."""
 
     def __init_subclass__(cls, /, **kwargs):
         """Control how subclasses generate random integers.
@@ -120,74 +97,26 @@ class Random(_random.Random):
                 cls._randbelow = cls._randbelow_without_getrandbits
                 break
 
-    def seed(self, a=None, version=2):
-        """Initialize internal state from a seed.
+    def getrandbits(self, k):
+        raise NotImplementedError
 
-        The only supported seed types are None, int, float,
-        str, bytes, and bytearray.
-
-        None or no argument seeds from current time or from an operating
-        system specific randomness source if available.
-
-        If *a* is an int, all bits are used.
-
-        For version 2 (the default), all of the bits are used if *a* is a str,
-        bytes, or bytearray.  For version 1 (provided for reproducing random
-        sequences from older versions of Python), the algorithm for str and
-        bytes generates a narrower range of seeds.
-
-        """
-
-        if version == 1 and isinstance(a, (str, bytes)):
-            a = a.decode('latin-1') if isinstance(a, bytes) else a
-            x = ord(a[0]) << 7 if a else 0
-            for c in map(ord, a):
-                x = ((1000003 * x) ^ c) & 0xFFFFFFFFFFFFFFFF
-            x ^= len(a)
-            a = -2 if x == -1 else x
-
-        elif version == 2 and isinstance(a, (str, bytes, bytearray)):
-            if isinstance(a, str):
-                a = a.encode()
-            a += _sha512(a).digest()
-            a = int.from_bytes(a, 'big')
-
-        elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
-            _warn('Seeding based on hashing is deprecated\n'
-                  'since Python 3.9 and will be removed in a subsequent '
-                  'version. The only \n'
-                  'supported seed types are: None, '
-                  'int, float, str, bytes, and bytearray.',
-                  DeprecationWarning, 2)
-
-        super().seed(a)
-        self.gauss_next = None
+    def seed(self, a=None, /):
+        raise NotImplementedError
 
     def getstate(self):
-        """Return internal state; can be passed to setstate() later."""
-        return self.VERSION, super().getstate(), self.gauss_next
+        raise NotImplementedError
 
     def setstate(self, state):
-        """Restore internal state from object returned by getstate()."""
-        version = state[0]
-        if version == 3:
-            version, internalstate, self.gauss_next = state
-            super().setstate(internalstate)
-        elif version == 2:
-            version, internalstate, self.gauss_next = state
-            # In version 2, the state was saved as signed ints, which causes
-            #   inconsistencies between 32/64-bit systems. The state is
-            #   really unsigned 32-bit ints, so we convert negative ints from
-            #   version 2 to positive longs for version 3.
-            try:
-                internalstate = tuple(x % (2**32) for x in internalstate)
-            except ValueError as e:
-                raise TypeError from e
-            super().setstate(internalstate)
-        else:
-            raise ValueError("state with version %s passed to "
-                             "Random.setstate() of version %s" %
-                             (version, self.VERSION))
+        raise NotImplementedError
+
+## -------------------- float and bytes -------------------
+
+    def random(self):
+        """Get the next random number in the range [0.0, 1.0)."""
+        return self.getrandbits(53) * RECIP_BPF
+
+    def randbytes(self, n, /):
+        return self.getrandbits(n * 8).to_bytes(n, 'little')
 
 ## ---- Methods below this point do not need to be overridden when
 ## ---- subclassing for the purpose of using a different core generator.
@@ -636,9 +565,6 @@ class Random(_random.Random):
 
         mu is the mean, and sigma is the standard deviation.  This is
         slightly faster than the normalvariate() function.
-
-        Not thread-safe without a lock around calls.
-
         """
 
         # When x and y are two variables from [0, 1), uniformly
@@ -652,22 +578,10 @@ class Random(_random.Random):
         # (Lambert Meertens)
         # (corrected version; bug discovered by Mike Miller, fixed by LM)
 
-        # Multithreading note: When two threads call this function
-        # simultaneously, it is possible that they will receive the
-        # same return value.  The window is very small though.  To
-        # avoid this, you have to use a lock around all calls.  (I
-        # didn't want to slow this down in the serial case by using a
-        # lock here.)
-
         random = self.random
-        z = self.gauss_next
-        self.gauss_next = None
-        if z is None:
-            x2pi = random() * TWOPI
-            g2rad = _sqrt(-2.0 * _log(1.0 - random()))
-            z = _cos(x2pi) * g2rad
-            self.gauss_next = _sin(x2pi) * g2rad
-
+        x2pi = random() * TWOPI
+        g2rad = _sqrt(-2.0 * _log(1.0 - random()))
+        z = _cos(x2pi) * g2rad
         return mu + z*sigma
 
 ## -------------------- beta --------------------
@@ -722,19 +636,136 @@ class Random(_random.Random):
         u = 1.0 - self.random()
         return alpha * (-_log(u)) ** (1.0/beta)
 
-## --------------- Operating System Random Source  ------------------
 
-class SystemRandom(Random):
-    """Alternate random number generator using sources provided
-    by the operating system (such as /dev/urandom on Unix or
-    CryptGenRandom on Windows).
+## --------------- Mersene Twister Source ---------------------------
 
-     Not available on all systems (see os.urandom() for details).
+class Random(_random.Random, BaseRandom):
+    """Mersenne Twister Random number generator.
+
+    It is used by bound module functions.
+
+    Used to instantiate instances of Random to get generators that don't
+    share state.
     """
 
-    def random(self):
-        """Get the next random number in the range [0.0, 1.0)."""
-        return (int.from_bytes(_urandom(7), 'big') >> 3) * RECIP_BPF
+    VERSION = 3     # used by getstate/setstate
+
+    def __init__(self, x=None):
+        """Initialize an instance.
+
+        Optional argument x controls seeding, as for Random.seed().
+        """
+
+        self.seed(x)
+
+    def seed(self, a=None, version=2):
+        """Initialize internal state from a seed.
+
+        The only supported seed types are None, int, float,
+        str, bytes, and bytearray.
+
+        None or no argument seeds from current time or from an operating
+        system specific randomness source if available.
+
+        If *a* is an int, all bits are used.
+
+        For version 2 (the default), all of the bits are used if *a* is a str,
+        bytes, or bytearray.  For version 1 (provided for reproducing random
+        sequences from older versions of Python), the algorithm for str and
+        bytes generates a narrower range of seeds.
+
+        """
+
+        if version == 1 and isinstance(a, (str, bytes)):
+            a = a.decode('latin-1') if isinstance(a, bytes) else a
+            x = ord(a[0]) << 7 if a else 0
+            for c in map(ord, a):
+                x = ((1000003 * x) ^ c) & 0xFFFFFFFFFFFFFFFF
+            x ^= len(a)
+            a = -2 if x == -1 else x
+
+        elif version == 2 and isinstance(a, (str, bytes, bytearray)):
+            if isinstance(a, str):
+                a = a.encode()
+            a += _sha512(a).digest()
+            a = int.from_bytes(a, 'big')
+
+        elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
+            _warn('Seeding based on hashing is deprecated\n'
+                  'since Python 3.9 and will be removed in a subsequent '
+                  'version. The only \n'
+                  'supported seed types are: None, '
+                  'int, float, str, bytes, and bytearray.',
+                  DeprecationWarning, 2)
+
+        super().seed(a)
+        self.gauss_next = None
+
+    def getstate(self):
+        """Return internal state; can be passed to setstate() later."""
+        return self.VERSION, super().getstate(), self.gauss_next
+
+    def setstate(self, state):
+        """Restore internal state from object returned by getstate()."""
+        version = state[0]
+        if version == 3:
+            version, internalstate, self.gauss_next = state
+            super().setstate(internalstate)
+        elif version == 2:
+            version, internalstate, self.gauss_next = state
+            # In version 2, the state was saved as signed ints, which causes
+            #   inconsistencies between 32/64-bit systems. The state is
+            #   really unsigned 32-bit ints, so we convert negative ints from
+            #   version 2 to positive longs for version 3.
+            try:
+                internalstate = tuple(x % (2**32) for x in internalstate)
+            except ValueError as e:
+                raise TypeError from e
+            super().setstate(internalstate)
+        else:
+            raise ValueError("state with version %s passed to "
+                             "Random.setstate() of version %s" %
+                             (version, self.VERSION))
+
+## -------------------- Gauss (faster alternative) --------------------
+
+    def gauss(self, mu, sigma):
+        """Gaussian distribution.
+
+        mu is the mean, and sigma is the standard deviation.  This is
+        slightly faster than the normalvariate() function.
+
+        Not thread-safe without a lock around calls.
+
+        """
+
+        # Multithreading note: When two threads call this function
+        # simultaneously, it is possible that they will receive the
+        # same return value.  The window is very small though.  To
+        # avoid this, you have to use a lock around all calls.  (I
+        # didn't want to slow this down in the serial case by using a
+        # lock here.)
+        #
+        # See also BaseRandom.gauss().
+
+        random = self.random
+        z = self.gauss_next
+        self.gauss_next = None
+        if z is None:
+            x2pi = random() * TWOPI
+            g2rad = _sqrt(-2.0 * _log(1.0 - random()))
+            z = _cos(x2pi) * g2rad
+            self.gauss_next = _sin(x2pi) * g2rad
+
+        return mu + z*sigma
+
+
+## --------------- Operating System Random Source  ------------------
+
+class SystemRandom(BaseRandom):
+    """Random number generator which uses the system function os.random()
+    to generate random numbers from sources provided by the operating system.
+    """
 
     def getrandbits(self, k):
         """getrandbits(k) -> x.  Generates an int with k random bits."""
@@ -744,7 +775,7 @@ class SystemRandom(Random):
         x = int.from_bytes(_urandom(numbytes), 'big')
         return x >> (numbytes * 8 - k)                # trim excess bits
 
-    def randbytes(self, n):
+    def randbytes(self, n, /):
         """Generate n random bytes."""
         # os.urandom(n) fails with ValueError for n < 0
         # and returns an empty bytes string for n == 0.
@@ -752,12 +783,7 @@ class SystemRandom(Random):
 
     def seed(self, *args, **kwds):
         "Stub method.  Not used for a system random number generator."
-        return None
-
-    def _notimplemented(self, *args, **kwds):
-        "Method should not be called for a system random number generator."
-        raise NotImplementedError('System entropy source does not have state.')
-    getstate = setstate = _notimplemented
+        pass
 
 ## -------------------- test program --------------------
 
