@@ -226,25 +226,13 @@ error:
 }
 
 static int
-tokenizer_string_error(Parser *p)
+tokenizer_error_with_col_offset(Parser *p, PyObject *errtype, const char *errmsg)
 {
     PyObject *errstr = NULL;
     PyObject *value = NULL;
-    const char *msg = NULL;
     int col_number = p->tok->cur - p->tok->buf;
 
-    if (p->tok->done == E_EOLS) {
-        msg = "EOL while scanning string literal";
-    }
-    else if (p->tok->done == E_EOFS) {
-        msg = "EOF while scanning triple-quoted string literal";
-    }
-    else if (p->tok->done == E_BADPREFIX) {
-        msg = "invalid string prefix";
-    }
-    assert(msg != NULL);
-
-    errstr = PyUnicode_FromString(msg);
+    errstr = PyUnicode_FromString(errmsg);
     if (!errstr) {
         return -1;
     }
@@ -260,7 +248,7 @@ tokenizer_string_error(Parser *p)
     if (!value) {
         goto error;
     }
-    PyErr_SetObject(PyExc_SyntaxError, value);
+    PyErr_SetObject(errtype, value);
 
 error:
     Py_XDECREF(errstr);
@@ -285,9 +273,17 @@ tokenizer_error(Parser *p)
             msg = "invalid character in identifier";
             break;
         case E_BADPREFIX:
+            return tokenizer_error_with_col_offset(p,
+                PyExc_SyntaxError, "invalid string prefix");
         case E_EOFS:
+            return tokenizer_error_with_col_offset(p,
+                PyExc_SyntaxError, "EOF while scanning triple-quoted string literal");
         case E_EOLS:
-            return tokenizer_string_error(p);
+            return tokenizer_error_with_col_offset(p,
+                PyExc_SyntaxError, "EOL while scanning string literal");
+        case E_DEDENT:
+            return tokenizer_error_with_col_offset(p,
+                PyExc_IndentationError, "unindent does not match any outer indentation level");
         case E_INTR:
             if (!PyErr_Occurred()) {
                 PyErr_SetNone(PyExc_KeyboardInterrupt);
@@ -299,10 +295,6 @@ tokenizer_error(Parser *p)
         case E_TABSPACE:
             errtype = PyExc_TabError;
             msg = "inconsistent use of tabs and spaces in indentation";
-            break;
-        case E_DEDENT:
-            errtype = PyExc_IndentationError;
-            msg = "unindent does not match any outer indentation level";
             break;
         case E_TOODEEP:
             errtype = PyExc_IndentationError;
