@@ -111,6 +111,16 @@ Bookkeeping functions
    as an optional part of the API. When available, :meth:`getrandbits` enables
    :meth:`randrange` to handle arbitrarily large ranges.
 
+   .. versionchanged:: 3.9
+      This method now accepts zero for *k*.
+
+
+.. function:: randbytes(n)
+
+   Generate *n* random bytes.
+
+   .. versionadded:: 3.9
+
 
 Functions for integers
 ----------------------
@@ -165,8 +175,9 @@ Functions for sequences
 
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`random` (that includes
-   integers, floats, and fractions but excludes decimals).  Weights are
-   assumed to be non-negative.
+   integers, floats, and fractions but excludes decimals).  Behavior is
+   undefined if any weight is negative.  A :exc:`ValueError` is raised if all
+   weights are zero.
 
    For a given seed, the :func:`choices` function with equal weighting
    typically produces a different sequence than repeated calls to
@@ -176,6 +187,9 @@ Functions for sequences
    to avoid small biases from round-off error.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.9
+      Raises a :exc:`ValueError` if all weights are zero.
 
 
 .. function:: shuffle(x[, random])
@@ -215,6 +229,13 @@ Functions for sequences
 
    If the sample size is larger than the population size, a :exc:`ValueError`
    is raised.
+
+   .. deprecated:: 3.9
+      In the future, the *population* must be a sequence.  Instances of
+      :class:`set` are no longer supported.  The set must first be converted
+      to a :class:`list` or :class:`tuple`, preferably in a deterministic
+      order so that the sample is reproducible.
+
 
 Real-valued distributions
 -------------------------
@@ -339,8 +360,8 @@ Alternative Generator
 Notes on Reproducibility
 ------------------------
 
-Sometimes it is useful to be able to reproduce the sequences given by a pseudo
-random number generator.  By re-using a seed value, the same sequence should be
+Sometimes it is useful to be able to reproduce the sequences given by a
+pseudo-random number generator.  By re-using a seed value, the same sequence should be
 reproducible from run to run as long as multiple threads are not running.
 
 Most of the random module's algorithms and seeding functions are subject to

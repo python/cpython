@@ -401,16 +401,21 @@ class MyRPCServer(rpc.RPCServer):
 
 # Pseudofiles for shell-remote communication (also used in pyshell)
 
-class PseudoFile(io.TextIOBase):
+class StdioFile(io.TextIOBase):
 
-    def __init__(self, shell, tags, encoding=None):
+    def __init__(self, shell, tags, encoding='utf-8', errors='strict'):
         self.shell = shell
         self.tags = tags
         self._encoding = encoding
+        self._errors = errors
 
     @property
     def encoding(self):
         return self._encoding
+
+    @property
+    def errors(self):
+        return self._errors
 
     @property
     def name(self):
@@ -420,7 +425,7 @@ class PseudoFile(io.TextIOBase):
         return True
 
 
-class PseudoOutputFile(PseudoFile):
+class StdOutputFile(StdioFile):
 
     def writable(self):
         return True
@@ -428,19 +433,12 @@ class PseudoOutputFile(PseudoFile):
     def write(self, s):
         if self.closed:
             raise ValueError("write to closed file")
-        if type(s) is not str:
-            if not isinstance(s, str):
-                raise TypeError('must be str, not ' + type(s).__name__)
-            # See issue #19481
-            s = str.__str__(s)
+        s = str.encode(s, self.encoding, self.errors).decode(self.encoding, self.errors)
         return self.shell.write(s, self.tags)
 
 
-class PseudoInputFile(PseudoFile):
-
-    def __init__(self, shell, tags, encoding=None):
-        PseudoFile.__init__(self, shell, tags, encoding)
-        self._line_buffer = ''
+class StdInputFile(StdioFile):
+    _line_buffer = ''
 
     def readable(self):
         return True
@@ -495,12 +493,12 @@ class MyHandler(rpc.RPCHandler):
         executive = Executive(self)
         self.register("exec", executive)
         self.console = self.get_remote_proxy("console")
-        sys.stdin = PseudoInputFile(self.console, "stdin",
-                iomenu.encoding)
-        sys.stdout = PseudoOutputFile(self.console, "stdout",
-                iomenu.encoding)
-        sys.stderr = PseudoOutputFile(self.console, "stderr",
-                iomenu.encoding)
+        sys.stdin = StdInputFile(self.console, "stdin",
+                                 iomenu.encoding, iomenu.errors)
+        sys.stdout = StdOutputFile(self.console, "stdout",
+                                   iomenu.encoding, iomenu.errors)
+        sys.stderr = StdOutputFile(self.console, "stderr",
+                                   iomenu.encoding, "backslashreplace")
 
         sys.displayhook = rpc.displayhook
         # page help() text to shell.

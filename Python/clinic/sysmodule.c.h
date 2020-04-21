@@ -135,7 +135,7 @@ static PyObject *
 sys_exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *status = NULL;
+    PyObject *status = Py_None;
 
     if (!_PyArg_CheckPositional("exit", nargs, 0, 1)) {
         goto exit;
@@ -758,27 +758,6 @@ exit:
     return return_value;
 }
 
-#if defined(COUNT_ALLOCS)
-
-PyDoc_STRVAR(sys_getcounts__doc__,
-"getcounts($module, /)\n"
-"--\n"
-"\n");
-
-#define SYS_GETCOUNTS_METHODDEF    \
-    {"getcounts", (PyCFunction)sys_getcounts, METH_NOARGS, sys_getcounts__doc__},
-
-static PyObject *
-sys_getcounts_impl(PyObject *module);
-
-static PyObject *
-sys_getcounts(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_getcounts_impl(module);
-}
-
-#endif /* defined(COUNT_ALLOCS) */
-
 PyDoc_STRVAR(sys__getframe__doc__,
 "_getframe($module, depth=0, /)\n"
 "--\n"
@@ -988,11 +967,7 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define SYS_GETTOTALREFCOUNT_METHODDEF
 #endif /* !defined(SYS_GETTOTALREFCOUNT_METHODDEF) */
 
-#ifndef SYS_GETCOUNTS_METHODDEF
-    #define SYS_GETCOUNTS_METHODDEF
-#endif /* !defined(SYS_GETCOUNTS_METHODDEF) */
-
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=8b250245a1265eef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=39eb34a01fb9a919 input=a9049054013a1b77]*/

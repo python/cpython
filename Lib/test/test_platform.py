@@ -3,6 +3,7 @@ import platform
 import subprocess
 import sys
 import unittest
+import collections
 from unittest import mock
 
 from test import support
@@ -160,6 +161,19 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[4], res.machine)
         self.assertEqual(res[5], res.processor)
 
+    @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
+    def test_uname_processor(self):
+        """
+        On some systems, the processor must match the output
+        of 'uname -p'. See Issue 35967 for rationale.
+        """
+        try:
+            proc_res = subprocess.check_output(['uname', '-p'], text=True).strip()
+            expect = platform._unknown_as_blank(proc_res)
+        except (OSError, subprocess.CalledProcessError):
+            expect = ''
+        self.assertEqual(platform.uname().processor, expect)
+
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_ARCHITEW6432(self):
         # Issue 7860: make sure we get architecture from the correct variable
@@ -236,9 +250,7 @@ class PlatformTest(unittest.TestCase):
 
         else:
             # parent
-            cpid, sts = os.waitpid(pid, 0)
-            self.assertEqual(cpid, pid)
-            self.assertEqual(sts, 0)
+            support.wait_process(pid, exitcode=0)
 
     def test_libc_ver(self):
         # check that libc_ver(executable) doesn't raise an exception

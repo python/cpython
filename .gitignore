@@ -6,7 +6,8 @@
 *.iml
 *.o
 *.a
-*.so*
+*.so
+*.so.*
 *.dylib
 *.dll
 *.orig
@@ -33,6 +34,7 @@ TAGS
 gmon.out
 .coverage
 .mypy_cache/
+.pytest_cache/
 
 *.exe
 !Lib/distutils/command/*.exe
@@ -69,6 +71,7 @@ Programs/_freeze_importlib
 Programs/_testembed
 PC/python_nt*.h
 PC/pythonnt_rc*.h
+Modules/python.exp
 PC/*/*.exp
 PC/*/*.lib
 PC/*/*.bsc

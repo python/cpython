@@ -169,11 +169,6 @@ The following data items and methods are also supported:
    a.append(x)`` except that if there is a type error, the array is unchanged.
 
 
-.. method:: array.fromstring()
-
-   Deprecated alias for :meth:`frombytes`.
-
-
 .. method:: array.fromunicode(s)
 
    Extends this array with data from the given unicode string.  The array must
@@ -229,11 +224,6 @@ The following data items and methods are also supported:
 .. method:: array.tolist()
 
    Convert the array to an ordinary list with the same items.
-
-
-.. method:: array.tostring()
-
-   Deprecated alias for :meth:`tobytes`.
 
 
 .. method:: array.tounicode()

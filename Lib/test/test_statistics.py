@@ -2192,7 +2192,7 @@ class TestQuantiles(unittest.TestCase):
                 quantiles(padded_data, n=n, method='inclusive'),
                 (n, data),
             )
-            # Invariant under tranlation and scaling
+            # Invariant under translation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))
@@ -2232,7 +2232,7 @@ class TestQuantiles(unittest.TestCase):
                 result = quantiles(map(datatype, data), n=n, method="inclusive")
                 self.assertTrue(all(type(x) == datatype) for x in result)
                 self.assertEqual(result, list(map(datatype, expected)))
-            # Invariant under tranlation and scaling
+            # Invariant under translation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))
@@ -2602,6 +2602,21 @@ class TestNormalDist:
         with self.assertRaises(self.module.StatisticsError):
             NormalDist(1, 0).overlap(X)             # left operand sigma is zero
 
+    def test_zscore(self):
+        NormalDist = self.module.NormalDist
+        X = NormalDist(100, 15)
+        self.assertEqual(X.zscore(142), 2.8)
+        self.assertEqual(X.zscore(58), -2.8)
+        self.assertEqual(X.zscore(100), 0.0)
+        with self.assertRaises(TypeError):
+            X.zscore()                              # too few arguments
+        with self.assertRaises(TypeError):
+            X.zscore(1, 1)                          # too may arguments
+        with self.assertRaises(TypeError):
+            X.zscore(None)                          # non-numeric type
+        with self.assertRaises(self.module.StatisticsError):
+            NormalDist(1, 0).zscore(100)            # sigma is zero
+
     def test_properties(self):
         X = self.module.NormalDist(100, 15)
         self.assertEqual(X.mean, 100)
@@ -2651,9 +2666,13 @@ class TestNormalDist:
         nd2 = NormalDist(2, 4)
         nd3 = NormalDist()
         nd4 = NormalDist(2, 4)
+        nd5 = NormalDist(2, 8)
+        nd6 = NormalDist(8, 4)
         self.assertNotEqual(nd1, nd2)
         self.assertEqual(nd1, nd3)
         self.assertEqual(nd2, nd4)
+        self.assertNotEqual(nd2, nd5)
+        self.assertNotEqual(nd2, nd6)
 
         # Test NotImplemented when types are different
         class A:

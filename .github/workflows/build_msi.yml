@@ -1,0 +1,34 @@
+name: TestsMSI
+
+on:
+  push:
+    branches:
+    - master
+    - 3.8
+    - 3.7
+    paths:
+    - 'Tools/msi/**'
+  pull_request:
+    branches:
+    - master
+    - 3.8
+    - 3.7
+    paths:
+    - 'Tools/msi/**'
+
+jobs:
+  build_win32:
+    name: 'Windows (x86) Installer'
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build CPython installer
+      run: .\Tools\msi\build.bat -x86
+
+  build_win_amd64:
+    name: 'Windows (x64) Installer'
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build CPython installer
+      run: .\Tools\msi\build.bat -x64

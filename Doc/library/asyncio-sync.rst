@@ -6,6 +6,10 @@
 Synchronization Primitives
 ==========================
 
+**Source code:** :source:`Lib/asyncio/locks.py`
+
+-----------------------------------------------
+
 asyncio synchronization primitives are designed to be similar to
 those of the :mod:`threading` module with two important caveats:
 
@@ -343,8 +347,8 @@ BoundedSemaphore
 ---------
 
 
-.. deprecated:: 3.7
+.. versionchanged:: 3.9
 
    Acquiring a lock using ``await lock`` or ``yield from lock`` and/or
    :keyword:`with` statement (``with await lock``, ``with (yield from
-   lock)``) is deprecated.  Use ``async with lock`` instead.
+   lock)``) was removed.  Use ``async with lock`` instead.

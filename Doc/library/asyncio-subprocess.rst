@@ -6,6 +6,11 @@
 Subprocesses
 ============
 
+**Source code:** :source:`Lib/asyncio/subprocess.py`,
+:source:`Lib/asyncio/base_subprocess.py`
+
+----------------------------------------
+
 This section describes high-level async/await asyncio APIs to
 create and manage subprocesses.
 

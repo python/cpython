@@ -87,7 +87,7 @@ def open_new_tab(url):
 
 
 def _synthesize(browser, *, preferred=False):
-    """Attempt to synthesize a controller base on existing controllers.
+    """Attempt to synthesize a controller based on existing controllers.
 
     This is useful to create a controller when a user specifies a path to
     an entry in the BROWSER environment variable -- we can copy a general
