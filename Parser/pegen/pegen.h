@@ -38,6 +38,7 @@ typedef struct {
     int start_rule;
     int *errcode;
     jmp_buf error_env;
+    PyObject* normalize;
 } Parser;
 
 typedef struct {
