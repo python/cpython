@@ -8960,7 +8960,7 @@ incorrect_arguments_rule(Parser *p)
             (literal_1 = _PyPegen_expect_token(p, 16))
         )
         {
-            res = _PyPegen_raise_syntax_error ( p , "iterable argument unpacking follows keyword argument unpacking" );
+            res = RAISE_SYNTAX_ERROR ( "iterable argument unpacking follows keyword argument unpacking" );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
@@ -9011,7 +9011,7 @@ invalid_named_expression_rule(Parser *p)
             (expression_var = expression_rule(p))
         )
         {
-            res = _PyPegen_raise_syntax_error ( p , "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( a ) );
+            res = RAISE_SYNTAX_ERROR ( "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( a ) );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
@@ -9043,7 +9043,7 @@ invalid_assignment_rule(Parser *p)
             (literal = _PyPegen_expect_token(p, 11))
         )
         {
-            res = _PyPegen_raise_syntax_error ( p , "only single target (not list) can be annotated" );
+            res = RAISE_SYNTAX_ERROR ( "only single target (not list) can be annotated" );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
@@ -9060,7 +9060,7 @@ invalid_assignment_rule(Parser *p)
             (literal = _PyPegen_expect_token(p, 11))
         )
         {
-            res = _PyPegen_raise_syntax_error ( p , "only single target (not tuple) can be annotated" );
+            res = RAISE_SYNTAX_ERROR ( "only single target (not tuple) can be annotated" );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
@@ -9084,7 +9084,7 @@ invalid_assignment_rule(Parser *p)
             (opt_var = _tmp_115_rule(p), 1)
         )
         {
-            res = _PyPegen_raise_syntax_error ( p , "illegal target for annotation" );
+            res = RAISE_SYNTAX_ERROR ( "illegal target for annotation" );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
@@ -9104,7 +9104,7 @@ invalid_assignment_rule(Parser *p)
             (_tmp_117_var = _tmp_117_rule(p))
         )
         {
-            res = _PyPegen_raise_syntax_error ( p , "cannot assign to %s" , _PyPegen_get_expr_name ( a ) );
+            res = RAISE_SYNTAX_ERROR ( "cannot assign to %s" , _PyPegen_get_expr_name ( a ) );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
@@ -9131,7 +9131,7 @@ invalid_block_rule(Parser *p)
             _PyPegen_lookahead(0, _PyPegen_indent_token, p)
         )
         {
-            res = _PyPegen_raise_syntax_error ( p , "expected an indented block" );
+            res = RAISE_INDENTATION_ERROR ( "expected an indented block" );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }

@@ -711,7 +711,8 @@ class ASTGenerationTest(unittest.TestCase):
 
     def test_incorrect_ast_generation_with_specialized_errors(self) -> None:
         for source, error_text in FAIL_SPECIALIZED_MESSAGE_CASES:
-            with self.assertRaises(SyntaxError) as se:
+            exc = IndentationError if "indent" in error_text else SyntaxError
+            with self.assertRaises(exc) as se:
                 peg_parser.parse_string(source)
             self.assertTrue(
                 error_text in se.exception.msg,

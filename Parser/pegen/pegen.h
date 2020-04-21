@@ -101,12 +101,14 @@ void *_PyPegen_dedent_token(Parser *p);
 expr_ty _PyPegen_number_token(Parser *p);
 void *_PyPegen_string_token(Parser *p);
 const char *_PyPegen_get_expr_name(expr_ty);
-void *_PyPegen_raise_syntax_error(Parser *p, const char *errmsg, ...);
+void *_PyPegen_raise_error(Parser *p, PyObject *, const char *errmsg, ...);
 void *_PyPegen_dummy_name(Parser *p, ...);
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define EXTRA_EXPR(head, tail) head->lineno, head->col_offset, tail->end_lineno, tail->end_col_offset, p->arena
 #define EXTRA start_lineno, start_col_offset, end_lineno, end_col_offset, p->arena
+#define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
+#define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
 
 Py_LOCAL_INLINE(void *)
 CHECK_CALL(Parser *p, void *result)
