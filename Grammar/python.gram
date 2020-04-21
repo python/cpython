@@ -472,7 +472,8 @@ star_targets[expr_ty]:
         _Py_Tuple(CHECK(_PyPegen_seq_insert_in_front(p, a, b)), Store, EXTRA) }
 star_targets_seq[asdl_seq*]: a=','.star_target+ [','] { a }
 star_target[expr_ty] (memo):
-    | '*' a=bitwise_or { _Py_Starred(CHECK(_PyPegen_set_expr_context(p, a, Store)), Store, EXTRA) }
+    | '*' a=(star_atom | t_primary | invalid_target) {
+        _Py_Starred(CHECK(_PyPegen_set_expr_context(p, a, Store)), Store, EXTRA) }
     | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
     | star_atom
@@ -544,3 +545,5 @@ invalid_block:
 invalid_comprehension:
     | ('[' | '(' | '{') '*' expression for_if_clauses {
         RAISE_SYNTAX_ERROR("iterable unpacking cannot be used in comprehension") }
+invalid_target:
+    | a=bitwise_or { RAISE_SYNTAX_ERROR("cannot assign to %s", _PyPegen_get_expr_name(a)) }
