@@ -25,8 +25,9 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    database file is opened for reading and writing.  The optional *flag* parameter
    has the same interpretation as the *flag* parameter of :func:`dbm.open`.
 
-   By default, version 3 pickles are used to serialize values.  The version of the
-   pickle protocol can be specified with the *protocol* parameter.
+   By default, pickles created with :data:`pickle.DEFAULT_PROTOCOL` are used
+   to serialize values.  The version of the pickle protocol can be specified
+   with the *protocol* parameter.
 
    Because of Python semantics, a shelf cannot know when a mutable
    persistent-dictionary entry is modified.  By default modified objects are
@@ -39,6 +40,11 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    very slow since all accessed entries are written back (there is no way to
    determine which accessed entries are mutable, nor which ones were actually
    mutated).
+
+   .. versionchanged:: 3.9
+
+      :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
+      protocol.
 
    .. note::
 

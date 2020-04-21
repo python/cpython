@@ -1,6 +1,8 @@
 import unittest
 import shelve
 import glob
+import pickle
+
 from test import support
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
@@ -159,7 +161,7 @@ class TestCase(unittest.TestCase):
 
     def test_default_protocol(self):
         with shelve.Shelf({}) as s:
-            self.assertEqual(s._protocol, 3)
+            self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
 
 from test import mapping_tests
 
