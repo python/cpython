@@ -240,7 +240,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
             check_syntax_error(self, "lambda a, b = 5, /, c: None", "non-default argument follows default argument")
             check_syntax_error(self, "lambda a = 5, b, /, c: None", "non-default argument follows default argument")
             check_syntax_error(self, "lambda a = 5, b, /: None", "non-default argument follows default argument")
-        
+
         check_syntax_error(self, "lambda *args, /: None")
         check_syntax_error(self, "lambda *args, a, /: None")
         check_syntax_error(self, "lambda **kwargs, /: None")
