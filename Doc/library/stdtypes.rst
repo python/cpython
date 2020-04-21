@@ -1865,7 +1865,12 @@ expression support in the :mod:`re` module).
       'example.com'
 
    See :meth:`str.removeprefix` for a method that will remove a single prefix
-   string rather than all of a set of characters.
+   string rather than all of a set of characters.  For example::
+
+      >>> 'Arthur: three!'.lstrip('Arthur: ')
+      'ee!'
+      >>> 'Arthur: three!'.removeprefix('Arthur: ')
+      'three!'
 
 
 .. staticmethod:: str.maketrans(x[, y[, z]])
@@ -1948,7 +1953,12 @@ expression support in the :mod:`re` module).
       'mississ'
 
    See :meth:`str.removesuffix` for a method that will remove a single suffix
-   string rather than all of a set of characters.
+   string rather than all of a set of characters.  For example::
+
+      >>> 'Monty Python'.rstrip(' Python')
+      'M'
+      >>> 'Monty Python'.removesuffix(' Python')
+      'Monty'
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2921,7 +2931,12 @@ produce new objects.
    The binary sequence of byte values to remove may be any
    :term:`bytes-like object`. See :meth:`~bytes.removeprefix` for a method
    that will remove a single prefix string rather than all of a set of
-   characters.
+   characters.  For example::
+
+      >>> b'Monty Python'.rstrip(b' Python')
+      b'M'
+      >>> b'Monty Python'.removesuffix(b' Python')
+      b'Monty'
 
    .. note::
 
@@ -2972,7 +2987,12 @@ produce new objects.
    The binary sequence of byte values to remove may be any
    :term:`bytes-like object`. See :meth:`~bytes.removesuffix` for a method
    that will remove a single suffix string rather than all of a set of
-   characters.
+   characters.  For example::
+
+      >>> b'Arthur: three!'.lstrip(b'Arthur: ')
+      b'ee!'
+      >>> b'Arthur: three!'.removeprefix(b'Arthur: ')
+      b'three!'
 
    .. note::
 
