@@ -1228,7 +1228,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
         return NULL;
 
     if (use_peg) {
-        mod = PyPegen_ASTFromString(str, start, flags, arena);
+        mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
     }
     else {
         mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
