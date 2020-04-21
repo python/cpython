@@ -213,6 +213,9 @@ PyAPI_FUNC(PyObject*) PyType_FromSpecWithBases(PyType_Spec*, PyObject*);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
 PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObject *);
+#endif
 
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
