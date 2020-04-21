@@ -342,8 +342,9 @@ static KeywordToken *reserved_keywords[] = {
 #define _tmp_129_type 1271
 #define _tmp_130_type 1272
 #define _tmp_131_type 1273
-#define _loop0_132_type 1274
-#define _tmp_133_type 1275
+#define _tmp_132_type 1274
+#define _loop0_133_type 1275
+#define _tmp_134_type 1276
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -619,8 +620,9 @@ static void *_tmp_128_rule(Parser *p);
 static void *_tmp_129_rule(Parser *p);
 static void *_tmp_130_rule(Parser *p);
 static void *_tmp_131_rule(Parser *p);
-static asdl_seq *_loop0_132_rule(Parser *p);
-static void *_tmp_133_rule(Parser *p);
+static void *_tmp_132_rule(Parser *p);
+static asdl_seq *_loop0_133_rule(Parser *p);
+static void *_tmp_134_rule(Parser *p);
 
 
 // file: statements? $
@@ -7868,7 +7870,7 @@ star_targets_seq_rule(Parser *p)
 }
 
 // star_target:
-//     | '*' (star_atom | t_primary | invalid_target)
+//     | '*' (!'*' (star_target | invalid_target))
 //     | t_primary '.' NAME !t_lookahead
 //     | t_primary '[' slices ']' !t_lookahead
 //     | star_atom
@@ -7886,7 +7888,7 @@ star_target_rule(Parser *p)
     UNUSED(start_lineno); // Only used by EXTRA macro
     int start_col_offset = p->tokens[mark]->col_offset;
     UNUSED(start_col_offset); // Only used by EXTRA macro
-    { // '*' (star_atom | t_primary | invalid_target)
+    { // '*' (!'*' (star_target | invalid_target))
         void *a;
         void *literal;
         if (
@@ -13185,41 +13187,21 @@ _gather_109_rule(Parser *p)
     return res;
 }
 
-// _tmp_111: star_atom | t_primary | invalid_target
+// _tmp_111: !'*' (star_target | invalid_target)
 static void *
 _tmp_111_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
-    { // star_atom
-        expr_ty star_atom_var;
+    { // !'*' (star_target | invalid_target)
+        void *_tmp_132_var;
         if (
-            (star_atom_var = star_atom_rule(p))
+            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 16)
+            &&
+            (_tmp_132_var = _tmp_132_rule(p))
         )
         {
-            res = star_atom_var;
-            goto done;
-        }
-        p->mark = mark;
-    }
-    { // t_primary
-        expr_ty t_primary_var;
-        if (
-            (t_primary_var = t_primary_rule(p))
-        )
-        {
-            res = t_primary_var;
-            goto done;
-        }
-        p->mark = mark;
-    }
-    { // invalid_target
-        void *invalid_target_var;
-        if (
-            (invalid_target_var = invalid_target_rule(p))
-        )
-        {
-            res = invalid_target_var;
+            res = _tmp_132_var;
             goto done;
         }
         p->mark = mark;
@@ -13825,7 +13807,7 @@ _tmp_130_rule(Parser *p)
             &&
             (b = disjunction_rule(p))
             &&
-            (c = _loop0_132_rule(p))
+            (c = _loop0_133_rule(p))
         )
         {
             res = _Py_comprehension ( a , b , c , y != NULL , p -> arena );
@@ -13869,9 +13851,42 @@ _tmp_131_rule(Parser *p)
     return res;
 }
 
-// _loop0_132: ('if' disjunction)
+// _tmp_132: star_target | invalid_target
+static void *
+_tmp_132_rule(Parser *p)
+{
+    void * res = NULL;
+    int mark = p->mark;
+    { // star_target
+        expr_ty star_target_var;
+        if (
+            (star_target_var = star_target_rule(p))
+        )
+        {
+            res = star_target_var;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // invalid_target
+        void *invalid_target_var;
+        if (
+            (invalid_target_var = invalid_target_rule(p))
+        )
+        {
+            res = invalid_target_var;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// _loop0_133: ('if' disjunction)
 static asdl_seq *
-_loop0_132_rule(Parser *p)
+_loop0_133_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
@@ -13884,12 +13899,12 @@ _loop0_132_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('if' disjunction)
-        void *_tmp_133_var;
+        void *_tmp_134_var;
         while (
-            (_tmp_133_var = _tmp_133_rule(p))
+            (_tmp_134_var = _tmp_134_rule(p))
         )
         {
-            res = _tmp_133_var;
+            res = _tmp_134_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -13905,18 +13920,18 @@ _loop0_132_rule(Parser *p)
     }
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_132");
+        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_133");
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    _PyPegen_insert_memo(p, start_mark, _loop0_132_type, seq);
+    _PyPegen_insert_memo(p, start_mark, _loop0_133_type, seq);
     return seq;
 }
 
-// _tmp_133: 'if' disjunction
+// _tmp_134: 'if' disjunction
 static void *
-_tmp_133_rule(Parser *p)
+_tmp_134_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;

@@ -472,7 +472,7 @@ star_targets[expr_ty]:
         _Py_Tuple(CHECK(_PyPegen_seq_insert_in_front(p, a, b)), Store, EXTRA) }
 star_targets_seq[asdl_seq*]: a=','.star_target+ [','] { a }
 star_target[expr_ty] (memo):
-    | '*' a=(star_atom | t_primary | invalid_target) {
+    | '*' a=(!'*' (star_target | invalid_target)) {
         _Py_Starred(CHECK(_PyPegen_set_expr_context(p, a, Store)), Store, EXTRA) }
     | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
