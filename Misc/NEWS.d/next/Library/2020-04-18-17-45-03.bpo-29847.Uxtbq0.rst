@@ -1,1 +1,1 @@
-Fix bug when Path takes and ignores **kwargs
+Fix bug where :class:`pathlib.Path` and its subclasses take and ignore `**kwargs`. Patch provided by Yurii Karabas.
