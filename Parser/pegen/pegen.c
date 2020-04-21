@@ -163,7 +163,7 @@ tokenizer_error(Parser *p)
     }
 
     const char *msg = NULL;
-
+    PyObject* errtype = PyExc_SyntaxError;
     switch (p->tok->done) {
         case E_TOKEN:
             msg = "invalid token";
@@ -178,12 +178,38 @@ tokenizer_error(Parser *p)
         case E_EOFS:
         case E_EOLS:
             return tokenizer_string_error(p);
+        case E_INTR:
+            if (!PyErr_Occurred()) {
+                PyErr_SetNone(PyExc_KeyboardInterrupt);
+            }
+            return -1;
+        case E_NOMEM:
+            PyErr_NoMemory();
+            return -1;
+        case E_TABSPACE:
+            errtype = PyExc_TabError;
+            msg = "inconsistent use of tabs and spaces in indentation";
+            break;
+        case E_DEDENT:
+            errtype = PyExc_IndentationError;
+            msg = "unindent does not match any outer indentation level";
+            break;
+        case E_TOODEEP:
+            errtype = PyExc_IndentationError;
+            msg = "too many levels of indentation";
+            break;
+        case E_DECODE: {
+            msg = "unknown decode error";
+            break;
+        }
+        case E_LINECONT:
+            msg = "unexpected character after line continuation character";
+            break;
         default:
             msg = "unknown parsing error";
     }
 
-
-    PyErr_Format(PyExc_SyntaxError, msg);
+    PyErr_Format(errtype, msg);
     // There is no reliable column information for this error
     PyErr_SyntaxLocationObject(p->tok->filename, p->tok->lineno, 0);
 
