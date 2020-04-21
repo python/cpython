@@ -628,9 +628,6 @@ class PyTypesVisitor(PickleVisitor):
 
     def visitModule(self, mod):
         self.emit("""
-_Py_IDENTIFIER(_fields);
-_Py_IDENTIFIER(_attributes);
-_Py_IDENTIFIER(index);
 
 typedef struct {
     PyObject_HEAD
@@ -666,7 +663,6 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    PyObject *index = NULL;
     if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), astmodulestate_global->_fields, &fields) < 0) {
         goto cleanup;
     }
@@ -701,13 +697,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     }
     if (kw) {
         i = 0;  /* needed by PyDict_Next */
-        if (_PyObject_LookupAttrId(fields, &PyId_index, &index) < 0) {
-            goto cleanup;
-        }
         while (PyDict_Next(kw, &i, &key, &value)) {
-            PyObject* pos = _PyObject_FastCallDict(index, &key, 1, NULL);
+            Py_ssize_t p = PySequence_Index(fields, key);
             PyObject* err = PyErr_Occurred();
-            if (pos == NULL) {
+            if (p == -1) {
                 // arbitrary keyword arguments are accepted
                 if (!PyErr_GivenExceptionMatches(err, PyExc_ValueError)) {
                     res = -1;
@@ -716,12 +709,6 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 PyErr_Clear();
             }
             else {
-                Py_ssize_t p = PyNumber_AsSsize_t(pos, NULL);
-                Py_DECREF(pos);
-                if (p == -1 && PyErr_Occurred()) {
-                    res = -1;
-                    goto cleanup;
-                }
                 if (p < PyTuple_GET_SIZE(args)) {
                     PyErr_Format(PyExc_TypeError,
                         "%.400s got multiple values for argument '%U'",
@@ -738,7 +725,6 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     }
   cleanup:
     Py_XDECREF(fields);
-    Py_XDECREF(index);
     return res;
 }
 
