@@ -425,29 +425,28 @@ Simulations::
    >>> def trial():
    ...     return choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
    ...
-   >>> sum(trial() for i in range(10000)) / 10000
+   >>> sum(trial() for i in range(10_000)) / 10_000
    0.4169
 
    >>> # Probability of the median of 5 samples being in middle two quartiles
    >>> def trial():
-   ...     return 2500 <= sorted(choices(range(10000), k=5))[2] < 7500
+   ...     return 2_500 <= sorted(choices(range(10_000), k=5))[2] < 7_500
    ...
-   >>> sum(trial() for i in range(10000)) / 10000
+   >>> sum(trial() for i in range(10_000)) / 10_000
    0.7958
 
 Example of `statistical bootstrapping
 <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)>`_ using resampling
-with replacement to estimate a confidence interval for the mean of a sample of
-size five::
+with replacement to estimate a confidence interval for the mean of a sample::
 
    # http://statistics.about.com/od/Applications/a/Example-Of-Bootstrapping.htm
    from statistics import fmean as mean
    from random import choices
 
-   data = 1, 2, 4, 4, 10
-   means = sorted(mean(choices(data, k=5)) for i in range(20))
+   data = [41, 50, 29, 37, 81, 30, 73, 63, 20, 35, 68, 22, 60, 31, 95]
+   means = sorted(mean(choices(data, k=len(data))) for i in range(100))
    print(f'The sample mean of {mean(data):.1f} has a 90% confidence '
-         f'interval from {means[1]:.1f} to {means[-2]:.1f}')
+         f'interval from {means[5]:.1f} to {means[94]:.1f}')
 
 Example of a `resampling permutation test
 <https://en.wikipedia.org/wiki/Resampling_(statistics)#Permutation_tests>`_
@@ -463,7 +462,7 @@ between the effects of a drug versus a placebo::
     placebo = [54, 51, 58, 44, 55, 52, 42, 47, 58, 46]
     observed_diff = mean(drug) - mean(placebo)
 
-    n = 10000
+    n = 10_000
     count = 0
     combined = drug + placebo
     for i in range(n):
@@ -476,32 +475,29 @@ between the effects of a drug versus a placebo::
     print(f'The one-sided p-value of {count / n:.4f} leads us to reject the null')
     print(f'hypothesis that there is no difference between the drug and the placebo.')
 
-Simulation of arrival times and service deliveries in a single server queue::
+Simulation of arrival times and service deliveries for a multiserver queue::
 
+    from heapq import heappush, heappop
     from random import expovariate, gauss
     from statistics import mean, median, stdev
 
     average_arrival_interval = 5.6
-    average_service_time = 5.0
-    stdev_service_time = 0.5
+    average_service_time = 15.0
+    stdev_service_time = 3.5
+    num_servers = 3
 
-    num_waiting = 0
-    arrivals = []
-    starts = []
-    arrival = service_end = 0.0
-    for i in range(20000):
-        if arrival <= service_end:
-            num_waiting += 1
-            arrival += expovariate(1.0 / average_arrival_interval)
-            arrivals.append(arrival)
-        else:
-            num_waiting -= 1
-            service_start = service_end if num_waiting else arrival
-            service_time = gauss(average_service_time, stdev_service_time)
-            service_end = service_start + service_time
-            starts.append(service_start)
+    waits = []
+    arrival_time = 0.0
+    servers = [0.0] * num_servers  # time when each server becomes available
+    for i in range(100_000):
+        arrival_time += expovariate(1.0 / average_arrival_interval)
+        next_server_available = heappop(servers)
+        wait = max(0.0, next_server_available - arrival_time)
+        waits.append(wait)
+        service_duration = gauss(average_service_time, stdev_service_time)
+        service_completed = arrival_time + wait + service_duration
+        heappush(servers, service_completed)
 
-    waits = [start - arrival for arrival, start in zip(arrivals, starts)]
     print(f'Mean wait: {mean(waits):.1f}.  Stdev wait: {stdev(waits):.1f}.')
     print(f'Median wait: {median(waits):.1f}.  Max wait: {max(waits):.1f}.')
 
