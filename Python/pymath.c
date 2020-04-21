@@ -83,7 +83,8 @@ round(double x)
 #include <limits.h>
 #ifdef _MSC_VER
 #  include <intrin.h>
-#  define __builtin_clz(VALUE) ({ int clz = 0; _BitScanReverse (&clz, VALUE); clz; })
+#  pragma intrinsic(_BitScanReverse)
+#  define __builtin_clz(VALUE) do { unsigned long clz = 0; _BitScanReverse (&clz, VALUE); clz; } while (0);
 #endif
 
 unsigned int _Py_bit_length(unsigned long d) {
