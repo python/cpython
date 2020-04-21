@@ -26,17 +26,6 @@ PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
 PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 
-/* Macros for direct access to these values. Type checks are *not*
-   done, so use with care. */
-#ifndef Py_LIMITED_API
-#define PyCFunction_GET_FUNCTION(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_meth)
-#define PyCFunction_GET_SELF(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_flags & METH_STATIC ? \
-         NULL : ((PyCFunctionObject *)func) -> m_self)
-#define PyCFunction_GET_FLAGS(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_flags)
-#endif
 Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 struct PyMethodDef {
@@ -85,14 +74,11 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 #endif
 
 #ifndef Py_LIMITED_API
-typedef struct {
-    PyObject_HEAD
-    PyMethodDef *m_ml; /* Description of the C function to call */
-    PyObject    *m_self; /* Passed as 'self' arg to the C func, can be NULL */
-    PyObject    *m_module; /* The __module__ attribute, can be anything */
-    PyObject    *m_weakreflist; /* List of weak references */
-    vectorcallfunc vectorcall;
-} PyCFunctionObject;
+
+#define Py_CPYTHON_METHODOBJECT_H
+#include  "cpython/methodobject.h"
+#undef Py_CPYTHON_METHODOBJECT_H
+
 #endif
 
 #ifdef __cplusplus

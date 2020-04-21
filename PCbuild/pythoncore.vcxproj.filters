@@ -111,6 +111,9 @@
     <ClInclude Include="..\Include\cpython\listobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\methodobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\object.h">
       <Filter>Include</Filter>
     </ClInclude>
