@@ -762,7 +762,15 @@ _PyPegen_run_parser(Parser *p)
             _PyPegen_raise_syntax_error(p, "error at start before reading any input");
         }
         else {
-            _PyPegen_raise_syntax_error(p, "invalid syntax");
+            if (p->tokens[p->fill-1]->type == INDENT) {
+                _PyPegen_raise_syntax_error(p, "unexpected indent");
+            }
+            else if (p->tokens[p->fill-1]->type == DEDENT) {
+                _PyPegen_raise_syntax_error(p, "unexpected unindent");
+            }
+            else {
+                _PyPegen_raise_syntax_error(p, "invalid syntax");
+            }
         }
         return NULL;
     }

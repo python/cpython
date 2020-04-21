@@ -199,137 +199,138 @@ static KeywordToken *reserved_keywords[] = {
 #define incorrect_arguments_type 1137
 #define invalid_named_expression_type 1138
 #define invalid_assignment_type 1139
-#define _loop0_1_type 1140
-#define _loop1_2_type 1141
-#define _loop0_4_type 1142
-#define _gather_3_type 1143
-#define _tmp_5_type 1144
-#define _tmp_6_type 1145
-#define _tmp_7_type 1146
-#define _tmp_8_type 1147
-#define _tmp_9_type 1148
-#define _tmp_10_type 1149
-#define _tmp_11_type 1150
-#define _tmp_12_type 1151
-#define _loop1_13_type 1152
-#define _tmp_14_type 1153
-#define _tmp_15_type 1154
-#define _loop0_17_type 1155
-#define _gather_16_type 1156
-#define _loop0_19_type 1157
-#define _gather_18_type 1158
-#define _tmp_20_type 1159
-#define _loop0_21_type 1160
-#define _loop1_22_type 1161
-#define _loop0_24_type 1162
-#define _gather_23_type 1163
-#define _tmp_25_type 1164
-#define _loop0_27_type 1165
-#define _gather_26_type 1166
-#define _tmp_28_type 1167
-#define _loop0_30_type 1168
-#define _gather_29_type 1169
-#define _loop0_32_type 1170
-#define _gather_31_type 1171
-#define _tmp_33_type 1172
-#define _loop1_34_type 1173
-#define _tmp_35_type 1174
-#define _tmp_36_type 1175
-#define _tmp_37_type 1176
-#define _tmp_38_type 1177
-#define _tmp_39_type 1178
-#define _tmp_40_type 1179
-#define _tmp_41_type 1180
-#define _tmp_42_type 1181
-#define _tmp_43_type 1182
-#define _tmp_44_type 1183
-#define _tmp_45_type 1184
-#define _tmp_46_type 1185
-#define _loop0_47_type 1186
-#define _tmp_48_type 1187
-#define _loop1_49_type 1188
-#define _tmp_50_type 1189
-#define _tmp_51_type 1190
-#define _loop0_53_type 1191
-#define _gather_52_type 1192
-#define _loop0_55_type 1193
-#define _gather_54_type 1194
-#define _tmp_56_type 1195
-#define _loop1_57_type 1196
-#define _tmp_58_type 1197
-#define _loop0_60_type 1198
-#define _gather_59_type 1199
-#define _loop1_61_type 1200
-#define _loop0_63_type 1201
-#define _gather_62_type 1202
-#define _loop1_64_type 1203
-#define _tmp_65_type 1204
-#define _tmp_66_type 1205
-#define _tmp_67_type 1206
-#define _tmp_68_type 1207
-#define _tmp_69_type 1208
-#define _tmp_70_type 1209
-#define _tmp_71_type 1210
-#define _tmp_72_type 1211
-#define _tmp_73_type 1212
-#define _loop0_74_type 1213
-#define _tmp_75_type 1214
-#define _loop1_76_type 1215
-#define _tmp_77_type 1216
-#define _tmp_78_type 1217
-#define _loop0_80_type 1218
-#define _gather_79_type 1219
-#define _loop0_82_type 1220
-#define _gather_81_type 1221
-#define _loop1_83_type 1222
-#define _loop1_84_type 1223
-#define _loop1_85_type 1224
-#define _loop0_87_type 1225
-#define _gather_86_type 1226
-#define _tmp_88_type 1227
-#define _tmp_89_type 1228
-#define _tmp_90_type 1229
-#define _tmp_91_type 1230
-#define _loop1_92_type 1231
-#define _tmp_93_type 1232
-#define _tmp_94_type 1233
-#define _loop0_96_type 1234
-#define _gather_95_type 1235
-#define _loop1_97_type 1236
-#define _tmp_98_type 1237
-#define _tmp_99_type 1238
-#define _loop0_101_type 1239
-#define _gather_100_type 1240
-#define _loop0_103_type 1241
-#define _gather_102_type 1242
-#define _loop0_105_type 1243
-#define _gather_104_type 1244
-#define _loop0_107_type 1245
-#define _gather_106_type 1246
-#define _loop0_108_type 1247
-#define _loop0_110_type 1248
-#define _gather_109_type 1249
-#define _loop0_112_type 1250
-#define _gather_111_type 1251
-#define _loop0_114_type 1252
-#define _gather_113_type 1253
-#define _tmp_115_type 1254
-#define _tmp_116_type 1255
-#define _tmp_117_type 1256
-#define _tmp_118_type 1257
-#define _tmp_119_type 1258
-#define _tmp_120_type 1259
-#define _tmp_121_type 1260
-#define _tmp_122_type 1261
-#define _tmp_123_type 1262
-#define _tmp_124_type 1263
-#define _tmp_125_type 1264
-#define _tmp_126_type 1265
-#define _tmp_127_type 1266
-#define _tmp_128_type 1267
-#define _tmp_129_type 1268
-#define _loop0_130_type 1269
-#define _tmp_131_type 1270
+#define invalid_block_type 1140
+#define _loop0_1_type 1141
+#define _loop1_2_type 1142
+#define _loop0_4_type 1143
+#define _gather_3_type 1144
+#define _tmp_5_type 1145
+#define _tmp_6_type 1146
+#define _tmp_7_type 1147
+#define _tmp_8_type 1148
+#define _tmp_9_type 1149
+#define _tmp_10_type 1150
+#define _tmp_11_type 1151
+#define _tmp_12_type 1152
+#define _loop1_13_type 1153
+#define _tmp_14_type 1154
+#define _tmp_15_type 1155
+#define _loop0_17_type 1156
+#define _gather_16_type 1157
+#define _loop0_19_type 1158
+#define _gather_18_type 1159
+#define _tmp_20_type 1160
+#define _loop0_21_type 1161
+#define _loop1_22_type 1162
+#define _loop0_24_type 1163
+#define _gather_23_type 1164
+#define _tmp_25_type 1165
+#define _loop0_27_type 1166
+#define _gather_26_type 1167
+#define _tmp_28_type 1168
+#define _loop0_30_type 1169
+#define _gather_29_type 1170
+#define _loop0_32_type 1171
+#define _gather_31_type 1172
+#define _tmp_33_type 1173
+#define _loop1_34_type 1174
+#define _tmp_35_type 1175
+#define _tmp_36_type 1176
+#define _tmp_37_type 1177
+#define _tmp_38_type 1178
+#define _tmp_39_type 1179
+#define _tmp_40_type 1180
+#define _tmp_41_type 1181
+#define _tmp_42_type 1182
+#define _tmp_43_type 1183
+#define _tmp_44_type 1184
+#define _tmp_45_type 1185
+#define _tmp_46_type 1186
+#define _loop0_47_type 1187
+#define _tmp_48_type 1188
+#define _loop1_49_type 1189
+#define _tmp_50_type 1190
+#define _tmp_51_type 1191
+#define _loop0_53_type 1192
+#define _gather_52_type 1193
+#define _loop0_55_type 1194
+#define _gather_54_type 1195
+#define _tmp_56_type 1196
+#define _loop1_57_type 1197
+#define _tmp_58_type 1198
+#define _loop0_60_type 1199
+#define _gather_59_type 1200
+#define _loop1_61_type 1201
+#define _loop0_63_type 1202
+#define _gather_62_type 1203
+#define _loop1_64_type 1204
+#define _tmp_65_type 1205
+#define _tmp_66_type 1206
+#define _tmp_67_type 1207
+#define _tmp_68_type 1208
+#define _tmp_69_type 1209
+#define _tmp_70_type 1210
+#define _tmp_71_type 1211
+#define _tmp_72_type 1212
+#define _tmp_73_type 1213
+#define _loop0_74_type 1214
+#define _tmp_75_type 1215
+#define _loop1_76_type 1216
+#define _tmp_77_type 1217
+#define _tmp_78_type 1218
+#define _loop0_80_type 1219
+#define _gather_79_type 1220
+#define _loop0_82_type 1221
+#define _gather_81_type 1222
+#define _loop1_83_type 1223
+#define _loop1_84_type 1224
+#define _loop1_85_type 1225
+#define _loop0_87_type 1226
+#define _gather_86_type 1227
+#define _tmp_88_type 1228
+#define _tmp_89_type 1229
+#define _tmp_90_type 1230
+#define _tmp_91_type 1231
+#define _loop1_92_type 1232
+#define _tmp_93_type 1233
+#define _tmp_94_type 1234
+#define _loop0_96_type 1235
+#define _gather_95_type 1236
+#define _loop1_97_type 1237
+#define _tmp_98_type 1238
+#define _tmp_99_type 1239
+#define _loop0_101_type 1240
+#define _gather_100_type 1241
+#define _loop0_103_type 1242
+#define _gather_102_type 1243
+#define _loop0_105_type 1244
+#define _gather_104_type 1245
+#define _loop0_107_type 1246
+#define _gather_106_type 1247
+#define _loop0_108_type 1248
+#define _loop0_110_type 1249
+#define _gather_109_type 1250
+#define _loop0_112_type 1251
+#define _gather_111_type 1252
+#define _loop0_114_type 1253
+#define _gather_113_type 1254
+#define _tmp_115_type 1255
+#define _tmp_116_type 1256
+#define _tmp_117_type 1257
+#define _tmp_118_type 1258
+#define _tmp_119_type 1259
+#define _tmp_120_type 1260
+#define _tmp_121_type 1261
+#define _tmp_122_type 1262
+#define _tmp_123_type 1263
+#define _tmp_124_type 1264
+#define _tmp_125_type 1265
+#define _tmp_126_type 1266
+#define _tmp_127_type 1267
+#define _tmp_128_type 1268
+#define _tmp_129_type 1269
+#define _loop0_130_type 1270
+#define _tmp_131_type 1271
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -471,6 +472,7 @@ static expr_ty t_atom_rule(Parser *p);
 static void *incorrect_arguments_rule(Parser *p);
 static void *invalid_named_expression_rule(Parser *p);
 static void *invalid_assignment_rule(Parser *p);
+static void *invalid_block_rule(Parser *p);
 static asdl_seq *_loop0_1_rule(Parser *p);
 static asdl_seq *_loop1_2_rule(Parser *p);
 static asdl_seq *_loop0_4_rule(Parser *p);
@@ -3651,7 +3653,7 @@ class_def_raw_rule(Parser *p)
     return res;
 }
 
-// block: NEWLINE INDENT statements DEDENT | simple_stmt
+// block: NEWLINE INDENT statements DEDENT | simple_stmt | invalid_block
 static asdl_seq*
 block_rule(Parser *p)
 {
@@ -3689,6 +3691,17 @@ block_rule(Parser *p)
         )
         {
             res = simple_stmt_var;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // invalid_block
+        void *invalid_block_var;
+        if (
+            (invalid_block_var = invalid_block_rule(p))
+        )
+        {
+            res = invalid_block_var;
             goto done;
         }
         p->mark = mark;
@@ -9031,6 +9044,33 @@ invalid_assignment_rule(Parser *p)
         )
         {
             res = _PyPegen_raise_syntax_error ( p , "cannot assign to %s" , _PyPegen_get_expr_name ( a ) );
+            if (res == NULL && PyErr_Occurred()) {
+                longjmp(p->error_env, 1);
+            }
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// invalid_block: NEWLINE !INDENT
+static void *
+invalid_block_rule(Parser *p)
+{
+    void * res = NULL;
+    int mark = p->mark;
+    { // NEWLINE !INDENT
+        void *newline_var;
+        if (
+            (newline_var = _PyPegen_newline_token(p))
+            &&
+            _PyPegen_lookahead(0, _PyPegen_indent_token, p)
+        )
+        {
+            res = _PyPegen_raise_syntax_error ( p , "expected an indented block" );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
