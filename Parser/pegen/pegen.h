@@ -39,6 +39,7 @@ typedef struct {
     int *errcode;
     jmp_buf error_env;
     int parsing_started;
+    PyObject* normalize;
 } Parser;
 
 typedef struct {

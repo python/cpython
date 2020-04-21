@@ -5,14 +5,68 @@
 #include "pegen.h"
 #include "parse_string.h"
 
-PyObject *
-_PyPegen_new_identifier(Parser *p, char *identifier)
+static int
+init_normalization(Parser *p)
 {
-    PyObject *id = PyUnicode_FromString(identifier);
-    if (id == NULL) {
-        return NULL;
+    PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
+    if (!m)
+    {
+        return 0;
     }
-    if (PyArena_AddPyObject(p->arena, id) < 0) {
+    p->normalize = PyObject_GetAttrString(m, "normalize");
+    Py_DECREF(m);
+    if (!p->normalize)
+    {
+        return 0;
+    }
+    return 1;
+}
+
+PyObject *
+_PyPegen_new_identifier(Parser *p, char *n)
+{
+    PyObject *id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
+    if (!id)
+        return NULL;
+    /* PyUnicode_DecodeUTF8 should always return a ready string. */
+    assert(PyUnicode_IS_READY(id));
+    /* Check whether there are non-ASCII characters in the
+       identifier; if so, normalize to NFKC. */
+    if (!PyUnicode_IS_ASCII(id))
+    {
+        PyObject *id2;
+        if (!p->normalize && !init_normalization(p))
+        {
+            Py_DECREF(id);
+            return NULL;
+        }
+        PyObject *form = PyUnicode_InternFromString("NFKC");
+        if (form == NULL)
+        {
+            Py_DECREF(id);
+            return NULL;
+        }
+        PyObject *args[2] = {form, id};
+        id2 = _PyObject_FastCall(p->normalize, args, 2);
+        Py_DECREF(id);
+        Py_DECREF(form);
+        if (!id2) {
+            return NULL;
+        }
+        if (!PyUnicode_Check(id2))
+        {
+            PyErr_Format(PyExc_TypeError,
+                         "unicodedata.normalize() must return a string, not "
+                         "%.200s",
+                         _PyType_Name(Py_TYPE(id2)));
+            Py_DECREF(id2);
+            return NULL;
+        }
+        id = id2;
+    }
+    PyUnicode_InternInPlace(&id);
+    if (PyArena_AddPyObject(p->arena, id) < 0)
+    {
         Py_DECREF(id);
         return NULL;
     }
@@ -163,7 +217,7 @@ tokenizer_error(Parser *p)
     }
 
     const char *msg = NULL;
-
+    PyObject* errtype = PyExc_SyntaxError;
     switch (p->tok->done) {
         case E_TOKEN:
             msg = "invalid token";
@@ -178,12 +232,38 @@ tokenizer_error(Parser *p)
         case E_EOFS:
         case E_EOLS:
             return tokenizer_string_error(p);
+        case E_INTR:
+            if (!PyErr_Occurred()) {
+                PyErr_SetNone(PyExc_KeyboardInterrupt);
+            }
+            return -1;
+        case E_NOMEM:
+            PyErr_NoMemory();
+            return -1;
+        case E_TABSPACE:
+            errtype = PyExc_TabError;
+            msg = "inconsistent use of tabs and spaces in indentation";
+            break;
+        case E_DEDENT:
+            errtype = PyExc_IndentationError;
+            msg = "unindent does not match any outer indentation level";
+            break;
+        case E_TOODEEP:
+            errtype = PyExc_IndentationError;
+            msg = "too many levels of indentation";
+            break;
+        case E_DECODE: {
+            msg = "unknown decode error";
+            break;
+        }
+        case E_LINECONT:
+            msg = "unexpected character after line continuation character";
+            break;
         default:
             msg = "unknown parsing error";
     }
 
-
-    PyErr_Format(PyExc_SyntaxError, msg);
+    PyErr_Format(errtype, msg);
     // There is no reliable column information for this error
     PyErr_SyntaxLocationObject(p->tok->filename, p->tok->lineno, 0);
 
@@ -570,20 +650,14 @@ _PyPegen_name_token(Parser *p)
     if (t == NULL) {
         return NULL;
     }
-    char *s;
-    Py_ssize_t n;
-    if (PyBytes_AsStringAndSize(t->bytes, &s, &n) < 0) {
+    char* s = PyBytes_AsString(t->bytes);
+    if (!s) {
         return NULL;
     }
-    PyObject *id = PyUnicode_DecodeUTF8(s, n, NULL);
+    PyObject *id = _PyPegen_new_identifier(p, s);
     if (id == NULL) {
         return NULL;
     }
-    if (PyArena_AddPyObject(p->arena, id) < 0) {
-        Py_DECREF(id);
-        return NULL;
-    }
-    // TODO: What _PyPegen_new_identifier() does.
     return Name(id, Load, t->lineno, t->col_offset, t->end_lineno, t->end_col_offset,
                 p->arena);
 }
@@ -714,6 +788,7 @@ _PyPegen_number_token(Parser *p)
 void
 _PyPegen_Parser_Free(Parser *p)
 {
+    Py_XDECREF(p->normalize);
     for (int i = 0; i < p->size; i++) {
         PyMem_Free(p->tokens[i]);
     }
@@ -749,6 +824,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
     p->arena = arena;
     p->start_rule = start_rule;
     p->parsing_started = 0;
+    p->normalize = NULL;
 
     return p;
 }
@@ -770,7 +846,15 @@ _PyPegen_run_parser(Parser *p)
             _PyPegen_raise_syntax_error(p, "error at start before reading any input");
         }
         else {
-            _PyPegen_raise_syntax_error(p, "invalid syntax");
+            if (p->tokens[p->fill-1]->type == INDENT) {
+                _PyPegen_raise_syntax_error(p, "unexpected indent");
+            }
+            else if (p->tokens[p->fill-1]->type == DEDENT) {
+                _PyPegen_raise_syntax_error(p, "unexpected unindent");
+            }
+            else {
+                _PyPegen_raise_syntax_error(p, "invalid syntax");
+            }
         }
         return NULL;
     }

@@ -142,6 +142,12 @@ Other Language Changes
   grammar was much more restrictive.  See :pep:`614` for details.
   (Contributed by Brandt Bucher in :issue:`39702`.)
 
+* Improved help for the :mod:`typing` module. Docstrings are now shown for
+  all special forms and special generic aliases (like ``Union`` and ``List``).
+  Using :func:`help` with generic alias like ``List[int]`` will show the help
+  for the correspondent concrete type (``list`` in this case).
+  (Contributed by Serhiy Storchaka in :issue:`40257`.)
+
 
 New Modules
 ===========
@@ -199,6 +205,11 @@ Removed daemon threads from :class:`~concurrent.futures.ThreadPoolExecutor`
 and :class:`~concurrent.futures.ProcessPoolExecutor`. This improves
 compatibility with subinterpreters and predictability in their shutdown
 processes. (Contributed by Kyle Stanley in :issue:`39812`.)
+
+Workers in :class:`~concurrent.futures.ProcessPoolExecutor` are now spawned on
+demand, only when there are no available idle workers to reuse. This optimizes
+startup overhead and reduces the amount of lost CPU time to idle workers.
+(Contributed by Kyle Stanley in :issue:`39207`.)
 
 curses
 ------
@@ -345,6 +356,19 @@ pprint
 
 :mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
 (Contributed by Carl Bordum Hansen in :issue:`37376`.)
+
+pydoc
+-----
+
+The documentation string is now shown not only for class, function,
+method etc, but for any object that has its own ``__doc__`` attribute.
+(Contributed by Serhiy Storchaka in :issue:`40257`.)
+
+random
+------
+
+Add a new :attr:`random.Random.randbytes` method: generate random bytes.
+(Contributed by Victor Stinner in :issue:`40286`.)
 
 signal
 ------
@@ -797,6 +821,12 @@ Changes in the Python API
 * The *encoding* parameter has been added to the classes :class:`ftplib.FTP` and
   :class:`ftplib.FTP_TLS` as a keyword-only parameter, and the default encoding
   is changed from Latin-1 to UTF-8 to follow :rfc:`2640`.
+
+* :func:`inspect.getdoc` no longer returns docstring inherited from the type
+  of the object or from parent class if it is a class if it is not defined
+  in the object itself.
+  (Contributed by Serhiy Storchaka in :issue:`40257`.)
+
 
 CPython bytecode changes
 ------------------------

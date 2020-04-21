@@ -1149,7 +1149,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Set(self, node):
         if not node.elts:
-            raise ValueError("Set node should has at least one item")
+            raise ValueError("Set node should have at least one item")
         with self.delimit("{", "}"):
             self.interleave(lambda: self.write(", "), self.traverse, node.elts)
 

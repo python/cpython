@@ -452,11 +452,11 @@ PyInterpreterState_GetID(PyInterpreterState *interp)
 
 
 static PyInterpreterState *
-interp_look_up_id(_PyRuntimeState *runtime, PY_INT64_T requested_id)
+interp_look_up_id(_PyRuntimeState *runtime, int64_t requested_id)
 {
     PyInterpreterState *interp = runtime->interpreters.head;
     while (interp != NULL) {
-        PY_INT64_T id = PyInterpreterState_GetID(interp);
+        int64_t id = PyInterpreterState_GetID(interp);
         if (id < 0) {
             return NULL;
         }
@@ -469,7 +469,7 @@ interp_look_up_id(_PyRuntimeState *runtime, PY_INT64_T requested_id)
 }
 
 PyInterpreterState *
-_PyInterpreterState_LookUpID(PY_INT64_T requested_id)
+_PyInterpreterState_LookUpID(int64_t requested_id)
 {
     PyInterpreterState *interp = NULL;
     if (requested_id >= 0) {

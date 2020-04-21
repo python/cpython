@@ -447,6 +447,20 @@ class _NormalAccessor(_Accessor):
     def readlink(self, path):
         return os.readlink(path)
 
+    def owner(self, path):
+        try:
+            import pwd
+            return pwd.getpwuid(self.stat(path).st_uid).pw_name
+        except ImportError:
+            raise NotImplementedError("Path.owner() is unsupported on this system")
+
+    def group(self, path):
+        try:
+            import grp
+            return grp.getgrgid(self.stat(path).st_gid).gr_name
+        except ImportError:
+            raise NotImplementedError("Path.group() is unsupported on this system")
+
 
 _normal_accessor = _NormalAccessor()
 
@@ -856,6 +870,10 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
+    def with_stem(self, stem):
+        """Return a new path with the stem changed."""
+        return self.with_name(stem + self.suffix)
+
     def with_suffix(self, suffix):
         """Return a new path with the file suffix changed.  If the path
         has no suffix, add given suffix.  If the given suffix is an empty
@@ -1117,7 +1135,7 @@ class Path(PurePath):
         try:
             other_st = other_path.stat()
         except AttributeError:
-            other_st = os.stat(other_path)
+            other_st = self._accessor.stat(other_path)
         return os.path.samestat(st, other_st)
 
     def iterdir(self):
@@ -1202,15 +1220,13 @@ class Path(PurePath):
         """
         Return the login name of the file owner.
         """
-        import pwd
-        return pwd.getpwuid(self.stat().st_uid).pw_name
+        return self._accessor.owner(self)
 
     def group(self):
         """
         Return the group name of the file gid.
         """
-        import grp
-        return grp.getgrgid(self.stat().st_gid).gr_name
+        return self._accessor.group(self)
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -1426,9 +1442,8 @@ class Path(PurePath):
         if not self.exists() or not self.is_dir():
             return False
 
-        parent = Path(self.parent)
         try:
-            parent_dev = parent.stat().st_dev
+            parent_dev = self.parent.stat().st_dev
         except OSError:
             return False
 
@@ -1436,7 +1451,7 @@ class Path(PurePath):
         if dev != parent_dev:
             return True
         ino = self.stat().st_ino
-        parent_ino = parent.stat().st_ino
+        parent_ino = self.parent.stat().st_ino
         return ino == parent_ino
 
     def is_symlink(self):
@@ -1543,12 +1558,6 @@ class WindowsPath(Path, PureWindowsPath):
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
-    def owner(self):
-        raise NotImplementedError("Path.owner() is unsupported on this system")
-
-    def group(self):
-        raise NotImplementedError("Path.group() is unsupported on this system")
 
     def is_mount(self):
         raise NotImplementedError("Path.is_mount() is unsupported on this system")

@@ -597,8 +597,9 @@ class Formatter(object):
         if datefmt:
             s = time.strftime(datefmt, ct)
         else:
-            t = time.strftime(self.default_time_format, ct)
-            s = self.default_msec_format % (t, record.msecs)
+            s = time.strftime(self.default_time_format, ct)
+            if self.default_msec_format:
+                s = self.default_msec_format % (s, record.msecs)
         return s
 
     def formatException(self, ei):
