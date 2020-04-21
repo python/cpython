@@ -251,25 +251,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         const char *line_start;
 
         type = PyTokenizer_Get(tok, &a, &b);
-        if (type == ERRORTOKEN) {
-            err_ret->error = tok->done;
-            break;
-        }
-        if (type == ENDMARKER && started) {
-            type = NEWLINE; /* Add an extra newline */
-            started = 0;
-            /* Add the right number of dedent tokens,
-               except if a certain flag is given --
-               codeop.py uses this. */
-            if (tok->indent &&
-                !(*flags & PyPARSE_DONT_IMPLY_DEDENT))
-            {
-                tok->pendin = -tok->indent;
-                tok->indent = 0;
-            }
-        }
-        else
-            started = 1;
+
         len = (a != NULL && b != NULL) ? b - a : 0;
         str = (char *) PyObject_MALLOC(len + 1);
         if (str == NULL) {
@@ -326,6 +308,27 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
                 break;
             }
             continue;
+        }
+
+        if (type == ERRORTOKEN) {
+            err_ret->error = tok->done;
+            break;
+        }
+        if (type == ENDMARKER && started) {
+            type = NEWLINE; /* Add an extra newline */
+            started = 0;
+            /* Add the right number of dedent tokens,
+               except if a certain flag is given --
+               codeop.py uses this. */
+            if (tok->indent &&
+                !(*flags & PyPARSE_DONT_IMPLY_DEDENT))
+            {
+                tok->pendin = -tok->indent;
+                tok->indent = 0;
+            }
+        }
+        else {
+            started = 1;
         }
 
         if ((err_ret->error =
