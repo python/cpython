@@ -1392,13 +1392,14 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         if (nonascii && !verify_identifier(tok)) {
             return ERRORTOKEN;
         }
+
+        *p_start = tok->start;
+        *p_end = tok->cur;
+
         if (c == '"' || c == '\'') {
             tok->done = E_BADPREFIX;
             return ERRORTOKEN;
         }
-        *p_start = tok->start;
-        *p_end = tok->cur;
-
         /* async/await parsing block. */
         if (tok->cur - tok->start == 5 && tok->start[0] == 'a') {
             /* May be an 'async' or 'await' token.  For Python 3.7 or
