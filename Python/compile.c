@@ -4070,6 +4070,9 @@ validate_keywords(struct compiler *c, asdl_seq *keywords)
         if (key->arg == NULL) {
             continue;
         }
+        if (forbidden_name(c, key->arg, Store)) {
+            return -1;
+        }
         for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
             if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
