@@ -181,12 +181,12 @@ raise_decode_error(Parser *p)
         PyErr_Fetch(&type, &value, &tback);
         errstr = PyObject_Str(value);
         if (errstr) {
-            _PyPegen_raise_syntax_error(p, "(%s) %U", errtype, errstr);
+            RAISE_SYNTAX_ERROR("(%s) %U", errtype, errstr);
             Py_DECREF(errstr);
         }
         else {
             PyErr_Clear();
-            _PyPegen_raise_syntax_error(p, "(%s) unknown error", errtype);
+            RAISE_SYNTAX_ERROR("(%s) unknown error", errtype);
         }
         Py_XDECREF(type);
         Py_XDECREF(value);

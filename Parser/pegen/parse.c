@@ -6663,7 +6663,7 @@ atom_rule(Parser *p)
             (keyword = _PyPegen_expect_token(p, 530))
         )
         {
-            res = _PyPegen_raise_syntax_error ( p , "You found it!" );
+            res = RAISE_SYNTAX_ERROR ( "You found it!" );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
@@ -9165,7 +9165,7 @@ invalid_comprehension_rule(Parser *p)
             (for_if_clauses_var = for_if_clauses_rule(p))
         )
         {
-            res = _PyPegen_raise_syntax_error ( p , "iterable unpacking cannot be used in comprehension" );
+            res = RAISE_SYNTAX_ERROR ( "iterable unpacking cannot be used in comprehension" );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }

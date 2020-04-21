@@ -388,7 +388,7 @@ atom[expr_ty]:
     | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
     | 'None' { _Py_Constant(Py_None, NULL, EXTRA) }
-    | '__new_parser__' { _PyPegen_raise_syntax_error(p, "You found it!") }
+    | '__new_parser__' { RAISE_SYNTAX_ERROR("You found it!") }
     | &STRING strings
     | NUMBER
     | &'(' (tuple | group | genexp)
@@ -540,7 +540,7 @@ invalid_assignment:
     | a=expression ('=' | augassign) (yield_expr | star_expressions) {
         RAISE_SYNTAX_ERROR("cannot assign to %s", _PyPegen_get_expr_name(a)) }
 invalid_block:
-    | NEWLINE !INDENT { RAISE_SYNTAX_ERROR("expected an indented block") }
+    | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
     | ('[' | '(' | '{') '*' expression for_if_clauses {
         RAISE_SYNTAX_ERROR("iterable unpacking cannot be used in comprehension") }
