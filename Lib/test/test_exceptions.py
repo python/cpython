@@ -188,7 +188,7 @@ class ExceptionTests(unittest.TestCase):
                 if not isinstance(src, str):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
-                self.assertEqual(cm.exception.text.rstrip('\n'), line)
+                self.assertIn(line, cm.exception.text)
 
         check('def fact(x):\n\treturn x!\n', 2, 10)
         check('1 +\n', 1, 4)
@@ -217,6 +217,16 @@ class ExceptionTests(unittest.TestCase):
         check(b'\xce\xb1 = 0xI', 1, 6)
         check(b'# -*- coding: iso8859-7 -*-\n\xe1 = 0xI', 2, 6,
               encoding='iso8859-7')
+        check(b"""if 1:
+            def foo():
+                '''
+
+            def bar():
+                pass
+
+            def baz():
+                '''quux'''
+            """, 9, 20)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 5)
