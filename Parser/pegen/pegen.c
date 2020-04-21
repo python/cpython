@@ -60,7 +60,7 @@ _PyPegen_new_identifier(Parser *p, char *n)
                          "%.200s",
                          _PyType_Name(Py_TYPE(id2)));
             Py_DECREF(id2);
-            return NULL;
+            longjmp(p->error_env, 1);
         }
         id = id2;
     }
