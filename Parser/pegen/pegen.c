@@ -283,7 +283,7 @@ get_error_line(char *buffer)
 }
 
 void *
-_PyPegen_raise_syntax_error(Parser *p, const char *errmsg, ...)
+_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
     PyObject *value = NULL;
     PyObject *errstr = NULL;
@@ -327,7 +327,7 @@ _PyPegen_raise_syntax_error(Parser *p, const char *errmsg, ...)
     if (!value) {
         goto error;
     }
-    PyErr_SetObject(PyExc_SyntaxError, value);
+    PyErr_SetObject(errtype, value);
 
     Py_DECREF(errstr);
     Py_DECREF(value);
@@ -355,7 +355,7 @@ void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
         msg = "positional argument follows keyword argument";
     }
 
-    return _PyPegen_raise_syntax_error(p, msg);
+    return RAISE_SYNTAX_ERROR(msg);
 }
 
 #if 0
@@ -835,17 +835,17 @@ _PyPegen_run_parser(Parser *p)
             return NULL;
         }
         if (p->fill == 0) {
-            _PyPegen_raise_syntax_error(p, "error at start before reading any input");
+            RAISE_SYNTAX_ERROR("error at start before reading any input");
         }
         else {
             if (p->tokens[p->fill-1]->type == INDENT) {
-                _PyPegen_raise_syntax_error(p, "unexpected indent");
+                RAISE_INDENTATION_ERROR("unexpected indent");
             }
             else if (p->tokens[p->fill-1]->type == DEDENT) {
-                _PyPegen_raise_syntax_error(p, "unexpected unindent");
+                RAISE_INDENTATION_ERROR("unexpected unindent");
             }
             else {
-                _PyPegen_raise_syntax_error(p, "invalid syntax");
+                RAISE_SYNTAX_ERROR("invalid syntax");
             }
         }
         return NULL;
@@ -1709,7 +1709,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
 
         /* Check that we are not mixing bytes with unicode. */
         if (i != 0 && bytesmode != this_bytesmode) {
-            _PyPegen_raise_syntax_error(p, "cannot mix bytes and nonbytes literals");
+            RAISE_SYNTAX_ERROR("cannot mix bytes and nonbytes literals");
             Py_XDECREF(s);
             goto error;
         }
@@ -1775,12 +1775,12 @@ error:
             PyErr_Fetch(&type, &value, &tback);
             errstr = PyObject_Str(value);
             if (errstr) {
-                _PyPegen_raise_syntax_error(p, "(%s) %U", errtype, errstr);
+                RAISE_SYNTAX_ERROR("(%s) %U", errtype, errstr);
                 Py_DECREF(errstr);
             }
             else {
                 PyErr_Clear();
-                _PyPegen_raise_syntax_error(p, "(%s) unknown error", errtype);
+                RAISE_SYNTAX_ERROR("(%s) unknown error", errtype);
             }
             Py_XDECREF(type);
             Py_XDECREF(value);
