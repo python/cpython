@@ -1,5 +1,6 @@
 import ast
 import os
+import sys
 import _peg_parser as peg_parser
 import unittest
 from pathlib import PurePath
@@ -719,6 +720,7 @@ class ASTGenerationTest(unittest.TestCase):
                 f"Actual error message does not match expexted for {source}"
             )
 
+    @unittest.skipIf(sys.flags.use_peg, "This tests nothing for now, since compile uses pegen as well")
     @unittest.expectedFailure
     def test_correct_but_known_to_fail_ast_generation_on_source_files(self) -> None:
         for source in GOOD_BUT_FAIL_SOURCES:

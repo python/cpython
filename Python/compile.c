@@ -3492,6 +3492,17 @@ inplace_binop(operator_ty op)
 }
 
 static int
+forbidden_name(struct compiler *c, identifier name, expr_context_ty ctx)
+{
+
+    if (ctx == Store && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        compiler_error(c, "cannot assign to __debug__");
+        return 1;
+    }
+    return 0;
+}
+
+static int
 compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 {
     int op, scope;
@@ -3504,6 +3515,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
+
+    if (forbidden_name(c, name, ctx))
+        return 0;
 
     mangled = _Py_Mangle(c->u->u_private, name);
     if (!mangled)
@@ -5013,6 +5027,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case Store:
+            if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx))
+                return 0;
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:

@@ -60,7 +60,7 @@ _PyPegen_new_identifier(Parser *p, char *n)
                          "%.200s",
                          _PyType_Name(Py_TYPE(id2)));
             Py_DECREF(id2);
-            return NULL;
+            longjmp(p->error_env, 1);
         }
         id = id2;
     }
@@ -166,6 +166,65 @@ _PyPegen_get_expr_name(expr_ty e)
     }
 }
 
+static void
+raise_decode_error(Parser *p)
+{
+    const char *errtype = NULL;
+    if (PyErr_ExceptionMatches(PyExc_UnicodeError)) {
+        errtype = "unicode error";
+    }
+    else if (PyErr_ExceptionMatches(PyExc_ValueError)) {
+        errtype = "value error";
+    }
+    if (errtype) {
+        PyObject *type, *value, *tback, *errstr;
+        PyErr_Fetch(&type, &value, &tback);
+        errstr = PyObject_Str(value);
+        if (errstr) {
+            RAISE_SYNTAX_ERROR("(%s) %U", errtype, errstr);
+            Py_DECREF(errstr);
+        }
+        else {
+            PyErr_Clear();
+            RAISE_SYNTAX_ERROR("(%s) unknown error", errtype);
+        }
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(tback);
+    }
+}
+
+static void
+raise_tokenizer_init_error(PyObject *filename)
+{
+    if (!(PyErr_ExceptionMatches(PyExc_LookupError)
+          || PyErr_ExceptionMatches(PyExc_ValueError)
+          || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) {
+        return;
+    }
+    PyObject *type, *value, *tback, *errstr;
+    PyErr_Fetch(&type, &value, &tback);
+    errstr = PyObject_Str(value);
+
+    Py_INCREF(Py_None);
+    PyObject *tmp = Py_BuildValue("(OiiN)", filename, 0, -1, Py_None);
+    if (!tmp) {
+        goto error;
+    }
+
+    value = PyTuple_Pack(2, errstr, tmp);
+    Py_DECREF(tmp);
+    if (!value) {
+        goto error;
+    }
+    PyErr_SetObject(PyExc_SyntaxError, value);
+
+error:
+    Py_XDECREF(type);
+    Py_XDECREF(value);
+    Py_XDECREF(tback);
+}
+
 static int
 tokenizer_string_error(Parser *p)
 {
@@ -222,9 +281,6 @@ tokenizer_error(Parser *p)
         case E_TOKEN:
             msg = "invalid token";
             break;
-        case E_EOF:
-            msg = "unexpected EOF while parsing";
-            break;
         case E_IDENTIFIER:
             msg = "invalid character in identifier";
             break;
@@ -252,10 +308,9 @@ tokenizer_error(Parser *p)
             errtype = PyExc_IndentationError;
             msg = "too many levels of indentation";
             break;
-        case E_DECODE: {
-            msg = "unknown decode error";
-            break;
-        }
+        case E_DECODE:
+            raise_decode_error(p);
+            return -1;
         case E_LINECONT:
             msg = "unexpected character after line continuation character";
             break;
@@ -442,6 +497,13 @@ _PyPegen_fill_token(Parser *p)
     int type = PyTokenizer_Get(p->tok, &start, &end);
     if (type == ERRORTOKEN) {
         return tokenizer_error(p);
+    }
+    if (type == ENDMARKER && p->start_rule == Py_single_input && p->parsing_started) {
+        type = NEWLINE; /* Add an extra newline */
+        p->parsing_started = 0;
+    }
+    else {
+        p->parsing_started = 1;
     }
 
     if (p->fill == p->size) {
@@ -816,6 +878,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
     p->errcode = errcode;
     p->arena = arena;
     p->start_rule = start_rule;
+    p->parsing_started = 0;
     p->normalize = NULL;
 
     return p;
@@ -836,6 +899,9 @@ _PyPegen_run_parser(Parser *p)
         }
         if (p->fill == 0) {
             RAISE_SYNTAX_ERROR("error at start before reading any input");
+        }
+        else if (p->tok->done == E_EOF) {
+            RAISE_SYNTAX_ERROR("unexpected EOF while parsing");
         }
         else {
             if (p->tokens[p->fill-1]->type == INDENT) {
@@ -861,6 +927,10 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
 {
     struct tok_state *tok = PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
+        if (PyErr_Occurred()) {
+            raise_tokenizer_init_error(filename_ob);
+            return NULL;
+        }
         return NULL;
     }
     // This transfers the ownership to the tokenizer
@@ -911,6 +981,9 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
         tok = PyTokenizer_FromString(str, 1);
     }
     if (tok == NULL) {
+        if (PyErr_Occurred()) {
+            raise_tokenizer_init_error(filename_ob);
+        }
         return NULL;
     }
     // This transfers the ownership to the tokenizer
@@ -1763,29 +1836,7 @@ error:
     Py_XDECREF(bytes_str);
     _PyPegen_FstringParser_Dealloc(&state);
     if (PyErr_Occurred()) {
-        const char *errtype = NULL;
-        if (PyErr_ExceptionMatches(PyExc_UnicodeError)) {
-            errtype = "unicode error";
-        }
-        else if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            errtype = "value error";
-        }
-        if (errtype) {
-            PyObject *type, *value, *tback, *errstr;
-            PyErr_Fetch(&type, &value, &tback);
-            errstr = PyObject_Str(value);
-            if (errstr) {
-                RAISE_SYNTAX_ERROR("(%s) %U", errtype, errstr);
-                Py_DECREF(errstr);
-            }
-            else {
-                PyErr_Clear();
-                RAISE_SYNTAX_ERROR("(%s) unknown error", errtype);
-            }
-            Py_XDECREF(type);
-            Py_XDECREF(value);
-            Py_XDECREF(tback);
-        }
+        raise_decode_error(p);
     }
     return NULL;
 }
