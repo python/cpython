@@ -80,6 +80,12 @@ round(double x)
 }
 #endif /* HAVE_ROUND */
 
+#include <limits.h>
+#ifdef _MSC_VER
+#  include <intrin.h>
+#  define __builtin_clz(VALUE) ({ int clz = 0; _BitScanReverse (&clz, VALUE); clz; })
+#endif
+
 unsigned int _Py_bit_length(unsigned long d) {
-   return d ? __CHAR_BIT__ * sizeof (d) - __builtin_clz (d) : 0;
+   return d ? CHAR_BIT * sizeof (d) - __builtin_clz (d) : 0;
 }
