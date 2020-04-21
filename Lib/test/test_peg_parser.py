@@ -1,5 +1,6 @@
 import ast
 import os
+import sys
 import _peg_parser as peg_parser
 import unittest
 from pathlib import PurePath
@@ -693,6 +694,7 @@ EXPRESSIONS_TEST_IDS, EXPRESSIONS_TEST_SOURCES = prepare_test_cases(
 
 
 class ASTGenerationTest(unittest.TestCase):
+    @unittest.skipIf(sys.flags.use_peg, "This tests nothing for now, since compile used pegen as well")
     def test_correct_ast_generation_on_source_files(self) -> None:
         self.maxDiff = None
         for source in TEST_SOURCES:
@@ -719,6 +721,7 @@ class ASTGenerationTest(unittest.TestCase):
                 f"Actual error message does not match expexted for {source}"
             )
 
+    @unittest.skipIf(sys.flags.use_peg, "This tests nothing for now, since compile used pegen as well")
     @unittest.expectedFailure
     def test_correct_but_known_to_fail_ast_generation_on_source_files(self) -> None:
         for source in GOOD_BUT_FAIL_SOURCES:
@@ -730,6 +733,7 @@ class ASTGenerationTest(unittest.TestCase):
                 f"Wrong AST generation for source: {source}",
             )
 
+    @unittest.skipIf(sys.flags.use_peg, "This tests nothing for now, since compile used pegen as well")
     def test_correct_ast_generation_without_pos_info(self) -> None:
         for source in GOOD_BUT_FAIL_SOURCES:
             actual_ast = peg_parser.parse_string(source)
@@ -746,6 +750,7 @@ class ASTGenerationTest(unittest.TestCase):
                 peg_parser.parse_string(dedent(source))
             self.assertEqual(error_text, se.exception.text)
 
+    @unittest.skipIf(sys.flags.use_peg, "This tests nothing for now, since compile used pegen as well")
     def test_correct_ast_generatrion_eval(self) -> None:
         for source in EXPRESSIONS_TEST_SOURCES:
             actual_ast = peg_parser.parse_string(source, mode='eval')
