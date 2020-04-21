@@ -79,26 +79,30 @@ typedef enum kind {
 #define BITS_PER_BLOCK 3
 
 static inline int64_t
-push_block(int64_t stack, Kind kind) {
+push_block(int64_t stack, Kind kind)
+{
     assert(stack < ((int64_t)1)<<(BITS_PER_BLOCK*CO_MAXBLOCKS));
     return (stack << BITS_PER_BLOCK) | kind;
 }
 
 static inline int64_t
-pop_block(int64_t stack) {
+pop_block(int64_t stack)
+{
     assert(stack > 0);
     return stack >> BITS_PER_BLOCK;
 }
 
 static inline Kind
-top_block(int64_t stack) {
+top_block(int64_t stack)
+{
     return stack & ((1<<BITS_PER_BLOCK)-1);
 }
 
 static int64_t *
 markblocks(PyCodeObject *code_obj, int len)
 {
-    const _Py_CODEUNIT *code = (const _Py_CODEUNIT *)PyBytes_AsString(code_obj->co_code);
+    const _Py_CODEUNIT *code =
+        (const _Py_CODEUNIT *)PyBytes_AS_STRING(code_obj->co_code);
     int64_t *blocks = PyMem_New(int64_t, len+1);
     int i, j, opcode;
 
@@ -204,7 +208,8 @@ markblocks(PyCodeObject *code_obj, int len)
 }
 
 static int
-compatible_block_stack(int64_t from_stack, int64_t to_stack) {
+compatible_block_stack(int64_t from_stack, int64_t to_stack)
+{
     if (to_stack < 0) {
         return 0;
     }
@@ -215,7 +220,8 @@ compatible_block_stack(int64_t from_stack, int64_t to_stack) {
 }
 
 static const char *
-explain_incompatible_block_stack(int64_t to_stack) {
+explain_incompatible_block_stack(int64_t to_stack)
+{
     Kind target_kind = top_block(to_stack);
     switch(target_kind) {
         case Except:
@@ -235,8 +241,11 @@ static int *
 marklines(PyCodeObject *code, int len)
 {
     int *linestarts = PyMem_New(int, len);
-    Py_ssize_t size = PyBytes_Size(code->co_lnotab) / 2;
-    unsigned char *p = (unsigned char*)PyBytes_AsString(code->co_lnotab);
+    if (linestarts == NULL) {
+        return NULL;
+    }
+    Py_ssize_t size = PyBytes_GET_SIZE(code->co_lnotab) / 2;
+    unsigned char *p = (unsigned char*)PyBytes_AS_STRING(code->co_lnotab);
     int line = code->co_firstlineno;
     int addr = 0;
     int index = 0;
@@ -388,7 +397,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    int len = PyBytes_Size(f->f_code->co_code)/sizeof(_Py_CODEUNIT);
+    int len = PyBytes_GET_SIZE(f->f_code->co_code)/sizeof(_Py_CODEUNIT);
     int *lines = marklines(f->f_code, len);
     if (lines == NULL) {
         return -1;
@@ -399,6 +408,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         PyErr_Format(PyExc_ValueError,
                     "line %d comes after the current code block",
                     (int)l_new_lineno);
+        PyMem_Free(lines);
         return -1;
     }
 
