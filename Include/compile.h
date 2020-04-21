@@ -18,6 +18,11 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
                    CO_FUTURE_UNICODE_LITERALS | CO_FUTURE_BARRY_AS_BDFL | \
                    CO_FUTURE_GENERATOR_STOP | CO_FUTURE_ANNOTATIONS)
 #define PyCF_MASK_OBSOLETE (CO_NESTED)
+
+/* bpo-39562: These constant values are changed in Python 3.9
+   to prevent collision with compiler flags. CO_FUTURE_ and PyCF_
+   constants must be kept unique. PyCF_ constants can use bits from 
+   0x0100 to 0x10000. CO_FUTURE_ constants use bits starting at 0x20000. */
 #define PyCF_SOURCE_IS_UTF8  0x0100
 #define PyCF_DONT_IMPLY_DEDENT 0x0200
 #define PyCF_ONLY_AST 0x0400

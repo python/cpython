@@ -89,7 +89,9 @@ typedef struct {
 #define CO_ASYNC_GENERATOR      0x0200
 
 /* bpo-39562: These constant values are changed in Python 3.9
-              to prevent collision with compiler flags. */
+   to prevent collision with compiler flags. CO_FUTURE_ and PyCF_
+   constants must be kept unique. PyCF_ constants can use bits from
+   0x0100 to 0x10000. CO_FUTURE_ constants use bits starting at 0x20000. */
 #define CO_FUTURE_DIVISION      0x20000
 #define CO_FUTURE_ABSOLUTE_IMPORT 0x40000 /* do absolute imports by default */
 #define CO_FUTURE_WITH_STATEMENT  0x80000

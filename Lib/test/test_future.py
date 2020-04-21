@@ -80,16 +80,17 @@ class FutureTest(unittest.TestCase):
     def test_ensure_flags_dont_clash(self):
         # bpo-39562: test that future flags and compiler flags doesn't clash
 
-        # obtain future flags (CO_***) from the __future__ module
-        flags = [
-            getattr(__future__, future).compiler_flag
+        # obtain future flags (CO_FUTURE_***) from the __future__ module
+        flags = {
+            f"CO_FUTURE_{future.upper()}": getattr(__future__, future).compiler_flag
             for future in __future__.all_feature_names
-        ]
+        }
         # obtain some of the exported compiler flags (PyCF_***) from the ast module
-        flags.extend(
-            getattr(ast, flag) for flag in dir(ast) if flag.startswith("PyCF_")
-        )
-        self.assertCountEqual(set(flags), flags)
+        flags |= {
+            flag: getattr(ast, flag)
+            for flag in dir(ast) if flag.startswith("PyCF_")
+        }
+        self.assertCountEqual(set(flags.values()), flags.values())
 
     def test_parserhack(self):
         # test that the parser.c::future_hack function works as expected
