@@ -883,8 +883,7 @@ def uname():
 
     vals = system, node, release, version, machine
     # Replace 'unknown' values with the more portable ''
-    _uname_cache = uname_result(*map(_unknown_as_blank, vals))
-    return _uname_cache
+    return uname_result(*map(_unknown_as_blank, vals))
 
 ### Direct interfaces to some of the uname() return values
 
