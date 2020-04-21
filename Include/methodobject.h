@@ -13,7 +13,7 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
-#define PyCFunction_Check(op) Py_IS_TYPE(op, &PyCFunction_Type)
+#define PyCFunction_Check(op) (Py_IS_TYPE(op, &PyCFunction_Type) || (PyType_IsSubtype(Py_TYPE(op), &PyCFunction_Type)))
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
@@ -22,6 +22,9 @@ typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
 typedef PyObject *(*_PyCFunctionFastWithKeywords) (PyObject *,
                                                    PyObject *const *, Py_ssize_t,
                                                    PyObject *);
+typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
+                               size_t, PyObject *);
+
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
 PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
@@ -40,6 +43,13 @@ typedef struct PyMethodDef PyMethodDef;
 #define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
 PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
                                          PyObject *);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+#define PyCFunction_NewEx(ML, SELF, MOD) PyCMethod_New((ML), (SELF), (MOD), NULL)
+PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
+                                     PyObject *, PyTypeObject *);
+#endif
+
 
 /* Flag passed to newmethodobject */
 /* #define METH_OLDARGS  0x0000   -- unsupported now */
@@ -72,6 +82,18 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 #else
 #define METH_STACKLESS 0x0000
 #endif
+
+/* METH_METHOD means the function stores an
+ * additional reference to the class that defines it;
+ * both self and class are passed to it.
+ * It uses PyCMethodObject instead of PyCFunctionObject.
+ * May not be combined with METH_NOARGS, METH_O, METH_CLASS or METH_STATIC.
+ */
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+#define METH_METHOD 0x0200
+#endif
+
 
 #ifndef Py_LIMITED_API
 

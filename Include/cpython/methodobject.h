@@ -1,6 +1,9 @@
 #ifndef Py_CPYTHON_METHODOBJECT_H
 #  error "this header file must not be included directly"
 #endif
+
+PyAPI_DATA(PyTypeObject) PyCMethod_Type;
+
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyCFunction_GET_FUNCTION(func) \
@@ -10,6 +13,10 @@
          NULL : ((PyCFunctionObject *)func) -> m_self)
 #define PyCFunction_GET_FLAGS(func) \
         (((PyCFunctionObject *)func) -> m_ml -> ml_flags)
+#define PyCFunction_GET_CLASS(func) \
+    (((PyCFunctionObject *)func) -> m_ml -> ml_flags & METH_METHOD ? \
+         ((PyCMethodObject *)func) -> mm_class : NULL)
+
 typedef struct {
     PyObject_HEAD
     PyMethodDef *m_ml; /* Description of the C function to call */
@@ -18,3 +25,8 @@ typedef struct {
     PyObject    *m_weakreflist; /* List of weak references */
     vectorcallfunc vectorcall;
 } PyCFunctionObject;
+
+typedef struct {
+    PyCFunctionObject func;
+    PyTypeObject *mm_class; /* Class that defines this method */
+} PyCMethodObject;
