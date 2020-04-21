@@ -80,17 +80,61 @@ round(double x)
 }
 #endif /* HAVE_ROUND */
 
-static const unsigned int BitLengthTable[32] = {
-    0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
-};
+#if defined(HAVE_BUILTIN_CLZL) || defined(HAVE_BUILTIN_BSRL)
+
+#include <limits.h>
+
+#  ifdef MS_WINDOWS
+#    include <intrin.h>
+#    pragma intrinsic(_BitScanReverse)
+
+static inline int
+__builtin_clzl(unsigned long x)
+ {
+   unsigned long clz = 0;
+   _BitScanReverse (&clz, x);
+   return (clz + 1);
+ }
+#  endif /* MS_WINDOWS */
 
 unsigned int _Py_bit_length(unsigned long d) {
-   unsigned int d_bits = 0;
-   while (d >= 32) {
-       d_bits += 6;
-       d >>= 6;
-   }
-   d_bits += BitLengthTable[d];
-   return d_bits;
+   return d ? CHAR_BIT * sizeof (d) - __builtin_clzl (d) : 0;
 }
+
+#else /* !(defined(HAVE_BUILTIN_CLZL) || defined(HAVE_BUILTIN_BSRL)) */
+
+unsigned int _Py_bit_length(unsigned long d) {
+#if SIZEOF_LONG > 4
+#  if SIZEOF_LONG > 8
+#  error _Py_bit_length should be fixed for sizeof (unsigned long) > 8
+#  endif
+  
+  int shift = (d >> (1 << 5) != 0) << 5;
+  unsigned int ui_value = d >> shift;
+#else /* 32 bits and less */
+  int shift = 0;
+  unsigned int ui_value = d;
+#endif /* 64/32 bits */
+  int bits = shift;
+
+  shift = (ui_value >> (1 << 4) != 0) << 4;
+  bits |= shift;
+  ui_value >>= shift;
+
+  shift = (ui_value >> (1 << 3) != 0) << 3;
+  bits |= shift;
+  ui_value >>= shift;
+
+  shift = (ui_value >> (1 << 2) != 0) << 2;
+  bits |= shift;
+  ui_value >>= shift;
+
+  shift = (ui_value >> (1 << 1) != 0) << 1;
+  bits |= shift;
+  ui_value >>= shift;
+
+  bits += ui_value ^ (ui_value > 2);
+  return (bits);
+}
+
+#endif /* defined(HAVE_BUILTIN_CLZL) || defined(HAVE_BUILTIN_BSRL) */

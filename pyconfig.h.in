@@ -115,6 +115,12 @@
 /* Has builtin atomics */
 #undef HAVE_BUILTIN_ATOMIC
 
+/* Has _BitScanReverse */
+#undef HAVE_BUILTIN_BSRL
+
+/* Has __builtin_clzl */
+#undef HAVE_BUILTIN_CLZL
+
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
 

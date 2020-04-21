@@ -5532,6 +5532,22 @@ if test "$have_builtin_atomic" = yes; then
     AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin atomics])
 fi
 
+AC_MSG_CHECKING(for __builtin_clzl)
+AC_LINK_IFELSE([ AC_LANG_SOURCE([[ int main() { return (__builtin_clzl (1)); } ]]) ], [have_builtin_clzl=yes], [have_builtin_clzl=no])
+AC_MSG_RESULT($have_builtin_clzl)
+
+if test "$have_builtin_clzl" = yes; then
+    AC_DEFINE(HAVE_BUILTIN_CLZL, 1, [Has __builtin_clzl])
+fi
+
+AC_MSG_CHECKING(for _BitScanReverse)
+AC_LINK_IFELSE([ AC_LANG_SOURCE([[ int main() { return (_BitScanReverse ((void*)0, 1)); } ]]) ], [have_builtin_bsrl=yes], [have_builtin_bsrl=no])
+AC_MSG_RESULT($have_builtin_bsrl)
+
+if test "$have_builtin_bsrl" = yes; then
+    AC_DEFINE(HAVE_BUILTIN_BSRL, 1, [Has _BitScanReverse])
+fi
+
 # ensurepip option
 AC_MSG_CHECKING(for ensurepip)
 AC_ARG_WITH(ensurepip,

@@ -16955,6 +16955,50 @@ $as_echo "#define HAVE_BUILTIN_ATOMIC 1" >>confdefs.h
 
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_clzl" >&5
+$as_echo_n "checking for __builtin_clzl... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+  int main() { return (__builtin_clzl (1)); }
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  have_builtin_clzl=yes
+else
+  have_builtin_clzl=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_builtin_clzl" >&5
+$as_echo "$have_builtin_clzl" >&6; }
+
+if test "$have_builtin_clzl" = yes; then
+
+$as_echo "#define HAVE_BUILTIN_CLZL 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _BitScanReverse" >&5
+$as_echo_n "checking for _BitScanReverse... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+  int main() { return (_BitScanReverse ((void*)0, 1)); }
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  have_builtin_bsrl=yes
+else
+  have_builtin_bsrl=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_builtin_bsrl" >&5
+$as_echo "$have_builtin_bsrl" >&6; }
+
+if test "$have_builtin_bsrl" = yes; then
+
+$as_echo "#define HAVE_BUILTIN_BSRL 1" >>confdefs.h
+
+fi
+
 # ensurepip option
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ensurepip" >&5
 $as_echo_n "checking for ensurepip... " >&6; }
