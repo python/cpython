@@ -2300,18 +2300,6 @@ class _BasePathTest(object):
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
-
-class PathTest(_BasePathTest, unittest.TestCase):
-    cls = pathlib.Path
-
-    def test_class_getitem(self):
-        self.assertIs(self.cls[str], self.cls)
-
-    def test_concrete_class(self):
-        p = self.cls('a')
-        self.assertIs(type(p),
-            pathlib.WindowsPath if os.name == 'nt' else pathlib.PosixPath)
-
     def test_kwargs(self):
         with self.assertRaisesRegex(TypeError, 'got an unexpected keyword argument'):
             self.cls(arg=None)
@@ -2326,6 +2314,18 @@ class PathTest(_BasePathTest, unittest.TestCase):
         _kwargs = {"a": 1, "b": 2}
         p = _PathSubclass(**_kwargs)
         self.assertEqual(p.kwargs, _kwargs)
+
+
+class PathTest(_BasePathTest, unittest.TestCase):
+    cls = pathlib.Path
+
+    def test_class_getitem(self):
+        self.assertIs(self.cls[str], self.cls)
+
+    def test_concrete_class(self):
+        p = self.cls('a')
+        self.assertIs(type(p),
+            pathlib.WindowsPath if os.name == 'nt' else pathlib.PosixPath)
 
     def test_unsupported_flavour(self):
         if os.name == 'nt':
