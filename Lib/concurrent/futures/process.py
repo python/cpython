@@ -59,19 +59,6 @@ import itertools
 import sys
 import traceback
 
-# Workers are created as daemon threads and processes. This is done to allow the
-# interpreter to exit when there are still idle processes in a
-# ProcessPoolExecutor's process pool (i.e. shutdown() was not called). However,
-# allowing workers to die with the interpreter has two undesirable properties:
-#   - The workers would still be running during interpreter shutdown,
-#     meaning that they would fail in unpredictable ways.
-#   - The workers could be killed while evaluating a work item, which could
-#     be bad if the callable being evaluated has external side-effects e.g.
-#     writing to a file.
-#
-# To work around this problem, an exit handler is installed which tells the
-# workers to exit when their work queues are empty and then waits until the
-# threads/processes finish.
 
 _threads_wakeups = weakref.WeakKeyDictionary()
 _global_shutdown = False
@@ -106,6 +93,12 @@ def _python_exit():
         thread_wakeup.wakeup()
     for t, _ in items:
         t.join()
+
+# Register for `_python_exit()` to be called just before joining all
+# non-daemon threads. This is used instead of `atexit.register()` for
+# compatibility with subinterpreters, which no longer support daemon threads.
+# See bpo-39812 for context.
+threading._register_atexit(_python_exit)
 
 # Controls how many more calls than processes will be queued in the call queue.
 # A smaller number will mean that processes spend more time idle waiting for
@@ -306,9 +299,7 @@ class _ExecutorManagerThread(threading.Thread):
         #     {5: <_WorkItem...>, 6: <_WorkItem...>, ...}
         self.pending_work_items = executor._pending_work_items
 
-        # Set this thread to be daemonized
         super().__init__()
-        self.daemon = True
 
     def run(self):
         # Main loop for the executor manager thread.
@@ -732,5 +723,3 @@ class ProcessPoolExecutor(_base.Executor):
             self._executor_manager_thread_wakeup = None
 
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
-
-atexit.register(_python_exit)

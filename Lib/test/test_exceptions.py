@@ -994,7 +994,7 @@ class ExceptionTests(unittest.TestCase):
         # finalization of these locals.
         code = """if 1:
             import sys
-            from _testcapi import get_recursion_depth
+            from _testinternalcapi import get_recursion_depth
 
             class MyException(Exception): pass
 

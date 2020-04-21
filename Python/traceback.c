@@ -801,7 +801,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = _PyThreadState_GetFrame(tstate);
+    frame = tstate->frame;
     if (frame == NULL) {
         PUTS(fd, "<no Python frame>\n");
         return;

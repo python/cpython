@@ -10,16 +10,17 @@ from test import support
 from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
                           change_cwd)
 import builtins
-import os
-import sys
-import re
 import encodings
-import urllib.request
-import urllib.error
+import glob
+import os
+import re
 import shutil
 import subprocess
+import sys
 import sysconfig
 import tempfile
+import urllib.error
+import urllib.request
 from unittest import mock
 from copy import copy
 
@@ -266,11 +267,18 @@ class HelperFunctionsTests(unittest.TestCase):
         dirs = site.getsitepackages()
         if os.sep == '/':
             # OS X, Linux, FreeBSD, etc
-            self.assertEqual(len(dirs), 1)
+            if sys.platlibdir != "lib":
+                self.assertEqual(len(dirs), 2)
+                wanted = os.path.join('xoxo', sys.platlibdir,
+                                      'python%d.%d' % sys.version_info[:2],
+                                      'site-packages')
+                self.assertEqual(dirs[0], wanted)
+            else:
+                self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'lib',
                                   'python%d.%d' % sys.version_info[:2],
                                   'site-packages')
-            self.assertEqual(dirs[0], wanted)
+            self.assertEqual(dirs[-1], wanted)
         else:
             # other platforms
             self.assertEqual(len(dirs), 2)
@@ -512,6 +520,23 @@ class ImportSideEffectTests(unittest.TestCase):
 class StartupImportTests(unittest.TestCase):
 
     def test_startup_imports(self):
+        # Get sys.path in isolated mode (python3 -I)
+        popen = subprocess.Popen([sys.executable, '-I', '-c',
+                                  'import sys; print(repr(sys.path))'],
+                                 stdout=subprocess.PIPE,
+                                 encoding='utf-8')
+        stdout = popen.communicate()[0]
+        self.assertEqual(popen.returncode, 0, repr(stdout))
+        isolated_paths = eval(stdout)
+
+        # bpo-27807: Even with -I, the site module executes all .pth files
+        # found in sys.path (see site.addpackage()). Skip the test if at least
+        # one .pth file is found.
+        for path in isolated_paths:
+            pth_files = glob.glob(os.path.join(path, "*.pth"))
+            if pth_files:
+                self.skipTest(f"found {len(pth_files)} .pth files in: {path}")
+
         # This tests checks which modules are loaded by Python when it
         # initially starts upon startup.
         popen = subprocess.Popen([sys.executable, '-I', '-v', '-c',
@@ -520,6 +545,7 @@ class StartupImportTests(unittest.TestCase):
                                  stderr=subprocess.PIPE,
                                  encoding='utf-8')
         stdout, stderr = popen.communicate()
+        self.assertEqual(popen.returncode, 0, (stdout, stderr))
         modules = eval(stdout)
 
         self.assertIn('site', modules)

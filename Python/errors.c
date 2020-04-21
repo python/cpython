@@ -5,6 +5,7 @@
 #include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
+#include "pycore_sysmodule.h"
 #include "pycore_traceback.h"
 
 #ifndef __STDC__
@@ -1410,7 +1411,7 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
         goto default_hook;
     }
 
-    if (PySys_Audit("sys.unraisablehook", "OO", hook, hook_args) < 0) {
+    if (_PySys_Audit(tstate, "sys.unraisablehook", "OO", hook, hook_args) < 0) {
         Py_DECREF(hook_args);
         err_msg_str = "Exception ignored in audit hook";
         obj = NULL;

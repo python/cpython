@@ -99,6 +99,7 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B734", "\U0002B734")
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B740", "\U0002B740")
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B81D", "\U0002B81D")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-3134A", "\U0003134A")
 
     def test_bmp_characters(self):
         for code in range(0x10000):

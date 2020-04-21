@@ -1139,6 +1139,17 @@ config_init_program_name(PyConfig *config)
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
+
+            /*
+             * This environment variable is used to communicate between
+             * the stub launcher and the real interpreter and isn't needed
+             * beyond this point.
+             *
+             * Clean up to avoid problems when launching other programs
+             * later on.
+             */
+            (void)unsetenv("__PYVENV_LAUNCHER__");
+
             return _PyStatus_OK();
         }
     }
@@ -2572,8 +2583,8 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* pre config */
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    const PyPreConfig *pre_config = &_PyRuntime.preconfig;
+    PyThreadState *tstate = _PyThreadState_GET();
+    const PyPreConfig *pre_config = &tstate->interp->runtime->preconfig;
     dict = _PyPreConfig_AsDict(pre_config);
     if (dict == NULL) {
         goto error;
@@ -2584,7 +2595,7 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* core config */
-    const PyConfig *config = &interp->config;
+    const PyConfig *config = &tstate->interp->config;
     dict = config_as_dict(config);
     if (dict == NULL) {
         goto error;

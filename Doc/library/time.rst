@@ -774,6 +774,16 @@ These constants are used as parameters for :func:`clock_getres` and
 
    .. versionadded:: 3.7
 
+.. data:: CLOCK_TAI
+
+   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/nist-time-frequently-asked-questions-faq#tai>`_
+
+   The system must have a current leap second table in order for this to give
+   the correct answer.  PTP or NTP software can maintain a leap second table.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.9
 
 .. data:: CLOCK_THREAD_CPUTIME_ID
 
@@ -804,7 +814,6 @@ These constants are used as parameters for :func:`clock_getres` and
    .. availability:: macOS 10.12 and newer.
 
    .. versionadded:: 3.8
-
 
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.

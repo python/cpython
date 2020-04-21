@@ -7993,10 +7993,6 @@ PyInit__pickle(void)
         return m;
     }
 
-    if (PyType_Ready(&Unpickler_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&Pickler_Type) < 0)
-        return NULL;
     if (PyType_Ready(&Pdata_Type) < 0)
         return NULL;
     if (PyType_Ready(&PicklerMemoProxyType) < 0)
@@ -8010,16 +8006,15 @@ PyInit__pickle(void)
         return NULL;
 
     /* Add types */
-    Py_INCREF(&Pickler_Type);
-    if (PyModule_AddObject(m, "Pickler", (PyObject *)&Pickler_Type) < 0)
+    if (PyModule_AddType(m, &Pickler_Type) < 0) {
         return NULL;
-    Py_INCREF(&Unpickler_Type);
-    if (PyModule_AddObject(m, "Unpickler", (PyObject *)&Unpickler_Type) < 0)
+    }
+    if (PyModule_AddType(m, &Unpickler_Type) < 0) {
         return NULL;
-    Py_INCREF(&PyPickleBuffer_Type);
-    if (PyModule_AddObject(m, "PickleBuffer",
-                           (PyObject *)&PyPickleBuffer_Type) < 0)
+    }
+    if (PyModule_AddType(m, &PyPickleBuffer_Type) < 0) {
         return NULL;
+    }
 
     st = _Pickle_GetState(m);
 

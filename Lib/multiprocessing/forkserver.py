@@ -237,14 +237,8 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                             break
                         child_w = pid_to_fd.pop(pid, None)
                         if child_w is not None:
-                            if os.WIFSIGNALED(sts):
-                                returncode = -os.WTERMSIG(sts)
-                            else:
-                                if not os.WIFEXITED(sts):
-                                    raise AssertionError(
-                                        "Child {0:n} status is {1:n}".format(
-                                            pid,sts))
-                                returncode = os.WEXITSTATUS(sts)
+                            returncode = os.waitstatus_to_exitcode(sts)
+
                             # Send exit code to client process
                             try:
                                 write_signed(child_w, returncode)

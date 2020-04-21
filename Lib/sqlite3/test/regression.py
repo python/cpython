@@ -68,7 +68,7 @@ class RegressionTests(unittest.TestCase):
     def CheckColumnNameWithSpaces(self):
         cur = self.con.cursor()
         cur.execute('select 1 as "foo bar [datetime]"')
-        self.assertEqual(cur.description[0][0], "foo bar")
+        self.assertEqual(cur.description[0][0], "foo bar [datetime]")
 
         cur.execute('select 1 as "foo baz"')
         self.assertEqual(cur.description[0][0], "foo baz")

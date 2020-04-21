@@ -193,22 +193,30 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
 }
 
 static PyObject *
-_pysqlite_build_column_name(const char* colname)
+_pysqlite_build_column_name(pysqlite_Cursor *self, const char *colname)
 {
     const char* pos;
+    Py_ssize_t len;
 
     if (!colname) {
         Py_RETURN_NONE;
     }
 
-    for (pos = colname;; pos++) {
-        if (*pos == 0 || *pos == '[') {
-            if ((*pos == '[') && (pos > colname) && (*(pos-1) == ' ')) {
-                pos--;
+    if (self->connection->detect_types & PARSE_COLNAMES) {
+        for (pos = colname; *pos; pos++) {
+            if (*pos == '[') {
+                if ((pos != colname) && (*(pos-1) == ' ')) {
+                    pos--;
+                }
+                break;
             }
-            return PyUnicode_FromStringAndSize(colname, pos - colname);
         }
+        len = pos - colname;
     }
+    else {
+        len = strlen(colname);
+    }
+    return PyUnicode_FromStringAndSize(colname, len);
 }
 
 /*
@@ -370,6 +378,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
     PyObject* result;
     int numcols;
     PyObject* descriptor;
+    PyObject* column_name;
     PyObject* second_argument = NULL;
     sqlite_int64 lastrowid;
 
@@ -536,7 +545,13 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
                 if (!descriptor) {
                     goto error;
                 }
-                PyTuple_SetItem(descriptor, 0, _pysqlite_build_column_name(sqlite3_column_name(self->statement->st, i)));
+                column_name = _pysqlite_build_column_name(self,
+                                sqlite3_column_name(self->statement->st, i));
+                if (!column_name) {
+                    Py_DECREF(descriptor);
+                    goto error;
+                }
+                PyTuple_SetItem(descriptor, 0, column_name);
                 Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 1, Py_None);
                 Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 2, Py_None);
                 Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 3, Py_None);
