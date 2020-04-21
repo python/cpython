@@ -281,9 +281,6 @@ tokenizer_error(Parser *p)
         case E_TOKEN:
             msg = "invalid token";
             break;
-        case E_EOF:
-            msg = "unexpected EOF while parsing";
-            break;
         case E_IDENTIFIER:
             msg = "invalid character in identifier";
             break;
@@ -902,6 +899,9 @@ _PyPegen_run_parser(Parser *p)
         }
         if (p->fill == 0) {
             RAISE_SYNTAX_ERROR("error at start before reading any input");
+        }
+        else if (p->tok->done == E_EOF) {
+            RAISE_SYNTAX_ERROR("unexpected EOF while parsing");
         }
         else {
             if (p->tokens[p->fill-1]->type == INDENT) {
