@@ -827,6 +827,11 @@ Changes in the Python API
   in the object itself.
   (Contributed by Serhiy Storchaka in :issue:`40257`.)
 
+* :meth:`asyncio.loop.shutdown_default_executor` has been added to
+  :class:`~asyncio.AbstractEventLoop`, meaning alternative event loops that
+  inherit from it should have this method defined.
+  (Contributed by Kyle Stanley in :issue:`34037`.)
+
 
 CPython bytecode changes
 ------------------------
