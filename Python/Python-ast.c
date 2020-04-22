@@ -1161,17 +1161,16 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     if (kw) {
         i = 0;  /* needed by PyDict_Next */
         while (PyDict_Next(kw, &i, &key, &value)) {
-            Py_ssize_t p = PySequence_Index(fields, key);
-            PyObject* err = PyErr_Occurred();
-            if (p == -1) {
-                // arbitrary keyword arguments are accepted
-                if (!PyErr_GivenExceptionMatches(err, PyExc_ValueError)) {
+            int contains = PySequence_Contains(fields, key);
+            if (contains == -1) {
+                res = -1;
+                goto cleanup;
+            } else if (contains == 1) {
+                Py_ssize_t p = PySequence_Index(fields, key);
+                if (p == -1) {
                     res = -1;
                     goto cleanup;
                 }
-                PyErr_Clear();
-            }
-            else {
                 if (p < PyTuple_GET_SIZE(args)) {
                     PyErr_Format(PyExc_TypeError,
                         "%.400s got multiple values for argument '%U'",
