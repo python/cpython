@@ -468,9 +468,13 @@ and off individually.  They are described here in more detail.
    Python 3.9 will switch to a PEG parser (see :pep:`617`), and Python 3.10 may
    include new language syntax that is not parsable by lib2to3's LL(1) parser.
    The ``lib2to3`` module may be removed from the standard library in a future
-   Python version.
+   Python version. Consider third-party alternatives such as `LibCST`_ or
+   `parso`_.
 
 .. note::
 
    The :mod:`lib2to3` API should be considered unstable and may change
    drastically in the future.
+
+.. _LibCST: https://libcst.readthedocs.io/
+.. _parso: https://parso.readthedocs.io/
