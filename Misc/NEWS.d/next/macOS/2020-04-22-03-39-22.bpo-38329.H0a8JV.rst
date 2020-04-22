@@ -1,0 +1,4 @@
+python.org macOS installers now update the Current version symlink of
+/Library/Frameworks/Python.framework/Versions for 3.9 installs. Previously,
+Current was only updated for Python 2.x installs. This should make it easier
+to embed Python 3 into other macOS applications.
