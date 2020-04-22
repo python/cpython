@@ -86,7 +86,7 @@ round(double x)
 #  pragma intrinsic(_BitScanReverse)
 
 static intline int
-__builtin_clz(unsigned int x)
+__builtin_clzl(unsigned int x)
  {
    unsigned long clz = 0;
    _BitScanReverse (&clz, x);
@@ -96,5 +96,5 @@ __builtin_clz(unsigned int x)
 #endif
 
 unsigned int _Py_bit_length(unsigned long d) {
-   return d ? CHAR_BIT * sizeof (d) - __builtin_clz (d) : 0;
+   return d ? CHAR_BIT * sizeof (d) - __builtin_clzl (d) : 0;
 }
