@@ -484,8 +484,8 @@ fstring_fix_expr_location(Token *parent, expr_ty n, char *expr_str)
 {
     char *substr = NULL;
     char *start;
-    int lines = parent->lineno - 1;
-    int cols = parent->col_offset;
+    int lines = 0;
+    int cols = 0;
 
     if (parent && parent->bytes) {
         char *parent_str = PyBytes_AsString(parent->bytes);
@@ -511,7 +511,7 @@ fstring_fix_expr_location(Token *parent, expr_ty n, char *expr_str)
             // left until the beginning of substr.
             if (!newline_after_brace) {
                 start = substr;
-                while (start > parent_str && start[0] != '\n') {
+                while (start > parent_str && *start != '\n') {
                     start--;
                 }
                 cols += (int)(substr - start);
@@ -587,6 +587,9 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     }
 
     Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, NULL, p->arena);
+    p2->starting_lineno = p->starting_lineno + p->tok->first_lineno - 1;
+    p2->starting_col_offset = p->tok->first_lineno == p->tok->lineno
+                              ? p->starting_col_offset + t->col_offset : 0;
 
     expr = _PyPegen_run_parser(p2);
 

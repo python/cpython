@@ -40,6 +40,8 @@ typedef struct {
     jmp_buf error_env;
     int parsing_started;
     PyObject* normalize;
+    int starting_lineno;
+    int starting_col_offset;
 } Parser;
 
 typedef struct {

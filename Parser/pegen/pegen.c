@@ -531,10 +531,10 @@ _PyPegen_fill_token(Parser *p)
         end_col_offset = end - p->tok->line_start;
     }
 
-    t->lineno = lineno;
-    t->col_offset = col_offset;
-    t->end_lineno = end_lineno;
-    t->end_col_offset = end_col_offset;
+    t->lineno = p->starting_lineno + lineno;
+    t->col_offset = p->tok->lineno == 1 ? p->starting_col_offset + col_offset : col_offset;
+    t->end_lineno = p->starting_lineno + end_lineno;
+    t->end_col_offset = p->tok->lineno == 1 ? p->starting_col_offset + end_col_offset : end_col_offset;
 
     // if (p->fill % 100 == 0) fprintf(stderr, "Filled at %d: %s \"%s\"\n", p->fill,
     // token_name(type), PyBytes_AsString(t->bytes));
@@ -872,6 +872,9 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
     p->start_rule = start_rule;
     p->parsing_started = 0;
     p->normalize = NULL;
+
+    p->starting_lineno = 0;
+    p->starting_col_offset = 0;
 
     return p;
 }
