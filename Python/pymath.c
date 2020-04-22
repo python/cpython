@@ -89,7 +89,7 @@ static intline int
 __builtin_clz(unsigned int x)
  {
    unsigned long clz = 0;
-   _BitScanReverse (&clz, VALUE);
+   _BitScanReverse (&clz, x);
    return (clz);
  }
 
