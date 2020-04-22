@@ -42,7 +42,6 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    mutated).
 
    .. versionchanged:: 3.9
-
       :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
@@ -136,6 +135,10 @@ Restrictions
 
    .. versionchanged:: 3.4
       Added context manager support.
+
+   .. versionchanged:: 3.9
+      :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
+      protocol.
 
 
 .. class:: BsdDbShelf(dict, protocol=None, writeback=False, keyencoding='utf-8')
