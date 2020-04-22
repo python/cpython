@@ -122,6 +122,7 @@ class CodeopTests(unittest.TestCase):
         av("def f():\n pass\n#foo\n")
         av("@a.b.c\ndef f():\n pass\n")
 
+    @unittest.skipIf(sys.flags.use_peg, "Pegen does not support PyCF_DONT_INPLY_DEDENT yet")
     def test_incomplete(self):
         ai = self.assertIncomplete
 
