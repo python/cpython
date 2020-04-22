@@ -12767,7 +12767,7 @@ str.removeprefix as unicode_removeprefix
     prefix: unicode
     /
 
-Remove a specified prefix, if present.
+Return a str with the given prefix string removed if present.
 
 If the string starts with the prefix, return string[len(prefix):].
 Otherwise, return a copy of the original string.
@@ -12775,7 +12775,7 @@ Otherwise, return a copy of the original string.
 
 static PyObject *
 unicode_removeprefix_impl(PyObject *self, PyObject *prefix)
-/*[clinic end generated code: output=f1e5945e9763bcb9 input=9aeb1706f08ce2cf]*/
+/*[clinic end generated code: output=f1e5945e9763bcb9 input=59b55b6fa49a46b5]*/
 {
     int match = tailmatch(self, prefix, 0, PY_SSIZE_T_MAX, -1);
     if (match == -1) {
@@ -12794,15 +12794,15 @@ str.removesuffix as unicode_removesuffix
     suffix: unicode
     /
 
-Remove a specified suffix, if present.
+Return a str with the given suffix string removed if present.
 
-If the string ends with the suffix, return string[:len(string)-len(suffix)].
-Otherwise, return a copy of the original string.
+If the string ends with the suffix and the suffix is not empty, return
+string[:-len(suffix)]. Otherwise, return a copy of the original string.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_removesuffix_impl(PyObject *self, PyObject *suffix)
-/*[clinic end generated code: output=d36629e227636822 input=ed89a10ab150499c]*/
+/*[clinic end generated code: output=d36629e227636822 input=50db6c0aa0f82736]*/
 {
     int match = tailmatch(self, suffix, 0, PY_SSIZE_T_MAX, +1);
     if (match == -1) {

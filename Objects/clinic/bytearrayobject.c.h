@@ -42,9 +42,9 @@ PyDoc_STRVAR(bytearray_removeprefix__doc__,
 "removeprefix($self, prefix, /)\n"
 "--\n"
 "\n"
-"Return a copy of the bytearray with a given prefix removed if present.\n"
+"Return a bytearray with the given prefix string removed if present.\n"
 "\n"
-"If the bytearray starts with the prefix, return b[len(prefix):].\n"
+"If the bytearray starts with the prefix, return bytearray[len(prefix):].\n"
 "Otherwise, return a copy of the original bytearray.");
 
 #define BYTEARRAY_REMOVEPREFIX_METHODDEF    \
@@ -81,10 +81,11 @@ PyDoc_STRVAR(bytearray_removesuffix__doc__,
 "removesuffix($self, suffix, /)\n"
 "--\n"
 "\n"
-"Return a copy of the bytearray with a given suffix removed if present.\n"
+"Return a bytearray with the given suffix string removed if present.\n"
 "\n"
-"If the bytearray ends with the suffix, return b[:len(b)-len(suffix)].\n"
-"Otherwise, return a copy of the original bytearray.");
+"If the bytearray ends with the suffix string and the suffix is not\n"
+"empty, return bytearray[:-len(suffix)].  Otherwise, return a copy of\n"
+"the original bytearray.");
 
 #define BYTEARRAY_REMOVESUFFIX_METHODDEF    \
     {"removesuffix", (PyCFunction)bytearray_removesuffix, METH_O, bytearray_removesuffix__doc__},
@@ -1089,4 +1090,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=4ea3c2feebafe2d0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8b7b311d194a75f8 input=a9049054013a1b77]*/

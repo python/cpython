@@ -1564,8 +1564,8 @@ expression support in the :mod:`re` module).
 
 .. method:: str.removesuffix(suffix, /)
 
-   If the string ends with the *suffix* string, return
-   ``string[:len(string)-len(suffix)]``. Otherwise, return a copy of the
+   If the string ends with the *suffix* string and that *suffix* is not empty,
+   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
    original string::
 
       >>> 'MiscTests'.removesuffix('Tests')
@@ -2636,8 +2636,9 @@ arbitrary binary data.
 .. method:: bytes.removeprefix(prefix, /)
             bytearray.removeprefix(prefix, /)
 
-   If the binary data starts with the *prefix*, return ``b[len(prefix):]``.
-   Otherwise, return a copy of the original binary data::
+   If the binary data starts with the *prefix* string, return
+   ``bytes[len(prefix):]``. Otherwise, return a copy of the original
+   binary data::
 
       >>> b'TestHook'.removeprefix(b'Test')
       b'Hook'
@@ -2657,9 +2658,9 @@ arbitrary binary data.
 .. method:: bytes.removesuffix(suffix, /)
             bytearray.removesuffix(suffix, /)
 
-   If the binary data ends with the *suffix*, return
-   ``b[:len(b)-len(prefix)]``. Otherwise, return a copy of the original
-   binary data::
+   If the binary data ends with the *suffix* string and that *suffix* is
+   not empty, return ``bytes[:-len(suffix)]``.  Otherwise, return a copy of
+   the original binary data::
 
       >>> b'MiscTests'.removesuffix(b'Tests')
       b'Misc'
