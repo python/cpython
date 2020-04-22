@@ -832,6 +832,10 @@ Changes in the Python API
   inherit from it should have this method defined.
   (Contributed by Kyle Stanley in :issue:`34037`.)
 
+* The constant values of future flags in the :mod:`__future__` module
+  is updated in order to prevent collision with compiler flags. Previously
+  ``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
+  (Contributed by Batuhan Taskaya in :issue:`39562`)
 
 CPython bytecode changes
 ------------------------
