@@ -110,17 +110,17 @@ them.
 # Traceback (most recent call last):
 # SyntaxError: cannot assign to True
 
-# >>> (a, __debug__, c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to __debug__
+>>> (a, __debug__, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 
 # >>> (a, *True, c) = (1, 2, 3)
 # Traceback (most recent call last):
 # SyntaxError: cannot assign to True
 
-# >>> (a, *__debug__, c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to __debug__
+>>> (a, *__debug__, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 
 # >>> [a, b, c + 1] = [1, 2, 3]
 # Traceback (most recent call last):
@@ -323,9 +323,9 @@ keyword slot of a call site.  Test a few different options.
 # >>> f(True=2)
 # Traceback (most recent call last):
 # SyntaxError: cannot assign to True
-# >>> f(__debug__=1)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to __debug__
+>>> f(__debug__=1)
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 
 
 More set_context():
