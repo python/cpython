@@ -2,6 +2,7 @@
    Test cases for codeop.py
    Nick Mathewson
 """
+import sys
 import unittest
 from test.support import is_jython
 
@@ -9,7 +10,6 @@ from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
 import io
 
 if is_jython:
-    import sys
 
     def unify_callables(d):
         for n,v in d.items():
