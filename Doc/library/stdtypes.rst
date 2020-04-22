@@ -1549,6 +1549,33 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
 
+.. method:: str.removeprefix(prefix, /)
+
+   If the string starts with the *prefix* string, return
+   ``string[len(prefix):]``. Otherwise, return a copy of the original
+   string::
+
+      >>> 'TestHook'.removeprefix('Test')
+      'Hook'
+      >>> 'BaseTestCase'.removeprefix('Test')
+      'BaseTestCase'
+
+   .. versionadded:: 3.9
+
+.. method:: str.removesuffix(suffix, /)
+
+   If the string ends with the *suffix* string and that *suffix* is not empty,
+   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
+   original string::
+
+      >>> 'MiscTests'.removesuffix('Tests')
+      'Misc'
+      >>> 'TmpDirMixin'.removesuffix('Tests')
+      'TmpDirMixin'
+
+   .. versionadded:: 3.9
+
+
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
    Return an encoded version of the string as a bytes object. Default encoding
@@ -1831,6 +1858,14 @@ expression support in the :mod:`re` module).
       >>> 'www.example.com'.lstrip('cmowz.')
       'example.com'
 
+   See :meth:`str.removeprefix` for a method that will remove a single prefix
+   string rather than all of a set of characters.  For example::
+
+      >>> 'Arthur: three!'.lstrip('Arthur: ')
+      'ee!'
+      >>> 'Arthur: three!'.removeprefix('Arthur: ')
+      'three!'
+
 
 .. staticmethod:: str.maketrans(x[, y[, z]])
 
@@ -1911,6 +1946,13 @@ expression support in the :mod:`re` module).
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
 
+   See :meth:`str.removesuffix` for a method that will remove a single suffix
+   string rather than all of a set of characters.  For example::
+
+      >>> 'Monty Python'.rstrip(' Python')
+      'M'
+      >>> 'Monty Python'.removesuffix(' Python')
+      'Monty'
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2591,6 +2633,50 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
+.. method:: bytes.removeprefix(prefix, /)
+            bytearray.removeprefix(prefix, /)
+
+   If the binary data starts with the *prefix* string, return
+   ``bytes[len(prefix):]``. Otherwise, return a copy of the original
+   binary data::
+
+      >>> b'TestHook'.removeprefix(b'Test')
+      b'Hook'
+      >>> b'BaseTestCase'.removeprefix(b'Test')
+      b'BaseTestCase'
+
+   The *prefix* may be any :term:`bytes-like object`.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+   .. versionadded:: 3.9
+
+
+.. method:: bytes.removesuffix(suffix, /)
+            bytearray.removesuffix(suffix, /)
+
+   If the binary data ends with the *suffix* string and that *suffix* is
+   not empty, return ``bytes[:-len(suffix)]``.  Otherwise, return a copy of
+   the original binary data::
+
+      >>> b'MiscTests'.removesuffix(b'Tests')
+      b'Misc'
+      >>> b'TmpDirMixin'.removesuffix(b'Tests')
+      b'TmpDirMixin'
+
+   The *suffix* may be any :term:`bytes-like object`.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+   .. versionadded:: 3.9
+
+
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
             bytearray.decode(encoding="utf-8", errors="strict")
 
@@ -2841,7 +2927,14 @@ produce new objects.
       b'example.com'
 
    The binary sequence of byte values to remove may be any
-   :term:`bytes-like object`.
+   :term:`bytes-like object`. See :meth:`~bytes.removeprefix` for a method
+   that will remove a single prefix string rather than all of a set of
+   characters.  For example::
+
+      >>> b'Arthur: three!'.lstrip(b'Arthur: ')
+      b'ee!'
+      >>> b'Arthur: three!'.removeprefix(b'Arthur: ')
+      b'three!'
 
    .. note::
 
@@ -2890,7 +2983,14 @@ produce new objects.
       b'mississ'
 
    The binary sequence of byte values to remove may be any
-   :term:`bytes-like object`.
+   :term:`bytes-like object`. See :meth:`~bytes.removesuffix` for a method
+   that will remove a single suffix string rather than all of a set of
+   characters.  For example::
+
+      >>> b'Monty Python'.rstrip(b' Python')
+      b'M'
+      >>> b'Monty Python'.removesuffix(b' Python')
+      b'Monty'
 
    .. note::
 
