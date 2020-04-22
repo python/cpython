@@ -1551,33 +1551,26 @@ expression support in the :mod:`re` module).
 
 .. method:: str.removeprefix(prefix, /)
 
-   Return a copy of the string with the given prefix removed, if present. ::
+   If the string starts with the prefix, return ``string[len(prefix):]``.
+   Otherwise, return a copy of the original string::
 
-      >>> 'BarFooBaz'.removeprefix('Bar')
-      'FooBaz'
-      >>> 'BarFooBaz'.removeprefix('Baz')
-      'BarFooBaz'
-
-   The expression ``s.removeprefix(pre)`` is roughly equivalent to
-   ``s[len(pre):] if s.startswith(pre) else s``.
-   Unlike :meth:`~str.startswith`, only one prefix can be passed
-   at a time.
+      >>> 'TestHook'.removeprefix('Test')
+      'Hook'
+      >>> 'BaseTestCase'.removeprefix('Test')
+      'BaseTestCase'
 
    .. versionadded:: 3.9
 
 .. method:: str.removesuffix(suffix, /)
 
-   Return a copy of the string with the given suffix removed, if present. ::
+   If the string ends with the suffix, return
+   ``string[:len(string)-len(suffix)]``. Otherwise, return a copy of the
+   original string::
 
-      >>> 'BarFooBaz'.removesuffix('Baz')
-      'BarFoo'
-      >>> 'BarFooBaz'.removesuffix('Bar')
-      'BarFooBaz'
-
-   The expression ``s.removesuffix(suf)`` is roughly equivalent to
-   ``s[:-len(suf)] if suf and s.endswith(suf) else s``.
-   Unlike :meth:`~str.endswith`, only one suffix can be passed
-   at a time.
+      >>> 'MiscTests'.removesuffix('Tests')
+      'Misc'
+      >>> 'TmpDirMixin'.removesuffix('Tests')
+      'TmpDirMixin'
 
    .. versionadded:: 3.9
 
@@ -2642,19 +2635,20 @@ arbitrary binary data.
 .. method:: bytes.removeprefix(prefix, /)
             bytearray.removeprefix(prefix, /)
 
-   Return a copy of the binary data with the given prefix removed,
-   if present. ::
+   If the binary data starts with the *prefix*, return ``b[len(prefix):]``.
+   Otherwise, return a copy of the original binary data::
 
-      >>> b'BarFooBaz'.removeprefix(b'Bar')
-      b'FooBaz'
-      >>> b'BarFooBaz'.removeprefix(b'Baz')
-      b'BarFooBaz'
+      >>> b'TestHook'.removeprefix(b'Test')
+      b'Hook'
+      >>> b'BaseTestCase'.removeprefix(b'Test')
+      b'BaseTestCase'
 
    The *prefix* may be any :term:`bytes-like object`.
-   The expression ``b.removeprefix(pre)`` is roughly equivalent to
-   ``b[len(pre):] if b.startswith(pre) else b[:]``.
-   Unlike :meth:`~bytes.startswith`, only one prefix can be passed
-   at a time.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
 
    .. versionadded:: 3.9
 
@@ -2662,19 +2656,21 @@ arbitrary binary data.
 .. method:: bytes.removesuffix(suffix, /)
             bytearray.removesuffix(suffix, /)
 
-   Return a copy of the binary data with the given suffix removed,
-   if present. ::
+   If the binary data ends with the *suffix*, return
+   ``b[:len(b)-len(prefix)]``. Otherwise, return a copy of the original
+   binary data::
 
-      >>> b'BarFooBaz'.removesuffix(b'Baz')
-      b'BarFoo'
-      >>> b'BarFooBaz'.removesuffix(b'Bar')
-      b'BarFooBaz'
+      >>> b'MiscTests'.removesuffix(b'Tests')
+      b'Misc'
+      >>> b'TmpDirMixin'.removesuffix(b'Tests')
+      b'TmpDirMixin'
 
    The *suffix* may be any :term:`bytes-like object`.
-   The expression ``b.removesuffix(suf)`` is roughly equivalent to
-   ``b[:-len(suf)] if suf and b.endswith(suf) else b[:]``.
-   Unlike :meth:`~bytes.endswith`, only one suffix can be passed
-   at a time.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
 
    .. versionadded:: 3.9
 
@@ -2933,10 +2929,10 @@ produce new objects.
    that will remove a single prefix string rather than all of a set of
    characters.  For example::
 
-      >>> b'Monty Python'.rstrip(b' Python')
-      b'M'
-      >>> b'Monty Python'.removesuffix(b' Python')
-      b'Monty'
+      >>> b'Arthur: three!'.lstrip(b'Arthur: ')
+      b'ee!'
+      >>> b'Arthur: three!'.removeprefix(b'Arthur: ')
+      b'three!'
 
    .. note::
 
@@ -2989,10 +2985,10 @@ produce new objects.
    that will remove a single suffix string rather than all of a set of
    characters.  For example::
 
-      >>> b'Arthur: three!'.lstrip(b'Arthur: ')
-      b'ee!'
-      >>> b'Arthur: three!'.removeprefix(b'Arthur: ')
-      b'three!'
+      >>> b'Monty Python'.rstrip(b' Python')
+      b'M'
+      >>> b'Monty Python'.removesuffix(b' Python')
+      b'Monty'
 
    .. note::
 
