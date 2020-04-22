@@ -22,7 +22,6 @@ env:
 branches:
   only:
     - master
-    - pegen
     - /^\d\.\d+$/
     - buildbot-custom
 
