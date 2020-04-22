@@ -438,12 +438,10 @@ static PyGetSetDef ga_properties[] = {
 static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
-        PyErr_SetString(PyExc_TypeError, "GenericAlias does not support keyword arguments");
+    if (!_PyArg_NoKwnames("GenericAlias", kwds)) {
         return NULL;
     }
-    if (PyTuple_GET_SIZE(args) != 2) {
-        PyErr_SetString(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
+    if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {
         return NULL;
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
@@ -451,6 +449,20 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return Py_GenericAlias(origin, arguments);
 }
 
+static PyObject *
+ga_vectorcall(PyObject *type, PyObject * const*args,
+              size_t nargsf, PyObject *kwnames)
+{
+    if (!_PyArg_NoKwnames("GenericAlias", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("GenericAlias", nargs, 2, 2)) {
+        return NULL;
+    }
+    return Py_GenericAlias(args[0], args[1]);
+}
 // TODO:
 // - argument clinic?
 // - __doc__?
@@ -477,6 +489,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_new = ga_new,
     .tp_free = PyObject_GC_Del,
     .tp_getset = ga_properties,
+    .tp_vectorcall = ga_vectorcall,
 };
 
 PyObject *
