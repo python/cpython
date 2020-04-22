@@ -2795,7 +2795,7 @@ class PidTests(unittest.TestCase):
             # arguments need to be quoted
             args = [f'"{sys.executable}"', '-c', f'"{code}"']
         else:
-            args = [sys.executable, filename]
+            args = [sys.executable, '-c', code]
         pid = os.spawnv(os.P_NOWAIT, sys.executable, args)
 
         if callback is not None:
