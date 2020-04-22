@@ -7972,8 +7972,10 @@ os_waitpid_impl(PyObject *module, intptr_t pid, int options)
     if (res < 0)
         return (!async_err) ? posix_error() : NULL;
 
+    unsigned long long ustatus = (unsigned int)status;
+
     /* shift the status left a byte so this is more like the POSIX waitpid */
-    return Py_BuildValue(_Py_PARSE_INTPTR "i", res, status << 8);
+    return Py_BuildValue(_Py_PARSE_INTPTR "K", res, ustatus << 8);
 }
 #endif
 
@@ -13829,7 +13831,7 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
 /*[clinic input]
 os.waitstatus_to_exitcode
 
-    status: int
+    status as status_obj: object
 
 Convert a wait status to an exit code.
 
@@ -13847,10 +13849,20 @@ This function must not be called if WIFSTOPPED(status) is true.
 [clinic start generated code]*/
 
 static PyObject *
-os_waitstatus_to_exitcode_impl(PyObject *module, int status)
-/*[clinic end generated code: output=c7c2265731f79b7a input=edfa5ca5006276fb]*/
+os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
+/*[clinic end generated code: output=db50b1b0ba3c7153 input=7fe2d7fdaea3db42]*/
 {
+    if (PyFloat_Check(status_obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        return NULL;
+    }
 #ifndef MS_WINDOWS
+    int status = _PyLong_AsInt(status_obj);
+    if (status == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
     int exitcode;
@@ -13889,8 +13901,19 @@ os_waitstatus_to_exitcode_impl(PyObject *module, int status)
 #else
     /* Windows implementation: see os.waitpid() implementation
        which uses _cwait(). */
-    int exitcode = (status >> 8);
-    return PyLong_FromLong(exitcode);
+    unsigned long long status = PyLong_AsUnsignedLongLong(status_obj);
+    if (status == (unsigned long long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    unsigned long long exitcode = (status >> 8);
+    /* ExitProcess() accepts an UINT type:
+       reject exit code which doesn't fit in an UINT */
+    if (exitcode > UINT_MAX) {
+        PyErr_Format(PyExc_ValueError, "invalid exit code: %llu", exitcode);
+        return NULL;
+    }
+    return PyLong_FromUnsignedLong((unsigned long)exitcode);
 #endif
 }
 #endif

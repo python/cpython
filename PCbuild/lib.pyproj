@@ -1585,6 +1585,7 @@
     <Content Include="idlelib\Icons\idle_32.png" />
     <Content Include="idlelib\Icons\idle_48.gif" />
     <Content Include="idlelib\Icons\idle_48.png" />
+    <Content Include="idlelib\Icons\idle_256.png" />
     <Content Include="idlelib\Icons\minusnode.gif" />
     <Content Include="idlelib\Icons\openfolder.gif" />
     <Content Include="idlelib\Icons\plusnode.gif" />
