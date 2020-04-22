@@ -13,7 +13,6 @@ on:
     - '**/*.rst'
   pull_request:
     branches:
-    - pegen
     - master
     - 3.8
     - 3.7
@@ -51,22 +50,6 @@ jobs:
   build_macos:
     name: 'macOS'
     runs-on: macos-latest
-    env:
-      PYTHONOLDPARSER: old
-    steps:
-    - uses: actions/checkout@v1
-    - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev
-    - name: Build CPython
-      run: make -j4
-    - name: Display build info
-      run: make pythoninfo
-    - name: Tests
-      run: make buildbottest TESTOPTS="-j4 -uall,-cpu"
-
-  build_macos_pegen:
-    name: 'macOS - Pegen'
-    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v1
     - name: Configure CPython
@@ -80,34 +63,6 @@ jobs:
 
   build_ubuntu:
     name: 'Ubuntu'
-    runs-on: ubuntu-latest
-    env:
-      OPENSSL_VER: 1.1.1f
-      PYTHONOLDPARSER: old
-    steps:
-    - uses: actions/checkout@v1
-    - name: Install Dependencies
-      run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: 'Restore OpenSSL build'
-      id: cache-openssl
-      uses: actions/cache@v1
-      with:
-        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
-    - name: Install OpenSSL
-      if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $PWD/multissl --openssl $OPENSSL_VER --system Linux
-    - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
-    - name: Build CPython
-      run: make -j4
-    - name: Display build info
-      run: make pythoninfo
-    - name: Tests
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
-
-  build_ubuntu_pegen:
-    name: 'Ubuntu - Pegen'
     runs-on: ubuntu-latest
     env:
       OPENSSL_VER: 1.1.1f
