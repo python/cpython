@@ -1309,12 +1309,6 @@ def buildPython():
 
     os.chdir(curdir)
 
-    if PYTHON_3:
-        # Remove the 'Current' link, that way we don't accidentally mess
-        # with an already installed version of python 2
-        os.unlink(os.path.join(rootDir, 'Library', 'Frameworks',
-                            'Python.framework', 'Versions', 'Current'))
-
 def patchFile(inPath, outPath):
     data = fileContents(inPath)
     data = data.replace('$FULL_VERSION', getFullVersion())
