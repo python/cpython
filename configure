@@ -16746,7 +16746,7 @@ do
 done
 
 
-SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
+SRCDIRS="Parser Parser/pegen Objects Python Modules Modules/_io Programs"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do
