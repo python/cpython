@@ -17,7 +17,6 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
                    CO_FUTURE_WITH_STATEMENT | CO_FUTURE_PRINT_FUNCTION | \
                    CO_FUTURE_UNICODE_LITERALS | CO_FUTURE_BARRY_AS_BDFL | \
                    CO_FUTURE_GENERATOR_STOP | CO_FUTURE_ANNOTATIONS)
-#define PyCF_MASK_OBSOLETE (CO_NESTED)
 
 /* bpo-39562: CO_FUTURE_ and PyCF_ constants must be kept unique.
    PyCF_ constants can use bits from 0x0100 to 0x10000.

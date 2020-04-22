@@ -20,7 +20,7 @@ import unittest
 import warnings
 from contextlib import ExitStack
 from functools import partial
-from inspect import CO_COROUTINE
+from inspect import CO_COROUTINE, CO_NESTED
 from itertools import product
 from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType
@@ -339,6 +339,7 @@ class BuiltinTest(unittest.TestCase):
         compile('print("\xe5")\n', '', 'exec')
         self.assertRaises(ValueError, compile, chr(0), 'f', 'exec')
         self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
+        self.assertRaises(ValueError, compile, 'obsolote_flag', 'f', 'exec', CO_NESTED)
 
         # test the optimize argument
 

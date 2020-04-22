@@ -1,0 +1,1 @@
+Removed support for ``CO_NESTED`` flag in :func:`compile`.

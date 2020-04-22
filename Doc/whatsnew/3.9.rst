@@ -791,6 +791,9 @@ Removed
   deprecated since 2006, and only returning ``False`` when it's called.
   (Contributed by Batuhan Taskaya in :issue:`40208`)
 
+* Support for passing ``CO_NESTED`` flag to :func:`compile` has been removed.
+  It was obsolete and the default behavior since Python 2.2, 19 years.
+  (Contributed by Batuhan Taskaya in :issue:`40366`)
 
 Porting to Python 3.9
 =====================
