@@ -18,12 +18,18 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
                    CO_FUTURE_UNICODE_LITERALS | CO_FUTURE_BARRY_AS_BDFL | \
                    CO_FUTURE_GENERATOR_STOP | CO_FUTURE_ANNOTATIONS)
 #define PyCF_MASK_OBSOLETE (CO_NESTED)
+
+/* bpo-39562: CO_FUTURE_ and PyCF_ constants must be kept unique.
+   PyCF_ constants can use bits from 0x0100 to 0x10000.
+   CO_FUTURE_ constants use bits starting at 0x20000. */
 #define PyCF_SOURCE_IS_UTF8  0x0100
 #define PyCF_DONT_IMPLY_DEDENT 0x0200
 #define PyCF_ONLY_AST 0x0400
 #define PyCF_IGNORE_COOKIE 0x0800
 #define PyCF_TYPE_COMMENTS 0x1000
 #define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
+#define PyCF_COMPILE_MASK (PyCF_ONLY_AST | PyCF_ALLOW_TOP_LEVEL_AWAIT | \
+                           PyCF_TYPE_COMMENTS | PyCF_DONT_IMPLY_DEDENT)
 
 #ifndef Py_LIMITED_API
 typedef struct {
