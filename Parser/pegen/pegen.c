@@ -513,6 +513,11 @@ _PyPegen_fill_token(Parser *p)
     if (type == ENDMARKER && p->start_rule == Py_single_input && p->parsing_started) {
         type = NEWLINE; /* Add an extra newline */
         p->parsing_started = 0;
+
+        if (p->tok->indent) {
+            p->tok->pendin = -p->tok->indent;
+            p->tok->indent = 0;
+        }
     }
     else {
         p->parsing_started = 1;
