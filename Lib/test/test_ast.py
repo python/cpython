@@ -401,6 +401,11 @@ class AST_Tests(unittest.TestCase):
 
         self.assertRaises(TypeError, ast.Num, 1, None, 2)
         self.assertRaises(TypeError, ast.Num, 1, None, 2, lineno=0)
+
+        # Arbitrary keyword arguments are supported
+        self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
+        self.assertEqual(ast.Num(1, foo='bar').foo, 'bar')
+
         with self.assertRaisesRegex(TypeError, "Num got multiple values for argument 'n'"):
             ast.Num(1, n=2)
         with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
