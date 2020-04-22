@@ -326,6 +326,9 @@ keyword slot of a call site.  Test a few different options.
 >>> f(__debug__=1)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
+>>> __debug__: int
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 
 
 More set_context():
