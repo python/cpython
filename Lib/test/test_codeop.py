@@ -2,6 +2,7 @@
    Test cases for codeop.py
    Nick Mathewson
 """
+import sys
 import unittest
 from test.support import is_jython
 
@@ -9,7 +10,6 @@ from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
 import io
 
 if is_jython:
-    import sys
 
     def unify_callables(d):
         for n,v in d.items():
@@ -122,6 +122,7 @@ class CodeopTests(unittest.TestCase):
         av("def f():\n pass\n#foo\n")
         av("@a.b.c\ndef f():\n pass\n")
 
+    @unittest.skipIf(sys.flags.use_peg, "Pegen does not support PyCF_DONT_INPLY_DEDENT yet")
     def test_incomplete(self):
         ai = self.assertIncomplete
 
