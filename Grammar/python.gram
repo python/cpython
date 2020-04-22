@@ -177,11 +177,14 @@ function_def[stmt_ty]:
     | function_def_raw
 
 function_def_raw[stmt_ty]:
-    | is_async=[ASYNC] 'def' n=NAME '(' params=[parameters] ')' a=['->' z=annotation { z }] ':' b=block {
+    | is_async=[ASYNC] 'def' n=NAME '(' params=[params] ')' a=['->' z=annotation { z }] ':' b=block {
         (is_async ? _Py_AsyncFunctionDef : _Py_FunctionDef)(n->v.Name.id,
                              (params) ? params : CHECK(_PyPegen_empty_arguments(p)),
                              b, NULL, a, NULL, EXTRA) }
 
+params[arguments_ty]:
+    | invalid_parameters
+    | parameters
 parameters[arguments_ty]:
     | a=slash_without_default b=[',' x=plain_names { x }] c=[',' y=names_with_default { y }] d=[',' z=[star_etc] { z }] {
         _PyPegen_make_arguments(p, a, NULL, b, c, d) }
@@ -529,6 +532,8 @@ t_atom[expr_ty]:
 # From here on, there are rules for invalid syntax with specialised error messages
 incorrect_arguments:
     | args ',' '*' { RAISE_SYNTAX_ERROR("iterable argument unpacking follows keyword argument unpacking") }
+    | expression for_if_clauses ',' [args | expression for_if_clauses] {
+        RAISE_SYNTAX_ERROR("Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_named_expression:
     | a=expression ':=' expression {
@@ -545,3 +550,6 @@ invalid_block:
 invalid_comprehension:
     | ('[' | '(' | '{') '*' expression for_if_clauses {
         RAISE_SYNTAX_ERROR("iterable unpacking cannot be used in comprehension") }
+invalid_parameters:
+    | [plain_names ','] (slash_with_default | names_with_default) ',' plain_names {
+        RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
