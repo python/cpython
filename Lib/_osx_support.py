@@ -320,7 +320,7 @@ def compiler_fixup(compiler_so, cc_args):
         stripArch = stripSysroot = True
     else:
         stripArch = '-arch' in cc_args
-        stripSysroot = any(arg for arg in cc_args if arg.find('-isysroot') == 0)
+        stripSysroot = any(arg for arg in cc_args if arg.startswith('-isysroot'))
 
     if stripArch or 'ARCHFLAGS' in os.environ:
         while True:
@@ -338,7 +338,7 @@ def compiler_fixup(compiler_so, cc_args):
 
     if stripSysroot:
         while True:
-            indices = [i for i,x in enumerate(compiler_so) if x.find('-isysroot') == 0]
+            indices = [i for i,x in enumerate(compiler_so) if x.startswith('-isysroot')]
             if not indices:
                 break
             index = indices[0]
@@ -354,10 +354,10 @@ def compiler_fixup(compiler_so, cc_args):
     # users have that installed by default.
     sysroot = None
     argvar = cc_args
-    indices = [i for i,x in enumerate(cc_args) if x.find('-isysroot') == 0]
+    indices = [i for i,x in enumerate(cc_args) if x.startswith('-isysroot')]
     if not indices:
         argvar = compiler_so
-        indices = [i for i,x in enumerate(compiler_so) if x.find('-isysroot') == 0]
+        indices = [i for i,x in enumerate(compiler_so) if x.startswith('-isysroot')]
 
     for idx in indices:
         if argvar[idx] == '-isysroot':
