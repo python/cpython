@@ -1194,13 +1194,14 @@ bytearray.removeprefix as bytearray_removeprefix
 
 Return a bytearray with the given prefix string removed if present.
 
-If the bytearray starts with the prefix, return bytearray[len(prefix):].
-Otherwise, return a copy of the original bytearray.
+If the bytearray starts with the prefix string, return
+bytearray[len(prefix):].  Otherwise, return a copy of the original
+bytearray.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_removeprefix_impl(PyByteArrayObject *self, Py_buffer *prefix)
-/*[clinic end generated code: output=6cabc585e7f502e0 input=431c03722532cba5]*/
+/*[clinic end generated code: output=6cabc585e7f502e0 input=968aada38aedd262]*/
 {
     const char *self_start = PyByteArray_AS_STRING(self);
     Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
@@ -1225,14 +1226,14 @@ bytearray.removesuffix as bytearray_removesuffix
 
 Return a bytearray with the given suffix string removed if present.
 
-If the bytearray ends with the suffix string and the suffix is not
+If the bytearray ends with the suffix string and that suffix is not
 empty, return bytearray[:-len(suffix)].  Otherwise, return a copy of
 the original bytearray.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_removesuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
-/*[clinic end generated code: output=2bc8cfb79de793d3 input=e4155e07c8629473]*/
+/*[clinic end generated code: output=2bc8cfb79de793d3 input=c1827e810b2f6b99]*/
 {
     const char *self_start = PyByteArray_AS_STRING(self);
     Py_ssize_t self_len = PyByteArray_GET_SIZE(self);

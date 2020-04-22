@@ -2190,13 +2190,13 @@ bytes.removeprefix as bytes_removeprefix
 
 Return a bytes object with the given prefix string removed if present.
 
-If the bytes starts with the prefix, return b[len(prefix):].
+If the bytes starts with the prefix string, return bytes[len(prefix):].
 Otherwise, return a copy of the original bytes.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix)
-/*[clinic end generated code: output=f006865331a06ab6 input=24f4dccc70a6e388]*/
+/*[clinic end generated code: output=f006865331a06ab6 input=0c93bac817a8502c]*/
 {
     const char *self_start = PyBytes_AS_STRING(self);
     Py_ssize_t self_len = PyBytes_GET_SIZE(self);
@@ -2227,13 +2227,14 @@ bytes.removesuffix as bytes_removesuffix
 
 Return a bytes object with the given suffix string removed if present.
 
-If the bytes ends with the suffix and the suffix is not empty, return
-b[:-len(prefix)].  Otherwise, return a copy of the original bytes.
+If the bytes ends with the suffix string and that suffix is not empty,
+return bytes[:-len(prefix)].  Otherwise, return a copy of the original
+bytes.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
-/*[clinic end generated code: output=d887d308e3242eeb input=b0128a19cd0453ef]*/
+/*[clinic end generated code: output=d887d308e3242eeb input=9f4e1da8c637bbf1]*/
 {
     const char *self_start = PyBytes_AS_STRING(self);
     Py_ssize_t self_len = PyBytes_GET_SIZE(self);

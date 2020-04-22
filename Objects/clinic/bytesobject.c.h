@@ -532,7 +532,7 @@ PyDoc_STRVAR(bytes_removeprefix__doc__,
 "\n"
 "Return a bytes object with the given prefix string removed if present.\n"
 "\n"
-"If the bytes starts with the prefix, return b[len(prefix):].\n"
+"If the bytes starts with the prefix string, return bytes[len(prefix):].\n"
 "Otherwise, return a copy of the original bytes.");
 
 #define BYTES_REMOVEPREFIX_METHODDEF    \
@@ -571,8 +571,9 @@ PyDoc_STRVAR(bytes_removesuffix__doc__,
 "\n"
 "Return a bytes object with the given suffix string removed if present.\n"
 "\n"
-"If the bytes ends with the suffix and the suffix is not empty, return\n"
-"b[:-len(prefix)].  Otherwise, return a copy of the original bytes.");
+"If the bytes ends with the suffix string and that suffix is not empty,\n"
+"return bytes[:-len(prefix)].  Otherwise, return a copy of the original\n"
+"bytes.");
 
 #define BYTES_REMOVESUFFIX_METHODDEF    \
     {"removesuffix", (PyCFunction)bytes_removesuffix, METH_O, bytes_removesuffix__doc__},
@@ -833,4 +834,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cdee4f315f08f207 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=220388917d7bf751 input=a9049054013a1b77]*/

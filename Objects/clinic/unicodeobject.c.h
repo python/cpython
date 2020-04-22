@@ -760,7 +760,7 @@ PyDoc_STRVAR(unicode_removeprefix__doc__,
 "\n"
 "Return a str with the given prefix string removed if present.\n"
 "\n"
-"If the string starts with the prefix, return string[len(prefix):].\n"
+"If the string starts with the prefix string, return string[len(prefix):].\n"
 "Otherwise, return a copy of the original string.");
 
 #define UNICODE_REMOVEPREFIX_METHODDEF    \
@@ -795,8 +795,9 @@ PyDoc_STRVAR(unicode_removesuffix__doc__,
 "\n"
 "Return a str with the given suffix string removed if present.\n"
 "\n"
-"If the string ends with the suffix and the suffix is not empty, return\n"
-"string[:-len(suffix)]. Otherwise, return a copy of the original string.");
+"If the string ends with the suffix string and that suffix is not empty,\n"
+"return string[:-len(suffix)]. Otherwise, return a copy of the original\n"
+"string.");
 
 #define UNICODE_REMOVESUFFIX_METHODDEF    \
     {"removesuffix", (PyCFunction)unicode_removesuffix, METH_O, unicode_removesuffix__doc__},
@@ -1302,4 +1303,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=3026a75c0aed4d6f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b91233f3722643be input=a9049054013a1b77]*/
