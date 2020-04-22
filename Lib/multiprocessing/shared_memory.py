@@ -445,11 +445,14 @@ class ShareableList:
 
         if not isinstance(value, (str, bytes)):
             new_format = self._types_mapping[type(value)]
+            encoded_value = value
         else:
             allocated_length = self._allocated_offsets[position + 1] - item_offset
 
-            if len(value) > allocated_length:
-                raise ValueError("exceeds available storage for existing str")
+            encoded_value = (value.encode(_encoding)
+                             if isinstance(value, str) else value)
+            if len(encoded_value) > allocated_length:
+                raise ValueError("bytes/str item exceeds available storage")
             if current_format[-1] == "s":
                 new_format = current_format
             else:
@@ -462,8 +465,7 @@ class ShareableList:
             new_format,
             value
         )
-        value = value.encode(_encoding) if isinstance(value, str) else value
-        struct.pack_into(new_format, self.shm.buf, offset, value)
+        struct.pack_into(new_format, self.shm.buf, offset, encoded_value)
 
     def __reduce__(self):
         return partial(self.__class__, name=self.shm.name), ()

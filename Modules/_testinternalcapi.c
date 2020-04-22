@@ -6,6 +6,9 @@
 #  error "Py_BUILD_CORE_BUILTIN or Py_BUILD_CORE_MODULE must be defined"
 #endif
 
+/* Always enable assertions */
+#undef NDEBUG
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
