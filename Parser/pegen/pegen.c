@@ -26,8 +26,9 @@ PyObject *
 _PyPegen_new_identifier(Parser *p, char *n)
 {
     PyObject *id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
-    if (!id)
-        return NULL;
+    if (!id) {
+        goto error;
+    }
     /* PyUnicode_DecodeUTF8 should always return a ready string. */
     assert(PyUnicode_IS_READY(id));
     /* Check whether there are non-ASCII characters in the
@@ -38,20 +39,20 @@ _PyPegen_new_identifier(Parser *p, char *n)
         if (!p->normalize && !init_normalization(p))
         {
             Py_DECREF(id);
-            return NULL;
+            goto error;
         }
         PyObject *form = PyUnicode_InternFromString("NFKC");
         if (form == NULL)
         {
             Py_DECREF(id);
-            return NULL;
+            goto error;
         }
         PyObject *args[2] = {form, id};
         id2 = _PyObject_FastCall(p->normalize, args, 2);
         Py_DECREF(id);
         Py_DECREF(form);
         if (!id2) {
-            return NULL;
+            goto error;
         }
         if (!PyUnicode_Check(id2))
         {
@@ -60,7 +61,7 @@ _PyPegen_new_identifier(Parser *p, char *n)
                          "%.200s",
                          _PyType_Name(Py_TYPE(id2)));
             Py_DECREF(id2);
-            longjmp(p->error_env, 1);
+            goto error;
         }
         id = id2;
     }
@@ -68,9 +69,13 @@ _PyPegen_new_identifier(Parser *p, char *n)
     if (PyArena_AddPyObject(p->arena, id) < 0)
     {
         Py_DECREF(id);
-        return NULL;
+        goto error;
     }
     return id;
+
+error:
+    p->error_indicator = 1;
+    return NULL;
 }
 
 static PyObject *
@@ -897,6 +902,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
     p->start_rule = start_rule;
     p->parsing_started = 0;
     p->normalize = NULL;
+    p->error_indicator = 0;
 
     p->starting_lineno = 0;
     p->starting_col_offset = 0;
@@ -907,11 +913,6 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
 void *
 _PyPegen_run_parser(Parser *p)
 {
-    int error = setjmp(p->error_env);
-    if (error) {
-        return NULL;
-    }
-
     void *res = _PyPegen_parse(p);
     if (res == NULL) {
         if (PyErr_Occurred()) {

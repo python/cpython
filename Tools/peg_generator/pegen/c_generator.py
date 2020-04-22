@@ -174,11 +174,13 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"}}")
 
     def out_of_memory_return(
-        self, expr: str, returnval: str, message: str = "Parser out of memory"
+        self, expr: str, returnval: str, message: str = "Parser out of memory", cleanup_code=None
     ) -> None:
         self.print(f"if ({expr}) {{")
         with self.indent():
             self.print(f'PyErr_Format(PyExc_MemoryError, "{message}");')
+            if cleanup_code is not None:
+                self.print(cleanup_code)
             self.print(f"return {returnval};")
         self.print(f"}}")
 
@@ -268,7 +270,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def _set_up_token_start_metadata_extraction(self) -> None:
         self.print("if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {")
         with self.indent():
-            self.print("longjmp(p->error_env, 1);")
+            self.print("p->error_indicator = 1;")
+            self.print("return NULL;")
         self.print("}")
         self.print("int start_lineno = p->tokens[mark]->lineno;")
         self.print("UNUSED(start_lineno); // Only used by EXTRA macro")
@@ -321,6 +324,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         memoize = self._should_memoize(node)
 
         with self.indent():
+            self.print("if (p->error_indicator) {")
+            with self.indent():
+                self.print("return NULL;")
+            self.print("}")
             self.print(f"{result_type} res = NULL;")
             if memoize:
                 self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &res))")
@@ -349,6 +356,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         is_repeat1 = node.name.startswith("_loop1")
 
         with self.indent():
+            self.print("if (p->error_indicator) {")
+            with self.indent():
+                self.print("return NULL;")
+            self.print("}")
             self.print(f"void *res = NULL;")
             if memoize:
                 self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &res))")
@@ -375,7 +386,12 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     self.print("return NULL;")
                 self.print("}")
             self.print("asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);")
-            self.out_of_memory_return(f"!seq", "NULL", message=f"asdl_seq_new {node.name}")
+            self.out_of_memory_return(
+                f"!seq",
+                "NULL",
+                message=f"asdl_seq_new {node.name}",
+                cleanup_code="PyMem_Free(children);",
+            )
             self.print("for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);")
             self.print("PyMem_Free(children);")
             if node.name:
@@ -439,12 +455,15 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.visit(item, names=names)
         self.print(")")
 
-    def emit_action(self, node: Alt) -> None:
+    def emit_action(self, node: Alt, cleanup_code=None) -> None:
         self.print(f"res = {node.action};")
 
         self.print("if (res == NULL && PyErr_Occurred()) {")
         with self.indent():
-            self.print("longjmp(p->error_env, 1);")
+            self.print("p->error_indicator = 1;")
+            if cleanup_code:
+                self.print(cleanup_code)
+            self.print("return NULL;")
         self.print("}")
 
         if self.debug:
@@ -506,7 +525,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             if self.skip_actions:
                 self.emit_dummy_action()
             elif node.action:
-                self.emit_action(node)
+                self.emit_action(node, cleanup_code="PyMem_Free(children);")
             else:
                 self.emit_default_action(is_gather, names, node)
 
@@ -539,7 +558,6 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print(f"{var_type}{v};")
                 if v == "opt_var":
                     self.print("UNUSED(opt_var); // Silence compiler warnings")
-
 
             names: List[str] = []
             if is_loop:

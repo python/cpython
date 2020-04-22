@@ -36,7 +36,7 @@ class ParserGenerator:
     def __init__(self, grammar: Grammar, file: Optional[IO[Text]]):
         self.grammar = grammar
         self.rules = grammar.rules
-        if 'trailer' not in grammar.metas and "start" not in self.rules:
+        if "trailer" not in grammar.metas and "start" not in self.rules:
             raise GrammarError("Grammar without a trailer must have a 'start' rule")
         checker = RuleCheckingVisitor(self.rules)
         for rule in self.rules.values():

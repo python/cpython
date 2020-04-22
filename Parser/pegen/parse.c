@@ -635,6 +635,9 @@ static void *_tmp_136_rule(Parser *p);
 static mod_ty
 file_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     mod_ty res = NULL;
     int mark = p->mark;
     { // statements? $
@@ -648,7 +651,8 @@ file_rule(Parser *p)
         {
             res = Module ( a , NULL , p -> arena );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -663,6 +667,9 @@ file_rule(Parser *p)
 static mod_ty
 interactive_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     mod_ty res = NULL;
     int mark = p->mark;
     { // statement_newline
@@ -673,7 +680,8 @@ interactive_rule(Parser *p)
         {
             res = Interactive ( a , p -> arena );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -688,6 +696,9 @@ interactive_rule(Parser *p)
 static mod_ty
 eval_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     mod_ty res = NULL;
     int mark = p->mark;
     { // expressions NEWLINE* $
@@ -704,7 +715,8 @@ eval_rule(Parser *p)
         {
             res = Expression ( a , p -> arena );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -719,6 +731,9 @@ eval_rule(Parser *p)
 static expr_ty
 fstring_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     { // star_expressions
@@ -741,6 +756,9 @@ fstring_rule(Parser *p)
 static asdl_seq*
 statements_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // statement+
@@ -751,7 +769,8 @@ statements_rule(Parser *p)
         {
             res = _PyPegen_seq_flatten ( p , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -766,6 +785,9 @@ statements_rule(Parser *p)
 static asdl_seq*
 statement_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // compound_stmt
@@ -776,7 +798,8 @@ statement_rule(Parser *p)
         {
             res = _PyPegen_singleton_seq ( p , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -802,10 +825,14 @@ statement_rule(Parser *p)
 static asdl_seq*
 statement_newline_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -822,7 +849,8 @@ statement_newline_rule(Parser *p)
         {
             res = _PyPegen_singleton_seq ( p , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -855,7 +883,8 @@ statement_newline_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _PyPegen_singleton_seq ( p , CHECK ( _Py_Pass ( EXTRA ) ) );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -869,7 +898,8 @@ statement_newline_rule(Parser *p)
         {
             res = _PyPegen_interactive_exit ( p );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -884,6 +914,9 @@ statement_newline_rule(Parser *p)
 static asdl_seq*
 simple_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // small_stmt !';' NEWLINE
@@ -899,7 +932,8 @@ simple_stmt_rule(Parser *p)
         {
             res = _PyPegen_singleton_seq ( p , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -920,7 +954,8 @@ simple_stmt_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -948,12 +983,16 @@ simple_stmt_rule(Parser *p)
 static stmt_ty
 small_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     if (_PyPegen_is_memoized(p, small_stmt_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -986,7 +1025,8 @@ small_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Expr ( e , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1047,7 +1087,8 @@ small_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Pass ( EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1108,7 +1149,8 @@ small_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Break ( EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1130,7 +1172,8 @@ small_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Continue ( EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1179,6 +1222,9 @@ small_stmt_rule(Parser *p)
 static stmt_ty
 compound_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     { // &('def' | '@' | ASYNC) function_def
@@ -1286,10 +1332,14 @@ compound_stmt_rule(Parser *p)
 static void *
 assignment_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1320,7 +1370,8 @@ assignment_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_AnnAssign ( CHECK ( _PyPegen_set_expr_context ( p , a , Store ) ) , b , c , 1 , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1351,7 +1402,8 @@ assignment_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_AnnAssign ( a , b , c , 0 , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1376,7 +1428,8 @@ assignment_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Assign ( a , b , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1404,7 +1457,8 @@ assignment_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_AugAssign ( a , b -> kind , c , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1443,6 +1497,9 @@ assignment_rule(Parser *p)
 static AugOperator*
 augassign_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     AugOperator* res = NULL;
     int mark = p->mark;
     { // '+='
@@ -1453,7 +1510,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , Add );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1467,7 +1525,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , Sub );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1481,7 +1540,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , Mult );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1495,7 +1555,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , MatMult );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1509,7 +1570,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , Div );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1523,7 +1585,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , Mod );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1537,7 +1600,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , BitAnd );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1551,7 +1615,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , BitOr );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1565,7 +1630,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , BitXor );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1579,7 +1645,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , LShift );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1593,7 +1660,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , RShift );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1607,7 +1675,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , Pow );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1621,7 +1690,8 @@ augassign_rule(Parser *p)
         {
             res = _PyPegen_augoperator ( p , FloorDiv );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1636,10 +1706,14 @@ augassign_rule(Parser *p)
 static stmt_ty
 global_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1664,7 +1738,8 @@ global_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Global ( CHECK ( _PyPegen_map_names_to_ids ( p , a ) ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1679,10 +1754,14 @@ global_stmt_rule(Parser *p)
 static stmt_ty
 nonlocal_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1707,7 +1786,8 @@ nonlocal_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Nonlocal ( CHECK ( _PyPegen_map_names_to_ids ( p , a ) ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1722,10 +1802,14 @@ nonlocal_stmt_rule(Parser *p)
 static stmt_ty
 yield_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1747,7 +1831,8 @@ yield_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Expr ( y , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1762,10 +1847,14 @@ yield_stmt_rule(Parser *p)
 static stmt_ty
 assert_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1793,7 +1882,8 @@ assert_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Assert ( a , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1808,10 +1898,14 @@ assert_stmt_rule(Parser *p)
 static stmt_ty
 del_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1836,7 +1930,8 @@ del_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Delete ( a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1851,6 +1946,9 @@ del_stmt_rule(Parser *p)
 static stmt_ty
 import_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     { // import_name
@@ -1884,10 +1982,14 @@ import_stmt_rule(Parser *p)
 static stmt_ty
 import_name_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1912,7 +2014,8 @@ import_name_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Import ( a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1929,10 +2032,14 @@ import_name_rule(Parser *p)
 static stmt_ty
 import_from_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -1966,7 +2073,8 @@ import_from_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_ImportFrom ( b -> v . Name . id , c , _PyPegen_seq_count_dots ( a ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -1997,7 +2105,8 @@ import_from_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_ImportFrom ( NULL , b , _PyPegen_seq_count_dots ( a ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2012,6 +2121,9 @@ import_from_rule(Parser *p)
 static asdl_seq*
 import_from_targets_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // '(' import_from_as_names ','? ')'
@@ -2032,7 +2144,8 @@ import_from_targets_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2057,7 +2170,8 @@ import_from_targets_rule(Parser *p)
         {
             res = _PyPegen_singleton_seq ( p , CHECK ( _PyPegen_alias_for_star ( p ) ) );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2072,6 +2186,9 @@ import_from_targets_rule(Parser *p)
 static asdl_seq*
 import_from_as_names_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.import_from_as_name+
@@ -2082,7 +2199,8 @@ import_from_as_names_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2097,6 +2215,9 @@ import_from_as_names_rule(Parser *p)
 static alias_ty
 import_from_as_name_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     alias_ty res = NULL;
     int mark = p->mark;
     { // NAME ['as' NAME]
@@ -2110,7 +2231,8 @@ import_from_as_name_rule(Parser *p)
         {
             res = _Py_alias ( a -> v . Name . id , ( b ) ? ( ( expr_ty ) b ) -> v . Name . id : NULL , p -> arena );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2125,6 +2247,9 @@ import_from_as_name_rule(Parser *p)
 static asdl_seq*
 dotted_as_names_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.dotted_as_name+
@@ -2135,7 +2260,8 @@ dotted_as_names_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2150,6 +2276,9 @@ dotted_as_names_rule(Parser *p)
 static alias_ty
 dotted_as_name_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     alias_ty res = NULL;
     int mark = p->mark;
     { // dotted_name ['as' NAME]
@@ -2163,7 +2292,8 @@ dotted_as_name_rule(Parser *p)
         {
             res = _Py_alias ( a -> v . Name . id , ( b ) ? ( ( expr_ty ) b ) -> v . Name . id : NULL , p -> arena );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2203,6 +2333,9 @@ dotted_name_rule(Parser *p)
 static expr_ty
 dotted_name_raw(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     { // dotted_name '.' NAME
@@ -2219,7 +2352,8 @@ dotted_name_raw(Parser *p)
         {
             res = _PyPegen_join_names_with_dot ( p , a , b );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2247,10 +2381,14 @@ dotted_name_raw(Parser *p)
 static stmt_ty
 if_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2284,7 +2422,8 @@ if_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_If ( a , b , CHECK ( _PyPegen_singleton_seq ( p , c ) ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2318,7 +2457,8 @@ if_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_If ( a , b , c , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2335,10 +2475,14 @@ if_stmt_rule(Parser *p)
 static stmt_ty
 elif_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2372,7 +2516,8 @@ elif_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_If ( a , b , CHECK ( _PyPegen_singleton_seq ( p , c ) ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2406,7 +2551,8 @@ elif_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_If ( a , b , c , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2421,6 +2567,9 @@ elif_stmt_rule(Parser *p)
 static asdl_seq*
 else_block_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // 'else' ':' block
@@ -2437,7 +2586,8 @@ else_block_rule(Parser *p)
         {
             res = b;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2452,10 +2602,14 @@ else_block_rule(Parser *p)
 static stmt_ty
 while_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2489,7 +2643,8 @@ while_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_While ( a , b , c , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2504,10 +2659,14 @@ while_stmt_rule(Parser *p)
 static stmt_ty
 for_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2550,7 +2709,8 @@ for_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = ( is_async ? _Py_AsyncFor : _Py_For ) ( t , ex , b , el , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2567,10 +2727,14 @@ for_stmt_rule(Parser *p)
 static stmt_ty
 with_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2610,7 +2774,8 @@ with_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = ( is_async ? _Py_AsyncWith : _Py_With ) ( a , b , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2644,7 +2809,8 @@ with_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = ( is_async ? _Py_AsyncWith : _Py_With ) ( a , b , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2659,6 +2825,9 @@ with_stmt_rule(Parser *p)
 static withitem_ty
 with_item_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     withitem_ty res = NULL;
     int mark = p->mark;
     { // expression ['as' target]
@@ -2672,7 +2841,8 @@ with_item_rule(Parser *p)
         {
             res = _Py_withitem ( e , o , p -> arena );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2689,10 +2859,14 @@ with_item_rule(Parser *p)
 static stmt_ty
 try_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2723,7 +2897,8 @@ try_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Try ( b , NULL , NULL , f , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2760,7 +2935,8 @@ try_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Try ( b , ex , el , f , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2775,10 +2951,14 @@ try_stmt_rule(Parser *p)
 static excepthandler_ty
 except_block_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     excepthandler_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2812,7 +2992,8 @@ except_block_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_ExceptHandler ( e , ( t ) ? ( ( expr_ty ) t ) -> v . Name . id : NULL , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2840,7 +3021,8 @@ except_block_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_ExceptHandler ( NULL , NULL , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2855,6 +3037,9 @@ except_block_rule(Parser *p)
 static asdl_seq*
 finally_block_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // 'finally' ':' block
@@ -2871,7 +3056,8 @@ finally_block_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2886,10 +3072,14 @@ finally_block_rule(Parser *p)
 static stmt_ty
 return_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2914,7 +3104,8 @@ return_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Return ( a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2929,10 +3120,14 @@ return_stmt_rule(Parser *p)
 static stmt_ty
 raise_stmt_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -2960,7 +3155,8 @@ raise_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Raise ( a , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2982,7 +3178,8 @@ raise_stmt_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Raise ( NULL , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -2997,6 +3194,9 @@ raise_stmt_rule(Parser *p)
 static stmt_ty
 function_def_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     { // decorators function_def_raw
@@ -3010,7 +3210,8 @@ function_def_rule(Parser *p)
         {
             res = _PyPegen_function_def_decorators ( p , d , f );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3036,10 +3237,14 @@ function_def_rule(Parser *p)
 static stmt_ty
 function_def_raw_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3085,7 +3290,8 @@ function_def_raw_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = ( is_async ? _Py_AsyncFunctionDef : _Py_FunctionDef ) ( n -> v . Name . id , ( params ) ? params : CHECK ( _PyPegen_empty_arguments ( p ) ) , b , NULL , a , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3100,6 +3306,9 @@ function_def_raw_rule(Parser *p)
 static arguments_ty
 params_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     arguments_ty res = NULL;
     int mark = p->mark;
     { // invalid_parameters
@@ -3138,6 +3347,9 @@ params_rule(Parser *p)
 static arguments_ty
 parameters_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     arguments_ty res = NULL;
     int mark = p->mark;
     { // slash_without_default [',' plain_names] [',' names_with_default] [',' star_etc?]
@@ -3157,7 +3369,8 @@ parameters_rule(Parser *p)
         {
             res = _PyPegen_make_arguments ( p , a , NULL , b , c , d );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3177,7 +3390,8 @@ parameters_rule(Parser *p)
         {
             res = _PyPegen_make_arguments ( p , NULL , a , NULL , b , c );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3197,7 +3411,8 @@ parameters_rule(Parser *p)
         {
             res = _PyPegen_make_arguments ( p , NULL , NULL , a , b , c );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3214,7 +3429,8 @@ parameters_rule(Parser *p)
         {
             res = _PyPegen_make_arguments ( p , NULL , NULL , NULL , a , b );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3228,7 +3444,8 @@ parameters_rule(Parser *p)
         {
             res = _PyPegen_make_arguments ( p , NULL , NULL , NULL , NULL , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3243,6 +3460,9 @@ parameters_rule(Parser *p)
 static asdl_seq*
 slash_without_default_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // plain_names ',' '/'
@@ -3259,7 +3479,8 @@ slash_without_default_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3274,6 +3495,9 @@ slash_without_default_rule(Parser *p)
 static SlashWithDefault*
 slash_with_default_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     SlashWithDefault* res = NULL;
     int mark = p->mark;
     { // [plain_names ','] names_with_default ',' '/'
@@ -3293,7 +3517,8 @@ slash_with_default_rule(Parser *p)
         {
             res = _PyPegen_slash_with_default ( p , a , b );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3311,6 +3536,9 @@ slash_with_default_rule(Parser *p)
 static StarEtc*
 star_etc_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     StarEtc* res = NULL;
     int mark = p->mark;
     { // '*' plain_name name_with_optional_default* [',' kwds] ','?
@@ -3334,7 +3562,8 @@ star_etc_rule(Parser *p)
         {
             res = _PyPegen_star_etc ( p , a , b , c );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3358,7 +3587,8 @@ star_etc_rule(Parser *p)
         {
             res = _PyPegen_star_etc ( p , NULL , b , c );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3376,7 +3606,8 @@ star_etc_rule(Parser *p)
         {
             res = _PyPegen_star_etc ( p , NULL , NULL , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3391,6 +3622,9 @@ star_etc_rule(Parser *p)
 static NameDefaultPair*
 name_with_optional_default_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     NameDefaultPair* res = NULL;
     int mark = p->mark;
     { // ',' plain_name ['=' expression]
@@ -3407,7 +3641,8 @@ name_with_optional_default_rule(Parser *p)
         {
             res = _PyPegen_name_default_pair ( p , a , b );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3422,6 +3657,9 @@ name_with_optional_default_rule(Parser *p)
 static asdl_seq*
 names_with_default_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.name_with_default+
@@ -3432,7 +3670,8 @@ names_with_default_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3447,6 +3686,9 @@ names_with_default_rule(Parser *p)
 static NameDefaultPair*
 name_with_default_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     NameDefaultPair* res = NULL;
     int mark = p->mark;
     { // plain_name '=' expression
@@ -3463,7 +3705,8 @@ name_with_default_rule(Parser *p)
         {
             res = _PyPegen_name_default_pair ( p , n , e );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3478,6 +3721,9 @@ name_with_default_rule(Parser *p)
 static asdl_seq*
 plain_names_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     if (_PyPegen_is_memoized(p, plain_names_type, &res))
         return res;
@@ -3490,7 +3736,8 @@ plain_names_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3506,10 +3753,14 @@ plain_names_rule(Parser *p)
 static arg_ty
 plain_name_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     arg_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3534,7 +3785,8 @@ plain_name_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_arg ( a -> v . Name . id , b , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3549,6 +3801,9 @@ plain_name_rule(Parser *p)
 static arg_ty
 kwds_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     arg_ty res = NULL;
     int mark = p->mark;
     { // '**' plain_name
@@ -3562,7 +3817,8 @@ kwds_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3577,6 +3833,9 @@ kwds_rule(Parser *p)
 static expr_ty
 annotation_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     { // expression
@@ -3599,6 +3858,9 @@ annotation_rule(Parser *p)
 static asdl_seq*
 decorators_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // (('@' named_expression NEWLINE))+
@@ -3609,7 +3871,8 @@ decorators_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3624,6 +3887,9 @@ decorators_rule(Parser *p)
 static stmt_ty
 class_def_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     { // decorators class_def_raw
@@ -3637,7 +3903,8 @@ class_def_rule(Parser *p)
         {
             res = _PyPegen_class_def_decorators ( p , a , b );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3663,10 +3930,14 @@ class_def_rule(Parser *p)
 static stmt_ty
 class_def_raw_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3700,7 +3971,8 @@ class_def_raw_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_ClassDef ( a -> v . Name . id , ( b ) ? ( ( expr_ty ) b ) -> v . Call . args : NULL , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , c , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3715,6 +3987,9 @@ class_def_raw_rule(Parser *p)
 static asdl_seq*
 block_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     if (_PyPegen_is_memoized(p, block_type, &res))
         return res;
@@ -3736,7 +4011,8 @@ block_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3774,6 +4050,9 @@ block_rule(Parser *p)
 static asdl_seq*
 expressions_list_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.star_expression+ ','?
@@ -3788,7 +4067,8 @@ expressions_list_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3806,10 +4086,14 @@ expressions_list_rule(Parser *p)
 static expr_ty
 star_expressions_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3838,7 +4122,8 @@ star_expressions_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Tuple ( CHECK ( _PyPegen_seq_insert_in_front ( p , a , b ) ) , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3863,7 +4148,8 @@ star_expressions_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Tuple ( CHECK ( _PyPegen_singleton_seq ( p , a ) ) , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3889,12 +4175,16 @@ star_expressions_rule(Parser *p)
 static expr_ty
 star_expression_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, star_expression_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -3919,7 +4209,8 @@ star_expression_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Starred ( a , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3946,6 +4237,9 @@ star_expression_rule(Parser *p)
 static asdl_seq*
 star_named_expressions_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.star_named_expression+ ','?
@@ -3960,7 +4254,8 @@ star_named_expressions_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -3975,10 +4270,14 @@ star_named_expressions_rule(Parser *p)
 static expr_ty
 star_named_expression_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4003,7 +4302,8 @@ star_named_expression_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Starred ( a , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4029,10 +4329,14 @@ star_named_expression_rule(Parser *p)
 static expr_ty
 named_expression_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4060,7 +4364,8 @@ named_expression_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_NamedExpr ( CHECK ( _PyPegen_set_expr_context ( p , a , Store ) ) , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4099,6 +4404,9 @@ named_expression_rule(Parser *p)
 static expr_ty
 annotated_rhs_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     { // yield_expr
@@ -4132,10 +4440,14 @@ annotated_rhs_rule(Parser *p)
 static expr_ty
 expressions_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4164,7 +4476,8 @@ expressions_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Tuple ( CHECK ( _PyPegen_seq_insert_in_front ( p , a , b ) ) , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4189,7 +4502,8 @@ expressions_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Tuple ( CHECK ( _PyPegen_singleton_seq ( p , a ) ) , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4215,12 +4529,16 @@ expressions_rule(Parser *p)
 static expr_ty
 expression_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, expression_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4254,7 +4572,8 @@ expression_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_IfExp ( b , a , c , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4292,10 +4611,14 @@ expression_rule(Parser *p)
 static expr_ty
 lambdef_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4326,7 +4649,8 @@ lambdef_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Lambda ( ( a ) ? a : CHECK ( _PyPegen_empty_arguments ( p ) ) , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4346,6 +4670,9 @@ lambdef_rule(Parser *p)
 static arguments_ty
 lambda_parameters_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     arguments_ty res = NULL;
     int mark = p->mark;
     { // lambda_slash_without_default [',' lambda_plain_names] [',' lambda_names_with_default] [',' lambda_star_etc?]
@@ -4365,7 +4692,8 @@ lambda_parameters_rule(Parser *p)
         {
             res = _PyPegen_make_arguments ( p , a , NULL , b , c , d );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4385,7 +4713,8 @@ lambda_parameters_rule(Parser *p)
         {
             res = _PyPegen_make_arguments ( p , NULL , a , NULL , b , c );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4405,7 +4734,8 @@ lambda_parameters_rule(Parser *p)
         {
             res = _PyPegen_make_arguments ( p , NULL , NULL , a , b , c );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4422,7 +4752,8 @@ lambda_parameters_rule(Parser *p)
         {
             res = _PyPegen_make_arguments ( p , NULL , NULL , NULL , a , b );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4436,7 +4767,8 @@ lambda_parameters_rule(Parser *p)
         {
             res = _PyPegen_make_arguments ( p , NULL , NULL , NULL , NULL , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4451,6 +4783,9 @@ lambda_parameters_rule(Parser *p)
 static asdl_seq*
 lambda_slash_without_default_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // lambda_plain_names ',' '/'
@@ -4467,7 +4802,8 @@ lambda_slash_without_default_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4482,6 +4818,9 @@ lambda_slash_without_default_rule(Parser *p)
 static SlashWithDefault*
 lambda_slash_with_default_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     SlashWithDefault* res = NULL;
     int mark = p->mark;
     { // [lambda_plain_names ','] lambda_names_with_default ',' '/'
@@ -4501,7 +4840,8 @@ lambda_slash_with_default_rule(Parser *p)
         {
             res = _PyPegen_slash_with_default ( p , a , b );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4519,6 +4859,9 @@ lambda_slash_with_default_rule(Parser *p)
 static StarEtc*
 lambda_star_etc_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     StarEtc* res = NULL;
     int mark = p->mark;
     { // '*' lambda_plain_name lambda_name_with_optional_default* [',' lambda_kwds] ','?
@@ -4542,7 +4885,8 @@ lambda_star_etc_rule(Parser *p)
         {
             res = _PyPegen_star_etc ( p , a , b , c );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4566,7 +4910,8 @@ lambda_star_etc_rule(Parser *p)
         {
             res = _PyPegen_star_etc ( p , NULL , b , c );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4584,7 +4929,8 @@ lambda_star_etc_rule(Parser *p)
         {
             res = _PyPegen_star_etc ( p , NULL , NULL , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4599,6 +4945,9 @@ lambda_star_etc_rule(Parser *p)
 static NameDefaultPair*
 lambda_name_with_optional_default_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     NameDefaultPair* res = NULL;
     int mark = p->mark;
     { // ',' lambda_plain_name ['=' expression]
@@ -4615,7 +4964,8 @@ lambda_name_with_optional_default_rule(Parser *p)
         {
             res = _PyPegen_name_default_pair ( p , a , b );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4630,6 +4980,9 @@ lambda_name_with_optional_default_rule(Parser *p)
 static asdl_seq*
 lambda_names_with_default_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.lambda_name_with_default+
@@ -4640,7 +4993,8 @@ lambda_names_with_default_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4655,6 +5009,9 @@ lambda_names_with_default_rule(Parser *p)
 static NameDefaultPair*
 lambda_name_with_default_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     NameDefaultPair* res = NULL;
     int mark = p->mark;
     { // lambda_plain_name '=' expression
@@ -4671,7 +5028,8 @@ lambda_name_with_default_rule(Parser *p)
         {
             res = _PyPegen_name_default_pair ( p , n , e );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4686,6 +5044,9 @@ lambda_name_with_default_rule(Parser *p)
 static asdl_seq*
 lambda_plain_names_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.(lambda_plain_name !'=')+
@@ -4696,7 +5057,8 @@ lambda_plain_names_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4711,10 +5073,14 @@ lambda_plain_names_rule(Parser *p)
 static arg_ty
 lambda_plain_name_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     arg_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4736,7 +5102,8 @@ lambda_plain_name_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_arg ( a -> v . Name . id , NULL , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4751,6 +5118,9 @@ lambda_plain_name_rule(Parser *p)
 static arg_ty
 lambda_kwds_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     arg_ty res = NULL;
     int mark = p->mark;
     { // '**' lambda_plain_name
@@ -4764,7 +5134,8 @@ lambda_kwds_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4779,12 +5150,16 @@ lambda_kwds_rule(Parser *p)
 static expr_ty
 disjunction_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, disjunction_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4809,7 +5184,8 @@ disjunction_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BoolOp ( Or , CHECK ( _PyPegen_seq_insert_in_front ( p , a , b ) ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4836,12 +5212,16 @@ disjunction_rule(Parser *p)
 static expr_ty
 conjunction_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, conjunction_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4866,7 +5246,8 @@ conjunction_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BoolOp ( And , CHECK ( _PyPegen_seq_insert_in_front ( p , a , b ) ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4893,12 +5274,16 @@ conjunction_rule(Parser *p)
 static expr_ty
 inversion_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, inversion_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4923,7 +5308,8 @@ inversion_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_UnaryOp ( Not , a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -4950,10 +5336,14 @@ inversion_rule(Parser *p)
 static expr_ty
 comparison_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -4978,7 +5368,8 @@ comparison_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Compare ( a , CHECK ( _PyPegen_get_cmpops ( p , b ) ) , CHECK ( _PyPegen_get_exprs ( p , b ) ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5014,6 +5405,9 @@ comparison_rule(Parser *p)
 static CmpopExprPair*
 compare_op_bitwise_or_pair_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // eq_bitwise_or
@@ -5135,6 +5529,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
 static CmpopExprPair*
 eq_bitwise_or_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // '==' bitwise_or
@@ -5148,7 +5545,8 @@ eq_bitwise_or_rule(Parser *p)
         {
             res = _PyPegen_cmpop_expr_pair ( p , Eq , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5163,6 +5561,9 @@ eq_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 noteq_bitwise_or_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // '!=' bitwise_or
@@ -5176,7 +5577,8 @@ noteq_bitwise_or_rule(Parser *p)
         {
             res = _PyPegen_cmpop_expr_pair ( p , NotEq , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5191,6 +5593,9 @@ noteq_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 lte_bitwise_or_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // '<=' bitwise_or
@@ -5204,7 +5609,8 @@ lte_bitwise_or_rule(Parser *p)
         {
             res = _PyPegen_cmpop_expr_pair ( p , LtE , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5219,6 +5625,9 @@ lte_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 lt_bitwise_or_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // '<' bitwise_or
@@ -5232,7 +5641,8 @@ lt_bitwise_or_rule(Parser *p)
         {
             res = _PyPegen_cmpop_expr_pair ( p , Lt , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5247,6 +5657,9 @@ lt_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 gte_bitwise_or_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // '>=' bitwise_or
@@ -5260,7 +5673,8 @@ gte_bitwise_or_rule(Parser *p)
         {
             res = _PyPegen_cmpop_expr_pair ( p , GtE , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5275,6 +5689,9 @@ gte_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 gt_bitwise_or_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // '>' bitwise_or
@@ -5288,7 +5705,8 @@ gt_bitwise_or_rule(Parser *p)
         {
             res = _PyPegen_cmpop_expr_pair ( p , Gt , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5303,6 +5721,9 @@ gt_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 notin_bitwise_or_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // 'not' 'in' bitwise_or
@@ -5319,7 +5740,8 @@ notin_bitwise_or_rule(Parser *p)
         {
             res = _PyPegen_cmpop_expr_pair ( p , NotIn , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5334,6 +5756,9 @@ notin_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 in_bitwise_or_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // 'in' bitwise_or
@@ -5347,7 +5772,8 @@ in_bitwise_or_rule(Parser *p)
         {
             res = _PyPegen_cmpop_expr_pair ( p , In , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5362,6 +5788,9 @@ in_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 isnot_bitwise_or_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // 'is' 'not' bitwise_or
@@ -5378,7 +5807,8 @@ isnot_bitwise_or_rule(Parser *p)
         {
             res = _PyPegen_cmpop_expr_pair ( p , IsNot , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5393,6 +5823,9 @@ isnot_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 is_bitwise_or_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     CmpopExprPair* res = NULL;
     int mark = p->mark;
     { // 'is' bitwise_or
@@ -5406,7 +5839,8 @@ is_bitwise_or_rule(Parser *p)
         {
             res = _PyPegen_cmpop_expr_pair ( p , Is , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5446,10 +5880,14 @@ bitwise_or_rule(Parser *p)
 static expr_ty
 bitwise_or_raw(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5477,7 +5915,8 @@ bitwise_or_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , BitOr , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5528,10 +5967,14 @@ bitwise_xor_rule(Parser *p)
 static expr_ty
 bitwise_xor_raw(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5559,7 +6002,8 @@ bitwise_xor_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , BitXor , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5610,10 +6054,14 @@ bitwise_and_rule(Parser *p)
 static expr_ty
 bitwise_and_raw(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5641,7 +6089,8 @@ bitwise_and_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , BitAnd , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5692,10 +6141,14 @@ shift_expr_rule(Parser *p)
 static expr_ty
 shift_expr_raw(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5723,7 +6176,8 @@ shift_expr_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , LShift , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5751,7 +6205,8 @@ shift_expr_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , RShift , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5802,10 +6257,14 @@ sum_rule(Parser *p)
 static expr_ty
 sum_raw(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5833,7 +6292,8 @@ sum_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , Add , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5861,7 +6321,8 @@ sum_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , Sub , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5918,10 +6379,14 @@ term_rule(Parser *p)
 static expr_ty
 term_raw(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -5949,7 +6414,8 @@ term_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , Mult , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -5977,7 +6443,8 @@ term_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , Div , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6005,7 +6472,8 @@ term_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , FloorDiv , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6033,7 +6501,8 @@ term_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , Mod , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6061,7 +6530,8 @@ term_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , MatMult , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6087,12 +6557,16 @@ term_raw(Parser *p)
 static expr_ty
 factor_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, factor_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6117,7 +6591,8 @@ factor_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_UnaryOp ( UAdd , a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6142,7 +6617,8 @@ factor_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_UnaryOp ( USub , a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6167,7 +6643,8 @@ factor_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_UnaryOp ( Invert , a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6194,10 +6671,14 @@ factor_rule(Parser *p)
 static expr_ty
 power_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6225,7 +6706,8 @@ power_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_BinOp ( a , Pow , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6251,12 +6733,16 @@ power_rule(Parser *p)
 static expr_ty
 await_primary_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, await_primary_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6281,7 +6767,8 @@ await_primary_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Await ( a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6338,10 +6825,14 @@ primary_rule(Parser *p)
 static expr_ty
 primary_raw(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6369,7 +6860,8 @@ primary_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Attribute ( a , b -> v . Name . id , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6394,7 +6886,8 @@ primary_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Call ( a , CHECK ( _PyPegen_singleton_seq ( p , b ) ) , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6425,7 +6918,8 @@ primary_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Call ( a , ( b ) ? ( ( expr_ty ) b ) -> v . Call . args : NULL , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6456,7 +6950,8 @@ primary_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Subscript ( a , b , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6482,10 +6977,14 @@ primary_raw(Parser *p)
 static expr_ty
 slices_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6501,7 +7000,8 @@ slices_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6527,7 +7027,8 @@ slices_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Tuple ( a , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6542,10 +7043,14 @@ slices_rule(Parser *p)
 static expr_ty
 slice_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6576,7 +7081,8 @@ slice_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Slice ( a , b , c , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6590,7 +7096,8 @@ slice_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6616,10 +7123,14 @@ slice_rule(Parser *p)
 static expr_ty
 atom_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6652,7 +7163,8 @@ atom_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Constant ( Py_True , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6674,7 +7186,8 @@ atom_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Constant ( Py_False , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6696,7 +7209,8 @@ atom_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Constant ( Py_None , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6710,7 +7224,8 @@ atom_rule(Parser *p)
         {
             res = RAISE_SYNTAX_ERROR ( "You found it!" );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6795,7 +7310,8 @@ atom_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Constant ( Py_Ellipsis , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6810,6 +7326,9 @@ atom_rule(Parser *p)
 static expr_ty
 strings_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, strings_type, &res))
         return res;
@@ -6822,7 +7341,8 @@ strings_rule(Parser *p)
         {
             res = _PyPegen_concatenate_strings ( p , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6838,10 +7358,14 @@ strings_rule(Parser *p)
 static expr_ty
 list_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6869,7 +7393,8 @@ list_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_List ( a , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6884,10 +7409,14 @@ list_rule(Parser *p)
 static expr_ty
 listcomp_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6918,7 +7447,8 @@ listcomp_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_ListComp ( a , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6944,10 +7474,14 @@ listcomp_rule(Parser *p)
 static expr_ty
 tuple_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -6975,7 +7509,8 @@ tuple_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Tuple ( a , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -6990,6 +7525,9 @@ tuple_rule(Parser *p)
 static expr_ty
 group_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     { // '(' (yield_expr | named_expression) ')'
@@ -7006,7 +7544,8 @@ group_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7021,10 +7560,14 @@ group_rule(Parser *p)
 static expr_ty
 genexp_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7055,7 +7598,8 @@ genexp_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_GeneratorExp ( a , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7081,10 +7625,14 @@ genexp_rule(Parser *p)
 static expr_ty
 set_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7112,7 +7660,8 @@ set_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Set ( a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7127,10 +7676,14 @@ set_rule(Parser *p)
 static expr_ty
 setcomp_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7161,7 +7714,8 @@ setcomp_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_SetComp ( a , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7187,10 +7741,14 @@ setcomp_rule(Parser *p)
 static expr_ty
 dict_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7218,7 +7776,8 @@ dict_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Dict ( CHECK ( _PyPegen_get_keys ( p , a ) ) , CHECK ( _PyPegen_get_values ( p , a ) ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7233,10 +7792,14 @@ dict_rule(Parser *p)
 static expr_ty
 dictcomp_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7267,7 +7830,8 @@ dictcomp_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_DictComp ( a -> key , a -> value , b , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7282,6 +7846,9 @@ dictcomp_rule(Parser *p)
 static asdl_seq*
 kvpairs_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.kvpair+ ','?
@@ -7296,7 +7863,8 @@ kvpairs_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7311,6 +7879,9 @@ kvpairs_rule(Parser *p)
 static KeyValuePair*
 kvpair_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     KeyValuePair* res = NULL;
     int mark = p->mark;
     { // '**' bitwise_or
@@ -7324,7 +7895,8 @@ kvpair_rule(Parser *p)
         {
             res = _PyPegen_key_value_pair ( p , NULL , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7344,7 +7916,8 @@ kvpair_rule(Parser *p)
         {
             res = _PyPegen_key_value_pair ( p , a , b );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7359,6 +7932,9 @@ kvpair_rule(Parser *p)
 static asdl_seq*
 for_if_clauses_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ((ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*))+
@@ -7369,7 +7945,8 @@ for_if_clauses_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7384,10 +7961,14 @@ for_if_clauses_rule(Parser *p)
 static expr_ty
 yield_expr_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7415,7 +7996,8 @@ yield_expr_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_YieldFrom ( a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7440,7 +8022,8 @@ yield_expr_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Yield ( a , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7455,6 +8038,9 @@ yield_expr_rule(Parser *p)
 static expr_ty
 arguments_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, arguments_type, &res))
         return res;
@@ -7473,7 +8059,8 @@ arguments_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7500,10 +8087,14 @@ arguments_rule(Parser *p)
 static expr_ty
 args_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7528,7 +8119,8 @@ args_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Call ( _PyPegen_dummy_name ( p ) , ( b ) ? CHECK ( _PyPegen_seq_insert_in_front ( p , a , ( ( expr_ty ) b ) -> v . Call . args ) ) : CHECK ( _PyPegen_singleton_seq ( p , a ) ) , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7550,7 +8142,8 @@ args_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Call ( _PyPegen_dummy_name ( p ) , CHECK_NULL_ALLOWED ( _PyPegen_seq_extract_starred_exprs ( p , a ) ) , CHECK_NULL_ALLOWED ( _PyPegen_seq_delete_starred_exprs ( p , a ) ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7575,7 +8168,8 @@ args_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Call ( _PyPegen_dummy_name ( p ) , ( b ) ? CHECK ( _PyPegen_seq_insert_in_front ( p , a , ( ( expr_ty ) b ) -> v . Call . args ) ) : CHECK ( _PyPegen_singleton_seq ( p , a ) ) , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7593,6 +8187,9 @@ args_rule(Parser *p)
 static asdl_seq*
 kwargs_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.kwarg_or_starred+ ',' ','.kwarg_or_double_starred+
@@ -7609,7 +8206,8 @@ kwargs_rule(Parser *p)
         {
             res = _PyPegen_join_sequences ( p , a , b );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7646,10 +8244,14 @@ kwargs_rule(Parser *p)
 static expr_ty
 starred_expression_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7674,7 +8276,8 @@ starred_expression_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Starred ( a , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7689,10 +8292,14 @@ starred_expression_rule(Parser *p)
 static KeywordOrStarred*
 kwarg_or_starred_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     KeywordOrStarred* res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7720,7 +8327,8 @@ kwarg_or_starred_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _PyPegen_keyword_or_starred ( p , CHECK ( _Py_keyword ( a -> v . Name . id , b , EXTRA ) ) , 1 );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7734,7 +8342,8 @@ kwarg_or_starred_rule(Parser *p)
         {
             res = _PyPegen_keyword_or_starred ( p , a , 0 );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7749,10 +8358,14 @@ kwarg_or_starred_rule(Parser *p)
 static KeywordOrStarred*
 kwarg_or_double_starred_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     KeywordOrStarred* res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7780,7 +8393,8 @@ kwarg_or_double_starred_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _PyPegen_keyword_or_starred ( p , CHECK ( _Py_keyword ( a -> v . Name . id , b , EXTRA ) ) , 1 );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7805,7 +8419,8 @@ kwarg_or_double_starred_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _PyPegen_keyword_or_starred ( p , CHECK ( _Py_keyword ( NULL , a , EXTRA ) ) , 1 );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7820,10 +8435,14 @@ kwarg_or_double_starred_rule(Parser *p)
 static expr_ty
 star_targets_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7839,7 +8458,8 @@ star_targets_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7868,7 +8488,8 @@ star_targets_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Tuple ( CHECK ( _PyPegen_seq_insert_in_front ( p , a , b ) ) , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7883,6 +8504,9 @@ star_targets_rule(Parser *p)
 static asdl_seq*
 star_targets_seq_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.star_target+ ','?
@@ -7897,7 +8521,8 @@ star_targets_seq_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7916,12 +8541,16 @@ star_targets_seq_rule(Parser *p)
 static expr_ty
 star_target_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, star_target_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -7946,7 +8575,8 @@ star_target_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Starred ( CHECK ( _PyPegen_set_expr_context ( p , a , Store ) ) , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -7976,7 +8606,8 @@ star_target_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Attribute ( a , b -> v . Name . id , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8009,7 +8640,8 @@ star_target_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Subscript ( a , b , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8040,10 +8672,14 @@ star_target_rule(Parser *p)
 static expr_ty
 star_atom_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8057,7 +8693,8 @@ star_atom_rule(Parser *p)
         {
             res = _PyPegen_set_expr_context ( p , a , Store );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8077,7 +8714,8 @@ star_atom_rule(Parser *p)
         {
             res = _PyPegen_set_expr_context ( p , a , Store );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8105,7 +8743,8 @@ star_atom_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Tuple ( a , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8133,7 +8772,8 @@ star_atom_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_List ( a , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8151,6 +8791,9 @@ star_atom_rule(Parser *p)
 static expr_ty
 inside_paren_ann_assign_target_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     { // ann_assign_subscript_attribute_target
@@ -8172,7 +8815,8 @@ inside_paren_ann_assign_target_rule(Parser *p)
         {
             res = _PyPegen_set_expr_context ( p , a , Store );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8192,7 +8836,8 @@ inside_paren_ann_assign_target_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8209,10 +8854,14 @@ inside_paren_ann_assign_target_rule(Parser *p)
 static expr_ty
 ann_assign_subscript_attribute_target_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8242,7 +8891,8 @@ ann_assign_subscript_attribute_target_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Attribute ( a , b -> v . Name . id , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8275,7 +8925,8 @@ ann_assign_subscript_attribute_target_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Subscript ( a , b , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8290,6 +8941,9 @@ ann_assign_subscript_attribute_target_rule(Parser *p)
 static asdl_seq*
 del_targets_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.del_target+ ','?
@@ -8304,7 +8958,8 @@ del_targets_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8322,12 +8977,16 @@ del_targets_rule(Parser *p)
 static expr_ty
 del_target_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, del_target_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8357,7 +9016,8 @@ del_target_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Attribute ( a , b -> v . Name . id , Del , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8390,7 +9050,8 @@ del_target_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Subscript ( a , b , Del , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8417,10 +9078,14 @@ del_target_rule(Parser *p)
 static expr_ty
 del_t_atom_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8434,7 +9099,8 @@ del_t_atom_rule(Parser *p)
         {
             res = _PyPegen_set_expr_context ( p , a , Del );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8454,7 +9120,8 @@ del_t_atom_rule(Parser *p)
         {
             res = _PyPegen_set_expr_context ( p , a , Del );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8482,7 +9149,8 @@ del_t_atom_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Tuple ( a , Del , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8510,7 +9178,8 @@ del_t_atom_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_List ( a , Del , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8525,6 +9194,9 @@ del_t_atom_rule(Parser *p)
 static asdl_seq*
 targets_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq* res = NULL;
     int mark = p->mark;
     { // ','.target+ ','?
@@ -8539,7 +9211,8 @@ targets_rule(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8557,12 +9230,16 @@ targets_rule(Parser *p)
 static expr_ty
 target_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     if (_PyPegen_is_memoized(p, target_type, &res))
         return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8592,7 +9269,8 @@ target_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Attribute ( a , b -> v . Name . id , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8625,7 +9303,8 @@ target_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Subscript ( a , b , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8682,10 +9361,14 @@ t_primary_rule(Parser *p)
 static expr_ty
 t_primary_raw(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8715,7 +9398,8 @@ t_primary_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Attribute ( a , b -> v . Name . id , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8748,7 +9432,8 @@ t_primary_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Subscript ( a , b , Load , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8775,7 +9460,8 @@ t_primary_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Call ( a , CHECK ( _PyPegen_singleton_seq ( p , b ) ) , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8808,7 +9494,8 @@ t_primary_raw(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Call ( a , ( b ) ? ( ( expr_ty ) b ) -> v . Call . args : NULL , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8824,7 +9511,8 @@ t_primary_raw(Parser *p)
         {
             res = a;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8839,6 +9527,9 @@ t_primary_raw(Parser *p)
 static void *
 t_lookahead_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '('
@@ -8883,10 +9574,14 @@ t_lookahead_rule(Parser *p)
 static expr_ty
 t_atom_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     expr_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
+        return NULL;
     }
     int start_lineno = p->tokens[mark]->lineno;
     UNUSED(start_lineno); // Only used by EXTRA macro
@@ -8900,7 +9595,8 @@ t_atom_rule(Parser *p)
         {
             res = _PyPegen_set_expr_context ( p , a , Store );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8920,7 +9616,8 @@ t_atom_rule(Parser *p)
         {
             res = _PyPegen_set_expr_context ( p , a , Store );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8948,7 +9645,8 @@ t_atom_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_Tuple ( b , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8976,7 +9674,8 @@ t_atom_rule(Parser *p)
             UNUSED(end_col_offset); // Only used by EXTRA macro
             res = _Py_List ( b , Store , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -8994,6 +9693,9 @@ t_atom_rule(Parser *p)
 static void *
 incorrect_arguments_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // args ',' '*'
@@ -9010,7 +9712,8 @@ incorrect_arguments_rule(Parser *p)
         {
             res = RAISE_SYNTAX_ERROR ( "iterable argument unpacking follows keyword argument unpacking" );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9034,7 +9737,8 @@ incorrect_arguments_rule(Parser *p)
         {
             res = RAISE_SYNTAX_ERROR ( "Generator expression must be parenthesized" );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9054,7 +9758,8 @@ incorrect_arguments_rule(Parser *p)
         {
             res = _PyPegen_arguments_parsing_error ( p , a );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9069,6 +9774,9 @@ incorrect_arguments_rule(Parser *p)
 static void *
 invalid_named_expression_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // expression ':=' expression
@@ -9085,7 +9793,8 @@ invalid_named_expression_rule(Parser *p)
         {
             res = RAISE_SYNTAX_ERROR ( "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( a ) );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9104,6 +9813,9 @@ invalid_named_expression_rule(Parser *p)
 static void *
 invalid_assignment_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // list ':'
@@ -9117,7 +9829,8 @@ invalid_assignment_rule(Parser *p)
         {
             res = RAISE_SYNTAX_ERROR ( "only single target (not list) can be annotated" );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9134,7 +9847,8 @@ invalid_assignment_rule(Parser *p)
         {
             res = RAISE_SYNTAX_ERROR ( "only single target (not tuple) can be annotated" );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9158,7 +9872,8 @@ invalid_assignment_rule(Parser *p)
         {
             res = RAISE_SYNTAX_ERROR ( "illegal target for annotation" );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9178,7 +9893,8 @@ invalid_assignment_rule(Parser *p)
         {
             res = RAISE_SYNTAX_ERROR ( "cannot assign to %s" , _PyPegen_get_expr_name ( a ) );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9193,6 +9909,9 @@ invalid_assignment_rule(Parser *p)
 static void *
 invalid_block_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // NEWLINE !INDENT
@@ -9205,7 +9924,8 @@ invalid_block_rule(Parser *p)
         {
             res = RAISE_INDENTATION_ERROR ( "expected an indented block" );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9220,6 +9940,9 @@ invalid_block_rule(Parser *p)
 static void *
 invalid_comprehension_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ('[' | '(' | '{') '*' expression for_if_clauses
@@ -9239,7 +9962,8 @@ invalid_comprehension_rule(Parser *p)
         {
             res = RAISE_SYNTAX_ERROR ( "iterable unpacking cannot be used in comprehension" );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9255,6 +9979,9 @@ invalid_comprehension_rule(Parser *p)
 static void *
 invalid_parameters_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // [plain_names ','] (slash_with_default | names_with_default) ',' plain_names
@@ -9275,7 +10002,8 @@ invalid_parameters_rule(Parser *p)
         {
             res = RAISE_SYNTAX_ERROR ( "non-default argument follows default argument" );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9290,6 +10018,9 @@ invalid_parameters_rule(Parser *p)
 static asdl_seq *
 _loop0_1_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -9323,6 +10054,7 @@ _loop0_1_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_1");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -9335,6 +10067,9 @@ _loop0_1_rule(Parser *p)
 static asdl_seq *
 _loop1_2_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -9372,6 +10107,7 @@ _loop1_2_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_2");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -9384,6 +10120,9 @@ _loop1_2_rule(Parser *p)
 static asdl_seq *
 _loop0_4_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -9405,7 +10144,9 @@ _loop0_4_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -9423,6 +10164,7 @@ _loop0_4_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_4");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -9435,6 +10177,9 @@ _loop0_4_rule(Parser *p)
 static asdl_seq *
 _gather_3_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // small_stmt _loop0_4
@@ -9460,6 +10205,9 @@ _gather_3_rule(Parser *p)
 static void *
 _tmp_5_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'import'
@@ -9493,6 +10241,9 @@ _tmp_5_rule(Parser *p)
 static void *
 _tmp_6_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'def'
@@ -9537,6 +10288,9 @@ _tmp_6_rule(Parser *p)
 static void *
 _tmp_7_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'class'
@@ -9570,6 +10324,9 @@ _tmp_7_rule(Parser *p)
 static void *
 _tmp_8_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'with'
@@ -9603,6 +10360,9 @@ _tmp_8_rule(Parser *p)
 static void *
 _tmp_9_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'for'
@@ -9636,6 +10396,9 @@ _tmp_9_rule(Parser *p)
 static void *
 _tmp_10_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '=' annotated_rhs
@@ -9649,7 +10412,8 @@ _tmp_10_rule(Parser *p)
         {
             res = d;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9664,6 +10428,9 @@ _tmp_10_rule(Parser *p)
 static void *
 _tmp_11_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '(' inside_paren_ann_assign_target ')'
@@ -9680,7 +10447,8 @@ _tmp_11_rule(Parser *p)
         {
             res = b;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9706,6 +10474,9 @@ _tmp_11_rule(Parser *p)
 static void *
 _tmp_12_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '=' annotated_rhs
@@ -9719,7 +10490,8 @@ _tmp_12_rule(Parser *p)
         {
             res = d;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -9734,6 +10506,9 @@ _tmp_12_rule(Parser *p)
 static asdl_seq *
 _loop1_13_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -9771,6 +10546,7 @@ _loop1_13_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_13");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -9783,6 +10559,9 @@ _loop1_13_rule(Parser *p)
 static void *
 _tmp_14_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // yield_expr
@@ -9816,6 +10595,9 @@ _tmp_14_rule(Parser *p)
 static void *
 _tmp_15_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // yield_expr
@@ -9849,6 +10631,9 @@ _tmp_15_rule(Parser *p)
 static asdl_seq *
 _loop0_17_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -9870,7 +10655,9 @@ _loop0_17_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -9888,6 +10675,7 @@ _loop0_17_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_17");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -9900,6 +10688,9 @@ _loop0_17_rule(Parser *p)
 static asdl_seq *
 _gather_16_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // NAME _loop0_17
@@ -9925,6 +10716,9 @@ _gather_16_rule(Parser *p)
 static asdl_seq *
 _loop0_19_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -9946,7 +10740,9 @@ _loop0_19_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -9964,6 +10760,7 @@ _loop0_19_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_19");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -9976,6 +10773,9 @@ _loop0_19_rule(Parser *p)
 static asdl_seq *
 _gather_18_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // NAME _loop0_19
@@ -10001,6 +10801,9 @@ _gather_18_rule(Parser *p)
 static void *
 _tmp_20_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' expression
@@ -10014,7 +10817,8 @@ _tmp_20_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10029,6 +10833,9 @@ _tmp_20_rule(Parser *p)
 static asdl_seq *
 _loop0_21_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -10062,6 +10869,7 @@ _loop0_21_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_21");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -10074,6 +10882,9 @@ _loop0_21_rule(Parser *p)
 static asdl_seq *
 _loop1_22_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -10111,6 +10922,7 @@ _loop1_22_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_22");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -10123,6 +10935,9 @@ _loop1_22_rule(Parser *p)
 static asdl_seq *
 _loop0_24_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -10144,7 +10959,9 @@ _loop0_24_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -10162,6 +10979,7 @@ _loop0_24_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_24");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -10174,6 +10992,9 @@ _loop0_24_rule(Parser *p)
 static asdl_seq *
 _gather_23_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // import_from_as_name _loop0_24
@@ -10199,6 +11020,9 @@ _gather_23_rule(Parser *p)
 static void *
 _tmp_25_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'as' NAME
@@ -10212,7 +11036,8 @@ _tmp_25_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10227,6 +11052,9 @@ _tmp_25_rule(Parser *p)
 static asdl_seq *
 _loop0_27_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -10248,7 +11076,9 @@ _loop0_27_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -10266,6 +11096,7 @@ _loop0_27_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_27");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -10278,6 +11109,9 @@ _loop0_27_rule(Parser *p)
 static asdl_seq *
 _gather_26_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // dotted_as_name _loop0_27
@@ -10303,6 +11137,9 @@ _gather_26_rule(Parser *p)
 static void *
 _tmp_28_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'as' NAME
@@ -10316,7 +11153,8 @@ _tmp_28_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10331,6 +11169,9 @@ _tmp_28_rule(Parser *p)
 static asdl_seq *
 _loop0_30_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -10352,7 +11193,9 @@ _loop0_30_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -10370,6 +11213,7 @@ _loop0_30_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_30");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -10382,6 +11226,9 @@ _loop0_30_rule(Parser *p)
 static asdl_seq *
 _gather_29_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // with_item _loop0_30
@@ -10407,6 +11254,9 @@ _gather_29_rule(Parser *p)
 static asdl_seq *
 _loop0_32_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -10428,7 +11278,9 @@ _loop0_32_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -10446,6 +11298,7 @@ _loop0_32_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_32");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -10458,6 +11311,9 @@ _loop0_32_rule(Parser *p)
 static asdl_seq *
 _gather_31_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // with_item _loop0_32
@@ -10483,6 +11339,9 @@ _gather_31_rule(Parser *p)
 static void *
 _tmp_33_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'as' target
@@ -10496,7 +11355,8 @@ _tmp_33_rule(Parser *p)
         {
             res = t;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10511,6 +11371,9 @@ _tmp_33_rule(Parser *p)
 static asdl_seq *
 _loop1_34_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -10548,6 +11411,7 @@ _loop1_34_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_34");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -10560,6 +11424,9 @@ _loop1_34_rule(Parser *p)
 static void *
 _tmp_35_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'as' target
@@ -10573,7 +11440,8 @@ _tmp_35_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10588,6 +11456,9 @@ _tmp_35_rule(Parser *p)
 static void *
 _tmp_36_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'from' expression
@@ -10601,7 +11472,8 @@ _tmp_36_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10616,6 +11488,9 @@ _tmp_36_rule(Parser *p)
 static void *
 _tmp_37_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '->' annotation
@@ -10629,7 +11504,8 @@ _tmp_37_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10644,6 +11520,9 @@ _tmp_37_rule(Parser *p)
 static void *
 _tmp_38_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' plain_names
@@ -10657,7 +11536,8 @@ _tmp_38_rule(Parser *p)
         {
             res = x;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10672,6 +11552,9 @@ _tmp_38_rule(Parser *p)
 static void *
 _tmp_39_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' names_with_default
@@ -10685,7 +11568,8 @@ _tmp_39_rule(Parser *p)
         {
             res = y;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10700,6 +11584,9 @@ _tmp_39_rule(Parser *p)
 static void *
 _tmp_40_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' star_etc?
@@ -10713,7 +11600,8 @@ _tmp_40_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10728,6 +11616,9 @@ _tmp_40_rule(Parser *p)
 static void *
 _tmp_41_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' names_with_default
@@ -10741,7 +11632,8 @@ _tmp_41_rule(Parser *p)
         {
             res = y;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10756,6 +11648,9 @@ _tmp_41_rule(Parser *p)
 static void *
 _tmp_42_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' star_etc?
@@ -10769,7 +11664,8 @@ _tmp_42_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10784,6 +11680,9 @@ _tmp_42_rule(Parser *p)
 static void *
 _tmp_43_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' names_with_default
@@ -10797,7 +11696,8 @@ _tmp_43_rule(Parser *p)
         {
             res = y;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10812,6 +11712,9 @@ _tmp_43_rule(Parser *p)
 static void *
 _tmp_44_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' star_etc?
@@ -10825,7 +11728,8 @@ _tmp_44_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10840,6 +11744,9 @@ _tmp_44_rule(Parser *p)
 static void *
 _tmp_45_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' star_etc?
@@ -10853,7 +11760,8 @@ _tmp_45_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10868,6 +11776,9 @@ _tmp_45_rule(Parser *p)
 static void *
 _tmp_46_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // plain_names ','
@@ -10881,7 +11792,8 @@ _tmp_46_rule(Parser *p)
         {
             res = n;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10896,6 +11808,9 @@ _tmp_46_rule(Parser *p)
 static asdl_seq *
 _loop0_47_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -10929,6 +11844,7 @@ _loop0_47_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_47");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -10941,6 +11857,9 @@ _loop0_47_rule(Parser *p)
 static void *
 _tmp_48_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' kwds
@@ -10954,7 +11873,8 @@ _tmp_48_rule(Parser *p)
         {
             res = d;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -10969,6 +11889,9 @@ _tmp_48_rule(Parser *p)
 static asdl_seq *
 _loop1_49_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -11006,6 +11929,7 @@ _loop1_49_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_49");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -11018,6 +11942,9 @@ _loop1_49_rule(Parser *p)
 static void *
 _tmp_50_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' kwds
@@ -11031,7 +11958,8 @@ _tmp_50_rule(Parser *p)
         {
             res = d;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11046,6 +11974,9 @@ _tmp_50_rule(Parser *p)
 static void *
 _tmp_51_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '=' expression
@@ -11059,7 +11990,8 @@ _tmp_51_rule(Parser *p)
         {
             res = e;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11074,6 +12006,9 @@ _tmp_51_rule(Parser *p)
 static asdl_seq *
 _loop0_53_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -11095,7 +12030,9 @@ _loop0_53_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -11113,6 +12050,7 @@ _loop0_53_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_53");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -11125,6 +12063,9 @@ _loop0_53_rule(Parser *p)
 static asdl_seq *
 _gather_52_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // name_with_default _loop0_53
@@ -11150,6 +12091,9 @@ _gather_52_rule(Parser *p)
 static asdl_seq *
 _loop0_55_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -11171,7 +12115,9 @@ _loop0_55_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -11189,6 +12135,7 @@ _loop0_55_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_55");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -11201,6 +12148,9 @@ _loop0_55_rule(Parser *p)
 static asdl_seq *
 _gather_54_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // (plain_name !'=') _loop0_55
@@ -11226,6 +12176,9 @@ _gather_54_rule(Parser *p)
 static void *
 _tmp_56_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ':' annotation
@@ -11239,7 +12192,8 @@ _tmp_56_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11254,6 +12208,9 @@ _tmp_56_rule(Parser *p)
 static asdl_seq *
 _loop1_57_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -11291,6 +12248,7 @@ _loop1_57_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_57");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -11303,6 +12261,9 @@ _loop1_57_rule(Parser *p)
 static void *
 _tmp_58_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '(' arguments? ')'
@@ -11319,7 +12280,8 @@ _tmp_58_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11334,6 +12296,9 @@ _tmp_58_rule(Parser *p)
 static asdl_seq *
 _loop0_60_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -11355,7 +12320,9 @@ _loop0_60_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -11373,6 +12340,7 @@ _loop0_60_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_60");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -11385,6 +12353,9 @@ _loop0_60_rule(Parser *p)
 static asdl_seq *
 _gather_59_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // star_expression _loop0_60
@@ -11410,6 +12381,9 @@ _gather_59_rule(Parser *p)
 static asdl_seq *
 _loop1_61_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -11447,6 +12421,7 @@ _loop1_61_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_61");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -11459,6 +12434,9 @@ _loop1_61_rule(Parser *p)
 static asdl_seq *
 _loop0_63_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -11480,7 +12458,9 @@ _loop0_63_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -11498,6 +12478,7 @@ _loop0_63_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_63");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -11510,6 +12491,9 @@ _loop0_63_rule(Parser *p)
 static asdl_seq *
 _gather_62_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // star_named_expression _loop0_63
@@ -11535,6 +12519,9 @@ _gather_62_rule(Parser *p)
 static asdl_seq *
 _loop1_64_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -11572,6 +12559,7 @@ _loop1_64_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_64");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -11584,6 +12572,9 @@ _loop1_64_rule(Parser *p)
 static void *
 _tmp_65_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' lambda_plain_names
@@ -11597,7 +12588,8 @@ _tmp_65_rule(Parser *p)
         {
             res = x;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11612,6 +12604,9 @@ _tmp_65_rule(Parser *p)
 static void *
 _tmp_66_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' lambda_names_with_default
@@ -11625,7 +12620,8 @@ _tmp_66_rule(Parser *p)
         {
             res = y;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11640,6 +12636,9 @@ _tmp_66_rule(Parser *p)
 static void *
 _tmp_67_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' lambda_star_etc?
@@ -11653,7 +12652,8 @@ _tmp_67_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11668,6 +12668,9 @@ _tmp_67_rule(Parser *p)
 static void *
 _tmp_68_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' lambda_names_with_default
@@ -11681,7 +12684,8 @@ _tmp_68_rule(Parser *p)
         {
             res = y;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11696,6 +12700,9 @@ _tmp_68_rule(Parser *p)
 static void *
 _tmp_69_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' lambda_star_etc?
@@ -11709,7 +12716,8 @@ _tmp_69_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11724,6 +12732,9 @@ _tmp_69_rule(Parser *p)
 static void *
 _tmp_70_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' lambda_names_with_default
@@ -11737,7 +12748,8 @@ _tmp_70_rule(Parser *p)
         {
             res = y;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11752,6 +12764,9 @@ _tmp_70_rule(Parser *p)
 static void *
 _tmp_71_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' lambda_star_etc?
@@ -11765,7 +12780,8 @@ _tmp_71_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11780,6 +12796,9 @@ _tmp_71_rule(Parser *p)
 static void *
 _tmp_72_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' lambda_star_etc?
@@ -11793,7 +12812,8 @@ _tmp_72_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11808,6 +12828,9 @@ _tmp_72_rule(Parser *p)
 static void *
 _tmp_73_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // lambda_plain_names ','
@@ -11821,7 +12844,8 @@ _tmp_73_rule(Parser *p)
         {
             res = n;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11836,6 +12860,9 @@ _tmp_73_rule(Parser *p)
 static asdl_seq *
 _loop0_74_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -11869,6 +12896,7 @@ _loop0_74_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_74");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -11881,6 +12909,9 @@ _loop0_74_rule(Parser *p)
 static void *
 _tmp_75_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' lambda_kwds
@@ -11894,7 +12925,8 @@ _tmp_75_rule(Parser *p)
         {
             res = d;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11909,6 +12941,9 @@ _tmp_75_rule(Parser *p)
 static asdl_seq *
 _loop1_76_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -11946,6 +12981,7 @@ _loop1_76_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_76");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -11958,6 +12994,9 @@ _loop1_76_rule(Parser *p)
 static void *
 _tmp_77_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' lambda_kwds
@@ -11971,7 +13010,8 @@ _tmp_77_rule(Parser *p)
         {
             res = d;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -11986,6 +13026,9 @@ _tmp_77_rule(Parser *p)
 static void *
 _tmp_78_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '=' expression
@@ -11999,7 +13042,8 @@ _tmp_78_rule(Parser *p)
         {
             res = e;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -12014,6 +13058,9 @@ _tmp_78_rule(Parser *p)
 static asdl_seq *
 _loop0_80_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12035,7 +13082,9 @@ _loop0_80_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -12053,6 +13102,7 @@ _loop0_80_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_80");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12065,6 +13115,9 @@ _loop0_80_rule(Parser *p)
 static asdl_seq *
 _gather_79_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // lambda_name_with_default _loop0_80
@@ -12090,6 +13143,9 @@ _gather_79_rule(Parser *p)
 static asdl_seq *
 _loop0_82_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12111,7 +13167,9 @@ _loop0_82_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -12129,6 +13187,7 @@ _loop0_82_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_82");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12141,6 +13200,9 @@ _loop0_82_rule(Parser *p)
 static asdl_seq *
 _gather_81_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // (lambda_plain_name !'=') _loop0_82
@@ -12166,6 +13228,9 @@ _gather_81_rule(Parser *p)
 static asdl_seq *
 _loop1_83_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12203,6 +13268,7 @@ _loop1_83_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_83");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12215,6 +13281,9 @@ _loop1_83_rule(Parser *p)
 static asdl_seq *
 _loop1_84_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12252,6 +13321,7 @@ _loop1_84_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_84");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12264,6 +13334,9 @@ _loop1_84_rule(Parser *p)
 static asdl_seq *
 _loop1_85_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12301,6 +13374,7 @@ _loop1_85_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_85");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12313,6 +13387,9 @@ _loop1_85_rule(Parser *p)
 static asdl_seq *
 _loop0_87_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12334,7 +13411,9 @@ _loop0_87_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -12352,6 +13431,7 @@ _loop0_87_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_87");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12364,6 +13444,9 @@ _loop0_87_rule(Parser *p)
 static asdl_seq *
 _gather_86_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // slice _loop0_87
@@ -12389,6 +13472,9 @@ _gather_86_rule(Parser *p)
 static void *
 _tmp_88_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ':' expression?
@@ -12402,7 +13488,8 @@ _tmp_88_rule(Parser *p)
         {
             res = d;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -12417,6 +13504,9 @@ _tmp_88_rule(Parser *p)
 static void *
 _tmp_89_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // tuple
@@ -12461,6 +13551,9 @@ _tmp_89_rule(Parser *p)
 static void *
 _tmp_90_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // list
@@ -12494,6 +13587,9 @@ _tmp_90_rule(Parser *p)
 static void *
 _tmp_91_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // dict
@@ -12549,6 +13645,9 @@ _tmp_91_rule(Parser *p)
 static asdl_seq *
 _loop1_92_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12586,6 +13685,7 @@ _loop1_92_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_92");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12598,6 +13698,9 @@ _loop1_92_rule(Parser *p)
 static void *
 _tmp_93_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // star_named_expression ',' star_named_expressions?
@@ -12614,7 +13717,8 @@ _tmp_93_rule(Parser *p)
         {
             res = _PyPegen_seq_insert_in_front ( p , y , z );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -12629,6 +13733,9 @@ _tmp_93_rule(Parser *p)
 static void *
 _tmp_94_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // yield_expr
@@ -12662,6 +13769,9 @@ _tmp_94_rule(Parser *p)
 static asdl_seq *
 _loop0_96_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12683,7 +13793,9 @@ _loop0_96_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -12701,6 +13813,7 @@ _loop0_96_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_96");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12713,6 +13826,9 @@ _loop0_96_rule(Parser *p)
 static asdl_seq *
 _gather_95_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // kvpair _loop0_96
@@ -12738,6 +13854,9 @@ _gather_95_rule(Parser *p)
 static asdl_seq *
 _loop1_97_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12775,6 +13894,7 @@ _loop1_97_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_97");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12787,6 +13907,9 @@ _loop1_97_rule(Parser *p)
 static void *
 _tmp_98_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' args
@@ -12800,7 +13923,8 @@ _tmp_98_rule(Parser *p)
         {
             res = c;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -12815,6 +13939,9 @@ _tmp_98_rule(Parser *p)
 static void *
 _tmp_99_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' args
@@ -12828,7 +13955,8 @@ _tmp_99_rule(Parser *p)
         {
             res = c;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -12843,6 +13971,9 @@ _tmp_99_rule(Parser *p)
 static asdl_seq *
 _loop0_101_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12864,7 +13995,9 @@ _loop0_101_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -12882,6 +14015,7 @@ _loop0_101_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_101");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12894,6 +14028,9 @@ _loop0_101_rule(Parser *p)
 static asdl_seq *
 _gather_100_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // kwarg_or_starred _loop0_101
@@ -12919,6 +14056,9 @@ _gather_100_rule(Parser *p)
 static asdl_seq *
 _loop0_103_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -12940,7 +14080,9 @@ _loop0_103_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -12958,6 +14100,7 @@ _loop0_103_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_103");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -12970,6 +14113,9 @@ _loop0_103_rule(Parser *p)
 static asdl_seq *
 _gather_102_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // kwarg_or_double_starred _loop0_103
@@ -12995,6 +14141,9 @@ _gather_102_rule(Parser *p)
 static asdl_seq *
 _loop0_105_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -13016,7 +14165,9 @@ _loop0_105_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -13034,6 +14185,7 @@ _loop0_105_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_105");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -13046,6 +14198,9 @@ _loop0_105_rule(Parser *p)
 static asdl_seq *
 _gather_104_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // kwarg_or_starred _loop0_105
@@ -13071,6 +14226,9 @@ _gather_104_rule(Parser *p)
 static asdl_seq *
 _loop0_107_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -13092,7 +14250,9 @@ _loop0_107_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -13110,6 +14270,7 @@ _loop0_107_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_107");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -13122,6 +14283,9 @@ _loop0_107_rule(Parser *p)
 static asdl_seq *
 _gather_106_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // kwarg_or_double_starred _loop0_107
@@ -13147,6 +14311,9 @@ _gather_106_rule(Parser *p)
 static asdl_seq *
 _loop0_108_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -13180,6 +14347,7 @@ _loop0_108_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_108");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -13192,6 +14360,9 @@ _loop0_108_rule(Parser *p)
 static asdl_seq *
 _loop0_110_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -13213,7 +14384,9 @@ _loop0_110_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -13231,6 +14404,7 @@ _loop0_110_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_110");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -13243,6 +14417,9 @@ _loop0_110_rule(Parser *p)
 static asdl_seq *
 _gather_109_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // star_target _loop0_110
@@ -13268,6 +14445,9 @@ _gather_109_rule(Parser *p)
 static void *
 _tmp_111_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // !'*' star_target
@@ -13292,6 +14472,9 @@ _tmp_111_rule(Parser *p)
 static asdl_seq *
 _loop0_113_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -13313,7 +14496,9 @@ _loop0_113_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -13331,6 +14516,7 @@ _loop0_113_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_113");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -13343,6 +14529,9 @@ _loop0_113_rule(Parser *p)
 static asdl_seq *
 _gather_112_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // del_target _loop0_113
@@ -13368,6 +14557,9 @@ _gather_112_rule(Parser *p)
 static asdl_seq *
 _loop0_115_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -13389,7 +14581,9 @@ _loop0_115_rule(Parser *p)
         {
             res = elem;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                PyMem_Free(children);
+                return NULL;
             }
             if (n == children_capacity) {
                 children_capacity *= 2;
@@ -13407,6 +14601,7 @@ _loop0_115_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_115");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -13419,6 +14614,9 @@ _loop0_115_rule(Parser *p)
 static asdl_seq *
 _gather_114_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     asdl_seq * res = NULL;
     int mark = p->mark;
     { // target _loop0_115
@@ -13444,6 +14642,9 @@ _gather_114_rule(Parser *p)
 static void *
 _tmp_116_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // args
@@ -13480,6 +14681,9 @@ _tmp_116_rule(Parser *p)
 static void *
 _tmp_117_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '=' annotated_rhs
@@ -13505,6 +14709,9 @@ _tmp_117_rule(Parser *p)
 static void *
 _tmp_118_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '='
@@ -13538,6 +14745,9 @@ _tmp_118_rule(Parser *p)
 static void *
 _tmp_119_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // yield_expr
@@ -13571,6 +14781,9 @@ _tmp_119_rule(Parser *p)
 static void *
 _tmp_120_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '['
@@ -13615,6 +14828,9 @@ _tmp_120_rule(Parser *p)
 static void *
 _tmp_121_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // plain_names ','
@@ -13640,6 +14856,9 @@ _tmp_121_rule(Parser *p)
 static void *
 _tmp_122_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // slash_with_default
@@ -13673,6 +14892,9 @@ _tmp_122_rule(Parser *p)
 static void *
 _tmp_123_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // star_targets '='
@@ -13686,7 +14908,8 @@ _tmp_123_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -13701,6 +14924,9 @@ _tmp_123_rule(Parser *p)
 static void *
 _tmp_124_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '.'
@@ -13734,6 +14960,9 @@ _tmp_124_rule(Parser *p)
 static void *
 _tmp_125_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '.'
@@ -13767,6 +14996,9 @@ _tmp_125_rule(Parser *p)
 static void *
 _tmp_126_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // plain_name !'='
@@ -13791,6 +15023,9 @@ _tmp_126_rule(Parser *p)
 static void *
 _tmp_127_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // '@' named_expression NEWLINE
@@ -13807,7 +15042,8 @@ _tmp_127_rule(Parser *p)
         {
             res = f;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -13822,6 +15058,9 @@ _tmp_127_rule(Parser *p)
 static void *
 _tmp_128_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' star_expression
@@ -13835,7 +15074,8 @@ _tmp_128_rule(Parser *p)
         {
             res = c;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -13850,6 +15090,9 @@ _tmp_128_rule(Parser *p)
 static void *
 _tmp_129_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' expression
@@ -13863,7 +15106,8 @@ _tmp_129_rule(Parser *p)
         {
             res = c;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -13878,6 +15122,9 @@ _tmp_129_rule(Parser *p)
 static void *
 _tmp_130_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // lambda_plain_name !'='
@@ -13902,6 +15149,9 @@ _tmp_130_rule(Parser *p)
 static void *
 _tmp_131_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'or' conjunction
@@ -13915,7 +15165,8 @@ _tmp_131_rule(Parser *p)
         {
             res = c;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -13930,6 +15181,9 @@ _tmp_131_rule(Parser *p)
 static void *
 _tmp_132_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'and' inversion
@@ -13943,7 +15197,8 @@ _tmp_132_rule(Parser *p)
         {
             res = c;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -13958,6 +15213,9 @@ _tmp_132_rule(Parser *p)
 static void *
 _tmp_133_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*
@@ -13983,7 +15241,8 @@ _tmp_133_rule(Parser *p)
         {
             res = _Py_comprehension ( a , b , c , y != NULL , p -> arena );
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -13998,6 +15257,9 @@ _tmp_133_rule(Parser *p)
 static void *
 _tmp_134_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // ',' star_target
@@ -14011,7 +15273,8 @@ _tmp_134_rule(Parser *p)
         {
             res = c;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
@@ -14026,6 +15289,9 @@ _tmp_134_rule(Parser *p)
 static asdl_seq *
 _loop0_135_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void *res = NULL;
     int mark = p->mark;
     int start_mark = p->mark;
@@ -14059,6 +15325,7 @@ _loop0_135_rule(Parser *p)
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
         PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_135");
+        PyMem_Free(children);
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
@@ -14071,6 +15338,9 @@ _loop0_135_rule(Parser *p)
 static void *
 _tmp_136_rule(Parser *p)
 {
+    if (p->error_indicator) {
+        return NULL;
+    }
     void * res = NULL;
     int mark = p->mark;
     { // 'if' disjunction
@@ -14084,7 +15354,8 @@ _tmp_136_rule(Parser *p)
         {
             res = z;
             if (res == NULL && PyErr_Occurred()) {
-                longjmp(p->error_env, 1);
+                p->error_indicator = 1;
+                return NULL;
             }
             goto done;
         }
