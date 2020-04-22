@@ -2790,17 +2790,13 @@ class PidTests(unittest.TestCase):
         self.assertEqual(int(stdout), os.getpid())
 
     def check_waitpid(self, code, exitcode, callback=None):
-        # On Windows, os.spawnv() spawns a shell: run Python with a filename,
-        # rather than with -c CODE, to avoid the need to quote the code.
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
-
-        with open(filename, "w") as fp:
-            print(code, file=fp)
-            fp.flush()
-
-        args = [sys.executable, filename]
-        pid = os.spawnv(os.P_NOWAIT, args[0], args)
+        if sys.platform == 'win32':
+            # On Windows, os.spawnv() simply joins arguments with spaces:
+            # arguments need to be quoted
+            args = [f'"{sys.executable}"', '-c', f'"{code}"']
+        else:
+            args = [sys.executable, filename]
+        pid = os.spawnv(os.P_NOWAIT, sys.executable, args)
 
         if callback is not None:
             callback(pid)
