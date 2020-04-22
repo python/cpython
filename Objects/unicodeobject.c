@@ -12789,6 +12789,61 @@ unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
     return replace(self, old, new, count);
 }
 
+/*[clinic input]
+str.removeprefix as unicode_removeprefix
+
+    prefix: unicode
+    /
+
+Return a str with the given prefix string removed if present.
+
+If the string starts with the prefix string, return string[len(prefix):].
+Otherwise, return a copy of the original string.
+[clinic start generated code]*/
+
+static PyObject *
+unicode_removeprefix_impl(PyObject *self, PyObject *prefix)
+/*[clinic end generated code: output=f1e5945e9763bcb9 input=27ec40b99a37eb88]*/
+{
+    int match = tailmatch(self, prefix, 0, PY_SSIZE_T_MAX, -1);
+    if (match == -1) {
+        return NULL;
+    }
+    if (match) {
+        return PyUnicode_Substring(self, PyUnicode_GET_LENGTH(prefix),
+                                   PyUnicode_GET_LENGTH(self));
+    }
+    return unicode_result_unchanged(self);
+}
+
+/*[clinic input]
+str.removesuffix as unicode_removesuffix
+
+    suffix: unicode
+    /
+
+Return a str with the given suffix string removed if present.
+
+If the string ends with the suffix string and that suffix is not empty,
+return string[:-len(suffix)]. Otherwise, return a copy of the original
+string.
+[clinic start generated code]*/
+
+static PyObject *
+unicode_removesuffix_impl(PyObject *self, PyObject *suffix)
+/*[clinic end generated code: output=d36629e227636822 input=12cc32561e769be4]*/
+{
+    int match = tailmatch(self, suffix, 0, PY_SSIZE_T_MAX, +1);
+    if (match == -1) {
+        return NULL;
+    }
+    if (match) {
+        return PyUnicode_Substring(self, 0, PyUnicode_GET_LENGTH(self)
+                                            - PyUnicode_GET_LENGTH(suffix));
+    }
+    return unicode_result_unchanged(self);
+}
+
 static PyObject *
 unicode_repr(PyObject *unicode)
 {
@@ -14105,6 +14160,8 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_UPPER_METHODDEF
     {"startswith", (PyCFunction) unicode_startswith, METH_VARARGS, startswith__doc__},
     {"endswith", (PyCFunction) unicode_endswith, METH_VARARGS, endswith__doc__},
+    UNICODE_REMOVEPREFIX_METHODDEF
+    UNICODE_REMOVESUFFIX_METHODDEF
     UNICODE_ISASCII_METHODDEF
     UNICODE_ISLOWER_METHODDEF
     UNICODE_ISUPPER_METHODDEF
