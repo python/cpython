@@ -738,7 +738,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     }
 
     if (flags &
-        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST | PyCF_TYPE_COMMENTS))
+        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_COMPILE_MASK))
     {
         PyErr_SetString(PyExc_ValueError,
                         "compile(): unrecognised flags");

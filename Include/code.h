@@ -88,19 +88,19 @@ typedef struct {
 #define CO_ITERABLE_COROUTINE   0x0100
 #define CO_ASYNC_GENERATOR      0x0200
 
-/* These are no longer used. */
-#if 0
-#define CO_GENERATOR_ALLOWED    0x1000
-#endif
-#define CO_FUTURE_DIVISION      0x2000
-#define CO_FUTURE_ABSOLUTE_IMPORT 0x4000 /* do absolute imports by default */
-#define CO_FUTURE_WITH_STATEMENT  0x8000
-#define CO_FUTURE_PRINT_FUNCTION  0x10000
-#define CO_FUTURE_UNICODE_LITERALS 0x20000
+/* bpo-39562: These constant values are changed in Python 3.9
+   to prevent collision with compiler flags. CO_FUTURE_ and PyCF_
+   constants must be kept unique. PyCF_ constants can use bits from
+   0x0100 to 0x10000. CO_FUTURE_ constants use bits starting at 0x20000. */
+#define CO_FUTURE_DIVISION      0x20000
+#define CO_FUTURE_ABSOLUTE_IMPORT 0x40000 /* do absolute imports by default */
+#define CO_FUTURE_WITH_STATEMENT  0x80000
+#define CO_FUTURE_PRINT_FUNCTION  0x100000
+#define CO_FUTURE_UNICODE_LITERALS 0x200000
 
-#define CO_FUTURE_BARRY_AS_BDFL  0x40000
-#define CO_FUTURE_GENERATOR_STOP  0x80000
-#define CO_FUTURE_ANNOTATIONS    0x100000
+#define CO_FUTURE_BARRY_AS_BDFL  0x400000
+#define CO_FUTURE_GENERATOR_STOP  0x800000
+#define CO_FUTURE_ANNOTATIONS    0x1000000
 
 /* This value is found in the co_cell2arg array when the associated cell
    variable does not correspond to an argument. */
