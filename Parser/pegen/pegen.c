@@ -225,20 +225,48 @@ error:
     Py_XDECREF(tback);
 }
 
+static inline PyObject *
+get_error_line(char *buffer)
+{
+    char *newline = strchr(buffer, '\n');
+    if (newline) {
+        return PyUnicode_FromStringAndSize(buffer, newline - buffer);
+    }
+    else {
+        return PyUnicode_FromString(buffer);
+    }
+}
+
 static int
 tokenizer_error_with_col_offset(Parser *p, PyObject *errtype, const char *errmsg)
 {
     PyObject *errstr = NULL;
     PyObject *value = NULL;
-    int col_number = p->tok->cur - p->tok->buf;
+    int col_number = -1;
 
     errstr = PyUnicode_FromString(errmsg);
     if (!errstr) {
         return -1;
     }
 
-    PyObject *tmp = Py_BuildValue("(Oiis)", p->tok->filename, p->tok->lineno,
-                                  col_number, p->tok->buf);
+    PyObject *loc = NULL;
+    if (p->start_rule == Py_file_input) {
+        loc = PyErr_ProgramTextObject(p->tok->filename, p->tok->lineno);
+    }
+    if (!loc) {
+        loc = get_error_line(p->tok->buf);
+    }
+
+    if (loc) {
+        col_number = p->tok->cur - p->tok->buf;
+    }
+    else {
+        Py_INCREF(Py_None);
+        loc = Py_None;
+    }
+
+    PyObject *tmp = Py_BuildValue("(OiiN)", p->tok->filename, p->tok->lineno,
+                                  col_number, loc);
     if (!tmp) {
         goto error;
     }
@@ -250,9 +278,13 @@ tokenizer_error_with_col_offset(Parser *p, PyObject *errtype, const char *errmsg
     }
     PyErr_SetObject(errtype, value);
 
+    Py_XDECREF(value);
+    Py_XDECREF(errstr);
+    return -1;
+
 error:
     Py_XDECREF(errstr);
-    Py_XDECREF(value);
+    Py_XDECREF(loc);
     return -1;
 }
 
@@ -315,18 +347,6 @@ tokenizer_error(Parser *p)
     PyErr_SyntaxLocationObject(p->tok->filename, p->tok->lineno, 0);
 
     return -1;
-}
-
-static inline PyObject *
-get_error_line(char *buffer)
-{
-    char *newline = strchr(buffer, '\n');
-    if (newline) {
-        return PyUnicode_FromStringAndSize(buffer, newline - buffer);
-    }
-    else {
-        return PyUnicode_FromString(buffer);
-    }
 }
 
 void *
@@ -493,6 +513,11 @@ _PyPegen_fill_token(Parser *p)
     if (type == ENDMARKER && p->start_rule == Py_single_input && p->parsing_started) {
         type = NEWLINE; /* Add an extra newline */
         p->parsing_started = 0;
+
+        if (p->tok->indent) {
+            p->tok->pendin = -p->tok->indent;
+            p->tok->indent = 0;
+        }
     }
     else {
         p->parsing_started = 1;
@@ -531,10 +556,10 @@ _PyPegen_fill_token(Parser *p)
         end_col_offset = end - p->tok->line_start;
     }
 
-    t->lineno = lineno;
-    t->col_offset = col_offset;
-    t->end_lineno = end_lineno;
-    t->end_col_offset = end_col_offset;
+    t->lineno = p->starting_lineno + lineno;
+    t->col_offset = p->tok->lineno == 1 ? p->starting_col_offset + col_offset : col_offset;
+    t->end_lineno = p->starting_lineno + end_lineno;
+    t->end_col_offset = p->tok->lineno == 1 ? p->starting_col_offset + end_col_offset : end_col_offset;
 
     // if (p->fill % 100 == 0) fprintf(stderr, "Filled at %d: %s \"%s\"\n", p->fill,
     // token_name(type), PyBytes_AsString(t->bytes));
@@ -873,6 +898,9 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
     p->parsing_started = 0;
     p->normalize = NULL;
 
+    p->starting_lineno = 0;
+    p->starting_col_offset = 0;
+
     return p;
 }
 
@@ -966,11 +994,13 @@ mod_ty
 _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
                        int iflags, PyArena *arena)
 {
+    int exec_input = start_rule == Py_file_input;
+
     struct tok_state *tok;
     if (iflags & PyCF_IGNORE_COOKIE) {
-        tok = PyTokenizer_FromUTF8(str, 1);
+        tok = PyTokenizer_FromUTF8(str, exec_input);
     } else {
-        tok = PyTokenizer_FromString(str, 1);
+        tok = PyTokenizer_FromString(str, exec_input);
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {

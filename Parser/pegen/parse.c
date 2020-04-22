@@ -108,241 +108,246 @@ static KeywordToken *reserved_keywords[] = {
 #define raise_stmt_type 1037
 #define function_def_type 1038
 #define function_def_raw_type 1039
-#define parameters_type 1040
-#define slash_without_default_type 1041
-#define slash_with_default_type 1042
-#define star_etc_type 1043
-#define name_with_optional_default_type 1044
-#define names_with_default_type 1045
-#define name_with_default_type 1046
-#define plain_names_type 1047
-#define plain_name_type 1048
-#define kwds_type 1049
-#define annotation_type 1050
-#define decorators_type 1051
-#define class_def_type 1052
-#define class_def_raw_type 1053
-#define block_type 1054
-#define expressions_list_type 1055
-#define star_expressions_type 1056
-#define star_expression_type 1057
-#define star_named_expressions_type 1058
-#define star_named_expression_type 1059
-#define named_expression_type 1060
-#define annotated_rhs_type 1061
-#define expressions_type 1062
-#define expression_type 1063
-#define lambdef_type 1064
-#define lambda_parameters_type 1065
-#define lambda_slash_without_default_type 1066
-#define lambda_slash_with_default_type 1067
-#define lambda_star_etc_type 1068
-#define lambda_name_with_optional_default_type 1069
-#define lambda_names_with_default_type 1070
-#define lambda_name_with_default_type 1071
-#define lambda_plain_names_type 1072
-#define lambda_plain_name_type 1073
-#define lambda_kwds_type 1074
-#define disjunction_type 1075
-#define conjunction_type 1076
-#define inversion_type 1077
-#define comparison_type 1078
-#define compare_op_bitwise_or_pair_type 1079
-#define eq_bitwise_or_type 1080
-#define noteq_bitwise_or_type 1081
-#define lte_bitwise_or_type 1082
-#define lt_bitwise_or_type 1083
-#define gte_bitwise_or_type 1084
-#define gt_bitwise_or_type 1085
-#define notin_bitwise_or_type 1086
-#define in_bitwise_or_type 1087
-#define isnot_bitwise_or_type 1088
-#define is_bitwise_or_type 1089
-#define bitwise_or_type 1090  // Left-recursive
-#define bitwise_xor_type 1091  // Left-recursive
-#define bitwise_and_type 1092  // Left-recursive
-#define shift_expr_type 1093  // Left-recursive
-#define sum_type 1094  // Left-recursive
-#define term_type 1095  // Left-recursive
-#define factor_type 1096
-#define power_type 1097
-#define await_primary_type 1098
-#define primary_type 1099  // Left-recursive
-#define slices_type 1100
-#define slice_type 1101
-#define atom_type 1102
-#define strings_type 1103
-#define list_type 1104
-#define listcomp_type 1105
-#define tuple_type 1106
-#define group_type 1107
-#define genexp_type 1108
-#define set_type 1109
-#define setcomp_type 1110
-#define dict_type 1111
-#define dictcomp_type 1112
-#define kvpairs_type 1113
-#define kvpair_type 1114
-#define for_if_clauses_type 1115
-#define yield_expr_type 1116
-#define arguments_type 1117
-#define args_type 1118
-#define kwargs_type 1119
-#define starred_expression_type 1120
-#define kwarg_or_starred_type 1121
-#define kwarg_or_double_starred_type 1122
-#define star_targets_type 1123
-#define star_targets_seq_type 1124
-#define star_target_type 1125
-#define star_atom_type 1126
-#define inside_paren_ann_assign_target_type 1127
-#define ann_assign_subscript_attribute_target_type 1128
-#define del_targets_type 1129
-#define del_target_type 1130
-#define del_t_atom_type 1131
-#define targets_type 1132
-#define target_type 1133
-#define t_primary_type 1134  // Left-recursive
-#define t_lookahead_type 1135
-#define t_atom_type 1136
-#define incorrect_arguments_type 1137
-#define invalid_named_expression_type 1138
-#define invalid_assignment_type 1139
-#define invalid_block_type 1140
-#define invalid_comprehension_type 1141
-#define _loop0_1_type 1142
-#define _loop1_2_type 1143
-#define _loop0_4_type 1144
-#define _gather_3_type 1145
-#define _tmp_5_type 1146
-#define _tmp_6_type 1147
-#define _tmp_7_type 1148
-#define _tmp_8_type 1149
-#define _tmp_9_type 1150
-#define _tmp_10_type 1151
-#define _tmp_11_type 1152
-#define _tmp_12_type 1153
-#define _loop1_13_type 1154
-#define _tmp_14_type 1155
-#define _tmp_15_type 1156
-#define _loop0_17_type 1157
-#define _gather_16_type 1158
-#define _loop0_19_type 1159
-#define _gather_18_type 1160
-#define _tmp_20_type 1161
-#define _loop0_21_type 1162
-#define _loop1_22_type 1163
-#define _loop0_24_type 1164
-#define _gather_23_type 1165
-#define _tmp_25_type 1166
-#define _loop0_27_type 1167
-#define _gather_26_type 1168
-#define _tmp_28_type 1169
-#define _loop0_30_type 1170
-#define _gather_29_type 1171
-#define _loop0_32_type 1172
-#define _gather_31_type 1173
-#define _tmp_33_type 1174
-#define _loop1_34_type 1175
-#define _tmp_35_type 1176
-#define _tmp_36_type 1177
-#define _tmp_37_type 1178
-#define _tmp_38_type 1179
-#define _tmp_39_type 1180
-#define _tmp_40_type 1181
-#define _tmp_41_type 1182
-#define _tmp_42_type 1183
-#define _tmp_43_type 1184
-#define _tmp_44_type 1185
-#define _tmp_45_type 1186
-#define _tmp_46_type 1187
-#define _loop0_47_type 1188
-#define _tmp_48_type 1189
-#define _loop1_49_type 1190
-#define _tmp_50_type 1191
-#define _tmp_51_type 1192
-#define _loop0_53_type 1193
-#define _gather_52_type 1194
-#define _loop0_55_type 1195
-#define _gather_54_type 1196
-#define _tmp_56_type 1197
-#define _loop1_57_type 1198
-#define _tmp_58_type 1199
-#define _loop0_60_type 1200
-#define _gather_59_type 1201
-#define _loop1_61_type 1202
-#define _loop0_63_type 1203
-#define _gather_62_type 1204
-#define _loop1_64_type 1205
-#define _tmp_65_type 1206
-#define _tmp_66_type 1207
-#define _tmp_67_type 1208
-#define _tmp_68_type 1209
-#define _tmp_69_type 1210
-#define _tmp_70_type 1211
-#define _tmp_71_type 1212
-#define _tmp_72_type 1213
-#define _tmp_73_type 1214
-#define _loop0_74_type 1215
-#define _tmp_75_type 1216
-#define _loop1_76_type 1217
-#define _tmp_77_type 1218
-#define _tmp_78_type 1219
-#define _loop0_80_type 1220
-#define _gather_79_type 1221
-#define _loop0_82_type 1222
-#define _gather_81_type 1223
-#define _loop1_83_type 1224
-#define _loop1_84_type 1225
-#define _loop1_85_type 1226
-#define _loop0_87_type 1227
-#define _gather_86_type 1228
-#define _tmp_88_type 1229
-#define _tmp_89_type 1230
-#define _tmp_90_type 1231
-#define _tmp_91_type 1232
-#define _loop1_92_type 1233
-#define _tmp_93_type 1234
-#define _tmp_94_type 1235
-#define _loop0_96_type 1236
-#define _gather_95_type 1237
-#define _loop1_97_type 1238
-#define _tmp_98_type 1239
-#define _tmp_99_type 1240
-#define _loop0_101_type 1241
-#define _gather_100_type 1242
-#define _loop0_103_type 1243
-#define _gather_102_type 1244
-#define _loop0_105_type 1245
-#define _gather_104_type 1246
-#define _loop0_107_type 1247
-#define _gather_106_type 1248
-#define _loop0_108_type 1249
-#define _loop0_110_type 1250
-#define _gather_109_type 1251
-#define _tmp_111_type 1252
-#define _loop0_113_type 1253
-#define _gather_112_type 1254
-#define _loop0_115_type 1255
-#define _gather_114_type 1256
-#define _tmp_116_type 1257
-#define _tmp_117_type 1258
-#define _tmp_118_type 1259
-#define _tmp_119_type 1260
-#define _tmp_120_type 1261
-#define _tmp_121_type 1262
-#define _tmp_122_type 1263
-#define _tmp_123_type 1264
-#define _tmp_124_type 1265
-#define _tmp_125_type 1266
-#define _tmp_126_type 1267
-#define _tmp_127_type 1268
-#define _tmp_128_type 1269
-#define _tmp_129_type 1270
-#define _tmp_130_type 1271
-#define _tmp_131_type 1272
-#define _loop0_132_type 1273
-#define _tmp_133_type 1274
+#define params_type 1040
+#define parameters_type 1041
+#define slash_without_default_type 1042
+#define slash_with_default_type 1043
+#define star_etc_type 1044
+#define name_with_optional_default_type 1045
+#define names_with_default_type 1046
+#define name_with_default_type 1047
+#define plain_names_type 1048
+#define plain_name_type 1049
+#define kwds_type 1050
+#define annotation_type 1051
+#define decorators_type 1052
+#define class_def_type 1053
+#define class_def_raw_type 1054
+#define block_type 1055
+#define expressions_list_type 1056
+#define star_expressions_type 1057
+#define star_expression_type 1058
+#define star_named_expressions_type 1059
+#define star_named_expression_type 1060
+#define named_expression_type 1061
+#define annotated_rhs_type 1062
+#define expressions_type 1063
+#define expression_type 1064
+#define lambdef_type 1065
+#define lambda_parameters_type 1066
+#define lambda_slash_without_default_type 1067
+#define lambda_slash_with_default_type 1068
+#define lambda_star_etc_type 1069
+#define lambda_name_with_optional_default_type 1070
+#define lambda_names_with_default_type 1071
+#define lambda_name_with_default_type 1072
+#define lambda_plain_names_type 1073
+#define lambda_plain_name_type 1074
+#define lambda_kwds_type 1075
+#define disjunction_type 1076
+#define conjunction_type 1077
+#define inversion_type 1078
+#define comparison_type 1079
+#define compare_op_bitwise_or_pair_type 1080
+#define eq_bitwise_or_type 1081
+#define noteq_bitwise_or_type 1082
+#define lte_bitwise_or_type 1083
+#define lt_bitwise_or_type 1084
+#define gte_bitwise_or_type 1085
+#define gt_bitwise_or_type 1086
+#define notin_bitwise_or_type 1087
+#define in_bitwise_or_type 1088
+#define isnot_bitwise_or_type 1089
+#define is_bitwise_or_type 1090
+#define bitwise_or_type 1091  // Left-recursive
+#define bitwise_xor_type 1092  // Left-recursive
+#define bitwise_and_type 1093  // Left-recursive
+#define shift_expr_type 1094  // Left-recursive
+#define sum_type 1095  // Left-recursive
+#define term_type 1096  // Left-recursive
+#define factor_type 1097
+#define power_type 1098
+#define await_primary_type 1099
+#define primary_type 1100  // Left-recursive
+#define slices_type 1101
+#define slice_type 1102
+#define atom_type 1103
+#define strings_type 1104
+#define list_type 1105
+#define listcomp_type 1106
+#define tuple_type 1107
+#define group_type 1108
+#define genexp_type 1109
+#define set_type 1110
+#define setcomp_type 1111
+#define dict_type 1112
+#define dictcomp_type 1113
+#define kvpairs_type 1114
+#define kvpair_type 1115
+#define for_if_clauses_type 1116
+#define yield_expr_type 1117
+#define arguments_type 1118
+#define args_type 1119
+#define kwargs_type 1120
+#define starred_expression_type 1121
+#define kwarg_or_starred_type 1122
+#define kwarg_or_double_starred_type 1123
+#define star_targets_type 1124
+#define star_targets_seq_type 1125
+#define star_target_type 1126
+#define star_atom_type 1127
+#define inside_paren_ann_assign_target_type 1128
+#define ann_assign_subscript_attribute_target_type 1129
+#define del_targets_type 1130
+#define del_target_type 1131
+#define del_t_atom_type 1132
+#define targets_type 1133
+#define target_type 1134
+#define t_primary_type 1135  // Left-recursive
+#define t_lookahead_type 1136
+#define t_atom_type 1137
+#define incorrect_arguments_type 1138
+#define invalid_named_expression_type 1139
+#define invalid_assignment_type 1140
+#define invalid_block_type 1141
+#define invalid_comprehension_type 1142
+#define invalid_parameters_type 1143
+#define _loop0_1_type 1144
+#define _loop1_2_type 1145
+#define _loop0_4_type 1146
+#define _gather_3_type 1147
+#define _tmp_5_type 1148
+#define _tmp_6_type 1149
+#define _tmp_7_type 1150
+#define _tmp_8_type 1151
+#define _tmp_9_type 1152
+#define _tmp_10_type 1153
+#define _tmp_11_type 1154
+#define _tmp_12_type 1155
+#define _loop1_13_type 1156
+#define _tmp_14_type 1157
+#define _tmp_15_type 1158
+#define _loop0_17_type 1159
+#define _gather_16_type 1160
+#define _loop0_19_type 1161
+#define _gather_18_type 1162
+#define _tmp_20_type 1163
+#define _loop0_21_type 1164
+#define _loop1_22_type 1165
+#define _loop0_24_type 1166
+#define _gather_23_type 1167
+#define _tmp_25_type 1168
+#define _loop0_27_type 1169
+#define _gather_26_type 1170
+#define _tmp_28_type 1171
+#define _loop0_30_type 1172
+#define _gather_29_type 1173
+#define _loop0_32_type 1174
+#define _gather_31_type 1175
+#define _tmp_33_type 1176
+#define _loop1_34_type 1177
+#define _tmp_35_type 1178
+#define _tmp_36_type 1179
+#define _tmp_37_type 1180
+#define _tmp_38_type 1181
+#define _tmp_39_type 1182
+#define _tmp_40_type 1183
+#define _tmp_41_type 1184
+#define _tmp_42_type 1185
+#define _tmp_43_type 1186
+#define _tmp_44_type 1187
+#define _tmp_45_type 1188
+#define _tmp_46_type 1189
+#define _loop0_47_type 1190
+#define _tmp_48_type 1191
+#define _loop1_49_type 1192
+#define _tmp_50_type 1193
+#define _tmp_51_type 1194
+#define _loop0_53_type 1195
+#define _gather_52_type 1196
+#define _loop0_55_type 1197
+#define _gather_54_type 1198
+#define _tmp_56_type 1199
+#define _loop1_57_type 1200
+#define _tmp_58_type 1201
+#define _loop0_60_type 1202
+#define _gather_59_type 1203
+#define _loop1_61_type 1204
+#define _loop0_63_type 1205
+#define _gather_62_type 1206
+#define _loop1_64_type 1207
+#define _tmp_65_type 1208
+#define _tmp_66_type 1209
+#define _tmp_67_type 1210
+#define _tmp_68_type 1211
+#define _tmp_69_type 1212
+#define _tmp_70_type 1213
+#define _tmp_71_type 1214
+#define _tmp_72_type 1215
+#define _tmp_73_type 1216
+#define _loop0_74_type 1217
+#define _tmp_75_type 1218
+#define _loop1_76_type 1219
+#define _tmp_77_type 1220
+#define _tmp_78_type 1221
+#define _loop0_80_type 1222
+#define _gather_79_type 1223
+#define _loop0_82_type 1224
+#define _gather_81_type 1225
+#define _loop1_83_type 1226
+#define _loop1_84_type 1227
+#define _loop1_85_type 1228
+#define _loop0_87_type 1229
+#define _gather_86_type 1230
+#define _tmp_88_type 1231
+#define _tmp_89_type 1232
+#define _tmp_90_type 1233
+#define _tmp_91_type 1234
+#define _loop1_92_type 1235
+#define _tmp_93_type 1236
+#define _tmp_94_type 1237
+#define _loop0_96_type 1238
+#define _gather_95_type 1239
+#define _loop1_97_type 1240
+#define _tmp_98_type 1241
+#define _tmp_99_type 1242
+#define _loop0_101_type 1243
+#define _gather_100_type 1244
+#define _loop0_103_type 1245
+#define _gather_102_type 1246
+#define _loop0_105_type 1247
+#define _gather_104_type 1248
+#define _loop0_107_type 1249
+#define _gather_106_type 1250
+#define _loop0_108_type 1251
+#define _loop0_110_type 1252
+#define _gather_109_type 1253
+#define _tmp_111_type 1254
+#define _loop0_113_type 1255
+#define _gather_112_type 1256
+#define _loop0_115_type 1257
+#define _gather_114_type 1258
+#define _tmp_116_type 1259
+#define _tmp_117_type 1260
+#define _tmp_118_type 1261
+#define _tmp_119_type 1262
+#define _tmp_120_type 1263
+#define _tmp_121_type 1264
+#define _tmp_122_type 1265
+#define _tmp_123_type 1266
+#define _tmp_124_type 1267
+#define _tmp_125_type 1268
+#define _tmp_126_type 1269
+#define _tmp_127_type 1270
+#define _tmp_128_type 1271
+#define _tmp_129_type 1272
+#define _tmp_130_type 1273
+#define _tmp_131_type 1274
+#define _tmp_132_type 1275
+#define _tmp_133_type 1276
+#define _tmp_134_type 1277
+#define _loop0_135_type 1278
+#define _tmp_136_type 1279
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -384,6 +389,7 @@ static stmt_ty return_stmt_rule(Parser *p);
 static stmt_ty raise_stmt_rule(Parser *p);
 static stmt_ty function_def_rule(Parser *p);
 static stmt_ty function_def_raw_rule(Parser *p);
+static arguments_ty params_rule(Parser *p);
 static arguments_ty parameters_rule(Parser *p);
 static asdl_seq* slash_without_default_rule(Parser *p);
 static SlashWithDefault* slash_with_default_rule(Parser *p);
@@ -486,6 +492,7 @@ static void *invalid_named_expression_rule(Parser *p);
 static void *invalid_assignment_rule(Parser *p);
 static void *invalid_block_rule(Parser *p);
 static void *invalid_comprehension_rule(Parser *p);
+static void *invalid_parameters_rule(Parser *p);
 static asdl_seq *_loop0_1_rule(Parser *p);
 static asdl_seq *_loop1_2_rule(Parser *p);
 static asdl_seq *_loop0_4_rule(Parser *p);
@@ -617,8 +624,11 @@ static void *_tmp_128_rule(Parser *p);
 static void *_tmp_129_rule(Parser *p);
 static void *_tmp_130_rule(Parser *p);
 static void *_tmp_131_rule(Parser *p);
-static asdl_seq *_loop0_132_rule(Parser *p);
+static void *_tmp_132_rule(Parser *p);
 static void *_tmp_133_rule(Parser *p);
+static void *_tmp_134_rule(Parser *p);
+static asdl_seq *_loop0_135_rule(Parser *p);
+static void *_tmp_136_rule(Parser *p);
 
 
 // file: statements? $
@@ -3022,7 +3032,7 @@ function_def_rule(Parser *p)
     return res;
 }
 
-// function_def_raw: ASYNC? 'def' NAME '(' parameters? ')' ['->' annotation] ':' block
+// function_def_raw: ASYNC? 'def' NAME '(' params? ')' ['->' annotation] ':' block
 static stmt_ty
 function_def_raw_rule(Parser *p)
 {
@@ -3035,7 +3045,7 @@ function_def_raw_rule(Parser *p)
     UNUSED(start_lineno); // Only used by EXTRA macro
     int start_col_offset = p->tokens[mark]->col_offset;
     UNUSED(start_col_offset); // Only used by EXTRA macro
-    { // ASYNC? 'def' NAME '(' parameters? ')' ['->' annotation] ':' block
+    { // ASYNC? 'def' NAME '(' params? ')' ['->' annotation] ':' block
         void *a;
         asdl_seq* b;
         void *is_async;
@@ -3054,7 +3064,7 @@ function_def_raw_rule(Parser *p)
             &&
             (literal = _PyPegen_expect_token(p, 7))
             &&
-            (params = parameters_rule(p), 1)
+            (params = params_rule(p), 1)
             &&
             (literal_1 = _PyPegen_expect_token(p, 8))
             &&
@@ -3077,6 +3087,39 @@ function_def_raw_rule(Parser *p)
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// params: invalid_parameters | parameters
+static arguments_ty
+params_rule(Parser *p)
+{
+    arguments_ty res = NULL;
+    int mark = p->mark;
+    { // invalid_parameters
+        void *invalid_parameters_var;
+        if (
+            (invalid_parameters_var = invalid_parameters_rule(p))
+        )
+        {
+            res = invalid_parameters_var;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // parameters
+        arguments_ty parameters_var;
+        if (
+            (parameters_var = parameters_rule(p))
+        )
+        {
+            res = parameters_var;
             goto done;
         }
         p->mark = mark;
@@ -8944,7 +8987,10 @@ t_atom_rule(Parser *p)
     return res;
 }
 
-// incorrect_arguments: args ',' '*' | args ',' args
+// incorrect_arguments:
+//     | args ',' '*'
+//     | expression for_if_clauses ',' [args | expression for_if_clauses]
+//     | args ',' args
 static void *
 incorrect_arguments_rule(Parser *p)
 {
@@ -8963,6 +9009,30 @@ incorrect_arguments_rule(Parser *p)
         )
         {
             res = RAISE_SYNTAX_ERROR ( "iterable argument unpacking follows keyword argument unpacking" );
+            if (res == NULL && PyErr_Occurred()) {
+                longjmp(p->error_env, 1);
+            }
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // expression for_if_clauses ',' [args | expression for_if_clauses]
+        expr_ty expression_var;
+        asdl_seq* for_if_clauses_var;
+        void *literal;
+        void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
+        if (
+            (expression_var = expression_rule(p))
+            &&
+            (for_if_clauses_var = for_if_clauses_rule(p))
+            &&
+            (literal = _PyPegen_expect_token(p, 12))
+            &&
+            (opt_var = _tmp_116_rule(p), 1)
+        )
+        {
+            res = RAISE_SYNTAX_ERROR ( "Generator expression must be parenthesized" );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
@@ -9083,7 +9153,7 @@ invalid_assignment_rule(Parser *p)
             &&
             (expression_var_1 = expression_rule(p))
             &&
-            (opt_var = _tmp_116_rule(p), 1)
+            (opt_var = _tmp_117_rule(p), 1)
         )
         {
             res = RAISE_SYNTAX_ERROR ( "illegal target for annotation" );
@@ -9095,15 +9165,15 @@ invalid_assignment_rule(Parser *p)
         p->mark = mark;
     }
     { // expression ('=' | augassign) (yield_expr | star_expressions)
-        void *_tmp_117_var;
         void *_tmp_118_var;
+        void *_tmp_119_var;
         expr_ty a;
         if (
             (a = expression_rule(p))
             &&
-            (_tmp_117_var = _tmp_117_rule(p))
-            &&
             (_tmp_118_var = _tmp_118_rule(p))
+            &&
+            (_tmp_119_var = _tmp_119_rule(p))
         )
         {
             res = RAISE_SYNTAX_ERROR ( "cannot assign to %s" , _PyPegen_get_expr_name ( a ) );
@@ -9153,12 +9223,12 @@ invalid_comprehension_rule(Parser *p)
     void * res = NULL;
     int mark = p->mark;
     { // ('[' | '(' | '{') '*' expression for_if_clauses
-        void *_tmp_119_var;
+        void *_tmp_120_var;
         expr_ty expression_var;
         asdl_seq* for_if_clauses_var;
         void *literal;
         if (
-            (_tmp_119_var = _tmp_119_rule(p))
+            (_tmp_120_var = _tmp_120_rule(p))
             &&
             (literal = _PyPegen_expect_token(p, 16))
             &&
@@ -9168,6 +9238,42 @@ invalid_comprehension_rule(Parser *p)
         )
         {
             res = RAISE_SYNTAX_ERROR ( "iterable unpacking cannot be used in comprehension" );
+            if (res == NULL && PyErr_Occurred()) {
+                longjmp(p->error_env, 1);
+            }
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// invalid_parameters:
+//     | [plain_names ','] (slash_with_default | names_with_default) ',' plain_names
+static void *
+invalid_parameters_rule(Parser *p)
+{
+    void * res = NULL;
+    int mark = p->mark;
+    { // [plain_names ','] (slash_with_default | names_with_default) ',' plain_names
+        void *_tmp_122_var;
+        void *literal;
+        void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
+        asdl_seq* plain_names_var;
+        if (
+            (opt_var = _tmp_121_rule(p), 1)
+            &&
+            (_tmp_122_var = _tmp_122_rule(p))
+            &&
+            (literal = _PyPegen_expect_token(p, 12))
+            &&
+            (plain_names_var = plain_names_rule(p))
+        )
+        {
+            res = RAISE_SYNTAX_ERROR ( "non-default argument follows default argument" );
             if (res == NULL && PyErr_Occurred()) {
                 longjmp(p->error_env, 1);
             }
@@ -9639,12 +9745,12 @@ _loop1_13_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // (star_targets '=')
-        void *_tmp_120_var;
+        void *_tmp_123_var;
         while (
-            (_tmp_120_var = _tmp_120_rule(p))
+            (_tmp_123_var = _tmp_123_rule(p))
         )
         {
-            res = _tmp_120_var;
+            res = _tmp_123_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -9934,12 +10040,12 @@ _loop0_21_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('.' | '...')
-        void *_tmp_121_var;
+        void *_tmp_124_var;
         while (
-            (_tmp_121_var = _tmp_121_rule(p))
+            (_tmp_124_var = _tmp_124_rule(p))
         )
         {
-            res = _tmp_121_var;
+            res = _tmp_124_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -9979,12 +10085,12 @@ _loop1_22_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('.' | '...')
-        void *_tmp_122_var;
+        void *_tmp_125_var;
         while (
-            (_tmp_122_var = _tmp_122_rule(p))
+            (_tmp_125_var = _tmp_125_rule(p))
         )
         {
-            res = _tmp_122_var;
+            res = _tmp_125_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -11060,7 +11166,7 @@ _loop0_55_rule(Parser *p)
         while (
             (literal = _PyPegen_expect_token(p, 12))
             &&
-            (elem = _tmp_123_rule(p))
+            (elem = _tmp_126_rule(p))
         )
         {
             res = elem;
@@ -11101,7 +11207,7 @@ _gather_54_rule(Parser *p)
         void *elem;
         asdl_seq * seq;
         if (
-            (elem = _tmp_123_rule(p))
+            (elem = _tmp_126_rule(p))
             &&
             (seq = _loop0_55_rule(p))
         )
@@ -11159,12 +11265,12 @@ _loop1_57_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('@' named_expression NEWLINE)
-        void *_tmp_124_var;
+        void *_tmp_127_var;
         while (
-            (_tmp_124_var = _tmp_124_rule(p))
+            (_tmp_127_var = _tmp_127_rule(p))
         )
         {
-            res = _tmp_124_var;
+            res = _tmp_127_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -11315,12 +11421,12 @@ _loop1_61_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // (',' star_expression)
-        void *_tmp_125_var;
+        void *_tmp_128_var;
         while (
-            (_tmp_125_var = _tmp_125_rule(p))
+            (_tmp_128_var = _tmp_128_rule(p))
         )
         {
-            res = _tmp_125_var;
+            res = _tmp_128_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -11440,12 +11546,12 @@ _loop1_64_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // (',' expression)
-        void *_tmp_126_var;
+        void *_tmp_129_var;
         while (
-            (_tmp_126_var = _tmp_126_rule(p))
+            (_tmp_129_var = _tmp_129_rule(p))
         )
         {
-            res = _tmp_126_var;
+            res = _tmp_129_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -12000,7 +12106,7 @@ _loop0_82_rule(Parser *p)
         while (
             (literal = _PyPegen_expect_token(p, 12))
             &&
-            (elem = _tmp_127_rule(p))
+            (elem = _tmp_130_rule(p))
         )
         {
             res = elem;
@@ -12041,7 +12147,7 @@ _gather_81_rule(Parser *p)
         void *elem;
         asdl_seq * seq;
         if (
-            (elem = _tmp_127_rule(p))
+            (elem = _tmp_130_rule(p))
             &&
             (seq = _loop0_82_rule(p))
         )
@@ -12071,12 +12177,12 @@ _loop1_83_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('or' conjunction)
-        void *_tmp_128_var;
+        void *_tmp_131_var;
         while (
-            (_tmp_128_var = _tmp_128_rule(p))
+            (_tmp_131_var = _tmp_131_rule(p))
         )
         {
-            res = _tmp_128_var;
+            res = _tmp_131_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -12120,12 +12226,12 @@ _loop1_84_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('and' inversion)
-        void *_tmp_129_var;
+        void *_tmp_132_var;
         while (
-            (_tmp_129_var = _tmp_129_rule(p))
+            (_tmp_132_var = _tmp_132_rule(p))
         )
         {
-            res = _tmp_129_var;
+            res = _tmp_132_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -12643,12 +12749,12 @@ _loop1_97_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // (ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*)
-        void *_tmp_130_var;
+        void *_tmp_133_var;
         while (
-            (_tmp_130_var = _tmp_130_rule(p))
+            (_tmp_133_var = _tmp_133_rule(p))
         )
         {
-            res = _tmp_130_var;
+            res = _tmp_133_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -13052,12 +13158,12 @@ _loop0_108_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // (',' star_target)
-        void *_tmp_131_var;
+        void *_tmp_134_var;
         while (
-            (_tmp_131_var = _tmp_131_rule(p))
+            (_tmp_134_var = _tmp_134_rule(p))
         )
         {
-            res = _tmp_131_var;
+            res = _tmp_134_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -13334,9 +13440,45 @@ _gather_114_rule(Parser *p)
     return res;
 }
 
-// _tmp_116: '=' annotated_rhs
+// _tmp_116: args | expression for_if_clauses
 static void *
 _tmp_116_rule(Parser *p)
+{
+    void * res = NULL;
+    int mark = p->mark;
+    { // args
+        expr_ty args_var;
+        if (
+            (args_var = args_rule(p))
+        )
+        {
+            res = args_var;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // expression for_if_clauses
+        expr_ty expression_var;
+        asdl_seq* for_if_clauses_var;
+        if (
+            (expression_var = expression_rule(p))
+            &&
+            (for_if_clauses_var = for_if_clauses_rule(p))
+        )
+        {
+            res = _PyPegen_dummy_name(p, expression_var, for_if_clauses_var);
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// _tmp_117: '=' annotated_rhs
+static void *
+_tmp_117_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13359,9 +13501,9 @@ _tmp_116_rule(Parser *p)
     return res;
 }
 
-// _tmp_117: '=' | augassign
+// _tmp_118: '=' | augassign
 static void *
-_tmp_117_rule(Parser *p)
+_tmp_118_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13392,9 +13534,9 @@ _tmp_117_rule(Parser *p)
     return res;
 }
 
-// _tmp_118: yield_expr | star_expressions
+// _tmp_119: yield_expr | star_expressions
 static void *
-_tmp_118_rule(Parser *p)
+_tmp_119_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13425,9 +13567,9 @@ _tmp_118_rule(Parser *p)
     return res;
 }
 
-// _tmp_119: '[' | '(' | '{'
+// _tmp_120: '[' | '(' | '{'
 static void *
-_tmp_119_rule(Parser *p)
+_tmp_120_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13469,9 +13611,67 @@ _tmp_119_rule(Parser *p)
     return res;
 }
 
-// _tmp_120: star_targets '='
+// _tmp_121: plain_names ','
 static void *
-_tmp_120_rule(Parser *p)
+_tmp_121_rule(Parser *p)
+{
+    void * res = NULL;
+    int mark = p->mark;
+    { // plain_names ','
+        void *literal;
+        asdl_seq* plain_names_var;
+        if (
+            (plain_names_var = plain_names_rule(p))
+            &&
+            (literal = _PyPegen_expect_token(p, 12))
+        )
+        {
+            res = _PyPegen_dummy_name(p, plain_names_var, literal);
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// _tmp_122: slash_with_default | names_with_default
+static void *
+_tmp_122_rule(Parser *p)
+{
+    void * res = NULL;
+    int mark = p->mark;
+    { // slash_with_default
+        SlashWithDefault* slash_with_default_var;
+        if (
+            (slash_with_default_var = slash_with_default_rule(p))
+        )
+        {
+            res = slash_with_default_var;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // names_with_default
+        asdl_seq* names_with_default_var;
+        if (
+            (names_with_default_var = names_with_default_rule(p))
+        )
+        {
+            res = names_with_default_var;
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// _tmp_123: star_targets '='
+static void *
+_tmp_123_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13497,9 +13697,9 @@ _tmp_120_rule(Parser *p)
     return res;
 }
 
-// _tmp_121: '.' | '...'
+// _tmp_124: '.' | '...'
 static void *
-_tmp_121_rule(Parser *p)
+_tmp_124_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13530,9 +13730,9 @@ _tmp_121_rule(Parser *p)
     return res;
 }
 
-// _tmp_122: '.' | '...'
+// _tmp_125: '.' | '...'
 static void *
-_tmp_122_rule(Parser *p)
+_tmp_125_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13563,9 +13763,9 @@ _tmp_122_rule(Parser *p)
     return res;
 }
 
-// _tmp_123: plain_name !'='
+// _tmp_126: plain_name !'='
 static void *
-_tmp_123_rule(Parser *p)
+_tmp_126_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13587,9 +13787,9 @@ _tmp_123_rule(Parser *p)
     return res;
 }
 
-// _tmp_124: '@' named_expression NEWLINE
+// _tmp_127: '@' named_expression NEWLINE
 static void *
-_tmp_124_rule(Parser *p)
+_tmp_127_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13618,9 +13818,9 @@ _tmp_124_rule(Parser *p)
     return res;
 }
 
-// _tmp_125: ',' star_expression
+// _tmp_128: ',' star_expression
 static void *
-_tmp_125_rule(Parser *p)
+_tmp_128_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13646,9 +13846,9 @@ _tmp_125_rule(Parser *p)
     return res;
 }
 
-// _tmp_126: ',' expression
+// _tmp_129: ',' expression
 static void *
-_tmp_126_rule(Parser *p)
+_tmp_129_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13674,9 +13874,9 @@ _tmp_126_rule(Parser *p)
     return res;
 }
 
-// _tmp_127: lambda_plain_name !'='
+// _tmp_130: lambda_plain_name !'='
 static void *
-_tmp_127_rule(Parser *p)
+_tmp_130_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13698,9 +13898,9 @@ _tmp_127_rule(Parser *p)
     return res;
 }
 
-// _tmp_128: 'or' conjunction
+// _tmp_131: 'or' conjunction
 static void *
-_tmp_128_rule(Parser *p)
+_tmp_131_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13726,9 +13926,9 @@ _tmp_128_rule(Parser *p)
     return res;
 }
 
-// _tmp_129: 'and' inversion
+// _tmp_132: 'and' inversion
 static void *
-_tmp_129_rule(Parser *p)
+_tmp_132_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13754,9 +13954,9 @@ _tmp_129_rule(Parser *p)
     return res;
 }
 
-// _tmp_130: ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*
+// _tmp_133: ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*
 static void *
-_tmp_130_rule(Parser *p)
+_tmp_133_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13778,7 +13978,7 @@ _tmp_130_rule(Parser *p)
             &&
             (b = disjunction_rule(p))
             &&
-            (c = _loop0_132_rule(p))
+            (c = _loop0_135_rule(p))
         )
         {
             res = _Py_comprehension ( a , b , c , y != NULL , p -> arena );
@@ -13794,9 +13994,9 @@ _tmp_130_rule(Parser *p)
     return res;
 }
 
-// _tmp_131: ',' star_target
+// _tmp_134: ',' star_target
 static void *
-_tmp_131_rule(Parser *p)
+_tmp_134_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
@@ -13822,9 +14022,9 @@ _tmp_131_rule(Parser *p)
     return res;
 }
 
-// _loop0_132: ('if' disjunction)
+// _loop0_135: ('if' disjunction)
 static asdl_seq *
-_loop0_132_rule(Parser *p)
+_loop0_135_rule(Parser *p)
 {
     void *res = NULL;
     int mark = p->mark;
@@ -13837,12 +14037,12 @@ _loop0_132_rule(Parser *p)
     ssize_t children_capacity = 1;
     ssize_t n = 0;
     { // ('if' disjunction)
-        void *_tmp_133_var;
+        void *_tmp_136_var;
         while (
-            (_tmp_133_var = _tmp_133_rule(p))
+            (_tmp_136_var = _tmp_136_rule(p))
         )
         {
-            res = _tmp_133_var;
+            res = _tmp_136_var;
             if (n == children_capacity) {
                 children_capacity *= 2;
                 children = PyMem_Realloc(children, children_capacity*sizeof(void *));
@@ -13858,18 +14058,18 @@ _loop0_132_rule(Parser *p)
     }
     asdl_seq *seq = _Py_asdl_seq_new(n, p->arena);
     if (!seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_132");
+        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_135");
         return NULL;
     }
     for (int i = 0; i < n; i++) asdl_seq_SET(seq, i, children[i]);
     PyMem_Free(children);
-    _PyPegen_insert_memo(p, start_mark, _loop0_132_type, seq);
+    _PyPegen_insert_memo(p, start_mark, _loop0_135_type, seq);
     return seq;
 }
 
-// _tmp_133: 'if' disjunction
+// _tmp_136: 'if' disjunction
 static void *
-_tmp_133_rule(Parser *p)
+_tmp_136_rule(Parser *p)
 {
     void * res = NULL;
     int mark = p->mark;
