@@ -114,9 +114,10 @@ Restrictions
    A subclass of :class:`collections.abc.MutableMapping` which stores pickled
    values in the *dict* object.
 
-   By default, version 3 pickles are used to serialize values.  The version of the
-   pickle protocol can be specified with the *protocol* parameter. See the
-   :mod:`pickle` documentation for a discussion of the pickle protocols.
+   By default, pickles created with :data:`pickle.DEFAULT_PROTOCOL` are used
+   to serialize values.  The version of the pickle protocol can be specified
+   with the *protocol* parameter.  See the :mod:`pickle` documentation for a
+   discussion of the pickle protocols.
 
    If the *writeback* parameter is ``True``, the object will hold a cache of all
    entries accessed and write them back to the *dict* at sync and close times.
