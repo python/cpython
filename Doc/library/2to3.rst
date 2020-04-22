@@ -3,6 +3,12 @@
 2to3 - Automated Python 2 to 3 code translation
 ===============================================
 
+.. deprecated:: 3.9
+   The :mod:`lib2to3` package and related 2to3 tool are pending deprecation
+   and removal by Python 3.11 or 3.12.  We anticipate that a fork of it may
+   live on as an external package on PyPI as it does have use as a Python to
+   Python source transformation tool.
+
 .. sectionauthor:: Benjamin Peterson <benjamin@python.org>
 
 2to3 is a Python program that reads Python 2.x source code and applies a series
@@ -461,6 +467,11 @@ and off individually.  They are described here in more detail.
 .. moduleauthor:: Guido van Rossum
 .. moduleauthor:: Collin Winter
 .. moduleauthor:: Benjamin Peterson <benjamin@python.org>
+
+.. deprecated:: 3.9
+   The :mod:`lib2to3` package and related 2to3 tool are pending deprecation
+   and removal by Python 3.11 or 3.12.  We anticipate that a fork of it may
+   live on as an external package on PyPI.
 
 **Source code:** :source:`Lib/lib2to3/`
 
