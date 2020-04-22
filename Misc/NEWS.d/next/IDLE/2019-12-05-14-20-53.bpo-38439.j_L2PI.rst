@@ -1,0 +1,2 @@
+Add a 256×256 pixel IDLE icon to support more modern environments. Created by Andrew Clover.
+Delete the unused macOS idle.icns icon file.
