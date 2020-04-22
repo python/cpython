@@ -84,7 +84,15 @@ round(double x)
 #ifdef _MSC_VER
 #  include <intrin.h>
 #  pragma intrinsic(_BitScanReverse)
-#  define __builtin_clz(VALUE) do { unsigned long clz = 0; _BitScanReverse (&clz, VALUE); clz; } while (0);
+
+static intline int
+__builtin_clz(unsigned int x)
+ {
+   unsigned long clz = 0;
+   _BitScanReverse (&clz, VALUE);
+   return (clz);
+ }
+
 #endif
 
 unsigned int _Py_bit_length(unsigned long d) {
