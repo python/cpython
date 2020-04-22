@@ -339,7 +339,7 @@ class ModuleFinder:
             self.msgout(2, "load_module ->", m)
             return m
         if type == _PY_SOURCE:
-            co = compile(fp.read()+b'\n', pathname, 'exec')
+            co = compile(fp.read(), pathname, 'exec')
         elif type == _PY_COMPILED:
             try:
                 data = fp.read()
