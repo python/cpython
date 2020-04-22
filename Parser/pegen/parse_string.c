@@ -275,7 +275,8 @@ static inline void shift_arg(expr_ty parent, arg_ty n, int line, int col) {
 }
 
 static void fstring_shift_seq_locations(expr_ty parent, asdl_seq *seq, int lineno, int col_offset) {
-    for (Py_ssize_t i = 0, l = asdl_seq_LEN(seq); i < l; i++) {
+    Py_ssize_t i;
+    for (i = 0; i < asdl_seq_LEN(seq); i++) {
         expr_ty expr = asdl_seq_GET(seq, i);
         if (expr == NULL){
             continue;
@@ -322,12 +323,13 @@ static void fstring_shift_argument(expr_ty parent, arg_ty arg, int lineno, int c
 }
 
 static void fstring_shift_arguments(expr_ty parent, arguments_ty args, int lineno, int col_offset) {
-    for (Py_ssize_t i = 0, l = asdl_seq_LEN(args->posonlyargs); i < l; i++) {
+    Py_ssize_t i;
+    for (i = 0; i < asdl_seq_LEN(args->posonlyargs); i++) {
        arg_ty arg = asdl_seq_GET(args->posonlyargs, i);
        shift_arg(parent, arg, lineno, col_offset);
     }
 
-    for (Py_ssize_t i = 0, l = asdl_seq_LEN(args->args); i < l; i++) {
+    for (i = 0; i < asdl_seq_LEN(args->args); i++) {
        arg_ty arg = asdl_seq_GET(args->args, i);
        shift_arg(parent, arg, lineno, col_offset);
     }
@@ -336,7 +338,7 @@ static void fstring_shift_arguments(expr_ty parent, arguments_ty args, int linen
         shift_arg(parent, args->vararg, lineno, col_offset);
     }
 
-    for (Py_ssize_t i = 0, l = asdl_seq_LEN(args->kwonlyargs); i < l; i++) {
+    for (i = 0; i < asdl_seq_LEN(args->kwonlyargs); i++) {
        arg_ty arg = asdl_seq_GET(args->kwonlyargs, i);
        shift_arg(parent, arg, lineno, col_offset);
     }
@@ -351,6 +353,7 @@ static void fstring_shift_arguments(expr_ty parent, arguments_ty args, int linen
 }
 
 static void fstring_shift_children_locations(expr_ty n, int lineno, int col_offset) {
+    Py_ssize_t i;
     switch (n->kind) {
         case BoolOp_kind:
             fstring_shift_seq_locations(n, n->v.BoolOp.values, lineno, col_offset);
@@ -384,14 +387,14 @@ static void fstring_shift_children_locations(expr_ty n, int lineno, int col_offs
             break;
         case ListComp_kind:
             shift_expr(n, n->v.ListComp.elt, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(n->v.ListComp.generators); i < l; i++) {
+            for (i = 0; i < asdl_seq_LEN(n->v.ListComp.generators); i++) {
                 comprehension_ty comp = asdl_seq_GET(n->v.ListComp.generators, i);
                 fstring_shift_comprehension(n, comp, lineno, col_offset);
             }
             break;
         case SetComp_kind:
             shift_expr(n, n->v.SetComp.elt, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(n->v.SetComp.generators); i < l; i++) {
+            for (i = 0; i < asdl_seq_LEN(n->v.SetComp.generators); i++) {
                 comprehension_ty comp = asdl_seq_GET(n->v.SetComp.generators, i);
                 fstring_shift_comprehension(n, comp, lineno, col_offset);
             }
@@ -399,14 +402,14 @@ static void fstring_shift_children_locations(expr_ty n, int lineno, int col_offs
         case DictComp_kind:
             shift_expr(n, n->v.DictComp.key, lineno, col_offset);
             shift_expr(n, n->v.DictComp.value, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(n->v.DictComp.generators); i < l; i++) {
+            for (i = 0; i < asdl_seq_LEN(n->v.DictComp.generators); i++) {
                 comprehension_ty comp = asdl_seq_GET(n->v.DictComp.generators, i);
                 fstring_shift_comprehension(n, comp, lineno, col_offset);
             }
             break;
         case GeneratorExp_kind:
             shift_expr(n, n->v.GeneratorExp.elt, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(n->v.GeneratorExp.generators); i < l; i++) {
+            for (i = 0; i < asdl_seq_LEN(n->v.GeneratorExp.generators); i++) {
                 comprehension_ty comp = asdl_seq_GET(n->v.GeneratorExp.generators, i);
                 fstring_shift_comprehension(n, comp, lineno, col_offset);
             }
@@ -427,7 +430,7 @@ static void fstring_shift_children_locations(expr_ty n, int lineno, int col_offs
         case Call_kind:
             shift_expr(n, n->v.Call.func, lineno, col_offset);
             fstring_shift_seq_locations(n, n->v.Call.args, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(n->v.Call.keywords); i < l; i++) {
+            for (i = 0; i < asdl_seq_LEN(n->v.Call.keywords); i++) {
                 keyword_ty keyword = asdl_seq_GET(n->v.Call.keywords, i);
                 shift_expr(n, keyword->value, lineno, col_offset);
             }
@@ -518,7 +521,8 @@ fstring_fix_expr_location(Token *parent, expr_ty n, char *expr_str)
             }
             /* adjust the start based on the number of newlines encountered
                before the f-string expression */
-            for (char* p = parent_str; p < substr; p++) {
+            char *p;
+            for (p = parent_str; p < substr; p++) {
                 if (*p == '\n') {
                     lines++;
                 }
