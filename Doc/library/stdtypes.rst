@@ -1551,8 +1551,9 @@ expression support in the :mod:`re` module).
 
 .. method:: str.removeprefix(prefix, /)
 
-   If the string starts with the prefix, return ``string[len(prefix):]``.
-   Otherwise, return a copy of the original string::
+   If the string starts with the *prefix* string, return
+   ``string[len(prefix):]``. Otherwise, return a copy of the original
+   string::
 
       >>> 'TestHook'.removeprefix('Test')
       'Hook'
@@ -1563,7 +1564,7 @@ expression support in the :mod:`re` module).
 
 .. method:: str.removesuffix(suffix, /)
 
-   If the string ends with the suffix, return
+   If the string ends with the *suffix* string, return
    ``string[:len(string)-len(suffix)]``. Otherwise, return a copy of the
    original string::
 
