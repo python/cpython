@@ -599,7 +599,7 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
             # Confirm that the caret is located under the first 1 character
-            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+            self.assertIn("\n    1 + 1 = 2\n            ^", text)
 
     def test_syntaxerror_indented_caret_position(self):
         script = textwrap.dedent("""\
@@ -611,7 +611,7 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
             # Confirm that the caret is located under the first 1 character
-            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+            self.assertIn("\n    1 + 1 = 2\n            ^", text)
 
             # Try the same with a form feed at the start of the indented line
             script = (
@@ -622,7 +622,7 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), "ascii").read()
             self.assertNotIn("\f", text)
-            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+            self.assertIn("\n    1 + 1 = 2\n            ^", text)
 
     def test_syntaxerror_multi_line_fstring(self):
         script = 'foo = f"""{}\nfoo"""\n'
@@ -632,14 +632,14 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [
-                    b'    foo = f"""{}',
-                    b'          ^',
+                    b'    foo"""',
+                    b'         ^',
                     b'SyntaxError: f-string: empty expression not allowed',
                 ],
             )
 
     def test_syntaxerror_invalid_escape_sequence_multi_line(self):
-        script = 'foo = """\\q\n"""\n'
+        script = 'foo = """\\q"""\n'
         with support.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(
@@ -647,10 +647,9 @@ class CmdLineTest(unittest.TestCase):
             )
             self.assertEqual(
                 stderr.splitlines()[-3:],
-                [
-                    b'    foo = """\\q',
-                    b'          ^',
-                    b'SyntaxError: invalid escape sequence \\q',
+                [   b'    foo = """\\q"""',
+                    b'                 ^',
+                    b'SyntaxError: invalid escape sequence \\q'
                 ],
             )
 

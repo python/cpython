@@ -166,6 +166,14 @@
     </Copy>
     <Warning Text="Grammar updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' and '@(_UpdatedC)' != ''" />
   </Target>
+  <Target Name="_RegenPegen" BeforeTargets="Build">
+    <!-- Regenerate Parser/pegen/parse.c -->
+    <Exec Command="&quot;$PYTHONPATH=$(srcdir)/Tools/peg_generator&quot; &quot;$(PythonExe)&quot; -m pegen -c -q &quot;$(PySourcePath)Grammar\python.gram&quot; -o &quot;$(IntDir)parse.c&quot;" />
+    <Copy SourceFiles="$(IntDir)parse.c" DestinationFiles="$(PySourcePath)Parser\pegen\parse.c">
+      <Output TaskParameter="CopiedFiles" ItemName="_UpdatedParse" />
+    </Copy>
+    <Warning Text="Pegen updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedParse)' != ''" />
+  </Target>
   <Target Name="_RegenAST_H" AfterTargets="_RegenGrammar">
     <!-- Regenerate Include/Python-ast.h using Parser/asdl_c.py -h -->
     <Exec Command="&quot;$(PythonExe)&quot; &quot;$(PySourcePath)Parser\asdl_c.py&quot; -h &quot;$(IntDir)Python-ast.h&quot; &quot;$(PySourcePath)Parser\Python.asdl&quot;" />

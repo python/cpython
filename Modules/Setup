@@ -134,6 +134,9 @@ faulthandler faulthandler.c
 # can call _PyTraceMalloc_NewReference().
 _tracemalloc _tracemalloc.c hashtable.c
 
+# PEG-based parser module -- slated to be *the* parser
+_peg_parser _peg_parser.c
+
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically
 # loaded modules by the new setup.py script added in Python 2.1.  If

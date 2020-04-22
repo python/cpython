@@ -1,6 +1,9 @@
 import __future__
 import unittest
+import sys
 
+
+@unittest.skipIf(sys.flags.use_peg, "Not supported by pegen yet")
 class FLUFLTests(unittest.TestCase):
 
     def test_barry_as_bdfl(self):
