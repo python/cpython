@@ -347,6 +347,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'isolated': 0,
         'use_environment': 1,
         'dev_mode': 0,
+        'use_peg': 1,
 
         'install_signal_handlers': 1,
         'use_hash_seed': 0,
@@ -728,6 +729,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'show_ref_count': 1,
             'malloc_stats': 1,
+            'use_peg': 0,
 
             'stdio_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
