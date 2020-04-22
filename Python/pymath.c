@@ -81,7 +81,7 @@ round(double x)
 #endif /* HAVE_ROUND */
 
 #include <limits.h>
-#ifdef _MSC_VER
+#ifdef MS_WINDOWS
 #  include <intrin.h>
 #  pragma intrinsic(_BitScanReverse)
 
@@ -93,7 +93,7 @@ __builtin_clzl(unsigned int x)
    return (clz);
  }
 
-#endif
+#endif /* MS_WINDOWS */
 
 unsigned int _Py_bit_length(unsigned long d) {
    return d ? CHAR_BIT * sizeof (d) - __builtin_clzl (d) : 0;
