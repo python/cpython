@@ -242,16 +242,27 @@ tokenizer_error_with_col_offset(Parser *p, PyObject *errtype, const char *errmsg
 {
     PyObject *errstr = NULL;
     PyObject *value = NULL;
-    int col_number = p->tok->cur - p->tok->buf;
+    int col_number = -1;
 
     errstr = PyUnicode_FromString(errmsg);
     if (!errstr) {
         return -1;
     }
 
-    PyObject *loc = get_error_line(p->tok->buf);
+    PyObject *loc = NULL;
+    if (p->start_rule == Py_file_input) {
+        loc = PyErr_ProgramTextObject(p->tok->filename, p->tok->lineno);
+    }
     if (!loc) {
-        goto error;
+        loc = get_error_line(p->tok->buf);
+    }
+
+    if (loc) {
+        col_number = p->tok->cur - p->tok->buf;
+    }
+    else {
+        Py_INCREF(Py_None);
+        loc = Py_None;
     }
 
     PyObject *tmp = Py_BuildValue("(OiiN)", p->tok->filename, p->tok->lineno,
@@ -267,10 +278,13 @@ tokenizer_error_with_col_offset(Parser *p, PyObject *errtype, const char *errmsg
     }
     PyErr_SetObject(errtype, value);
 
+    Py_XDECREF(value);
+    Py_XDECREF(errstr);
+    return -1;
+
 error:
     Py_XDECREF(errstr);
     Py_XDECREF(loc);
-    Py_XDECREF(value);
     return -1;
 }
 
