@@ -81,7 +81,9 @@ round(double x)
 #endif /* HAVE_ROUND */
 
 #include <limits.h>
+
 #ifdef MS_WINDOWS
+#  error WINDOWS DETECTED!
 #  include <intrin.h>
 #  pragma intrinsic(_BitScanReverse)
 
