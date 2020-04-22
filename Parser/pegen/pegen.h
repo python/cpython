@@ -6,7 +6,6 @@
 #include <token.h>
 #include <Python-ast.h>
 #include <pyarena.h>
-#include <setjmp.h>
 
 typedef struct _memo {
     int type;
@@ -37,11 +36,11 @@ typedef struct {
     int n_keyword_lists;
     int start_rule;
     int *errcode;
-    jmp_buf error_env;
     int parsing_started;
     PyObject* normalize;
     int starting_lineno;
     int starting_col_offset;
+    int error_indicator;
 } Parser;
 
 typedef struct {
@@ -117,7 +116,7 @@ CHECK_CALL(Parser *p, void *result)
 {
     if (result == NULL) {
         assert(PyErr_Occurred());
-        longjmp(p->error_env, 1);
+        p->error_indicator=1;
     }
     return result;
 }
@@ -128,7 +127,7 @@ Py_LOCAL_INLINE(void *)
 CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
 {
     if (result == NULL && PyErr_Occurred()) {
-        longjmp(p->error_env, 1);
+        p->error_indicator = 1;
     }
     return result;
 }

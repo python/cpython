@@ -60,7 +60,8 @@ _PyPegen_new_identifier(Parser *p, char *n)
                          "%.200s",
                          _PyType_Name(Py_TYPE(id2)));
             Py_DECREF(id2);
-            longjmp(p->error_env, 1);
+            p->error_indicator = 1;
+            return NULL;
         }
         id = id2;
     }
@@ -900,6 +901,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
 
     p->starting_lineno = 0;
     p->starting_col_offset = 0;
+    p->error_indicator = 0;
 
     return p;
 }
@@ -907,11 +909,6 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
 void *
 _PyPegen_run_parser(Parser *p)
 {
-    int error = setjmp(p->error_env);
-    if (error) {
-        return NULL;
-    }
-
     void *res = _PyPegen_parse(p);
     if (res == NULL) {
         if (PyErr_Occurred()) {

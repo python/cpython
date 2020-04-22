@@ -268,7 +268,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def _set_up_token_start_metadata_extraction(self) -> None:
         self.print("if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {")
         with self.indent():
-            self.print("longjmp(p->error_env, 1);")
+            self.print("p->error_indicator = 1;")
+            self.print("return NULL;")
         self.print("}")
         self.print("int start_lineno = p->tokens[mark]->lineno;")
         self.print("UNUSED(start_lineno); // Only used by EXTRA macro")
@@ -321,6 +322,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         memoize = self._should_memoize(node)
 
         with self.indent():
+            self.print("if (p->error_indicator){")
+            with self.indent():
+                self.print("return NULL;")
+            self.print("}")
             self.print(f"{result_type} res = NULL;")
             if memoize:
                 self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &res))")
@@ -349,6 +354,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         is_repeat1 = node.name.startswith("_loop1")
 
         with self.indent():
+            self.print("if (p->error_indicator){")
+            with self.indent():
+                self.print("return NULL;")
+            self.print("}")
             self.print(f"void *res = NULL;")
             if memoize:
                 self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &res))")
@@ -444,7 +453,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
 
         self.print("if (res == NULL && PyErr_Occurred()) {")
         with self.indent():
-            self.print("longjmp(p->error_env, 1);")
+            self.print("p->error_indicator = 1;")
+            self.print("return NULL;")
         self.print("}")
 
         if self.debug:
