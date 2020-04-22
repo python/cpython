@@ -7127,8 +7127,10 @@ os_waitpid_impl(PyObject *module, intptr_t pid, int options)
     if (res < 0)
         return (!async_err) ? posix_error() : NULL;
 
+    unsigned long long ustatus = (unsigned int)status;
+
     /* shift the status left a byte so this is more like the POSIX waitpid */
-    return Py_BuildValue(_Py_PARSE_INTPTR "i", res, status << 8);
+    return Py_BuildValue(_Py_PARSE_INTPTR "K", res, ustatus << 8);
 }
 #endif
 
