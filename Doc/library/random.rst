@@ -513,7 +513,7 @@ Simulation of arrival times and service deliveries for a multiserver queue::
         service_completed = arrival_time + wait + service_duration
         heappush(servers, service_completed)
 
-    print(f'Mean wait: {mean(waits):.1f}.  Max wait: {max(waits):.1f}.')
+    print(f'Mean wait: {mean(waits):.1f}   Max wait: {max(waits):.1f}')
     print('Quartiles:', quantiles(waits, n=4))
 
 .. seealso::
