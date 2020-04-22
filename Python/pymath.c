@@ -83,12 +83,11 @@ round(double x)
 #include <limits.h>
 
 #ifdef MS_WINDOWS
-#  error WINDOWS DETECTED!
 #  include <intrin.h>
 #  pragma intrinsic(_BitScanReverse)
 
-static intline int
-__builtin_clzl(unsigned int x)
+static inline int
+__builtin_clzl(unsigned long x)
  {
    unsigned long clz = 0;
    _BitScanReverse (&clz, x);
