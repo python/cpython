@@ -1,0 +1,2 @@
+lib2to3 and the 2to3 tool gain a PendingDeprecationWarning, slated for
+removal in 3.11 or 3.12.
