@@ -656,8 +656,7 @@ class BaseExceptionReportingTests:
         self.assertIn('inner_raise() # Marker', blocks[2])
         self.check_zero_div(blocks[2])
 
-    @unittest.skipIf(sys.flags.use_peg,
-                     "Pegen is arguably better here, so no need to fix this")
+    @support.skip_if_new_parser("Pegen is arguably better here, so no need to fix this")
     def test_syntax_error_offset_at_eol(self):
         # See #10186.
         def e():

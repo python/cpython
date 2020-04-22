@@ -149,7 +149,7 @@ typedef struct {
 
     /* Enable PEG parser?
        1 by default, set to 0 by -X oldparser and PYTHONOLDPARSER */
-    int use_peg;
+    int _use_peg_parser;
 
     /* Enable tracemalloc?
        Set by -X tracemalloc=N and PYTHONTRACEMALLOC. -1 means unset */
