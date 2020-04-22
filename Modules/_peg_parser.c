@@ -1,5 +1,5 @@
 #include <Python.h>
-#include <pegen_interface.h>
+#include "pegen_interface.h"
 
 PyObject *
 _Py_parse_file(PyObject *self, PyObject *args, PyObject *kwds)

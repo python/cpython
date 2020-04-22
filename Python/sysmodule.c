@@ -2427,7 +2427,6 @@ static PyStructSequence_Field flags_fields[] = {
     {"inspect",                 "-i"},
     {"interactive",             "-i"},
     {"optimize",                "-O or -OO"},
-    {"use_peg",                 "-p old or -p new"},
     {"dont_write_bytecode",     "-B"},
     {"no_user_site",            "-s"},
     {"no_site",                 "-S"},
@@ -2441,6 +2440,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"isolated",                "-I"},
     {"dev_mode",                "-X dev"},
     {"utf8_mode",               "-X utf8"},
+    {"use_peg",                 "-X oldparser"},
     {0}
 };
 

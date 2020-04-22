@@ -1,4 +1,3 @@
-#ifndef Py_LIMITED_API
 #ifndef Py_PEGENINTERFACE
 #define Py_PEGENINTERFACE
 #ifdef __cplusplus
@@ -29,4 +28,3 @@ PyAPI_FUNC(PyCodeObject *) PyPegen_CodeObjectFromFileObject(FILE *, PyObject *fi
 }
 #endif
 #endif /* !Py_PEGENINTERFACE*/
-#endif /* !Py_LIMITED_API */

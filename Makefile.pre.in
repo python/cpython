@@ -304,7 +304,7 @@ PEGEN_OBJS=		\
 
 
 PEGEN_HEADERS= \
-		$(srcdir)/Include/pegen_interface.h \
+		$(srcdir)/Include/internal/pegen_interface.h \
 		$(srcdir)/Parser/pegen/pegen.h \
 		$(srcdir)/Parser/pegen/parse_string.h
 
