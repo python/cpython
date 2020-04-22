@@ -225,6 +225,18 @@ error:
     Py_XDECREF(tback);
 }
 
+static inline PyObject *
+get_error_line(char *buffer)
+{
+    char *newline = strchr(buffer, '\n');
+    if (newline) {
+        return PyUnicode_FromStringAndSize(buffer, newline - buffer);
+    }
+    else {
+        return PyUnicode_FromString(buffer);
+    }
+}
+
 static int
 tokenizer_error_with_col_offset(Parser *p, PyObject *errtype, const char *errmsg)
 {
@@ -237,8 +249,13 @@ tokenizer_error_with_col_offset(Parser *p, PyObject *errtype, const char *errmsg
         return -1;
     }
 
-    PyObject *tmp = Py_BuildValue("(Oiis)", p->tok->filename, p->tok->lineno,
-                                  col_number, p->tok->buf);
+    PyObject *loc = get_error_line(p->tok->buf);
+    if (!loc) {
+        goto error;
+    }
+
+    PyObject *tmp = Py_BuildValue("(OiiN)", p->tok->filename, p->tok->lineno,
+                                  col_number, loc);
     if (!tmp) {
         goto error;
     }
@@ -252,6 +269,7 @@ tokenizer_error_with_col_offset(Parser *p, PyObject *errtype, const char *errmsg
 
 error:
     Py_XDECREF(errstr);
+    Py_XDECREF(loc);
     Py_XDECREF(value);
     return -1;
 }
@@ -315,18 +333,6 @@ tokenizer_error(Parser *p)
     PyErr_SyntaxLocationObject(p->tok->filename, p->tok->lineno, 0);
 
     return -1;
-}
-
-static inline PyObject *
-get_error_line(char *buffer)
-{
-    char *newline = strchr(buffer, '\n');
-    if (newline) {
-        return PyUnicode_FromStringAndSize(buffer, newline - buffer);
-    }
-    else {
-        return PyUnicode_FromString(buffer);
-    }
 }
 
 void *
@@ -969,11 +975,13 @@ mod_ty
 _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
                        int iflags, PyArena *arena)
 {
+    int exec_input = start_rule == Py_file_input;
+
     struct tok_state *tok;
     if (iflags & PyCF_IGNORE_COOKIE) {
-        tok = PyTokenizer_FromUTF8(str, 1);
+        tok = PyTokenizer_FromUTF8(str, exec_input);
     } else {
-        tok = PyTokenizer_FromString(str, 1);
+        tok = PyTokenizer_FromString(str, exec_input);
     }
     if (tok == NULL) {
         if (PyErr_Occurred()) {
