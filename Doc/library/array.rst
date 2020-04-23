@@ -22,7 +22,7 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'B'``   | unsigned char      | int               | 1                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'u'``   | Py_UNICODE         | Unicode character | 2                     | \(1)  |
+| ``'u'``   | wchar_t            | Unicode character | 2                     | \(1)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'h'``   | signed short       | int               | 2                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -48,12 +48,9 @@ defined:
 Notes:
 
 (1)
-   The ``'u'`` type code corresponds to Python's obsolete unicode character
+   The ``'u'`` type code had corresponded to Python's obsolete unicode character
    (:c:type:`Py_UNICODE` which is :c:type:`wchar_t`). Depending on the
    platform, it can be 16 bits or 32 bits.
-
-   ``'u'`` will be removed together with the rest of the :c:type:`Py_UNICODE`
-   API.
 
    .. deprecated-removed:: 3.3 4.0
 
