@@ -453,6 +453,7 @@ static PyObject *
 ga_vectorcall(PyObject *type, PyObject * const*args,
               size_t nargsf, PyObject *kwnames)
 {
+    assert(PyType_Check(type));
     if (!_PyArg_NoKwnames("GenericAlias", kwnames)) {
         return NULL;
     }
