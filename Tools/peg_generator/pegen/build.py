@@ -6,12 +6,6 @@ import sysconfig
 
 from typing import Optional, Tuple
 
-import distutils.log
-from distutils.core import Distribution, Extension
-from distutils.command.clean import clean  # type: ignore
-from distutils.command.build_ext import build_ext  # type: ignore
-from distutils.tests.support import fixup_build_ext
-
 from pegen.c_generator import CParserGenerator
 from pegen.grammar import Grammar
 from pegen.grammar_parser import GeneratedParser as GrammarParser
@@ -47,6 +41,12 @@ def compile_c_extension(
     If *build_dir* is provided, that path will be used as the temporary build directory
     of distutils (this is useful in case you want to use a temporary directory).
     """
+    import distutils.log
+    from distutils.core import Distribution, Extension
+    from distutils.command.clean import clean  # type: ignore
+    from distutils.command.build_ext import build_ext  # type: ignore
+    from distutils.tests.support import fixup_build_ext
+
     if verbose:
         distutils.log.set_verbosity(distutils.log.DEBUG)
 
