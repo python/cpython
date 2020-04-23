@@ -98,7 +98,6 @@ class AnyTests(BaseTestCase):
                 pass
 
     def test_cannot_instantiate(self):
-        self.assertFalse(callable(Any))
         with self.assertRaises(TypeError):
             Any()
         with self.assertRaises(TypeError):
@@ -139,7 +138,6 @@ class NoReturnTests(BaseTestCase):
                 pass
 
     def test_cannot_instantiate(self):
-        self.assertFalse(callable(NoReturn))
         with self.assertRaises(TypeError):
             NoReturn()
         with self.assertRaises(TypeError):
@@ -214,7 +212,6 @@ class TypeVarTests(BaseTestCase):
                 pass
 
     def test_cannot_instantiate_vars(self):
-        self.assertFalse(callable(TypeVar('A')))
         with self.assertRaises(TypeError):
             TypeVar('A')()
 
@@ -309,7 +306,6 @@ class UnionTests(BaseTestCase):
                 pass
 
     def test_cannot_instantiate(self):
-        self.assertFalse(callable(Union))
         with self.assertRaises(TypeError):
             Union()
         with self.assertRaises(TypeError):
@@ -525,8 +521,7 @@ class LiteralTests(BaseTestCase):
         self.assertEqual(repr(Literal), "typing.Literal")
         self.assertEqual(repr(Literal[None]), "typing.Literal[None]")
 
-    def test_cannot_instantiate(self):
-        self.assertFalse(callable(Literal))
+    def test_cannot_init(self):
         with self.assertRaises(TypeError):
             Literal()
         with self.assertRaises(TypeError):
@@ -2233,8 +2228,7 @@ class ClassVarTests(BaseTestCase):
             class C(type(ClassVar[int])):
                 pass
 
-    def test_cannot_instantiate(self):
-        self.assertFalse(callable(ClassVar))
+    def test_cannot_init(self):
         with self.assertRaises(TypeError):
             ClassVar()
         with self.assertRaises(TypeError):
@@ -2277,8 +2271,7 @@ class FinalTests(BaseTestCase):
             class C(type(Final[int])):
                 pass
 
-    def test_cannot_instantiate(self):
-        self.assertFalse(callable(Final))
+    def test_cannot_init(self):
         with self.assertRaises(TypeError):
             Final()
         with self.assertRaises(TypeError):

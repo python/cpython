@@ -310,11 +310,17 @@ class _SpecialForm(_Final, _root=True):
         self._name = getitem.__name__
         self.__doc__ = getitem.__doc__
 
+    def __mro_entries__(self, bases):
+        raise TypeError(f"Cannot subclass {self!r}")
+
     def __repr__(self):
         return 'typing.' + self._name
 
     def __reduce__(self):
         return self._name
+
+    def __call__(self, *args, **kwds):
+        raise TypeError(f"Cannot instantiate {self!r}")
 
     def __instancecheck__(self, obj):
         raise TypeError(f"{self} cannot be used with isinstance()")
