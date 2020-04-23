@@ -9,7 +9,7 @@ static int
 init_normalization(Parser *p)
 {
     if (p->normalize) {
-        return 0;
+        return 1;
     }
     PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
     if (!m)
