@@ -11,11 +11,6 @@ import time
 import token
 import traceback
 
-from typing import Final
-
-from pegen.build import build_parser_and_generator
-from pegen.testutil import print_memstats
-
 
 argparser = argparse.ArgumentParser(
     prog="pegen", description="Experimental PEG-like parser generator"
@@ -52,6 +47,9 @@ argparser.add_argument(
 
 
 def main() -> None:
+    from pegen.build import build_parser_and_generator
+    from pegen.testutil import print_memstats
+
     args = argparser.parse_args()
     verbose = args.verbose
     verbose_tokenizer = verbose >= 3
@@ -133,4 +131,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    if sys.version_info < (3, 8):
+        print("ERROR: using pegen requires at least Python 3.8!", file=sys.stderr)
+        sys.exit(1)
     main()
