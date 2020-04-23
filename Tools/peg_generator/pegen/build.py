@@ -2,6 +2,7 @@ import pathlib
 import shutil
 import tokenize
 import sys
+import sysconfig
 
 from typing import Optional, Tuple
 
@@ -20,6 +21,14 @@ from pegen.python_generator import PythonParserGenerator
 from pegen.tokenizer import Tokenizer
 
 MOD_DIR = pathlib.Path(__file__).parent
+
+
+def get_extra_flags(compiler_flags, compiler_py_flags_nodist):
+    flags = sysconfig.get_config_var(compiler_flags)
+    py_flags_nodist = sysconfig.get_config_var(compiler_py_flags_nodist)
+    if flags is None or py_flags_nodist is None:
+        return []
+    return f'{flags} {py_flags_nodist}'.split()
 
 
 def compile_c_extension(
@@ -43,9 +52,8 @@ def compile_c_extension(
 
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
-    extra_compile_args = []
-    if not sys.platform.startswith('win'):
-        extra_compile_args.append("-std=c99")
+    extra_compile_args = get_extra_flags('CFLAGS', 'PY_CFLAGS_NODIST')
+    extra_link_args = get_extra_flags('LDFLAGS', 'PY_LDFLAGS_NODIST')
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
     extension = [
@@ -66,6 +74,7 @@ def compile_c_extension(
                 str(MOD_DIR.parent.parent.parent / "Parser" / "pegen"),
             ],
             extra_compile_args=extra_compile_args,
+            extra_link_args=extra_link_args,
         )
     ]
     dist = Distribution({"name": extension_name, "ext_modules": extension})
