@@ -640,6 +640,16 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
     return 0;
 }
 
+
+int
+_PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
+{
+    int mark = p->mark;
+    void *res = func(p);
+    p->mark = mark;
+    return (res != NULL) == positive;
+}
+
 int
 _PyPegen_lookahead_with_string(int positive, void *(func)(Parser *, const char *), Parser *p,
                       const char *arg)
@@ -663,7 +673,7 @@ int
 _PyPegen_lookahead(int positive, void *(func)(Parser *), Parser *p)
 {
     int mark = p->mark;
-    void *res = func(p);
+    void *res = (void*)func(p);
     p->mark = mark;
     return (res != NULL) == positive;
 }
