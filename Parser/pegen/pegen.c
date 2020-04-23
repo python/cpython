@@ -8,6 +8,9 @@
 static int
 init_normalization(Parser *p)
 {
+    if (p->normalize) {
+        return 1;
+    }
     PyObject *m = PyImport_ImportModuleNoBlock("unicodedata");
     if (!m)
     {
@@ -36,7 +39,7 @@ _PyPegen_new_identifier(Parser *p, char *n)
     if (!PyUnicode_IS_ASCII(id))
     {
         PyObject *id2;
-        if (!p->normalize && !init_normalization(p))
+        if (!init_normalization(p))
         {
             Py_DECREF(id);
             goto error;
@@ -88,6 +91,9 @@ static inline Py_ssize_t
 byte_offset_to_character_offset(PyObject *line, int col_offset)
 {
     const char *str = PyUnicode_AsUTF8(line);
+    if (!str) {
+        return 0;
+    }
     PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, NULL);
     if (!text) {
         return 0;
@@ -171,9 +177,10 @@ _PyPegen_get_expr_name(expr_ty e)
     }
 }
 
-static void
+static int
 raise_decode_error(Parser *p)
 {
+    assert(PyErr_Occurred());
     const char *errtype = NULL;
     if (PyErr_ExceptionMatches(PyExc_UnicodeError)) {
         errtype = "unicode error";
@@ -197,6 +204,8 @@ raise_decode_error(Parser *p)
         Py_XDECREF(value);
         Py_XDECREF(tback);
     }
+
+    return -1;
 }
 
 static void
@@ -207,27 +216,33 @@ raise_tokenizer_init_error(PyObject *filename)
           || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) {
         return;
     }
-    PyObject *type, *value, *tback, *errstr;
+    PyObject *errstr = NULL;
+    PyObject *tuple = NULL;
+    PyObject *type, *value, *tback;
     PyErr_Fetch(&type, &value, &tback);
     errstr = PyObject_Str(value);
+    if (!errstr) {
+        goto error;
+    }
 
-    Py_INCREF(Py_None);
-    PyObject *tmp = Py_BuildValue("(OiiN)", filename, 0, -1, Py_None);
+    PyObject *tmp = Py_BuildValue("(OiiO)", filename, 0, -1, Py_None);
     if (!tmp) {
         goto error;
     }
 
-    value = PyTuple_Pack(2, errstr, tmp);
+    tuple = PyTuple_Pack(2, errstr, tmp);
     Py_DECREF(tmp);
     if (!value) {
         goto error;
     }
-    PyErr_SetObject(PyExc_SyntaxError, value);
+    PyErr_SetObject(PyExc_SyntaxError, tuple);
 
 error:
     Py_XDECREF(type);
     Py_XDECREF(value);
     Py_XDECREF(tback);
+    Py_XDECREF(errstr);
+    Py_XDECREF(tuple);
 }
 
 static inline PyObject *
@@ -337,9 +352,6 @@ tokenizer_error(Parser *p)
             errtype = PyExc_IndentationError;
             msg = "too many levels of indentation";
             break;
-        case E_DECODE:
-            raise_decode_error(p);
-            return -1;
         case E_LINECONT:
             msg = "unexpected character after line continuation character";
             break;
@@ -513,7 +525,12 @@ _PyPegen_fill_token(Parser *p)
     const char *start, *end;
     int type = PyTokenizer_Get(p->tok, &start, &end);
     if (type == ERRORTOKEN) {
-        return tokenizer_error(p);
+        if (p->tok->done == E_DECODE) {
+            return raise_decode_error(p);
+        }
+        else {
+            return tokenizer_error(p);
+        }
     }
     if (type == ENDMARKER && p->start_rule == Py_single_input && p->parsing_started) {
         type = NEWLINE; /* Add an extra newline */
@@ -530,13 +547,21 @@ _PyPegen_fill_token(Parser *p)
 
     if (p->fill == p->size) {
         int newsize = p->size * 2;
-        p->tokens = PyMem_Realloc(p->tokens, newsize * sizeof(Token *));
-        if (p->tokens == NULL) {
-            PyErr_Format(PyExc_MemoryError, "Realloc tokens failed");
+        Token **new_tokens = PyMem_Realloc(p->tokens, newsize * sizeof(Token *));
+        if (new_tokens == NULL) {
+            PyErr_NoMemory();
             return -1;
+        }
+        else {
+            p->tokens = new_tokens;
         }
         for (int i = p->size; i < newsize; i++) {
             p->tokens[i] = PyMem_Malloc(sizeof(Token));
+            if (p->tokens[i] == NULL) {
+                p->size = i; // Needed, in order to cleanup correctly after parser fails
+                PyErr_NoMemory();
+                return -1;
+            }
             memset(p->tokens[i], '\0', sizeof(Token));
         }
         p->size = newsize;
@@ -566,8 +591,6 @@ _PyPegen_fill_token(Parser *p)
     t->end_lineno = p->starting_lineno + end_lineno;
     t->end_col_offset = p->tok->lineno == 1 ? p->starting_col_offset + end_col_offset : end_col_offset;
 
-    // if (p->fill % 100 == 0) fprintf(stderr, "Filled at %d: %s \"%s\"\n", p->fill,
-    // token_name(type), PyBytes_AsString(t->bytes));
     p->fill += 1;
     return 0;
 }
@@ -614,6 +637,7 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
 {
     if (p->mark == p->fill) {
         if (_PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
             return -1;
         }
     }
@@ -632,11 +656,9 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
             }
             p->mark = m->mark;
             *(void **)(pres) = m->node;
-            // fprintf(stderr, "%d < %d: memoized!\n", p->mark, p->fill);
             return 1;
         }
     }
-    // fprintf(stderr, "%d < %d: not memoized\n", p->mark, p->fill);
     return 0;
 }
 
@@ -683,18 +705,15 @@ _PyPegen_expect_token(Parser *p, int type)
 {
     if (p->mark == p->fill) {
         if (_PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
             return NULL;
         }
     }
     Token *t = p->tokens[p->mark];
     if (t->type != type) {
-        // fprintf(stderr, "No %s at %d\n", token_name(type), p->mark);
         return NULL;
     }
     p->mark += 1;
-    // fprintf(stderr, "Got %s at %d: %s\n", token_name(type), p->mark,
-    // PyBytes_AsString(t->bytes));
-
     return t;
 }
 
@@ -888,8 +907,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
 {
     Parser *p = PyMem_Malloc(sizeof(Parser));
     if (p == NULL) {
-        PyErr_Format(PyExc_MemoryError, "Out of memory for Parser");
-        return NULL;
+        return (Parser *) PyErr_NoMemory();
     }
     assert(tok != NULL);
     p->tok = tok;
@@ -898,10 +916,14 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
     p->tokens = PyMem_Malloc(sizeof(Token *));
     if (!p->tokens) {
         PyMem_Free(p);
-        PyErr_Format(PyExc_MemoryError, "Out of memory for tokens");
-        return NULL;
+        return (Parser *) PyErr_NoMemory();
     }
     p->tokens[0] = PyMem_Malloc(sizeof(Token));
+    if (!p->tokens) {
+        PyMem_Free(p->tokens);
+        PyMem_Free(p);
+        return (Parser *) PyErr_NoMemory();
+    }
     memset(p->tokens[0], '\0', sizeof(Token));
     p->mark = 0;
     p->fill = 0;
@@ -1187,7 +1209,7 @@ _PyPegen_seq_count_dots(asdl_seq *seq)
                 number_of_dots += 1;
                 break;
             default:
-                assert(current_expr->type == ELLIPSIS || current_expr->type == DOT);
+                Py_UNREACHABLE();
         }
     }
 
