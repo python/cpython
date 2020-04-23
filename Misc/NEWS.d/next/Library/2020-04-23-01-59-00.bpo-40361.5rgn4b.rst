@@ -1,0 +1,3 @@
+When loading Jupyter Notebook, a NotADirectoryError: [Errno 20] Not a directory: 'xdg-settings' error was showing. This seems to be because Darwin systems were using Win settings. 
+
+The pull request has addressed this by modifying the webbrowser.py code.
