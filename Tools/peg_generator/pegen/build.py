@@ -31,7 +31,7 @@ def get_extra_flags(compiler_flags, compiler_py_flags_nodist):
 def compile_c_extension(
     generated_source_path: str,
     build_dir: Optional[str] = None,
-    verbose: bool = False,
+    verbose: bool = True,
     keep_asserts: bool = True,
 ) -> str:
     """Compile the generated source for a parser generator into an extension module.
@@ -52,6 +52,7 @@ def compile_c_extension(
     extension_name = source_file_path.stem
     extra_compile_args = get_extra_flags('CFLAGS', 'PY_CFLAGS_NODIST')
     extra_link_args = get_extra_flags('LDFLAGS', 'PY_LDFLAGS_NODIST')
+    print(extra_compile_args, extra_link_args)
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
     extension = [
