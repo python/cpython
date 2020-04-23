@@ -1,0 +1,2 @@
+Fix multiprocessing test_heap(): a new Heap object is now created for each test
+run.
