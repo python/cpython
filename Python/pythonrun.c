@@ -29,7 +29,7 @@
 #include "ast.h"                  // PyAST_FromNodeObject()
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
 
-#include <pegen_interface.h>      // PyPegen_ASTFrom*
+#include "pegen_interface.h"      // PyPegen_ASTFrom*
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
