@@ -51,8 +51,19 @@ class FutureTest(unittest.TestCase):
 
             a(hasattr(value, "compiler_flag"),
                    "feature is missing a .compiler_flag attr")
-            # Make sure the compile accepts the flag.
-            compile("", "<test>", "exec", value.compiler_flag)
+
+            if isinstance(value, __future__._ObsoletedFuture) and value.compiler_flag:
+                self.assertRaises(
+                    ValueError,
+                    compile,
+                    "",
+                    "<test>",
+                    "exec",
+                    value.compiler_flag
+                )
+            else:
+                # Make sure the compile accepts the flag.
+                compile("", "<test>", "exec", value.compiler_flag)
             a(isinstance(getattr(value, "compiler_flag"), int),
                    ".compiler_flag isn't int")
 

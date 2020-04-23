@@ -22,10 +22,13 @@
   can be inspected programmatically via importing :mod:`__future__` and examining
   its contents.
 
-Each statement in :file:`__future__.py` is of the form::
+Each statement in :file:`__future__.py` is in one of these forms::
 
    FeatureName = _Feature(OptionalRelease, MandatoryRelease,
                           CompilerFlag)
+
+   FeatureName = _ObsoletedFeature(OptionalRelease, MandatoryRelease,
+                                   CompilerFlag)
 
 
 where, normally, *OptionalRelease* is less than *MandatoryRelease*, and both are

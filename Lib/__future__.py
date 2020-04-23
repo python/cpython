@@ -105,11 +105,14 @@ class _Feature:
                                   self.mandatory,
                                   self.compiler_flag))
 
-nested_scopes = _Feature((2, 1, 0, "beta",  1),
+class _ObsoletedFuture(_Feature):
+    pass
+
+nested_scopes = _ObsoletedFuture((2, 1, 0, "beta",  1),
                          (2, 2, 0, "alpha", 0),
                          CO_NESTED)
 
-generators = _Feature((2, 2, 0, "alpha", 1),
+generators = _ObsoletedFuture((2, 2, 0, "alpha", 1),
                       (2, 3, 0, "final", 0),
                       CO_GENERATOR_ALLOWED)
 
