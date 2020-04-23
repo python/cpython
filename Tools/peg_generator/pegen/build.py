@@ -25,7 +25,7 @@ MOD_DIR = pathlib.Path(__file__).parent
 def get_extra_flags(compiler_flags, compiler_py_flags_nodist):
     flags = sysconfig.get_config_var(compiler_flags)
     py_flags_nodist = sysconfig.get_config_var(compiler_py_flags_nodist)
-    return (flags + ' ' + py_flags_nodist).split()
+    return f'{flags} {py_flags_nodist}'.split()
 
 
 def compile_c_extension(
