@@ -1,2 +1,0 @@
-Multiprocessing and concurrent.futures tests now stop the resource tracker
-process when tests complete.
