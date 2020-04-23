@@ -1,0 +1,2 @@
+``doctest`` program examples now exit with a non-successful code if any test
+fails

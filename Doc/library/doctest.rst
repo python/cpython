@@ -83,7 +83,10 @@ Here's a complete but small example module::
 
    if __name__ == "__main__":
        import doctest
-       doctest.testmod()
+       import sys
+       fail, _ = doctest.testmod()
+       if fail:
+           sys.exit(1)
 
 If you run :file:`example.py` directly from the command line, :mod:`doctest`
 works its magic:
@@ -147,9 +150,13 @@ continue to do it) is to end each module :mod:`M` with::
 
    if __name__ == "__main__":
        import doctest
-       doctest.testmod()
+       import sys
+       fail, _ = doctest.testmod()
+       if fail:
+           sys.exit(1)
 
-:mod:`doctest` then examines docstrings in module :mod:`M`.
+:mod:`doctest` then examines docstrings in module :mod:`M`, and the program
+exits with an unsuccessful code if any test fails.
 
 Running the module as a script causes the examples in the docstrings to get
 executed and verified::
