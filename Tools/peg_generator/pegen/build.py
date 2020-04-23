@@ -1,6 +1,7 @@
 import pathlib
 import shutil
 import tokenize
+import sys
 
 from typing import Optional, Tuple
 
@@ -42,6 +43,8 @@ def compile_c_extension(
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
     extra_compile_args = []
+    if not sys.platform.startswith('win'):
+        extra_compile_args.append("-std=c99")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
     extension = [
