@@ -185,7 +185,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     PyArena *arena;
     const char *ps1 = "", *ps2 = "", *enc = NULL;
     int errcode = 0;
-    int use_peg = _PyInterpreterState_GET()->config.use_peg;
+    int use_peg = _PyInterpreterState_GET()->config._use_peg_parser;
     _Py_IDENTIFIER(encoding);
     _Py_IDENTIFIER(__main__);
 
@@ -1030,7 +1030,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     mod_ty mod;
     PyArena *arena;
     PyObject *filename;
-    int use_peg = _PyInterpreterState_GET()->config.use_peg;
+    int use_peg = _PyInterpreterState_GET()->config._use_peg_parser;
 
     filename = _PyUnicode_FromId(&PyId_string); /* borrowed */
     if (filename == NULL)
@@ -1061,7 +1061,7 @@ PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globa
     mod_ty mod;
     PyArena *arena = NULL;
     PyObject *filename;
-    int use_peg = _PyInterpreterState_GET()->config.use_peg;
+    int use_peg = _PyInterpreterState_GET()->config._use_peg_parser;
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
     if (filename == NULL)
@@ -1222,7 +1222,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
 {
     PyCodeObject *co;
     mod_ty mod;
-    int use_peg = _PyInterpreterState_GET()->config.use_peg;
+    int use_peg = _PyInterpreterState_GET()->config._use_peg_parser;
     PyArena *arena = PyArena_New();
     if (arena == NULL)
         return NULL;
@@ -1329,7 +1329,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename, int start, Py
 {
     struct symtable *st;
     mod_ty mod;
-    int use_peg = _PyInterpreterState_GET()->config.use_peg;
+    int use_peg = _PyInterpreterState_GET()->config._use_peg_parser;
     PyArena *arena;
 
     arena = PyArena_New();
