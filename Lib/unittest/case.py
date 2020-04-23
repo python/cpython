@@ -354,18 +354,17 @@ class _AssertLogsBaseContext(_BaseTestCaseContext):
         self.logger.propagate = self.old_propagate
         self.logger.setLevel(self.old_level)
 
-
-class _AssertLogsContext(_AssertLogsBaseContext):
-    """A context manager used to implement TestCase.assertLogs()."""
-
-    def __exit__(self, exc_type, exc_value, tb):
-        _AssertLogsBaseContext.__exit__(
-            self, exc_type, exc_value, tb)
-
         if exc_type is not None:
             # let unexpected exceptions pass through
             return False
 
+        self.check_records()
+
+
+class _AssertLogsContext(_AssertLogsBaseContext):
+    """A context manager used to implement TestCase.assertLogs()."""
+
+    def check_records(self):
         if len(self.watcher.records) == 0:
             self._raiseFailure(
                 "no logs of level {} or higher triggered on {}"
@@ -375,18 +374,7 @@ class _AssertLogsContext(_AssertLogsBaseContext):
 class _AssertNoLogsContext(_AssertLogsBaseContext):
     """A context manager used to implement TestCase.assertNoLogs()."""
 
-    def __enter__(self):
-        _AssertLogsBaseContext.__enter__(self)
-        return None
-
-    def __exit__(self, exc_type, exc_value, tb):
-        _AssertLogsBaseContext.__exit__(
-            self, exc_type, exc_value, tb)
-
-        if exc_type is not None:
-            # let unexpected exceptions pass through
-            return False
-
+    def check_records(self):
         if len(self.watcher.records) > 0:
             self._raiseFailure(
                 "Logs unexpected found: {!r}".format(
