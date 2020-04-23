@@ -463,6 +463,7 @@ ga_vectorcall(PyObject *type, PyObject * const*args,
     }
     return Py_GenericAlias(args[0], args[1]);
 }
+
 // TODO:
 // - argument clinic?
 // - __doc__?
