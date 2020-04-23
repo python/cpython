@@ -558,7 +558,7 @@ _PyPegen_fill_token(Parser *p)
         for (int i = p->size; i < newsize; i++) {
             p->tokens[i] = PyMem_Malloc(sizeof(Token));
             if (p->tokens[i] == NULL) {
-                p->size = i - 1; // Needed, in order to cleanup correctly after parser fails
+                p->size = i; // Needed, in order to cleanup correctly after parser fails
                 PyErr_NoMemory();
                 return -1;
             }
@@ -897,7 +897,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
 {
     Parser *p = PyMem_Malloc(sizeof(Parser));
     if (p == NULL) {
-        return (void *) PyErr_NoMemory();
+        return (Parser *) PyErr_NoMemory();
     }
     assert(tok != NULL);
     p->tok = tok;
@@ -906,13 +906,13 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
     p->tokens = PyMem_Malloc(sizeof(Token *));
     if (!p->tokens) {
         PyMem_Free(p);
-        return (void *) PyErr_NoMemory();
+        return (Parser *) PyErr_NoMemory();
     }
     p->tokens[0] = PyMem_Malloc(sizeof(Token));
     if (!p->tokens) {
         PyMem_Free(p->tokens);
         PyMem_Free(p);
-        return (void *) PyErr_NoMemory();
+        return (Parser *) PyErr_NoMemory();
     }
     memset(p->tokens[0], '\0', sizeof(Token));
     p->mark = 0;
