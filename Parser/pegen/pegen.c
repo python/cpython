@@ -542,8 +542,7 @@ _PyPegen_fill_token(Parser *p)
         int newsize = p->size * 2;
         Token **new_tokens = PyMem_Realloc(p->tokens, newsize * sizeof(Token *));
         if (new_tokens == NULL) {
-            PyMem_Free(p->tokens);
-            p->tokens = NULL;
+            PyErr_NoMemory();
             return -1;
         }
         else {
@@ -630,6 +629,7 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
 {
     if (p->mark == p->fill) {
         if (_PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
             return -1;
         }
     }
@@ -687,6 +687,7 @@ _PyPegen_expect_token(Parser *p, int type)
 {
     if (p->mark == p->fill) {
         if (_PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
             return NULL;
         }
     }
@@ -876,12 +877,10 @@ void
 _PyPegen_Parser_Free(Parser *p)
 {
     Py_XDECREF(p->normalize);
-    if (p->tokens) {
-        for (int i = 0; i < p->size; i++) {
-            PyMem_Free(p->tokens[i]);
-        }
-        PyMem_Free(p->tokens);
+    for (int i = 0; i < p->size; i++) {
+        PyMem_Free(p->tokens[i]);
     }
+    PyMem_Free(p->tokens);
     PyMem_Free(p);
 }
 
