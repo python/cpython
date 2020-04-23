@@ -26,7 +26,7 @@ class EOFTestCase(unittest.TestCase):
         else:
             raise support.TestFailed
 
-    @unittest.skipIf(sys.flags.use_peg, "TODO for PEG -- fails with new parser")
+    @support.skip_if_new_parser("TODO for PEG -- fails with new parser")
     def test_line_continuation_EOF(self):
         """A continuation at the end of input must be an error; bpo2180."""
         expect = 'unexpected EOF while parsing (<string>, line 1)'

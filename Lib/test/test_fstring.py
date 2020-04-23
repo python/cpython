@@ -12,6 +12,7 @@ import types
 import decimal
 import sys
 import unittest
+from test import support
 
 a_global = 'global variable'
 
@@ -206,7 +207,7 @@ f'{a * f"-{x()}-"}'"""
         call = binop.right.values[1].value
         self.assertEqual(type(call), ast.Call)
         self.assertEqual(call.lineno, 3)
-        if not sys.flags.use_peg:
+        if support.use_old_parser():
             self.assertEqual(call.col_offset, 11)
 
     def test_ast_line_numbers_duplicate_expression(self):

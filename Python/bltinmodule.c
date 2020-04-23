@@ -816,12 +816,12 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (str == NULL)
         goto error;
 
-    int current_use_peg = PyInterpreterState_Get()->config.use_peg;
+    int current_use_peg = PyInterpreterState_Get()->config._use_peg_parser;
     if (flags & PyCF_TYPE_COMMENTS || feature_version >= 0) {
-        PyInterpreterState_Get()->config.use_peg = 0;
+        PyInterpreterState_Get()->config._use_peg_parser = 0;
     }
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
-    PyInterpreterState_Get()->config.use_peg = current_use_peg;
+    PyInterpreterState_Get()->config._use_peg_parser = current_use_peg;
     Py_XDECREF(source_copy);
     goto finally;
 

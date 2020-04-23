@@ -1,6 +1,7 @@
 import ast
 import sys
 import unittest
+from test import support
 
 
 funcdef = """\
@@ -218,7 +219,7 @@ def favk(
 """
 
 
-@unittest.skipIf(sys.flags.use_peg, "Pegen does not support type comments yet")
+@support.skip_if_new_parser("Pegen does not support type comments yet")
 class TypeCommentTests(unittest.TestCase):
 
     lowest = 4  # Lowest minor version supported
