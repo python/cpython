@@ -635,7 +635,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
-    config->use_peg = 1;
+    config->_use_peg_parser = 1;
 }
 
 
@@ -793,7 +793,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
-    COPY_ATTR(use_peg);
+    COPY_ATTR(_use_peg_parser);
     COPY_ATTR(install_signal_handlers);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
@@ -897,7 +897,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
     SET_ITEM_INT(dev_mode);
-    SET_ITEM_INT(use_peg);
+    SET_ITEM_INT(_use_peg_parser);
     SET_ITEM_INT(install_signal_handlers);
     SET_ITEM_INT(use_hash_seed);
     SET_ITEM_UINT(hash_seed);
@@ -1434,7 +1434,7 @@ config_read_complex_options(PyConfig *config)
 
     if (config_get_env(config, "PYTHONOLDPARSER")
        || config_get_xoption(config, L"oldparser")) {
-        config->use_peg = 0;
+        config->_use_peg_parser = 0;
     }
 
     PyStatus status;
@@ -2516,7 +2516,7 @@ PyConfig_Read(PyConfig *config)
     assert(config->isolated >= 0);
     assert(config->use_environment >= 0);
     assert(config->dev_mode >= 0);
-    assert(config->use_peg >= 0);
+    assert(config->_use_peg_parser >= 0);
     assert(config->install_signal_handlers >= 0);
     assert(config->use_hash_seed >= 0);
     assert(config->faulthandler >= 0);

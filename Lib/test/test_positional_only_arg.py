@@ -5,7 +5,7 @@ import pickle
 import unittest
 import sys
 
-from test.support import check_syntax_error
+from test.support import check_syntax_error, use_old_parser
 
 
 def global_pos_only_f(a, b, /):
@@ -24,7 +24,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
             compile(codestr + "\n", "<test>", "single")
 
     def test_invalid_syntax_errors(self):
-        if not sys.flags.use_peg:
+        if use_old_parser():
             check_syntax_error(self, "def f(a, b = 5, /, c): pass", "non-default argument follows default argument")
             check_syntax_error(self, "def f(a = 5, b, /, c): pass", "non-default argument follows default argument")
             check_syntax_error(self, "def f(a = 5, b=1, /, c, *, d=2): pass", "non-default argument follows default argument")
@@ -47,7 +47,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
         check_syntax_error(self, "def f(a, *, c, /, d, e): pass")
 
     def test_invalid_syntax_errors_async(self):
-        if not sys.flags.use_peg:
+        if use_old_parser():
             check_syntax_error(self, "async def f(a, b = 5, /, c): pass", "non-default argument follows default argument")
             check_syntax_error(self, "async def f(a = 5, b, /, c): pass", "non-default argument follows default argument")
             check_syntax_error(self, "async def f(a = 5, b=1, /, c, d=2): pass", "non-default argument follows default argument")
@@ -236,7 +236,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
         self.assertEqual(x(1, 2), 3)
 
     def test_invalid_syntax_lambda(self):
-        if not sys.flags.use_peg:
+        if use_old_parser():
             check_syntax_error(self, "lambda a, b = 5, /, c: None", "non-default argument follows default argument")
             check_syntax_error(self, "lambda a = 5, b, /, c: None", "non-default argument follows default argument")
             check_syntax_error(self, "lambda a = 5, b, /: None", "non-default argument follows default argument")

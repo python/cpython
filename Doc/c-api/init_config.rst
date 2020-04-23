@@ -686,6 +686,16 @@ PyConfig
 
       :data:`sys._xoptions`.
 
+   .. c:member:: int _use_peg_parser
+
+      Enable PEG parser? Default: 1.
+
+      Set to 0 by :option:`-X oldparser <-X>` and :envvar:`PYTHONOLDPARSER`.
+
+      See also :pep:`617`.
+
+      .. deprecated-removed:: 3.9 3.10
+
 If ``parse_argv`` is non-zero, ``argv`` arguments are parsed the same
 way the regular Python parses command line arguments, and Python
 arguments are stripped from ``argv``: see :ref:`Command Line Arguments

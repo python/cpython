@@ -678,8 +678,8 @@ class SyntaxTestCase(unittest.TestCase):
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
 
-    @unittest.skipIf(sys.flags.use_peg, "Pegen does not produce a specialized error "
-                                        "message yet")
+    @support.skip_if_new_parser("Pegen does not produce a specialized error "
+                                "message yet")
     def test_assign_del(self):
         self._check_error("del f()", "delete")
 
