@@ -879,7 +879,8 @@ class TestCase(object):
         """ Fail unless no log messages of level *level* or higher are emitted
         on *logger_name* or its children.
 
-        This method must be used as a context manager, and will yield nothing.
+        This method must be used as a context manager, and will yield
+        a recording object expected to have recorded nothing.
         """
         return _AssertNoLogsContext(self, logger, level)
 
