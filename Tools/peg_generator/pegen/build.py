@@ -25,13 +25,15 @@ MOD_DIR = pathlib.Path(__file__).parent
 def get_extra_flags(compiler_flags, compiler_py_flags_nodist):
     flags = sysconfig.get_config_var(compiler_flags)
     py_flags_nodist = sysconfig.get_config_var(compiler_py_flags_nodist)
+    if flags is None or py_flags_nodist is None:
+        return []
     return f'{flags} {py_flags_nodist}'.split()
 
 
 def compile_c_extension(
     generated_source_path: str,
     build_dir: Optional[str] = None,
-    verbose: bool = True,
+    verbose: bool = False,
     keep_asserts: bool = True,
 ) -> str:
     """Compile the generated source for a parser generator into an extension module.
@@ -47,12 +49,10 @@ def compile_c_extension(
     if verbose:
         distutils.log.set_verbosity(distutils.log.DEBUG)
 
-
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
     extra_compile_args = get_extra_flags('CFLAGS', 'PY_CFLAGS_NODIST')
     extra_link_args = get_extra_flags('LDFLAGS', 'PY_LDFLAGS_NODIST')
-    print(extra_compile_args, extra_link_args)
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
     extension = [
