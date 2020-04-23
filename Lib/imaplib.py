@@ -1028,8 +1028,6 @@ class IMAP4:
             self._check_bye()
         try:
             typ, data = self._get_tagged_response(tag, expect_bye=logout)
-            if name == "NOOP":
-                return typ, data
         except self.abort as val:
             raise self.abort('command: %s => %s' % (name, val))
         except self.error as val:
@@ -1237,9 +1235,11 @@ class IMAP4:
             sys.stderr.flush()
 
         def _dump_ur(self, untagged_resp_dict):
-            if untagged_resp_dict:
-                self._mesg('untagged responses dump:' +
-                    ''.join('\n\t\t%s: %r' % (x[0], x[1]) for x in untagged_resp_dict.items()))
+            if not untagged_resp_dict:
+                return
+            items = ('%s: %r' % (key, value)
+                    for key, value in untagged_resp_dict.items())
+            self._mesg('untagged responses dump:' + '\n\t\t'.join(items))
 
         def _log(self, line):
             # Keep log of last `_cmd_log_len' interactions for debugging.

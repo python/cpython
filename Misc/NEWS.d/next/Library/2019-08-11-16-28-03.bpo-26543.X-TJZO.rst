@@ -1,1 +1,1 @@
-Fix crash on :meth:`IMAP4.noop()` when bytes data is passed.
+Fix :meth:`IMAP4.noop()` when debug mode is enabled (ex: ``imaplib.Debug = 3``).
