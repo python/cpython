@@ -1856,7 +1856,6 @@ static struct PyMemberDef kqueue_event_members[] = {
 #undef KQ_OFF
 
 static PyObject *
-
 kqueue_event_repr(kqueue_event_Object *s)
 {
     char buf[1024];
