@@ -2177,7 +2177,7 @@ static int
 compiler_check_debug_args_seq(struct compiler *c, asdl_seq *args)
 {
     if (args != NULL) {
-        for (int i = 0, n = asdl_seq_LEN(args); i < n; i++) {
+        for (Py_ssize_t i = 0, n = asdl_seq_LEN(args); i < n; i++) {
             if (!compiler_check_debug_one_arg(c, asdl_seq_GET(args, i)))
                 return 0;
         }
