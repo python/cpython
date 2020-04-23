@@ -690,9 +690,9 @@ PyConfig
 
       Enable PEG parser? Default: 1.
 
-      See also :pep:`617`.
-
       Set to 0 by :option:`-X oldparser <-X>` and :envvar:`PYTHONOLDPARSER`.
+
+      See also :pep:`617`.
 
       .. deprecated-removed:: 3.9 3.10
 
