@@ -93,7 +93,9 @@ class CCallMakerVisitor(GrammarVisitor):
         func, args = call.split("(", 1)
         assert args[-1] == ")"
         args = args[:-1]
-        if not args.startswith("p,"):
+        if "name_token" in call:
+            return None, f"_PyPegen_lookahead_with_name({positive}, {func}, {args})"
+        elif not args.startswith("p,"):
             return None, f"_PyPegen_lookahead({positive}, {func}, {args})"
         elif args[2:].strip().isalnum():
             return None, f"_PyPegen_lookahead_with_int({positive}, {func}, {args})"
