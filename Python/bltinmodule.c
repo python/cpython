@@ -817,7 +817,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto error;
 
     int current_use_peg = PyInterpreterState_Get()->config._use_peg_parser;
-    if (flags & PyCF_TYPE_COMMENTS || feature_version >= 0) {
+    if (flags & PyCF_TYPE_COMMENTS || feature_version >= 0 || compile_mode == 3) {
         PyInterpreterState_Get()->config._use_peg_parser = 0;
     }
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
