@@ -295,7 +295,6 @@ class TestCParser(unittest.TestCase):
         expr: NAME
         """
         grammar = parse_string(grammar_source, GrammarParser)
-        print(list(Path(self.tmp_path).iterdir()))
         extension = generate_parser_c_extension(grammar, Path(self.tmp_path))
         for text in ("a b 42 b a", "名 名 42 名 名"):
             try:
