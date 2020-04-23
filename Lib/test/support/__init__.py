@@ -2250,6 +2250,12 @@ def run_doctest(module, verbosity=None, optionflags=0):
 #=======================================================================
 # Support for saving and restoring the imported modules.
 
+def print_warning(msg):
+    # bpo-39983: Print into sys.__stderr__ to display the warning even
+    # when sys.stderr is captured temporarily by a test
+    for line in msg.splitlines():
+        print(f"Warning -- {line}", file=sys.__stderr__, flush=True)
+
 def modules_setup():
     return sys.modules.copy(),
 
@@ -2305,14 +2311,12 @@ def threading_cleanup(*original_values):
             # Display a warning at the first iteration
             environment_altered = True
             dangling_threads = values[1]
-            print("Warning -- threading_cleanup() failed to cleanup "
-                  "%s threads (count: %s, dangling: %s)"
-                  % (values[0] - original_values[0],
-                     values[0], len(dangling_threads)),
-                  file=sys.stderr)
+            print_warning(f"threading_cleanup() failed to cleanup "
+                          f"{values[0] - original_values[0]} threads "
+                          f"(count: {values[0]}, "
+                          f"dangling: {len(dangling_threads)})")
             for thread in dangling_threads:
-                print(f"Dangling thread: {thread!r}", file=sys.stderr)
-            sys.stderr.flush()
+                print_warning(f"Dangling thread: {thread!r}")
 
             # Don't hold references to threads
             dangling_threads = None
@@ -2409,8 +2413,7 @@ def reap_children():
         if pid == 0:
             break
 
-        print("Warning -- reap_children() reaped child process %s"
-              % pid, file=sys.stderr)
+        print_warning(f"reap_children() reaped child process {pid}")
         environment_altered = True
 
 
