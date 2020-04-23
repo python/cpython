@@ -72,7 +72,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
                                                   ``discard``
 
 :class:`Mapping`           :class:`Collection`    ``__getitem__``,        ``__contains__``, ``keys``, ``items``, ``values``,
-                                                  ``__iter__``,           ``get``, ``__eq__``, and ``__ne__``
+                                                  ``__iter__``,           ``get``, ``__reversed__``, ``__eq__``, and ``__ne__``
                                                   ``__len__``
 
 :class:`MutableMapping`    :class:`Mapping`       ``__getitem__``,        Inherited :class:`Mapping` methods and
