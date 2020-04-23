@@ -1,0 +1,1 @@
+`Mapping` has a `__reversed__` method, but is not listed under Mixin Methods in the Abstract Base Classes table.
