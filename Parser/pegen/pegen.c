@@ -247,7 +247,7 @@ tokenizer_error_with_col_offset(Parser *p, PyObject *errtype, const char *errmsg
 {
     PyObject *errstr = NULL;
     PyObject *value = NULL;
-    int col_number = -1;
+    size_t col_number = -1;
 
     errstr = PyUnicode_FromString(errmsg);
     if (!errstr) {
@@ -552,8 +552,8 @@ _PyPegen_fill_token(Parser *p)
 
     int lineno = type == STRING ? p->tok->first_lineno : p->tok->lineno;
     const char *line_start = type == STRING ? p->tok->multi_line_start : p->tok->line_start;
-    int end_lineno = p->tok->lineno;
-    int col_offset = -1, end_col_offset = -1;
+    size_t end_lineno = p->tok->lineno;
+    size_t col_offset = -1, end_col_offset = -1;
     if (start != NULL && start >= line_start) {
         col_offset = start - line_start;
     }
@@ -1066,16 +1066,16 @@ _PyPegen_seq_insert_in_front(Parser *p, void *a, asdl_seq *seq)
     }
 
     asdl_seq_SET(new_seq, 0, a);
-    for (int i = 1, l = asdl_seq_LEN(new_seq); i < l; i++) {
+    for (Py_ssize_t i = 1, l = asdl_seq_LEN(new_seq); i < l; i++) {
         asdl_seq_SET(new_seq, i, asdl_seq_GET(seq, i - 1));
     }
     return new_seq;
 }
 
-static int
+static Py_ssize_t
 _get_flattened_seq_size(asdl_seq *seqs)
 {
-    int size = 0;
+    Py_ssize_t size = 0;
     for (Py_ssize_t i = 0, l = asdl_seq_LEN(seqs); i < l; i++) {
         asdl_seq *inner_seq = asdl_seq_GET(seqs, i);
         size += asdl_seq_LEN(inner_seq);
@@ -1087,7 +1087,7 @@ _get_flattened_seq_size(asdl_seq *seqs)
 asdl_seq *
 _PyPegen_seq_flatten(Parser *p, asdl_seq *seqs)
 {
-    int flattened_seq_size = _get_flattened_seq_size(seqs);
+    Py_ssize_t flattened_seq_size = _get_flattened_seq_size(seqs);
     assert(flattened_seq_size > 0);
 
     asdl_seq *flattened_seq = _Py_asdl_seq_new(flattened_seq_size, p->arena);
@@ -1098,7 +1098,7 @@ _PyPegen_seq_flatten(Parser *p, asdl_seq *seqs)
     int flattened_seq_idx = 0;
     for (Py_ssize_t i = 0, l = asdl_seq_LEN(seqs); i < l; i++) {
         asdl_seq *inner_seq = asdl_seq_GET(seqs, i);
-        for (int j = 0, li = asdl_seq_LEN(inner_seq); j < li; j++) {
+        for (Py_ssize_t j = 0, li = asdl_seq_LEN(inner_seq); j < li; j++) {
             asdl_seq_SET(flattened_seq, flattened_seq_idx++, asdl_seq_GET(inner_seq, j));
         }
     }
@@ -1203,7 +1203,7 @@ _PyPegen_alias_for_star(Parser *p)
 asdl_seq *
 _PyPegen_map_names_to_ids(Parser *p, asdl_seq *seq)
 {
-    int len = asdl_seq_LEN(seq);
+    Py_ssize_t len = asdl_seq_LEN(seq);
     assert(len > 0);
 
     asdl_seq *new_seq = _Py_asdl_seq_new(len, p->arena);
@@ -1234,7 +1234,7 @@ _PyPegen_cmpop_expr_pair(Parser *p, cmpop_ty cmpop, expr_ty expr)
 asdl_int_seq *
 _PyPegen_get_cmpops(Parser *p, asdl_seq *seq)
 {
-    int len = asdl_seq_LEN(seq);
+    Py_ssize_t len = asdl_seq_LEN(seq);
     assert(len > 0);
 
     asdl_int_seq *new_seq = _Py_asdl_int_seq_new(len, p->arena);
@@ -1251,7 +1251,7 @@ _PyPegen_get_cmpops(Parser *p, asdl_seq *seq)
 asdl_seq *
 _PyPegen_get_exprs(Parser *p, asdl_seq *seq)
 {
-    int len = asdl_seq_LEN(seq);
+    Py_ssize_t len = asdl_seq_LEN(seq);
     assert(len > 0);
 
     asdl_seq *new_seq = _Py_asdl_seq_new(len, p->arena);
@@ -1269,7 +1269,7 @@ _PyPegen_get_exprs(Parser *p, asdl_seq *seq)
 static asdl_seq *
 _set_seq_context(Parser *p, asdl_seq *seq, expr_context_ty ctx)
 {
-    int len = asdl_seq_LEN(seq);
+    Py_ssize_t len = asdl_seq_LEN(seq);
     if (len == 0) {
         return NULL;
     }
@@ -1370,7 +1370,7 @@ _PyPegen_key_value_pair(Parser *p, expr_ty key, expr_ty value)
 asdl_seq *
 _PyPegen_get_keys(Parser *p, asdl_seq *seq)
 {
-    int len = asdl_seq_LEN(seq);
+    Py_ssize_t len = asdl_seq_LEN(seq);
     asdl_seq *new_seq = _Py_asdl_seq_new(len, p->arena);
     if (!new_seq) {
         return NULL;
@@ -1386,7 +1386,7 @@ _PyPegen_get_keys(Parser *p, asdl_seq *seq)
 asdl_seq *
 _PyPegen_get_values(Parser *p, asdl_seq *seq)
 {
-    int len = asdl_seq_LEN(seq);
+    Py_ssize_t len = asdl_seq_LEN(seq);
     asdl_seq *new_seq = _Py_asdl_seq_new(len, p->arena);
     if (!new_seq) {
         return NULL;
@@ -1441,8 +1441,8 @@ _PyPegen_star_etc(Parser *p, arg_ty vararg, asdl_seq *kwonlyargs, arg_ty kwarg)
 asdl_seq *
 _PyPegen_join_sequences(Parser *p, asdl_seq *a, asdl_seq *b)
 {
-    int first_len = asdl_seq_LEN(a);
-    int second_len = asdl_seq_LEN(b);
+    Py_ssize_t first_len = asdl_seq_LEN(a);
+    Py_ssize_t second_len = asdl_seq_LEN(b);
     asdl_seq *new_seq = _Py_asdl_seq_new(first_len + second_len, p->arena);
     if (!new_seq) {
         return NULL;
@@ -1462,7 +1462,7 @@ _PyPegen_join_sequences(Parser *p, asdl_seq *a, asdl_seq *b)
 static asdl_seq *
 _get_names(Parser *p, asdl_seq *names_with_defaults)
 {
-    int len = asdl_seq_LEN(names_with_defaults);
+    Py_ssize_t len = asdl_seq_LEN(names_with_defaults);
     asdl_seq *seq = _Py_asdl_seq_new(len, p->arena);
     if (!seq) {
         return NULL;
@@ -1477,7 +1477,7 @@ _get_names(Parser *p, asdl_seq *names_with_defaults)
 static asdl_seq *
 _get_defaults(Parser *p, asdl_seq *names_with_defaults)
 {
-    int len = asdl_seq_LEN(names_with_defaults);
+    Py_ssize_t len = asdl_seq_LEN(names_with_defaults);
     asdl_seq *seq = _Py_asdl_seq_new(len, p->arena);
     if (!seq) {
         return NULL;
@@ -1750,8 +1750,8 @@ _PyPegen_seq_extract_starred_exprs(Parser *p, asdl_seq *kwargs)
 asdl_seq *
 _PyPegen_seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
 {
-    int len = asdl_seq_LEN(kwargs);
-    int new_len = len - _seq_number_of_starred_exprs(kwargs);
+    Py_ssize_t len = asdl_seq_LEN(kwargs);
+    Py_ssize_t new_len = len - _seq_number_of_starred_exprs(kwargs);
     if (new_len == 0) {
         return NULL;
     }
@@ -1773,7 +1773,7 @@ _PyPegen_seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
 expr_ty
 _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
 {
-    int len = asdl_seq_LEN(strings);
+    Py_ssize_t len = asdl_seq_LEN(strings);
     assert(len > 0);
 
     Token *first = asdl_seq_GET(strings, 0);
