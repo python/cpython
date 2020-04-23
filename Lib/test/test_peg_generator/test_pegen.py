@@ -81,7 +81,6 @@ class TestPegen(unittest.TestCase):
         """
         rules = parse_string(grammar, GrammarParser).rules
         self.assertEqual(str(rules["start"]), "start: ','.thing+ NEWLINE")
-        print(repr(rules["start"]))
         self.assertTrue(repr(rules["start"]).startswith(
             "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
         ))
@@ -511,7 +510,7 @@ class TestPegen(unittest.TestCase):
         expr: NUMBER
         """
         parser_class = make_parser(grammar)
-        node = parse_string("(1)", parser_class, verbose=True)
+        node = parse_string("(1)", parser_class)
         self.assertEqual(node, [
             TokenInfo(OP, string="(", start=(1, 0), end=(1, 1), line="(1)"),
             [TokenInfo(NUMBER, string="1", start=(1, 1), end=(1, 2), line="(1)")],
@@ -695,8 +694,6 @@ class TestGrammarVisualizer(unittest.TestCase):
         printer.print_grammar_ast(rules, printer=lines.append)
 
         output = "\n".join(lines)
-        print()
-        print(output)
         expected_output = textwrap.dedent(
             """\
         └──Rule
