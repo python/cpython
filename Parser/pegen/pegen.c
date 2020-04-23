@@ -551,6 +551,7 @@ _PyPegen_fill_token(Parser *p)
         for (int i = p->size; i < newsize; i++) {
             p->tokens[i] = PyMem_Malloc(sizeof(Token));
             if (p->tokens[i] == NULL) {
+                p->size = i - 1; // Needed, in order to cleanup correctly after parser fails
                 PyErr_NoMemory();
                 return -1;
             }
