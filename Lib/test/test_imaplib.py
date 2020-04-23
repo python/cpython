@@ -907,13 +907,13 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertIsNone(server.logged)
 
     @reap_threads
-    def test_noop_with_debug(self):
-        # See: http://bugs.python.org/issue26543
+    @support.cpython_only
+    def test_dump_ur(self):
+        d = {'READ-WRITE': [b'']}
         with self.reaped_server(SimpleIMAPHandler) as server:
             with self.imap_class(*server.server_address) as imap:
                 imap.debug = 5
-                imap.noop()
-
+                imap._dump_ur(d)
 
 @unittest.skipUnless(ssl, "SSL not available")
 class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
