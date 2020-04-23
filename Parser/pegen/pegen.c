@@ -216,26 +216,33 @@ raise_tokenizer_init_error(PyObject *filename)
           || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) {
         return;
     }
-    PyObject *type, *value, *tback, *errstr;
+    PyObject *errstr = NULL;
+    PyObject *tuple = NULL;
+    PyObject *type, *value, *tback;
     PyErr_Fetch(&type, &value, &tback);
     errstr = PyObject_Str(value);
+    if (!errstr) {
+        goto error;
+    }
 
     PyObject *tmp = Py_BuildValue("(OiiO)", filename, 0, -1, Py_None);
     if (!tmp) {
         goto error;
     }
 
-    value = PyTuple_Pack(2, errstr, tmp);
+    tuple = PyTuple_Pack(2, errstr, tmp);
     Py_DECREF(tmp);
     if (!value) {
         goto error;
     }
-    PyErr_SetObject(PyExc_SyntaxError, value);
+    PyErr_SetObject(PyExc_SyntaxError, tuple);
 
 error:
     Py_XDECREF(type);
     Py_XDECREF(value);
     Py_XDECREF(tback);
+    Py_XDECREF(errstr);
+    Py_XDECREF(tuple);
 }
 
 static inline PyObject *
