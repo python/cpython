@@ -8,6 +8,7 @@ import sys
 
 from test import test_tools
 from test.test_peg_generator.ast_dump import ast_dump
+from test import support
 from pathlib import PurePath, Path
 from typing import Sequence
 
@@ -23,6 +24,9 @@ with test_tools.imports_under_tool('peg_generator'):
 
 class TestCParser(unittest.TestCase):
     def setUp(self):
+        cmd = support.missing_compiler_executable()
+        if cmd is not None:
+            self.skipTest('The %r command is not found' % cmd)
         self.tmp_path = tempfile.mkdtemp()
 
     def tearDown(self):
