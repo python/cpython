@@ -1,0 +1,40 @@
+name: macOS w/ clang or GCC
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # this needs the fix in
+  # https://github.com/python/cpython/pull/13306
+  install_gcc9_autotools:
+    name: install with gcc@9.3.0 (Autotools)
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: install GCC with brew
+      run: |
+        brew install automake
+        brew install gcc
+        gcc-9 --version
+    - name: compile
+      run: |
+        export CC=$(which gcc-9)
+        export CXX=$(which g++-9)
+        ./configure
+        make -j 2
+        make buildbottest
+
+  install_clang_autotools:
+    name: install with AppleClang 11.0 (Autotools)
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: install autotools with brew
+      run: |
+        brew install automake
+    - name: compile
+      run: |
+        ./configure
+        make -j 2
+        make buildbottest
