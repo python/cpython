@@ -339,15 +339,53 @@ class TestBasicOps:
         # For random.Random and random.SystemRandom subclasses,
         # randbytes() is implemented with getrandbits()
         class Subclass(type(self.gen)):
-            calls = []
+            getrandbits_calls = []
             def getrandbits(self, n):
-                self.calls.append(n)
+                self.getrandbits_calls.append(n)
                 return 0
 
+        class SubSubclass(Subclass):
+            randbytes_calls = []
+            def randbytes(self, n):
+                self.randbytes_calls.append(n)
+                return b'\x04' * n
+
+        # SubSubclass override explicitly randbytes():
+        # getrandbits() implemented in Subclass is not called.
+        #
+        # Test SubSubclass first, since it shares randbytes_calls
+        # and getrandbits_calls lists with Subclass.
+        subsubclass = SubSubclass()
+        for n in range(10):
+            self.assertEqual(subsubclass.randbytes(n), b'\x04' * n)
+        self.assertEqual(subsubclass.randbytes_calls, list(range(10)))
+        self.assertEqual(subsubclass.getrandbits_calls, [])
+
+        # Subclass implements getrandbits() but not randbytes()
         subclass = Subclass()
         for n in range(10):
             self.assertEqual(subclass.randbytes(n), b'\0' * n)
-        self.assertEqual(subclass.calls, [n * 8 for n in range(10)])
+        self.assertEqual(subclass.getrandbits_calls,
+                         [n * 8 for n in range(10)])
+
+        class Subclass2(type(self.gen)):
+            getrandbits_calls = []
+            def getrandbits(self, n):
+                self.getrandbits_calls.append(n)
+                return 0
+
+            randbytes_calls = []
+            def randbytes(self, n):
+                self.randbytes_calls.append(n)
+                return b'\x04' * n
+
+        # Subclass implements getrandbits() and randbytes():
+        # randbytes() doesn't use getrandbits().
+        subclass2 = Subclass2()
+        for n in range(10):
+            self.assertEqual(subclass2.randbytes(n), b'\x04' * n)
+        self.assertEqual(subclass2.randbytes_calls, list(range(10)))
+        self.assertEqual(subclass2.getrandbits_calls, [])
 
 
 try:
