@@ -1,0 +1,11 @@
+Optimize the :mod:`subprocess` module on FreeBSD using ``closefrom()``.
+A single ``close(fd)`` syscall is cheap, but when ``sysconf(_SC_OPEN_MAX)`` is
+high, the loop calling ``close(fd)`` on each file descriptor can take several
+milliseconds.
+
+The workaround on FreeBSD to improve performance was to load and mount the
+fdescfs kernel module, but this is not enabled by default.
+
+Initial patch by Ed Maste (emaste), Conrad Meyer (cem), Kyle Evans (kevans) and
+Kubilay Kocak (koobs):
+https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=242274
