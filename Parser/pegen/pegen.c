@@ -1161,7 +1161,7 @@ _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
     if (!second_str) {
         return NULL;
     }
-    ssize_t len = strlen(first_str) + strlen(second_str) + 1;  // +1 for the dot
+    Py_ssize_t len = strlen(first_str) + strlen(second_str) + 1;  // +1 for the dot
 
     PyObject *str = PyBytes_FromStringAndSize(NULL, len);
     if (!str) {
