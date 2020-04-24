@@ -335,6 +335,20 @@ class TestBasicOps:
         self.assertRaises(ValueError, self.gen.randbytes, -1)
         self.assertRaises(TypeError, self.gen.randbytes, 1.0)
 
+    def test_randbytes_subclass(self):
+        # For random.Random and random.SystemRandom subclasses,
+        # randbytes() is implemented with getrandbits()
+        class Subclass(type(self.gen)):
+            calls = []
+            def getrandbits(self, n):
+                self.calls.append(n)
+                return 0
+
+        subclass = Subclass()
+        for n in range(10):
+            self.assertEqual(subclass.randbytes(n), b'\0' * n)
+        self.assertEqual(subclass.calls, [n * 8 for n in range(10)])
+
 
 try:
     random.SystemRandom().random()

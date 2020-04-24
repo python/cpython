@@ -38,6 +38,8 @@ basic generator of your own devising: in that case, override the :meth:`~Random.
 :meth:`~Random.seed`, :meth:`~Random.getstate`, and :meth:`~Random.setstate` methods.
 Optionally, a new generator can supply a :meth:`~Random.getrandbits` method --- this
 allows :meth:`randrange` to produce selections over an arbitrarily large range.
+In subclasses, :meth:`randbytes` is implemented with the
+:meth:`~Random.getrandbits` method.
 
 The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers

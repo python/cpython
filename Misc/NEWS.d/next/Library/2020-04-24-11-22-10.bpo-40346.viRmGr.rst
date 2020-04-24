@@ -1,0 +1,3 @@
+Subclasses of the :class:`random.Random` and :class:`random.SystemRandom`
+classes now get a ``randbytes()`` method implementation which uses the
+``getrandbits()`` method.

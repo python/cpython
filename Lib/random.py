@@ -120,6 +120,11 @@ class Random(_random.Random):
                 cls._randbelow = cls._randbelow_without_getrandbits
                 break
 
+        if cls.randbytes == _random.Random.randbytes:
+            # Subclasses of random.Random implement randbytes()
+            # using getrandbits()
+            cls.randbytes = cls._randbytes_getrandbits
+
     def seed(self, a=None, version=2):
         """Initialize internal state from a seed.
 
@@ -188,6 +193,13 @@ class Random(_random.Random):
             raise ValueError("state with version %s passed to "
                              "Random.setstate() of version %s" %
                              (version, self.VERSION))
+
+## -------------------- bytes -----------------------------
+
+    # Implementation used by Random and SystemRandom subclasses
+    def _randbytes_getrandbits(self, n):
+        """Generate n random bytes."""
+        return self.getrandbits(n * 8).to_bytes(n, 'little')
 
 ## ---- Methods below this point do not need to be overridden when
 ## ---- subclassing for the purpose of using a different core generator.
@@ -731,6 +743,14 @@ class SystemRandom(Random):
 
      Not available on all systems (see os.urandom() for details).
     """
+
+    def __init_subclass__(cls, /, **kwargs):
+        super.__init_subclass__(**kwargs)
+
+        if cls.randbytes == SystemRandom.randbytes:
+            # Subclasses of random.SystemRandom implement randbytes()
+            # using getrandbits()
+            cls.randbytes = cls._randbytes_getrandbits
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)."""
