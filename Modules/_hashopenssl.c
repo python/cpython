@@ -1120,6 +1120,7 @@ _hashlib_get_fips_mode_impl(PyObject *module)
 /*[clinic end generated code: output=87eece1bab4d3fa9 input=c2799c3132a36d6c]*/
 
 {
+    ERR_clear_error();
     int result = FIPS_mode();
     if (result == 0) {
         // "If the library was built without support of the FIPS Object Module,
