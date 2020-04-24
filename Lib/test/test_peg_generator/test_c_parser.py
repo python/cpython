@@ -1,4 +1,3 @@
-import contextlib
 import textwrap
 import unittest
 from distutils.tests.support import TempdirManager
@@ -70,8 +69,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
         self.addCleanup(change_cwd.__exit__, None, None, None)
 
     def tearDown(self):
-        with contextlib.suppress(PermissionError):
-            super(TestCParser, self).tearDown()
+        super(TestCParser, self).tearDown()
 
     def build_extension(self, grammar_source):
         grammar = parse_string(grammar_source, GrammarParser)
