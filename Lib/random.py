@@ -753,7 +753,7 @@ class SystemRandom(Random):
         super().__init_subclass__(**kwargs)
 
         if (cls.randbytes == SystemRandom.randbytes
-           and cls.getrandbits != _random.Random.getrandbits):
+           and cls.getrandbits != SystemRandom.getrandbits):
             # Subclasses of random.SystemRandom implement randbytes()
             # using getrandbits() if getrandbits() is overriden.
             cls.randbytes = cls._randbytes_getrandbits
