@@ -368,6 +368,10 @@ class TestBasicOps:
         self.assertEqual(subclass.getrandbits_calls,
                          [n * 8 for n in range(10)])
 
+        # Check the method name in a subclass
+        self.assertEqual(subclass.randbytes.__name__, "randbytes")
+        self.assertEqual(subclass.randbytes.__qualname__, "Random.randbytes")
+
         class Subclass2(type(self.gen)):
             getrandbits_calls = []
             def getrandbits(self, n):
