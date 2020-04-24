@@ -8687,10 +8687,13 @@ _fdwalk_close_func(void *lohi, int fd)
     int lo = ((int *)lohi)[0];
     int hi = ((int *)lohi)[1];
 
-    if (fd >= hi)
+    if (fd >= hi) {
         return 1;
-    else if (fd >= lo)
-        close(fd);
+    }
+    else if (fd >= lo) {
+        /* Ignore errors */
+        (void)close(fd);
+    }
     return 0;
 }
 #endif /* HAVE_FDWALK */
@@ -8711,8 +8714,6 @@ os_closerange_impl(PyObject *module, int fd_low, int fd_high)
 {
 #ifdef HAVE_FDWALK
     int lohi[2];
-#else
-    int i;
 #endif
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
@@ -8721,8 +8722,20 @@ os_closerange_impl(PyObject *module, int fd_low, int fd_high)
     lohi[1] = fd_high;
     fdwalk(_fdwalk_close_func, lohi);
 #else
-    for (i = Py_MAX(fd_low, 0); i < fd_high; i++)
-        close(i);
+    fd_low = Py_MAX(fd_low, 0);
+#ifdef __FreeBSD__
+    if (fd_high >= sysconf(_SC_OPEN_MAX)) {
+        /* Any errors encountered while closing file descriptors are ignored */
+        closefrom(fd_low);
+    }
+    else
+#endif
+    {
+        for (int i = fd_low; i < fd_high; i++) {
+            /* Ignore errors */
+            (void)close(i);
+        }
+    }
 #endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS

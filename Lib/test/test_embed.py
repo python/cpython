@@ -347,6 +347,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'isolated': 0,
         'use_environment': 1,
         'dev_mode': 0,
+        '_use_peg_parser': 1,
 
         'install_signal_handlers': 1,
         'use_hash_seed': 0,
@@ -728,6 +729,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'show_ref_count': 1,
             'malloc_stats': 1,
+            '_use_peg_parser': 0,
 
             'stdio_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
@@ -790,6 +792,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'user_site_directory': 0,
             'faulthandler': 1,
             'warnoptions': ['EnvVar'],
+            '_use_peg_parser': 0,
         }
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
@@ -817,6 +820,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'user_site_directory': 0,
             'faulthandler': 1,
             'warnoptions': ['EnvVar'],
+            '_use_peg_parser': 0,
         }
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)

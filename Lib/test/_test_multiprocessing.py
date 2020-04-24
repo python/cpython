@@ -5341,10 +5341,9 @@ class TestSyncManagerTypes(unittest.TestCase):
             dt = time.monotonic() - start_time
             if dt >= 5.0:
                 test.support.environment_altered = True
-                print("Warning -- multiprocessing.Manager still has %s active "
-                      "children after %s seconds"
-                      % (multiprocessing.active_children(), dt),
-                      file=sys.stderr)
+                support.print_warning(f"multiprocessing.Manager still has "
+                                      f"{multiprocessing.active_children()} "
+                                      f"active children after {dt} seconds")
                 break
 
     def run_worker(self, worker, obj):
@@ -5544,15 +5543,13 @@ class BaseMixin(object):
         processes = set(multiprocessing.process._dangling) - set(cls.dangling[0])
         if processes:
             test.support.environment_altered = True
-            print('Warning -- Dangling processes: %s' % processes,
-                  file=sys.stderr)
+            support.print_warning(f'Dangling processes: {processes}')
         processes = None
 
         threads = set(threading._dangling) - set(cls.dangling[1])
         if threads:
             test.support.environment_altered = True
-            print('Warning -- Dangling threads: %s' % threads,
-                  file=sys.stderr)
+            support.print_warning(f'Dangling threads: {threads}')
         threads = None
 
 
@@ -5620,10 +5617,9 @@ class ManagerMixin(BaseMixin):
             dt = time.monotonic() - start_time
             if dt >= 5.0:
                 test.support.environment_altered = True
-                print("Warning -- multiprocessing.Manager still has %s active "
-                      "children after %s seconds"
-                      % (multiprocessing.active_children(), dt),
-                      file=sys.stderr)
+                support.print_warning(f"multiprocessing.Manager still has "
+                                      f"{multiprocessing.active_children()} "
+                                      f"active children after {dt} seconds")
                 break
 
         gc.collect()                       # do garbage collection
@@ -5632,9 +5628,9 @@ class ManagerMixin(BaseMixin):
             # ensure that all processes which hold a reference to a
             # managed object have been joined.
             test.support.environment_altered = True
-            print('Warning -- Shared objects which still exist at manager '
-                  'shutdown:')
-            print(cls.manager._debug_info())
+            support.print_warning('Shared objects which still exist '
+                                  'at manager shutdown:')
+            support.print_warning(cls.manager._debug_info())
         cls.manager.shutdown()
         cls.manager.join()
         cls.manager = None
@@ -5731,16 +5727,14 @@ def install_tests_in_module_dict(remote_globs, start_method):
         if processes:
             need_sleep = True
             test.support.environment_altered = True
-            print('Warning -- Dangling processes: %s' % processes,
-                  file=sys.stderr)
+            support.print_warning(f'Dangling processes: {processes}')
         processes = None
 
         threads = set(threading._dangling) - set(dangling[1])
         if threads:
             need_sleep = True
             test.support.environment_altered = True
-            print('Warning -- Dangling threads: %s' % threads,
-                  file=sys.stderr)
+            support.print_warning(f'Dangling threads: {threads}')
         threads = None
 
         # Sleep 500 ms to give time to child processes to complete.

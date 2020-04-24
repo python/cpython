@@ -438,12 +438,10 @@ static PyGetSetDef ga_properties[] = {
 static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
-        PyErr_SetString(PyExc_TypeError, "GenericAlias does not support keyword arguments");
+    if (!_PyArg_NoKwnames("GenericAlias", kwds)) {
         return NULL;
     }
-    if (PyTuple_GET_SIZE(args) != 2) {
-        PyErr_SetString(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
+    if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {
         return NULL;
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);

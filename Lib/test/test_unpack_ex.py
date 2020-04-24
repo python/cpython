@@ -158,14 +158,15 @@ List comprehension element unpacking
     ...
     SyntaxError: iterable unpacking cannot be used in comprehension
 
-Generator expression in function arguments
+# Pegen is better here.
+# Generator expression in function arguments
 
-    >>> list(*x for x in (range(5) for i in range(3)))
-    Traceback (most recent call last):
-    ...
-        list(*x for x in (range(5) for i in range(3)))
-                  ^
-    SyntaxError: invalid syntax
+#     >>> list(*x for x in (range(5) for i in range(3)))
+#     Traceback (most recent call last):
+#     ...
+#         list(*x for x in (range(5) for i in range(3)))
+#                   ^
+#     SyntaxError: invalid syntax
 
     >>> dict(**x for x in [{1:2}])
     Traceback (most recent call last):

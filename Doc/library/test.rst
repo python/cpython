@@ -825,6 +825,15 @@ The :mod:`test.support` module defines the following functions:
    target of the "as" clause, if there is one.
 
 
+.. function:: print_warning(msg)
+
+   Print a warning into :data:`sys.__stderr__`. Format the message as:
+   ``f"Warning -- {msg}"``. If *msg* is made of multiple lines, add
+   ``"Warning -- "`` prefix to each line.
+
+   .. versionadded:: 3.9
+
+
 .. function:: wait_process(pid, *, exitcode, timeout=None)
 
    Wait until process *pid* completes and check that the process exit code is

@@ -711,6 +711,13 @@ class Counter(dict):
     #
     # To strip negative and zero counts, add-in an empty counter:
     #       c += Counter()
+    #
+    # Rich comparison operators for multiset subset and superset tests
+    # are deliberately omitted due to semantic conflicts with the
+    # existing inherited dict equality method.  Subset and superset
+    # semantics ignore zero counts and require that p≤q ∧ p≥q → p=q;
+    # however, that would not be the case for p=Counter(a=1, b=0)
+    # and q=Counter(a=1) where the dictionaries are not equal.
 
     def __add__(self, other):
         '''Add counts from two counters.
@@ -1239,6 +1246,14 @@ class UserString(_collections_abc.Sequence):
         if isinstance(sub, UserString):
             sub = sub.data
         return self.data.count(sub, start, end)
+    def removeprefix(self, prefix, /):
+        if isinstance(prefix, UserString):
+            prefix = prefix.data
+        return self.__class__(self.data.removeprefix(prefix))
+    def removesuffix(self, suffix, /):
+        if isinstance(suffix, UserString):
+            suffix = suffix.data
+        return self.__class__(self.data.removesuffix(suffix))
     def encode(self, encoding='utf-8', errors='strict'):
         encoding = 'utf-8' if encoding is None else encoding
         errors = 'strict' if errors is None else errors

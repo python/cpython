@@ -178,6 +178,7 @@ class ExceptionTests(unittest.TestCase):
         s = '''if True:\n        print()\n\texec "mixed tabs and spaces"'''
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
 
+    @support.skip_if_new_parser("Pegen column offsets might be different")
     def testSyntaxErrorOffset(self):
         def check(src, lineno, offset, encoding='utf-8'):
             with self.assertRaises(SyntaxError) as cm:

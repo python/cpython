@@ -902,6 +902,18 @@
     <ClCompile Include="..\Parser\grammar1.c">
       <Filter>Parser</Filter>
     </ClCompile>
+    <ClCompile Include="..\Parser\pegen\pegen.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\pegen\parse.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\pegen\parse_string.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\pegen\peg_api.c">
+      <Filter>Parser</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\listnode.c">
       <Filter>Parser</Filter>
     </ClCompile>
