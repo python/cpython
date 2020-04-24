@@ -198,13 +198,9 @@ class Random(_random.Random):
 ## -------------------- bytes -----------------------------
 
     # Implementation used by Random and SystemRandom subclasses
-    def randbytes(self, n):
+    def _randbytes_getrandbits (self, n):
         """Generate n random bytes."""
         return self.getrandbits(n * 8).to_bytes(n, 'little')
-    # Declare the function as "randbytes" to set __name__ and __qualname__
-    # to "randbytes"
-    _randbytes_getrandbits = randbytes
-    del randbytes
 
 ## ---- Methods below this point do not need to be overridden when
 ## ---- subclassing for the purpose of using a different core generator.

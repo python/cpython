@@ -355,9 +355,6 @@ class TestBasicOps:
         self.assertEqual(subclass.getrandbits_calls,
                          [n * 8 for n in range(10)])
 
-        self.assertEqual(subclass.randbytes.__name__, "randbytes")
-        self.assertEqual(subclass.randbytes.__qualname__, "Random.randbytes")
-
         # SubSubclass override explicitly randbytes():
         # getrandbits() implemented in Subclass is not called.
         class SubSubclass(Subclass):
