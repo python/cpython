@@ -1,19 +1,14 @@
-import ast
-import contextlib
-import traceback
-import tempfile
-import shutil
+import textwrap
 import unittest
-import sys
+from distutils.tests.support import TempdirManager
+from pathlib import Path
 
 from test import test_tools
-from test.test_peg_generator.ast_dump import ast_dump
 from test import support
-from pathlib import PurePath, Path
-from typing import Sequence
+from test.support.script_helper import assert_python_ok
 
-test_tools.skip_if_missing('peg_generator')
-with test_tools.imports_under_tool('peg_generator'):
+test_tools.skip_if_missing("peg_generator")
+with test_tools.imports_under_tool("peg_generator"):
     from pegen.grammar_parser import GeneratedParser as GrammarParser
     from pegen.testutil import (
         parse_string,
@@ -22,43 +17,71 @@ with test_tools.imports_under_tool('peg_generator'):
     )
 
 
-class TestCParser(unittest.TestCase):
-    def setUp(self):
-        cmd = support.missing_compiler_executable()
-        if cmd is not None:
-            self.skipTest('The %r command is not found' % cmd)
-        self.tmp_path = tempfile.mkdtemp()
+TEST_TEMPLATE = """
+tmp_dir = {extension_path!r}
 
-    def tearDown(self):
-        with contextlib.suppress(PermissionError):
-            shutil.rmtree(self.tmp_path)
+import ast
+import traceback
+import sys
+import unittest
+from test.test_peg_generator.ast_dump import ast_dump
+
+sys.path.insert(0, tmp_dir)
+import parse
+
+class Tests(unittest.TestCase):
 
     def check_input_strings_for_grammar(
         self,
-        source: str,
-        tmp_path: PurePath,
-        valid_cases: Sequence[str] = (),
-        invalid_cases: Sequence[str] = (),
-    ) -> None:
-        grammar = parse_string(source, GrammarParser)
-        extension = generate_parser_c_extension(grammar, Path(tmp_path))
-
+        valid_cases = (),
+        invalid_cases = (),
+    ):
         if valid_cases:
             for case in valid_cases:
-                extension.parse_string(case, mode=0)
+                parse.parse_string(case, mode=0)
 
         if invalid_cases:
             for case in invalid_cases:
                 with self.assertRaises(SyntaxError):
-                    extension.parse_string(case, mode=0)
+                    parse.parse_string(case, mode=0)
 
-    def verify_ast_generation(self, source: str, stmt: str, tmp_path: PurePath) -> None:
-        grammar = parse_string(source, GrammarParser)
-        extension = generate_parser_c_extension(grammar, Path(tmp_path))
-
+    def verify_ast_generation(self, stmt):
         expected_ast = ast.parse(stmt)
-        actual_ast = extension.parse_string(stmt, mode=1)
+        actual_ast = parse.parse_string(stmt, mode=1)
         self.assertEqual(ast_dump(expected_ast), ast_dump(actual_ast))
+
+    def test_parse(self):
+        {test_source}
+
+unittest.main()
+"""
+
+
+class TestCParser(TempdirManager, unittest.TestCase):
+    def setUp(self):
+        cmd = support.missing_compiler_executable()
+        if cmd is not None:
+            self.skipTest("The %r command is not found" % cmd)
+        super(TestCParser, self).setUp()
+        self.tmp_path = self.mkdtemp()
+        change_cwd = support.change_cwd(self.tmp_path)
+        change_cwd.__enter__()
+        self.addCleanup(change_cwd.__exit__, None, None, None)
+
+    def tearDown(self):
+        super(TestCParser, self).tearDown()
+
+    def build_extension(self, grammar_source):
+        grammar = parse_string(grammar_source, GrammarParser)
+        generate_parser_c_extension(grammar, Path(self.tmp_path))
+
+    def run_test(self, grammar_source, test_source):
+        self.build_extension(grammar_source)
+        test_source = textwrap.indent(textwrap.dedent(test_source), 8 * " ")
+        assert_python_ok(
+            "-c",
+            TEST_TEMPLATE.format(extension_path=self.tmp_path, test_source=test_source),
+        )
 
     def test_c_parser(self) -> None:
         grammar_source = """
@@ -81,9 +104,7 @@ class TestCParser(unittest.TestCase):
                     | s=STRING { s }
                     )
         """
-        grammar = parse_string(grammar_source, GrammarParser)
-        extension = generate_parser_c_extension(grammar, Path(self.tmp_path))
-
+        test_source = """
         expressions = [
             "4+5",
             "4-5",
@@ -97,30 +118,38 @@ class TestCParser(unittest.TestCase):
         ]
 
         for expr in expressions:
-            the_ast = extension.parse_string(expr, mode=1)
+            the_ast = parse.parse_string(expr, mode=1)
             expected_ast = ast.parse(expr)
             self.assertEqual(ast_dump(the_ast), ast_dump(expected_ast))
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_lookahead(self) -> None:
-        grammar = """
+        grammar_source = """
         start: NAME &NAME expr NEWLINE? ENDMARKER
         expr: NAME | NUMBER
         """
+        test_source = """
         valid_cases = ["foo bar"]
         invalid_cases = ["foo 34"]
-        self.check_input_strings_for_grammar(grammar, self.tmp_path, valid_cases, invalid_cases)
+        self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_negative_lookahead(self) -> None:
-        grammar = """
+        grammar_source = """
         start: NAME !NAME expr NEWLINE? ENDMARKER
         expr: NAME | NUMBER
         """
+        test_source = """
         valid_cases = ["foo 34"]
         invalid_cases = ["foo bar"]
-        self.check_input_strings_for_grammar(grammar, self.tmp_path, valid_cases, invalid_cases)
+        self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_cut(self) -> None:
-        grammar = """
+        grammar_source = """
         start: X ~ Y Z | X Q S
         X: 'x'
         Y: 'y'
@@ -128,57 +157,75 @@ class TestCParser(unittest.TestCase):
         Q: 'q'
         S: 's'
         """
+        test_source = """
         valid_cases = ["x y z"]
         invalid_cases = ["x q s"]
-        self.check_input_strings_for_grammar(grammar, self.tmp_path, valid_cases, invalid_cases)
+        self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_gather(self) -> None:
-        grammar = """
+        grammar_source = """
         start: ';'.pass_stmt+ NEWLINE
         pass_stmt: 'pass'
         """
+        test_source = """
         valid_cases = ["pass", "pass; pass"]
         invalid_cases = ["pass;", "pass; pass;"]
-        self.check_input_strings_for_grammar(grammar, self.tmp_path, valid_cases, invalid_cases)
+        self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_left_recursion(self) -> None:
-        grammar = """
+        grammar_source = """
         start: expr NEWLINE
         expr: ('-' term | expr '+' term | term)
         term: NUMBER
         """
+        test_source = """
         valid_cases = ["-34", "34", "34 + 12", "1 + 1 + 2 + 3"]
-        self.check_input_strings_for_grammar(grammar, self.tmp_path, valid_cases)
+        self.check_input_strings_for_grammar(valid_cases)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_advanced_left_recursive(self) -> None:
-        grammar = """
+        grammar_source = """
         start: NUMBER | sign start
         sign: ['-']
         """
+        test_source = """
         valid_cases = ["23", "-34"]
-        self.check_input_strings_for_grammar(grammar, self.tmp_path, valid_cases)
+        self.check_input_strings_for_grammar(valid_cases)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_mutually_left_recursive(self) -> None:
-        grammar = """
+        grammar_source = """
         start: foo 'E'
         foo: bar 'A' | 'B'
         bar: foo 'C' | 'D'
         """
+        test_source = """
         valid_cases = ["B E", "D A C A E"]
-        self.check_input_strings_for_grammar(grammar, self.tmp_path, valid_cases)
+        self.check_input_strings_for_grammar(valid_cases)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_nasty_mutually_left_recursive(self) -> None:
-        grammar = """
+        grammar_source = """
         start: target '='
         target: maybe '+' | NAME
         maybe: maybe '-' | target
         """
+        test_source = """
         valid_cases = ["x ="]
         invalid_cases = ["x - + ="]
-        self.check_input_strings_for_grammar(grammar, self.tmp_path, valid_cases, invalid_cases)
+        self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_return_stmt_noexpr_action(self) -> None:
-        grammar = """
+        grammar_source = """
         start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
         statements[asdl_seq*]: a=statement+ { a }
         statement[stmt_ty]: simple_stmt
@@ -186,19 +233,25 @@ class TestCParser(unittest.TestCase):
         small_stmt[stmt_ty]: return_stmt
         return_stmt[stmt_ty]: a='return' NEWLINE { _Py_Return(NULL, EXTRA) }
         """
+        test_source = """
         stmt = "return"
-        self.verify_ast_generation(grammar, stmt, self.tmp_path)
+        self.verify_ast_generation(stmt)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_gather_action_ast(self) -> None:
-        grammar = """
+        grammar_source = """
         start[mod_ty]: a=';'.pass_stmt+ NEWLINE ENDMARKER { Module(a, NULL, p->arena) }
         pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA)}
         """
+        test_source = """
         stmt = "pass; pass"
-        self.verify_ast_generation(grammar, stmt, self.tmp_path)
+        self.verify_ast_generation(stmt)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_pass_stmt_action(self) -> None:
-        grammar = """
+        grammar_source = """
         start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
         statements[asdl_seq*]: a=statement+ { a }
         statement[stmt_ty]: simple_stmt
@@ -206,11 +259,14 @@ class TestCParser(unittest.TestCase):
         small_stmt[stmt_ty]: pass_stmt
         pass_stmt[stmt_ty]: a='pass' NEWLINE { _Py_Pass(EXTRA) }
         """
+        test_source = """
         stmt = "pass"
-        self.verify_ast_generation(grammar, stmt, self.tmp_path)
+        self.verify_ast_generation(stmt)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_if_stmt_action(self) -> None:
-        grammar = """
+        grammar_source = """
         start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
         statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
         statement[asdl_seq*]:  a=compound_stmt { _PyPegen_singleton_seq(p, a) } | simple_stmt
@@ -230,11 +286,14 @@ class TestCParser(unittest.TestCase):
 
         full_expression: NAME
         """
+        test_source = """
         stmt = "pass"
-        self.verify_ast_generation(grammar, stmt, self.tmp_path)
+        self.verify_ast_generation(stmt)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_same_name_different_types(self) -> None:
-        source = """
+        grammar_source = """
         start[mod_ty]: a=import_from+ NEWLINE ENDMARKER { Module(a, NULL, p->arena)}
         import_from[stmt_ty]: ( a='from' !'import' c=simple_name 'import' d=import_as_names_from {
                                 _Py_ImportFrom(c->v.Name.id, d, 0, EXTRA) }
@@ -245,13 +304,13 @@ class TestCParser(unittest.TestCase):
         import_as_names_from[asdl_seq*]: a=','.import_as_name_from+ { a }
         import_as_name_from[alias_ty]: a=NAME 'as' b=NAME { _Py_alias(((expr_ty) a)->v.Name.id, ((expr_ty) b)->v.Name.id, p->arena) }
         """
-        grammar = parse_string(source, GrammarParser)
-        extension = generate_parser_c_extension(grammar, Path(self.tmp_path))
-
+        test_source = """
         for stmt in ("from a import b as c", "from . import a as b"):
             expected_ast = ast.parse(stmt)
-            actual_ast = extension.parse_string(stmt, mode=1)
+            actual_ast = parse.parse_string(stmt, mode=1)
             self.assertEqual(ast_dump(expected_ast), ast_dump(actual_ast))
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_with_stmt_with_paren(self) -> None:
         grammar_source = """
@@ -269,14 +328,15 @@ class TestCParser(unittest.TestCase):
         block[stmt_ty]: a=pass_stmt NEWLINE { a } | NEWLINE INDENT a=pass_stmt DEDENT { a }
         pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA) }
         """
-        stmt = "with (\n    a as b,\n    c as d\n): pass"
-        grammar = parse_string(grammar_source, GrammarParser)
-        extension = generate_parser_c_extension(grammar, Path(self.tmp_path))
-        the_ast = extension.parse_string(stmt, mode=1)
+        test_source = """
+        stmt = "with (\\n    a as b,\\n    c as d\\n): pass"
+        the_ast = parse.parse_string(stmt, mode=1)
         self.assertTrue(ast_dump(the_ast).startswith(
             "Module(body=[With(items=[withitem(context_expr=Name(id='a', ctx=Load()), optional_vars=Name(id='b', ctx=Store())), "
             "withitem(context_expr=Name(id='c', ctx=Load()), optional_vars=Name(id='d', ctx=Store()))]"
         ))
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_ternary_operator(self) -> None:
         grammar_source = """
@@ -290,23 +350,27 @@ class TestCParser(unittest.TestCase):
                 { _Py_comprehension(_Py_Name(((expr_ty) a)->v.Name.id, Store, EXTRA), b, c, (y == NULL) ? 0 : 1, p->arena) })+ { a }
         )
         """
+        test_source = """
         stmt = "[i for i in a if b]"
-        self.verify_ast_generation(grammar_source, stmt, self.tmp_path)
+        self.verify_ast_generation(stmt)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_syntax_error_for_string(self) -> None:
         grammar_source = """
         start: expr+ NEWLINE? ENDMARKER
         expr: NAME
         """
-        grammar = parse_string(grammar_source, GrammarParser)
-        extension = generate_parser_c_extension(grammar, Path(self.tmp_path))
+        test_source = """
         for text in ("a b 42 b a", "名 名 42 名 名"):
             try:
-                extension.parse_string(text, mode=0)
+                parse.parse_string(text, mode=0)
             except SyntaxError as e:
                 tb = traceback.format_exc()
             self.assertTrue('File "<string>", line 1' in tb)
             self.assertTrue(f"SyntaxError: invalid syntax" in tb)
+        """
+        self.run_test(grammar_source, test_source)
 
     def test_headers_and_trailer(self) -> None:
         grammar_source = """
@@ -323,14 +387,14 @@ class TestCParser(unittest.TestCase):
         self.assertTrue("SOME SUBHEADER" in parser_source)
         self.assertTrue("SOME TRAILER" in parser_source)
 
-
     def test_error_in_rules(self) -> None:
         grammar_source = """
         start: expr+ NEWLINE? ENDMARKER
         expr: NAME {PyTuple_New(-1)}
         """
-        grammar = parse_string(grammar_source, GrammarParser)
-        extension = generate_parser_c_extension(grammar, Path(self.tmp_path))
         # PyTuple_New raises SystemError if an invalid argument was passed.
+        test_source = """
         with self.assertRaises(SystemError):
-            extension.parse_string("a", mode=0)
+            parse.parse_string("a", mode=0)
+        """
+        self.run_test(grammar_source, test_source)

@@ -83,6 +83,7 @@ def compile_c_extension(
     cmd.inplace = True
     if build_dir:
         cmd.build_temp = build_dir
+        cmd.build_lib = build_dir
     cmd.ensure_finalized()
     cmd.run()
 
