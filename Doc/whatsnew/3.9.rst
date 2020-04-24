@@ -471,6 +471,10 @@ Optimizations
   until the main thread handles signals.
   (Contributed by Victor Stinner in :issue:`40010`.)
 
+* Optimize the :mod:`subprocess` module on FreeBSD using ``closefrom()``.
+  (Contributed by Ed Maste, Conrad Meyer, Kyle Evans, Kubilay Kocak and Victor
+  Stinner in :issue:`38061`.)
+
 
 Build and C API Changes
 =======================
