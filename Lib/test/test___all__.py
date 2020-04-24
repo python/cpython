@@ -17,6 +17,7 @@ class AllTest(unittest.TestCase):
         names = {}
         with support.check_warnings(
             (".* (module|package)", DeprecationWarning),
+            (".* (module|package)", PendingDeprecationWarning),
             ("", ResourceWarning),
             quiet=True):
             try:
