@@ -8,8 +8,8 @@ from test import test_tools
 from test import support
 from test.support.script_helper import assert_python_ok
 
-test_tools.skip_if_missing('peg_generator')
-with test_tools.imports_under_tool('peg_generator'):
+test_tools.skip_if_missing("peg_generator")
+with test_tools.imports_under_tool("peg_generator"):
     from pegen.grammar_parser import GeneratedParser as GrammarParser
     from pegen.testutil import (
         parse_string,
@@ -62,7 +62,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
     def setUp(self):
         cmd = support.missing_compiler_executable()
         if cmd is not None:
-            self.skipTest('The %r command is not found' % cmd)
+            self.skipTest("The %r command is not found" % cmd)
         super(TestCParser, self).setUp()
         self.tmp_path = self.mkdtemp()
         change_cwd = support.change_cwd(self.tmp_path)
@@ -79,11 +79,11 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def run_test(self, grammar_source, test_source):
         self.build_extension(grammar_source)
-        test_source = textwrap.indent(textwrap.dedent(test_source), 8 * ' ')
-        assert_python_ok("-c", TEST_TEMPLATE.format(
-            extension_path=self.tmp_path,
-            test_source=test_source
-        ))
+        test_source = textwrap.indent(textwrap.dedent(test_source), 8 * " ")
+        assert_python_ok(
+            "-c",
+            TEST_TEMPLATE.format(extension_path=self.tmp_path, test_source=test_source),
+        )
 
     def test_c_parser(self) -> None:
         grammar_source = """
@@ -389,7 +389,6 @@ class TestCParser(TempdirManager, unittest.TestCase):
         self.assertTrue("SOME SUBHEADER" in parser_source)
         self.assertTrue("SOME TRAILER" in parser_source)
 
-
     def test_error_in_rules(self) -> None:
         grammar_source = """
         start: expr+ NEWLINE? ENDMARKER
@@ -401,4 +400,3 @@ class TestCParser(TempdirManager, unittest.TestCase):
             parse.parse_string("a", mode=0)
         """
         self.run_test(grammar_source, test_source)
-
