@@ -750,7 +750,7 @@ class SystemRandom(Random):
     """
 
     def __init_subclass__(cls, /, **kwargs):
-        super.__init_subclass__(**kwargs)
+        super().__init_subclass__(**kwargs)
 
         if (cls.randbytes == SystemRandom.randbytes
            and cls.getrandbits != _random.Random.getrandbits):
