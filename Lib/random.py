@@ -120,9 +120,10 @@ class Random(_random.Random):
                 cls._randbelow = cls._randbelow_without_getrandbits
                 break
 
-        if cls.randbytes == _random.Random.randbytes:
+        if (cls.randbytes == _random.Random.randbytes
+           and cls.getrandbits != _random.Random.getrandbits):
             # Subclasses of random.Random implement randbytes()
-            # using getrandbits()
+            # using getrandbits() if getrandbits() is overriden.
             cls.randbytes = cls._randbytes_getrandbits
 
     def seed(self, a=None, version=2):
@@ -747,9 +748,10 @@ class SystemRandom(Random):
     def __init_subclass__(cls, /, **kwargs):
         super.__init_subclass__(**kwargs)
 
-        if cls.randbytes == SystemRandom.randbytes:
+        if (cls.randbytes == SystemRandom.randbytes
+           and cls.getrandbits != _random.Random.getrandbits):
             # Subclasses of random.SystemRandom implement randbytes()
-            # using getrandbits()
+            # using getrandbits() if getrandbits() is overriden.
             cls.randbytes = cls._randbytes_getrandbits
 
     def random(self):
