@@ -15,11 +15,6 @@ import hashlib
 import importlib
 import importlib.util
 import locale
-<<<<<<< HEAD
-import nntplib
-=======
-import logging.handlers
->>>>>>> master
 import os
 import platform
 import re
