@@ -80,11 +80,10 @@ class ConfigDialog(Toplevel):
         self.transient(parent)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.fontpage.fontlist.focus_set()
-        # XXX Decide whether to keep or delete these key bindings.
         # Key bindings for this dialog.
-        # self.bind('<Escape>', self.Cancel) #dismiss dialog, no save
-        # self.bind('<Alt-a>', self.Apply) #apply changes, save
-        # self.bind('<F1>', self.Help) #context help
+        self.bind('<Escape>', self.cancel)  # Dismiss dialog, no save
+        self.bind('<Alt-a>', self.apply)  # Apply changes, save
+        self.bind('<F1>', self.help)  # Context help
         # Attach callbacks after loading config to avoid calling them.
         tracers.attach()
 
@@ -174,7 +173,7 @@ class ConfigDialog(Toplevel):
         self.apply()
         self.destroy()
 
-    def apply(self):
+    def apply(self, event=None):
         """Apply config changes and leave dialog open.
 
         Methods:
@@ -187,7 +186,7 @@ class ConfigDialog(Toplevel):
         self.save_all_changed_extensions()
         self.activate_config_changes()
 
-    def cancel(self):
+    def cancel(self, event=None):
         """Dismiss config dialog.
 
         Methods:
@@ -202,7 +201,7 @@ class ConfigDialog(Toplevel):
         self.grab_release()
         super().destroy()
 
-    def help(self):
+    def help(self, event=None):
         """Create textview for config dialog help.
 
         Attributes accessed:
