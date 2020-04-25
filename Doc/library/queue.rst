@@ -190,6 +190,9 @@ fully processed by daemon consumer threads.
 
 Example of how to wait for enqueued tasks to be completed::
 
+    def do_work(item):
+        return item + 1
+
     def worker():
         while True:
             item = q.get()
@@ -200,12 +203,14 @@ Example of how to wait for enqueued tasks to be completed::
 
     q = queue.Queue()
     threads = []
+    num_worker_threads = os.cpu_count()
     for i in range(num_worker_threads):
-        t = threading.Thread(target=worker)
-        t.start()
-        threads.append(t)
+        thread = threading.Thread(target=worker)
+        thread.start()
+        threads.append(thread)
 
-    for item in source():
+    ELEMENTS_TO_QUEUE = 20
+    for item in range(ELEMENTS_TO_QUEUE):
         q.put(item)
 
     # block until all tasks are done
