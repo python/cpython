@@ -115,6 +115,49 @@ to easily remove an unneeded prefix or a suffix from a string. Corresponding
 added. See :pep:`616` for a full description. (Contributed by Dennis Sweeney in
 :issue:`18939`.)
 
+PEP 585: Builtin Generic Types
+------------------------------
+
+In type annotations you can now use built-in collection types such as
+``list`` and ``dict`` as generic types instead of importing the
+corresponding capitalized types (e.g. ``List`` or ``Dict``) from
+``typing``.  Some other types in the standard library are also now generic,
+for example ``queue.Queue``.
+
+Example:
+
+.. code-block:: python
+
+   def greet_all(names: list[str]) -> None:
+       for name in names:
+           print("Hello", name)
+
+See :pep:`585` for more details.  (Contributed by Guido van Rossum,
+Ethan Smith, and Batuhan Taşkaya in :issue:`39481`.)
+
+PEP 617: New Parser
+-------------------
+
+Python 3.9 uses a new parser, based on `PEG
+<https://en.wikipedia.org/wiki/Parsing_expression_grammar>`_ instead
+of `LL(1) <https://en.wikipedia.org/wiki/LL_parser>`_.  The new
+parser's performance is roughly comparable to that of the old parser,
+but the PEG formalism is more flexible than LL(1) when it comes to
+designing new language features.  We'll start using this flexibility
+in Python 3.10 and later.
+
+The :mod:`ast` module uses the new parser and produces the same AST as
+the old parser.
+
+In Python 3.10, the old parser will be deleted and so will all
+functionality that depends on it (primarily the :mod:`parser` module,
+which has long been deprecated).  In Python 3.9 *only*, you can switch
+back to the LL(1) parser using a command line switch (``-X
+oldparser``) or an environment variable (``PYTHONOLDPARSER=1``).
+
+See :pep:`617` for more details.  (Contributed by Guido van Rossum,
+Pablo Galindo and Lysandros Nikolau in :issue:`40334`.)
+
 
 Other Language Changes
 ======================
