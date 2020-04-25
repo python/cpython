@@ -4,6 +4,7 @@ import threading
 import unittest
 
 from test import support
+from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
@@ -47,7 +48,7 @@ class BaseStartServer(func_tests.FunctionalTestCaseMixin):
 
         with self.assertWarns(DeprecationWarning):
             srv = self.loop.run_until_complete(asyncio.start_server(
-                serve, support.HOSTv4, 0, loop=self.loop, start_serving=False))
+                serve, socket_helper.HOSTv4, 0, loop=self.loop, start_serving=False))
 
         self.assertFalse(srv.is_serving())
 
@@ -73,7 +74,7 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
     def new_loop(self):
         return asyncio.SelectorEventLoop()
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_start_unix_server_1(self):
         HELLO_MSG = b'1' * 1024 * 5 + b'\n'
         started = threading.Event()

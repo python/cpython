@@ -13,6 +13,7 @@ import unittest
 TestCase = unittest.TestCase
 
 from test import support
+from test.support import socket_helper
 
 here = os.path.dirname(__file__)
 # Self-signed cert file for 'localhost'
@@ -42,7 +43,7 @@ last_chunk_extended = "0" + chunk_extension + "\r\n"
 trailers = "X-Dummy: foo\r\nX-Dumm2: bar\r\n"
 chunked_end = "\r\n"
 
-HOST = support.HOST
+HOST = socket_helper.HOST
 
 class FakeSocket:
     def __init__(self, text, fileclass=io.BytesIO, host=None, port=None):
@@ -1463,8 +1464,8 @@ class OfflineTest(TestCase):
 class SourceAddressTest(TestCase):
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.port = support.bind_port(self.serv)
-        self.source_port = support.find_unused_port()
+        self.port = socket_helper.bind_port(self.serv)
+        self.source_port = socket_helper.find_unused_port()
         self.serv.listen()
         self.conn = None
 
@@ -1496,7 +1497,7 @@ class TimeoutTest(TestCase):
 
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        TimeoutTest.PORT = support.bind_port(self.serv)
+        TimeoutTest.PORT = socket_helper.bind_port(self.serv)
         self.serv.listen()
 
     def tearDown(self):
