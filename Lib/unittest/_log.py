@@ -67,5 +67,3 @@ class _AssertLogsContext(_BaseTestCaseContext):
             self._raiseFailure(
                 "no logs of level {} or higher triggered on {}"
                 .format(logging.getLevelName(self.level), self.logger.name))
-
-
