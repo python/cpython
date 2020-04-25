@@ -53,7 +53,10 @@ base class:
       Support for the :keyword:`with` statement was added.
 
    .. versionchanged:: 3.9
-      The optional *timeout* parameter was added and :meth:`IMAP4.unselect` was added.
+      The optional *timeout* parameter was added.
+
+   .. versionadded:: 3.9
+      :meth:`IMAP4.unselect` was added.
 
 Three exceptions are defined as attributes of the :class:`IMAP4` class:
 
