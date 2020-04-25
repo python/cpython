@@ -1005,7 +1005,8 @@ class ConvertTest(unittest.TestCase):
             self.assertTrue(_nan_equal(x, nan))
 
     def test_raise_type_error(self):
-        self.assertRaises(TypeError, statistics._convert, None, float)
+        with self.assertRaises(TypeError):
+            statistics._convert(None, float)
 
 
 class FailNegTest(unittest.TestCase):
@@ -1045,7 +1046,8 @@ class FindLteqTest(unittest.TestCase):
             ([1, 2], 3),    # non-existing max value triggers `i != len(a)`
             ([1, 3], 2)     # non-existing value triggers `a[i] == x`
         ]:
-            self.assertRaises(ValueError, statistics._find_lteq, a, x)
+            with self.assertRaises(ValueError):
+                statistics._find_lteq(a, x)
 
     def test_locate_successfully(self):
         for a, x, expected_i in [
@@ -1064,7 +1066,8 @@ class FindRteqTest(unittest.TestCase):
             ([1], 2, 1),    # when l=len(a)+1 triggers `i != (len(a)+1)`
             ([1, 3], 0, 2)  # non-existing value triggers `a[i-1] == x`
         ]:
-            self.assertRaises(ValueError, statistics._find_rteq, a, l, x)
+            with self.assertRaises(ValueError):
+                statistics._find_rteq(a, l, x)
 
     def test_locate_successfully(self):
         for a, l, x, expected_i in [
@@ -1496,9 +1499,6 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
     def setUp(self):
         self.func = statistics.harmonic_mean
 
-    def test_single_value_unsupported_type(self):
-        self.assertRaises(TypeError, self.func, ['3.14'])
-
     def prepare_data(self):
         # Override mixin method.
         values = super().prepare_data()
@@ -1520,6 +1520,10 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         for values in ([-1], [1, -2, 3]):
             with self.subTest(values=values):
                 self.assertRaises(exc, self.func, values)
+
+    def test_single_value_unsupported_type(self):
+        with self.assertRaises(TypeError):
+            self.func(['3.14'])
 
     def test_ints(self):
         # Test harmonic mean with ints.
