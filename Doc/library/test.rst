@@ -1410,11 +1410,6 @@ The :mod:`test.support` module defines the following classes:
       Run *test* and return the result.
 
 
-.. class:: TestHandler(logging.handlers.BufferingHandler)
-
-   Class for logging support.
-
-
 .. class:: FakePath(path)
 
    Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
