@@ -166,7 +166,8 @@ weakref_repr(PyWeakReference *self)
     PyObject* obj = PyWeakref_GET_OBJECT(self);
 
     if (obj == Py_None) {
-        return PyUnicode_FromFormat("<weakref at %p; dead>", self);
+        return PyUnicode_FromFormat("<%s at %p; dead>",
+                                    _PyType_Name(Py_TYPE(self)), self);
     }
 
     Py_INCREF(obj);
@@ -176,23 +177,26 @@ weakref_repr(PyWeakReference *self)
     }
     if (name == NULL || !PyUnicode_Check(name)) {
         repr = PyUnicode_FromFormat(
-            "<weakref at %p; to '%s' at %p>",
-            self,
-            Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
-            obj);
+                "<%s at %p; to '%s' at %p>",
+                _PyType_Name(Py_TYPE(self)),
+                self,
+                Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
+                obj);
     }
     else {
         repr = PyUnicode_FromFormat(
-            "<weakref at %p; to '%s' at %p (%U)>",
-            self,
-            Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
-            obj,
-            name);
+                "<%s at %p; to '%s' at %p (%U)>",
+                _PyType_Name(Py_TYPE(self)),
+                self,
+                Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
+                obj,
+                name);
     }
     Py_DECREF(obj);
     Py_XDECREF(name);
     return repr;
 }
+
 
 /* Weak references only support equality, not ordering. Two weak references
    are equal if the underlying objects are equal. If the underlying object has
