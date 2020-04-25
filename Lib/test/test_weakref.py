@@ -1156,6 +1156,19 @@ class WeakMethodTestCase(unittest.TestCase):
         # If it wasn't hashed when alive, a dead WeakMethod cannot be hashed.
         self.assertRaises(TypeError, hash, c)
 
+    def test_extend_repr(self):
+        class ExtendRef(weakref.ref):
+            pass
+
+        # Dead weak ref
+        a = Object(1)
+        ra = ExtendRef(a)
+        self.assertIn("ExtendRef", repr(a))
+
+        b = Object(1)
+        c = {"ref": b}
+        rb = ExtendRef
+        self.assertIn("ExtendRef", repr(b))
 
 class MappingTestCase(TestBase):
 
