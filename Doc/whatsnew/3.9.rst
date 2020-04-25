@@ -320,6 +320,11 @@ with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
 :class:`~imaplib.IMAP4_stream` were applied to this change.
 (Contributed by Dong-hee Na in :issue:`38615`.)
 
+:meth:`imaplib.IMAP4.unselect` is added.
+This command performs the same actions as :meth:`imaplib.IMAP4.close`
+except that no messages are permanently removed from the currently selected mailbox.
+(Contributed by Dong-hee Na in :issue:`40375`.)
+
 importlib
 ---------
 

@@ -98,6 +98,7 @@ Commands = {
         'THREAD':       ('SELECTED',),
         'UID':          ('SELECTED',),
         'UNSUBSCRIBE':  ('AUTH', 'SELECTED'),
+        'UNSELECT':     ('SELECTED',),
         }
 
 #       Patterns to match server responses
@@ -900,6 +901,18 @@ class IMAP4:
         (typ, [data]) = <instance>.unsubscribe(mailbox)
         """
         return self._simple_command('UNSUBSCRIBE', mailbox)
+
+
+    def unselect(self):
+        """Close the mailbox without expunging it.
+
+        (typ, [data]) = <instance>.unselect()
+        """
+        try:
+            typ, data = self._simple_command('UNSELECT')
+        finally:
+            self.state = 'AUTH'
+        return typ, data
 
 
     def xatom(self, name, *args):

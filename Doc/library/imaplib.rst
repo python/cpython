@@ -53,7 +53,7 @@ base class:
       Support for the :keyword:`with` statement was added.
 
    .. versionchanged:: 3.9
-      The optional *timeout* parameter was added.
+      The optional *timeout* parameter was added and :meth:`IMAP4.unselect` was added.
 
 Three exceptions are defined as attributes of the :class:`IMAP4` class:
 
@@ -582,6 +582,12 @@ An :class:`IMAP4` instance has the following methods:
 
    Unsubscribe from old mailbox.
 
+.. method:: IMAP4.unselect()
+
+   Close the current mailbox without removing messages from
+   the currently selected mailbox.
+
+   .. versionadded:: 3.9
 
 .. method:: IMAP4.xatom(name[, ...])
 
