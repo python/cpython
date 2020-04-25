@@ -10,6 +10,7 @@ import re
 import threading
 
 from test import support
+from test.support import socket_helper
 from nntplib import NNTP, GroupInfo
 import nntplib
 from unittest.mock import patch
@@ -1555,14 +1556,14 @@ class MockSslTests(MockSocketTests):
 class LocalServerTests(unittest.TestCase):
     def setUp(self):
         sock = socket.socket()
-        port = support.bind_port(sock)
+        port = socket_helper.bind_port(sock)
         sock.listen()
         self.background = threading.Thread(
             target=self.run_server, args=(sock,))
         self.background.start()
         self.addCleanup(self.background.join)
 
-        self.nntp = NNTP(support.HOST, port, usenetrc=False).__enter__()
+        self.nntp = NNTP(socket_helper.HOST, port, usenetrc=False).__enter__()
         self.addCleanup(self.nntp.__exit__, None, None, None)
 
     def run_server(self, sock):
