@@ -30,6 +30,7 @@ import unittest
 import uuid
 import warnings
 from test import support
+from test.support import socket_helper
 from platform import win32_is_iot
 
 try:
@@ -3171,7 +3172,7 @@ class TestSendfile(unittest.TestCase):
         support.unlink(support.TESTFN)
 
     def setUp(self):
-        self.server = SendfileTestServer((support.HOST, 0))
+        self.server = SendfileTestServer((socket_helper.HOST, 0))
         self.server.start()
         self.client = socket.socket()
         self.client.connect((self.server.host, self.server.port))
