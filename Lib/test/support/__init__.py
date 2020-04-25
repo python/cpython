@@ -15,7 +15,6 @@ import hashlib
 import importlib
 import importlib.util
 import locale
-import logging.handlers
 import os
 import platform
 import re
@@ -99,8 +98,6 @@ __all__ = [
     "open_urlresource",
     # processes
     'temp_umask', "reap_children",
-    # logging
-    "TestHandler",
     # threads
     "threading_setup", "threading_cleanup", "reap_threads", "start_threads",
     # miscellaneous
@@ -2368,37 +2365,6 @@ def optim_args_from_interpreter_flags():
     optimization settings in sys.flags."""
     return subprocess._optim_args_from_interpreter_flags()
 
-#============================================================
-# Support for assertions about logging.
-#============================================================
-
-class TestHandler(logging.handlers.BufferingHandler):
-    def __init__(self, matcher):
-        # BufferingHandler takes a "capacity" argument
-        # so as to know when to flush. As we're overriding
-        # shouldFlush anyway, we can set a capacity of zero.
-        # You can call flush() manually to clear out the
-        # buffer.
-        logging.handlers.BufferingHandler.__init__(self, 0)
-        self.matcher = matcher
-
-    def shouldFlush(self):
-        return False
-
-    def emit(self, record):
-        self.format(record)
-        self.buffer.append(record.__dict__)
-
-    def matches(self, **kwargs):
-        """
-        Look for a saved dict whose keys/values match the supplied arguments.
-        """
-        result = False
-        for d in self.buffer:
-            if self.matcher.matches(d, **kwargs):
-                result = True
-                break
-        return result
 
 class Matcher(object):
 
