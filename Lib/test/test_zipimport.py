@@ -41,7 +41,8 @@ def make_pyc(co, mtime, size):
         else:
             mtime = int(-0x100000000 + int(mtime))
     pyc = (importlib.util.MAGIC_NUMBER +
-        struct.pack("<iii", 0, int(mtime), size & 0xFFFFFFFF) + data)
+        struct.pack("<iLL", 0,
+                    int(mtime) & 0xFFFF_FFFF, size & 0xFFFF_FFFF) + data)
     return pyc
 
 def module_path_to_dotted_name(path):
@@ -251,6 +252,19 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         badtime_pyc[11] ^= 0x02
         files = {TESTMOD + ".py": (NOW, test_src),
                  TESTMOD + pyc_ext: (NOW, badtime_pyc)}
+        self.doTest(".py", files, TESTMOD)
+
+    def test2038MTime(self):
+        # Make sure we can handle mtimes larger than what a 32-bit signed number
+        # can hold.
+        twenty_thirty_eight_pyc = make_pyc(test_co, 2**32 - 1, len(test_src))
+        files = {TESTMOD + ".py": (NOW, test_src),
+                 TESTMOD + pyc_ext: (NOW, twenty_thirty_eight_pyc)}
+        self.doTest(".py", files, TESTMOD)
+
+        larger_than_32_bit = make_pyc(test_co, 2**35, len(test_src))
+        files = {TESTMOD + ".py": (NOW, test_src),
+                 TESTMOD + pyc_ext: (NOW, twenty_thirty_eight_pyc)}
         self.doTest(".py", files, TESTMOD)
 
     def testPackage(self):
