@@ -44,6 +44,7 @@ import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
 from test.support import socket_helper
+from test.support.logging_helper import TestHandler
 import textwrap
 import threading
 import time
@@ -3524,7 +3525,7 @@ class QueueHandlerTest(BaseTest):
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
     def test_queue_listener(self):
-        handler = support.TestHandler(support.Matcher())
+        handler = TestHandler(support.Matcher())
         listener = logging.handlers.QueueListener(self.queue, handler)
         listener.start()
         try:
@@ -3540,7 +3541,7 @@ class QueueHandlerTest(BaseTest):
 
         # Now test with respect_handler_level set
 
-        handler = support.TestHandler(support.Matcher())
+        handler = TestHandler(support.Matcher())
         handler.setLevel(logging.CRITICAL)
         listener = logging.handlers.QueueListener(self.queue, handler,
                                                   respect_handler_level=True)
