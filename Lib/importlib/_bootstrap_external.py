@@ -42,11 +42,19 @@ def _make_relax_case():
             return False
     return _relax_case
 
+def _pack_uint64(x):
+    """Convert a 64-bit integer to litte-endian."""
+    return (int(x) & 0xFFFFFFFFFFFFFFFF).to_bytes(8, 'little')
 
 def _pack_uint32(x):
     """Convert a 32-bit integer to little-endian."""
     return (int(x) & 0xFFFFFFFF).to_bytes(4, 'little')
 
+
+def _unpack_uint64(data):
+    """Convert 8 bytes in little-endian to an integer."""
+    assert len(data) == 8
+    return int.from_bytes(data, 'little')
 
 def _unpack_uint32(data):
     """Convert 4 bytes in little-endian to an integer."""
@@ -277,6 +285,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.9a2  3423 (add IS_OP, CONTAINS_OP and JUMP_IF_NOT_EXC_MATCH bytecodes #39156)
 #     Python 3.9a2  3424 (simplify bytecodes for *value unpacking)
 #     Python 3.9a2  3425 (simplify bytecodes for **value unpacking)
+#     Python 3.9a5  3426 (use 64 bit integers for timestamp and size in pyc header)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -286,7 +295,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3425).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3426).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -501,7 +510,7 @@ def _classify_pyc(data, name, exc_details):
     """Perform basic validity checking of a pyc header and return the flags field,
     which determines how the pyc should be further validated against the source.
 
-    *data* is the contents of the pyc file. (Only the first 16 bytes are
+    *data* is the contents of the pyc file. (Only the first 24 bytes are
     required, though.)
 
     *name* is the name of the module being imported. It is used for logging.
@@ -518,7 +527,7 @@ def _classify_pyc(data, name, exc_details):
         message = f'bad magic number in {name!r}: {magic!r}'
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
-    if len(data) < 16:
+    if len(data) < 24:
         message = f'reached EOF while reading pyc header of {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise EOFError(message)
@@ -534,7 +543,7 @@ def _validate_timestamp_pyc(data, source_mtime, source_size, name,
                             exc_details):
     """Validate a pyc against the source last-modified time.
 
-    *data* is the contents of the pyc file. (Only the first 16 bytes are
+    *data* is the contents of the pyc file. (Only the first 24 bytes are
     required.)
 
     *source_mtime* is the last modified timestamp of the source file.
@@ -549,12 +558,12 @@ def _validate_timestamp_pyc(data, source_mtime, source_size, name,
     An ImportError is raised if the bytecode is stale.
 
     """
-    if _unpack_uint32(data[8:12]) != (source_mtime & 0xFFFFFFFF):
+    if _unpack_uint64(data[8:16]) != (source_mtime & 0xFFFFFFFFFFFFFFFF):
         message = f'bytecode is stale for {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
     if (source_size is not None and
-        _unpack_uint32(data[12:16]) != (source_size & 0xFFFFFFFF)):
+        _unpack_uint64(data[16:24]) != (source_size & 0xFFFFFFFFFFFFFFFF)):
         raise ImportError(f'bytecode is stale for {name!r}', **exc_details)
 
 
@@ -599,8 +608,8 @@ def _code_to_timestamp_pyc(code, mtime=0, source_size=0):
     "Produce the data for a timestamp-based pyc."
     data = bytearray(MAGIC_NUMBER)
     data.extend(_pack_uint32(0))
-    data.extend(_pack_uint32(mtime))
-    data.extend(_pack_uint32(source_size))
+    data.extend(_pack_uint64(mtime))
+    data.extend(_pack_uint64(source_size))
     data.extend(marshal.dumps(code))
     return data
 
@@ -612,6 +621,8 @@ def _code_to_hash_pyc(code, source_hash, checked=True):
     data.extend(_pack_uint32(flags))
     assert len(source_hash) == 8
     data.extend(source_hash)
+    # Padding for where source size goes in timestamped pyc header.
+    data.extend(_pack_uint64(0))
     data.extend(marshal.dumps(code))
     return data
 
@@ -888,7 +899,7 @@ class SourceLoader(_LoaderBasics):
                     }
                     try:
                         flags = _classify_pyc(data, fullname, exc_details)
-                        bytes_data = memoryview(data)[16:]
+                        bytes_data = memoryview(data)[24:]
                         hash_based = flags & 0b1 != 0
                         if hash_based:
                             check_source = flags & 0b10 != 0
@@ -1070,7 +1081,7 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
         }
         _classify_pyc(data, fullname, exc_details)
         return _compile_bytecode(
-            memoryview(data)[16:],
+            memoryview(data)[24:],
             name=fullname,
             bytecode_path=path,
         )

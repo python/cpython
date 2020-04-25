@@ -890,8 +890,8 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
             self.assertIn(self.cached, self.loader.written)
             data = bytearray(self.util.MAGIC_NUMBER)
             data.extend(self.init._pack_uint32(0))
-            data.extend(self.init._pack_uint32(self.loader.source_mtime))
-            data.extend(self.init._pack_uint32(self.loader.source_size))
+            data.extend(self.init._pack_uint64(self.loader.source_mtime))
+            data.extend(self.init._pack_uint64(self.loader.source_size))
             data.extend(marshal.dumps(code_object))
             self.assertEqual(self.loader.written[self.cached], bytes(data))
 

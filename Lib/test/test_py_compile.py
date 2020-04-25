@@ -150,6 +150,14 @@ class PyCompileTestsBase:
 
         self.assertEqual(flags, expected_flags)
 
+    def test_mtime_year_2038(self):
+        # Test that we can compile a file whose creation time is larger than
+        # a 32-bit number.
+        with open(self.source_path, 'r') as f:
+            os.utime(f.name, (2**33, 2**33))
+        py_compile.compile(self.source_path, self.pyc_path)
+        self.assertTrue(os.path.exists(self.pyc_path))
+
     @unittest.skipIf(sys.flags.optimize > 0, 'test does not work with -O')
     def test_double_dot_no_clobber(self):
         # http://bugs.python.org/issue22966

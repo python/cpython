@@ -1,0 +1,3 @@
+Timestamp based .pyc files now use a 64-bit integer for the modified time
+and file size values. This fixes a future Y2K38 problem whereby Python files
+created with an mtime after 2038 will not work with the compileall module.

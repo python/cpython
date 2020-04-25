@@ -15,7 +15,7 @@ to Zip archives.
 #from importlib import _bootstrap_external
 #from importlib import _bootstrap  # for _verbose_message
 import _frozen_importlib_external as _bootstrap_external
-from _frozen_importlib_external import _unpack_uint16, _unpack_uint32
+from _frozen_importlib_external import _unpack_uint16, _unpack_uint32, _unpack_uint64
 import _frozen_importlib as _bootstrap  # for _verbose_message
 import _imp  # for check_hash_based_pycs
 import _io  # for open
@@ -619,13 +619,13 @@ def _unmarshal_code(self, pathname, fullpath, fullname, data):
         if source_mtime:
             # We don't use _bootstrap_external._validate_timestamp_pyc
             # to allow for a more lenient timestamp check.
-            if (not _eq_mtime(_unpack_uint32(data[8:12]), source_mtime) or
-                    _unpack_uint32(data[12:16]) != source_size):
+            if (not _eq_mtime(_unpack_uint64(data[8:16]), source_mtime) or
+                    _unpack_uint64(data[16:24]) != source_size):
                 _bootstrap._verbose_message(
                     f'bytecode is stale for {fullname!r}')
                 return None
 
-    code = marshal.loads(data[16:])
+    code = marshal.loads(data[24:])
     if not isinstance(code, _code_type):
         raise TypeError(f'compiled module {pathname!r} is not a code object')
     return code

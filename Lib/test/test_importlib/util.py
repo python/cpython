@@ -125,7 +125,7 @@ def get_code_from_pyc(pyc_path):
     No header validation is performed.
     """
     with open(pyc_path, 'rb') as pyc_f:
-        pyc_f.seek(16)
+        pyc_f.seek(24)
         return marshal.load(pyc_f)
 
 

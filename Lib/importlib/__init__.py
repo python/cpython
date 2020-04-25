@@ -49,6 +49,7 @@ else:
 
 # To simplify imports in test code
 _pack_uint32 = _bootstrap_external._pack_uint32
+_pack_uint64 = _bootstrap_external._pack_uint64
 _unpack_uint32 = _bootstrap_external._unpack_uint32
 
 # Fully bootstrapped at this point, import whatever you like, circular

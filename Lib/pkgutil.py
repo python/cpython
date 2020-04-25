@@ -47,7 +47,7 @@ def read_code(stream):
     if magic != importlib.util.MAGIC_NUMBER:
         return None
 
-    stream.read(12) # Skip rest of the header
+    stream.read(20) # Skip rest of the header
     return marshal.load(stream)
 
 

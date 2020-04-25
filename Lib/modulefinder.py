@@ -347,7 +347,7 @@ class ModuleFinder:
             except ImportError as exc:
                 self.msgout(2, "raise ImportError: " + str(exc), pathname)
                 raise
-            co = marshal.loads(memoryview(data)[16:])
+            co = marshal.loads(memoryview(data)[24:])
         else:
             co = None
         m = self.add_module(fqname)

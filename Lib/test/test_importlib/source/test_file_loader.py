@@ -464,14 +464,14 @@ class BadBytecodeTest:
     def _test_partial_size(self, test, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
-                                                lambda bc: bc[:15],
+                                                lambda bc: bc[:17],
                                                 del_source=del_source)
             test('_temp', mapping, bc_path)
 
     def _test_no_marshal(self, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
-                                                lambda bc: bc[:16],
+                                                lambda bc: bc[:24],
                                                 del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bc_path
             with self.assertRaises(EOFError):
@@ -480,7 +480,7 @@ class BadBytecodeTest:
     def _test_non_code_marshal(self, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bytecode_path = self.manipulate_bytecode('_temp', mapping,
-                                    lambda bc: bc[:16] + marshal.dumps(b'abcd'),
+                                    lambda bc: bc[:24] + marshal.dumps(b'abcd'),
                                     del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bytecode_path
             with self.assertRaises(ImportError) as cm:
@@ -491,7 +491,7 @@ class BadBytecodeTest:
     def _test_bad_marshal(self, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bytecode_path = self.manipulate_bytecode('_temp', mapping,
-                                                lambda bc: bc[:16] + b'<test>',
+                                                lambda bc: bc[:24] + b'<test>',
                                                 del_source=del_source)
             file_path = mapping['_temp'] if not del_source else bytecode_path
             with self.assertRaises(EOFError):
@@ -635,7 +635,7 @@ class SourceLoaderBadBytecodeTest:
     def test_old_timestamp(self):
         # When the timestamp is older than the source, bytecode should be
         # regenerated.
-        zeros = b'\x00\x00\x00\x00'
+        zeros = b'\x00\x00\x00\x00\x00\x00\x00\x00'
         with util.create_modules('_temp') as mapping:
             py_compile.compile(mapping['_temp'])
             bytecode_path = self.util.cache_from_source(mapping['_temp'])
@@ -644,10 +644,10 @@ class SourceLoaderBadBytecodeTest:
                 bytecode_file.write(zeros)
             self.import_(mapping['_temp'], '_temp')
             source_mtime = os.path.getmtime(mapping['_temp'])
-            source_timestamp = self.importlib._pack_uint32(source_mtime)
+            source_timestamp = self.importlib._pack_uint64(source_mtime)
             with open(bytecode_path, 'rb') as bytecode_file:
                 bytecode_file.seek(8)
-                self.assertEqual(bytecode_file.read(4), source_timestamp)
+                self.assertEqual(bytecode_file.read(8), source_timestamp)
 
     # [bytecode read-only]
     @util.writes_bytecode_files
