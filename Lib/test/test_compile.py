@@ -501,6 +501,7 @@ if 1:
         self.compile_single("if x:\n   f(x)\nelse:\n   g(x)")
         self.compile_single("class T:\n   pass")
 
+    @support.skip_if_new_parser('Pegen does not disallow multiline single stmts')
     def test_bad_single_statement(self):
         self.assertInvalidSingle('1\n2')
         self.assertInvalidSingle('def f(): pass')

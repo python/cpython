@@ -170,7 +170,7 @@ def macosx_sdk_root():
         return MACOS_SDK_ROOT
 
     cflags = sysconfig.get_config_var('CFLAGS')
-    m = re.search(r'-isysroot\s+(\S+)', cflags)
+    m = re.search(r'-isysroot\s*(\S+)', cflags)
     if m is not None:
         MACOS_SDK_ROOT = m.group(1)
     else:

@@ -244,7 +244,7 @@ LIBOBJS=	@LIBOBJS@
 PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
-PYTHON_FOR_REGEN=@PYTHON_FOR_REGEN@
+PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
 UPDATE_FILE=@PYTHON_FOR_REGEN@ $(srcdir)/Tools/scripts/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
 _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
@@ -295,6 +295,19 @@ LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
 
 ##########################################################################
 # Parser
+
+PEGEN_OBJS=		\
+		Parser/pegen/pegen.o \
+		Parser/pegen/parse.o \
+		Parser/pegen/parse_string.o \
+		Parser/pegen/peg_api.o
+
+
+PEGEN_HEADERS= \
+		$(srcdir)/Include/internal/pegen_interface.h \
+		$(srcdir)/Parser/pegen/pegen.h \
+		$(srcdir)/Parser/pegen/parse_string.h
+
 POBJS=		\
 		Parser/acceler.o \
 		Parser/grammar1.o \
@@ -303,9 +316,10 @@ POBJS=		\
 		Parser/parser.o \
 		Parser/token.o \
 
-PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/parsetok.o Parser/tokenizer.o
+PARSER_OBJS=	$(POBJS) $(PEGEN_OBJS) Parser/myreadline.o Parser/parsetok.o Parser/tokenizer.o
 
 PARSER_HEADERS= \
+		$(PEGEN_HEADERS) \
 		$(srcdir)/Include/grammar.h \
 		$(srcdir)/Include/parsetok.h \
 		$(srcdir)/Parser/parser.h \
@@ -731,7 +745,7 @@ regen-importlib: Programs/_freeze_importlib
 ############################################################################
 # Regenerate all generated files
 
-regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar \
+regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar regen-pegen \
 	regen-token regen-keyword regen-symbol regen-ast regen-importlib clinic
 
 ############################################################################
@@ -805,6 +819,13 @@ regen-grammar: regen-token
 		$(srcdir)/Python/graminit.c.new
 	$(UPDATE_FILE) $(srcdir)/Include/graminit.h $(srcdir)/Include/graminit.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/graminit.c $(srcdir)/Python/graminit.c.new
+
+.PHONY: regen-pegen
+regen-pegen:
+	@$(MKDIR_P) $(srcdir)/Parser/pegen
+	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -c -q $(srcdir)/Grammar/python.gram \
+		-o $(srcdir)/Parser/pegen/parse.new.c
+	$(UPDATE_FILE) $(srcdir)/Parser/pegen/parse.c $(srcdir)/Parser/pegen/parse.new.c
 
 .PHONY=regen-ast
 regen-ast:

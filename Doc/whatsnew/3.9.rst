@@ -105,6 +105,59 @@ Merge (``|``) and update (``|=``) operators have been added to the built-in
 :class:`dict` class.  See :pep:`584` for a full description.
 (Contributed by Brandt Bucher in :issue:`36144`.)
 
+PEP 616: New removeprefix() and removesuffix() string methods
+-------------------------------------------------------------
+
+:meth:`str.removeprefix(prefix)<str.removeprefix>` and
+:meth:`str.removesuffix(suffix)<str.removesuffix>` have been added
+to easily remove an unneeded prefix or a suffix from a string. Corresponding
+``bytes``, ``bytearray``, and ``collections.UserString`` methods have also been
+added. See :pep:`616` for a full description. (Contributed by Dennis Sweeney in
+:issue:`18939`.)
+
+PEP 585: Builtin Generic Types
+------------------------------
+
+In type annotations you can now use built-in collection types such as
+``list`` and ``dict`` as generic types instead of importing the
+corresponding capitalized types (e.g. ``List`` or ``Dict``) from
+``typing``.  Some other types in the standard library are also now generic,
+for example ``queue.Queue``.
+
+Example:
+
+.. code-block:: python
+
+   def greet_all(names: list[str]) -> None:
+       for name in names:
+           print("Hello", name)
+
+See :pep:`585` for more details.  (Contributed by Guido van Rossum,
+Ethan Smith, and Batuhan Taşkaya in :issue:`39481`.)
+
+PEP 617: New Parser
+-------------------
+
+Python 3.9 uses a new parser, based on `PEG
+<https://en.wikipedia.org/wiki/Parsing_expression_grammar>`_ instead
+of `LL(1) <https://en.wikipedia.org/wiki/LL_parser>`_.  The new
+parser's performance is roughly comparable to that of the old parser,
+but the PEG formalism is more flexible than LL(1) when it comes to
+designing new language features.  We'll start using this flexibility
+in Python 3.10 and later.
+
+The :mod:`ast` module uses the new parser and produces the same AST as
+the old parser.
+
+In Python 3.10, the old parser will be deleted and so will all
+functionality that depends on it (primarily the :mod:`parser` module,
+which has long been deprecated).  In Python 3.9 *only*, you can switch
+back to the LL(1) parser using a command line switch (``-X
+oldparser``) or an environment variable (``PYTHONOLDPARSER=1``).
+
+See :pep:`617` for more details.  (Contributed by Guido van Rossum,
+Pablo Galindo and Lysandros Nikolau in :issue:`40334`.)
+
 
 Other Language Changes
 ======================
@@ -205,6 +258,11 @@ Removed daemon threads from :class:`~concurrent.futures.ThreadPoolExecutor`
 and :class:`~concurrent.futures.ProcessPoolExecutor`. This improves
 compatibility with subinterpreters and predictability in their shutdown
 processes. (Contributed by Kyle Stanley in :issue:`39812`.)
+
+Workers in :class:`~concurrent.futures.ProcessPoolExecutor` are now spawned on
+demand, only when there are no available idle workers to reuse. This optimizes
+startup overhead and reduces the amount of lost CPU time to idle workers.
+(Contributed by Kyle Stanley in :issue:`39207`.)
 
 curses
 ------
@@ -455,6 +513,10 @@ Optimizations
   Previously, the bytecode evaluation loop was interrupted at each instruction
   until the main thread handles signals.
   (Contributed by Victor Stinner in :issue:`40010`.)
+
+* Optimize the :mod:`subprocess` module on FreeBSD using ``closefrom()``.
+  (Contributed by Ed Maste, Conrad Meyer, Kyle Evans, Kubilay Kocak and Victor
+  Stinner in :issue:`38061`.)
 
 
 Build and C API Changes
@@ -822,6 +884,15 @@ Changes in the Python API
   in the object itself.
   (Contributed by Serhiy Storchaka in :issue:`40257`.)
 
+* :meth:`asyncio.loop.shutdown_default_executor` has been added to
+  :class:`~asyncio.AbstractEventLoop`, meaning alternative event loops that
+  inherit from it should have this method defined.
+  (Contributed by Kyle Stanley in :issue:`34037`.)
+
+* The constant values of future flags in the :mod:`__future__` module
+  is updated in order to prevent collision with compiler flags. Previously
+  ``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
+  (Contributed by Batuhan Taskaya in :issue:`39562`)
 
 CPython bytecode changes
 ------------------------

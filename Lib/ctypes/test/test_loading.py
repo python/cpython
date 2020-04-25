@@ -158,11 +158,9 @@ class LoaderTest(unittest.TestCase):
             # Relative path (but not just filename) should succeed
             should_pass("WinDLL('./_sqlite3.dll')")
 
-            # XXX: This test has started failing on Azure Pipelines CI.  See
-            #      bpo-40214 for more information.
-            if 0:
-                # Insecure load flags should succeed
-                should_pass("WinDLL('_sqlite3.dll', winmode=0)")
+            # Insecure load flags should succeed
+            # Clear the DLL directory to avoid safe search settings propagating
+            should_pass("windll.kernel32.SetDllDirectoryW(None); WinDLL('_sqlite3.dll', winmode=0)")
 
             # Full path load without DLL_LOAD_DIR shouldn't find dependency
             should_fail("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +

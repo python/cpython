@@ -1,5 +1,5 @@
 language: c
-dist: xenial
+dist: bionic
 
 # To cache doc-building dependencies and C compiler output.
 cache:
@@ -157,7 +157,9 @@ install:
 before_script:
   # -Og is much faster than -O0
   - CFLAGS="${CFLAGS} -Og" ./configure --with-pydebug
-  - make -j4 regen-all
+  - eval "$(pyenv init -)"
+  - pyenv global 3.8
+  - PYTHON_FOR_REGEN=python3.8 make -j4 regen-all
   - changes=`git status --porcelain`
   - |
       # Check for changes in regenerated files

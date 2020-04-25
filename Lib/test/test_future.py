@@ -1,5 +1,7 @@
 # Test various flavors of legal and illegal future statements
 
+import __future__
+import ast
 import unittest
 from test import support
 from textwrap import dedent
@@ -74,6 +76,21 @@ class FutureTest(unittest.TestCase):
         with self.assertRaises(SyntaxError) as cm:
             from test import badsyntax_future10
         self.check_syntax_error(cm.exception, "badsyntax_future10", 3)
+
+    def test_ensure_flags_dont_clash(self):
+        # bpo-39562: test that future flags and compiler flags doesn't clash
+
+        # obtain future flags (CO_FUTURE_***) from the __future__ module
+        flags = {
+            f"CO_FUTURE_{future.upper()}": getattr(__future__, future).compiler_flag
+            for future in __future__.all_feature_names
+        }
+        # obtain some of the exported compiler flags (PyCF_***) from the ast module
+        flags |= {
+            flag: getattr(ast, flag)
+            for flag in dir(ast) if flag.startswith("PyCF_")
+        }
+        self.assertCountEqual(set(flags.values()), flags.values())
 
     def test_parserhack(self):
         # test that the parser.c::future_hack function works as expected

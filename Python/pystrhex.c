@@ -82,22 +82,59 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
 
     /* Hexlify */
     Py_ssize_t i, j;
-    for (i=j=0; i < arglen; ++i) {
-        assert((j + 1) < resultlen);
-        unsigned char c;
-        c = (argbuf[i] >> 4) & 0x0f;
-        retbuf[j++] = Py_hexdigits[c];
-        c = argbuf[i] & 0x0f;
-        retbuf[j++] = Py_hexdigits[c];
-        if (bytes_per_sep_group && i < arglen - 1) {
-            Py_ssize_t anchor;
-            anchor = (bytes_per_sep_group > 0) ? (arglen - 1 - i) : (i + 1);
-            if (anchor % abs_bytes_per_sep == 0) {
+    unsigned char c;
+
+    if (bytes_per_sep_group == 0) {
+        for (i = j = 0; i < arglen; ++i) {
+            assert((j + 1) < resultlen);
+            c = argbuf[i];
+            retbuf[j++] = Py_hexdigits[c >> 4];
+            retbuf[j++] = Py_hexdigits[c & 0x0f];
+        }
+        assert(j == resultlen);
+    }
+    else {
+        /* The number of complete chunk+sep periods */
+        Py_ssize_t chunks = (arglen - 1) / abs_bytes_per_sep;
+        Py_ssize_t chunk;
+        unsigned int k;
+
+        if (bytes_per_sep_group < 0) {
+            i = j = 0;
+            for (chunk = 0; chunk < chunks; chunk++) {
+                for (k = 0; k < abs_bytes_per_sep; k++) {
+                    c = argbuf[i++];
+                    retbuf[j++] = Py_hexdigits[c >> 4];
+                    retbuf[j++] = Py_hexdigits[c & 0x0f];
+                }
                 retbuf[j++] = sep_char;
             }
+            while (i < arglen) {
+                c = argbuf[i++];
+                retbuf[j++] = Py_hexdigits[c >> 4];
+                retbuf[j++] = Py_hexdigits[c & 0x0f];
+            }
+            assert(j == resultlen);
+        }
+        else {
+            i = arglen - 1;
+            j = resultlen - 1;
+            for (chunk = 0; chunk < chunks; chunk++) {
+                for (k = 0; k < abs_bytes_per_sep; k++) {
+                    c = argbuf[i--];
+                    retbuf[j--] = Py_hexdigits[c & 0x0f];
+                    retbuf[j--] = Py_hexdigits[c >> 4];
+                }
+                retbuf[j--] = sep_char;
+            }
+            while (i >= 0) {
+                c = argbuf[i--];
+                retbuf[j--] = Py_hexdigits[c & 0x0f];
+                retbuf[j--] = Py_hexdigits[c >> 4];
+            }
+            assert(j == -1);
         }
     }
-    assert(j == resultlen);
 
 #ifdef Py_DEBUG
     if (!return_bytes) {

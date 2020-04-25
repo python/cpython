@@ -8839,7 +8839,7 @@ PyDoc_STRVAR(os_waitstatus_to_exitcode__doc__,
     {"waitstatus_to_exitcode", (PyCFunction)(void(*)(void))os_waitstatus_to_exitcode, METH_FASTCALL|METH_KEYWORDS, os_waitstatus_to_exitcode__doc__},
 
 static PyObject *
-os_waitstatus_to_exitcode_impl(PyObject *module, int status);
+os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj);
 
 static PyObject *
 os_waitstatus_to_exitcode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -8848,22 +8848,14 @@ os_waitstatus_to_exitcode(PyObject *module, PyObject *const *args, Py_ssize_t na
     static const char * const _keywords[] = {"status", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "waitstatus_to_exitcode", 0};
     PyObject *argsbuf[1];
-    int status;
+    PyObject *status_obj;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    status = _PyLong_AsInt(args[0]);
-    if (status == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = os_waitstatus_to_exitcode_impl(module, status);
+    status_obj = args[0];
+    return_value = os_waitstatus_to_exitcode_impl(module, status_obj);
 
 exit:
     return return_value;
@@ -9426,4 +9418,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=545c08f76d7a6286 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ba73b68f1c435ff6 input=a9049054013a1b77]*/

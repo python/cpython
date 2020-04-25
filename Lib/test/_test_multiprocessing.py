@@ -26,6 +26,7 @@ import warnings
 import test.support
 import test.support.script_helper
 from test import support
+from test.support import socket_helper
 
 
 # Skip tests if _multiprocessing wasn't built.
@@ -2928,7 +2929,7 @@ class _TestRemoteManager(BaseTestCase):
         authkey = os.urandom(32)
 
         manager = QueueManager(
-            address=(test.support.HOST, 0), authkey=authkey, serializer=SERIALIZER
+            address=(socket_helper.HOST, 0), authkey=authkey, serializer=SERIALIZER
             )
         manager.start()
         self.addCleanup(manager.shutdown)
@@ -2965,7 +2966,7 @@ class _TestManagerRestart(BaseTestCase):
     def test_rapid_restart(self):
         authkey = os.urandom(32)
         manager = QueueManager(
-            address=(test.support.HOST, 0), authkey=authkey, serializer=SERIALIZER)
+            address=(socket_helper.HOST, 0), authkey=authkey, serializer=SERIALIZER)
         try:
             srvr = manager.get_server()
             addr = srvr.address
@@ -3455,7 +3456,7 @@ class _TestPicklingConnections(BaseTestCase):
             new_conn.close()
             l.close()
 
-        l = socket.create_server((test.support.HOST, 0))
+        l = socket.create_server((socket_helper.HOST, 0))
         conn.send(l.getsockname())
         new_conn, addr = l.accept()
         conn.send(new_conn)
@@ -3995,9 +3996,21 @@ class _TestSharedMemory(BaseTestCase):
         sl[4] = 'some'  # Change type at a given position.
         self.assertEqual(sl[4], 'some')
         self.assertEqual(sl.format, '8s8sdq8sxxxxxxx?q')
-        with self.assertRaises(ValueError):
-            sl[4] = 'far too many'  # Exceeds available storage.
+        with self.assertRaisesRegex(ValueError,
+                                    "exceeds available storage"):
+            sl[4] = 'far too many'
         self.assertEqual(sl[4], 'some')
+        sl[0] = 'encodés'  # Exactly 8 bytes of UTF-8 data
+        self.assertEqual(sl[0], 'encodés')
+        self.assertEqual(sl[1], b'HoWdY')  # no spillage
+        with self.assertRaisesRegex(ValueError,
+                                    "exceeds available storage"):
+            sl[0] = 'encodées'  # Exactly 9 bytes of UTF-8 data
+        self.assertEqual(sl[1], b'HoWdY')
+        with self.assertRaisesRegex(ValueError,
+                                    "exceeds available storage"):
+            sl[1] = b'123456789'
+        self.assertEqual(sl[1], b'HoWdY')
 
         # Exercise count().
         with warnings.catch_warnings():
@@ -4581,7 +4594,7 @@ class TestWait(unittest.TestCase):
 
     def test_wait_socket(self, slow=False):
         from multiprocessing.connection import wait
-        l = socket.create_server((test.support.HOST, 0))
+        l = socket.create_server((socket_helper.HOST, 0))
         addr = l.getsockname()
         readers = []
         procs = []
@@ -5329,10 +5342,9 @@ class TestSyncManagerTypes(unittest.TestCase):
             dt = time.monotonic() - start_time
             if dt >= 5.0:
                 test.support.environment_altered = True
-                print("Warning -- multiprocessing.Manager still has %s active "
-                      "children after %s seconds"
-                      % (multiprocessing.active_children(), dt),
-                      file=sys.stderr)
+                support.print_warning(f"multiprocessing.Manager still has "
+                                      f"{multiprocessing.active_children()} "
+                                      f"active children after {dt} seconds")
                 break
 
     def run_worker(self, worker, obj):
@@ -5532,15 +5544,13 @@ class BaseMixin(object):
         processes = set(multiprocessing.process._dangling) - set(cls.dangling[0])
         if processes:
             test.support.environment_altered = True
-            print('Warning -- Dangling processes: %s' % processes,
-                  file=sys.stderr)
+            support.print_warning(f'Dangling processes: {processes}')
         processes = None
 
         threads = set(threading._dangling) - set(cls.dangling[1])
         if threads:
             test.support.environment_altered = True
-            print('Warning -- Dangling threads: %s' % threads,
-                  file=sys.stderr)
+            support.print_warning(f'Dangling threads: {threads}')
         threads = None
 
 
@@ -5608,10 +5618,9 @@ class ManagerMixin(BaseMixin):
             dt = time.monotonic() - start_time
             if dt >= 5.0:
                 test.support.environment_altered = True
-                print("Warning -- multiprocessing.Manager still has %s active "
-                      "children after %s seconds"
-                      % (multiprocessing.active_children(), dt),
-                      file=sys.stderr)
+                support.print_warning(f"multiprocessing.Manager still has "
+                                      f"{multiprocessing.active_children()} "
+                                      f"active children after {dt} seconds")
                 break
 
         gc.collect()                       # do garbage collection
@@ -5620,9 +5629,9 @@ class ManagerMixin(BaseMixin):
             # ensure that all processes which hold a reference to a
             # managed object have been joined.
             test.support.environment_altered = True
-            print('Warning -- Shared objects which still exist at manager '
-                  'shutdown:')
-            print(cls.manager._debug_info())
+            support.print_warning('Shared objects which still exist '
+                                  'at manager shutdown:')
+            support.print_warning(cls.manager._debug_info())
         cls.manager.shutdown()
         cls.manager.join()
         cls.manager = None
@@ -5719,16 +5728,14 @@ def install_tests_in_module_dict(remote_globs, start_method):
         if processes:
             need_sleep = True
             test.support.environment_altered = True
-            print('Warning -- Dangling processes: %s' % processes,
-                  file=sys.stderr)
+            support.print_warning(f'Dangling processes: {processes}')
         processes = None
 
         threads = set(threading._dangling) - set(dangling[1])
         if threads:
             need_sleep = True
             test.support.environment_altered = True
-            print('Warning -- Dangling threads: %s' % threads,
-                  file=sys.stderr)
+            support.print_warning(f'Dangling threads: {threads}')
         threads = None
 
         # Sleep 500 ms to give time to child processes to complete.

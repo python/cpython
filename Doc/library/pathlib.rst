@@ -528,8 +528,10 @@ Pure paths provide the following methods and properties:
       >>> PurePath('a/b.py').match('/*.py')
       False
 
-   As with other methods, case-sensitivity is observed::
+   As with other methods, case-sensitivity follows platform defaults::
 
+      >>> PurePosixPath('b.py').match('*.PY')
+      False
       >>> PureWindowsPath('b.py').match('*.PY')
       True
 
@@ -567,6 +569,30 @@ Pure paths provide the following methods and properties:
         File "/home/antoine/cpython/default/Lib/pathlib.py", line 751, in with_name
           raise ValueError("%r has an empty name" % (self,))
       ValueError: PureWindowsPath('c:/') has an empty name
+
+
+.. method:: PurePath.with_stem(stem)
+
+   Return a new path with the :attr:`stem` changed.  If the original path
+   doesn't have a name, ValueError is raised::
+
+      >>> p = PureWindowsPath('c:/Downloads/draft.txt')
+      >>> p.with_stem('final')
+      PureWindowsPath('c:/Downloads/final.txt')
+      >>> p = PureWindowsPath('c:/Downloads/pathlib.tar.gz')
+      >>> p.with_stem('lib')
+      PureWindowsPath('c:/Downloads/lib.gz')
+      >>> p = PureWindowsPath('c:/')
+      >>> p.with_stem('')
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "/home/antoine/cpython/default/Lib/pathlib.py", line 861, in with_stem
+          return self.with_name(stem + self.suffix)
+        File "/home/antoine/cpython/default/Lib/pathlib.py", line 851, in with_name
+          raise ValueError("%r has an empty name" % (self,))
+      ValueError: PureWindowsPath('c:/') has an empty name
+
+   .. versionadded:: 3.9
 
 
 .. method:: PurePath.with_suffix(suffix)

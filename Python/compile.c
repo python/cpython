@@ -2153,6 +2153,55 @@ compiler_default_arguments(struct compiler *c, arguments_ty args)
 }
 
 static int
+forbidden_name(struct compiler *c, identifier name, expr_context_ty ctx)
+{
+
+    if (ctx == Store && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        compiler_error(c, "cannot assign to __debug__");
+        return 1;
+    }
+    return 0;
+}
+
+static int
+compiler_check_debug_one_arg(struct compiler *c, arg_ty arg)
+{
+    if (arg != NULL) {
+        if (forbidden_name(c, arg->arg, Store))
+            return 0;
+    }
+    return 1;
+}
+
+static int
+compiler_check_debug_args_seq(struct compiler *c, asdl_seq *args)
+{
+    if (args != NULL) {
+        for (Py_ssize_t i = 0, n = asdl_seq_LEN(args); i < n; i++) {
+            if (!compiler_check_debug_one_arg(c, asdl_seq_GET(args, i)))
+                return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+compiler_check_debug_args(struct compiler *c, arguments_ty args)
+{
+    if (!compiler_check_debug_args_seq(c, args->posonlyargs))
+        return 0;
+    if (!compiler_check_debug_args_seq(c, args->args))
+        return 0;
+    if (!compiler_check_debug_one_arg(c, args->vararg))
+        return 0;
+    if (!compiler_check_debug_args_seq(c, args->kwonlyargs))
+        return 0;
+    if (!compiler_check_debug_one_arg(c, args->kwarg))
+        return 0;
+    return 1;
+}
+
+static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
@@ -2188,6 +2237,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
         scope_type = COMPILER_SCOPE_FUNCTION;
     }
+
+    if (!compiler_check_debug_args(c, args))
+        return 0;
 
     if (!compiler_decorators(c, decos))
         return 0;
@@ -2595,6 +2647,9 @@ compiler_lambda(struct compiler *c, expr_ty e)
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
+
+    if (!compiler_check_debug_args(c, args))
+        return 0;
 
     if (!name) {
         name = PyUnicode_InternFromString("<lambda>");
@@ -3505,6 +3560,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
 
+    if (forbidden_name(c, name, ctx))
+        return 0;
+
     mangled = _Py_Mangle(c->u->u_private, name);
     if (!mangled)
         return 0;
@@ -4055,6 +4113,9 @@ validate_keywords(struct compiler *c, asdl_seq *keywords)
         keyword_ty key = ((keyword_ty)asdl_seq_GET(keywords, i));
         if (key->arg == NULL) {
             continue;
+        }
+        if (forbidden_name(c, key->arg, Store)) {
+            return -1;
         }
         for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
@@ -5013,6 +5074,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case Store:
+            if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx))
+                return 0;
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
@@ -5183,6 +5246,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
     }
     switch (targ->kind) {
     case Name_kind:
+        if (forbidden_name(c, targ->v.Name.id, Store))
+            return 0;
         /* If we have a simple name in a module or class, store annotation. */
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
@@ -5200,6 +5265,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         }
         break;
     case Attribute_kind:
+        if (forbidden_name(c, targ->v.Attribute.attr, Store))
+            return 0;
         if (!s->v.AnnAssign.value &&
             !check_ann_expr(c, targ->v.Attribute.value)) {
             return 0;

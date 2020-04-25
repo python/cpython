@@ -739,7 +739,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     }
 
     if (flags &
-        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST | PyCF_TYPE_COMMENTS))
+        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_COMPILE_MASK))
     {
         PyErr_SetString(PyExc_ValueError,
                         "compile(): unrecognised flags");
@@ -816,7 +816,12 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (str == NULL)
         goto error;
 
+    int current_use_peg = PyInterpreterState_Get()->config._use_peg_parser;
+    if (flags & PyCF_TYPE_COMMENTS || feature_version >= 0 || compile_mode == 3) {
+        PyInterpreterState_Get()->config._use_peg_parser = 0;
+    }
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+    PyInterpreterState_Get()->config._use_peg_parser = current_use_peg;
     Py_XDECREF(source_copy);
     goto finally;
 

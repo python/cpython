@@ -7972,8 +7972,10 @@ os_waitpid_impl(PyObject *module, intptr_t pid, int options)
     if (res < 0)
         return (!async_err) ? posix_error() : NULL;
 
+    unsigned long long ustatus = (unsigned int)status;
+
     /* shift the status left a byte so this is more like the POSIX waitpid */
-    return Py_BuildValue(_Py_PARSE_INTPTR "i", res, status << 8);
+    return Py_BuildValue(_Py_PARSE_INTPTR "K", res, ustatus << 8);
 }
 #endif
 
@@ -8685,10 +8687,13 @@ _fdwalk_close_func(void *lohi, int fd)
     int lo = ((int *)lohi)[0];
     int hi = ((int *)lohi)[1];
 
-    if (fd >= hi)
+    if (fd >= hi) {
         return 1;
-    else if (fd >= lo)
-        close(fd);
+    }
+    else if (fd >= lo) {
+        /* Ignore errors */
+        (void)close(fd);
+    }
     return 0;
 }
 #endif /* HAVE_FDWALK */
@@ -8709,8 +8714,6 @@ os_closerange_impl(PyObject *module, int fd_low, int fd_high)
 {
 #ifdef HAVE_FDWALK
     int lohi[2];
-#else
-    int i;
 #endif
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
@@ -8719,8 +8722,20 @@ os_closerange_impl(PyObject *module, int fd_low, int fd_high)
     lohi[1] = fd_high;
     fdwalk(_fdwalk_close_func, lohi);
 #else
-    for (i = Py_MAX(fd_low, 0); i < fd_high; i++)
-        close(i);
+    fd_low = Py_MAX(fd_low, 0);
+#ifdef __FreeBSD__
+    if (fd_high >= sysconf(_SC_OPEN_MAX)) {
+        /* Any errors encountered while closing file descriptors are ignored */
+        closefrom(fd_low);
+    }
+    else
+#endif
+    {
+        for (int i = fd_low; i < fd_high; i++) {
+            /* Ignore errors */
+            (void)close(i);
+        }
+    }
 #endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
@@ -13829,7 +13844,7 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
 /*[clinic input]
 os.waitstatus_to_exitcode
 
-    status: int
+    status as status_obj: object
 
 Convert a wait status to an exit code.
 
@@ -13847,10 +13862,20 @@ This function must not be called if WIFSTOPPED(status) is true.
 [clinic start generated code]*/
 
 static PyObject *
-os_waitstatus_to_exitcode_impl(PyObject *module, int status)
-/*[clinic end generated code: output=c7c2265731f79b7a input=edfa5ca5006276fb]*/
+os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
+/*[clinic end generated code: output=db50b1b0ba3c7153 input=7fe2d7fdaea3db42]*/
 {
+    if (PyFloat_Check(status_obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        return NULL;
+    }
 #ifndef MS_WINDOWS
+    int status = _PyLong_AsInt(status_obj);
+    if (status == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
     int exitcode;
@@ -13889,8 +13914,19 @@ os_waitstatus_to_exitcode_impl(PyObject *module, int status)
 #else
     /* Windows implementation: see os.waitpid() implementation
        which uses _cwait(). */
-    int exitcode = (status >> 8);
-    return PyLong_FromLong(exitcode);
+    unsigned long long status = PyLong_AsUnsignedLongLong(status_obj);
+    if (status == (unsigned long long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    unsigned long long exitcode = (status >> 8);
+    /* ExitProcess() accepts an UINT type:
+       reject exit code which doesn't fit in an UINT */
+    if (exitcode > UINT_MAX) {
+        PyErr_Format(PyExc_ValueError, "invalid exit code: %llu", exitcode);
+        return NULL;
+    }
+    return PyLong_FromUnsignedLong((unsigned long)exitcode);
 #endif
 }
 #endif
