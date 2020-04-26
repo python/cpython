@@ -1525,6 +1525,16 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         with self.assertRaisesRegex(TypeError, '^unsupported type$'):
             self.func(['3.14'])
 
+    def test_multiple_values_type_error(self):
+        # Test TypeError is raised when given multiple (valid/invalid) values
+        for data in [
+            ['1', '2', '3'],        # only strings
+            [1, '2', 3, '4', 5],    # mixed strings and valid integers
+            [2.3, 3.4, 4.5, '5.6']  # only one string and valid floats
+        ]:
+            with self.assertRaises(TypeError):
+                self.func(data)
+
     def test_ints(self):
         # Test harmonic mean with ints.
         data = [2, 4, 4, 8, 16, 16]
