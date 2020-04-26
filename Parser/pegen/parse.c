@@ -13400,7 +13400,7 @@ _tmp_86_rule(Parser *p)
             (tok = _PyPegen_expect_token(p, 28))
         )
         {
-            res = check_barry_as_flufl ( p ) ? NULL : tok;
+            res = _PyPegen_check_barry_as_flufl ( p ) ? NULL : tok;
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;

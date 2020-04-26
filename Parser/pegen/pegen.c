@@ -26,7 +26,7 @@ init_normalization(Parser *p)
 }
 
 int
-check_barry_as_flufl(Parser *p){
+_PyPegen_check_barry_as_flufl(Parser *p){
     Token *t = p->tokens[p->fill - 1];
     assert(t->bytes != NULL);
     assert(t->type == NOTEQUAL);
