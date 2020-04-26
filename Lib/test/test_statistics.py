@@ -1061,7 +1061,7 @@ class FindLteqTest(unittest.TestCase):
 class FindRteqTest(unittest.TestCase):
     # Test _find_rteq private function.
 
-    def test_raise_value_error(self):
+    def test_invalid_input_values(self):
         for a, l, x in [
             ([1], 2, 1),
             ([1, 3], 0, 2)
@@ -1521,14 +1521,11 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
             with self.subTest(values=values):
                 self.assertRaises(exc, self.func, values)
 
-    def test_single_value_unsupported_type(self):
-        with self.assertRaises(TypeError):
-            self.func(['3.14'])
-
-    def test_multiple_values_type_error(self):
-        # Test TypeError is raised when given multiple (valid/invalid) values
+    def test_invalid_type_error(self):
+        # Test error is raised when input contains invalid type(s)
         for data in [
-            ['1', '2', '3'],        # only strings
+            ['3.14'],               # single string
+            ['1', '2', '3'],        # multiple strings
             [1, '2', 3, '4', 5],    # mixed strings and valid integers
             [2.3, 3.4, 4.5, '5.6']  # only one string and valid floats
         ]:
