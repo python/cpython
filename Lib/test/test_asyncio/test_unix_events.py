@@ -15,6 +15,7 @@ import threading
 import unittest
 from unittest import mock
 from test import support
+from test.support import socket_helper
 
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
@@ -273,7 +274,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_create_unix_server_existing_path_sock(self):
         with test_utils.unix_socket_path() as path:
             sock = socket.socket(socket.AF_UNIX)
@@ -286,7 +287,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_create_unix_server_pathlib(self):
         with test_utils.unix_socket_path() as path:
             path = pathlib.Path(path)
@@ -344,7 +345,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
                          'no socket.SOCK_NONBLOCK (linux only)')
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_create_unix_server_path_stream_bittype(self):
         sock = socket.socket(
             socket.AF_UNIX, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
@@ -497,12 +498,12 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
-        port = support.find_unused_port()
+        port = socket_helper.find_unused_port()
         srv_sock = self.make_socket(cleanup=False)
-        srv_sock.bind((support.HOST, port))
+        srv_sock.bind((socket_helper.HOST, port))
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
-        self.run_loop(self.loop.sock_connect(sock, (support.HOST, port)))
+        self.run_loop(self.loop.sock_connect(sock, (socket_helper.HOST, port)))
         self.run_loop(proto._ready)
 
         def cleanup():

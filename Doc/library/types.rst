@@ -282,6 +282,11 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.9
+
+      Updated to support the new union (``|``) operator from :pep:`584`, which
+      simply delegates to the underlying mapping.
+
    .. describe:: key in proxy
 
       Return ``True`` if the underlying mapping has a key *key*, else

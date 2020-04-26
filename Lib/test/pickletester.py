@@ -13,7 +13,6 @@ import sys
 import threading
 import unittest
 import weakref
-from textwrap import dedent
 from http.cookies import SimpleCookie
 
 try:
@@ -71,6 +70,18 @@ class UnseekableIO(io.BytesIO):
 
     def tell(self):
         raise io.UnsupportedOperation
+
+
+class MinimalIO(object):
+    """
+    A file-like object that doesn't support readinto().
+    """
+    def __init__(self, *args):
+        self._bio = io.BytesIO(*args)
+        self.getvalue = self._bio.getvalue
+        self.read = self._bio.read
+        self.readline = self._bio.readline
+        self.write = self._bio.write
 
 
 # We can't very well test the extension registry without putting known stuff
@@ -1341,16 +1352,16 @@ class AbstractUnpickleTests(unittest.TestCase):
     @reap_threads
     def test_unpickle_module_race(self):
         # https://bugs.python.org/issue34572
-        locker_module = dedent("""
+        locker_module = """
         import threading
         barrier = threading.Barrier(2)
-        """)
-        locking_import_module = dedent("""
+        """.dedent()
+        locking_import_module = """
         import locker
         locker.barrier.wait()
         class ToBeUnpickled(object):
             pass
-        """)
+        """.dedent()
 
         os.mkdir(TESTFN)
         self.addCleanup(shutil.rmtree, TESTFN)
@@ -3363,7 +3374,7 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         f.seek(0)
         self.assertEqual(unpickler.load(), data2)
 
-    def _check_multiple_unpicklings(self, ioclass):
+    def _check_multiple_unpicklings(self, ioclass, *, seekable=True):
         for proto in protocols:
             with self.subTest(proto=proto):
                 data1 = [(x, str(x)) for x in range(2000)] + [b"abcde", len]
@@ -3376,10 +3387,10 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
                 f = ioclass(pickled * N)
                 unpickler = self.unpickler_class(f)
                 for i in range(N):
-                    if f.seekable():
+                    if seekable:
                         pos = f.tell()
                     self.assertEqual(unpickler.load(), data1)
-                    if f.seekable():
+                    if seekable:
                         self.assertEqual(f.tell(), pos + len(pickled))
                 self.assertRaises(EOFError, unpickler.load)
 
@@ -3387,7 +3398,12 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         self._check_multiple_unpicklings(io.BytesIO)
 
     def test_multiple_unpicklings_unseekable(self):
-        self._check_multiple_unpicklings(UnseekableIO)
+        self._check_multiple_unpicklings(UnseekableIO, seekable=False)
+
+    def test_multiple_unpicklings_minimal(self):
+        # File-like object that doesn't support peek() and readinto()
+        # (bpo-39681)
+        self._check_multiple_unpicklings(MinimalIO, seekable=False)
 
     def test_unpickling_buffering_readline(self):
         # Issue #12687: the unpickler's buffering logic could fail with
@@ -3498,6 +3514,30 @@ class AbstractHookTests(unittest.TestCase):
                 with self.assertRaisesRegex(
                         ValueError, 'The reducer just failed'):
                     p.dump(h)
+
+    @support.cpython_only
+    def test_reducer_override_no_reference_cycle(self):
+        # bpo-39492: reducer_override used to induce a spurious reference cycle
+        # inside the Pickler object, that could prevent all serialized objects
+        # from being garbage-collected without explicity invoking gc.collect.
+
+        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                def f():
+                    pass
+
+                wr = weakref.ref(f)
+
+                bio = io.BytesIO()
+                p = self.pickler_class(bio, proto)
+                p.dump(f)
+                new_f = pickle.loads(bio.getvalue())
+                assert new_f == 5
+
+                del p
+                del f
+
+                self.assertIsNone(wr())
 
 
 class AbstractDispatchTableTests(unittest.TestCase):

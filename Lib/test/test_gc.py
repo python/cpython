@@ -2,14 +2,13 @@ import unittest
 import unittest.mock
 from test.support import (verbose, refcount_test, run_unittest,
                           cpython_only, start_threads,
-                          temp_dir, requires_type_collecting, TESTFN, unlink,
+                          temp_dir, TESTFN, unlink,
                           import_module)
 from test.support.script_helper import assert_python_ok, make_script
 
 import gc
 import sys
 import sysconfig
-import textwrap
 import threading
 import time
 import weakref
@@ -131,7 +130,6 @@ class GCTests(unittest.TestCase):
         del a
         self.assertNotEqual(gc.collect(), 0)
 
-    @requires_type_collecting
     def test_newinstance(self):
         class A(object):
             pass
@@ -709,7 +707,6 @@ class GCTests(unittest.TestCase):
         stderr = run_command(code % "gc.DEBUG_SAVEALL")
         self.assertNotIn(b"uncollectable objects at shutdown", stderr)
 
-    @requires_type_collecting
     def test_gc_main_module_at_shutdown(self):
         # Create a reference cycle through the __main__ module and check
         # it gets collected at interpreter shutdown.
@@ -723,7 +720,6 @@ class GCTests(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code)
         self.assertEqual(out.strip(), b'__del__ called')
 
-    @requires_type_collecting
     def test_gc_ordinary_module_at_shutdown(self):
         # Same as above, but with a non-__main__ module.
         with temp_dir() as script_dir:
@@ -743,7 +739,6 @@ class GCTests(unittest.TestCase):
             rc, out, err = assert_python_ok('-c', code)
             self.assertEqual(out.strip(), b'__del__ called')
 
-    @requires_type_collecting
     def test_global_del_SystemExit(self):
         code = """if 1:
             class ClassWithDel:
@@ -1175,7 +1170,7 @@ class GCCallbackTests(unittest.TestCase):
         import_module("ctypes")
 
         import subprocess
-        code = textwrap.dedent('''
+        code = '''
             from test.support import gc_collect, SuppressCrashReport
 
             a = [1, 2, 3]
@@ -1193,7 +1188,7 @@ class GCCallbackTests(unittest.TestCase):
             # The garbage collector should now have a fatal error
             # when it reaches the broken object
             gc_collect()
-        ''')
+        '''.dedent()
         p = subprocess.Popen([sys.executable, "-c", code],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)

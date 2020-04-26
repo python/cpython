@@ -24,7 +24,7 @@ static PyObject *simple_format = NULL;
 /**************************************************************************/
 
 static PyTypeObject NDArray_Type;
-#define NDArray_Check(v) (Py_TYPE(v) == &NDArray_Type)
+#define NDArray_Check(v) Py_IS_TYPE(v, &NDArray_Type)
 
 #define CHECK_LIST_OR_TUPLE(v) \
     if (!PyList_Check(v) && !PyTuple_Check(v)) { \
@@ -1854,7 +1854,7 @@ ndarray_subscript(NDArrayObject *self, PyObject *key)
 type_error:
     PyErr_Format(PyExc_TypeError,
         "cannot index memory using \"%.200s\"",
-        key->ob_type->tp_name);
+        Py_TYPE(key)->tp_name);
 err_occurred:
     Py_DECREF(nd);
     return NULL;
@@ -2050,7 +2050,7 @@ static PyObject *
 ndarray_get_format(NDArrayObject *self, void *closure)
 {
     Py_buffer *base = &self->head->base;
-    char *fmt = base->format ? base->format : "";
+    const char *fmt = base->format ? base->format : "";
     return PyUnicode_FromString(fmt);
 }
 
@@ -2835,11 +2835,11 @@ PyInit__testbuffer(void)
     if (m == NULL)
         return NULL;
 
-    Py_TYPE(&NDArray_Type) = &PyType_Type;
+    Py_SET_TYPE(&NDArray_Type, &PyType_Type);
     Py_INCREF(&NDArray_Type);
     PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
 
-    Py_TYPE(&StaticArray_Type) = &PyType_Type;
+    Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
     Py_INCREF(&StaticArray_Type);
     PyModule_AddObject(m, "staticarray", (PyObject *)&StaticArray_Type);
 

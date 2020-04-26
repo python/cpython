@@ -1,5 +1,4 @@
 import os
-import textwrap
 import unittest
 
 from test import support
@@ -15,7 +14,7 @@ class TestLLTrace(unittest.TestCase):
         # when the interal Python stack was negatively adjusted
         with open(support.TESTFN, 'w') as fd:
             self.addCleanup(os.unlink, support.TESTFN)
-            fd.write(textwrap.dedent("""\
+            fd.write("""\
             import code
 
             console = code.InteractiveConsole()
@@ -23,7 +22,7 @@ class TestLLTrace(unittest.TestCase):
             console.push('a = [1, 2, 3]')
             console.push('a[0] = 1')
             print('unreachable if bug exists')
-            """))
+            """.dedent())
 
             assert_python_ok(support.TESTFN)
 

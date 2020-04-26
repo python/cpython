@@ -11,7 +11,6 @@ import subprocess
 import sys
 import sysconfig
 import test.support
-import textwrap
 import unittest
 import warnings
 
@@ -241,7 +240,7 @@ class SysModuleTest(unittest.TestCase):
         # mark". Otherwise, it may not be possible anymore to
         # reset the overflowed flag to 0.
 
-        from _testcapi import get_recursion_depth
+        from _testinternalcapi import get_recursion_depth
 
         def set_recursion_limit_at_depth(depth, limit):
             recursion_depth = get_recursion_depth()
@@ -269,10 +268,12 @@ class SysModuleTest(unittest.TestCase):
         finally:
             sys.setrecursionlimit(oldlimit)
 
+    # The error message is specific to CPython
+    @test.support.cpython_only
     def test_recursionlimit_fatalerror(self):
         # A fatal error occurs if a second recursion limit is hit when recovering
         # from a first one.
-        code = textwrap.dedent("""
+        code = """
             import sys
 
             def f():
@@ -282,7 +283,7 @@ class SysModuleTest(unittest.TestCase):
                     f()
 
             sys.setrecursionlimit(%d)
-            f()""")
+            f()""".dedent()
         with test.support.SuppressCrashReport():
             for i in (50, 1000):
                 sub = subprocess.Popen([sys.executable, '-c', code % i],
@@ -290,7 +291,8 @@ class SysModuleTest(unittest.TestCase):
                 err = sub.communicate()[1]
                 self.assertTrue(sub.returncode, sub.returncode)
                 self.assertIn(
-                    b"Fatal Python error: Cannot recover from stack overflow",
+                    b"Fatal Python error: _Py_CheckRecursiveCall: "
+                    b"Cannot recover from stack overflow",
                     err)
 
     def test_getwindowsversion(self):
@@ -542,10 +544,10 @@ class SysModuleTest(unittest.TestCase):
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
         attrs = ("debug",
-                 "inspect", "interactive", "optimize", "dont_write_bytecode",
-                 "no_user_site", "no_site", "ignore_environment", "verbose",
-                 "bytes_warning", "quiet", "hash_randomization", "isolated",
-                 "dev_mode", "utf8_mode")
+                 "inspect", "interactive", "optimize",
+                 "dont_write_bytecode", "no_user_site", "no_site",
+                 "ignore_environment", "verbose", "bytes_warning", "quiet",
+                 "hash_randomization", "isolated", "dev_mode", "utf8_mode")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
             attr_type = bool if attr == "dev_mode" else int
@@ -819,7 +821,6 @@ class SysModuleTest(unittest.TestCase):
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
 
-    @test.support.requires_type_collecting
     def test_is_finalizing(self):
         self.assertIs(sys.is_finalizing(), False)
         # Don't use the atexit module because _Py_Finalizing is only set
@@ -841,7 +842,6 @@ class SysModuleTest(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', code)
         self.assertEqual(stdout.rstrip(), b'True')
 
-    @test.support.requires_type_collecting
     def test_issue20602(self):
         # sys.flags and sys.float_info were wiped during shutdown.
         code = """if 1:
@@ -856,6 +856,23 @@ class SysModuleTest(unittest.TestCase):
         out = out.splitlines()
         self.assertIn(b'sys.flags', out[0])
         self.assertIn(b'sys.float_info', out[1])
+
+    def test_sys_ignores_cleaning_up_user_data(self):
+        code = """if 1:
+            import struct, sys
+
+            class C:
+                def __init__(self):
+                    self.pack = struct.pack
+                def __del__(self):
+                    self.pack('I', -42)
+
+            sys.x = C()
+            """
+        rc, stdout, stderr = assert_python_ok('-c', code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.rstrip(), b"")
+        self.assertEqual(stderr.rstrip(), b"")
 
     @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
                          'need sys.getandroidapilevel()')
@@ -1038,8 +1055,8 @@ class SizeofTest(unittest.TestCase):
     def setUp(self):
         self.P = struct.calcsize('P')
         self.longdigit = sys.int_info.sizeof_digit
-        import _testcapi
-        self.gc_headsize = _testcapi.SIZEOF_PYGC_HEAD
+        import _testinternalcapi
+        self.gc_headsize = _testinternalcapi.SIZEOF_PYGC_HEAD
 
     check_sizeof = test.support.check_sizeof
 
@@ -1295,8 +1312,6 @@ class SizeofTest(unittest.TestCase):
         # type
         # static type: PyTypeObject
         fmt = 'P2nPI13Pl4Pn9Pn11PIPP'
-        if hasattr(sys, 'getcounts'):
-            fmt += '3n2P'
         s = vsize(fmt)
         check(int, s)
         # class

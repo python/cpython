@@ -12,7 +12,6 @@ import copy
 import functools
 import pickle
 import tempfile
-import textwrap
 import unittest
 
 import test.support
@@ -322,7 +321,7 @@ class BaseBytesTest:
         # and errors arguments in dev mode
         invalid = 'Boom, Shaka Laka, Boom!'
         encodings = ('ascii', 'utf8', 'latin1')
-        code = textwrap.dedent(f'''
+        code = f'''
             import sys
             type2test = {self.type2test.__name__}
             encodings = {encodings!r}
@@ -369,7 +368,7 @@ class BaseBytesTest:
                         sys.exit(25)
 
             sys.exit(10)
-        ''')
+        '''.dedent()
         proc = assert_python_failure('-X', 'dev', '-c', code)
         self.assertEqual(proc.rc, 10, proc)
 
@@ -547,9 +546,13 @@ class BaseBytesTest:
         self.assertEqual(dot_join([bytearray(b"ab"), b"cd"]), b"ab.:cd")
         self.assertEqual(dot_join([b"ab", bytearray(b"cd")]), b"ab.:cd")
         # Stress it with many items
-        seq = [b"abc"] * 1000
-        expected = b"abc" + b".:abc" * 999
+        seq = [b"abc"] * 100000
+        expected = b"abc" + b".:abc" * 99999
         self.assertEqual(dot_join(seq), expected)
+        # Stress test with empty separator
+        seq = [b"abc"] * 100000
+        expected = b"abc" * 100000
+        self.assertEqual(self.type2test(b"").join(seq), expected)
         self.assertRaises(TypeError, self.type2test(b" ").join, None)
         # Error handling and cleanup when some item in the middle of the
         # sequence has the wrong type.

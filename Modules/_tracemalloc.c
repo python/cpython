@@ -1,9 +1,9 @@
 #include "Python.h"
+#include "pycore_gc.h"            // PyGC_Head
+#include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_traceback.h"
 #include "hashtable.h"
 #include "frameobject.h"
-#include "pythread.h"
-#include "osdefs.h"
 
 #include "clinic/_tracemalloc.c.h"
 /*[clinic input]
@@ -444,7 +444,8 @@ traceback_get_frames(traceback_t *traceback)
         return;
     }
 
-    for (pyframe = tstate->frame; pyframe != NULL; pyframe = pyframe->f_back) {
+    pyframe = PyThreadState_GetFrame(tstate);
+    for (; pyframe != NULL; pyframe = pyframe->f_back) {
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
             assert(traceback->frames[traceback->nframe].filename != NULL);
@@ -711,7 +712,7 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
 
                The GIL and the table lock ensures that only one thread is
                allocating memory. */
-            Py_UNREACHABLE();
+            Py_FatalError("tracemalloc_realloc() failed to allocate a trace");
         }
         TABLES_UNLOCK();
     }

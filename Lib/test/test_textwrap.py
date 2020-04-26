@@ -9,6 +9,7 @@
 #
 
 import unittest
+import warnings
 
 from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
 
@@ -693,6 +694,20 @@ some (including a hanging indent).'''
 # of IndentTestCase!
 class DedentTestCase(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls._warning_catcher = warnings.catch_warnings()
+        cls._warning_catcher.__enter__()
+        warnings.filterwarnings(
+            "ignore",
+            # "textwrap.dedent is pending deprecation",
+            category=PendingDeprecationWarning
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._warning_catcher.__exit__()
+
     def assertUnchanged(self, text):
         """assert that dedent() has no effect on 'text'"""
         self.assertEqual(text, dedent(text))
@@ -832,6 +847,20 @@ class IndentTestCase(unittest.TestCase):
       # Pathological case
       "\nHi.\r\nThis is a test.\n\r\nTesting.\r\n\n",
     )
+
+    @classmethod
+    def setUpClass(cls):
+        cls._warning_catcher = warnings.catch_warnings()
+        cls._warning_catcher.__enter__()
+        warnings.filterwarnings(
+            "ignore",
+            # "textwrap.dedent is pending deprecation",
+            category=PendingDeprecationWarning
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._warning_catcher.__exit__()
 
     def test_indent_nomargin_default(self):
         # indent should do nothing if 'prefix' is empty.

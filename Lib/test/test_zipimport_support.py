@@ -6,7 +6,6 @@ import test.support
 import os
 import os.path
 import sys
-import textwrap
 import zipfile
 import zipimport
 import doctest
@@ -183,14 +182,14 @@ class ZipSupportTests(unittest.TestCase):
                 del sys.modules["test_zipped_doctest"]
 
     def test_doctest_main_issue4197(self):
-        test_src = textwrap.dedent("""\
+        test_src = """\
                     class Test:
                         ">>> 'line 2'"
                         pass
 
                     import doctest
                     doctest.testmod()
-                    """)
+                    """.dedent()
         pattern = 'File "%s", line 2, in %s'
         with test.support.temp_dir() as d:
             script_name = make_script(d, 'script', test_src)
@@ -212,13 +211,13 @@ class ZipSupportTests(unittest.TestCase):
             self.assertIn(expected.encode('utf-8'), out)
 
     def test_pdb_issue4201(self):
-        test_src = textwrap.dedent("""\
+        test_src = """\
                     def f():
                         pass
 
                     import pdb
                     pdb.Pdb(nosigint=True).runcall(f)
-                    """)
+                    """.dedent()
         with test.support.temp_dir() as d:
             script_name = make_script(d, 'script', test_src)
             p = spawn_python(script_name)

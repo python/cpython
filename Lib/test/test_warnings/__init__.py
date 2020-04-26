@@ -4,7 +4,6 @@ import os
 from io import StringIO
 import re
 import sys
-import textwrap
 import unittest
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -930,14 +929,14 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
         self.addCleanup(support.unlink, support.TESTFN)
 
         with open(support.TESTFN, 'w') as fp:
-            fp.write(textwrap.dedent("""
+            fp.write("""
                 def func():
                     f = open(__file__)
                     # Emit ResourceWarning
                     f = None
 
                 func()
-            """))
+            """.dedent())
 
         def run(*args):
             res = assert_python_ok(*args)
@@ -951,16 +950,16 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
         # tracemalloc disabled
         filename = os.path.abspath(support.TESTFN)
         stderr = run('-Wd', support.TESTFN)
-        expected = textwrap.dedent(f'''
+        expected = f'''
             {filename}:5: ResourceWarning: unclosed file <...>
               f = None
             ResourceWarning: Enable tracemalloc to get the object allocation traceback
-        ''').strip()
+        '''.dedent().strip()
         self.assertEqual(stderr, expected)
 
         # tracemalloc enabled
         stderr = run('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
-        expected = textwrap.dedent(f'''
+        expected = f'''
             {filename}:5: ResourceWarning: unclosed file <...>
               f = None
             Object allocated at (most recent call last):
@@ -968,7 +967,7 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
                 func()
               File "{filename}", lineno 3
                 f = open(__file__)
-        ''').strip()
+        '''.dedent().strip()
         self.assertEqual(stderr, expected)
 
 
@@ -1227,7 +1226,6 @@ class BootstrapTest(unittest.TestCase):
 
 
 class FinalizationTest(unittest.TestCase):
-    @support.requires_type_collecting
     def test_finalization(self):
         # Issue #19421: warnings.warn() should not crash
         # during Python finalization

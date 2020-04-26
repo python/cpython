@@ -309,7 +309,7 @@ def fix_scaling(root):
 
 def fixdoc(fun, text):
     tem = (fun.__doc__ + '\n\n') if fun.__doc__ is not None else ''
-    fun.__doc__ = tem + textwrap.fill(textwrap.dedent(text))
+    fun.__doc__ = tem + textwrap.fill(text.dedent())
 
 RECURSIONLIMIT_DELTA = 30
 

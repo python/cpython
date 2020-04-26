@@ -1,4 +1,3 @@
-import textwrap
 from io import StringIO
 from test.test_json import PyTest, CTest
 
@@ -8,7 +7,7 @@ class TestIndent:
         h = [['blorpie'], ['whoops'], [], 'd-shtaeou', 'd-nthiouh', 'i-vhbjkhnth',
              {'nifty': 87}, {'field': 'yes', 'morefield': False} ]
 
-        expect = textwrap.dedent("""\
+        expect = """\
         [
         \t[
         \t\t"blorpie"
@@ -27,7 +26,7 @@ class TestIndent:
         \t\t"field": "yes",
         \t\t"morefield": false
         \t}
-        ]""")
+        ]""".dedent()
 
         d1 = self.dumps(h)
         d2 = self.dumps(h, indent=2, sort_keys=True, separators=(',', ': '))

@@ -526,8 +526,7 @@ def normalize_snippet(s, *, indent=0):
         * ensures that it does not end with a newline
         * dedents so the first nonwhite character on any line is at column "indent"
     """
-    s = strip_leading_and_trailing_blank_lines(s)
-    s = textwrap.dedent(s)
+    s = strip_leading_and_trailing_blank_lines(s).dedent()
     if indent:
         s = textwrap.indent(s, ' ' * indent)
     return s
@@ -3585,17 +3584,14 @@ class self_converter(CConverter):
         cls = self.function.cls
 
         if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
+            type_object = self.function.cls.type_object
             if kind == METHOD_NEW:
-                passed_in_type = self.name
+                type_check = '({} == {})'.format(self.name, type_object)
             else:
-                passed_in_type = 'Py_TYPE({})'.format(self.name)
+                type_check = 'Py_IS_TYPE({}, {})'.format(self.name, type_object)
 
-            line = '({passed_in_type} == {type_object}) &&\n        '
-            d = {
-                'type_object': self.function.cls.type_object,
-                'passed_in_type': passed_in_type
-                }
-            template_dict['self_type_check'] = line.format_map(d)
+            line = '{} &&\n        '.format(type_check)
+            template_dict['self_type_check'] = line
 
 
 

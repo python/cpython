@@ -15,16 +15,16 @@ import sys
 import time
 import select
 import errno
-import textwrap
 import threading
 
 import unittest
 from test import support, mock_socket
-from test.support import HOST
+from test.support import socket_helper
 from test.support import threading_setup, threading_cleanup, join_thread
 from test.support import requires_hashdigest
 from unittest.mock import Mock
 
+HOST = socket_helper.HOST
 
 if sys.platform == 'darwin':
     # select.poll returns a select.POLLHUP at the end of the tests
@@ -271,7 +271,7 @@ class DebuggingServerTests(unittest.TestCase):
 
     def testSourceAddress(self):
         # connect
-        src_port = support.find_unused_port()
+        src_port = socket_helper.find_unused_port()
         try:
             smtp = smtplib.SMTP(self.host, self.port, local_hostname='localhost',
                                 timeout=support.LOOPBACK_TIMEOUT,
@@ -711,7 +711,7 @@ class TooLongLineTests(unittest.TestCase):
         self.evt = threading.Event()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(15)
-        self.port = support.bind_port(self.sock)
+        self.port = socket_helper.bind_port(self.sock)
         servargs = (self.evt, self.respdata, self.sock)
         self.thread = threading.Thread(target=server, args=servargs)
         self.thread.start()
@@ -1349,7 +1349,7 @@ class SMTPUTF8SimTests(unittest.TestCase):
         msg.set_content("oh là là, know what I mean, know what I mean?\n\n")
         # XXX smtpd converts received /r/n to /n, so we can't easily test that
         # we are successfully sending /r/n :(.
-        expected = textwrap.dedent("""\
+        expected = """\
             From: Páolo <főo@bar.com>
             To: Dinsdale
             Subject: Nudge nudge, wink, wink \u1F609
@@ -1358,7 +1358,7 @@ class SMTPUTF8SimTests(unittest.TestCase):
             MIME-Version: 1.0
 
             oh là là, know what I mean, know what I mean?
-            """)
+            """.dedent()
         smtp = smtplib.SMTP(
             HOST, self.port, local_hostname='localhost',
             timeout=support.LOOPBACK_TIMEOUT)

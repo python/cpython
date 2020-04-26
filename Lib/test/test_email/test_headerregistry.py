@@ -1,5 +1,4 @@
 import datetime
-import textwrap
 import unittest
 from email import errors
 from email import policy
@@ -1437,6 +1436,25 @@ class TestAddressAndGroup(TestEmailBase):
     #    with self.assertRaises(ValueError):
     #        Address('foo', 'wők', 'example.com')
 
+    def test_crlf_in_constructor_args_raises(self):
+        cases = (
+            dict(display_name='foo\r'),
+            dict(display_name='foo\n'),
+            dict(display_name='foo\r\n'),
+            dict(domain='example.com\r'),
+            dict(domain='example.com\n'),
+            dict(domain='example.com\r\n'),
+            dict(username='wok\r'),
+            dict(username='wok\n'),
+            dict(username='wok\r\n'),
+            dict(addr_spec='wok@example.com\r'),
+            dict(addr_spec='wok@example.com\n'),
+            dict(addr_spec='wok@example.com\r\n')
+        )
+        for kwargs in cases:
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "invalid arguments"):
+                Address(**kwargs)
+
     def test_non_ascii_username_in_addr_spec_raises(self):
         with self.assertRaises(ValueError):
             Address('foo', addr_spec='wők@example.com')
@@ -1590,12 +1608,12 @@ class TestFolding(TestHeaderBase):
             'that will be folded anyway')
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
-            textwrap.dedent("""\
+                """\
                 Subject: this is a
                  short header that
                  will be folded
                  anyway
-                """))
+                """.dedent())
 
     def test_fold_unstructured_single_word(self):
         h = self.make_header('Subject', 'test')
@@ -1658,21 +1676,21 @@ class TestFolding(TestHeaderBase):
             "not give a , special treatment in unstructured headers.")
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=60)),
-            textwrap.dedent("""\
+                """\
                 Subject: This header is intended to demonstrate, in a fairly
                  succinct way, that we now do not give a , special treatment
                  in unstructured headers.
-                 """))
+                 """.dedent())
 
     def test_fold_address_list(self):
         h = self.make_header('To', '"Theodore H. Perfect" <yes@man.com>, '
             '"My address is very long because my name is long" <foo@bar.com>, '
             '"Only A. Friend" <no@yes.com>')
-        self.assertEqual(h.fold(policy=policy.default), textwrap.dedent("""\
+        self.assertEqual(h.fold(policy=policy.default), """\
             To: "Theodore H. Perfect" <yes@man.com>,
              "My address is very long because my name is long" <foo@bar.com>,
              "Only A. Friend" <no@yes.com>
-             """))
+             """.dedent())
 
     def test_fold_date_header(self):
         h = self.make_header('Date', 'Sat, 2 Feb 2002 17:00:06 -0800')

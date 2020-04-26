@@ -1,6 +1,10 @@
 import __future__
 import unittest
+import sys
+from test import support
 
+
+@support.skip_if_new_parser("Not supported by pegen yet")
 class FLUFLTests(unittest.TestCase):
 
     def test_barry_as_bdfl(self):

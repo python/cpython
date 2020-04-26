@@ -1,8 +1,9 @@
 #include "Python.h"
-#include "pycore_initconfig.h"
-#include "pycore_getopt.h"
-#include "pycore_pystate.h"   /* _PyRuntime_Initialize() */
-#include <locale.h>       /* setlocale() */
+#include "pycore_getopt.h"        // _PyOS_GetOpt()
+#include "pycore_initconfig.h"    // _PyArgv
+#include "pycore_pymem.h"         // _PyMem_GetAllocatorName()
+#include "pycore_runtime.h"       // _PyRuntime_Initialize()
+#include <locale.h>               // setlocale()
 
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \

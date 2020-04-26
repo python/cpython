@@ -17,7 +17,7 @@ from test.support import open_urlresource, requires_resource, script_helper
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'e728278035eb76cf92d86f07852266b0433f16a5'
+    expectedchecksum = 'fbdf8106a3c7c242086b0a9efa03ad4d30d5b85d'
 
     @requires_resource('cpu')
     def test_method_checksum(self):
@@ -70,7 +70,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '4bcbf9df344114b1ebc95b904f4352dd250dff7e'
+    expectedchecksum = 'd1e37a2854df60ac607b47b51189b9bf1b54bfdb'
 
     @requires_resource('cpu')
     def test_function_checksum(self):
@@ -176,7 +176,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertRaises(TypeError, self.db.combining, 'xx')
 
     def test_pr29(self):
-        # http://www.unicode.org/review/pr-29.html
+        # https://www.unicode.org/review/pr-29.html
         # See issues #1054943 and #10254.
         composed = ("\u0b47\u0300\u0b3e", "\u1100\u0300\u1161",
                     'Li\u030dt-s\u1e73\u0301',

@@ -7,7 +7,6 @@ import sys
 import types
 import unittest
 import subprocess
-import textwrap
 
 from contextlib import ExitStack
 from io import StringIO
@@ -1207,7 +1206,7 @@ class PdbTestCase(unittest.TestCase):
         """Run 'script' lines with pdb and the pdb 'commands'."""
         filename = 'main.py'
         with open(filename, 'w') as f:
-            f.write(textwrap.dedent(script))
+            f.write(script.dedent())
         self.addCleanup(support.unlink, filename)
         return self._run_pdb([filename], commands)
 
@@ -1221,12 +1220,12 @@ class PdbTestCase(unittest.TestCase):
         with open(init_file, 'w') as f:
             pass
         with open(main_file, 'w') as f:
-            f.write(textwrap.dedent(script))
+            f.write(script.dedent())
         self.addCleanup(support.rmtree, self.module_name)
         return self._run_pdb(['-m', self.module_name], commands)
 
     def _assert_find_function(self, file_content, func_name, expected):
-        file_content = textwrap.dedent(file_content)
+        file_content = file_content.dedent()
 
         with open(support.TESTFN, 'w') as f:
             f.write(file_content)
@@ -1299,7 +1298,7 @@ class PdbTestCase(unittest.TestCase):
                 pass
         """
         with open('bar.py', 'w') as f:
-            f.write(textwrap.dedent(bar))
+            f.write(bar.dedent())
         self.addCleanup(support.unlink, 'bar.py')
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertTrue(
@@ -1311,7 +1310,7 @@ class PdbTestCase(unittest.TestCase):
         # inside signal.signal.
 
         with open(support.TESTFN, 'wb') as f:
-            f.write(textwrap.dedent("""
+            f.write("""
                 import threading
                 import pdb
 
@@ -1321,7 +1320,7 @@ class PdbTestCase(unittest.TestCase):
                     y = 1
 
                 t = threading.Thread(target=start_pdb)
-                t.start()""").encode('ascii'))
+                t.start()""".dedent().encode('ascii'))
         cmd = [sys.executable, '-u', support.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
@@ -1336,7 +1335,7 @@ class PdbTestCase(unittest.TestCase):
     def test_issue36250(self):
 
         with open(support.TESTFN, 'wb') as f:
-            f.write(textwrap.dedent("""
+            f.write("""
                 import threading
                 import pdb
 
@@ -1350,7 +1349,7 @@ class PdbTestCase(unittest.TestCase):
                 t.start()
                 pdb.Pdb(readrc=False).set_trace()
                 evt.set()
-                t.join()""").encode('ascii'))
+                t.join()""".dedent().encode('ascii'))
         cmd = [sys.executable, '-u', support.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
@@ -1375,11 +1374,11 @@ class PdbTestCase(unittest.TestCase):
 
 
     def test_readrc_kwarg(self):
-        script = textwrap.dedent("""
+        script = """
             import pdb; pdb.Pdb(readrc=False).set_trace()
 
             print('hello')
-        """)
+        """.dedent()
 
         save_home = os.environ.pop('HOME', None)
         try:
@@ -1509,21 +1508,21 @@ class PdbTestCase(unittest.TestCase):
         self.addCleanup(support.rmtree, self.module_name)
         os.mkdir(self.module_name)
         with open(init_file, 'w') as f:
-            f.write(textwrap.dedent("""
+            f.write("""
                 top_var = "VAR from top"
-            """))
+            """.dedent())
         with open(main_file, 'w') as f:
-            f.write(textwrap.dedent("""
+            f.write("""
                 from . import top_var
                 from .module import var
                 from . import module
                 pass # We'll stop here and print the vars
-            """))
+            """.dedent())
         with open(module_file, 'w') as f:
-            f.write(textwrap.dedent("""
+            f.write("""
                 var = "VAR from module"
                 var2 = "second var"
-            """))
+            """.dedent())
         commands = """
             b 5
             c
@@ -1547,18 +1546,18 @@ class PdbTestCase(unittest.TestCase):
         self.addCleanup(support.rmtree, self.module_name)
         os.mkdir(self.module_name)
         with open(init_file, 'w') as f:
-            f.write(textwrap.dedent("""
+            f.write("""
                 top_var = "VAR from top"
-            """))
+            """.dedent())
         with open(main_file, 'w') as f:
-            f.write(textwrap.dedent("""
+            f.write("""
                 from . import module
                 pass # We'll stop here and print the vars
-            """))
+            """.dedent())
         with open(module_file, 'w') as f:
-            f.write(textwrap.dedent("""
+            f.write("""
                 var = "VAR from module"
-            """))
+            """.dedent())
         commands = """
             b 3
             c

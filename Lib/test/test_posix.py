@@ -17,7 +17,6 @@ import stat
 import tempfile
 import unittest
 import warnings
-import textwrap
 
 _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               support.TESTFN + '-dummy-symlink')
@@ -36,6 +35,7 @@ def _supports_sched():
     return True
 
 requires_sched = unittest.skipUnless(_supports_sched(), 'requires POSIX scheduler API')
+
 
 class PosixTester(unittest.TestCase):
 
@@ -180,7 +180,6 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(getattr(os, 'execve', None) in os.supports_fd, "test needs execve() to support the fd parameter")
     @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
-    @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_fexecve(self):
         fp = os.open(sys.executable, os.O_RDONLY)
         try:
@@ -189,7 +188,7 @@ class PosixTester(unittest.TestCase):
                 os.chdir(os.path.split(sys.executable)[0])
                 posix.execve(fp, [sys.executable, '-c', 'pass'], os.environ)
             else:
-                self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+                support.wait_process(pid, exitcode=0)
         finally:
             os.close(fp)
 
@@ -969,7 +968,6 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(type(k), item_type)
             self.assertEqual(type(v), item_type)
 
-    @unittest.skipUnless(hasattr(os, "putenv"), "requires os.putenv()")
     def test_putenv(self):
         with self.assertRaises(ValueError):
             os.putenv('FRUIT\0VEGETABLE', 'cabbage')
@@ -1540,7 +1538,7 @@ class _PosixSpawnMixin:
             """
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args, os.environ)
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
         with open(pidfile) as f:
             self.assertEqual(f.read(), str(pid))
 
@@ -1570,7 +1568,7 @@ class _PosixSpawnMixin:
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args,
                               {**os.environ, 'foo': 'bar'})
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
         with open(envfile) as f:
             self.assertEqual(f.read(), 'bar')
 
@@ -1581,7 +1579,7 @@ class _PosixSpawnMixin:
             os.environ,
             file_actions=None
         )
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
 
     def test_empty_file_actions(self):
         pid = self.spawn_func(
@@ -1590,7 +1588,7 @@ class _PosixSpawnMixin:
             os.environ,
             file_actions=[]
         )
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
 
     def test_resetids_explicit_default(self):
         pid = self.spawn_func(
@@ -1599,7 +1597,7 @@ class _PosixSpawnMixin:
             os.environ,
             resetids=False
         )
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
 
     def test_resetids(self):
         pid = self.spawn_func(
@@ -1608,7 +1606,7 @@ class _PosixSpawnMixin:
             os.environ,
             resetids=True
         )
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
 
     def test_resetids_wrong_type(self):
         with self.assertRaises(TypeError):
@@ -1623,7 +1621,7 @@ class _PosixSpawnMixin:
             os.environ,
             setpgroup=os.getpgrp()
         )
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
 
     def test_setpgroup_wrong_type(self):
         with self.assertRaises(TypeError):
@@ -1634,9 +1632,9 @@ class _PosixSpawnMixin:
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                            'need signal.pthread_sigmask()')
     def test_setsigmask(self):
-        code = textwrap.dedent("""\
+        code = """\
             import signal
-            signal.raise_signal(signal.SIGUSR1)""")
+            signal.raise_signal(signal.SIGUSR1)""".dedent()
 
         pid = self.spawn_func(
             sys.executable,
@@ -1644,7 +1642,7 @@ class _PosixSpawnMixin:
             os.environ,
             setsigmask=[signal.SIGUSR1]
         )
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
 
     def test_setsigmask_wrong_type(self):
         with self.assertRaises(TypeError):
@@ -1667,12 +1665,12 @@ class _PosixSpawnMixin:
         try:
             os.set_inheritable(wfd, True)
 
-            code = textwrap.dedent(f"""
+            code = f"""
                 import os
                 fd = {wfd}
                 sid = os.getsid(0)
                 os.write(fd, str(sid).encode())
-            """)
+            """.dedent()
 
             try:
                 pid = self.spawn_func(sys.executable,
@@ -1685,7 +1683,8 @@ class _PosixSpawnMixin:
         finally:
             os.close(wfd)
 
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
+
         output = os.read(rfd, 100)
         child_sid = int(output)
         parent_sid = os.getsid(os.getpid())
@@ -1695,9 +1694,9 @@ class _PosixSpawnMixin:
                          'need signal.pthread_sigmask()')
     def test_setsigdef(self):
         original_handler = signal.signal(signal.SIGUSR1, signal.SIG_IGN)
-        code = textwrap.dedent("""\
+        code = """\
             import signal
-            signal.raise_signal(signal.SIGUSR1)""")
+            signal.raise_signal(signal.SIGUSR1)""".dedent()
         try:
             pid = self.spawn_func(
                 sys.executable,
@@ -1708,10 +1707,7 @@ class _PosixSpawnMixin:
         finally:
             signal.signal(signal.SIGUSR1, original_handler)
 
-        pid2, status = os.waitpid(pid, 0)
-        self.assertEqual(pid2, pid)
-        self.assertTrue(os.WIFSIGNALED(status), status)
-        self.assertEqual(os.WTERMSIG(status), signal.SIGUSR1)
+        support.wait_process(pid, exitcode=-signal.SIGUSR1)
 
     def test_setsigdef_wrong_type(self):
         with self.assertRaises(TypeError):
@@ -1733,19 +1729,19 @@ class _PosixSpawnMixin:
     def test_setscheduler_only_param(self):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)
-        code = textwrap.dedent(f"""\
+        code = f"""\
             import os, sys
             if os.sched_getscheduler(0) != {policy}:
                 sys.exit(101)
             if os.sched_getparam(0).sched_priority != {priority}:
-                sys.exit(102)""")
+                sys.exit(102)""".dedent()
         pid = self.spawn_func(
             sys.executable,
             [sys.executable, '-c', code],
             os.environ,
             scheduler=(None, os.sched_param(priority))
         )
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
 
     @requires_sched
     @unittest.skipIf(sys.platform.startswith(('freebsd', 'netbsd')),
@@ -1753,19 +1749,19 @@ class _PosixSpawnMixin:
     def test_setscheduler_with_policy(self):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)
-        code = textwrap.dedent(f"""\
+        code = f"""\
             import os, sys
             if os.sched_getscheduler(0) != {policy}:
                 sys.exit(101)
             if os.sched_getparam(0).sched_priority != {priority}:
-                sys.exit(102)""")
+                sys.exit(102)""".dedent()
         pid = self.spawn_func(
             sys.executable,
             [sys.executable, '-c', code],
             os.environ,
             scheduler=(policy, os.sched_param(priority))
         )
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
 
     def test_multiple_file_actions(self):
         file_actions = [
@@ -1777,7 +1773,7 @@ class _PosixSpawnMixin:
                               self.NOOP_PROGRAM,
                               os.environ,
                               file_actions=file_actions)
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        support.wait_process(pid, exitcode=0)
 
     def test_bad_file_actions(self):
         args = self.NOOP_PROGRAM
@@ -1823,7 +1819,8 @@ class _PosixSpawnMixin:
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args, os.environ,
                               file_actions=file_actions)
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
+        support.wait_process(pid, exitcode=0)
         with open(outfile) as f:
             self.assertEqual(f.read(), 'hello')
 
@@ -1841,7 +1838,8 @@ class _PosixSpawnMixin:
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args, os.environ,
                               file_actions=[(os.POSIX_SPAWN_CLOSE, 0)])
-        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
+        support.wait_process(pid, exitcode=0)
         with open(closefile) as f:
             self.assertEqual(f.read(), 'is closed %d' % errno.EBADF)
 
@@ -1859,7 +1857,7 @@ class _PosixSpawnMixin:
             args = self.python_args('-c', script)
             pid = self.spawn_func(args[0], args, os.environ,
                                   file_actions=file_actions)
-            self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+            support.wait_process(pid, exitcode=0)
         with open(dupfile) as f:
             self.assertEqual(f.read(), 'hello')
 
@@ -1889,16 +1887,15 @@ class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
             path = temp_dir   # PATH is not set
 
         spawn_args = (program, '-I', '-S', '-c', 'pass')
-        code = textwrap.dedent("""
+        code = ("""
             import os
+            from test import support
+
             args = %a
             pid = os.posix_spawnp(args[0], args, os.environ)
-            pid2, status = os.waitpid(pid, 0)
-            if pid2 != pid:
-                raise Exception(f"pid {pid2} != {pid}")
-            if status != 0:
-                raise Exception(f"status {status} != 0")
-        """ % (spawn_args,))
+
+            support.wait_process(pid, exitcode=0)
+        """ % (spawn_args,)).dedent()
 
         # Use a subprocess to test os.posix_spawnp() with a modified PATH
         # environment variable: posix_spawnp() uses the current environment

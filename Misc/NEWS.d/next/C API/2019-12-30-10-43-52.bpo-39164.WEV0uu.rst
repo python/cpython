@@ -1,1 +1,0 @@
-Add a private ``_PyErr_GetExcInfo()`` function to retrieve exception information of the specified Python thread state.

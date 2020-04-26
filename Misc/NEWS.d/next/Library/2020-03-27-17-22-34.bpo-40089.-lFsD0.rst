@@ -1,0 +1,3 @@
+Fix threading._after_fork(): if fork was not called by a thread spawned by
+threading.Thread, threading._after_fork() now creates a _MainThread instance
+for _main_thread, instead of a _DummyThread instance.

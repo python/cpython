@@ -1,9 +1,8 @@
 #include "Python.h"
 
 #include "pycore_hamt.h"
-#include "pycore_object.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include <stddef.h>               // offsetof()
 
 /*
 This file provides an implementation of an immutable mapping using the
@@ -274,9 +273,9 @@ to introspect the tree:
 */
 
 
-#define IS_ARRAY_NODE(node)     (Py_TYPE(node) == &_PyHamt_ArrayNode_Type)
-#define IS_BITMAP_NODE(node)    (Py_TYPE(node) == &_PyHamt_BitmapNode_Type)
-#define IS_COLLISION_NODE(node) (Py_TYPE(node) == &_PyHamt_CollisionNode_Type)
+#define IS_ARRAY_NODE(node)     Py_IS_TYPE(node, &_PyHamt_ArrayNode_Type)
+#define IS_BITMAP_NODE(node)    Py_IS_TYPE(node, &_PyHamt_BitmapNode_Type)
+#define IS_COLLISION_NODE(node) Py_IS_TYPE(node, &_PyHamt_CollisionNode_Type)
 
 
 /* Return type for 'find' (lookup a key) functions.
@@ -551,7 +550,7 @@ hamt_node_bitmap_new(Py_ssize_t size)
         return NULL;
     }
 
-    Py_SIZE(node) = size;
+    Py_SET_SIZE(node, size);
 
     for (i = 0; i < size; i++) {
         node->b_array[i] = NULL;
@@ -1288,7 +1287,7 @@ hamt_node_collision_new(int32_t hash, Py_ssize_t size)
         node->c_array[i] = NULL;
     }
 
-    Py_SIZE(node) = size;
+    Py_SET_SIZE(node, size);
     node->c_hash = hash;
 
     _PyObject_GC_TRACK(node);

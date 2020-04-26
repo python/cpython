@@ -429,11 +429,11 @@ class TestCoverageCommandLineOutput(unittest.TestCase):
 
     def setUp(self):
         with open(self.codefile, 'w') as f:
-            f.write(textwrap.dedent('''\
+            f.write('''\
                 x = 42
                 if []:
                     print('unreachable')
-            '''))
+            '''.dedent())
 
     def tearDown(self):
         unlink(self.codefile)
@@ -463,11 +463,11 @@ class TestCoverageCommandLineOutput(unittest.TestCase):
         status, stdout, stderr = assert_python_ok(*argv)
         self.assertTrue(os.path.exists(self.coverfile))
         with open(self.coverfile) as f:
-            self.assertEqual(f.read(), textwrap.dedent('''\
+            self.assertEqual(f.read(), '''\
                     1: x = 42
                     1: if []:
                 >>>>>>     print('unreachable')
-            '''))
+            '''.dedent())
 
 class TestCommandLine(unittest.TestCase):
 
@@ -507,7 +507,7 @@ class TestCommandLine(unittest.TestCase):
         with open(filename, 'w') as fd:
             self.addCleanup(unlink, filename)
             self.addCleanup(unlink, coverfilename)
-            fd.write(textwrap.dedent("""\
+            fd.write("""\
                 x = 1
                 y = 2
 
@@ -516,7 +516,7 @@ class TestCommandLine(unittest.TestCase):
 
                 for i in range(10):
                     f()
-            """))
+            """.dedent())
         status, stdout, _ = assert_python_ok('-m', 'trace', '-cs', filename)
         stdout = stdout.decode()
         self.assertEqual(status, 0)

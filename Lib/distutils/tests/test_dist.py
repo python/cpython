@@ -421,11 +421,11 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
         self.assertIn('Metadata-Version: 1.1', meta)
 
     def test_long_description(self):
-        long_desc = textwrap.dedent("""\
+        long_desc = """\
         example::
               We start here
             and continue here
-          and end here.""")
+          and end here.""".dedent()
         attrs = {"name": "package",
                  "version": "1.0",
                  "long_description": long_desc}

@@ -249,13 +249,13 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         # instance can be called without an explicit call to
         # get_config_vars().
         with open(TESTFN, 'w') as f:
-            f.writelines(textwrap.dedent('''\
+            f.writelines('''\
                 from distutils.core import Distribution
                 config = Distribution().get_command_obj('config')
                 # try_compile may pass or it may fail if no compiler
                 # is found but it should not raise an exception.
                 rc = config.try_compile('int x;')
-                '''))
+                '''.dedent())
         p = subprocess.Popen([str(sys.executable), TESTFN],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,

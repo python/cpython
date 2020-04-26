@@ -11,7 +11,6 @@ import gc
 import pickle
 from test import support
 from itertools import permutations
-from textwrap import dedent
 from collections import OrderedDict
 
 class Test_Csv(unittest.TestCase):
@@ -1163,14 +1162,14 @@ class KeyOrderingTest(unittest.TestCase):
         self.assertEqual(len(resultset), 120, "Key ordering: some key permutations not collected (expected 120)")
 
     def test_ordered_dict_reader(self):
-        data = dedent('''\
+        data = '''\
             FirstName,LastName
             Eric,Idle
             Graham,Chapman,Over1,Over2
 
             Under1
             John,Cleese
-        ''').splitlines()
+        '''.dedent().splitlines()
 
         self.assertEqual(list(csv.DictReader(data)),
             [OrderedDict([('FirstName', 'Eric'), ('LastName', 'Idle')]),

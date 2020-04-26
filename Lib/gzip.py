@@ -209,7 +209,7 @@ class GzipFile(_compression.BaseStream):
         self.fileobj = fileobj
 
         if self.mode == WRITE:
-            self._write_gzip_header()
+            self._write_gzip_header(compresslevel)
 
     @property
     def filename(self):
@@ -236,7 +236,7 @@ class GzipFile(_compression.BaseStream):
         self.bufsize = 0
         self.offset = 0  # Current file offset for seek(), tell(), etc
 
-    def _write_gzip_header(self):
+    def _write_gzip_header(self, compresslevel):
         self.fileobj.write(b'\037\213')             # magic header
         self.fileobj.write(b'\010')                 # compression method
         try:
@@ -257,7 +257,13 @@ class GzipFile(_compression.BaseStream):
         if mtime is None:
             mtime = time.time()
         write32u(self.fileobj, int(mtime))
-        self.fileobj.write(b'\002')
+        if compresslevel == _COMPRESS_LEVEL_BEST:
+            xfl = b'\002'
+        elif compresslevel == _COMPRESS_LEVEL_FAST:
+            xfl = b'\004'
+        else:
+            xfl = b'\000'
+        self.fileobj.write(xfl)
         self.fileobj.write(b'\377')
         if fname:
             self.fileobj.write(fname + b'\000')

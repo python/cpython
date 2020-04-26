@@ -1,11 +1,12 @@
 #include "Python.h"
 
 #include "pycore_context.h"
+#include "pycore_gc.h"            // _PyObject_GC_MAY_BE_TRACKED()
 #include "pycore_hamt.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "structmember.h"         // PyMemberDef
 
 
 #define CONTEXT_FREELIST_MAXLEN 255
@@ -1023,13 +1024,6 @@ _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
 }
 
 
-static PyObject *
-contextvar_cls_getitem(PyObject *self, PyObject *arg)
-{
-    Py_INCREF(self);
-    return self;
-}
-
 static PyMemberDef PyContextVar_members[] = {
     {"name", T_OBJECT, offsetof(PyContextVar, var_name), READONLY},
     {NULL}
@@ -1039,8 +1033,8 @@ static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_GET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF
-    {"__class_getitem__", contextvar_cls_getitem,
-        METH_O | METH_CLASS, NULL},
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}
 };
 
@@ -1179,10 +1173,17 @@ static PyGetSetDef PyContextTokenType_getsetlist[] = {
     {NULL}
 };
 
+static PyMethodDef PyContextTokenType_methods[] = {
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    {NULL}
+};
+
 PyTypeObject PyContextToken_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "Token",
     sizeof(PyContextToken),
+    .tp_methods = PyContextTokenType_methods,
     .tp_getset = PyContextTokenType_getsetlist,
     .tp_dealloc = (destructor)token_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,

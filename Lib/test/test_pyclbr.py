@@ -4,7 +4,6 @@
 '''
 
 import sys
-from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
@@ -159,7 +158,7 @@ class PyclbrTest(TestCase):
         mb = pyclbr
         # Set arguments for descriptor creation and _creat_tree call.
         m, p, f, t, i = 'test', '', 'test.py', {}, None
-        source = dedent("""\
+        source = """\
         def f0:
             def f1(a,b,c):
                 def f2(a=1, b=2, c=3): pass
@@ -175,7 +174,7 @@ class PyclbrTest(TestCase):
                     "Class nested within nested class."
                     def F3(): return 1+1
 
-        """)
+        """.dedent()
         actual = mb._create_tree(m, p, f, source, t, i)
 
         # Create descriptors, linked together, and expected dict.

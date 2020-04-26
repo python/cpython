@@ -2,8 +2,6 @@ import timeit
 import unittest
 import sys
 import io
-from textwrap import dedent
-
 from test.support import captured_stdout
 from test.support import captured_stderr
 
@@ -244,10 +242,10 @@ class TestTimeit(unittest.TestCase):
 
     def test_main_bad_switch(self):
         s = self.run_main(switches=['--bad-switch'])
-        self.assertEqual(s, dedent("""\
+        self.assertEqual(s, """\
             option --bad-switch not recognized
             use -h/--help for command line help
-            """))
+            """.dedent())
 
     def test_main_seconds(self):
         s = self.run_main(seconds_per_increment=5.5)
@@ -294,17 +292,17 @@ class TestTimeit(unittest.TestCase):
 
     def test_main_verbose(self):
         s = self.run_main(switches=['-v'])
-        self.assertEqual(s, dedent("""\
+        self.assertEqual(s, """\
                 1 loop -> 1 secs
 
                 raw times: 1 sec, 1 sec, 1 sec, 1 sec, 1 sec
 
                 1 loop, best of 5: 1 sec per loop
-            """))
+            """.dedent())
 
     def test_main_very_verbose(self):
         s = self.run_main(seconds_per_increment=0.000_030, switches=['-vv'])
-        self.assertEqual(s, dedent("""\
+        self.assertEqual(s, """\
                 1 loop -> 3e-05 secs
                 2 loops -> 6e-05 secs
                 5 loops -> 0.00015 secs
@@ -322,7 +320,7 @@ class TestTimeit(unittest.TestCase):
                 raw times: 300 msec, 300 msec, 300 msec, 300 msec, 300 msec
 
                 10000 loops, best of 5: 30 usec per loop
-            """))
+            """.dedent())
 
     def test_main_with_time_unit(self):
         unit_sec = self.run_main(seconds_per_increment=0.003,

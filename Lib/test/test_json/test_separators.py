@@ -1,4 +1,3 @@
-import textwrap
 from test.test_json import PyTest, CTest
 
 
@@ -7,7 +6,7 @@ class TestSeparators:
         h = [['blorpie'], ['whoops'], [], 'd-shtaeou', 'd-nthiouh', 'i-vhbjkhnth',
              {'nifty': 87}, {'field': 'yes', 'morefield': False} ]
 
-        expect = textwrap.dedent("""\
+        expect = """\
         [
           [
             "blorpie"
@@ -26,7 +25,7 @@ class TestSeparators:
             "field" : "yes" ,
             "morefield" : false
           }
-        ]""")
+        ]""".dedent()
 
 
         d1 = self.dumps(h)

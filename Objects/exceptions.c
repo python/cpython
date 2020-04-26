@@ -8,10 +8,8 @@
 #include <Python.h>
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
-#include "osdefs.h"
+#include "structmember.h"         // PyMemberDef
+#include "osdefs.h"               // SEP
 
 
 /* Compatibility aliases */
@@ -875,7 +873,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
 
     /* self->filename will remain Py_None otherwise */
     if (filename && filename != Py_None) {
-        if (Py_TYPE(self) == (PyTypeObject *) PyExc_BlockingIOError &&
+        if (Py_IS_TYPE(self, (PyTypeObject *) PyExc_BlockingIOError) &&
             PyNumber_Check(filename)) {
             /* BlockingIOError's 3rd argument can be the number of
              * characters written.
@@ -1379,7 +1377,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
          * Only applies to SyntaxError instances, not to subclasses such
          * as TabError or IndentationError (see issue #31161)
          */
-        if ((PyObject*)Py_TYPE(self) == PyExc_SyntaxError &&
+        if (Py_IS_TYPE(self, (PyTypeObject *)PyExc_SyntaxError) &&
                 self->text && PyUnicode_Check(self->text) &&
                 _report_missing_parentheses(self) < 0) {
             return -1;
@@ -1428,7 +1426,7 @@ my_basename(PyObject *name)
 {
     Py_ssize_t i, size, offset;
     int kind;
-    void *data;
+    const void *data;
 
     if (PyUnicode_READY(name))
         return NULL;
@@ -1437,11 +1435,13 @@ my_basename(PyObject *name)
     size = PyUnicode_GET_LENGTH(name);
     offset = 0;
     for(i=0; i < size; i++) {
-        if (PyUnicode_READ(kind, data, i) == SEP)
+        if (PyUnicode_READ(kind, data, i) == SEP) {
             offset = i + 1;
+        }
     }
-    if (offset != 0)
+    if (offset != 0) {
         return PyUnicode_Substring(name, offset, size);
+    }
     else {
         Py_INCREF(name);
         return name;
@@ -2953,7 +2953,7 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     static PyObject *exec_prefix = NULL;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text), match;
     int kind = PyUnicode_KIND(self->text);
-    void *data = PyUnicode_DATA(self->text);
+    const void *data = PyUnicode_DATA(self->text);
 
     /* Ignore leading whitespace */
     while (start < text_len) {

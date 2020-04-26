@@ -155,13 +155,9 @@ class Fraction(numbers.Rational):
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
         if _normalize:
-            if type(numerator) is int is type(denominator):
-                # *very* normal case
-                g = math.gcd(numerator, denominator)
-                if denominator < 0:
-                    g = -g
-            else:
-                g = _gcd(numerator, denominator)
+            g = math.gcd(numerator, denominator)
+            if denominator < 0:
+                g = -g
             numerator //= g
             denominator //= g
         self._numerator = numerator
@@ -625,7 +621,9 @@ class Fraction(numbers.Rational):
 
     def __bool__(a):
         """a != 0"""
-        return a._numerator != 0
+        # bpo-39274: Use bool() because (a._numerator != 0) can return an
+        # object which is not a bool.
+        return bool(a._numerator)
 
     # support for pickling, copy, and deepcopy
 

@@ -1,11 +1,11 @@
-import netrc, os, unittest, sys, tempfile, textwrap
+import netrc, os, unittest, sys, tempfile
 from test import support
 
 
 class NetrcTestCase(unittest.TestCase):
 
     def make_nrc(self, test_data):
-        test_data = textwrap.dedent(test_data)
+        test_data = test_data.dedent()
         mode = 'w'
         if sys.platform != 'cygwin':
             mode += 't'

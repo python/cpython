@@ -8,7 +8,6 @@ import random
 import re
 import subprocess
 import sys
-import textwrap
 import threading
 import time
 import unittest
@@ -23,6 +22,8 @@ except ImportError:
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = support.import_module('_testcapi')
+
+import _testinternalcapi
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
@@ -61,8 +62,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
         self.assertTrue(err.rstrip().startswith(
-                         b'Fatal Python error:'
-                         b' PyThreadState_Get: no current thread'))
+                         b'Fatal Python error: '
+                         b'PyThreadState_Get: '
+                         b'current thread state is NULL (released GIL?)'))
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
@@ -188,16 +190,17 @@ class CAPITest(unittest.TestCase):
         # Issue #23571: A function must not return NULL without setting an
         # error
         if Py_DEBUG:
-            code = textwrap.dedent("""
+            code = """
                 import _testcapi
                 from test import support
 
                 with support.SuppressCrashReport():
                     _testcapi.return_null_without_error()
-            """)
+            """.dedent()
             rc, out, err = assert_python_failure('-c', code)
             self.assertRegex(err.replace(b'\r', b''),
-                             br'Fatal Python error: a function returned NULL '
+                             br'Fatal Python error: _Py_CheckFunctionResult: '
+                                br'a function returned NULL '
                                 br'without setting an error\n'
                              br'Python runtime state: initialized\n'
                              br'SystemError: <built-in function '
@@ -216,17 +219,18 @@ class CAPITest(unittest.TestCase):
     def test_return_result_with_error(self):
         # Issue #23571: A function must not return a result with an error set
         if Py_DEBUG:
-            code = textwrap.dedent("""
+            code = """
                 import _testcapi
                 from test import support
 
                 with support.SuppressCrashReport():
                     _testcapi.return_result_with_error()
-            """)
+            """.dedent()
             rc, out, err = assert_python_failure('-c', code)
             self.assertRegex(err.replace(b'\r', b''),
-                             br'Fatal Python error: a function returned a '
-                                br'result with an error set\n'
+                             br'Fatal Python error: _Py_CheckFunctionResult: '
+                                 br'a function returned a result '
+                                 br'with an error set\n'
                              br'Python runtime state: initialized\n'
                              br'ValueError\n'
                              br'\n'
@@ -330,13 +334,13 @@ class CAPITest(unittest.TestCase):
     def test_negative_refcount(self):
         # bpo-35059: Check that Py_DECREF() reports the correct filename
         # when calling _Py_NegativeRefcount() to abort Python.
-        code = textwrap.dedent("""
+        code = """
             import _testcapi
             from test import support
 
             with support.SuppressCrashReport():
                 _testcapi.negative_refcount()
-        """)
+        """.dedent()
         rc, out, err = assert_python_failure('-c', code)
         self.assertRegex(err,
                          br'_testcapimodule\.c:[0-9]+: '
@@ -500,6 +504,20 @@ class CAPITest(unittest.TestCase):
         # Test that subtype_dealloc decref the newly assigned __class__ only once
         self.assertEqual(new_type_refcnt, sys.getrefcount(_testcapi.HeapCTypeSubclass))
 
+    def test_pynumber_tobase(self):
+        from _testcapi import pynumber_tobase
+        self.assertEqual(pynumber_tobase(123, 2), '0b1111011')
+        self.assertEqual(pynumber_tobase(123, 8), '0o173')
+        self.assertEqual(pynumber_tobase(123, 10), '123')
+        self.assertEqual(pynumber_tobase(123, 16), '0x7b')
+        self.assertEqual(pynumber_tobase(-123, 2), '-0b1111011')
+        self.assertEqual(pynumber_tobase(-123, 8), '-0o173')
+        self.assertEqual(pynumber_tobase(-123, 10), '-123')
+        self.assertEqual(pynumber_tobase(-123, 16), '-0x7b')
+        self.assertRaises(TypeError, pynumber_tobase, 123.0, 10)
+        self.assertRaises(TypeError, pynumber_tobase, '123', 10)
+        self.assertRaises(SystemError, pynumber_tobase, 123, 0)
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -641,6 +659,12 @@ class Test_testcapi(unittest.TestCase):
                     if name.startswith('test_') and not name.endswith('_code'))
 
 
+class Test_testinternalcapi(unittest.TestCase):
+    locals().update((name, getattr(_testinternalcapi, name))
+                    for name in dir(_testinternalcapi)
+                    if name.startswith('test_'))
+
+
 class PyMemDebugTests(unittest.TestCase):
     PYTHONMALLOC = 'debug'
     # '0x04c06e0' or '04C06E0'
@@ -668,7 +692,7 @@ class PyMemDebugTests(unittest.TestCase):
                  r"\n"
                  r"Enable tracemalloc to get the memory block allocation traceback\n"
                  r"\n"
-                 r"Fatal Python error: bad trailing pad byte")
+                 r"Fatal Python error: _PyMem_DebugRawFree: bad trailing pad byte")
         regex = regex.format(ptr=self.PTR_REGEX)
         regex = re.compile(regex, flags=re.DOTALL)
         self.assertRegex(out, regex)
@@ -684,14 +708,14 @@ class PyMemDebugTests(unittest.TestCase):
                  r"\n"
                  r"Enable tracemalloc to get the memory block allocation traceback\n"
                  r"\n"
-                 r"Fatal Python error: bad ID: Allocated using API 'm', verified using API 'r'\n")
+                 r"Fatal Python error: _PyMem_DebugRawFree: bad ID: Allocated using API 'm', verified using API 'r'\n")
         regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
 
     def check_malloc_without_gil(self, code):
         out = self.check(code)
-        expected = ('Fatal Python error: Python memory allocator called '
-                    'without holding the GIL')
+        expected = ('Fatal Python error: _PyMem_DebugMalloc: '
+                    'Python memory allocator called without holding the GIL')
         self.assertIn(expected, out)
 
     def test_pymem_malloc_without_gil(self):
@@ -707,7 +731,7 @@ class PyMemDebugTests(unittest.TestCase):
         self.check_malloc_without_gil(code)
 
     def check_pyobject_is_freed(self, func_name):
-        code = textwrap.dedent(f'''
+        code = f'''
             import gc, os, sys, _testcapi
             # Disable the GC to avoid crash on GC collection
             gc.disable()
@@ -718,7 +742,7 @@ class PyMemDebugTests(unittest.TestCase):
                 os._exit(0)
             except _testcapi.error:
                 os._exit(1)
-        ''')
+        '''.dedent()
         assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
 
     def test_pyobject_null_is_freed(self):

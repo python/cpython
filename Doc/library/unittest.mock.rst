@@ -1327,8 +1327,7 @@ patch
 
 .. note::
 
-    :func:`patch` is straightforward to use. The key is to do the patching in the
-    right namespace. See the section `where to patch`_.
+    The key is to do the patching in the right namespace. See the section `where to patch`_.
 
 .. function:: patch(target, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs)
 
@@ -1401,7 +1400,8 @@ patch
     "as"; very useful if :func:`patch` is creating a mock object for you.
 
     :func:`patch` takes arbitrary keyword arguments. These will be passed to
-    the :class:`Mock` (or *new_callable*) on construction.
+    :class:`AsyncMock` if the patched object is asynchronous, to
+    :class:`MagicMock` otherwise or to *new_callable* if specified.
 
     ``patch.dict(...)``, ``patch.multiple(...)`` and ``patch.object(...)`` are
     available for alternate use-cases.

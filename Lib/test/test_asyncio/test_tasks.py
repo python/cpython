@@ -9,7 +9,6 @@ import io
 import random
 import re
 import sys
-import textwrap
 import types
 import unittest
 import weakref
@@ -3368,7 +3367,7 @@ class CompatibilityTests(test_utils.TestCase):
 
     def test_debug_mode_interop(self):
         # https://bugs.python.org/issue32636
-        code = textwrap.dedent("""
+        code = """
             import asyncio
 
             async def native_coro():
@@ -3379,7 +3378,7 @@ class CompatibilityTests(test_utils.TestCase):
                 yield from native_coro()
 
             asyncio.run(old_style_coro())
-        """)
+        """.dedent()
 
         assert_python_ok("-Wignore::DeprecationWarning", "-c", code,
                          PYTHONASYNCIODEBUG="1")

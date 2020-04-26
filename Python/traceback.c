@@ -2,12 +2,11 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "pycore_pystate.h"
 
 #include "code.h"
 #include "frameobject.h"
-#include "structmember.h"
-#include "osdefs.h"
+#include "structmember.h"         // PyMemberDef
+#include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -376,7 +375,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     int fd;
     int i;
     char *found_encoding;
-    char *encoding;
+    const char *encoding;
     PyObject *io;
     PyObject *binary;
     PyObject *fob = NULL;
@@ -384,7 +383,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     PyObject *res;
     char buf[MAXPATHLEN+1];
     int kind;
-    void *data;
+    const void *data;
 
     /* open the file */
     if (filename == NULL)
@@ -801,7 +800,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = _PyThreadState_GetFrame(tstate);
+    frame = tstate->frame;
     if (frame == NULL) {
         PUTS(fd, "<no Python frame>\n");
         return;

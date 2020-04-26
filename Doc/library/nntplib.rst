@@ -542,33 +542,6 @@ them have been superseded by newer commands in :rfc:`3977`.
    if available.
 
 
-.. method:: NNTP.xpath(id)
-
-   Return a pair ``(resp, path)``, where *path* is the directory path to the
-   article with message ID *id*.  Most of the time, this extension is not
-   enabled by NNTP server administrators.
-
-   .. deprecated:: 3.3
-      The XPATH extension is not actively used.
-
-
-.. XXX deprecated:
-
-   .. method:: NNTP.xgtitle(name, *, file=None)
-
-      Process an ``XGTITLE`` command, returning a pair ``(response, list)``, where
-      *list* is a list of tuples containing ``(name, title)``. If the *file* parameter
-      is supplied, then the output of the  ``XGTITLE`` command is stored in a file.
-      If *file* is a string,  then the method will open a file with that name, write
-      to it  then close it.  If *file* is a :term:`file object`, then it will start
-      calling :meth:`write` on it to store the lines of the command output. If *file*
-      is supplied, then the returned *list* is an empty list. This is an optional NNTP
-      extension, and may not be supported by all servers.
-
-      :rfc:`2980` says "It is suggested that this extension be deprecated".  Use
-      :meth:`descriptions` or :meth:`description` instead.
-
-
 Utility functions
 -----------------
 

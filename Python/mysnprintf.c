@@ -81,12 +81,12 @@ PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
     }
 
     len = vsprintf(buffer, format, va);
-    if (len < 0)
+    if (len < 0) {
         /* ignore the error */;
-
-    else if ((size_t)len >= size + _PyOS_vsnprintf_EXTRA_SPACE)
-        Py_FatalError("Buffer overflow in PyOS_snprintf/PyOS_vsnprintf");
-
+    }
+    else if ((size_t)len >= size + _PyOS_vsnprintf_EXTRA_SPACE) {
+        _Py_FatalErrorFunc(__func__, "Buffer overflow");
+    }
     else {
         const size_t to_copy = (size_t)len < size ?
                                 (size_t)len : size - 1;

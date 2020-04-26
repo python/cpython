@@ -1,9 +1,0 @@
-Split the COMPARE_OP bytecode instruction into four distinct instructions.
-
-*  COMPARE_OP for rich comparisons
-*  IS_OP for 'is' and 'is not' tests
-*  CONTAINS_OP for 'in' and 'is not' tests
-*  JUMP_IF_NOT_EXC_MATCH for checking exceptions in 'try-except' statements.
-
-This improves the clarity of the interpreter and should provide a modest
-speedup.

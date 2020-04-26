@@ -1,5 +1,4 @@
 import itertools
-import textwrap
 import unittest
 import sys
 
@@ -67,7 +66,7 @@ class IterLinesTests(TestCaseBase):
         self.check_calls()
 
     def test_no_directives(self):
-        lines = textwrap.dedent('''
+        lines = '''
 
             // xyz
             typedef enum {
@@ -101,7 +100,7 @@ class IterLinesTests(TestCaseBase):
                 return 0;
             }
 
-            ''')[1:-1].splitlines()
+            '''.dedent()[1:-1].splitlines()
         expected = [(lno, line, None, ())
                     for lno, line in enumerate(lines, 1)]
         expected[1] = (2, ' ', None, ())
@@ -141,11 +140,11 @@ class IterLinesTests(TestCaseBase):
                 self.parsed = [
                     directive,
                     ]
-                text = textwrap.dedent('''
+                text = '''
                     static int spam = 0;
                     {}
                     static char buffer[256];
-                    ''').strip().format(line)
+                    '''.dedent().strip().format(line)
                 lines = text.strip().splitlines()
 
                 results = list(
@@ -188,14 +187,14 @@ class IterLinesTests(TestCaseBase):
         self.parsed = [
             directive,
             ]
-        text = textwrap.dedent(r'''
+        text = r'''
             static int spam = 0;
             #define eggs(a, b) \
                 { \
                     a = b; \
                 }
             static char buffer[256];
-            ''').strip()
+            '''.dedent().strip()
         lines = [line + '\n' for line in text.splitlines()]
         lines[-1] = lines[-1][:-1]
 
@@ -221,7 +220,7 @@ class IterLinesTests(TestCaseBase):
             OtherDirective('endif', None),
             ]
         self.parsed = list(directives)
-        text = textwrap.dedent(r'''
+        text = r'''
             static int spam = 0;
 
             #ifdef SPAM
@@ -237,7 +236,7 @@ class IterLinesTests(TestCaseBase):
             #endif
 
             static int eggs = 0;
-            ''').strip()
+            '''.dedent().strip()
         lines = [line for line in text.splitlines() if line.strip()]
 
         results = list(
@@ -274,7 +273,7 @@ class IterLinesTests(TestCaseBase):
             OtherDirective('endif', None),
             ]
         self.parsed = list(directives)
-        text = textwrap.dedent(r'''
+        text = r'''
             void str_copy(char *buffer, *orig);
 
             int init(char *name) {
@@ -302,7 +301,7 @@ class IterLinesTests(TestCaseBase):
             }
 
             #endif
-            ''').strip()
+            '''.dedent().strip()
         lines = [line for line in text.splitlines() if line.strip()]
 
         results = list(
@@ -362,7 +361,7 @@ class IterLinesTests(TestCaseBase):
             OtherDirective('endif', None),
             ]
         self.parsed = list(directives)
-        text = textwrap.dedent(r'''
+        text = r'''
             #include <stdio.h>
             print("begin");
             #ifdef SPAM
@@ -386,7 +385,7 @@ class IterLinesTests(TestCaseBase):
                print("no ham");
             #endif
             print("end");
-            ''')[1:-1]
+            '''.dedent()[1:-1]
         lines = [line + '\n' for line in text.splitlines()]
         lines[-1] = lines[-1][:-1]
 
@@ -513,7 +512,7 @@ class IterLinesTests(TestCaseBase):
             OtherDirective('endif', None),  # ifndef Py_COMPILE_H
             ]
         self.parsed = list(directives)
-        text = textwrap.dedent(r'''
+        text = r'''
             #ifndef Py_COMPILE_H
             #define Py_COMPILE_H
 
@@ -611,7 +610,7 @@ class IterLinesTests(TestCaseBase):
             #define Py_func_type_input 345
 
             #endif /* !Py_COMPILE_H */
-            ''').strip()
+            '''.dedent().strip()
         lines = [line + '\n' for line in text.splitlines()]
         lines[-1] = lines[-1][:-1]
 

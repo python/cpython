@@ -5,7 +5,6 @@ import unittest
 import warnings
 import zipfile
 from os.path import join
-from textwrap import dedent
 from test.support import captured_stdout, check_warnings, run_unittest
 
 try:
@@ -393,11 +392,11 @@ class SDistTestCase(BasePyPIRCCommandTestCase):
     @unittest.skipUnless(ZLIB_SUPPORT, "Need zlib support to run")
     def test_manifest_comments(self):
         # make sure comments don't cause exceptions or wrong includes
-        contents = dedent("""\
+        contents = """\
             # bad.py
             #bad.py
             good.py
-            """)
+            """.dedent()
         dist, cmd = self.get_cmd()
         cmd.ensure_finalized()
         self.write_file((self.tmp_dir, cmd.manifest), contents)

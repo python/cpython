@@ -391,6 +391,18 @@ class BasicTest(BaseTest):
         self.assertEqual(err, "".encode())
 
 
+    @unittest.skipUnless(sys.platform == 'darwin', 'only relevant on macOS')
+    def test_macos_env(self):
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder()
+        builder.create(self.env_dir)
+
+        envpy = os.path.join(os.path.realpath(self.env_dir),
+                             self.bindir, self.exe)
+        out, err = check_output([envpy, '-c',
+            'import os; print("__PYVENV_LAUNCHER__" in os.environ)'])
+        self.assertEqual(out.strip(), 'False'.encode())
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""

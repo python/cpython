@@ -999,6 +999,17 @@ class NormalDist:
         x2 = (a - b) / dv
         return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
 
+    def zscore(self, x):
+        """Compute the Standard Score.  (x - mean) / stdev
+
+        Describes *x* in terms of the number of standard deviations
+        above or below the mean of the normal distribution.
+        """
+        # https://www.statisticshowto.com/probability-and-statistics/z-score/
+        if not self._sigma:
+            raise StatisticsError('zscore() not defined when sigma is zero')
+        return (x - self._mu) / self._sigma
+
     @property
     def mean(self):
         "Arithmetic mean of the normal distribution."

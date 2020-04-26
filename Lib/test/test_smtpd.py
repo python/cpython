@@ -1,6 +1,6 @@
 import unittest
-import textwrap
 from test import support, mock_socket
+from test.support import socket_helper
 import socket
 import io
 import smtpd
@@ -38,7 +38,7 @@ class SMTPDServerTest(unittest.TestCase):
         smtpd.socket = asyncore.socket = mock_socket
 
     def test_process_message_unimplemented(self):
-        server = smtpd.SMTPServer((support.HOST, 0), ('b', 0),
+        server = smtpd.SMTPServer((socket_helper.HOST, 0), ('b', 0),
                                   decode_data=True)
         conn, addr = server.accept()
         channel = smtpd.SMTPChannel(server, conn, addr, decode_data=True)
@@ -57,7 +57,7 @@ class SMTPDServerTest(unittest.TestCase):
         self.assertRaises(
             ValueError,
             smtpd.SMTPServer,
-            (support.HOST, 0),
+            (socket_helper.HOST, 0),
             ('b', 0),
             enable_SMTPUTF8=True,
             decode_data=True)
@@ -87,57 +87,57 @@ class DebuggingServerTest(unittest.TestCase):
         write_line(b'.')
 
     def test_process_message_with_decode_data_true(self):
-        server = smtpd.DebuggingServer((support.HOST, 0), ('b', 0),
+        server = smtpd.DebuggingServer((socket_helper.HOST, 0), ('b', 0),
                                        decode_data=True)
         conn, addr = server.accept()
         channel = smtpd.SMTPChannel(server, conn, addr, decode_data=True)
         with support.captured_stdout() as s:
             self.send_data(channel, b'From: test\n\nhello\n')
         stdout = s.getvalue()
-        self.assertEqual(stdout, textwrap.dedent("""\
+        self.assertEqual(stdout, """\
              ---------- MESSAGE FOLLOWS ----------
              From: test
              X-Peer: peer-address
 
              hello
              ------------ END MESSAGE ------------
-             """))
+             """.dedent())
 
     def test_process_message_with_decode_data_false(self):
-        server = smtpd.DebuggingServer((support.HOST, 0), ('b', 0))
+        server = smtpd.DebuggingServer((socket_helper.HOST, 0), ('b', 0))
         conn, addr = server.accept()
         channel = smtpd.SMTPChannel(server, conn, addr)
         with support.captured_stdout() as s:
             self.send_data(channel, b'From: test\n\nh\xc3\xa9llo\xff\n')
         stdout = s.getvalue()
-        self.assertEqual(stdout, textwrap.dedent("""\
+        self.assertEqual(stdout, """\
              ---------- MESSAGE FOLLOWS ----------
              b'From: test'
              b'X-Peer: peer-address'
              b''
              b'h\\xc3\\xa9llo\\xff'
              ------------ END MESSAGE ------------
-             """))
+             """.dedent())
 
     def test_process_message_with_enable_SMTPUTF8_true(self):
-        server = smtpd.DebuggingServer((support.HOST, 0), ('b', 0),
+        server = smtpd.DebuggingServer((socket_helper.HOST, 0), ('b', 0),
                                        enable_SMTPUTF8=True)
         conn, addr = server.accept()
         channel = smtpd.SMTPChannel(server, conn, addr, enable_SMTPUTF8=True)
         with support.captured_stdout() as s:
             self.send_data(channel, b'From: test\n\nh\xc3\xa9llo\xff\n')
         stdout = s.getvalue()
-        self.assertEqual(stdout, textwrap.dedent("""\
+        self.assertEqual(stdout, """\
              ---------- MESSAGE FOLLOWS ----------
              b'From: test'
              b'X-Peer: peer-address'
              b''
              b'h\\xc3\\xa9llo\\xff'
              ------------ END MESSAGE ------------
-             """))
+             """.dedent())
 
     def test_process_SMTPUTF8_message_with_enable_SMTPUTF8_true(self):
-        server = smtpd.DebuggingServer((support.HOST, 0), ('b', 0),
+        server = smtpd.DebuggingServer((socket_helper.HOST, 0), ('b', 0),
                                        enable_SMTPUTF8=True)
         conn, addr = server.accept()
         channel = smtpd.SMTPChannel(server, conn, addr, enable_SMTPUTF8=True)
@@ -145,7 +145,7 @@ class DebuggingServerTest(unittest.TestCase):
             self.send_data(channel, b'From: test\n\nh\xc3\xa9llo\xff\n',
                            enable_SMTPUTF8=True)
         stdout = s.getvalue()
-        self.assertEqual(stdout, textwrap.dedent("""\
+        self.assertEqual(stdout, """\
              ---------- MESSAGE FOLLOWS ----------
              mail options: ['BODY=8BITMIME', 'SMTPUTF8']
              b'From: test'
@@ -153,7 +153,7 @@ class DebuggingServerTest(unittest.TestCase):
              b''
              b'h\\xc3\\xa9llo\\xff'
              ------------ END MESSAGE ------------
-             """))
+             """.dedent())
 
     def tearDown(self):
         asyncore.close_all()
@@ -168,13 +168,13 @@ class TestFamilyDetection(unittest.TestCase):
         asyncore.close_all()
         asyncore.socket = smtpd.socket = socket
 
-    @unittest.skipUnless(support.IPV6_ENABLED, "IPv6 not enabled")
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, "IPv6 not enabled")
     def test_socket_uses_IPv6(self):
-        server = smtpd.SMTPServer((support.HOSTv6, 0), (support.HOSTv4, 0))
+        server = smtpd.SMTPServer((socket_helper.HOSTv6, 0), (socket_helper.HOSTv4, 0))
         self.assertEqual(server.socket.family, socket.AF_INET6)
 
     def test_socket_uses_IPv4(self):
-        server = smtpd.SMTPServer((support.HOSTv4, 0), (support.HOSTv6, 0))
+        server = smtpd.SMTPServer((socket_helper.HOSTv4, 0), (socket_helper.HOSTv6, 0))
         self.assertEqual(server.socket.family, socket.AF_INET)
 
 
@@ -197,7 +197,7 @@ class TestRcptOptionParsing(unittest.TestCase):
         channel.handle_read()
 
     def test_params_rejected(self):
-        server = DummyServer((support.HOST, 0), ('b', 0))
+        server = DummyServer((socket_helper.HOST, 0), ('b', 0))
         conn, addr = server.accept()
         channel = smtpd.SMTPChannel(server, conn, addr)
         self.write_line(channel, b'EHLO example')
@@ -206,7 +206,7 @@ class TestRcptOptionParsing(unittest.TestCase):
         self.assertEqual(channel.socket.last, self.error_response)
 
     def test_nothing_accepted(self):
-        server = DummyServer((support.HOST, 0), ('b', 0))
+        server = DummyServer((socket_helper.HOST, 0), ('b', 0))
         conn, addr = server.accept()
         channel = smtpd.SMTPChannel(server, conn, addr)
         self.write_line(channel, b'EHLO example')
@@ -234,7 +234,7 @@ class TestMailOptionParsing(unittest.TestCase):
         channel.handle_read()
 
     def test_with_decode_data_true(self):
-        server = DummyServer((support.HOST, 0), ('b', 0), decode_data=True)
+        server = DummyServer((socket_helper.HOST, 0), ('b', 0), decode_data=True)
         conn, addr = server.accept()
         channel = smtpd.SMTPChannel(server, conn, addr, decode_data=True)
         self.write_line(channel, b'EHLO example')
@@ -250,7 +250,7 @@ class TestMailOptionParsing(unittest.TestCase):
         self.assertEqual(channel.socket.last, b'250 OK\r\n')
 
     def test_with_decode_data_false(self):
-        server = DummyServer((support.HOST, 0), ('b', 0))
+        server = DummyServer((socket_helper.HOST, 0), ('b', 0))
         conn, addr = server.accept()
         channel = smtpd.SMTPChannel(server, conn, addr)
         self.write_line(channel, b'EHLO example')
@@ -271,7 +271,7 @@ class TestMailOptionParsing(unittest.TestCase):
         self.assertEqual(channel.socket.last, b'250 OK\r\n')
 
     def test_with_enable_smtputf8_true(self):
-        server = DummyServer((support.HOST, 0), ('b', 0), enable_SMTPUTF8=True)
+        server = DummyServer((socket_helper.HOST, 0), ('b', 0), enable_SMTPUTF8=True)
         conn, addr = server.accept()
         channel = smtpd.SMTPChannel(server, conn, addr, enable_SMTPUTF8=True)
         self.write_line(channel, b'EHLO example')
@@ -286,7 +286,7 @@ class SMTPDChannelTest(unittest.TestCase):
         smtpd.socket = asyncore.socket = mock_socket
         self.old_debugstream = smtpd.DEBUGSTREAM
         self.debug = smtpd.DEBUGSTREAM = io.StringIO()
-        self.server = DummyServer((support.HOST, 0), ('b', 0),
+        self.server = DummyServer((socket_helper.HOST, 0), ('b', 0),
                                   decode_data=True)
         conn, addr = self.server.accept()
         self.channel = smtpd.SMTPChannel(self.server, conn, addr,
@@ -304,7 +304,7 @@ class SMTPDChannelTest(unittest.TestCase):
     def test_broken_connect(self):
         self.assertRaises(
             DummyDispatcherBroken, BrokenDummyServer,
-            (support.HOST, 0), ('b', 0), decode_data=True)
+            (socket_helper.HOST, 0), ('b', 0), decode_data=True)
 
     def test_decode_data_and_enable_SMTPUTF8_raises(self):
         self.assertRaises(
@@ -758,13 +758,13 @@ class SMTPDChannelTest(unittest.TestCase):
         with support.check_warnings(('', DeprecationWarning)):
             self.channel._SMTPChannel__addr = 'spam'
 
-@unittest.skipUnless(support.IPV6_ENABLED, "IPv6 not enabled")
+@unittest.skipUnless(socket_helper.IPV6_ENABLED, "IPv6 not enabled")
 class SMTPDChannelIPv6Test(SMTPDChannelTest):
     def setUp(self):
         smtpd.socket = asyncore.socket = mock_socket
         self.old_debugstream = smtpd.DEBUGSTREAM
         self.debug = smtpd.DEBUGSTREAM = io.StringIO()
-        self.server = DummyServer((support.HOSTv6, 0), ('b', 0),
+        self.server = DummyServer((socket_helper.HOSTv6, 0), ('b', 0),
                                   decode_data=True)
         conn, addr = self.server.accept()
         self.channel = smtpd.SMTPChannel(self.server, conn, addr,
@@ -776,7 +776,7 @@ class SMTPDChannelWithDataSizeLimitTest(unittest.TestCase):
         smtpd.socket = asyncore.socket = mock_socket
         self.old_debugstream = smtpd.DEBUGSTREAM
         self.debug = smtpd.DEBUGSTREAM = io.StringIO()
-        self.server = DummyServer((support.HOST, 0), ('b', 0),
+        self.server = DummyServer((socket_helper.HOST, 0), ('b', 0),
                                   decode_data=True)
         conn, addr = self.server.accept()
         # Set DATA size limit to 32 bytes for easy testing
@@ -831,7 +831,7 @@ class SMTPDChannelWithDecodeDataFalse(unittest.TestCase):
         smtpd.socket = asyncore.socket = mock_socket
         self.old_debugstream = smtpd.DEBUGSTREAM
         self.debug = smtpd.DEBUGSTREAM = io.StringIO()
-        self.server = DummyServer((support.HOST, 0), ('b', 0))
+        self.server = DummyServer((socket_helper.HOST, 0), ('b', 0))
         conn, addr = self.server.accept()
         self.channel = smtpd.SMTPChannel(self.server, conn, addr)
 
@@ -873,7 +873,7 @@ class SMTPDChannelWithDecodeDataTrue(unittest.TestCase):
         smtpd.socket = asyncore.socket = mock_socket
         self.old_debugstream = smtpd.DEBUGSTREAM
         self.debug = smtpd.DEBUGSTREAM = io.StringIO()
-        self.server = DummyServer((support.HOST, 0), ('b', 0),
+        self.server = DummyServer((socket_helper.HOST, 0), ('b', 0),
                                   decode_data=True)
         conn, addr = self.server.accept()
         # Set decode_data to True
@@ -916,7 +916,7 @@ class SMTPDChannelTestWithEnableSMTPUTF8True(unittest.TestCase):
         smtpd.socket = asyncore.socket = mock_socket
         self.old_debugstream = smtpd.DEBUGSTREAM
         self.debug = smtpd.DEBUGSTREAM = io.StringIO()
-        self.server = DummyServer((support.HOST, 0), ('b', 0),
+        self.server = DummyServer((socket_helper.HOST, 0), ('b', 0),
                                   enable_SMTPUTF8=True)
         conn, addr = self.server.accept()
         self.channel = smtpd.SMTPChannel(self.server, conn, addr,

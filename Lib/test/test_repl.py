@@ -4,7 +4,6 @@ import sys
 import os
 import unittest
 import subprocess
-from textwrap import dedent
 from test.support import cpython_only, SuppressCrashReport
 from test.support.script_helper import kill_python
 
@@ -48,7 +47,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             _testcapi.set_nomemory(0)
             sys.exit(0)
         """
-        user_input = dedent(user_input)
+        user_input = user_input.dedent()
         user_input = user_input.encode()
         p = spawn_repl()
         with SuppressCrashReport():
@@ -85,7 +84,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             </Users>
         </test>"""
         '''
-        user_input = dedent(user_input)
+        user_input = user_input.dedent()
         user_input = user_input.encode()
         p = spawn_repl()
         with SuppressCrashReport():

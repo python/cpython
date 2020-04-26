@@ -15,7 +15,6 @@ import operator
 import os
 import pickle
 import sys
-import textwrap
 import types
 import unittest
 import warnings
@@ -430,13 +429,14 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(ET.tostring(elem),
                 b'<test testa="testval" testb="test1" testc="test2">aa</test>')
 
+        # Test preserving white space chars in attributes
         elem = ET.Element('test')
         elem.set('a', '\r')
         elem.set('b', '\r\n')
         elem.set('c', '\t\n\r ')
-        elem.set('d', '\n\n')
+        elem.set('d', '\n\n\r\r\t\t  ')
         self.assertEqual(ET.tostring(elem),
-                b'<test a="&#10;" b="&#10;" c="&#09;&#10;&#10; " d="&#10;&#10;" />')
+                b'<test a="&#13;" b="&#13;&#10;" c="&#09;&#10;&#13; " d="&#10;&#10;&#13;&#13;&#09;&#09;  " />')
 
     def test_makeelement(self):
         # Test makeelement handling.
@@ -724,7 +724,7 @@ class ElementTreeTest(unittest.TestCase):
 
         builder = Builder()
         parser = ET.XMLParser(target=builder)
-        parser.feed(textwrap.dedent("""\
+        parser.feed("""\
             <?pi data?>
             <!-- comment -->
             <root xmlns='namespace' xmlns:p='pns' xmlns:a='ans'>
@@ -732,7 +732,7 @@ class ElementTreeTest(unittest.TestCase):
                <p:element>text</p:element>tail
                <empty-element/>
             </root>
-            """))
+            """.dedent())
         self.assertEqual(builder, [
                 ('end-ns', 'a'),
                 ('end-ns', 'p'),
@@ -2258,6 +2258,10 @@ class BugsTest(unittest.TestCase):
         text = text.replace('\r\n', ' ')
         text = text[6:-4]
         self.assertEqual(root.get('b'), text)
+
+    def test_39495_treebuilder_start(self):
+        self.assertRaises(TypeError, ET.TreeBuilder().start, "tag")
+        self.assertRaises(TypeError, ET.TreeBuilder().start, "tag", None)
 
 
 
@@ -3890,7 +3894,7 @@ class C14NTest(unittest.TestCase):
         #'<doc xmlns:x="http://example.com/x"><b xmlns:y="http://example.com/y" a3="3" y:a1="1" y:a2="2"></b></doc>')
 
     def test_c14n_exclusion(self):
-        xml = textwrap.dedent("""\
+        xml = """\
         <root xmlns:x="http://example.com/x">
             <a x:attr="attrx">
                 <b>abtext</b>
@@ -3900,7 +3904,7 @@ class C14NTest(unittest.TestCase):
                 <x:d>dtext</x:d>
             </c>
         </root>
-        """)
+        """.dedent()
         self.assertEqual(
             c14n_roundtrip(xml, strip_text=True),
             '<root>'

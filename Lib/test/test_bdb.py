@@ -52,7 +52,6 @@ import bdb as _bdb
 import sys
 import os
 import unittest
-import textwrap
 import importlib
 import linecache
 from contextlib import contextmanager
@@ -537,7 +536,7 @@ def create_modules(modules):
             for m in modules:
                 fname = m + '.py'
                 with open(fname, 'w') as f:
-                    f.write(textwrap.dedent(modules[m]))
+                    f.write(modules[m].dedent())
                 linecache.checkcache(fname)
             importlib.invalidate_caches()
             yield
@@ -961,7 +960,7 @@ class RunTestCase(BaseTestCase):
             ('return', 2, '<module>'), ('quit', ),
         ]
         with TracerRun(self) as tracer:
-            tracer.run(compile(textwrap.dedent(code), '<string>', 'exec'))
+            tracer.run(compile(code.dedent(), '<string>', 'exec'))
 
     def test_runeval_step(self):
         # Test bdb 'runeval'.

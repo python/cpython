@@ -1,4 +1,3 @@
-import textwrap
 import unittest
 
 from .. import tool_imports_for_tests
@@ -27,18 +26,18 @@ class IterGlobalDeclarationsTests(TestCaseBase):
 
     def test_functions(self):
         tests = [
-            (textwrap.dedent('''
+            ('''
                 void func1() {
                     return;
                 }
-                '''),
-             textwrap.dedent('''
+                '''.dedent(),
+             '''
                 void func1() {
                 return;
                 }
-                ''').strip(),
+                '''.dedent().strip(),
              ),
-            (textwrap.dedent('''
+            ('''
                 static unsigned int * _func1(
                     const char *arg1,
                     int *arg2
@@ -47,14 +46,14 @@ class IterGlobalDeclarationsTests(TestCaseBase):
                 {
                     return _do_something(arg1, arg2, arg3);
                 }
-                '''),
-             textwrap.dedent('''
+                '''.dedent(),
+             '''
                 static unsigned int * _func1( const char *arg1, int *arg2 long long arg3 ) {
                 return _do_something(arg1, arg2, arg3);
                 }
-                ''').strip(),
+                '''.dedent().strip(),
              ),
-            (textwrap.dedent('''
+            ('''
                 static PyObject *
                 _func1(const char *arg1, PyObject *arg2)
                 {
@@ -68,8 +67,8 @@ class IterGlobalDeclarationsTests(TestCaseBase):
                     Py_INCREF(result);
                     return result;
                 }
-                '''),
-             textwrap.dedent('''
+                '''.dedent(),
+             '''
                 static PyObject * _func1(const char *arg1, PyObject *arg2) {
                 static int initialized = 0;
                 if (!initialized) {
@@ -80,13 +79,11 @@ class IterGlobalDeclarationsTests(TestCaseBase):
                 Py_INCREF(result);
                 return result;
                 }
-                ''').strip(),
+                '''.dedent().strip(),
              ),
             ]
         for lines, expected in tests:
-            body = textwrap.dedent(
-                    expected.partition('{')[2].rpartition('}')[0]
-                    ).strip()
+            body = expected.partition('{')[2].rpartition('}')[0].dedent().strip()
             expected = (expected, body)
             with self.subTest(lines):
                 lines = lines.splitlines()
@@ -132,7 +129,7 @@ class IterGlobalDeclarationsTests(TestCaseBase):
             ])
 
     def test_mixed(self):
-        lines = textwrap.dedent('''
+        lines = '''
            int spam;
            static const char const *eggs;
 
@@ -151,9 +148,9 @@ class IterGlobalDeclarationsTests(TestCaseBase):
                ham = reason;
                return _stop();
            }
-           ''').splitlines()
+           '''.dedent().splitlines()
         expected = [
-            (textwrap.dedent('''
+            ('''
                 PyObject * start(void) {
                 static int initialized = 0;
                 if (initialized) {
@@ -162,26 +159,26 @@ class IterGlobalDeclarationsTests(TestCaseBase):
                 }
                 return _start();
                 }
-                ''').strip(),
-             textwrap.dedent('''
+                '''.dedent().strip(),
+             '''
                 static int initialized = 0;
                 if (initialized) {
                 initialized = 1;
                 init();
                 }
                 return _start();
-                ''').strip(),
+                '''.dedent().strip(),
              ),
-            (textwrap.dedent('''
+            ('''
                 static int stop(char *reason) {
                 ham = reason;
                 return _stop();
                 }
-                ''').strip(),
-             textwrap.dedent('''
+                '''.dedent().strip(),
+             '''
                 ham = reason;
                 return _stop();
-                ''').strip(),
+                '''.dedent().strip(),
              ),
             ]
 
@@ -202,7 +199,7 @@ class IterGlobalDeclarationsTests(TestCaseBase):
 
     def test_bogus(self):
         tests = [
-                (textwrap.dedent('''
+                ('''
                     int spam;
                     static const char const *eggs;
 
@@ -224,8 +221,8 @@ class IterGlobalDeclarationsTests(TestCaseBase):
                         ham = reason;
                         return _stop();
                     }
-                    '''),
-                 [(textwrap.dedent('''
+                    '''.dedent(),
+                 [('''
                     PyObject * start(void) {
                     static int initialized = 0;
                     if (initialized) {
@@ -234,15 +231,15 @@ class IterGlobalDeclarationsTests(TestCaseBase):
                     }
                     return _start();
                     }
-                    ''').strip(),
-                   textwrap.dedent('''
+                    '''.dedent().strip(),
+                   '''
                     static int initialized = 0;
                     if (initialized) {
                     initialized = 1;
                     init();
                     }
                     return _start();
-                    ''').strip(),
+                    '''.dedent().strip(),
                    ),
                    # Neither "stop()" nor "_stop()" are here.
                   ],
@@ -355,11 +352,11 @@ class IterLocalStatementsTests(TestCaseBase):
 
     @unittest.expectedFailure
     def test_vars_multiline_var(self):
-        lines = textwrap.dedent('''
+        lines = '''
             PyObject *
             spam
             = NULL;
-            ''').splitlines()
+            '''.dedent().splitlines()
         expected = 'PyObject * spam = NULL;'
 
         stmts = list(iter_local_statements(lines))
@@ -607,9 +604,9 @@ class IterVariablesTests(TestCaseBase):
             ])
 
     def test_no_statements(self):
-        content = textwrap.dedent('''
+        content = '''
         ...
-        ''')
+        '''.dedent()
         self._return_iter_source_lines = content
         self._return_iter_global = [
             [],
@@ -634,9 +631,9 @@ class IterVariablesTests(TestCaseBase):
             ])
 
     def test_typical(self):
-        content = textwrap.dedent('''
+        content = '''
         ...
-        ''')
+        '''.dedent()
         self._return_iter_source_lines = content
         self._return_iter_global = [
             [('<lines 1>', None),  # var1
@@ -718,9 +715,9 @@ class IterVariablesTests(TestCaseBase):
             ])
 
     def test_no_locals(self):
-        content = textwrap.dedent('''
+        content = '''
         ...
-        ''')
+        '''.dedent()
         self._return_iter_source_lines = content
         self._return_iter_global = [
             [('<lines 1>', None),  # var1

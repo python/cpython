@@ -533,6 +533,12 @@ case $ac_sys_system/$ac_sys_release in
     define_xopen_source=no
     ;;
 
+  # On HP-UX, defining _XOPEN_SOURCE to 600 or greater hides
+  # chroot() and other functions
+  hp*|HP*)
+    define_xopen_source=no
+    ;;
+
 esac
 
 if test $define_xopen_source = yes
@@ -3044,6 +3050,21 @@ AC_ARG_WITH(system_libmpdec,
 
 AC_MSG_RESULT($with_system_libmpdec)
 
+# Check whether _decimal should use a coroutine-local or thread-local context
+AC_MSG_CHECKING(for --with-decimal-contextvar)
+AC_ARG_WITH(decimal_contextvar,
+            AS_HELP_STRING([--with-decimal-contextvar], [build _decimal module using a coroutine-local rather than a thread-local context (default is yes)]),
+            [],
+            [with_decimal_contextvar="yes"])
+
+if test "$with_decimal_contextvar" != "no"
+then
+    AC_DEFINE(WITH_DECIMAL_CONTEXTVAR, 1,
+      [Define if you want build the _decimal module using a coroutine-local rather than a thread-local context])
+fi
+
+AC_MSG_RESULT($with_decimal_contextvar)
+
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
 AC_ARG_ENABLE(loadable-sqlite-extensions,
@@ -3426,6 +3447,16 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ /* CAN_RAW_FD_FRAMES available check */
   AC_MSG_RESULT(no)
 ])
 
+AC_MSG_CHECKING(for CAN_RAW_JOIN_FILTERS)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <linux/can/raw.h>]],
+[[int can_raw_join_filters = CAN_RAW_JOIN_FILTERS;]])],[
+  AC_DEFINE(HAVE_LINUX_CAN_RAW_JOIN_FILTERS, 1, [Define if compiling using Linux 4.1 or later.])
+  AC_MSG_RESULT(yes)
+],[
+  AC_MSG_RESULT(no)
+])
+
 # Check for --with-doc-strings
 AC_MSG_CHECKING(for --with-doc-strings)
 AC_ARG_WITH(doc-strings,
@@ -3500,7 +3531,6 @@ AC_SUBST(DFLAGS)
 AC_SUBST(DTRACE_HEADERS)
 AC_SUBST(DTRACE_OBJS)
 DTRACE=
-DFLAGS=
 DTRACE_HEADERS=
 DTRACE_OBJS=
 
@@ -3521,7 +3551,7 @@ then
         [ac_cv_dtrace_link], [dnl
             ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            "$DTRACE" $DFLAGS -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
       ])
     if test "$ac_cv_dtrace_link" = "yes"; then
@@ -3598,7 +3628,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  memrchr mbrtowc mkdirat mkfifo \
  madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
- pthread_condattr_setclock pthread_init pthread_kill putenv pwrite pwritev pwritev2 \
+ pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
@@ -3608,7 +3638,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
+ truncate uname unlinkat utimensat utimes waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
@@ -4703,12 +4733,36 @@ else
   LIBPYTHON=''
 fi
 
+
+# Check for --with-libdir-name
+# /usr/$LIDIRNAME/python$VERSION
+AC_SUBST(PLATLIBDIR)
+PLATLIBDIR="lib"
+AC_MSG_CHECKING(for --with-platlibdir)
+AC_ARG_WITH(platlibdir,
+            AS_HELP_STRING([--with-platlibdir=DIRNAME],
+            [Python library directory name (default is "lib")]),
+[
+# ignore 3 options:
+#   --with-platlibdir
+#   --with-platlibdir=
+#   --without-platlibdir
+if test -n "$withval" -a "$withval" != yes -a "$withval" != no
+then
+  AC_MSG_RESULT(yes)
+  PLATLIBDIR="$withval"
+else
+  AC_MSG_RESULT(no)
+fi],
+[AC_MSG_RESULT(no)])
+
+
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST(PY_ENABLE_SHARED)
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 AC_SUBST(LIBPL)
 
@@ -5343,7 +5397,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
+SRCDIRS="Parser Parser/pegen Objects Python Modules Modules/_io Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

@@ -82,7 +82,7 @@ class PindentTests(unittest.TestCase):
         self.assertEqual(self.pindent(broken, '-r', '-e', '-s', '4'), closed)
 
     def test_statements(self):
-        clean = textwrap.dedent("""\
+        clean = """\
             if a:
                 pass
 
@@ -145,9 +145,9 @@ class PindentTests(unittest.TestCase):
 
             def f():
                 pass
-            """)
+            """.dedent()
 
-        closed = textwrap.dedent("""\
+        closed = """\
             if a:
                 pass
             # end if
@@ -223,11 +223,11 @@ class PindentTests(unittest.TestCase):
             def f():
                 pass
             # end def f
-            """)
+            """.dedent()
         self.pindent_test(clean, closed)
 
     def test_multilevel(self):
-        clean = textwrap.dedent("""\
+        clean = """\
             def foobar(a, b):
                 if a == b:
                     a = a+1
@@ -236,8 +236,8 @@ class PindentTests(unittest.TestCase):
                     if b > a: a = a-1
                 else:
                     print 'oops!'
-            """)
-        closed = textwrap.dedent("""\
+            """.dedent()
+        closed = """\
             def foobar(a, b):
                 if a == b:
                     a = a+1
@@ -249,45 +249,45 @@ class PindentTests(unittest.TestCase):
                     print 'oops!'
                 # end if
             # end def foobar
-            """)
+            """.dedent()
         self.pindent_test(clean, closed)
 
     def test_preserve_indents(self):
-        clean = textwrap.dedent("""\
+        clean = """\
             if a:
                      if b:
                               pass
-            """)
-        closed = textwrap.dedent("""\
+            """.dedent()
+        closed = """\
             if a:
                      if b:
                               pass
                      # end if
             # end if
-            """)
+            """.dedent()
         self.assertEqual(self.pindent(clean, '-c'), closed)
         self.assertEqual(self.pindent(closed, '-d'), clean)
         broken = self.lstriplines(closed)
         self.assertEqual(self.pindent(broken, '-r', '-e', '-s', '9'), closed)
-        clean = textwrap.dedent("""\
+        clean = """\
             if a:
             \tif b:
             \t\tpass
-            """)
-        closed = textwrap.dedent("""\
+            """.dedent()
+        closed = """\
             if a:
             \tif b:
             \t\tpass
             \t# end if
             # end if
-            """)
+            """.dedent()
         self.assertEqual(self.pindent(clean, '-c'), closed)
         self.assertEqual(self.pindent(closed, '-d'), clean)
         broken = self.lstriplines(closed)
         self.assertEqual(self.pindent(broken, '-r'), closed)
 
     def test_escaped_newline(self):
-        clean = textwrap.dedent("""\
+        clean = """\
             class\\
             \\
              A:
@@ -295,8 +295,8 @@ class PindentTests(unittest.TestCase):
             \\
             f:
                   pass
-            """)
-        closed = textwrap.dedent("""\
+            """.dedent()
+        closed = """\
             class\\
             \\
              A:
@@ -306,32 +306,32 @@ class PindentTests(unittest.TestCase):
                   pass
                # end def f
             # end class A
-            """)
+            """.dedent()
         self.assertEqual(self.pindent(clean, '-c'), closed)
         self.assertEqual(self.pindent(closed, '-d'), clean)
 
     def test_empty_line(self):
-        clean = textwrap.dedent("""\
+        clean = """\
             if a:
 
                 pass
-            """)
-        closed = textwrap.dedent("""\
+            """.dedent()
+        closed = """\
             if a:
 
                 pass
             # end if
-            """)
+            """.dedent()
         self.pindent_test(clean, closed)
 
     def test_oneline(self):
-        clean = textwrap.dedent("""\
+        clean = """\
             if a: pass
-            """)
-        closed = textwrap.dedent("""\
+            """.dedent()
+        closed = """\
             if a: pass
             # end if
-            """)
+            """.dedent()
         self.pindent_test(clean, closed)
 
 

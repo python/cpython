@@ -1,2 +1,0 @@
-Added a new function :func:`gc.is_finalized` to check if an object has been
-finalized by the garbage collector. Patch by Pablo Galindo.
