@@ -4,7 +4,6 @@ import io
 import sys
 import unittest
 import warnings
-import textwrap
 
 from unittest import mock
 

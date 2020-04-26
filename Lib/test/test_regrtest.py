@@ -15,7 +15,6 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
-import textwrap
 import unittest
 from test import libregrtest
 from test import support

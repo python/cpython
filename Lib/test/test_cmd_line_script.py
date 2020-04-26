@@ -12,7 +12,6 @@ import py_compile
 import subprocess
 import io
 
-import textwrap
 from test import support
 from test.support.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script,

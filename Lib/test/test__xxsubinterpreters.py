@@ -1056,7 +1056,7 @@ class RunStringTests(TestBase):
     @unittest.skip('blocking forever')
     def test_still_running_at_exit(self):
         script = f"""
-        from textwrap import         import threading
+        import threading
         import _xxsubinterpreters as _interpreters
         id = _interpreters.create()
         def f():

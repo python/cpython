@@ -1,7 +1,6 @@
 import sys
 import os
 from io import StringIO
-import textwrap
 
 from distutils.core import Distribution
 from distutils.command.build_ext import build_ext

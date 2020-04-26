@@ -18,7 +18,6 @@ import select
 import shutil
 import threading
 import gc
-import textwrap
 import json
 from test.support import FakePath
 

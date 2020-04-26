@@ -4,7 +4,6 @@ import os
 import shutil
 import subprocess
 import sys
-import textwrap
 import unittest
 
 from distutils import sysconfig

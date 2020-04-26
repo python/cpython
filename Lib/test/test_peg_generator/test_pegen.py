@@ -1,5 +1,4 @@
 import io
-import textwrap
 import unittest
 
 from test import test_tools

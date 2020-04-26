@@ -1,6 +1,5 @@
 import io
 import sys
-import textwrap
 
 from test import support
 

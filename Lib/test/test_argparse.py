@@ -5,7 +5,6 @@ import os
 import shutil
 import stat
 import sys
-import textwrap
 import tempfile
 import unittest
 import argparse

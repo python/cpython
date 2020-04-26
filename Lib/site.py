@@ -635,7 +635,6 @@ def _script():
         else:
             sys.exit(3)
     else:
-        import textwrap
         print((help % (sys.argv[0], os.pathsep)).dedent())
         sys.exit(10)
 

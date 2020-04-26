@@ -2,7 +2,6 @@ import os
 import sys
 from test.support import TESTFN, rmtree, unlink, captured_stdout
 from test.support.script_helper import assert_python_ok, assert_python_failure
-import textwrap
 import unittest
 
 import trace
