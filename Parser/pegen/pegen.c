@@ -401,7 +401,6 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
         loc = Py_None;
     }
 
-
     tmp = Py_BuildValue("(OiiN)", p->tok->filename, t->lineno, col_number, loc);
     if (!tmp) {
         goto error;
@@ -902,8 +901,31 @@ _PyPegen_Parser_Free(Parser *p)
     PyMem_Free(p);
 }
 
+static int
+compute_parser_flags(PyCompilerFlags *flags)
+{
+    int parser_flags = 0;
+    if (!flags) {
+        return 0;
+    }
+    if (flags->cf_flags & PyCF_DONT_IMPLY_DEDENT) {
+        parser_flags |= PyPARSE_DONT_IMPLY_DEDENT;
+    }
+    if (flags->cf_flags & PyCF_IGNORE_COOKIE) {
+        parser_flags |= PyPARSE_IGNORE_COOKIE;
+    }
+    if (flags->cf_flags & CO_FUTURE_BARRY_AS_BDFL) {
+        parser_flags |= PyPARSE_BARRY_AS_BDFL;
+    }
+    if (flags->cf_flags & PyCF_TYPE_COMMENTS) {
+        parser_flags |= PyPARSE_TYPE_COMMENTS;
+    }
+    return parser_flags;
+}
+
 Parser *
-_PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena *arena)
+_PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
+                    int *errcode, PyArena *arena)
 {
     Parser *p = PyMem_Malloc(sizeof(Parser));
     if (p == NULL) {
@@ -938,6 +960,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int *errcode, PyArena
 
     p->starting_lineno = 0;
     p->starting_col_offset = 0;
+    p->flags = flags;
 
     return p;
 }
@@ -976,7 +999,7 @@ _PyPegen_run_parser(Parser *p)
 mod_ty
 _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filename_ob,
                              const char *enc, const char *ps1, const char *ps2,
-                             int *errcode, PyArena *arena)
+                             PyCompilerFlags *flags, int *errcode, PyArena *arena)
 {
     struct tok_state *tok = PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
@@ -993,7 +1016,8 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     // From here on we need to clean up even if there's an error
     mod_ty result = NULL;
 
-    Parser *p = _PyPegen_Parser_New(tok, start_rule, errcode, arena);
+    int parser_flags = compute_parser_flags(flags);
+    Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, errcode, arena);
     if (p == NULL) {
         goto error;
     }
@@ -1008,7 +1032,7 @@ error:
 
 mod_ty
 _PyPegen_run_parser_from_file(const char *filename, int start_rule,
-                     PyObject *filename_ob, PyArena *arena)
+                     PyObject *filename_ob, PyCompilerFlags *flags, PyArena *arena)
 {
     FILE *fp = fopen(filename, "rb");
     if (fp == NULL) {
@@ -1017,7 +1041,7 @@ _PyPegen_run_parser_from_file(const char *filename, int start_rule,
     }
 
     mod_ty result = _PyPegen_run_parser_from_file_pointer(fp, start_rule, filename_ob,
-                                                 NULL, NULL, NULL, NULL, arena);
+                                                 NULL, NULL, NULL, flags, NULL, arena);
 
     fclose(fp);
     return result;
@@ -1025,12 +1049,12 @@ _PyPegen_run_parser_from_file(const char *filename, int start_rule,
 
 mod_ty
 _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
-                       int iflags, PyArena *arena)
+                       PyCompilerFlags *flags, PyArena *arena)
 {
     int exec_input = start_rule == Py_file_input;
 
     struct tok_state *tok;
-    if (iflags & PyCF_IGNORE_COOKIE) {
+    if (flags == NULL || flags->cf_flags & PyCF_IGNORE_COOKIE) {
         tok = PyTokenizer_FromUTF8(str, exec_input);
     } else {
         tok = PyTokenizer_FromString(str, exec_input);
@@ -1048,7 +1072,8 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     // We need to clear up from here on
     mod_ty result = NULL;
 
-    Parser *p = _PyPegen_Parser_New(tok, start_rule, NULL, arena);
+    int parser_flags = compute_parser_flags(flags);
+    Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, NULL, arena);
     if (p == NULL) {
         goto error;
     }
