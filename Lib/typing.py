@@ -191,7 +191,7 @@ def _subs_tvars(tp, tvars, subs):
     """Substitute type variables 'tvars' with substitutions 'subs'.
     These two must have the same length.
     """
-    if not isinstance(tp, _GenericAlias):
+    if not isinstance(tp, (_GenericAlias, GenericAlias)):
         return tp
     new_args = list(tp.__args__)
     for a, arg in enumerate(tp.__args__):
@@ -203,7 +203,10 @@ def _subs_tvars(tp, tvars, subs):
             new_args[a] = _subs_tvars(arg, tvars, subs)
     if tp.__origin__ is Union:
         return Union[tuple(new_args)]
-    return tp.copy_with(tuple(new_args))
+    if isinstance(tp, GenericAlias):
+        return GenericAlias(tp.__origin__, tuple(new_args))
+    else:
+        return tp.copy_with(tuple(new_args))
 
 
 def _check_generic(cls, parameters):
@@ -278,6 +281,11 @@ def _eval_type(t, globalns, localns):
         res = t.copy_with(ev_args)
         res._special = t._special
         return res
+    if isinstance(t, GenericAlias):
+        ev_args = tuple(_eval_type(a, globalns, localns) for a in t.__args__)
+        if ev_args == t.__args__:
+            return t
+        return GenericAlias(t.__origin__, ev_args)
     return t
 
 
@@ -1368,6 +1376,11 @@ def _strip_annotations(t):
         res = t.copy_with(stripped_args)
         res._special = t._special
         return res
+    if isinstance(t, GenericAlias):
+        stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
+        if stripped_args == t.__args__:
+            return t
+        return GenericAlias(t.__origin__, stripped_args)
     return t
 
 
@@ -1387,7 +1400,7 @@ def get_origin(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return Annotated
-    if isinstance(tp, _GenericAlias):
+    if isinstance(tp, (_GenericAlias, GenericAlias)):
         return tp.__origin__
     if tp is Generic:
         return Generic
@@ -1407,9 +1420,9 @@ def get_args(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
-    if isinstance(tp, _GenericAlias):
+    if isinstance(tp, (_GenericAlias, GenericAlias)):
         res = tp.__args__
-        if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:
+        if tp.__origin__ is collections.abc.Callable and res[0] is not Ellipsis:
             res = (list(res[:-1]), res[-1])
         return res
     return ()
