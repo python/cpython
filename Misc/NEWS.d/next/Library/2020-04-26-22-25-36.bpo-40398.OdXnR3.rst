@@ -1,0 +1,2 @@
+:func:`typing.get_args` now always returns an empty tuple for special
+generic aliases.
