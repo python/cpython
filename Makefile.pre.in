@@ -1426,6 +1426,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		ctypes ctypes/test ctypes/macholib \
 		idlelib idlelib/Icons idlelib/idle_test \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
+		test/test_peg_generator \
 		test/test_tools test/test_warnings test/test_warnings/data \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
