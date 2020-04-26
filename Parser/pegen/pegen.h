@@ -195,4 +195,6 @@ void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 
 void *_PyPegen_parse(Parser *);
 
+int check_barry_as_flufl(Parser *);
+
 #endif

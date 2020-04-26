@@ -25,6 +25,21 @@ init_normalization(Parser *p)
     return 1;
 }
 
+int
+check_barry_as_flufl(Parser *p){
+    Token *t = p->tokens[p->fill - 1];
+    assert(t->bytes != NULL);
+    assert(t->type == NOTEQUAL);
+
+    char* tok_str = PyBytes_AS_STRING(t->bytes);
+    if (p->flags & PyPARSE_BARRY_AS_BDFL && strcmp(tok_str, "<>")){
+        RAISE_SYNTAX_ERROR("with Barry as BDFL, use '<>' instead of '!='");
+    } else if (!(p->flags & PyPARSE_BARRY_AS_BDFL)) {
+        return strcmp(tok_str, "!=");
+    }
+    return 0;
+}
+
 PyObject *
 _PyPegen_new_identifier(Parser *p, char *n)
 {
