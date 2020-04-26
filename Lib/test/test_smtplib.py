@@ -20,7 +20,7 @@ import threading
 
 import unittest
 from test import support, mock_socket
-from test.support import hashlib_helper 
+from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_setup, threading_cleanup, join_thread
 from unittest.mock import Mock
