@@ -219,7 +219,6 @@ def favk(
 """
 
 
-@support.skip_if_new_parser("Pegen does not support type comments yet")
 class TypeCommentTests(unittest.TestCase):
 
     lowest = 4  # Lowest minor version supported
@@ -253,6 +252,7 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.body[0].type_comment, None)
         self.assertEqual(tree.body[1].type_comment, None)
 
+    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_asyncdef(self):
         for tree in self.parse_all(asyncdef, minver=5):
             self.assertEqual(tree.body[0].type_comment, "() -> int")
@@ -261,22 +261,27 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.body[0].type_comment, None)
         self.assertEqual(tree.body[1].type_comment, None)
 
+    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_asyncvar(self):
         for tree in self.parse_all(asyncvar, maxver=6):
             pass
 
+    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_asynccomp(self):
         for tree in self.parse_all(asynccomp, minver=6):
             pass
 
+    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_matmul(self):
         for tree in self.parse_all(matmul, minver=5):
             pass
 
+    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_fstring(self):
         for tree in self.parse_all(fstring, minver=6):
             pass
 
+    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_underscorednumber(self):
         for tree in self.parse_all(underscorednumber, minver=6):
             pass
@@ -308,6 +313,7 @@ class TypeCommentTests(unittest.TestCase):
         tree = self.classic_parse(vardecl)
         self.assertEqual(tree.body[0].type_comment, None)
 
+    @support.skip_if_new_parser("Pegen does not support `# type: ignore` yet")
     def test_ignores(self):
         for tree in self.parse_all(ignores):
             self.assertEqual(
@@ -323,6 +329,7 @@ class TypeCommentTests(unittest.TestCase):
         tree = self.classic_parse(ignores)
         self.assertEqual(tree.type_ignores, [])
 
+    @support.skip_if_new_parser("Pegen does not support per-argument type comments yet")
     def test_longargs(self):
         for tree in self.parse_all(longargs):
             for t in tree.body:
@@ -377,6 +384,7 @@ class TypeCommentTests(unittest.TestCase):
         check_both_ways("pass  # type: ignorewhatever\n")
         check_both_ways("pass  # type: ignoreé\n")
 
+    @support.skip_if_new_parser("Pegen does not support func_type_input yet")
     def test_func_type_input(self):
 
         def parse_func_type_input(source):

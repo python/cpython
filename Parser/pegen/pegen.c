@@ -5,6 +5,20 @@
 #include "pegen.h"
 #include "parse_string.h"
 
+PyObject *
+_PyPegen_new_type_comment(Parser *p, char *s)
+{
+    PyObject *res = PyUnicode_DecodeUTF8(s, strlen(s), NULL);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (PyArena_AddPyObject(p->arena, res) < 0) {
+        Py_DECREF(res);
+        return NULL;
+    }
+    return res;
+}
+
 static int
 init_normalization(Parser *p)
 {
@@ -544,6 +558,12 @@ _PyPegen_fill_token(Parser *p)
 {
     const char *start, *end;
     int type = PyTokenizer_Get(p->tok, &start, &end);
+
+    // Skip '# type: ignore'; TODO: collect these like parsetok.c
+    while (type == TYPE_IGNORE) {
+        type = PyTokenizer_Get(p->tok, &start, &end);
+    }
+
     if (type == ERRORTOKEN) {
         if (p->tok->done == E_DECODE) {
             return raise_decode_error(p);
@@ -792,6 +812,12 @@ void *
 _PyPegen_string_token(Parser *p)
 {
     return _PyPegen_expect_token(p, STRING);
+}
+
+void *
+_PyPegen_type_comment_token(Parser *p)
+{
+    return _PyPegen_expect_token(p, TYPE_COMMENT);
 }
 
 void *
@@ -1094,6 +1120,11 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     mod_ty result = NULL;
 
     int parser_flags = compute_parser_flags(flags);
+
+    if (parser_flags & PyPARSE_TYPE_COMMENTS) {
+        tok->type_comments = 1;
+    }
+
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, NULL, arena);
     if (p == NULL) {
         goto error;
