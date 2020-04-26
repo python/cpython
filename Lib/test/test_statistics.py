@@ -1522,7 +1522,7 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
                 self.assertRaises(exc, self.func, values)
 
     def test_single_value_unsupported_type(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, '^unsupported type$'):
             self.func(['3.14'])
 
     def test_ints(self):
