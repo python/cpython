@@ -1004,7 +1004,7 @@ class ConvertTest(unittest.TestCase):
             x = statistics._convert(nan, type(nan))
             self.assertTrue(_nan_equal(x, nan))
 
-    def test_raise_type_error(self):
+    def test_invalid_input_type(self):
         with self.assertRaises(TypeError):
             statistics._convert(None, float)
 
@@ -1040,11 +1040,11 @@ class FailNegTest(unittest.TestCase):
 class FindLteqTest(unittest.TestCase):
     # Test _find_lteq private function.
 
-    def test_raise_value_error(self):
+    def test_invalid_input_values(self):
         for a, x in [
-            ([], 1),        # empty a triggers `i != len(a)`
-            ([1, 2], 3),    # non-existing max value triggers `i != len(a)`
-            ([1, 3], 2)     # non-existing value triggers `a[i] == x`
+            ([], 1),
+            ([1, 2], 3),
+            ([1, 3], 2)
         ]:
             with self.assertRaises(ValueError):
                 statistics._find_lteq(a, x)
@@ -1063,8 +1063,8 @@ class FindRteqTest(unittest.TestCase):
 
     def test_raise_value_error(self):
         for a, l, x in [
-            ([1], 2, 1),    # when l=len(a)+1 triggers `i != (len(a)+1)`
-            ([1, 3], 0, 2)  # non-existing value triggers `a[i-1] == x`
+            ([1], 2, 1),
+            ([1, 3], 0, 2)
         ]:
             with self.assertRaises(ValueError):
                 statistics._find_rteq(a, l, x)
@@ -1522,7 +1522,7 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
                 self.assertRaises(exc, self.func, values)
 
     def test_single_value_unsupported_type(self):
-        with self.assertRaisesRegex(TypeError, '^unsupported type$'):
+        with self.assertRaises(TypeError):
             self.func(['3.14'])
 
     def test_multiple_values_type_error(self):
