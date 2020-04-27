@@ -1844,9 +1844,6 @@ yes)
 	    ;;
 
     Darwin*)
-        # Issue #35569: Expose the RFC 3542 socket options.
-        CFLAGS="-D__APPLE_USE_RFC_3542 ${CFLAGS}"
-
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
         if test "${CC}" = gcc
