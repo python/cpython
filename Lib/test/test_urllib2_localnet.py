@@ -322,6 +322,7 @@ class ProxyAuthTests(unittest.TestCase):
     PASSWD = "test123"
     REALM = "TestRealm"
 
+    @support.requires_hashdigest("md5")
     def setUp(self):
         super(ProxyAuthTests, self).setUp()
         # Ignore proxy bypass settings in the environment.
@@ -446,6 +447,9 @@ class TestUrlopen(unittest.TestCase):
 
     def setUp(self):
         super(TestUrlopen, self).setUp()
+
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
 
         # Ignore proxies for localhost tests.
         def restore_environ(old_environ):

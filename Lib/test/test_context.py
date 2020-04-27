@@ -38,9 +38,6 @@ class ContextTest(unittest.TestCase):
 
         self.assertNotEqual(hash(c), hash('aaa'))
 
-    def test_context_var_new_2(self):
-        self.assertIsNone(contextvars.ContextVar[int])
-
     @isolated_context
     def test_context_var_repr_1(self):
         c = contextvars.ContextVar('a')

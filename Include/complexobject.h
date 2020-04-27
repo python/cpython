@@ -39,7 +39,7 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyComplex_Type;
 
 #define PyComplex_Check(op) PyObject_TypeCheck(op, &PyComplex_Type)
-#define PyComplex_CheckExact(op) (Py_TYPE(op) == &PyComplex_Type)
+#define PyComplex_CheckExact(op) Py_IS_TYPE(op, &PyComplex_Type)
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyComplex_FromCComplex(Py_complex);

@@ -2,14 +2,14 @@
    Test cases for codeop.py
    Nick Mathewson
 """
+import sys
 import unittest
-from test.support import is_jython
+from test import support
 
 from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
 import io
 
-if is_jython:
-    import sys
+if support.is_jython:
 
     def unify_callables(d):
         for n,v in d.items():
@@ -21,7 +21,7 @@ class CodeopTests(unittest.TestCase):
 
     def assertValid(self, str, symbol='single'):
         '''succeed iff str is a valid piece of code'''
-        if is_jython:
+        if support.is_jython:
             code = compile_command(str, "<input>", symbol)
             self.assertTrue(code)
             if symbol == "single":
@@ -60,7 +60,7 @@ class CodeopTests(unittest.TestCase):
         av = self.assertValid
 
         # special case
-        if not is_jython:
+        if not support.is_jython:
             self.assertEqual(compile_command(""),
                              compile("pass", "<input>", 'single',
                                      PyCF_DONT_IMPLY_DEDENT))
@@ -122,6 +122,7 @@ class CodeopTests(unittest.TestCase):
         av("def f():\n pass\n#foo\n")
         av("@a.b.c\ndef f():\n pass\n")
 
+    @support.skip_if_new_parser("Pegen does not support PyCF_DONT_INPLY_DEDENT yet")
     def test_incomplete(self):
         ai = self.assertIncomplete
 

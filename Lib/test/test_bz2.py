@@ -100,6 +100,9 @@ class BZ2FileTest(BaseTest):
         self.assertRaises(ValueError, BZ2File, os.devnull, compresslevel=0)
         self.assertRaises(ValueError, BZ2File, os.devnull, compresslevel=10)
 
+        # compresslevel is keyword-only
+        self.assertRaises(TypeError, BZ2File, os.devnull, "r", 3)
+
     def testRead(self):
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
@@ -643,6 +646,7 @@ class BZ2CompressorTest(BaseTest):
         data += bz2c.flush()
         self.assertEqual(ext_decompress(data), self.TEXT)
 
+    @support.skip_if_pgo_task
     @bigmemtest(size=_4G + 100, memuse=2)
     def testCompress4G(self, size):
         # "Test BZ2Compressor.compress()/flush() with >4GiB input"
@@ -701,11 +705,12 @@ class BZ2DecompressorTest(BaseTest):
         self.assertRaises(EOFError, bz2d.decompress, b"anything")
         self.assertRaises(EOFError, bz2d.decompress, b"")
 
+    @support.skip_if_pgo_task
     @bigmemtest(size=_4G + 100, memuse=3.3)
     def testDecompress4G(self, size):
         # "Test BZ2Decompressor.decompress() with >4GiB input"
         blocksize = 10 * 1024 * 1024
-        block = random.getrandbits(blocksize * 8).to_bytes(blocksize, 'little')
+        block = random.randbytes(blocksize)
         try:
             data = block * (size // blocksize + 1)
             compressed = bz2.compress(data)

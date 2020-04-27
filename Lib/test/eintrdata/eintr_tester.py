@@ -22,6 +22,7 @@ import time
 import unittest
 
 from test import support
+from test.support import socket_helper
 
 @contextlib.contextmanager
 def kill_on_error(proc):
@@ -57,9 +58,8 @@ class EINTRBaseTest(unittest.TestCase):
 
         # Use faulthandler as watchdog to debug when a test hangs
         # (timeout of 10 minutes)
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            faulthandler.dump_traceback_later(10 * 60, exit=True,
-                                              file=sys.__stderr__)
+        faulthandler.dump_traceback_later(10 * 60, exit=True,
+                                          file=sys.__stderr__)
 
     @staticmethod
     def stop_alarm():
@@ -68,8 +68,7 @@ class EINTRBaseTest(unittest.TestCase):
     def tearDown(self):
         self.stop_alarm()
         signal.signal(signal.SIGALRM, self.orig_handler)
-        if hasattr(faulthandler, 'cancel_dump_traceback_later'):
-            faulthandler.cancel_dump_traceback_later()
+        faulthandler.cancel_dump_traceback_later()
 
     def subprocess(self, *args, **kw):
         cmd_args = (sys.executable, '-c') + args
@@ -285,14 +284,14 @@ class SocketEINTRTest(EINTRBaseTest):
         self._test_send(lambda sock, data: sock.sendmsg([data]))
 
     def test_accept(self):
-        sock = socket.create_server((support.HOST, 0))
+        sock = socket.create_server((socket_helper.HOST, 0))
         self.addCleanup(sock.close)
         port = sock.getsockname()[1]
 
         code = '\n'.join((
             'import socket, time',
             '',
-            'host = %r' % support.HOST,
+            'host = %r' % socket_helper.HOST,
             'port = %s' % port,
             'sleep_time = %r' % self.sleep_time,
             '',

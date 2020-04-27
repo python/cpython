@@ -1,0 +1,2 @@
+The :mod:`logging` package is now imported lazily in :mod:`unittest` only
+when the :meth:`~unittest.TestCase.assertLogs` assertion is used.

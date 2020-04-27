@@ -36,5 +36,8 @@ python_symbols = Symbols(python_grammar)
 python_grammar_no_print_statement = python_grammar.copy()
 del python_grammar_no_print_statement.keywords["print"]
 
+python_grammar_no_print_and_exec_statement = python_grammar_no_print_statement.copy()
+del python_grammar_no_print_and_exec_statement.keywords["exec"]
+
 pattern_grammar = driver.load_packaged_grammar("lib2to3", _PATTERN_GRAMMAR_FILE)
 pattern_symbols = Symbols(pattern_grammar)

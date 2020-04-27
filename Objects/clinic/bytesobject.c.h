@@ -99,7 +99,7 @@ bytes_partition(PyBytesObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&sep, 'C')) {
-        _PyArg_BadArgument("partition", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("partition", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = bytes_partition_impl(self, &sep);
@@ -142,7 +142,7 @@ bytes_rpartition(PyBytesObject *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&sep, 'C')) {
-        _PyArg_BadArgument("rpartition", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("rpartition", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = bytes_rpartition_impl(self, &sep);
@@ -420,14 +420,14 @@ bytes_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&frm, 'C')) {
-        _PyArg_BadArgument("maketrans", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("maketrans", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &to, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&to, 'C')) {
-        _PyArg_BadArgument("maketrans", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("maketrans", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = bytes_maketrans_impl(&frm, &to);
@@ -480,14 +480,14 @@ bytes_replace(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&old, 'C')) {
-        _PyArg_BadArgument("replace", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("replace", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &new, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&new, 'C')) {
-        _PyArg_BadArgument("replace", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("replace", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -521,6 +521,85 @@ exit:
     /* Cleanup for new */
     if (new.obj) {
        PyBuffer_Release(&new);
+    }
+
+    return return_value;
+}
+
+PyDoc_STRVAR(bytes_removeprefix__doc__,
+"removeprefix($self, prefix, /)\n"
+"--\n"
+"\n"
+"Return a bytes object with the given prefix string removed if present.\n"
+"\n"
+"If the bytes starts with the prefix string, return bytes[len(prefix):].\n"
+"Otherwise, return a copy of the original bytes.");
+
+#define BYTES_REMOVEPREFIX_METHODDEF    \
+    {"removeprefix", (PyCFunction)bytes_removeprefix, METH_O, bytes_removeprefix__doc__},
+
+static PyObject *
+bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix);
+
+static PyObject *
+bytes_removeprefix(PyBytesObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer prefix = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &prefix, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&prefix, 'C')) {
+        _PyArg_BadArgument("removeprefix", "argument", "contiguous buffer", arg);
+        goto exit;
+    }
+    return_value = bytes_removeprefix_impl(self, &prefix);
+
+exit:
+    /* Cleanup for prefix */
+    if (prefix.obj) {
+       PyBuffer_Release(&prefix);
+    }
+
+    return return_value;
+}
+
+PyDoc_STRVAR(bytes_removesuffix__doc__,
+"removesuffix($self, suffix, /)\n"
+"--\n"
+"\n"
+"Return a bytes object with the given suffix string removed if present.\n"
+"\n"
+"If the bytes ends with the suffix string and that suffix is not empty,\n"
+"return bytes[:-len(prefix)].  Otherwise, return a copy of the original\n"
+"bytes.");
+
+#define BYTES_REMOVESUFFIX_METHODDEF    \
+    {"removesuffix", (PyCFunction)bytes_removesuffix, METH_O, bytes_removesuffix__doc__},
+
+static PyObject *
+bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix);
+
+static PyObject *
+bytes_removesuffix(PyBytesObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer suffix = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &suffix, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&suffix, 'C')) {
+        _PyArg_BadArgument("removesuffix", "argument", "contiguous buffer", arg);
+        goto exit;
+    }
+    return_value = bytes_removesuffix_impl(self, &suffix);
+
+exit:
+    /* Cleanup for suffix */
+    if (suffix.obj) {
+       PyBuffer_Release(&suffix);
     }
 
     return return_value;
@@ -568,7 +647,7 @@ bytes_decode(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
     }
     if (args[0]) {
         if (!PyUnicode_Check(args[0])) {
-            _PyArg_BadArgument("decode", 1, "str", args[0]);
+            _PyArg_BadArgument("decode", "argument 'encoding'", "str", args[0]);
             goto exit;
         }
         Py_ssize_t encoding_length;
@@ -585,7 +664,7 @@ bytes_decode(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("decode", 2, "str", args[1]);
+        _PyArg_BadArgument("decode", "argument 'errors'", "str", args[1]);
         goto exit;
     }
     Py_ssize_t errors_length;
@@ -674,7 +753,7 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
     PyObject *string;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("fromhex", 0, "str", arg);
+        _PyArg_BadArgument("fromhex", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -686,4 +765,73 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=af9f51b9b185567d input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(bytes_hex__doc__,
+"hex($self, /, sep=<unrepresentable>, bytes_per_sep=1)\n"
+"--\n"
+"\n"
+"Create a str of hexadecimal numbers from a bytes object.\n"
+"\n"
+"  sep\n"
+"    An optional single character or byte to separate hex bytes.\n"
+"  bytes_per_sep\n"
+"    How many bytes between separators.  Positive values count from the\n"
+"    right, negative values count from the left.\n"
+"\n"
+"Example:\n"
+">>> value = b\'\\xb9\\x01\\xef\'\n"
+">>> value.hex()\n"
+"\'b901ef\'\n"
+">>> value.hex(\':\')\n"
+"\'b9:01:ef\'\n"
+">>> value.hex(\':\', 2)\n"
+"\'b9:01ef\'\n"
+">>> value.hex(\':\', -2)\n"
+"\'b901:ef\'");
+
+#define BYTES_HEX_METHODDEF    \
+    {"hex", (PyCFunction)(void(*)(void))bytes_hex, METH_FASTCALL|METH_KEYWORDS, bytes_hex__doc__},
+
+static PyObject *
+bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep);
+
+static PyObject *
+bytes_hex(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"sep", "bytes_per_sep", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "hex", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *sep = NULL;
+    int bytes_per_sep = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        sep = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    bytes_per_sep = _PyLong_AsInt(args[1]);
+    if (bytes_per_sep == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = bytes_hex_impl(self, sep, bytes_per_sep);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=220388917d7bf751 input=a9049054013a1b77]*/

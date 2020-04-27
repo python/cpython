@@ -29,6 +29,7 @@ test_urlparse.py provides a good indicator of parsing behavior.
 
 import re
 import sys
+import types
 import collections
 import warnings
 
@@ -175,6 +176,8 @@ class _NetlocResultMixinBase(object):
             if not ( 0 <= port <= 65535):
                 raise ValueError("Port out of range 0-65535")
         return port
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class _NetlocResultMixinStr(_NetlocResultMixinBase, _ResultMixinStr):
@@ -366,9 +369,23 @@ del _fix_result_transcoding
 def urlparse(url, scheme='', allow_fragments=True):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
-    Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
-    Note that we don't break the components up in smaller bits
-    (e.g. netloc is a single string) and we don't expand % escapes."""
+
+    The result is a named 6-tuple with fields corresponding to the
+    above. It is either a ParseResult or ParseResultBytes object,
+    depending on the type of the url parameter.
+
+    The username, password, hostname, and port sub-components of netloc
+    can also be accessed as attributes of the returned object.
+
+    The scheme argument provides the default value of the scheme
+    component when no scheme is found in url.
+
+    If allow_fragments is False, no attempt is made to separate the
+    fragment component from the previous component, which can be either
+    path or query.
+
+    Note that % escapes are not expanded.
+    """
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     splitresult = urlsplit(url, scheme, allow_fragments)
     scheme, netloc, url, query, fragment = splitresult
@@ -402,9 +419,9 @@ def _checknetloc(netloc):
     # looking for characters like \u2100 that expand to 'a/c'
     # IDNA uses NFKC equivalence, so normalize for this check
     import unicodedata
-    n = netloc.rpartition('@')[2] # ignore anything to the left of '@'
-    n = n.replace(':', '')        # ignore characters already included
-    n = n.replace('#', '')        # but not the surrounding text
+    n = netloc.replace('@', '')   # ignore characters already included
+    n = n.replace(':', '')        # but not the surrounding text
+    n = n.replace('#', '')
     n = n.replace('?', '')
     netloc2 = unicodedata.normalize('NFKC', n)
     if n == netloc2:
@@ -417,9 +434,24 @@ def _checknetloc(netloc):
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
     <scheme>://<netloc>/<path>?<query>#<fragment>
-    Return a 5-tuple: (scheme, netloc, path, query, fragment).
-    Note that we don't break the components up in smaller bits
-    (e.g. netloc is a single string) and we don't expand % escapes."""
+
+    The result is a named 5-tuple with fields corresponding to the
+    above. It is either a SplitResult or SplitResultBytes object,
+    depending on the type of the url parameter.
+
+    The username, password, hostname, and port sub-components of netloc
+    can also be accessed as attributes of the returned object.
+
+    The scheme argument provides the default value of the scheme
+    component when no scheme is found in url.
+
+    If allow_fragments is False, no attempt is made to separate the
+    fragment component from the previous component, which can be either
+    path or query.
+
+    Note that % escapes are not expanded.
+    """
+
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     allow_fragments = bool(allow_fragments)
     key = url, scheme, allow_fragments, type(url), type(scheme)
@@ -431,31 +463,11 @@ def urlsplit(url, scheme='', allow_fragments=True):
     netloc = query = fragment = ''
     i = url.find(':')
     if i > 0:
-        if url[:i] == 'http': # optimize the common case
-            url = url[i+1:]
-            if url[:2] == '//':
-                netloc, url = _splitnetloc(url, 2)
-                if (('[' in netloc and ']' not in netloc) or
-                        (']' in netloc and '[' not in netloc)):
-                    raise ValueError("Invalid IPv6 URL")
-            if allow_fragments and '#' in url:
-                url, fragment = url.split('#', 1)
-            if '?' in url:
-                url, query = url.split('?', 1)
-            _checknetloc(netloc)
-            v = SplitResult('http', netloc, url, query, fragment)
-            _parse_cache[key] = v
-            return _coerce_result(v)
         for c in url[:i]:
             if c not in scheme_chars:
                 break
         else:
-            # make sure "url" is not actually a port number (in which case
-            # "scheme" is really part of the path)
-            rest = url[i+1:]
-            if not rest or any(c not in '0123456789' for c in rest):
-                # not a port number
-                scheme, url = url[:i].lower(), rest
+            scheme, url = url[:i].lower(), url[i+1:]
 
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
@@ -631,6 +643,8 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
     unquote('abc%20def') -> 'abc def'.
     """
+    if isinstance(string, bytes):
+        return unquote_to_bytes(string).decode(encoding, errors)
     if '%' not in string:
         string.split
         return string
@@ -979,17 +993,15 @@ def _to_bytes(url):
 
 
 def unwrap(url):
-    warnings.warn("urllib.parse.unwrap() is deprecated as of 3.8",
-                  DeprecationWarning, stacklevel=2)
-    return _unwrap(url)
+    """Transform a string like '<URL:scheme://host/path>' into 'scheme://host/path'.
 
-
-def _unwrap(url):
-    """unwrap('<URL:type://host/path>') --> 'type://host/path'."""
+    The string is returned unchanged if it's not a wrapped URL.
+    """
     url = str(url).strip()
     if url[:1] == '<' and url[-1:] == '>':
         url = url[1:-1].strip()
-    if url[:4] == 'URL:': url = url[4:].strip()
+    if url[:4] == 'URL:':
+        url = url[4:].strip()
     return url
 
 
@@ -1076,9 +1088,9 @@ def _splitport(host):
     """splitport('host:port') --> 'host', 'port'."""
     global _portprog
     if _portprog is None:
-        _portprog = re.compile('(.*):([0-9]*)$', re.DOTALL)
+        _portprog = re.compile('(.*):([0-9]*)', re.DOTALL)
 
-    match = _portprog.match(host)
+    match = _portprog.fullmatch(host)
     if match:
         host, port = match.groups()
         if port:

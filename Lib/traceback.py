@@ -538,7 +538,9 @@ class TracebackException:
             self.__cause__._load_lines()
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        if isinstance(other, TracebackException):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
 
     def __str__(self):
         return self._str
@@ -549,7 +551,7 @@ class TracebackException:
         The return value is a generator of strings, each ending in a newline.
 
         Normally, the generator emits a single string; however, for
-        SyntaxError exceptions, it emites several lines that (when
+        SyntaxError exceptions, it emits several lines that (when
         printed) display detailed information about where the syntax
         error occurred.
 

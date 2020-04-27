@@ -21,7 +21,7 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyFloat_Type;
 
 #define PyFloat_Check(op) PyObject_TypeCheck(op, &PyFloat_Type)
-#define PyFloat_CheckExact(op) (Py_TYPE(op) == &PyFloat_Type)
+#define PyFloat_CheckExact(op) Py_IS_TYPE(op, &PyFloat_Type)
 
 #ifdef Py_NAN
 #define Py_RETURN_NAN return PyFloat_FromDouble(Py_NAN)
@@ -87,15 +87,6 @@ PyAPI_FUNC(double) PyFloat_AsDouble(PyObject *);
 PyAPI_FUNC(int) _PyFloat_Pack2(double x, unsigned char *p, int le);
 PyAPI_FUNC(int) _PyFloat_Pack4(double x, unsigned char *p, int le);
 PyAPI_FUNC(int) _PyFloat_Pack8(double x, unsigned char *p, int le);
-
-/* Needed for the old way for marshal to store a floating point number.
-   Returns the string length copied into p, -1 on error.
- */
-PyAPI_FUNC(int) _PyFloat_Repr(double x, char *p, size_t len);
-
-/* Used to get the important decimal digits of a double */
-PyAPI_FUNC(int) _PyFloat_Digits(char *buf, double v, int *signum);
-PyAPI_FUNC(void) _PyFloat_DigitsInit(void);
 
 /* The unpack routines read 2, 4 or 8 bytes, starting at p.  le is a bool
  * argument, true if the string is in little-endian format (exponent

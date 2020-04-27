@@ -1,9 +1,16 @@
-/* Implementation helper: a struct that looks like a tuple.  See timemodule
-   and posixmodule for example uses. */
+/* Implementation helper: a struct that looks like a tuple.
+   See timemodule and posixmodule for example uses.
+
+   The structseq helper is considered an internal CPython implementation
+   detail.  Docs for modules using structseqs should call them
+   "named tuples" (be sure to include a space between the two
+   words and add a link back to the term in Docs/glossary.rst).
+*/
 
 #include "Python.h"
 #include "pycore_tupleobject.h"
-#include "structmember.h"
+#include "pycore_object.h"
+#include "structmember.h"         // PyMemberDef
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
@@ -11,7 +18,7 @@ static const char unnamed_fields_key[] = "n_unnamed_fields";
 
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
-char *PyStructSequence_UnnamedField = "unnamed field";
+const char * const PyStructSequence_UnnamedField = "unnamed field";
 _Py_IDENTIFIER(n_sequence_fields);
 _Py_IDENTIFIER(n_fields);
 _Py_IDENTIFIER(n_unnamed_fields);
@@ -40,7 +47,7 @@ PyStructSequence_New(PyTypeObject *type)
         return NULL;
     /* Hack the size of the variable object, so invisible fields don't appear
      to Python code. */
-    Py_SIZE(obj) = VISIBLE_SIZE_TP(type);
+    Py_SET_SIZE(obj, VISIBLE_SIZE_TP(type));
     for (i = 0; i < size; i++)
         obj->ob_item[i] = NULL;
 
@@ -59,11 +66,24 @@ PyStructSequence_GetItem(PyObject* op, Py_ssize_t i)
     return PyStructSequence_GET_ITEM(op, i);
 }
 
+
+static int
+structseq_traverse(PyStructSequence *obj, visitproc visit, void *arg)
+{
+    Py_ssize_t i, size;
+    size = REAL_SIZE(obj);
+    for (i = 0; i < size; ++i) {
+        Py_VISIT(obj->ob_item[i]);
+    }
+    return 0;
+}
+
 static void
 structseq_dealloc(PyStructSequence *obj)
 {
     Py_ssize_t i, size;
     PyTypeObject *tp;
+    PyObject_GC_UnTrack(obj);
 
     tp = (PyTypeObject *) Py_TYPE(obj);
     size = REAL_SIZE(obj);
@@ -87,12 +107,12 @@ class structseq "PyStructSequence *" "NULL"
 @classmethod
 structseq.__new__ as structseq_new
     sequence as arg: object
-    dict: object = NULL
+    dict: object(c_default="NULL") = {}
 [clinic start generated code]*/
 
 static PyObject *
 structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
-/*[clinic end generated code: output=baa082e788b171da input=9b44810243907377]*/
+/*[clinic end generated code: output=baa082e788b171da input=90532511101aa3fb]*/
 {
     PyObject *ob;
     PyStructSequence *res = NULL;
@@ -166,6 +186,7 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     }
 
     Py_DECREF(arg);
+    _PyObject_GC_TRACK(res);
     return (PyObject*) res;
 }
 
@@ -388,6 +409,7 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     type->tp_methods = structseq_methods;
     type->tp_new = structseq_new;
     type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
+    type->tp_traverse = (traverseproc) structseq_traverse;
 
     n_members = count_members(desc, &n_unnamed_members);
     members = PyMem_NEW(PyMemberDef, n_members - n_unnamed_members + 1);
@@ -426,7 +448,7 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     PyMemberDef *members;
     PyObject *bases;
     PyTypeObject *type;
-    PyType_Slot slots[7];
+    PyType_Slot slots[8];
     PyType_Spec spec;
     Py_ssize_t n_members, n_unnamed_members;
 
@@ -446,7 +468,8 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     slots[3] = (PyType_Slot){Py_tp_methods, structseq_methods};
     slots[4] = (PyType_Slot){Py_tp_new, structseq_new};
     slots[5] = (PyType_Slot){Py_tp_members, members};
-    slots[6] = (PyType_Slot){0, 0};
+    slots[6] = (PyType_Slot){Py_tp_traverse, (traverseproc)structseq_traverse};
+    slots[7] = (PyType_Slot){0, 0};
 
     /* Initialize Spec */
     /* The name in this PyType_Spec is statically allocated so it is */

@@ -7,8 +7,6 @@
 extern "C" {
 #endif
 
-#include "pythread.h"
-
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
 #define MAX_CO_EXTRA_USERS 255
@@ -27,6 +25,17 @@ typedef struct _is PyInterpreterState;
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+/* New in 3.9 */
+/* Get the current interpreter state.
+
+   Issue a fatal error if there no current Python thread state or no current
+   interpreter. It cannot return NULL.
+
+   The caller must hold the GIL. */
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Get(void);
+#endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
 /* New in 3.8 */
@@ -50,7 +59,6 @@ PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
 PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
 PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);
 PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
-PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Get the current thread state.
 
@@ -76,6 +84,13 @@ PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+/* New in 3.9 */
+PyAPI_FUNC(PyInterpreterState*) PyThreadState_GetInterpreter(PyThreadState *tstate);
+PyAPI_FUNC(struct _frame*) PyThreadState_GetFrame(PyThreadState *tstate);
+PyAPI_FUNC(uint64_t) PyThreadState_GetID(PyThreadState *tstate);
+#endif
 
 typedef
     enum {PyGILState_LOCKED, PyGILState_UNLOCKED}

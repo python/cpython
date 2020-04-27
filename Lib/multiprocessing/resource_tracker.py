@@ -20,8 +20,6 @@ import signal
 import sys
 import threading
 import warnings
-import _multiprocessing
-import _posixshmem
 
 from . import spawn
 from . import util
@@ -33,9 +31,16 @@ _IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
 _CLEANUP_FUNCS = {
     'noop': lambda: None,
-    'semaphore': _multiprocessing.sem_unlink,
-    'shared_memory': _posixshmem.shm_unlink
 }
+
+if os.name == 'posix':
+    import _multiprocessing
+    import _posixshmem
+
+    _CLEANUP_FUNCS.update({
+        'semaphore': _multiprocessing.sem_unlink,
+        'shared_memory': _posixshmem.shm_unlink,
+    })
 
 
 class ResourceTracker(object):
@@ -44,6 +49,19 @@ class ResourceTracker(object):
         self._lock = threading.Lock()
         self._fd = None
         self._pid = None
+
+    def _stop(self):
+        with self._lock:
+            if self._fd is None:
+                # not running
+                return
+
+            # closing the "alive" file descriptor stops main()
+            os.close(self._fd)
+            self._fd = None
+
+            os.waitpid(self._pid, 0)
+            self._pid = None
 
     def getfd(self):
         self.ensure_running()

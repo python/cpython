@@ -1,7 +1,7 @@
 from test import support
+from test.support import socket_helper
 
 from contextlib import contextmanager
-import errno
 import imaplib
 import os.path
 import socketserver
@@ -11,7 +11,8 @@ import threading
 import socket
 
 from test.support import (reap_threads, verbose, transient_internet,
-                          run_with_tz, run_with_locale, cpython_only)
+                          run_with_tz, run_with_locale, cpython_only,
+                          requires_hashdigest)
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -82,7 +83,7 @@ class TestImaplib(unittest.TestCase):
                 pass
 
         # This is the exception that should be raised.
-        expected_errnos = support.get_socket_conn_refused_errs()
+        expected_errnos = socket_helper.get_socket_conn_refused_errs()
         with self.assertRaises(OSError) as cm:
             imaplib.IMAP4()
         self.assertIn(cm.exception.errno, expected_errnos)
@@ -109,7 +110,7 @@ else:
 
 
 class SimpleIMAPHandler(socketserver.StreamRequestHandler):
-    timeout = 1
+    timeout = support.LOOPBACK_TIMEOUT
     continuation = None
     capabilities = ''
 
@@ -210,7 +211,7 @@ class NewIMAPTestsMixin():
                 raise
 
         self.addCleanup(self._cleanup)
-        self.server = self.server_class((support.HOST, 0), imap_handler)
+        self.server = self.server_class((socket_helper.HOST, 0), imap_handler)
         self.thread = threading.Thread(
             name=self._testMethodName+'-server',
             target=self.server.serve_forever,
@@ -238,7 +239,7 @@ class NewIMAPTestsMixin():
         # cleanup the server
         self.server.shutdown()
         self.server.server_close()
-        support.join_thread(self.thread, 3.0)
+        support.join_thread(self.thread)
         # Explicitly clear the attribute to prevent dangling thread
         self.thread = None
 
@@ -371,6 +372,7 @@ class NewIMAPTestsMixin():
         self.assertEqual(code, 'OK')
         self.assertEqual(server.response, b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
+    @requires_hashdigest('md5')
     def test_login_cram_md5_bytes(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -388,6 +390,7 @@ class NewIMAPTestsMixin():
         ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
+    @requires_hashdigest('md5')
     def test_login_cram_md5_plain_text(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -437,6 +440,29 @@ class NewIMAPTestsMixin():
         _, server = self._setup(SimpleIMAPHandler, connect=False)
         with self.imap_class(*server.server_address):
             pass
+
+    def test_imaplib_timeout_test(self):
+        _, server = self._setup(SimpleIMAPHandler)
+        addr = server.server_address[1]
+        client = self.imap_class("localhost", addr, timeout=None)
+        self.assertEqual(client.sock.timeout, None)
+        client.shutdown()
+        client = self.imap_class("localhost", addr, timeout=support.LOOPBACK_TIMEOUT)
+        self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
+        client.shutdown()
+        with self.assertRaises(ValueError):
+            client = self.imap_class("localhost", addr, timeout=0)
+
+    def test_imaplib_timeout_functionality_test(self):
+        class TimeoutHandler(SimpleIMAPHandler):
+            def handle(self):
+                time.sleep(1)
+                SimpleIMAPHandler.handle(self)
+
+        _, server = self._setup(TimeoutHandler)
+        addr = server.server_address[1]
+        with self.assertRaises(socket.timeout):
+            client = self.imap_class("localhost", addr, timeout=0.001)
 
     def test_with_statement(self):
         _, server = self._setup(SimpleIMAPHandler, connect=False)
@@ -575,7 +601,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
     @contextmanager
     def reaped_server(self, hdlr):
-        server, thread = self.make_server((support.HOST, 0), hdlr)
+        server, thread = self.make_server((socket_helper.HOST, 0), hdlr)
         try:
             yield server
         finally:
@@ -798,6 +824,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
                              b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
     @reap_threads
+    @requires_hashdigest('md5')
     def test_login_cram_md5(self):
 
         class AuthHandler(SimpleIMAPHandler):

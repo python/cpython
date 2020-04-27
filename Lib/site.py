@@ -73,6 +73,7 @@ import sys
 import os
 import builtins
 import _sitebuiltins
+import io
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -156,7 +157,7 @@ def addpackage(sitedir, name, known_paths):
         reset = False
     fullname = os.path.join(sitedir, name)
     try:
-        f = open(fullname, "r")
+        f = io.TextIOWrapper(io.open_code(fullname))
     except OSError:
         return
     with f:
@@ -333,13 +334,22 @@ def getsitepackages(prefixes=None):
             continue
         seen.add(prefix)
 
+        libdirs = [sys.platlibdir]
+        if sys.platlibdir != "lib":
+            libdirs.append("lib")
+
         if os.sep == '/':
-            sitepackages.append(os.path.join(prefix, "lib",
-                                        "python%d.%d" % sys.version_info[:2],
-                                        "site-packages"))
+            for libdir in libdirs:
+                path = os.path.join(prefix, libdir,
+                                    "python%d.%d" % sys.version_info[:2],
+                                    "site-packages")
+                sitepackages.append(path)
         else:
             sitepackages.append(prefix)
-            sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
+
+            for libdir in libdirs:
+                path = os.path.join(prefix, libdir, "site-packages")
+                sitepackages.append(path)
     return sitepackages
 
 def addsitepackages(known_paths, prefixes=None):
@@ -458,13 +468,6 @@ def venv(known_paths):
     env = os.environ
     if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in env:
         executable = sys._base_executable = os.environ['__PYVENV_LAUNCHER__']
-    elif sys.platform == 'win32' and '__PYVENV_LAUNCHER__' in env:
-        executable = sys.executable
-        import _winapi
-        sys._base_executable = _winapi.GetModuleFileName(0)
-        # bpo-35873: Clear the environment variable to avoid it being
-        # inherited by child processes.
-        del os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
     exe_dir, _ = os.path.split(os.path.abspath(executable))
@@ -596,7 +599,7 @@ def _script():
     Exit codes with --user-base or --user-site:
       0 - user site directory is enabled
       1 - user site directory is disabled by user
-      2 - uses site directory is disabled by super user
+      2 - user site directory is disabled by super user
           or for security reasons
      >2 - unknown error
     """

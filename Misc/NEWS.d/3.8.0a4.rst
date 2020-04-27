@@ -33,17 +33,6 @@ directory if the :envvar:`PATH` environment variable is not set.
 
 ..
 
-.. bpo: 36751
-.. date: 2019-04-29-23-30-21
-.. nonce: 3NCRbm
-.. section: Core and Builtins
-
-The :func:`~inspect.getfullargspec` function in the :mod:`inspect` module is
-deprecated in favor of the :func:`inspect.signature` API. Contributed by
-Pablo Galindo.
-
-..
-
 .. bpo: 36722
 .. date: 2019-04-25-21-02-40
 .. nonce: 8NApVM
@@ -915,7 +904,7 @@ only enabled by ``--findleaks``. The check now also works with
 .. nonce: B8-ghi
 .. section: Tests
 
-When using mulitprocessing mode (-jN), regrtest now better reports errors if
+When using multiprocessing mode (-jN), regrtest now better reports errors if
 a worker process fails, and it exits immediately on a worker thread failure
 or when interrupted.
 
@@ -1063,7 +1052,8 @@ Remove the stale scriptsinstall Makefile target.
 .. nonce: ACQkiC
 .. section: Build
 
-On Unix, C extensions are no longer linked to libpython except on Android.
+On Unix, C extensions are no longer linked to libpython except on Android
+and Cygwin.
 
 It is now possible for a statically linked Python to load a C extension
 built using a shared library Python.
@@ -1120,7 +1110,7 @@ Add ``-fmax-type-align=8`` to CFLAGS when clang compiler is detected. The
 pymalloc memory allocator aligns memory on 8 bytes. On x86-64, clang expects
 alignment on 16 bytes by default and so uses MOVAPS instruction which can
 lead to segmentation fault. Instruct clang that Python is limited to
-alignemnt on 8 bytes to use MOVUPS instruction instead: slower but don't
+alignment on 8 bytes to use MOVUPS instruction instead: slower but don't
 trigger a SIGSEGV if the memory is not aligned on 16 bytes. Sadly, the flag
 must be added to ``CFLAGS`` and not just ``CFLAGS_NODIST``, since third
 party C extensions can have the same issue.

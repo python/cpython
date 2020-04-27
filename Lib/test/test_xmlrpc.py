@@ -15,6 +15,8 @@ import re
 import io
 import contextlib
 from test import support
+from test.support import socket_helper
+from test.support import ALWAYS_EQ, LARGEST, SMALLEST
 
 try:
     import gzip
@@ -333,7 +335,7 @@ class XMLRPCTestCase(unittest.TestCase):
             server.handle_request()  # First request and attempt at second
             server.handle_request()  # Retried second request
 
-        server = http.server.HTTPServer((support.HOST, 0), RequestHandler)
+        server = http.server.HTTPServer((socket_helper.HOST, 0), RequestHandler)
         self.addCleanup(server.server_close)
         thread = threading.Thread(target=run_server)
         thread.start()
@@ -530,14 +532,10 @@ class DateTimeTestCase(unittest.TestCase):
         # some other types
         dbytes = dstr.encode('ascii')
         dtuple = now.timetuple()
-        with self.assertRaises(TypeError):
-            dtime == 1970
-        with self.assertRaises(TypeError):
-            dtime != dbytes
-        with self.assertRaises(TypeError):
-            dtime == bytearray(dbytes)
-        with self.assertRaises(TypeError):
-            dtime != dtuple
+        self.assertFalse(dtime == 1970)
+        self.assertTrue(dtime != dbytes)
+        self.assertFalse(dtime == bytearray(dbytes))
+        self.assertTrue(dtime != dtuple)
         with self.assertRaises(TypeError):
             dtime < float(1970)
         with self.assertRaises(TypeError):
@@ -546,6 +544,18 @@ class DateTimeTestCase(unittest.TestCase):
             dtime <= bytearray(dbytes)
         with self.assertRaises(TypeError):
             dtime >= dtuple
+
+        self.assertTrue(dtime == ALWAYS_EQ)
+        self.assertFalse(dtime != ALWAYS_EQ)
+        self.assertTrue(dtime < LARGEST)
+        self.assertFalse(dtime > LARGEST)
+        self.assertTrue(dtime <= LARGEST)
+        self.assertFalse(dtime >= LARGEST)
+        self.assertFalse(dtime < SMALLEST)
+        self.assertTrue(dtime > SMALLEST)
+        self.assertFalse(dtime <= SMALLEST)
+        self.assertTrue(dtime >= SMALLEST)
+
 
 class BinaryTestCase(unittest.TestCase):
 

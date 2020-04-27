@@ -41,6 +41,7 @@ test_data = [
     ("String Val",    "A string value",                        REG_SZ),
     ("StringExpand",  "The path is %path%",                    REG_EXPAND_SZ),
     ("Multi-string",  ["Lots", "of", "string", "values"],      REG_MULTI_SZ),
+    ("Multi-nul",     ["", "", "", ""],                        REG_MULTI_SZ),
     ("Raw Data",      b"binary\x00data",                       REG_BINARY),
     ("Big String",    "x"*(2**14-1),                           REG_SZ),
     ("Big Binary",    b"x"*(2**14),                            REG_BINARY),
@@ -229,7 +230,7 @@ class LocalWinregTests(BaseWinregTests):
         h.Close()
         self.assertEqual(h.handle, 0)
 
-    def test_inexistant_remote_registry(self):
+    def test_nonexistent_remote_registry(self):
         connect = lambda: ConnectRegistry("abcdefghijkl", HKEY_CURRENT_USER)
         self.assertRaises(OSError, connect)
 

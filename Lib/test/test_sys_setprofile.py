@@ -334,6 +334,15 @@ class ProfileSimulatorTestCase(TestCaseBase):
                               (1, 'return', j_ident),
                               ])
 
+    # bpo-34125: profiling method_descriptor with **kwargs
+    def test_unbound_method(self):
+        kwargs = {}
+        def f(p):
+            dict.get({}, 42, **kwargs)
+        f_ident = ident(f)
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'return', f_ident)])
+
     # Test an invalid call (bpo-34126)
     def test_unbound_method_no_args(self):
         def f(p):
