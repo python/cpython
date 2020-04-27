@@ -1140,23 +1140,19 @@ _pyexc_set_context(PyObject *exc, PyObject *context)
 {
     PyObject *contexttype = (PyObject *)Py_TYPE(context);
 
-    // Set the context as though it were just caught in an "except" block.
-    // Doing this first makes it chain automatically.
-    PyErr_SetObject(contexttype, context);
-    // PyErr_SetExcInfo() steals references.
-    Py_INCREF(contexttype);
-    PyObject *tb = PyException_GetTraceback(context);
-    // Behave as though the exception was caught in this thread.
-    // (This is like entering an "except" block.)
-    PyErr_SetExcInfo(contexttype, context, tb);
+    // PyErr_Restore() steals references.
+    PyObject *exctype = (PyObject *)Py_TYPE(exc);
+    Py_INCREF(exctype);
+    Py_INCREF(exc);
+    PyObject *tb = PyException_GetTraceback(exc);
+    PyErr_Restore(exctype, exc, tb);  // This is needed for chaining.
 
-    // Chain "exc" as the current exception.
-    // exc.__context__ will be set automatically.
-    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
-    PyErr_Clear();
+    Py_INCREF(contexttype);  // _PyErr_ChainExceptions() steals a reference.
+    // This sets exc.__context__ to "context".
+    _PyErr_ChainExceptions(contexttype, context,
+                           PyException_GetTraceback(context));
 
-    // This is like leaving "except" block.
-    PyErr_SetExcInfo(NULL, NULL, NULL);
+    PyErr_Clear();  // We had only set it temporarily for chaining.
 }
 
 static PyObject *
