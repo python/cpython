@@ -878,6 +878,12 @@ For an example of the usage of queues for interprocess communication see
 
    It is a simplified :class:`Queue` type, very close to a locked :class:`Pipe`.
 
+   .. method:: close()
+
+      Close the queue.
+
+      .. versionadded:: 3.9
+
    .. method:: empty()
 
       Return ``True`` if the queue is empty, ``False`` otherwise.
