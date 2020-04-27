@@ -1135,6 +1135,30 @@ _sharedexception_extract(_sharedexception *she, PyObject *exc)
     Py_XDECREF(msgobj);
 }
 
+static void
+_pyexc_set_context(PyObject *exc, PyObject *context)
+{
+    PyObject *contexttype = (PyObject *)Py_TYPE(context);
+
+    // Set the context as though it were just caught in an "except" block.
+    // Doing this first makes it chain automatically.
+    PyErr_SetObject(contexttype, context);
+    // PyErr_SetExcInfo() steals references.
+    Py_INCREF(contexttype);
+    PyObject *tb = PyException_GetTraceback(context);
+    // Behave as though the exception was caught in this thread.
+    // (This is like entering an "except" block.)
+    PyErr_SetExcInfo(contexttype, context, tb);
+
+    // Chain "exc" as the current exception.
+    // exc.__context__ will be set automatically.
+    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
+    PyErr_Clear();
+
+    // This is like leaving "except" block.
+    PyErr_SetExcInfo(NULL, NULL, NULL);
+}
+
 static PyObject *
 _sharedexception_resolve(_sharedexception *sharedexc, PyObject *wrapperclass)
 {
@@ -1147,27 +1171,12 @@ _sharedexception_resolve(_sharedexception *sharedexc, PyObject *wrapperclass)
     // Set __cause__, is possible.
     PyObject *cause = _sharedexception_get_cause(sharedexc);
     if (cause != NULL) {
-        // Set the cause as though it were just caught in an "except" block.
-        // Doing this first makes it chain automatically.
-        PyObject *causetype = (PyObject *)Py_TYPE(cause);
-        PyErr_SetObject(causetype, cause);
-        // PyErr_SetExcInfo() steals references.
-        Py_INCREF(causetype);
-        PyObject *tb = PyException_GetTraceback(cause);
-        // Behave as though the exception was caught in this thread.
-        // (This is like entering an "except" block.)
-        PyErr_SetExcInfo(causetype, cause, tb);
-
-        // Chain "exc" as the current exception.
-        // exc.__context__ will be set automatically.
-        PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
+        // Set __context__ automatically.
+        _pyexc_set_context(exc, cause);
 
         // Set __cause__.
         Py_INCREF(cause);  // PyException_SetCause() steals a reference.
         PyException_SetCause(exc, cause);
-
-        // This is like leaving "except" block.
-        PyErr_SetExcInfo(NULL, NULL, NULL);
     }
 
     return exc;
