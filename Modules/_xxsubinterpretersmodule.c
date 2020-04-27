@@ -74,22 +74,6 @@ _pyobj_get_str_and_size(PyObject *obj, Py_ssize_t *psize)
     }
 }
 
-static char *
-_copy_raw_string(PyObject *strobj)
-{
-    const char *str = PyUnicode_AsUTF8(strobj);
-    if (str == NULL) {
-        return NULL;
-    }
-    char *copied = PyMem_Malloc(strlen(str)+1);
-    if (copied == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    strcpy(copied, str);
-    return copied;
-}
-
 /* "raw" strings */
 
 typedef struct _rawstring {
@@ -920,7 +904,7 @@ _excsnapshot_resolve(_excsnapshot *es)
 /* shared "object" */
 
 struct _sharednsitem {
-    char *name;
+    _rawstring name;
     _PyCrossInterpreterData data;
 };
 
@@ -929,8 +913,7 @@ static void _sharednsitem_clear(struct _sharednsitem *);  // forward
 static int
 _sharednsitem_init(struct _sharednsitem *item, PyObject *key, PyObject *value)
 {
-    item->name = _copy_raw_string(key);
-    if (item->name == NULL) {
+    if (_rawstring_from_pyobj(&item->name, key) != 0) {
         return -1;
     }
     if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0) {
@@ -943,17 +926,14 @@ _sharednsitem_init(struct _sharednsitem *item, PyObject *key, PyObject *value)
 static void
 _sharednsitem_clear(struct _sharednsitem *item)
 {
-    if (item->name != NULL) {
-        PyMem_RawFree(item->name);
-        item->name = NULL;
-    }
+    _rawstring_clear(&item->name);
     _PyCrossInterpreterData_Release(&item->data);
 }
 
 static int
 _sharednsitem_apply(struct _sharednsitem *item, PyObject *ns)
 {
-    PyObject *name = PyUnicode_FromString(item->name);
+    PyObject *name = PyUnicode_FromString(item->name.data);
     if (name == NULL) {
         return -1;
     }
