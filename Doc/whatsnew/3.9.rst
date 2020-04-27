@@ -376,6 +376,14 @@ nntplib
 if the given timeout for their constructor is zero to prevent the creation of
 a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 
+multiprocessing
+---------------
+
+The :class:`multiprocessing.SimpleQueue` class has a new
+:meth:`~multiprocessing.SimpleQueue.close` method to explicitly close the
+queue.
+(Contributed by Victor Stinner in :issue:`30966`.)
+
 os
 --
 

@@ -5244,6 +5244,20 @@ class TestSimpleQueue(unittest.TestCase):
 
         proc.join()
 
+    def test_close(self):
+        queue = multiprocessing.SimpleQueue()
+        queue.close()
+        # closing a queue twice should not fail
+        queue.close()
+
+    # Test specific to CPython since it tests private attributes
+    @test.support.cpython_only
+    def test_closed(self):
+        queue = multiprocessing.SimpleQueue()
+        queue.close()
+        self.assertTrue(queue._reader.closed)
+        self.assertTrue(queue._writer.closed)
+
 
 class TestPoolNotLeakOnFailure(unittest.TestCase):
 
