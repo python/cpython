@@ -1046,8 +1046,9 @@ class FindLteqTest(unittest.TestCase):
             ([1, 2], 3),
             ([1, 3], 2)
         ]:
-            with self.assertRaises(ValueError):
-                statistics._find_lteq(a, x)
+            with self.subTest(a=a, x=x):
+                with self.assertRaises(ValueError):
+                    statistics._find_lteq(a, x)
 
     def test_locate_successfully(self):
         for a, x, expected_i in [
@@ -1055,7 +1056,8 @@ class FindLteqTest(unittest.TestCase):
             ([0, 1, 1, 1, 2, 3], 1, 1),
             ([1, 2, 3, 3, 3], 3, 2)
         ]:
-            self.assertEqual(expected_i, statistics._find_lteq(a, x))
+            with self.subTest(a=a, x=x):
+                self.assertEqual(expected_i, statistics._find_lteq(a, x))
 
 
 class FindRteqTest(unittest.TestCase):
@@ -1075,7 +1077,8 @@ class FindRteqTest(unittest.TestCase):
             ([0, 1, 1, 1, 2, 3], 0, 1, 3),
             ([1, 2, 3, 3, 3], 0, 3, 4)
         ]:
-            self.assertEqual(expected_i, statistics._find_rteq(a, l, x))
+            with self.subTest(a=a, l=l, x=x):
+                self.assertEqual(expected_i, statistics._find_rteq(a, l, x))
 
 
 # === Tests for public functions ===
@@ -1529,8 +1532,9 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
             [1, '2', 3, '4', 5],    # mixed strings and valid integers
             [2.3, 3.4, 4.5, '5.6']  # only one string and valid floats
         ]:
-            with self.assertRaises(TypeError):
-                self.func(data)
+            with self.subTest(data=data):
+                with self.assertRaises(TypeError):
+                    self.func(data)
 
     def test_ints(self):
         # Test harmonic mean with ints.
