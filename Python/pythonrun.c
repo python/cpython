@@ -241,7 +241,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
 
     if (use_peg) {
         mod = PyPegen_ASTFromFileObject(fp, filename, Py_single_input,
-                                        enc, ps1, ps2, &errcode, arena);
+                                        enc, ps1, ps2, flags, &errcode, arena);
     }
     else {
         mod = PyParser_ASTFromFileObject(fp, filename, enc,
@@ -1073,7 +1073,7 @@ PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globa
 
     if (use_peg) {
         mod = PyPegen_ASTFromFileObject(fp, filename, start, NULL, NULL, NULL,
-                                        NULL, arena);
+                                        flags, NULL, arena);
     }
     else {
         mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, 0, 0,

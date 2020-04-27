@@ -7,6 +7,23 @@
 #include <Python-ast.h>
 #include <pyarena.h>
 
+#if 0
+#define PyPARSE_YIELD_IS_KEYWORD        0x0001
+#endif
+
+#define PyPARSE_DONT_IMPLY_DEDENT       0x0002
+
+#if 0
+#define PyPARSE_WITH_IS_KEYWORD         0x0003
+#define PyPARSE_PRINT_IS_FUNCTION       0x0004
+#define PyPARSE_UNICODE_LITERALS        0x0008
+#endif
+
+#define PyPARSE_IGNORE_COOKIE 0x0010
+#define PyPARSE_BARRY_AS_BDFL 0x0020
+#define PyPARSE_TYPE_COMMENTS 0x0040
+#define PyPARSE_ASYNC_HACKS   0x0080
+
 typedef struct _memo {
     int type;
     void *node;
@@ -41,6 +58,7 @@ typedef struct {
     int starting_lineno;
     int starting_col_offset;
     int error_indicator;
+    int flags;
 } Parser;
 
 typedef struct {
@@ -137,13 +155,13 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
 #define CHECK_NULL_ALLOWED(result) CHECK_CALL_NULL_ALLOWED(p, result)
 
 PyObject *_PyPegen_new_identifier(Parser *, char *);
-Parser *_PyPegen_Parser_New(struct tok_state *, int, int *, PyArena *);
+Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int *, PyArena *);
 void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
-                                    const char *, const char *, int *, PyArena *);
+                                    const char *, const char *, PyCompilerFlags *, int *, PyArena *);
 void *_PyPegen_run_parser(Parser *);
-mod_ty _PyPegen_run_parser_from_file(const char *, int, PyObject *, PyArena *);
-mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, int, PyArena *);
+mod_ty _PyPegen_run_parser_from_file(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
+mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 void *_PyPegen_interactive_exit(Parser *);
 asdl_seq *_PyPegen_singleton_seq(Parser *, void *);
 asdl_seq *_PyPegen_seq_insert_in_front(Parser *, void *, asdl_seq *);
@@ -174,6 +192,7 @@ asdl_seq *_PyPegen_seq_delete_starred_exprs(Parser *, asdl_seq *);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
+int _PyPegen_check_barry_as_flufl(Parser *);
 
 void *_PyPegen_parse(Parser *);
 

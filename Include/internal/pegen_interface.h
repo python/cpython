@@ -11,21 +11,24 @@ extern "C" {
 #include "Python.h"
 #include "Python-ast.h"
 
-PyAPI_FUNC(mod_ty) PyPegen_ASTFromFile(const char *filename, int mode, PyArena *arena);
+PyAPI_FUNC(mod_ty) PyPegen_ASTFromFile(const char *filename, int mode, PyCompilerFlags*, PyArena *arena);
 PyAPI_FUNC(mod_ty) PyPegen_ASTFromString(const char *str, int mode, PyCompilerFlags *flags,
                                          PyArena *arena);
 PyAPI_FUNC(mod_ty) PyPegen_ASTFromStringObject(const char *str, PyObject* filename, int mode,
                                                PyCompilerFlags *flags, PyArena *arena);
 PyAPI_FUNC(mod_ty) PyPegen_ASTFromFileObject(FILE *fp, PyObject *filename_ob,
                                              int mode, const char *enc, const char *ps1,
-                                             const char *ps2, int *errcode, PyArena *arena);
-PyAPI_FUNC(PyCodeObject *) PyPegen_CodeObjectFromFile(const char *filename, int mode);
+                                             const char *ps2, PyCompilerFlags *flags,
+                                             int *errcode, PyArena *arena);
+PyAPI_FUNC(PyCodeObject *) PyPegen_CodeObjectFromFile(const char *filename, int mode, PyCompilerFlags *flags);
 PyAPI_FUNC(PyCodeObject *) PyPegen_CodeObjectFromString(const char *str, int mode,
                                                         PyCompilerFlags *flags);
 PyAPI_FUNC(PyCodeObject *) PyPegen_CodeObjectFromFileObject(FILE *, PyObject *filename_ob,
-                                                            int mode, const char *enc,
+                                                            int mode,
                                                             const char *ps1,
                                                             const char *ps2,
+                                                            PyCompilerFlags *flags,
+                                                            const char *enc,
                                                             int *errcode);
 
 #ifdef __cplusplus
