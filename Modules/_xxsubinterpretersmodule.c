@@ -877,6 +877,8 @@ _excsnapshot_resolve(_excsnapshot *es)
 
 /* data-sharing-specific code ***********************************************/
 
+/* shared "object" */
+
 struct _sharednsitem {
     char *name;
     _PyCrossInterpreterData data;
@@ -902,7 +904,7 @@ static void
 _sharednsitem_clear(struct _sharednsitem *item)
 {
     if (item->name != NULL) {
-        PyMem_Free(item->name);
+        PyMem_RawFree(item->name);
         item->name = NULL;
     }
     _PyCrossInterpreterData_Release(&item->data);
@@ -1002,122 +1004,195 @@ _sharedns_apply(_sharedns *shared, PyObject *ns)
     return 0;
 }
 
+/* shared exception */
+
 // Ultimately we'd like to preserve enough information about the
 // exception and traceback that we could re-constitute (or at least
 // simulate, a la traceback.TracebackException), and even chain, a copy
 // of the exception in the calling interpreter.
 
 typedef struct _sharedexception {
-    char *name;
-    char *msg;
+    _excsnapshot snapshot;
+    _rawstring msg;
 } _sharedexception;
+
+static void
+_sharedexception_init(_sharedexception *she)
+{
+    _excsnapshot_init(&she->snapshot);
+    _rawstring_init(&she->msg);
+}
 
 static _sharedexception *
 _sharedexception_new(void)
 {
-    _sharedexception *err = PyMem_NEW(_sharedexception, 1);
-    if (err == NULL) {
+    _sharedexception *she = PyMem_NEW(_sharedexception, 1);
+    if (she == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    err->name = NULL;
-    err->msg = NULL;
-    return err;
+    _sharedexception_init(she);
+    return she;
 }
 
 static void
-_sharedexception_clear(_sharedexception *exc)
+_sharedexception_clear(_sharedexception *she)
 {
-    if (exc->name != NULL) {
-        PyMem_Free(exc->name);
-    }
-    if (exc->msg != NULL) {
-        PyMem_Free(exc->msg);
-    }
+    _excsnapshot_clear(&she->snapshot);
+    _rawstring_clear(&she->msg);
 }
 
 static void
-_sharedexception_free(_sharedexception *exc)
+_sharedexception_free(_sharedexception *she)
 {
-    _sharedexception_clear(exc);
-    PyMem_Free(exc);
+    _sharedexception_clear(she);
+    PyMem_Free(she);
 }
 
-static _sharedexception *
-_sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
+static int
+_sharedexception_is_clear(_sharedexception *she)
 {
-    assert(exctype != NULL);
-    char *failure = NULL;
-
-    _sharedexception *err = _sharedexception_new();
-    if (err == NULL) {
-        goto finally;
-    }
-
-    PyObject *name = PyUnicode_FromFormat("%S", exctype);
-    if (name == NULL) {
-        failure = "unable to format exception type name";
-        goto finally;
-    }
-    err->name = _copy_raw_string(name);
-    Py_DECREF(name);
-    if (err->name == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-            failure = "out of memory copying exception type name";
-        } else {
-            failure = "unable to encode and copy exception type name";
-        }
-        goto finally;
-    }
-
-    if (exc != NULL) {
-        PyObject *msg = PyUnicode_FromFormat("%S", exc);
-        if (msg == NULL) {
-            failure = "unable to format exception message";
-            goto finally;
-        }
-        err->msg = _copy_raw_string(msg);
-        Py_DECREF(msg);
-        if (err->msg == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-                failure = "out of memory copying exception message";
-            } else {
-                failure = "unable to encode and copy exception message";
-            }
-            goto finally;
-        }
-    }
-
-finally:
-    if (failure != NULL) {
-        PyErr_Clear();
-        if (err->name != NULL) {
-            PyMem_Free(err->name);
-            err->name = NULL;
-        }
-        err->msg = failure;
-    }
-    return err;
+    return 1
+        && _excsnapshot_is_clear(&she->snapshot)
+        && _rawstring_is_clear(&she->msg);
 }
 
 static void
-_sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
+_sharedexception_extract(_sharedexception *she, PyObject *exc)
 {
-    if (exc->name != NULL) {
-        if (exc->msg != NULL) {
-            PyErr_Format(wrapperclass, "%s: %s",  exc->name, exc->msg);
-        }
-        else {
-            PyErr_SetString(wrapperclass, exc->name);
+    assert(_sharedexception_is_clear(she));
+    assert(exc != NULL);
+
+    _excsnapshot_extract(&she->snapshot, exc);
+
+    // Compose the message.
+    const char *msg = NULL;
+    PyObject *msgobj = PyUnicode_FromFormat("%S", exc);
+    if (msgobj == NULL) {
+        IGNORE_FAILURE("unable to format exception message");
+    } else {
+        msg = PyUnicode_AsUTF8(msgobj);
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
         }
     }
-    else if (exc->msg != NULL) {
-        PyErr_SetString(wrapperclass, exc->msg);
+    _objsnapshot_summarize(&she->snapshot.es_object, &she->msg, msg);
+    Py_XDECREF(msgobj);
+}
+
+static PyObject *
+_sharedexception_resolve(_sharedexception *sharedexc, PyObject *wrapperclass)
+{
+    assert(!PyErr_Occurred());
+
+    // Get the __cause__, is possible.  Note that doing it first makes
+    // it chain automatically.
+    // FYI, "cause" is already normalized.
+    PyObject *cause = _excsnapshot_resolve(&sharedexc->snapshot);
+    if (cause != NULL) {
+        // XXX Ensure "cause" has a traceback.
+        PyObject *causetype = (PyObject *)Py_TYPE(cause);
+        PyErr_SetObject(causetype, cause);
+        // PyErr_SetExcInfo() steals references.
+        Py_INCREF(causetype);
+        Py_INCREF(cause);
+        PyObject *tb = PyException_GetTraceback(cause);
+        // Behave as though the exception was caught in this thread.
+        // (This is like entering an "except" block.)
+        PyErr_SetExcInfo(causetype, cause, tb);
+    } else if (PyErr_Occurred()) {
+        IGNORE_FAILURE("could not deserialize exc snapshot");
     }
-    else {
+
+    // Create (and set) the exception (e.g. RunFailedError).
+    // XXX Ensure a traceback is set?
+    if (sharedexc->msg.data != NULL) {
+        PyErr_SetString(wrapperclass, sharedexc->msg.data);
+    } else {
         PyErr_SetNone(wrapperclass);
     }
+
+    // Pop off the exception we just set and normalize it.
+    PyObject *exctype = NULL, *exc = NULL, *tb = NULL;
+    PyErr_Fetch(&exctype, &exc, &tb);
+    // XXX Chaining already normalized it?
+    PyErr_NormalizeException(&exctype, &exc, &tb);
+    // XXX It should always be set?
+    if (tb != NULL) {
+        // This does *not* steal a reference!
+        PyException_SetTraceback(exc, tb);
+    }
+    if (cause == NULL) {
+        // We didn't get/deserialize the cause snapshot, so we're done.
+        return exc;
+    }
+
+    // Finish handling "cause" and set exc.__cause__.
+    // This is like leaving "except" block.
+    PyErr_SetExcInfo(NULL, NULL, NULL);
+    // PyException_SetCause() steals a reference, but we have one to give.
+    PyException_SetCause(exc, cause);
+
+    return exc;
 }
+
+//static PyObject *
+//_sharedexception_resolve(_sharedexception *exc, PyObject *wrapperclass)
+//{
+//    assert(!PyErr_Occurred());
+//
+//    // Create (and set) the exception (e.g. RunFailedError).
+//    // XXX Ensure a traceback is set?
+//    if (exc->name != NULL) {
+//        if (exc->msg != NULL) {
+//            PyErr_Format(wrapperclass, "%s: %s",  exc->name, exc->msg);
+//        }
+//        else {
+//            PyErr_SetString(wrapperclass, exc->name);
+//        }
+//    }
+//    else if (exc->msg != NULL) {
+//        PyErr_SetString(wrapperclass, exc->msg);
+//    }
+//    else {
+//        PyErr_SetNone(wrapperclass);
+//    }
+//
+//    // Pop off the exception we just set and normalize it.
+//    PyObject *exctype = NULL, *exc = NULL, *tb = NULL;
+//    PyErr_Fetch(&exctype, &exc, &tb);
+//    PyErr_NormalizeException(&exctype, &exc, &tb);
+//    // XXX It should always be set?
+//    if (tb != NULL) {
+//        // This does *not* steal a reference!
+//        PyException_SetTraceback(exc, tb);
+//    }
+//    if (exc->snapshot == NULL) {
+//        // We didn't get the cause snapshot, so we're done.
+//        return exc;
+//    }
+//
+//    // Resolve the cause,
+//    PyObject *cause = _excsnapshot_resolve(exc->snapshot);
+//    if (cause == NULL) {
+//        IGNORE_FAILURE("could not deserialize exc snapshot");
+//        return exc;
+//    }
+//    // XXX Ensure it has a traceback.
+//
+//    // Set __cause__ (and __context__).
+//    PyObject *causetype = (PyObject *)Py_TYPE(cause);
+//    Py_INCREF(causetype);  // _PyErr_ChainExceptions() steals a reference.
+//    PyErr_Restore(exctype, exc, tb);  // This is needed for chaining.
+//    // This sets exc.__context__ to "cause".
+//    _PyErr_ChainExceptions(causetype, cause,
+//                           PyException_GetTraceback(cause));
+//    PyErr_Clear();  // We had only set it teomorarily for chaining.
+//    Py_INCREF(cause);  // PyException_SetCause() steals a reference.
+//    PyException_SetCause(exc, cause);
+//
+//    return exc;
+//}
 
 
 /* channel-specific code ****************************************************/
@@ -2699,11 +2774,9 @@ _ensure_not_running(PyInterpreterState *interp)
 
 static int
 _run_script(PyInterpreterState *interp, const char *codestr,
-            _sharedns *shared, _sharedexception **exc)
+            _sharedns *shared, _sharedexception **pexc)
 {
-    PyObject *exctype = NULL;
-    PyObject *excval = NULL;
-    PyObject *tb = NULL;
+    assert(!PyErr_Occurred());  // ...in the called interpreter.
 
     PyObject *main_mod = _PyInterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
@@ -2734,25 +2807,38 @@ _run_script(PyInterpreterState *interp, const char *codestr,
         Py_DECREF(result);  // We throw away the result.
     }
 
-    *exc = NULL;
+    *pexc = NULL;
     return 0;
 
+    PyObject *exctype = NULL, *exc = NULL, *tb = NULL;
 error:
-    PyErr_Fetch(&exctype, &excval, &tb);
+    PyErr_Fetch(&exctype, &exc, &tb);
 
-    _sharedexception *sharedexc = _sharedexception_bind(exctype, excval, tb);
-    Py_XDECREF(exctype);
-    Py_XDECREF(excval);
-    Py_XDECREF(tb);
-    if (sharedexc == NULL) {
-        fprintf(stderr, "RunFailedError: script raised an uncaught exception");
-        PyErr_Clear();
-        sharedexc = NULL;
+    // First normalize the exception.
+    PyErr_NormalizeException(&exctype, &exc, &tb);
+    assert(PyExceptionInstance_Check(exc));
+    if (tb != NULL) {
+        PyException_SetTraceback(exc, tb);
     }
-    else {
+
+    // Behave as though the exception was caught in this thread.
+    PyErr_SetExcInfo(exctype, exc, tb);  // Like entering "except" block.
+
+    // Serialize the exception.
+    _sharedexception *sharedexc = _sharedexception_new();
+    if (sharedexc == NULL) {
+        IGNORE_FAILURE("script raised an uncaught exception");
+    } else {
+        _sharedexception_extract(sharedexc, exc);
         assert(!PyErr_Occurred());
     }
-    *exc = sharedexc;
+
+    // Clear the exception.
+    PyErr_SetExcInfo(NULL, NULL, NULL);  // Like leaving "except" block.
+    PyErr_Clear();  // Do not re-raise.
+
+    // "Return" the serialized exception.
+    *pexc = sharedexc;
     return -1;
 }
 
@@ -2760,6 +2846,8 @@ static int
 _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
                            PyObject *shareables)
 {
+    assert(!PyErr_Occurred());  // ...in the calling interpreter.
+
     if (_ensure_not_running(interp) < 0) {
         return -1;
     }
@@ -2779,8 +2867,8 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     }
 
     // Run the script.
-    _sharedexception *exc = NULL;
-    int result = _run_script(interp, codestr, shared, &exc);
+    _sharedexception *sharedexc = NULL;
+    int result = _run_script(interp, codestr, shared, &sharedexc);
 
     // Switch back.
     if (save_tstate != NULL) {
@@ -2788,9 +2876,14 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     }
 
     // Propagate any exception out to the caller.
-    if (exc != NULL) {
-        _sharedexception_apply(exc, RunFailedError);
-        _sharedexception_free(exc);
+    if (sharedexc != NULL) {
+        assert(!PyErr_Occurred());
+        PyObject *exc = _sharedexception_resolve(sharedexc, RunFailedError);
+        // XXX This is not safe once interpreters no longer share allocators.
+        _sharedexception_free(sharedexc);
+        PyObject *exctype = (PyObject *)Py_TYPE(exc);
+        Py_INCREF(exctype);  // PyErr_Restore() steals a reference.
+        PyErr_Restore(exctype, exc, PyException_GetTraceback(exc));
     }
     else if (result != 0) {
         // We were unable to allocate a shared exception.
