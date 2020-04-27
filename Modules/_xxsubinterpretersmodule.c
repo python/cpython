@@ -1057,6 +1057,50 @@ _sharedexception_is_clear(_sharedexception *she)
         && _rawstring_is_clear(&she->msg);
 }
 
+static PyObject *
+_sharedexception_get_wrapper(_sharedexception *sharedexc,
+                             PyObject *wrapperclass)
+{
+    PyObject *exctype = NULL, *exc = NULL, *tb = NULL;
+
+    // Create (and set) the exception (e.g. RunFailedError).
+    // XXX Ensure a traceback is set?
+    if (sharedexc->msg.data != NULL) {
+        PyErr_SetString(wrapperclass, sharedexc->msg.data);
+    } else {
+        PyErr_SetNone(wrapperclass);
+    }
+
+    // Pop off the exception we just set and normalize it.
+    PyErr_Fetch(&exctype, &exc, &tb);
+
+    // XXX Chaining may normalize it for us...
+    PyErr_NormalizeException(&exctype, &exc, &tb);
+    Py_DECREF(exctype);
+    Py_XDECREF(tb);
+    // XXX It should always be set?
+    if (tb != NULL) {
+        // This does *not* steal a reference!
+        PyException_SetTraceback(exc, tb);
+    }
+    return exc;
+}
+
+static PyObject *
+_sharedexception_get_cause(_sharedexception *sharedexc)
+{
+    // FYI, "cause" is already normalized.
+    PyObject *cause = _excsnapshot_resolve(&sharedexc->snapshot);
+    if (cause == NULL) {
+        if (PyErr_Occurred()) {
+            IGNORE_FAILURE("could not deserialize exc snapshot");
+        }
+        return NULL;
+    }
+    // XXX Ensure "cause" has a traceback.
+    return cause;
+}
+
 static void
 _sharedexception_extract(_sharedexception *she, PyObject *exc)
 {
@@ -1085,114 +1129,37 @@ _sharedexception_resolve(_sharedexception *sharedexc, PyObject *wrapperclass)
 {
     assert(!PyErr_Occurred());
 
-    // Get the __cause__, is possible.  Note that doing it first makes
-    // it chain automatically.
-    // FYI, "cause" is already normalized.
-    PyObject *cause = _excsnapshot_resolve(&sharedexc->snapshot);
+    // Get the __cause__, is possible.
+    PyObject *cause = _sharedexception_get_cause(sharedexc);
     if (cause != NULL) {
-        // XXX Ensure "cause" has a traceback.
+        // Set the cause as though it were just caught in an "except" block.
+        // Doing this first makes it chain automatically.
         PyObject *causetype = (PyObject *)Py_TYPE(cause);
         PyErr_SetObject(causetype, cause);
         // PyErr_SetExcInfo() steals references.
         Py_INCREF(causetype);
-        Py_INCREF(cause);
         PyObject *tb = PyException_GetTraceback(cause);
         // Behave as though the exception was caught in this thread.
         // (This is like entering an "except" block.)
         PyErr_SetExcInfo(causetype, cause, tb);
-    } else if (PyErr_Occurred()) {
-        IGNORE_FAILURE("could not deserialize exc snapshot");
     }
 
-    // Create (and set) the exception (e.g. RunFailedError).
-    // XXX Ensure a traceback is set?
-    if (sharedexc->msg.data != NULL) {
-        PyErr_SetString(wrapperclass, sharedexc->msg.data);
-    } else {
-        PyErr_SetNone(wrapperclass);
-    }
+    // Get the exception object (already normalized).
+    // exc.__context__ will be set automatically.
+    PyObject *exc = _sharedexception_get_wrapper(sharedexc, wrapperclass);
+    assert(!PyErr_Occurred());
 
-    // Pop off the exception we just set and normalize it.
-    PyObject *exctype = NULL, *exc = NULL, *tb = NULL;
-    PyErr_Fetch(&exctype, &exc, &tb);
-    // XXX Chaining already normalized it?
-    PyErr_NormalizeException(&exctype, &exc, &tb);
-    // XXX It should always be set?
-    if (tb != NULL) {
-        // This does *not* steal a reference!
-        PyException_SetTraceback(exc, tb);
-    }
-    if (cause == NULL) {
-        // We didn't get/deserialize the cause snapshot, so we're done.
-        return exc;
-    }
+    if (cause != NULL) {
+        // Set __cause__.
+        Py_INCREF(cause);  // PyException_SetCause() steals a reference.
+        PyException_SetCause(exc, cause);
 
-    // Finish handling "cause" and set exc.__cause__.
-    // This is like leaving "except" block.
-    PyErr_SetExcInfo(NULL, NULL, NULL);
-    // PyException_SetCause() steals a reference, but we have one to give.
-    PyException_SetCause(exc, cause);
+        // This is like leaving "except" block.
+        PyErr_SetExcInfo(NULL, NULL, NULL);
+    }
 
     return exc;
 }
-
-//static PyObject *
-//_sharedexception_resolve(_sharedexception *exc, PyObject *wrapperclass)
-//{
-//    assert(!PyErr_Occurred());
-//
-//    // Create (and set) the exception (e.g. RunFailedError).
-//    // XXX Ensure a traceback is set?
-//    if (exc->name != NULL) {
-//        if (exc->msg != NULL) {
-//            PyErr_Format(wrapperclass, "%s: %s",  exc->name, exc->msg);
-//        }
-//        else {
-//            PyErr_SetString(wrapperclass, exc->name);
-//        }
-//    }
-//    else if (exc->msg != NULL) {
-//        PyErr_SetString(wrapperclass, exc->msg);
-//    }
-//    else {
-//        PyErr_SetNone(wrapperclass);
-//    }
-//
-//    // Pop off the exception we just set and normalize it.
-//    PyObject *exctype = NULL, *exc = NULL, *tb = NULL;
-//    PyErr_Fetch(&exctype, &exc, &tb);
-//    PyErr_NormalizeException(&exctype, &exc, &tb);
-//    // XXX It should always be set?
-//    if (tb != NULL) {
-//        // This does *not* steal a reference!
-//        PyException_SetTraceback(exc, tb);
-//    }
-//    if (exc->snapshot == NULL) {
-//        // We didn't get the cause snapshot, so we're done.
-//        return exc;
-//    }
-//
-//    // Resolve the cause,
-//    PyObject *cause = _excsnapshot_resolve(exc->snapshot);
-//    if (cause == NULL) {
-//        IGNORE_FAILURE("could not deserialize exc snapshot");
-//        return exc;
-//    }
-//    // XXX Ensure it has a traceback.
-//
-//    // Set __cause__ (and __context__).
-//    PyObject *causetype = (PyObject *)Py_TYPE(cause);
-//    Py_INCREF(causetype);  // _PyErr_ChainExceptions() steals a reference.
-//    PyErr_Restore(exctype, exc, tb);  // This is needed for chaining.
-//    // This sets exc.__context__ to "cause".
-//    _PyErr_ChainExceptions(causetype, cause,
-//                           PyException_GetTraceback(cause));
-//    PyErr_Clear();  // We had only set it teomorarily for chaining.
-//    Py_INCREF(cause);  // PyException_SetCause() steals a reference.
-//    PyException_SetCause(exc, cause);
-//
-//    return exc;
-//}
 
 
 /* channel-specific code ****************************************************/
