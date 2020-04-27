@@ -321,9 +321,11 @@ with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
 (Contributed by Dong-hee Na in :issue:`38615`.)
 
 :meth:`imaplib.IMAP4.unselect` is added.
-This command performs the same actions as :meth:`imaplib.IMAP4.close`
-except that no messages are permanently removed from the currently selected mailbox.
-(Contributed by Dong-hee Na in :issue:`40375`.)
+:meth:`imaplib.IMAP4.unselect` frees server's resources associated with the
+selected mailbox and returns the server to the authenticated
+state. This command performs the same actions as :meth:`imaplib.IMAP4.close`, except
+that no messages are permanently removed from the currently
+selected mailbox. (Contributed by Dong-hee Na in :issue:`40375`.)
 
 importlib
 ---------

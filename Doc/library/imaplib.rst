@@ -55,9 +55,6 @@ base class:
    .. versionchanged:: 3.9
       The optional *timeout* parameter was added.
 
-   .. versionadded:: 3.9
-      :meth:`IMAP4.unselect` was added.
-
 Three exceptions are defined as attributes of the :class:`IMAP4` class:
 
 
@@ -587,8 +584,11 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.unselect()
 
-   Close the current mailbox without removing messages from
-   the currently selected mailbox.
+   :meth:`imaplib.IMAP4.unselect` frees server's resources associated with the
+   selected mailbox and returns the server to the authenticated
+   state. This command performs the same actions as :meth:`imaplib.IMAP4.close`, except
+   that no messages are permanently removed from the currently
+   selected mailbox.
 
    .. versionadded:: 3.9
 
