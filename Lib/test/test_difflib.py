@@ -501,12 +501,30 @@ class TestJunkAPIs(unittest.TestCase):
         for char in ['a', '#', '\n', '\f', '\r', '\v']:
             self.assertFalse(difflib.IS_CHARACTER_JUNK(char), repr(char))
 
+class TestFindLongest(unittest.TestCase):
+    def test_default_args(self):
+        sm = difflib.SequenceMatcher(a='foo bar', b='foo baz')
+        match = sm.find_longest_match()
+        self.assertEqual(match.a, 0)
+        self.assertEqual(match.b, 0)
+        self.assertEqual(match.size, 6)
+
+    def test_longest_match_with_popular_chars(self):
+        a = 'dabcd'
+        b = 'd'*100 + 'abc' + 'd'*100  # length over 200 so popular used
+        sm = difflib.SequenceMatcher(a=a, b=b)
+        match = sm.find_longest_match(0, len(a), 0, len(b))
+        self.assertEqual(match.a, 0)
+        self.assertEqual(match.b, 99)
+        self.assertEqual(match.size, 5)
+
+
 def test_main():
     difflib.HtmlDiff._default_prefix = 0
     Doctests = doctest.DocTestSuite(difflib)
     run_unittest(
         TestWithAscii, TestAutojunk, TestSFpatches, TestSFbugs,
-        TestOutputFormat, TestBytes, TestJunkAPIs, Doctests)
+        TestOutputFormat, TestBytes, TestJunkAPIs, TestFindLongest, Doctests)
 
 if __name__ == '__main__':
     test_main()
