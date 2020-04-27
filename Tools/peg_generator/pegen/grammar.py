@@ -1,4 +1,4 @@
-from __future__ import annotations
+#from __future__ import annotations
 
 from abc import abstractmethod
 from typing import (
@@ -45,7 +45,7 @@ class GrammarVisitor:
 
 
 class Grammar:
-    def __init__(self, rules: Iterable[Rule], metas: Iterable[Tuple[str, Optional[str]]]):
+    def __init__(self, rules: Iterable['Rule'], metas: Iterable[Tuple[str, Optional[str]]]):
         self.rules = {rule.name: rule for rule in rules}
         self.metas = dict(metas)
 
@@ -62,7 +62,7 @@ class Grammar:
         lines.append(")")
         return "\n".join(lines)
 
-    def __iter__(self) -> Iterator[Rule]:
+    def __iter__(self) -> Iterator['Rule']:
         yield from self.rules.values()
 
 
@@ -71,7 +71,7 @@ SIMPLE_STR = True
 
 
 class Rule:
-    def __init__(self, name: str, type: Optional[str], rhs: Rhs, memo: Optional[object] = None):
+    def __init__(self, name: str, type: Optional[str], rhs: 'Rhs', memo: Optional[object] = None):
         self.name = name
         self.type = type
         self.rhs = rhs
@@ -101,10 +101,10 @@ class Rule:
     def __repr__(self) -> str:
         return f"Rule({self.name!r}, {self.type!r}, {self.rhs!r})"
 
-    def __iter__(self) -> Iterator[Rhs]:
+    def __iter__(self) -> Iterator['Rhs']:
         yield self.rhs
 
-    def nullable_visit(self, rules: Dict[str, Rule]) -> bool:
+    def nullable_visit(self, rules: Dict[str, 'Rule']) -> bool:
         if self.visited:
             # A left-recursive rule is considered non-nullable.
             return False
@@ -115,7 +115,7 @@ class Rule:
     def initial_names(self) -> AbstractSet[str]:
         return self.rhs.initial_names()
 
-    def flatten(self) -> Rhs:
+    def flatten(self) -> 'Rhs':
         # If it's a single parenthesized group, flatten it.
         rhs = self.rhs
         if (
@@ -127,7 +127,7 @@ class Rule:
             rhs = rhs.alts[0].items[0].item.rhs
         return rhs
 
-    def collect_todo(self, gen: ParserGenerator) -> None:
+    def collect_todo(self, gen: 'ParserGenerator') -> None:
         rhs = self.flatten()
         rhs.collect_todo(gen)
 
@@ -188,7 +188,7 @@ class StringLeaf(Leaf):
 
 
 class Rhs:
-    def __init__(self, alts: List[Alt]):
+    def __init__(self, alts: List['Alt']):
         self.alts = alts
         self.memo: Optional[Tuple[Optional[str], str]] = None
 
@@ -198,7 +198,7 @@ class Rhs:
     def __repr__(self) -> str:
         return f"Rhs({self.alts!r})"
 
-    def __iter__(self) -> Iterator[List[Alt]]:
+    def __iter__(self) -> Iterator[List['Alt']]:
         yield self.alts
 
     def nullable_visit(self, rules: Dict[str, Rule]) -> bool:
@@ -213,13 +213,13 @@ class Rhs:
             names |= alt.initial_names()
         return names
 
-    def collect_todo(self, gen: ParserGenerator) -> None:
+    def collect_todo(self, gen: 'ParserGenerator') -> None:
         for alt in self.alts:
             alt.collect_todo(gen)
 
 
 class Alt:
-    def __init__(self, items: List[NamedItem], *, icut: int = -1, action: Optional[str] = None):
+    def __init__(self, items: List['NamedItem'], *, icut: int = -1, action: Optional[str] = None):
         self.items = items
         self.icut = icut
         self.action = action
@@ -239,7 +239,7 @@ class Alt:
             args.append(f"action={self.action!r}")
         return f"Alt({', '.join(args)})"
 
-    def __iter__(self) -> Iterator[List[NamedItem]]:
+    def __iter__(self) -> Iterator[List['NamedItem']]:
         yield self.items
 
     def nullable_visit(self, rules: Dict[str, Rule]) -> bool:
@@ -256,13 +256,13 @@ class Alt:
                 break
         return names
 
-    def collect_todo(self, gen: ParserGenerator) -> None:
+    def collect_todo(self, gen: 'ParserGenerator') -> None:
         for item in self.items:
             item.collect_todo(gen)
 
 
 class NamedItem:
-    def __init__(self, name: Optional[str], item: Item):
+    def __init__(self, name: Optional[str], item: 'Item'):
         self.name = name
         self.item = item
         self.nullable = False
@@ -276,7 +276,7 @@ class NamedItem:
     def __repr__(self) -> str:
         return f"NamedItem({self.name!r}, {self.item!r})"
 
-    def __iter__(self) -> Iterator[Item]:
+    def __iter__(self) -> Iterator['Item']:
         yield self.item
 
     def nullable_visit(self, rules: Dict[str, Rule]) -> bool:
@@ -286,19 +286,19 @@ class NamedItem:
     def initial_names(self) -> AbstractSet[str]:
         return self.item.initial_names()
 
-    def collect_todo(self, gen: ParserGenerator) -> None:
+    def collect_todo(self, gen: 'ParserGenerator') -> None:
         gen.callmakervisitor.visit(self.item)
 
 
 class Lookahead:
-    def __init__(self, node: Plain, sign: str):
+    def __init__(self, node: 'Plain', sign: str):
         self.node = node
         self.sign = sign
 
     def __str__(self) -> str:
         return f"{self.sign}{self.node}"
 
-    def __iter__(self) -> Iterator[Plain]:
+    def __iter__(self) -> Iterator['Plain']:
         yield self.node
 
     def nullable_visit(self, rules: Dict[str, Rule]) -> bool:
@@ -309,7 +309,7 @@ class Lookahead:
 
 
 class PositiveLookahead(Lookahead):
-    def __init__(self, node: Plain):
+    def __init__(self, node: 'Plain'):
         super().__init__(node, "&")
 
     def __repr__(self) -> str:
@@ -317,7 +317,7 @@ class PositiveLookahead(Lookahead):
 
 
 class NegativeLookahead(Lookahead):
-    def __init__(self, node: Plain):
+    def __init__(self, node: 'Plain'):
         super().__init__(node, "!")
 
     def __repr__(self) -> str:
@@ -325,7 +325,7 @@ class NegativeLookahead(Lookahead):
 
 
 class Opt:
-    def __init__(self, node: Item):
+    def __init__(self, node: 'Item'):
         self.node = node
 
     def __str__(self) -> str:
@@ -339,7 +339,7 @@ class Opt:
     def __repr__(self) -> str:
         return f"Opt({self.node!r})"
 
-    def __iter__(self) -> Iterator[Item]:
+    def __iter__(self) -> Iterator['Item']:
         yield self.node
 
     def nullable_visit(self, rules: Dict[str, Rule]) -> bool:
@@ -352,7 +352,7 @@ class Opt:
 class Repeat:
     """Shared base class for x* and x+."""
 
-    def __init__(self, node: Plain):
+    def __init__(self, node: 'Plain'):
         self.node = node
         self.memo: Optional[Tuple[Optional[str], str]] = None
 
@@ -360,7 +360,7 @@ class Repeat:
     def nullable_visit(self, rules: Dict[str, Rule]) -> bool:
         raise NotImplementedError
 
-    def __iter__(self) -> Iterator[Plain]:
+    def __iter__(self) -> Iterator['Plain']:
         yield self.node
 
     def initial_names(self) -> AbstractSet[str]:
@@ -400,7 +400,7 @@ class Repeat1(Repeat):
 
 
 class Gather(Repeat):
-    def __init__(self, separator: Plain, node: Plain):
+    def __init__(self, separator: 'Plain', node: 'Plain'):
         self.separator = separator
         self.node = node
 
