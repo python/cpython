@@ -886,10 +886,10 @@ class RunStringTests(TestBase):
             yield
         if msg is None:
             self.assertEqual(str(caught.exception).split(':')[0],
-                             str(exctype))
+                             exctype.__name__)
         else:
             self.assertEqual(str(caught.exception),
-                             "{}: {}".format(exctype, msg))
+                             "{}: {}".format(exctype.__name__, msg))
         self.assertIsInstance(caught.exception.__cause__, exctype)
 
     def test_invalid_syntax(self):
