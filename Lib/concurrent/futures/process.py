@@ -728,6 +728,8 @@ class ProcessPoolExecutor(_base.Executor):
         # objects that use file descriptors.
         self._executor_manager_thread = None
         self._call_queue = None
+        if self._result_queue is not None and wait:
+            self._result_queue.close()
         self._result_queue = None
         self._processes = None
 
