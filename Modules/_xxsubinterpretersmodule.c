@@ -6,6 +6,13 @@
 #include "interpreteridobject.h"
 
 
+// XXX Emit a warning?
+#define IGNORE_FAILURE(msg) \
+    fprintf(stderr, " -----\nRunFailedError: %s\n", msg); \
+    PyErr_PrintEx(0); \
+    fprintf(stderr, " -----\n"); \
+    PyErr_Clear();
+
 typedef void (*_deallocfunc)(void *);
 
 static PyInterpreterState *
@@ -227,6 +234,367 @@ static PyObject *
 _rawstring_as_pybytes(_rawstring *raw)
 {
     return PyBytes_FromStringAndSize(raw->data, raw->size);
+}
+
+
+/* object utils *************************************************************/
+
+static void
+_pyobj_identify_type(PyObject *obj, _rawstring *modname, _rawstring *clsname)
+{
+    PyObject *objtype = (PyObject *)Py_TYPE(obj);
+
+    // Try __module__ and __name__.
+    if (_rawstring_from_pyobj_attr(modname, objtype, "__module__") != 0) {
+        // Fall back to the previous values in "modname".
+        IGNORE_FAILURE("bad __module__");
+    }
+    if (_rawstring_from_pyobj_attr(clsname, objtype, "__name__") != 0) {
+        // Fall back to the previous values in "clsname".
+        IGNORE_FAILURE("bad __name__");
+    }
+
+    // XXX Fall back to __qualname__?
+    // XXX Fall back to tp_name?
+}
+
+
+/* object snapshots */
+
+typedef struct _objsnapshot {
+    // If modname is NULL then try "builtins" and "__main__".
+    _rawstring modname;
+    // clsname is required.
+    _rawstring clsname;
+
+    // The rest are optional.
+
+    // The serialized args with which to call the class.
+    _rawstring *args;
+    // The serialized dict with which to call __setstate__.
+    _rawstring *state;
+} _objsnapshot;
+
+static void
+_objsnapshot_init(_objsnapshot *osn)
+{
+    _rawstring_init(&osn->modname);
+    _rawstring_init(&osn->clsname);
+    osn->args = NULL;
+    osn->state = NULL;
+}
+
+//static _objsnapshot *
+//_objsnapshot_new(void)
+//{
+//    _objsnapshot *osn = PyMem_NEW(_objsnapshot, 1);
+//    if (osn == NULL) {
+//        PyErr_NoMemory();
+//        return NULL;
+//    }
+//    _objsnapshot_init(osn);
+//    return osn;
+//}
+
+static void
+_objsnapshot_clear(_objsnapshot *osn)
+{
+    _rawstring_clear(&osn->modname);
+    _rawstring_clear(&osn->clsname);
+    if (osn->args != NULL) {
+        _rawstring_free(osn->args);
+        osn->args = NULL;
+    }
+    if (osn->state != NULL) {
+        _rawstring_free(osn->state);
+        osn->state = NULL;
+    }
+}
+
+//static void
+//_objsnapshot_free(_objsnapshot *osn)
+//{
+//    _objsnapshot_clear(osn);
+//    PyMem_Free(osn);
+//}
+
+static int
+_objsnapshot_is_clear(_objsnapshot *osn)
+{
+    return osn->args == NULL && osn->state == NULL
+        && _rawstring_is_clear(&osn->modname)
+        && _rawstring_is_clear(&osn->clsname);
+}
+
+static void
+_objsnapshot_summarize(_objsnapshot *osn, _rawstring *rawbuf, const char *msg)
+{
+    if (msg == NULL || *msg == '\0') {
+        // XXX Keep it NULL?
+        // XXX Keep it an empty string?
+        // XXX Use something more informative?
+        msg = "<no message>";
+    }
+    const char *clsname = osn->clsname.data;
+    const char *modname = osn->modname.data;
+    if (modname && *modname == '\0') {
+        modname = NULL;
+    }
+
+    // Prep the buffer.
+    Py_ssize_t size = strlen(clsname);
+    if (modname != NULL) {
+        if (strcmp(modname, "builtins") == 0) {
+            modname = NULL;
+        } else if (strcmp(modname, "__main__") == 0) {
+            modname = NULL;
+        } else {
+            size += strlen(modname) + 1;
+        }
+    }
+    if (msg != NULL) {
+        size += strlen(": ") + strlen(msg);
+    }
+    if (modname != NULL || msg != NULL) {
+        if (_rawstring_buffer(rawbuf, size) != 0) {
+            IGNORE_FAILURE("could not summarize object snapshot");
+            return;
+        }
+    }
+    // ...else we'll proxy clsname as-is, so no need to allocate a buffer.
+
+    char *buf = (char *)rawbuf->data;
+    if (modname != NULL) {
+        if (msg != NULL) {
+            snprintf(buf, size+1, "%s.%s: %s", modname, clsname, msg);
+        } else {
+            snprintf(buf, size+1, "%s.%s", modname, clsname);
+        }
+    } else if (msg != NULL) {
+        snprintf(buf, size+1, "%s: %s", clsname, msg);
+    } else {
+        _rawstring_proxy(rawbuf, clsname);
+    }
+}
+
+static void
+_objsnapshot_extract(_objsnapshot *osn, PyObject *obj)
+{
+    assert(_objsnapshot_is_clear(osn));
+
+    // Get the "qualname".
+    _rawstring_proxy(&osn->modname, "<unknown>");
+    _rawstring_proxy(&osn->clsname, "<unknown>");
+    _pyobj_identify_type(obj, &osn->modname, &osn->clsname);
+
+    // Get the object args and state.
+    PyObject *reduced = NULL;
+    PyObject *reducefunc = PyObject_GetAttrString(obj, "__reduce__");
+    if (reducefunc == NULL) {
+        // We can move ahead with just the class name.
+        IGNORE_FAILURE("could not get object state: missing __reduce__");
+    } else {
+        // The snapshot is still useful without this.
+        reduced = PyObject_CallFunctionObjArgs(reducefunc, NULL);
+        Py_DECREF(reducefunc);
+        if (reduced == NULL) {
+            IGNORE_FAILURE("could not get object state: __reduce__ failed");
+        }
+        if (!PyTuple_Check(reduced)) {
+            IGNORE_FAILURE("could not get object state: reduced obj is not tuple");
+            Py_DECREF(reduced);
+            reduced = NULL;
+        }
+    }
+    // These will be borrowed references (if set), due to PyTuple_GET_ITEM().
+    PyObject *argsobj = NULL, *stateobj = NULL;
+    if (reduced != NULL) {
+        if (PyTuple_GET_SIZE(reduced) < 2) {
+            IGNORE_FAILURE("could not get object state: reduced obj missing args");
+        } else {
+            argsobj = PyTuple_GET_ITEM(reduced, 1);
+            if (argsobj == Py_None) {
+                argsobj = NULL;
+            } else if (!PyTuple_Check(argsobj)) {
+                argsobj = NULL;
+            } else if (PyTuple_GET_SIZE(argsobj) == 0) {
+                argsobj = NULL;
+            } else {
+                // It needs to live past where we decref "reduced".
+                Py_INCREF(argsobj);
+            }
+            // Everything past reduced[1] is optional.
+
+            stateobj = PyTuple_GetItem(reduced, 2);
+            if (stateobj == NULL) {
+                if (PyErr_Occurred()) {
+                    PyErr_Clear();
+                }
+            } else if (stateobj == Py_None) {
+                stateobj = NULL;
+            } else if (!PyDict_Check(stateobj)) {
+                // XXX Emit a warning?
+                stateobj = NULL;
+            } else if (PyDict_GET_SIZE(stateobj) == 0) {
+                stateobj = NULL;
+            } else {
+                // It needs to live past where we decref "reduced".
+                Py_INCREF(stateobj);
+            }
+        }
+        Py_DECREF(reduced);
+    }
+
+    // Serialize the object args and state.
+    if (argsobj != NULL || stateobj != NULL) {
+        // XXX Use marshal?
+        PyObject *pickle = PyImport_ImportModule("pickle");
+        if (pickle == NULL) {
+            IGNORE_FAILURE("could not serialize object state: pickle import failed");
+        } else {
+            if (stateobj != NULL) {
+                PyObject *statestr = PyObject_CallMethod(pickle, "dumps", "(O)", stateobj);
+                if (statestr == NULL) {
+                    IGNORE_FAILURE("could not serialize object state: pickle.dumps on dict failed");
+                } else {
+                    _rawstring *state = _rawstring_new();
+                    int res = _rawstring_from_pyobj(state, statestr);
+                    Py_DECREF(statestr);
+                    if (res != 0) {
+                        IGNORE_FAILURE("could not serialize object state: raw dict str failed");
+                        _rawstring_free(state);
+                    } else if (state->size == 0) {
+                        _rawstring_free(state);
+                    } else {
+                        osn->state = state;
+                    }
+                }
+            }
+            if (argsobj != NULL) {
+                PyObject *argsstr = PyObject_CallMethod(pickle, "dumps", "(O)", argsobj);
+                if (argsstr == NULL) {
+                    IGNORE_FAILURE("could not serialize object state: pickle.dumps on args failed");
+                } else {
+                    _rawstring *args = _rawstring_new();
+                    int res = _rawstring_from_pyobj(args, argsstr);
+                    Py_DECREF(argsstr);
+                    if (res != 0) {
+                        IGNORE_FAILURE("could not serialize object state: raw args str failed");
+                        _rawstring_free(args);
+                    } else if (args->size == 0) {
+                        _rawstring_free(args);
+                    } else {
+                        osn->args = args;
+                    }
+                }
+            }
+            Py_DECREF(pickle);
+        }
+        Py_XDECREF(argsobj);
+        Py_XDECREF(stateobj);
+    }
+}
+
+static PyObject *
+_objsnapshot_resolve(_objsnapshot *osn)
+{
+    // Get the object's class.
+    if (&osn->clsname == NULL) {
+        // We can't proceed without at least the class name.
+        PyErr_SetString(PyExc_ValueError, "missing class name");
+        return NULL;
+    }
+    const char *modname = osn->modname.data ? osn->modname.data : "builtins";
+    PyObject *module = PyImport_ImportModule(modname);
+    if (module == NULL) {
+        if (&osn->modname != NULL) {
+            // We can't proceed without the module from which to get the class.
+            return NULL;
+        }
+        // Fall back to __main__.
+        PyErr_Clear();
+    }
+    PyObject *cls = NULL;
+    if (module != NULL) {
+        cls = PyObject_GetAttrString(module, osn->clsname.data);
+        Py_DECREF(module);
+        if (cls == NULL) {
+            PyErr_Clear();
+        }
+    }
+    if (cls == NULL) {
+        if (&osn->modname == NULL) {
+            PyObject *module = PyImport_ImportModule("__main__");
+            if (module == NULL) {
+                // We can't proceed without the module from which to get the class.
+                return NULL;
+            }
+            cls = PyObject_GetAttrString(module, osn->clsname.data);
+            Py_DECREF(module);
+        }
+        if (cls == NULL) {
+            // We can't proceed without the class.
+            return NULL;
+        }
+    }
+
+    // De-serialize the object args and state.
+    PyObject *argsobj = NULL, *stateobj = NULL;
+    if (osn->args != NULL || osn->state != NULL) {
+        // XXX Use marshal?
+        PyObject *pickle = PyImport_ImportModule("pickle");
+        if (pickle == NULL) {
+            IGNORE_FAILURE("could not de-serialize object state: pickle import failed");
+        } else {
+            if (osn->args != NULL) {
+                PyObject *argsstr = _rawstring_as_pybytes(osn->args);
+                if (argsstr == NULL) {
+                    IGNORE_FAILURE("could not de-serialize object state: args str obj failed");
+                } else {
+                    argsobj = PyObject_CallMethod(pickle, "loads", "O", argsstr);
+                    Py_DECREF(argsstr);
+                    if (argsobj == NULL) {
+                        IGNORE_FAILURE("could not de-serialize object state: args unpickle failed");
+                    }
+                }
+            }
+            if (osn->state != NULL) {
+                PyObject *statestr = _rawstring_as_pybytes(osn->state);
+                if (statestr == NULL) {
+                    IGNORE_FAILURE("could not de-serialize object state: dict str obj failed");
+                } else {
+                    stateobj = PyObject_CallMethod(pickle, "loads", "O", statestr);
+                    Py_DECREF(statestr);
+                    if (stateobj == NULL) {
+                        IGNORE_FAILURE("could not de-serialize object state: dict unpickle failed");
+                    }
+                }
+            }
+            Py_DECREF(pickle);
+        }
+    }
+
+    // Create the object.
+    PyObject *resolved = PyObject_CallObject(cls, argsobj);  // A NULL argsobj means "no args";
+    Py_DECREF(cls);
+    Py_XDECREF(argsobj);
+    if (resolved == NULL) {
+        Py_XDECREF(stateobj);
+        return NULL;
+    }
+
+    // Set the object state.
+    if (stateobj != NULL) {
+        PyObject *res = PyObject_CallMethod(resolved, "__setstate__", "O", stateobj);
+        Py_DECREF(stateobj);
+        if (res == NULL) {
+            // We can get by without the object's state.
+            IGNORE_FAILURE("could not de-serialize object state: __setstate__ failed");
+        }
+        Py_XDECREF(res);
+    }
+
+    return resolved;
 }
 
 
