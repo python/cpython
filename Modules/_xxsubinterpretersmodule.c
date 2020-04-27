@@ -1135,26 +1135,6 @@ _sharedexception_extract(_sharedexception *she, PyObject *exc)
     Py_XDECREF(msgobj);
 }
 
-static void
-_pyexc_set_context(PyObject *exc, PyObject *context)
-{
-    PyObject *contexttype = (PyObject *)Py_TYPE(context);
-
-    // PyErr_Restore() steals references.
-    PyObject *exctype = (PyObject *)Py_TYPE(exc);
-    Py_INCREF(exctype);
-    Py_INCREF(exc);
-    PyObject *tb = PyException_GetTraceback(exc);
-    PyErr_Restore(exctype, exc, tb);  // This is needed for chaining.
-
-    Py_INCREF(contexttype);  // _PyErr_ChainExceptions() steals a reference.
-    // This sets exc.__context__ to "context".
-    _PyErr_ChainExceptions(contexttype, context,
-                           PyException_GetTraceback(context));
-
-    PyErr_Clear();  // We had only set it temporarily for chaining.
-}
-
 static PyObject *
 _sharedexception_resolve(_sharedexception *sharedexc, PyObject *wrapperclass)
 {
@@ -1167,8 +1147,9 @@ _sharedexception_resolve(_sharedexception *sharedexc, PyObject *wrapperclass)
     // Set __cause__, is possible.
     PyObject *cause = _sharedexception_get_cause(sharedexc);
     if (cause != NULL) {
-        // Set __context__ automatically.
-        _pyexc_set_context(exc, cause);
+        // Set __context__.
+        Py_INCREF(cause);  // PyException_SetContext() steals a reference.
+        PyException_SetContext(exc, cause);
 
         // Set __cause__.
         Py_INCREF(cause);  // PyException_SetCause() steals a reference.
