@@ -1,0 +1,1 @@
+Document :c:macro:`PyDoc_STRVAR` macro in the C-API reference.
