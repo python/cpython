@@ -131,7 +131,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    if sys.version_info < (3, 8):
-        print("ERROR: using pegen requires at least Python 3.8!", file=sys.stderr)
+    if sys.version_info < (3, 7):
+        print("ERROR: using pegen requires at least Python 3.7!", file=sys.stderr)
         sys.exit(1)
     main()

@@ -92,10 +92,10 @@ def main() -> None:
 
     # Flatten the start node if has only a single reference
     root_node = "start"
-    if start := references["start"]:
-        if len(start) == 1:
-            root_node = list(start)[0]
-            del references["start"]
+    start = references["start"]
+    if start and len(start) == 1:
+        root_node = list(start)[0]
+        del references["start"]
 
     print("digraph g1 {")
     print('\toverlap="scale";')  # Force twopi to scale the graph to avoid overlaps

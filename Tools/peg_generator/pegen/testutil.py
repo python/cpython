@@ -6,7 +6,7 @@ import sys
 import textwrap
 import tokenize
 
-from typing import Any, cast, Dict, IO, Type, Final
+from typing import Any, cast, Dict, IO, Type
 
 from pegen.build import compile_c_extension
 from pegen.c_generator import CParserGenerator
@@ -96,7 +96,7 @@ def generate_parser_c_extension(
 
 
 def print_memstats() -> bool:
-    MiB: Final = 2 ** 20
+    MiB = 2 ** 20
     try:
         import psutil  # type: ignore
     except ImportError:

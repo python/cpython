@@ -178,11 +178,12 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
         if node.name:
             name = node.name
         if not name:
-            self.print(call)
+            self.print(f"if {call}:")
         else:
             if name != "cut":
                 name = dedupe(name, names)
-            self.print(f"({name} := {call})")
+            self.print(f"{name} = {call}")
+            self.print(f"if {name}:")
 
     def visit_Rhs(self, node: Rhs, is_loop: bool = False, is_gather: bool = False) -> None:
         if is_loop:
@@ -194,31 +195,28 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
         names: List[str] = []
         self.print("cut = False")  # TODO: Only if needed.
         if is_loop:
-            self.print("while (")
-        else:
-            self.print("if (")
-        with self.indent():
-            first = True
-            for item in node.items:
-                if first:
-                    first = False
-                else:
-                    self.print("and")
-                self.visit(item, names=names)
-        self.print("):")
-        with self.indent():
-            action = node.action
-            if not action:
-                if is_gather:
-                    assert len(names) == 2
-                    action = f"[{names[0]}] + {names[1]}"
-                else:
-                    action = f"[{', '.join(names)}]"
-            if is_loop:
-                self.print(f"children.append({action})")
-                self.print(f"mark = self.mark()")
+            self.print("while True:")
+            self.level += 1
+        for item in node.items:
+            self.visit(item, names=names)
+            self.level += 1
+        action = node.action
+        if not action:
+            if is_gather:
+                assert len(names) == 2
+                action = f"[{names[0]}] + {names[1]}"
             else:
-                self.print(f"return {action}")
+                action = f"[{', '.join(names)}]"
+        if is_loop:
+            self.print(f"children.append({action})")
+            self.print("mark = self.mark()")
+            self.print("continue")
+        else:
+            self.print(f"return {action}")
+        self.level -= len(node.items)
+        if is_loop:
+            self.print("break")
+            self.level -= 1
         self.print("self.reset(mark)")
         # Skip remaining alternatives if a cut was reached.
         self.print("if cut: return None")  # TODO: Only if needed.

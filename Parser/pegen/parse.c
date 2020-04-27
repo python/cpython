@@ -641,6 +641,8 @@ file_rule(Parser *p)
         return NULL;
     }
     mod_ty res = NULL;
+    if (_PyPegen_is_memoized(p, file_type, &res))
+        return res;
     int mark = p->mark;
     { // statements? $
         void *a;
@@ -662,6 +664,7 @@ file_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, file_type, res);
     return res;
 }
 
@@ -673,6 +676,8 @@ interactive_rule(Parser *p)
         return NULL;
     }
     mod_ty res = NULL;
+    if (_PyPegen_is_memoized(p, interactive_type, &res))
+        return res;
     int mark = p->mark;
     { // statement_newline
         asdl_seq* a;
@@ -691,6 +696,7 @@ interactive_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, interactive_type, res);
     return res;
 }
 
@@ -702,6 +708,8 @@ eval_rule(Parser *p)
         return NULL;
     }
     mod_ty res = NULL;
+    if (_PyPegen_is_memoized(p, eval_type, &res))
+        return res;
     int mark = p->mark;
     { // expressions NEWLINE* $
         asdl_seq * _loop0_1_var;
@@ -726,6 +734,7 @@ eval_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, eval_type, res);
     return res;
 }
 
@@ -737,6 +746,8 @@ fstring_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, fstring_type, &res))
+        return res;
     int mark = p->mark;
     { // star_expressions
         expr_ty star_expressions_var;
@@ -751,6 +762,7 @@ fstring_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, fstring_type, res);
     return res;
 }
 
@@ -762,6 +774,8 @@ statements_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, statements_type, &res))
+        return res;
     int mark = p->mark;
     { // statement+
         asdl_seq * a;
@@ -780,6 +794,7 @@ statements_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, statements_type, res);
     return res;
 }
 
@@ -791,6 +806,8 @@ statement_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, statement_type, &res))
+        return res;
     int mark = p->mark;
     { // compound_stmt
         stmt_ty a;
@@ -820,6 +837,7 @@ statement_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, statement_type, res);
     return res;
 }
 
@@ -831,6 +849,8 @@ statement_newline_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, statement_newline_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -909,6 +929,7 @@ statement_newline_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, statement_newline_type, res);
     return res;
 }
 
@@ -920,6 +941,8 @@ simple_stmt_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, simple_stmt_type, &res))
+        return res;
     int mark = p->mark;
     { // small_stmt !';' NEWLINE
         stmt_ty a;
@@ -965,6 +988,7 @@ simple_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, simple_stmt_type, res);
     return res;
 }
 
@@ -1228,6 +1252,8 @@ compound_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, compound_stmt_type, &res))
+        return res;
     int mark = p->mark;
     { // &('def' | '@' | ASYNC) function_def
         stmt_ty function_def_var;
@@ -1322,6 +1348,7 @@ compound_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, compound_stmt_type, res);
     return res;
 }
 
@@ -1338,6 +1365,8 @@ assignment_rule(Parser *p)
         return NULL;
     }
     void * res = NULL;
+    if (_PyPegen_is_memoized(p, assignment_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -1479,6 +1508,7 @@ assignment_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, assignment_type, res);
     return res;
 }
 
@@ -1503,6 +1533,8 @@ augassign_rule(Parser *p)
         return NULL;
     }
     AugOperator* res = NULL;
+    if (_PyPegen_is_memoized(p, augassign_type, &res))
+        return res;
     int mark = p->mark;
     { // '+='
         void *literal;
@@ -1701,6 +1733,7 @@ augassign_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, augassign_type, res);
     return res;
 }
 
@@ -1712,6 +1745,8 @@ global_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, global_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -1749,6 +1784,7 @@ global_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, global_stmt_type, res);
     return res;
 }
 
@@ -1760,6 +1796,8 @@ nonlocal_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, nonlocal_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -1797,6 +1835,7 @@ nonlocal_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, nonlocal_stmt_type, res);
     return res;
 }
 
@@ -1808,6 +1847,8 @@ yield_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, yield_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -1842,6 +1883,7 @@ yield_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, yield_stmt_type, res);
     return res;
 }
 
@@ -1853,6 +1895,8 @@ assert_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, assert_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -1893,6 +1937,7 @@ assert_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, assert_stmt_type, res);
     return res;
 }
 
@@ -1904,6 +1949,8 @@ del_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, del_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -1941,6 +1988,7 @@ del_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, del_stmt_type, res);
     return res;
 }
 
@@ -1952,6 +2000,8 @@ import_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, import_stmt_type, &res))
+        return res;
     int mark = p->mark;
     { // import_name
         stmt_ty import_name_var;
@@ -1977,6 +2027,7 @@ import_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, import_stmt_type, res);
     return res;
 }
 
@@ -1988,6 +2039,8 @@ import_name_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, import_name_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -2025,6 +2078,7 @@ import_name_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, import_name_type, res);
     return res;
 }
 
@@ -2038,6 +2092,8 @@ import_from_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, import_from_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -2116,6 +2172,7 @@ import_from_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, import_from_type, res);
     return res;
 }
 
@@ -2127,6 +2184,8 @@ import_from_targets_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, import_from_targets_type, &res))
+        return res;
     int mark = p->mark;
     { // '(' import_from_as_names ','? ')'
         asdl_seq* a;
@@ -2181,6 +2240,7 @@ import_from_targets_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, import_from_targets_type, res);
     return res;
 }
 
@@ -2192,6 +2252,8 @@ import_from_as_names_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, import_from_as_names_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.import_from_as_name+
         asdl_seq * a;
@@ -2210,6 +2272,7 @@ import_from_as_names_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, import_from_as_names_type, res);
     return res;
 }
 
@@ -2221,6 +2284,8 @@ import_from_as_name_rule(Parser *p)
         return NULL;
     }
     alias_ty res = NULL;
+    if (_PyPegen_is_memoized(p, import_from_as_name_type, &res))
+        return res;
     int mark = p->mark;
     { // NAME ['as' NAME]
         expr_ty a;
@@ -2242,6 +2307,7 @@ import_from_as_name_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, import_from_as_name_type, res);
     return res;
 }
 
@@ -2253,6 +2319,8 @@ dotted_as_names_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, dotted_as_names_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.dotted_as_name+
         asdl_seq * a;
@@ -2271,6 +2339,7 @@ dotted_as_names_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, dotted_as_names_type, res);
     return res;
 }
 
@@ -2282,6 +2351,8 @@ dotted_as_name_rule(Parser *p)
         return NULL;
     }
     alias_ty res = NULL;
+    if (_PyPegen_is_memoized(p, dotted_as_name_type, &res))
+        return res;
     int mark = p->mark;
     { // dotted_name ['as' NAME]
         expr_ty a;
@@ -2303,6 +2374,7 @@ dotted_as_name_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, dotted_as_name_type, res);
     return res;
 }
 
@@ -2387,6 +2459,8 @@ if_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, if_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -2468,6 +2542,7 @@ if_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, if_stmt_type, res);
     return res;
 }
 
@@ -2481,6 +2556,8 @@ elif_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, elif_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -2562,6 +2639,7 @@ elif_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, elif_stmt_type, res);
     return res;
 }
 
@@ -2573,6 +2651,8 @@ else_block_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, else_block_type, &res))
+        return res;
     int mark = p->mark;
     { // 'else' ':' block
         asdl_seq* b;
@@ -2597,6 +2677,7 @@ else_block_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, else_block_type, res);
     return res;
 }
 
@@ -2608,6 +2689,8 @@ while_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, while_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -2654,6 +2737,7 @@ while_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, while_stmt_type, res);
     return res;
 }
 
@@ -2665,6 +2749,8 @@ for_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, for_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -2720,6 +2806,7 @@ for_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, for_stmt_type, res);
     return res;
 }
 
@@ -2733,6 +2820,8 @@ with_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, with_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -2820,6 +2909,7 @@ with_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, with_stmt_type, res);
     return res;
 }
 
@@ -2831,6 +2921,8 @@ with_item_rule(Parser *p)
         return NULL;
     }
     withitem_ty res = NULL;
+    if (_PyPegen_is_memoized(p, with_item_type, &res))
+        return res;
     int mark = p->mark;
     { // expression ['as' target]
         expr_ty e;
@@ -2852,6 +2944,7 @@ with_item_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, with_item_type, res);
     return res;
 }
 
@@ -2865,6 +2958,8 @@ try_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, try_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -2946,6 +3041,7 @@ try_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, try_stmt_type, res);
     return res;
 }
 
@@ -2957,6 +3053,8 @@ except_block_rule(Parser *p)
         return NULL;
     }
     excepthandler_ty res = NULL;
+    if (_PyPegen_is_memoized(p, except_block_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -3032,6 +3130,7 @@ except_block_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, except_block_type, res);
     return res;
 }
 
@@ -3043,6 +3142,8 @@ finally_block_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, finally_block_type, &res))
+        return res;
     int mark = p->mark;
     { // 'finally' ':' block
         asdl_seq* a;
@@ -3067,6 +3168,7 @@ finally_block_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, finally_block_type, res);
     return res;
 }
 
@@ -3078,6 +3180,8 @@ return_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, return_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -3115,6 +3219,7 @@ return_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, return_stmt_type, res);
     return res;
 }
 
@@ -3126,6 +3231,8 @@ raise_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, raise_stmt_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -3189,6 +3296,7 @@ raise_stmt_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, raise_stmt_type, res);
     return res;
 }
 
@@ -3200,6 +3308,8 @@ function_def_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, function_def_type, &res))
+        return res;
     int mark = p->mark;
     { // decorators function_def_raw
         asdl_seq* d;
@@ -3232,6 +3342,7 @@ function_def_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, function_def_type, res);
     return res;
 }
 
@@ -3243,6 +3354,8 @@ function_def_raw_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, function_def_raw_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -3301,6 +3414,7 @@ function_def_raw_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, function_def_raw_type, res);
     return res;
 }
 
@@ -3312,6 +3426,8 @@ params_rule(Parser *p)
         return NULL;
     }
     arguments_ty res = NULL;
+    if (_PyPegen_is_memoized(p, params_type, &res))
+        return res;
     int mark = p->mark;
     { // invalid_parameters
         void *invalid_parameters_var;
@@ -3337,6 +3453,7 @@ params_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, params_type, res);
     return res;
 }
 
@@ -3353,6 +3470,8 @@ parameters_rule(Parser *p)
         return NULL;
     }
     arguments_ty res = NULL;
+    if (_PyPegen_is_memoized(p, parameters_type, &res))
+        return res;
     int mark = p->mark;
     { // slash_without_default [',' plain_names] [',' names_with_default] [',' star_etc?]
         asdl_seq* a;
@@ -3455,6 +3574,7 @@ parameters_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, parameters_type, res);
     return res;
 }
 
@@ -3466,6 +3586,8 @@ slash_without_default_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, slash_without_default_type, &res))
+        return res;
     int mark = p->mark;
     { // plain_names ',' '/'
         asdl_seq* a;
@@ -3490,6 +3612,7 @@ slash_without_default_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, slash_without_default_type, res);
     return res;
 }
 
@@ -3501,6 +3624,8 @@ slash_with_default_rule(Parser *p)
         return NULL;
     }
     SlashWithDefault* res = NULL;
+    if (_PyPegen_is_memoized(p, slash_with_default_type, &res))
+        return res;
     int mark = p->mark;
     { // [plain_names ','] names_with_default ',' '/'
         void *a;
@@ -3528,6 +3653,7 @@ slash_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, slash_with_default_type, res);
     return res;
 }
 
@@ -3542,6 +3668,8 @@ star_etc_rule(Parser *p)
         return NULL;
     }
     StarEtc* res = NULL;
+    if (_PyPegen_is_memoized(p, star_etc_type, &res))
+        return res;
     int mark = p->mark;
     { // '*' plain_name name_with_optional_default* [',' kwds] ','?
         arg_ty a;
@@ -3617,6 +3745,7 @@ star_etc_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, star_etc_type, res);
     return res;
 }
 
@@ -3628,6 +3757,8 @@ name_with_optional_default_rule(Parser *p)
         return NULL;
     }
     NameDefaultPair* res = NULL;
+    if (_PyPegen_is_memoized(p, name_with_optional_default_type, &res))
+        return res;
     int mark = p->mark;
     { // ',' plain_name ['=' expression]
         arg_ty a;
@@ -3652,6 +3783,7 @@ name_with_optional_default_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, name_with_optional_default_type, res);
     return res;
 }
 
@@ -3663,6 +3795,8 @@ names_with_default_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, names_with_default_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.name_with_default+
         asdl_seq * a;
@@ -3681,6 +3815,7 @@ names_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, names_with_default_type, res);
     return res;
 }
 
@@ -3692,6 +3827,8 @@ name_with_default_rule(Parser *p)
         return NULL;
     }
     NameDefaultPair* res = NULL;
+    if (_PyPegen_is_memoized(p, name_with_default_type, &res))
+        return res;
     int mark = p->mark;
     { // plain_name '=' expression
         expr_ty e;
@@ -3716,6 +3853,7 @@ name_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, name_with_default_type, res);
     return res;
 }
 
@@ -3759,6 +3897,8 @@ plain_name_rule(Parser *p)
         return NULL;
     }
     arg_ty res = NULL;
+    if (_PyPegen_is_memoized(p, plain_name_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -3796,6 +3936,7 @@ plain_name_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, plain_name_type, res);
     return res;
 }
 
@@ -3807,6 +3948,8 @@ kwds_rule(Parser *p)
         return NULL;
     }
     arg_ty res = NULL;
+    if (_PyPegen_is_memoized(p, kwds_type, &res))
+        return res;
     int mark = p->mark;
     { // '**' plain_name
         arg_ty a;
@@ -3828,6 +3971,7 @@ kwds_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, kwds_type, res);
     return res;
 }
 
@@ -3839,6 +3983,8 @@ annotation_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, annotation_type, &res))
+        return res;
     int mark = p->mark;
     { // expression
         expr_ty expression_var;
@@ -3853,6 +3999,7 @@ annotation_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, annotation_type, res);
     return res;
 }
 
@@ -3864,6 +4011,8 @@ decorators_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, decorators_type, &res))
+        return res;
     int mark = p->mark;
     { // (('@' named_expression NEWLINE))+
         asdl_seq * a;
@@ -3882,6 +4031,7 @@ decorators_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, decorators_type, res);
     return res;
 }
 
@@ -3893,6 +4043,8 @@ class_def_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, class_def_type, &res))
+        return res;
     int mark = p->mark;
     { // decorators class_def_raw
         asdl_seq* a;
@@ -3925,6 +4077,7 @@ class_def_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, class_def_type, res);
     return res;
 }
 
@@ -3936,6 +4089,8 @@ class_def_raw_rule(Parser *p)
         return NULL;
     }
     stmt_ty res = NULL;
+    if (_PyPegen_is_memoized(p, class_def_raw_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -3982,6 +4137,7 @@ class_def_raw_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, class_def_raw_type, res);
     return res;
 }
 
@@ -4056,6 +4212,8 @@ expressions_list_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, expressions_list_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.star_expression+ ','?
         asdl_seq * a;
@@ -4078,6 +4236,7 @@ expressions_list_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, expressions_list_type, res);
     return res;
 }
 
@@ -4092,6 +4251,8 @@ star_expressions_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, star_expressions_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -4170,6 +4331,7 @@ star_expressions_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, star_expressions_type, res);
     return res;
 }
 
@@ -4243,6 +4405,8 @@ star_named_expressions_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, star_named_expressions_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.star_named_expression+ ','?
         asdl_seq * a;
@@ -4265,6 +4429,7 @@ star_named_expressions_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, star_named_expressions_type, res);
     return res;
 }
 
@@ -4276,6 +4441,8 @@ star_named_expression_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, star_named_expression_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -4324,6 +4491,7 @@ star_named_expression_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, star_named_expression_type, res);
     return res;
 }
 
@@ -4335,6 +4503,8 @@ named_expression_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, named_expression_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -4399,6 +4569,7 @@ named_expression_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, named_expression_type, res);
     return res;
 }
 
@@ -4410,6 +4581,8 @@ annotated_rhs_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, annotated_rhs_type, &res))
+        return res;
     int mark = p->mark;
     { // yield_expr
         expr_ty yield_expr_var;
@@ -4435,6 +4608,7 @@ annotated_rhs_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, annotated_rhs_type, res);
     return res;
 }
 
@@ -4446,6 +4620,8 @@ expressions_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, expressions_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -4524,6 +4700,7 @@ expressions_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, expressions_type, res);
     return res;
 }
 
@@ -4617,6 +4794,8 @@ lambdef_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, lambdef_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -4660,6 +4839,7 @@ lambdef_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambdef_type, res);
     return res;
 }
 
@@ -4676,6 +4856,8 @@ lambda_parameters_rule(Parser *p)
         return NULL;
     }
     arguments_ty res = NULL;
+    if (_PyPegen_is_memoized(p, lambda_parameters_type, &res))
+        return res;
     int mark = p->mark;
     { // lambda_slash_without_default [',' lambda_plain_names] [',' lambda_names_with_default] [',' lambda_star_etc?]
         asdl_seq* a;
@@ -4778,6 +4960,7 @@ lambda_parameters_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambda_parameters_type, res);
     return res;
 }
 
@@ -4789,6 +4972,8 @@ lambda_slash_without_default_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, lambda_slash_without_default_type, &res))
+        return res;
     int mark = p->mark;
     { // lambda_plain_names ',' '/'
         asdl_seq* a;
@@ -4813,6 +4998,7 @@ lambda_slash_without_default_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambda_slash_without_default_type, res);
     return res;
 }
 
@@ -4824,6 +5010,8 @@ lambda_slash_with_default_rule(Parser *p)
         return NULL;
     }
     SlashWithDefault* res = NULL;
+    if (_PyPegen_is_memoized(p, lambda_slash_with_default_type, &res))
+        return res;
     int mark = p->mark;
     { // [lambda_plain_names ','] lambda_names_with_default ',' '/'
         void *a;
@@ -4851,6 +5039,7 @@ lambda_slash_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambda_slash_with_default_type, res);
     return res;
 }
 
@@ -4865,6 +5054,8 @@ lambda_star_etc_rule(Parser *p)
         return NULL;
     }
     StarEtc* res = NULL;
+    if (_PyPegen_is_memoized(p, lambda_star_etc_type, &res))
+        return res;
     int mark = p->mark;
     { // '*' lambda_plain_name lambda_name_with_optional_default* [',' lambda_kwds] ','?
         arg_ty a;
@@ -4940,6 +5131,7 @@ lambda_star_etc_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambda_star_etc_type, res);
     return res;
 }
 
@@ -4951,6 +5143,8 @@ lambda_name_with_optional_default_rule(Parser *p)
         return NULL;
     }
     NameDefaultPair* res = NULL;
+    if (_PyPegen_is_memoized(p, lambda_name_with_optional_default_type, &res))
+        return res;
     int mark = p->mark;
     { // ',' lambda_plain_name ['=' expression]
         arg_ty a;
@@ -4975,6 +5169,7 @@ lambda_name_with_optional_default_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambda_name_with_optional_default_type, res);
     return res;
 }
 
@@ -4986,6 +5181,8 @@ lambda_names_with_default_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, lambda_names_with_default_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.lambda_name_with_default+
         asdl_seq * a;
@@ -5004,6 +5201,7 @@ lambda_names_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambda_names_with_default_type, res);
     return res;
 }
 
@@ -5015,6 +5213,8 @@ lambda_name_with_default_rule(Parser *p)
         return NULL;
     }
     NameDefaultPair* res = NULL;
+    if (_PyPegen_is_memoized(p, lambda_name_with_default_type, &res))
+        return res;
     int mark = p->mark;
     { // lambda_plain_name '=' expression
         expr_ty e;
@@ -5039,6 +5239,7 @@ lambda_name_with_default_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambda_name_with_default_type, res);
     return res;
 }
 
@@ -5050,6 +5251,8 @@ lambda_plain_names_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, lambda_plain_names_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.(lambda_plain_name !'=')+
         asdl_seq * a;
@@ -5068,6 +5271,7 @@ lambda_plain_names_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambda_plain_names_type, res);
     return res;
 }
 
@@ -5079,6 +5283,8 @@ lambda_plain_name_rule(Parser *p)
         return NULL;
     }
     arg_ty res = NULL;
+    if (_PyPegen_is_memoized(p, lambda_plain_name_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -5113,6 +5319,7 @@ lambda_plain_name_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambda_plain_name_type, res);
     return res;
 }
 
@@ -5124,6 +5331,8 @@ lambda_kwds_rule(Parser *p)
         return NULL;
     }
     arg_ty res = NULL;
+    if (_PyPegen_is_memoized(p, lambda_kwds_type, &res))
+        return res;
     int mark = p->mark;
     { // '**' lambda_plain_name
         arg_ty a;
@@ -5145,6 +5354,7 @@ lambda_kwds_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lambda_kwds_type, res);
     return res;
 }
 
@@ -5342,6 +5552,8 @@ comparison_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, comparison_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -5390,6 +5602,7 @@ comparison_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, comparison_type, res);
     return res;
 }
 
@@ -5411,6 +5624,8 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, compare_op_bitwise_or_pair_type, &res))
+        return res;
     int mark = p->mark;
     { // eq_bitwise_or
         CmpopExprPair* eq_bitwise_or_var;
@@ -5524,6 +5739,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, compare_op_bitwise_or_pair_type, res);
     return res;
 }
 
@@ -5535,6 +5751,8 @@ eq_bitwise_or_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, eq_bitwise_or_type, &res))
+        return res;
     int mark = p->mark;
     { // '==' bitwise_or
         expr_ty a;
@@ -5556,6 +5774,7 @@ eq_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, eq_bitwise_or_type, res);
     return res;
 }
 
@@ -5567,6 +5786,8 @@ noteq_bitwise_or_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, noteq_bitwise_or_type, &res))
+        return res;
     int mark = p->mark;
     { // ('!=') bitwise_or
         void *_tmp_86_var;
@@ -5588,6 +5809,7 @@ noteq_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, noteq_bitwise_or_type, res);
     return res;
 }
 
@@ -5599,6 +5821,8 @@ lte_bitwise_or_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, lte_bitwise_or_type, &res))
+        return res;
     int mark = p->mark;
     { // '<=' bitwise_or
         expr_ty a;
@@ -5620,6 +5844,7 @@ lte_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lte_bitwise_or_type, res);
     return res;
 }
 
@@ -5631,6 +5856,8 @@ lt_bitwise_or_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, lt_bitwise_or_type, &res))
+        return res;
     int mark = p->mark;
     { // '<' bitwise_or
         expr_ty a;
@@ -5652,6 +5879,7 @@ lt_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, lt_bitwise_or_type, res);
     return res;
 }
 
@@ -5663,6 +5891,8 @@ gte_bitwise_or_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, gte_bitwise_or_type, &res))
+        return res;
     int mark = p->mark;
     { // '>=' bitwise_or
         expr_ty a;
@@ -5684,6 +5914,7 @@ gte_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, gte_bitwise_or_type, res);
     return res;
 }
 
@@ -5695,6 +5926,8 @@ gt_bitwise_or_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, gt_bitwise_or_type, &res))
+        return res;
     int mark = p->mark;
     { // '>' bitwise_or
         expr_ty a;
@@ -5716,6 +5949,7 @@ gt_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, gt_bitwise_or_type, res);
     return res;
 }
 
@@ -5727,6 +5961,8 @@ notin_bitwise_or_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, notin_bitwise_or_type, &res))
+        return res;
     int mark = p->mark;
     { // 'not' 'in' bitwise_or
         expr_ty a;
@@ -5751,6 +5987,7 @@ notin_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, notin_bitwise_or_type, res);
     return res;
 }
 
@@ -5762,6 +5999,8 @@ in_bitwise_or_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, in_bitwise_or_type, &res))
+        return res;
     int mark = p->mark;
     { // 'in' bitwise_or
         expr_ty a;
@@ -5783,6 +6022,7 @@ in_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, in_bitwise_or_type, res);
     return res;
 }
 
@@ -5794,6 +6034,8 @@ isnot_bitwise_or_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, isnot_bitwise_or_type, &res))
+        return res;
     int mark = p->mark;
     { // 'is' 'not' bitwise_or
         expr_ty a;
@@ -5818,6 +6060,7 @@ isnot_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, isnot_bitwise_or_type, res);
     return res;
 }
 
@@ -5829,6 +6072,8 @@ is_bitwise_or_rule(Parser *p)
         return NULL;
     }
     CmpopExprPair* res = NULL;
+    if (_PyPegen_is_memoized(p, is_bitwise_or_type, &res))
+        return res;
     int mark = p->mark;
     { // 'is' bitwise_or
         expr_ty a;
@@ -5850,6 +6095,7 @@ is_bitwise_or_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, is_bitwise_or_type, res);
     return res;
 }
 
@@ -6677,6 +6923,8 @@ power_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, power_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -6728,6 +6976,7 @@ power_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, power_type, res);
     return res;
 }
 
@@ -6983,6 +7232,8 @@ slices_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, slices_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7038,6 +7289,7 @@ slices_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, slices_type, res);
     return res;
 }
 
@@ -7049,6 +7301,8 @@ slice_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, slice_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7107,6 +7361,7 @@ slice_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, slice_type, res);
     return res;
 }
 
@@ -7129,6 +7384,8 @@ atom_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, atom_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7321,6 +7578,7 @@ atom_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, atom_type, res);
     return res;
 }
 
@@ -7364,6 +7622,8 @@ list_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, list_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7404,6 +7664,7 @@ list_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, list_type, res);
     return res;
 }
 
@@ -7415,6 +7676,8 @@ listcomp_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, listcomp_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7469,6 +7732,7 @@ listcomp_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, listcomp_type, res);
     return res;
 }
 
@@ -7480,6 +7744,8 @@ tuple_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, tuple_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7520,6 +7786,7 @@ tuple_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, tuple_type, res);
     return res;
 }
 
@@ -7531,6 +7798,8 @@ group_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, group_type, &res))
+        return res;
     int mark = p->mark;
     { // '(' (yield_expr | named_expression) ')'
         void *a;
@@ -7555,6 +7824,7 @@ group_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, group_type, res);
     return res;
 }
 
@@ -7566,6 +7836,8 @@ genexp_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, genexp_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7620,6 +7892,7 @@ genexp_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, genexp_type, res);
     return res;
 }
 
@@ -7631,6 +7904,8 @@ set_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, set_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7671,6 +7946,7 @@ set_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, set_type, res);
     return res;
 }
 
@@ -7682,6 +7958,8 @@ setcomp_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, setcomp_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7736,6 +8014,7 @@ setcomp_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, setcomp_type, res);
     return res;
 }
 
@@ -7747,6 +8026,8 @@ dict_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, dict_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7787,6 +8068,7 @@ dict_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, dict_type, res);
     return res;
 }
 
@@ -7798,6 +8080,8 @@ dictcomp_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, dictcomp_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -7841,6 +8125,7 @@ dictcomp_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, dictcomp_type, res);
     return res;
 }
 
@@ -7852,6 +8137,8 @@ kvpairs_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, kvpairs_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.kvpair+ ','?
         asdl_seq * a;
@@ -7874,6 +8161,7 @@ kvpairs_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, kvpairs_type, res);
     return res;
 }
 
@@ -7885,6 +8173,8 @@ kvpair_rule(Parser *p)
         return NULL;
     }
     KeyValuePair* res = NULL;
+    if (_PyPegen_is_memoized(p, kvpair_type, &res))
+        return res;
     int mark = p->mark;
     { // '**' bitwise_or
         expr_ty a;
@@ -7927,6 +8217,7 @@ kvpair_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, kvpair_type, res);
     return res;
 }
 
@@ -7938,6 +8229,8 @@ for_if_clauses_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, for_if_clauses_type, &res))
+        return res;
     int mark = p->mark;
     { // ((ASYNC? 'for' star_targets 'in' disjunction (('if' disjunction))*))+
         asdl_seq * a;
@@ -7956,6 +8249,7 @@ for_if_clauses_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, for_if_clauses_type, res);
     return res;
 }
 
@@ -7967,6 +8261,8 @@ yield_expr_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, yield_expr_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -8033,6 +8329,7 @@ yield_expr_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, yield_expr_type, res);
     return res;
 }
 
@@ -8093,6 +8390,8 @@ args_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, args_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -8179,6 +8478,7 @@ args_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, args_type, res);
     return res;
 }
 
@@ -8193,6 +8493,8 @@ kwargs_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, kwargs_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.kwarg_or_starred+ ',' ','.kwarg_or_double_starred+
         asdl_seq * a;
@@ -8239,6 +8541,7 @@ kwargs_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, kwargs_type, res);
     return res;
 }
 
@@ -8250,6 +8553,8 @@ starred_expression_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, starred_expression_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -8287,6 +8592,7 @@ starred_expression_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, starred_expression_type, res);
     return res;
 }
 
@@ -8298,6 +8604,8 @@ kwarg_or_starred_rule(Parser *p)
         return NULL;
     }
     KeywordOrStarred* res = NULL;
+    if (_PyPegen_is_memoized(p, kwarg_or_starred_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -8353,6 +8661,7 @@ kwarg_or_starred_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, kwarg_or_starred_type, res);
     return res;
 }
 
@@ -8364,6 +8673,8 @@ kwarg_or_double_starred_rule(Parser *p)
         return NULL;
     }
     KeywordOrStarred* res = NULL;
+    if (_PyPegen_is_memoized(p, kwarg_or_double_starred_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -8430,6 +8741,7 @@ kwarg_or_double_starred_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, kwarg_or_double_starred_type, res);
     return res;
 }
 
@@ -8441,6 +8753,8 @@ star_targets_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, star_targets_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -8499,6 +8813,7 @@ star_targets_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, star_targets_type, res);
     return res;
 }
 
@@ -8510,6 +8825,8 @@ star_targets_seq_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, star_targets_seq_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.star_target+ ','?
         asdl_seq * a;
@@ -8532,6 +8849,7 @@ star_targets_seq_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, star_targets_seq_type, res);
     return res;
 }
 
@@ -8678,6 +8996,8 @@ star_atom_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, star_atom_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -8783,6 +9103,7 @@ star_atom_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, star_atom_type, res);
     return res;
 }
 
@@ -8797,6 +9118,8 @@ inside_paren_ann_assign_target_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, inside_paren_ann_assign_target_type, &res))
+        return res;
     int mark = p->mark;
     { // ann_assign_subscript_attribute_target
         expr_ty ann_assign_subscript_attribute_target_var;
@@ -8847,6 +9170,7 @@ inside_paren_ann_assign_target_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, inside_paren_ann_assign_target_type, res);
     return res;
 }
 
@@ -8860,6 +9184,8 @@ ann_assign_subscript_attribute_target_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, ann_assign_subscript_attribute_target_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -8936,6 +9262,7 @@ ann_assign_subscript_attribute_target_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, ann_assign_subscript_attribute_target_type, res);
     return res;
 }
 
@@ -8947,6 +9274,8 @@ del_targets_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, del_targets_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.del_target+ ','?
         asdl_seq * a;
@@ -8969,6 +9298,7 @@ del_targets_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, del_targets_type, res);
     return res;
 }
 
@@ -9084,6 +9414,8 @@ del_t_atom_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, del_t_atom_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -9189,6 +9521,7 @@ del_t_atom_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, del_t_atom_type, res);
     return res;
 }
 
@@ -9200,6 +9533,8 @@ targets_rule(Parser *p)
         return NULL;
     }
     asdl_seq* res = NULL;
+    if (_PyPegen_is_memoized(p, targets_type, &res))
+        return res;
     int mark = p->mark;
     { // ','.target+ ','?
         asdl_seq * a;
@@ -9222,6 +9557,7 @@ targets_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, targets_type, res);
     return res;
 }
 
@@ -9533,6 +9869,8 @@ t_lookahead_rule(Parser *p)
         return NULL;
     }
     void * res = NULL;
+    if (_PyPegen_is_memoized(p, t_lookahead_type, &res))
+        return res;
     int mark = p->mark;
     { // '('
         void *literal;
@@ -9569,6 +9907,7 @@ t_lookahead_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, t_lookahead_type, res);
     return res;
 }
 
@@ -9580,6 +9919,8 @@ t_atom_rule(Parser *p)
         return NULL;
     }
     expr_ty res = NULL;
+    if (_PyPegen_is_memoized(p, t_atom_type, &res))
+        return res;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -9685,6 +10026,7 @@ t_atom_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, t_atom_type, res);
     return res;
 }
 
@@ -9699,6 +10041,8 @@ incorrect_arguments_rule(Parser *p)
         return NULL;
     }
     void * res = NULL;
+    if (_PyPegen_is_memoized(p, incorrect_arguments_type, &res))
+        return res;
     int mark = p->mark;
     { // args ',' '*'
         expr_ty args_var;
@@ -9769,6 +10113,7 @@ incorrect_arguments_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, incorrect_arguments_type, res);
     return res;
 }
 
@@ -9780,6 +10125,8 @@ invalid_named_expression_rule(Parser *p)
         return NULL;
     }
     void * res = NULL;
+    if (_PyPegen_is_memoized(p, invalid_named_expression_type, &res))
+        return res;
     int mark = p->mark;
     { // expression ':=' expression
         expr_ty a;
@@ -9804,6 +10151,7 @@ invalid_named_expression_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, invalid_named_expression_type, res);
     return res;
 }
 
@@ -9819,6 +10167,8 @@ invalid_assignment_rule(Parser *p)
         return NULL;
     }
     void * res = NULL;
+    if (_PyPegen_is_memoized(p, invalid_assignment_type, &res))
+        return res;
     int mark = p->mark;
     { // list ':'
         expr_ty list_var;
@@ -9904,6 +10254,7 @@ invalid_assignment_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, invalid_assignment_type, res);
     return res;
 }
 
@@ -9915,6 +10266,8 @@ invalid_block_rule(Parser *p)
         return NULL;
     }
     void * res = NULL;
+    if (_PyPegen_is_memoized(p, invalid_block_type, &res))
+        return res;
     int mark = p->mark;
     { // NEWLINE !INDENT
         void *newline_var;
@@ -9935,6 +10288,7 @@ invalid_block_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, invalid_block_type, res);
     return res;
 }
 
@@ -9946,6 +10300,8 @@ invalid_comprehension_rule(Parser *p)
         return NULL;
     }
     void * res = NULL;
+    if (_PyPegen_is_memoized(p, invalid_comprehension_type, &res))
+        return res;
     int mark = p->mark;
     { // ('[' | '(' | '{') '*' expression for_if_clauses
         void *_tmp_121_var;
@@ -9973,6 +10329,7 @@ invalid_comprehension_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, invalid_comprehension_type, res);
     return res;
 }
 
@@ -9985,6 +10342,8 @@ invalid_parameters_rule(Parser *p)
         return NULL;
     }
     void * res = NULL;
+    if (_PyPegen_is_memoized(p, invalid_parameters_type, &res))
+        return res;
     int mark = p->mark;
     { // [plain_names ','] (slash_with_default | names_with_default) ',' plain_names
         void *_tmp_123_var;
@@ -10013,6 +10372,7 @@ invalid_parameters_rule(Parser *p)
     }
     res = NULL;
   done:
+    _PyPegen_insert_memo(p, mark, invalid_parameters_type, res);
     return res;
 }
 
