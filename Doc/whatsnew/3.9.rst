@@ -832,6 +832,12 @@ Changes in the Python API
   inherit from it should have this method defined.
   (Contributed by Kyle Stanley in :issue:`34037`.)
 
+* ``array('u')`` now uses ``wchar_t`` as C type instead of ``Py_UNICODE``.
+  This change doesn't affect to its behavior because ``Py_UNICODE`` is alias
+  of ``wchar_t`` since Python 3.3. Although ``array('u')`` is deprecated,
+  it may be alive after ``Py_UNICODE`` is removed.
+  (Contributed by Inada Naoki in :issue:`34538`.)
+
 
 CPython bytecode changes
 ------------------------
