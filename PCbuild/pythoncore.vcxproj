@@ -215,7 +215,6 @@
     <ClInclude Include="..\Include\patchlevel.h" />
     <ClInclude Include="..\Include\picklebufobject.h" />
     <ClInclude Include="..\Include\pyhash.h" />
-    <ClInclude Include="..\Include\pyhash.h" />
     <ClInclude Include="..\Include\py_curses.h" />
     <ClInclude Include="..\Include\pyarena.h" />
     <ClInclude Include="..\Include\pycapsule.h" />
