@@ -1,11 +1,71 @@
-
-/* interpreters module */
+/* _interpreters module */
 /* low-level access to interpreter primitives */
 
 #include "Python.h"
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
+
+typedef void (*_deallocfunc)(void *);
+
+static PyInterpreterState *
+_get_current(void)
+{
+    // _PyInterpreterState_Get() aborts if lookup fails, so don't need
+    // to check the result for NULL.
+    return _PyInterpreterState_Get();
+}
+
+
+/* string utils *************************************************************/
+
+// PyMem_Free() must be used to dealocate the resulting string.
+static char *
+_strdup_and_size(const char *data, Py_ssize_t *psize, _deallocfunc *dealloc)
+{
+    if (data == NULL) {
+        if (psize != NULL) {
+            *psize = 0;
+        }
+        if (dealloc != NULL) {
+            *dealloc = NULL;
+        }
+        return "";
+    }
+
+    Py_ssize_t size;
+    if (psize == NULL) {
+        size = strlen(data);
+    } else {
+        size = *psize;
+        if (size == 0) {
+            size = strlen(data);
+            *psize = size;  // The size "return" value.
+        }
+    }
+    char *copied = PyMem_Malloc(size+1);
+    if (copied == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    if (dealloc != NULL) {
+        *dealloc = PyMem_Free;
+    }
+    memcpy(copied, data, size+1);
+    return copied;
+}
+
+static const char *
+_pyobj_get_str_and_size(PyObject *obj, Py_ssize_t *psize)
+{
+    if (PyUnicode_Check(obj)) {
+        return PyUnicode_AsUTF8AndSize(obj, psize);
+    } else {
+        const char *data = NULL;
+        PyBytes_AsStringAndSize(obj, (char **)&data, psize);
+        return data;
+    }
+}
 
 static char *
 _copy_raw_string(PyObject *strobj)
@@ -23,12 +83,150 @@ _copy_raw_string(PyObject *strobj)
     return copied;
 }
 
-static PyInterpreterState *
-_get_current(void)
+/* "raw" strings */
+
+typedef struct _rawstring {
+    Py_ssize_t size;
+    const char *data;
+    _deallocfunc dealloc;
+} _rawstring;
+
+static void
+_rawstring_init(_rawstring *raw)
 {
-    // PyInterpreterState_Get() aborts if lookup fails, so don't need
-    // to check the result for NULL.
-    return PyInterpreterState_Get();
+    raw->size = 0;
+    raw->data = NULL;
+    raw->dealloc = NULL;
+}
+
+static _rawstring *
+_rawstring_new(void)
+{
+    _rawstring *raw = PyMem_NEW(_rawstring, 1);
+    if (raw == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    _rawstring_init(raw);
+    return raw;
+}
+
+static void
+_rawstring_clear(_rawstring *raw)
+{
+    if (raw->data != NULL && raw->dealloc != NULL) {
+        (*raw->dealloc)((void *)raw->data);
+    }
+    _rawstring_init(raw);
+}
+
+static void
+_rawstring_free(_rawstring *raw)
+{
+    _rawstring_clear(raw);
+    PyMem_Free(raw);
+}
+
+static int
+_rawstring_is_clear(_rawstring *raw)
+{
+    return raw->size == 0 && raw->data == NULL && raw->dealloc == NULL;
+}
+
+//static void
+//_rawstring_move(_rawstring *raw, _rawstring *src)
+//{
+//    raw->size = src->size;
+//    raw->data = src->data;
+//    raw->dealloc = src->dealloc;
+//    _rawstring_init(src);
+//}
+
+static void
+_rawstring_proxy(_rawstring *raw, const char *str)
+{
+    if (str == NULL) {
+        str = "";
+    }
+    raw->size = strlen(str);
+    raw->data = str;
+    raw->dealloc = NULL;
+}
+
+static int
+_rawstring_buffer(_rawstring *raw, Py_ssize_t size)
+{
+    raw->data = PyMem_Malloc(size+1);
+    if (raw->data == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    raw->size = size;
+    raw->dealloc = PyMem_Free;
+    return 0;
+}
+
+static int
+_rawstring_strcpy(_rawstring *raw, const char *str, Py_ssize_t size)
+{
+    _deallocfunc dealloc = NULL;
+    const char *copied = _strdup_and_size(str, &size, &dealloc);
+    if (copied == NULL) {
+        return -1;
+    }
+
+    raw->size = size;
+    raw->dealloc = dealloc;
+    raw->data = copied;
+    return 0;
+}
+
+static int
+_rawstring_from_pyobj(_rawstring *raw, PyObject *obj)
+{
+    Py_ssize_t size = 0;
+    const char *data = _pyobj_get_str_and_size(obj, &size);
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+    if (_rawstring_strcpy(raw, data, size) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+_rawstring_from_pyobj_attr(_rawstring *raw, PyObject *obj, const char *attr)
+{
+    int res = -1;
+    PyObject *valueobj = PyObject_GetAttrString(obj, attr);
+    if (valueobj == NULL) {
+        goto done;
+    }
+    if (!PyUnicode_Check(valueobj)) {
+        // XXX PyObject_Str()?  Repr()?
+        goto done;
+    }
+    const char *valuestr = PyUnicode_AsUTF8(valueobj);
+    if (valuestr == NULL) {
+        if (PyErr_Occurred()) {
+            goto done;
+        }
+    } else if (_rawstring_strcpy(raw, valuestr, 0) != 0) {
+        _rawstring_clear(raw);
+        goto done;
+    }
+    res = 0;
+
+done:
+    Py_XDECREF(valueobj);
+    return res;
+}
+
+static PyObject *
+_rawstring_as_pybytes(_rawstring *raw)
+{
+    return PyBytes_FromStringAndSize(raw->data, raw->size);
 }
 
 
