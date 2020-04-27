@@ -258,22 +258,11 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
         int keep_fd = PyLong_AsLong(py_keep_fd);
         if (keep_fd < start_fd)
             continue;
-        for (fd_num = start_fd; fd_num < keep_fd; ++fd_num) {
-            close(fd_num);
-        }
+        _Py_closerange(start_fd, keep_fd - 1);
         start_fd = keep_fd + 1;
     }
-    if (start_fd <= end_fd) {
-#if defined(__FreeBSD__)
-        /* Any errors encountered while closing file descriptors are ignored */
-        closefrom(start_fd);
-#else
-        for (fd_num = start_fd; fd_num < end_fd; ++fd_num) {
-            /* Ignore errors */
-            (void)close(fd_num);
-        }
-#endif
-    }
+    if (start_fd <= end_fd)
+        _Py_closerange(start_fd, end_fd);
 }
 
 
