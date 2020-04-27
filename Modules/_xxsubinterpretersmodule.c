@@ -600,6 +600,46 @@ _objsnapshot_resolve(_objsnapshot *osn)
 
 /* exception utils **********************************************************/
 
+// _pyexc_create is inspired by _PyErr_SetObject().
+
+static PyObject *
+_pyexc_create(PyObject *exctype, const char *msg, PyObject *tb)
+{
+    assert(exctype != NULL && PyExceptionClass_Check(exctype));
+
+    PyObject *curtype = NULL, *curexc = NULL, *curtb = NULL;
+    PyErr_Fetch(&curtype, &curexc, &curtb);
+
+    // Create the object.
+    PyObject *exc = NULL;
+    if (msg != NULL) {
+        PyObject *msgobj = PyUnicode_FromString(msg);
+        if (msgobj == NULL) {
+            IGNORE_FAILURE("could not deserialize propagated error message");
+        }
+        exc = _PyObject_CallOneArg(exctype, msgobj);
+        Py_XDECREF(msgobj);
+    } else {
+        exc = _PyObject_CallNoArg(exctype);
+    }
+    if (exc == NULL) {
+        return NULL;
+    }
+
+    // Set the traceback, if any.
+    if (tb == NULL) {
+        tb = curtb;
+    }
+    if (tb != NULL) {
+        // This does *not* steal a reference!
+        PyException_SetTraceback(exc, tb);
+    }
+
+    PyErr_Restore(curtype, curexc, curtb);
+
+    return exc;
+}
+
 /* traceback snapshots */
 
 typedef struct _tbsnapshot {
@@ -1058,35 +1098,6 @@ _sharedexception_is_clear(_sharedexception *she)
 }
 
 static PyObject *
-_sharedexception_get_wrapper(_sharedexception *sharedexc,
-                             PyObject *wrapperclass)
-{
-    PyObject *exctype = NULL, *exc = NULL, *tb = NULL;
-
-    // Create (and set) the exception (e.g. RunFailedError).
-    // XXX Ensure a traceback is set?
-    if (sharedexc->msg.data != NULL) {
-        PyErr_SetString(wrapperclass, sharedexc->msg.data);
-    } else {
-        PyErr_SetNone(wrapperclass);
-    }
-
-    // Pop off the exception we just set and normalize it.
-    PyErr_Fetch(&exctype, &exc, &tb);
-
-    // XXX Chaining may normalize it for us...
-    PyErr_NormalizeException(&exctype, &exc, &tb);
-    Py_DECREF(exctype);
-    Py_XDECREF(tb);
-    // XXX It should always be set?
-    if (tb != NULL) {
-        // This does *not* steal a reference!
-        PyException_SetTraceback(exc, tb);
-    }
-    return exc;
-}
-
-static PyObject *
 _sharedexception_get_cause(_sharedexception *sharedexc)
 {
     // FYI, "cause" is already normalized.
@@ -1129,7 +1140,11 @@ _sharedexception_resolve(_sharedexception *sharedexc, PyObject *wrapperclass)
 {
     assert(!PyErr_Occurred());
 
-    // Get the __cause__, is possible.
+    // Get the exception object (already normalized).
+    PyObject *exc = _pyexc_create(wrapperclass, sharedexc->msg.data, NULL);
+    assert(exc != NULL);
+
+    // Set __cause__, is possible.
     PyObject *cause = _sharedexception_get_cause(sharedexc);
     if (cause != NULL) {
         // Set the cause as though it were just caught in an "except" block.
@@ -1142,14 +1157,11 @@ _sharedexception_resolve(_sharedexception *sharedexc, PyObject *wrapperclass)
         // Behave as though the exception was caught in this thread.
         // (This is like entering an "except" block.)
         PyErr_SetExcInfo(causetype, cause, tb);
-    }
 
-    // Get the exception object (already normalized).
-    // exc.__context__ will be set automatically.
-    PyObject *exc = _sharedexception_get_wrapper(sharedexc, wrapperclass);
-    assert(!PyErr_Occurred());
+        // Chain "exc" as the current exception.
+        // exc.__context__ will be set automatically.
+        PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
 
-    if (cause != NULL) {
         // Set __cause__.
         Py_INCREF(cause);  // PyException_SetCause() steals a reference.
         PyException_SetCause(exc, cause);
