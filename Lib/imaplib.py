@@ -904,9 +904,9 @@ class IMAP4:
 
 
     def unselect(self):
-        """Free server's resources associated with the
-        selected mailbox and returns the server to the authenticated
-        state. This command performs the same actions as CLOSE, except
+        """Free server's resources associated with the selected mailbox
+        and returns the server to the authenticated state.
+        This command performs the same actions as CLOSE, except
         that no messages are permanently removed from the currently
         selected mailbox.
 
