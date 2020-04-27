@@ -116,6 +116,7 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
 
     def setup(self):
         super().setup()
+        self.server.is_selected = False
         self.server.logged = None
 
     def _send(self, message):
@@ -189,6 +190,18 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
     def cmd_LOGIN(self, tag, args):
         self.server.logged = args[0]
         self._send_tagged(tag, 'OK', 'LOGIN completed')
+
+    def cmd_SELECT(self, tag, args):
+        self.server.is_selected = True
+        self._send_line(b'* 2 EXISTS')
+        self._send_tagged(tag, 'OK', '[READ-WRITE] SELECT completed.')
+
+    def cmd_UNSELECT(self, tag, args):
+        if self.server.is_selected:
+            self.server.is_selected = False
+            self._send_tagged(tag, 'OK', 'Returned to authenticated state. (Success)')
+        else:
+            self._send_tagged(tag, 'BAD', 'No mailbox selected')
 
 
 class NewIMAPTestsMixin():
@@ -510,6 +523,18 @@ class NewIMAPTestsMixin():
         typ, data = client.lsub()
         self.assertEqual(typ, 'OK')
         self.assertEqual(data[0], b'() "." directoryA')
+
+    def test_unselect(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        typ, data = client.select()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'2')
+
+        typ, data = client.unselect()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'Returned to authenticated state. (Success)')
+        self.assertEqual(client.state, 'AUTH')
 
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
