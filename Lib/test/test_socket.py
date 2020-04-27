@@ -948,7 +948,7 @@ class GeneralModuleTests(unittest.TestCase):
         socket.IPPROTO_SCTP
 
     @unittest.skipUnless(sys.platform == 'darwin', 'macOS specific test')
-    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
     def test3542SocketOptions(self):
         # Ref. issue #35569 and https://tools.ietf.org/html/rfc3542
         opts = {
