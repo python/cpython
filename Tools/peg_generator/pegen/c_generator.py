@@ -73,9 +73,17 @@ class CCallMakerVisitor(GrammarVisitor):
             return "literal", f"_PyPegen_expect_token(p, {type})"
 
     def visit_Rhs(self, node: Rhs) -> Tuple[Optional[str], str]:
+        def can_we_inline(node):
+            if len(node.alts) != 1 or len(node.alts[0].items) != 1:
+                return False
+            # If the alternative has an action we cannot inline
+            if getattr(node.alts[0], "action", None) is not None:
+                return False
+            return True
+
         if node in self.cache:
             return self.cache[node]
-        if len(node.alts) == 1 and len(node.alts[0].items) == 1:
+        if can_we_inline(node):
             self.cache[node] = self.visit(node.alts[0].items[0])
         else:
             name = self.gen.name_node(node)

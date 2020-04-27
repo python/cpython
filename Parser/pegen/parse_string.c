@@ -586,7 +586,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         return NULL;
     }
 
-    Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, NULL, p->arena);
+    Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, p->flags, NULL, p->arena);
     p2->starting_lineno = p->starting_lineno + p->tok->first_lineno - 1;
     p2->starting_col_offset = p->tok->first_lineno == p->tok->lineno
                               ? p->starting_col_offset + t->col_offset : 0;

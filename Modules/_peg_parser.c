@@ -28,9 +28,10 @@ _Py_parse_file(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
     PyObject *result = NULL;
 
-    mod_ty res = PyPegen_ASTFromFile(filename, mode, arena);
+    mod_ty res = PyPegen_ASTFromFile(filename, mode, &flags, arena);
     if (res == NULL) {
         goto error;
     }
