@@ -880,7 +880,11 @@ For an example of the usage of queues for interprocess communication see
 
    .. method:: close()
 
-      Close the queue.
+      Close the queue: release internal resources.
+
+      A queue must not be used anymore after it is closed. For example,
+      :meth:`get`, :meth:`put` and :meth:`empty` methods must no longer be
+      called.
 
       .. versionadded:: 3.9
 
