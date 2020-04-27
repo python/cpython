@@ -598,6 +598,283 @@ _objsnapshot_resolve(_objsnapshot *osn)
 }
 
 
+/* exception utils **********************************************************/
+
+/* traceback snapshots */
+
+typedef struct _tbsnapshot {
+    _rawstring tbs_funcname;
+    _rawstring tbs_filename;
+    int tbs_lineno;
+    struct _tbsnapshot *tbs_next;
+} _tbsnapshot;
+
+static void
+_tbsnapshot_init(_tbsnapshot *tbs)
+{
+    _rawstring_init(&tbs->tbs_funcname);
+    _rawstring_init(&tbs->tbs_filename);
+    tbs->tbs_lineno = -1;
+    tbs->tbs_next = NULL;
+}
+
+static _tbsnapshot *
+_tbsnapshot_new(void)
+{
+    _tbsnapshot *tbs = PyMem_NEW(_tbsnapshot, 1);
+    if (tbs == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    _tbsnapshot_init(tbs);
+    return tbs;
+}
+
+static void _tbsnapshot_free(_tbsnapshot *);  // forward
+
+static void
+_tbsnapshot_clear(_tbsnapshot *tbs)
+{
+    _rawstring_clear(&tbs->tbs_funcname);
+    _rawstring_clear(&tbs->tbs_filename);
+    tbs->tbs_lineno = -1;
+    if (tbs->tbs_next != NULL) {
+        _tbsnapshot_free(tbs->tbs_next);
+        tbs->tbs_next = NULL;
+    }
+}
+
+static void
+_tbsnapshot_free(_tbsnapshot *tbs)
+{
+    _tbsnapshot_clear(tbs);
+    PyMem_Free(tbs);
+}
+
+static int
+_tbsnapshot_is_clear(_tbsnapshot *tbs)
+{
+    return tbs->tbs_lineno == -1 && tbs->tbs_next == NULL
+        && _rawstring_is_clear(&tbs->tbs_funcname)
+        && _rawstring_is_clear(&tbs->tbs_filename);
+}
+
+static void _tbsnapshot_extract(_tbsnapshot *, PyTracebackObject *);
+static void
+_tbsnapshot_extract(_tbsnapshot *tbs, PyTracebackObject *pytb)
+{
+    assert(_tbsnapshot_is_clear(tbs));
+    assert(pytb != NULL);
+
+    if (pytb->tb_next != NULL) {
+        tbs->tbs_next = _tbsnapshot_new();
+        if (tbs->tbs_next == NULL) {
+            goto error;
+        }
+        _tbsnapshot_extract(tbs->tbs_next, pytb->tb_next);
+    }
+    PyCodeObject *pycode = pytb->tb_frame->f_code;
+    const char *funcname = PyUnicode_AsUTF8(pycode->co_name);
+    if (_rawstring_strcpy(&tbs->tbs_funcname, funcname, 0) != 0) {
+        goto error;
+    }
+    const char *filename = PyUnicode_AsUTF8(pycode->co_filename);
+    if (_rawstring_strcpy(&tbs->tbs_filename, filename, 0) != 0) {
+        goto error;
+    }
+    tbs->tbs_lineno = pytb->tb_lineno;
+
+error:
+    _tbsnapshot_clear(tbs);
+    // XXX Emit a warning?
+    PyErr_Clear();
+}
+
+static PyObject *
+_tbsnapshot_resolve(_tbsnapshot *tbs)
+{
+    assert(!PyErr_Occurred());
+    // At this point there should be no traceback set yet.
+
+    while (tbs != NULL) {
+        const char *funcname = tbs->tbs_funcname.data;
+        const char *filename = tbs->tbs_filename.data;
+        _PyTraceback_Add(funcname ? funcname : "",
+                         filename ? filename : "",
+                         tbs->tbs_lineno);
+        tbs = tbs->tbs_next;
+    }
+
+    PyObject *exctype = NULL, *excval = NULL, *tb = NULL;
+    PyErr_Fetch(&exctype, &excval, &tb);
+    // Leave it cleared.
+    return tb;
+}
+
+/* exception snapshots */
+
+typedef struct _excsnapshot {
+    _objsnapshot es_object;
+    struct _excsnapshot *es_cause;
+    struct _excsnapshot *es_context;
+    char es_suppress_context;
+    struct _tbsnapshot *es_traceback;
+} _excsnapshot;
+
+static void
+_excsnapshot_init(_excsnapshot *es)
+{
+    _objsnapshot_init(&es->es_object);
+    es->es_cause = NULL;
+    es->es_context = NULL;
+    es->es_suppress_context = 0;
+    es->es_traceback = NULL;
+}
+
+static _excsnapshot *
+_excsnapshot_new(void) {
+    _excsnapshot *es = PyMem_NEW(_excsnapshot, 1);
+    if (es == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    _excsnapshot_init(es);
+    return es;
+}
+
+static void _excsnapshot_free(_excsnapshot *);  // forward
+
+static void
+_excsnapshot_clear(_excsnapshot *es)
+{
+    _objsnapshot_clear(&es->es_object);
+    if (es->es_cause != NULL) {
+        _excsnapshot_free(es->es_cause);
+        es->es_cause = NULL;
+    }
+    if (es->es_context != NULL) {
+        _excsnapshot_free(es->es_context);
+        es->es_context = NULL;
+    }
+    es->es_suppress_context = 0;
+    if (es->es_traceback != NULL) {
+        _tbsnapshot_free(es->es_traceback);
+        es->es_traceback = NULL;
+    }
+}
+
+static void
+_excsnapshot_free(_excsnapshot *es)
+{
+    _excsnapshot_clear(es);
+    PyMem_Free(es);
+}
+
+static int
+_excsnapshot_is_clear(_excsnapshot *es)
+{
+    return es->es_suppress_context == 0
+        && es->es_cause == NULL
+        && es->es_context == NULL
+        && es->es_traceback == NULL
+        && _objsnapshot_is_clear(&es->es_object);
+}
+
+static void _excsnapshot_extract(_excsnapshot *, PyObject *);
+static void
+_excsnapshot_extract(_excsnapshot *es, PyObject *excobj)
+{
+    assert(_excsnapshot_is_clear(es));
+    assert(PyExceptionInstance_Check(excobj));
+
+    _objsnapshot_extract(&es->es_object, excobj);
+
+    PyBaseExceptionObject *exc = (PyBaseExceptionObject *)excobj;
+
+    if (exc->cause != NULL && exc->cause != Py_None) {
+        es->es_cause = _excsnapshot_new();
+        _excsnapshot_extract(es->es_cause, exc->cause);
+    }
+
+    if (exc->context != NULL && exc->context != Py_None) {
+        es->es_context = _excsnapshot_new();
+        _excsnapshot_extract(es->es_context, exc->context);
+    }
+
+    es->es_suppress_context = exc->suppress_context;
+
+    PyObject *tb = PyException_GetTraceback(excobj);
+    if (PyErr_Occurred()) {
+        IGNORE_FAILURE("could not get traceback");
+    } else if (tb == Py_None) {
+        Py_DECREF(tb);
+        tb = NULL;
+    }
+    if (tb != NULL) {
+        es->es_traceback = _tbsnapshot_new();
+        _tbsnapshot_extract(es->es_traceback, (PyTracebackObject *)tb);
+    }
+}
+
+static PyObject *
+_excsnapshot_resolve(_excsnapshot *es)
+{
+    assert(&es->es_object != NULL);
+
+    PyObject *exc = _objsnapshot_resolve(&es->es_object);
+    if (exc == NULL) {
+        return NULL;
+    }
+    // People can do some weird stuff...
+    if (!PyExceptionInstance_Check(exc)) {
+        // We got a bogus "exception".
+        Py_DECREF(exc);
+        return NULL;
+    }
+
+    if (es->es_traceback != NULL) {
+        PyObject *tb = _tbsnapshot_resolve(es->es_traceback);
+        if (tb == NULL) {
+            // The snapshot is still somewhat useful without this.
+            IGNORE_FAILURE("could not deserialize traceback");
+        } else {
+            // This does not steal references.
+            PyException_SetTraceback(exc, tb);
+            Py_DECREF(tb);
+        }
+    }
+    // NULL means "not set".
+
+    if (es->es_context != NULL) {
+        PyObject *context = _excsnapshot_resolve(es->es_context);
+        if (context == NULL) {
+            // The snapshot is still useful without this.
+            IGNORE_FAILURE("could not deserialize __context__");
+        } else {
+            // This steals references but we have one to give.
+            PyException_SetContext(exc, context);
+        }
+    }
+    // NULL means "not set".
+
+    if (es->es_cause != NULL) {
+        PyObject *cause = _excsnapshot_resolve(es->es_cause);
+        if (cause == NULL) {
+            // The snapshot is still useful without this.
+            IGNORE_FAILURE("could not deserialize __cause__");
+        } else {
+            // This steals references, but we have one to give.
+            PyException_SetCause(exc, cause);
+        }
+    }
+    // NULL means "not set".
+
+    ((PyBaseExceptionObject *)exc)->suppress_context = es->es_suppress_context;
+
+    return exc;
+}
+
+
 /* data-sharing-specific code ***********************************************/
 
 struct _sharednsitem {
