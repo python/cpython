@@ -1310,7 +1310,8 @@ class RunFailedTests(TestBase):
             interpreters.run_string(interpid, script)
         exc = caught.exception
 
-        self.assertTracebacksEqual(exc.__traceback__, expected.__traceback__)
+        self.assertTracebacksEqual(exc.__cause__.__traceback__,
+                                   expected.__traceback__)
 
     def test_chained_exceptions(self):
         script = dedent("""
