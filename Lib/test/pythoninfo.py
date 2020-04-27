@@ -736,18 +736,6 @@ def collect_fips(info_add):
         pass
 
 
-def collect_get_config(info_add):
-    # Get global configuration variables, _PyPreConfig and _PyCoreConfig
-    try:
-        from _testinternalcapi import get_configs
-    except ImportError:
-        return
-
-    all_configs = get_configs()
-    for config_type in sorted(all_configs):
-        config = all_configs[config_type]
-        for key in sorted(config):
-            info_add('%s[%s]' % (config_type, key), repr(config[key]))
 def collect_info(info):
     error = False
     info_add = info.add
