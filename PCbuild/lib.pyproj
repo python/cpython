@@ -1207,6 +1207,12 @@
     <Compile Include="test\test_pathlib.py" />
     <Compile Include="test\test_pdb.py" />
     <Compile Include="test\test_peepholer.py" />
+    <Compile Include="test\test_peg_generator\__init__.py" />
+    <Compile Include="test\test_peg_generator\__main__.py" />
+    <Compile Include="test\test_peg_generator\ast_dump.py" />
+    <Compile Include="test\test_peg_generator\test_c_parser.py" />
+    <Compile Include="test\test_peg_generator\test_first_sets.py" />
+    <Compile Include="test\test_peg_generator\test_pegen.py" />
     <Compile Include="test\test_pickle.py" />
     <Compile Include="test\test_pickletools.py" />
     <Compile Include="test\test_pipes.py" />
@@ -1787,6 +1793,7 @@
     <Folder Include="test\test_import\data\package" />
     <Folder Include="test\test_import\data\package2" />
     <Folder Include="test\test_json" />
+    <Folder Include="test\test_peg_generator" />
     <Folder Include="test\test_tools" />
     <Folder Include="test\test_warnings" />
     <Folder Include="test\test_warnings\data" />
