@@ -553,7 +553,7 @@ _PyPegen_fill_token(Parser *p)
         type = NEWLINE; /* Add an extra newline */
         p->parsing_started = 0;
 
-        if (p->tok->indent) {
+        if (p->tok->indent && !(p->flags & PyPARSE_DONT_IMPLY_DEDENT)) {
             p->tok->pendin = -p->tok->indent;
             p->tok->indent = 0;
         }
