@@ -1420,11 +1420,13 @@ def get_args(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
-    if isinstance(tp, (_GenericAlias, GenericAlias)):
+    if isinstance(tp, _GenericAlias) and not tp._special:
         res = tp.__args__
         if tp.__origin__ is collections.abc.Callable and res[0] is not Ellipsis:
             res = (list(res[:-1]), res[-1])
         return res
+    if isinstance(tp, GenericAlias):
+        return tp.__args__
     return ()
 
 
