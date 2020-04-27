@@ -1031,25 +1031,29 @@ PyType_FromSpec_Alloc(PyTypeObject *type, Py_ssize_t nitems)
     /* note that we need to add one, for the sentinel and space for the
        provided tp-traverse: See bpo-40217 for more details */
 
-    if (PyType_IS_GC(type))
+    if (PyType_IS_GC(type)) {
         obj = _PyObject_GC_Malloc(size);
-    else
+    }
+    else {
         obj = (PyObject *)PyObject_MALLOC(size);
+    }
 
-    if (obj == NULL)
+    if (obj == NULL) {
         return PyErr_NoMemory();
-
-    obj = obj;
+    }
 
     memset(obj, '\0', size);
 
-    if (type->tp_itemsize == 0)
+    if (type->tp_itemsize == 0) {
         (void)PyObject_INIT(obj, type);
-    else
+    }
+    else {
         (void) PyObject_INIT_VAR((PyVarObject *)obj, type, nitems);
+    }
 
-    if (PyType_IS_GC(type))
+    if (PyType_IS_GC(type)) {
         _PyObject_GC_TRACK(obj);
+    }
     return obj;
 }
 
@@ -3066,7 +3070,11 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             *
             * We store the user-provided traverse function at the end of the type
             * (we have allocated space for it) so we can call it from our
-            * PyType_FromSpec_tp_traverse wrapper. */
+            * PyType_FromSpec_tp_traverse wrapper.
+            *
+            * Check bpo-40217 for more information and rationale about this issue.
+            *
+            * */
 
             type->tp_traverse = PyType_FromSpec_tp_traverse;
             size_t _offset = _PyObject_VAR_SIZE(&PyType_Type, nmembers+1);
