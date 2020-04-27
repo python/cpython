@@ -17,6 +17,8 @@ _PyPegen_parse(Parser *p)
         result = interactive_rule(p);
     } else if (p->start_rule == Py_eval_input) {
         result = eval_rule(p);
+    } else if (p->start_rule == Py_func_type_input) {
+        result = func_type_rule(p);
     } else if (p->start_rule == Py_fstring_input) {
         result = fstring_rule(p);
     }
@@ -29,7 +31,16 @@ _PyPegen_parse(Parser *p)
 file[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
 interactive[mod_ty]: a=statement_newline { Interactive(a, p->arena) }
 eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { Expression(a, p->arena) }
+func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression { FunctionType(a, b, p->arena) }
 fstring[expr_ty]: star_expressions
+
+# type_expressions allow */** but ignore them
+type_expressions[asdl_seq*]:
+    | a=','.expression+ ',' '*' b=expression ',' '**' c=expression {
+        _PyPegen_seq_append_to_end(p, _PyPegen_seq_append_to_end(p, a, b), c) }
+    | a=','.expression+ ',' '*' b=expression { _PyPegen_seq_append_to_end(p, a, b) }
+    | a=','.expression+ ',' '**' b=expression { _PyPegen_seq_append_to_end(p, a, b) }
+    | ','.expression+
 
 statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
 statement[asdl_seq*]: a=compound_stmt { _PyPegen_singleton_seq(p, a) } | simple_stmt

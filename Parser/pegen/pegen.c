@@ -1181,6 +1181,27 @@ _PyPegen_seq_insert_in_front(Parser *p, void *a, asdl_seq *seq)
     return new_seq;
 }
 
+/* Creates a copy of seq and appends a to it */
+asdl_seq *
+_PyPegen_seq_append_to_end(Parser *p, asdl_seq *seq, void *a)
+{
+    assert(a != NULL);
+    if (!seq) {
+        return _PyPegen_singleton_seq(p, a);
+    }
+
+    asdl_seq *new_seq = _Py_asdl_seq_new(asdl_seq_LEN(seq) + 1, p->arena);
+    if (!new_seq) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0, l = asdl_seq_LEN(new_seq); i + 1 < l; i++) {
+        asdl_seq_SET(new_seq, i, asdl_seq_GET(seq, i));
+    }
+    asdl_seq_SET(new_seq, asdl_seq_LEN(new_seq) - 1, a);
+    return new_seq;
+}
+
 static Py_ssize_t
 _get_flattened_seq_size(asdl_seq *seqs)
 {

@@ -384,7 +384,6 @@ class TypeCommentTests(unittest.TestCase):
         check_both_ways("pass  # type: ignorewhatever\n")
         check_both_ways("pass  # type: ignoreé\n")
 
-    @support.skip_if_new_parser("Pegen does not support func_type_input yet")
     def test_func_type_input(self):
 
         def parse_func_type_input(source):
