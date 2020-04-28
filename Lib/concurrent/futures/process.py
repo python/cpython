@@ -68,21 +68,30 @@ class _ThreadWakeup:
     def __init__(self):
         self._closed = False
         self._reader, self._writer = mp.Pipe(duplex=False)
+        # Used to ensure pipe is not closed while sending or receiving bytes
+        self._not_running = threading.Event()
+        # Initialize event as True
+        self._not_running.set()
 
     def close(self):
         if not self._closed:
             self._closed = True
+            self._not_running.wait()
             self._writer.close()
             self._reader.close()
 
     def wakeup(self):
         if not self._closed:
+            self._not_running.clear()
             self._writer.send_bytes(b"")
+            self._not_running.set()
 
     def clear(self):
         if not self._closed:
+            self._not_running.clear()
             while self._reader.poll():
                 self._reader.recv_bytes()
+            self._not_running.set()
 
 
 def _python_exit():
