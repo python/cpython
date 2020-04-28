@@ -582,7 +582,7 @@ Waiting Primitives
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently. Return an iterator of coroutines.
+   set concurrently.  Return an iterator of coroutines.
    Each coroutine allows to wait for the earliest next result from
    the set of the remaining awaitables.
 
