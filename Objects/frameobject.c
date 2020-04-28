@@ -34,10 +34,13 @@ frame_getlocals(PyFrameObject *f, void *closure)
 int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
-    if (f->f_trace)
+    assert(f != NULL);
+    if (f->f_trace) {
         return f->f_lineno;
-    else
+    }
+    else {
         return PyCode_Addr2Line(f->f_code, f->f_lasti);
+    }
 }
 
 static PyObject *

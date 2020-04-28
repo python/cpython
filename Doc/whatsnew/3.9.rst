@@ -537,6 +537,9 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Add :c:func:`PyFrame_GetLineNumber` to the limited C API.
+  (Contributed by Victor Stinner in :issue:`40421`.)
+
 * New :c:func:`PyThreadState_GetInterpreter` and
   :c:func:`PyInterpreterState_Get` functions to get the interpreter.
   New :c:func:`PyThreadState_GetFrame` function to get the current frame of a
