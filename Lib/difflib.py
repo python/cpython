@@ -130,7 +130,7 @@ class SequenceMatcher:
     set_seq2(b)
         Set the second sequence to be compared.
 
-    find_longest_match(alo, ahi, blo, bhi)
+    find_longest_match(alo=0, ahi=None, blo=0, bhi=None)
         Find longest matching block in a[alo:ahi] and b[blo:bhi].
 
     get_matching_blocks()
