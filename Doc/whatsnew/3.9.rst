@@ -539,6 +539,8 @@ Build and C API Changes
 
 * New :c:func:`PyFrame_GetCode` function: return a borrowed reference to the
   frame code.
+  New :c:func:`PyFrame_GetLastInstr` function: get the index of last attempted
+  instruction in bytecode of a frame.
   (Contributed by Victor Stinner in :issue:`40421`.)
 
 * Add :c:func:`PyFrame_GetLineNumber` to the limited C API.

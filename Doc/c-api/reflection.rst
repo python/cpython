@@ -40,6 +40,17 @@ Reflection
    .. versionadded:: 3.9
 
 
+.. c:function:: int PyFrame_GetLastInstr(PyFrameObject *frame)
+
+   Get the index of last attempted instruction in bytecode of *frame*.
+
+   Return ``-1`` for new frame (not run yet).
+
+   *frame* must not be ``NULL``.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
 
    Return the line number that *frame* is currently executing.

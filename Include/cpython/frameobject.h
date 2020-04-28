@@ -79,6 +79,8 @@ PyAPI_FUNC(int) PyFrame_ClearFreeList(void);
 
 PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 
+PyAPI_FUNC(int) PyFrame_GetLastInstr(PyFrameObject *frame);
+
 #ifdef __cplusplus
 }
 #endif

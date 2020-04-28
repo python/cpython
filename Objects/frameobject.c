@@ -1229,3 +1229,11 @@ PyFrame_GetCode(PyFrameObject *frame)
     assert(frame != NULL);
     return frame->f_code;
 }
+
+
+int
+PyFrame_GetLastInstr(PyFrameObject *frame)
+{
+    assert(frame != NULL);
+    return frame->f_lasti;
+}

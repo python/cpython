@@ -1,0 +1,2 @@
+New :c:func:`PyFrame_GetLastInstr` function: get the index of last attempted
+instruction in bytecode of a frame.
