@@ -1622,7 +1622,6 @@ def run_with_locale(catstr, *locales):
     def decorator(func):
         def inner(*args, **kwds):
             try:
-                import locale
                 category = getattr(locale, catstr)
                 orig_locale = locale.setlocale(category)
             except AttributeError:
