@@ -2375,7 +2375,7 @@ channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 PyDoc_STRVAR(channel_recv_doc,
 "channel_recv(cid, [default]) -> obj\n\
 \n\
-Return a new object from the data at the from of the channel's queue.\n\
+Return a new object from the data at the front of the channel's queue.\n\
 \n\
 If there is nothing to receive then raise ChannelEmptyError, unless\n\
 a default value is provided.  In that case return it.");
