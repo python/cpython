@@ -1,6 +1,6 @@
 import ast
 import re
-from typing import Any, cast, Dict, IO, Optional, List, Text, Tuple
+from typing import Any, cast, Dict, IO, Optional, List, Text, Tuple, Set
 
 from pegen.grammar import (
     Cut,
@@ -22,7 +22,6 @@ from pegen.grammar import (
 )
 from pegen import grammar
 from pegen.parser_generator import dedupe, ParserGenerator
-from pegen.tokenizer import exact_token_types
 
 EXTENSION_PREFIX = """\
 #include "pegen.h"
@@ -43,8 +42,15 @@ _PyPegen_parse(Parser *p)
 
 
 class CCallMakerVisitor(GrammarVisitor):
-    def __init__(self, parser_generator: ParserGenerator):
+    def __init__(
+        self,
+        parser_generator: ParserGenerator,
+        exact_tokens: Dict[str, int],
+        non_exact_tokens: Set[str],
+    ):
         self.gen = parser_generator
+        self.exact_tokens = exact_tokens
+        self.non_exact_tokens = non_exact_tokens
         self.cache: Dict[Any, Any] = {}
         self.keyword_cache: Dict[str, int] = {}
 
@@ -55,10 +61,7 @@ class CCallMakerVisitor(GrammarVisitor):
 
     def visit_NameLeaf(self, node: NameLeaf) -> Tuple[str, str]:
         name = node.value
-        if name in ("NAME", "NUMBER", "STRING"):
-            name = name.lower()
-            return f"{name}_var", f"_PyPegen_{name}_token(p)"
-        if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER", "ASYNC", "AWAIT"):
+        if name in self.non_exact_tokens:
             name = name.lower()
             return f"{name}_var", f"_PyPegen_{name}_token(p)"
         return f"{name}_var", f"{name}_rule(p)"
@@ -68,12 +71,12 @@ class CCallMakerVisitor(GrammarVisitor):
         if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
             return self.keyword_helper(val)
         else:
-            assert val in exact_token_types, f"{node.value} is not a known literal"
-            type = exact_token_types[val]
+            assert val in self.exact_tokens, f"{node.value} is not a known literal"
+            type = self.exact_tokens[val]
             return "literal", f"_PyPegen_expect_token(p, {type})"
 
     def visit_Rhs(self, node: Rhs) -> Tuple[Optional[str], str]:
-        def can_we_inline(node):
+        def can_we_inline(node: Rhs) -> int:
             if len(node.alts) != 1 or len(node.alts[0].items) != 1:
                 return False
             # If the alternative has an action we cannot inline
@@ -152,12 +155,16 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def __init__(
         self,
         grammar: grammar.Grammar,
+        exact_tokens: Dict[str, int],
+        non_exact_tokens: Set[str],
         file: Optional[IO[Text]],
         debug: bool = False,
         skip_actions: bool = False,
     ):
         super().__init__(grammar, file)
-        self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(self)
+        self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(
+            self, exact_tokens, non_exact_tokens
+        )
         self._varname_counter = 0
         self.debug = debug
         self.skip_actions = skip_actions
@@ -184,7 +191,11 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"}}")
 
     def out_of_memory_return(
-        self, expr: str, returnval: str, message: str = "Parser out of memory", cleanup_code=None
+        self,
+        expr: str,
+        returnval: str,
+        message: str = "Parser out of memory",
+        cleanup_code: Optional[str] = None,
     ) -> None:
         self.print(f"if ({expr}) {{")
         with self.indent():
@@ -465,7 +476,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.visit(item, names=names)
         self.print(")")
 
-    def emit_action(self, node: Alt, cleanup_code=None) -> None:
+    def emit_action(self, node: Alt, cleanup_code: Optional[str] = None) -> None:
         self.print(f"res = {node.action};")
 
         self.print("if (res == NULL && PyErr_Occurred()) {")
