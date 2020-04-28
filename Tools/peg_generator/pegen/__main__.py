@@ -122,8 +122,7 @@ def main() -> None:
 
     args = argparser.parse_args()
     if "func" not in args:
-        argparser.print_help()
-        sys.exit(1)
+        argparser.error("Must specify the target language mode ('c' or 'python')")
 
     t0 = time.time()
     grammar, parser, tokenizer, gen = args.func(args)

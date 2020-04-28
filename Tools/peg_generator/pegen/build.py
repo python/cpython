@@ -132,6 +132,8 @@ def generate_token_definitions(tokens: IO[str]) -> Tuple[Dict[str, int], Set[str
         elif len(pieces) == 2:
             _, op = pieces
             exact_tokens[op.strip("'")] = index
+        else:
+            raise ValueError(f"Unexpected line found in Tokens file: {line}")
 
     return exact_tokens, non_exact_tokens
 
