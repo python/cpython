@@ -8033,13 +8033,13 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         PyFrameObject *f;
         PyCodeObject *co;
         Py_ssize_t i, n;
-        f = _PyThreadState_GET()->frame;
+        f = PyThreadState_GetFrame(_PyThreadState_GET());
         if (f == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");
             return -1;
         }
-        co = f->f_code;
+        co = PyFrame_GetCode(f);
         if (co == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no code object");

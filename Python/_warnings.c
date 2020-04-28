@@ -762,7 +762,6 @@ is_internal_frame(PyFrameObject *frame)
 {
     static PyObject *importlib_string = NULL;
     static PyObject *bootstrap_string = NULL;
-    PyObject *filename;
     int contains;
 
     if (importlib_string == NULL) {
@@ -780,14 +779,23 @@ is_internal_frame(PyFrameObject *frame)
         Py_INCREF(bootstrap_string);
     }
 
-    if (frame == NULL || frame->f_code == NULL ||
-            frame->f_code->co_filename == NULL) {
+    if (frame == NULL) {
         return 0;
     }
-    filename = frame->f_code->co_filename;
+
+    PyCodeObject *code = PyFrame_GetCode(frame);
+    if (code == NULL) {
+        return 0;
+    }
+
+    PyObject *filename = code->co_filename;
+    if (filename == NULL) {
+        return 0;
+    }
     if (!PyUnicode_Check(filename)) {
         return 0;
     }
+
     contains = PyUnicode_Contains(filename, importlib_string);
     if (contains < 0) {
         return 0;
@@ -846,7 +854,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
     else {
         globals = f->f_globals;
-        *filename = f->f_code->co_filename;
+        *filename = PyFrame_GetCode(f)->co_filename;
         Py_INCREF(*filename);
         *lineno = PyFrame_GetLineNumber(f);
     }
