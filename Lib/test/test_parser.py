@@ -900,7 +900,6 @@ class ParserStackLimitTestCase(unittest.TestCase):
         st = parser.expr(e)
         st.compile()
 
-    @support.skip_if_new_parser("Pegen does not trigger memory error with this many parenthesis")
     def test_trigger_memory_error(self):
         e = self._nested_expression(100)
         rc, out, err = assert_python_failure('-Xoldparser', '-c', e)
