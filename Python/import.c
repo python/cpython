@@ -15,7 +15,6 @@
 #include "errcode.h"
 #include "marshal.h"
 #include "code.h"
-#include "frameobject.h"
 #include "importdl.h"
 #include "pydtrace.h"
 
@@ -1536,7 +1535,7 @@ remove_importlib_frames(PyThreadState *tstate)
         PyTracebackObject *traceback = (PyTracebackObject *)tb;
         PyObject *next = (PyObject *) traceback->tb_next;
         PyFrameObject *frame = traceback->tb_frame;
-        PyCodeObject *code = frame->f_code;
+        PyCodeObject *code = PyFrame_GetCode(frame);
         int now_in_importlib;
 
         assert(PyTraceBack_Check(tb));

@@ -1222,3 +1222,10 @@ _PyFrame_DebugMallocStats(FILE *out)
                            numfree, sizeof(PyFrameObject));
 }
 
+
+PyCodeObject *
+PyFrame_GetCode(PyFrameObject *frame)
+{
+    assert(frame != NULL);
+    return frame->f_code;
+}
