@@ -784,10 +784,6 @@ is_internal_frame(PyFrameObject *frame)
     }
 
     PyCodeObject *code = PyFrame_GetCode(frame);
-    if (code == NULL) {
-        return 0;
-    }
-
     PyObject *filename = code->co_filename;
     if (filename == NULL) {
         return 0;
