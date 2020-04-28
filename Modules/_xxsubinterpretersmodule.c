@@ -374,6 +374,7 @@ _objsnapshot_summarize(_objsnapshot *osn, _rawstring *rawbuf, const char *msg)
     }
     // ...else we'll proxy clsname as-is, so no need to allocate a buffer.
 
+    // XXX Use __qualname__ somehow?
     char *buf = (char *)rawbuf->data;
     if (modname != NULL) {
         if (msg != NULL) {

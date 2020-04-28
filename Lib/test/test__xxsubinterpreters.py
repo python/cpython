@@ -1210,10 +1210,15 @@ class RunFailedTests(TestBase):
             yield caught
         exc = caught.exception
 
-        if exctype is expected:
-            self.assertEqual(str(exc).split(':')[0], exctype.__name__)
+        modname = exctype.__module__
+        if modname == 'builtins' or modname == '__main__':
+            exctypename = exctype.__name__
         else:
-            self.assertEqual(str(exc), f'{exctype.__name__}: {expected}')
+            exctypename = f'{modname}.{exctype.__name__}'
+        if exctype is expected:
+            self.assertEqual(str(exc).split(':')[0], exctypename)
+        else:
+            self.assertEqual(str(exc), f'{exctypename}: {expected}')
         self.assertExceptionsEqual(exc.__cause__, expected)
         if exc.__cause__ is not None:
             self.assertIsNotNone(exc.__cause__.__traceback__)
@@ -1241,7 +1246,7 @@ class RunFailedTests(TestBase):
                 with self.expected_run_failure(expected):
                     interpreters.run_string(interpid, script)
 
-    def test_custom_exception(self):
+    def test_custom_exception_from___main__(self):
         script = dedent("""
             class SpamError(Exception):
                 def __init__(self, q):
@@ -1249,8 +1254,35 @@ class RunFailedTests(TestBase):
                     self.q = q
             raise SpamError('eggs')
             """)
+        expected = Exception(f'SpamError: got {"eggs"}')
+
+        interpid = interpreters.create()
+        with self.assertRaises(interpreters.RunFailedError) as caught:
+            interpreters.run_string(interpid, script)
+        cause = caught.exception.__cause__
+
+        self.assertExceptionsEqual(cause, expected)
+
+    class SpamError(Exception):
+        # The normal Exception.__reduce__() produces a funny result
+        # here.  So we have to use a custom __new__().
+        def __new__(cls, q):
+            if type(q) is SpamError:
+                return q
+            return super().__new__(cls, q)
+        def __init__(self, q):
+            super().__init__(f'got {q}')
+            self.q = q
+
+    def test_custom_exception(self):
+        script = dedent("""
+            import test.test__xxsubinterpreters
+            SpamError = test.test__xxsubinterpreters.RunFailedTests.SpamError
+            raise SpamError('eggs')
+            """)
         try:
-            exec(script, (ns := {'__name__': '__main__'}), ns)
+            ns = {}
+            exec(script, ns, ns)
         except Exception as exc:
             expected = exc
 
@@ -1258,14 +1290,17 @@ class RunFailedTests(TestBase):
         with self.expected_run_failure(expected):
             interpreters.run_string(interpid, script)
 
+    class SpamReducedError(Exception):
+        def __init__(self, q):
+            super().__init__(f'got {q}')
+            self.q = q
+        def __reduce__(self):
+            return (type(self), (self.q,), {})
+
     def test_custom___reduce__(self):
         script = dedent("""
-            class SpamError(Exception):
-                def __init__(self, q=None):
-                    super().__init__(f'got {q}')
-                    self.q = q
-                def __reduce__(self):
-                    return (type(self), (), {'q': self.q})
+            import test.test__xxsubinterpreters
+            SpamError = test.test__xxsubinterpreters.RunFailedTests.SpamReducedError
             raise SpamError('eggs')
             """)
         try:
