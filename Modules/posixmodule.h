@@ -28,6 +28,8 @@ PyAPI_FUNC(int) _Py_Sigset_Converter(PyObject *, void *);
 #endif /* HAVE_SIGSET_T */
 #endif /* Py_LIMITED_API */
 
+PyAPI_FUNC(void) _Py_closerange(int first, int last);
+
 #ifdef __cplusplus
 }
 #endif
