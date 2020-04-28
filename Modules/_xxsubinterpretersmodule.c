@@ -1350,9 +1350,6 @@ _channel_recv(_channels *channels, int64_t id)
     _PyCrossInterpreterData *data = _channel_next(chan, PyInterpreterState_GetID(interp));
     PyThread_release_lock(mutex);
     if (data == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_Format(ChannelEmptyError, "channel %" PRId64 " is empty", id);
-        }
         return NULL;
     }
 
@@ -2351,20 +2348,37 @@ Add the object's data to the channel's queue.");
 static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", NULL};
+    static char *kwlist[] = {"cid", "default", NULL};
     int64_t cid;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_recv", kwlist,
-                                     channel_id_converter, &cid)) {
+    PyObject *dflt = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|O:channel_recv", kwlist,
+                                     channel_id_converter, &cid, &dflt)) {
         return NULL;
     }
+    Py_XINCREF(dflt);
 
-    return _channel_recv(&_globals.channels, cid);
+    PyObject *obj = _channel_recv(&_globals.channels, cid);
+    if (obj != NULL) {
+        Py_XDECREF(dflt);
+        return obj;
+    } else if (PyErr_Occurred()) {
+        Py_XDECREF(dflt);
+        return NULL;
+    } else if (dflt != NULL) {
+        return dflt;
+    } else {
+        PyErr_Format(ChannelEmptyError, "channel %" PRId64 " is empty", cid);
+        return NULL;
+    }
 }
 
 PyDoc_STRVAR(channel_recv_doc,
-"channel_recv(cid) -> obj\n\
+"channel_recv(cid, [default]) -> obj\n\
 \n\
-Return a new object from the data at the from of the channel's queue.");
+Return a new object from the data at the from of the channel's queue.\n\
+\n\
+If there is nothing to receive then raise ChannelEmptyError, unless\n\
+a default value is provided.  In that case return it.");
 
 static PyObject *
 channel_close(PyObject *self, PyObject *args, PyObject *kwds)
