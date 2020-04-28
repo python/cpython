@@ -1237,5 +1237,6 @@ PyFrame_GetCode(PyFrameObject *frame)
     assert(frame != NULL);
     PyCodeObject *code = frame->f_code;
     assert(code != NULL);
+    Py_INCREF(code);
     return code;
 }

@@ -33,10 +33,11 @@ Reflection
 
 .. c:function:: int PyFrame_GetCode(PyFrameObject *frame)
 
-   Return a borrowed reference to the *frame* code.
-   The frame code cannot be ``NULL``.
+   Get the *frame* code.
 
-   *frame* must not be ``NULL``.
+   Return a strong reference.
+
+   *frame* must not be ``NULL``. The result (frame code) cannot be ``NULL``.
 
    .. versionadded:: 3.9
 
