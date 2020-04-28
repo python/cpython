@@ -2371,6 +2371,7 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
                 goto except;
             }
             res = PyList_Insert(ids, 0, id_obj);
+            Py_DECREF(id_obj);
             if (res < 0) {
                 goto except;
             }
