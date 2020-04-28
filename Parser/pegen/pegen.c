@@ -911,6 +911,32 @@ _PyPegen_number_token(Parser *p)
                     p->arena);
 }
 
+static int // bool
+bad_single_statement(Parser *p)
+{
+    const char *cur = strchr(p->tok->buf, '\n');
+    if (!cur) {
+        return 0;
+    }
+    char c = *cur;
+
+    for (;;) {
+        while (c == ' ' || c == '\t' || c == '\n' || c == '\014')
+            c = *++cur;
+
+        if (!c)
+            return 0;
+
+        if (c != '#') {
+            return 1;
+        }
+
+        /* Suck up comment. */
+        while (c && c != '\n')
+            c = *++cur;
+    }
+}
+
 void
 _PyPegen_Parser_Free(Parser *p)
 {
@@ -1012,6 +1038,11 @@ _PyPegen_run_parser(Parser *p)
             }
         }
         return NULL;
+    }
+
+    if (p->start_rule == Py_single_input && bad_single_statement(p)) {
+        p->tok->done = E_BADSINGLE; // This is not necessary for now, but might be in the future
+        return RAISE_SYNTAX_ERROR("multiple statements found while compiling a single statement");
     }
 
     return res;
