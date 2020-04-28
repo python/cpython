@@ -665,12 +665,18 @@ frame_dealloc(PyFrameObject *f)
     Py_TRASHCAN_SAFE_END(f)
 }
 
+static inline Py_ssize_t
+frame_nslots(PyFrameObject *frame)
+{
+    PyCodeObject *code = frame->f_code;
+    return (code->co_nlocals
+            + PyTuple_GET_SIZE(code->co_cellvars)
+            + PyTuple_GET_SIZE(code->co_freevars));
+}
+
 static int
 frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
-    PyObject **fastlocals, **p;
-    Py_ssize_t i, slots;
-
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_code);
     Py_VISIT(f->f_builtins);
@@ -679,15 +685,16 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     Py_VISIT(f->f_trace);
 
     /* locals */
-    slots = f->f_code->co_nlocals + PyTuple_GET_SIZE(f->f_code->co_cellvars) + PyTuple_GET_SIZE(f->f_code->co_freevars);
-    fastlocals = f->f_localsplus;
-    for (i = slots; --i >= 0; ++fastlocals)
+    PyObject **fastlocals = f->f_localsplus;
+    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
         Py_VISIT(*fastlocals);
+    }
 
     /* stack */
     if (f->f_stacktop != NULL) {
-        for (p = f->f_valuestack; p < f->f_stacktop; p++)
+        for (PyObject **p = f->f_valuestack; p < f->f_stacktop; p++) {
             Py_VISIT(*p);
+        }
     }
     return 0;
 }
@@ -695,30 +702,28 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 static int
 frame_tp_clear(PyFrameObject *f)
 {
-    PyObject **fastlocals, **p, **oldtop;
-    Py_ssize_t i, slots;
-
     /* Before anything else, make sure that this frame is clearly marked
      * as being defunct!  Else, e.g., a generator reachable from this
      * frame may also point to this frame, believe itself to still be
      * active, and try cleaning up this frame again.
      */
-    oldtop = f->f_stacktop;
+    PyObject **oldtop = f->f_stacktop;
     f->f_stacktop = NULL;
     f->f_executing = 0;
 
     Py_CLEAR(f->f_trace);
 
     /* locals */
-    slots = f->f_code->co_nlocals + PyTuple_GET_SIZE(f->f_code->co_cellvars) + PyTuple_GET_SIZE(f->f_code->co_freevars);
-    fastlocals = f->f_localsplus;
-    for (i = slots; --i >= 0; ++fastlocals)
+    PyObject **fastlocals = f->f_localsplus;
+    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
         Py_CLEAR(*fastlocals);
+    }
 
     /* stack */
     if (oldtop != NULL) {
-        for (p = f->f_valuestack; p < oldtop; p++)
+        for (PyObject **p = f->f_valuestack; p < oldtop; p++) {
             Py_CLEAR(*p);
+        }
     }
     return 0;
 }
@@ -747,10 +752,10 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res, extras, ncells, nfrees;
 
-    ncells = PyTuple_GET_SIZE(f->f_code->co_cellvars);
-    nfrees = PyTuple_GET_SIZE(f->f_code->co_freevars);
-    extras = f->f_code->co_stacksize + f->f_code->co_nlocals +
-             ncells + nfrees;
+    PyCodeObject *code = f->f_code;
+    ncells = PyTuple_GET_SIZE(code->co_cellvars);
+    nfrees = PyTuple_GET_SIZE(code->co_freevars);
+    extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
     /* subtract one as it is already included in PyFrameObject */
     res = sizeof(PyFrameObject) + (extras-1) * sizeof(PyObject *);
 
@@ -764,9 +769,10 @@ static PyObject *
 frame_repr(PyFrameObject *f)
 {
     int lineno = PyFrame_GetLineNumber(f);
+    PyCodeObject *code = f->f_code;
     return PyUnicode_FromFormat(
         "<frame at %p, file %R, line %d, code %S>",
-        f, f->f_code->co_filename, lineno, f->f_code->co_name);
+        f, code->co_filename, lineno, code->co_name);
 }
 
 static PyMethodDef frame_methods[] = {
@@ -939,6 +945,8 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     f->f_gen = NULL;
     f->f_trace_opcodes = 0;
     f->f_trace_lines = 1;
+
+    assert(f->f_code != NULL);
 
     return f;
 }
@@ -1227,5 +1235,7 @@ PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)
 {
     assert(frame != NULL);
-    return frame->f_code;
+    PyCodeObject *code = frame->f_code;
+    assert(code != NULL);
+    return code;
 }
