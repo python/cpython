@@ -1047,6 +1047,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
 		$(srcdir)/Include/pyfpe.h \
+		$(srcdir)/Include/pyframe.h \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
 		$(srcdir)/Include/pymacconfig.h \

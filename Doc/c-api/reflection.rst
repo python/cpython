@@ -35,6 +35,8 @@ Reflection
 
    Return the line number that *frame* is currently executing.
 
+   *frame* must not be ``NULL``.
+
 
 .. c:function:: const char* PyEval_GetFuncName(PyObject *func)
 
