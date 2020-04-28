@@ -677,7 +677,7 @@ file_rule(Parser *p)
             (endmarker_var = _PyPegen_endmarker_token(p))
         )
         {
-            res = Module ( a , NULL , p -> arena );
+            res = _PyPegen_make_module ( p , a );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;

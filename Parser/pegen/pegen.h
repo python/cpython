@@ -43,6 +43,16 @@ typedef struct {
     int type;
 } KeywordToken;
 
+
+typedef struct {
+    struct {
+        int lineno;
+        char *comment;  // The " <tag>" in "# type: ignore <tag>"
+    } *items;
+    size_t size;
+    size_t num_items;
+} growable_comment_array;
+
 typedef struct {
     struct tok_state *tok;
     Token **tokens;
@@ -59,6 +69,7 @@ typedef struct {
     int starting_col_offset;
     int error_indicator;
     int flags;
+    growable_comment_array type_ignore_comments;
 } Parser;
 
 typedef struct {
@@ -198,6 +209,7 @@ expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 int _PyPegen_check_barry_as_flufl(Parser *);
+mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
 
 void *_PyPegen_parse(Parser *);
 

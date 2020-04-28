@@ -28,7 +28,7 @@ _PyPegen_parse(Parser *p)
 
 // The end
 '''
-file[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+file[mod_ty]: a=[statements] ENDMARKER { _PyPegen_make_module(p, a) }
 interactive[mod_ty]: a=statement_newline { Interactive(a, p->arena) }
 eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { Expression(a, p->arena) }
 func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression { FunctionType(a, b, p->arena) }

@@ -313,7 +313,6 @@ class TypeCommentTests(unittest.TestCase):
         tree = self.classic_parse(vardecl)
         self.assertEqual(tree.body[0].type_comment, None)
 
-    @support.skip_if_new_parser("Pegen does not support `# type: ignore` yet")
     def test_ignores(self):
         for tree in self.parse_all(ignores):
             self.assertEqual(
