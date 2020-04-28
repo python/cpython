@@ -348,11 +348,6 @@ The :mod:`test.support` module defines the following constants:
    :data:`SHORT_TIMEOUT`.
 
 
-.. data:: IPV6_ENABLED
-
-    Set to ``True`` if IPV6 is enabled on this host, ``False`` otherwise.
-
-
 .. data:: SAVEDCWD
 
    Set to :func:`os.getcwd`.
@@ -825,6 +820,30 @@ The :mod:`test.support` module defines the following functions:
    target of the "as" clause, if there is one.
 
 
+.. function:: print_warning(msg)
+
+   Print a warning into :data:`sys.__stderr__`. Format the message as:
+   ``f"Warning -- {msg}"``. If *msg* is made of multiple lines, add
+   ``"Warning -- "`` prefix to each line.
+
+   .. versionadded:: 3.9
+
+
+.. function:: wait_process(pid, *, exitcode, timeout=None)
+
+   Wait until process *pid* completes and check that the process exit code is
+   *exitcode*.
+
+   Raise an :exc:`AssertionError` if the process exit code is not equal to
+   *exitcode*.
+
+   If the process runs longer than *timeout* seconds (:data:`SHORT_TIMEOUT` by
+   default), kill the process and raise an :exc:`AssertionError`. The timeout
+   feature is not available on Windows.
+
+   .. versionadded:: 3.9
+
+
 .. function:: wait_threads_exit(timeout=60.0)
 
    Context manager to wait until all threads created in the ``with`` statement
@@ -875,12 +894,6 @@ The :mod:`test.support` module defines the following functions:
 .. decorator:: skip_unless_xattr
 
    A decorator for running tests that require support for xattr.
-
-
-.. decorator:: skip_unless_bind_unix_socket
-
-   A decorator for running tests that require a functional bind() for Unix
-   sockets.
 
 
 .. decorator:: anticipate_failure(condition)
@@ -1133,31 +1146,6 @@ The :mod:`test.support` module defines the following functions:
    is raised.
 
 
-.. function:: bind_port(sock, host=HOST)
-
-   Bind the socket to a free port and return the port number.  Relies on
-   ephemeral ports in order to ensure we are using an unbound port.  This is
-   important as many tests may be running simultaneously, especially in a
-   buildbot environment.  This method raises an exception if the
-   ``sock.family`` is :const:`~socket.AF_INET` and ``sock.type`` is
-   :const:`~socket.SOCK_STREAM`, and the socket has
-   :const:`~socket.SO_REUSEADDR` or :const:`~socket.SO_REUSEPORT` set on it.
-   Tests should never set these socket options for TCP/IP sockets.
-   The only case for setting these options is testing multicasting via
-   multiple UDP sockets.
-
-   Additionally, if the :const:`~socket.SO_EXCLUSIVEADDRUSE` socket option is
-   available (i.e. on Windows), it will be set on the socket.  This will
-   prevent anyone else from binding to our host/port for the duration of the
-   test.
-
-
-.. function:: bind_unix_socket(sock, addr)
-
-   Bind a unix socket, raising :exc:`unittest.SkipTest` if
-   :exc:`PermissionError` is raised.
-
-
 .. function:: catch_threading_exception()
 
    Context manager catching :class:`threading.Thread` exception using
@@ -1217,29 +1205,6 @@ The :mod:`test.support` module defines the following functions:
        # (to break a reference cycle)
 
    .. versionadded:: 3.8
-
-
-.. function:: find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM)
-
-   Returns an unused port that should be suitable for binding.  This is
-   achieved by creating a temporary socket with the same family and type as
-   the ``sock`` parameter (default is :const:`~socket.AF_INET`,
-   :const:`~socket.SOCK_STREAM`),
-   and binding it to the specified host address (defaults to ``0.0.0.0``)
-   with the port set to 0, eliciting an unused ephemeral port from the OS.
-   The temporary socket is then closed and deleted, and the ephemeral port is
-   returned.
-
-   Either this method or :func:`bind_port` should be used for any tests
-   where a server socket needs to be bound to a particular port for the
-   duration of the test.
-   Which one to use depends on whether the calling code is creating a Python
-   socket, or if an unused port needs to be provided in a constructor
-   or passed to an external program (i.e. the ``-accept`` argument to
-   openssl's s_server mode).  Always prefer :func:`bind_port` over
-   :func:`find_unused_port` where possible.  Using a hard coded port is
-   discouraged since it can make multiple instances of the test impossible to
-   run simultaneously, which is a problem for buildbots.
 
 
 .. function:: load_package_tests(pkg_dir, loader, standard_tests, pattern)
@@ -1445,16 +1410,82 @@ The :mod:`test.support` module defines the following classes:
       Run *test* and return the result.
 
 
-.. class:: TestHandler(logging.handlers.BufferingHandler)
-
-   Class for logging support.
-
-
 .. class:: FakePath(path)
 
    Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
    method which just returns the *path* argument.  If *path* is an exception,
    it will be raised in :meth:`!__fspath__`.
+
+
+:mod:`test.support.socket_helper` --- Utilities for socket tests
+================================================================
+
+.. module:: test.support.socket_helper
+   :synopsis: Support for socket tests.
+
+
+The :mod:`test.support.socket_helper` module provides support for socket tests.
+
+.. versionadded:: 3.9
+
+
+.. data:: IPV6_ENABLED
+
+    Set to ``True`` if IPv6 is enabled on this host, ``False`` otherwise.
+
+
+.. function:: find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM)
+
+   Returns an unused port that should be suitable for binding.  This is
+   achieved by creating a temporary socket with the same family and type as
+   the ``sock`` parameter (default is :const:`~socket.AF_INET`,
+   :const:`~socket.SOCK_STREAM`),
+   and binding it to the specified host address (defaults to ``0.0.0.0``)
+   with the port set to 0, eliciting an unused ephemeral port from the OS.
+   The temporary socket is then closed and deleted, and the ephemeral port is
+   returned.
+
+   Either this method or :func:`bind_port` should be used for any tests
+   where a server socket needs to be bound to a particular port for the
+   duration of the test.
+   Which one to use depends on whether the calling code is creating a Python
+   socket, or if an unused port needs to be provided in a constructor
+   or passed to an external program (i.e. the ``-accept`` argument to
+   openssl's s_server mode).  Always prefer :func:`bind_port` over
+   :func:`find_unused_port` where possible.  Using a hard coded port is
+   discouraged since it can make multiple instances of the test impossible to
+   run simultaneously, which is a problem for buildbots.
+
+
+.. function:: bind_port(sock, host=HOST)
+
+   Bind the socket to a free port and return the port number.  Relies on
+   ephemeral ports in order to ensure we are using an unbound port.  This is
+   important as many tests may be running simultaneously, especially in a
+   buildbot environment.  This method raises an exception if the
+   ``sock.family`` is :const:`~socket.AF_INET` and ``sock.type`` is
+   :const:`~socket.SOCK_STREAM`, and the socket has
+   :const:`~socket.SO_REUSEADDR` or :const:`~socket.SO_REUSEPORT` set on it.
+   Tests should never set these socket options for TCP/IP sockets.
+   The only case for setting these options is testing multicasting via
+   multiple UDP sockets.
+
+   Additionally, if the :const:`~socket.SO_EXCLUSIVEADDRUSE` socket option is
+   available (i.e. on Windows), it will be set on the socket.  This will
+   prevent anyone else from binding to our host/port for the duration of the
+   test.
+
+
+.. function:: bind_unix_socket(sock, addr)
+
+   Bind a unix socket, raising :exc:`unittest.SkipTest` if
+   :exc:`PermissionError` is raised.
+
+
+.. decorator:: skip_unless_bind_unix_socket
+
+   A decorator for running tests that require a functional ``bind()`` for Unix
+   sockets.
 
 
 :mod:`test.support.script_helper` --- Utilities for the Python execution tests

@@ -1,11 +1,11 @@
 /* Generator object implementation */
 
 #include "Python.h"
-#include "pycore_ceval.h"   /* _PyEval_EvalFrame() */
+#include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "opcode.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
@@ -1346,6 +1346,8 @@ static PyMethodDef async_gen_methods[] = {
     {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
     {"athrow",(PyCFunction)async_gen_athrow, METH_VARARGS, async_athrow_doc},
     {"aclose", (PyCFunction)async_gen_aclose, METH_NOARGS, async_aclose_doc},
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 

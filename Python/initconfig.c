@@ -1,24 +1,26 @@
 #include "Python.h"
-#include "osdefs.h"       /* DELIM */
-#include "pycore_fileutils.h"
-#include "pycore_getopt.h"
-#include "pycore_initconfig.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"   /* _PyRuntime */
-#include <locale.h>       /* setlocale() */
+#include "pycore_fileutils.h"     // _Py_HasFileSystemDefaultEncodeErrors
+#include "pycore_getopt.h"        // _PyOS_GetOpt()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp.h"        // _PyInterpreterState.runtime
+#include "pycore_pathconfig.h"    // _Py_path_config
+#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
+#include "osdefs.h"               // DELIM
+#include <locale.h>               // setlocale()
 #ifdef HAVE_LANGINFO_H
-#  include <langinfo.h>   /* nl_langinfo(CODESET) */
+#  include <langinfo.h>           // nl_langinfo(CODESET)
 #endif
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
-#  include <windows.h>    /* GetACP() */
+#  include <windows.h>            // GetACP()
 #  ifdef HAVE_IO_H
 #    include <io.h>
 #  endif
 #  ifdef HAVE_FCNTL_H
-#    include <fcntl.h>    /* O_BINARY */
+#    include <fcntl.h>            // O_BINARY
 #  endif
 #endif
 
@@ -66,6 +68,7 @@ static const char usage_3[] = "\
 -X opt : set implementation-specific option. The following options are available:\n\
 \n\
          -X faulthandler: enable faulthandler\n\
+         -X oldparser: enable the traditional LL(1) parser; also PYTHONOLDPARSER\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
              interactive interpreter. This only works on debug builds\n\
@@ -632,6 +635,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
+    config->_use_peg_parser = 1;
 }
 
 
@@ -789,6 +793,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
+    COPY_ATTR(_use_peg_parser);
     COPY_ATTR(install_signal_handlers);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
@@ -892,6 +897,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
     SET_ITEM_INT(dev_mode);
+    SET_ITEM_INT(_use_peg_parser);
     SET_ITEM_INT(install_signal_handlers);
     SET_ITEM_INT(use_hash_seed);
     SET_ITEM_UINT(hash_seed);
@@ -1139,6 +1145,17 @@ config_init_program_name(PyConfig *config)
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
+
+            /*
+             * This environment variable is used to communicate between
+             * the stub launcher and the real interpreter and isn't needed
+             * beyond this point.
+             *
+             * Clean up to avoid problems when launching other programs
+             * later on.
+             */
+            (void)unsetenv("__PYVENV_LAUNCHER__");
+
             return _PyStatus_OK();
         }
     }
@@ -1413,6 +1430,11 @@ config_read_complex_options(PyConfig *config)
     if (config_get_env(config, "PYTHONPROFILEIMPORTTIME")
        || config_get_xoption(config, L"importtime")) {
         config->import_time = 1;
+    }
+
+    if (config_get_env(config, "PYTHONOLDPARSER")
+       || config_get_xoption(config, L"oldparser")) {
+        config->_use_peg_parser = 0;
     }
 
     PyStatus status;
@@ -2494,6 +2516,7 @@ PyConfig_Read(PyConfig *config)
     assert(config->isolated >= 0);
     assert(config->use_environment >= 0);
     assert(config->dev_mode >= 0);
+    assert(config->_use_peg_parser >= 0);
     assert(config->install_signal_handlers >= 0);
     assert(config->use_hash_seed >= 0);
     assert(config->faulthandler >= 0);
@@ -2584,7 +2607,7 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* core config */
-    const PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     dict = config_as_dict(config);
     if (dict == NULL) {
         goto error;
@@ -2651,7 +2674,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
             PySys_WriteStderr("\n"); \
         } while (0)
 
-    PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     DUMP_CONFIG("PYTHONHOME", home);
     DUMP_CONFIG("PYTHONPATH", pythonpath_env);
     DUMP_CONFIG("program name", program_name);

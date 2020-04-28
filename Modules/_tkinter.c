@@ -26,8 +26,6 @@ Copyright (C) 1994 Steen Lumholt.
 #include "Python.h"
 #include <ctype.h>
 
-#include "pythread.h"
-
 #ifdef MS_WINDOWS
 #include <windows.h>
 #endif
@@ -574,9 +572,9 @@ SplitObj(PyObject *arg)
     else if (PyBytes_Check(arg)) {
         int argc;
         const char **argv;
-        char *list = PyBytes_AS_STRING(arg);
+        const char *list = PyBytes_AS_STRING(arg);
 
-        if (Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
+        if (Tcl_SplitList((Tcl_Interp *)NULL, (char *)list, &argc, &argv) != TCL_OK) {
             Py_INCREF(arg);
             return arg;
         }

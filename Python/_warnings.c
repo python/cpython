@@ -1,7 +1,8 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
+#include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "clinic/_warnings.c.h"
 
@@ -211,7 +212,7 @@ get_warnings_attr(_Py_Identifier *attr_id, int try_import)
            gone, then we can't even use PyImport_GetModule without triggering
            an interpreter abort.
         */
-        if (!_PyInterpreterState_GET_UNSAFE()->modules) {
+        if (!_PyInterpreterState_GET()->modules) {
             return NULL;
         }
         warnings_module = PyImport_GetModule(warnings_str);
@@ -435,7 +436,7 @@ normalize_module(PyObject *filename)
 {
     PyObject *module;
     int kind;
-    void *data;
+    const void *data;
     Py_ssize_t len;
 
     len = PyUnicode_GetLength(filename);
@@ -519,7 +520,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
     /* Print "  source_line\n" */
     if (sourceline) {
         int kind;
-        void *data;
+        const void *data;
         Py_ssize_t i, len;
         Py_UCS4 ch;
         PyObject *truncated;
@@ -839,7 +840,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
 
     if (f == NULL) {
-        globals = _PyInterpreterState_GET_UNSAFE()->sysdict;
+        globals = _PyInterpreterState_GET()->sysdict;
         *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }
@@ -1129,6 +1130,23 @@ PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level,
     return res;
 }
 
+static int
+_PyErr_WarnFormat(PyObject *source, PyObject *category, Py_ssize_t stack_level,
+                  const char *format, ...)
+{
+    int res;
+    va_list vargs;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    res = _PyErr_WarnFormatV(source, category, stack_level, format, vargs);
+    va_end(vargs);
+    return res;
+}
+
 int
 PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level,
                       const char *format, ...)
@@ -1297,9 +1315,9 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
         PyErr_WriteUnraisable(coro);
     }
     if (!warned) {
-        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
-                             "coroutine '%.50S' was never awaited",
-                             ((PyCoroObject *)coro)->cr_qualname) < 0)
+        if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
+                              "coroutine '%S' was never awaited",
+                              ((PyCoroObject *)coro)->cr_qualname) < 0)
         {
             PyErr_WriteUnraisable(coro);
         }

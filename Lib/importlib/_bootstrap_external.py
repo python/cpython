@@ -716,9 +716,9 @@ class WindowsRegistryFinder:
     @classmethod
     def _open_registry(cls, key):
         try:
-            return _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, key)
+            return winreg.OpenKey(winreg.HKEY_CURRENT_USER, key)
         except OSError:
-            return _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, key)
+            return winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key)
 
     @classmethod
     def _search_registry(cls, fullname):
@@ -730,7 +730,7 @@ class WindowsRegistryFinder:
                                   sys_version='%d.%d' % sys.version_info[:2])
         try:
             with cls._open_registry(key) as hkey:
-                filepath = _winreg.QueryValue(hkey, '')
+                filepath = winreg.QueryValue(hkey, '')
         except OSError:
             return None
         return filepath
@@ -1584,14 +1584,7 @@ def _setup(_bootstrap_module):
     sys = _bootstrap.sys
     _imp = _bootstrap._imp
 
-    # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]
-    for builtin_name in ('_io', '_warnings', 'builtins', 'marshal'):
-        if builtin_name not in sys.modules:
-            builtin_module = _bootstrap._builtin_from_name(builtin_name)
-        else:
-            builtin_module = sys.modules[builtin_name]
-        setattr(self_module, builtin_name, builtin_module)
 
     # Directly load the os module (needed during bootstrap).
     os_details = ('posix', ['/']), ('nt', ['\\', '/'])
@@ -1610,23 +1603,22 @@ def _setup(_bootstrap_module):
                 continue
     else:
         raise ImportError('importlib requires posix or nt')
+
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
     setattr(self_module, 'path_separators', ''.join(path_separators))
     setattr(self_module, '_pathseps_with_colon', {f':{s}' for s in path_separators})
 
-    # Directly load the _thread module (needed during bootstrap).
-    thread_module = _bootstrap._builtin_from_name('_thread')
-    setattr(self_module, '_thread', thread_module)
-
-    # Directly load the _weakref module (needed during bootstrap).
-    weakref_module = _bootstrap._builtin_from_name('_weakref')
-    setattr(self_module, '_weakref', weakref_module)
-
-    # Directly load the winreg module (needed during bootstrap).
+    # Directly load built-in modules needed during bootstrap.
+    builtin_names = ['_io', '_warnings', 'marshal']
     if builtin_os == 'nt':
-        winreg_module = _bootstrap._builtin_from_name('winreg')
-        setattr(self_module, '_winreg', winreg_module)
+        builtin_names.append('winreg')
+    for builtin_name in builtin_names:
+        if builtin_name not in sys.modules:
+            builtin_module = _bootstrap._builtin_from_name(builtin_name)
+        else:
+            builtin_module = sys.modules[builtin_name]
+        setattr(self_module, builtin_name, builtin_module)
 
     # Constants
     setattr(self_module, '_relax_case', _make_relax_case())

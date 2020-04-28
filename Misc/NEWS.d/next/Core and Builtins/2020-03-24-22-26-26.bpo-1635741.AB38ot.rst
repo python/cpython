@@ -1,0 +1,2 @@
+Port _functools module to multiphase initialization (PEP 489). Patch by
+Paulo Henrique Silva.

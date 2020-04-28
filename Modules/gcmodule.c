@@ -26,13 +26,13 @@
 #include "Python.h"
 #include "pycore_context.h"
 #include "pycore_initconfig.h"
+#include "pycore_interp.h"      // PyInterpreterState.gc
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "frameobject.h"        /* for PyFrame_ClearFreeList */
+#include "pycore_pystate.h"     // _PyThreadState_GET()
+#include "frameobject.h"        // PyFrame_ClearFreeList
 #include "pydtrace.h"
-#include "pytime.h"             /* for _PyTime_GetMonotonicClock() */
+#include "pytime.h"             // _PyTime_GetMonotonicClock()
 
 typedef struct _gc_runtime_state GCState;
 
@@ -441,7 +441,7 @@ visit_decref(PyObject *op, void *parent)
 {
     _PyObject_ASSERT(_PyObject_CAST(parent), !_PyObject_IsFreed(op));
 
-    if (PyObject_IS_GC(op)) {
+    if (_PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         /* We're only interested in gc_refs for objects in the
          * generation being collected, which can be recognized
@@ -477,7 +477,7 @@ subtract_refs(PyGC_Head *containers)
 static int
 visit_reachable(PyObject *op, PyGC_Head *reachable)
 {
-    if (!PyObject_IS_GC(op)) {
+    if (!_PyObject_IS_GC(op)) {
         return 0;
     }
 
@@ -704,7 +704,7 @@ clear_unreachable_mask(PyGC_Head *unreachable)
 static int
 visit_move(PyObject *op, PyGC_Head *tolist)
 {
-    if (PyObject_IS_GC(op)) {
+    if (_PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         if (gc_is_collecting(gc)) {
             gc_list_move(gc, tolist);
@@ -788,7 +788,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 
         /* It supports weakrefs.  Does it have any? */
         wrlist = (PyWeakReference **)
-                                PyObject_GET_WEAKREFS_LISTPTR(op);
+                                _PyObject_GET_WEAKREFS_LISTPTR(op);
 
         /* `op` may have some weakrefs.  March over the list, clear
          * all the weakrefs, and move the weakrefs with callbacks
@@ -1715,7 +1715,7 @@ gc_get_referents(PyObject *self, PyObject *args)
         traverseproc traverse;
         PyObject *obj = PyTuple_GET_ITEM(args, i);
 
-        if (! PyObject_IS_GC(obj))
+        if (!_PyObject_IS_GC(obj))
             continue;
         traverse = Py_TYPE(obj)->tp_traverse;
         if (! traverse)
@@ -1855,7 +1855,7 @@ gc_is_tracked(PyObject *module, PyObject *obj)
 {
     PyObject *result;
 
-    if (PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj))
+    if (_PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj))
         result = Py_True;
     else
         result = Py_False;
@@ -1876,7 +1876,7 @@ static PyObject *
 gc_is_finalized(PyObject *module, PyObject *obj)
 /*[clinic end generated code: output=e1516ac119a918ed input=201d0c58f69ae390]*/
 {
-    if (PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+    if (_PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
          Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -2203,6 +2203,12 @@ PyObject_GC_UnTrack(void *op_raw)
     }
 }
 
+int
+PyObject_IS_GC(PyObject *obj)
+{
+    return _PyObject_IS_GC(obj);
+}
+
 static PyObject *
 _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
 {
@@ -2311,4 +2317,22 @@ PyObject_GC_Del(void *op)
         gcstate->generations[0].count--;
     }
     PyObject_FREE(g);
+}
+
+int
+PyObject_GC_IsTracked(PyObject* obj)
+{
+    if (_PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj)) {
+        return 1;
+    }
+    return 0;
+}
+
+int
+PyObject_GC_IsFinalized(PyObject *obj)
+{
+    if (_PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+         return 1;
+    }
+    return 0;
 }

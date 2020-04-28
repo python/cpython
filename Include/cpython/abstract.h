@@ -264,9 +264,7 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 /* === New Buffer API ============================================ */
 
 /* Return 1 if the getbuffer function is available, otherwise return 0. */
-#define PyObject_CheckBuffer(obj) \
-    ((Py_TYPE(obj)->tp_as_buffer != NULL) &&  \
-     (Py_TYPE(obj)->tp_as_buffer->bf_getbuffer != NULL))
+PyAPI_FUNC(int) PyObject_CheckBuffer(PyObject *obj);
 
 /* This is a C-API version of the getbuffer function call.  It checks
    to make sure object has the required function pointer and issues the
@@ -336,12 +334,6 @@ PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
 #define PyIter_Check(obj) \
     (Py_TYPE(obj)->tp_iternext != NULL && \
      Py_TYPE(obj)->tp_iternext != &_PyObject_NextNotImplemented)
-
-/* === Number Protocol ================================================== */
-
-#define PyIndex_Check(obj)                              \
-    (Py_TYPE(obj)->tp_as_number != NULL &&            \
-     Py_TYPE(obj)->tp_as_number->nb_index != NULL)
 
 /* === Sequence protocol ================================================ */
 

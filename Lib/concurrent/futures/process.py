@@ -59,19 +59,6 @@ import itertools
 import sys
 import traceback
 
-# Workers are created as daemon threads and processes. This is done to allow the
-# interpreter to exit when there are still idle processes in a
-# ProcessPoolExecutor's process pool (i.e. shutdown() was not called). However,
-# allowing workers to die with the interpreter has two undesirable properties:
-#   - The workers would still be running during interpreter shutdown,
-#     meaning that they would fail in unpredictable ways.
-#   - The workers could be killed while evaluating a work item, which could
-#     be bad if the callable being evaluated has external side-effects e.g.
-#     writing to a file.
-#
-# To work around this problem, an exit handler is installed which tells the
-# workers to exit when their work queues are empty and then waits until the
-# threads/processes finish.
 
 _threads_wakeups = weakref.WeakKeyDictionary()
 _global_shutdown = False
@@ -106,6 +93,12 @@ def _python_exit():
         thread_wakeup.wakeup()
     for t, _ in items:
         t.join()
+
+# Register for `_python_exit()` to be called just before joining all
+# non-daemon threads. This is used instead of `atexit.register()` for
+# compatibility with subinterpreters, which no longer support daemon threads.
+# See bpo-39812 for context.
+threading._register_atexit(_python_exit)
 
 # Controls how many more calls than processes will be queued in the call queue.
 # A smaller number will mean that processes spend more time idle waiting for
@@ -306,9 +299,7 @@ class _ExecutorManagerThread(threading.Thread):
         #     {5: <_WorkItem...>, 6: <_WorkItem...>, ...}
         self.pending_work_items = executor._pending_work_items
 
-        # Set this thread to be daemonized
         super().__init__()
-        self.daemon = True
 
     def run(self):
         # Main loop for the executor manager thread.
@@ -326,6 +317,12 @@ class _ExecutorManagerThread(threading.Thread):
                 # Delete reference to result_item to avoid keeping references
                 # while waiting on new results.
                 del result_item
+
+                # attempt to increment idle process count
+                executor = self.executor_reference()
+                if executor is not None:
+                    executor._idle_worker_semaphore.release()
+                del executor
 
             if self.is_shutting_down():
                 self.flag_executor_shutting_down()
@@ -610,6 +607,7 @@ class ProcessPoolExecutor(_base.Executor):
         # Shutdown is a two-step process.
         self._shutdown_thread = False
         self._shutdown_lock = threading.Lock()
+        self._idle_worker_semaphore = threading.Semaphore(0)
         self._broken = False
         self._queue_count = 0
         self._pending_work_items = {}
@@ -642,14 +640,18 @@ class ProcessPoolExecutor(_base.Executor):
     def _start_executor_manager_thread(self):
         if self._executor_manager_thread is None:
             # Start the processes so that their sentinels are known.
-            self._adjust_process_count()
             self._executor_manager_thread = _ExecutorManagerThread(self)
             self._executor_manager_thread.start()
             _threads_wakeups[self._executor_manager_thread] = \
                 self._executor_manager_thread_wakeup
 
     def _adjust_process_count(self):
-        for _ in range(len(self._processes), self._max_workers):
+        # if there's an idle process, we don't need to spawn a new one.
+        if self._idle_worker_semaphore.acquire(blocking=False):
+            return
+
+        process_count = len(self._processes)
+        if process_count < self._max_workers:
             p = self._mp_context.Process(
                 target=_process_worker,
                 args=(self._call_queue,
@@ -678,6 +680,7 @@ class ProcessPoolExecutor(_base.Executor):
             # Wake up queue management thread
             self._executor_manager_thread_wakeup.wakeup()
 
+            self._adjust_process_count()
             self._start_executor_manager_thread()
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
@@ -725,6 +728,8 @@ class ProcessPoolExecutor(_base.Executor):
         # objects that use file descriptors.
         self._executor_manager_thread = None
         self._call_queue = None
+        if self._result_queue is not None and wait:
+            self._result_queue.close()
         self._result_queue = None
         self._processes = None
 
@@ -732,5 +737,3 @@ class ProcessPoolExecutor(_base.Executor):
             self._executor_manager_thread_wakeup = None
 
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
-
-atexit.register(_python_exit)

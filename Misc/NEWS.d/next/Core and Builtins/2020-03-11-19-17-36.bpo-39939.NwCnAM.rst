@@ -1,0 +1,5 @@
+Added str.removeprefix and str.removesuffix methods and corresponding
+bytes, bytearray, and collections.UserString methods to remove affixes
+from a string if present.
+See :pep:`616` for a full description.
+Patch by Dennis Sweeney.

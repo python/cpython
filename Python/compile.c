@@ -23,7 +23,6 @@
 
 #include "Python.h"
 
-#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "Python-ast.h"
 #include "ast.h"
 #include "code.h"
@@ -323,7 +322,6 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     int merged;
-    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
 
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
@@ -350,11 +348,15 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
-    c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
+    c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c.c_nestlevel = 0;
     c.c_do_not_emit_bytecode = 0;
 
-    if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
+    _PyASTOptimizeState state;
+    state.optimize = c.c_optimize;
+    state.ff_features = merged;
+
+    if (!_PyAST_Optimize(mod, arena, &state)) {
         goto finally;
     }
 
@@ -557,13 +559,12 @@ compiler_enter_scope(struct compiler *c, identifier name,
     struct compiler_unit *u;
     basicblock *block;
 
-    u = (struct compiler_unit *)PyObject_Malloc(sizeof(
+    u = (struct compiler_unit *)PyObject_Calloc(1, sizeof(
                                             struct compiler_unit));
     if (!u) {
         PyErr_NoMemory();
         return 0;
     }
-    memset(u, 0, sizeof(struct compiler_unit));
     u->u_scope_type = scope_type;
     u->u_argcount = 0;
     u->u_posonlyargcount = 0;
@@ -766,12 +767,11 @@ compiler_new_block(struct compiler *c)
     struct compiler_unit *u;
 
     u = c->u;
-    b = (basicblock *)PyObject_Malloc(sizeof(basicblock));
+    b = (basicblock *)PyObject_Calloc(1, sizeof(basicblock));
     if (b == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memset((void *)b, 0, sizeof(basicblock));
     /* Extend the singly linked list of blocks with new block. */
     b->b_list = u->u_blocks;
     u->u_blocks = b;
@@ -808,15 +808,13 @@ compiler_next_instr(basicblock *b)
 {
     assert(b != NULL);
     if (b->b_instr == NULL) {
-        b->b_instr = (struct instr *)PyObject_Malloc(
-                         sizeof(struct instr) * DEFAULT_BLOCK_SIZE);
+        b->b_instr = (struct instr *)PyObject_Calloc(
+                         DEFAULT_BLOCK_SIZE, sizeof(struct instr));
         if (b->b_instr == NULL) {
             PyErr_NoMemory();
             return -1;
         }
         b->b_ialloc = DEFAULT_BLOCK_SIZE;
-        memset((char *)b->b_instr, 0,
-               sizeof(struct instr) * DEFAULT_BLOCK_SIZE);
     }
     else if (b->b_iused == b->b_ialloc) {
         struct instr *tmp;
@@ -1876,18 +1874,15 @@ get_ref_type(struct compiler *c, PyObject *name)
         return CELL;
     scope = PyST_GetScope(c->u->u_ste, name);
     if (scope == 0) {
-        char buf[350];
-        PyOS_snprintf(buf, sizeof(buf),
-                      "unknown scope for %.100s in %.100s(%s)\n"
-                      "symbols: %s\nlocals: %s\nglobals: %s",
-                      PyUnicode_AsUTF8(name),
-                      PyUnicode_AsUTF8(c->u->u_name),
-                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_id)),
-                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_symbols)),
-                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_varnames)),
-                      PyUnicode_AsUTF8(PyObject_Repr(c->u->u_names))
-        );
-        Py_FatalError(buf);
+        _Py_FatalErrorFormat(__func__,
+           "unknown scope for %.100s in %.100s(%s)\n"
+           "symbols: %s\nlocals: %s\nglobals: %s",
+           PyUnicode_AsUTF8(name),
+           PyUnicode_AsUTF8(c->u->u_name),
+           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_id)),
+           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_symbols)),
+           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_varnames)),
+           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_names)));
     }
 
     return scope;
@@ -1930,7 +1925,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
             else /* (reftype == FREE) */
                 arg = compiler_lookup_arg(c->u->u_freevars, name);
             if (arg == -1) {
-                fprintf(stderr,
+                _Py_FatalErrorFormat(__func__,
                     "lookup %s in %s %d %d\n"
                     "freevars of %s: %s\n",
                     PyUnicode_AsUTF8(PyObject_Repr(name)),
@@ -1938,7 +1933,6 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
                     reftype, arg,
                     PyUnicode_AsUTF8(co->co_name),
                     PyUnicode_AsUTF8(PyObject_Repr(co->co_freevars)));
-                Py_FatalError("compiler_make_closure()");
             }
             ADDOP_I(c, LOAD_CLOSURE, arg);
         }
@@ -2159,6 +2153,55 @@ compiler_default_arguments(struct compiler *c, arguments_ty args)
 }
 
 static int
+forbidden_name(struct compiler *c, identifier name, expr_context_ty ctx)
+{
+
+    if (ctx == Store && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        compiler_error(c, "cannot assign to __debug__");
+        return 1;
+    }
+    return 0;
+}
+
+static int
+compiler_check_debug_one_arg(struct compiler *c, arg_ty arg)
+{
+    if (arg != NULL) {
+        if (forbidden_name(c, arg->arg, Store))
+            return 0;
+    }
+    return 1;
+}
+
+static int
+compiler_check_debug_args_seq(struct compiler *c, asdl_seq *args)
+{
+    if (args != NULL) {
+        for (Py_ssize_t i = 0, n = asdl_seq_LEN(args); i < n; i++) {
+            if (!compiler_check_debug_one_arg(c, asdl_seq_GET(args, i)))
+                return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+compiler_check_debug_args(struct compiler *c, arguments_ty args)
+{
+    if (!compiler_check_debug_args_seq(c, args->posonlyargs))
+        return 0;
+    if (!compiler_check_debug_args_seq(c, args->args))
+        return 0;
+    if (!compiler_check_debug_one_arg(c, args->vararg))
+        return 0;
+    if (!compiler_check_debug_args_seq(c, args->kwonlyargs))
+        return 0;
+    if (!compiler_check_debug_one_arg(c, args->kwarg))
+        return 0;
+    return 1;
+}
+
+static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
@@ -2194,6 +2237,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
         scope_type = COMPILER_SCOPE_FUNCTION;
     }
+
+    if (!compiler_check_debug_args(c, args))
+        return 0;
 
     if (!compiler_decorators(c, decos))
         return 0;
@@ -2601,6 +2647,9 @@ compiler_lambda(struct compiler *c, expr_ty e)
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
+
+    if (!compiler_check_debug_args(c, args))
+        return 0;
 
     if (!name) {
         name = PyUnicode_InternFromString("<lambda>");
@@ -3511,6 +3560,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
 
+    if (forbidden_name(c, name, ctx))
+        return 0;
+
     mangled = _Py_Mangle(c->u->u_private, name);
     if (!mangled)
         return 0;
@@ -3712,7 +3764,7 @@ assignment_helper(struct compiler *c, asdl_seq *elts)
         }
         else if (elt->kind == Starred_kind) {
             return compiler_error(c,
-                "two starred expressions in assignment");
+                "multiple starred expressions in assignment");
         }
     }
     if (!seen_star) {
@@ -4054,6 +4106,35 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 }
 
 static int
+validate_keywords(struct compiler *c, asdl_seq *keywords)
+{
+    Py_ssize_t nkeywords = asdl_seq_LEN(keywords);
+    for (Py_ssize_t i = 0; i < nkeywords; i++) {
+        keyword_ty key = ((keyword_ty)asdl_seq_GET(keywords, i));
+        if (key->arg == NULL) {
+            continue;
+        }
+        if (forbidden_name(c, key->arg, Store)) {
+            return -1;
+        }
+        for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
+            keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
+            if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
+                PyObject *msg = PyUnicode_FromFormat("keyword argument repeated: %U", key->arg);
+                if (msg == NULL) {
+                    return -1;
+                }
+                c->u->u_col_offset = other->col_offset;
+                compiler_error(c, PyUnicode_AsUTF8(msg));
+                Py_DECREF(msg);
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+static int
 compiler_call(struct compiler *c, expr_ty e)
 {
     int ret = maybe_optimize_method_call(c, e);
@@ -4168,6 +4249,10 @@ compiler_call_helper(struct compiler *c,
                      asdl_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
+
+    if (validate_keywords(c, keywords) == -1) {
+        return 0;
+    }
 
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
@@ -4516,11 +4601,14 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     PyCodeObject *co = NULL;
     comprehension_ty outermost;
     PyObject *qualname = NULL;
-    int is_async_function = c->u->u_ste->ste_coroutine;
     int is_async_generator = 0;
 
-    outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
+    if (IS_TOP_LEVEL_AWAIT(c)) {
+        c->u->u_ste->ste_coroutine = 1;
+    }
+    int is_async_function = c->u->u_ste->ste_coroutine;
 
+    outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
                               (void *)e, e->lineno))
     {
@@ -4986,6 +5074,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case Store:
+            if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx))
+                return 0;
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
@@ -5156,6 +5246,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
     }
     switch (targ->kind) {
     case Name_kind:
+        if (forbidden_name(c, targ->v.Name.id, Store))
+            return 0;
         /* If we have a simple name in a module or class, store annotation. */
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
@@ -5173,6 +5265,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         }
         break;
     case Attribute_kind:
+        if (forbidden_name(c, targ->v.Attribute.attr, Store))
+            return 0;
         if (!s->v.AnnAssign.value &&
             !check_ann_expr(c, targ->v.Attribute.value)) {
             return 0;
@@ -5408,8 +5502,8 @@ stackdepth(struct compiler *c)
             struct instr *instr = &b->b_instr[i];
             int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
             if (effect == PY_INVALID_STACK_EFFECT) {
-                fprintf(stderr, "opcode = %d\n", instr->i_opcode);
-                Py_FatalError("PyCompile_OpcodeStackEffect()");
+                _Py_FatalErrorFormat(__func__,
+                    "opcode = %d", instr->i_opcode);
             }
             int new_depth = depth + effect;
             if (new_depth > maxdepth) {

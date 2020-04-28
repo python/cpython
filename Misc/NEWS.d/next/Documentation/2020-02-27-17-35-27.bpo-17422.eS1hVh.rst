@@ -1,2 +1,0 @@
-The language reference no longer restricts default class namespaces to dicts
-only.

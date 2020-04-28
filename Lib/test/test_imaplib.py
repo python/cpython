@@ -1,4 +1,5 @@
 from test import support
+from test.support import socket_helper
 
 from contextlib import contextmanager
 import imaplib
@@ -82,7 +83,7 @@ class TestImaplib(unittest.TestCase):
                 pass
 
         # This is the exception that should be raised.
-        expected_errnos = support.get_socket_conn_refused_errs()
+        expected_errnos = socket_helper.get_socket_conn_refused_errs()
         with self.assertRaises(OSError) as cm:
             imaplib.IMAP4()
         self.assertIn(cm.exception.errno, expected_errnos)
@@ -115,6 +116,7 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
 
     def setup(self):
         super().setup()
+        self.server.is_selected = False
         self.server.logged = None
 
     def _send(self, message):
@@ -189,6 +191,18 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
         self.server.logged = args[0]
         self._send_tagged(tag, 'OK', 'LOGIN completed')
 
+    def cmd_SELECT(self, tag, args):
+        self.server.is_selected = True
+        self._send_line(b'* 2 EXISTS')
+        self._send_tagged(tag, 'OK', '[READ-WRITE] SELECT completed.')
+
+    def cmd_UNSELECT(self, tag, args):
+        if self.server.is_selected:
+            self.server.is_selected = False
+            self._send_tagged(tag, 'OK', 'Returned to authenticated state. (Success)')
+        else:
+            self._send_tagged(tag, 'BAD', 'No mailbox selected')
+
 
 class NewIMAPTestsMixin():
     client = None
@@ -210,7 +224,7 @@ class NewIMAPTestsMixin():
                 raise
 
         self.addCleanup(self._cleanup)
-        self.server = self.server_class((support.HOST, 0), imap_handler)
+        self.server = self.server_class((socket_helper.HOST, 0), imap_handler)
         self.thread = threading.Thread(
             name=self._testMethodName+'-server',
             target=self.server.serve_forever,
@@ -510,6 +524,18 @@ class NewIMAPTestsMixin():
         self.assertEqual(typ, 'OK')
         self.assertEqual(data[0], b'() "." directoryA')
 
+    def test_unselect(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        typ, data = client.select()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'2')
+
+        typ, data = client.unselect()
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'Returned to authenticated state. (Success)')
+        self.assertEqual(client.state, 'AUTH')
+
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = imaplib.IMAP4
@@ -600,7 +626,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
     @contextmanager
     def reaped_server(self, hdlr):
-        server, thread = self.make_server((support.HOST, 0), hdlr)
+        server, thread = self.make_server((socket_helper.HOST, 0), hdlr)
         try:
             yield server
         finally:

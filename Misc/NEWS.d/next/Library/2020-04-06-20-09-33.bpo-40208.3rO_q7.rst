@@ -1,0 +1,1 @@
+Remove deprecated :meth:`symtable.SymbolTable.has_exec`.

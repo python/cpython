@@ -230,6 +230,15 @@ class DebuggerTests(unittest.TestCase):
                                     " because the Program Counter is"
                                     " not present")
 
+        # bpo-40019: Skip the test if gdb failed to read debug information
+        # because the Python binary is optimized.
+        for pattern in (
+            '(frame information optimized out)',
+            'Unable to read information on python frame',
+        ):
+            if pattern in out:
+                raise unittest.SkipTest(f"{pattern!r} found in gdb output")
+
         return out
 
     def get_gdb_repr(self, source,

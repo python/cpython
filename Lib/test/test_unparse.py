@@ -6,16 +6,14 @@ import pathlib
 import random
 import tokenize
 import ast
+import sys
 
 
 def read_pyfile(filename):
     """Read and return the contents of a Python source file (as a
     string), taking into account the file encoding."""
-    with open(filename, "rb") as pyfile:
-        encoding = tokenize.detect_encoding(pyfile.readline)[0]
-    with open(filename, "r", encoding=encoding) as pyfile:
-        source = pyfile.read()
-    return source
+    with tokenize.open(filename) as stream:
+        return stream.read()
 
 
 for_else = """\
@@ -330,6 +328,7 @@ class UnparseTestCase(ASTTestCase):
             ast.Constant(value=(1, 2, 3), kind=None), "(1, 2, 3)"
         )
 
+    @test.support.skip_if_new_parser("Pegen does not support type annotation yet")
     def test_function_type(self):
         for function_type in (
             "() -> int",

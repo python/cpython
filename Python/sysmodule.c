@@ -17,18 +17,18 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"         // _Py_RecursionLimitLowerWaterMark()
 #include "pycore_initconfig.h"
+#include "pycore_object.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
-#include "pythread.h"
-#include "pydtrace.h"
 
-#include "osdefs.h"
+#include "pydtrace.h"
+#include "osdefs.h"               // DELIM
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -137,58 +137,67 @@ PySys_SetObject(const char *name, PyObject *v)
     return sys_set_object(tstate, name, v);
 }
 
+
 static int
-should_audit(PyThreadState *ts)
+should_audit(PyInterpreterState *is)
 {
-    if (!ts) {
+    /* tstate->interp cannot be NULL, but test it just in case
+       for extra safety */
+    assert(is != NULL);
+    if (!is) {
         return 0;
     }
-    PyInterpreterState *is = ts ? ts->interp : NULL;
-    return _PyRuntime.audit_hook_head
-        || (is && is->audit_hooks)
-        || PyDTrace_AUDIT_ENABLED();
+    return (is->runtime->audit_hook_head
+            || is->audit_hooks
+            || PyDTrace_AUDIT_ENABLED());
 }
 
-int
-PySys_Audit(const char *event, const char *argFormat, ...)
-{
-    PyObject *eventName = NULL;
-    PyObject *eventArgs = NULL;
-    PyObject *hooks = NULL;
-    PyObject *hook = NULL;
-    int res = -1;
-    PyThreadState *ts = _PyThreadState_GET();
 
+static int
+sys_audit_tstate(PyThreadState *ts, const char *event,
+                 const char *argFormat, va_list vargs)
+{
     /* N format is inappropriate, because you do not know
        whether the reference is consumed by the call.
        Assert rather than exception for perf reasons */
     assert(!argFormat || !strchr(argFormat, 'N'));
 
-    /* Early exit when no hooks are registered */
-    if (!should_audit(ts)) {
+    if (!ts) {
+        /* Audit hooks cannot be called with a NULL thread state */
         return 0;
     }
 
-    _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
+    /* The current implementation cannot be called if tstate is not
+       the current Python thread state. */
+    assert(ts == _PyThreadState_GET());
+
+    /* Early exit when no hooks are registered */
+    PyInterpreterState *is = ts->interp;
+    if (!should_audit(is)) {
+        return 0;
+    }
+
+    PyObject *eventName = NULL;
+    PyObject *eventArgs = NULL;
+    PyObject *hooks = NULL;
+    PyObject *hook = NULL;
+    int res = -1;
+
     int dtrace = PyDTrace_AUDIT_ENABLED();
 
     PyObject *exc_type, *exc_value, *exc_tb;
-    if (ts) {
-        _PyErr_Fetch(ts, &exc_type, &exc_value, &exc_tb);
-    }
+    _PyErr_Fetch(ts, &exc_type, &exc_value, &exc_tb);
 
     /* Initialize event args now */
     if (argFormat && argFormat[0]) {
-        va_list args;
-        va_start(args, argFormat);
-        eventArgs = _Py_VaBuildValue_SizeT(argFormat, args);
-        va_end(args);
+        eventArgs = _Py_VaBuildValue_SizeT(argFormat, vargs);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
             PyObject *argTuple = PyTuple_Pack(1, eventArgs);
             Py_DECREF(eventArgs);
             eventArgs = argTuple;
         }
-    } else {
+    }
+    else {
         eventArgs = PyTuple_New(0);
     }
     if (!eventArgs) {
@@ -196,6 +205,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     }
 
     /* Call global hooks */
+    _Py_AuditHookEntry *e = is->runtime->audit_hook_head;
     for (; e; e = e->next) {
         if (e->hookCFunction(event, eventArgs, e->userData) < 0) {
             goto exit;
@@ -208,8 +218,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     }
 
     /* Call interpreter hooks */
-    PyInterpreterState *is = ts ? ts->interp : NULL;
-    if (is && is->audit_hooks) {
+    if (is->audit_hooks) {
         eventName = PyUnicode_FromString(event);
         if (!eventName) {
             goto exit;
@@ -238,8 +247,8 @@ PySys_Audit(const char *event, const char *argFormat, ...)
                 ts->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
                 ts->tracing--;
             }
-            o = PyObject_CallFunctionObjArgs(hook, eventName,
-                                             eventArgs, NULL);
+            PyObject* args[2] = {eventName, eventArgs};
+            o = _PyObject_FastCallTstate(ts, hook, args, 2);
             if (canTrace) {
                 ts->tracing++;
                 ts->use_tracing = 0;
@@ -265,48 +274,81 @@ exit:
     Py_XDECREF(eventName);
     Py_XDECREF(eventArgs);
 
-    if (ts) {
-        if (!res) {
-            _PyErr_Restore(ts, exc_type, exc_value, exc_tb);
-        } else {
-            assert(_PyErr_Occurred(ts));
-            Py_XDECREF(exc_type);
-            Py_XDECREF(exc_value);
-            Py_XDECREF(exc_tb);
-        }
+    if (!res) {
+        _PyErr_Restore(ts, exc_type, exc_value, exc_tb);
+    }
+    else {
+        assert(_PyErr_Occurred(ts));
+        Py_XDECREF(exc_type);
+        Py_XDECREF(exc_value);
+        Py_XDECREF(exc_tb);
     }
 
     return res;
 }
 
+int
+_PySys_Audit(PyThreadState *tstate, const char *event,
+             const char *argFormat, ...)
+{
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, argFormat);
+#else
+    va_start(vargs);
+#endif
+    int res = sys_audit_tstate(tstate, event, argFormat, vargs);
+    va_end(vargs);
+    return res;
+}
+
+int
+PySys_Audit(const char *event, const char *argFormat, ...)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, argFormat);
+#else
+    va_start(vargs);
+#endif
+    int res = sys_audit_tstate(tstate, event, argFormat, vargs);
+    va_end(vargs);
+    return res;
+}
+
 /* We expose this function primarily for our own cleanup during
  * finalization. In general, it should not need to be called,
- * and as such it is not defined in any header files.
- */
+ * and as such the function is not exported.
+ *
+ * Must be finalizing to clear hooks */
 void
-_PySys_ClearAuditHooks(void)
+_PySys_ClearAuditHooks(PyThreadState *ts)
 {
-    /* Must be finalizing to clear hooks */
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *ts = _PyRuntimeState_GetThreadState(runtime);
-    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
-    assert(!ts || finalizing == ts);
-    if (!ts || finalizing != ts) {
+    assert(ts != NULL);
+    if (!ts) {
         return;
     }
 
-    const PyConfig *config = &ts->interp->config;
+    _PyRuntimeState *runtime = ts->interp->runtime;
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
+    assert(finalizing == ts);
+    if (finalizing != ts) {
+        return;
+    }
+
+    const PyConfig *config = _PyInterpreterState_GetConfig(ts->interp);
     if (config->verbose) {
         PySys_WriteStderr("# clear sys.audit hooks\n");
     }
 
     /* Hooks can abort later hooks for this event, but cannot
        abort the clear operation itself. */
-    PySys_Audit("cpython._PySys_ClearAuditHooks", NULL);
+    _PySys_Audit(ts, "cpython._PySys_ClearAuditHooks", NULL);
     _PyErr_Clear(ts);
 
-    _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head, *n;
-    _PyRuntime.audit_hook_head = NULL;
+    _Py_AuditHookEntry *e = runtime->audit_hook_head, *n;
+    runtime->audit_hook_head = NULL;
     while (e) {
         n = e->next;
         PyMem_RawFree(e);
@@ -317,13 +359,21 @@ _PySys_ClearAuditHooks(void)
 int
 PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
 {
+    /* tstate can be NULL, so access directly _PyRuntime:
+       PySys_AddAuditHook() can be called before Python is initialized. */
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyThreadState *tstate;
+    if (runtime->initialized) {
+        tstate = _PyRuntimeState_GetThreadState(runtime);
+    }
+    else {
+        tstate = NULL;
+    }
 
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     /* Cannot invoke hooks until we are initialized */
-    if (runtime->initialized) {
-        if (PySys_Audit("sys.addaudithook", NULL) < 0) {
+    if (tstate != NULL) {
+        if (_PySys_Audit(tstate, "sys.addaudithook", NULL) < 0) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_RuntimeError)) {
                 /* We do not report errors derived from RuntimeError */
                 _PyErr_Clear(tstate);
@@ -333,10 +383,10 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         }
     }
 
-    _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
+    _Py_AuditHookEntry *e = runtime->audit_hook_head;
     if (!e) {
         e = (_Py_AuditHookEntry*)PyMem_RawMalloc(sizeof(_Py_AuditHookEntry));
-        _PyRuntime.audit_hook_head = e;
+        runtime->audit_hook_head = e;
     } else {
         while (e->next) {
             e = e->next;
@@ -346,7 +396,7 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
     }
 
     if (!e) {
-        if (runtime->initialized) {
+        if (tstate != NULL) {
             _PyErr_NoMemory(tstate);
         }
         return -1;
@@ -374,7 +424,7 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
     PyThreadState *tstate = _PyThreadState_GET();
 
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
-    if (PySys_Audit("sys.addaudithook", NULL) < 0) {
+    if (_PySys_Audit(tstate, "sys.addaudithook", NULL) < 0) {
         if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
             /* We do not report errors derived from Exception */
             _PyErr_Clear(tstate);
@@ -384,7 +434,6 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
     }
 
     PyInterpreterState *is = tstate->interp;
-
     if (is->audit_hooks == NULL) {
         is->audit_hooks = PyList_New(0);
         if (is->audit_hooks == NULL) {
@@ -408,6 +457,7 @@ static PyObject *
 sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate != NULL);
 
     if (argc == 0) {
         _PyErr_SetString(tstate, PyExc_TypeError,
@@ -416,7 +466,7 @@ sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
         return NULL;
     }
 
-    if (!should_audit(tstate)) {
+    if (!should_audit(tstate->interp)) {
         Py_RETURN_NONE;
     }
 
@@ -442,7 +492,7 @@ sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
         return NULL;
     }
 
-    int res = PySys_Audit(event, "O", auditArgs);
+    int res = _PySys_Audit(tstate, event, "O", auditArgs);
     Py_DECREF(auditArgs);
 
     if (res < 0) {
@@ -796,8 +846,8 @@ static PyObject *
 sys_getfilesystemencoding_impl(PyObject *module)
 /*[clinic end generated code: output=1dc4bdbe9be44aa7 input=8475f8649b8c7d8c]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    const PyConfig *config = &tstate->interp->config;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
@@ -811,8 +861,8 @@ static PyObject *
 sys_getfilesystemencodeerrors_impl(PyObject *module)
 /*[clinic end generated code: output=ba77b36bbf7c96f5 input=22a1e8365566f1e5]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    const PyConfig *config = &tstate->interp->config;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
@@ -1222,10 +1272,12 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                           Py_TYPE(finalizer)->tp_name);
             return NULL;
         }
-        _PyEval_SetAsyncGenFinalizer(finalizer);
+        if (_PyEval_SetAsyncGenFinalizer(finalizer) < 0) {
+            return NULL;
+        }
     }
-    else if (finalizer == Py_None) {
-        _PyEval_SetAsyncGenFinalizer(NULL);
+    else if (finalizer == Py_None && _PyEval_SetAsyncGenFinalizer(NULL) < 0) {
+        return NULL;
     }
 
     if (firstiter && firstiter != Py_None) {
@@ -1235,10 +1287,12 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                           Py_TYPE(firstiter)->tp_name);
             return NULL;
         }
-        _PyEval_SetAsyncGenFirstiter(firstiter);
+        if (_PyEval_SetAsyncGenFirstiter(firstiter) < 0) {
+            return NULL;
+        }
     }
-    else if (firstiter == Py_None) {
-        _PyEval_SetAsyncGenFirstiter(NULL);
+    else if (firstiter == Py_None && _PyEval_SetAsyncGenFirstiter(NULL) < 0) {
+        return NULL;
     }
 
     Py_RETURN_NONE;
@@ -1625,7 +1679,7 @@ _PySys_GetSizeOf(PyObject *o)
     }
 
     /* add gc_head size */
-    if (PyObject_IS_GC(o))
+    if (_PyObject_IS_GC(o))
         return ((size_t)size) + sizeof(PyGC_Head);
     return (size_t)size;
 }
@@ -1735,7 +1789,7 @@ sys__getframe_impl(PyObject *module, int depth)
     PyThreadState *tstate = _PyThreadState_GET();
     PyFrameObject *f = tstate->frame;
 
-    if (PySys_Audit("sys._getframe", "O", f) < 0) {
+    if (_PySys_Audit(tstate, "sys._getframe", "O", f) < 0) {
         return NULL;
     }
 
@@ -2401,7 +2455,7 @@ make_flags(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
     const PyPreConfig *preconfig = &interp->runtime->preconfig;
-    const PyConfig *config = &interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
     PyObject *seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL) {
@@ -2835,7 +2889,7 @@ int
 _PySys_InitMain(PyThreadState *tstate)
 {
     PyObject *sysdict = tstate->interp->sysdict;
-    const PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     int res;
 
 #define COPY_LIST(KEY, VALUE) \

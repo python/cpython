@@ -6,10 +6,9 @@
 #undef NDEBUG
 
 #include <Python.h>
-#include "pycore_initconfig.h"   /* _PyConfig_InitCompatConfig() */
-#include "pycore_pystate.h"      /* _PyRuntime */
+#include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
+#include "pycore_runtime.h"       // _PyRuntime
 #include <Python.h>
-#include "pythread.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <wchar.h>
@@ -486,6 +485,9 @@ static int test_init_from_config(void)
 
     config.install_signal_handlers = 0;
 
+    putenv("PYTHONOLDPARSER=1");
+    config._use_peg_parser = 0;
+
     /* FIXME: test use_environment */
 
     putenv("PYTHONHASHSEED=42");
@@ -663,6 +665,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
+    putenv("PYTHONOLDPARSER=1");
 }
 
 

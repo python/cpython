@@ -1,0 +1,2 @@
+:func:`collections.namedtuple` now provides a human-readable repr for its
+field accessors.

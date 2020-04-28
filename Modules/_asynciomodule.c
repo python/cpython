@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 
 
 /*[clinic input]
@@ -231,17 +231,19 @@ get_running_loop(PyObject **loop)
     PyObject *rl;
 
     PyThreadState *ts = PyThreadState_Get();
-    if (ts->id == cached_running_holder_tsid && cached_running_holder != NULL) {
+    uint64_t ts_id = PyThreadState_GetID(ts);
+    if (ts_id == cached_running_holder_tsid && cached_running_holder != NULL) {
         // Fast path, check the cache.
         rl = cached_running_holder;  // borrowed
     }
     else {
-        if (ts->dict == NULL) {
+        PyObject *ts_dict = _PyThreadState_GetDict(ts);  // borrowed
+        if (ts_dict == NULL) {
             goto not_found;
         }
 
         rl = _PyDict_GetItemIdWithError(
-            ts->dict, &PyId___asyncio_running_event_loop__);  // borrowed
+            ts_dict, &PyId___asyncio_running_event_loop__);  // borrowed
         if (rl == NULL) {
             if (PyErr_Occurred()) {
                 goto error;
@@ -252,7 +254,7 @@ get_running_loop(PyObject **loop)
         }
 
         cached_running_holder = rl;  // borrowed
-        cached_running_holder_tsid = ts->id;
+        cached_running_holder_tsid = ts_id;
     }
 
     assert(Py_IS_TYPE(rl, &PyRunningLoopHolder_Type));
@@ -3269,6 +3271,8 @@ module_free(void *m)
     Py_CLEAR(context_kwname);
 
     module_free_freelists();
+
+    module_initialized = 0;
 }
 
 static int
@@ -3391,9 +3395,6 @@ PyInit__asyncio(void)
     if (module_init() < 0) {
         return NULL;
     }
-    if (PyType_Ready(&FutureType) < 0) {
-        return NULL;
-    }
     if (PyType_Ready(&FutureIterType) < 0) {
         return NULL;
     }
@@ -3401,9 +3402,6 @@ PyInit__asyncio(void)
         return NULL;
     }
     if (PyType_Ready(&TaskWakeupMethWrapper_Type) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&TaskType) < 0) {
         return NULL;
     }
     if (PyType_Ready(&PyRunningLoopHolder_Type) < 0) {
@@ -3415,16 +3413,13 @@ PyInit__asyncio(void)
         return NULL;
     }
 
-    Py_INCREF(&FutureType);
-    if (PyModule_AddObject(m, "Future", (PyObject *)&FutureType) < 0) {
-        Py_DECREF(&FutureType);
+    /* FutureType and TaskType are made ready by PyModule_AddType() calls below. */
+    if (PyModule_AddType(m, &FutureType) < 0) {
         Py_DECREF(m);
         return NULL;
     }
 
-    Py_INCREF(&TaskType);
-    if (PyModule_AddObject(m, "Task", (PyObject *)&TaskType) < 0) {
-        Py_DECREF(&TaskType);
+    if (PyModule_AddType(m, &TaskType) < 0) {
         Py_DECREF(m);
         return NULL;
     }

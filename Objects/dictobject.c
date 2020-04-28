@@ -111,10 +111,11 @@ converting the dict to the combined table.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
+#include "pycore_gc.h"       // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"  // _PyThreadState_GET()
 #include "dict-common.h"
-#include "stringlib/eq.h"    /* to get unicode_eq() */
+#include "stringlib/eq.h"    // unicode_eq()
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
@@ -331,27 +332,27 @@ dictkeys_decref(PyDictKeysObject *dk)
 
 /* lookup indices.  returns DKIX_EMPTY, DKIX_DUMMY, or ix >=0 */
 static inline Py_ssize_t
-dictkeys_get_index(PyDictKeysObject *keys, Py_ssize_t i)
+dictkeys_get_index(const PyDictKeysObject *keys, Py_ssize_t i)
 {
     Py_ssize_t s = DK_SIZE(keys);
     Py_ssize_t ix;
 
     if (s <= 0xff) {
-        int8_t *indices = (int8_t*)(keys->dk_indices);
+        const int8_t *indices = (const int8_t*)(keys->dk_indices);
         ix = indices[i];
     }
     else if (s <= 0xffff) {
-        int16_t *indices = (int16_t*)(keys->dk_indices);
+        const int16_t *indices = (const int16_t*)(keys->dk_indices);
         ix = indices[i];
     }
 #if SIZEOF_VOID_P > 4
     else if (s > 0xffffffff) {
-        int64_t *indices = (int64_t*)(keys->dk_indices);
+        const int64_t *indices = (const int64_t*)(keys->dk_indices);
         ix = indices[i];
     }
 #endif
     else {
-        int32_t *indices = (int32_t*)(keys->dk_indices);
+        const int32_t *indices = (const int32_t*)(keys->dk_indices);
         ix = indices[i];
     }
     assert(ix >= DKIX_DUMMY);
@@ -3252,6 +3253,7 @@ static PyMethodDef mapp_methods[] = {
     {"copy",            (PyCFunction)dict_copy,         METH_NOARGS,
      copy__doc__},
     DICT___REVERSED___METHODDEF
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -3343,6 +3345,38 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+dict_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(type));
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("dict", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    PyObject *self = dict_new((PyTypeObject *)type, NULL, NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (nargs == 1) {
+        if (dict_update_arg(self, args[0]) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        args++;
+    }
+    if (kwnames != NULL) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
+            if (PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+        }
+    }
+    return self;
+}
+
+static PyObject *
 dict_iter(PyDictObject *dict)
 {
     return dictiter_new(dict, &PyDictIterKey_Type);
@@ -3400,6 +3434,7 @@ PyTypeObject PyDict_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     dict_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = dict_vectorcall,
 };
 
 PyObject *

@@ -1830,7 +1830,7 @@ _is_running(PyInterpreterState *interp)
                         "interpreter has more than one thread");
         return -1;
     }
-    PyFrameObject *frame = tstate->frame;
+    PyFrameObject *frame = PyThreadState_GetFrame(tstate);
     if (frame == NULL) {
         if (PyErr_Occurred() != NULL) {
             return -1;
@@ -2004,7 +2004,8 @@ interp_create(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
         return NULL;
     }
-    PyObject *idobj = _PyInterpreterState_GetIDObject(tstate->interp);
+    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
+    PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
@@ -2012,7 +2013,7 @@ interp_create(PyObject *self, PyObject *args)
         PyThreadState_Swap(save_tstate);
         return NULL;
     }
-    _PyInterpreterState_RequireIDRef(tstate->interp, 1);
+    _PyInterpreterState_RequireIDRef(interp, 1);
     return idobj;
 }
 
@@ -2134,7 +2135,7 @@ static PyObject *
 interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Currently, 0 is always the main interpreter.
-    PY_INT64_T id = 0;
+    int64_t id = 0;
     return _PyInterpreterID_New(id);
 }
 

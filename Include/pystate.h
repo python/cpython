@@ -7,8 +7,6 @@
 extern "C" {
 #endif
 
-#include "pythread.h"
-
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
 #define MAX_CO_EXTRA_USERS 255
@@ -89,7 +87,9 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
 /* New in 3.9 */
-PyAPI_FUNC(PyInterpreterState *) PyThreadState_GetInterpreter(PyThreadState *tstate);
+PyAPI_FUNC(PyInterpreterState*) PyThreadState_GetInterpreter(PyThreadState *tstate);
+PyAPI_FUNC(struct _frame*) PyThreadState_GetFrame(PyThreadState *tstate);
+PyAPI_FUNC(uint64_t) PyThreadState_GetID(PyThreadState *tstate);
 #endif
 
 typedef

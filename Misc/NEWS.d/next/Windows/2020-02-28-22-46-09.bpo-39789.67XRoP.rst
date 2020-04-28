@@ -1,1 +1,0 @@
-Update Windows release build machines to Visual Studio 2019 (MSVC 14.2).

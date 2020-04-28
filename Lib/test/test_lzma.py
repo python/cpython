@@ -350,7 +350,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
     def test_decompressor_bigmem(self, size):
         lzd = LZMADecompressor()
         blocksize = 10 * 1024 * 1024
-        block = random.getrandbits(blocksize * 8).to_bytes(blocksize, "little")
+        block = random.randbytes(blocksize)
         try:
             input = block * (size // blocksize + 1)
             cdata = lzma.compress(input)

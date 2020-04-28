@@ -159,7 +159,8 @@ class LoaderTest(unittest.TestCase):
             should_pass("WinDLL('./_sqlite3.dll')")
 
             # Insecure load flags should succeed
-            should_pass("WinDLL('_sqlite3.dll', winmode=0)")
+            # Clear the DLL directory to avoid safe search settings propagating
+            should_pass("windll.kernel32.SetDllDirectoryW(None); WinDLL('_sqlite3.dll', winmode=0)")
 
             # Full path load without DLL_LOAD_DIR shouldn't find dependency
             should_fail("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +

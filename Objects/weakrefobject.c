@@ -1,9 +1,10 @@
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR()
+#include "structmember.h"         // PyMemberDef
 
 
 #define GET_WEAKREFS_LISTPTR(o) \
-        ((PyWeakReference **) PyObject_GET_WEAKREFS_LISTPTR(o))
+        ((PyWeakReference **) _PyObject_GET_WEAKREFS_LISTPTR(o))
 
 
 Py_ssize_t
@@ -361,6 +362,12 @@ static PyMemberDef weakref_members[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMethodDef weakref_methods[] = {
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    {NULL} /* Sentinel */
+};
+
 PyTypeObject
 _PyWeakref_RefType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -391,7 +398,7 @@ _PyWeakref_RefType = {
     0,                          /*tp_weaklistoffset*/
     0,                          /*tp_iter*/
     0,                          /*tp_iternext*/
-    0,                          /*tp_methods*/
+    weakref_methods,            /*tp_methods*/
     weakref_members,            /*tp_members*/
     0,                          /*tp_getset*/
     0,                          /*tp_base*/

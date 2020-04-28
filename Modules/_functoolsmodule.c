@@ -1,8 +1,7 @@
 #include "Python.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 /* _functools module written and maintained
    by Hye-Shik Chang <perky@FreeBSD.org>
@@ -414,6 +413,8 @@ partial_setstate(partialobject *pto, PyObject *state)
 static PyMethodDef partial_methods[] = {
     {"__reduce__", (PyCFunction)partial_reduce, METH_NOARGS},
     {"__setstate__", (PyCFunction)partial_setstate, METH_O},
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1194,6 +1195,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->maxsize = maxsize;
     Py_INCREF(cache_info_type);
     obj->cache_info_type = cache_info_type;
+    obj->dict = NULL;
     return (PyObject *)obj;
 }
 
@@ -1400,10 +1402,10 @@ static PyTypeObject lru_cache_type = {
 
 /* module level code ********************************************************/
 
-PyDoc_STRVAR(module_doc,
+PyDoc_STRVAR(_functools_doc,
 "Tools that operate on functions.");
 
-static PyMethodDef module_methods[] = {
+static PyMethodDef _functools_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
     {"cmp_to_key",      (PyCFunction)(void(*)(void))functools_cmp_to_key,
      METH_VARARGS | METH_KEYWORDS, functools_cmp_to_key_doc},
@@ -1411,53 +1413,56 @@ static PyMethodDef module_methods[] = {
 };
 
 static void
-module_free(void *m)
+_functools_free(void *m)
 {
-    Py_CLEAR(kwd_mark);
+    // FIXME: Do not clear kwd_mark to avoid NULL pointer dereferencing if we have
+    //        other modules instances that could use it. Will fix when PEP-573 land
+    //        and we could move kwd_mark to a per-module state.
+    // Py_CLEAR(kwd_mark);
 }
 
-static struct PyModuleDef _functoolsmodule = {
+static int
+_functools_exec(PyObject *module)
+{
+    PyTypeObject *typelist[] = {
+        &partial_type,
+        &lru_cache_type
+    };
+
+    if (!kwd_mark) {
+        kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+        if (!kwd_mark) {
+            return -1;
+        }
+    }
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
+        if (PyModule_AddType(module, typelist[i]) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static struct PyModuleDef_Slot _functools_slots[] = {
+    {Py_mod_exec, _functools_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef _functools_module = {
     PyModuleDef_HEAD_INIT,
     "_functools",
-    module_doc,
-    -1,
-    module_methods,
+    _functools_doc,
+    0,
+    _functools_methods,
+    _functools_slots,
     NULL,
     NULL,
-    NULL,
-    module_free,
+    _functools_free,
 };
 
 PyMODINIT_FUNC
 PyInit__functools(void)
 {
-    int i;
-    PyObject *m;
-    const char *name;
-    PyTypeObject *typelist[] = {
-        &partial_type,
-        &lru_cache_type,
-        NULL
-    };
-
-    m = PyModule_Create(&_functoolsmodule);
-    if (m == NULL)
-        return NULL;
-
-    kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
-    if (!kwd_mark) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    for (i=0 ; typelist[i] != NULL ; i++) {
-        if (PyType_Ready(typelist[i]) < 0) {
-            Py_DECREF(m);
-            return NULL;
-        }
-        name = _PyType_Name(typelist[i]);
-        Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
-    }
-    return m;
+    return PyModuleDef_Init(&_functools_module);
 }

@@ -50,7 +50,7 @@ Revision history:
 /* syslog module */
 
 #include "Python.h"
-#include "osdefs.h"
+#include "osdefs.h"               // SEP
 
 #include <syslog.h>
 
