@@ -31,6 +31,15 @@ Reflection
    See also :c:func:`PyThreadState_GetFrame`.
 
 
+.. c:function:: int PyFrame_GetCode(PyFrameObject *frame)
+
+   Return a borrowed reference to the *frame* code.
+
+   *frame* must not be ``NULL``.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
 
    Return the line number that *frame* is currently executing.
