@@ -8040,11 +8040,6 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
             return -1;
         }
         co = PyFrame_GetCode(f);
-        if (co == NULL) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "super(): no code object");
-            return -1;
-        }
         if (co->co_argcount == 0) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no arguments");

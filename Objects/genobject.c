@@ -1117,11 +1117,11 @@ compute_cr_origin(int origin_depth)
     }
     frame = PyEval_GetFrame();
     for (int i = 0; i < frame_count; ++i) {
-        PyObject *frameinfo = Py_BuildValue(
-            "OiO",
-            frame->f_code->co_filename,
-            PyFrame_GetLineNumber(frame),
-            frame->f_code->co_name);
+        PyCodeObject *code = frame->f_code;
+        PyObject *frameinfo = Py_BuildValue("OiO",
+                                            code->co_filename,
+                                            PyFrame_GetLineNumber(frame),
+                                            code->co_name);
         if (!frameinfo) {
             Py_DECREF(cr_origin);
             return NULL;
