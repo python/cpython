@@ -581,6 +581,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
                 err = PyErr_CheckSignals();
             }
         }
+        Py_DECREF(code);
         tb = tb->tb_next;
     }
     if (err == 0 && cnt > TB_RECURSIVE_CUTOFF) {
@@ -752,12 +753,9 @@ _Py_DumpASCII(int fd, PyObject *text)
 static void
 dump_frame(int fd, PyFrameObject *frame)
 {
-    PyCodeObject *code;
-    int lineno;
-
-    code = PyFrame_GetCode(frame);
+    PyCodeObject *code = PyFrame_GetCode(frame);
     PUTS(fd, "  File ");
-    if (code != NULL && code->co_filename != NULL
+    if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
     {
         PUTS(fd, "\"");
@@ -768,7 +766,7 @@ dump_frame(int fd, PyFrameObject *frame)
     }
 
     /* PyFrame_GetLineNumber() was introduced in Python 2.7.0 and 3.2.0 */
-    lineno = PyCode_Addr2Line(code, frame->f_lasti);
+    int lineno = PyCode_Addr2Line(code, frame->f_lasti);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (unsigned long)lineno);
@@ -778,7 +776,7 @@ dump_frame(int fd, PyFrameObject *frame)
     }
     PUTS(fd, " in ");
 
-    if (code != NULL && code->co_name != NULL
+    if (code->co_name != NULL
        && PyUnicode_Check(code->co_name)) {
         _Py_DumpASCII(fd, code->co_name);
     }
@@ -787,6 +785,7 @@ dump_frame(int fd, PyFrameObject *frame)
     }
 
     PUTS(fd, "\n");
+    Py_DECREF(code);
 }
 
 static void

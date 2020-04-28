@@ -335,26 +335,24 @@ hashtable_compare_traceback(_Py_hashtable_t *ht, const void *pkey,
 static void
 tracemalloc_get_frame(PyFrameObject *pyframe, frame_t *frame)
 {
-    PyCodeObject *code;
-    PyObject *filename;
-    _Py_hashtable_entry_t *entry;
-    int lineno;
-
     frame->filename = unknown_filename;
-    lineno = PyFrame_GetLineNumber(pyframe);
-    if (lineno < 0)
+    int lineno = PyFrame_GetLineNumber(pyframe);
+    if (lineno < 0) {
         lineno = 0;
+    }
     frame->lineno = (unsigned int)lineno;
 
-    code = PyFrame_GetCode(pyframe);
-    if (code->co_filename == NULL) {
+    PyCodeObject *code = PyFrame_GetCode(pyframe);
+    PyObject *filename = code->co_filename;
+    Py_DECREF(code);
+
+    if (filename == NULL) {
 #ifdef TRACE_DEBUG
         tracemalloc_error("failed to get the filename of the code object");
 #endif
         return;
     }
 
-    filename = code->co_filename;
     assert(filename != NULL);
     if (filename == NULL)
         return;
@@ -375,6 +373,7 @@ tracemalloc_get_frame(PyFrameObject *pyframe, frame_t *frame)
     }
 
     /* intern the filename */
+    _Py_hashtable_entry_t *entry;
     entry = _Py_HASHTABLE_GET_ENTRY(tracemalloc_filenames, filename);
     if (entry != NULL) {
         _Py_HASHTABLE_ENTRY_READ_KEY(tracemalloc_filenames, entry, filename);

@@ -537,8 +537,7 @@ Optimizations
 Build and C API Changes
 =======================
 
-* New :c:func:`PyFrame_GetCode` function: return a borrowed reference to the
-  frame code.
+* New :c:func:`PyFrame_GetCode` function: get a frame code.
   (Contributed by Victor Stinner in :issue:`40421`.)
 
 * Add :c:func:`PyFrame_GetLineNumber` to the limited C API.
