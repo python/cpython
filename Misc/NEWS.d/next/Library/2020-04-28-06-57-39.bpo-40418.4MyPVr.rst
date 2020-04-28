@@ -1,0 +1,1 @@
+For performance and clarity, use bytes.hex() in the implementation of secrets.token_hex().
