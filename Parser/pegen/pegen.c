@@ -912,10 +912,24 @@ _PyPegen_number_token(Parser *p)
 }
 
 static int // bool
+newline_in_string(Parser *p, const char *cur)
+{
+    for (char c = *cur; cur >= p->tok->buf; c = *--cur) {
+        if (c == '\'' || c == '"') {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int // bool
 bad_single_statement(Parser *p)
 {
     const char *cur = strchr(p->tok->buf, '\n');
-    if (!cur) {
+
+    /* Newlines are allowed if preceded by a line continuation character
+       or if they appear inside a string. */
+    if (!cur || *(cur - 1) == '\\' || newline_in_string(p, cur)) {
         return 0;
     }
     char c = *cur;
