@@ -103,23 +103,20 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 static PyListObject *free_list[PyList_MAXFREELIST];
 static int numfree = 0;
 
-int
-PyList_ClearFreeList(void)
+void
+_PyList_ClearFreeList(void)
 {
-    PyListObject *op;
-    int ret = numfree;
     while (numfree) {
-        op = free_list[--numfree];
+        PyListObject *op = free_list[--numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
     }
-    return ret;
 }
 
 void
 _PyList_Fini(void)
 {
-    PyList_ClearFreeList();
+    _PyList_ClearFreeList();
 }
 
 /* Print summary info about the state of the optimized allocator */

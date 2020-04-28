@@ -30,7 +30,6 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"     // _PyThreadState_GET()
-#include "frameobject.h"        // PyFrame_ClearFreeList
 #include "pydtrace.h"
 #include "pytime.h"             // _PyTime_GetMonotonicClock()
 
@@ -1026,14 +1025,13 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
 static void
 clear_freelists(void)
 {
-    (void)PyFrame_ClearFreeList();
-    (void)PyTuple_ClearFreeList();
-    (void)PyFloat_ClearFreeList();
-    (void)PyList_ClearFreeList();
-    (void)PyDict_ClearFreeList();
-    (void)PySet_ClearFreeList();
-    (void)PyAsyncGen_ClearFreeLists();
-    (void)PyContext_ClearFreeList();
+    _PyFrame_ClearFreeList();
+    _PyTuple_ClearFreeList();
+    _PyFloat_ClearFreeList();
+    _PyList_ClearFreeList();
+    _PyDict_ClearFreeList();
+    _PyAsyncGen_ClearFreeLists();
+    _PyContext_ClearFreeList();
 }
 
 // Show stats for objects in each generations
