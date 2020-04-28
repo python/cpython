@@ -156,14 +156,14 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self,
         grammar: grammar.Grammar,
         exac_tokens: Dict[str, int],
-        non_exac_tokens: Set[str],
+        non_exact_tokens: Set[str],
         file: Optional[IO[Text]],
         debug: bool = False,
         skip_actions: bool = False,
     ):
         super().__init__(grammar, file)
         self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(
-            self, exac_tokens, non_exac_tokens
+            self, exact_tokens, non_exact_tokens
         )
         self._varname_counter = 0
         self.debug = debug

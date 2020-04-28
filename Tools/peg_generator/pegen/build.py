@@ -147,10 +147,10 @@ def build_c_generator(
     skip_actions: bool = False,
 ) -> ParserGenerator:
     with open(tokens_file, "r") as tok_file:
-        exact_tok, non_exac_tok = generate_token_definitions(tok_file)
+        exact_tok, non_exact_tok = generate_token_definitions(tok_file)
     with open(output_file, "w") as file:
         gen: ParserGenerator = CParserGenerator(
-            grammar, exact_tok, non_exac_tok, file, skip_actions=skip_actions
+            grammar, exact_tok, non_exact_tok, file, skip_actions=skip_actions
         )
         gen.generate(grammar_file)
 
