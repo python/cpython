@@ -1340,6 +1340,28 @@ class ChannelTests(TestBase):
         self.assertEqual(len(send_interps), 1)
         self.assertEqual(len(recv_interps), 0)
 
+        # Force close the channel.
+        interpreters.channel_close(cid, force=True)
+        # Both ends should raise an error.
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_list_interpreters(cid, send=True)
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_list_interpreters(cid, send=False)
+
+    def test_channel_list_interpreters_closed_send_end(self):
+        """Test listing channel interpreters with a channel's send end closed."""
+        interp0 = interpreters.get_main()
+        interp1 = interpreters.create()
+        cid = interpreters.channel_create()
+        # Put something in the channel so that it's not empty.
+        interpreters.channel_send(cid, "send")
+
+        # Check initial state.
+        send_interps = interpreters.channel_list_interpreters(cid, send=True)
+        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
+        self.assertEqual(len(send_interps), 1)
+        self.assertEqual(len(recv_interps), 0)
+
         # Close the send end of the channel.
         interpreters.channel_close(cid, send=True)
         # Send end should raise an error.
