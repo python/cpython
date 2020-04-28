@@ -1,0 +1,3 @@
+Fix a race condition in concurrent.futures._ThreadWakeup: it now uses an
+internal threading event to ensure that the pipe is not closed while sending or
+receiving bytes. Patch by Kyle Stanley and Victor Stinner.
