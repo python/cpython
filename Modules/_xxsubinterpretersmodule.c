@@ -242,6 +242,40 @@ _pyobj_identify_type(PyObject *obj, _rawstring *modname, _rawstring *clsname)
     // XXX Fall back to tp_name?
 }
 
+static PyObject *
+_pyobj_get_class(const char *modname, const char *clsname)
+{
+    assert(clsname != NULL);
+    if (modname == NULL) {
+        modname = "builtins";
+    }
+
+    PyObject *module = PyImport_ImportModule(modname);
+    if (module == NULL) {
+        return NULL;
+    }
+    PyObject *cls = PyObject_GetAttrString(module, clsname);
+    Py_DECREF(module);
+    return cls;
+}
+
+static PyObject *
+_pyobj_create(const char *modname, const char *clsname, PyObject *arg)
+{
+    PyObject *cls = _pyobj_get_class(modname, clsname);
+    if (cls == NULL) {
+        return NULL;
+    }
+    PyObject *obj = NULL;
+    if (arg == NULL) {
+        obj = _PyObject_CallNoArg(cls);
+    } else {
+        obj = PyObject_CallFunction(cls, "O", arg);
+    }
+    Py_DECREF(cls);
+    return obj;
+}
+
 
 /* object snapshots */
 
@@ -253,10 +287,8 @@ typedef struct _objsnapshot {
 
     // The rest are optional.
 
-    // The serialized args with which to call the class.
-    _rawstring *args;
-    // The serialized dict with which to call __setstate__.
-    _rawstring *state;
+    // The serialized exception.
+    _rawstring *serialized;
 } _objsnapshot;
 
 static void
@@ -264,8 +296,7 @@ _objsnapshot_init(_objsnapshot *osn)
 {
     _rawstring_init(&osn->modname);
     _rawstring_init(&osn->clsname);
-    osn->args = NULL;
-    osn->state = NULL;
+    osn->serialized = NULL;
 }
 
 //static _objsnapshot *
@@ -285,13 +316,9 @@ _objsnapshot_clear(_objsnapshot *osn)
 {
     _rawstring_clear(&osn->modname);
     _rawstring_clear(&osn->clsname);
-    if (osn->args != NULL) {
-        _rawstring_free(osn->args);
-        osn->args = NULL;
-    }
-    if (osn->state != NULL) {
-        _rawstring_free(osn->state);
-        osn->state = NULL;
+    if (osn->serialized != NULL) {
+        _rawstring_free(osn->serialized);
+        osn->serialized = NULL;
     }
 }
 
@@ -305,7 +332,7 @@ _objsnapshot_clear(_objsnapshot *osn)
 static int
 _objsnapshot_is_clear(_objsnapshot *osn)
 {
-    return osn->args == NULL && osn->state == NULL
+    return osn->serialized == NULL
         && _rawstring_is_clear(&osn->modname)
         && _rawstring_is_clear(&osn->clsname);
 }
@@ -361,6 +388,28 @@ _objsnapshot_summarize(_objsnapshot *osn, _rawstring *rawbuf, const char *msg)
     }
 }
 
+static _rawstring *
+_objsnapshot_get_minimal_summary(_objsnapshot *osn, PyObject *obj)
+{
+    const char *str = NULL;
+    PyObject *objstr = PyObject_Str(obj);
+    if (objstr == NULL) {
+        PyErr_Clear();
+    } else {
+        str = PyUnicode_AsUTF8(objstr);
+        if (str == NULL) {
+            PyErr_Clear();
+        }
+    }
+
+    _rawstring *summary = _rawstring_new();
+    if (summary == NULL) {
+        return NULL;
+    }
+    _objsnapshot_summarize(osn, summary, str);
+    return summary;
+}
+
 static void
 _objsnapshot_extract(_objsnapshot *osn, PyObject *obj)
 {
@@ -371,214 +420,86 @@ _objsnapshot_extract(_objsnapshot *osn, PyObject *obj)
     _rawstring_proxy(&osn->clsname, "<unknown>");
     _pyobj_identify_type(obj, &osn->modname, &osn->clsname);
 
-    // Get the object args and state.
-    PyObject *reduced = NULL;
-    PyObject *reducefunc = PyObject_GetAttrString(obj, "__reduce__");
-    if (reducefunc == NULL) {
-        // We can move ahead with just the class name.
-        IGNORE_FAILURE("could not get object state: missing __reduce__");
+    // Serialize the object.
+    // XXX Use marshal?
+    PyObject *pickle = PyImport_ImportModule("pickle");
+    if (pickle == NULL) {
+        IGNORE_FAILURE("could not serialize object: pickle import failed");
+        return;
+    }
+    PyObject *objdata = PyObject_CallMethod(pickle, "dumps", "(O)", obj);
+    Py_DECREF(pickle);
+    if (objdata == NULL) {
+        IGNORE_FAILURE("could not serialize object: pickle.dumps failed");
     } else {
-        // The snapshot is still useful without this.
-        reduced = PyObject_CallFunctionObjArgs(reducefunc, NULL);
-        Py_DECREF(reducefunc);
-        if (reduced == NULL) {
-            IGNORE_FAILURE("could not get object state: __reduce__ failed");
-        }
-        if (!PyTuple_Check(reduced)) {
-            IGNORE_FAILURE("could not get object state: reduced obj is not tuple");
-            Py_DECREF(reduced);
-            reduced = NULL;
+        _rawstring *serialized = _rawstring_new();
+        int res = _rawstring_from_pyobj(serialized, objdata);
+        Py_DECREF(objdata);
+        if (res != 0) {
+            IGNORE_FAILURE("could not serialize object: raw str failed");
+            _rawstring_free(serialized);
+        } else if (serialized->size == 0) {
+            _rawstring_free(serialized);
+        } else {
+            osn->serialized = serialized;
         }
     }
-    // These will be borrowed references (if set), due to PyTuple_GET_ITEM().
-    PyObject *argsobj = NULL, *stateobj = NULL;
-    if (reduced != NULL) {
-        if (PyTuple_GET_SIZE(reduced) < 2) {
-            IGNORE_FAILURE("could not get object state: reduced obj missing args");
-        } else {
-            argsobj = PyTuple_GET_ITEM(reduced, 1);
-            if (argsobj == Py_None) {
-                argsobj = NULL;
-            } else if (!PyTuple_Check(argsobj)) {
-                argsobj = NULL;
-            } else if (PyTuple_GET_SIZE(argsobj) == 0) {
-                argsobj = NULL;
-            } else {
-                // It needs to live past where we decref "reduced".
-                Py_INCREF(argsobj);
-            }
-            // Everything past reduced[1] is optional.
+}
 
-            stateobj = PyTuple_GetItem(reduced, 2);
-            if (stateobj == NULL) {
-                if (PyErr_Occurred()) {
-                    PyErr_Clear();
-                }
-            } else if (stateobj == Py_None) {
-                stateobj = NULL;
-            } else if (!PyDict_Check(stateobj)) {
-                // XXX Emit a warning?
-                stateobj = NULL;
-            } else if (PyDict_GET_SIZE(stateobj) == 0) {
-                stateobj = NULL;
-            } else {
-                // It needs to live past where we decref "reduced".
-                Py_INCREF(stateobj);
-            }
-        }
-        Py_DECREF(reduced);
+static PyObject *
+_objsnapshot_resolve_serialized(_objsnapshot *osn)
+{
+    assert(osn->serialized != NULL);
+
+    // XXX Use marshal?
+    PyObject *pickle = PyImport_ImportModule("pickle");
+    if (pickle == NULL) {
+        return NULL;
+    }
+    PyObject *objdata = _rawstring_as_pybytes(osn->serialized);
+    if (objdata == NULL) {
+        return NULL;
+    } else {
+        PyObject *obj = PyObject_CallMethod(pickle, "loads", "O", objdata);
+        Py_DECREF(objdata);
+        return obj;
+    }
+}
+
+static PyObject *
+_objsnapshot_resolve_naive(_objsnapshot *osn, PyObject *arg)
+{
+    if (_rawstring_is_clear(&osn->clsname)) {
+        // We can't proceed without at least the class name.
+        PyErr_SetString(PyExc_ValueError, "missing class name");
+        return NULL;
     }
 
-    // Serialize the object args and state.
-    if (argsobj != NULL || stateobj != NULL) {
-        // XXX Use marshal?
-        PyObject *pickle = PyImport_ImportModule("pickle");
-        if (pickle == NULL) {
-            IGNORE_FAILURE("could not serialize object state: pickle import failed");
-        } else {
-            if (stateobj != NULL) {
-                PyObject *statestr = PyObject_CallMethod(pickle, "dumps", "(O)", stateobj);
-                if (statestr == NULL) {
-                    IGNORE_FAILURE("could not serialize object state: pickle.dumps on dict failed");
-                } else {
-                    _rawstring *state = _rawstring_new();
-                    int res = _rawstring_from_pyobj(state, statestr);
-                    Py_DECREF(statestr);
-                    if (res != 0) {
-                        IGNORE_FAILURE("could not serialize object state: raw dict str failed");
-                        _rawstring_free(state);
-                    } else if (state->size == 0) {
-                        _rawstring_free(state);
-                    } else {
-                        osn->state = state;
-                    }
-                }
-            }
-            if (argsobj != NULL) {
-                PyObject *argsstr = PyObject_CallMethod(pickle, "dumps", "(O)", argsobj);
-                if (argsstr == NULL) {
-                    IGNORE_FAILURE("could not serialize object state: pickle.dumps on args failed");
-                } else {
-                    _rawstring *args = _rawstring_new();
-                    int res = _rawstring_from_pyobj(args, argsstr);
-                    Py_DECREF(argsstr);
-                    if (res != 0) {
-                        IGNORE_FAILURE("could not serialize object state: raw args str failed");
-                        _rawstring_free(args);
-                    } else if (args->size == 0) {
-                        _rawstring_free(args);
-                    } else {
-                        osn->args = args;
-                    }
-                }
-            }
-            Py_DECREF(pickle);
+    if (osn->modname.data != NULL) {
+        return _pyobj_create(osn->modname.data, osn->clsname.data, arg);
+    } else {
+        PyObject *obj = _pyobj_create("builtins", osn->clsname.data, arg);
+        if (obj == NULL) {
+            PyErr_Clear();
+            obj = _pyobj_create("__main__", osn->clsname.data, arg);
         }
-        Py_XDECREF(argsobj);
-        Py_XDECREF(stateobj);
+        return obj;
     }
 }
 
 static PyObject *
 _objsnapshot_resolve(_objsnapshot *osn)
 {
-    // Get the object's class.
-    if (&osn->clsname == NULL) {
-        // We can't proceed without at least the class name.
-        PyErr_SetString(PyExc_ValueError, "missing class name");
-        return NULL;
-    }
-    const char *modname = osn->modname.data ? osn->modname.data : "builtins";
-    PyObject *module = PyImport_ImportModule(modname);
-    if (module == NULL) {
-        if (&osn->modname != NULL) {
-            // We can't proceed without the module from which to get the class.
-            return NULL;
+    if (osn->serialized != NULL) {
+        PyObject *obj = _objsnapshot_resolve_serialized(osn);
+        if (obj != NULL) {
+            return obj;
         }
-        // Fall back to __main__.
-        PyErr_Clear();
-    }
-    PyObject *cls = NULL;
-    if (module != NULL) {
-        cls = PyObject_GetAttrString(module, osn->clsname.data);
-        Py_DECREF(module);
-        if (cls == NULL) {
-            PyErr_Clear();
-        }
-    }
-    if (cls == NULL) {
-        if (&osn->modname == NULL) {
-            PyObject *module = PyImport_ImportModule("__main__");
-            if (module == NULL) {
-                // We can't proceed without the module from which to get the class.
-                return NULL;
-            }
-            cls = PyObject_GetAttrString(module, osn->clsname.data);
-            Py_DECREF(module);
-        }
-        if (cls == NULL) {
-            // We can't proceed without the class.
-            return NULL;
-        }
+        IGNORE_FAILURE("could not de-serialize object");
     }
 
-    // De-serialize the object args and state.
-    PyObject *argsobj = NULL, *stateobj = NULL;
-    if (osn->args != NULL || osn->state != NULL) {
-        // XXX Use marshal?
-        PyObject *pickle = PyImport_ImportModule("pickle");
-        if (pickle == NULL) {
-            IGNORE_FAILURE("could not de-serialize object state: pickle import failed");
-        } else {
-            if (osn->args != NULL) {
-                PyObject *argsstr = _rawstring_as_pybytes(osn->args);
-                if (argsstr == NULL) {
-                    IGNORE_FAILURE("could not de-serialize object state: args str obj failed");
-                } else {
-                    argsobj = PyObject_CallMethod(pickle, "loads", "O", argsstr);
-                    Py_DECREF(argsstr);
-                    if (argsobj == NULL) {
-                        IGNORE_FAILURE("could not de-serialize object state: args unpickle failed");
-                    }
-                }
-            }
-            if (osn->state != NULL) {
-                PyObject *statestr = _rawstring_as_pybytes(osn->state);
-                if (statestr == NULL) {
-                    IGNORE_FAILURE("could not de-serialize object state: dict str obj failed");
-                } else {
-                    stateobj = PyObject_CallMethod(pickle, "loads", "O", statestr);
-                    Py_DECREF(statestr);
-                    if (stateobj == NULL) {
-                        IGNORE_FAILURE("could not de-serialize object state: dict unpickle failed");
-                    }
-                }
-            }
-            Py_DECREF(pickle);
-        }
-    }
-
-    // Create the object.
-    PyObject *resolved = PyObject_CallObject(cls, argsobj);  // A NULL argsobj means "no args";
-    Py_DECREF(cls);
-    Py_XDECREF(argsobj);
-    if (resolved == NULL) {
-        Py_XDECREF(stateobj);
-        return NULL;
-    }
-
-    // Set the object state.
-    if (stateobj != NULL) {
-        PyObject *res = PyObject_CallMethod(resolved, "__setstate__", "O", stateobj);
-        Py_DECREF(stateobj);
-        if (res == NULL) {
-            // We can get by without the object's state.
-            IGNORE_FAILURE("could not de-serialize object state: __setstate__ failed");
-        }
-        Py_XDECREF(res);
-    }
-
-    return resolved;
+    // Fall back to naive resolution.
+    return _objsnapshot_resolve_naive(osn, NULL);
 }
 
 
@@ -765,6 +686,7 @@ _tbsnapshot_resolve(_tbsnapshot *tbs)
 
 typedef struct _excsnapshot {
     _objsnapshot es_object;
+    _rawstring *es_msg;
     struct _excsnapshot *es_cause;
     struct _excsnapshot *es_context;
     char es_suppress_context;
@@ -775,6 +697,7 @@ static void
 _excsnapshot_init(_excsnapshot *es)
 {
     _objsnapshot_init(&es->es_object);
+    es->es_msg = NULL;
     es->es_cause = NULL;
     es->es_context = NULL;
     es->es_suppress_context = 0;
@@ -798,6 +721,10 @@ static void
 _excsnapshot_clear(_excsnapshot *es)
 {
     _objsnapshot_clear(&es->es_object);
+    if (es->es_msg != NULL) {
+        _rawstring_free(es->es_msg);
+        es->es_msg = NULL;
+    }
     if (es->es_cause != NULL) {
         _excsnapshot_free(es->es_cause);
         es->es_cause = NULL;
@@ -827,7 +754,69 @@ _excsnapshot_is_clear(_excsnapshot *es)
         && es->es_cause == NULL
         && es->es_context == NULL
         && es->es_traceback == NULL
+        && es->es_msg == NULL
         && _objsnapshot_is_clear(&es->es_object);
+}
+
+static PyObject *
+_excsnapshot_get_exc_naive(_excsnapshot *es)
+{
+    _rawstring buf;
+    const char *msg = NULL;
+    if (es->es_msg != NULL) {
+        msg = es->es_msg->data;
+    } else {
+        _objsnapshot_summarize(&es->es_object, &buf, NULL);
+        if (buf.size > 0) {
+            msg = buf.data;
+        }
+    }
+
+    PyObject *exc = NULL;
+    // XXX Use _objsnapshot_resolve_naive()?
+    const char *modname = es->es_object.modname.size > 0
+        ? es->es_object.modname.data
+        : NULL;
+    PyObject *exctype = _pyobj_get_class(modname, es->es_object.clsname.data);
+    if (exctype != NULL) {
+        exc = _pyexc_create(exctype, msg, NULL);
+        Py_DECREF(exctype);
+        if (exc != NULL) {
+            return exc;
+        }
+        PyErr_Clear();
+    } else {
+        PyErr_Clear();
+    }
+    exctype = PyExc_Exception;
+    return _pyexc_create(exctype, msg, NULL);
+}
+
+static PyObject *
+_excsnapshot_get_exc(_excsnapshot *es)
+{
+    assert(!_objsnapshot_is_clear(&es->es_object));
+
+    PyObject *exc = _objsnapshot_resolve(&es->es_object);
+    if (exc == NULL) {
+        // Fall back to resolving the object.
+        PyObject *curtype = NULL, *curexc = NULL, *curtb = NULL;
+        PyErr_Fetch(&curtype, &curexc, &curtb);
+
+        exc = _excsnapshot_get_exc_naive(es);
+        if (exc == NULL) {
+            PyErr_Restore(curtype, curexc, curtb);
+            return NULL;
+        }
+    }
+    // People can do some weird stuff...
+    if (!PyExceptionInstance_Check(exc)) {
+        // We got a bogus "exception".
+        Py_DECREF(exc);
+        PyErr_SetString(PyExc_TypeError, "expected exception");
+        return NULL;
+    }
+    return exc;
 }
 
 static void _excsnapshot_extract(_excsnapshot *, PyObject *);
@@ -838,6 +827,11 @@ _excsnapshot_extract(_excsnapshot *es, PyObject *excobj)
     assert(PyExceptionInstance_Check(excobj));
 
     _objsnapshot_extract(&es->es_object, excobj);
+
+    es->es_msg = _objsnapshot_get_minimal_summary(&es->es_object, excobj);
+    if (es->es_msg == NULL) {
+        PyErr_Clear();
+    }
 
     PyBaseExceptionObject *exc = (PyBaseExceptionObject *)excobj;
 
@@ -872,16 +866,8 @@ _excsnapshot_extract(_excsnapshot *es, PyObject *excobj)
 static PyObject *
 _excsnapshot_resolve(_excsnapshot *es)
 {
-    assert(&es->es_object != NULL);
-
-    PyObject *exc = _objsnapshot_resolve(&es->es_object);
+    PyObject *exc = _excsnapshot_get_exc(es);
     if (exc == NULL) {
-        return NULL;
-    }
-    // People can do some weird stuff...
-    if (!PyExceptionInstance_Check(exc)) {
-        // We got a bogus "exception".
-        Py_DECREF(exc);
         return NULL;
     }
 
