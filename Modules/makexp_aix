@@ -3,7 +3,7 @@
 # ===========================================================================
 # FILE:         makexp_aix
 # TYPE:         standalone executable
-# SYSTEM:	AIX 3.2.5 and AIX 4
+# SYSTEM:	AIX
 #
 # DESCRIPTION:  This script creates an export list of ALL global symbols
 #               from a list of object or archive files.
@@ -18,6 +18,9 @@
 #                      <InputFile> is an object (.o) or an archive file (.a).
 #
 # HISTORY:
+#               15-Apr-2020 -- Do not run in parallel to same expFileName
+#               Michael Felt
+#
 #		3-Apr-1998  -- remove C++ entries of the form Class::method
 #		Vladimir Marangozov
 #
@@ -33,6 +36,18 @@ expFileName=$1
 toAppendStr=$2
 shift; shift;
 inputFiles=$*
+
+# if lock file exists - file is already being made.
+# wait for lock file to be removed, and then exit
+if [[ -e ${expFileName}.lck ]]; then
+  while [[ -e ${expFileName}.lck ]]; do
+     sleep 3
+  done
+  exit 0
+else
+  touch ${expFileName}.lck
+fi
+
 automsg="Generated automatically by makexp_aix"
 notemsg="NOTE: lists _all_ global symbols defined in the above file(s)."
 curwdir=`pwd`
@@ -79,3 +94,5 @@ $NM -e $xopt $1 >/dev/null 2>&1 || xopt=""
 $NM -Bex $xopt $inputFiles					\
 | sed -e '/ [^BDT] /d' -e '/\./d' -e 's/.* [BDT] //' -e '/::/d'	\
 | sort | uniq >> $expFileName
+
+rm ${expFileName}.lck
