@@ -1355,11 +1355,11 @@ _channel_recv(_channels *channels, int64_t id)
 
     // Convert the data back to an object.
     PyObject *obj = _PyCrossInterpreterData_NewObject(data);
+    _PyCrossInterpreterData_Release(data);
+    PyMem_Free(data);
     if (obj == NULL) {
         return NULL;
     }
-    _PyCrossInterpreterData_Release(data);
-    PyMem_Free(data);
 
     return obj;
 }
