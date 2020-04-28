@@ -1,0 +1,1 @@
+Documentation fixes for :func:`asyncio.as_completed`.
