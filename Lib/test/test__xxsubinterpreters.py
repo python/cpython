@@ -1194,11 +1194,11 @@ class RunFailedTests(TestBase):
         elif not isinstance(expected, Traceback):
             self.assertEqual(tb, expected)
         else:
-            self.assertEqual(tb.tb_lineno, expected.tb_lineno)
-            self.assertEqual(tb.tb_frame.f_code.co_filename,
-                             expected.tb_frame.f_code.co_filename)
             self.assertEqual(tb.tb_frame.f_code.co_name,
                              expected.tb_frame.f_code.co_name)
+            self.assertEqual(tb.tb_frame.f_code.co_filename,
+                             expected.tb_frame.f_code.co_filename)
+            self.assertEqual(tb.tb_lineno, expected.tb_lineno)
             self.assertTracebacksEqual(tb.tb_next, expected.tb_next)
 
     # XXX Move this to TestBase?
@@ -1304,6 +1304,7 @@ class RunFailedTests(TestBase):
             exec(script, ns, ns)
         except Exception as exc:
             expected = exc
+            expectedtb = exc.__traceback__.tb_next
 
         interpid = interpreters.create()
         with self.expected_run_failure(expected) as caught:
@@ -1311,7 +1312,7 @@ class RunFailedTests(TestBase):
         exc = caught.exception
 
         self.assertTracebacksEqual(exc.__cause__.__traceback__,
-                                   expected.__traceback__)
+                                   expectedtb)
 
     def test_chained_exceptions(self):
         script = dedent("""

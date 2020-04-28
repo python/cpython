@@ -683,20 +683,12 @@ _tbsnapshot_is_clear(_tbsnapshot *tbs)
         && _rawstring_is_clear(&tbs->tbs_filename);
 }
 
-static void _tbsnapshot_extract(_tbsnapshot *, PyTracebackObject *);
-static void
-_tbsnapshot_extract(_tbsnapshot *tbs, PyTracebackObject *pytb)
+static int
+_tbsnapshot_from_pytb(_tbsnapshot *tbs, PyTracebackObject *pytb)
 {
     assert(_tbsnapshot_is_clear(tbs));
     assert(pytb != NULL);
 
-    if (pytb->tb_next != NULL) {
-        tbs->tbs_next = _tbsnapshot_new();
-        if (tbs->tbs_next == NULL) {
-            goto error;
-        }
-        _tbsnapshot_extract(tbs->tbs_next, pytb->tb_next);
-    }
     PyCodeObject *pycode = pytb->tb_frame->f_code;
     const char *funcname = PyUnicode_AsUTF8(pycode->co_name);
     if (_rawstring_strcpy(&tbs->tbs_funcname, funcname, 0) != 0) {
@@ -708,10 +700,44 @@ _tbsnapshot_extract(_tbsnapshot *tbs, PyTracebackObject *pytb)
     }
     tbs->tbs_lineno = pytb->tb_lineno;
 
+    return 0;
+
 error:
     _tbsnapshot_clear(tbs);
-    // XXX Emit a warning?
-    PyErr_Clear();
+    return -1;
+}
+
+static int
+_tbsnapshot_extract(_tbsnapshot *tbs, PyTracebackObject *pytb)
+{
+    assert(_tbsnapshot_is_clear(tbs));
+    assert(pytb != NULL);
+
+    _tbsnapshot *next = NULL;
+    while (pytb->tb_next != NULL) {
+        _tbsnapshot *_next = _tbsnapshot_new();
+        if (_next == NULL) {
+            goto error;
+        }
+        if (_tbsnapshot_from_pytb(_next, pytb) != 0) {
+            goto error;
+        }
+        if (next != NULL) {
+            _next->tbs_next = next;
+        }
+        next = _next;
+        pytb = pytb->tb_next;
+    }
+    if (_tbsnapshot_from_pytb(tbs, pytb) != 0) {
+        goto error;
+    }
+    tbs->tbs_next = next;
+
+    return 0;
+
+error:
+    _tbsnapshot_clear(tbs);
+    return -1;
 }
 
 static PyObject *
@@ -836,7 +862,10 @@ _excsnapshot_extract(_excsnapshot *es, PyObject *excobj)
     }
     if (tb != NULL) {
         es->es_traceback = _tbsnapshot_new();
-        _tbsnapshot_extract(es->es_traceback, (PyTracebackObject *)tb);
+        if (_tbsnapshot_extract(es->es_traceback,
+                                (PyTracebackObject *)tb) != 0) {
+            IGNORE_FAILURE("could not extract __traceback__");
+        }
     }
 }
 
