@@ -10,6 +10,7 @@ CPYTHON ?= ../../Lib
 MYPY ?= mypy
 
 GRAMMAR = ../../Grammar/python.gram
+TOKENS = ../../Grammar/Tokens
 TESTFILE = data/cprog.py
 TIMEFILE = data/xxl.py
 TESTDIR = .
@@ -20,8 +21,8 @@ data/xxl.py:
 
 build: peg_extension/parse.c
 
-peg_extension/parse.c: $(GRAMMAR) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen/pegen.c ../../Parser/pegen/parse_string.c ../../Parser/pegen/*.h pegen/grammar_parser.py
-	$(PYTHON) -m pegen -q -c $(GRAMMAR) -o peg_extension/parse.c --compile-extension
+peg_extension/parse.c: $(GRAMMAR) $(TOKENS) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen/pegen.c ../../Parser/pegen/parse_string.c ../../Parser/pegen/*.h pegen/grammar_parser.py
+	$(PYTHON) -m pegen -q c $(GRAMMAR) $(TOKENS) -o peg_extension/parse.c --compile-extension
 
 clean:
 	-rm -f peg_extension/*.o peg_extension/*.so peg_extension/parse.c
@@ -79,7 +80,8 @@ time_stdlib_parse: data/xxl.py
 
 test_local:
 	$(PYTHON) scripts/test_parse_directory.py \
-		-g $(GRAMMAR) \
+		--grammar-file $(GRAMMAR) \
+		--tokens-file $(TOKENS) \
 		-d $(TESTDIR) \
 		$(TESTFLAGS) \
 		--exclude "*/failset/*" \
@@ -88,7 +90,8 @@ test_local:
 
 test_global: $(CPYTHON)
 	$(PYTHON) scripts/test_parse_directory.py \
-		-g $(GRAMMAR) \
+		--grammar-file $(GRAMMAR) \
+		--tokens-file $(TOKENS) \
 		-d $(CPYTHON) \
 		$(TESTFLAGS) \
 		--exclude "*/test2to3/*" \
