@@ -344,13 +344,16 @@ tokenizer_error(Parser *p)
             break;
         case E_BADPREFIX:
             return tokenizer_error_with_col_offset(p,
-                PyExc_SyntaxError, "invalid string prefix");
+                errtype, "invalid string prefix");
         case E_EOFS:
             return tokenizer_error_with_col_offset(p,
-                PyExc_SyntaxError, "EOF while scanning triple-quoted string literal");
+                errtype, "EOF while scanning triple-quoted string literal");
         case E_EOLS:
             return tokenizer_error_with_col_offset(p,
-                PyExc_SyntaxError, "EOL while scanning string literal");
+                errtype, "EOL while scanning string literal");
+        case E_EOF:
+            return tokenizer_error_with_col_offset(p,
+                errtype, "unexpected EOF while parsing");
         case E_DEDENT:
             return tokenizer_error_with_col_offset(p,
                 PyExc_IndentationError, "unindent does not match any outer indentation level");
