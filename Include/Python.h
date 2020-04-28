@@ -114,6 +114,7 @@
 #include "classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"
+#include "pyframe.h"
 #include "traceback.h"
 #include "sliceobject.h"
 #include "cellobject.h"
