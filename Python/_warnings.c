@@ -785,6 +785,8 @@ is_internal_frame(PyFrameObject *frame)
 
     PyCodeObject *code = PyFrame_GetCode(frame);
     PyObject *filename = code->co_filename;
+    Py_DECREF(code);
+
     if (filename == NULL) {
         return 0;
     }
@@ -850,7 +852,9 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
     else {
         globals = f->f_globals;
-        *filename = PyFrame_GetCode(f)->co_filename;
+        PyCodeObject *code = PyFrame_GetCode(f);
+        *filename = code->co_filename;
+        Py_DECREF(code);
         Py_INCREF(*filename);
         *lineno = PyFrame_GetLineNumber(f);
     }

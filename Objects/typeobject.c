@@ -8031,7 +8031,6 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
         PyFrameObject *f;
-        PyCodeObject *co;
         Py_ssize_t i, n;
         f = PyThreadState_GetFrame(_PyThreadState_GET());
         if (f == NULL) {
@@ -8039,7 +8038,8 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
                             "super(): no current frame");
             return -1;
         }
-        co = PyFrame_GetCode(f);
+        PyCodeObject *co = PyFrame_GetCode(f);
+        Py_DECREF(co);   // use a borrowed reference
         if (co->co_argcount == 0) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no arguments");
