@@ -560,24 +560,23 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
         tb = tb->tb_next;
     }
     while (tb != NULL && err == 0) {
+        PyCodeObject *code = PyFrame_GetCode(tb->tb_frame);
         if (last_file == NULL ||
-            tb->tb_frame->f_code->co_filename != last_file ||
+            code->co_filename != last_file ||
             last_line == -1 || tb->tb_lineno != last_line ||
-            last_name == NULL || tb->tb_frame->f_code->co_name != last_name) {
+            last_name == NULL || code->co_name != last_name) {
             if (cnt > TB_RECURSIVE_CUTOFF) {
                 err = tb_print_line_repeated(f, cnt);
             }
-            last_file = tb->tb_frame->f_code->co_filename;
+            last_file = code->co_filename;
             last_line = tb->tb_lineno;
-            last_name = tb->tb_frame->f_code->co_name;
+            last_name = code->co_name;
             cnt = 0;
         }
         cnt++;
         if (err == 0 && cnt <= TB_RECURSIVE_CUTOFF) {
-            err = tb_displayline(f,
-                                 tb->tb_frame->f_code->co_filename,
-                                 tb->tb_lineno,
-                                 tb->tb_frame->f_code->co_name);
+            err = tb_displayline(f, code->co_filename, tb->tb_lineno,
+                                 code->co_name);
             if (err == 0) {
                 err = PyErr_CheckSignals();
             }
@@ -756,7 +755,7 @@ dump_frame(int fd, PyFrameObject *frame)
     PyCodeObject *code;
     int lineno;
 
-    code = frame->f_code;
+    code = PyFrame_GetCode(frame);
     PUTS(fd, "  File ");
     if (code != NULL && code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
