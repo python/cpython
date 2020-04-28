@@ -1245,7 +1245,7 @@ class ChannelTests(TestBase):
         interpreters.channel_send(cid, "send")
         _run_output(interp1, dedent(f"""
             import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_send({cid}, "send")
+            _interpreters.channel_send({cid}, "send")
             """))
         _run_output(interp2, dedent(f"""
             import _xxsubinterpreters as _interpreters
@@ -1318,7 +1318,7 @@ class ChannelTests(TestBase):
         # Release one of the subinterpreters from the receive end.
         _run_output(interp2, dedent(f"""
             import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_release({cid})
+            _interpreters.channel_release({cid})
             """))
         # Receive end should have the released interpreter removed.
         send_interps = interpreters.channel_list_interpreters(cid, send=True)
@@ -1331,30 +1331,34 @@ class ChannelTests(TestBase):
         interp0 = interpreters.get_main()
         interp1 = interpreters.create()
         cid = interpreters.channel_create()
-        # Should be no interpreters associated with either end.
+        # Put something in the channel so that it's not empty.
+        interpreters.channel_send(cid, "send")
+
+        # Check initial state.
         send_interps = interpreters.channel_list_interpreters(cid, send=True)
         recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(len(send_interps), 0)
+        self.assertEqual(len(send_interps), 1)
         self.assertEqual(len(recv_interps), 0)
 
         # Close the send end of the channel.
         interpreters.channel_close(cid, send=True)
         # Send end should raise an error.
         with self.assertRaises(interpreters.ChannelClosedError):
-            send_interps = interpreters.channel_list_interpreters(cid, send=True)
+            interpreters.channel_list_interpreters(cid, send=True)
+        # Receive end should not be closed (since channel is not empty).
         recv_interps = interpreters.channel_list_interpreters(cid, send=False)
         self.assertEqual(len(recv_interps), 0)
 
         # Close the receive end of the channel from a subinterpreter.
-        _run_output(interp3, dedent(f"""
+        _run_output(interp1, dedent(f"""
             import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_close({cid})
+            _interpreters.channel_close({cid}, force=True)
             """))
         # Both ends should raise an error.
         with self.assertRaises(interpreters.ChannelClosedError):
-            send_interps = interpreters.channel_list_interpreters(cid, send=True)
+            interpreters.channel_list_interpreters(cid, send=True)
         with self.assertRaises(interpreters.ChannelClosedError):
-            recv_interps = interpreters.channel_list_interpreters(cid, send=False)
+            interpreters.channel_list_interpreters(cid, send=False)
 
     ####################
 

@@ -1395,6 +1395,9 @@ _channel_is_associated(_channels *channels, int64_t cid, int64_t interp,
     _PyChannelState *chan = _channels_lookup(channels, cid, NULL);
     if (chan == NULL) {
         return -1;
+    } else if (send && chan->closing != NULL) {
+        PyErr_Format(ChannelClosedError, "channel %" PRId64 " closed", cid);
+        return -1;
     }
 
     _channelend *end = _channelend_find(send ? chan->ends->send : chan->ends->recv,
