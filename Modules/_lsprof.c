@@ -390,14 +390,19 @@ profiler_callback(PyObject *self, PyFrameObject *frame, int what,
     {
         PyCodeObject *code = PyFrame_GetCode(frame);
         ptrace_enter_call(self, (void *)code, (PyObject *)code);
+        Py_DECREF(code);
         break;
     }
 
     /* the 'frame' of a called function is about to finish
        (either normally or with an exception) */
     case PyTrace_RETURN:
-        ptrace_leave_call(self, (void *)PyFrame_GetCode(frame));
+    {
+        PyCodeObject *code = PyFrame_GetCode(frame);
+        ptrace_leave_call(self, (void *)code);
+        Py_DECREF(code);
         break;
+    }
 
     /* case PyTrace_EXCEPTION:
         If the exception results in the function exiting, a
