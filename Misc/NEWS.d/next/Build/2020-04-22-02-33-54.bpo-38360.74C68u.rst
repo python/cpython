@@ -1,1 +1,0 @@
-Support single-argument form of macOS -isysroot flag.
