@@ -1074,8 +1074,10 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: PyFrameObject* PyThreadState_GetFrame(PyThreadState *tstate)
 
-   Get the current frame of the Python thread state *tstate*. It can be
-   ``NULL`` if no frame is currently executing.
+   Get the current frame of the Python thread state *tstate*.
+
+   Return a strong reference. Return ``NULL`` if no frame is currently
+   executing.
 
    See also :c:func:`PyEval_GetFrame`.
 

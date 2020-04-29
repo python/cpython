@@ -320,6 +320,13 @@ with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
 :class:`~imaplib.IMAP4_stream` were applied to this change.
 (Contributed by Dong-hee Na in :issue:`38615`.)
 
+:meth:`imaplib.IMAP4.unselect` is added.
+:meth:`imaplib.IMAP4.unselect` frees server's resources associated with the
+selected mailbox and returns the server to the authenticated
+state. This command performs the same actions as :meth:`imaplib.IMAP4.close`, except
+that no messages are permanently removed from the currently
+selected mailbox. (Contributed by Dong-hee Na in :issue:`40375`.)
+
 importlib
 ---------
 
@@ -368,6 +375,14 @@ nntplib
 :class:`~nntplib.NNTP` and :class:`~nntplib.NNTP_SSL` now raise a :class:`ValueError`
 if the given timeout for their constructor is zero to prevent the creation of
 a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
+multiprocessing
+---------------
+
+The :class:`multiprocessing.SimpleQueue` class has a new
+:meth:`~multiprocessing.SimpleQueue.close` method to explicitly close the
+queue.
+(Contributed by Victor Stinner in :issue:`30966`.)
 
 os
 --
@@ -522,6 +537,13 @@ Optimizations
 Build and C API Changes
 =======================
 
+* New :c:func:`PyFrame_GetCode` function: get a frame code.
+  New :c:func:`PyFrame_GetBack` function: get the frame next outer frame.
+  (Contributed by Victor Stinner in :issue:`40421`.)
+
+* Add :c:func:`PyFrame_GetLineNumber` to the limited C API.
+  (Contributed by Victor Stinner in :issue:`40421`.)
+
 * New :c:func:`PyThreadState_GetInterpreter` and
   :c:func:`PyInterpreterState_Get` functions to get the interpreter.
   New :c:func:`PyThreadState_GetFrame` function to get the current frame of a
@@ -650,6 +672,19 @@ Build and C API Changes
   Python objects are being currently tracked or have been already finalized by
   the garbage collector respectively. (Contributed by Pablo Galindo in
   :issue:`40241`.)
+
+* Remove the following functions from the C API. Call :c:func:`PyGC_Collect`
+  explicitly to free all free lists.
+  (Contributed by Victor Stinner in :issue:`40428`.)
+
+  * ``PyAsyncGen_ClearFreeLists()``
+  * ``PyContext_ClearFreeList()``
+  * ``PyDict_ClearFreeList()``
+  * ``PyFloat_ClearFreeList()``
+  * ``PyFrame_ClearFreeList()``
+  * ``PyList_ClearFreeList()``
+  * ``PySet_ClearFreeList()``
+  * ``PyTuple_ClearFreeList()``
 
 
 Deprecated
