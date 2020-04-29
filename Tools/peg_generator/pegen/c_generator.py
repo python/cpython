@@ -697,7 +697,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             for item in node.items:
                 name, type = self.add_var(item)
                 types[name] = type
-            return types
+        return types
 
     def add_var(self, node: NamedItem) -> Tuple[Optional[str], Optional[str]]:
         call = self.callmakervisitor.visit(node.item)
@@ -709,16 +709,16 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         name = call.assigned_variable
         rulename = call.metadata.get("rulename")
 
-        type: Optional[str]
+        type: Optional[str] = None
+
         assert self.all_rules is not None
-        if rulename and (rule := self.all_rules.get(rulename)):
+        if rulename and rulename in self.all_rules:
+            rule = self.all_rules.get(rulename)
             if rule.is_loop() or rule.is_gather():
                 type = "asdl_seq *"
             else:
                 type = rule.type
         elif call.nodetype in BASE_NODETYPES.values():
             type = "expr_ty"
-        else:
-            type = None
 
         return self.dedupe(node.name if node.name else call.assigned_variable), type
