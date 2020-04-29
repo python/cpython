@@ -597,13 +597,13 @@ _PyPegen_fill_token(Parser *p)
 
     int lineno = type == STRING ? p->tok->first_lineno : p->tok->lineno;
     const char *line_start = type == STRING ? p->tok->multi_line_start : p->tok->line_start;
-    size_t end_lineno = p->tok->lineno;
-    size_t col_offset = -1, end_col_offset = -1;
+    int end_lineno = p->tok->lineno;
+    int col_offset = -1, end_col_offset = -1;
     if (start != NULL && start >= line_start) {
-        col_offset = start - line_start;
+        col_offset = (int)(start - line_start);
     }
     if (end != NULL && end >= p->tok->line_start) {
-        end_col_offset = end - p->tok->line_start;
+        end_col_offset = (int)(end - p->tok->line_start);
     }
 
     t->lineno = p->starting_lineno + lineno;
