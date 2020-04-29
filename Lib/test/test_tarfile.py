@@ -11,7 +11,7 @@ import unittest.mock
 import tarfile
 
 from test import support
-from test.support import script_helper, requires_hashdigest
+from test.support import script_helper
 
 # Check for our compression modules.
 try:

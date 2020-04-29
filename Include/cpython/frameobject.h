@@ -14,7 +14,7 @@ typedef struct {
     int b_level;                /* value stack level to pop to */
 } PyTryBlock;
 
-typedef struct _frame {
+struct _frame {
     PyObject_VAR_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */
     PyCodeObject *f_code;       /* code segment */
@@ -44,7 +44,7 @@ typedef struct _frame {
     char f_executing;           /* whether the frame is still executing */
     PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
     PyObject *f_localsplus[1];  /* locals+stack, dynamically sized */
-} PyFrameObject;
+};
 
 
 /* Standard object interface */
@@ -75,12 +75,9 @@ PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
 PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
-PyAPI_FUNC(int) PyFrame_ClearFreeList(void);
-
 PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 
-/* Return the line of code the frame is currently executing. */
-PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject *);
+PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
 
 #ifdef __cplusplus
 }
