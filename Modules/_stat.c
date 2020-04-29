@@ -497,7 +497,7 @@ stat_exec(PyObject *module)
 {
 #define ADD_INT_MACRO(module, macro)                                  \
     do {                                                              \
-        if (PyModule_AddIntMacro(module, macro) < 0) {                \
+        if (PyModule_AddIntConstant(module, #macro, macro) < 0) {     \
             return -1;                                                \
         }                                                             \
     } while (0)
