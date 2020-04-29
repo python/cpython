@@ -88,6 +88,12 @@ round(double x)
 #    include <intrin.h>
 #    pragma intrinsic(_BitScanReverse)
 
+#include <limits.h>
+
+#ifdef MS_WINDOWS
+#  include <intrin.h>
+#  pragma intrinsic(_BitScanReverse)
+
 static inline int
 __builtin_clzl(unsigned long x)
  {
@@ -108,7 +114,7 @@ unsigned int _Py_bit_length(unsigned long d) {
 #  if SIZEOF_LONG > 8
 #  error _Py_bit_length should be fixed for sizeof (unsigned long) > 8
 #  endif
-  
+
   int shift = (d >> (1 << 5) != 0) << 5;
   unsigned int ui_value = d >> shift;
 #else /* 32 bits and less */
