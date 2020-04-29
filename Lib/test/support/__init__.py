@@ -14,7 +14,6 @@ import glob
 import hashlib
 import importlib
 import importlib.util
-import locale
 import os
 import platform
 import re
@@ -1622,6 +1621,7 @@ def run_with_locale(catstr, *locales):
     def decorator(func):
         def inner(*args, **kwds):
             try:
+                import locale
                 category = getattr(locale, catstr)
                 orig_locale = locale.setlocale(category)
             except AttributeError:
@@ -2432,6 +2432,7 @@ def skip_if_buggy_ucrt_strfptime(test):
     See bpo-37552 [Windows] strptime/strftime return invalid
     results with UCRT version 17763.615
     """
+    import locale
     global _buggy_ucrt
     if _buggy_ucrt is None:
         if(sys.platform == 'win32' and
