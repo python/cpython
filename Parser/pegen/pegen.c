@@ -693,16 +693,6 @@ _PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
 }
 
 int
-_PyPegen_lookahead_with_string(int positive, void *(func)(Parser *, const char *), Parser *p,
-                      const char *arg)
-{
-    int mark = p->mark;
-    void *res = func(p, arg);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
-
-int
 _PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int arg)
 {
     int mark = p->mark;
@@ -751,24 +741,6 @@ _PyPegen_get_last_nonnwhitespace_token(Parser *p)
     return token;
 }
 
-void *
-_PyPegen_async_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, ASYNC);
-}
-
-void *
-_PyPegen_await_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, AWAIT);
-}
-
-void *
-_PyPegen_endmarker_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, ENDMARKER);
-}
-
 expr_ty
 _PyPegen_name_token(Parser *p)
 {
@@ -792,24 +764,6 @@ void *
 _PyPegen_string_token(Parser *p)
 {
     return _PyPegen_expect_token(p, STRING);
-}
-
-void *
-_PyPegen_newline_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, NEWLINE);
-}
-
-void *
-_PyPegen_indent_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, INDENT);
-}
-
-void *
-_PyPegen_dedent_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, DEDENT);
 }
 
 static PyObject *

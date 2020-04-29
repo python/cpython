@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, IO, Text, Tuple
+from typing import Any, Dict, Optional, IO, Text, Tuple
 
 from pegen.grammar import (
     Cut,
@@ -19,7 +19,7 @@ from pegen.grammar import (
     Alt,
 )
 from pegen import grammar
-from pegen.parser_generator import dedupe, ParserGenerator
+from pegen.parser_generator import ParserGenerator
 
 MODULE_PREFIX = """\
 #!/usr/bin/env python3.8
@@ -173,7 +173,7 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
             else:
                 self.print("return None")
 
-    def visit_NamedItem(self, node: NamedItem, names: List[str]) -> None:
+    def visit_NamedItem(self, node: NamedItem) -> None:
         name, call = self.callmakervisitor.visit(node.item)
         if node.name:
             name = node.name
@@ -181,7 +181,7 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
             self.print(call)
         else:
             if name != "cut":
-                name = dedupe(name, names)
+                name = self.dedupe(name)
             self.print(f"({name} := {call})")
 
     def visit_Rhs(self, node: Rhs, is_loop: bool = False, is_gather: bool = False) -> None:
@@ -191,34 +191,36 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
             self.visit(alt, is_loop=is_loop, is_gather=is_gather)
 
     def visit_Alt(self, node: Alt, is_loop: bool, is_gather: bool) -> None:
-        names: List[str] = []
-        self.print("cut = False")  # TODO: Only if needed.
-        if is_loop:
-            self.print("while (")
-        else:
-            self.print("if (")
-        with self.indent():
-            first = True
-            for item in node.items:
-                if first:
-                    first = False
-                else:
-                    self.print("and")
-                self.visit(item, names=names)
-        self.print("):")
-        with self.indent():
-            action = node.action
-            if not action:
-                if is_gather:
-                    assert len(names) == 2
-                    action = f"[{names[0]}] + {names[1]}"
-                else:
-                    action = f"[{', '.join(names)}]"
+        with self.local_variable_context():
+            self.print("cut = False")  # TODO: Only if needed.
             if is_loop:
-                self.print(f"children.append({action})")
-                self.print(f"mark = self.mark()")
+                self.print("while (")
             else:
-                self.print(f"return {action}")
-        self.print("self.reset(mark)")
-        # Skip remaining alternatives if a cut was reached.
-        self.print("if cut: return None")  # TODO: Only if needed.
+                self.print("if (")
+            with self.indent():
+                first = True
+                for item in node.items:
+                    if first:
+                        first = False
+                    else:
+                        self.print("and")
+                    self.visit(item)
+            self.print("):")
+            with self.indent():
+                action = node.action
+                if not action:
+                    if is_gather:
+                        assert len(self.local_variable_names) == 2
+                        action = (
+                            f"[{self.local_variable_names[0]}] + {self.local_variable_names[1]}"
+                        )
+                    else:
+                        action = f"[{', '.join(self.local_variable_names)}]"
+                if is_loop:
+                    self.print(f"children.append({action})")
+                    self.print(f"mark = self.mark()")
+                else:
+                    self.print(f"return {action}")
+            self.print("self.reset(mark)")
+            # Skip remaining alternatives if a cut was reached.
+            self.print("if cut: return None")  # TODO: Only if needed.
