@@ -4436,6 +4436,7 @@ class TestInvalidHandle(unittest.TestCase):
         t.join()
         self.assertIsInstance(self.exc, OSError)
         self.assertEqual(str(self.exc), "handle is closed")
+        del self.exc
 
 
 class OtherTest(unittest.TestCase):
