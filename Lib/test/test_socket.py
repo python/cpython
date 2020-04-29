@@ -1533,7 +1533,7 @@ class GeneralModuleTests(unittest.TestCase):
     def test_idna(self):
         # Check for internet access before running test
         # (issue #12804, issue #25138).
-        with support.transient_internet('python.org'):
+        with socket_helper.transient_internet('python.org'):
             socket.gethostbyname('python.org')
 
         # these should all be successful
