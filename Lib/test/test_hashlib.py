@@ -19,7 +19,6 @@ import unittest
 import warnings
 from test import support
 from test.support import _4G, bigmemtest, import_fresh_module
-from test.support import requires_hashdigest
 from http.client import HTTPException
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
