@@ -192,6 +192,12 @@ class Random(_random.Random):
 ## ---- Methods below this point do not need to be overridden when
 ## ---- subclassing for the purpose of using a different core generator.
 
+## -------------------- bytes methods ---------------------
+
+    def randbytes(self, n):
+        """Generate n random bytes."""
+        return self.getrandbits(n * 8).to_bytes(n, 'little')
+
 ## -------------------- pickle support  -------------------
 
     # Issue 17489: Since __reduce__ was defined to fix #759889 this is no
