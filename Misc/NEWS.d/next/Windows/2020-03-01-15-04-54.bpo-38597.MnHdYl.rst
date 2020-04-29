@@ -1,4 +1,0 @@
-:mod:`distutils` will no longer statically link :file:`vcruntime140.dll`
-when a redistributable version is unavailable. All future releases of
-CPython will include a copy of this DLL to ensure distributed extensions can
-continue to load.

@@ -1,1 +1,0 @@
-Correct performance degradation in ``zipfile.Path`` as found in zipp 3.0. While retaining compatibility, this change discourages the use of ``zipfile.Path.open`` due to the signature change in Python 3.9. For compatibility across Python 3.8 and later versions, consider using ``zipp.Path`` on Python 3.8.x and earlier.
