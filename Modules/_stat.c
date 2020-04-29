@@ -495,219 +495,98 @@ ST_CTIME\n\
 static int
 stat_exec(PyObject *module)
 {
-    if (PyModule_AddIntMacro(module, S_IFDIR) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IFCHR) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IFBLK) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IFREG) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IFIFO) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IFLNK) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IFSOCK) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IFDOOR) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IFPORT) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IFWHT) < 0) {
-        return -1;
-    }
+#define ADD_INT_MACRO(module, macro)                                  \
+    do {                                                              \
+        if (PyModule_AddIntMacro(module, macro) < 0) {                \
+            return -1;                                                \
+        }                                                             \
+    } while (0)
 
-    if (PyModule_AddIntMacro(module, S_ISUID) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_ISGID) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_ISVTX) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_ENFMT) < 0) {
-        return -1;
-    }
+    ADD_INT_MACRO(module, S_IFDIR);
+    ADD_INT_MACRO(module, S_IFCHR);
+    ADD_INT_MACRO(module, S_IFBLK);
+    ADD_INT_MACRO(module, S_IFREG);
+    ADD_INT_MACRO(module, S_IFIFO);
+    ADD_INT_MACRO(module, S_IFLNK);
+    ADD_INT_MACRO(module, S_IFSOCK);
+    ADD_INT_MACRO(module, S_IFDOOR);
+    ADD_INT_MACRO(module, S_IFPORT);
+    ADD_INT_MACRO(module, S_IFWHT);
 
-    if (PyModule_AddIntMacro(module, S_IREAD) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IWRITE) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IEXEC) < 0) {
-        return -1;
-    }
+    ADD_INT_MACRO(module, S_ISUID);
+    ADD_INT_MACRO(module, S_ISGID);
+    ADD_INT_MACRO(module, S_ISVTX);
+    ADD_INT_MACRO(module, S_ENFMT);
 
-    if (PyModule_AddIntMacro(module, S_IRWXU) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IRUSR) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IWUSR) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IXUSR) < 0) {
-        return -1;
-    }
+    ADD_INT_MACRO(module, S_IREAD);
+    ADD_INT_MACRO(module, S_IWRITE);
+    ADD_INT_MACRO(module, S_IEXEC);
 
-    if (PyModule_AddIntMacro(module, S_IRWXG) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IRGRP) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IWGRP) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IXGRP) < 0) {
-        return -1;
-    }
+    ADD_INT_MACRO(module, S_IRWXU);
+    ADD_INT_MACRO(module, S_IRUSR);
+    ADD_INT_MACRO(module, S_IWUSR);
+    ADD_INT_MACRO(module, S_IXUSR);
 
-    if (PyModule_AddIntMacro(module, S_IRWXO) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IROTH) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IWOTH) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, S_IXOTH) < 0) {
-        return -1;
-    }
+    ADD_INT_MACRO(module, S_IRWXG);
+    ADD_INT_MACRO(module, S_IRGRP);
+    ADD_INT_MACRO(module, S_IWGRP);
+    ADD_INT_MACRO(module, S_IXGRP);
 
-    if (PyModule_AddIntMacro(module, UF_NODUMP) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, UF_IMMUTABLE) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, UF_APPEND) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, UF_OPAQUE) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, UF_NOUNLINK) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, UF_COMPRESSED) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, UF_HIDDEN) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, SF_ARCHIVED) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, SF_IMMUTABLE) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, SF_APPEND) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, SF_NOUNLINK) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, SF_SNAPSHOT) < 0) {
-        return -1;
-    }
+    ADD_INT_MACRO(module, S_IRWXO);
+    ADD_INT_MACRO(module, S_IROTH);
+    ADD_INT_MACRO(module, S_IWOTH);
+    ADD_INT_MACRO(module, S_IXOTH);
 
-    if (PyModule_AddIntConstant(module, "ST_MODE", 0) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntConstant(module, "ST_INO", 1) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntConstant(module, "ST_DEV", 2) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntConstant(module, "ST_NLINK", 3) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntConstant(module, "ST_UID", 4) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntConstant(module, "ST_GID", 5) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntConstant(module, "ST_SIZE", 6) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntConstant(module, "ST_ATIME", 7) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntConstant(module, "ST_MTIME", 8) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntConstant(module, "ST_CTIME", 9) < 0) {
-        return -1;
+    ADD_INT_MACRO(module, UF_NODUMP);
+    ADD_INT_MACRO(module, UF_IMMUTABLE);
+    ADD_INT_MACRO(module, UF_APPEND);
+    ADD_INT_MACRO(module, UF_OPAQUE);
+    ADD_INT_MACRO(module, UF_NOUNLINK);
+    ADD_INT_MACRO(module, UF_COMPRESSED);
+    ADD_INT_MACRO(module, UF_HIDDEN);
+    ADD_INT_MACRO(module, SF_ARCHIVED);
+    ADD_INT_MACRO(module, SF_IMMUTABLE);
+    ADD_INT_MACRO(module, SF_APPEND);
+    ADD_INT_MACRO(module, SF_NOUNLINK);
+    ADD_INT_MACRO(module, SF_SNAPSHOT);
+
+    const char* st_constants[] = {
+        "ST_MODE",
+        "ST_INO",
+        "ST_DEV",
+        "ST_NLINK",
+        "ST_UID",
+        "ST_GID",
+        "ST_SIZE",
+        "ST_ATIME",
+        "ST_MTIME",
+        "ST_CTIME"
+    };
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(st_constants); i++) {
+        if (PyModule_AddIntConstant(module, st_constants[i], i) < 0) {
+            return -1;
+        }
     }
 
 #ifdef MS_WINDOWS
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_ARCHIVE) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_COMPRESSED) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_DEVICE) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_DIRECTORY) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_ENCRYPTED) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_HIDDEN) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_INTEGRITY_STREAM) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_NORMAL) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_NO_SCRUB_DATA) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_OFFLINE) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_READONLY) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_REPARSE_POINT) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_SPARSE_FILE) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_SYSTEM) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_TEMPORARY) < 0) {
-        return -1;
-    }
-    if (PyModule_AddIntMacro(module, FILE_ATTRIBUTE_VIRTUAL) < 0) {
-        return -1;
-    }
+    ADD_INT_MACROmodule, FILE_ATTRIBUTE_ARCHIVE);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_COMPRESSED);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_DEVICE);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_DIRECTORY);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_ENCRYPTED);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_HIDDEN);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_INTEGRITY_STREAM);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_NORMAL);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_NO_SCRUB_DATA);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_OFFLINE);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_READONLY);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_REPARSE_POINT);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_SPARSE_FILE);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_SYSTEM);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_TEMPORARY);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_VIRTUAL);
 
     if (PyModule_AddObject(module, "IO_REPARSE_TAG_SYMLINK",
         PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
