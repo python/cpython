@@ -20,7 +20,7 @@ _PyPegen_new_type_comment(Parser *p, char *tc)
 }
 
 arg_ty
-_PyPegen_add_type_comment(Parser *p, arg_ty a, char *tc)
+_PyPegen_add_type_comment_to_arg(Parser *p, arg_ty a, char *tc)
 {
     if (tc == NULL) {
         return a;
@@ -1190,10 +1190,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     mod_ty result = NULL;
 
     int parser_flags = compute_parser_flags(flags);
-
-    if (parser_flags & PyPARSE_TYPE_COMMENTS) {
-        tok->type_comments = 1;
-    }
+    tok->type_comments = (parser_flags & PyPARSE_TYPE_COMMENTS) > 0;
 
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, NULL, arena);
     if (p == NULL) {
@@ -1606,7 +1603,7 @@ _PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value, char *tc)
     if (!a) {
         return NULL;
     }
-    a->arg = _PyPegen_add_type_comment(p, arg, tc);
+    a->arg = _PyPegen_add_type_comment_to_arg(p, arg, tc);
     a->value = value;
     return a;
 }
