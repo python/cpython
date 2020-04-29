@@ -1,9 +1,6 @@
 import ast
-import os
-import sys
 import _peg_parser as peg_parser
 import unittest
-from pathlib import PurePath
 from typing import Any, Union, Iterable, Tuple
 from textwrap import dedent
 from test import support
