@@ -88,12 +88,6 @@ round(double x)
 #    include <intrin.h>
 #    pragma intrinsic(_BitScanReverse)
 
-#include <limits.h>
-
-#ifdef MS_WINDOWS
-#  include <intrin.h>
-#  pragma intrinsic(_BitScanReverse)
-
 static inline int
 __builtin_clzl(unsigned long x)
  {
