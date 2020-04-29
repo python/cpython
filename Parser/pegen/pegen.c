@@ -25,7 +25,7 @@ _PyPegen_add_type_comment(Parser *p, arg_ty a, char *tc)
     if (tc == NULL) {
         return a;
     }
-    PyObject *tco = _PyPegen_new_type_comment(p, tc);
+    PyObject *tco = NEW_TYPE_COMMENT(tc);
     if (tco == NULL) {
         return NULL;
     }
