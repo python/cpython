@@ -8,7 +8,6 @@ import pickle
 import unittest
 import operator
 import struct
-import sys
 from test import support
 from test.support.script_helper import assert_python_failure
 from test.support.script_helper import assert_python_ok
