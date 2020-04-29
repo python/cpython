@@ -393,8 +393,10 @@ class SequenceMatcher:
         # the unique 'b's and then matching the first two 'a's.
 
         a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
-        ahi = len(a) if ahi is None else ahi
-        bhi = len(b) if bhi is None else bhi
+        if ahi is None:
+            ahi = len(a)
+        if bhi is None:
+            bhi = len(b)
         besti, bestj, bestsize = alo, blo, 0
         # find longest junk-free match
         # during an iteration of the loop, j2len[j] = length of longest
