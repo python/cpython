@@ -328,7 +328,6 @@ class TypeCommentTests(unittest.TestCase):
         tree = self.classic_parse(ignores)
         self.assertEqual(tree.type_ignores, [])
 
-    @support.skip_if_new_parser("Pegen does not support per-argument type comments yet")
     def test_longargs(self):
         for tree in self.parse_all(longargs):
             for t in tree.body:

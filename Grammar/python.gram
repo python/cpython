@@ -244,18 +244,18 @@ kwds[arg_ty]:
 # The latter form is for a final parameter without trailing comma.
 #
 param_no_default[arg_ty]:
-    | a=NAME b=annotation? ',' tc=TYPE_COMMENT? { _Py_arg(a->v.Name.id, b, tc, EXTRA) }
-    | a=NAME b=annotation? tc=TYPE_COMMENT? &')' { _Py_arg(a->v.Name.id, b, tc, EXTRA) }
+    | a=NAME b=annotation? ',' tc=TYPE_COMMENT? { _Py_arg(a->v.Name.id, b, NEW_TYPE_COMMENT(tc), EXTRA) }
+    | a=NAME b=annotation? tc=TYPE_COMMENT? &')' { _Py_arg(a->v.Name.id, b, NEW_TYPE_COMMENT(tc), EXTRA) }
 param_with_default[NameDefaultPair*]:
     | a=NAME b=annotation? c=default ',' tc=TYPE_COMMENT? {
-        _PyPegen_name_default_pair(p, _Py_arg(a->v.Name.id, b, tc, EXTRA), c) }
+        _PyPegen_name_default_pair(p, _Py_arg(a->v.Name.id, b, NEW_TYPE_COMMENT(tc), EXTRA), c) }
     | a=NAME b=annotation? c=default tc=TYPE_COMMENT? &')' {
-        _PyPegen_name_default_pair(p, _Py_arg(a->v.Name.id, b, tc, EXTRA), c) }
+        _PyPegen_name_default_pair(p, _Py_arg(a->v.Name.id, b, NEW_TYPE_COMMENT(tc), EXTRA), c) }
 param_maybe_default[NameDefaultPair*]:
     | a=NAME b=annotation? c=default? ',' tc=TYPE_COMMENT? {
-        _PyPegen_name_default_pair(p, _Py_arg(a->v.Name.id, b, tc, EXTRA), c) }
+        _PyPegen_name_default_pair(p, _Py_arg(a->v.Name.id, b, NEW_TYPE_COMMENT(tc), EXTRA), c) }
     | a=NAME b=annotation? c=default? tc=TYPE_COMMENT? &')' {
-        _PyPegen_name_default_pair(p, _Py_arg(a->v.Name.id, b, tc, EXTRA), c) }
+        _PyPegen_name_default_pair(p, _Py_arg(a->v.Name.id, b, NEW_TYPE_COMMENT(tc), EXTRA), c) }
 
 annotation[expr_ty]: ':' a=expression { a }
 default[expr_ty]: '=' a=expression { a }

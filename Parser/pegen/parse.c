@@ -3968,7 +3968,7 @@ param_no_default_rule(Parser *p)
             UNUSED(end_lineno); // Only used by EXTRA macro
             int end_col_offset = token->end_col_offset;
             UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _Py_arg ( a -> v . Name . id , b , tc , EXTRA );
+            res = _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -3999,7 +3999,7 @@ param_no_default_rule(Parser *p)
             UNUSED(end_lineno); // Only used by EXTRA macro
             int end_col_offset = token->end_col_offset;
             UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _Py_arg ( a -> v . Name . id , b , tc , EXTRA );
+            res = _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -4058,7 +4058,7 @@ param_with_default_rule(Parser *p)
             UNUSED(end_lineno); // Only used by EXTRA macro
             int end_col_offset = token->end_col_offset;
             UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , tc , EXTRA ) , c );
+            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA ) , c );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -4092,7 +4092,7 @@ param_with_default_rule(Parser *p)
             UNUSED(end_lineno); // Only used by EXTRA macro
             int end_col_offset = token->end_col_offset;
             UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , tc , EXTRA ) , c );
+            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA ) , c );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -4151,7 +4151,7 @@ param_maybe_default_rule(Parser *p)
             UNUSED(end_lineno); // Only used by EXTRA macro
             int end_col_offset = token->end_col_offset;
             UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , tc , EXTRA ) , c );
+            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA ) , c );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -4185,7 +4185,7 @@ param_maybe_default_rule(Parser *p)
             UNUSED(end_lineno); // Only used by EXTRA macro
             int end_col_offset = token->end_col_offset;
             UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , tc , EXTRA ) , c );
+            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA ) , c );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
