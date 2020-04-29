@@ -87,7 +87,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
         head, tail = self.lookahead_call_helper(node)
         return None, f"self.positive_lookahead({head}, {tail})", False
 
-    def visit_NegativeLookahead(self, node: NegativeLookahead) -> Tuple[None, str]:
+    def visit_NegativeLookahead(self, node: NegativeLookahead) -> Tuple[None, str, bool]:
         head, tail = self.lookahead_call_helper(node)
         return None, f"self.negative_lookahead({head}, {tail})", False
 
