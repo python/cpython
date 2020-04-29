@@ -172,7 +172,6 @@ class _ConnectionBase:
 
     def fileno(self):
         """File descriptor or handle of the connection"""
-        self._check_closed()
         return self._handle
 
     def close(self):
@@ -185,7 +184,6 @@ class _ConnectionBase:
 
     def send_bytes(self, buf, offset=0, size=None):
         """Send the bytes data from a bytes-like object"""
-        self._check_closed()
         self._check_writable()
         m = memoryview(buf)
         # HACK for byte-indexing of non-bytewise buffers (e.g. array.array)
@@ -206,7 +204,6 @@ class _ConnectionBase:
 
     def send(self, obj):
         """Send a (picklable) object"""
-        self._check_closed()
         self._check_writable()
         self._send_bytes(_ForkingPickler.dumps(obj))
 
@@ -214,7 +211,6 @@ class _ConnectionBase:
         """
         Receive bytes data as a bytes object.
         """
-        self._check_closed()
         self._check_readable()
         if maxlength is not None and maxlength < 0:
             raise ValueError("negative maxlength")
@@ -228,7 +224,6 @@ class _ConnectionBase:
         Receive bytes data into a writeable bytes-like object.
         Return the number of bytes read.
         """
-        self._check_closed()
         self._check_readable()
         with memoryview(buf) as m:
             # Get bytesize of arbitrary buffer
@@ -250,14 +245,12 @@ class _ConnectionBase:
 
     def recv(self):
         """Receive a (picklable) object"""
-        self._check_closed()
         self._check_readable()
         buf = self._recv_bytes()
         return _ForkingPickler.loads(buf.getbuffer())
 
     def poll(self, timeout=0.0):
         """Whether there is any input available to be read"""
-        self._check_closed()
         self._check_readable()
         return self._poll(timeout)
 
@@ -370,7 +363,13 @@ class Connection(_ConnectionBase):
     def _send(self, buf, write=_write):
         remaining = len(buf)
         while True:
-            n = write(self._handle, buf)
+            try:
+                n = write(self._handle, buf)
+            except TypeError:
+                if self._handle is None:
+                    raise OSError("handle is closed") from None
+                raise
+
             remaining -= n
             if remaining == 0:
                 break
@@ -381,7 +380,13 @@ class Connection(_ConnectionBase):
         handle = self._handle
         remaining = size
         while remaining > 0:
-            chunk = read(handle, remaining)
+            try:
+                chunk = read(handle, remaining)
+            except TypeError:
+                if self._handle is None:
+                    raise OSError("handle is closed") from None
+                raise
+
             n = len(chunk)
             if n == 0:
                 if remaining == size:

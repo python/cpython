@@ -1,0 +1,2 @@
+Fixed race condition in :class:`multiprocessing.connection.Connection`.
+Patch contributed by Rémi Lapeyre.
