@@ -160,30 +160,11 @@ class GeneratedParser(Parser):
         cut = False
         rulename = self.rulename()
         if rulename:
-            opt = self.memoflag(),
-            if opt:
-                literal = self.expect(":")
-                if literal:
-                    alts = self.alts()
-                    if alts:
-                        newline = self.expect('NEWLINE')
-                        if newline:
-                            indent = self.expect('INDENT')
-                            if indent:
-                                more_alts = self.more_alts()
-                                if more_alts:
-                                    dedent = self.expect('DEDENT')
-                                    if dedent:
-                                        return Rule ( rulename [ 0 ] , rulename [ 1 ] , Rhs ( alts . alts + more_alts . alts ) , memo = opt )
-        self.reset(mark)
-        if cut: return None
-        cut = False
-        rulename = self.rulename()
-        if rulename:
-            opt = self.memoflag(),
-            if opt:
-                literal = self.expect(":")
-                if literal:
+            opt = self.memoflag()
+            literal = self.expect(":")
+            if literal:
+                alts = self.alts()
+                if alts:
                     newline = self.expect('NEWLINE')
                     if newline:
                         indent = self.expect('INDENT')
@@ -192,21 +173,37 @@ class GeneratedParser(Parser):
                             if more_alts:
                                 dedent = self.expect('DEDENT')
                                 if dedent:
-                                    return Rule ( rulename [ 0 ] , rulename [ 1 ] , more_alts , memo = opt )
+                                    return Rule ( rulename [ 0 ] , rulename [ 1 ] , Rhs ( alts . alts + more_alts . alts ) , memo = opt )
         self.reset(mark)
         if cut: return None
         cut = False
         rulename = self.rulename()
         if rulename:
-            opt = self.memoflag(),
-            if opt:
-                literal = self.expect(":")
-                if literal:
-                    alts = self.alts()
-                    if alts:
-                        newline = self.expect('NEWLINE')
-                        if newline:
-                            return Rule ( rulename [ 0 ] , rulename [ 1 ] , alts , memo = opt )
+            opt = self.memoflag()
+            literal = self.expect(":")
+            if literal:
+                newline = self.expect('NEWLINE')
+                if newline:
+                    indent = self.expect('INDENT')
+                    if indent:
+                        more_alts = self.more_alts()
+                        if more_alts:
+                            dedent = self.expect('DEDENT')
+                            if dedent:
+                                return Rule ( rulename [ 0 ] , rulename [ 1 ] , more_alts , memo = opt )
+        self.reset(mark)
+        if cut: return None
+        cut = False
+        rulename = self.rulename()
+        if rulename:
+            opt = self.memoflag()
+            literal = self.expect(":")
+            if literal:
+                alts = self.alts()
+                if alts:
+                    newline = self.expect('NEWLINE')
+                    if newline:
+                        return Rule ( rulename [ 0 ] , rulename [ 1 ] , alts , memo = opt )
         self.reset(mark)
         if cut: return None
         return None
@@ -383,10 +380,9 @@ class GeneratedParser(Parser):
             literal = self.expect('=')
             if literal:
                 cut = True
-                if cut:
-                    item = self.item()
-                    if item:
-                        return NamedItem ( name . string , item )
+                item = self.item()
+                if item:
+                    return NamedItem ( name . string , item )
         self.reset(mark)
         if cut: return None
         cut = False
@@ -411,20 +407,18 @@ class GeneratedParser(Parser):
         literal = self.expect('&')
         if literal:
             cut = True
-            if cut:
-                atom = self.atom()
-                if atom:
-                    return PositiveLookahead ( atom )
+            atom = self.atom()
+            if atom:
+                return PositiveLookahead ( atom )
         self.reset(mark)
         if cut: return None
         cut = False
         literal = self.expect('!')
         if literal:
             cut = True
-            if cut:
-                atom = self.atom()
-                if atom:
-                    return NegativeLookahead ( atom )
+            atom = self.atom()
+            if atom:
+                return NegativeLookahead ( atom )
         self.reset(mark)
         if cut: return None
         cut = False
@@ -443,12 +437,11 @@ class GeneratedParser(Parser):
         literal = self.expect('[')
         if literal:
             cut = True
-            if cut:
-                alts = self.alts()
-                if alts:
-                    literal_1 = self.expect(']')
-                    if literal_1:
-                        return Opt ( alts )
+            alts = self.alts()
+            if alts:
+                literal_1 = self.expect(']')
+                if literal_1:
+                    return Opt ( alts )
         self.reset(mark)
         if cut: return None
         cut = False
@@ -503,12 +496,11 @@ class GeneratedParser(Parser):
         literal = self.expect('(')
         if literal:
             cut = True
-            if cut:
-                alts = self.alts()
-                if alts:
-                    literal_1 = self.expect(')')
-                    if literal_1:
-                        return Group ( alts )
+            alts = self.alts()
+            if alts:
+                literal_1 = self.expect(')')
+                if literal_1:
+                    return Group ( alts )
         self.reset(mark)
         if cut: return None
         cut = False
@@ -533,12 +525,11 @@ class GeneratedParser(Parser):
         literal = self.expect("{")
         if literal:
             cut = True
-            if cut:
-                target_atoms = self.target_atoms()
-                if target_atoms:
-                    literal_1 = self.expect("}")
-                    if literal_1:
-                        return target_atoms
+            target_atoms = self.target_atoms()
+            if target_atoms:
+                literal_1 = self.expect("}")
+                if literal_1:
+                    return target_atoms
         self.reset(mark)
         if cut: return None
         return None
@@ -571,12 +562,11 @@ class GeneratedParser(Parser):
         literal = self.expect("{")
         if literal:
             cut = True
-            if cut:
-                target_atoms = self.target_atoms()
-                if target_atoms:
-                    literal_1 = self.expect("}")
-                    if literal_1:
-                        return "{" + target_atoms + "}"
+            target_atoms = self.target_atoms()
+            if target_atoms:
+                literal_1 = self.expect("}")
+                if literal_1:
+                    return "{" + target_atoms + "}"
         self.reset(mark)
         if cut: return None
         cut = False
