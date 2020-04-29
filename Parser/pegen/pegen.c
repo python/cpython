@@ -935,8 +935,9 @@ bad_single_statement(Parser *p)
     char c = *cur;
 
     for (;;) {
-        while (c == ' ' || c == '\t' || c == '\n' || c == '\014')
+        while (c == ' ' || c == '\t' || c == '\n' || c == '\014') {
             c = *++cur;
+        }
 
         if (!c) {
             return 0;
