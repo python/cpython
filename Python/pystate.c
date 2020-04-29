@@ -1042,11 +1042,13 @@ PyThreadState_GetInterpreter(PyThreadState *tstate)
 }
 
 
-struct _frame*
+PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    return tstate->frame;
+    PyFrameObject *frame = tstate->frame;
+    Py_XINCREF(frame);
+    return frame;
 }
 
 
@@ -1165,7 +1167,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
-            struct _frame *frame = t->frame;
+            PyFrameObject *frame = t->frame;
             if (frame == NULL) {
                 continue;
             }
