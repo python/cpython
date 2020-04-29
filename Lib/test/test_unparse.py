@@ -6,7 +6,6 @@ import pathlib
 import random
 import tokenize
 import ast
-import sys
 
 
 def read_pyfile(filename):
