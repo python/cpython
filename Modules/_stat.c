@@ -563,7 +563,7 @@ stat_exec(PyObject *module)
         "ST_CTIME"
     };
 
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(st_constants); i++) {
+    for (int i = 0; i < Py_ARRAY_LENGTH(st_constants); i++) {
         if (PyModule_AddIntConstant(module, st_constants[i], i) < 0) {
             return -1;
         }
@@ -589,15 +589,15 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, FILE_ATTRIBUTE_VIRTUAL);
 
     if (PyModule_AddObject(module, "IO_REPARSE_TAG_SYMLINK",
-        PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
+                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
             return -1;
     }
     if (PyModule_AddObject(module, "IO_REPARSE_TAG_MOUNT_POINT",
-        PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
+                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
             return -1;
     }
     if (PyModule_AddObject(module, "IO_REPARSE_TAG_APPEXECLINK",
-        PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
+                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
             return -1;
     }
 #endif
