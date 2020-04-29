@@ -922,6 +922,9 @@ newline_in_string(Parser *p, const char *cur)
     return 0;
 }
 
+/* Check that the source for a single input statement really is a single
+   statement by looking at what is left in the buffer after parsing.
+   Trailing whitespace and comments are OK. */
 static int // bool
 bad_single_statement(Parser *p)
 {
