@@ -938,16 +938,18 @@ bad_single_statement(Parser *p)
         while (c == ' ' || c == '\t' || c == '\n' || c == '\014')
             c = *++cur;
 
-        if (!c)
+        if (!c) {
             return 0;
+        }
 
         if (c != '#') {
             return 1;
         }
 
         /* Suck up comment. */
-        while (c && c != '\n')
+        while (c && c != '\n') {
             c = *++cur;
+        }
     }
 }
 
