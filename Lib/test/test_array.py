@@ -45,6 +45,14 @@ class MiscTest(unittest.TestCase):
         a += a
         self.assertEqual(len(a), 0)
 
+    def test_empty_mv(self):
+        # Exercise code for handling zero-length arrays from memoryview
+        apre = array.array('B')
+        a = array.array('B', memoryview(apre))
+        self.assertEqual(len(a + a), 0)
+        self.assertEqual(len(a * 3), 0)
+        a += a
+        self.assertEqual(len(a), 0)
 
 # Machine format codes.
 #
@@ -196,6 +204,20 @@ class BaseTest:
         self.assertGreaterEqual(a.itemsize, self.minitemsize)
         self.assertRaises(TypeError, array.array, self.typecode, None)
 
+        a_mv = array.array(self.typecode, memoryview(a))
+        self.assertEqual(a_mv.typecode, self.typecode)
+        self.assertGreaterEqual(a_mv.itemsize, self.minitemsize)
+
+        # check memoryview construction
+        if self.typecode not in {'b', 'B'}:
+            b = array.array('b', range(17))
+            b_mv = memoryview(b)
+            # bad length
+            self.assertRaises(ValueError, array.array, self.typecode, b_mv)
+            b_mv2 = b_mv[1:]
+            # bad alignment
+            self.assertRaises(ValueError, array.array, self.typecode, b_mv2)
+
     def test_len(self):
         a = array.array(self.typecode)
         a.append(self.example[0])
@@ -203,6 +225,9 @@ class BaseTest:
 
         a = array.array(self.typecode, self.example)
         self.assertEqual(len(a), len(self.example))
+
+        a_mv = array.array(self.typecode, memoryview(a))
+        self.assertEqual(len(a_mv), len(a))
 
     def test_buffer_info(self):
         a = array.array(self.typecode, self.example)
@@ -213,6 +238,10 @@ class BaseTest:
         self.assertIsInstance(bi[0], int)
         self.assertIsInstance(bi[1], int)
         self.assertEqual(bi[1], len(a))
+
+        a_mv = array.array(self.typecode, memoryview(a))
+        bi_mv = a_mv.buffer_info()
+        self.assertEqual(bi_mv, bi)
 
     def test_byteswap(self):
         if self.typecode == 'u':
@@ -237,6 +266,10 @@ class BaseTest:
         b = copy.copy(a)
         self.assertNotEqual(id(a), id(b))
         self.assertEqual(a, b)
+        a_mv = array.array(self.typecode, memoryview(a))
+        c = copy.copy(a)
+        self.assertNotEqual(id(a_mv), id(c))
+        self.assertEqual(a_mv, c)
 
     def test_deepcopy(self):
         import copy
@@ -244,6 +277,10 @@ class BaseTest:
         b = copy.deepcopy(a)
         self.assertNotEqual(id(a), id(b))
         self.assertEqual(a, b)
+        a_mv = array.array(self.typecode, memoryview(a))
+        c = copy.deepcopy(a)
+        self.assertNotEqual(id(a_mv), id(c))
+        self.assertEqual(a_mv, c)
 
     def test_reduce_ex(self):
         a = array.array(self.typecode, self.example)
@@ -363,6 +400,10 @@ class BaseTest:
             a,
             array.array(self.typecode, self.example + self.example[:1])
         )
+
+        a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
+        self.assertRaises(BufferError, a_mv.insert, 0, self.example[0])
 
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
@@ -599,30 +640,51 @@ class BaseTest:
         self.assertRaises(IndexError, a.__getitem__, len(self.example))
         self.assertRaises(IndexError, a.__getitem__, -len(self.example)-1)
 
+        a_mv = array.array(self.typecode, memoryview(a))
+        self.assertEntryEqual(a_mv[0], self.example[0])
+        self.assertEntryEqual(a_mv[0], self.example[0])
+        self.assertEntryEqual(a_mv[-1], self.example[-1])
+        self.assertEntryEqual(a_mv[-1], self.example[-1])
+        self.assertEntryEqual(a_mv[len(self.example)-1], self.example[-1])
+        self.assertEntryEqual(a_mv[-len(self.example)], self.example[0])
+
     def test_setitem(self):
         a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
         a[0] = a[-1]
         self.assertEntryEqual(a[0], a[-1])
+        self.assertEntryEqual(a_mv[0], a_mv[-1])
 
         a = array.array(self.typecode, self.example)
-        a[0] = a[-1]
-        self.assertEntryEqual(a[0], a[-1])
-
-        a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
         a[-1] = a[0]
         self.assertEntryEqual(a[0], a[-1])
+        self.assertEntryEqual(a_mv[0], a_mv[-1])
 
         a = array.array(self.typecode, self.example)
-        a[-1] = a[0]
+        a_mv = array.array(self.typecode, memoryview(a))
+        a_mv[0] = a_mv[-1]
         self.assertEntryEqual(a[0], a[-1])
+        self.assertEntryEqual(a_mv[0], a_mv[-1])
 
         a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
+        a_mv[-1] = a_mv[0]
+        self.assertEntryEqual(a[0], a[-1])
+        self.assertEntryEqual(a_mv[0], a_mv[-1])
+
+        a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
         a[len(self.example)-1] = a[0]
+        a_mv[len(self.example)-1] = a_mv[0]
         self.assertEntryEqual(a[0], a[-1])
+        self.assertEntryEqual(a_mv[0], a_mv[-1])
 
         a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
         a[-len(self.example)] = a[-1]
         self.assertEntryEqual(a[0], a[-1])
+        self.assertEntryEqual(a_mv[0], a_mv[-1])
 
         self.assertRaises(TypeError, a.__setitem__)
         self.assertRaises(TypeError, a.__setitem__, None)
@@ -672,55 +734,66 @@ class BaseTest:
         self.assertRaises(IndexError, a.__delitem__, len(self.example))
         self.assertRaises(IndexError, a.__delitem__, -len(self.example)-1)
 
+        a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
+
+        self.assertRaises(BufferError, a.__delitem__, 0)
+        self.assertRaises(BufferError, a_mv.__delitem__, 0)
+
     def test_getslice(self):
         a = array.array(self.typecode, self.example)
-        self.assertEqual(a[:], a)
+        a_mv = array.array(self.typecode, memoryview(a))
 
-        self.assertEqual(
-            a[1:],
-            array.array(self.typecode, self.example[1:])
-        )
+        for handle in [a, a_mv]:
+            self.assertEqual(handle[:], handle)
 
-        self.assertEqual(
-            a[:1],
-            array.array(self.typecode, self.example[:1])
-        )
+            self.assertEqual(
+                handle[1:],
+                array.array(self.typecode, self.example[1:])
+            )
 
-        self.assertEqual(
-            a[:-1],
-            array.array(self.typecode, self.example[:-1])
-        )
+            self.assertEqual(
+                handle[:1],
+                array.array(self.typecode, self.example[:1])
+            )
 
-        self.assertEqual(
-            a[-1:],
-            array.array(self.typecode, self.example[-1:])
-        )
 
-        self.assertEqual(
-            a[-1:-1],
-            array.array(self.typecode)
-        )
+            self.assertEqual(
+                handle[:-1],
+                array.array(self.typecode, self.example[:-1])
+            )
 
-        self.assertEqual(
-            a[2:1],
-            array.array(self.typecode)
-        )
+            self.assertEqual(
+                handle[-1:],
+                array.array(self.typecode, self.example[-1:])
+            )
 
-        self.assertEqual(
-            a[1000:],
-            array.array(self.typecode)
-        )
-        self.assertEqual(a[-1000:], a)
-        self.assertEqual(a[:1000], a)
-        self.assertEqual(
-            a[:-1000],
-            array.array(self.typecode)
-        )
-        self.assertEqual(a[-1000:1000], a)
-        self.assertEqual(
-            a[2000:1000],
-            array.array(self.typecode)
-        )
+            self.assertEqual(
+                handle[-1:-1],
+                array.array(self.typecode)
+            )
+
+            self.assertEqual(
+                handle[2:1],
+                array.array(self.typecode)
+            )
+
+            self.assertEqual(
+                handle[1000:],
+                array.array(self.typecode)
+            )
+            self.assertEqual(handle[-1000:], handle)
+            self.assertEqual(handle[:1000], handle)
+            self.assertEqual(
+                handle[:-1000],
+                array.array(self.typecode)
+            )
+            self.assertEqual(handle[-1000:1000], handle)
+            self.assertEqual(
+                handle[2000:1000],
+                array.array(self.typecode)
+            )
+
 
     def test_extended_getslice(self):
         # Test extended slicing by comparing with list slicing
@@ -733,6 +806,16 @@ class BaseTest:
                 for step in indices[1:]:
                     self.assertEqual(list(a[start:stop:step]),
                                      list(a)[start:stop:step])
+
+        a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
+        for start in indices:
+            for stop in indices:
+                # Everything except the initial 0 (invalid step)
+                for step in indices[1:]:
+                    self.assertEqual(list(a_mv[start:stop:step]),
+                                     list(a_mv)[start:stop:step])
+
 
     def test_setslice(self):
         a = array.array(self.typecode, self.example)
@@ -846,20 +929,32 @@ class BaseTest:
     def test_index(self):
         example = 2*self.example
         a = array.array(self.typecode, example)
+        a_mv = array.array(self.typecode, memoryview(a))
         self.assertRaises(TypeError, a.index)
         for x in example:
             self.assertEqual(a.index(x), example.index(x))
+            self.assertEqual(a_mv.index(x), example.index(x))
+
         self.assertRaises(ValueError, a.index, None)
         self.assertRaises(ValueError, a.index, self.outside)
+
+        self.assertRaises(ValueError, a_mv.index, None)
+        self.assertRaises(ValueError, a_mv.index, self.outside)
 
     def test_count(self):
         example = 2*self.example
         a = array.array(self.typecode, example)
+        a_mv = array.array(self.typecode, memoryview(a))
         self.assertRaises(TypeError, a.count)
         for x in example:
             self.assertEqual(a.count(x), example.count(x))
+            self.assertEqual(a_mv.count(x), example.count(x))
+
         self.assertEqual(a.count(self.outside), 0)
         self.assertEqual(a.count(None), 0)
+
+        self.assertEqual(a_mv.count(self.outside), 0)
+        self.assertEqual(a_mv.count(None), 0)
 
     def test_remove(self):
         for x in self.example:
@@ -874,6 +969,10 @@ class BaseTest:
         self.assertRaises(ValueError, a.remove, self.outside)
 
         self.assertRaises(ValueError, a.remove, None)
+        a_mv = array.array(self.typecode, memoryview(a))
+
+        self.assertRaises(ValueError, a_mv.remove, self.outside)
+        self.assertRaises(BufferError, a_mv.remove, self.example[0])
 
     def test_pop(self):
         a = array.array(self.typecode)
@@ -901,6 +1000,11 @@ class BaseTest:
             a,
             array.array(self.typecode, self.example[3:]+self.example[:-1])
         )
+
+        a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
+        self.assertRaises(BufferError, a_mv.pop, 0)
+
 
     def test_reverse(self):
         a = array.array(self.typecode, self.example)
@@ -937,6 +1041,11 @@ class BaseTest:
             array.array(self.typecode, self.example+self.example[::-1])
         )
 
+        a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
+        with self.assertRaises(BufferError):
+            a_mv.extend(array.array(self.typecode, self.example[::-1]))
+
     def test_constructor_with_iterable_argument(self):
         a = array.array(self.typecode, iter(self.example))
         b = array.array(self.typecode, self.example)
@@ -970,37 +1079,40 @@ class BaseTest:
     def test_buffer(self):
         a = array.array(self.typecode, self.example)
         m = memoryview(a)
+        a_mv = array.array(self.typecode, m)
         expected = m.tobytes()
-        self.assertEqual(a.tobytes(), expected)
-        self.assertEqual(a.tobytes()[0], expected[0])
-        # Resizing is forbidden when there are buffer exports.
-        # For issue 4509, we also check after each error that
-        # the array was not modified.
-        self.assertRaises(BufferError, a.append, a[0])
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.extend, a[0:1])
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.remove, a[0])
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.pop, 0)
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.fromlist, a.tolist())
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, a.frombytes, a.tobytes())
-        self.assertEqual(m.tobytes(), expected)
-        if self.typecode == 'u':
-            self.assertRaises(BufferError, a.fromunicode, a.tounicode())
+
+        for handle in [a, a_mv]:
+            self.assertEqual(handle.tobytes(), expected)
+            self.assertEqual(handle.tobytes()[0], expected[0])
+            # Resizing is forbidden when there are buffer exports.
+            # For issue 4509, we also check after each error that
+            # the array was not modified.
+            self.assertRaises(BufferError, handle.append, handle[0])
             self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, operator.imul, a, 2)
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, operator.imul, a, 0)
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, operator.setitem, a, slice(0, 0), a)
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, operator.delitem, a, 0)
-        self.assertEqual(m.tobytes(), expected)
-        self.assertRaises(BufferError, operator.delitem, a, slice(0, 1))
-        self.assertEqual(m.tobytes(), expected)
+            self.assertRaises(BufferError, handle.extend, handle[0:1])
+            self.assertEqual(m.tobytes(), expected)
+            self.assertRaises(BufferError, handle.remove, handle[0])
+            self.assertEqual(m.tobytes(), expected)
+            self.assertRaises(BufferError, handle.pop, 0)
+            self.assertEqual(m.tobytes(), expected)
+            self.assertRaises(BufferError, handle.fromlist, handle.tolist())
+            self.assertEqual(m.tobytes(), expected)
+            self.assertRaises(BufferError, handle.frombytes, handle.tobytes())
+            self.assertEqual(m.tobytes(), expected)
+            if self.typecode == 'u':
+                self.assertRaises(BufferError, handle.fromunicode, handle.tounicode())
+                self.assertEqual(m.tobytes(), expected)
+            self.assertRaises(BufferError, operator.imul, handle, 2)
+            self.assertEqual(m.tobytes(), expected)
+            self.assertRaises(BufferError, operator.imul, handle, 0)
+            self.assertEqual(m.tobytes(), expected)
+            self.assertRaises(BufferError, operator.setitem, handle, slice(0, 0), handle)
+            self.assertEqual(m.tobytes(), expected)
+            self.assertRaises(BufferError, operator.delitem, handle, 0)
+            self.assertEqual(m.tobytes(), expected)
+            self.assertRaises(BufferError, operator.delitem, handle, slice(0, 1))
+            self.assertEqual(m.tobytes(), expected)
 
     def test_weakref(self):
         s = array.array(self.typecode, self.example)
@@ -1032,14 +1144,14 @@ class BaseTest:
     @support.cpython_only
     def test_sizeof_with_buffer(self):
         a = array.array(self.typecode, self.example)
-        basesize = support.calcvobjsize('Pn2Pi')
+        basesize = support.calcvobjsize('Pn2PiP')
         buffer_size = a.buffer_info()[1] * a.itemsize
         support.check_sizeof(self, a, basesize + buffer_size)
 
     @support.cpython_only
     def test_sizeof_without_buffer(self):
         a = array.array(self.typecode)
-        basesize = support.calcvobjsize('Pn2Pi')
+        basesize = support.calcvobjsize('Pn2PiP')
         support.check_sizeof(self, a, basesize)
 
     def test_initialize_with_unicode(self):
@@ -1115,19 +1227,39 @@ class UnicodeTest(StringTest, unittest.TestCase):
 
 class NumberTest(BaseTest):
 
+    def test_mview_init(self):
+        a = array.array(self.typecode, self.example)
+        a_mv = array.array(self.typecode, memoryview(a))
+
+        def different(x):
+            return int(not bool(x))
+
+        a[0] = different(a[0])
+        self.assertEqual(a[0], a_mv[0])
+
+        a_mv[-1] = different(a[-1])
+        self.assertEqual(a[-1], a_mv[-1])
+
+        a_shift_mv = array.array(self.typecode, memoryview(a)[1:])
+        a_shift_mv[2] = different(a_shift_mv[2])
+        self.assertEqual(a_shift_mv[2], a[3])
+
     def test_extslice(self):
         a = array.array(self.typecode, range(5))
-        self.assertEqual(a[::], a)
-        self.assertEqual(a[::2], array.array(self.typecode, [0,2,4]))
-        self.assertEqual(a[1::2], array.array(self.typecode, [1,3]))
-        self.assertEqual(a[::-1], array.array(self.typecode, [4,3,2,1,0]))
-        self.assertEqual(a[::-2], array.array(self.typecode, [4,2,0]))
-        self.assertEqual(a[3::-2], array.array(self.typecode, [3,1]))
-        self.assertEqual(a[-100:100:], a)
-        self.assertEqual(a[100:-100:-1], a[::-1])
-        self.assertEqual(a[-100:100:2], array.array(self.typecode, [0,2,4]))
-        self.assertEqual(a[1000:2000:2], array.array(self.typecode, []))
-        self.assertEqual(a[-1000:-2000:-2], array.array(self.typecode, []))
+        a_mv = array.array(self.typecode, memoryview(a))
+
+        for handle in [a, a_mv]:
+            self.assertEqual(handle[::], a)
+            self.assertEqual(handle[::2], array.array(self.typecode, [0,2,4]))
+            self.assertEqual(handle[1::2], array.array(self.typecode, [1,3]))
+            self.assertEqual(handle[::-1], array.array(self.typecode, [4,3,2,1,0]))
+            self.assertEqual(handle[::-2], array.array(self.typecode, [4,2,0]))
+            self.assertEqual(handle[3::-2], array.array(self.typecode, [3,1]))
+            self.assertEqual(handle[-100:100:], a)
+            self.assertEqual(handle[100:-100:-1], handle[::-1])
+            self.assertEqual(handle[-100:100:2], array.array(self.typecode, [0,2,4]))
+            self.assertEqual(handle[1000:2000:2], array.array(self.typecode, []))
+            self.assertEqual(handle[-1000:-2000:-2], array.array(self.typecode, []))
 
     def test_delslice(self):
         a = array.array(self.typecode, range(5))
@@ -1148,14 +1280,27 @@ class NumberTest(BaseTest):
 
     def test_assignment(self):
         a = array.array(self.typecode, range(10))
+        a_mv = array.array(self.typecode, memoryview(a))
         a[::2] = array.array(self.typecode, [42]*5)
         self.assertEqual(a, array.array(self.typecode, [42, 1, 42, 3, 42, 5, 42, 7, 42, 9]))
+        a_mv[::2] = array.array(self.typecode, [42]*5)
+        self.assertEqual(a_mv, array.array(self.typecode, [42, 1, 42, 3, 42, 5, 42, 7, 42, 9]))
+
         a = array.array(self.typecode, range(10))
+        a_mv = array.array(self.typecode, memoryview(a))
         a[::-4] = array.array(self.typecode, [10]*3)
         self.assertEqual(a, array.array(self.typecode, [0, 10, 2, 3, 4, 10, 6, 7, 8 ,10]))
+        a_mv[::-4] = array.array(self.typecode, [10]*3)
+        self.assertEqual(a_mv, array.array(self.typecode, [0, 10, 2, 3, 4, 10, 6, 7, 8 ,10]))
+
         a = array.array(self.typecode, range(4))
         a[::-1] = a
         self.assertEqual(a, array.array(self.typecode, [3, 2, 1, 0]))
+        a = array.array(self.typecode, range(4))
+        a_mv = array.array(self.typecode, memoryview(a))
+        a_mv[::-1] = a_mv
+        self.assertEqual(a_mv, array.array(self.typecode, [3, 2, 1, 0]))
+
         a = array.array(self.typecode, range(10))
         b = a[:]
         c = a[:]

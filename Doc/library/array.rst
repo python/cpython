@@ -68,27 +68,61 @@ The module defines the following type:
 
    A new array whose items are restricted by *typecode*, and initialized
    from the optional *initializer* value, which must be a list, a
-   :term:`bytes-like object`, or iterable over elements of the
-   appropriate type.
+   :term:`bytes-like object`, iterable over elements of the
+   appropriate type, or a memoryview.
+
+   If given a memoryview, then the array object uses the memoryview's
+   data directly instead of copying the data into a buffer it allocates itself.
+   The memoryview's buffer must be contiguous and have a base address and
+   length compatible with the array's specified typecode.
 
    If given a list or string, the initializer is passed to the new array's
    :meth:`fromlist`, :meth:`frombytes`, or :meth:`fromunicode` method (see below)
    to add initial items to the array.  Otherwise, the iterable initializer is
    passed to the :meth:`extend` method.
 
+
    .. audit-event:: array.__new__ typecode,initializer array.array
+
+
+
+Array objects support the ordinary sequence operations of indexing, slicing,
+concatenation, and multiplication.  When using slice assignment, the assigned
+value must be an array object with the same type code; in all other cases,
+:exc:`TypeError` is raised.
+
+Array objects implement the :ref:`bufferobjects`,
+and may be used wherever :term:`bytes-like objects <bytes-like object>`
+are supported.  When an array object is
+initialized from a memoryview or exports one, array operations
+(such as :meth:`pop`) that need to resize the underlying buffer will raise
+:exc:`BufferError`.  Ordinary element access is allowed.
+
+Initializing an array from another array always copies the data, but using
+a `memoryview` allows constructing array objects referring to the same underlying
+memory.  These can possibly have a different type or index only a portion
+of the original array. In this example, the slice
+operation to make `c` is applied to the `memoryview` and not the array itself::
+
+    >>> from array import array
+    >>> a = array('d', [1, 2, 3, 4])
+    >>> b = array('d', memoryview(a))
+    >>> c = array('d', memoryview(a)[1:])
+    >>> b[0] = 42
+    >>> c[0] = 42
+    >>> a
+    array('d', [42.0, 42.0, 3.0, 4.0])
+    >>> b
+    array('d', [42.0, 42.0, 3.0, 4.0])
+    >>> c
+    array('d', [42.0, 3.0, 4.0])
+
+The array object supports the following attributes:
 
 .. data:: typecodes
 
    A string with all available type codes.
 
-Array objects support the ordinary sequence operations of indexing, slicing,
-concatenation, and multiplication.  When using slice assignment, the assigned
-value must be an array object with the same type code; in all other cases,
-:exc:`TypeError` is raised. Array objects also implement the buffer interface,
-and may be used wherever :term:`bytes-like objects <bytes-like object>` are supported.
-
-The following data items and methods are also supported:
 
 .. attribute:: array.typecode
 
@@ -103,6 +137,8 @@ The following data items and methods are also supported:
 .. method:: array.append(x)
 
    Append a new item with value *x* to the end of the array.
+
+   Raises :exc:`BufferError` if the array's buffer is imported or exported.
 
 
 .. method:: array.buffer_info()
@@ -143,6 +179,8 @@ The following data items and methods are also supported:
    array, it must have *exactly* the same type code; if not, :exc:`TypeError` will
    be raised.  If *iterable* is not an array, it must be iterable and its elements
    must be the right type to be appended to the array.
+
+   Raises :exc:`BufferError` if the array's buffer is imported or exported.
 
 
 .. method:: array.frombytes(s)
@@ -188,6 +226,8 @@ The following data items and methods are also supported:
    Insert a new item with value *x* in the array before position *i*. Negative
    values are treated as being relative to the end of the array.
 
+   Raises :exc:`BufferError` if the array's buffer is imported or exported.
+
 
 .. method:: array.pop([i])
 
@@ -195,10 +235,15 @@ The following data items and methods are also supported:
    argument defaults to ``-1``, so that by default the last item is removed and
    returned.
 
+   Raises :exc:`BufferError` if the array's buffer is imported or exported.
+
 
 .. method:: array.remove(x)
 
    Remove the first occurrence of *x* from the array.
+
+   Raises :exc:`BufferError` if the array's buffer is imported or exported.
+
 
 
 .. method:: array.reverse()
