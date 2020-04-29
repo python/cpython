@@ -4390,8 +4390,15 @@ class _TestPollEintr(BaseTestCase):
             signal.signal(signal.SIGUSR1, oldhandler)
 
 #
-# Test to verify handle verification, see issue 3321
+# Test to verify handle verification, see issue 3321 and 40402
 #
+
+class SlowPicklable:
+    def __reduce__(self):
+        from time import sleep
+        sleep(1)
+        return (SlowPicklable, ())
+
 
 class TestInvalidHandle(unittest.TestCase):
 
@@ -4410,6 +4417,26 @@ class TestInvalidHandle(unittest.TestCase):
         self.assertRaises((ValueError, OSError),
                           multiprocessing.connection.Connection, -1)
 
+    def race_condition(self, parent):
+        try:
+            parent.send(SlowPicklable())
+        except Exception as e:
+            # It's not possible to mark a test failed in a thread so we send
+            # the exception back to the main thread.
+            self.exc = e
+        else:
+            self.exc = None
+
+    def test_closed_handled(self):
+        parent, child = multiprocessing.Pipe()
+
+        t = threading.Thread(target=self.race_condition, args=(parent,))
+        t.start()
+        parent.close()
+        t.join()
+        self.assertTrue(isinstance(self.exc, OSError))
+        self.assertEqual(str(self.exc), "handle is closed")
+        del self.exc
 
 
 class OtherTest(unittest.TestCase):
