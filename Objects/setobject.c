@@ -2384,12 +2384,6 @@ PySet_Add(PyObject *anyset, PyObject *key)
     return set_add_key((PySetObject *)anyset, key);
 }
 
-int
-PySet_ClearFreeList(void)
-{
-    return 0;
-}
-
 void
 _PySet_Fini(void)
 {

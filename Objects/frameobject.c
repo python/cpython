@@ -1200,11 +1200,9 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 }
 
 /* Clear out the free list */
-int
-PyFrame_ClearFreeList(void)
+void
+_PyFrame_ClearFreeList(void)
 {
-    int freelist_size = numfree;
-
     while (free_list != NULL) {
         PyFrameObject *f = free_list;
         free_list = free_list->f_back;
@@ -1212,13 +1210,12 @@ PyFrame_ClearFreeList(void)
         --numfree;
     }
     assert(numfree == 0);
-    return freelist_size;
 }
 
 void
 _PyFrame_Fini(void)
 {
-    (void)PyFrame_ClearFreeList();
+    _PyFrame_ClearFreeList();
 }
 
 /* Print summary info about the state of the optimized allocator */

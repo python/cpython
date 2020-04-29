@@ -1270,18 +1270,15 @@ get_token_missing(void)
 ///////////////////////////
 
 
-int
-PyContext_ClearFreeList(void)
+void
+_PyContext_ClearFreeList(void)
 {
-    int size = ctx_freelist_len;
-    while (ctx_freelist_len) {
+    for (; ctx_freelist_len; ctx_freelist_len--) {
         PyContext *ctx = ctx_freelist;
         ctx_freelist = (PyContext *)ctx->ctx_weakreflist;
         ctx->ctx_weakreflist = NULL;
         PyObject_GC_Del(ctx);
-        ctx_freelist_len--;
     }
-    return size;
 }
 
 
@@ -1289,8 +1286,8 @@ void
 _PyContext_Fini(void)
 {
     Py_CLEAR(_token_missing);
-    (void)PyContext_ClearFreeList();
-    (void)_PyHamt_Fini();
+    _PyContext_ClearFreeList();
+    _PyHamt_Fini();
 }
 
 
