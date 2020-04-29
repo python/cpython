@@ -1429,11 +1429,9 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 }
 
 
-int
-PyAsyncGen_ClearFreeLists(void)
+void
+_PyAsyncGen_ClearFreeLists(void)
 {
-    int ret = ag_value_freelist_free + ag_asend_freelist_free;
-
     while (ag_value_freelist_free) {
         _PyAsyncGenWrappedValue *o;
         o = ag_value_freelist[--ag_value_freelist_free];
@@ -1447,14 +1445,12 @@ PyAsyncGen_ClearFreeLists(void)
         assert(Py_IS_TYPE(o, &_PyAsyncGenASend_Type));
         PyObject_GC_Del(o);
     }
-
-    return ret;
 }
 
 void
 _PyAsyncGen_Fini(void)
 {
-    PyAsyncGen_ClearFreeLists();
+    _PyAsyncGen_ClearFreeLists();
 }
 
 
