@@ -272,10 +272,21 @@ if _winapi:
         _got_empty_message = False
 
         def _close(self, _CloseHandle=_winapi.CloseHandle):
-            _CloseHandle(self._handle)
+            try:
+                _CloseHandle(self._handle)
+            except TypeError:
+                if self._handle is None:
+                    raise OSError("handle is closed") from None
+                raise
 
         def _send_bytes(self, buf):
-            ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
+            try:
+                ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
+            except TypeError:
+                if self._handle is None:
+                    raise OSError("handle is closed") from None
+                raise
+
             try:
                 if err == _winapi.ERROR_IO_PENDING:
                     waitres = _winapi.WaitForMultipleObjects(
@@ -314,6 +325,10 @@ if _winapi:
                             return f
                         elif err == _winapi.ERROR_MORE_DATA:
                             return self._get_more_data(ov, maxsize)
+                except TypeError:
+                    if self._handle is None:
+                        raise OSError("handle is closed") from None
+                    raise
                 except OSError as e:
                     if e.winerror == _winapi.ERROR_BROKEN_PIPE:
                         raise EOFError
@@ -322,10 +337,15 @@ if _winapi:
             raise RuntimeError("shouldn't get here; expected KeyboardInterrupt")
 
         def _poll(self, timeout):
-            if (self._got_empty_message or
-                        _winapi.PeekNamedPipe(self._handle)[0] != 0):
-                return True
-            return bool(wait([self], timeout))
+            try:
+                if (self._got_empty_message or
+                            _winapi.PeekNamedPipe(self._handle)[0] != 0):
+                    return True
+                return bool(wait([self], timeout))
+            except TypeError:
+                if self._handle is None:
+                    raise OSError("handle is closed") from None
+                raise
 
         def _get_more_data(self, ov, maxsize):
             buf = ov.getbuffer()
