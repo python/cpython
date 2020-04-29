@@ -45,11 +45,13 @@ error:
 PyObject *
 _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *keywords[] = {"string", "mode", NULL};
+    static char *keywords[] = {"string", "mode", "oldparser", NULL};
     char *the_string;
     char *mode_str = "exec";
+    int oldparser = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|s", keywords, &the_string, &mode_str)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sp", keywords,
+            &the_string, &mode_str, &oldparser)) {
         return NULL;
     }
 
@@ -77,7 +79,13 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
     flags.cf_flags = PyCF_IGNORE_COOKIE;
 
-    mod_ty res = PyPegen_ASTFromString(the_string, mode, &flags, arena);
+    mod_ty res;
+    if (oldparser) {
+        res = PyParser_ASTFromString(the_string, "<string>", mode, &flags, arena);
+    }
+    else {
+        res = PyPegen_ASTFromString(the_string, mode, &flags, arena);
+    }
     if (res == NULL) {
         goto error;
     }
