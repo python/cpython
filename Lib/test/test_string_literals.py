@@ -33,7 +33,7 @@ import shutil
 import tempfile
 import unittest
 import warnings
-from test.support import check_syntax_warning, use_old_parser
+from test.support import use_old_parser
 
 
 TEMPLATE = r"""# coding: %s

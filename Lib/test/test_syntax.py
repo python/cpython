@@ -644,7 +644,6 @@ Corner-cases that used to crash:
 """
 
 import re
-import sys
 import unittest
 
 from test import support
