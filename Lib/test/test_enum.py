@@ -1751,6 +1751,16 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(Color.blue.value, 2)
         self.assertEqual(Color.green.value, 3)
 
+    def test_auto_order(self):
+        with self.assertRaises(TypeError):
+            class Color(Enum):
+                red = auto()
+                green = auto()
+                blue = auto()
+                def _generate_next_value_(name, start, count, last):
+                    return name
+
+
     def test_duplicate_auto(self):
         class Dupes(Enum):
             first = primero = auto()

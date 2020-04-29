@@ -681,13 +681,13 @@ _PyPegen_fill_token(Parser *p)
 
     int lineno = type == STRING ? p->tok->first_lineno : p->tok->lineno;
     const char *line_start = type == STRING ? p->tok->multi_line_start : p->tok->line_start;
-    size_t end_lineno = p->tok->lineno;
-    size_t col_offset = -1, end_col_offset = -1;
+    int end_lineno = p->tok->lineno;
+    int col_offset = -1, end_col_offset = -1;
     if (start != NULL && start >= line_start) {
-        col_offset = start - line_start;
+        col_offset = (int)(start - line_start);
     }
     if (end != NULL && end >= p->tok->line_start) {
-        end_col_offset = end - p->tok->line_start;
+        end_col_offset = (int)(end - p->tok->line_start);
     }
 
     t->lineno = p->starting_lineno + lineno;
@@ -777,16 +777,6 @@ _PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
 }
 
 int
-_PyPegen_lookahead_with_string(int positive, void *(func)(Parser *, const char *), Parser *p,
-                      const char *arg)
-{
-    int mark = p->mark;
-    void *res = func(p, arg);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
-
-int
 _PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int arg)
 {
     int mark = p->mark;
@@ -835,24 +825,6 @@ _PyPegen_get_last_nonnwhitespace_token(Parser *p)
     return token;
 }
 
-void *
-_PyPegen_async_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, ASYNC);
-}
-
-void *
-_PyPegen_await_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, AWAIT);
-}
-
-void *
-_PyPegen_endmarker_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, ENDMARKER);
-}
-
 expr_ty
 _PyPegen_name_token(Parser *p)
 {
@@ -876,30 +848,6 @@ void *
 _PyPegen_string_token(Parser *p)
 {
     return _PyPegen_expect_token(p, STRING);
-}
-
-void *
-_PyPegen_type_comment_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, TYPE_COMMENT);
-}
-
-void *
-_PyPegen_newline_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, NEWLINE);
-}
-
-void *
-_PyPegen_indent_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, INDENT);
-}
-
-void *
-_PyPegen_dedent_token(Parser *p)
-{
-    return _PyPegen_expect_token(p, DEDENT);
 }
 
 static PyObject *
@@ -999,6 +947,52 @@ _PyPegen_number_token(Parser *p)
 
     return Constant(c, NULL, t->lineno, t->col_offset, t->end_lineno, t->end_col_offset,
                     p->arena);
+}
+
+static int // bool
+newline_in_string(Parser *p, const char *cur)
+{
+    for (char c = *cur; cur >= p->tok->buf; c = *--cur) {
+        if (c == '\'' || c == '"') {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* Check that the source for a single input statement really is a single
+   statement by looking at what is left in the buffer after parsing.
+   Trailing whitespace and comments are OK. */
+static int // bool
+bad_single_statement(Parser *p)
+{
+    const char *cur = strchr(p->tok->buf, '\n');
+
+    /* Newlines are allowed if preceded by a line continuation character
+       or if they appear inside a string. */
+    if (!cur || *(cur - 1) == '\\' || newline_in_string(p, cur)) {
+        return 0;
+    }
+    char c = *cur;
+
+    for (;;) {
+        while (c == ' ' || c == '\t' || c == '\n' || c == '\014') {
+            c = *++cur;
+        }
+
+        if (!c) {
+            return 0;
+        }
+
+        if (c != '#') {
+            return 1;
+        }
+
+        /* Suck up comment. */
+        while (c && c != '\n') {
+            c = *++cur;
+        }
+    }
 }
 
 void
@@ -1109,6 +1103,11 @@ _PyPegen_run_parser(Parser *p)
             }
         }
         return NULL;
+    }
+
+    if (p->start_rule == Py_single_input && bad_single_statement(p)) {
+        p->tok->done = E_BADSINGLE; // This is not necessary for now, but might be in the future
+        return RAISE_SYNTAX_ERROR("multiple statements found while compiling a single statement");
     }
 
     return res;

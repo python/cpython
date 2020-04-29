@@ -449,6 +449,15 @@ static void fstring_shift_children_locations(expr_ty n, int lineno, int col_offs
         case Tuple_kind:
             fstring_shift_seq_locations(n, n->v.Tuple.elts, lineno, col_offset);
             break;
+        case JoinedStr_kind:
+            fstring_shift_seq_locations(n, n->v.JoinedStr.values, lineno, col_offset);
+            break;
+        case FormattedValue_kind:
+            shift_expr(n, n->v.FormattedValue.value, lineno, col_offset);
+            if (n->v.FormattedValue.format_spec) {
+                shift_expr(n, n->v.FormattedValue.format_spec, lineno, col_offset);
+            }
+            break;
         default:
             return;
     }

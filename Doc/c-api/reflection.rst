@@ -31,6 +31,28 @@ Reflection
    See also :c:func:`PyThreadState_GetFrame`.
 
 
+.. c:function:: int PyFrame_GetBack(PyFrameObject *frame)
+
+   Get the *frame* next outer frame.
+
+   Return a strong reference, or ``NULL`` if *frame* has no outer frame.
+
+   *frame* must not be ``NULL``.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: int PyFrame_GetCode(PyFrameObject *frame)
+
+   Get the *frame* code.
+
+   Return a strong reference.
+
+   *frame* must not be ``NULL``. The result (frame code) cannot be ``NULL``.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
 
    Return the line number that *frame* is currently executing.

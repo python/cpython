@@ -955,26 +955,22 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     return 0;
 }
 
-int
-PyTuple_ClearFreeList(void)
+void
+_PyTuple_ClearFreeList(void)
 {
-    int freelist_size = 0;
 #if PyTuple_MAXSAVESIZE > 0
-    int i;
-    for (i = 1; i < PyTuple_MAXSAVESIZE; i++) {
-        PyTupleObject *p, *q;
-        p = free_list[i];
-        freelist_size += numfree[i];
+    for (Py_ssize_t i = 1; i < PyTuple_MAXSAVESIZE; i++) {
+        PyTupleObject *p = free_list[i];
         free_list[i] = NULL;
         numfree[i] = 0;
         while (p) {
-            q = p;
+            PyTupleObject *q = p;
             p = (PyTupleObject *)(p->ob_item[0]);
             PyObject_GC_Del(q);
         }
     }
+    // the empty tuple singleton is only cleared by _PyTuple_Fini()
 #endif
-    return freelist_size;
 }
 
 void
@@ -985,7 +981,7 @@ _PyTuple_Fini(void)
      * rely on the fact that an empty tuple is a singleton. */
     Py_CLEAR(free_list[0]);
 
-    (void)PyTuple_ClearFreeList();
+    _PyTuple_ClearFreeList();
 #endif
 }
 

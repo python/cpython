@@ -664,7 +664,7 @@ file_rule(Parser *p)
         if (
             (a = statements_rule(p), 1)
             &&
-            (endmarker_var = _PyPegen_endmarker_token(p))
+            (endmarker_var = _PyPegen_expect_token(p, ENDMARKER))
         )
         {
             res = _PyPegen_make_module ( p , a );
@@ -728,7 +728,7 @@ eval_rule(Parser *p)
             &&
             (_loop0_1_var = _loop0_1_rule(p))
             &&
-            (endmarker_var = _PyPegen_endmarker_token(p))
+            (endmarker_var = _PyPegen_expect_token(p, ENDMARKER))
         )
         {
             res = Expression ( a , p -> arena );
@@ -1013,7 +1013,7 @@ statement_newline_rule(Parser *p)
         if (
             (a = compound_stmt_rule(p))
             &&
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             res = _PyPegen_singleton_seq ( p , a );
@@ -1039,7 +1039,7 @@ statement_newline_rule(Parser *p)
     { // NEWLINE
         void *newline_var;
         if (
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             Token *token = _PyPegen_get_last_nonnwhitespace_token(p);
@@ -1062,7 +1062,7 @@ statement_newline_rule(Parser *p)
     { // $
         void *endmarker_var;
         if (
-            (endmarker_var = _PyPegen_endmarker_token(p))
+            (endmarker_var = _PyPegen_expect_token(p, ENDMARKER))
         )
         {
             res = _PyPegen_interactive_exit ( p );
@@ -1096,7 +1096,7 @@ simple_stmt_rule(Parser *p)
             &&
             _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 13)
             &&
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             res = _PyPegen_singleton_seq ( p , a );
@@ -1118,7 +1118,7 @@ simple_stmt_rule(Parser *p)
             &&
             (opt_var = _PyPegen_expect_token(p, 13), 1)
             &&
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             res = a;
@@ -1587,7 +1587,7 @@ assignment_rule(Parser *p)
             &&
             (b = _tmp_22_rule(p))
             &&
-            (tc = _PyPegen_type_comment_token(p), 1)
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), 1)
         )
         {
             Token *token = _PyPegen_get_last_nonnwhitespace_token(p);
@@ -2856,7 +2856,7 @@ for_stmt_rule(Parser *p)
         expr_ty t;
         void *tc;
         if (
-            (is_async = _PyPegen_async_token(p), 1)
+            (is_async = _PyPegen_expect_token(p, ASYNC), 1)
             &&
             (keyword = _PyPegen_expect_token(p, 517))
             &&
@@ -2868,7 +2868,7 @@ for_stmt_rule(Parser *p)
             &&
             (literal = _PyPegen_expect_token(p, 11))
             &&
-            (tc = _PyPegen_type_comment_token(p), 1)
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), 1)
             &&
             (b = block_rule(p))
             &&
@@ -2925,7 +2925,7 @@ with_stmt_rule(Parser *p)
         void *literal_1;
         void *literal_2;
         if (
-            (is_async = _PyPegen_async_token(p), 1)
+            (is_async = _PyPegen_expect_token(p, ASYNC), 1)
             &&
             (keyword = _PyPegen_expect_token(p, 519))
             &&
@@ -2965,7 +2965,7 @@ with_stmt_rule(Parser *p)
         void *literal;
         void *tc;
         if (
-            (is_async = _PyPegen_async_token(p), 1)
+            (is_async = _PyPegen_expect_token(p, ASYNC), 1)
             &&
             (keyword = _PyPegen_expect_token(p, 519))
             &&
@@ -2973,7 +2973,7 @@ with_stmt_rule(Parser *p)
             &&
             (literal = _PyPegen_expect_token(p, 11))
             &&
-            (tc = _PyPegen_type_comment_token(p), 1)
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), 1)
             &&
             (b = block_rule(p))
         )
@@ -3442,7 +3442,7 @@ function_def_raw_rule(Parser *p)
         void *params;
         void *tc;
         if (
-            (is_async = _PyPegen_async_token(p), 1)
+            (is_async = _PyPegen_expect_token(p, ASYNC), 1)
             &&
             (keyword = _PyPegen_expect_token(p, 522))
             &&
@@ -3501,9 +3501,9 @@ func_type_comment_rule(Parser *p)
         void *newline_var;
         void *t;
         if (
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
             &&
-            (t = _PyPegen_type_comment_token(p))
+            (t = _PyPegen_expect_token(p, TYPE_COMMENT))
             &&
             _PyPegen_lookahead(1, _tmp_46_rule, p)
         )
@@ -3531,7 +3531,7 @@ func_type_comment_rule(Parser *p)
     { // TYPE_COMMENT
         void *type_comment_var;
         if (
-            (type_comment_var = _PyPegen_type_comment_token(p))
+            (type_comment_var = _PyPegen_expect_token(p, TYPE_COMMENT))
         )
         {
             res = type_comment_var;
@@ -3946,7 +3946,7 @@ param_no_default_rule(Parser *p)
             &&
             (literal = _PyPegen_expect_token(p, 12))
             &&
-            (tc = _PyPegen_type_comment_token(p), 1)
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), 1)
         )
         {
             res = _PyPegen_add_type_comment ( p , a , tc );
@@ -3964,7 +3964,7 @@ param_no_default_rule(Parser *p)
         if (
             (a = param_rule(p))
             &&
-            (tc = _PyPegen_type_comment_token(p), 1)
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), 1)
             &&
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 8)
         )
@@ -4004,7 +4004,7 @@ param_with_default_rule(Parser *p)
             &&
             (literal = _PyPegen_expect_token(p, 12))
             &&
-            (tc = _PyPegen_type_comment_token(p), 1)
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), 1)
         )
         {
             res = _PyPegen_name_default_pair ( p , a , c , tc );
@@ -4025,7 +4025,7 @@ param_with_default_rule(Parser *p)
             &&
             (c = default_rule(p))
             &&
-            (tc = _PyPegen_type_comment_token(p), 1)
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), 1)
             &&
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 8)
         )
@@ -4067,7 +4067,7 @@ param_maybe_default_rule(Parser *p)
             &&
             (literal = _PyPegen_expect_token(p, 12))
             &&
-            (tc = _PyPegen_type_comment_token(p), 1)
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), 1)
         )
         {
             res = _PyPegen_name_default_pair ( p , a , c , tc );
@@ -4088,7 +4088,7 @@ param_maybe_default_rule(Parser *p)
             &&
             (c = default_rule(p), 1)
             &&
-            (tc = _PyPegen_type_comment_token(p), 1)
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), 1)
             &&
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 8)
         )
@@ -4365,13 +4365,13 @@ block_rule(Parser *p)
         void *indent_var;
         void *newline_var;
         if (
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
             &&
-            (indent_var = _PyPegen_indent_token(p))
+            (indent_var = _PyPegen_expect_token(p, INDENT))
             &&
             (a = statements_rule(p))
             &&
-            (dedent_var = _PyPegen_dedent_token(p))
+            (dedent_var = _PyPegen_expect_token(p, DEDENT))
         )
         {
             res = a;
@@ -7117,7 +7117,7 @@ await_primary_rule(Parser *p)
         expr_ty a;
         void *await_var;
         if (
-            (await_var = _PyPegen_await_token(p))
+            (await_var = _PyPegen_expect_token(p, AWAIT))
             &&
             (a = primary_rule(p))
         )
@@ -10282,9 +10282,9 @@ invalid_block_rule(Parser *p)
     { // NEWLINE !INDENT
         void *newline_var;
         if (
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
             &&
-            _PyPegen_lookahead(0, _PyPegen_indent_token, p)
+            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, INDENT)
         )
         {
             res = RAISE_INDENTATION_ERROR ( "expected an indented block" );
@@ -10391,15 +10391,15 @@ invalid_double_type_comments_rule(Parser *p)
         void *type_comment_var;
         void *type_comment_var_1;
         if (
-            (type_comment_var = _PyPegen_type_comment_token(p))
+            (type_comment_var = _PyPegen_expect_token(p, TYPE_COMMENT))
             &&
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
             &&
-            (type_comment_var_1 = _PyPegen_type_comment_token(p))
+            (type_comment_var_1 = _PyPegen_expect_token(p, TYPE_COMMENT))
             &&
-            (newline_var_1 = _PyPegen_newline_token(p))
+            (newline_var_1 = _PyPegen_expect_token(p, NEWLINE))
             &&
-            (indent_var = _PyPegen_indent_token(p))
+            (indent_var = _PyPegen_expect_token(p, INDENT))
         )
         {
             res = RAISE_SYNTAX_ERROR ( "Cannot have two type comments on def" );
@@ -10436,7 +10436,7 @@ _loop0_1_rule(Parser *p)
     { // NEWLINE
         void *newline_var;
         while (
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             res = newline_var;
@@ -11013,7 +11013,7 @@ _tmp_14_rule(Parser *p)
     { // ASYNC
         void *async_var;
         if (
-            (async_var = _PyPegen_async_token(p))
+            (async_var = _PyPegen_expect_token(p, ASYNC))
         )
         {
             res = async_var;
@@ -11085,7 +11085,7 @@ _tmp_16_rule(Parser *p)
     { // ASYNC
         void *async_var;
         if (
-            (async_var = _PyPegen_async_token(p))
+            (async_var = _PyPegen_expect_token(p, ASYNC))
         )
         {
             res = async_var;
@@ -11121,7 +11121,7 @@ _tmp_17_rule(Parser *p)
     { // ASYNC
         void *async_var;
         if (
-            (async_var = _PyPegen_async_token(p))
+            (async_var = _PyPegen_expect_token(p, ASYNC))
         )
         {
             res = async_var;
@@ -12271,9 +12271,9 @@ _tmp_46_rule(Parser *p)
         void *indent_var;
         void *newline_var;
         if (
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
             &&
-            (indent_var = _PyPegen_indent_token(p))
+            (indent_var = _PyPegen_expect_token(p, INDENT))
         )
         {
             res = _PyPegen_dummy_name(p, newline_var, indent_var);
@@ -15856,7 +15856,7 @@ _tmp_131_rule(Parser *p)
             &&
             (f = named_expression_rule(p))
             &&
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             res = f;
@@ -16045,7 +16045,7 @@ _tmp_137_rule(Parser *p)
         void *keyword_1;
         void *y;
         if (
-            (y = _PyPegen_async_token(p), 1)
+            (y = _PyPegen_expect_token(p, ASYNC), 1)
             &&
             (keyword = _PyPegen_expect_token(p, 517))
             &&

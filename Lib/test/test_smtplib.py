@@ -20,9 +20,9 @@ import threading
 
 import unittest
 from test import support, mock_socket
+from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_setup, threading_cleanup, join_thread
-from test.support import requires_hashdigest
 from unittest.mock import Mock
 
 HOST = socket_helper.HOST
@@ -1058,7 +1058,7 @@ class SMTPSimTests(unittest.TestCase):
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
 
-    @requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5')
     def testAUTH_CRAM_MD5(self):
         self.serv.add_feature("AUTH CRAM-MD5")
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',

@@ -10,9 +10,9 @@ import calendar
 import threading
 import socket
 
-from test.support import (reap_threads, verbose, transient_internet,
-                          run_with_tz, run_with_locale, cpython_only,
-                          requires_hashdigest)
+from test.support import (reap_threads, verbose,
+                          run_with_tz, run_with_locale, cpython_only)
+from test.support import hashlib_helper
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -385,7 +385,7 @@ class NewIMAPTestsMixin():
         self.assertEqual(code, 'OK')
         self.assertEqual(server.response, b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
-    @requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5')
     def test_login_cram_md5_bytes(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -403,7 +403,7 @@ class NewIMAPTestsMixin():
         ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
-    @requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5')
     def test_login_cram_md5_plain_text(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -849,7 +849,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
                              b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
     @reap_threads
-    @requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5')
     def test_login_cram_md5(self):
 
         class AuthHandler(SimpleIMAPHandler):
@@ -968,16 +968,16 @@ class RemoteIMAPTest(unittest.TestCase):
     imap_class = imaplib.IMAP4
 
     def setUp(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             self.server = self.imap_class(self.host, self.port)
 
     def tearDown(self):
         if self.server is not None:
-            with transient_internet(self.host):
+            with socket_helper.transient_internet(self.host):
                 self.server.logout()
 
     def test_logincapa(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             for cap in self.server.capabilities:
                 self.assertIsInstance(cap, str)
             self.assertIn('LOGINDISABLED', self.server.capabilities)
@@ -986,7 +986,7 @@ class RemoteIMAPTest(unittest.TestCase):
             self.assertEqual(rs[0], 'OK')
 
     def test_logout(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             rs = self.server.logout()
             self.server = None
             self.assertEqual(rs[0], 'BYE', rs)
@@ -999,7 +999,7 @@ class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
 
     def setUp(self):
         super().setUp()
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             rs = self.server.starttls()
             self.assertEqual(rs[0], 'OK')
 
@@ -1039,24 +1039,24 @@ class RemoteIMAP_SSLTest(RemoteIMAPTest):
             server.logout()
 
     def test_logincapa(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             _server = self.imap_class(self.host, self.port)
             self.check_logincapa(_server)
 
     def test_logout(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             _server = self.imap_class(self.host, self.port)
             rs = _server.logout()
             self.assertEqual(rs[0], 'BYE', rs)
 
     def test_ssl_context_certfile_exclusive(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             self.assertRaises(
                 ValueError, self.imap_class, self.host, self.port,
                 certfile=CERTFILE, ssl_context=self.create_ssl_context())
 
     def test_ssl_context_keyfile_exclusive(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             self.assertRaises(
                 ValueError, self.imap_class, self.host, self.port,
                 keyfile=CERTFILE, ssl_context=self.create_ssl_context())

@@ -13,7 +13,6 @@ from pegen.grammar import (
     NamedItem,
     Plain,
     NameLeaf,
-    StringLeaf,
     Gather,
 )
 from pegen.grammar import GrammarError, GrammarVisitor
@@ -48,6 +47,18 @@ class ParserGenerator:
         self.todo = self.rules.copy()  # Rules to generate
         self.counter = 0  # For name_rule()/name_loop()
         self.keyword_counter = 499  # For keyword_type()
+        self.all_rules: Optional[Dict[str, Rule]] = None  # Rules + temporal rules
+        self._local_variable_stack: List[List[str]] = []
+
+    @contextlib.contextmanager
+    def local_variable_context(self) -> Iterator[None]:
+        self._local_variable_stack.append([])
+        yield
+        self._local_variable_stack.pop()
+
+    @property
+    def local_variable_names(self) -> List[str]:
+        return self._local_variable_stack[-1]
 
     @abstractmethod
     def generate(self, filename: str) -> None:
@@ -82,6 +93,7 @@ class ParserGenerator:
             for rulename in todo:
                 self.todo[rulename].collect_todo(self)
             done = set(alltodo)
+        self.all_rules = self.todo.copy()
 
     def keyword_type(self) -> int:
         self.keyword_counter += 1
@@ -109,26 +121,23 @@ class ParserGenerator:
         self.counter += 1
         extra_function_name = f"_loop0_{self.counter}"
         extra_function_alt = Alt(
-            [NamedItem(None, node.separator), NamedItem("elem", node.node),], action="elem",
+            [NamedItem(None, node.separator), NamedItem("elem", node.node)], action="elem",
         )
         self.todo[extra_function_name] = Rule(
             extra_function_name, None, Rhs([extra_function_alt]),
         )
-        alt = Alt(
-            [NamedItem("elem", node.node), NamedItem("seq", NameLeaf(extra_function_name)),],
-        )
+        alt = Alt([NamedItem("elem", node.node), NamedItem("seq", NameLeaf(extra_function_name))],)
         self.todo[name] = Rule(name, None, Rhs([alt]),)
         return name
 
-
-def dedupe(name: str, names: List[str]) -> str:
-    origname = name
-    counter = 0
-    while name in names:
-        counter += 1
-        name = f"{origname}_{counter}"
-    names.append(name)
-    return name
+    def dedupe(self, name: str) -> str:
+        origname = name
+        counter = 0
+        while name in self.local_variable_names:
+            counter += 1
+            name = f"{origname}_{counter}"
+        self.local_variable_names.append(name)
+        return name
 
 
 def compute_nullables(rules: Dict[str, Rule]) -> None:
@@ -153,13 +162,13 @@ def compute_left_recursives(
             leaders = set(scc)
             for start in scc:
                 for cycle in sccutils.find_cycles_in_scc(graph, scc, start):
-                    ## print("Cycle:", " -> ".join(cycle))
+                    # print("Cycle:", " -> ".join(cycle))
                     leaders -= scc - set(cycle)
                     if not leaders:
                         raise ValueError(
                             f"SCC {scc} has no leadership candidate (no element is included in all cycles)"
                         )
-            ## print("Leaders:", leaders)
+            # print("Leaders:", leaders)
             leader = min(leaders)  # Pick an arbitrary leader from the candidates.
             rules[leader].leader = True
         else:
