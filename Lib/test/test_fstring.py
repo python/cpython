@@ -10,9 +10,7 @@
 import ast
 import types
 import decimal
-import sys
 import unittest
-from test import support
 
 a_global = 'global variable'
 
