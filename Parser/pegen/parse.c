@@ -650,7 +650,7 @@ file_rule(Parser *p)
         if (
             (a = statements_rule(p), 1)
             &&
-            (endmarker_var = _PyPegen_endmarker_token(p))
+            (endmarker_var = _PyPegen_expect_token(p, ENDMARKER))
         )
         {
             res = Module ( a , NULL , p -> arena );
@@ -720,7 +720,7 @@ eval_rule(Parser *p)
             &&
             (_loop0_1_var = _loop0_1_rule(p))
             &&
-            (endmarker_var = _PyPegen_endmarker_token(p))
+            (endmarker_var = _PyPegen_expect_token(p, ENDMARKER))
         )
         {
             res = Expression ( a , p -> arena );
@@ -866,7 +866,7 @@ statement_newline_rule(Parser *p)
         if (
             (a = compound_stmt_rule(p))
             &&
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             res = _PyPegen_singleton_seq ( p , a );
@@ -892,7 +892,7 @@ statement_newline_rule(Parser *p)
     { // NEWLINE
         void *newline_var;
         if (
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             Token *token = _PyPegen_get_last_nonnwhitespace_token(p);
@@ -915,7 +915,7 @@ statement_newline_rule(Parser *p)
     { // $
         void *endmarker_var;
         if (
-            (endmarker_var = _PyPegen_endmarker_token(p))
+            (endmarker_var = _PyPegen_expect_token(p, ENDMARKER))
         )
         {
             res = _PyPegen_interactive_exit ( p );
@@ -952,7 +952,7 @@ simple_stmt_rule(Parser *p)
             &&
             _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 13)
             &&
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             res = _PyPegen_singleton_seq ( p , a );
@@ -974,7 +974,7 @@ simple_stmt_rule(Parser *p)
             &&
             (opt_var = _PyPegen_expect_token(p, 13), 1)
             &&
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             res = a;
@@ -2770,7 +2770,7 @@ for_stmt_rule(Parser *p)
         void *literal;
         expr_ty t;
         if (
-            (is_async = _PyPegen_async_token(p), 1)
+            (is_async = _PyPegen_expect_token(p, ASYNC), 1)
             &&
             (keyword = _PyPegen_expect_token(p, 517))
             &&
@@ -2840,7 +2840,7 @@ with_stmt_rule(Parser *p)
         void *literal_1;
         void *literal_2;
         if (
-            (is_async = _PyPegen_async_token(p), 1)
+            (is_async = _PyPegen_expect_token(p, ASYNC), 1)
             &&
             (keyword = _PyPegen_expect_token(p, 519))
             &&
@@ -2879,7 +2879,7 @@ with_stmt_rule(Parser *p)
         void *keyword;
         void *literal;
         if (
-            (is_async = _PyPegen_async_token(p), 1)
+            (is_async = _PyPegen_expect_token(p, ASYNC), 1)
             &&
             (keyword = _PyPegen_expect_token(p, 519))
             &&
@@ -3376,7 +3376,7 @@ function_def_raw_rule(Parser *p)
         expr_ty n;
         void *params;
         if (
-            (is_async = _PyPegen_async_token(p), 1)
+            (is_async = _PyPegen_expect_token(p, ASYNC), 1)
             &&
             (keyword = _PyPegen_expect_token(p, 522))
             &&
@@ -4158,13 +4158,13 @@ block_rule(Parser *p)
         void *indent_var;
         void *newline_var;
         if (
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
             &&
-            (indent_var = _PyPegen_indent_token(p))
+            (indent_var = _PyPegen_expect_token(p, INDENT))
             &&
             (a = statements_rule(p))
             &&
-            (dedent_var = _PyPegen_dedent_token(p))
+            (dedent_var = _PyPegen_expect_token(p, DEDENT))
         )
         {
             res = a;
@@ -7003,7 +7003,7 @@ await_primary_rule(Parser *p)
         expr_ty a;
         void *await_var;
         if (
-            (await_var = _PyPegen_await_token(p))
+            (await_var = _PyPegen_expect_token(p, AWAIT))
             &&
             (a = primary_rule(p))
         )
@@ -10272,9 +10272,9 @@ invalid_block_rule(Parser *p)
     { // NEWLINE !INDENT
         void *newline_var;
         if (
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
             &&
-            _PyPegen_lookahead(0, _PyPegen_indent_token, p)
+            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, INDENT)
         )
         {
             res = RAISE_INDENTATION_ERROR ( "expected an indented block" );
@@ -10396,7 +10396,7 @@ _loop0_1_rule(Parser *p)
     { // NEWLINE
         void *newline_var;
         while (
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             res = newline_var;
@@ -10633,7 +10633,7 @@ _tmp_6_rule(Parser *p)
     { // ASYNC
         void *async_var;
         if (
-            (async_var = _PyPegen_async_token(p))
+            (async_var = _PyPegen_expect_token(p, ASYNC))
         )
         {
             res = async_var;
@@ -10705,7 +10705,7 @@ _tmp_8_rule(Parser *p)
     { // ASYNC
         void *async_var;
         if (
-            (async_var = _PyPegen_async_token(p))
+            (async_var = _PyPegen_expect_token(p, ASYNC))
         )
         {
             res = async_var;
@@ -10741,7 +10741,7 @@ _tmp_9_rule(Parser *p)
     { // ASYNC
         void *async_var;
         if (
-            (async_var = _PyPegen_async_token(p))
+            (async_var = _PyPegen_expect_token(p, ASYNC))
         )
         {
             res = async_var;
@@ -15428,7 +15428,7 @@ _tmp_128_rule(Parser *p)
             &&
             (f = named_expression_rule(p))
             &&
-            (newline_var = _PyPegen_newline_token(p))
+            (newline_var = _PyPegen_expect_token(p, NEWLINE))
         )
         {
             res = f;
@@ -15617,7 +15617,7 @@ _tmp_134_rule(Parser *p)
         void *keyword_1;
         void *y;
         if (
-            (y = _PyPegen_async_token(p), 1)
+            (y = _PyPegen_expect_token(p, ASYNC), 1)
             &&
             (keyword = _PyPegen_expect_token(p, 517))
             &&

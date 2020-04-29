@@ -314,7 +314,7 @@ The :mod:`test.support` module defines the following constants:
 
    Usually, a timeout using :data:`INTERNET_TIMEOUT` should not mark a test as
    failed, but skip the test instead: see
-   :func:`~test.support.transient_internet`.
+   :func:`~test.support.socket_helper.transient_internet`.
 
    Its default value is 1 minute.
 
@@ -757,12 +757,6 @@ The :mod:`test.support` module defines the following functions:
 .. function:: temp_umask(umask)
 
    A context manager that temporarily sets the process umask.
-
-
-.. function:: transient_internet(resource_name, *, timeout=30.0, errnos=())
-
-   A context manager that raises :exc:`ResourceDenied` when various issues
-   with the internet connection manifest themselves as exceptions.
 
 
 .. function:: disable_faulthandler()
@@ -1486,6 +1480,13 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
 
    A decorator for running tests that require a functional ``bind()`` for Unix
    sockets.
+
+
+.. function:: transient_internet(resource_name, *, timeout=30.0, errnos=())
+
+   A context manager that raises :exc:`~test.support.ResourceDenied` when
+   various issues with the internet connection manifest themselves as
+   exceptions.
 
 
 :mod:`test.support.script_helper` --- Utilities for the Python execution tests
