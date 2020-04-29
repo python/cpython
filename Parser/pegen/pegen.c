@@ -380,14 +380,14 @@ tokenizer_error(Parser *p)
 }
 
 void *
-_PyPegen_raise_error(Parser *p, PyObject *errtype, int no_col_number, const char *errmsg, ...)
+_PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number, const char *errmsg, ...)
 {
     PyObject *value = NULL;
     PyObject *errstr = NULL;
     PyObject *loc = NULL;
     PyObject *tmp = NULL;
     Token *t = p->tokens[p->fill - 1];
-    Py_ssize_t col_number = no_col_number;
+    Py_ssize_t col_number = !with_col_number;
     va_list va;
 
     va_start(va, errmsg);
@@ -405,17 +405,17 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int no_col_number, const char
         loc = get_error_line(p->tok->buf, p->start_rule == Py_file_input);
     }
 
-    if (loc && !no_col_number) {
+    if (loc && with_col_number) {
         int col_offset;
         if (t->col_offset == -1) {
-            col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf, 
+            col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
                                           intptr_t, int);
         } else {
             col_offset = t->col_offset + 1;
         }
         col_number = byte_offset_to_character_offset(loc, col_offset);
     }
-    else if(!loc) {
+    else if (!loc) {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
@@ -595,15 +595,6 @@ _PyPegen_fill_token(Parser *p)
             return -1;
         }
         type = PyTokenizer_Get(p->tok, &start, &end);
-    }
-
-    if (type == ERRORTOKEN) {
-        if (p->tok->done == E_DECODE) {
-            return raise_decode_error(p);
-        }
-        else {
-            return tokenizer_error(p);
-        }
     }
 
     if (type == ENDMARKER && p->start_rule == Py_single_input && p->parsing_started) {
