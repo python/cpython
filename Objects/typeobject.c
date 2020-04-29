@@ -8108,15 +8108,16 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
         PyThreadState *tstate = _PyThreadState_GET();
-        PyFrameObject *f = PyThreadState_GetFrame(tstate);
-        if (f == NULL) {
+        PyFrameObject *frame = PyThreadState_GetFrame(tstate);
+        if (frame == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");
             return -1;
         }
 
-        PyCodeObject *code = PyFrame_GetCode(f);
-        int res = super_init_without_args(f, code, &type, &obj);
+        PyCodeObject *code = PyFrame_GetCode(frame);
+        int res = super_init_without_args(frame, code, &type, &obj);
+        Py_DECREF(frame);
         Py_DECREF(code);
 
         if (res < 0) {
