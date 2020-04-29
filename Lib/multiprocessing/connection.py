@@ -138,7 +138,7 @@ class _ConnectionBase:
 
     def _check_closed(self):
         if self._handle is None:
-            raise OSError("handle is closed")
+            raise OSError("handle is closed") from None
 
     def _check_readable(self):
         if not self._readable:
@@ -172,7 +172,10 @@ class _ConnectionBase:
 
     def fileno(self):
         """File descriptor or handle of the connection"""
-        return self._handle
+        handle = self._handle
+        if handle is None:
+            self._check_closed()
+        return handle
 
     def close(self):
         """Close the connection"""
@@ -275,16 +278,14 @@ if _winapi:
             try:
                 _CloseHandle(self._handle)
             except TypeError:
-                if self._handle is None:
-                    raise OSError("handle is closed") from None
+                self._check_closed()
                 raise
 
         def _send_bytes(self, buf):
             try:
                 ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
             except TypeError:
-                if self._handle is None:
-                    raise OSError("handle is closed") from None
+                self._check_closed()
                 raise
 
             try:
@@ -326,8 +327,7 @@ if _winapi:
                         elif err == _winapi.ERROR_MORE_DATA:
                             return self._get_more_data(ov, maxsize)
                 except TypeError:
-                    if self._handle is None:
-                        raise OSError("handle is closed") from None
+                    self._check_closed()
                     raise
                 except OSError as e:
                     if e.winerror == _winapi.ERROR_BROKEN_PIPE:
@@ -341,10 +341,9 @@ if _winapi:
                 if (self._got_empty_message or
                             _winapi.PeekNamedPipe(self._handle)[0] != 0):
                     return True
-                return bool(wait([self], timeout))
+                return bool(wait([self._handle], timeout))
             except TypeError:
-                if self._handle is None:
-                    raise OSError("handle is closed") from None
+                self._check_closed()
                 raise
 
         def _get_more_data(self, ov, maxsize):
@@ -386,8 +385,7 @@ class Connection(_ConnectionBase):
             try:
                 n = write(self._handle, buf)
             except TypeError:
-                if self._handle is None:
-                    raise OSError("handle is closed") from None
+                self._check_closed()
                 raise
 
             remaining -= n
@@ -403,8 +401,7 @@ class Connection(_ConnectionBase):
             try:
                 chunk = read(handle, remaining)
             except TypeError:
-                if self._handle is None:
-                    raise OSError("handle is closed") from None
+                self._check_closed()
                 raise
 
             n = len(chunk)
