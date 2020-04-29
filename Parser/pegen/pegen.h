@@ -104,7 +104,6 @@ int _PyPegen_update_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_is_memoized(Parser *p, int type, void *pres);
 
 int _PyPegen_lookahead_with_name(int, expr_ty (func)(Parser *), Parser *);
-int _PyPegen_lookahead_with_string(int, void *(func)(Parser *, const char *), Parser *, const char *);
 int _PyPegen_lookahead_with_int(int, Token *(func)(Parser *, int), Parser *, int);
 int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
 
