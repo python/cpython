@@ -73,7 +73,7 @@ class FunctionCall:
         parts = []
         parts.append(self.function)
         if self.arguments:
-            parts.append("(" + ", ".join(map(str, self.arguments)) + ")")
+            parts.append(f"({', '.join(map(str, self.arguments))})")
         if self.force_true:
             parts.append(", 1")
         if self.assigned_variable:
