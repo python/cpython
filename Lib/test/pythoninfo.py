@@ -376,6 +376,9 @@ def collect_gdb(info_add):
                                 stderr=subprocess.PIPE,
                                 universal_newlines=True)
         version = proc.communicate()[0]
+        if proc.returncode:
+            # ignore gdb failure: test_gdb will log the error
+            return
     except OSError:
         return
 
