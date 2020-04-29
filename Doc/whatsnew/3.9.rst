@@ -570,14 +570,6 @@ Build and C API Changes
   ``pyfpe.h`` from ``Py_LIMITED_API`` (stable API).
   (Contributed by Victor Stinner in :issue:`38835`.)
 
-* Remove ``PyMethod_ClearFreeList()`` and ``PyCFunction_ClearFreeList()``
-  functions: the free lists of bound method objects have been removed.
-  (Contributed by Inada Naoki and Victor Stinner in :issue:`37340`.)
-
-* Remove ``PyUnicode_ClearFreeList()`` function: the Unicode free list has been
-  removed in Python 3.3.
-  (Contributed by Victor Stinner in :issue:`38896`.)
-
 * The ``tp_print`` slot of :ref:`PyTypeObject <type-structs>` has been removed.
   It was used for printing objects to files in Python 2.7 and before. Since
   Python 3.0, it has been ignored and unused.
@@ -674,8 +666,9 @@ Build and C API Changes
   :issue:`40241`.)
 
 * Remove the following functions from the C API. Call :c:func:`PyGC_Collect`
-  explicitly to free all free lists.
-  (Contributed by Victor Stinner in :issue:`40428`.)
+  explicitly to clear all free lists.
+  (Contributed by Inada Naoki and Victor Stinner in :issue:`37340`,
+  :issue:`38896` and :issue:`40428`.)
 
   * ``PyAsyncGen_ClearFreeLists()``
   * ``PyContext_ClearFreeList()``
@@ -683,8 +676,13 @@ Build and C API Changes
   * ``PyFloat_ClearFreeList()``
   * ``PyFrame_ClearFreeList()``
   * ``PyList_ClearFreeList()``
-  * ``PySet_ClearFreeList()``
+  * ``PyMethod_ClearFreeList()`` and ``PyCFunction_ClearFreeList()``:
+    the free lists of bound method objects have been removed.
+  * ``PySet_ClearFreeList()``: the set free list has been removed
+    in Python 3.4.
   * ``PyTuple_ClearFreeList()``
+  * ``PyUnicode_ClearFreeList()``: the Unicode free list has been removed in
+    Python 3.3.
 
 
 Deprecated
