@@ -3,7 +3,7 @@
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_traceback.h"
 #include "hashtable.h"
-#include "frameobject.h"
+#include "frameobject.h"          // PyFrame_GetBack()
 
 #include "clinic/_tracemalloc.c.h"
 /*[clinic input]
@@ -434,15 +434,19 @@ traceback_get_frames(traceback_t *traceback)
     }
 
     PyFrameObject *pyframe = PyThreadState_GetFrame(tstate);
-    Py_XDECREF(pyframe); // use a borrowed reference
-    for (; pyframe != NULL; pyframe = pyframe->f_back) {
+    for (; pyframe != NULL;) {
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
             assert(traceback->frames[traceback->nframe].filename != NULL);
             traceback->nframe++;
         }
-        if (traceback->total_nframe < UINT16_MAX)
+        if (traceback->total_nframe < UINT16_MAX) {
             traceback->total_nframe++;
+        }
+
+        PyFrameObject *back = PyFrame_GetBack(pyframe);
+        Py_DECREF(pyframe);
+        pyframe = back;
     }
 }
 
