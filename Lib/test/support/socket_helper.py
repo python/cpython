@@ -2,6 +2,7 @@ import contextlib
 import errno
 import socket
 import unittest
+import sys
 
 from .. import support
 
