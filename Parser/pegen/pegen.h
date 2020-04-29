@@ -169,6 +169,7 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
 #define NEW_TYPE_COMMENT(tc) (tc==NULL ? NULL : _PyPegen_new_type_comment(p, PyBytes_AsString(((Token *)tc)->bytes)))
 
 PyObject *_PyPegen_new_type_comment(Parser *, char *);
+arg_ty _PyPegen_add_type_comment(Parser *, arg_ty, char *);
 PyObject *_PyPegen_new_identifier(Parser *, char *);
 Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int *, PyArena *);
 void _PyPegen_Parser_Free(Parser *);
@@ -193,7 +194,7 @@ expr_ty _PyPegen_set_expr_context(Parser *, expr_ty, expr_context_ty);
 KeyValuePair *_PyPegen_key_value_pair(Parser *, expr_ty, expr_ty);
 asdl_seq *_PyPegen_get_keys(Parser *, asdl_seq *);
 asdl_seq *_PyPegen_get_values(Parser *, asdl_seq *);
-NameDefaultPair *_PyPegen_name_default_pair(Parser *, arg_ty, expr_ty);
+NameDefaultPair *_PyPegen_name_default_pair(Parser *, arg_ty, expr_ty, char *);
 SlashWithDefault *_PyPegen_slash_with_default(Parser *, asdl_seq *, asdl_seq *);
 StarEtc *_PyPegen_star_etc(Parser *, arg_ty, asdl_seq *, arg_ty);
 arguments_ty _PyPegen_make_arguments(Parser *, asdl_seq *, SlashWithDefault *,

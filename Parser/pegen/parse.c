@@ -120,242 +120,243 @@ static KeywordToken *reserved_keywords[] = {
 #define param_no_default_type 1049
 #define param_with_default_type 1050
 #define param_maybe_default_type 1051
-#define annotation_type 1052
-#define default_type 1053
-#define decorators_type 1054
-#define class_def_type 1055
-#define class_def_raw_type 1056
-#define block_type 1057
-#define expressions_list_type 1058
-#define star_expressions_type 1059
-#define star_expression_type 1060
-#define star_named_expressions_type 1061
-#define star_named_expression_type 1062
-#define named_expression_type 1063
-#define annotated_rhs_type 1064
-#define expressions_type 1065
-#define expression_type 1066
-#define lambdef_type 1067
-#define lambda_parameters_type 1068
-#define lambda_slash_without_default_type 1069
-#define lambda_slash_with_default_type 1070
-#define lambda_star_etc_type 1071
-#define lambda_name_with_optional_default_type 1072
-#define lambda_names_with_default_type 1073
-#define lambda_name_with_default_type 1074
-#define lambda_plain_names_type 1075
-#define lambda_plain_name_type 1076
-#define lambda_kwds_type 1077
-#define disjunction_type 1078
-#define conjunction_type 1079
-#define inversion_type 1080
-#define comparison_type 1081
-#define compare_op_bitwise_or_pair_type 1082
-#define eq_bitwise_or_type 1083
-#define noteq_bitwise_or_type 1084
-#define lte_bitwise_or_type 1085
-#define lt_bitwise_or_type 1086
-#define gte_bitwise_or_type 1087
-#define gt_bitwise_or_type 1088
-#define notin_bitwise_or_type 1089
-#define in_bitwise_or_type 1090
-#define isnot_bitwise_or_type 1091
-#define is_bitwise_or_type 1092
-#define bitwise_or_type 1093  // Left-recursive
-#define bitwise_xor_type 1094  // Left-recursive
-#define bitwise_and_type 1095  // Left-recursive
-#define shift_expr_type 1096  // Left-recursive
-#define sum_type 1097  // Left-recursive
-#define term_type 1098  // Left-recursive
-#define factor_type 1099
-#define power_type 1100
-#define await_primary_type 1101
-#define primary_type 1102  // Left-recursive
-#define slices_type 1103
-#define slice_type 1104
-#define atom_type 1105
-#define strings_type 1106
-#define list_type 1107
-#define listcomp_type 1108
-#define tuple_type 1109
-#define group_type 1110
-#define genexp_type 1111
-#define set_type 1112
-#define setcomp_type 1113
-#define dict_type 1114
-#define dictcomp_type 1115
-#define kvpairs_type 1116
-#define kvpair_type 1117
-#define for_if_clauses_type 1118
-#define yield_expr_type 1119
-#define arguments_type 1120
-#define args_type 1121
-#define kwargs_type 1122
-#define starred_expression_type 1123
-#define kwarg_or_starred_type 1124
-#define kwarg_or_double_starred_type 1125
-#define star_targets_type 1126
-#define star_targets_seq_type 1127
-#define star_target_type 1128
-#define star_atom_type 1129
-#define inside_paren_ann_assign_target_type 1130
-#define ann_assign_subscript_attribute_target_type 1131
-#define del_targets_type 1132
-#define del_target_type 1133
-#define del_t_atom_type 1134
-#define targets_type 1135
-#define target_type 1136
-#define t_primary_type 1137  // Left-recursive
-#define t_lookahead_type 1138
-#define t_atom_type 1139
-#define incorrect_arguments_type 1140
-#define invalid_named_expression_type 1141
-#define invalid_assignment_type 1142
-#define invalid_block_type 1143
-#define invalid_comprehension_type 1144
-#define invalid_parameters_type 1145
-#define invalid_double_type_comments_type 1146
-#define _loop0_1_type 1147
-#define _loop0_3_type 1148
-#define _gather_2_type 1149
-#define _loop0_5_type 1150
-#define _gather_4_type 1151
-#define _loop0_7_type 1152
-#define _gather_6_type 1153
-#define _loop0_9_type 1154
-#define _gather_8_type 1155
-#define _loop1_10_type 1156
-#define _loop0_12_type 1157
-#define _gather_11_type 1158
-#define _tmp_13_type 1159
-#define _tmp_14_type 1160
-#define _tmp_15_type 1161
-#define _tmp_16_type 1162
-#define _tmp_17_type 1163
-#define _tmp_18_type 1164
-#define _tmp_19_type 1165
-#define _tmp_20_type 1166
-#define _loop1_21_type 1167
-#define _tmp_22_type 1168
-#define _tmp_23_type 1169
-#define _loop0_25_type 1170
-#define _gather_24_type 1171
-#define _loop0_27_type 1172
-#define _gather_26_type 1173
-#define _tmp_28_type 1174
-#define _loop0_29_type 1175
-#define _loop1_30_type 1176
-#define _loop0_32_type 1177
-#define _gather_31_type 1178
-#define _tmp_33_type 1179
-#define _loop0_35_type 1180
-#define _gather_34_type 1181
-#define _tmp_36_type 1182
-#define _loop0_38_type 1183
-#define _gather_37_type 1184
-#define _loop0_40_type 1185
-#define _gather_39_type 1186
-#define _tmp_41_type 1187
-#define _loop1_42_type 1188
-#define _tmp_43_type 1189
-#define _tmp_44_type 1190
-#define _tmp_45_type 1191
-#define _tmp_46_type 1192
-#define _loop0_47_type 1193
-#define _loop0_48_type 1194
-#define _loop0_49_type 1195
-#define _loop1_50_type 1196
-#define _loop0_51_type 1197
-#define _loop1_52_type 1198
-#define _loop1_53_type 1199
-#define _loop1_54_type 1200
-#define _loop0_55_type 1201
-#define _loop1_56_type 1202
-#define _loop0_57_type 1203
-#define _loop1_58_type 1204
-#define _loop0_59_type 1205
-#define _loop1_60_type 1206
-#define _loop1_61_type 1207
-#define _tmp_62_type 1208
-#define _loop0_64_type 1209
-#define _gather_63_type 1210
-#define _loop1_65_type 1211
-#define _loop0_67_type 1212
-#define _gather_66_type 1213
-#define _loop1_68_type 1214
-#define _tmp_69_type 1215
-#define _tmp_70_type 1216
-#define _tmp_71_type 1217
-#define _tmp_72_type 1218
-#define _tmp_73_type 1219
-#define _tmp_74_type 1220
-#define _tmp_75_type 1221
-#define _tmp_76_type 1222
-#define _tmp_77_type 1223
-#define _loop0_78_type 1224
-#define _tmp_79_type 1225
-#define _loop1_80_type 1226
-#define _tmp_81_type 1227
-#define _tmp_82_type 1228
-#define _loop0_84_type 1229
-#define _gather_83_type 1230
-#define _loop0_86_type 1231
-#define _gather_85_type 1232
-#define _loop1_87_type 1233
-#define _loop1_88_type 1234
-#define _loop1_89_type 1235
-#define _tmp_90_type 1236
-#define _loop0_92_type 1237
-#define _gather_91_type 1238
-#define _tmp_93_type 1239
-#define _tmp_94_type 1240
-#define _tmp_95_type 1241
-#define _tmp_96_type 1242
-#define _loop1_97_type 1243
-#define _tmp_98_type 1244
-#define _tmp_99_type 1245
-#define _loop0_101_type 1246
-#define _gather_100_type 1247
-#define _loop1_102_type 1248
-#define _tmp_103_type 1249
-#define _tmp_104_type 1250
-#define _loop0_106_type 1251
-#define _gather_105_type 1252
-#define _loop0_108_type 1253
-#define _gather_107_type 1254
-#define _loop0_110_type 1255
-#define _gather_109_type 1256
-#define _loop0_112_type 1257
-#define _gather_111_type 1258
-#define _loop0_113_type 1259
-#define _loop0_115_type 1260
-#define _gather_114_type 1261
-#define _tmp_116_type 1262
-#define _loop0_118_type 1263
-#define _gather_117_type 1264
-#define _loop0_120_type 1265
-#define _gather_119_type 1266
-#define _tmp_121_type 1267
-#define _tmp_122_type 1268
-#define _tmp_123_type 1269
-#define _tmp_124_type 1270
-#define _tmp_125_type 1271
-#define _loop0_126_type 1272
-#define _tmp_127_type 1273
-#define _tmp_128_type 1274
-#define _tmp_129_type 1275
-#define _tmp_130_type 1276
-#define _tmp_131_type 1277
-#define _tmp_132_type 1278
-#define _tmp_133_type 1279
-#define _tmp_134_type 1280
-#define _tmp_135_type 1281
-#define _tmp_136_type 1282
-#define _tmp_137_type 1283
-#define _tmp_138_type 1284
-#define _loop1_139_type 1285
-#define _loop0_140_type 1286
-#define _tmp_141_type 1287
+#define param_type 1052
+#define annotation_type 1053
+#define default_type 1054
+#define decorators_type 1055
+#define class_def_type 1056
+#define class_def_raw_type 1057
+#define block_type 1058
+#define expressions_list_type 1059
+#define star_expressions_type 1060
+#define star_expression_type 1061
+#define star_named_expressions_type 1062
+#define star_named_expression_type 1063
+#define named_expression_type 1064
+#define annotated_rhs_type 1065
+#define expressions_type 1066
+#define expression_type 1067
+#define lambdef_type 1068
+#define lambda_parameters_type 1069
+#define lambda_slash_without_default_type 1070
+#define lambda_slash_with_default_type 1071
+#define lambda_star_etc_type 1072
+#define lambda_name_with_optional_default_type 1073
+#define lambda_names_with_default_type 1074
+#define lambda_name_with_default_type 1075
+#define lambda_plain_names_type 1076
+#define lambda_plain_name_type 1077
+#define lambda_kwds_type 1078
+#define disjunction_type 1079
+#define conjunction_type 1080
+#define inversion_type 1081
+#define comparison_type 1082
+#define compare_op_bitwise_or_pair_type 1083
+#define eq_bitwise_or_type 1084
+#define noteq_bitwise_or_type 1085
+#define lte_bitwise_or_type 1086
+#define lt_bitwise_or_type 1087
+#define gte_bitwise_or_type 1088
+#define gt_bitwise_or_type 1089
+#define notin_bitwise_or_type 1090
+#define in_bitwise_or_type 1091
+#define isnot_bitwise_or_type 1092
+#define is_bitwise_or_type 1093
+#define bitwise_or_type 1094  // Left-recursive
+#define bitwise_xor_type 1095  // Left-recursive
+#define bitwise_and_type 1096  // Left-recursive
+#define shift_expr_type 1097  // Left-recursive
+#define sum_type 1098  // Left-recursive
+#define term_type 1099  // Left-recursive
+#define factor_type 1100
+#define power_type 1101
+#define await_primary_type 1102
+#define primary_type 1103  // Left-recursive
+#define slices_type 1104
+#define slice_type 1105
+#define atom_type 1106
+#define strings_type 1107
+#define list_type 1108
+#define listcomp_type 1109
+#define tuple_type 1110
+#define group_type 1111
+#define genexp_type 1112
+#define set_type 1113
+#define setcomp_type 1114
+#define dict_type 1115
+#define dictcomp_type 1116
+#define kvpairs_type 1117
+#define kvpair_type 1118
+#define for_if_clauses_type 1119
+#define yield_expr_type 1120
+#define arguments_type 1121
+#define args_type 1122
+#define kwargs_type 1123
+#define starred_expression_type 1124
+#define kwarg_or_starred_type 1125
+#define kwarg_or_double_starred_type 1126
+#define star_targets_type 1127
+#define star_targets_seq_type 1128
+#define star_target_type 1129
+#define star_atom_type 1130
+#define inside_paren_ann_assign_target_type 1131
+#define ann_assign_subscript_attribute_target_type 1132
+#define del_targets_type 1133
+#define del_target_type 1134
+#define del_t_atom_type 1135
+#define targets_type 1136
+#define target_type 1137
+#define t_primary_type 1138  // Left-recursive
+#define t_lookahead_type 1139
+#define t_atom_type 1140
+#define incorrect_arguments_type 1141
+#define invalid_named_expression_type 1142
+#define invalid_assignment_type 1143
+#define invalid_block_type 1144
+#define invalid_comprehension_type 1145
+#define invalid_parameters_type 1146
+#define invalid_double_type_comments_type 1147
+#define _loop0_1_type 1148
+#define _loop0_3_type 1149
+#define _gather_2_type 1150
+#define _loop0_5_type 1151
+#define _gather_4_type 1152
+#define _loop0_7_type 1153
+#define _gather_6_type 1154
+#define _loop0_9_type 1155
+#define _gather_8_type 1156
+#define _loop1_10_type 1157
+#define _loop0_12_type 1158
+#define _gather_11_type 1159
+#define _tmp_13_type 1160
+#define _tmp_14_type 1161
+#define _tmp_15_type 1162
+#define _tmp_16_type 1163
+#define _tmp_17_type 1164
+#define _tmp_18_type 1165
+#define _tmp_19_type 1166
+#define _tmp_20_type 1167
+#define _loop1_21_type 1168
+#define _tmp_22_type 1169
+#define _tmp_23_type 1170
+#define _loop0_25_type 1171
+#define _gather_24_type 1172
+#define _loop0_27_type 1173
+#define _gather_26_type 1174
+#define _tmp_28_type 1175
+#define _loop0_29_type 1176
+#define _loop1_30_type 1177
+#define _loop0_32_type 1178
+#define _gather_31_type 1179
+#define _tmp_33_type 1180
+#define _loop0_35_type 1181
+#define _gather_34_type 1182
+#define _tmp_36_type 1183
+#define _loop0_38_type 1184
+#define _gather_37_type 1185
+#define _loop0_40_type 1186
+#define _gather_39_type 1187
+#define _tmp_41_type 1188
+#define _loop1_42_type 1189
+#define _tmp_43_type 1190
+#define _tmp_44_type 1191
+#define _tmp_45_type 1192
+#define _tmp_46_type 1193
+#define _loop0_47_type 1194
+#define _loop0_48_type 1195
+#define _loop0_49_type 1196
+#define _loop1_50_type 1197
+#define _loop0_51_type 1198
+#define _loop1_52_type 1199
+#define _loop1_53_type 1200
+#define _loop1_54_type 1201
+#define _loop0_55_type 1202
+#define _loop1_56_type 1203
+#define _loop0_57_type 1204
+#define _loop1_58_type 1205
+#define _loop0_59_type 1206
+#define _loop1_60_type 1207
+#define _loop1_61_type 1208
+#define _tmp_62_type 1209
+#define _loop0_64_type 1210
+#define _gather_63_type 1211
+#define _loop1_65_type 1212
+#define _loop0_67_type 1213
+#define _gather_66_type 1214
+#define _loop1_68_type 1215
+#define _tmp_69_type 1216
+#define _tmp_70_type 1217
+#define _tmp_71_type 1218
+#define _tmp_72_type 1219
+#define _tmp_73_type 1220
+#define _tmp_74_type 1221
+#define _tmp_75_type 1222
+#define _tmp_76_type 1223
+#define _tmp_77_type 1224
+#define _loop0_78_type 1225
+#define _tmp_79_type 1226
+#define _loop1_80_type 1227
+#define _tmp_81_type 1228
+#define _tmp_82_type 1229
+#define _loop0_84_type 1230
+#define _gather_83_type 1231
+#define _loop0_86_type 1232
+#define _gather_85_type 1233
+#define _loop1_87_type 1234
+#define _loop1_88_type 1235
+#define _loop1_89_type 1236
+#define _tmp_90_type 1237
+#define _loop0_92_type 1238
+#define _gather_91_type 1239
+#define _tmp_93_type 1240
+#define _tmp_94_type 1241
+#define _tmp_95_type 1242
+#define _tmp_96_type 1243
+#define _loop1_97_type 1244
+#define _tmp_98_type 1245
+#define _tmp_99_type 1246
+#define _loop0_101_type 1247
+#define _gather_100_type 1248
+#define _loop1_102_type 1249
+#define _tmp_103_type 1250
+#define _tmp_104_type 1251
+#define _loop0_106_type 1252
+#define _gather_105_type 1253
+#define _loop0_108_type 1254
+#define _gather_107_type 1255
+#define _loop0_110_type 1256
+#define _gather_109_type 1257
+#define _loop0_112_type 1258
+#define _gather_111_type 1259
+#define _loop0_113_type 1260
+#define _loop0_115_type 1261
+#define _gather_114_type 1262
+#define _tmp_116_type 1263
+#define _loop0_118_type 1264
+#define _gather_117_type 1265
+#define _loop0_120_type 1266
+#define _gather_119_type 1267
+#define _tmp_121_type 1268
+#define _tmp_122_type 1269
+#define _tmp_123_type 1270
+#define _tmp_124_type 1271
+#define _tmp_125_type 1272
+#define _loop0_126_type 1273
+#define _tmp_127_type 1274
+#define _tmp_128_type 1275
+#define _tmp_129_type 1276
+#define _tmp_130_type 1277
+#define _tmp_131_type 1278
+#define _tmp_132_type 1279
+#define _tmp_133_type 1280
+#define _tmp_134_type 1281
+#define _tmp_135_type 1282
+#define _tmp_136_type 1283
+#define _tmp_137_type 1284
+#define _tmp_138_type 1285
+#define _loop1_139_type 1286
+#define _loop0_140_type 1287
+#define _tmp_141_type 1288
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -409,6 +410,7 @@ static arg_ty kwds_rule(Parser *p);
 static arg_ty param_no_default_rule(Parser *p);
 static NameDefaultPair* param_with_default_rule(Parser *p);
 static NameDefaultPair* param_maybe_default_rule(Parser *p);
+static arg_ty param_rule(Parser *p);
 static expr_ty annotation_rule(Parser *p);
 static expr_ty default_rule(Parser *p);
 static asdl_seq* decorators_rule(Parser *p);
@@ -3926,9 +3928,7 @@ kwds_rule(Parser *p)
     return res;
 }
 
-// param_no_default:
-//     | NAME annotation? ',' TYPE_COMMENT?
-//     | NAME annotation? TYPE_COMMENT? &')'
+// param_no_default: param ',' TYPE_COMMENT? | param TYPE_COMMENT? &')'
 static arg_ty
 param_no_default_rule(Parser *p)
 {
@@ -3937,38 +3937,19 @@ param_no_default_rule(Parser *p)
     }
     arg_ty res = NULL;
     int mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        return NULL;
-    }
-    int start_lineno = p->tokens[mark]->lineno;
-    UNUSED(start_lineno); // Only used by EXTRA macro
-    int start_col_offset = p->tokens[mark]->col_offset;
-    UNUSED(start_col_offset); // Only used by EXTRA macro
-    { // NAME annotation? ',' TYPE_COMMENT?
-        expr_ty a;
-        void *b;
+    { // param ',' TYPE_COMMENT?
+        arg_ty a;
         void *literal;
         void *tc;
         if (
-            (a = _PyPegen_name_token(p))
-            &&
-            (b = annotation_rule(p), 1)
+            (a = param_rule(p))
             &&
             (literal = _PyPegen_expect_token(p, 12))
             &&
             (tc = _PyPegen_type_comment_token(p), 1)
         )
         {
-            Token *token = _PyPegen_get_last_nonnwhitespace_token(p);
-            if (token == NULL) {
-                return NULL;
-            }
-            int end_lineno = token->end_lineno;
-            UNUSED(end_lineno); // Only used by EXTRA macro
-            int end_col_offset = token->end_col_offset;
-            UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA );
+            res = _PyPegen_add_type_comment ( p , a , tc );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -3977,29 +3958,18 @@ param_no_default_rule(Parser *p)
         }
         p->mark = mark;
     }
-    { // NAME annotation? TYPE_COMMENT? &')'
-        expr_ty a;
-        void *b;
+    { // param TYPE_COMMENT? &')'
+        arg_ty a;
         void *tc;
         if (
-            (a = _PyPegen_name_token(p))
-            &&
-            (b = annotation_rule(p), 1)
+            (a = param_rule(p))
             &&
             (tc = _PyPegen_type_comment_token(p), 1)
             &&
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 8)
         )
         {
-            Token *token = _PyPegen_get_last_nonnwhitespace_token(p);
-            if (token == NULL) {
-                return NULL;
-            }
-            int end_lineno = token->end_lineno;
-            UNUSED(end_lineno); // Only used by EXTRA macro
-            int end_col_offset = token->end_col_offset;
-            UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA );
+            res = _PyPegen_add_type_comment ( p , a , tc );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -4013,9 +3983,7 @@ param_no_default_rule(Parser *p)
     return res;
 }
 
-// param_with_default:
-//     | NAME annotation? default ',' TYPE_COMMENT?
-//     | NAME annotation? default TYPE_COMMENT? &')'
+// param_with_default: param default ',' TYPE_COMMENT? | param default TYPE_COMMENT? &')'
 static NameDefaultPair*
 param_with_default_rule(Parser *p)
 {
@@ -4024,24 +3992,13 @@ param_with_default_rule(Parser *p)
     }
     NameDefaultPair* res = NULL;
     int mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        return NULL;
-    }
-    int start_lineno = p->tokens[mark]->lineno;
-    UNUSED(start_lineno); // Only used by EXTRA macro
-    int start_col_offset = p->tokens[mark]->col_offset;
-    UNUSED(start_col_offset); // Only used by EXTRA macro
-    { // NAME annotation? default ',' TYPE_COMMENT?
-        expr_ty a;
-        void *b;
+    { // param default ',' TYPE_COMMENT?
+        arg_ty a;
         expr_ty c;
         void *literal;
         void *tc;
         if (
-            (a = _PyPegen_name_token(p))
-            &&
-            (b = annotation_rule(p), 1)
+            (a = param_rule(p))
             &&
             (c = default_rule(p))
             &&
@@ -4050,15 +4007,7 @@ param_with_default_rule(Parser *p)
             (tc = _PyPegen_type_comment_token(p), 1)
         )
         {
-            Token *token = _PyPegen_get_last_nonnwhitespace_token(p);
-            if (token == NULL) {
-                return NULL;
-            }
-            int end_lineno = token->end_lineno;
-            UNUSED(end_lineno); // Only used by EXTRA macro
-            int end_col_offset = token->end_col_offset;
-            UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA ) , c );
+            res = _PyPegen_name_default_pair ( p , a , c , tc );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -4067,15 +4016,12 @@ param_with_default_rule(Parser *p)
         }
         p->mark = mark;
     }
-    { // NAME annotation? default TYPE_COMMENT? &')'
-        expr_ty a;
-        void *b;
+    { // param default TYPE_COMMENT? &')'
+        arg_ty a;
         expr_ty c;
         void *tc;
         if (
-            (a = _PyPegen_name_token(p))
-            &&
-            (b = annotation_rule(p), 1)
+            (a = param_rule(p))
             &&
             (c = default_rule(p))
             &&
@@ -4084,15 +4030,7 @@ param_with_default_rule(Parser *p)
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 8)
         )
         {
-            Token *token = _PyPegen_get_last_nonnwhitespace_token(p);
-            if (token == NULL) {
-                return NULL;
-            }
-            int end_lineno = token->end_lineno;
-            UNUSED(end_lineno); // Only used by EXTRA macro
-            int end_col_offset = token->end_col_offset;
-            UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA ) , c );
+            res = _PyPegen_name_default_pair ( p , a , c , tc );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -4107,8 +4045,8 @@ param_with_default_rule(Parser *p)
 }
 
 // param_maybe_default:
-//     | NAME annotation? default? ',' TYPE_COMMENT?
-//     | NAME annotation? default? TYPE_COMMENT? &')'
+//     | param default? ',' TYPE_COMMENT?
+//     | param default? TYPE_COMMENT? &')'
 static NameDefaultPair*
 param_maybe_default_rule(Parser *p)
 {
@@ -4116,6 +4054,67 @@ param_maybe_default_rule(Parser *p)
         return NULL;
     }
     NameDefaultPair* res = NULL;
+    int mark = p->mark;
+    { // param default? ',' TYPE_COMMENT?
+        arg_ty a;
+        void *c;
+        void *literal;
+        void *tc;
+        if (
+            (a = param_rule(p))
+            &&
+            (c = default_rule(p), 1)
+            &&
+            (literal = _PyPegen_expect_token(p, 12))
+            &&
+            (tc = _PyPegen_type_comment_token(p), 1)
+        )
+        {
+            res = _PyPegen_name_default_pair ( p , a , c , tc );
+            if (res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // param default? TYPE_COMMENT? &')'
+        arg_ty a;
+        void *c;
+        void *tc;
+        if (
+            (a = param_rule(p))
+            &&
+            (c = default_rule(p), 1)
+            &&
+            (tc = _PyPegen_type_comment_token(p), 1)
+            &&
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 8)
+        )
+        {
+            res = _PyPegen_name_default_pair ( p , a , c , tc );
+            if (res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = mark;
+    }
+    res = NULL;
+  done:
+    return res;
+}
+
+// param: NAME annotation?
+static arg_ty
+param_rule(Parser *p)
+{
+    if (p->error_indicator) {
+        return NULL;
+    }
+    arg_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -4125,22 +4124,13 @@ param_maybe_default_rule(Parser *p)
     UNUSED(start_lineno); // Only used by EXTRA macro
     int start_col_offset = p->tokens[mark]->col_offset;
     UNUSED(start_col_offset); // Only used by EXTRA macro
-    { // NAME annotation? default? ',' TYPE_COMMENT?
+    { // NAME annotation?
         expr_ty a;
         void *b;
-        void *c;
-        void *literal;
-        void *tc;
         if (
             (a = _PyPegen_name_token(p))
             &&
             (b = annotation_rule(p), 1)
-            &&
-            (c = default_rule(p), 1)
-            &&
-            (literal = _PyPegen_expect_token(p, 12))
-            &&
-            (tc = _PyPegen_type_comment_token(p), 1)
         )
         {
             Token *token = _PyPegen_get_last_nonnwhitespace_token(p);
@@ -4151,41 +4141,7 @@ param_maybe_default_rule(Parser *p)
             UNUSED(end_lineno); // Only used by EXTRA macro
             int end_col_offset = token->end_col_offset;
             UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA ) , c );
-            if (res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = mark;
-    }
-    { // NAME annotation? default? TYPE_COMMENT? &')'
-        expr_ty a;
-        void *b;
-        void *c;
-        void *tc;
-        if (
-            (a = _PyPegen_name_token(p))
-            &&
-            (b = annotation_rule(p), 1)
-            &&
-            (c = default_rule(p), 1)
-            &&
-            (tc = _PyPegen_type_comment_token(p), 1)
-            &&
-            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 8)
-        )
-        {
-            Token *token = _PyPegen_get_last_nonnwhitespace_token(p);
-            if (token == NULL) {
-                return NULL;
-            }
-            int end_lineno = token->end_lineno;
-            UNUSED(end_lineno); // Only used by EXTRA macro
-            int end_col_offset = token->end_col_offset;
-            UNUSED(end_col_offset); // Only used by EXTRA macro
-            res = _PyPegen_name_default_pair ( p , _Py_arg ( a -> v . Name . id , b , NEW_TYPE_COMMENT ( tc ) , EXTRA ) , c );
+            res = _Py_arg ( a -> v . Name . id , b , NULL , EXTRA );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -5371,7 +5327,7 @@ lambda_name_with_optional_default_rule(Parser *p)
             (b = _tmp_82_rule(p), 1)
         )
         {
-            res = _PyPegen_name_default_pair ( p , a , b );
+            res = _PyPegen_name_default_pair ( p , a , b , NULL );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -5435,7 +5391,7 @@ lambda_name_with_default_rule(Parser *p)
             (e = expression_rule(p))
         )
         {
-            res = _PyPegen_name_default_pair ( p , n , e );
+            res = _PyPegen_name_default_pair ( p , n , e , NULL );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;

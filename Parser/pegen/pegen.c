@@ -6,9 +6,9 @@
 #include "parse_string.h"
 
 PyObject *
-_PyPegen_new_type_comment(Parser *p, char *s)
+_PyPegen_new_type_comment(Parser *p, char *tc)
 {
-    PyObject *res = PyUnicode_DecodeUTF8(s, strlen(s), NULL);
+    PyObject *res = PyUnicode_DecodeUTF8(tc, strlen(tc), NULL);
     if (res == NULL) {
         return NULL;
     }
@@ -17,6 +17,21 @@ _PyPegen_new_type_comment(Parser *p, char *s)
         return NULL;
     }
     return res;
+}
+
+arg_ty
+_PyPegen_add_type_comment(Parser *p, arg_ty a, char *tc)
+{
+    if (tc == NULL) {
+        return a;
+    }
+    PyObject *tco = _PyPegen_new_type_comment(p, tc);
+    if (tco == NULL) {
+        return NULL;
+    }
+    return arg(a->arg, a->annotation, tco,
+               a->lineno, a->col_offset, a->end_lineno, a->end_col_offset,
+               p->arena);
 }
 
 static int
@@ -1586,13 +1601,13 @@ _PyPegen_get_values(Parser *p, asdl_seq *seq)
 
 /* Constructs a NameDefaultPair */
 NameDefaultPair *
-_PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value)
+_PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value, char *tc)
 {
     NameDefaultPair *a = PyArena_Malloc(p->arena, sizeof(NameDefaultPair));
     if (!a) {
         return NULL;
     }
-    a->arg = arg;
+    a->arg = _PyPegen_add_type_comment(p, arg, tc);
     a->value = value;
     return a;
 }
