@@ -911,6 +911,52 @@ _PyPegen_number_token(Parser *p)
                     p->arena);
 }
 
+static int // bool
+newline_in_string(Parser *p, const char *cur)
+{
+    for (char c = *cur; cur >= p->tok->buf; c = *--cur) {
+        if (c == '\'' || c == '"') {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* Check that the source for a single input statement really is a single
+   statement by looking at what is left in the buffer after parsing.
+   Trailing whitespace and comments are OK. */
+static int // bool
+bad_single_statement(Parser *p)
+{
+    const char *cur = strchr(p->tok->buf, '\n');
+
+    /* Newlines are allowed if preceded by a line continuation character
+       or if they appear inside a string. */
+    if (!cur || *(cur - 1) == '\\' || newline_in_string(p, cur)) {
+        return 0;
+    }
+    char c = *cur;
+
+    for (;;) {
+        while (c == ' ' || c == '\t' || c == '\n' || c == '\014') {
+            c = *++cur;
+        }
+
+        if (!c) {
+            return 0;
+        }
+
+        if (c != '#') {
+            return 1;
+        }
+
+        /* Suck up comment. */
+        while (c && c != '\n') {
+            c = *++cur;
+        }
+    }
+}
+
 void
 _PyPegen_Parser_Free(Parser *p)
 {
@@ -1012,6 +1058,11 @@ _PyPegen_run_parser(Parser *p)
             }
         }
         return NULL;
+    }
+
+    if (p->start_rule == Py_single_input && bad_single_statement(p)) {
+        p->tok->done = E_BADSINGLE; // This is not necessary for now, but might be in the future
+        return RAISE_SYNTAX_ERROR("multiple statements found while compiling a single statement");
     }
 
     return res;
