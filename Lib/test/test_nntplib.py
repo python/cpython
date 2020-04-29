@@ -246,7 +246,7 @@ class NetworkedNNTPTestsMixin:
         def wrap_meth(meth):
             @functools.wraps(meth)
             def wrapped(self):
-                with support.transient_internet(self.NNTP_HOST):
+                with socket_helper.transient_internet(self.NNTP_HOST):
                     meth(self)
             return wrapped
         for name in dir(cls):
@@ -315,7 +315,7 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires("network")
-        with support.transient_internet(cls.NNTP_HOST):
+        with socket_helper.transient_internet(cls.NNTP_HOST):
             try:
                 cls.server = cls.NNTP_CLASS(cls.NNTP_HOST,
                                             timeout=support.INTERNET_TIMEOUT,
