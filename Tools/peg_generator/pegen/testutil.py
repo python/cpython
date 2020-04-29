@@ -17,7 +17,7 @@ from pegen.parser import Parser
 from pegen.python_generator import PythonParserGenerator
 from pegen.tokenizer import Tokenizer
 
-EXACT_TOKENS = token.EXACT_TOKEN_TYPES  # type: ignore
+EXACT_TOKENS = tokenize.EXACT_TOKEN_TYPES  # type: ignore
 NON_EXACT_TOKENS = {
     name for index, name in token.tok_name.items() if index not in EXACT_TOKENS.values()
 }
