@@ -301,9 +301,15 @@ error:
 }
 
 static inline PyObject *
-get_error_line(char *buffer)
+get_error_line(char *buffer, int is_file)
 {
-    char *newline = strrchr(buffer, '\n');
+    const char *newline;
+    if (is_file) {
+        newline = strrchr(buffer, '\n');
+    } else {
+        newline = strchr(buffer, '\n');
+    }
+
     if (newline) {
         return PyUnicode_DecodeUTF8(buffer, newline - buffer, "replace");
     }
@@ -396,7 +402,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int no_col_number, const char
     }
 
     if (!loc) {
-        loc = get_error_line(p->tok->buf);
+        loc = get_error_line(p->tok->buf, p->start_rule == Py_file_input);
     }
 
     if (loc && !no_col_number) {
@@ -409,7 +415,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int no_col_number, const char
         }
         col_number = byte_offset_to_character_offset(loc, col_offset);
     }
-    else {
+    else if(!loc) {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
