@@ -425,10 +425,7 @@ traceback_hash(traceback_t *traceback)
 static void
 traceback_get_frames(traceback_t *traceback)
 {
-    PyThreadState *tstate;
-    PyFrameObject *pyframe;
-
-    tstate = PyGILState_GetThisThreadState();
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
     if (tstate == NULL) {
 #ifdef TRACE_DEBUG
         tracemalloc_error("failed to get the current thread state");
@@ -436,7 +433,8 @@ traceback_get_frames(traceback_t *traceback)
         return;
     }
 
-    pyframe = PyThreadState_GetFrame(tstate);
+    PyFrameObject *pyframe = PyThreadState_GetFrame(tstate);
+    Py_XDECREF(pyframe); // use a borrowed reference
     for (; pyframe != NULL; pyframe = pyframe->f_back) {
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
