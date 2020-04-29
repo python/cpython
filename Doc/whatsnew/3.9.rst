@@ -538,6 +538,7 @@ Build and C API Changes
 =======================
 
 * New :c:func:`PyFrame_GetCode` function: get a frame code.
+  New :c:func:`PyFrame_GetBack` function: get the frame next outer frame.
   (Contributed by Victor Stinner in :issue:`40421`.)
 
 * Add :c:func:`PyFrame_GetLineNumber` to the limited C API.

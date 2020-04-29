@@ -3,7 +3,7 @@
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "frameobject.h"
+#include "frameobject.h"          // PyFrame_GetBack()
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"
@@ -815,7 +815,9 @@ static PyFrameObject *
 next_external_frame(PyFrameObject *frame)
 {
     do {
-        frame = frame->f_back;
+        PyFrameObject *back = PyFrame_GetBack(frame);
+        Py_DECREF(frame);
+        frame = back;
     } while (frame != NULL && is_internal_frame(frame));
 
     return frame;
@@ -831,12 +833,15 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     PyObject *globals;
 
     /* Setup globals, filename and lineno. */
-    PyFrameObject *f = _PyThreadState_GET()->frame;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyFrameObject *f = PyThreadState_GetFrame(tstate);
     // Stack level comparisons to Python code is off by one as there is no
     // warnings-related stack level to avoid.
     if (stack_level <= 0 || is_internal_frame(f)) {
         while (--stack_level > 0 && f != NULL) {
-            f = f->f_back;
+            PyFrameObject *back = PyFrame_GetBack(f);
+            Py_DECREF(f);
+            f = back;
         }
     }
     else {
@@ -857,6 +862,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         Py_DECREF(code);
         Py_INCREF(*filename);
         *lineno = PyFrame_GetLineNumber(f);
+        Py_DECREF(f);
     }
 
     *module = NULL;
@@ -868,7 +874,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     if (*registry == NULL) {
         int rc;
 
-        if (PyErr_Occurred()) {
+        if (_PyErr_Occurred(tstate)) {
             goto handle_error;
         }
         *registry = PyDict_New();
@@ -887,7 +893,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
         Py_INCREF(*module);
     }
-    else if (PyErr_Occurred()) {
+    else if (_PyErr_Occurred(tstate)) {
         goto handle_error;
     }
     else {

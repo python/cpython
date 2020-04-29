@@ -1237,3 +1237,13 @@ PyFrame_GetCode(PyFrameObject *frame)
     Py_INCREF(code);
     return code;
 }
+
+
+PyFrameObject*
+PyFrame_GetBack(PyFrameObject *frame)
+{
+    assert(frame != NULL);
+    PyFrameObject *back = frame->f_back;
+    Py_XINCREF(back);
+    return back;
+}
