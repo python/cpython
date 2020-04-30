@@ -102,6 +102,20 @@ dbm_length(dbmobject *dp)
         return -1;
     }
     if (dp->di_size < 0) {
+#if GDBM_VERSION_MAJOR >= 1 && GDBM_VERSION_MINOR >= 11
+        errno = 0;
+        gdbm_count_t count;
+        if (gdbm_count(dp->di_dbm, &count) == -1) {
+            if (errno != 0) {
+                PyErr_SetFromErrno(DbmError);
+            }
+            else {
+                PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
+            }
+            return -1;
+        }
+        dp->di_size = count;
+#else
         datum key,okey;
         int size;
         okey.dsize=0;
@@ -115,6 +129,7 @@ dbm_length(dbmobject *dp)
             okey=key;
         }
         dp->di_size = size;
+#endif
     }
     return dp->di_size;
 }
