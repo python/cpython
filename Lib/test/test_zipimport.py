@@ -34,12 +34,6 @@ raise_src = 'def do_raise(): raise TypeError\n'
 
 def make_pyc(co, mtime, size):
     data = marshal.dumps(co)
-    if type(mtime) is type(0.0):
-        # Mac mtimes need a bit of special casing
-        if mtime < 0x7fffffff:
-            mtime = int(mtime)
-        else:
-            mtime = int(-0x100000000 + int(mtime))
     pyc = (importlib.util.MAGIC_NUMBER +
         struct.pack("<iLL", 0,
                     int(mtime) & 0xFFFF_FFFF, size & 0xFFFF_FFFF) + data)
@@ -258,11 +252,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # Make sure we can handle mtimes larger than what a 32-bit signed number
         # can hold.
         twenty_thirty_eight_pyc = make_pyc(test_co, 2**32 - 1, len(test_src))
-        files = {TESTMOD + ".py": (NOW, test_src),
-                 TESTMOD + pyc_ext: (NOW, twenty_thirty_eight_pyc)}
-        self.doTest(".py", files, TESTMOD)
-
-        larger_than_32_bit = make_pyc(test_co, 2**35, len(test_src))
         files = {TESTMOD + ".py": (NOW, test_src),
                  TESTMOD + pyc_ext: (NOW, twenty_thirty_eight_pyc)}
         self.doTest(".py", files, TESTMOD)
