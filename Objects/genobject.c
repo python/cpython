@@ -512,12 +512,6 @@ throw_here:
     }
 
     PyErr_Restore(typ, val, tb);
-    if (gen->gi_exc_state.exc_type) {
-        Py_INCREF(gen->gi_exc_state.exc_type);
-        Py_XINCREF(gen->gi_exc_state.exc_value);
-        Py_XINCREF(gen->gi_exc_state.exc_traceback);
-        _PyErr_ChainExceptions(gen->gi_exc_state.exc_type, gen->gi_exc_state.exc_value, gen->gi_exc_state.exc_traceback);
-    }
     return gen_send_ex(gen, Py_None, 1, 0);
 
 failed_throw:
