@@ -895,10 +895,10 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
-    def relative_to(self, *other):
+    def relative_to(self, *other, strict=True):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
-        a subpath of the other path), raise ValueError.
+        related to the other path), raise ValueError.
         """
         # For the purpose of this method, drive and root are considered
         # separate parts, i.e.:
@@ -920,12 +920,26 @@ class PurePath(object):
             to_abs_parts = to_parts
         n = len(to_abs_parts)
         cf = self._flavour.casefold_parts
-        if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
+        common = 0
+        for p, tp in zip(cf(abs_parts), cf(to_abs_parts)):
+            if p != tp:
+                break
+            common += 1
+        if strict:
+            failure = (root or drv) if n == 0 else common != n
+            error_message = "{!r} does not start with {!r}"
+            up_parts = []
+        else:
+            failure = root != to_root
+            if drv or to_drv:
+                failure = cf([drv]) != cf([to_drv]) or (failure and n > 1)
+            error_message = "{!r} is not related to {!r}"
+            up_parts = (n-common)*['..']
+        if failure:
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
-            raise ValueError("{!r} does not start with {!r}"
-                             .format(str(self), str(formatted)))
-        return self._from_parsed_parts('', root if n == 1 else '',
-                                       abs_parts[n:])
+            raise ValueError(error_message.format(str(self), str(formatted)))
+        return self._from_parsed_parts('', root if common == 1 else '',
+                                       up_parts+abs_parts[common:])
 
     def is_relative_to(self, *other):
         """Return True if the path is relative to another path or False.
