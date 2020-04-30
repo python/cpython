@@ -914,8 +914,9 @@ class NNTP:
 
     def _close(self):
         try:
-            self.file.close()
-            del self.file
+            if self.file:
+                self.file.close()
+                del self.file
         finally:
             self.sock.close()
 
