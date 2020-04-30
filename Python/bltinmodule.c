@@ -2521,7 +2521,7 @@ builtin_issubclass_impl(PyObject *module, PyObject *cls,
 
 typedef struct {
     PyObject_HEAD
-    Py_ssize_t tuplesize;  /* negative when total=True */
+    Py_ssize_t tuplesize;  /* negative when strict=True */
     PyObject *ittuple;     /* tuple of iterators */
     PyObject *result;
 } zipobject;
@@ -2534,16 +2534,16 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
     Py_ssize_t tuplesize;
-    int total = 0;
+    int strict = 0;
 
     if (kwds) {
         PyObject *empty = PyTuple_New(0);
         if (empty == NULL) {
             return NULL;
         }
-        static char *kwlist[] = {"total", NULL};
+        static char *kwlist[] = {"strict", NULL};
         int parsed = PyArg_ParseTupleAndKeywords(
-                empty, kwds, "|$p:zip", kwlist, &total);
+                empty, kwds, "|$p:zip", kwlist, &strict);
         Py_DECREF(empty);
         if (!parsed) {
             return NULL;
@@ -2587,7 +2587,7 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     lz->ittuple = ittuple;
-    lz->tuplesize = total ? -tuplesize : tuplesize;
+    lz->tuplesize = strict ? -tuplesize : tuplesize;
     lz->result = result;
 
     return (PyObject *)lz;
@@ -2666,7 +2666,8 @@ check:
         item = (*Py_TYPE(it)->tp_iternext)(it);
         if (item) {
             Py_DECREF(item);
-            return PyErr_Format(PyExc_ValueError, "%s() argument %d is too long",
+            return PyErr_Format(PyExc_ValueError,
+                                "%s() argument %d is too long",
                                 Py_TYPE(lz)->tp_name, i + 1);
         }
         if (PyErr_Occurred()) {
@@ -2681,7 +2682,7 @@ zip_getnewargs_ex(zipobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* Just recreate the zip with the internal iterator tuple */
     if (lz->tuplesize < 0) {
-        return Py_BuildValue("O{sO}", lz->ittuple, "total", Py_True);
+        return Py_BuildValue("O{sO}", lz->ittuple, "strict", Py_True);
     }
     return Py_BuildValue("O{}", lz->ittuple);
 }
@@ -2692,15 +2693,15 @@ static PyMethodDef zip_methods[] = {
 };
 
 PyDoc_STRVAR(zip_doc,
-"zip(*iterables[, total=False]) --> zip object\n\
+"zip(*iterables[, strict=False]) --> zip object\n\
 \n\
 Return a zip object whose .__next__() method returns a tuple where\n\
 the i-th element comes from the i-th iterable argument.  The .__next__()\n\
 method continues until the shortest iterable in the argument sequence\n\
 is exhausted and then it raises StopIteration.\n\
 \n\
-If total is True, raise a ValueError if one of the arguments is exhausted\n\
-before the others.");
+If strict is true and one of the arguments is exhausted before the others,\n\
+raise a ValueError.");
 
 PyTypeObject PyZip_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
