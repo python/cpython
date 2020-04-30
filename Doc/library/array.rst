@@ -48,11 +48,15 @@ defined:
 Notes:
 
 (1)
-   The ``'u'`` type code had corresponded to Python's obsolete unicode character
-   (:c:type:`Py_UNICODE` which is :c:type:`wchar_t`). Depending on the
-   platform, it can be 16 bits or 32 bits.
+   It can be 16 bits or 32 bits depending on the platform.
+
+   .. versionchanged:: 3.9
+      ``array('u')`` now uses ``wchar_t`` as C type instead of deprecated
+      ``Py_UNICODE``. This change doesn't affect to its behavior because
+      ``Py_UNICODE`` is alias of ``wchar_t`` since Python 3.3.
 
    .. deprecated-removed:: 3.3 4.0
+
 
 The actual representation of values is determined by the machine architecture
 (strictly speaking, by the C implementation).  The actual size can be accessed
