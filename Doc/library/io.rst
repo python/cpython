@@ -136,8 +136,8 @@ High-level Module Interface
 
    The behavior of this function may be overridden by an earlier call to the
    :c:func:`PyFile_SetOpenCodeHook`, however, it should always be considered
-   interchangeable with ``open(path, 'rb')``. Overriding the behavior is
-   intended for additional validation or preprocessing of the file.
+   interchangeable with ``open(abspath(str(path), 'rb')``. Overriding the
+   behavior is intended for additional validation or preprocessing of the file.
 
    .. versionadded:: 3.8
 
