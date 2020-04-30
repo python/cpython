@@ -241,18 +241,25 @@ u_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    wchar_t *p;
-    Py_ssize_t len;
-
-    if (!PyArg_Parse(v, "u#;array item must be unicode character", &p, &len))
+    PyObject *u;
+    if (!PyArg_Parse(v, "U;array item must be unicode character", &u)) {
         return -1;
-    if (len != 1) {
+    }
+
+    Py_ssize_t len = PyUnicode_AsWideChar(u, NULL, 0);
+    if (len != 2) {
         PyErr_SetString(PyExc_TypeError,
                         "array item must be unicode character");
         return -1;
     }
-    if (i >= 0)
-        ((wchar_t *)ap->ob_item)[i] = p[0];
+
+    wchar_t w;
+    len = PyUnicode_AsWideChar(u, &w, 1);
+    assert(len == 1);
+
+    if (i >= 0) {
+        ((wchar_t *)ap->ob_item)[i] = w;
+    }
     return 0;
 }
 
