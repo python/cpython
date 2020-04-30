@@ -13,7 +13,6 @@ import threading
 from test import support
 from test.support import socket_helper
 from nntplib import NNTP, GroupInfo
-
 from unittest.mock import patch
 try:
     import ssl
