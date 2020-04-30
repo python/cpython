@@ -8,10 +8,9 @@ from importlib.abc import ResourceLoader
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from types import ModuleType
-from typing import Iterable, Iterator, Optional, Set, Union   # noqa: F401
+from typing import Iterable, Iterator, Optional, Union   # noqa: F401
 from typing import cast
 from typing.io import BinaryIO, TextIO
-from zipimport import ZipImportError
 
 
 __all__ = [
