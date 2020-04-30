@@ -1817,6 +1817,7 @@ class GenPage(Frame):
                     (*)startup_shell_on: Radiobutton - startup_edit
                 frame_win_size: Frame
                     win_size_title: Label
+                    (*)win_max_title: Checkbutton - win_max
                     win_width_title: Label
                     (*)win_width_int: Entry - win_width
                     win_height_title: Label
