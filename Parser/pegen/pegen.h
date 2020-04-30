@@ -166,7 +166,18 @@ NEW_TYPE_COMMENT(Parser *p, Token *tc)
     if (tc == NULL) {
         return NULL;
     }
-    return CHECK_CALL_NULL_ALLOWED(p, _PyPegen_new_type_comment(p, PyBytes_AsString(tc->bytes)));
+    char *bytes = PyBytes_AsString(tc->bytes);
+    if (bytes == NULL) {
+        goto error;
+    }
+    PyObject *tco = _PyPegen_new_type_comment(p, bytes);
+    if (tco == NULL) {
+        goto error;
+    }
+    return tco;
+ error:
+    p->error_indicator = 1;  // Inline CHECK_CALL
+    return NULL;
 }
 
 arg_ty _PyPegen_add_type_comment_to_arg(Parser *, arg_ty, Token *);
