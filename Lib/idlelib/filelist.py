@@ -68,19 +68,19 @@ class FileList:
         if key:
             del self.dict[key]
         del self.inversedict[edit]
-        try:
-            clip = self.root.clipboard_get().encode('utf-8')
-            if clip and sys.platform[:3] == 'win' and \
-               len(clip) <= io.DEFAULT_BUFFER_SIZE:  # Required to avoid exceeding the pipe bufsize
-                p = subprocess.Popen('clip', shell=True, stdin=subprocess.PIPE)
-                p.stdin.write(clip)
-                p.stdin.close()
-        except:
-            # Ignore anything that goes wrong
-            # Partly because it doesn't matter
-            # Mostly because we must reach the quit
-            pass
         if not self.inversedict:
+            try:
+                clip = self.root.clipboard_get().encode('utf-8')
+                if clip and sys.platform[:3] == 'win' and \
+                   len(clip) <= io.DEFAULT_BUFFER_SIZE:  # Required to avoid exceeding the pipe bufsize
+                    p = subprocess.Popen('clip', shell=True, stdin=subprocess.PIPE)
+                    p.stdin.write(clip)
+                    p.stdin.close()
+            except:
+                # Ignore anything that goes wrong
+                # Partly because it doesn't matter
+                # Mostly because we must reach the quit
+                pass
             self.root.quit()
 
     def filename_changed_edit(self, edit):
