@@ -563,7 +563,7 @@ stat_exec(PyObject *module)
         "ST_CTIME"
     };
 
-    for (int i = 0; i < Py_ARRAY_LENGTH(st_constants); i++) {
+    for (int i = 0; i < (int)Py_ARRAY_LENGTH(st_constants); i++) {
         if (PyModule_AddIntConstant(module, st_constants[i], i) < 0) {
             return -1;
         }
