@@ -45,7 +45,6 @@ Process #1..n:
 
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
-import atexit
 import os
 from concurrent.futures import _base
 import queue
