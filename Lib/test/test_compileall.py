@@ -62,7 +62,10 @@ class CompileallTestsBase:
     def test_year_2038_mtime_compilation(self):
         # Test to make sure we can handle mtimes larger than what a 32-bit
         # signed number can hold as part of bpo-34990
-        os.utime(self.source_path, (2**32 - 1, 2**32 - 1))
+        try:
+            os.utime(self.source_path, (2**32 - 1, 2**32 - 1))
+        except (OverflowError, OSError):
+            self.skipTest("filesystem doesn't support timestamps near 2**32")
         self.assertTrue(compileall.compile_file(self.source_path))
 
     def test_larger_than_32_bit_times(self):

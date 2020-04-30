@@ -1,2 +1,2 @@
 Fixed a Y2k38 bug in the compileall module where it would fail to compile
-files created after 2038.
+files with a modification time after the year 2038.
