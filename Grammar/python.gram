@@ -85,7 +85,7 @@ assignment:
          | ann_assign_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
         _Py_AnnAssign(a, b, c, 0, EXTRA)}
     | a=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) tc=[TYPE_COMMENT] {
-         _Py_Assign(a, b, NEW_TYPE_COMMENT(tc), EXTRA) }
+         _Py_Assign(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | a=target b=augassign c=(yield_expr | star_expressions) {
          _Py_AugAssign(a, b->kind, c, EXTRA) }
     | invalid_assignment
@@ -157,13 +157,13 @@ while_stmt[stmt_ty]:
 
 for_stmt[stmt_ty]:
     | is_async=[ASYNC] 'for' t=star_targets 'in' ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
-        (is_async ? _Py_AsyncFor : _Py_For)(t, ex, b, el, NEW_TYPE_COMMENT(tc), EXTRA) }
+        (is_async ? _Py_AsyncFor : _Py_For)(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
 
 with_stmt[stmt_ty]:
     | is_async=[ASYNC] 'with' '(' a=','.with_item+ ')' ':' b=block {
         (is_async ? _Py_AsyncWith : _Py_With)(a, b, NULL, EXTRA) }
     | is_async=[ASYNC] 'with' a=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
-        (is_async ? _Py_AsyncWith : _Py_With)(a, b, NEW_TYPE_COMMENT(tc), EXTRA) }
+        (is_async ? _Py_AsyncWith : _Py_With)(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
 with_item[withitem_ty]:
     | e=expression o=['as' t=target { t }] { _Py_withitem(e, o, p->arena) }
 
@@ -191,7 +191,7 @@ function_def_raw[stmt_ty]:
     | is_async=[ASYNC] 'def' n=NAME '(' params=[params] ')' a=['->' z=expression { z }] ':' tc=[func_type_comment] b=block {
         (is_async ? _Py_AsyncFunctionDef : _Py_FunctionDef)(n->v.Name.id,
                              (params) ? params : CHECK(_PyPegen_empty_arguments(p)),
-                             b, NULL, a, NEW_TYPE_COMMENT(tc), EXTRA) }
+                             b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA) }
 func_type_comment[PyObject*]:
     | NEWLINE t=TYPE_COMMENT &(NEWLINE INDENT) { t }  # Must be followed by indented block
     | invalid_double_type_comments

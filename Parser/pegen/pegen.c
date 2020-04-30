@@ -6,9 +6,9 @@
 #include "parse_string.h"
 
 PyObject *
-_PyPegen_new_type_comment(Parser *p, char *tc)
+_PyPegen_new_type_comment(Parser *p, char *s)
 {
-    PyObject *res = PyUnicode_DecodeUTF8(tc, strlen(tc), NULL);
+    PyObject *res = PyUnicode_DecodeUTF8(s, strlen(s), NULL);
     if (res == NULL) {
         return NULL;
     }
@@ -20,12 +20,12 @@ _PyPegen_new_type_comment(Parser *p, char *tc)
 }
 
 arg_ty
-_PyPegen_add_type_comment_to_arg(Parser *p, arg_ty a, char *tc)
+_PyPegen_add_type_comment_to_arg(Parser *p, arg_ty a, Token *tc)
 {
     if (tc == NULL) {
         return a;
     }
-    PyObject *tco = NEW_TYPE_COMMENT(tc);
+    PyObject *tco = NEW_TYPE_COMMENT(p, tc);
     if (tco == NULL) {
         return NULL;
     }
@@ -1597,7 +1597,7 @@ _PyPegen_get_values(Parser *p, asdl_seq *seq)
 
 /* Constructs a NameDefaultPair */
 NameDefaultPair *
-_PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value, char *tc)
+_PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value, Token *tc)
 {
     NameDefaultPair *a = PyArena_Malloc(p->arena, sizeof(NameDefaultPair));
     if (!a) {
