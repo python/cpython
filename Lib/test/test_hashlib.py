@@ -8,7 +8,6 @@
 
 import array
 from binascii import unhexlify
-import functools
 import hashlib
 import importlib
 import itertools
