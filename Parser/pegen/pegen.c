@@ -5,6 +5,39 @@
 #include "pegen.h"
 #include "parse_string.h"
 
+PyObject *
+_PyPegen_new_type_comment(Parser *p, char *s)
+{
+    PyObject *res = PyUnicode_DecodeUTF8(s, strlen(s), NULL);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (PyArena_AddPyObject(p->arena, res) < 0) {
+        Py_DECREF(res);
+        return NULL;
+    }
+    return res;
+}
+
+arg_ty
+_PyPegen_add_type_comment_to_arg(Parser *p, arg_ty a, Token *tc)
+{
+    if (tc == NULL) {
+        return a;
+    }
+    char *bytes = PyBytes_AsString(tc->bytes);
+    if (bytes == NULL) {
+        return NULL;
+    }
+    PyObject *tco = _PyPegen_new_type_comment(p, bytes);
+    if (tco == NULL) {
+        return NULL;
+    }
+    return arg(a->arg, a->annotation, tco,
+               a->lineno, a->col_offset, a->end_lineno, a->end_col_offset,
+               p->arena);
+}
+
 static int
 init_normalization(Parser *p)
 {
@@ -539,11 +572,66 @@ _get_keyword_or_name_type(Parser *p, const char *name, int name_len)
     return NAME;
 }
 
+static int
+growable_comment_array_init(growable_comment_array *arr, size_t initial_size) {
+    assert(initial_size > 0);
+    arr->items = PyMem_Malloc(initial_size * sizeof(*arr->items));
+    arr->size = initial_size;
+    arr->num_items = 0;
+
+    return arr->items != NULL;
+}
+
+static int
+growable_comment_array_add(growable_comment_array *arr, int lineno, char *comment) {
+    if (arr->num_items >= arr->size) {
+        size_t new_size = arr->size * 2;
+        void *new_items_array = PyMem_Realloc(arr->items, new_size * sizeof(*arr->items));
+        if (!new_items_array) {
+            return 0;
+        }
+        arr->items = new_items_array;
+        arr->size = new_size;
+    }
+
+    arr->items[arr->num_items].lineno = lineno;
+    arr->items[arr->num_items].comment = comment;  // Take ownership
+    arr->num_items++;
+    return 1;
+}
+
+static void
+growable_comment_array_deallocate(growable_comment_array *arr) {
+    for (unsigned i = 0; i < arr->num_items; i++) {
+        PyMem_Free(arr->items[i].comment);
+    }
+    PyMem_Free(arr->items);
+}
+
 int
 _PyPegen_fill_token(Parser *p)
 {
     const char *start, *end;
     int type = PyTokenizer_Get(p->tok, &start, &end);
+
+    // Record and skip '# type: ignore' comments
+    while (type == TYPE_IGNORE) {
+        Py_ssize_t len = end - start;
+        char *tag = PyMem_Malloc(len + 1);
+        if (tag == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        strncpy(tag, start, len);
+        tag[len] = '\0';
+        // Ownership of tag passes to the growable array
+        if (!growable_comment_array_add(&p->type_ignore_comments, p->tok->lineno, tag)) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        type = PyTokenizer_Get(p->tok, &start, &end);
+    }
+
     if (type == ERRORTOKEN) {
         if (p->tok->done == E_DECODE) {
             return raise_decode_error(p);
@@ -919,6 +1007,7 @@ _PyPegen_Parser_Free(Parser *p)
         PyMem_Free(p->tokens[i]);
     }
     PyMem_Free(p->tokens);
+    growable_comment_array_deallocate(&p->type_ignore_comments);
     PyMem_Free(p);
 }
 
@@ -961,13 +1050,19 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
         PyMem_Free(p);
         return (Parser *) PyErr_NoMemory();
     }
-    p->tokens[0] = PyMem_Malloc(sizeof(Token));
+    p->tokens[0] = PyMem_Calloc(1, sizeof(Token));
     if (!p->tokens) {
         PyMem_Free(p->tokens);
         PyMem_Free(p);
         return (Parser *) PyErr_NoMemory();
     }
-    memset(p->tokens[0], '\0', sizeof(Token));
+    if (!growable_comment_array_init(&p->type_ignore_comments, 10)) {
+        PyMem_Free(p->tokens[0]);
+        PyMem_Free(p->tokens);
+        PyMem_Free(p);
+        return (Parser *) PyErr_NoMemory();
+    }
+
     p->mark = 0;
     p->fill = 0;
     p->size = 1;
@@ -1099,6 +1194,8 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     mod_ty result = NULL;
 
     int parser_flags = compute_parser_flags(flags);
+    tok->type_comments = (parser_flags & PyPARSE_TYPE_COMMENTS) > 0;
+
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, NULL, arena);
     if (p == NULL) {
         goto error;
@@ -1152,6 +1249,27 @@ _PyPegen_seq_insert_in_front(Parser *p, void *a, asdl_seq *seq)
     for (Py_ssize_t i = 1, l = asdl_seq_LEN(new_seq); i < l; i++) {
         asdl_seq_SET(new_seq, i, asdl_seq_GET(seq, i - 1));
     }
+    return new_seq;
+}
+
+/* Creates a copy of seq and appends a to it */
+asdl_seq *
+_PyPegen_seq_append_to_end(Parser *p, asdl_seq *seq, void *a)
+{
+    assert(a != NULL);
+    if (!seq) {
+        return _PyPegen_singleton_seq(p, a);
+    }
+
+    asdl_seq *new_seq = _Py_asdl_seq_new(asdl_seq_LEN(seq) + 1, p->arena);
+    if (!new_seq) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0, l = asdl_seq_LEN(new_seq); i + 1 < l; i++) {
+        asdl_seq_SET(new_seq, i, asdl_seq_GET(seq, i));
+    }
+    asdl_seq_SET(new_seq, asdl_seq_LEN(new_seq) - 1, a);
     return new_seq;
 }
 
@@ -1483,13 +1601,13 @@ _PyPegen_get_values(Parser *p, asdl_seq *seq)
 
 /* Constructs a NameDefaultPair */
 NameDefaultPair *
-_PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value)
+_PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value, Token *tc)
 {
     NameDefaultPair *a = PyArena_Malloc(p->arena, sizeof(NameDefaultPair));
     if (!a) {
         return NULL;
     }
-    a->arg = arg;
+    a->arg = _PyPegen_add_type_comment_to_arg(p, arg, tc);
     a->value = value;
     return a;
 }
@@ -1945,4 +2063,29 @@ error:
         raise_decode_error(p);
     }
     return NULL;
+}
+
+mod_ty
+_PyPegen_make_module(Parser *p, asdl_seq *a) {
+    asdl_seq *type_ignores = NULL;
+    Py_ssize_t num = p->type_ignore_comments.num_items;
+    if (num > 0) {
+        // Turn the raw (comment, lineno) pairs into TypeIgnore objects in the arena
+        type_ignores = _Py_asdl_seq_new(num, p->arena);
+        if (type_ignores == NULL) {
+            return NULL;
+        }
+        for (int i = 0; i < num; i++) {
+            PyObject *tag = _PyPegen_new_type_comment(p, p->type_ignore_comments.items[i].comment);
+            if (tag == NULL) {
+                return NULL;
+            }
+            type_ignore_ty ti = TypeIgnore(p->type_ignore_comments.items[i].lineno, tag, p->arena);
+            if (ti == NULL) {
+                return NULL;
+            }
+            asdl_seq_SET(type_ignores, i, ti);
+        }
+    }
+    return Module(a, type_ignores, p->arena);
 }
