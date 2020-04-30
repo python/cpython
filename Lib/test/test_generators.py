@@ -316,23 +316,6 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(cm.exception.value.value, 2)
 
 
-class GeneratorThrowTest(unittest.TestCase):
-
-    def test_exception_context_set(self):
-        def f():
-            try:
-                raise KeyError('a')
-            except Exception:
-                yield
-
-        gen = f()
-        gen.send(None)
-        with self.assertRaises(ValueError) as cm:
-            gen.throw(ValueError)
-        context = cm.exception.__context__
-        self.assertEqual((type(context), context.args), (KeyError, ('a',)))
-
-
 class YieldFromTests(unittest.TestCase):
     def test_generator_gi_yieldfrom(self):
         def a():
