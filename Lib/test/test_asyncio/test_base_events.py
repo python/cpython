@@ -3,7 +3,6 @@
 import concurrent.futures
 import errno
 import math
-import os
 import socket
 import sys
 import threading

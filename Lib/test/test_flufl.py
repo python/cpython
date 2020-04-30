@@ -1,6 +1,5 @@
 import __future__
 import unittest
-import sys
 from test import support
 
 
