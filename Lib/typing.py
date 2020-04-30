@@ -691,6 +691,13 @@ class _GenericAlias(_Final, _root=True):
         return _GenericAlias(self.__origin__, params, name=self._name, inst=self._inst)
 
     def __repr__(self):
+        if (self.__origin__ == Union and len(self.__args__) == 2
+                and type(None) in self.__args__):
+            if self.__args__[0] is not type(None):
+                arg = self.__args__[0]
+            else:
+                arg = self.__args__[1]
+            return (f'typing.Optional[{_type_repr(arg)}]')
         if (self._name != 'Callable' or
                 len(self.__args__) == 2 and self.__args__[0] is Ellipsis):
             if self._name:
