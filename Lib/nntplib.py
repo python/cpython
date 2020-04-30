@@ -96,7 +96,7 @@ _MAXLINE = 2048
 class NNTPError(Exception):
     """Base class for all nntplib exceptions"""
     def __init__(self, *args):
-        Exception.__init__(self, *args)
+        super().__init__(*args)
         try:
             self.response = args[0]
         except IndexError:
