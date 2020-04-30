@@ -536,7 +536,7 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.relative_to(*other)
+.. method:: PurePath.relative_to(*other, strict=True)
 
    Compute a version of this path relative to the path represented by
    *other*.  If it's impossible, ValueError is raised::
@@ -549,9 +549,25 @@ Pure paths provide the following methods and properties:
       >>> p.relative_to('/usr')
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
-        File "pathlib.py", line 694, in relative_to
-          .format(str(self), str(formatted)))
+        File "pathlib.py", line 940, in relative_to
+          raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' does not start with '/usr'
+      >>> p.relative_to('/usr', strict=False)
+      PurePosixPath('../etc/passwd')
+      >>> p.relative_to('foo', strict=False)
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "pathlib.py", line 940, in relative_to
+          raise ValueError(error_message.format(str(self), str(formatted)))
+      ValueError: '/etc/passwd' is not related to 'foo'
+
+   If the path doesn't start with *other* and *strict* is ``True``,
+   :exc:`ValueError` is raised.  If *strict* is ``False`` and the paths are
+   not both relative or both absolute :exc:`ValueError` is raised (on Windows
+   both paths must reference the same drive as well).
+
+   .. versionadded:: 3.9
+      The *strict* parameter was added.
 
 
 .. method:: PurePath.with_name(name)
