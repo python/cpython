@@ -1455,6 +1455,33 @@ PyGILState_Release(PyGILState_STATE oldstate)
 /* cross-interpreter data */
 /**************************/
 
+/* cross-interpreter operations */
+
+static void
+_call_in_interpreter(struct _gilstate_runtime_state *gilstate,
+                     PyInterpreterState *interp,
+                     void (*func)(void *), void *arg)
+{
+    /* We would use Py_AddPendingCall() if it weren't specific to the
+     * main interpreter (see bpo-33608).  In the meantime we take a
+     * naive approach.
+     */
+    PyThreadState *save_tstate = NULL;
+    if (interp != _PyRuntimeGILState_GetThreadState(gilstate)->interp) {
+        // XXX Using the "head" thread isn't strictly correct.
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        // XXX Possible GILState issues?
+        save_tstate = _PyThreadState_Swap(gilstate, tstate);
+    }
+
+    func(arg);
+
+    // Switch back.
+    if (save_tstate != NULL) {
+        _PyThreadState_Swap(gilstate, save_tstate);
+    }
+}
+
 /* cross-interpreter data */
 
 crossinterpdatafunc _PyCrossInterpreterData_Lookup(PyObject *);
@@ -1545,31 +1572,6 @@ _release_xidata(void *arg)
         data->free(data->data);
     }
     Py_XDECREF(data->obj);
-}
-
-static void
-_call_in_interpreter(struct _gilstate_runtime_state *gilstate,
-                     PyInterpreterState *interp,
-                     void (*func)(void *), void *arg)
-{
-    /* We would use Py_AddPendingCall() if it weren't specific to the
-     * main interpreter (see bpo-33608).  In the meantime we take a
-     * naive approach.
-     */
-    PyThreadState *save_tstate = NULL;
-    if (interp != _PyRuntimeGILState_GetThreadState(gilstate)->interp) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        // XXX Possible GILState issues?
-        save_tstate = _PyThreadState_Swap(gilstate, tstate);
-    }
-
-    func(arg);
-
-    // Switch back.
-    if (save_tstate != NULL) {
-        _PyThreadState_Swap(gilstate, save_tstate);
-    }
 }
 
 void
@@ -1803,6 +1805,10 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
         Py_FatalError("could not register str for cross-interpreter sharing");
     }
 }
+
+/******************************/
+/* END cross-interpreter data */
+/******************************/
 
 
 _PyFrameEvalFunction
