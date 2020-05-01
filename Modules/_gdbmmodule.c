@@ -121,11 +121,10 @@ dbm_length(dbmobject *dp)
         dp->di_size = count;
 #else
         datum key,okey;
-        int size;
         okey.dsize=0;
         okey.dptr=NULL;
 
-        size = 0;
+        Py_ssize_t size = 0;
         for (key=gdbm_firstkey(dp->di_dbm); key.dptr;
              key = gdbm_nextkey(dp->di_dbm,okey)) {
             size++;
