@@ -252,7 +252,6 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.body[0].type_comment, None)
         self.assertEqual(tree.body[1].type_comment, None)
 
-    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_asyncdef(self):
         for tree in self.parse_all(asyncdef, minver=5):
             self.assertEqual(tree.body[0].type_comment, "() -> int")
@@ -261,27 +260,22 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.body[0].type_comment, None)
         self.assertEqual(tree.body[1].type_comment, None)
 
-    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_asyncvar(self):
         for tree in self.parse_all(asyncvar, maxver=6):
             pass
 
-    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_asynccomp(self):
         for tree in self.parse_all(asynccomp, minver=6):
             pass
 
-    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_matmul(self):
         for tree in self.parse_all(matmul, minver=5):
             pass
 
-    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_fstring(self):
         for tree in self.parse_all(fstring, minver=6):
             pass
 
-    @support.skip_if_new_parser("Pegen does not support feature_version yet")
     def test_underscorednumber(self):
         for tree in self.parse_all(underscorednumber, minver=6):
             pass
