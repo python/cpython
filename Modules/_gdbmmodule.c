@@ -128,7 +128,9 @@ dbm_length(dbmobject *dp)
         for (key=gdbm_firstkey(dp->di_dbm); key.dptr;
              key = gdbm_nextkey(dp->di_dbm,okey)) {
             size++;
-            if(okey.dsize) free(okey.dptr);
+            if (okey.dsize) {
+                free(okey.dptr);
+            }
             okey=key;
         }
         dp->di_size = size;
