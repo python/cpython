@@ -2692,9 +2692,8 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
                 if (n > 0) {
                     arrayobject *self = (arrayobject *)a;
-                    if (self->ob_item != NULL) {
-                        PyMem_Free(self->ob_item);
-                    }
+                    // self->ob_item may be NULL but it is safe.
+                    PyMem_Free(self->ob_item);
                     self->ob_item = (char *)ustr;
                     Py_SET_SIZE(self, n);
                     self->allocated = n;
