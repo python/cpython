@@ -65,9 +65,9 @@ class FunctionCall:
     function: str
     arguments: Optional[List[Any]] = None
     assigned_variable: Optional[str] = None
+    return_type: Optional[str] = None
     nodetype: Optional[NodeTypes] = None
     force_true: bool = False
-    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __str__(self) -> str:
         parts = []
@@ -101,6 +101,7 @@ class CCallMakerVisitor(GrammarVisitor):
             assigned_variable="keyword",
             function="_PyPegen_expect_token",
             arguments=["p", self.keyword_cache[keyword]],
+            return_type="Token *",
             nodetype=NodeTypes.KEYWORD,
         )
 
@@ -113,21 +114,26 @@ class CCallMakerVisitor(GrammarVisitor):
                     function=f"_PyPegen_{name.lower()}_token",
                     arguments=["p"],
                     nodetype=BASE_NODETYPES[name],
-                    metadata={"rulename": name.lower()},
+                    return_type="expr_ty",
                 )
             return FunctionCall(
                 assigned_variable=f"{name.lower()}_var",
                 function=f"_PyPegen_expect_token",
                 arguments=["p", name],
                 nodetype=NodeTypes.GENERIC_TOKEN,
-                metadata={"rulename": name.lower()},
+                return_type="Token *",
             )
+
+        type = None
+        rule = self.gen.all_rules.get(name.lower())
+        if rule is not None:
+            type = "asdl_seq *" if rule.is_loop() or rule.is_gather() else rule.type
 
         return FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
             arguments=["p"],
-            metadata={"rulename": name.lower()},
+            return_type=type,
         )
 
     def visit_StringLeaf(self, node: StringLeaf) -> FunctionCall:
@@ -142,6 +148,7 @@ class CCallMakerVisitor(GrammarVisitor):
                 function=f"_PyPegen_expect_token",
                 arguments=["p", type],
                 nodetype=NodeTypes.GENERIC_TOKEN,
+                return_type="Token *",
             )
 
     def visit_Rhs(self, node: Rhs) -> FunctionCall:
@@ -160,10 +167,7 @@ class CCallMakerVisitor(GrammarVisitor):
         else:
             name = self.gen.name_node(node)
             self.cache[node] = FunctionCall(
-                assigned_variable=f"{name}_var",
-                function=f"{name}_rule",
-                arguments=["p"],
-                metadata={"rulename": name},
+                assigned_variable=f"{name}_var", function=f"{name}_rule", arguments=["p"],
             )
         return self.cache[node]
 
@@ -179,16 +183,19 @@ class CCallMakerVisitor(GrammarVisitor):
             return FunctionCall(
                 function=f"_PyPegen_lookahead_with_name",
                 arguments=[positive, call.function, *call.arguments],
+                return_type="int",
             )
         elif call.nodetype in {NodeTypes.GENERIC_TOKEN, NodeTypes.KEYWORD}:
             return FunctionCall(
                 function=f"_PyPegen_lookahead_with_int",
                 arguments=[positive, call.function, *call.arguments],
+                return_type="int",
             )
         else:
             return FunctionCall(
                 function=f"_PyPegen_lookahead",
                 arguments=[positive, call.function, *call.arguments],
+                return_type="int",
             )
 
     def visit_PositiveLookahead(self, node: PositiveLookahead) -> FunctionCall:
@@ -214,7 +221,7 @@ class CCallMakerVisitor(GrammarVisitor):
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
             arguments=["p"],
-            metadata={"rulename": name},
+            return_type="asdl_seq *",
         )
         return self.cache[node]
 
@@ -226,7 +233,7 @@ class CCallMakerVisitor(GrammarVisitor):
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
             arguments=["p"],
-            metadata={"rulename": name},
+            return_type="asdl_seq *",
         )
         return self.cache[node]
 
@@ -238,7 +245,7 @@ class CCallMakerVisitor(GrammarVisitor):
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
             arguments=["p"],
-            metadata={"rulename": name},
+            return_type="asdl_seq *",
         )
         return self.cache[node]
 
@@ -247,7 +254,10 @@ class CCallMakerVisitor(GrammarVisitor):
 
     def visit_Cut(self, node: Cut) -> FunctionCall:
         return FunctionCall(
-            assigned_variable="cut_var", function="1", nodetype=NodeTypes.CUT_OPERATOR
+            assigned_variable="cut_var",
+            return_type="int",
+            function="1",
+            nodetype=NodeTypes.CUT_OPERATOR,
         )
 
 
@@ -701,24 +711,4 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
 
     def add_var(self, node: NamedItem) -> Tuple[Optional[str], Optional[str]]:
         call = self.callmakervisitor.visit(node.item)
-        if not call.assigned_variable:
-            return None, None
-        if call.nodetype == NodeTypes.CUT_OPERATOR:
-            return call.assigned_variable, "int"
-
-        name = call.assigned_variable
-        rulename = call.metadata.get("rulename")
-
-        type: Optional[str] = None
-
-        assert self.all_rules is not None
-        if rulename and rulename in self.all_rules:
-            rule = self.all_rules.get(rulename)
-            if rule.is_loop() or rule.is_gather():
-                type = "asdl_seq *"
-            else:
-                type = rule.type
-        elif call.nodetype in BASE_NODETYPES.values():
-            type = "expr_ty"
-
-        return self.dedupe(node.name if node.name else call.assigned_variable), type
+        return self.dedupe(node.name if node.name else call.assigned_variable), call.return_type

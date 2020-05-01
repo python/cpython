@@ -1999,16 +1999,20 @@ _global_channels(void) {
 }
 
 static PyObject *
-interp_create(PyObject *self, PyObject *args)
+interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    if (!PyArg_UnpackTuple(args, "create", 0, 0)) {
+
+    static char *kwlist[] = {"isolated", NULL};
+    int isolated = 1;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|$i:create", kwlist,
+                                     &isolated)) {
         return NULL;
     }
 
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     // XXX Possible GILState issues?
-    PyThreadState *tstate = Py_NewInterpreter();
+    PyThreadState *tstate = _Py_NewInterpreter(isolated);
     PyThreadState_Swap(save_tstate);
     if (tstate == NULL) {
         /* Since no new thread state was created, there is no exception to
@@ -2547,8 +2551,8 @@ channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMethodDef module_functions[] = {
-    {"create",                    (PyCFunction)interp_create,
-     METH_VARARGS, create_doc},
+    {"create",                    (PyCFunction)(void(*)(void))interp_create,
+     METH_VARARGS | METH_KEYWORDS, create_doc},
     {"destroy",                   (PyCFunction)(void(*)(void))interp_destroy,
      METH_VARARGS | METH_KEYWORDS, destroy_doc},
     {"list_all",                  interp_list_all,
