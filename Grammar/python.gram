@@ -210,7 +210,7 @@ function_def_raw[stmt_ty]:
                             (params) ? params : CHECK(_PyPegen_empty_arguments(p)),
                             b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA)
         ) }
-func_type_comment[PyObject*]:
+func_type_comment[Token*]:
     | NEWLINE t=TYPE_COMMENT &(NEWLINE INDENT) { t }  # Must be followed by indented block
     | invalid_double_type_comments
     | TYPE_COMMENT
