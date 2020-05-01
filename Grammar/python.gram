@@ -609,7 +609,7 @@ invalid_assignment:
     | expression ':' expression ['=' annotated_rhs] {
         RAISE_SYNTAX_ERROR("illegal target for annotation") }
     | a=expression ('=' | augassign) (yield_expr | star_expressions) {
-        RAISE_SYNTAX_ERROR("cannot assign to %s", _PyPegen_get_expr_name(a)) }
+        RAISE_SYNTAX_ERROR_NO_COL_OFFSET("cannot assign to %s", _PyPegen_get_expr_name(a)) }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:

@@ -10515,7 +10515,7 @@ invalid_assignment_rule(Parser *p)
             (_tmp_132_var = _tmp_132_rule(p))
         )
         {
-            res = RAISE_SYNTAX_ERROR ( "cannot assign to %s" , _PyPegen_get_expr_name ( a ) );
+            res = RAISE_SYNTAX_ERROR_NO_COL_OFFSET ( "cannot assign to %s" , _PyPegen_get_expr_name ( a ) );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
