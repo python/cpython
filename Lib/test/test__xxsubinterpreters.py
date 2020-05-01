@@ -19,12 +19,6 @@ interpreters = support.import_module('_xxsubinterpreters')
 ##################################
 # helpers
 
-def powerset(*sets):
-    return itertools.chain.from_iterable(
-        combinations(sets, r)
-        for r in range(len(sets)+1))
-
-
 def _captured_script(script):
     r, w = os.pipe()
     indented = script.replace('\n', '\n                ')
@@ -88,14 +82,6 @@ def _run_interp(id, source, shared, _mainns={}):
         exec(source, _mainns)
     else:
         interpreters.run_string(id, source, shared)
-
-
-def run_interp_threaded(id, source, **shared):
-    def run():
-        _run(id, source, shared)
-    t = threading.Thread(target=run)
-    t.start()
-    t.join()
 
 
 class Interpreter(namedtuple('Interpreter', 'name id')):
@@ -785,12 +771,6 @@ class RunStringTests(TestBase):
         if self._fs is not None:
             self._fs.close()
         super().tearDown()
-
-    @property
-    def fs(self):
-        if self._fs is None:
-            self._fs = FSFixture(self)
-        return self._fs
 
     def test_success(self):
         script, file = _captured_script('print("it worked!", end="")')

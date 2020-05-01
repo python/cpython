@@ -933,9 +933,14 @@ _PyPegen_number_token(Parser *p)
     }
 
     char *num_raw = PyBytes_AsString(t->bytes);
-
     if (num_raw == NULL) {
         return NULL;
+    }
+
+    if (p->feature_version < 6 && strchr(num_raw, '_') != NULL) {
+        p->error_indicator = 1;
+        return RAISE_SYNTAX_ERROR("Underscores in numeric literals are only supported"
+                                  "in Python 3.6 and greater");
     }
 
     PyObject *c = parsenumber(num_raw);
@@ -1030,12 +1035,15 @@ compute_parser_flags(PyCompilerFlags *flags)
     if (flags->cf_flags & PyCF_TYPE_COMMENTS) {
         parser_flags |= PyPARSE_TYPE_COMMENTS;
     }
+    if (flags->cf_feature_version < 7) {
+        parser_flags |= PyPARSE_ASYNC_HACKS;
+    }
     return parser_flags;
 }
 
 Parser *
 _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
-                    int *errcode, PyArena *arena)
+                    int feature_version, int *errcode, PyArena *arena)
 {
     Parser *p = PyMem_Malloc(sizeof(Parser));
     if (p == NULL) {
@@ -1077,6 +1085,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->starting_lineno = 0;
     p->starting_col_offset = 0;
     p->flags = flags;
+    p->feature_version = feature_version;
 
     return p;
 }
@@ -1138,7 +1147,8 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     mod_ty result = NULL;
 
     int parser_flags = compute_parser_flags(flags);
-    Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, errcode, arena);
+    Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, PY_MINOR_VERSION,
+                                    errcode, arena);
     if (p == NULL) {
         goto error;
     }
@@ -1194,9 +1204,12 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     mod_ty result = NULL;
 
     int parser_flags = compute_parser_flags(flags);
+    int feature_version = flags ? flags->cf_feature_version : PY_MINOR_VERSION;
     tok->type_comments = (parser_flags & PyPARSE_TYPE_COMMENTS) > 0;
+    tok->async_hacks = (parser_flags & PyPARSE_ASYNC_HACKS) > 0;
 
-    Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, NULL, arena);
+    Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, feature_version,
+                                    NULL, arena);
     if (p == NULL) {
         goto error;
     }
