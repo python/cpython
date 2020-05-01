@@ -69,6 +69,7 @@ typedef struct {
     int starting_col_offset;
     int error_indicator;
     int flags;
+    int feature_version;
     growable_comment_array type_ignore_comments;
 } Parser;
 
@@ -180,9 +181,26 @@ NEW_TYPE_COMMENT(Parser *p, Token *tc)
     return NULL;
 }
 
+Py_LOCAL_INLINE(void *)
+INVALID_VERSION_CHECK(Parser *p, int version, char *msg, void *node)
+{
+    if (node == NULL) {
+        p->error_indicator = 1;  // Inline CHECK_CALL
+        return NULL;
+    }
+    if (p->feature_version < version) {
+        p->error_indicator = 1;
+        return _PyPegen_raise_error(p, PyExc_SyntaxError, "%s only supported in Python 3.%i and greater",
+                                    msg, version);
+    }
+    return node;
+}
+
+#define CHECK_VERSION(version, msg, node) INVALID_VERSION_CHECK(p, version, msg, node)
+
 arg_ty _PyPegen_add_type_comment_to_arg(Parser *, arg_ty, Token *);
 PyObject *_PyPegen_new_identifier(Parser *, char *);
-Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int *, PyArena *);
+Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int, int *, PyArena *);
 void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
                                     const char *, const char *, PyCompilerFlags *, int *, PyArena *);
