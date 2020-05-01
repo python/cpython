@@ -145,11 +145,15 @@ byte_offset_to_character_offset(PyObject *line, int col_offset)
     if (!str) {
         return 0;
     }
-    PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, NULL);
+    PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
     if (!text) {
         return 0;
     }
     Py_ssize_t size = PyUnicode_GET_LENGTH(text);
+    str = PyUnicode_AsUTF8(text);
+    if (str != NULL && (int)strlen(str) == col_offset) {
+        size = strlen(str);
+    }
     Py_DECREF(text);
     return size;
 }
@@ -297,66 +301,21 @@ error:
 }
 
 static inline PyObject *
-get_error_line(char *buffer)
+get_error_line(char *buffer, int is_file)
 {
-    char *newline = strchr(buffer, '\n');
+    const char *newline;
+    if (is_file) {
+        newline = strrchr(buffer, '\n');
+    } else {
+        newline = strchr(buffer, '\n');
+    }
+
     if (newline) {
-        return PyUnicode_FromStringAndSize(buffer, newline - buffer);
+        return PyUnicode_DecodeUTF8(buffer, newline - buffer, "replace");
     }
     else {
-        return PyUnicode_FromString(buffer);
+        return PyUnicode_DecodeUTF8(buffer, strlen(buffer), "replace");
     }
-}
-
-static int
-tokenizer_error_with_col_offset(Parser *p, PyObject *errtype, const char *errmsg)
-{
-    PyObject *errstr = NULL;
-    PyObject *value = NULL;
-    size_t col_number = -1;
-
-    errstr = PyUnicode_FromString(errmsg);
-    if (!errstr) {
-        return -1;
-    }
-
-    PyObject *loc = NULL;
-    if (p->start_rule == Py_file_input) {
-        loc = PyErr_ProgramTextObject(p->tok->filename, p->tok->lineno);
-    }
-    if (!loc) {
-        loc = get_error_line(p->tok->buf);
-    }
-
-    if (loc) {
-        col_number = p->tok->cur - p->tok->buf;
-    }
-    else {
-        Py_INCREF(Py_None);
-        loc = Py_None;
-    }
-
-    PyObject *tmp = Py_BuildValue("(OiiN)", p->tok->filename, p->tok->lineno,
-                                  col_number, loc);
-    if (!tmp) {
-        goto error;
-    }
-
-    value = PyTuple_Pack(2, errstr, tmp);
-    Py_DECREF(tmp);
-    if (!value) {
-        goto error;
-    }
-    PyErr_SetObject(errtype, value);
-
-    Py_XDECREF(value);
-    Py_XDECREF(errstr);
-    return -1;
-
-error:
-    Py_XDECREF(errstr);
-    Py_XDECREF(loc);
-    return -1;
 }
 
 static int
@@ -376,20 +335,20 @@ tokenizer_error(Parser *p)
             msg = "invalid character in identifier";
             break;
         case E_BADPREFIX:
-            return tokenizer_error_with_col_offset(p,
-                errtype, "invalid string prefix");
+            RAISE_SYNTAX_ERROR("invalid string prefix");
+            return -1;
         case E_EOFS:
-            return tokenizer_error_with_col_offset(p,
-                errtype, "EOF while scanning triple-quoted string literal");
+            RAISE_SYNTAX_ERROR("EOF while scanning triple-quoted string literal");
+            return -1;
         case E_EOLS:
-            return tokenizer_error_with_col_offset(p,
-                errtype, "EOL while scanning string literal");
+            RAISE_SYNTAX_ERROR("EOL while scanning string literal");
+            return -1;
         case E_EOF:
-            return tokenizer_error_with_col_offset(p,
-                errtype, "unexpected EOF while parsing");
+            RAISE_SYNTAX_ERROR("unexpected EOF while parsing");
+            return -1;
         case E_DEDENT:
-            return tokenizer_error_with_col_offset(p,
-                PyExc_IndentationError, "unindent does not match any outer indentation level");
+            RAISE_INDENTATION_ERROR("unindent does not match any outer indentation level");
+            return -1;
         case E_INTR:
             if (!PyErr_Occurred()) {
                 PyErr_SetNone(PyExc_KeyboardInterrupt);
@@ -421,14 +380,14 @@ tokenizer_error(Parser *p)
 }
 
 void *
-_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
+_PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number, const char *errmsg, ...)
 {
     PyObject *value = NULL;
     PyObject *errstr = NULL;
     PyObject *loc = NULL;
     PyObject *tmp = NULL;
     Token *t = p->tokens[p->fill - 1];
-    Py_ssize_t col_number = 0;
+    Py_ssize_t col_number = !with_col_number;
     va_list va;
 
     va_start(va, errmsg);
@@ -443,14 +402,20 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     }
 
     if (!loc) {
-        loc = get_error_line(p->tok->buf);
+        loc = get_error_line(p->tok->buf, p->start_rule == Py_file_input);
     }
 
-    if (loc) {
-        int col_offset = t->col_offset == -1 ? 0 : t->col_offset;
-        col_number = byte_offset_to_character_offset(loc, col_offset) + 1;
+    if (loc && with_col_number) {
+        int col_offset;
+        if (t->col_offset == -1) {
+            col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
+                                          intptr_t, int);
+        } else {
+            col_offset = t->col_offset + 1;
+        }
+        col_number = byte_offset_to_character_offset(loc, col_offset);
     }
-    else {
+    else if (!loc) {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
@@ -632,14 +597,6 @@ _PyPegen_fill_token(Parser *p)
         type = PyTokenizer_Get(p->tok, &start, &end);
     }
 
-    if (type == ERRORTOKEN) {
-        if (p->tok->done == E_DECODE) {
-            return raise_decode_error(p);
-        }
-        else {
-            return tokenizer_error(p);
-        }
-    }
     if (type == ENDMARKER && p->start_rule == Py_single_input && p->parsing_started) {
         type = NEWLINE; /* Add an extra newline */
         p->parsing_started = 0;
@@ -700,6 +657,16 @@ _PyPegen_fill_token(Parser *p)
     t->end_col_offset = p->tok->lineno == 1 ? p->starting_col_offset + end_col_offset : end_col_offset;
 
     p->fill += 1;
+
+    if (type == ERRORTOKEN) {
+        if (p->tok->done == E_DECODE) {
+            return raise_decode_error(p);
+        }
+        else {
+            return tokenizer_error(p);
+        }
+    }
+
     return 0;
 }
 

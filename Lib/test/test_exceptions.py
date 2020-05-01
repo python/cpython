@@ -178,19 +178,19 @@ class ExceptionTests(unittest.TestCase):
         s = '''if True:\n        print()\n\texec "mixed tabs and spaces"'''
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
 
-    @support.skip_if_new_parser("Pegen column offsets might be different")
-    def testSyntaxErrorOffset(self):
-        def check(src, lineno, offset, encoding='utf-8'):
-            with self.assertRaises(SyntaxError) as cm:
-                compile(src, '<fragment>', 'exec')
-            self.assertEqual(cm.exception.lineno, lineno)
-            self.assertEqual(cm.exception.offset, offset)
-            if cm.exception.text is not None:
-                if not isinstance(src, str):
-                    src = src.decode(encoding, 'replace')
-                line = src.split('\n')[lineno-1]
-                self.assertIn(line, cm.exception.text)
+    def check(self, src, lineno, offset, encoding='utf-8'):
+        with self.assertRaises(SyntaxError) as cm:
+            compile(src, '<fragment>', 'exec')
+        self.assertEqual(cm.exception.lineno, lineno)
+        self.assertEqual(cm.exception.offset, offset)
+        if cm.exception.text is not None:
+            if not isinstance(src, str):
+                src = src.decode(encoding, 'replace')
+            line = src.split('\n')[lineno-1]
+            self.assertIn(line, cm.exception.text)
 
+    def testSyntaxErrorOffset(self):
+        check = self.check
         check('def fact(x):\n\treturn x!\n', 2, 10)
         check('1 +\n', 1, 4)
         check('def spam():\n  print(1)\n print(2)', 3, 10)
@@ -238,20 +238,20 @@ class ExceptionTests(unittest.TestCase):
         check('nonlocal x', 1, 1)
         check('def f():\n  global x\n  nonlocal x', 2, 3)
 
-        # Errors thrown by ast.c
-        check('for 1 in []: pass', 1, 5)
-        check('def f(*):\n  pass', 1, 7)
-        check('[*x for x in xs]', 1, 2)
-        check('def f():\n  x, y: int', 2, 3)
-        check('(yield i) = 2', 1, 1)
-        check('foo(x for x in range(10), 100)', 1, 5)
-        check('foo(1=2)', 1, 5)
-
         # Errors thrown by future.c
         check('from __future__ import doesnt_exist', 1, 1)
         check('from __future__ import braces', 1, 1)
         check('x=1\nfrom __future__ import division', 2, 1)
 
+    @support.skip_if_new_parser("Pegen column offsets might be different")
+    def testSyntaxErrorOffsetCustom(self):
+        self.check('for 1 in []: pass', 1, 5)
+        self.check('def f(*):\n  pass', 1, 7)
+        self.check('[*x for x in xs]', 1, 2)
+        self.check('def f():\n  x, y: int', 2, 3)
+        self.check('(yield i) = 2', 1, 1)
+        self.check('foo(x for x in range(10), 100)', 1, 5)
+        self.check('foo(1=2)', 1, 5)
 
     @cpython_only
     def testSettingException(self):
