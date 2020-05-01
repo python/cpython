@@ -1697,9 +1697,9 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
             return NULL;
         }
 
-        Py_ssize_t res = PyUnicode_AsWideChar(
-                ustr, ((wchar_t *)self->ob_item) + old_size, ustr_length);
-        assert(res == ustr_length);
+        // must not fail
+        PyUnicode_AsWideChar(
+            ustr, ((wchar_t *)self->ob_item) + old_size, ustr_length);
     }
 
     Py_RETURN_NONE;
