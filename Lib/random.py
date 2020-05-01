@@ -303,8 +303,7 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        i = self._randbelow(len(seq))
-        return seq[i]
+        return seq[self._randbelow(len(seq))] # raises IndexError if seq is empty
 
     def shuffle(self, x, random=None):
         """Shuffle list x in place, and return None.
