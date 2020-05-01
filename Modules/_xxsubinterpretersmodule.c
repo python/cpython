@@ -299,7 +299,7 @@ _lockobj_init(_lockobj *lock)
 }
 
 static void
-_lockobj_free(_lockobj *lock)
+_lockobj_dealloc(_lockobj *lock)
 {
     PyThread_free_lock(lock->lock);
     PyObject_Del(lock);
@@ -390,7 +390,7 @@ static PyTypeObject _lockobjtype = {
     .tp_basicsize = sizeof(_lockobj),
     // functionality
     .tp_new = NULL,  // It cannot be instantiated from Python code.
-    .tp_dealloc = (destructor)_lockobj_free,
+    .tp_dealloc = (destructor)_lockobj_dealloc,
     .tp_call = _lockobj_call,
 };
 
@@ -406,6 +406,18 @@ _lockobj_new(void)
         return NULL;
     }
     return lock;
+}
+
+static void
+_lockobj_free(_lockobj *lock)
+{
+    _lockobj_release(lock);
+    if (lock->owner == NULL || lock->owner == _get_current()) {
+        Py_DECREF(lock);
+    } else {
+        int res = _Py_DECREF_in_interpreter(lock->owner, (PyObject *)lock);
+        assert(res == 0);
+    }
 }
 
 
