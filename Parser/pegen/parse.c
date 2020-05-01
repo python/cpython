@@ -408,7 +408,7 @@ static stmt_ty return_stmt_rule(Parser *p);
 static stmt_ty raise_stmt_rule(Parser *p);
 static stmt_ty function_def_rule(Parser *p);
 static stmt_ty function_def_raw_rule(Parser *p);
-static PyObject* func_type_comment_rule(Parser *p);
+static Token* func_type_comment_rule(Parser *p);
 static arguments_ty params_rule(Parser *p);
 static arguments_ty parameters_rule(Parser *p);
 static asdl_seq* slash_no_default_rule(Parser *p);
@@ -3679,13 +3679,13 @@ function_def_raw_rule(Parser *p)
 //     | NEWLINE TYPE_COMMENT &(NEWLINE INDENT)
 //     | invalid_double_type_comments
 //     | TYPE_COMMENT
-static PyObject*
+static Token*
 func_type_comment_rule(Parser *p)
 {
     if (p->error_indicator) {
         return NULL;
     }
-    PyObject* res = NULL;
+    Token* res = NULL;
     int mark = p->mark;
     { // NEWLINE TYPE_COMMENT &(NEWLINE INDENT)
         Token * newline_var;
