@@ -87,7 +87,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     } else if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
         && dict->size * 8 >= *pfield_size
-        && (*pbitofs + bitsize) <= dict->size * 8) {
+        && (((*pbitofs + bitsize) <= dict->size * 8) || pack)) {
         /* expand bit field */
         fieldtype = EXPAND_BITFIELD;
 #endif
@@ -170,10 +170,18 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         break;
 
     case EXPAND_BITFIELD:
-        *poffset += dict->size - *pfield_size/8;
-        *psize += dict->size - *pfield_size/8;
+        if (pack) {
+            while(*pfield_size < (*pbitofs + bitsize)) {
+                *pfield_size += 8;
+                *poffset += 1;
+                *psize += 1;
+            }
+        } else {
+            *poffset += dict->size - *pfield_size/8;
+            *psize += dict->size - *pfield_size/8;
 
-        *pfield_size = dict->size * 8;
+            *pfield_size = dict->size * 8;
+        }
 
         if (big_endian)
             self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
