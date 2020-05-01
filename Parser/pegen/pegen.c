@@ -1042,6 +1042,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
         return (Parser *) PyErr_NoMemory();
     }
     assert(tok != NULL);
+    tok->type_comments = (flags & PyPARSE_TYPE_COMMENTS) > 0;
     p->tok = tok;
     p->keywords = NULL;
     p->n_keyword_lists = -1;
@@ -1194,8 +1195,6 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     mod_ty result = NULL;
 
     int parser_flags = compute_parser_flags(flags);
-    tok->type_comments = (parser_flags & PyPARSE_TYPE_COMMENTS) > 0;
-
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, NULL, arena);
     if (p == NULL) {
         goto error;
