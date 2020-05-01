@@ -1526,7 +1526,7 @@ Py_Finalize(void)
 */
 
 static PyStatus
-new_interpreter(PyThreadState **tstate_p)
+new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 {
     PyStatus status;
 
@@ -1573,6 +1573,7 @@ new_interpreter(PyThreadState **tstate_p)
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
+    interp->config._isolated_interpreter = isolated_subinterpreter;
 
     status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1606,15 +1607,21 @@ error:
 }
 
 PyThreadState *
-Py_NewInterpreter(void)
+_Py_NewInterpreter(int isolated_subinterpreter)
 {
     PyThreadState *tstate = NULL;
-    PyStatus status = new_interpreter(&tstate);
+    PyStatus status = new_interpreter(&tstate, isolated_subinterpreter);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
     return tstate;
 
+}
+
+PyThreadState *
+Py_NewInterpreter(void)
+{
+    return _Py_NewInterpreter(0);
 }
 
 /* Delete an interpreter and its last thread.  This requires that the

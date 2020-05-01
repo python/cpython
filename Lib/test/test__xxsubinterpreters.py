@@ -794,6 +794,7 @@ class RunStringTests(TestBase):
         self.assertEqual(out, 'it worked!')
 
     def test_create_thread(self):
+        subinterp = interpreters.create(isolated=False)
         script, file = _captured_script("""
             import threading
             def f():
@@ -804,7 +805,7 @@ class RunStringTests(TestBase):
             t.join()
             """)
         with file:
-            interpreters.run_string(self.id, script)
+            interpreters.run_string(subinterp, script)
             out = file.read()
 
         self.assertEqual(out, 'it worked!')
