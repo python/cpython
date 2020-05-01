@@ -31,7 +31,7 @@ _Py_parse_file(PyObject *self, PyObject *args, PyObject *kwds)
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
     PyObject *result = NULL;
 
-    mod_ty res = PyPegen_ASTFromFile(filename, mode, &flags, arena);
+    mod_ty res = PyPegen_ASTFromFilename(filename, mode, &flags, arena);
     if (res == NULL) {
         goto error;
     }
@@ -84,7 +84,7 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         res = PyParser_ASTFromString(the_string, "<string>", mode, &flags, arena);
     }
     else {
-        res = PyPegen_ASTFromString(the_string, mode, &flags, arena);
+        res = PyPegen_ASTFromString(the_string, "<string>", mode, &flags, arena);
     }
     if (res == NULL) {
         goto error;
