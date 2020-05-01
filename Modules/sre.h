@@ -18,7 +18,7 @@
 #define SRE_CODE Py_UCS4
 
 /* SRE_MAXGROUPS is 1,073,741,823 */
-#define SRE_MAXGROUPS INT_MAX / 2
+#define SRE_MAXGROUPS (INT_MAX / 2)
 
 #if SIZEOF_SIZE_T > 4
 # define SRE_MAXREPEAT (~(SRE_CODE)0)

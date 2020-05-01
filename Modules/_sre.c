@@ -513,9 +513,9 @@ state_getslice(SRE_STATE* state, Py_ssize_t index, PyObject* string, int empty)
 
         /* check wrong span */
         if (i > j) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "the span of capturing group is wrong,"
-                            " please report a bug.");
+            PyErr_SetString(PyExc_SystemError,
+                            "The span of capturing group is wrong,"
+                            " please report a bug for the re module.");
             return NULL;
         }
     }
@@ -2356,9 +2356,9 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
 
                 /* check wrong span */
                 if (match->mark[j+2] > match->mark[j+3]) {
-                    PyErr_SetString(PyExc_RuntimeError,
-                                    "the span of capturing group is wrong,"
-                                    " please report a bug.");
+                    PyErr_SetString(PyExc_SystemError,
+                                    "The span of capturing group is wrong,"
+                                    " please report a bug for the re module.");
                     Py_DECREF(match);
                     return NULL;
                 }

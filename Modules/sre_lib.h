@@ -1093,7 +1093,7 @@ entrance:
                tail matches */
             state->repeat = ctx->u.rep->prev;
             DO_JUMP(JUMP_MAX_UNTIL_3, jump_max_until_3, ctx->pattern);
-            state->repeat = ctx->u.rep; /* restore repeat before return */
+            state->repeat = ctx->u.rep; // restore repeat before return
 
             RETURN_ON_SUCCESS(ret);
             state->ptr = ctx->ptr;
@@ -1137,7 +1137,7 @@ entrance:
 
             DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, ctx->pattern);
             SRE_REPEAT *repeat_of_tail = state->repeat;
-            state->repeat = ctx->u.rep; /* restore repeat before return */
+            state->repeat = ctx->u.rep; // restore repeat before return
 
             if (ret) {
                 if (repeat_of_tail)
