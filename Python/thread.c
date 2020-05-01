@@ -224,3 +224,32 @@ PyThread_GetInfo(void)
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
     return threadinfo;
 }
+
+#define TIMEOUT_NOT_SET _PYTIME_FROMSECONDS(-1)
+// This is equivalent to _PyTime_AsMicroseconds(timeout_not_set):
+const PY_TIMEOUT_T _PyThread_TIMEOUT_NOT_SET = (TIMEOUT_NOT_SET - 999) / 1000;
+
+int
+_PyThread_timeout_arg_converter(PyObject *arg, void *ptr)
+{
+    if (arg == NULL) {
+        *(PY_TIMEOUT_T *)ptr = _PyThread_TIMEOUT_NOT_SET;
+        return 0;
+    }
+
+    _PyTime_t time = TIMEOUT_NOT_SET;
+    if (_PyTime_FromSecondsObject(&time, arg, _PyTime_ROUND_TIMEOUT) < 0) {
+        return -1;
+    }
+    if (time < 0 && time != TIMEOUT_NOT_SET) {
+        PyErr_SetString(PyExc_ValueError, "timeout value must be positive");
+        return -1;
+    }
+    PY_TIMEOUT_T timeout = _PyTime_AsMicroseconds(time, _PyTime_ROUND_TIMEOUT);
+    if (timeout >= PY_TIMEOUT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "timeout value is too large");
+        return -1;
+    }
+    *(PY_TIMEOUT_T *)ptr = timeout;
+    return 0;
+}

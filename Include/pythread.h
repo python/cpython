@@ -162,6 +162,12 @@ PyAPI_FUNC(int) PyThread_tss_set(Py_tss_t *key, void *value);
 PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t *key);
 #endif  /* New in 3.7 */
 
+#ifndef Py_LIMITED_API
+PyAPI_DATA(const PY_TIMEOUT_T) _PyThread_TIMEOUT_NOT_SET;
+// This is for use with PyArg_ParseTupleAndKeywords():
+PyAPI_FUNC(int) _PyThread_timeout_arg_converter(PyObject *, void *);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
