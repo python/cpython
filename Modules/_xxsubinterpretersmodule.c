@@ -497,6 +497,7 @@ struct _channelitem;
 
 typedef struct _channelitem {
     _PyCrossInterpreterData *data;
+    _lockobj *recvlock;
     struct _channelitem *next;
 } _channelitem;
 
@@ -509,6 +510,7 @@ _channelitem_new(void)
         return NULL;
     }
     item->data = NULL;
+    item->recvlock = NULL;
     item->next = NULL;
     return item;
 }
@@ -520,6 +522,9 @@ _channelitem_clear(_channelitem *item)
         _PyCrossInterpreterData_Release(item->data);
         PyMem_Free(item->data);
         item->data = NULL;
+    }
+    if (item->recvlock != NULL) {
+        _lockobj_free(item->recvlock);
     }
     item->next = NULL;
 }
@@ -546,6 +551,7 @@ _channelitem_popped(_channelitem *item)
 {
     _PyCrossInterpreterData *data = item->data;
     item->data = NULL;
+    // The lock (if any) is released here:
     _channelitem_free(item);
     return data;
 }
