@@ -2235,6 +2235,9 @@ Fixed a regression with the ``ignore`` callback of :func:`shutil.copytree`.
 The argument types are now str and List[str] again.
 (Contributed by Manuel Barkhau and Giampaolo Rodola in :issue:`39390`.)
 
+Notable changes in Python 3.8.3
+===============================
+
 The constant values of future flags in the :mod:`__future__` module
 are updated in order to prevent collision with compiler flags. Previously
 ``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
