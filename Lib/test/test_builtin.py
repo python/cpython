@@ -1585,25 +1585,24 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertIs(cm.exception, exception)
 
-    def test_zip_total(self):
-        assert tuple(zip((1, 2, 3), 'abc', total=True)) == (
-            (1, 'a'), (2, 'b'), (3, 'c')
-        )
+    def test_zip_strict(self):
+        self.assertEqual(tuple(zip((1, 2, 3), 'abc', strict=True)),
+                         ((1, 'a'), (2, 'b'), (3, 'c')))
         self.assertRaises(ValueError, tuple,
-                          zip((1, 2, 3, 4), 'abc', total=True))
+                          zip((1, 2, 3, 4), 'abc', strict=True))
         self.assertRaises(ValueError, tuple,
-                          zip((1, 2), 'abc', total=True))
+                          zip((1, 2), 'abc', strict=True))
         self.assertRaises(ValueError, tuple,
-                          zip((1, 2), (1, 2), 'abc', total=True))
+                          zip((1, 2), (1, 2), 'abc', strict=True))
 
-    def test_zip_total_iterators(self):
+    def test_zip_strict_iterators(self):
         x = iter(range(5))
         y = [0]
         z = iter(range(5))
         self.assertRaises(ValueError, list,
-                          (zip(x, y, z, total=True)))
-        assert next(x) == 2
-        assert next(z) == 1
+                          (zip(x, y, z, strict=True)))
+        self.assertEqual(next(x), 2)
+        self.assertEqual(next(z), 1)
 
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
