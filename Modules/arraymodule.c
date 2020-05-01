@@ -1689,6 +1689,7 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
     }
 
     Py_ssize_t ustr_length = PyUnicode_AsWideChar(ustr, NULL, 0);
+    assert(ustr_length > 0);
     if (ustr_length > 1) {
         ustr_length--; /* trim trailing NUL character */
         Py_ssize_t old_size = Py_SIZE(self);
@@ -1698,9 +1699,7 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
 
         Py_ssize_t res = PyUnicode_AsWideChar(
                 ustr, ((wchar_t *)self->ob_item) + old_size, ustr_length);
-        if (res < 0) {  // must not happen
-            return NULL;
-        }
+        assert(res == ustr_length);
     }
 
     Py_RETURN_NONE;
