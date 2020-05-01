@@ -265,7 +265,7 @@ class Random(_random.Random):
         return self.randrange(a, b+1)
 
     def _randbelow_with_getrandbits(self, n):
-        "Return a random int in the range [0,n).  Returns if n==0."
+        "Return a random int in the range [0,n).  Returns 0 if n==0."
 
         if not n:
             return 0
