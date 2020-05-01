@@ -3,6 +3,7 @@
 /* low-level access to interpreter primitives */
 
 #include "Python.h"
+#include "pythread.h"
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -274,6 +275,137 @@ _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
     else {
         PyErr_SetNone(wrapperclass);
     }
+}
+
+/* locks */
+
+typedef struct _lockobj {
+    PyObject_HEAD
+    PyThread_type_lock lock;
+    PyInterpreterState *owner;
+    int done;
+} _lockobj;
+
+static int
+_lockobj_init(_lockobj *lock)
+{
+    lock->lock = PyThread_allocate_lock();
+    if (lock->lock == NULL) {
+        return -1;
+    }
+    lock->done = 0;
+    lock->owner = _get_current();
+    return 0;
+}
+
+static void
+_lockobj_free(_lockobj *lock)
+{
+    PyThread_free_lock(lock->lock);
+    PyObject_Del(lock);
+}
+
+// This is cross-interpreter safe.
+static int
+_lockobj_acquire(_lockobj *lock)
+{
+    // Do not wait.
+    return PyThread_acquire_lock(lock->lock, 0);
+}
+
+// This is cross-interpreter safe.
+static void
+_lockobj_release(_lockobj *lock)
+{
+    PyThread_release_lock(lock->lock);
+}
+
+static PyObject *
+_lockobj_call(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"timeout", NULL};
+    PY_TIMEOUT_T timeout = _PyThread_TIMEOUT_NOT_SET;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&:__call__", kwlist,
+                                     _PyThread_timeout_arg_converter,
+                                     &timeout)) {
+        return NULL;
+    }
+    _lockobj *lock = (_lockobj *)self;
+
+    if (lock->done) {
+        Py_RETURN_TRUE;
+    }
+
+    // Wait for the lock to be released.
+    _PyTime_t end = timeout > 0 ? _PyTime_GetMonotonicClock() + timeout : 0;
+    PyLockStatus r = PY_LOCK_FAILURE;
+    do {
+        _PyTime_t microseconds = _PyTime_AsMicroseconds(timeout,
+                                                        _PyTime_ROUND_CEILING);
+
+        /* first a simple non-blocking try without releasing the GIL */
+        r = PyThread_acquire_lock_timed(lock->lock, 0, 0);
+        if (r == PY_LOCK_FAILURE && microseconds != 0) {
+            Py_BEGIN_ALLOW_THREADS
+            r = PyThread_acquire_lock_timed(lock, microseconds, 0);
+            Py_END_ALLOW_THREADS
+        }
+
+        if (r == PY_LOCK_INTR) {
+            /* Run signal handlers if we were interrupted.  Propagate
+             * exceptions from signal handlers, such as KeyboardInterrupt, by
+             * passing up PY_LOCK_INTR.  */
+            if (Py_MakePendingCalls() < 0) {
+                return NULL;
+            }
+
+            /* If we're using a timeout, recompute the timeout after processing
+             * signals, since those can take time.  */
+            if (timeout > 0) {
+                timeout = end - _PyTime_GetMonotonicClock();
+
+                /* Check for negative values, since those mean block forever.
+                 */
+                if (timeout < 0) {
+                    r = PY_LOCK_FAILURE;
+                }
+            }
+        }
+    } while (r == PY_LOCK_INTR);  /* Retry if we were interrupted. */
+    if (r == PY_LOCK_FAILURE) {
+        Py_RETURN_FALSE;
+    }
+
+    // Success!
+    _lockobj_release(lock);
+    lock->done = 1;
+    Py_RETURN_TRUE;
+}
+
+static PyTypeObject _lockobjtype = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "_xxsubinterpreters.lock",
+    .tp_doc = PyDoc_STR("a basic waitable wrapper around a mutex"),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_basicsize = sizeof(_lockobj),
+    // functionality
+    .tp_new = NULL,  // It cannot be instantiated from Python code.
+    .tp_dealloc = (destructor)_lockobj_free,
+    .tp_call = _lockobj_call,
+};
+
+static _lockobj *
+_lockobj_new(void)
+{
+    _lockobj *lock = PyObject_New(_lockobj, &_lockobjtype);
+    if (lock == NULL) {
+        return NULL;
+    }
+    if (_lockobj_init(lock) != 0) {
+        PyMem_Free(lock);
+        return NULL;
+    }
+    return lock;
 }
 
 
@@ -2616,6 +2748,9 @@ PyInit__xxsubinterpreters(void)
 
     /* Initialize types */
     if (PyType_Ready(&ChannelIDtype) != 0) {
+        return NULL;
+    }
+    if (PyType_Ready(&_lockobjtype) != 0) {
         return NULL;
     }
 
