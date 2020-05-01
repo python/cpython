@@ -1,4 +1,3 @@
-import _signal
 from _signal import *
 from functools import wraps as _wraps
 from enum import IntEnum as _IntEnum
