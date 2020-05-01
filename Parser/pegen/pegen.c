@@ -1147,7 +1147,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     mod_ty result = NULL;
 
     int parser_flags = compute_parser_flags(flags);
-    Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, flags->cf_feature_version,
+    Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, PY_MINOR_VERSION,
                                     errcode, arena);
     if (p == NULL) {
         goto error;
@@ -1204,10 +1204,11 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     mod_ty result = NULL;
 
     int parser_flags = compute_parser_flags(flags);
+    int feature_version = flags ? flags->cf_feature_version : PY_MINOR_VERSION;
     tok->type_comments = (parser_flags & PyPARSE_TYPE_COMMENTS) > 0;
     tok->async_hacks = (parser_flags & PyPARSE_ASYNC_HACKS) > 0;
 
-    Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, flags->cf_feature_version,
+    Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, feature_version,
                                     NULL, arena);
     if (p == NULL) {
         goto error;
