@@ -36,7 +36,7 @@ values() methods are not supported.");
 
 typedef struct {
     PyObject_HEAD
-    int di_size;        /* -1 means recompute */
+    Py_ssize_t di_size;        /* -1 means recompute */
     GDBM_FILE di_dbm;
 } dbmobject;
 
@@ -112,6 +112,10 @@ dbm_length(dbmobject *dp)
             else {
                 PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
             }
+            return -1;
+        }
+        if (count > PY_SSIZE_T_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "count exceeds PY_SSIZE_T_MAX");
             return -1;
         }
         dp->di_size = count;
