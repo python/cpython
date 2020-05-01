@@ -191,8 +191,8 @@ INVALID_VERSION_CHECK(Parser *p, int version, char *msg, void *node)
     }
     if (p->feature_version < version) {
         p->error_indicator = 1;
-        return _PyPegen_raise_error(p, PyExc_SyntaxError, "%s only supported in Python 3.%i and greater",
-                                    msg, version);
+        return RAISE_SYNTAX_ERROR("%s only supported in Python 3.%i and greater",
+                                  msg, version);
     }
     return node;
 }
