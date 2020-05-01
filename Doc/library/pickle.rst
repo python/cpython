@@ -255,7 +255,7 @@ process more convenient:
 .. function:: loads(data, \*, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
 
    Return the reconstituted object hierarchy of the pickled representation
-   *data* of an object.
+   *data* of an object. *data* must be a :term:`bytes-like object`.
 
    The protocol version of the pickle is detected automatically, so no
    protocol argument is needed.  Bytes past the pickled representation
