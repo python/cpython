@@ -327,7 +327,6 @@ class UnparseTestCase(ASTTestCase):
             ast.Constant(value=(1, 2, 3), kind=None), "(1, 2, 3)"
         )
 
-    @test.support.skip_if_new_parser("Pegen does not support type annotation yet")
     def test_function_type(self):
         for function_type in (
             "() -> int",
