@@ -91,13 +91,15 @@ def bind_port(sock, host=HOST):
     if sock.family == socket.AF_INET and sock.type == socket.SOCK_STREAM:
         if hasattr(socket, 'SO_REUSEADDR'):
             if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR) == 1:
-                raise TestFailed("tests should never set the SO_REUSEADDR "   \
-                                 "socket option on TCP/IP sockets!")
+                raise support.TestFailed("tests should never set the "
+                                         "SO_REUSEADDR socket option on "
+                                         "TCP/IP sockets!")
         if hasattr(socket, 'SO_REUSEPORT'):
             try:
                 if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT) == 1:
-                    raise TestFailed("tests should never set the SO_REUSEPORT "   \
-                                     "socket option on TCP/IP sockets!")
+                    raise support.TestFailed("tests should never set the "
+                                             "SO_REUSEPORT socket option on "
+                                             "TCP/IP sockets!")
             except OSError:
                 # Python's socket module was compiled using modern headers
                 # thus defining SO_REUSEPORT but this process is running
