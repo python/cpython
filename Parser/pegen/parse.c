@@ -5261,8 +5261,8 @@ lambda_slash_with_default_rule(Parser *p)
 }
 
 // lambda_star_etc:
-//     | '*' lambda_param_no_default lambda_param_maybe_default* kwds?
-//     | '*' ',' lambda_param_maybe_default+ kwds?
+//     | '*' lambda_param_no_default lambda_param_maybe_default* lambda_kwds?
+//     | '*' ',' lambda_param_maybe_default+ lambda_kwds?
 //     | lambda_kwds
 static StarEtc*
 lambda_star_etc_rule(Parser *p)
@@ -5272,7 +5272,7 @@ lambda_star_etc_rule(Parser *p)
     }
     StarEtc* res = NULL;
     int mark = p->mark;
-    { // '*' lambda_param_no_default lambda_param_maybe_default* kwds?
+    { // '*' lambda_param_no_default lambda_param_maybe_default* lambda_kwds?
         arg_ty a;
         asdl_seq * b;
         void *c;
@@ -5284,7 +5284,7 @@ lambda_star_etc_rule(Parser *p)
             &&
             (b = _loop0_82_rule(p))
             &&
-            (c = kwds_rule(p), 1)
+            (c = lambda_kwds_rule(p), 1)
         )
         {
             res = _PyPegen_star_etc ( p , a , b , c );
@@ -5296,7 +5296,7 @@ lambda_star_etc_rule(Parser *p)
         }
         p->mark = mark;
     }
-    { // '*' ',' lambda_param_maybe_default+ kwds?
+    { // '*' ',' lambda_param_maybe_default+ lambda_kwds?
         asdl_seq * b;
         void *c;
         void *literal;
@@ -5308,7 +5308,7 @@ lambda_star_etc_rule(Parser *p)
             &&
             (b = _loop1_83_rule(p))
             &&
-            (c = kwds_rule(p), 1)
+            (c = lambda_kwds_rule(p), 1)
         )
         {
             res = _PyPegen_star_etc ( p , NULL , b , c );

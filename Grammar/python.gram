@@ -329,9 +329,9 @@ lambda_slash_with_default[SlashWithDefault*]:
     | a=lambda_param_no_default* b=lambda_param_with_default+ '/' &':' { _PyPegen_slash_with_default(p, a, b) }
 
 lambda_star_etc[StarEtc*]:
-    | '*' a=lambda_param_no_default b=lambda_param_maybe_default* c=[kwds] {
+    | '*' a=lambda_param_no_default b=lambda_param_maybe_default* c=[lambda_kwds] {
         _PyPegen_star_etc(p, a, b, c) }
-    | '*' ',' b=lambda_param_maybe_default+ c=[kwds] {
+    | '*' ',' b=lambda_param_maybe_default+ c=[lambda_kwds] {
         _PyPegen_star_etc(p, NULL, b, c) }
     | a=lambda_kwds { _PyPegen_star_etc(p, NULL, NULL, a) }
 
