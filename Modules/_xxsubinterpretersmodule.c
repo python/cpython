@@ -2578,6 +2578,43 @@ PyDoc_STRVAR(channel_send_doc,
 Add the object's data to the channel's queue.");
 
 static PyObject *
+channel_send_wait(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", "obj", NULL};
+    int64_t cid;
+    PyObject *obj;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O:channel_send", kwlist,
+                                     channel_id_converter, &cid, &obj)) {
+        return NULL;
+    }
+
+    _lockobj *lock = _lockobj_new();
+    if (lock == NULL) {
+        return NULL;
+    }
+    if (_lockobj_acquire(lock) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "could not acquire lock");
+        _lockobj_dealloc(lock);
+        return NULL;
+    }
+    if (_channel_send(&_globals.channels, cid, obj, lock) != 0) {
+        _lockobj_dealloc(lock);
+        return NULL;
+    }
+    Py_INCREF(lock);
+    return (PyObject*)lock;
+}
+
+PyDoc_STRVAR(channel_send_wait_doc,
+"channel_send_wait(cid, obj)\n\
+\n\
+Add the object's data to the channel's queue.\n\
+\n\
+The returned callable will block until the object is received.\n\
+Note that it takes an optional 'timeout' arg like\n\
+threading.Lock.acquire() does.");
+
+static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "default", NULL};
@@ -2729,6 +2766,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channel_list_interpreters_doc},
     {"channel_send",              (PyCFunction)(void(*)(void))channel_send,
      METH_VARARGS | METH_KEYWORDS, channel_send_doc},
+    {"channel_send_wait",         (PyCFunction)(void(*)(void))channel_send_wait,
+     METH_VARARGS | METH_KEYWORDS, channel_send_wait_doc},
     {"channel_recv",              (PyCFunction)(void(*)(void))channel_recv,
      METH_VARARGS | METH_KEYWORDS, channel_recv_doc},
     {"channel_close",             (PyCFunction)(void(*)(void))channel_close,
