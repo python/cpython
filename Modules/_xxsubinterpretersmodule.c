@@ -593,13 +593,15 @@ _channelqueue_free(_channelqueue *queue)
 }
 
 static int
-_channelqueue_put(_channelqueue *queue, _PyCrossInterpreterData *data)
+_channelqueue_put(_channelqueue *queue, _PyCrossInterpreterData *data,
+                  _lockobj *recvlock)
 {
     _channelitem *item = _channelitem_new();
     if (item == NULL) {
         return -1;
     }
     item->data = data;
+    item->recvlock = recvlock;
 
     queue->count += 1;
     if (queue->first == NULL) {
@@ -911,7 +913,7 @@ _channel_free(_PyChannelState *chan)
 
 static int
 _channel_add(_PyChannelState *chan, int64_t interp,
-             _PyCrossInterpreterData *data)
+             _PyCrossInterpreterData *data, _lockobj *recvlock)
 {
     int res = -1;
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
@@ -924,7 +926,7 @@ _channel_add(_PyChannelState *chan, int64_t interp,
         goto done;
     }
 
-    if (_channelqueue_put(chan->queue, data) != 0) {
+    if (_channelqueue_put(chan->queue, data, recvlock) != 0) {
         goto done;
     }
 
@@ -1430,7 +1432,8 @@ _channel_destroy(_channels *channels, int64_t id)
 }
 
 static int
-_channel_send(_channels *channels, int64_t id, PyObject *obj)
+_channel_send(_channels *channels, int64_t id, PyObject *obj,
+              _lockobj *recvlock)
 {
     PyInterpreterState *interp = _get_current();
     if (interp == NULL) {
@@ -1464,7 +1467,8 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj)
     }
 
     // Add the data to the channel.
-    int res = _channel_add(chan, PyInterpreterState_GetID(interp), data);
+    int res = _channel_add(chan, PyInterpreterState_GetID(interp), data,
+                           recvlock);
     PyThread_release_lock(mutex);
     if (res != 0) {
         _PyCrossInterpreterData_Release(data);
@@ -2562,7 +2566,7 @@ channel_send(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (_channel_send(&_globals.channels, cid, obj) != 0) {
+    if (_channel_send(&_globals.channels, cid, obj, NULL) != 0) {
         return NULL;
     }
     Py_RETURN_NONE;
