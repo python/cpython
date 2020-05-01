@@ -80,8 +80,12 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
     flags.cf_flags = PyCF_IGNORE_COOKIE;
 
     mod_ty res;
-    res = (oldparser ? PyParser_ASTFromString : PyPegen_ASTFromString)
-        (the_string, "<string>", mode, &flags, arena);
+    if (oldparser) {
+        res = PyParser_ASTFromString(the_string, "<string>", mode, &flags, arena);
+    }
+    else {
+        res = PyPegen_ASTFromString(the_string, "<string>", mode, &flags, arena);
+    }
     if (res == NULL) {
         goto error;
     }
