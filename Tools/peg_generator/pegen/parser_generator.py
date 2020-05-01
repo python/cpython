@@ -1,5 +1,4 @@
 import contextlib
-import token
 from abc import abstractmethod
 
 from typing import AbstractSet, Dict, IO, Iterator, List, Optional, Set, Text, Tuple
@@ -19,11 +18,12 @@ from pegen.grammar import GrammarError, GrammarVisitor
 
 
 class RuleCheckingVisitor(GrammarVisitor):
-    def __init__(self, rules: Dict[str, Rule]):
+    def __init__(self, rules: Dict[str, Rule], tokens: Dict[int, str]):
         self.rules = rules
+        self.tokens = tokens
 
     def visit_NameLeaf(self, node: NameLeaf) -> None:
-        if node.value not in self.rules and node.value not in token.tok_name.values():
+        if node.value not in self.rules and node.value not in self.tokens.values():
             # TODO: Add line/col info to (leaf) nodes
             raise GrammarError(f"Dangling reference to rule {node.value!r}")
 
@@ -32,12 +32,13 @@ class ParserGenerator:
 
     callmakervisitor: GrammarVisitor
 
-    def __init__(self, grammar: Grammar, file: Optional[IO[Text]]):
+    def __init__(self, grammar: Grammar, tokens: Dict[int, str], file: Optional[IO[Text]]):
         self.grammar = grammar
+        self.tokens = tokens
         self.rules = grammar.rules
         if "trailer" not in grammar.metas and "start" not in self.rules:
             raise GrammarError("Grammar without a trailer must have a 'start' rule")
-        checker = RuleCheckingVisitor(self.rules)
+        checker = RuleCheckingVisitor(self.rules, self.tokens)
         for rule in self.rules.values():
             checker.visit(rule)
         self.file = file
