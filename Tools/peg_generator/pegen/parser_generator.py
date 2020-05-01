@@ -47,7 +47,7 @@ class ParserGenerator:
         self.todo = self.rules.copy()  # Rules to generate
         self.counter = 0  # For name_rule()/name_loop()
         self.keyword_counter = 499  # For keyword_type()
-        self.all_rules: Optional[Dict[str, Rule]] = None  # Rules + temporal rules
+        self.all_rules: Dict[str, Rule] = {}  # Rules + temporal rules
         self._local_variable_stack: List[List[str]] = []
 
     @contextlib.contextmanager
@@ -87,13 +87,13 @@ class ParserGenerator:
         done: Set[str] = set()
         while True:
             alltodo = list(self.todo)
+            self.all_rules.update(self.todo)
             todo = [i for i in alltodo if i not in done]
             if not todo:
                 break
             for rulename in todo:
                 self.todo[rulename].collect_todo(self)
             done = set(alltodo)
-        self.all_rules = self.todo.copy()
 
     def keyword_type(self) -> int:
         self.keyword_counter += 1

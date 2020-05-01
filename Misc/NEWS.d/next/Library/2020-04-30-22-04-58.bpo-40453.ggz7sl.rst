@@ -1,0 +1,3 @@
+Add ``isolated=True`` keyword-only parameter to
+``_xxsubinterpreters.create()``. An isolated subinterpreter cannot spawn
+threads, spawn a child process or call ``os.fork()``.
