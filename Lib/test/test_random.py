@@ -688,7 +688,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
                 maxsize+1, maxsize=maxsize
             )
         self.gen._randbelow_without_getrandbits(5640, maxsize=maxsize)
-        # issue 33203: test that _randbelow raises returns zero on
+        # issue 33203: test that _randbelow returns zero on
         # n == 0 also in its getrandbits-independent branch.
         x = self.gen._randbelow_without_getrandbits(0, maxsize=maxsize)
         self.assertEqual(x, 0)
