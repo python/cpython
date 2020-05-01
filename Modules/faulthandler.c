@@ -405,7 +405,8 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     case EXCEPTION_IN_PAGE_ERROR: PUTS(fd, "page error"); break;
     case EXCEPTION_STACK_OVERFLOW:
         PUTS(fd, "stack overflow");
-        tstate = get_thread_state();
+        /* call UncheckedGet directly to avoid setting exceptions */
+        tstate = _PyThreadState_UncheckedGet();
         if (tstate != NULL) {
             PUTS(fd, " (recursion depth=");
             _Py_DumpDecimal(fd, tstate->recursion_depth);
