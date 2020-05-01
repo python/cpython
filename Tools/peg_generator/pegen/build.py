@@ -15,7 +15,7 @@ from pegen.parser_generator import ParserGenerator
 from pegen.python_generator import PythonParserGenerator
 from pegen.tokenizer import Tokenizer
 
-MOD_DIR = pathlib.Path(__file__).parent
+MOD_DIR = pathlib.Path(__file__).resolve().parent
 
 
 def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> List[str]:
