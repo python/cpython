@@ -606,6 +606,9 @@ FAIL_SPECIALIZED_MESSAGE_CASES = [
     ("def f(*): pass", "named arguments must follow bare *"),
     ("def f(*,): pass", "named arguments must follow bare *"),
     ("def f(*, **a): pass", "named arguments must follow bare *"),
+    ("lambda *: pass", "named arguments must follow bare *"),
+    ("lambda *,: pass", "named arguments must follow bare *"),
+    ("lambda *, **a: pass", "named arguments must follow bare *"),
 ]
 
 GOOD_BUT_FAIL_TEST_CASES = [

@@ -353,6 +353,7 @@ lambda_star_etc[StarEtc*]:
     | '*' ',' b=lambda_param_maybe_default+ c=[lambda_kwds] {
         _PyPegen_star_etc(p, NULL, b, c) }
     | a=lambda_kwds { _PyPegen_star_etc(p, NULL, NULL, a) }
+    | invalid_lambda_star_etc
 
 lambda_kwds[arg_ty]: '**' a=lambda_param_no_default { a }
 
@@ -635,6 +636,8 @@ invalid_parameters:
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
 invalid_star_etc:
     | '*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
+invalid_lambda_star_etc:
+    | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
 invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
