@@ -252,7 +252,7 @@ process more convenient:
    .. versionchanged:: 3.8
       The *buffers* argument was added.
 
-.. function:: loads(data, \*, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
+.. function:: loads(data, /, \*, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
 
    Return the reconstituted object hierarchy of the pickled representation
    *data* of an object. *data* must be a :term:`bytes-like object`.
