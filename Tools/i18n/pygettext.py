@@ -162,6 +162,7 @@ import sys
 import glob
 import time
 import getopt
+import ast
 import token
 import tokenize
 
@@ -343,6 +344,29 @@ class TokenEater:
                 return
         if ttype == tokenize.NAME and tstring in opts.keywords:
             self.__state = self.__keywordseen
+            return
+        if ttype == tokenize.STRING:
+            maybe_fstring = ast.parse(tstring, mode='eval').body
+            if not isinstance(maybe_fstring, ast.JoinedStr):
+                return
+            for value in filter(lambda node: isinstance(node, ast.FormattedValue),
+                                maybe_fstring.values):
+                for call in filter(lambda node: isinstance(node, ast.Call),
+                                   ast.walk(value)):
+                    func = call.func
+                    # Name.id or Attribute.attr
+                    func_name = getattr(func, "id", None) or func.attr
+                    if func_name not in opts.keywords:
+                        continue
+                    if len(call.args) != 1 or call.keywords:
+                        # what warning should I print when this happens?
+                        continue
+                    arg = call.args[0]
+                    if not isinstance(arg, ast.Constant):
+                        # what warning should I print when this happens?
+                        break
+                    if isinstance(arg.value, str):
+                        self.__addentry(arg.value, lineno)
 
     def __suiteseen(self, ttype, tstring, lineno):
         # skip over any enclosure pairs until we see the colon
