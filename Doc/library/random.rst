@@ -208,6 +208,9 @@ Functions for sequences
    generated.  For example, a sequence of length 2080 is the largest that
    can fit within the period of the Mersenne Twister random number generator.
 
+   .. deprecated-removed:: 3.9 3.11
+      The optional parameter *random*.
+
 
 .. function:: sample(population, k)
 
