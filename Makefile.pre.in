@@ -823,6 +823,7 @@ regen-grammar: regen-token
 
 .PHONY: regen-pegen-metaparser
 regen-pegen-metaparser:
+	@$(MKDIR_P) $(srcdir)/Tools/peg_generator/pegen
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -q python \
 	$(srcdir)/Tools/peg_generator/pegen/metagrammar.gram \
 	-o $(srcdir)/Tools/peg_generator/pegen/grammar_parser.py.new
