@@ -186,28 +186,6 @@ def _collect_type_vars(types):
     return tuple(tvars)
 
 
-def _subs_tvars(tp, tvars, subs):
-    """Substitute type variables 'tvars' with substitutions 'subs'.
-    These two must have the same length.
-    """
-    if not isinstance(tp, (_BaseGenericAlias, GenericAlias)):
-        return tp
-    new_args = list(tp.__args__)
-    for a, arg in enumerate(tp.__args__):
-        if isinstance(arg, TypeVar):
-            for i, tvar in enumerate(tvars):
-                if arg == tvar:
-                    new_args[a] = subs[i]
-        else:
-            new_args[a] = _subs_tvars(arg, tvars, subs)
-    if tp.__origin__ is Union:
-        return Union[tuple(new_args)]
-    if isinstance(tp, GenericAlias):
-        return GenericAlias(tp.__origin__, tuple(new_args))
-    else:
-        return tp.copy_with(tuple(new_args))
-
-
 def _check_generic(cls, parameters):
     """Check correct count for parameters of a generic cls (internal helper).
     This gives a nice error message in case of count mismatch.
@@ -653,18 +631,6 @@ class _BaseGenericAlias(_Final, _root=True):
         if not name:
             self.__module__ = origin.__module__
 
-    @_tp_cache
-    def __getitem__(self, params):
-        if self.__origin__ in (Generic, Protocol):
-            # Can't subscript Generic[...] or Protocol[...].
-            raise TypeError(f"Cannot subscript already-subscripted {self}")
-        if not isinstance(params, tuple):
-            params = (params,)
-        msg = "Parameters to generic types must be types."
-        params = tuple(_type_check(p, msg) for p in params)
-        _check_generic(self, params)
-        return _subs_tvars(self, self.__parameters__, params)
-
     def __eq__(self, other):
         if not isinstance(other, _BaseGenericAlias):
             return NotImplemented
@@ -719,6 +685,28 @@ class _BaseGenericAlias(_Final, _root=True):
 
 
 class _GenericAlias(_BaseGenericAlias, _root=True):
+    @_tp_cache
+    def __getitem__(self, params):
+        if self.__origin__ in (Generic, Protocol):
+            # Can't subscript Generic[...] or Protocol[...].
+            raise TypeError(f"Cannot subscript already-subscripted {self}")
+        if not isinstance(params, tuple):
+            params = (params,)
+        msg = "Parameters to generic types must be types."
+        params = tuple(_type_check(p, msg) for p in params)
+        _check_generic(self, params)
+
+        subst = dict(zip(self.__parameters__, params))
+        new_args = []
+        for arg in self.__args__:
+            if isinstance(arg, TypeVar):
+                arg = subst[arg]
+            elif isinstance(arg, (_BaseGenericAlias, GenericAlias)):
+                subargs = tuple(subst[x] for x in arg.__parameters__)
+                arg = arg[subargs]
+            new_args.append(arg)
+        return self.copy_with(tuple(new_args))
+
     def copy_with(self, params):
         return self.__class__(self.__origin__, params, name=self._name, inst=self._inst)
 
@@ -763,6 +751,16 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
             name = origin.__name__
         super().__init__(origin, params, inst=inst, name=name)
         self.__doc__ = f'A generic version of {origin.__module__}.{origin.__qualname__}'
+
+    @_tp_cache
+    def __getitem__(self, params):
+        if not isinstance(params, tuple):
+            params = (params,)
+        msg = "Parameters to generic types must be types."
+        params = tuple(_type_check(p, msg) for p in params)
+        _check_generic(self, params)
+        assert self.__args__ == self.__parameters__
+        return self.copy_with(params)
 
     def copy_with(self, params):
         return _GenericAlias(self.__origin__, params,
@@ -841,6 +839,9 @@ class _TupleType(_SpecialGenericAlias, _root=True):
 
 
 class _UnionGenericAlias(_GenericAlias, _root=True):
+    def copy_with(self, params):
+        return Union[params]
+
     def __eq__(self, other):
         if not isinstance(other, _UnionGenericAlias):
             return NotImplemented
@@ -1172,9 +1173,8 @@ class _AnnotatedAlias(_GenericAlias, _root=True):
     def __eq__(self, other):
         if not isinstance(other, _AnnotatedAlias):
             return NotImplemented
-        if self.__origin__ != other.__origin__:
-            return False
-        return self.__metadata__ == other.__metadata__
+        return (self.__origin__ == other.__origin__
+                and self.__metadata__ == other.__metadata__)
 
     def __hash__(self):
         return hash((self.__origin__, self.__metadata__))
