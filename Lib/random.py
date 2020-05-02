@@ -323,7 +323,7 @@ class Random(_random.Random):
         else:
             _warn('The *random* parameter to shuffle() has been deprecated\n'
                   'since Python 3.9 and will be removed in a subsequent '
-                  'version.\n',
+                  'version.',
                   DeprecationWarning, 2)
             _int = int
             for i in reversed(range(1, len(x))):
