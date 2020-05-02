@@ -745,8 +745,9 @@ regen-importlib: Programs/_freeze_importlib
 ############################################################################
 # Regenerate all generated files
 
-regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar regen-pegen \
-	regen-token regen-keyword regen-symbol regen-ast regen-importlib clinic
+regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar \
+	regen-token regen-keyword regen-symbol regen-ast regen-importlib clinic \
+	regen-pegen-metaparser regen-pegen
 
 ############################################################################
 # Special rules for object files
@@ -820,10 +821,20 @@ regen-grammar: regen-token
 	$(UPDATE_FILE) $(srcdir)/Include/graminit.h $(srcdir)/Include/graminit.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/graminit.c $(srcdir)/Python/graminit.c.new
 
+.PHONY: regen-pegen-metaparser
+regen-pegen-metaparser:
+	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -q python \
+	$(srcdir)/Tools/peg_generator/pegen/metagrammar.gram \
+	-o $(srcdir)/Tools/peg_generator/pegen/grammar_parser.py.new
+	$(UPDATE_FILE) $(srcdir)/Tools/peg_generator/pegen/grammar_parser.py \
+	$(srcdir)/Tools/peg_generator/pegen/grammar_parser.py.new
+
 .PHONY: regen-pegen
 regen-pegen:
 	@$(MKDIR_P) $(srcdir)/Parser/pegen
-	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -c -q $(srcdir)/Grammar/python.gram \
+	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -q c \
+		$(srcdir)/Grammar/python.gram \
+		$(srcdir)/Grammar/Tokens \
 		-o $(srcdir)/Parser/pegen/parse.new.c
 	$(UPDATE_FILE) $(srcdir)/Parser/pegen/parse.c $(srcdir)/Parser/pegen/parse.new.c
 
@@ -1045,6 +1056,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
 		$(srcdir)/Include/pyfpe.h \
+		$(srcdir)/Include/pyframe.h \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
 		$(srcdir)/Include/pymacconfig.h \
@@ -1083,6 +1095,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/bytearrayobject.h \
 		$(srcdir)/Include/cpython/bytesobject.h \
 		$(srcdir)/Include/cpython/ceval.h \
+		$(srcdir)/Include/cpython/code.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/fileutils.h \
@@ -1426,6 +1439,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		ctypes ctypes/test ctypes/macholib \
 		idlelib idlelib/Icons idlelib/idle_test \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
+		test/test_peg_generator \
 		test/test_tools test/test_warnings test/test_warnings/data \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \

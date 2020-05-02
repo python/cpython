@@ -15,7 +15,6 @@
 #include "errcode.h"
 #include "marshal.h"
 #include "code.h"
-#include "frameobject.h"
 #include "importdl.h"
 #include "pydtrace.h"
 
@@ -299,6 +298,7 @@ _PyImport_Fini2(void)
 
     /* Free memory allocated by PyImport_ExtendInittab() */
     PyMem_RawFree(inittab_copy);
+    inittab_copy = NULL;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -1536,7 +1536,7 @@ remove_importlib_frames(PyThreadState *tstate)
         PyTracebackObject *traceback = (PyTracebackObject *)tb;
         PyObject *next = (PyObject *) traceback->tb_next;
         PyFrameObject *frame = traceback->tb_frame;
-        PyCodeObject *code = frame->f_code;
+        PyCodeObject *code = PyFrame_GetCode(frame);
         int now_in_importlib;
 
         assert(PyTraceBack_Check(tb));
@@ -1558,6 +1558,7 @@ remove_importlib_frames(PyThreadState *tstate)
         else {
             prev_link = (PyObject **) &traceback->tb_next;
         }
+        Py_DECREF(code);
         tb = next;
     }
 done:
@@ -1977,23 +1978,23 @@ PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals
 PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
-    _Py_IDENTIFIER(imp);
+    _Py_IDENTIFIER(importlib);
     _Py_IDENTIFIER(reload);
     PyObject *reloaded_module = NULL;
-    PyObject *imp = _PyImport_GetModuleId(&PyId_imp);
-    if (imp == NULL) {
+    PyObject *importlib = _PyImport_GetModuleId(&PyId_importlib);
+    if (importlib == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
         }
 
-        imp = PyImport_ImportModule("imp");
-        if (imp == NULL) {
+        importlib = PyImport_ImportModule("importlib");
+        if (importlib == NULL) {
             return NULL;
         }
     }
 
-    reloaded_module = _PyObject_CallMethodIdOneArg(imp, &PyId_reload, m);
-    Py_DECREF(imp);
+    reloaded_module = _PyObject_CallMethodIdOneArg(importlib, &PyId_reload, m);
+    Py_DECREF(importlib);
     return reloaded_module;
 }
 

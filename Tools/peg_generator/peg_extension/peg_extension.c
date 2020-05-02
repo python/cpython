@@ -12,7 +12,6 @@ _build_return_object(mod_ty module, int mode, PyObject *filename_ob, PyArena *ar
     } else {
         result = Py_None;
         Py_INCREF(result);
-        
     }
 
     return result;
@@ -43,7 +42,8 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    mod_ty res = _PyPegen_run_parser_from_file(filename, Py_file_input, filename_ob, arena);
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    mod_ty res = _PyPegen_run_parser_from_file(filename, Py_file_input, filename_ob, &flags, arena);
     if (res == NULL) {
         goto error;
     }
@@ -81,8 +81,9 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
     mod_ty res = _PyPegen_run_parser_from_string(the_string, Py_file_input, filename_ob,
-                                        PyCF_IGNORE_COOKIE, arena);
+                                        &flags, arena);
     if (res == NULL) {
         goto error;
     }

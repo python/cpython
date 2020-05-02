@@ -1022,6 +1022,42 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyObject *
+PyType_FromSpec_Alloc(PyTypeObject *type, Py_ssize_t nitems)
+{
+    PyObject *obj;
+    const size_t size = _Py_SIZE_ROUND_UP(
+            _PyObject_VAR_SIZE(type, nitems+1) + sizeof(traverseproc),
+            SIZEOF_VOID_P);
+    /* note that we need to add one, for the sentinel and space for the
+       provided tp-traverse: See bpo-40217 for more details */
+
+    if (PyType_IS_GC(type)) {
+        obj = _PyObject_GC_Malloc(size);
+    }
+    else {
+        obj = (PyObject *)PyObject_MALLOC(size);
+    }
+
+    if (obj == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    memset(obj, '\0', size);
+
+    if (type->tp_itemsize == 0) {
+        (void)PyObject_INIT(obj, type);
+    }
+    else {
+        (void) PyObject_INIT_VAR((PyVarObject *)obj, type, nitems);
+    }
+
+    if (PyType_IS_GC(type)) {
+        _PyObject_GC_TRACK(obj);
+    }
+    return obj;
+}
+
+PyObject *
 PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 {
     PyObject *obj;
@@ -2853,6 +2889,36 @@ static const short slotoffsets[] = {
 #include "typeslots.inc"
 };
 
+static int
+PyType_FromSpec_tp_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyTypeObject *parent = Py_TYPE(self);
+
+    // Only a instance of a type that is directly created by
+    // PyType_FromSpec (not subclasses) must visit its parent.
+    if (parent->tp_traverse == PyType_FromSpec_tp_traverse) {
+        Py_VISIT(parent);
+    }
+
+    // Search for the original type that was created using PyType_FromSpec
+    PyTypeObject *base;
+    base = parent;
+    while (base->tp_traverse != PyType_FromSpec_tp_traverse) {
+        base = base->tp_base;
+        assert(base);
+    }
+
+    // Extract the user defined traverse function that we placed at the end
+    // of the type and call it.
+    size_t size = Py_SIZE(base);
+    size_t _offset = _PyObject_VAR_SIZE(&PyType_Type, size+1);
+    traverseproc fun = *(traverseproc*)((char*)base + _offset);
+    if (fun == NULL) {
+        return 0;
+    }
+    return fun(self, visit, arg);
+}
+
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
@@ -2886,7 +2952,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         }
     }
 
-    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
+    res = (PyHeapTypeObject*)PyType_FromSpec_Alloc(&PyType_Type, nmembers);
     if (res == NULL)
         return NULL;
     res_start = (char*)res;
@@ -2990,6 +3056,30 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
             memcpy(PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
             type->tp_members = PyHeapType_GET_MEMBERS(res);
+        }
+        else if (slot->slot == Py_tp_traverse) {
+
+           /* Types created by PyType_FromSpec own a strong reference to their
+            * type, but this was added in Python 3.8. The tp_traverse function
+            * needs to call Py_VISIT on the type but all existing traverse
+            * functions cannot be updated (especially the ones from existing user
+            * functions) so we need to provide a tp_traverse that manually calls
+            * Py_VISIT(Py_TYPE(self)) and then call the provided tp_traverse. In
+            * this way, user functions do not need to be updated, preserve
+            * backwards compatibility.
+            *
+            * We store the user-provided traverse function at the end of the type
+            * (we have allocated space for it) so we can call it from our
+            * PyType_FromSpec_tp_traverse wrapper.
+            *
+            * Check bpo-40217 for more information and rationale about this issue.
+            *
+            * */
+
+            type->tp_traverse = PyType_FromSpec_tp_traverse;
+            size_t _offset = _PyObject_VAR_SIZE(&PyType_Type, nmembers+1);
+            traverseproc *user_traverse = (traverseproc*)((char*)type + _offset);
+            *user_traverse = slot->pfunc;
         }
         else {
             /* Copy other slots directly */
@@ -7925,6 +8015,83 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
+super_init_without_args(PyFrameObject *f, PyCodeObject *co,
+                        PyTypeObject **type_p, PyObject **obj_p)
+{
+    if (co->co_argcount == 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "super(): no arguments");
+        return -1;
+    }
+
+    PyObject *obj = f->f_localsplus[0];
+    Py_ssize_t i, n;
+    if (obj == NULL && co->co_cell2arg) {
+        /* The first argument might be a cell. */
+        n = PyTuple_GET_SIZE(co->co_cellvars);
+        for (i = 0; i < n; i++) {
+            if (co->co_cell2arg[i] == 0) {
+                PyObject *cell = f->f_localsplus[co->co_nlocals + i];
+                assert(PyCell_Check(cell));
+                obj = PyCell_GET(cell);
+                break;
+            }
+        }
+    }
+    if (obj == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "super(): arg[0] deleted");
+        return -1;
+    }
+
+    if (co->co_freevars == NULL) {
+        n = 0;
+    }
+    else {
+        assert(PyTuple_Check(co->co_freevars));
+        n = PyTuple_GET_SIZE(co->co_freevars);
+    }
+
+    PyTypeObject *type = NULL;
+    for (i = 0; i < n; i++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
+        assert(PyUnicode_Check(name));
+        if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
+            Py_ssize_t index = co->co_nlocals +
+                PyTuple_GET_SIZE(co->co_cellvars) + i;
+            PyObject *cell = f->f_localsplus[index];
+            if (cell == NULL || !PyCell_Check(cell)) {
+                PyErr_SetString(PyExc_RuntimeError,
+                  "super(): bad __class__ cell");
+                return -1;
+            }
+            type = (PyTypeObject *) PyCell_GET(cell);
+            if (type == NULL) {
+                PyErr_SetString(PyExc_RuntimeError,
+                  "super(): empty __class__ cell");
+                return -1;
+            }
+            if (!PyType_Check(type)) {
+                PyErr_Format(PyExc_RuntimeError,
+                  "super(): __class__ is not a type (%s)",
+                  Py_TYPE(type)->tp_name);
+                return -1;
+            }
+            break;
+        }
+    }
+    if (type == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "super(): __class__ cell not found");
+        return -1;
+    }
+
+    *type_p = type;
+    *obj_p = obj;
+    return 0;
+}
+
+static int
 super_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     superobject *su = (superobject *)self;
@@ -7940,80 +8107,20 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (type == NULL) {
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
-        PyFrameObject *f;
-        PyCodeObject *co;
-        Py_ssize_t i, n;
-        f = _PyThreadState_GET()->frame;
-        if (f == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        PyFrameObject *frame = PyThreadState_GetFrame(tstate);
+        if (frame == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): no current frame");
             return -1;
         }
-        co = f->f_code;
-        if (co == NULL) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "super(): no code object");
-            return -1;
-        }
-        if (co->co_argcount == 0) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "super(): no arguments");
-            return -1;
-        }
-        obj = f->f_localsplus[0];
-        if (obj == NULL && co->co_cell2arg) {
-            /* The first argument might be a cell. */
-            n = PyTuple_GET_SIZE(co->co_cellvars);
-            for (i = 0; i < n; i++) {
-                if (co->co_cell2arg[i] == 0) {
-                    PyObject *cell = f->f_localsplus[co->co_nlocals + i];
-                    assert(PyCell_Check(cell));
-                    obj = PyCell_GET(cell);
-                    break;
-                }
-            }
-        }
-        if (obj == NULL) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "super(): arg[0] deleted");
-            return -1;
-        }
-        if (co->co_freevars == NULL)
-            n = 0;
-        else {
-            assert(PyTuple_Check(co->co_freevars));
-            n = PyTuple_GET_SIZE(co->co_freevars);
-        }
-        for (i = 0; i < n; i++) {
-            PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
-            assert(PyUnicode_Check(name));
-            if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
-                Py_ssize_t index = co->co_nlocals +
-                    PyTuple_GET_SIZE(co->co_cellvars) + i;
-                PyObject *cell = f->f_localsplus[index];
-                if (cell == NULL || !PyCell_Check(cell)) {
-                    PyErr_SetString(PyExc_RuntimeError,
-                      "super(): bad __class__ cell");
-                    return -1;
-                }
-                type = (PyTypeObject *) PyCell_GET(cell);
-                if (type == NULL) {
-                    PyErr_SetString(PyExc_RuntimeError,
-                      "super(): empty __class__ cell");
-                    return -1;
-                }
-                if (!PyType_Check(type)) {
-                    PyErr_Format(PyExc_RuntimeError,
-                      "super(): __class__ is not a type (%s)",
-                      Py_TYPE(type)->tp_name);
-                    return -1;
-                }
-                break;
-            }
-        }
-        if (type == NULL) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "super(): __class__ cell not found");
+
+        PyCodeObject *code = PyFrame_GetCode(frame);
+        int res = super_init_without_args(frame, code, &type, &obj);
+        Py_DECREF(frame);
+        Py_DECREF(code);
+
+        if (res < 0) {
             return -1;
         }
     }

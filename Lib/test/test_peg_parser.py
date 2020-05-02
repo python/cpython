@@ -1,9 +1,6 @@
 import ast
-import os
-import sys
 import _peg_parser as peg_parser
 import unittest
-from pathlib import PurePath
 from typing import Any, Union, Iterable, Tuple
 from textwrap import dedent
 from test import support
@@ -699,7 +696,7 @@ class ASTGenerationTest(unittest.TestCase):
         self.maxDiff = None
         for source in TEST_SOURCES:
             actual_ast = peg_parser.parse_string(source)
-            expected_ast = ast.parse(source)
+            expected_ast = peg_parser.parse_string(source, oldparser=True)
             self.assertEqual(
                 ast.dump(actual_ast, include_attributes=True),
                 ast.dump(expected_ast, include_attributes=True),
@@ -721,12 +718,11 @@ class ASTGenerationTest(unittest.TestCase):
                 f"Actual error message does not match expexted for {source}"
             )
 
-    @support.skip_if_new_parser("This tests nothing for now, since compile uses pegen as well")
     @unittest.expectedFailure
     def test_correct_but_known_to_fail_ast_generation_on_source_files(self) -> None:
         for source in GOOD_BUT_FAIL_SOURCES:
             actual_ast = peg_parser.parse_string(source)
-            expected_ast = ast.parse(source)
+            expected_ast = peg_parser.parse_string(source, oldparser=True)
             self.assertEqual(
                 ast.dump(actual_ast, include_attributes=True),
                 ast.dump(expected_ast, include_attributes=True),
@@ -736,7 +732,7 @@ class ASTGenerationTest(unittest.TestCase):
     def test_correct_ast_generation_without_pos_info(self) -> None:
         for source in GOOD_BUT_FAIL_SOURCES:
             actual_ast = peg_parser.parse_string(source)
-            expected_ast = ast.parse(source)
+            expected_ast = peg_parser.parse_string(source, oldparser=True)
             self.assertEqual(
                 ast.dump(actual_ast),
                 ast.dump(expected_ast),
@@ -752,7 +748,7 @@ class ASTGenerationTest(unittest.TestCase):
     def test_correct_ast_generatrion_eval(self) -> None:
         for source in EXPRESSIONS_TEST_SOURCES:
             actual_ast = peg_parser.parse_string(source, mode='eval')
-            expected_ast = ast.parse(source, mode='eval')
+            expected_ast = peg_parser.parse_string(source, mode='eval', oldparser=True)
             self.assertEqual(
                 ast.dump(actual_ast, include_attributes=True),
                 ast.dump(expected_ast, include_attributes=True),

@@ -349,7 +349,7 @@ class NetworkTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires('network')
-        with support.transient_internet(cls.base_url):
+        with socket_helper.transient_internet(cls.base_url):
             cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt)
             cls.parser.read()
 

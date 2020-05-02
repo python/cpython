@@ -538,7 +538,7 @@ _channelend_find(_channelend *first, int64_t interp, _channelend **pprev)
 
 typedef struct _channelassociations {
     // Note that the list entries are never removed for interpreter
-    // for which the channel is closed.  This should be a problem in
+    // for which the channel is closed.  This should not be a problem in
     // practice.  Also, a channel isn't automatically closed when an
     // interpreter is destroyed.
     int64_t numsendopen;
@@ -1179,11 +1179,6 @@ _channels_list_all(_channels *channels, int64_t *count)
 {
     int64_t *cids = NULL;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
-    int64_t numopen = channels->numopen;
-    if (numopen >= PY_SSIZE_T_MAX) {
-        PyErr_SetString(PyExc_RuntimeError, "too many channels open");
-        goto done;
-    }
     int64_t *ids = PyMem_NEW(int64_t, (Py_ssize_t)(channels->numopen));
     if (ids == NULL) {
         goto done;
@@ -1350,19 +1345,16 @@ _channel_recv(_channels *channels, int64_t id)
     _PyCrossInterpreterData *data = _channel_next(chan, PyInterpreterState_GetID(interp));
     PyThread_release_lock(mutex);
     if (data == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_Format(ChannelEmptyError, "channel %" PRId64 " is empty", id);
-        }
         return NULL;
     }
 
     // Convert the data back to an object.
     PyObject *obj = _PyCrossInterpreterData_NewObject(data);
+    _PyCrossInterpreterData_Release(data);
+    PyMem_Free(data);
     if (obj == NULL) {
         return NULL;
     }
-    _PyCrossInterpreterData_Release(data);
-    PyMem_Free(data);
 
     return obj;
 }
@@ -1393,6 +1385,24 @@ static int
 _channel_close(_channels *channels, int64_t id, int end, int force)
 {
     return _channels_close(channels, id, NULL, end, force);
+}
+
+static int
+_channel_is_associated(_channels *channels, int64_t cid, int64_t interp,
+                       int send)
+{
+    _PyChannelState *chan = _channels_lookup(channels, cid, NULL);
+    if (chan == NULL) {
+        return -1;
+    } else if (send && chan->closing != NULL) {
+        PyErr_Format(ChannelClosedError, "channel %" PRId64 " closed", cid);
+        return -1;
+    }
+
+    _channelend *end = _channelend_find(send ? chan->ends->send : chan->ends->recv,
+                                        interp, NULL);
+
+    return (end != NULL && end->open);
 }
 
 /* ChannelID class */
@@ -1830,14 +1840,17 @@ _is_running(PyInterpreterState *interp)
                         "interpreter has more than one thread");
         return -1;
     }
+
+    assert(!PyErr_Occurred());
     PyFrameObject *frame = PyThreadState_GetFrame(tstate);
     if (frame == NULL) {
-        if (PyErr_Occurred() != NULL) {
-            return -1;
-        }
         return 0;
     }
-    return (int)(frame->f_executing);
+
+    int executing = (int)(frame->f_executing);
+    Py_DECREF(frame);
+
+    return executing;
 }
 
 static int
@@ -1986,16 +1999,20 @@ _global_channels(void) {
 }
 
 static PyObject *
-interp_create(PyObject *self, PyObject *args)
+interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    if (!PyArg_UnpackTuple(args, "create", 0, 0)) {
+
+    static char *kwlist[] = {"isolated", NULL};
+    int isolated = 1;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|$i:create", kwlist,
+                                     &isolated)) {
         return NULL;
     }
 
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     // XXX Possible GILState issues?
-    PyThreadState *tstate = Py_NewInterpreter();
+    PyThreadState *tstate = _Py_NewInterpreter(isolated);
     PyThreadState_Swap(save_tstate);
     if (tstate == NULL) {
         /* Since no new thread state was created, there is no exception to
@@ -2327,6 +2344,68 @@ PyDoc_STRVAR(channel_list_all_doc,
 Return the list of all IDs for active channels.");
 
 static PyObject *
+channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", "send", NULL};
+    int64_t cid;            /* Channel ID */
+    int send = 0;           /* Send or receive end? */
+    int64_t id;
+    PyObject *ids, *id_obj;
+    PyInterpreterState *interp;
+
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwds, "O&$p:channel_list_interpreters",
+            kwlist, channel_id_converter, &cid, &send)) {
+        return NULL;
+    }
+
+    ids = PyList_New(0);
+    if (ids == NULL) {
+        goto except;
+    }
+
+    interp = PyInterpreterState_Head();
+    while (interp != NULL) {
+        id = PyInterpreterState_GetID(interp);
+        assert(id >= 0);
+        int res = _channel_is_associated(&_globals.channels, cid, id, send);
+        if (res < 0) {
+            goto except;
+        }
+        if (res) {
+            id_obj = _PyInterpreterState_GetIDObject(interp);
+            if (id_obj == NULL) {
+                goto except;
+            }
+            res = PyList_Insert(ids, 0, id_obj);
+            Py_DECREF(id_obj);
+            if (res < 0) {
+                goto except;
+            }
+        }
+        interp = PyInterpreterState_Next(interp);
+    }
+
+    goto finally;
+
+except:
+    Py_XDECREF(ids);
+    ids = NULL;
+
+finally:
+    return ids;
+}
+
+PyDoc_STRVAR(channel_list_interpreters_doc,
+"channel_list_interpreters(cid, *, send) -> [id]\n\
+\n\
+Return the list of all interpreter IDs associated with an end of the channel.\n\
+\n\
+The 'send' argument should be a boolean indicating whether to use the send or\n\
+receive end.");
+
+
+static PyObject *
 channel_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "obj", NULL};
@@ -2351,20 +2430,37 @@ Add the object's data to the channel's queue.");
 static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", NULL};
+    static char *kwlist[] = {"cid", "default", NULL};
     int64_t cid;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_recv", kwlist,
-                                     channel_id_converter, &cid)) {
+    PyObject *dflt = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|O:channel_recv", kwlist,
+                                     channel_id_converter, &cid, &dflt)) {
         return NULL;
     }
+    Py_XINCREF(dflt);
 
-    return _channel_recv(&_globals.channels, cid);
+    PyObject *obj = _channel_recv(&_globals.channels, cid);
+    if (obj != NULL) {
+        Py_XDECREF(dflt);
+        return obj;
+    } else if (PyErr_Occurred()) {
+        Py_XDECREF(dflt);
+        return NULL;
+    } else if (dflt != NULL) {
+        return dflt;
+    } else {
+        PyErr_Format(ChannelEmptyError, "channel %" PRId64 " is empty", cid);
+        return NULL;
+    }
 }
 
 PyDoc_STRVAR(channel_recv_doc,
-"channel_recv(cid) -> obj\n\
+"channel_recv(cid, [default]) -> obj\n\
 \n\
-Return a new object from the data at the from of the channel's queue.");
+Return a new object from the data at the front of the channel's queue.\n\
+\n\
+If there is nothing to receive then raise ChannelEmptyError, unless\n\
+a default value is provided.  In that case return it.");
 
 static PyObject *
 channel_close(PyObject *self, PyObject *args, PyObject *kwds)
@@ -2455,8 +2551,8 @@ channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMethodDef module_functions[] = {
-    {"create",                    (PyCFunction)interp_create,
-     METH_VARARGS, create_doc},
+    {"create",                    (PyCFunction)(void(*)(void))interp_create,
+     METH_VARARGS | METH_KEYWORDS, create_doc},
     {"destroy",                   (PyCFunction)(void(*)(void))interp_destroy,
      METH_VARARGS | METH_KEYWORDS, destroy_doc},
     {"list_all",                  interp_list_all,
@@ -2479,6 +2575,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channel_destroy_doc},
     {"channel_list_all",          channel_list_all,
      METH_NOARGS, channel_list_all_doc},
+    {"channel_list_interpreters", (PyCFunction)(void(*)(void))channel_list_interpreters,
+     METH_VARARGS | METH_KEYWORDS, channel_list_interpreters_doc},
     {"channel_send",              (PyCFunction)(void(*)(void))channel_send,
      METH_VARARGS | METH_KEYWORDS, channel_send_doc},
     {"channel_recv",              (PyCFunction)(void(*)(void))channel_recv,

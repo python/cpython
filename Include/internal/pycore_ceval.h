@@ -11,7 +11,6 @@ extern "C" {
 /* Forward declarations */
 struct pyruntimestate;
 struct _ceval_runtime_state;
-struct _frame;
 
 #include "pycore_interp.h"   /* PyInterpreterState.eval_frame */
 
@@ -36,7 +35,7 @@ PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
 void _PyEval_Fini(void);
 
 static inline PyObject*
-_PyEval_EvalFrame(PyThreadState *tstate, struct _frame *f, int throwflag)
+_PyEval_EvalFrame(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 {
     return tstate->interp->eval_frame(tstate, f, throwflag);
 }

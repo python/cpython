@@ -17,6 +17,8 @@ _PyPegen_parse(Parser *p)
         result = interactive_rule(p);
     } else if (p->start_rule == Py_eval_input) {
         result = eval_rule(p);
+    } else if (p->start_rule == Py_func_type_input) {
+        result = func_type_rule(p);
     } else if (p->start_rule == Py_fstring_input) {
         result = fstring_rule(p);
     }
@@ -26,10 +28,19 @@ _PyPegen_parse(Parser *p)
 
 // The end
 '''
-file[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+file[mod_ty]: a=[statements] ENDMARKER { _PyPegen_make_module(p, a) }
 interactive[mod_ty]: a=statement_newline { Interactive(a, p->arena) }
 eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { Expression(a, p->arena) }
+func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMARKER { FunctionType(a, b, p->arena) }
 fstring[expr_ty]: star_expressions
+
+# type_expressions allow */** but ignore them
+type_expressions[asdl_seq*]:
+    | a=','.expression+ ',' '*' b=expression ',' '**' c=expression {
+        _PyPegen_seq_append_to_end(p, CHECK(_PyPegen_seq_append_to_end(p, a, b)), c) }
+    | a=','.expression+ ',' '*' b=expression { _PyPegen_seq_append_to_end(p, a, b) }
+    | a=','.expression+ ',' '**' b=expression { _PyPegen_seq_append_to_end(p, a, b) }
+    | ','.expression+
 
 statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
 statement[asdl_seq*]: a=compound_stmt { _PyPegen_singleton_seq(p, a) } | simple_stmt
@@ -69,30 +80,34 @@ compound_stmt[stmt_ty]:
 # NOTE: annotated_rhs may start with 'yield'; yield_expr must start with 'yield'
 assignment:
     | a=NAME ':' b=expression c=['=' d=annotated_rhs { d }] {
-        _Py_AnnAssign(CHECK(_PyPegen_set_expr_context(p, a, Store)), b, c, 1, EXTRA) }
+        CHECK_VERSION(
+            6,
+            "Variable annotation syntax is",
+            _Py_AnnAssign(CHECK(_PyPegen_set_expr_context(p, a, Store)), b, c, 1, EXTRA)
+        ) }
     | a=('(' b=inside_paren_ann_assign_target ')' { b }
          | ann_assign_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
-        _Py_AnnAssign(a, b, c, 0, EXTRA)}
-    | a=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) {
-         _Py_Assign(a, b, NULL, EXTRA) }
+        CHECK_VERSION(6, "Variable annotations syntax is", _Py_AnnAssign(a, b, c, 0, EXTRA)) }
+    | a=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) tc=[TYPE_COMMENT] {
+         _Py_Assign(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | a=target b=augassign c=(yield_expr | star_expressions) {
          _Py_AugAssign(a, b->kind, c, EXTRA) }
     | invalid_assignment
 
 augassign[AugOperator*]:
-    | '+=' {_PyPegen_augoperator(p, Add)}
-    | '-=' {_PyPegen_augoperator(p, Sub)}
-    | '*=' {_PyPegen_augoperator(p, Mult)}
-    | '@=' {_PyPegen_augoperator(p, MatMult)}
-    | '/=' {_PyPegen_augoperator(p, Div)}
-    | '%=' {_PyPegen_augoperator(p, Mod)}
-    | '&=' {_PyPegen_augoperator(p, BitAnd)}
-    | '|=' {_PyPegen_augoperator(p, BitOr)}
-    | '^=' {_PyPegen_augoperator(p, BitXor)}
-    | '<<=' {_PyPegen_augoperator(p, LShift)}
-    | '>>=' {_PyPegen_augoperator(p, RShift)}
-    | '**=' {_PyPegen_augoperator(p, Pow)}
-    | '//=' {_PyPegen_augoperator(p, FloorDiv)}
+    | '+=' { _PyPegen_augoperator(p, Add) }
+    | '-=' { _PyPegen_augoperator(p, Sub) }
+    | '*=' { _PyPegen_augoperator(p, Mult) }
+    | '@=' { CHECK_VERSION(5, "The '@' operator is", _PyPegen_augoperator(p, MatMult)) }
+    | '/=' { _PyPegen_augoperator(p, Div) }
+    | '%=' { _PyPegen_augoperator(p, Mod) }
+    | '&=' { _PyPegen_augoperator(p, BitAnd) }
+    | '|=' { _PyPegen_augoperator(p, BitOr) }
+    | '^=' { _PyPegen_augoperator(p, BitXor) }
+    | '<<=' { _PyPegen_augoperator(p, LShift) }
+    | '>>=' { _PyPegen_augoperator(p, RShift) }
+    | '**=' { _PyPegen_augoperator(p, Pow) }
+    | '//=' { _PyPegen_augoperator(p, FloorDiv) }
 
 global_stmt[stmt_ty]: 'global' a=','.NAME+ {
     _Py_Global(CHECK(_PyPegen_map_names_to_ids(p, a)), EXTRA) }
@@ -145,14 +160,20 @@ while_stmt[stmt_ty]:
     | 'while' a=named_expression ':' b=block c=[else_block] { _Py_While(a, b, c, EXTRA) }
 
 for_stmt[stmt_ty]:
-    | is_async=[ASYNC] 'for' t=star_targets 'in' ex=star_expressions ':' b=block el=[else_block] {
-        (is_async ? _Py_AsyncFor : _Py_For)(t, ex, b, el, NULL, EXTRA) }
+    | 'for' t=star_targets 'in' ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+        _Py_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+    | ASYNC 'for' t=star_targets 'in' ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+        CHECK_VERSION(5, "Async for loops are", _Py_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
 
 with_stmt[stmt_ty]:
-    | is_async=[ASYNC] 'with' '(' a=','.with_item+ ')' ':' b=block {
-        (is_async ? _Py_AsyncWith : _Py_With)(a, b, NULL, EXTRA) }
-    | is_async=[ASYNC] 'with' a=','.with_item+ ':' b=block {
-        (is_async ? _Py_AsyncWith : _Py_With)(a, b, NULL, EXTRA) }
+    | 'with' '(' a=','.with_item+ ')' ':' b=block {
+        _Py_With(a, b, NULL, EXTRA) }
+    | 'with' a=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
+        _Py_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+    | ASYNC 'with' '(' a=','.with_item+ ')' ':' b=block {
+       CHECK_VERSION(5, "Async with statements are", _Py_AsyncWith(a, b, NULL, EXTRA)) }
+    | ASYNC 'with' a=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
+       CHECK_VERSION(5, "Async with statements are", _Py_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
 with_item[withitem_ty]:
     | e=expression o=['as' t=target { t }] { _Py_withitem(e, o, p->arena) }
 
@@ -177,43 +198,81 @@ function_def[stmt_ty]:
     | function_def_raw
 
 function_def_raw[stmt_ty]:
-    | is_async=[ASYNC] 'def' n=NAME '(' params=[params] ')' a=['->' z=annotation { z }] ':' b=block {
-        (is_async ? _Py_AsyncFunctionDef : _Py_FunctionDef)(n->v.Name.id,
-                             (params) ? params : CHECK(_PyPegen_empty_arguments(p)),
-                             b, NULL, a, NULL, EXTRA) }
+    | 'def' n=NAME '(' params=[params] ')' a=['->' z=expression { z }] ':' tc=[func_type_comment] b=block {
+        _Py_FunctionDef(n->v.Name.id,
+                        (params) ? params : CHECK(_PyPegen_empty_arguments(p)),
+                        b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+    | ASYNC 'def' n=NAME '(' params=[params] ')' a=['->' z=expression { z }] ':' tc=[func_type_comment] b=block {
+        CHECK_VERSION(
+            5,
+            "Async functions are",
+            _Py_AsyncFunctionDef(n->v.Name.id,
+                            (params) ? params : CHECK(_PyPegen_empty_arguments(p)),
+                            b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA)
+        ) }
+func_type_comment[Token*]:
+    | NEWLINE t=TYPE_COMMENT &(NEWLINE INDENT) { t }  # Must be followed by indented block
+    | invalid_double_type_comments
+    | TYPE_COMMENT
 
 params[arguments_ty]:
     | invalid_parameters
     | parameters
+
 parameters[arguments_ty]:
-    | a=slash_without_default b=[',' x=plain_names { x }] c=[',' y=names_with_default { y }] d=[',' z=[star_etc] { z }] {
+    | a=slash_no_default b=param_no_default* c=param_with_default* d=[star_etc] {
         _PyPegen_make_arguments(p, a, NULL, b, c, d) }
-    | a=slash_with_default b=[',' y=names_with_default { y }] c=[',' z=[star_etc] { z }] {
+    | a=slash_with_default b=param_with_default* c=[star_etc] {
         _PyPegen_make_arguments(p, NULL, a, NULL, b, c) }
-    | a=plain_names b=[',' y=names_with_default { y }] c=[',' z=[star_etc] { z }] {
+    | a=param_no_default+ b=param_with_default* c=[star_etc] {
         _PyPegen_make_arguments(p, NULL, NULL, a, b, c) }
-    | a=names_with_default b=[',' z=[star_etc] { z }] { _PyPegen_make_arguments(p, NULL, NULL, NULL, a, b)}
+    | a=param_with_default+ b=[star_etc] { _PyPegen_make_arguments(p, NULL, NULL, NULL, a, b)}
     | a=star_etc { _PyPegen_make_arguments(p, NULL, NULL, NULL, NULL, a) }
-slash_without_default[asdl_seq*]: a=plain_names ',' '/' { a }
-slash_with_default[SlashWithDefault*]: a=[n=plain_names ',' { n }] b=names_with_default ',' '/' {
-    _PyPegen_slash_with_default(p, a, b) }
+
+# Some duplication here because we can't write (',' | &')'),
+# which is because we don't support empty alternatives (yet).
+#
+slash_no_default[asdl_seq*]:
+    | a=param_no_default+ '/' ',' { a }
+    | a=param_no_default+ '/' &')' { a }
+slash_with_default[SlashWithDefault*]:
+    | a=param_no_default* b=param_with_default+ '/' ',' { _PyPegen_slash_with_default(p, a, b) }
+    | a=param_no_default* b=param_with_default+ '/' &')' { _PyPegen_slash_with_default(p, a, b) }
+
 star_etc[StarEtc*]:
-    | '*' a=plain_name b=name_with_optional_default* c=[',' d=kwds { d }] [','] {
+    | '*' a=param_no_default b=param_maybe_default* c=[kwds] {
         _PyPegen_star_etc(p, a, b, c) }
-    | '*' b=name_with_optional_default+ c=[',' d=kwds { d }] [','] {
+    | '*' ',' b=param_maybe_default+ c=[kwds] {
         _PyPegen_star_etc(p, NULL, b, c) }
-    | a=kwds [','] { _PyPegen_star_etc(p, NULL, NULL, a) }
-name_with_optional_default[NameDefaultPair*]:
-    | ',' a=plain_name b=['=' e=expression { e }] { _PyPegen_name_default_pair(p, a, b) }
-names_with_default[asdl_seq*]: a=','.name_with_default+ { a }
-name_with_default[NameDefaultPair*]:
-    | n=plain_name '=' e=expression { _PyPegen_name_default_pair(p, n, e) }
-plain_names[asdl_seq*] (memo): a=','.(plain_name !'=')+ { a }
-plain_name[arg_ty]:
-    | a=NAME b=[':' z=annotation { z }] { _Py_arg(a->v.Name.id, b, NULL, EXTRA) }
-kwds[arg_ty]:
-    | '**' a=plain_name { a }
-annotation[expr_ty]: expression
+    | a=kwds { _PyPegen_star_etc(p, NULL, NULL, a) }
+
+kwds[arg_ty]: '**' a=param_no_default { a }
+
+# One parameter.  This *includes* a following comma and type comment.
+#
+# There are three styles:
+# - No default
+# - With default
+# - Maybe with default
+#
+# There are two alternative forms of each, to deal with type comments:
+# - Ends in a comma followed by an optional type comment
+# - No comma, optional type comment, must be followed by close paren
+# The latter form is for a final parameter without trailing comma.
+#
+param_no_default[arg_ty]:
+    | a=param ',' tc=TYPE_COMMENT? { _PyPegen_add_type_comment_to_arg(p, a, tc) }
+    | a=param tc=TYPE_COMMENT? &')' { _PyPegen_add_type_comment_to_arg(p, a, tc) }
+param_with_default[NameDefaultPair*]:
+    | a=param c=default ',' tc=TYPE_COMMENT? { _PyPegen_name_default_pair(p, a, c, tc) }
+    | a=param c=default tc=TYPE_COMMENT? &')' { _PyPegen_name_default_pair(p, a, c, tc) }
+param_maybe_default[NameDefaultPair*]:
+    | a=param c=default? ',' tc=TYPE_COMMENT? { _PyPegen_name_default_pair(p, a, c, tc) }
+    | a=param c=default? tc=TYPE_COMMENT? &')' { _PyPegen_name_default_pair(p, a, c, tc) }
+param[arg_ty]: a=NAME b=annotation? { _Py_arg(a->v.Name.id, b, NULL, EXTRA) }
+
+annotation[expr_ty]: ':' a=expression { a }
+default[expr_ty]: '=' a=expression { a }
 
 decorators[asdl_seq*]: a=('@' f=named_expression NEWLINE { f })+ { a }
 
@@ -265,32 +324,47 @@ expression[expr_ty] (memo):
 
 lambdef[expr_ty]:
     | 'lambda' a=[lambda_parameters] ':' b=expression { _Py_Lambda((a) ? a : CHECK(_PyPegen_empty_arguments(p)), b, EXTRA) }
+
+# lambda_parameters etc. duplicates parameters but without annotations
+# or type comments, and if there's no comma after a parameter, we expect
+# a colon, not a close parenthesis.  (For more, see parameters above.)
+#
 lambda_parameters[arguments_ty]:
-    | a=lambda_slash_without_default b=[',' x=lambda_plain_names { x }] c=[',' y=lambda_names_with_default { y }] d=[',' z=[lambda_star_etc] { z }] {
+    | a=lambda_slash_no_default b=lambda_param_no_default* c=lambda_param_with_default* d=[lambda_star_etc] {
         _PyPegen_make_arguments(p, a, NULL, b, c, d) }
-    | a=lambda_slash_with_default b=[',' y=lambda_names_with_default { y }] c=[',' z=[lambda_star_etc] { z }] {
+    | a=lambda_slash_with_default b=lambda_param_with_default* c=[lambda_star_etc] {
         _PyPegen_make_arguments(p, NULL, a, NULL, b, c) }
-    | a=lambda_plain_names b=[',' y=lambda_names_with_default { y }] c=[',' z=[lambda_star_etc] { z }] {
+    | a=lambda_param_no_default+ b=lambda_param_with_default* c=[lambda_star_etc] {
         _PyPegen_make_arguments(p, NULL, NULL, a, b, c) }
-    | a=lambda_names_with_default b=[',' z=[lambda_star_etc] { z }] { _PyPegen_make_arguments(p, NULL, NULL, NULL, a, b)}
+    | a=lambda_param_with_default+ b=[lambda_star_etc] { _PyPegen_make_arguments(p, NULL, NULL, NULL, a, b)}
     | a=lambda_star_etc { _PyPegen_make_arguments(p, NULL, NULL, NULL, NULL, a) }
-lambda_slash_without_default[asdl_seq*]: a=lambda_plain_names ',' '/' { a }
-lambda_slash_with_default[SlashWithDefault*]: a=[n=lambda_plain_names ',' { n }] b=lambda_names_with_default ',' '/' {
-    _PyPegen_slash_with_default(p, a, b) }
+
+lambda_slash_no_default[asdl_seq*]:
+    | a=lambda_param_no_default+ '/' ',' { a }
+    | a=lambda_param_no_default+ '/' &':' { a }
+lambda_slash_with_default[SlashWithDefault*]:
+    | a=lambda_param_no_default* b=lambda_param_with_default+ '/' ',' { _PyPegen_slash_with_default(p, a, b) }
+    | a=lambda_param_no_default* b=lambda_param_with_default+ '/' &':' { _PyPegen_slash_with_default(p, a, b) }
+
 lambda_star_etc[StarEtc*]:
-    | '*' a=lambda_plain_name b=lambda_name_with_optional_default* c=[',' d=lambda_kwds { d }] [','] {
+    | '*' a=lambda_param_no_default b=lambda_param_maybe_default* c=[lambda_kwds] {
         _PyPegen_star_etc(p, a, b, c) }
-    | '*' b=lambda_name_with_optional_default+ c=[',' d=lambda_kwds { d }] [','] {
+    | '*' ',' b=lambda_param_maybe_default+ c=[lambda_kwds] {
         _PyPegen_star_etc(p, NULL, b, c) }
-    | a=lambda_kwds [','] { _PyPegen_star_etc(p, NULL, NULL, a) }
-lambda_name_with_optional_default[NameDefaultPair*]:
-    | ',' a=lambda_plain_name b=['=' e=expression { e }] { _PyPegen_name_default_pair(p, a, b) }
-lambda_names_with_default[asdl_seq*]: a=','.lambda_name_with_default+ { a }
-lambda_name_with_default[NameDefaultPair*]:
-    | n=lambda_plain_name '=' e=expression { _PyPegen_name_default_pair(p, n, e) }
-lambda_plain_names[asdl_seq*]: a=','.(lambda_plain_name !'=')+ { a }
-lambda_plain_name[arg_ty]: a=NAME { _Py_arg(a->v.Name.id, NULL, NULL, EXTRA) }
-lambda_kwds[arg_ty]: '**' a=lambda_plain_name { a }
+    | a=lambda_kwds { _PyPegen_star_etc(p, NULL, NULL, a) }
+
+lambda_kwds[arg_ty]: '**' a=lambda_param_no_default { a }
+
+lambda_param_no_default[arg_ty]:
+    | a=lambda_param ',' { a }
+    | a=lambda_param &':' { a }
+lambda_param_with_default[NameDefaultPair*]:
+    | a=lambda_param c=default ',' { _PyPegen_name_default_pair(p, a, c, NULL) }
+    | a=lambda_param c=default &':' { _PyPegen_name_default_pair(p, a, c, NULL) }
+lambda_param_maybe_default[NameDefaultPair*]:
+    | a=lambda_param c=default? ',' { _PyPegen_name_default_pair(p, a, c, NULL) }
+    | a=lambda_param c=default? &':' { _PyPegen_name_default_pair(p, a, c, NULL) }
+lambda_param[arg_ty]: a=NAME { _Py_arg(a->v.Name.id, NULL, NULL, EXTRA) }
 
 disjunction[expr_ty] (memo):
     | a=conjunction b=('or' c=conjunction { c })+ { _Py_BoolOp(
@@ -323,7 +397,8 @@ compare_op_bitwise_or_pair[CmpopExprPair*]:
     | isnot_bitwise_or
     | is_bitwise_or
 eq_bitwise_or[CmpopExprPair*]: '==' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Eq, a) }
-noteq_bitwise_or[CmpopExprPair*]: '!=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, NotEq, a) }
+noteq_bitwise_or[CmpopExprPair*]:
+    | (tok='!=' {_PyPegen_check_barry_as_flufl(p) ? NULL : tok}) a=bitwise_or {_PyPegen_cmpop_expr_pair(p, NotEq, a) }
 lte_bitwise_or[CmpopExprPair*]: '<=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, LtE, a) }
 lt_bitwise_or[CmpopExprPair*]: '<' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Lt, a) }
 gte_bitwise_or[CmpopExprPair*]: '>=' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, GtE, a) }
@@ -356,7 +431,7 @@ term[expr_ty]:
     | a=term '/' b=factor { _Py_BinOp(a, Div, b, EXTRA) }
     | a=term '//' b=factor { _Py_BinOp(a, FloorDiv, b, EXTRA) }
     | a=term '%' b=factor { _Py_BinOp(a, Mod, b, EXTRA) }
-    | a=term '@' b=factor { _Py_BinOp(a, MatMult, b, EXTRA) }
+    | a=term '@' b=factor { CHECK_VERSION(5, "The '@' operator is", _Py_BinOp(a, MatMult, b, EXTRA)) }
     | factor
 factor[expr_ty] (memo):
     | '+' a=factor { _Py_UnaryOp(UAdd, a, EXTRA) }
@@ -367,7 +442,7 @@ power[expr_ty]:
     | a=await_primary '**' b=factor { _Py_BinOp(a, Pow, b, EXTRA) }
     | await_primary
 await_primary[expr_ty] (memo):
-    | AWAIT a=primary { _Py_Await(a, EXTRA) }
+    | AWAIT a=primary { CHECK_VERSION(5, "Await expressions are", _Py_Await(a, EXTRA)) }
     | primary
 primary[expr_ty]:
     | a=primary '.' b=NAME { _Py_Attribute(a, b->v.Name.id, Load, EXTRA) }
@@ -426,8 +501,12 @@ kvpair[KeyValuePair*]:
     | '**' a=bitwise_or { _PyPegen_key_value_pair(p, NULL, a) }
     | a=expression ':' b=expression { _PyPegen_key_value_pair(p, a, b) }
 for_if_clauses[asdl_seq*]:
-    | a=(y=[ASYNC] 'for' a=star_targets 'in' b=disjunction c=('if' z=disjunction { z })*
-        { _Py_comprehension(a, b, c, y != NULL, p->arena) })+ { a }
+    | for_if_clause+
+for_if_clause[comprehension_ty]:
+    | ASYNC 'for' a=star_targets 'in' b=disjunction c=('if' z=disjunction { z })* {
+        CHECK_VERSION(6, "Async comprehensions are", _Py_comprehension(a, b, c, 1, p->arena)) }
+    | 'for' a=star_targets 'in' b=disjunction c=('if' z=disjunction { z })* {
+        _Py_comprehension(a, b, c, 0, p->arena) }
 
 yield_expr[expr_ty]:
     | 'yield' 'from' a=expression { _Py_YieldFrom(a, EXTRA) }
@@ -544,12 +623,15 @@ invalid_assignment:
     | expression ':' expression ['=' annotated_rhs] {
         RAISE_SYNTAX_ERROR("illegal target for annotation") }
     | a=expression ('=' | augassign) (yield_expr | star_expressions) {
-        RAISE_SYNTAX_ERROR("cannot assign to %s", _PyPegen_get_expr_name(a)) }
+        RAISE_SYNTAX_ERROR_NO_COL_OFFSET("cannot assign to %s", _PyPegen_get_expr_name(a)) }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
     | ('[' | '(' | '{') '*' expression for_if_clauses {
         RAISE_SYNTAX_ERROR("iterable unpacking cannot be used in comprehension") }
 invalid_parameters:
-    | [plain_names ','] (slash_with_default | names_with_default) ',' plain_names {
+    | param_no_default* (slash_with_default | param_with_default+) param_no_default {
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
+invalid_double_type_comments:
+    | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
+        RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }

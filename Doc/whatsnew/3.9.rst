@@ -320,6 +320,13 @@ with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
 :class:`~imaplib.IMAP4_stream` were applied to this change.
 (Contributed by Dong-hee Na in :issue:`38615`.)
 
+:meth:`imaplib.IMAP4.unselect` is added.
+:meth:`imaplib.IMAP4.unselect` frees server's resources associated with the
+selected mailbox and returns the server to the authenticated
+state. This command performs the same actions as :meth:`imaplib.IMAP4.close`, except
+that no messages are permanently removed from the currently
+selected mailbox. (Contributed by Dong-hee Na in :issue:`40375`.)
+
 importlib
 ---------
 
@@ -361,6 +368,14 @@ towards *y*.
 Add :func:`math.ulp`: return the value of the least significant bit
 of a float.
 (Contributed by Victor Stinner in :issue:`39310`.)
+
+multiprocessing
+---------------
+
+The :class:`multiprocessing.SimpleQueue` class has a new
+:meth:`~multiprocessing.SimpleQueue.close` method to explicitly close the
+queue.
+(Contributed by Victor Stinner in :issue:`30966`.)
 
 nntplib
 -------
@@ -519,139 +534,6 @@ Optimizations
   Stinner in :issue:`38061`.)
 
 
-Build and C API Changes
-=======================
-
-* New :c:func:`PyThreadState_GetInterpreter` and
-  :c:func:`PyInterpreterState_Get` functions to get the interpreter.
-  New :c:func:`PyThreadState_GetFrame` function to get the current frame of a
-  Python thread state.
-  New :c:func:`PyThreadState_GetID` function: get the unique identifier of a
-  Python thread state.
-  (Contributed by Victor Stinner in :issue:`39947`.)
-
-* Add ``--with-platlibdir`` option to the ``configure`` script: name of the
-  platform-specific library directory, stored in the new :attr:`sys.platlibdir`
-  attribute. See :attr:`sys.platlibdir` attribute for more information.
-  (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
-
-* Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
-  calls a callable Python object without any arguments. It is the most efficient
-  way to call a callable Python object without any argument.
-  (Contributed by Victor Stinner in :issue:`37194`.)
-
-* The global variable :c:data:`PyStructSequence_UnnamedField` is now a constant
-  and refers to a constant string.
-  (Contributed by Serhiy Storchaka in :issue:`38650`.)
-
-* Exclude ``PyFPE_START_PROTECT()`` and ``PyFPE_END_PROTECT()`` macros of
-  ``pyfpe.h`` from ``Py_LIMITED_API`` (stable API).
-  (Contributed by Victor Stinner in :issue:`38835`.)
-
-* Remove ``PyMethod_ClearFreeList()`` and ``PyCFunction_ClearFreeList()``
-  functions: the free lists of bound method objects have been removed.
-  (Contributed by Inada Naoki and Victor Stinner in :issue:`37340`.)
-
-* Remove ``PyUnicode_ClearFreeList()`` function: the Unicode free list has been
-  removed in Python 3.3.
-  (Contributed by Victor Stinner in :issue:`38896`.)
-
-* The ``tp_print`` slot of :ref:`PyTypeObject <type-structs>` has been removed.
-  It was used for printing objects to files in Python 2.7 and before. Since
-  Python 3.0, it has been ignored and unused.
-  (Contributed by Jeroen Demeyer in :issue:`36974`.)
-
-* On non-Windows platforms, the :c:func:`setenv` and :c:func:`unsetenv`
-  functions are now required to build Python.
-  (Contributed by Victor Stinner in :issue:`39395`.)
-
-* The ``COUNT_ALLOCS`` special build macro has been removed.
-  (Contributed by Victor Stinner in :issue:`39489`.)
-
-* Changes in the limited C API (if ``Py_LIMITED_API`` macro is defined):
-
-  * Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
-    as regular functions for the limited API. Previously, there were defined as
-    macros, but these macros didn't compile with the limited C API which cannot
-    access ``PyThreadState.recursion_depth`` field (the structure is opaque in
-    the limited C API).
-
-  * Exclude the following functions from the limited C API:
-
-    * ``_Py_CheckRecursionLimit``
-    * ``_Py_NewReference()``
-    * ``_Py_ForgetReference()``
-    * ``_PyTraceMalloc_NewReference()``
-    * ``_Py_GetRefTotal()``
-    * The trashcan mechanism which never worked in the limited C API.
-    * ``PyTrash_UNWIND_LEVEL``
-    * ``Py_TRASHCAN_BEGIN_CONDITION``
-    * ``Py_TRASHCAN_BEGIN``
-    * ``Py_TRASHCAN_END``
-    * ``Py_TRASHCAN_SAFE_BEGIN``
-    * ``Py_TRASHCAN_SAFE_END``
-
-  * The following static inline functions or macros become regular "opaque"
-    function to hide implementation details:
-
-    * ``_Py_NewReference()``
-    * ``PyObject_INIT()`` and ``PyObject_INIT_VAR()``  become aliases to
-      :c:func:`PyObject_Init` and :c:func:`PyObject_InitVar` in the limited C
-      API, but are overriden with static inline function otherwise. Thanks to
-      that, it was possible to exclude ``_Py_NewReference()`` from the limited
-      C API.
-
-  * Move following functions and definitions to the internal C API:
-
-    * ``_PyDebug_PrintTotalRefs()``
-    * ``_Py_PrintReferences()``
-    * ``_Py_PrintReferenceAddresses()``
-    * ``_Py_tracemalloc_config``
-    * ``_Py_AddToAllObjects()`` (specific to ``Py_TRACE_REFS`` build)
-
-  (Contributed by Victor Stinner in :issue:`38644` and :issue:`39542`.)
-
-* ``PyInterpreterState.eval_frame`` (:pep:`523`) now requires a new mandatory
-  *tstate* parameter (``PyThreadState*``).
-  (Contributed by Victor Stinner in :issue:`38500`.)
-
-* Extension modules: :c:member:`~PyModuleDef.m_traverse`,
-  :c:member:`~PyModuleDef.m_clear` and :c:member:`~PyModuleDef.m_free`
-  functions of :c:type:`PyModuleDef` are no longer called if the module state
-  was requested but is not allocated yet. This is the case immediately after
-  the module is created and before the module is executed
-  (:c:data:`Py_mod_exec` function). More precisely, these functions are not called
-  if :c:member:`~PyModuleDef.m_size` is greater than 0 and the module state (as
-  returned by :c:func:`PyModule_GetState`) is ``NULL``.
-
-  Extension modules without module state (``m_size <= 0``) are not affected.
-
-* If :c:func:`Py_AddPendingCall` is called in a subinterpreter, the function is
-  now scheduled to be called from the subinterpreter, rather than being called
-  from the main interpreter. Each subinterpreter now has its own list of
-  scheduled calls.
-  (Contributed by Victor Stinner in :issue:`39984`.)
-
-* Remove ``_PyRuntime.getframe`` hook and remove ``_PyThreadState_GetFrame``
-  macro which was an alias to ``_PyRuntime.getframe``. They were only exposed
-  by the internal C API. Remove also ``PyThreadFrameGetter`` type.
-  (Contributed by Victor Stinner in :issue:`39946`.)
-
-* The :c:func:`PyModule_AddType` function is added to help adding a type to a module.
-  (Contributed by Dong-hee Na in :issue:`40024`.)
-
-* The Windows registry is no longer used to initialize :data:`sys.path` when
-  the ``-E`` option is used. This is significant when embedding Python on
-  Windows.
-  (Contributed by Zackery Spytz in :issue:`8901`.)
-
-* Add the functions :c:func:`PyObject_GC_IsTracked` and
-  :c:func:`PyObject_GC_IsFinalized` to the public API to allow to query if
-  Python objects are being currently tracked or have been already finalized by
-  the garbage collector respectively. (Contributed by Pablo Galindo in
-  :issue:`40241`.)
-
-
 Deprecated
 ==========
 
@@ -696,7 +578,7 @@ Deprecated
   deprecated and will be removed in version 3.11.
   (Contributed by Yury Selivanov and Kyle Stanley in :issue:`34790`.)
 
-* binhex4 and hexbin4 standards are now deprecated. The :`binhex` module
+* binhex4 and hexbin4 standards are now deprecated. The :mod:`binhex` module
   and the following :mod:`binascii` functions are now deprecated:
 
   * :func:`~binascii.b2a_hqx`, :func:`~binascii.a2b_hqx`
@@ -901,3 +783,168 @@ CPython bytecode changes
   :keyword:`assert` statement. Previously, the assert statement would not work
   correctly if the :exc:`AssertionError` exception was being shadowed.
   (Contributed by Zackery Spytz in :issue:`34880`.)
+
+
+Build Changes
+=============
+
+* Add ``--with-platlibdir`` option to the ``configure`` script: name of the
+  platform-specific library directory, stored in the new :attr:`sys.platlibdir`
+  attribute. See :attr:`sys.platlibdir` attribute for more information.
+  (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis
+  and Victor Stinner in :issue:`1294959`.)
+
+* The ``COUNT_ALLOCS`` special build macro has been removed.
+  (Contributed by Victor Stinner in :issue:`39489`.)
+
+* On non-Windows platforms, the :c:func:`setenv` and :c:func:`unsetenv`
+  functions are now required to build Python.
+  (Contributed by Victor Stinner in :issue:`39395`.)
+
+
+C API Changes
+=============
+
+New Features
+------------
+
+* Add :c:func:`PyFrame_GetCode` function: get a frame code.
+  Add :c:func:`PyFrame_GetBack` function: get the frame next outer frame.
+  (Contributed by Victor Stinner in :issue:`40421`.)
+
+* Add :c:func:`PyFrame_GetLineNumber` to the limited C API.
+  (Contributed by Victor Stinner in :issue:`40421`.)
+
+* Add :c:func:`PyThreadState_GetInterpreter` and
+  :c:func:`PyInterpreterState_Get` functions to get the interpreter.
+  Add :c:func:`PyThreadState_GetFrame` function to get the current frame of a
+  Python thread state.
+  Add :c:func:`PyThreadState_GetID` function: get the unique identifier of a
+  Python thread state.
+  (Contributed by Victor Stinner in :issue:`39947`.)
+
+* Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
+  calls a callable Python object without any arguments. It is the most efficient
+  way to call a callable Python object without any argument.
+  (Contributed by Victor Stinner in :issue:`37194`.)
+
+* Changes in the limited C API (if ``Py_LIMITED_API`` macro is defined):
+
+  * Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
+    as regular functions for the limited API. Previously, there were defined as
+    macros, but these macros didn't compile with the limited C API which cannot
+    access ``PyThreadState.recursion_depth`` field (the structure is opaque in
+    the limited C API).
+
+  * ``PyObject_INIT()`` and ``PyObject_INIT_VAR()`` become regular "opaque"
+    function to hide implementation details.
+
+  (Contributed by Victor Stinner in :issue:`38644` and :issue:`39542`.)
+
+* The :c:func:`PyModule_AddType` function is added to help adding a type
+  to a module.
+  (Contributed by Dong-hee Na in :issue:`40024`.)
+
+* Add the functions :c:func:`PyObject_GC_IsTracked` and
+  :c:func:`PyObject_GC_IsFinalized` to the public API to allow to query if
+  Python objects are being currently tracked or have been already finalized by
+  the garbage collector respectively. (Contributed by Pablo Galindo in
+  :issue:`40241`.)
+
+
+Porting to Python 3.9
+---------------------
+
+* ``PyInterpreterState.eval_frame`` (:pep:`523`) now requires a new mandatory
+  *tstate* parameter (``PyThreadState*``).
+  (Contributed by Victor Stinner in :issue:`38500`.)
+
+* Extension modules: :c:member:`~PyModuleDef.m_traverse`,
+  :c:member:`~PyModuleDef.m_clear` and :c:member:`~PyModuleDef.m_free`
+  functions of :c:type:`PyModuleDef` are no longer called if the module state
+  was requested but is not allocated yet. This is the case immediately after
+  the module is created and before the module is executed
+  (:c:data:`Py_mod_exec` function). More precisely, these functions are not called
+  if :c:member:`~PyModuleDef.m_size` is greater than 0 and the module state (as
+  returned by :c:func:`PyModule_GetState`) is ``NULL``.
+
+  Extension modules without module state (``m_size <= 0``) are not affected.
+
+* If :c:func:`Py_AddPendingCall` is called in a subinterpreter, the function is
+  now scheduled to be called from the subinterpreter, rather than being called
+  from the main interpreter. Each subinterpreter now has its own list of
+  scheduled calls.
+  (Contributed by Victor Stinner in :issue:`39984`.)
+
+* The Windows registry is no longer used to initialize :data:`sys.path` when
+  the ``-E`` option is used (if :c:member:`PyConfig.use_environment` is set to
+  ``0``). This is significant when embedding Python on Windows.
+  (Contributed by Zackery Spytz in :issue:`8901`.)
+
+* The global variable :c:data:`PyStructSequence_UnnamedField` is now a constant
+  and refers to a constant string.
+  (Contributed by Serhiy Storchaka in :issue:`38650`.)
+
+
+Removed
+-------
+
+* Exclude ``PyFPE_START_PROTECT()`` and ``PyFPE_END_PROTECT()`` macros of
+  ``pyfpe.h`` from the limited C API.
+  (Contributed by Victor Stinner in :issue:`38835`.)
+
+* The ``tp_print`` slot of :ref:`PyTypeObject <type-structs>` has been removed.
+  It was used for printing objects to files in Python 2.7 and before. Since
+  Python 3.0, it has been ignored and unused.
+  (Contributed by Jeroen Demeyer in :issue:`36974`.)
+
+* Changes in the limited C API (if ``Py_LIMITED_API`` macro is defined):
+
+  * Exclude the following functions from the limited C API:
+
+    * ``_Py_CheckRecursionLimit``
+    * ``_Py_NewReference()``
+    * ``_Py_ForgetReference()``
+    * ``_PyTraceMalloc_NewReference()``
+    * ``_Py_GetRefTotal()``
+    * The trashcan mechanism which never worked in the limited C API.
+    * ``PyTrash_UNWIND_LEVEL``
+    * ``Py_TRASHCAN_BEGIN_CONDITION``
+    * ``Py_TRASHCAN_BEGIN``
+    * ``Py_TRASHCAN_END``
+    * ``Py_TRASHCAN_SAFE_BEGIN``
+    * ``Py_TRASHCAN_SAFE_END``
+
+  * Move following functions and definitions to the internal C API:
+
+    * ``_PyDebug_PrintTotalRefs()``
+    * ``_Py_PrintReferences()``
+    * ``_Py_PrintReferenceAddresses()``
+    * ``_Py_tracemalloc_config``
+    * ``_Py_AddToAllObjects()`` (specific to ``Py_TRACE_REFS`` build)
+
+  (Contributed by Victor Stinner in :issue:`38644` and :issue:`39542`.)
+
+* Remove ``_PyRuntime.getframe`` hook and remove ``_PyThreadState_GetFrame``
+  macro which was an alias to ``_PyRuntime.getframe``. They were only exposed
+  by the internal C API. Remove also ``PyThreadFrameGetter`` type.
+  (Contributed by Victor Stinner in :issue:`39946`.)
+
+* Remove the following functions from the C API. Call :c:func:`PyGC_Collect`
+  explicitly to clear all free lists.
+  (Contributed by Inada Naoki and Victor Stinner in :issue:`37340`,
+  :issue:`38896` and :issue:`40428`.)
+
+  * ``PyAsyncGen_ClearFreeLists()``
+  * ``PyContext_ClearFreeList()``
+  * ``PyDict_ClearFreeList()``
+  * ``PyFloat_ClearFreeList()``
+  * ``PyFrame_ClearFreeList()``
+  * ``PyList_ClearFreeList()``
+  * ``PyMethod_ClearFreeList()`` and ``PyCFunction_ClearFreeList()``:
+    the free lists of bound method objects have been removed.
+  * ``PySet_ClearFreeList()``: the set free list has been removed
+    in Python 3.4.
+  * ``PyTuple_ClearFreeList()``
+  * ``PyUnicode_ClearFreeList()``: the Unicode free list has been removed in
+    Python 3.3.

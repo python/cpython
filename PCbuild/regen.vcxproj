@@ -168,7 +168,8 @@
   </Target>
   <Target Name="_RegenPegen" BeforeTargets="Build">
     <!-- Regenerate Parser/pegen/parse.c -->
-    <Exec Command="&quot;$PYTHONPATH=$(srcdir)/Tools/peg_generator&quot; &quot;$(PythonExe)&quot; -m pegen -c -q &quot;$(PySourcePath)Grammar\python.gram&quot; -o &quot;$(IntDir)parse.c&quot;" />
+    <SetEnv Name="PYTHONPATH" Prefix="true" Value="$(PySourcePath)Tools\peg_generator\" />
+    <Exec Command="&quot;$(PythonExe)&quot; -m pegen -q c &quot;$(PySourcePath)Grammar\python.gram&quot; &quot;$(PySourcePath)Grammar\Tokens&quot; -o &quot;$(IntDir)parse.c&quot;" />
     <Copy SourceFiles="$(IntDir)parse.c" DestinationFiles="$(PySourcePath)Parser\pegen\parse.c">
       <Output TaskParameter="CopiedFiles" ItemName="_UpdatedParse" />
     </Copy>

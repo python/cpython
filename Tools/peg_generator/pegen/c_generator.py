@@ -1,33 +1,35 @@
 import ast
+from dataclasses import dataclass, field
 import re
-from typing import Any, cast, Dict, IO, Optional, List, Text, Tuple
+from typing import IO, Any, Dict, List, Optional, Set, Text, Tuple
+from enum import Enum
 
+from pegen import grammar
 from pegen.grammar import (
-    Cut,
-    GrammarVisitor,
-    Rhs,
     Alt,
+    Cut,
+    Gather,
+    GrammarVisitor,
+    Group,
+    Lookahead,
     NamedItem,
     NameLeaf,
-    StringLeaf,
-    Lookahead,
-    PositiveLookahead,
     NegativeLookahead,
     Opt,
+    PositiveLookahead,
     Repeat0,
     Repeat1,
-    Gather,
-    Group,
+    Rhs,
     Rule,
+    StringLeaf,
 )
-from pegen import grammar
-from pegen.parser_generator import dedupe, ParserGenerator
-from pegen.tokenizer import exact_token_types
+from pegen.parser_generator import ParserGenerator
 
 EXTENSION_PREFIX = """\
 #include "pegen.h"
 
 """
+
 
 EXTENSION_SUFFIX = """
 void *
@@ -42,114 +44,238 @@ _PyPegen_parse(Parser *p)
 """
 
 
+class NodeTypes(Enum):
+    NAME_TOKEN = 0
+    NUMBER_TOKEN = 1
+    STRING_TOKEN = 2
+    GENERIC_TOKEN = 3
+    KEYWORD = 4
+    CUT_OPERATOR = 5
+
+
+BASE_NODETYPES = {
+    "NAME": NodeTypes.NAME_TOKEN,
+    "NUMBER": NodeTypes.NUMBER_TOKEN,
+    "STRING": NodeTypes.STRING_TOKEN,
+}
+
+
+@dataclass
+class FunctionCall:
+    function: str
+    arguments: Optional[List[Any]] = None
+    assigned_variable: Optional[str] = None
+    return_type: Optional[str] = None
+    nodetype: Optional[NodeTypes] = None
+    force_true: bool = False
+
+    def __str__(self) -> str:
+        parts = []
+        parts.append(self.function)
+        if self.arguments:
+            parts.append(f"({', '.join(map(str, self.arguments))})")
+        if self.force_true:
+            parts.append(", 1")
+        if self.assigned_variable:
+            parts = ["(", self.assigned_variable, " = ", *parts, ")"]
+        return "".join(parts)
+
+
 class CCallMakerVisitor(GrammarVisitor):
-    def __init__(self, parser_generator: ParserGenerator):
+    def __init__(
+        self,
+        parser_generator: ParserGenerator,
+        exact_tokens: Dict[str, int],
+        non_exact_tokens: Set[str],
+    ):
         self.gen = parser_generator
+        self.exact_tokens = exact_tokens
+        self.non_exact_tokens = non_exact_tokens
         self.cache: Dict[Any, Any] = {}
         self.keyword_cache: Dict[str, int] = {}
 
-    def keyword_helper(self, keyword: str) -> Tuple[str, str]:
+    def keyword_helper(self, keyword: str) -> FunctionCall:
         if keyword not in self.keyword_cache:
             self.keyword_cache[keyword] = self.gen.keyword_type()
-        return "keyword", f"_PyPegen_expect_token(p, {self.keyword_cache[keyword]})"
+        return FunctionCall(
+            assigned_variable="keyword",
+            function="_PyPegen_expect_token",
+            arguments=["p", self.keyword_cache[keyword]],
+            return_type="Token *",
+            nodetype=NodeTypes.KEYWORD,
+        )
 
-    def visit_NameLeaf(self, node: NameLeaf) -> Tuple[str, str]:
+    def visit_NameLeaf(self, node: NameLeaf) -> FunctionCall:
         name = node.value
-        if name in ("NAME", "NUMBER", "STRING"):
-            name = name.lower()
-            return f"{name}_var", f"_PyPegen_{name}_token(p)"
-        if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER", "ASYNC", "AWAIT"):
-            name = name.lower()
-            return f"{name}_var", f"_PyPegen_{name}_token(p)"
-        return f"{name}_var", f"{name}_rule(p)"
+        if name in self.non_exact_tokens:
+            if name in BASE_NODETYPES:
+                return FunctionCall(
+                    assigned_variable=f"{name.lower()}_var",
+                    function=f"_PyPegen_{name.lower()}_token",
+                    arguments=["p"],
+                    nodetype=BASE_NODETYPES[name],
+                    return_type="expr_ty",
+                )
+            return FunctionCall(
+                assigned_variable=f"{name.lower()}_var",
+                function=f"_PyPegen_expect_token",
+                arguments=["p", name],
+                nodetype=NodeTypes.GENERIC_TOKEN,
+                return_type="Token *",
+            )
 
-    def visit_StringLeaf(self, node: StringLeaf) -> Tuple[str, str]:
+        type = None
+        rule = self.gen.all_rules.get(name.lower())
+        if rule is not None:
+            type = "asdl_seq *" if rule.is_loop() or rule.is_gather() else rule.type
+
+        return FunctionCall(
+            assigned_variable=f"{name}_var",
+            function=f"{name}_rule",
+            arguments=["p"],
+            return_type=type,
+        )
+
+    def visit_StringLeaf(self, node: StringLeaf) -> FunctionCall:
         val = ast.literal_eval(node.value)
         if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
             return self.keyword_helper(val)
         else:
-            assert val in exact_token_types, f"{node.value} is not a known literal"
-            type = exact_token_types[val]
-            return "literal", f"_PyPegen_expect_token(p, {type})"
+            assert val in self.exact_tokens, f"{node.value} is not a known literal"
+            type = self.exact_tokens[val]
+            return FunctionCall(
+                assigned_variable="literal",
+                function=f"_PyPegen_expect_token",
+                arguments=["p", type],
+                nodetype=NodeTypes.GENERIC_TOKEN,
+                return_type="Token *",
+            )
 
-    def visit_Rhs(self, node: Rhs) -> Tuple[Optional[str], str]:
+    def visit_Rhs(self, node: Rhs) -> FunctionCall:
+        def can_we_inline(node: Rhs) -> int:
+            if len(node.alts) != 1 or len(node.alts[0].items) != 1:
+                return False
+            # If the alternative has an action we cannot inline
+            if getattr(node.alts[0], "action", None) is not None:
+                return False
+            return True
+
         if node in self.cache:
             return self.cache[node]
-        if len(node.alts) == 1 and len(node.alts[0].items) == 1:
+        if can_we_inline(node):
             self.cache[node] = self.visit(node.alts[0].items[0])
         else:
             name = self.gen.name_node(node)
-            self.cache[node] = f"{name}_var", f"{name}_rule(p)"
+            self.cache[node] = FunctionCall(
+                assigned_variable=f"{name}_var", function=f"{name}_rule", arguments=["p"],
+            )
         return self.cache[node]
 
-    def visit_NamedItem(self, node: NamedItem) -> Tuple[Optional[str], str]:
-        name, call = self.visit(node.item)
+    def visit_NamedItem(self, node: NamedItem) -> FunctionCall:
+        call = self.visit(node.item)
         if node.name:
-            name = node.name
-        return name, call
+            call.assigned_variable = node.name
+        return call
 
-    def lookahead_call_helper(self, node: Lookahead, positive: int) -> Tuple[None, str]:
-        name, call = self.visit(node.node)
-        func, args = call.split("(", 1)
-        assert args[-1] == ")"
-        args = args[:-1]
-        if "name_token" in call:
-            return None, f"_PyPegen_lookahead_with_name({positive}, {func}, {args})"
-        elif not args.startswith("p,"):
-            return None, f"_PyPegen_lookahead({positive}, {func}, {args})"
-        elif args[2:].strip().isalnum():
-            return None, f"_PyPegen_lookahead_with_int({positive}, {func}, {args})"
+    def lookahead_call_helper(self, node: Lookahead, positive: int) -> FunctionCall:
+        call = self.visit(node.node)
+        if call.nodetype == NodeTypes.NAME_TOKEN:
+            return FunctionCall(
+                function=f"_PyPegen_lookahead_with_name",
+                arguments=[positive, call.function, *call.arguments],
+                return_type="int",
+            )
+        elif call.nodetype in {NodeTypes.GENERIC_TOKEN, NodeTypes.KEYWORD}:
+            return FunctionCall(
+                function=f"_PyPegen_lookahead_with_int",
+                arguments=[positive, call.function, *call.arguments],
+                return_type="int",
+            )
         else:
-            return None, f"_PyPegen_lookahead_with_string({positive}, {func}, {args})"
+            return FunctionCall(
+                function=f"_PyPegen_lookahead",
+                arguments=[positive, call.function, *call.arguments],
+                return_type="int",
+            )
 
-    def visit_PositiveLookahead(self, node: PositiveLookahead) -> Tuple[None, str]:
+    def visit_PositiveLookahead(self, node: PositiveLookahead) -> FunctionCall:
         return self.lookahead_call_helper(node, 1)
 
-    def visit_NegativeLookahead(self, node: NegativeLookahead) -> Tuple[None, str]:
+    def visit_NegativeLookahead(self, node: NegativeLookahead) -> FunctionCall:
         return self.lookahead_call_helper(node, 0)
 
-    def visit_Opt(self, node: Opt) -> Tuple[str, str]:
-        name, call = self.visit(node.node)
-        return "opt_var", f"{call}, 1"  # Using comma operator!
+    def visit_Opt(self, node: Opt) -> FunctionCall:
+        call = self.visit(node.node)
+        return FunctionCall(
+            assigned_variable="opt_var",
+            function=call.function,
+            arguments=call.arguments,
+            force_true=True,
+        )
 
-    def visit_Repeat0(self, node: Repeat0) -> Tuple[str, str]:
+    def visit_Repeat0(self, node: Repeat0) -> FunctionCall:
         if node in self.cache:
             return self.cache[node]
         name = self.gen.name_loop(node.node, False)
-        self.cache[node] = f"{name}_var", f"{name}_rule(p)"
+        self.cache[node] = FunctionCall(
+            assigned_variable=f"{name}_var",
+            function=f"{name}_rule",
+            arguments=["p"],
+            return_type="asdl_seq *",
+        )
         return self.cache[node]
 
-    def visit_Repeat1(self, node: Repeat1) -> Tuple[str, str]:
+    def visit_Repeat1(self, node: Repeat1) -> FunctionCall:
         if node in self.cache:
             return self.cache[node]
         name = self.gen.name_loop(node.node, True)
-        self.cache[node] = f"{name}_var", f"{name}_rule(p)"
+        self.cache[node] = FunctionCall(
+            assigned_variable=f"{name}_var",
+            function=f"{name}_rule",
+            arguments=["p"],
+            return_type="asdl_seq *",
+        )
         return self.cache[node]
 
-    def visit_Gather(self, node: Gather) -> Tuple[str, str]:
+    def visit_Gather(self, node: Gather) -> FunctionCall:
         if node in self.cache:
             return self.cache[node]
         name = self.gen.name_gather(node)
-        self.cache[node] = f"{name}_var", f"{name}_rule(p)"
+        self.cache[node] = FunctionCall(
+            assigned_variable=f"{name}_var",
+            function=f"{name}_rule",
+            arguments=["p"],
+            return_type="asdl_seq *",
+        )
         return self.cache[node]
 
-    def visit_Group(self, node: Group) -> Tuple[Optional[str], str]:
+    def visit_Group(self, node: Group) -> FunctionCall:
         return self.visit(node.rhs)
 
-    def visit_Cut(self, node: Cut) -> Tuple[str, str]:
-        return "cut_var", "1"
+    def visit_Cut(self, node: Cut) -> FunctionCall:
+        return FunctionCall(
+            assigned_variable="cut_var",
+            return_type="int",
+            function="1",
+            nodetype=NodeTypes.CUT_OPERATOR,
+        )
 
 
 class CParserGenerator(ParserGenerator, GrammarVisitor):
     def __init__(
         self,
         grammar: grammar.Grammar,
+        tokens: Dict[int, str],
+        exact_tokens: Dict[str, int],
+        non_exact_tokens: Set[str],
         file: Optional[IO[Text]],
         debug: bool = False,
         skip_actions: bool = False,
     ):
-        super().__init__(grammar, file)
-        self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(self)
+        super().__init__(grammar, tokens, file)
+        self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(
+            self, exact_tokens, non_exact_tokens
+        )
         self._varname_counter = 0
         self.debug = debug
         self.skip_actions = skip_actions
@@ -176,7 +302,11 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"}}")
 
     def out_of_memory_return(
-        self, expr: str, returnval: str, message: str = "Parser out of memory", cleanup_code=None
+        self,
+        expr: str,
+        returnval: str,
+        message: str = "Parser out of memory",
+        cleanup_code: Optional[str] = None,
     ) -> None:
         self.print(f"if ({expr}) {{")
         with self.indent():
@@ -233,7 +363,6 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 mode += 1
         modulename = self.grammar.metas.get("modulename", "parse")
         trailer = self.grammar.metas.get("trailer", EXTENSION_SUFFIX)
-        keyword_cache = self.callmakervisitor.keyword_cache
         if trailer:
             self.print(trailer.rstrip("\n") % dict(mode=mode, modulename=modulename))
 
@@ -429,13 +558,11 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self._handle_default_rule_body(node, rhs, result_type)
         self.print("}")
 
-    def visit_NamedItem(self, node: NamedItem, names: List[str]) -> None:
-        name, call = self.callmakervisitor.visit(node)
-        if not name:
-            self.print(call)
-        else:
-            name = dedupe(name, names)
-            self.print(f"({name} = {call})")
+    def visit_NamedItem(self, node: NamedItem) -> None:
+        call = self.callmakervisitor.visit(node)
+        if call.assigned_variable:
+            call.assigned_variable = self.dedupe(call.assigned_variable)
+        self.print(call)
 
     def visit_Rhs(
         self, node: Rhs, is_loop: bool, is_gather: bool, rulename: Optional[str]
@@ -445,7 +572,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         for alt in node.alts:
             self.visit(alt, is_loop=is_loop, is_gather=is_gather, rulename=rulename)
 
-    def join_conditions(self, keyword: str, node: Any, names: List[str]) -> None:
+    def join_conditions(self, keyword: str, node: Any) -> None:
         self.print(f"{keyword} (")
         with self.indent():
             first = True
@@ -454,10 +581,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     first = False
                 else:
                     self.print("&&")
-                self.visit(item, names=names)
+                self.visit(item)
         self.print(")")
 
-    def emit_action(self, node: Alt, cleanup_code=None) -> None:
+    def emit_action(self, node: Alt, cleanup_code: Optional[str] = None) -> None:
         self.print(f"res = {node.action};")
 
         self.print("if (res == NULL && PyErr_Occurred()) {")
@@ -473,29 +600,34 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 f'fprintf(stderr, "Hit with action [%d-%d]: %s\\n", mark, p->mark, "{node}");'
             )
 
-    def emit_default_action(self, is_gather: bool, names: List[str], node: Alt) -> None:
-        if len(names) > 1:
+    def emit_default_action(self, is_gather: bool, node: Alt) -> None:
+        if len(self.local_variable_names) > 1:
             if is_gather:
-                assert len(names) == 2
-                self.print(f"res = _PyPegen_seq_insert_in_front(p, {names[0]}, {names[1]});")
+                assert len(self.local_variable_names) == 2
+                self.print(
+                    f"res = _PyPegen_seq_insert_in_front(p, "
+                    f"{self.local_variable_names[0]}, {self.local_variable_names[1]});"
+                )
             else:
                 if self.debug:
                     self.print(
                         f'fprintf(stderr, "Hit without action [%d:%d]: %s\\n", mark, p->mark, "{node}");'
                     )
-                self.print(f"res = _PyPegen_dummy_name(p, {', '.join(names)});")
+                self.print(
+                    f"res = _PyPegen_dummy_name(p, {', '.join(self.local_variable_names)});"
+                )
         else:
             if self.debug:
                 self.print(
                     f'fprintf(stderr, "Hit with default action [%d:%d]: %s\\n", mark, p->mark, "{node}");'
                 )
-            self.print(f"res = {names[0]};")
+            self.print(f"res = {self.local_variable_names[0]};")
 
     def emit_dummy_action(self) -> None:
         self.print(f"res = _PyPegen_dummy_name(p);")
 
-    def handle_alt_normal(self, node: Alt, is_gather: bool, names: List[str]) -> None:
-        self.join_conditions(keyword="if", node=node, names=names)
+    def handle_alt_normal(self, node: Alt, is_gather: bool) -> None:
+        self.join_conditions(keyword="if", node=node)
         self.print("{")
         # We have parsed successfully all the conditions for the option.
         with self.indent():
@@ -507,17 +639,15 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             elif node.action:
                 self.emit_action(node)
             else:
-                self.emit_default_action(is_gather, names, node)
+                self.emit_default_action(is_gather, node)
 
             # As the current option has parsed correctly, do not continue with the rest.
             self.print(f"goto done;")
         self.print("}")
 
-    def handle_alt_loop(
-        self, node: Alt, is_gather: bool, rulename: Optional[str], names: List[str]
-    ) -> None:
+    def handle_alt_loop(self, node: Alt, is_gather: bool, rulename: Optional[str]) -> None:
         # Condition of the main body of the alternative
-        self.join_conditions(keyword="while", node=node, names=names)
+        self.join_conditions(keyword="while", node=node)
         self.print("{")
         # We have parsed successfully one item!
         with self.indent():
@@ -529,7 +659,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             elif node.action:
                 self.emit_action(node, cleanup_code="PyMem_Free(children);")
             else:
-                self.emit_default_action(is_gather, names, node)
+                self.emit_default_action(is_gather, node)
 
             # Add the result of rule to the temporary buffer of children. This buffer
             # will populate later an asdl_seq with all elements to return.
@@ -561,47 +691,25 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 if v == "opt_var":
                     self.print("UNUSED(opt_var); // Silence compiler warnings")
 
-            names: List[str] = []
-            if is_loop:
-                self.handle_alt_loop(node, is_gather, rulename, names)
-            else:
-                self.handle_alt_normal(node, is_gather, names)
+            with self.local_variable_context():
+                if is_loop:
+                    self.handle_alt_loop(node, is_gather, rulename)
+                else:
+                    self.handle_alt_normal(node, is_gather)
 
             self.print("p->mark = mark;")
-            if "cut_var" in names:
+            if "cut_var" in vars:
                 self.print("if (cut_var) return NULL;")
         self.print("}")
 
-    def collect_vars(self, node: Alt) -> Dict[str, Optional[str]]:
-        names: List[str] = []
+    def collect_vars(self, node: Alt) -> Dict[Optional[str], Optional[str]]:
         types = {}
-        for item in node.items:
-            name, type = self.add_var(item, names)
-            types[name] = type
+        with self.local_variable_context():
+            for item in node.items:
+                name, type = self.add_var(item)
+                types[name] = type
         return types
 
-    def add_var(self, node: NamedItem, names: List[str]) -> Tuple[str, Optional[str]]:
-        name: str
-        call: str
-        name, call = self.callmakervisitor.visit(node.item)
-        type = None
-        if not name:
-            return name, type
-        if name.startswith("cut"):
-            return name, "int"
-        if name.endswith("_var"):
-            rulename = name[:-4]
-            rule = self.rules.get(rulename)
-            if rule is not None:
-                if rule.is_loop() or rule.is_gather():
-                    type = "asdl_seq *"
-                else:
-                    type = rule.type
-            elif name.startswith("_loop") or name.startswith("_gather"):
-                type = "asdl_seq *"
-            elif name in ("name_var", "string_var", "number_var"):
-                type = "expr_ty"
-        if node.name:
-            name = node.name
-        name = dedupe(name, names)
-        return name, type
+    def add_var(self, node: NamedItem) -> Tuple[Optional[str], Optional[str]]:
+        call = self.callmakervisitor.visit(node.item)
+        return self.dedupe(node.name if node.name else call.assigned_variable), call.return_type

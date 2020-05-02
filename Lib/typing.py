@@ -728,6 +728,13 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return self.__class__(self.__origin__, params, name=self._name, inst=self._inst)
 
     def __repr__(self):
+        if (self.__origin__ == Union and len(self.__args__) == 2
+                and type(None) in self.__args__):
+            if self.__args__[0] is not type(None):
+                arg = self.__args__[0]
+            else:
+                arg = self.__args__[1]
+            return (f'typing.Optional[{_type_repr(arg)}]')
         if self._name:
             name = 'typing.' + self._name
         else:
@@ -1421,11 +1428,13 @@ def get_args(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
-    if isinstance(tp, (_BaseGenericAlias, GenericAlias)):
+    if isinstance(tp, (_GenericAlias, GenericAlias)):
         res = tp.__args__
         if tp.__origin__ is collections.abc.Callable and res[0] is not Ellipsis:
             res = (list(res[:-1]), res[-1])
         return res
+    if isinstance(tp, GenericAlias):
+        return tp.__args__
     return ()
 
 

@@ -179,6 +179,13 @@ _PyPegen_parsestr(Parser *p, const char *s, int *bytesmode, int *rawmode, PyObje
         }
     }
 
+    /* fstrings are only allowed in Python 3.6 and greater */
+    if (fmode && p->feature_version < 6) {
+        p->error_indicator = 1;
+        RAISE_SYNTAX_ERROR("Format strings are only supported in Python 3.6 and greater");
+        return -1;
+    }
+
     if (fmode && *bytesmode) {
         PyErr_BadInternalCall();
         return -1;
@@ -449,6 +456,15 @@ static void fstring_shift_children_locations(expr_ty n, int lineno, int col_offs
         case Tuple_kind:
             fstring_shift_seq_locations(n, n->v.Tuple.elts, lineno, col_offset);
             break;
+        case JoinedStr_kind:
+            fstring_shift_seq_locations(n, n->v.JoinedStr.values, lineno, col_offset);
+            break;
+        case FormattedValue_kind:
+            shift_expr(n, n->v.FormattedValue.value, lineno, col_offset);
+            if (n->v.FormattedValue.format_spec) {
+                shift_expr(n, n->v.FormattedValue.format_spec, lineno, col_offset);
+            }
+            break;
         default:
             return;
     }
@@ -586,7 +602,8 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         return NULL;
     }
 
-    Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, NULL, p->arena);
+    Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, p->flags, p->feature_version,
+                                     NULL, p->arena);
     p2->starting_lineno = p->starting_lineno + p->tok->first_lineno - 1;
     p2->starting_col_offset = p->tok->first_lineno == p->tok->lineno
                               ? p->starting_col_offset + t->col_offset : 0;

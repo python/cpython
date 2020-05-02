@@ -1,0 +1,1 @@
+Fix imp module deprecation warning when PyImport_ReloadModule is called. Patch by Robert Rouhani.

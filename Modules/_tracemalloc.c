@@ -3,7 +3,7 @@
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_traceback.h"
 #include "hashtable.h"
-#include "frameobject.h"
+#include "frameobject.h"          // PyFrame_GetBack()
 
 #include "clinic/_tracemalloc.c.h"
 /*[clinic input]
@@ -335,33 +335,24 @@ hashtable_compare_traceback(_Py_hashtable_t *ht, const void *pkey,
 static void
 tracemalloc_get_frame(PyFrameObject *pyframe, frame_t *frame)
 {
-    PyCodeObject *code;
-    PyObject *filename;
-    _Py_hashtable_entry_t *entry;
-    int lineno;
-
     frame->filename = unknown_filename;
-    lineno = PyFrame_GetLineNumber(pyframe);
-    if (lineno < 0)
+    int lineno = PyFrame_GetLineNumber(pyframe);
+    if (lineno < 0) {
         lineno = 0;
+    }
     frame->lineno = (unsigned int)lineno;
 
-    code = pyframe->f_code;
-    if (code == NULL) {
-#ifdef TRACE_DEBUG
-        tracemalloc_error("failed to get the code object of the frame");
-#endif
-        return;
-    }
+    PyCodeObject *code = PyFrame_GetCode(pyframe);
+    PyObject *filename = code->co_filename;
+    Py_DECREF(code);
 
-    if (code->co_filename == NULL) {
+    if (filename == NULL) {
 #ifdef TRACE_DEBUG
         tracemalloc_error("failed to get the filename of the code object");
 #endif
         return;
     }
 
-    filename = code->co_filename;
     assert(filename != NULL);
     if (filename == NULL)
         return;
@@ -382,6 +373,7 @@ tracemalloc_get_frame(PyFrameObject *pyframe, frame_t *frame)
     }
 
     /* intern the filename */
+    _Py_hashtable_entry_t *entry;
     entry = _Py_HASHTABLE_GET_ENTRY(tracemalloc_filenames, filename);
     if (entry != NULL) {
         _Py_HASHTABLE_ENTRY_READ_KEY(tracemalloc_filenames, entry, filename);
@@ -433,10 +425,7 @@ traceback_hash(traceback_t *traceback)
 static void
 traceback_get_frames(traceback_t *traceback)
 {
-    PyThreadState *tstate;
-    PyFrameObject *pyframe;
-
-    tstate = PyGILState_GetThisThreadState();
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
     if (tstate == NULL) {
 #ifdef TRACE_DEBUG
         tracemalloc_error("failed to get the current thread state");
@@ -444,15 +433,20 @@ traceback_get_frames(traceback_t *traceback)
         return;
     }
 
-    pyframe = PyThreadState_GetFrame(tstate);
-    for (; pyframe != NULL; pyframe = pyframe->f_back) {
+    PyFrameObject *pyframe = PyThreadState_GetFrame(tstate);
+    for (; pyframe != NULL;) {
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
             assert(traceback->frames[traceback->nframe].filename != NULL);
             traceback->nframe++;
         }
-        if (traceback->total_nframe < UINT16_MAX)
+        if (traceback->total_nframe < UINT16_MAX) {
             traceback->total_nframe++;
+        }
+
+        PyFrameObject *back = PyFrame_GetBack(pyframe);
+        Py_DECREF(pyframe);
+        pyframe = back;
     }
 }
 

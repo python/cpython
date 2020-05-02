@@ -219,7 +219,6 @@ def favk(
 """
 
 
-@support.skip_if_new_parser("Pegen does not support type comments yet")
 class TypeCommentTests(unittest.TestCase):
 
     lowest = 4  # Lowest minor version supported

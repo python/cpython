@@ -13,7 +13,8 @@ from pathlib import PurePath
 from typing import List, Optional, Any
 
 sys.path.insert(0, os.getcwd())
-from pegen.build import build_parser_and_generator
+from pegen.build import build_c_parser_and_generator
+from pegen.ast_dump import ast_dump
 from pegen.testutil import print_memstats
 from scripts import show_parse
 
@@ -26,7 +27,8 @@ argparser = argparse.ArgumentParser(
     description="Helper program to test directories or files for pegen",
 )
 argparser.add_argument("-d", "--directory", help="Directory path containing files to test")
-argparser.add_argument("-g", "--grammar-file", help="Grammar file path")
+argparser.add_argument("--grammar-file", help="Grammar file path")
+argparser.add_argument("--tokens-file", help="Tokens file path")
 argparser.add_argument(
     "-e", "--exclude", action="append", default=[], help="Glob(s) for matching files to exclude"
 )
@@ -84,8 +86,8 @@ def compare_trees(
     with open(file) as f:
         expected_tree = ast.parse(f.read())
 
-    expected_text = ast.dump(expected_tree, include_attributes=include_attributes)
-    actual_text = ast.dump(actual_tree, include_attributes=include_attributes)
+    expected_text = ast_dump(expected_tree, include_attributes=include_attributes)
+    actual_text = ast_dump(actual_tree, include_attributes=include_attributes)
     if actual_text == expected_text:
         if verbose:
             print("Tree for {file}:")
@@ -114,6 +116,7 @@ def compare_trees(
 def parse_directory(
     directory: str,
     grammar_file: str,
+    tokens_file: str,
     verbose: bool,
     excluded_files: List[str],
     skip_actions: bool,
@@ -131,15 +134,16 @@ def parse_directory(
         print("You must specify a directory of files to test.", file=sys.stderr)
         return 1
 
-    if grammar_file:
+    if grammar_file and tokens_file:
         if not os.path.exists(grammar_file):
             print(f"The specified grammar file, {grammar_file}, does not exist.", file=sys.stderr)
             return 1
 
         try:
             if not extension and parser == "pegen":
-                build_parser_and_generator(
+                build_c_parser_and_generator(
                     grammar_file,
+                    tokens_file,
                     "peg_extension/parse.c",
                     compile_extension=True,
                     skip_actions=skip_actions,
@@ -154,12 +158,14 @@ def parse_directory(
             return 1
 
     else:
-        print("A grammar file was not provided - attempting to use existing file...\n")
+        print(
+            "A grammar file or a tokens file was not provided - attempting to use existing parser from stdlib...\n"
+        )
 
     if parser == "pegen":
         try:
             from peg_extension import parse  # type: ignore
-        except:
+        except Exception as e:
             print(
                 "An existing parser was not found. Please run `make` or specify a grammar file with the `-g` flag.",
                 file=sys.stderr,
@@ -264,6 +270,7 @@ def main() -> None:
     args = argparser.parse_args()
     directory = args.directory
     grammar_file = args.grammar_file
+    tokens_file = args.tokens_file
     verbose = args.verbose
     excluded_files = args.exclude
     skip_actions = args.skip_actions
@@ -273,6 +280,7 @@ def main() -> None:
         parse_directory(
             directory,
             grammar_file,
+            tokens_file,
             verbose,
             excluded_files,
             skip_actions,
