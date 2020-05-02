@@ -52,7 +52,9 @@ jobs:
     - name: 'Tests with coverage'
       run: >
         source ./.venv/bin/activate &&
-        xvfb-run python -m coverage
+        xvfb-run
+        PYTHONPATH=.venv/lib/python*/site-packages/coverage/fullcoverage
+        python -m coverage
         run --branch --pylib
         -m test
         --fail-env-changed
