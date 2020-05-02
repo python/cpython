@@ -15,6 +15,7 @@ with test_tools.imports_under_tool("peg_generator"):
         generate_parser_c_extension,
         generate_c_parser_source,
     )
+    from pegen.ast_dump import ast_dump
 
 
 TEST_TEMPLATE = """
@@ -24,7 +25,10 @@ import ast
 import traceback
 import sys
 import unittest
-from test.test_peg_generator.ast_dump import ast_dump
+
+from test import test_tools
+with test_tools.imports_under_tool("peg_generator"):
+    from pegen.ast_dump import ast_dump
 
 sys.path.insert(0, tmp_dir)
 import parse

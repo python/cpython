@@ -14,6 +14,7 @@ from typing import List, Optional, Any
 
 sys.path.insert(0, os.getcwd())
 from pegen.build import build_c_parser_and_generator
+from pegen.ast_dump import ast_dump
 from pegen.testutil import print_memstats
 from scripts import show_parse
 
@@ -85,8 +86,8 @@ def compare_trees(
     with open(file) as f:
         expected_tree = ast.parse(f.read())
 
-    expected_text = ast.dump(expected_tree, include_attributes=include_attributes)
-    actual_text = ast.dump(actual_tree, include_attributes=include_attributes)
+    expected_text = ast_dump(expected_tree, include_attributes=include_attributes)
+    actual_text = ast_dump(actual_tree, include_attributes=include_attributes)
     if actual_text == expected_text:
         if verbose:
             print("Tree for {file}:")
@@ -164,7 +165,7 @@ def parse_directory(
     if parser == "pegen":
         try:
             from peg_extension import parse  # type: ignore
-        except:
+        except Exception as e:
             print(
                 "An existing parser was not found. Please run `make` or specify a grammar file with the `-g` flag.",
                 file=sys.stderr,
