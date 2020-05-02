@@ -2903,7 +2903,7 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
     if (a_bits <= DBL_MANT_DIG + 2) {
         shift_digits = (DBL_MANT_DIG + 2 - a_bits) / PyLong_SHIFT;
         shift_bits = (DBL_MANT_DIG + 2 - a_bits) % PyLong_SHIFT;
-        x_size = 0;
+        x_size = shift_digits;
         rem = v_lshift(x_digits + x_size, a->ob_digit, a_size,
                        (int)shift_bits);
         x_size += a_size;
