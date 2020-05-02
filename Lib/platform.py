@@ -403,7 +403,6 @@ def win32_ver(release='', version='', csd='', ptype=''):
         except OSError:
             pass
 
-
     return release, version, csd, ptype
 
 
