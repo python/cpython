@@ -107,7 +107,7 @@ Bookkeeping functions
 .. function:: getrandbits(k)
 
    Returns a Python integer with *k* random bits. This method is supplied with
-   the MersenneTwister generator and some other generators may also provide it
+   the Mersenne Twister generator and some other generators may also provide it
    as an optional part of the API. When available, :meth:`getrandbits` enables
    :meth:`randrange` to handle arbitrarily large ranges.
 
