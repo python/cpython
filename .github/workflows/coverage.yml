@@ -49,12 +49,11 @@ jobs:
         source ./.venv/bin/activate
         python -m pip install -U coverage
         python -m test.pythoninfo
+        export PYTHONPATH=./.venv/lib/python3.9/site-packages/coverage/fullcoverage
     - name: 'Tests with coverage'
       run: >
         source ./.venv/bin/activate &&
-        xvfb-run
-        PYTHONPATH=.venv/lib/python*/site-packages/coverage/fullcoverage
-        python -m coverage
+        xvfb-run python -m coverage
         run --branch --pylib
         -m test
         --fail-env-changed
