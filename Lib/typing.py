@@ -1300,7 +1300,7 @@ def get_args(tp):
         get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
         get_args(Callable[[], T][int]) == ([], int)
     """
-    if isinstance(tp, _GenericAlias):
+    if isinstance(tp, _GenericAlias) and not tp._special:
         res = tp.__args__
         if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:
             res = (list(res[:-1]), res[-1])
