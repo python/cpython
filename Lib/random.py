@@ -321,7 +321,7 @@ class Random(_random.Random):
                 j = randbelow(i+1)
                 x[i], x[j] = x[j], x[i]
         else:
-            _warn('The *random* parameter to shuffle() deprecated\n'
+            _warn('The *random* parameter to shuffle() has been deprecated\n'
                   'since Python 3.9 and will be removed in a subsequent '
                   'version.\n',
                   DeprecationWarning, 2)
