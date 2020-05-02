@@ -2441,6 +2441,39 @@ class TestSingleDispatch(unittest.TestCase):
             'typing.Iterable[str] is not a class.'
         ))
 
+        with self.assertRaises(TypeError) as exc:
+            @i.register
+            def _(arg) -> str:
+                # At runtime, dispatching on generics is impossible.
+                # When registering implementations with singledispatch, avoid
+                # types from `typing`. Instead, annotate with regular types
+                # or ABCs.
+                return "I annotated with a generic collection"
+        self.assertTrue(str(exc.exception).startswith(
+            "Invalid first argument to `register()`:"
+        ))
+        self.assertTrue(str(exc.exception).endswith(
+            'Use either `@register(some_class)` or plain `@register` on an annotated function.'
+        ))
+
+        @functools.singledispatch
+        def i(arg1, arg2):
+            return "base"
+        with self.assertRaises(TypeError) as exc:
+            @i.register
+            def _(arg1, arg2: int) -> str:
+                # At runtime, dispatching on generics is impossible.
+                # When registering implementations with singledispatch, avoid
+                # types from `typing`. Instead, annotate with regular types
+                # or ABCs.
+                return "I annotated with a generic collection"
+        self.assertTrue(str(exc.exception).startswith(
+            "Invalid first argument to `register()`:"
+        ))
+        self.assertTrue(str(exc.exception).endswith(
+            'Use either `@register(some_class)` or plain `@register` on an annotated function.'
+        ))
+
     def test_invalid_positional_argument(self):
         @functools.singledispatch
         def f(*args):
