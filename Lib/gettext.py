@@ -493,9 +493,13 @@ class GNUTranslations(NullTranslations):
         missing = object()
         tmsg = self._catalog.get(message, missing)
         if tmsg is missing:
-            if self._fallback:
-                return self._fallback.gettext(message)
-            return message
+            try:
+                # if `message` has plural forms
+                tmsg = self._catalog[(message, self.plural(1))]
+            except KeyError:
+                if self._fallback:
+                    return self._fallback.gettext(message)
+                return message
         return tmsg
 
     def ngettext(self, msgid1, msgid2, n):
