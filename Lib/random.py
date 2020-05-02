@@ -321,6 +321,10 @@ class Random(_random.Random):
                 j = randbelow(i+1)
                 x[i], x[j] = x[j], x[i]
         else:
+            _warn('The *random* parameter to shuffle() has been deprecated\n'
+                  'since Python 3.9 and will be removed in a subsequent '
+                  'version.',
+                  DeprecationWarning, 2)
             _int = int
             for i in reversed(range(1, len(x))):
                 # pick an element in x[:i+1] with which to exchange x[i]
