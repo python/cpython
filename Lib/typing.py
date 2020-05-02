@@ -721,13 +721,9 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             origin = globals()[self._name]
         else:
             origin = self.__origin__
-        if (origin is Callable and
-            not (len(self.__args__) == 2 and self.__args__[0] is Ellipsis)):
-            args = list(self.__args__[:-1]), self.__args__[-1]
-        else:
-            args = tuple(self.__args__)
-            if len(args) == 1 and not isinstance(args[0], tuple):
-                args, = args
+        args = tuple(self.__args__)
+        if len(args) == 1 and not isinstance(args[0], tuple):
+            args, = args
         return operator.getitem, (origin, args)
 
     def __mro_entries__(self, bases):
@@ -786,6 +782,12 @@ class _CallableGenericAlias(_GenericAlias, _root=True):
         return (f'typing.Callable'
                 f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
                 f'{_type_repr(self.__args__[-1])}]')
+
+    def __reduce__(self):
+        args = self.__args__
+        if not (len(args) == 2 and args[0] is ...):
+            args = list(args[:-1]), args[-1]
+        return operator.getitem, (Callable, args)
 
 
 class _CallableType(_SpecialGenericAlias, _root=True):
