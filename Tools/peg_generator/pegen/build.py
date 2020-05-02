@@ -3,6 +3,7 @@ import shutil
 import tokenize
 import sys
 import sysconfig
+import tempfile
 import itertools
 
 from typing import Optional, Tuple, List, IO, Iterator, Set, Dict
@@ -162,9 +163,13 @@ def build_c_generator(
         gen.generate(grammar_file)
 
     if compile_extension:
-        compile_c_extension(
-            output_file, verbose=verbose_c_extension, keep_asserts=keep_asserts_in_extension
-        )
+        with tempfile.TemporaryDirectory() as build_dir:
+            compile_c_extension(
+                output_file,
+                build_dir=build_dir,
+                verbose=verbose_c_extension,
+                keep_asserts=keep_asserts_in_extension,
+            )
     return gen
 
 
