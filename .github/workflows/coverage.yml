@@ -65,6 +65,7 @@ jobs:
         || true
     - name: 'Publish code coverage results'
       run: |
+        export PYTHONPATH=
         source ./.venv/bin/activate
         bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
       env:
