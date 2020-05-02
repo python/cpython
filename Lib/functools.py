@@ -837,7 +837,7 @@ def singledispatch(func):
             dispatch_cache[cls] = impl
         return impl
 
-    def register(cls, func=None):
+    def register(cls, func=None, _arg_index=0):
         """generic_func.register(cls, func) -> func
 
         Registers a new implementation for the given *cls* on a *generic_func*.
@@ -847,8 +847,13 @@ def singledispatch(func):
         if func is None:
             if isinstance(cls, type):
                 return lambda f: register(cls, f)
+            import inspect
+            try:
+                args = list(inspect.signature(cls).parameters.keys())
+            except TypeError:
+                args = []
             ann = getattr(cls, '__annotations__', {})
-            if not ann:
+            if len(args) <= _arg_index or args[_arg_index] not in ann:
                 raise TypeError(
                     f"Invalid first argument to `register()`: {cls!r}. "
                     f"Use either `@register(some_class)` or plain `@register` "
@@ -907,7 +912,7 @@ class singledispatchmethod:
 
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
-        return self.dispatcher.register(cls, func=method)
+        return self.dispatcher.register(cls, func=method, _arg_index=1)
 
     def __get__(self, obj, cls=None):
         def _method(*args, **kwargs):
