@@ -1,0 +1,1 @@
+Fix undefined HKEY_LOCAL_MACHINE name in platform.py
