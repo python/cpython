@@ -3,6 +3,7 @@ import shutil
 import tokenize
 import sys
 import sysconfig
+import tempfile
 import itertools
 
 from typing import Optional, Tuple, List, IO, Iterator, Set, Dict
@@ -15,7 +16,9 @@ from pegen.parser_generator import ParserGenerator
 from pegen.python_generator import PythonParserGenerator
 from pegen.tokenizer import Tokenizer
 
-MOD_DIR = pathlib.Path(__file__).parent
+MOD_DIR = pathlib.Path(__file__).resolve().parent
+
+TokenDefinitions = Tuple[Dict[int, str], Dict[str, int], Set[str]]
 
 
 def get_extra_flags(compiler_flags: str, compiler_py_flags_nodist: str) -> List[str]:
@@ -112,7 +115,8 @@ def build_parser(
     return grammar, parser, tokenizer
 
 
-def generate_token_definitions(tokens: IO[str]) -> Tuple[Dict[str, int], Set[str]]:
+def generate_token_definitions(tokens: IO[str]) -> TokenDefinitions:
+    all_tokens = {}
     exact_tokens = {}
     non_exact_tokens = set()
     numbers = itertools.count(0)
@@ -129,13 +133,15 @@ def generate_token_definitions(tokens: IO[str]) -> Tuple[Dict[str, int], Set[str
         if len(pieces) == 1:
             (token,) = pieces
             non_exact_tokens.add(token)
+            all_tokens[index] = token
         elif len(pieces) == 2:
-            _, op = pieces
+            token, op = pieces
             exact_tokens[op.strip("'")] = index
+            all_tokens[index] = token
         else:
             raise ValueError(f"Unexpected line found in Tokens file: {line}")
 
-    return exact_tokens, non_exact_tokens
+    return all_tokens, exact_tokens, non_exact_tokens
 
 
 def build_c_generator(
@@ -149,17 +155,21 @@ def build_c_generator(
     skip_actions: bool = False,
 ) -> ParserGenerator:
     with open(tokens_file, "r") as tok_file:
-        exact_tok, non_exact_tok = generate_token_definitions(tok_file)
+        all_tokens, exact_tok, non_exact_tok = generate_token_definitions(tok_file)
     with open(output_file, "w") as file:
         gen: ParserGenerator = CParserGenerator(
-            grammar, exact_tok, non_exact_tok, file, skip_actions=skip_actions
+            grammar, all_tokens, exact_tok, non_exact_tok, file, skip_actions=skip_actions
         )
         gen.generate(grammar_file)
 
     if compile_extension:
-        compile_c_extension(
-            output_file, verbose=verbose_c_extension, keep_asserts=keep_asserts_in_extension
-        )
+        with tempfile.TemporaryDirectory() as build_dir:
+            compile_c_extension(
+                output_file,
+                build_dir=build_dir,
+                verbose=verbose_c_extension,
+                keep_asserts=keep_asserts_in_extension,
+            )
     return gen
 
 

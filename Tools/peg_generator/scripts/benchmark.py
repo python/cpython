@@ -11,7 +11,7 @@ import memory_profiler
 
 sys.path.insert(0, os.getcwd())
 from peg_extension import parse
-from pegen.build import build_parser_and_generator
+from pegen.build import build_c_parser_and_generator
 from scripts.test_parse_directory import parse_directory
 
 argparser = argparse.ArgumentParser(
@@ -93,8 +93,9 @@ def run_benchmark_stdlib(subcommand, parser):
     modes = {"compile": 2, "parse": 1, "check": 0}
     extension = None
     if parser == "pegen":
-        extension = build_parser_and_generator(
+        extension = build_c_parser_and_generator(
             "../../Grammar/python.gram",
+            "../../Grammar/Tokens",
             "peg_extension/parse.c",
             compile_extension=True,
             skip_actions=False,
@@ -104,10 +105,7 @@ def run_benchmark_stdlib(subcommand, parser):
             "../../Lib",
             "../../Grammar/python.gram",
             verbose=False,
-            excluded_files=[
-                "*/bad*",
-                "*/lib2to3/tests/data/*",
-            ],
+            excluded_files=["*/bad*", "*/lib2to3/tests/data/*",],
             skip_actions=False,
             tree_arg=0,
             short=True,
