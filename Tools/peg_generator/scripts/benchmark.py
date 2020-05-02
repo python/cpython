@@ -105,10 +105,7 @@ def run_benchmark_stdlib(subcommand, parser):
             "../../Lib",
             "../../Grammar/python.gram",
             verbose=False,
-            excluded_files=[
-                "*/bad*",
-                "*/lib2to3/tests/data/*",
-            ],
+            excluded_files=["*/bad*", "*/lib2to3/tests/data/*",],
             skip_actions=False,
             tree_arg=0,
             short=True,
