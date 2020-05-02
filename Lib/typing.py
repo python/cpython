@@ -228,7 +228,7 @@ def _remove_dups_flatten(parameters):
     # Flatten out Union[Union[...], ...].
     params = []
     for p in parameters:
-        if isinstance(p, _GenericAlias) and p.__origin__ is Union:
+        if isinstance(p, _UnionGenericAlias):
             params.extend(p.__args__)
         elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
             params.extend(p[1:])
@@ -444,7 +444,7 @@ def Union(self, parameters):
     parameters = _remove_dups_flatten(parameters)
     if len(parameters) == 1:
         return parameters[0]
-    return _GenericAlias(self, parameters)
+    return _UnionGenericAlias(self, parameters)
 
 @_SpecialForm
 def Optional(self, parameters):
@@ -668,15 +668,10 @@ class _BaseGenericAlias(_Final, _root=True):
     def __eq__(self, other):
         if not isinstance(other, _BaseGenericAlias):
             return NotImplemented
-        if self.__origin__ != other.__origin__:
-            return False
-        if self.__origin__ is Union and other.__origin__ is Union:
-            return frozenset(self.__args__) == frozenset(other.__args__)
-        return self.__args__ == other.__args__
+        return (self.__origin__ == other.__origin__
+                and self.__args__ == other.__args__)
 
     def __hash__(self):
-        if self.__origin__ is Union:
-            return hash((Union, frozenset(self.__args__)))
         return hash((self.__origin__, self.__args__))
 
     def __call__(self, *args, **kwargs):
@@ -728,13 +723,6 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return self.__class__(self.__origin__, params, name=self._name, inst=self._inst)
 
     def __repr__(self):
-        if (self.__origin__ == Union and len(self.__args__) == 2
-                and type(None) in self.__args__):
-            if self.__args__[0] is not type(None):
-                arg = self.__args__[0]
-            else:
-                arg = self.__args__[1]
-            return (f'typing.Optional[{_type_repr(arg)}]')
         if self._name:
             name = 'typing.' + self._name
         else:
@@ -850,6 +838,25 @@ class _TupleType(_SpecialGenericAlias, _root=True):
         msg = "Tuple[t0, t1, ...]: each t must be a type."
         params = tuple(_type_check(p, msg) for p in params)
         return self.copy_with(params)
+
+
+class _UnionGenericAlias(_GenericAlias, _root=True):
+    def __eq__(self, other):
+        if not isinstance(other, _UnionGenericAlias):
+            return NotImplemented
+        return set(self.__args__) == set(other.__args__)
+
+    def __hash__(self):
+        return hash(frozenset(self.__args__))
+
+    def __repr__(self):
+        args = self.__args__
+        if len(args) == 2:
+            if args[0] is type(None):
+                return f'typing.Optional[{_type_repr(args[1])}]'
+            elif args[1] is type(None):
+                return f'typing.Optional[{_type_repr(args[0])}]'
+        return super().__repr__()
 
 
 class Generic:
