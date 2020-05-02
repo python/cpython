@@ -181,7 +181,7 @@ def _collect_type_vars(types):
     for t in types:
         if isinstance(t, TypeVar) and t not in tvars:
             tvars.append(t)
-        if isinstance(t, _GenericAlias) or isinstance(t, GenericAlias):
+        if isinstance(t, (_GenericAlias, GenericAlias)):
             tvars.extend([t for t in t.__parameters__ if t not in tvars])
     return tuple(tvars)
 
@@ -251,16 +251,14 @@ def _eval_type(t, globalns, localns):
     """
     if isinstance(t, ForwardRef):
         return t._evaluate(globalns, localns)
-    if isinstance(t, _GenericAlias):
+    if isinstance(t, (_GenericAlias, GenericAlias)):
         ev_args = tuple(_eval_type(a, globalns, localns) for a in t.__args__)
         if ev_args == t.__args__:
             return t
-        return t.copy_with(ev_args)
-    if isinstance(t, GenericAlias):
-        ev_args = tuple(_eval_type(a, globalns, localns) for a in t.__args__)
-        if ev_args == t.__args__:
-            return t
-        return GenericAlias(t.__origin__, ev_args)
+        if isinstance(t, GenericAlias):
+            return GenericAlias(t.__origin__, ev_args)
+        else:
+            return t.copy_with(ev_args)
     return t
 
 
@@ -1435,7 +1433,7 @@ def get_args(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
-    if isinstance(tp, (_GenericAlias, GenericAlias)):
+    if isinstance(tp, _GenericAlias):
         res = tp.__args__
         if tp.__origin__ is collections.abc.Callable and res[0] is not Ellipsis:
             res = (list(res[:-1]), res[-1])
