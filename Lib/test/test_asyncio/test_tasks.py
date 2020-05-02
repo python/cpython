@@ -466,6 +466,33 @@ class BaseTaskTests:
         t = outer()
         self.assertEqual(self.loop.run_until_complete(t), 1042)
 
+    def test_exception_chaining_after_await(self):
+        # Test that when awaiting on a task when an exception is already
+        # active, if the task raises an exception it will be chained
+        # with the original.
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+
+        async def raise_error():
+            raise ValueError
+
+        async def run():
+            try:
+                raise KeyError(3)
+            except Exception as exc:
+                task = self.new_task(loop, raise_error())
+                try:
+                    await task
+                except Exception as exc:
+                    self.assertEqual(type(exc), ValueError)
+                    chained = exc.__context__
+                    self.assertEqual((type(chained), chained.args),
+                        (KeyError, (3,)))
+
+        task = self.new_task(loop, run())
+        loop.run_until_complete(task)
+        loop.close()
+
     def test_cancel(self):
 
         def gen():
