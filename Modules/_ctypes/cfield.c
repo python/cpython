@@ -71,6 +71,18 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         Py_DECREF(self);
         return NULL;
     }
+
+#ifndef MS_WIN32
+    if (pack && bitsize) { /* packed bitfield */
+        size = 1;
+        while(size * 8 < bitsize)
+            size += 1;
+    } else
+#endif
+        size = dict->size;
+
+    proto = desc;
+
     if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
 #ifdef MS_WIN32
@@ -95,16 +107,13 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* start new bitfield */
         fieldtype = NEW_BITFIELD;
         *pbitofs = 0;
-        *pfield_size = dict->size * 8;
+        *pfield_size = size * 8;
     } else {
         /* not a bit field */
         fieldtype = NO_BITFIELD;
         *pbitofs = 0;
         *pfield_size = 0;
     }
-
-    size = dict->size;
-    proto = desc;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to
         return a Python string instead of an Array object instance...
@@ -170,18 +179,14 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         break;
 
     case EXPAND_BITFIELD:
-        if (pack) {
-            while(*pfield_size < (*pbitofs + bitsize)) {
-                *pfield_size += 8;
-                *poffset += 1;
-                *psize += 1;
-            }
-        } else {
-            *poffset += dict->size - *pfield_size/8;
-            *psize += dict->size - *pfield_size/8;
+        if (pack)
+            while(size * 8 < (*pbitofs + bitsize))
+                size += 1;
 
-            *pfield_size = dict->size * 8;
-        }
+        *poffset += size - *pfield_size/8;
+        *psize += size - *pfield_size/8;
+
+        *pfield_size = size * 8;
 
         if (big_endian)
             self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
