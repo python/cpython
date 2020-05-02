@@ -88,6 +88,8 @@ def literal_eval(node_or_string):
               node.func.id == 'set' and node.args == node.keywords == []):
             return set()
         elif isinstance(node, Dict):
+            if len(node.keys) != len(node.values):
+                raise ValueError(f'malformed node or string: {node!r}')
             return dict(zip(map(_convert, node.keys),
                             map(_convert, node.values)))
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):

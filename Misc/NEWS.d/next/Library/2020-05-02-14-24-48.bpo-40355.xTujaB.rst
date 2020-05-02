@@ -1,0 +1,2 @@
+Fixed case where malformed :class:`ast.Dict` nodes could have keys or values
+thrown away by :func:`ast.literal_eval`. Patch by Curtis Bucher.
