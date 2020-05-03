@@ -854,6 +854,13 @@ class TurtleScreenBase(object):
 ##############################################################################
 
 
+class Terminator (Exception):
+    """Will be raised in TurtleScreen.update, if _RUNNING becomes False.
+
+    This stops execution of a turtle graphics script.
+    Main purpose: use in the Demo-Viewer turtle.Demo.py.
+    """
+    pass
 
 
 class TurtleGraphicsError(Exception):
@@ -3936,12 +3943,14 @@ def {name}{paramslist}:
     if {obj} is None:
         if not TurtleScreen._RUNNING:
             TurtleScreen._RUNNING = True
+            raise Terminator
         {obj} = {init}
     try:
         return {obj}.{name}{argslist}
     except TK.TclError:
         if not TurtleScreen._RUNNING:
             TurtleScreen._RUNNING = True
+            raise Terminator
         raise
 """
 
