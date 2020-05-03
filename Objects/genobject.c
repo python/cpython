@@ -512,11 +512,12 @@ throw_here:
     }
 
     PyErr_Restore(typ, val, tb);
-    /* XXX Should we also handle the case where exc_type is true and
-       exc_value is false? */
-    if (gen->gi_exc_state.exc_type && gen->gi_exc_state.exc_value) {
+    /* XXX It seems like we shouldn't have to check not equal to Py_None
+       here because exc_type should only ever be a class.  But not including
+       this check was causing crashes on certain tests e.g. on Fedora. */
+    if (gen->gi_exc_state.exc_type && gen->gi_exc_state.exc_type != Py_None) {
         Py_INCREF(gen->gi_exc_state.exc_type);
-        Py_INCREF(gen->gi_exc_state.exc_value);
+        Py_XINCREF(gen->gi_exc_state.exc_value);
         Py_XINCREF(gen->gi_exc_state.exc_traceback);
         _PyErr_ChainExceptions(gen->gi_exc_state.exc_type,
             gen->gi_exc_state.exc_value, gen->gi_exc_state.exc_traceback);
