@@ -1,4 +1,5 @@
 import contextlib
+from fnmatch import fnmatchcase
 import os
 import pathlib
 import shutil
@@ -73,8 +74,23 @@ def _copy_archive(archive, new_archive, interpreter=None):
         os.chmod(new_archive, os.stat(new_archive).st_mode | stat.S_IEXEC)
 
 
+def _build_filter(*patterns):
+    """
+    Given a list of patterns, return a callable that will be true only if
+    the input matches at least one of the patterns.
+    """
+    return lambda name: any(fnmatchcase(name, pat=pat) for pat in patterns)
+
+
+def default_filter(package, exclude=(), include=('*',)):
+    package = str(package)
+    exclude_filter = _build_filter(*exclude)
+    include_filter = _build_filter(*include)
+    return include_filter(package) and not exclude_filter(package)
+
+
 def create_archive(source, target=None, interpreter=None, main=None,
-                   filter=None, compressed=False):
+                   filter=None, compressed=False, **filter_kwargs):
     """Create an application archive from SOURCE.
 
     The SOURCE can be the name of a directory, or a filename or a file-like
@@ -138,7 +154,7 @@ def create_archive(source, target=None, interpreter=None, main=None,
         with zipfile.ZipFile(fd, 'w', compression=compression) as z:
             for child in source.rglob('*'):
                 arcname = child.relative_to(source)
-                if filter is None or filter(arcname):
+                if filter is None or filter(arcname, **filter_kwargs):
                     z.write(child, arcname.as_posix())
             if main_py:
                 z.writestr('__main__.py', main_py.encode('utf-8'))
@@ -179,6 +195,12 @@ def main(args=None):
             help="Display the interpreter from the archive.")
     parser.add_argument('source',
             help="Source directory (or existing archive).")
+    parser.add_argument("--include", "-i", default=["*"], nargs="*",
+            help="A glob-style sequence of paths to include.",
+    )
+    parser.add_argument("--exclude", "-e", default=[], nargs="*",
+            help="A glob-style sequence of paths to exclude.",
+    )
 
     args = parser.parse_args(args)
 
@@ -199,7 +221,8 @@ def main(args=None):
 
     create_archive(args.source, args.output,
                    interpreter=args.python, main=args.main,
-                   compressed=args.compress)
+                   compressed=args.compress, filter=default_filter,
+                   include=args.include, exclude=args.exclude)
 
 
 if __name__ == '__main__':

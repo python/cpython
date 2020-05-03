@@ -21,6 +21,13 @@ class ZipAppTest(unittest.TestCase):
         self.addCleanup(tmpdir.cleanup)
         self.tmpdir = pathlib.Path(tmpdir.name)
 
+    def test_default_filter(self):
+        # Test default filter.
+        self.assertTrue(zipapp.default_filter('foo'))
+        self.assertTrue(zipapp.default_filter('foo', include=('foo',)))
+        self.assertFalse(zipapp.default_filter('foo', include=('bar',)))
+        self.assertFalse(zipapp.default_filter('foo', exclude=('foo',)))
+
     def test_create_archive(self):
         # Test packing a directory.
         source = self.tmpdir / 'source'
@@ -57,8 +64,8 @@ class ZipAppTest(unittest.TestCase):
     def test_create_archive_with_filter(self):
         # Test packing a directory and using filter to specify
         # which files to include.
-        def skip_pyc_files(path):
-            return path.suffix != '.pyc'
+        def skip_pyc_files(path, suffix):
+            return path.suffix != suffix
         source = self.tmpdir / 'source'
         source.mkdir()
         (source / '__main__.py').touch()
@@ -66,7 +73,7 @@ class ZipAppTest(unittest.TestCase):
         (source / 'test.pyc').touch()
         target = self.tmpdir / 'source.pyz'
 
-        zipapp.create_archive(source, target, filter=skip_pyc_files)
+        zipapp.create_archive(source, target, filter=skip_pyc_files, suffix='.pyc')
         with zipfile.ZipFile(target, 'r') as z:
             self.assertIn('__main__.py', z.namelist())
             self.assertIn('test.py', z.namelist())
