@@ -248,7 +248,10 @@ make_parameters(PyObject *args)
 }
 
 /* If obj is a generic alias, substitute type variables params
-   with substitutions argitems. */
+   with substitutions argitems.  For example, if obj is list[T],
+   params is (T, S), and argitems is (str, int), return list[str].
+   If obj doesn't have a __parameters__ attribute or that's not
+   a non-empty tuple, return a new reference to obj. */
 static PyObject *
 subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
 {
@@ -257,30 +260,27 @@ subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
     if (_PyObject_LookupAttrId(obj, &PyId___parameters__, &subparams) < 0) {
         return NULL;
     }
-    if (subparams && PyTuple_Check(subparams)) {
+    if (subparams && PyTuple_Check(subparams) && PyTuple_GET_SIZE(subparams)) {
         Py_ssize_t nparams = PyTuple_GET_SIZE(params);
         Py_ssize_t nsubargs = PyTuple_GET_SIZE(subparams);
-        if (nsubargs != 0) {
-            PyObject *subargs = PyTuple_New(nsubargs);
-            if (subargs == NULL) {
-                Py_DECREF(subparams);
-                return NULL;
-            }
-            for (Py_ssize_t i = 0; i < nsubargs; ++i) {
-                PyObject *arg = PyTuple_GET_ITEM(subparams, i);
-                Py_ssize_t iparam = tuple_index(params, nparams, arg);
-                if (iparam >= 0) {
-                    arg = argitems[iparam];
-                }
-                Py_INCREF(arg);
-                PyTuple_SET_ITEM(subargs, i, arg);
-            }
-            obj = PyObject_GetItem(obj, subargs);
-            Py_DECREF(subargs);
+        PyObject *subargs = PyTuple_New(nsubargs);
+        if (subargs == NULL) {
+            Py_DECREF(subparams);
+            return NULL;
         }
-        else {
-            Py_INCREF(obj);
+        for (Py_ssize_t i = 0; i < nsubargs; ++i) {
+            PyObject *arg = PyTuple_GET_ITEM(subparams, i);
+            Py_ssize_t iparam = tuple_index(params, nparams, arg);
+            if (iparam >= 0) {
+                arg = argitems[iparam];
+            }
+            Py_INCREF(arg);
+            PyTuple_SET_ITEM(subargs, i, arg);
         }
+
+        obj = PyObject_GetItem(obj, subargs);
+
+        Py_DECREF(subargs);
     }
     else {
         Py_INCREF(obj);
@@ -307,12 +307,12 @@ ga_getitem(PyObject *self, PyObject *item)
                             self);
     }
     int is_tuple = PyTuple_Check(item);
-    Py_ssize_t nitem = is_tuple ? PyTuple_GET_SIZE(item) : 1;
+    Py_ssize_t nitems = is_tuple ? PyTuple_GET_SIZE(item) : 1;
     PyObject **argitems = is_tuple ? &PyTuple_GET_ITEM(item, 0) : &item;
-    if (nitem != nparams) {
+    if (nitems != nparams) {
         return PyErr_Format(PyExc_TypeError,
                             "Too %s arguments for %R",
-                            nitem > nparams ? "many" : "few",
+                            nitems > nparams ? "many" : "few",
                             self);
     }
     /* Replace all type variables (specified by alias->parameters)
@@ -348,7 +348,9 @@ ga_getitem(PyObject *self, PyObject *item)
         }
         PyTuple_SET_ITEM(newargs, iarg, arg);
     }
+
     PyObject *res = Py_GenericAlias(alias->origin, newargs);
+
     Py_DECREF(newargs);
     return res;
 }
