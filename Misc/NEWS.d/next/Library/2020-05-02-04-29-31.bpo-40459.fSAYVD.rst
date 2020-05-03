@@ -1,1 +1,1 @@
-Fix undefined HKEY_LOCAL_MACHINE name in platform.py
+Fix :exc:`NameError` caused from :func:`platform.win32_ver`.
