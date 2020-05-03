@@ -342,8 +342,9 @@ class GeneratorThrowTest(unittest.TestCase):
             try:
                 yield
             except Exception:
-                # This line causes a crash ("Segmentation fault (core dumped)")
-                # on e.g. Fedora 32.
+                # Without the `gi_exc_state.exc_type != Py_None` in
+                # _gen_throw(), this line was causing a crash ("Segmentation
+                # fault (core dumped)") on e.g. Fedora 32.
                 raise RuntimeError
 
         gen = g()
