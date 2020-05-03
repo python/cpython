@@ -191,59 +191,6 @@ py_digest_name(const EVP_MD *md)
     return PyUnicode_FromString(name);
 }
 
-static const EVP_MD*
-py_digest_by_name(const char *name)
-{
-    const EVP_MD *digest = EVP_get_digestbyname(name);
-
-    /* OpenSSL uses dash instead of underscore in names of some algorithms
-     * like SHA3 and SHAKE. Detect different spellings. */
-    if (digest == NULL) {
-        if (0) {}
-#ifdef NID_sha512_224
-        else if (!strcmp(name, "sha512_224") || !strcmp(name, "SHA512_224")) {
-            digest = EVP_sha512_224();
-        }
-        else if (!strcmp(name, "sha512_256") || !strcmp(name, "SHA512_256")) {
-            digest = EVP_sha512_256();
-        }
-#endif
-#ifdef PY_OPENSSL_HAS_SHA3
-        /* could be sha3_ or shake_, Python never defined upper case */
-        else if (!strcmp(name, "sha3_224")) {
-            digest = EVP_sha3_224();
-        }
-        else if (!strcmp(name, "sha3_256")) {
-            digest = EVP_sha3_256();
-        }
-        else if (!strcmp(name, "sha3_384")) {
-            digest = EVP_sha3_384();
-        }
-        else if (!strcmp(name, "sha3_512")) {
-            digest = EVP_sha3_512();
-        }
-#endif
-#ifdef PY_OPENSSL_HAS_SHAKE
-        else if (!strcmp(name, "shake_128")) {
-            digest = EVP_shake128();
-        }
-        else if (!strcmp(name, "shake_256")) {
-            digest = EVP_shake256();
-        }
-#endif
-#ifdef PY_OPENSSL_HAS_BLAKE2
-        else if (!strcmp(name, "blake2s256")) {
-            digest = EVP_blake2s256();
-        }
-        else if (!strcmp(name, "blake2b512")) {
-            digest = EVP_blake2b512();
-        }
-#endif
-    }
-
-    return digest;
-}
-
 static EVPobject *
 newEVPobject(void)
 {
@@ -620,7 +567,7 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
     if (data_obj)
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
 
-    digest = py_digest_by_name(name);
+    digest = EVP_get_digestbyname(name);
 
     ret_obj = EVPnew(digest,
                      (unsigned char*)view.buf, view.len,
@@ -1138,6 +1085,40 @@ _hashlib_get_fips_mode_impl(PyObject *module)
 #endif  // !LIBRESSL_VERSION_NUMBER
 
 
+/* OpenSSL uses different spellings for digest (hashing) algorithms than
+ * Python. Python names are valid Python identifiers and lowercase. Register
+ * our aliases with OpenSSL.
+ */
+static int
+py_digest_aliases()
+{
+    static int initialized = 0;
+
+    if (initialized) {
+        return 0;
+    }
+#ifdef NID_sha512_224
+    EVP_add_digest_alias(SN_sha512_224, "sha512_224");
+    EVP_add_digest_alias(SN_sha512_256, "sha512_256");
+#endif
+#ifdef PY_OPENSSL_HAS_SHA3
+    EVP_add_digest_alias(SN_sha3_224, "sha3_224");
+    EVP_add_digest_alias(SN_sha3_256, "sha3_256");
+    EVP_add_digest_alias(SN_sha3_384, "sha3_384");
+    EVP_add_digest_alias(SN_sha3_512, "sha3_512");
+#endif
+#ifdef PY_OPENSSL_HAS_SHAKE
+    EVP_add_digest_alias(SN_shake128, "shake_128");
+    EVP_add_digest_alias(SN_shake256, "shake_256");
+#endif
+#ifdef PY_OPENSSL_HAS_BLAKE2
+    EVP_add_digest_alias(SN_blake2s256, "blake2s");
+    EVP_add_digest_alias(SN_blake2b512, "blake2b");
+#endif
+    initialized = 1;
+    return 0;
+}
+
 /* List of functions exported by this module */
 
 static struct PyMethodDef EVP_functions[] = {
@@ -1203,6 +1184,8 @@ PyInit__hashlib(void)
     OPENSSL_add_all_algorithms_noconf();
     ERR_load_crypto_strings();
 #endif
+
+    py_digest_aliases();
 
     m = PyState_FindModule(&_hashlibmodule);
     if (m != NULL) {

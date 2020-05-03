@@ -1,0 +1,2 @@
+Simplify hashlib's mapping from Python hashing algorithm names to OpenSSL
+EVP_MD. hashlib now registers Python names as aliases.
