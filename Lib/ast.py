@@ -62,11 +62,13 @@ def literal_eval(node_or_string):
         node_or_string = parse(node_or_string, mode='eval')
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
+    def _malformed(node):
+        raise ValueError(f'malformed node or string: {node!r}')
     def _convert_num(node):
         if isinstance(node, Constant):
             if type(node.value) in (int, float, complex):
                 return node.value
-        raise ValueError('malformed node or string: ' + repr(node))
+        _malformed(node)
     def _convert_signed_num(node):
         if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
             operand = _convert_num(node.operand)
@@ -89,7 +91,7 @@ def literal_eval(node_or_string):
             return set()
         elif isinstance(node, Dict):
             if len(node.keys) != len(node.values):
-                raise ValueError(f'malformed node or string: {node!r}')
+                _malformed(node)
             return dict(zip(map(_convert, node.keys),
                             map(_convert, node.values)))
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
