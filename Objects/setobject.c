@@ -190,7 +190,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
             for (j = 0 ; j < LINEAR_PROBES ; j++) {
                 entry++;
                 if (entry->hash == 0 && entry->key == NULL)
-                    goto found_unused_;
+                    goto found_unused;
                 if (entry->hash == hash) {
                     PyObject *startkey = entry->key;
                     assert(startkey != dummy);
@@ -220,7 +220,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 
         entry = &so->table[i];
         if (entry->key == NULL)
-            goto found_unused_;
+            goto found_unused;
     }
 
   found_unused:
