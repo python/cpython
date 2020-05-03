@@ -669,10 +669,16 @@ class _Unparser(NodeVisitor):
         else:
             self.interleave(lambda: self.write(", "), traverser, items)
 
+    def maybe_newline(self):
+        """Adds a newline if it isn't the start of generated source"""
+        if self._source:
+            self.write("\n")
+
     def fill(self, text=""):
         """Indent a piece of text and append it, according to the current
         indentation level"""
-        self.write("\n" + "    " * self._indent + text)
+        self.maybe_newline()
+        self.write("    " * self._indent + text)
 
     def write(self, text):
         """Append a piece of text"""
@@ -916,7 +922,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def visit_ClassDef(self, node):
-        self.write("\n")
+        self.maybe_newline()
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
@@ -946,7 +952,7 @@ class _Unparser(NodeVisitor):
         self._function_helper(node, "async def")
 
     def _function_helper(self, node, fill_suffix):
-        self.write("\n")
+        self.maybe_newline()
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
@@ -1043,7 +1049,7 @@ class _Unparser(NodeVisitor):
         write("{")
         unparser = type(self)()
         unparser.set_precedence(_Precedence.TEST.next(), node.value)
-        expr = unparser.visit(node.value).rstrip("\n")
+        expr = unparser.visit(node.value)
         if expr.startswith("{"):
             write(" ")  # Separate pair of opening brackets as "{ {"
         write(expr)
