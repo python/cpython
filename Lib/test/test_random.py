@@ -103,7 +103,8 @@ class TestBasicOps:
         shuffle = self.gen.shuffle
         mock_random = unittest.mock.Mock(return_value=0.5)
         seq = bytearray(b'abcdefghijk')
-        shuffle(seq, mock_random)
+        with self.assertWarns(DeprecationWarning):
+            shuffle(seq, mock_random)
         mock_random.assert_called_with()
 
     def test_choice(self):
