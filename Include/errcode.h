@@ -31,7 +31,6 @@ extern "C" {
 #define E_LINECONT      25      /* Unexpected characters after a line continuation */
 #define E_IDENTIFIER    26      /* Invalid characters in identifier */
 #define E_BADSINGLE     27      /* Ill-formed single statement input */
-#define E_BADPREFIX     28      /* Bad string prefixes */
 
 #ifdef __cplusplus
 }

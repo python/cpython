@@ -334,9 +334,6 @@ tokenizer_error(Parser *p)
         case E_IDENTIFIER:
             msg = "invalid character in identifier";
             break;
-        case E_BADPREFIX:
-            RAISE_SYNTAX_ERROR("invalid string prefix");
-            return -1;
         case E_EOFS:
             RAISE_SYNTAX_ERROR("EOF while scanning triple-quoted string literal");
             return -1;
