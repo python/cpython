@@ -669,7 +669,7 @@ class _Unparser(NodeVisitor):
         else:
             self.interleave(lambda: self.write(", "), traverser, items)
 
-    def newline(self):
+    def maybe_newline(self):
         """Adds a newline if it isn't the start of generated source"""
         if self._source:
             self.write("\n")
@@ -677,7 +677,7 @@ class _Unparser(NodeVisitor):
     def fill(self, text=""):
         """Indent a piece of text and append it, according to the current
         indentation level"""
-        self.newline()
+        self.maybe_newline()
         self.write("    " * self._indent + text)
 
     def write(self, text):
@@ -922,7 +922,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def visit_ClassDef(self, node):
-        self.newline()
+        self.maybe_newline()
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
@@ -952,7 +952,7 @@ class _Unparser(NodeVisitor):
         self._function_helper(node, "async def")
 
     def _function_helper(self, node, fill_suffix):
-        self.newline()
+        self.maybe_newline()
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
