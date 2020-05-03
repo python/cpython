@@ -107,7 +107,7 @@ Bookkeeping functions
 .. function:: getrandbits(k)
 
    Returns a Python integer with *k* random bits. This method is supplied with
-   the MersenneTwister generator and some other generators may also provide it
+   the Mersenne Twister generator and some other generators may also provide it
    as an optional part of the API. When available, :meth:`getrandbits` enables
    :meth:`randrange` to handle arbitrarily large ranges.
 
@@ -207,6 +207,9 @@ Functions for sequences
    This implies that most permutations of a long sequence can never be
    generated.  For example, a sequence of length 2080 is the largest that
    can fit within the period of the Mersenne Twister random number generator.
+
+   .. deprecated-removed:: 3.9 3.11
+      The optional parameter *random*.
 
 
 .. function:: sample(population, k)

@@ -9,7 +9,6 @@ import fractions
 import functools
 import sys
 import unittest
-import warnings
 from copy import copy, deepcopy
 from pickle import dumps, loads
 F = fractions.Fraction

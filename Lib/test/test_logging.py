@@ -36,13 +36,14 @@ import os
 import queue
 import random
 import re
-import signal
 import socket
 import struct
 import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import socket_helper
+from test.support.logging_helper import TestHandler
 import textwrap
 import threading
 import time
@@ -1053,10 +1054,10 @@ class SMTPHandlerTest(BaseTest):
 
     def test_basic(self):
         sockmap = {}
-        server = TestSMTPServer((support.HOST, 0), self.process_message, 0.001,
+        server = TestSMTPServer((socket_helper.HOST, 0), self.process_message, 0.001,
                                 sockmap)
         server.start()
-        addr = (support.HOST, server.port)
+        addr = (socket_helper.HOST, server.port)
         h = logging.handlers.SMTPHandler(addr, 'me', 'you', 'Log',
                                          timeout=self.TIMEOUT)
         self.assertEqual(h.toaddrs, ['you'])
@@ -1921,7 +1922,7 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
         SysLogHandlerTest.tearDown(self)
         support.unlink(self.address)
 
-@unittest.skipUnless(support.IPV6_ENABLED,
+@unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 class IPv6SysLogHandlerTest(SysLogHandlerTest):
 
@@ -3523,7 +3524,7 @@ class QueueHandlerTest(BaseTest):
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
     def test_queue_listener(self):
-        handler = support.TestHandler(support.Matcher())
+        handler = TestHandler(support.Matcher())
         listener = logging.handlers.QueueListener(self.queue, handler)
         listener.start()
         try:
@@ -3539,7 +3540,7 @@ class QueueHandlerTest(BaseTest):
 
         # Now test with respect_handler_level set
 
-        handler = support.TestHandler(support.Matcher())
+        handler = TestHandler(support.Matcher())
         handler.setLevel(logging.CRITICAL)
         listener = logging.handlers.QueueListener(self.queue, handler,
                                                   respect_handler_level=True)

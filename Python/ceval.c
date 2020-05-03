@@ -1297,7 +1297,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         co->co_opcache_flag++;
         if (co->co_opcache_flag == OPCACHE_MIN_RUNS) {
             if (_PyCode_InitOpcache(co) < 0) {
-                return NULL;
+                goto exit_eval_frame;
             }
 #if OPCACHE_STATS
             opcache_code_objects_extra_mem +=
@@ -5580,9 +5580,10 @@ dtrace_function_entry(PyFrameObject *f)
     const char *funcname;
     int lineno;
 
-    filename = PyUnicode_AsUTF8(f->f_code->co_filename);
-    funcname = PyUnicode_AsUTF8(f->f_code->co_name);
-    lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
+    PyCodeObject *code = f->f_code;
+    filename = PyUnicode_AsUTF8(code->co_filename);
+    funcname = PyUnicode_AsUTF8(code->co_name);
+    lineno = PyCode_Addr2Line(code, f->f_lasti);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
@@ -5594,9 +5595,10 @@ dtrace_function_return(PyFrameObject *f)
     const char *funcname;
     int lineno;
 
-    filename = PyUnicode_AsUTF8(f->f_code->co_filename);
-    funcname = PyUnicode_AsUTF8(f->f_code->co_name);
-    lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
+    PyCodeObject *code = f->f_code;
+    filename = PyUnicode_AsUTF8(code->co_filename);
+    funcname = PyUnicode_AsUTF8(code->co_name);
+    lineno = PyCode_Addr2Line(code, f->f_lasti);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }

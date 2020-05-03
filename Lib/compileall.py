@@ -66,7 +66,7 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
     workers:   maximum number of parallel workers
     invalidation_mode: how the up-to-dateness of the pyc will be checked
     stripdir:  part of path to left-strip from source file path
-    prependdir: path to prepend to beggining of original file path, applied
+    prependdir: path to prepend to beginning of original file path, applied
                after stripdir
     limit_sl_dest: ignore symlinks if they are pointing outside of
                    the defined path
@@ -136,7 +136,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                files each with one optimization level.
     invalidation_mode: how the up-to-dateness of the pyc will be checked
     stripdir:  part of path to left-strip from source file path
-    prependdir: path to prepend to beggining of original file path, applied
+    prependdir: path to prepend to beginning of original file path, applied
                after stripdir
     limit_sl_dest: ignore symlinks if they are pointing outside of
                    the defined path.

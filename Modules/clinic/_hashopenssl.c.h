@@ -725,7 +725,48 @@ exit:
     return return_value;
 }
 
+#if !defined(LIBRESSL_VERSION_NUMBER)
+
+PyDoc_STRVAR(_hashlib_get_fips_mode__doc__,
+"get_fips_mode($module, /)\n"
+"--\n"
+"\n"
+"Determine the OpenSSL FIPS mode of operation.\n"
+"\n"
+"Effectively any non-zero return value indicates FIPS mode;\n"
+"values other than 1 may have additional significance.\n"
+"\n"
+"See OpenSSL documentation for the FIPS_mode() function for details.");
+
+#define _HASHLIB_GET_FIPS_MODE_METHODDEF    \
+    {"get_fips_mode", (PyCFunction)_hashlib_get_fips_mode, METH_NOARGS, _hashlib_get_fips_mode__doc__},
+
+static int
+_hashlib_get_fips_mode_impl(PyObject *module);
+
+static PyObject *
+_hashlib_get_fips_mode(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _hashlib_get_fips_mode_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* !defined(LIBRESSL_VERSION_NUMBER) */
+
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=acb22ccddb7043c7 input=a9049054013a1b77]*/
+
+#ifndef _HASHLIB_GET_FIPS_MODE_METHODDEF
+    #define _HASHLIB_GET_FIPS_MODE_METHODDEF
+#endif /* !defined(_HASHLIB_GET_FIPS_MODE_METHODDEF) */
+/*[clinic end generated code: output=b0703dd5a043394d input=a9049054013a1b77]*/

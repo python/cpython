@@ -8282,8 +8282,8 @@ fi
 done
 
 
-# On Linux, can.h and can/raw.h require sys/socket.h
-for ac_header in linux/can.h linux/can/raw.h linux/can/bcm.h
+# On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
+for ac_header in linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "
@@ -16746,7 +16746,7 @@ do
 done
 
 
-SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
+SRCDIRS="Parser Parser/pegen Objects Python Modules Modules/_io Programs"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do

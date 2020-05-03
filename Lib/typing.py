@@ -141,8 +141,9 @@ def _type_check(arg, msg, is_argument=True):
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
-    if (isinstance(arg, _SpecialForm) and arg not in (Any, NoReturn) or
-            arg in (Generic, Protocol)):
+    if arg in (Any, NoReturn):
+        return arg
+    if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
     if isinstance(arg, (type, TypeVar, ForwardRef)):
         return arg
@@ -190,7 +191,7 @@ def _subs_tvars(tp, tvars, subs):
     """Substitute type variables 'tvars' with substitutions 'subs'.
     These two must have the same length.
     """
-    if not isinstance(tp, _GenericAlias):
+    if not isinstance(tp, (_GenericAlias, GenericAlias)):
         return tp
     new_args = list(tp.__args__)
     for a, arg in enumerate(tp.__args__):
@@ -202,7 +203,10 @@ def _subs_tvars(tp, tvars, subs):
             new_args[a] = _subs_tvars(arg, tvars, subs)
     if tp.__origin__ is Union:
         return Union[tuple(new_args)]
-    return tp.copy_with(tuple(new_args))
+    if isinstance(tp, GenericAlias):
+        return GenericAlias(tp.__origin__, tuple(new_args))
+    else:
+        return tp.copy_with(tuple(new_args))
 
 
 def _check_generic(cls, parameters):
@@ -277,6 +281,11 @@ def _eval_type(t, globalns, localns):
         res = t.copy_with(ev_args)
         res._special = t._special
         return res
+    if isinstance(t, GenericAlias):
+        ev_args = tuple(_eval_type(a, globalns, localns) for a in t.__args__)
+        if ev_args == t.__args__:
+            return t
+        return GenericAlias(t.__origin__, ev_args)
     return t
 
 
@@ -299,41 +308,18 @@ class _Immutable:
         return self
 
 
-class _SpecialForm(_Final, _Immutable, _root=True):
-    """Internal indicator of special typing constructs.
-    See _doc instance attribute for specific docs.
-    """
+# Internal indicator of special typing constructs.
+# See __doc__ instance attribute for specific docs.
+class _SpecialForm(_Final, _root=True):
+    __slots__ = ('_name', '__doc__', '_getitem')
 
-    __slots__ = ('_name', '_doc')
+    def __init__(self, getitem):
+        self._getitem = getitem
+        self._name = getitem.__name__
+        self.__doc__ = getitem.__doc__
 
-    def __new__(cls, *args, **kwds):
-        """Constructor.
-
-        This only exists to give a better error message in case
-        someone tries to subclass a special typing object (not a good idea).
-        """
-        if (len(args) == 3 and
-                isinstance(args[0], str) and
-                isinstance(args[1], tuple)):
-            # Close enough.
-            raise TypeError(f"Cannot subclass {cls!r}")
-        return super().__new__(cls)
-
-    def __init__(self, name, doc):
-        self._name = name
-        self._doc = doc
-
-    @property
-    def __doc__(self):
-        return self._doc
-
-    def __eq__(self, other):
-        if not isinstance(other, _SpecialForm):
-            return NotImplemented
-        return self._name == other._name
-
-    def __hash__(self):
-        return hash((self._name,))
+    def __mro_entries__(self, bases):
+        raise TypeError(f"Cannot subclass {self!r}")
 
     def __repr__(self):
         return 'typing.' + self._name
@@ -352,31 +338,10 @@ class _SpecialForm(_Final, _Immutable, _root=True):
 
     @_tp_cache
     def __getitem__(self, parameters):
-        if self._name in ('ClassVar', 'Final'):
-            item = _type_check(parameters, f'{self._name} accepts only single type.')
-            return _GenericAlias(self, (item,))
-        if self._name == 'Union':
-            if parameters == ():
-                raise TypeError("Cannot take a Union of no types.")
-            if not isinstance(parameters, tuple):
-                parameters = (parameters,)
-            msg = "Union[arg, ...]: each arg must be a type."
-            parameters = tuple(_type_check(p, msg) for p in parameters)
-            parameters = _remove_dups_flatten(parameters)
-            if len(parameters) == 1:
-                return parameters[0]
-            return _GenericAlias(self, parameters)
-        if self._name == 'Optional':
-            arg = _type_check(parameters, "Optional[t] requires a single type.")
-            return Union[arg, type(None)]
-        if self._name == 'Literal':
-            # There is no '_type_check' call because arguments to Literal[...] are
-            # values, not types.
-            return _GenericAlias(self, parameters)
-        raise TypeError(f"{self} is not subscriptable")
+        return self._getitem(self, parameters)
 
-
-Any = _SpecialForm('Any', doc=
+@_SpecialForm
+def Any(self, parameters):
     """Special type indicating an unconstrained type.
 
     - Any is compatible with every type.
@@ -386,9 +351,11 @@ Any = _SpecialForm('Any', doc=
     Note that all the above statements are true from the point of view of
     static type checkers. At runtime, Any should not be used with instance
     or class checks.
-    """)
+    """
+    raise TypeError(f"{self} is not subscriptable")
 
-NoReturn = _SpecialForm('NoReturn', doc=
+@_SpecialForm
+def NoReturn(self, parameters):
     """Special type indicating functions that never return.
     Example::
 
@@ -399,9 +366,11 @@ NoReturn = _SpecialForm('NoReturn', doc=
 
     This type is invalid in other positions, e.g., ``List[NoReturn]``
     will fail in static type checkers.
-    """)
+    """
+    raise TypeError(f"{self} is not subscriptable")
 
-ClassVar = _SpecialForm('ClassVar', doc=
+@_SpecialForm
+def ClassVar(self, parameters):
     """Special type construct to mark class variables.
 
     An annotation wrapped in ClassVar indicates that a given
@@ -416,9 +385,12 @@ ClassVar = _SpecialForm('ClassVar', doc=
 
     Note that ClassVar is not a class itself, and should not
     be used with isinstance() or issubclass().
-    """)
+    """
+    item = _type_check(parameters, f'{self} accepts only single type.')
+    return _GenericAlias(self, (item,))
 
-Final = _SpecialForm('Final', doc=
+@_SpecialForm
+def Final(self, parameters):
     """Special typing construct to indicate final names to type checkers.
 
     A final name cannot be re-assigned or overridden in a subclass.
@@ -434,9 +406,12 @@ Final = _SpecialForm('Final', doc=
           TIMEOUT = 1  # Error reported by type checker
 
     There is no runtime checking of these properties.
-    """)
+    """
+    item = _type_check(parameters, f'{self} accepts only single type.')
+    return _GenericAlias(self, (item,))
 
-Union = _SpecialForm('Union', doc=
+@_SpecialForm
+def Union(self, parameters):
     """Union type; Union[X, Y] means either X or Y.
 
     To define a union, use e.g. Union[int, str].  Details:
@@ -461,15 +436,29 @@ Union = _SpecialForm('Union', doc=
 
     - You cannot subclass or instantiate a union.
     - You can use Optional[X] as a shorthand for Union[X, None].
-    """)
+    """
+    if parameters == ():
+        raise TypeError("Cannot take a Union of no types.")
+    if not isinstance(parameters, tuple):
+        parameters = (parameters,)
+    msg = "Union[arg, ...]: each arg must be a type."
+    parameters = tuple(_type_check(p, msg) for p in parameters)
+    parameters = _remove_dups_flatten(parameters)
+    if len(parameters) == 1:
+        return parameters[0]
+    return _GenericAlias(self, parameters)
 
-Optional = _SpecialForm('Optional', doc=
+@_SpecialForm
+def Optional(self, parameters):
     """Optional type.
 
     Optional[X] is equivalent to Union[X, None].
-    """)
+    """
+    arg = _type_check(parameters, f"{self} requires a single type.")
+    return Union[arg, type(None)]
 
-Literal = _SpecialForm('Literal', doc=
+@_SpecialForm
+def Literal(self, parameters):
     """Special typing form to define literal types (a.k.a. value types).
 
     This form can be used to indicate to type checkers that the corresponding
@@ -486,10 +475,13 @@ Literal = _SpecialForm('Literal', doc=
       open_helper('/some/path', 'r')  # Passes type check
       open_helper('/other/path', 'typo')  # Error in type checker
 
-   Literal[...] cannot be subclassed. At runtime, an arbitrary value
-   is allowed as type argument to Literal[...], but type checkers may
-   impose restrictions.
-    """)
+    Literal[...] cannot be subclassed. At runtime, an arbitrary value
+    is allowed as type argument to Literal[...], but type checkers may
+    impose restrictions.
+    """
+    # There is no '_type_check' call because arguments to Literal[...] are
+    # values, not types.
+    return _GenericAlias(self, parameters)
 
 
 class ForwardRef(_Final, _root=True):
@@ -699,6 +691,13 @@ class _GenericAlias(_Final, _root=True):
         return _GenericAlias(self.__origin__, params, name=self._name, inst=self._inst)
 
     def __repr__(self):
+        if (self.__origin__ == Union and len(self.__args__) == 2
+                and type(None) in self.__args__):
+            if self.__args__[0] is not type(None):
+                arg = self.__args__[0]
+            else:
+                arg = self.__args__[1]
+            return (f'typing.Optional[{_type_repr(arg)}]')
         if (self._name != 'Callable' or
                 len(self.__args__) == 2 and self.__args__[0] is Ellipsis):
             if self._name:
@@ -991,7 +990,7 @@ def _no_init(self, *args, **kwargs):
 
 
 def _allow_reckless_class_cheks():
-    """Allow instnance and class checks for special stdlib modules.
+    """Allow instance and class checks for special stdlib modules.
 
     The abc and functools modules indiscriminately call isinstance() and
     issubclass() on the whole MRO of a user class, which may contain protocols.
@@ -1384,6 +1383,11 @@ def _strip_annotations(t):
         res = t.copy_with(stripped_args)
         res._special = t._special
         return res
+    if isinstance(t, GenericAlias):
+        stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
+        if stripped_args == t.__args__:
+            return t
+        return GenericAlias(t.__origin__, stripped_args)
     return t
 
 
@@ -1403,7 +1407,7 @@ def get_origin(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return Annotated
-    if isinstance(tp, _GenericAlias):
+    if isinstance(tp, (_GenericAlias, GenericAlias)):
         return tp.__origin__
     if tp is Generic:
         return Generic
@@ -1423,11 +1427,13 @@ def get_args(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
-    if isinstance(tp, _GenericAlias):
+    if isinstance(tp, _GenericAlias) and not tp._special:
         res = tp.__args__
-        if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:
+        if tp.__origin__ is collections.abc.Callable and res[0] is not Ellipsis:
             res = (list(res[:-1]), res[-1])
         return res
+    if isinstance(tp, GenericAlias):
+        return tp.__args__
     return ()
 
 

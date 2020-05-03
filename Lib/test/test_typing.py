@@ -3,7 +3,7 @@ import collections
 import pickle
 import re
 import sys
-from unittest import TestCase, main, skipUnless, SkipTest, skip
+from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
 from typing import Any, NoReturn
@@ -22,7 +22,7 @@ from typing import NewType
 from typing import NamedTuple, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
-from typing import Annotated
+from typing import Annotated, ForwardRef
 import abc
 import typing
 import weakref
@@ -1750,17 +1750,23 @@ class GenericTests(BaseTestCase):
         self.assertEqual(repr(Union[Tuple, Tuple[int]]).replace('typing.', ''),
                          'Union[Tuple, Tuple[int]]')
         self.assertEqual(repr(Callable[..., Optional[T]][int]).replace('typing.', ''),
-                         'Callable[..., Union[int, NoneType]]')
+                         'Callable[..., Optional[int]]')
         self.assertEqual(repr(Callable[[], List[T]][int]).replace('typing.', ''),
                          'Callable[[], List[int]]')
 
     def test_generic_forward_ref(self):
         def foobar(x: List[List['CC']]): ...
+        def foobar2(x: list[list[ForwardRef('CC')]]): ...
         class CC: ...
         self.assertEqual(
             get_type_hints(foobar, globals(), locals()),
             {'x': List[List[CC]]}
         )
+        self.assertEqual(
+            get_type_hints(foobar2, globals(), locals()),
+            {'x': list[list[CC]]}
+        )
+
         T = TypeVar('T')
         AT = Tuple[T, ...]
         def barfoo(x: AT): ...
@@ -2446,6 +2452,12 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(get_type_hints(foo, globals(), locals()),
                          {'a': Tuple[T]})
 
+        def foo(a: tuple[ForwardRef('T')]):
+            pass
+
+        self.assertEqual(get_type_hints(foo, globals(), locals()),
+                         {'a': tuple[T]})
+
     def test_forward_recursion_actually(self):
         def namespace1():
             a = typing.ForwardRef('A')
@@ -2909,6 +2921,18 @@ class GetTypeHintTests(BaseTestCase):
             get_type_hints(foobar, globals(), locals(), include_extras=True),
             {'x': List[Annotated[int, (1, 10)]]}
         )
+
+        def foobar(x: list[ForwardRef('X')]): ...
+        X = Annotated[int, (1, 10)]
+        self.assertEqual(
+            get_type_hints(foobar, globals(), locals()),
+            {'x': list[int]}
+        )
+        self.assertEqual(
+            get_type_hints(foobar, globals(), locals(), include_extras=True),
+            {'x': list[Annotated[int, (1, 10)]]}
+        )
+
         BA = Tuple[Annotated[T, (1, 0)], ...]
         def barfoo(x: BA): ...
         self.assertEqual(get_type_hints(barfoo, globals(), locals())['x'], Tuple[T, ...])
@@ -2916,12 +2940,22 @@ class GetTypeHintTests(BaseTestCase):
             get_type_hints(barfoo, globals(), locals(), include_extras=True)['x'],
             BA
         )
+
+        BA = tuple[Annotated[T, (1, 0)], ...]
+        def barfoo(x: BA): ...
+        self.assertEqual(get_type_hints(barfoo, globals(), locals())['x'], tuple[T, ...])
+        self.assertIs(
+            get_type_hints(barfoo, globals(), locals(), include_extras=True)['x'],
+            BA
+        )
+
         def barfoo2(x: typing.Callable[..., Annotated[List[T], "const"]],
                     y: typing.Union[int, Annotated[T, "mutable"]]): ...
         self.assertEqual(
             get_type_hints(barfoo2, globals(), locals()),
             {'x': typing.Callable[..., List[T]], 'y': typing.Union[int, T]}
         )
+
         BA2 = typing.Callable[..., List[T]]
         def barfoo3(x: BA2): ...
         self.assertIs(
@@ -2972,6 +3006,11 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin(Generic[T]), Generic)
         self.assertIs(get_origin(List[Tuple[T, T]][int]), list)
         self.assertIs(get_origin(Annotated[T, 'thing']), Annotated)
+        self.assertIs(get_origin(List), list)
+        self.assertIs(get_origin(Tuple), tuple)
+        self.assertIs(get_origin(Callable), collections.abc.Callable)
+        self.assertIs(get_origin(list[int]), list)
+        self.assertIs(get_origin(list), None)
 
     def test_get_args(self):
         T = TypeVar('T')
@@ -2987,12 +3026,18 @@ class GetUtilitiesTestCase(TestCase):
                          (int, Tuple[str, int]))
         self.assertEqual(get_args(typing.Dict[int, Tuple[T, T]][Optional[int]]),
                          (int, Tuple[Optional[int], Optional[int]]))
-        self.assertEqual(get_args(Callable[[], T][int]), ([], int,))
+        self.assertEqual(get_args(Callable[[], T][int]), ([], int))
+        self.assertEqual(get_args(Callable[..., int]), (..., int))
         self.assertEqual(get_args(Union[int, Callable[[Tuple[T, ...]], str]]),
                          (int, Callable[[Tuple[T, ...]], str]))
         self.assertEqual(get_args(Tuple[int, ...]), (int, ...))
         self.assertEqual(get_args(Tuple[()]), ((),))
         self.assertEqual(get_args(Annotated[T, 'one', 2, ['three']]), (T, 'one', 2, ['three']))
+        self.assertEqual(get_args(List), ())
+        self.assertEqual(get_args(Tuple), ())
+        self.assertEqual(get_args(Callable), ())
+        self.assertEqual(get_args(list[int]), (int,))
+        self.assertEqual(get_args(list), ())
 
 
 class CollectionsAbcTests(BaseTestCase):

@@ -264,9 +264,15 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
         start_fd = keep_fd + 1;
     }
     if (start_fd <= end_fd) {
+#if defined(__FreeBSD__)
+        /* Any errors encountered while closing file descriptors are ignored */
+        closefrom(start_fd);
+#else
         for (fd_num = start_fd; fd_num < end_fd; ++fd_num) {
-            close(fd_num);
+            /* Ignore errors */
+            (void)close(fd_num);
         }
+#endif
     }
 }
 
@@ -654,6 +660,14 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     }
     if (_sanity_check_python_fd_sequence(py_fds_to_keep)) {
         PyErr_SetString(PyExc_ValueError, "bad value(s) in fds_to_keep");
+        return NULL;
+    }
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_isolated_interpreter) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "subprocess not supported for isolated subinterpreters");
         return NULL;
     }
 

@@ -2182,6 +2182,81 @@ bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
 
 /** End DALKE **/
 
+/*[clinic input]
+bytes.removeprefix as bytes_removeprefix
+
+    prefix: Py_buffer
+    /
+
+Return a bytes object with the given prefix string removed if present.
+
+If the bytes starts with the prefix string, return bytes[len(prefix):].
+Otherwise, return a copy of the original bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix)
+/*[clinic end generated code: output=f006865331a06ab6 input=0c93bac817a8502c]*/
+{
+    const char *self_start = PyBytes_AS_STRING(self);
+    Py_ssize_t self_len = PyBytes_GET_SIZE(self);
+    const char *prefix_start = prefix->buf;
+    Py_ssize_t prefix_len = prefix->len;
+
+    if (self_len >= prefix_len
+        && prefix_len > 0
+        && memcmp(self_start, prefix_start, prefix_len) == 0)
+    {
+        return PyBytes_FromStringAndSize(self_start + prefix_len,
+                                         self_len - prefix_len);
+    }
+
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+
+    return PyBytes_FromStringAndSize(self_start, self_len);
+}
+
+/*[clinic input]
+bytes.removesuffix as bytes_removesuffix
+
+    suffix: Py_buffer
+    /
+
+Return a bytes object with the given suffix string removed if present.
+
+If the bytes ends with the suffix string and that suffix is not empty,
+return bytes[:-len(prefix)].  Otherwise, return a copy of the original
+bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
+/*[clinic end generated code: output=d887d308e3242eeb input=9f4e1da8c637bbf1]*/
+{
+    const char *self_start = PyBytes_AS_STRING(self);
+    Py_ssize_t self_len = PyBytes_GET_SIZE(self);
+    const char *suffix_start = suffix->buf;
+    Py_ssize_t suffix_len = suffix->len;
+
+    if (self_len >= suffix_len
+        && suffix_len > 0
+        && memcmp(self_start + self_len - suffix_len,
+                  suffix_start, suffix_len) == 0)
+    {
+        return PyBytes_FromStringAndSize(self_start,
+                                         self_len - suffix_len);
+    }
+
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+
+    return PyBytes_FromStringAndSize(self_start, self_len);
+}
 
 static PyObject *
 bytes_startswith(PyBytesObject *self, PyObject *args)
@@ -2421,6 +2496,8 @@ bytes_methods[] = {
     BYTES_MAKETRANS_METHODDEF
     BYTES_PARTITION_METHODDEF
     BYTES_REPLACE_METHODDEF
+    BYTES_REMOVEPREFIX_METHODDEF
+    BYTES_REMOVESUFFIX_METHODDEF
     {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, _Py_rindex__doc__},
     STRINGLIB_RJUST_METHODDEF

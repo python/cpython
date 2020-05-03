@@ -1,6 +1,7 @@
 import ast
 import sys
 import unittest
+from test import support
 
 
 funcdef = """\

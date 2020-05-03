@@ -34,10 +34,13 @@ frame_getlocals(PyFrameObject *f, void *closure)
 int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
-    if (f->f_trace)
+    assert(f != NULL);
+    if (f->f_trace) {
         return f->f_lineno;
-    else
+    }
+    else {
         return PyCode_Addr2Line(f->f_code, f->f_lasti);
+    }
 }
 
 static PyObject *
@@ -66,263 +69,223 @@ get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
     return oparg;
 }
 
-typedef struct _codetracker {
-    unsigned char *code;
-    Py_ssize_t code_len;
-    unsigned char *lnotab;
-    Py_ssize_t lnotab_len;
-    int start_line;
-    int offset;
-    int line;
-    int addr;
-    int line_addr;
-} codetracker;
+typedef enum kind {
+    With = 1,
+    Loop = 2,
+    Try = 3,
+    Except = 4,
+} Kind;
 
-/* Reset the mutable parts of the tracker */
-static void
-reset(codetracker *tracker)
+#define BITS_PER_BLOCK 3
+
+static inline int64_t
+push_block(int64_t stack, Kind kind)
 {
-    tracker->offset = 0;
-    tracker->addr = 0;
-    tracker->line_addr = 0;
-    tracker->line = tracker->start_line;
+    assert(stack < ((int64_t)1)<<(BITS_PER_BLOCK*CO_MAXBLOCKS));
+    return (stack << BITS_PER_BLOCK) | kind;
 }
 
-/* Initialise the tracker */
-static void
-init_codetracker(codetracker *tracker, PyCodeObject *code_obj)
+static inline int64_t
+pop_block(int64_t stack)
 {
-    PyBytes_AsStringAndSize(code_obj->co_code,
-                            (char **)&tracker->code, &tracker->code_len);
-    PyBytes_AsStringAndSize(code_obj->co_lnotab,
-                            (char **)&tracker->lnotab, &tracker->lnotab_len);
-    tracker->start_line = code_obj->co_firstlineno;
-    reset(tracker);
+    assert(stack > 0);
+    return stack >> BITS_PER_BLOCK;
 }
 
-static void
-advance_tracker(codetracker *tracker)
+static inline Kind
+top_block(int64_t stack)
 {
-    tracker->addr += sizeof(_Py_CODEUNIT);
-    if (tracker->offset >= tracker->lnotab_len) {
-        return;
-    }
-    while (tracker->offset < tracker->lnotab_len &&
-           tracker->addr >= tracker->line_addr + tracker->lnotab[tracker->offset]) {
-        tracker->line_addr += tracker->lnotab[tracker->offset];
-        tracker->line += (signed char)tracker->lnotab[tracker->offset+1];
-        tracker->offset += 2;
-    }
+    return stack & ((1<<BITS_PER_BLOCK)-1);
 }
 
-
-static void
-retreat_tracker(codetracker *tracker)
+static int64_t *
+markblocks(PyCodeObject *code_obj, int len)
 {
-    tracker->addr -= sizeof(_Py_CODEUNIT);
-    while (tracker->addr < tracker->line_addr) {
-        tracker->offset -= 2;
-        tracker->line_addr -= tracker->lnotab[tracker->offset];
-        tracker->line -= (signed char)tracker->lnotab[tracker->offset+1];
+    const _Py_CODEUNIT *code =
+        (const _Py_CODEUNIT *)PyBytes_AS_STRING(code_obj->co_code);
+    int64_t *blocks = PyMem_New(int64_t, len+1);
+    int i, j, opcode;
+
+    if (blocks == NULL) {
+        PyErr_NoMemory();
+        return NULL;
     }
+    memset(blocks, -1, (len+1)*sizeof(int64_t));
+    blocks[0] = 0;
+    int todo = 1;
+    while (todo) {
+        todo = 0;
+        for (i = 0; i < len; i++) {
+            int64_t block_stack = blocks[i];
+            int64_t except_stack;
+            if (block_stack == -1) {
+                continue;
+            }
+            opcode = _Py_OPCODE(code[i]);
+            switch (opcode) {
+                case JUMP_IF_FALSE_OR_POP:
+                case JUMP_IF_TRUE_OR_POP:
+                case POP_JUMP_IF_FALSE:
+                case POP_JUMP_IF_TRUE:
+                case JUMP_IF_NOT_EXC_MATCH:
+                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT);
+                    assert(j < len);
+                    if (blocks[j] == -1 && j < i) {
+                        todo = 1;
+                    }
+                    assert(blocks[j] == -1 || blocks[j] == block_stack);
+                    blocks[j] = block_stack;
+                    blocks[i+1] = block_stack;
+                    break;
+                case JUMP_ABSOLUTE:
+                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT);
+                    assert(j < len);
+                    if (blocks[j] == -1 && j < i) {
+                        todo = 1;
+                    }
+                    assert(blocks[j] == -1 || blocks[j] == block_stack);
+                    blocks[j] = block_stack;
+                    break;
+                case SETUP_FINALLY:
+                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    assert(j < len);
+                    except_stack = push_block(block_stack, Except);
+                    assert(blocks[j] == -1 || blocks[j] == except_stack);
+                    blocks[j] = except_stack;
+                    block_stack = push_block(block_stack, Try);
+                    blocks[i+1] = block_stack;
+                    break;
+                case SETUP_WITH:
+                case SETUP_ASYNC_WITH:
+                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    assert(j < len);
+                    except_stack = push_block(block_stack, Except);
+                    assert(blocks[j] == -1 || blocks[j] == except_stack);
+                    blocks[j] = except_stack;
+                    block_stack = push_block(block_stack, With);
+                    blocks[i+1] = block_stack;
+                    break;
+                case JUMP_FORWARD:
+                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    assert(j < len);
+                    assert(blocks[j] == -1 || blocks[j] == block_stack);
+                    blocks[j] = block_stack;
+                    break;
+                case GET_ITER:
+                case GET_AITER:
+                    block_stack = push_block(block_stack, Loop);
+                    blocks[i+1] = block_stack;
+                    break;
+                case FOR_ITER:
+                    blocks[i+1] = block_stack;
+                    block_stack = pop_block(block_stack);
+                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    assert(j < len);
+                    assert(blocks[j] == -1 || blocks[j] == block_stack);
+                    blocks[j] = block_stack;
+                    break;
+                case POP_BLOCK:
+                case POP_EXCEPT:
+                    block_stack = pop_block(block_stack);
+                    blocks[i+1] = block_stack;
+                    break;
+                case END_ASYNC_FOR:
+                    block_stack = pop_block(pop_block(block_stack));
+                    blocks[i+1] = block_stack;
+                    break;
+                case RETURN_VALUE:
+                case RAISE_VARARGS:
+                case RERAISE:
+                    /* End of block */
+                    break;
+                default:
+                    blocks[i+1] = block_stack;
+
+            }
+        }
+    }
+    return blocks;
 }
 
 static int
-move_to_addr(codetracker *tracker, int addr)
+compatible_block_stack(int64_t from_stack, int64_t to_stack)
 {
-    while (addr > tracker->addr) {
-        advance_tracker(tracker);
-        if (tracker->addr >= tracker->code_len) {
-            return -1;
-        }
+    if (to_stack < 0) {
+        return 0;
     }
-    while (addr < tracker->addr) {
-        retreat_tracker(tracker);
-        if (tracker->addr < 0) {
-            return -1;
-        }
+    while(from_stack > to_stack) {
+        from_stack = pop_block(from_stack);
     }
-    return 0;
+    return from_stack == to_stack;
+}
+
+static const char *
+explain_incompatible_block_stack(int64_t to_stack)
+{
+    Kind target_kind = top_block(to_stack);
+    switch(target_kind) {
+        case Except:
+            return "can't jump into an 'except' block as there's no exception";
+        case Try:
+            return "can't jump into the body of a try statement";
+        case With:
+            return "can't jump into the body of a with statement";
+        case Loop:
+            return "can't jump into the body of a for loop";
+        default:
+            Py_UNREACHABLE();
+    }
+}
+
+static int *
+marklines(PyCodeObject *code, int len)
+{
+    int *linestarts = PyMem_New(int, len);
+    if (linestarts == NULL) {
+        return NULL;
+    }
+    Py_ssize_t size = PyBytes_GET_SIZE(code->co_lnotab) / 2;
+    unsigned char *p = (unsigned char*)PyBytes_AS_STRING(code->co_lnotab);
+    int line = code->co_firstlineno;
+    int addr = 0;
+    int index = 0;
+    while (--size >= 0) {
+        addr += *p++;
+        if (index*2 < addr) {
+            linestarts[index++] = line;
+        }
+        while (index*2 < addr) {
+            linestarts[index++] = -1;
+            if (index >= len) {
+                break;
+            }
+        }
+        line += (signed char)*p;
+        p++;
+    }
+    if (index < len) {
+        linestarts[index++] = line;
+    }
+    while (index < len) {
+        linestarts[index++] = -1;
+    }
+    assert(index == len);
+    return linestarts;
 }
 
 static int
-first_line_not_before(codetracker *tracker, int line)
+first_line_not_before(int *lines, int len, int line)
 {
     int result = INT_MAX;
-    reset(tracker);
-    while (tracker->addr < tracker->code_len) {
-        if (tracker->line == line) {
-            return line;
+    for (int i = 0; i < len; i++) {
+        if (lines[i] < result && lines[i] >= line) {
+            result = lines[i];
         }
-        if (tracker->line > line && tracker->line < result) {
-            result = tracker->line;
-        }
-        advance_tracker(tracker);
     }
     if (result == INT_MAX) {
         return -1;
     }
     return result;
-}
-
-static int
-move_to_nearest_start_of_line(codetracker *tracker, int line)
-{
-    if (line > tracker->line) {
-        while (line != tracker->line) {
-            advance_tracker(tracker);
-            if (tracker->addr >= tracker->code_len) {
-                return -1;
-            }
-        }
-    }
-    else {
-        while (line != tracker->line) {
-            retreat_tracker(tracker);
-            if (tracker->addr < 0) {
-                return -1;
-            }
-        }
-        while (tracker->addr > tracker->line_addr) {
-            retreat_tracker(tracker);
-        }
-    }
-    return 0;
-}
-
-typedef struct _blockitem
-{
-    unsigned char kind;
-    int end_addr;
-    int start_line;
-} blockitem;
-
-typedef struct _blockstack
-{
-    blockitem stack[CO_MAXBLOCKS];
-    int depth;
-} blockstack;
-
-
-static void
-init_blockstack(blockstack *blocks)
-{
-    blocks->depth = 0;
-}
-
-static void
-push_block(blockstack *blocks, unsigned char kind,
-           int end_addr, int start_line)
-{
-    assert(blocks->depth < CO_MAXBLOCKS);
-    blocks->stack[blocks->depth].kind = kind;
-    blocks->stack[blocks->depth].end_addr = end_addr;
-    blocks->stack[blocks->depth].start_line = start_line;
-    blocks->depth++;
-}
-
-static unsigned char
-pop_block(blockstack *blocks)
-{
-    assert(blocks->depth > 0);
-    blocks->depth--;
-    return blocks->stack[blocks->depth].kind;
-}
-
-static blockitem *
-top_block(blockstack *blocks)
-{
-    assert(blocks->depth > 0);
-    return &blocks->stack[blocks->depth-1];
-}
-
-static inline int
-is_try_except(unsigned char op, int target_op)
-{
-    return op == SETUP_FINALLY && (target_op == DUP_TOP || target_op == POP_TOP);
-}
-
-static inline int
-is_async_for(unsigned char op, int target_op)
-{
-    return op == SETUP_FINALLY && target_op == END_ASYNC_FOR;
-}
-
-static inline int
-is_try_finally(unsigned char op, int target_op)
-{
-    return op == SETUP_FINALLY && !is_try_except(op, target_op) && !is_async_for(op, target_op);
-}
-
-/* Kind for finding except blocks in the jump to line code */
-#define TRY_EXCEPT 250
-
-static int
-block_stack_for_line(codetracker *tracker, int line, blockstack *blocks)
-{
-    if (line < tracker->start_line) {
-        return -1;
-    }
-    init_blockstack(blocks);
-    reset(tracker);
-    while (tracker->addr < tracker->code_len) {
-        if (tracker->line == line) {
-            return 0;
-        }
-        if (blocks->depth > 0 && tracker->addr == top_block(blocks)->end_addr) {
-            unsigned char kind = pop_block(blocks);
-            assert(kind != SETUP_FINALLY);
-            if (kind == TRY_EXCEPT) {
-                push_block(blocks, POP_EXCEPT, -1, tracker->line);
-            }
-            if (kind == SETUP_WITH || kind == SETUP_ASYNC_WITH) {
-                push_block(blocks, WITH_EXCEPT_START, -1, tracker->line);
-            }
-        }
-        unsigned char op = tracker->code[tracker->addr];
-        if (op == SETUP_FINALLY || op == SETUP_ASYNC_WITH || op == SETUP_WITH || op == FOR_ITER) {
-            unsigned int oparg = get_arg((const _Py_CODEUNIT *)tracker->code,
-                                        tracker->addr / sizeof(_Py_CODEUNIT));
-            int target_addr = tracker->addr + oparg + sizeof(_Py_CODEUNIT);
-            int target_op = tracker->code[target_addr];
-            if (is_async_for(op, target_op)) {
-                push_block(blocks, FOR_ITER, target_addr, tracker->line);
-            }
-            else if (op == FOR_ITER) {
-                push_block(blocks, FOR_ITER, target_addr-sizeof(_Py_CODEUNIT), tracker->line);
-            }
-            else if (is_try_except(op, target_op)) {
-                push_block(blocks, TRY_EXCEPT, target_addr-sizeof(_Py_CODEUNIT), tracker->line);
-            }
-            else if (is_try_finally(op, target_op)) {
-                int addr = tracker->addr;
-                // Skip over duplicate 'finally' blocks if line is after body.
-                move_to_addr(tracker, target_addr);
-                if (tracker->line > line) {
-                    // Target is in body, rewind to start.
-                    move_to_addr(tracker, addr);
-                    push_block(blocks, op, target_addr, tracker->line);
-                }
-                else {
-                    // Now in finally block.
-                    push_block(blocks, RERAISE, -1, tracker->line);
-                }
-            }
-            else {
-                push_block(blocks, op, target_addr, tracker->line);
-            }
-        }
-        else if (op == RERAISE) {
-            assert(blocks->depth > 0);
-            unsigned char kind = top_block(blocks)->kind;
-            if (kind == RERAISE || kind == WITH_EXCEPT_START || kind == POP_EXCEPT) {
-                pop_block(blocks);
-            }
-
-        }
-        advance_tracker(tracker);
-    }
-    return -1;
 }
 
 static void
@@ -409,131 +372,110 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-
-    codetracker tracker;
-    init_codetracker(&tracker, f->f_code);
-    move_to_addr(&tracker, f->f_lasti);
-    int current_line = tracker.line;
-    assert(current_line >= 0);
     int new_lineno;
 
-    {
-        /* Fail if the line falls outside the code block and
-           select first line with actual code. */
-        int overflow;
-        long l_new_lineno = PyLong_AsLongAndOverflow(p_new_lineno, &overflow);
-        if (overflow
+    /* Fail if the line falls outside the code block and
+        select first line with actual code. */
+    int overflow;
+    long l_new_lineno = PyLong_AsLongAndOverflow(p_new_lineno, &overflow);
+    if (overflow
 #if SIZEOF_LONG > SIZEOF_INT
-            || l_new_lineno > INT_MAX
-            || l_new_lineno < INT_MIN
+        || l_new_lineno > INT_MAX
+        || l_new_lineno < INT_MIN
 #endif
-        ) {
-            PyErr_SetString(PyExc_ValueError,
-                            "lineno out of range");
-            return -1;
-        }
-        new_lineno = (int)l_new_lineno;
-
-        if (new_lineno < f->f_code->co_firstlineno) {
-            PyErr_Format(PyExc_ValueError,
-                        "line %d comes before the current code block",
-                        new_lineno);
-            return -1;
-        }
-
-        new_lineno = first_line_not_before(&tracker, new_lineno);
-        if (new_lineno < 0) {
-            PyErr_Format(PyExc_ValueError,
-                        "line %d comes after the current code block",
-                        (int)l_new_lineno);
-            return -1;
-        }
-    }
-
-    if (tracker.code[f->f_lasti] == YIELD_VALUE || tracker.code[f->f_lasti] == YIELD_FROM) {
+    ) {
         PyErr_SetString(PyExc_ValueError,
-                "can't jump from a 'yield' statement");
+                        "lineno out of range");
+        return -1;
+    }
+    new_lineno = (int)l_new_lineno;
+
+    if (new_lineno < f->f_code->co_firstlineno) {
+        PyErr_Format(PyExc_ValueError,
+                    "line %d comes before the current code block",
+                    new_lineno);
         return -1;
     }
 
-    /* Find block stack for current line and target line. */
-    blockstack current_stack, new_stack;
-    block_stack_for_line(&tracker, new_lineno, &new_stack);
-    block_stack_for_line(&tracker, current_line, &current_stack);
-
-    /* The trace function is called with a 'return' trace event after the
-     * execution of a yield statement. */
-    if (tracker.code[tracker.addr] == DUP_TOP || tracker.code[tracker.addr] == POP_TOP) {
-        PyErr_SetString(PyExc_ValueError,
-            "can't jump to 'except' line as there's no exception");
+    int len = PyBytes_GET_SIZE(f->f_code->co_code)/sizeof(_Py_CODEUNIT);
+    int *lines = marklines(f->f_code, len);
+    if (lines == NULL) {
         return -1;
     }
 
-    /* Validate change of block stack. */
-    if (new_stack.depth > 0) {
-        blockitem *current_block_at_new_depth = &(current_stack.stack[new_stack.depth-1]);
-        if (new_stack.depth > current_stack.depth ||
-            top_block(&new_stack)->start_line != current_block_at_new_depth->start_line) {
-            unsigned char target_kind = top_block(&new_stack)->kind;
-            const char *msg;
-            if (target_kind == POP_EXCEPT) {
-                msg = "can't jump into an 'except' block as there's no exception";
-            }
-            else if (target_kind == RERAISE) {
-                msg = "can't jump into a 'finally' block";
-            }
-            else {
-                msg = "can't jump into the middle of a block";
-            }
-            PyErr_SetString(PyExc_ValueError, msg);
-            return -1;
-        }
+    new_lineno = first_line_not_before(lines, len, new_lineno);
+    if (new_lineno < 0) {
+        PyErr_Format(PyExc_ValueError,
+                    "line %d comes after the current code block",
+                    (int)l_new_lineno);
+        PyMem_Free(lines);
+        return -1;
     }
 
-    /* Check for illegal jumps out of finally or except blocks. */
-    for (int depth = new_stack.depth; depth < current_stack.depth; depth++) {
-        switch(current_stack.stack[depth].kind) {
-        case RERAISE:
-            PyErr_SetString(PyExc_ValueError,
-                "can't jump out of a 'finally' block");
-            return -1;
-        case POP_EXCEPT:
-            PyErr_SetString(PyExc_ValueError,
-                "can't jump out of an 'except' block");
-            return -1;
+    int64_t *blocks = markblocks(f->f_code, len);
+    if (blocks == NULL) {
+        PyMem_Free(lines);
+        return -1;
+    }
+
+    int64_t target_block_stack = -1;
+    int64_t best_block_stack = -1;
+    int best_addr = -1;
+    int64_t start_block_stack = blocks[f->f_lasti/sizeof(_Py_CODEUNIT)];
+    const char *msg = "cannot find bytecode for specified line";
+    for (int i = 0; i < len; i++) {
+        if (lines[i] == new_lineno) {
+            target_block_stack = blocks[i];
+            if (compatible_block_stack(start_block_stack, target_block_stack)) {
+                msg = NULL;
+                if (target_block_stack > best_block_stack) {
+                    best_block_stack = target_block_stack;
+                    best_addr = i*sizeof(_Py_CODEUNIT);
+                }
+            }
+            else if (msg) {
+                if (target_block_stack >= 0) {
+                    msg = explain_incompatible_block_stack(target_block_stack);
+                }
+                else {
+                    msg = "code may be unreachable.";
+                }
+            }
         }
+    }
+    PyMem_Free(blocks);
+    PyMem_Free(lines);
+    if (msg != NULL) {
+        PyErr_SetString(PyExc_ValueError, msg);
+        return -1;
     }
 
     /* Unwind block stack. */
-    while (current_stack.depth > new_stack.depth) {
-        unsigned char kind = pop_block(&current_stack);
+    while (start_block_stack > best_block_stack) {
+        Kind kind = top_block(start_block_stack);
         switch(kind) {
-        case FOR_ITER:
+        case Loop:
             frame_stack_pop(f);
             break;
-        case SETUP_FINALLY:
-        case TRY_EXCEPT:
+        case Try:
             frame_block_unwind(f);
             break;
-        case SETUP_WITH:
-        case SETUP_ASYNC_WITH:
+        case With:
             frame_block_unwind(f);
             // Pop the exit function
             frame_stack_pop(f);
             break;
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                "unexpected block kind");
+        case Except:
+            PyErr_SetString(PyExc_ValueError,
+                "can't jump out of an 'except' block");
             return -1;
         }
+        start_block_stack = pop_block(start_block_stack);
     }
-
-    move_to_addr(&tracker, f->f_lasti);
-    move_to_nearest_start_of_line(&tracker, new_lineno);
 
     /* Finally set the new f_lineno and f_lasti and return OK. */
     f->f_lineno = new_lineno;
-    f->f_lasti = tracker.addr;
+    f->f_lasti = best_addr;
     return 0;
 }
 
@@ -662,12 +604,18 @@ frame_dealloc(PyFrameObject *f)
     Py_TRASHCAN_SAFE_END(f)
 }
 
+static inline Py_ssize_t
+frame_nslots(PyFrameObject *frame)
+{
+    PyCodeObject *code = frame->f_code;
+    return (code->co_nlocals
+            + PyTuple_GET_SIZE(code->co_cellvars)
+            + PyTuple_GET_SIZE(code->co_freevars));
+}
+
 static int
 frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
-    PyObject **fastlocals, **p;
-    Py_ssize_t i, slots;
-
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_code);
     Py_VISIT(f->f_builtins);
@@ -676,15 +624,16 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     Py_VISIT(f->f_trace);
 
     /* locals */
-    slots = f->f_code->co_nlocals + PyTuple_GET_SIZE(f->f_code->co_cellvars) + PyTuple_GET_SIZE(f->f_code->co_freevars);
-    fastlocals = f->f_localsplus;
-    for (i = slots; --i >= 0; ++fastlocals)
+    PyObject **fastlocals = f->f_localsplus;
+    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
         Py_VISIT(*fastlocals);
+    }
 
     /* stack */
     if (f->f_stacktop != NULL) {
-        for (p = f->f_valuestack; p < f->f_stacktop; p++)
+        for (PyObject **p = f->f_valuestack; p < f->f_stacktop; p++) {
             Py_VISIT(*p);
+        }
     }
     return 0;
 }
@@ -692,30 +641,28 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 static int
 frame_tp_clear(PyFrameObject *f)
 {
-    PyObject **fastlocals, **p, **oldtop;
-    Py_ssize_t i, slots;
-
     /* Before anything else, make sure that this frame is clearly marked
      * as being defunct!  Else, e.g., a generator reachable from this
      * frame may also point to this frame, believe itself to still be
      * active, and try cleaning up this frame again.
      */
-    oldtop = f->f_stacktop;
+    PyObject **oldtop = f->f_stacktop;
     f->f_stacktop = NULL;
     f->f_executing = 0;
 
     Py_CLEAR(f->f_trace);
 
     /* locals */
-    slots = f->f_code->co_nlocals + PyTuple_GET_SIZE(f->f_code->co_cellvars) + PyTuple_GET_SIZE(f->f_code->co_freevars);
-    fastlocals = f->f_localsplus;
-    for (i = slots; --i >= 0; ++fastlocals)
+    PyObject **fastlocals = f->f_localsplus;
+    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
         Py_CLEAR(*fastlocals);
+    }
 
     /* stack */
     if (oldtop != NULL) {
-        for (p = f->f_valuestack; p < oldtop; p++)
+        for (PyObject **p = f->f_valuestack; p < oldtop; p++) {
             Py_CLEAR(*p);
+        }
     }
     return 0;
 }
@@ -744,10 +691,10 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t res, extras, ncells, nfrees;
 
-    ncells = PyTuple_GET_SIZE(f->f_code->co_cellvars);
-    nfrees = PyTuple_GET_SIZE(f->f_code->co_freevars);
-    extras = f->f_code->co_stacksize + f->f_code->co_nlocals +
-             ncells + nfrees;
+    PyCodeObject *code = f->f_code;
+    ncells = PyTuple_GET_SIZE(code->co_cellvars);
+    nfrees = PyTuple_GET_SIZE(code->co_freevars);
+    extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
     /* subtract one as it is already included in PyFrameObject */
     res = sizeof(PyFrameObject) + (extras-1) * sizeof(PyObject *);
 
@@ -761,9 +708,10 @@ static PyObject *
 frame_repr(PyFrameObject *f)
 {
     int lineno = PyFrame_GetLineNumber(f);
+    PyCodeObject *code = f->f_code;
     return PyUnicode_FromFormat(
         "<frame at %p, file %R, line %d, code %S>",
-        f, f->f_code->co_filename, lineno, f->f_code->co_name);
+        f, code->co_filename, lineno, code->co_name);
 }
 
 static PyMethodDef frame_methods[] = {
@@ -936,6 +884,8 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     f->f_gen = NULL;
     f->f_trace_opcodes = 0;
     f->f_trace_lines = 1;
+
+    assert(f->f_code != NULL);
 
     return f;
 }
@@ -1189,11 +1139,9 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 }
 
 /* Clear out the free list */
-int
-PyFrame_ClearFreeList(void)
+void
+_PyFrame_ClearFreeList(void)
 {
-    int freelist_size = numfree;
-
     while (free_list != NULL) {
         PyFrameObject *f = free_list;
         free_list = free_list->f_back;
@@ -1201,13 +1149,12 @@ PyFrame_ClearFreeList(void)
         --numfree;
     }
     assert(numfree == 0);
-    return freelist_size;
 }
 
 void
 _PyFrame_Fini(void)
 {
-    (void)PyFrame_ClearFreeList();
+    _PyFrame_ClearFreeList();
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -1219,3 +1166,23 @@ _PyFrame_DebugMallocStats(FILE *out)
                            numfree, sizeof(PyFrameObject));
 }
 
+
+PyCodeObject *
+PyFrame_GetCode(PyFrameObject *frame)
+{
+    assert(frame != NULL);
+    PyCodeObject *code = frame->f_code;
+    assert(code != NULL);
+    Py_INCREF(code);
+    return code;
+}
+
+
+PyFrameObject*
+PyFrame_GetBack(PyFrameObject *frame)
+{
+    assert(frame != NULL);
+    PyFrameObject *back = frame->f_back;
+    Py_XINCREF(back);
+    return back;
+}

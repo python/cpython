@@ -30,6 +30,7 @@ import unittest
 import uuid
 import warnings
 from test import support
+from test.support import socket_helper
 from platform import win32_is_iot
 
 try:
@@ -2789,40 +2790,66 @@ class PidTests(unittest.TestCase):
         # We are the parent of our subprocess
         self.assertEqual(int(stdout), os.getpid())
 
-    def test_waitpid(self):
-        args = [sys.executable, '-c', 'pass']
-        # Add an implicit test for PyUnicode_FSConverter().
-        pid = os.spawnv(os.P_NOWAIT, FakePath(args[0]), args)
-        support.wait_process(pid, exitcode=0)
+    def check_waitpid(self, code, exitcode, callback=None):
+        if sys.platform == 'win32':
+            # On Windows, os.spawnv() simply joins arguments with spaces:
+            # arguments need to be quoted
+            args = [f'"{sys.executable}"', '-c', f'"{code}"']
+        else:
+            args = [sys.executable, '-c', code]
+        pid = os.spawnv(os.P_NOWAIT, sys.executable, args)
 
-    def test_waitstatus_to_exitcode(self):
-        exitcode = 23
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+        if callback is not None:
+            callback(pid)
 
-        with open(filename, "w") as fp:
-            print(f'import sys; sys.exit({exitcode})', file=fp)
-            fp.flush()
-        args = [sys.executable, filename]
-        pid = os.spawnv(os.P_NOWAIT, args[0], args)
-
+        # don't use support.wait_process() to test directly os.waitpid()
+        # and os.waitstatus_to_exitcode()
         pid2, status = os.waitpid(pid, 0)
         self.assertEqual(os.waitstatus_to_exitcode(status), exitcode)
         self.assertEqual(pid2, pid)
 
+    def test_waitpid(self):
+        self.check_waitpid(code='pass', exitcode=0)
+
+    def test_waitstatus_to_exitcode(self):
+        exitcode = 23
+        code = f'import sys; sys.exit({exitcode})'
+        self.check_waitpid(code, exitcode=exitcode)
+
+        with self.assertRaises(TypeError):
+            os.waitstatus_to_exitcode(0.0)
+
+    @unittest.skipUnless(sys.platform == 'win32', 'win32-specific test')
+    def test_waitpid_windows(self):
+        # bpo-40138: test os.waitpid() and os.waitstatus_to_exitcode()
+        # with exit code larger than INT_MAX.
+        STATUS_CONTROL_C_EXIT = 0xC000013A
+        code = f'import _winapi; _winapi.ExitProcess({STATUS_CONTROL_C_EXIT})'
+        self.check_waitpid(code, exitcode=STATUS_CONTROL_C_EXIT)
+
+    @unittest.skipUnless(sys.platform == 'win32', 'win32-specific test')
+    def test_waitstatus_to_exitcode_windows(self):
+        max_exitcode = 2 ** 32 - 1
+        for exitcode in (0, 1, 5, max_exitcode):
+            self.assertEqual(os.waitstatus_to_exitcode(exitcode << 8),
+                             exitcode)
+
+        # invalid values
+        with self.assertRaises(ValueError):
+            os.waitstatus_to_exitcode((max_exitcode + 1) << 8)
+        with self.assertRaises(OverflowError):
+            os.waitstatus_to_exitcode(-1)
+
     # Skip the test on Windows
     @unittest.skipUnless(hasattr(signal, 'SIGKILL'), 'need signal.SIGKILL')
     def test_waitstatus_to_exitcode_kill(self):
+        code = f'import time; time.sleep({support.LONG_TIMEOUT})'
         signum = signal.SIGKILL
-        args = [sys.executable, '-c',
-                f'import time; time.sleep({support.LONG_TIMEOUT})']
-        pid = os.spawnv(os.P_NOWAIT, args[0], args)
 
-        os.kill(pid, signum)
+        def kill_process(pid):
+            os.kill(pid, signum)
 
-        pid2, status = os.waitpid(pid, 0)
-        self.assertEqual(os.waitstatus_to_exitcode(status), -signum)
-        self.assertEqual(pid2, pid)
+        self.check_waitpid(code, exitcode=-signum, callback=kill_process)
 
 
 class SpawnTests(unittest.TestCase):
@@ -2882,6 +2909,10 @@ class SpawnTests(unittest.TestCase):
     def test_spawnv(self):
         args = self.create_args()
         exitcode = os.spawnv(os.P_WAIT, args[0], args)
+        self.assertEqual(exitcode, self.exitcode)
+
+        # Test for PyUnicode_FSConverter()
+        exitcode = os.spawnv(os.P_WAIT, FakePath(args[0]), args)
         self.assertEqual(exitcode, self.exitcode)
 
     @requires_os_func('spawnve')
@@ -3141,7 +3172,7 @@ class TestSendfile(unittest.TestCase):
         support.unlink(support.TESTFN)
 
     def setUp(self):
-        self.server = SendfileTestServer((support.HOST, 0))
+        self.server = SendfileTestServer((socket_helper.HOST, 0))
         self.server.start()
         self.client = socket.socket()
         self.client.connect((self.server.host, self.server.port))

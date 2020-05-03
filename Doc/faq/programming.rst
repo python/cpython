@@ -851,10 +851,11 @@ For integers, use the built-in :func:`int` type constructor, e.g. ``int('144')
 e.g. ``float('144') == 144.0``.
 
 By default, these interpret the number as decimal, so that ``int('0144') ==
-144`` and ``int('0x144')`` raises :exc:`ValueError`. ``int(string, base)`` takes
-the base to convert from as a second optional argument, so ``int('0x144', 16) ==
-324``.  If the base is specified as 0, the number is interpreted using Python's
-rules: a leading '0o' indicates octal, and '0x' indicates a hex number.
+144`` holds true, and ``int('0x144')`` raises :exc:`ValueError`. ``int(string,
+base)`` takes the base to convert from as a second optional argument, so ``int(
+'0x144', 16) == 324``.  If the base is specified as 0, the number is interpreted
+using Python's rules: a leading '0o' indicates octal, and '0x' indicates a hex
+number.
 
 Do not use the built-in function :func:`eval` if all you need is to convert
 strings to numbers.  :func:`eval` will be significantly slower and it presents a
@@ -1494,8 +1495,8 @@ to uppercase::
 
 Here the ``UpperOut`` class redefines the ``write()`` method to convert the
 argument string to uppercase before calling the underlying
-``self.__outfile.write()`` method.  All other methods are delegated to the
-underlying ``self.__outfile`` object.  The delegation is accomplished via the
+``self._outfile.write()`` method.  All other methods are delegated to the
+underlying ``self._outfile`` object.  The delegation is accomplished via the
 ``__getattr__`` method; consult :ref:`the language reference <attribute-access>`
 for more information about controlling attribute access.
 

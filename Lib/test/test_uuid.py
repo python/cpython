@@ -6,8 +6,6 @@ import copy
 import io
 import os
 import pickle
-import shutil
-import subprocess
 import sys
 import weakref
 from unittest import mock
