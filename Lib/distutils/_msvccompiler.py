@@ -227,6 +227,7 @@ class MSVCCompiler(CCompiler) :
         self.cc = _find_exe("cl.exe", paths)
         self.linker = _find_exe("link.exe", paths)
         self.lib = _find_exe("lib.exe", paths)
+        self.nmake = _find_exe("nmake.exe", paths)
         self.rc = _find_exe("rc.exe", paths)   # resource compiler
         self.mc = _find_exe("mc.exe", paths)   # message compiler
         self.mt = _find_exe("mt.exe", paths)   # message compiler
