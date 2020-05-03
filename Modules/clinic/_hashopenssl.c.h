@@ -174,7 +174,7 @@ PyDoc_STRVAR(EVP_new__doc__,
     {"new", (PyCFunction)(void(*)(void))EVP_new, METH_FASTCALL|METH_KEYWORDS, EVP_new__doc__},
 
 static PyObject *
-EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
+EVP_new_impl(PyObject *module, const char *name, PyObject *data_obj,
              int usedforsecurity);
 
 static PyObject *
@@ -185,7 +185,7 @@ EVP_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     static _PyArg_Parser _parser = {NULL, _keywords, "new", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    PyObject *name_obj;
+    const char *name;
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
@@ -193,7 +193,19 @@ EVP_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     if (!args) {
         goto exit;
     }
-    name_obj = args[0];
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("new", "argument 'name'", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -212,7 +224,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = EVP_new_impl(module, name_obj, data_obj, usedforsecurity);
+    return_value = EVP_new_impl(module, name, data_obj, usedforsecurity);
 
 exit:
     return return_value;
@@ -1417,4 +1429,4 @@ exit:
 #ifndef _HASHLIB_GET_FIPS_MODE_METHODDEF
     #define _HASHLIB_GET_FIPS_MODE_METHODDEF
 #endif /* !defined(_HASHLIB_GET_FIPS_MODE_METHODDEF) */
-/*[clinic end generated code: output=2bbd6159493f44ea input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e83693a065569ca6 input=a9049054013a1b77]*/
