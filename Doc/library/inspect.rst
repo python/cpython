@@ -559,7 +559,7 @@ The Signature object represents the call signature of a callable object and its
 return annotation.  To retrieve a Signature object, use the :func:`signature`
 function.
 
-.. function:: signature(callable, \*, follow_wrapped=True)
+.. function:: signature(callable, \*, follow_wrapped=True, resolve_type_hints=False)
 
    Return a :class:`Signature` object for the given ``callable``::
 
@@ -587,6 +587,9 @@ function.
    A slash(/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
    :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
+
+   .. versionadded:: 3.9
+      ``resolve_type_hints`` parameter. Pass ``True`` to resolve the type annotations.
 
    .. versionadded:: 3.5
       ``follow_wrapped`` parameter. Pass ``False`` to get a signature of
@@ -671,7 +674,7 @@ function.
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
-   .. classmethod:: Signature.from_callable(obj, \*, follow_wrapped=True)
+   .. classmethod:: Signature.from_callable(obj, \*, follow_wrapped=True, resolve_type_hints=False)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
        ``obj``.  Pass ``follow_wrapped=False`` to get a signature of ``obj``
@@ -683,6 +686,9 @@ function.
              pass
          sig = MySignature.from_callable(min)
          assert isinstance(sig, MySignature)
+
+       .. versionadded:: 3.9
+          ``resolve_type_hints`` parameter. Pass ``True`` to resolve the type annotations.
 
        .. versionadded:: 3.5
 

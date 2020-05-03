@@ -1,0 +1,1 @@
+Add option to resolve annotation strings when creating a inspect.Signature from function/callable.
