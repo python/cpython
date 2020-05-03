@@ -1,0 +1,2 @@
+Accept :class:`pathlib.Path` in the ``ddir``, ``stripdir`` and ``prependdir``
+arguments of :meth:`compileall.compile_file` and :meth:`compileall.compile_dir`.
