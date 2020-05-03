@@ -512,11 +512,9 @@ throw_here:
     }
 
     PyErr_Restore(typ, val, tb);
-    /* XXX Should we also handle the case where exc_type is true and
-       exc_value is false? */
-    if (gen->gi_exc_state.exc_type && gen->gi_exc_state.exc_value) {
+    if (gen->gi_exc_state.exc_type) {
         Py_INCREF(gen->gi_exc_state.exc_type);
-        Py_INCREF(gen->gi_exc_state.exc_value);
+        Py_XINCREF(gen->gi_exc_state.exc_value);
         Py_XINCREF(gen->gi_exc_state.exc_traceback);
         _PyErr_ChainExceptions(gen->gi_exc_state.exc_type,
             gen->gi_exc_state.exc_value, gen->gi_exc_state.exc_traceback);

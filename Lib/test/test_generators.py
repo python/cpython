@@ -332,6 +332,25 @@ class GeneratorThrowTest(unittest.TestCase):
         context = cm.exception.__context__
         self.assertEqual((type(context), context.args), (KeyError, ('a',)))
 
+    def test_throw_after_none_exc_type(self):
+        def g():
+            try:
+                raise KeyError
+            except KeyError:
+                pass
+
+            try:
+                yield
+            except Exception:
+                # This line causes a crash ("Segmentation fault (core dumped)")
+                # on e.g. Fedora 32.
+                raise RuntimeError
+
+        gen = g()
+        gen.send(None)
+        with self.assertRaises(RuntimeError) as cm:
+            gen.throw(ValueError)
+
 
 class YieldFromTests(unittest.TestCase):
     def test_generator_gi_yieldfrom(self):
