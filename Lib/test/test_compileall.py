@@ -11,6 +11,7 @@ import tempfile
 import time
 import unittest
 import io
+import filecmp
 
 from unittest import mock, skipUnless
 try:
@@ -359,6 +360,234 @@ class CompileallTestsBase:
 
         self.assertTrue(os.path.isfile(allowed_bc))
         self.assertFalse(os.path.isfile(prohibited_bc))
+
+    def test_hardlink_deduplication_bad_args(self):
+        # Bad arguments combination, hardlink deduplication make sense
+        # only for more than one optimization level
+        with self.assertRaises(ValueError):
+            compileall.compile_dir(self.directory, quiet=True, optimize=0,
+                                   hardlink_dupes=True)
+
+    def test_hardlink_deduplication_same_bytecode_all_opt(self):
+        # 'a = 0' produces the same bytecode for all optimization levels
+        path = os.path.join(self.directory, "test", "same_all")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path, "test_same_bytecode",
+                                                  "a = 0")
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
+                               hardlink_dupes=True)
+
+        # import pdb; pdb.set_trace()
+
+        # All three files should have the same inode (hardlinks)
+        self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        for pyc_file in {pyc_opt0, pyc_opt1, pyc_opt2}:
+            os.unlink(pyc_file)
+
+        compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
+                               hardlink_dupes=False)
+
+        # Deduplication disabled, all pyc files should have different inodes
+        self.assertNotEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+    def test_hardlink_deduplication_same_bytecode_some_opt(self):
+        # 'a = 0' produces the same bytecode for all optimization levels
+        # only two levels of optimization [0, 1] tested
+        path = os.path.join(self.directory, "test", "same_some")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path, "test_same_bytecode",
+                                                  "a = 0")
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        compileall.compile_dir(path, quiet=True, optimize=[0, 2],
+                               hardlink_dupes=True)
+
+        # Both files should have the same inode (hardlink)
+        self.assertEqual(os.stat(pyc_opt0).st_ino,  os.stat(pyc_opt2).st_ino)
+
+        for pyc_file in {pyc_opt0, pyc_opt2}:
+            os.unlink(pyc_file)
+
+        compileall.compile_dir(path, quiet=True, force=True, optimize=[0, 2],
+                               hardlink_dupes=False)
+
+        # Deduplication disabled, both pyc files should have different inodes
+        self.assertNotEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt2).st_ino)
+
+    def test_hardlink_deduplication_same_bytecode_some_opt_2(self):
+        # 'a = 0' produces the same bytecode for all optimization levels
+        path = os.path.join(self.directory, "test", "same_some_2")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path, "test_same_bytecode",
+                                                  "a = 0")
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        compileall.compile_dir(path, quiet=True, optimize=[1, 2],
+                               hardlink_dupes=True)
+
+        # Both files should have the same inode (hardlinks)
+        self.assertEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        for pyc_file in {pyc_opt1, pyc_opt2}:
+            os.unlink(pyc_file)
+
+        compileall.compile_dir(path, quiet=True, optimize=[1, 2])
+
+        # Deduplication disabled, all pyc files should have different inodes
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+    def test_hardlink_deduplication_different_bytecode_all_opt(self):
+        # "'''string'''\nassert 1" produces a different bytecode for
+        # all optimization levels
+        path = os.path.join(self.directory, "test", "different_all")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(
+            path, "test_different_bytecode", "'''string'''\nassert 1"
+        )
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
+                               hardlink_dupes=True)
+
+        # No hardlinks, bytecodes are different
+        self.assertNotEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        for pyc_file in {pyc_opt0, pyc_opt1, pyc_opt2}:
+            os.unlink(pyc_file)
+
+        compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
+                               hardlink_dupes=False)
+
+        # Disabling hardlink deduplication makes no difference
+        self.assertNotEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+    def test_hardlink_deduplication_different_bytecode_one_hardlink(self):
+        # "'''string'''\na = 1" produces the same bytecode only
+        # for level 0 and 1
+        path = os.path.join(self.directory, "test", "different_one")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(
+            path, "test_different_bytecode", "'''string'''\na = 1"
+        )
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
+                               hardlink_dupes=True)
+
+        # Only level 0 and 1 has the same inode, level 2 produces
+        # a different bytecode
+        self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        for pyc_file in {pyc_opt0, pyc_opt1, pyc_opt2}:
+            os.unlink(pyc_file)
+
+        compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
+                               hardlink_dupes=False)
+
+        # Deduplication disabled, no hardlinks
+        self.assertNotEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+    def test_hardlink_deduplication_recompilation(self):
+        path = os.path.join(self.directory, "test", "module_change")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path, "module_change",
+                                                  "a = 0")
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
+                               hardlink_dupes=True)
+
+        # All three levels have the same inode
+        self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        previous_inode = os.stat(pyc_opt0).st_ino
+
+        # Change of the module content
+        simple_script = script_helper.make_script(path, "module_change",
+                                                  "print(0)")
+
+        # Recompilation without -o 1
+        compileall.compile_dir(path, force=True, quiet=True, optimize=[0, 2],
+                               hardlink_dupes=True)
+
+        # opt-1.pyc should have the same inode as before and others should not
+        self.assertEqual(previous_inode, os.stat(pyc_opt1).st_ino)
+        self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt2).st_ino)
+        self.assertNotEqual(previous_inode, os.stat(pyc_opt2).st_ino)
+        # opt-1.pyc and opt-2.pyc have different content
+        self.assertFalse(filecmp.cmp(pyc_opt1, pyc_opt2, shallow=True))
+
+    def test_hardlink_deduplication_import(self):
+        path = os.path.join(self.directory, "test", "module_import")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path, "module", "a = 0")
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
+                               hardlink_dupes=True)
+
+        # All three levels have the same inode
+        self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        previous_inode = os.stat(pyc_opt0).st_ino
+
+        # Change of the module content
+        simple_script = script_helper.make_script(path, "module", "print(0)")
+
+        # Import the module in Python
+        script_helper.assert_python_ok(
+            "-O", "-c", "import module", __isolated=False, PYTHONPATH=path
+        )
+
+        # Only opt-1.pyc is changed
+        self.assertEqual(previous_inode, os.stat(pyc_opt0).st_ino)
+        self.assertEqual(previous_inode, os.stat(pyc_opt2).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+        # opt-1.pyc and opt-2.pyc have different content
+        self.assertFalse(filecmp.cmp(pyc_opt1, pyc_opt2, shallow=True))
 
 
 class CompileallTestsWithSourceEpoch(CompileallTestsBase,
@@ -824,6 +1053,223 @@ class CommandLineTestsBase:
 
         self.assertTrue(os.path.isfile(allowed_bc))
         self.assertFalse(os.path.isfile(prohibited_bc))
+
+    def test_hardlink_deduplication_bad_args(self):
+        # Bad arguments combination, hardlink deduplication make sense
+        # only for more than one optimization level
+        self.assertRunNotOK(self.directory, "-o 1", "--hardlink_dupes")
+
+    def test_hardlink_deduplication_same_bytecode_all_opt(self):
+        # 'a = 0' produces the same bytecode for all optimization levels
+        path = os.path.join(self.directory, "test", "same_all")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path, "test_same_bytecode",
+                                                  "a = 0")
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        self.assertRunOK(path, "-q", "-o 0", "-o 1", "-o 2",
+                         "--hardlink-dupes")
+
+        # All three files should have the same inode (hardlinks)
+        self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        for pyc_file in {pyc_opt0, pyc_opt1, pyc_opt2}:
+            os.unlink(pyc_file)
+
+        self.assertRunOK(path, "-q", "-o 0", "-o 1", "-o 2")
+
+        # Deduplication disabled, all pyc files should have different inodes
+        self.assertNotEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+    def test_hardlink_deduplication_same_bytecode_some_opt(self):
+        # 'a = 0' produces the same bytecode for all optimization levels
+        # only two levels of optimization [0, 1] tested
+        path = os.path.join(self.directory, "test", "same_some")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path, "test_same_bytecode",
+                                                  "a = 0")
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        self.assertRunOK(path, "-q", "-o 0", "-o 2", "--hardlink-dupes")
+
+        # Both files should have the same inode (hardlink)
+        self.assertEqual(os.stat(pyc_opt0).st_ino,  os.stat(pyc_opt2).st_ino)
+
+        for pyc_file in {pyc_opt0, pyc_opt2}:
+            os.unlink(pyc_file)
+
+        self.assertRunOK(path, "-q", "-o 0", "-o 2")
+
+        # Deduplication disabled, both pyc files should have different inodes
+        self.assertNotEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt2).st_ino)
+
+    def test_hardlink_deduplication_same_bytecode_some_opt_2(self):
+        # 'a = 0' produces the same bytecode for all optimization levels
+        path = os.path.join(self.directory, "test", "same_some_2")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path, "test_same_bytecode",
+                                                  "a = 0")
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        self.assertRunOK(path, "-q", "-o 1", "-o 2", "--hardlink-dupes")
+
+        # Both files should have the same inode (hardlinks)
+        self.assertEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        for pyc_file in {pyc_opt1, pyc_opt2}:
+            os.unlink(pyc_file)
+
+        self.assertRunOK(path, "-q", "-o 1", "-o 2")
+
+        # Deduplication disabled, all pyc files should have different inodes
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+    def test_hardlink_deduplication_different_bytecode_all_opt(self):
+        # "'''string'''\nassert 1" produces a different bytecode for
+        # all optimization levels
+        path = os.path.join(self.directory, "test", "different_all")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path,
+                                                  "test_different_bytecode",
+                                                  "'''string'''\nassert 1")
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        self.assertRunOK(path, "-q", "-o 0", "-o 1", "-o 2",
+                         "--hardlink-dupes")
+
+        # No hardlinks, bytecodes are different
+        self.assertNotEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        for pyc_file in {pyc_opt0, pyc_opt1, pyc_opt2}:
+            os.unlink(pyc_file)
+
+        self.assertRunOK(path, "-q", "-o 0", "-o 1", "-o 2")
+
+        # Disabling hardlink deduplication makes no difference
+        self.assertNotEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+    def test_hardlink_deduplication_different_bytecode_one_hardlink(self):
+        # "'''string'''\na = 1" produces the same bytecode only
+        # for level 0 and 1
+        path = os.path.join(self.directory, "test", "different_one")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(
+            path, "test_different_bytecode", "'''string'''\na = 1"
+        )
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        self.assertRunOK(path, "-q", "-o 0", "-o 1", "-o 2",
+                         "--hardlink-dupes")
+
+        # Only level 0 and 1 has the same inode, level 2 produces
+        # a different bytecode
+        self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        for pyc_file in {pyc_opt0, pyc_opt1, pyc_opt2}:
+            os.unlink(pyc_file)
+
+        self.assertRunOK(path, "-q", "-o 0", "-o 1", "-o 2")
+
+        # Deduplication disabled, no hardlinks
+        self.assertNotEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+    def test_hardlink_deduplication_recompilation(self):
+        path = os.path.join(self.directory, "test", "module_change")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path, "module_change",
+                                                  "a = 0")
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        self.assertRunOK(path, "-f", "-q", "-o 0", "-o 1", "-o 2",
+                         "--hardlink-dupes")
+
+        # All three levels have the same inode
+        self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        previous_inode = os.stat(pyc_opt0).st_ino
+
+        # Change of the module content
+        simple_script = script_helper.make_script(path, "module_change",
+                                                  "print(0)")
+
+        # Recompilation without -o 1
+        self.assertRunOK(path, "-f", "-q", "-o 0", "-o 2", "--hardlink-dupes")
+
+        # opt-1.pyc should have the same inode as before and others should not
+        self.assertEqual(previous_inode, os.stat(pyc_opt1).st_ino)
+        self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt2).st_ino)
+        self.assertNotEqual(previous_inode, os.stat(pyc_opt2).st_ino)
+        # opt-1.pyc and opt-2.pyc have different content
+        self.assertFalse(filecmp.cmp(pyc_opt1, pyc_opt2, shallow=True))
+
+    def test_hardlink_deduplication_import(self):
+        path = os.path.join(self.directory, "test", "module_import")
+        os.makedirs(path)
+
+        simple_script = script_helper.make_script(path, "module", "a = 0")
+        pyc_opt0 = importlib.util.cache_from_source(simple_script)
+        pyc_opt1 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=1)
+        pyc_opt2 = importlib.util.cache_from_source(simple_script,
+                                                    optimization=2)
+
+        self.assertRunOK(path, "-f", "-q", "-o 0", "-o 1", "-o 2",
+                         "--hardlink-dupes")
+
+        # All three levels have the same inode
+        self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
+        self.assertEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+
+        previous_inode = os.stat(pyc_opt0).st_ino
+
+        # Change of the module content
+        simple_script = script_helper.make_script(path, "module", "print(0)")
+
+        # Import the module in Python
+        script_helper.assert_python_ok(
+            "-O", "-c", "import module", __isolated=False, PYTHONPATH=path
+        )
+
+        # Only opt-1.pyc is changed
+        self.assertEqual(previous_inode, os.stat(pyc_opt0).st_ino)
+        self.assertEqual(previous_inode, os.stat(pyc_opt2).st_ino)
+        self.assertNotEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
+        # opt-1.pyc and opt-2.pyc have different content
+        self.assertFalse(filecmp.cmp(pyc_opt1, pyc_opt2, shallow=True))
 
 
 class CommandLineTestsWithSourceEpoch(CommandLineTestsBase,
