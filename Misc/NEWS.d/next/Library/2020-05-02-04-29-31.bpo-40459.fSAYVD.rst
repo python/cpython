@@ -1,1 +1,1 @@
-Fix :exc:`NameError` caused from :func:`platform.win32_ver`.
+:func:`platform.win32_ver` now produces correct *ptype* strings instead of empty strings.
