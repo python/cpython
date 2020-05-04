@@ -1140,8 +1140,8 @@ calls these functions.
       *timeout* was added.
 
 
-.. function:: check_output(args, *, check=True, stdin=None, stderr=None, \
-                           shell=False, cwd=None, encoding=None, errors=None, \
+.. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
+                           cwd=None, encoding=None, errors=None, \
                            universal_newlines=None, timeout=None, text=None)
 
    Run command with arguments and return its output.
