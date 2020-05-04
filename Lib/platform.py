@@ -400,7 +400,7 @@ def win32_ver(release='', version='', csd='', ptype=''):
             cvkey = r'SOFTWARE\Microsoft\Windows NT\CurrentVersion'
             with winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, cvkey) as key:
                 ptype = winreg.QueryValueEx(key, 'CurrentType')[0]
-        except:
+        except OSError:
             pass
 
     return release, version, csd, ptype
