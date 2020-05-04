@@ -498,6 +498,8 @@ Waiting Primitives
    set concurrently and block until the condition specified
    by *return_when*.
 
+   The *aws* set must not be empty.
+
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
    Usage::
