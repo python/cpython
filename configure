@@ -658,6 +658,7 @@ LIBFFI_INCLUDEDIR
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
 PKG_CONFIG
+TZPATH
 SHLIBS
 CFLAGSFORSHARED
 LINKFORSHARED
@@ -819,6 +820,7 @@ with_assertions
 enable_optimizations
 with_lto
 with_hash_algorithm
+with_tzpath
 with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
@@ -1524,6 +1526,9 @@ Optional Packages:
   --with-hash-algorithm=[fnv|siphash24]
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash24)
+  --with-tzpath=<list of absolute paths separated by pathsep>
+                           Select the default time zone search path for zoneinfo.TZPATH
+
   --with-address-sanitizer
                           enable AddressSanitizer memory error detector,
                           'asan' (default is no)
@@ -10148,6 +10153,47 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: default" >&5
 $as_echo "default" >&6; }
 fi
+
+
+validate_tzpath() {
+    # Checks that each element of hte path is an absolute path
+    if test -z "$1"; then
+        # Empty string is allowed: it indicates no system TZPATH
+        return 0
+    fi
+
+    # Bad paths are those that don't start with /
+        if ( echo $1 | grep -qE '(^|:)([^/]|$)' ); then
+        as_fn_error $? "--with-tzpath must contain only absolute paths, not $1" "$LINENO" 5
+        return 1;
+    fi
+}
+
+TZPATH="/usr/share/zoneinfo:/usr/lib/zoneinfo:/usr/share/lib/zoneinfo:/etc/zoneinfo"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-tzpath" >&5
+$as_echo_n "checking for --with-tzpath... " >&6; }
+
+# Check whether --with-tzpath was given.
+if test "${with_tzpath+set}" = set; then :
+  withval=$with_tzpath;
+case "$withval" in
+    yes)
+        as_fn_error $? "--with-tzpath requires a value" "$LINENO" 5
+        ;;
+    *)
+        validate_tzpath "$withval"
+        TZPATH="$withval"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$withval\"" >&5
+$as_echo "\"$withval\"" >&6; }
+        ;;
+esac
+
+else
+  validate_tzpath "$TZPATH"
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$TZPATH\"" >&5
+$as_echo "\"$TZPATH\"" >&6; }
+fi
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-address-sanitizer" >&5

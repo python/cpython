@@ -48,6 +48,7 @@ jobs:
         ./python -m venv .venv
         source ./.venv/bin/activate
         python -m pip install -U coverage
+        python -m pip install -r Misc/requirements-test.txt
         python -m test.pythoninfo
     - name: 'Tests with coverage'
       run: >
