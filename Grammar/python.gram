@@ -41,7 +41,7 @@ type_expressions[asdl_seq*]:
     | a=','.expression+ ',' '*' b=expression { _PyPegen_seq_append_to_end(p, a, b) }
     | a=','.expression+ ',' '**' b=expression { _PyPegen_seq_append_to_end(p, a, b) }
     | '*' a=expression ',' '**' b=expression {
-        _PyPegen_seq_append_to_end(p, _PyPegen_singleton_seq(p, a), b) }
+        _PyPegen_seq_append_to_end(p, CHECK(_PyPegen_singleton_seq(p, a)), b) }
     | '*' a=expression { _PyPegen_singleton_seq(p, a) }
     | '**' a=expression { _PyPegen_singleton_seq(p, a) }
     | ','.expression+
