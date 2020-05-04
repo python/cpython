@@ -6306,7 +6306,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
         stack[1] = other; \
         r = vectorcall_maybe(tstate, &op_id, stack, 2); \
         if (r != Py_NotImplemented || \
-            Py_TYPE(other) == Py_TYPE(self)) \
+            Py_IS_TYPE(other, Py_TYPE(self))) \
             return r; \
         Py_DECREF(r); \
     } \
