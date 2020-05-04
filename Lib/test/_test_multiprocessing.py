@@ -3860,7 +3860,9 @@ class _TestSharedMemory(BaseTestCase):
         sms.close()
 
     def test_shared_memory_across_processes(self):
-        sms = shared_memory.SharedMemory('test02_tsmap', True, size=512)
+        # bpo-40135: don't define shared memory block's name in case of
+        # the failure when we run multiprocessing tests in parallel.
+        sms = shared_memory.SharedMemory(create=True, size=512)
         self.addCleanup(sms.unlink)
 
         # Verify remote attachment to existing block by name is working.
