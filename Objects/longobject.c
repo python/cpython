@@ -2852,7 +2852,8 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
 {
     Py_ssize_t a_size, a_bits, shift_digits, shift_bits, x_size;
     /* See below for why x_digits is always large enough. */
-    digit rem, x_digits[2 + (DBL_MANT_DIG + 1) / PyLong_SHIFT];
+    digit rem;
+    digit x_digits[2 + (DBL_MANT_DIG + 1) / PyLong_SHIFT] = {0,};
     double dx;
     /* Correction term for round-half-to-even rounding.  For a digit x,
        "x + half_even_correction[x & 7]" gives x rounded to the nearest
@@ -2902,9 +2903,7 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
     if (a_bits <= DBL_MANT_DIG + 2) {
         shift_digits = (DBL_MANT_DIG + 2 - a_bits) / PyLong_SHIFT;
         shift_bits = (DBL_MANT_DIG + 2 - a_bits) % PyLong_SHIFT;
-        x_size = 0;
-        while (x_size < shift_digits)
-            x_digits[x_size++] = 0;
+        x_size = shift_digits;
         rem = v_lshift(x_digits + x_size, a->ob_digit, a_size,
                        (int)shift_bits);
         x_size += a_size;

@@ -137,7 +137,6 @@ static int
 set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     setentry *table;
-    setentry *freeslot;
     setentry *entry;
     size_t perturb;
     size_t mask;
@@ -158,7 +157,6 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     if (entry->key == NULL)
         goto found_unused;
 
-    freeslot = NULL;
     perturb = hash;
 
     while (1) {
@@ -187,14 +185,12 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                 goto restart;
             mask = so->mask;                 /* help avoid a register spill */
         }
-        else if (entry->hash == -1)
-            freeslot = entry;
 
         if (i + LINEAR_PROBES <= mask) {
             for (j = 0 ; j < LINEAR_PROBES ; j++) {
                 entry++;
                 if (entry->hash == 0 && entry->key == NULL)
-                    goto found_unused_or_dummy;
+                    goto found_unused;
                 if (entry->hash == hash) {
                     PyObject *startkey = entry->key;
                     assert(startkey != dummy);
@@ -216,8 +212,6 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                         goto restart;
                     mask = so->mask;
                 }
-                else if (entry->hash == -1)
-                    freeslot = entry;
             }
         }
 
@@ -226,16 +220,8 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 
         entry = &so->table[i];
         if (entry->key == NULL)
-            goto found_unused_or_dummy;
+            goto found_unused;
     }
-
-  found_unused_or_dummy:
-    if (freeslot == NULL)
-        goto found_unused;
-    so->used++;
-    freeslot->key = key;
-    freeslot->hash = hash;
-    return 0;
 
   found_unused:
     so->fill++;
@@ -257,8 +243,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 
 /*
 Internal routine used by set_table_resize() to insert an item which is
-known to be absent from the set.  This routine also assumes that
-the set contains no deleted entries.  Besides the performance benefit,
+known to be absent from the set.  Besides the performance benefit,
 there is also safety benefit since using set_add_entry() risks making
 a callback in the middle of a set_table_resize(), see issue 1456209.
 The caller is responsible for updating the key's reference count and

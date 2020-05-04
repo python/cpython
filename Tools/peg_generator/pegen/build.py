@@ -1,12 +1,11 @@
 import pathlib
 import shutil
 import tokenize
-import sys
 import sysconfig
 import tempfile
 import itertools
 
-from typing import Optional, Tuple, List, IO, Iterator, Set, Dict
+from typing import Optional, Tuple, List, IO, Set, Dict
 
 from pegen.c_generator import CParserGenerator
 from pegen.grammar import Grammar

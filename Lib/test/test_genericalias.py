@@ -41,6 +41,8 @@ import typing
 
 from typing import TypeVar
 T = TypeVar('T')
+K = TypeVar('K')
+V = TypeVar('V')
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
@@ -170,10 +172,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a.__parameters__, ())
 
     def test_parameters(self):
-        from typing import TypeVar
-        T = TypeVar('T')
-        K = TypeVar('K')
-        V = TypeVar('V')
+        from typing import List, Dict, Callable
         D0 = dict[str, int]
         self.assertEqual(D0.__args__, (str, int))
         self.assertEqual(D0.__parameters__, ())
@@ -195,14 +194,43 @@ class BaseTest(unittest.TestCase):
         L1 = list[T]
         self.assertEqual(L1.__args__, (T,))
         self.assertEqual(L1.__parameters__, (T,))
+        L2 = list[list[T]]
+        self.assertEqual(L2.__args__, (list[T],))
+        self.assertEqual(L2.__parameters__, (T,))
+        L3 = list[List[T]]
+        self.assertEqual(L3.__args__, (List[T],))
+        self.assertEqual(L3.__parameters__, (T,))
+        L4a = list[Dict[K, V]]
+        self.assertEqual(L4a.__args__, (Dict[K, V],))
+        self.assertEqual(L4a.__parameters__, (K, V))
+        L4b = list[Dict[T, int]]
+        self.assertEqual(L4b.__args__, (Dict[T, int],))
+        self.assertEqual(L4b.__parameters__, (T,))
+        L5 = list[Callable[[K, V], K]]
+        self.assertEqual(L5.__args__, (Callable[[K, V], K],))
+        self.assertEqual(L5.__parameters__, (K, V))
 
     def test_parameter_chaining(self):
-        from typing import TypeVar
-        T = TypeVar('T')
+        from typing import List, Dict, Union, Callable
         self.assertEqual(list[T][int], list[int])
         self.assertEqual(dict[str, T][int], dict[str, int])
         self.assertEqual(dict[T, int][str], dict[str, int])
+        self.assertEqual(dict[K, V][str, int], dict[str, int])
         self.assertEqual(dict[T, T][int], dict[int, int])
+
+        self.assertEqual(list[list[T]][int], list[list[int]])
+        self.assertEqual(list[dict[T, int]][str], list[dict[str, int]])
+        self.assertEqual(list[dict[str, T]][int], list[dict[str, int]])
+        self.assertEqual(list[dict[K, V]][str, int], list[dict[str, int]])
+        self.assertEqual(dict[T, list[int]][str], dict[str, list[int]])
+
+        self.assertEqual(list[List[T]][int], list[List[int]])
+        self.assertEqual(list[Dict[K, V]][str, int], list[Dict[str, int]])
+        self.assertEqual(list[Union[K, V]][str, int], list[Union[str, int]])
+        self.assertEqual(list[Callable[[K, V], K]][str, int],
+                         list[Callable[[str, int], str]])
+        self.assertEqual(dict[T, List[int]][str], dict[str, List[int]])
+
         with self.assertRaises(TypeError):
             list[int][int]
             dict[T, int][str, int]
@@ -255,7 +283,6 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a.__parameters__, ())
 
     def test_union_generic(self):
-        T = typing.TypeVar('T')
         a = typing.Union[list[T], tuple[T, ...]]
         self.assertEqual(a.__args__, (list[T], tuple[T, ...]))
         self.assertEqual(a.__parameters__, (T,))

@@ -334,9 +334,6 @@ tokenizer_error(Parser *p)
         case E_IDENTIFIER:
             msg = "invalid character in identifier";
             break;
-        case E_BADPREFIX:
-            RAISE_SYNTAX_ERROR("invalid string prefix");
-            return -1;
         case E_EOFS:
             RAISE_SYNTAX_ERROR("EOF while scanning triple-quoted string literal");
             return -1;
@@ -389,6 +386,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number, const ch
     Token *t = p->tokens[p->fill - 1];
     Py_ssize_t col_number = !with_col_number;
     va_list va;
+    p->error_indicator = 1;
 
     va_start(va, errmsg);
     errstr = PyUnicode_FromFormatV(errmsg, va);
@@ -906,7 +904,7 @@ _PyPegen_number_token(Parser *p)
 
     if (p->feature_version < 6 && strchr(num_raw, '_') != NULL) {
         p->error_indicator = 1;
-        return RAISE_SYNTAX_ERROR("Underscores in numeric literals are only supported"
+        return RAISE_SYNTAX_ERROR("Underscores in numeric literals are only supported "
                                   "in Python 3.6 and greater");
     }
 
