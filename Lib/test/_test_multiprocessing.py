@@ -4394,9 +4394,11 @@ class _TestPollEintr(BaseTestCase):
 #
 
 class SlowPicklable:
+    def __init__(self, event):
+        self.event = event
+
     def __reduce__(self):
-        from time import sleep
-        sleep(1)
+        self.event.wait()
         return (SlowPicklable, ())
 
 
@@ -4417,9 +4419,9 @@ class TestInvalidHandle(unittest.TestCase):
         self.assertRaises((ValueError, OSError),
                           multiprocessing.connection.Connection, -1)
 
-    def race_condition(self, parent):
+    def race_condition(self, parent, event):
         try:
-            parent.send(SlowPicklable())
+            parent.send(SlowPicklable(event))
         except Exception as e:
             # It's not possible to mark a test failed in a thread so we send
             # the exception back to the main thread.
@@ -4430,9 +4432,11 @@ class TestInvalidHandle(unittest.TestCase):
     def test_closed_handled(self):
         parent, child = multiprocessing.Pipe()
 
-        t = threading.Thread(target=self.race_condition, args=(parent,))
+        e = threading.Event()
+        t = threading.Thread(target=self.race_condition, args=(parent, e))
         t.start()
         parent.close()
+        e.set()
         t.join()
         self.assertIsInstance(self.exc, OSError)
         self.assertEqual(str(self.exc), "handle is closed")
