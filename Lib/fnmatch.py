@@ -136,13 +136,10 @@ def translate(pat):
     res = []
     add = res.append
     i, n = 0, len(inp)
-    # Fixed piece at the start?
-    fixed = []
+    # Fixed pieces at the start?
     while i < n and inp[i] is not STAR:
         add(inp[i])
         i += 1
-    if fixed:
-        add("".join(fixed))
     # Now deal with STAR fixed STAR fixed ...
     # For an interior `STAR fixed` pairing, we want to do a minimal
     # .*? match followed by `fixed`, with no possibility of backtracking.
