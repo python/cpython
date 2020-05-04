@@ -43,6 +43,8 @@ struct _ceval_state {
        the fast path in the eval loop. */
     _Py_atomic_int eval_breaker;
     struct _pending_calls pending;
+    /* Request for checking signals. */
+    _Py_atomic_int signals_pending;
 };
 
 
