@@ -807,6 +807,8 @@ class PyBuildExt(build_ext):
         # uses modf().
         self.add(Extension('_datetime', ['_datetimemodule.c'],
                            libraries=['m']))
+        # zoneinfo module
+        self.add(Extension('_czoneinfo', ['zoneinfomodule.c'])),
         # random number generator implemented in C
         self.add(Extension("_random", ["_randommodule.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
