@@ -1,0 +1,2 @@
+Fix ``--outfile`` for :mod:`cProfile` / :mod:`profile` when the program being
+profiled changes the working directory - by Anthony Sottile.
