@@ -1,10 +1,9 @@
 #!/usr/bin/env python3.8
 
 import argparse
-import collections
 import pprint
 import sys
-from typing import Optional, Set, Dict
+from typing import Set, Dict
 
 from pegen.build import build_parser
 from pegen.grammar import (

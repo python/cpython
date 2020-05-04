@@ -4,7 +4,6 @@ import argparse
 import ast
 import os
 import sys
-import tempfile
 import time
 import traceback
 from glob import glob

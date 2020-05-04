@@ -1,6 +1,6 @@
 import ast
 import re
-from typing import Any, cast, Dict, IO, Optional, List, Text, Tuple, Set
+from typing import Any, Dict, IO, Optional, List, Text, Tuple, Set
 
 from pegen.grammar import (
     Cut,
