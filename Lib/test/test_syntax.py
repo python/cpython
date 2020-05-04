@@ -681,6 +681,7 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("del f()", "delete")
         self._check_error("del 1", "delete")
         self._check_error("del *x", "delete")
+        self._check_error("del x, f()", "delete")
 
     def test_global_param_err_first(self):
         source = """if 1:
