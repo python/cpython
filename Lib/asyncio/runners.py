@@ -39,7 +39,7 @@ def run(main, *, debug=False):
     loop = events.new_event_loop()
     try:
         events.set_event_loop(loop)
-        loop.set_debug(debug)
+        loop.set_debug(debug or coroutines._DEBUG)
         return loop.run_until_complete(main)
     finally:
         try:
