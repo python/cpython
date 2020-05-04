@@ -1609,9 +1609,6 @@ err_input(perrdetail *err)
     case E_BADSINGLE:
         msg = "multiple statements found while compiling a single statement";
         break;
-    case E_BADPREFIX:
-        msg = "invalid string prefix";
-        break;
     default:
         fprintf(stderr, "error=%d\n", err->error);
         msg = "unknown parsing error";
