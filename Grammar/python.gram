@@ -40,6 +40,10 @@ type_expressions[asdl_seq*]:
         _PyPegen_seq_append_to_end(p, CHECK(_PyPegen_seq_append_to_end(p, a, b)), c) }
     | a=','.expression+ ',' '*' b=expression { _PyPegen_seq_append_to_end(p, a, b) }
     | a=','.expression+ ',' '**' b=expression { _PyPegen_seq_append_to_end(p, a, b) }
+    | '*' a=expression ',' '**' b=expression {
+        _PyPegen_seq_append_to_end(p, CHECK(_PyPegen_singleton_seq(p, a)), b) }
+    | '*' a=expression { _PyPegen_singleton_seq(p, a) }
+    | '**' a=expression { _PyPegen_singleton_seq(p, a) }
     | ','.expression+
 
 statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
