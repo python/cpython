@@ -162,13 +162,13 @@ class ProcessTestCase(BaseTestCase):
                 [sys.executable, "-c", "print('BDFL')"])
         self.assertIn(b'BDFL', output)
 
-        # check_output should accept all keyword-arguments: bpo-40497
-        output = subprocess.check_output(
-            [sys.executable, "-c", "print('BDFL')"],
-            check=False
-        )
-        self.assertIn(b'BDFL', output)
+        with self.assertRaisesRegex(ValueError,
+                "stdout argument not allowed, it will be overridden"):
+            subprocess.check_output([], stdout=None)
 
+        with self.assertRaisesRegex(ValueError,
+                "check argument not allowed, it will be overridden"):
+            subprocess.check_output([], check=False)
 
     def test_check_output_nonzero(self):
         # check_call() function with non-zero return code
