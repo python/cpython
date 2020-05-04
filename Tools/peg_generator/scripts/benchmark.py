@@ -4,7 +4,6 @@ import argparse
 import ast
 import sys
 import os
-import resource
 from time import time
 
 import memory_profiler
