@@ -1,7 +1,7 @@
 import ast
 from dataclasses import dataclass, field
 import re
-from typing import IO, Any, Dict, List, Optional, Set, Text, Tuple
+from typing import Any, Dict, IO, Optional, List, Text, Tuple, Set
 from enum import Enum
 
 from pegen import grammar
