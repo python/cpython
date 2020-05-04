@@ -15,8 +15,6 @@ extern "C" {
 
 struct _ceval_runtime_state {
     int recursion_limit;
-    /* Request for dropping the GIL */
-    _Py_atomic_int gil_drop_request;
     struct _gil_runtime_state gil;
 };
 
