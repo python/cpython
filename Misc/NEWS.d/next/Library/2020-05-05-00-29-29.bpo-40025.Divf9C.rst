@@ -1,0 +1,2 @@
+The behavior is the same when `_generate_next_value_` is defined after or
+before members. Patch by Weipeng Hong.

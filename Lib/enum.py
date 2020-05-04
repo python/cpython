@@ -78,9 +78,6 @@ class _EnumDict(dict):
                     ):
                 raise ValueError('_names_ are reserved for future Enum use')
             if key == '_generate_next_value_':
-                # check if members already defined as auto()
-                if self._auto_called:
-                    raise TypeError("_generate_next_value_ must be defined before members")
                 setattr(self, '_generate_next_value', value)
             elif key == '_ignore_':
                 if isinstance(value, str):
@@ -104,10 +101,12 @@ class _EnumDict(dict):
                 # enum overwriting a descriptor?
                 raise TypeError('%r already defined as: %r' % (key, self[key]))
             if isinstance(value, auto):
-                self._auto_called = True
-                if value.value == _auto_null:
-                    value.value = self._generate_next_value(key, 1, len(self._member_names), self._last_values[:])
-                value = value.value
+                _value = value.value
+                if _value == _auto_null and self._auto_called:
+                    _value = self._generate_next_value(key, 1, len(self._member_names), self._last_values[:])
+                else:
+                    _value = value
+                value = _value
             self._member_names.append(key)
             self._last_values.append(value)
         super().__setitem__(key, value)
@@ -148,6 +147,14 @@ class EnumMeta(type):
 
         # save enum items into separate mapping so they don't get baked into
         # the new class
+        for i,name in enumerate(classdict._member_names):
+            value = classdict[name]
+            if isinstance(value, auto):
+                if value.value == _auto_null:
+                    value.value = classdict._generate_next_value(name, 1, len(classdict._member_names[:i]), classdict._last_values[:i])
+                super(type(classdict), classdict).__setitem__(name, value.value)
+                classdict._last_values[i] = value.value
+        super(type(classdict), classdict).__setitem__('_auto_called', True)
         enum_members = {k: classdict[k] for k in classdict._member_names}
         for name in classdict._member_names:
             del classdict[name]
