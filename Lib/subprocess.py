@@ -417,8 +417,8 @@ def check_output(*popenargs, timeout=None, **kwargs):
         # empty string. That is maintained here for backwards compatibility.
         kwargs['input'] = '' if kwargs.get('universal_newlines', False) else b''
 
-    kwargs.setdefault('check', True)
-    return run(*popenargs, stdout=PIPE, timeout=timeout, **kwargs).stdout
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+               **kwargs).stdout
 
 
 class CompletedProcess(object):

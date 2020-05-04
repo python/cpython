@@ -1,2 +1,0 @@
-:func:`subprocess.check_output` now accepts the `check` keyword-argument.
-Patch contributed by Rémi Lapeyre.
