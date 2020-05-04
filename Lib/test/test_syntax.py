@@ -678,10 +678,29 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("f() = 1", "assign")
 
     def test_assign_del(self):
-        self._check_error("del f()", "delete")
-        self._check_error("del 1", "delete")
-        self._check_error("del *x", "delete")
-        self._check_error("del x, f()", "delete")
+        self._check_error("del 1", "delete literal")
+        self._check_error("del (1, 2)", "delete literal")
+        self._check_error("del None", "delete None")
+        self._check_error("del *x", "delete starred")
+        self._check_error("del (*x)", "delete starred")
+        self._check_error("del (*x,)", "delete starred")
+        self._check_error("del [*x,]", "delete starred")
+        self._check_error("del f()", "delete function call")
+        self._check_error("del f(a, b)", "delete function call")
+        self._check_error("del o.f()", "delete function call")
+        self._check_error("del a[0]()", "delete function call")
+        self._check_error("del x, f()", "delete function call")
+        self._check_error("del f(), x", "delete function call")
+        self._check_error("del (a if True else b)", "delete conditional")
+        self._check_error("del +a", "delete operator")
+        self._check_error("del a, +b", "delete operator")
+        self._check_error("del a + b", "delete operator")
+        self._check_error("del (a + b, c)", "delete operator")
+        self._check_error("del (c[0], a + b)", "delete operator")
+        self._check_error("del (a := 5)", "delete named expression")
+        # We don't have a special message for this, but make sure we don't
+        # report "cannot delete name"
+        self._check_error("del a += b", "invalid syntax")
 
     def test_global_param_err_first(self):
         source = """if 1:
