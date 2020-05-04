@@ -44,16 +44,6 @@ class FnmatchTestCase(unittest.TestCase):
         check('foo\nbar\n', 'foo*')
         check('\nfoo', 'foo*', False)
         check('\n', '*')
-        # from the docs
-        self.assertEqual(translate('*.txt'), r'(?s:.*\.txt)\Z')
-        # squash consecutive stars
-        self.assertEqual(translate('*********'), r'(?s:.*)\Z')
-        self.assertEqual(translate('A*********'), r'(?s:A.*)\Z')
-        self.assertEqual(translate('*********A'), r'(?s:.*A)\Z')
-        self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[?].)\Z')
-        # fancy translation to prevent exponential-time match failure
-        self.assertEqual(translate('**a*a****a'),
-             r'(?s:(?=(?P<g1>.*?a))(?P=g1)(?=(?P<g2>.*?a))(?P=g2).*a)\Z')
 
     def test_slow_fnmatch(self):
         check = self.check_match
@@ -124,6 +114,16 @@ class TranslateTestCase(unittest.TestCase):
         self.assertEqual(translate('[!x]'), r'(?s:[^x])\Z')
         self.assertEqual(translate('[^x]'), r'(?s:[\^x])\Z')
         self.assertEqual(translate('[x'), r'(?s:\[x)\Z')
+        # from the docs
+        self.assertEqual(translate('*.txt'), r'(?s:.*\.txt)\Z')
+        # squash consecutive stars
+        self.assertEqual(translate('*********'), r'(?s:.*)\Z')
+        self.assertEqual(translate('A*********'), r'(?s:A.*)\Z')
+        self.assertEqual(translate('*********A'), r'(?s:.*A)\Z')
+        self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[?].)\Z')
+        # fancy translation to prevent exponential-time match failure
+        self.assertEqual(translate('**a*a****a'),
+             r'(?s:(?=(?P<g1>.*?a))(?P=g1)(?=(?P<g2>.*?a))(?P=g2).*a)\Z')
 
 
 class FilterTestCase(unittest.TestCase):
