@@ -389,6 +389,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number, const ch
     Token *t = p->tokens[p->fill - 1];
     Py_ssize_t col_number = !with_col_number;
     va_list va;
+    p->error_indicator = 1;
 
     va_start(va, errmsg);
     errstr = PyUnicode_FromFormatV(errmsg, va);
