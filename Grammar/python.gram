@@ -122,7 +122,9 @@ yield_stmt[stmt_ty]: y=yield_expr { _Py_Expr(y, EXTRA) }
 
 assert_stmt[stmt_ty]: 'assert' a=expression b=[',' z=expression { z }] { _Py_Assert(a, b, EXTRA) }
 
-del_stmt[stmt_ty]: 'del' a=del_targets { _Py_Delete(a, EXTRA) }
+del_stmt[stmt_ty]:
+    | 'del' a=del_targets { _Py_Delete(a, EXTRA) }
+    | invalid_delete
 
 import_stmt[stmt_ty]: import_name | import_from
 import_name[stmt_ty]: 'import' a=dotted_as_names { _Py_Import(a, EXTRA) }
@@ -588,7 +590,7 @@ del_target[expr_ty] (memo):
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Del, EXTRA) }
     | del_t_atom
 del_t_atom[expr_ty]:
-    | a=NAME { _PyPegen_set_expr_context(p, a, Del) }
+    | a=NAME !t_lookahead { _PyPegen_set_expr_context(p, a, Del) }
     | '(' a=del_target ')' { _PyPegen_set_expr_context(p, a, Del) }
     | '(' a=[del_targets] ')' { _Py_Tuple(a, Del, EXTRA) }
     | '[' a=[del_targets] ']' { _Py_List(a, Del, EXTRA) }
@@ -649,3 +651,6 @@ invalid_lambda_star_etc:
 invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
+invalid_delete:
+    | 'del' a=star_expressions {
+        RAISE_SYNTAX_ERROR_NO_COL_OFFSET("cannot delete %s", _PyPegen_get_expr_name(a)) }

@@ -677,10 +677,10 @@ class SyntaxTestCase(unittest.TestCase):
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
 
-    @support.skip_if_new_parser("Pegen does not produce a specialized error "
-                                "message yet")
     def test_assign_del(self):
         self._check_error("del f()", "delete")
+        self._check_error("del 1", "delete")
+        self._check_error("del *x", "delete")
 
     def test_global_param_err_first(self):
         source = """if 1:
