@@ -3,7 +3,6 @@ import platform
 import subprocess
 import sys
 import unittest
-import collections
 from unittest import mock
 
 from test import support

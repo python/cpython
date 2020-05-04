@@ -192,6 +192,12 @@ class Random(_random.Random):
 ## ---- Methods below this point do not need to be overridden when
 ## ---- subclassing for the purpose of using a different core generator.
 
+## -------------------- bytes methods ---------------------
+
+    def randbytes(self, n):
+        """Generate n random bytes."""
+        return self.getrandbits(n * 8).to_bytes(n, 'little')
+
 ## -------------------- pickle support  -------------------
 
     # Issue 17489: Since __reduce__ was defined to fix #759889 this is no
@@ -259,10 +265,10 @@ class Random(_random.Random):
         return self.randrange(a, b+1)
 
     def _randbelow_with_getrandbits(self, n):
-        "Return a random int in the range [0,n).  Raises ValueError if n==0."
+        "Return a random int in the range [0,n).  Returns 0 if n==0."
 
         if not n:
-            raise ValueError("Boundary cannot be zero")
+            return 0
         getrandbits = self.getrandbits
         k = n.bit_length()  # don't use (n-1) here because n can be 1
         r = getrandbits(k)          # 0 <= r < 2**k
@@ -271,7 +277,7 @@ class Random(_random.Random):
         return r
 
     def _randbelow_without_getrandbits(self, n, int=int, maxsize=1<<BPF):
-        """Return a random int in the range [0,n).  Raises ValueError if n==0.
+        """Return a random int in the range [0,n).  Returns 0 if n==0.
 
         The implementation does not use getrandbits, but only random.
         """
@@ -283,7 +289,7 @@ class Random(_random.Random):
                 "To remove the range limitation, add a getrandbits() method.")
             return int(random() * n)
         if n == 0:
-            raise ValueError("Boundary cannot be zero")
+            return 0
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
         r = random()
@@ -297,11 +303,7 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        try:
-            i = self._randbelow(len(seq))
-        except ValueError:
-            raise IndexError('Cannot choose from an empty sequence') from None
-        return seq[i]
+        return seq[self._randbelow(len(seq))] # raises IndexError if seq is empty
 
     def shuffle(self, x, random=None):
         """Shuffle list x in place, and return None.
@@ -319,6 +321,10 @@ class Random(_random.Random):
                 j = randbelow(i+1)
                 x[i], x[j] = x[j], x[i]
         else:
+            _warn('The *random* parameter to shuffle() has been deprecated\n'
+                  'since Python 3.9 and will be removed in a subsequent '
+                  'version.',
+                  DeprecationWarning, 2)
             _int = int
             for i in reversed(range(1, len(x))):
                 # pick an element in x[:i+1] with which to exchange x[i]

@@ -33,7 +33,7 @@ dump: peg_extension/parse.c
 	$(PYTHON) -c "from peg_extension import parse; import ast; t = parse.parse_file('$(TESTFILE)', mode=1); print(ast.dump(t))"
 
 regen-metaparser: pegen/metagrammar.gram pegen/*.py
-	$(PYTHON) -m pegen -q -c pegen/metagrammar.gram -o pegen/grammar_parser.py
+	$(PYTHON) -m pegen -q python pegen/metagrammar.gram -o pegen/grammar_parser.py
 
 # Note: These targets really depend on the generated shared object in peg_extension/parse.*.so but
 # this has different names in different systems so we are abusing the implicit dependency on

@@ -4,7 +4,7 @@
 #include "Python.h"
 
 #include "code.h"
-#include "frameobject.h"
+#include "frameobject.h"          // PyFrame_GetBack()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
@@ -798,22 +798,31 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = tstate->frame;
+    frame = PyThreadState_GetFrame(tstate);
     if (frame == NULL) {
         PUTS(fd, "<no Python frame>\n");
         return;
     }
 
     depth = 0;
-    while (frame != NULL) {
+    while (1) {
         if (MAX_FRAME_DEPTH <= depth) {
+            Py_DECREF(frame);
             PUTS(fd, "  ...\n");
             break;
         }
-        if (!PyFrame_Check(frame))
+        if (!PyFrame_Check(frame)) {
+            Py_DECREF(frame);
             break;
+        }
         dump_frame(fd, frame);
-        frame = frame->f_back;
+        PyFrameObject *back = PyFrame_GetBack(frame);
+        Py_DECREF(frame);
+
+        if (back == NULL) {
+            break;
+        }
+        frame = back;
         depth++;
     }
 }
