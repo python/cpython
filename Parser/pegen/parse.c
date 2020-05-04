@@ -825,6 +825,9 @@ fstring_rule(Parser *p)
 //     | ','.expression+ ',' '*' expression ',' '**' expression
 //     | ','.expression+ ',' '*' expression
 //     | ','.expression+ ',' '**' expression
+//     | '*' expression ',' '**' expression
+//     | '*' expression
+//     | '**' expression
 //     | ','.expression+
 static asdl_seq*
 type_expressions_rule(Parser *p)
@@ -907,6 +910,69 @@ type_expressions_rule(Parser *p)
         )
         {
             res = _PyPegen_seq_append_to_end ( p , a , b );
+            if (res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // '*' expression ',' '**' expression
+        expr_ty a;
+        expr_ty b;
+        Token * literal;
+        Token * literal_1;
+        Token * literal_2;
+        if (
+            (literal = _PyPegen_expect_token(p, 16))
+            &&
+            (a = expression_rule(p))
+            &&
+            (literal_1 = _PyPegen_expect_token(p, 12))
+            &&
+            (literal_2 = _PyPegen_expect_token(p, 35))
+            &&
+            (b = expression_rule(p))
+        )
+        {
+            res = _PyPegen_seq_append_to_end ( p , CHECK ( _PyPegen_singleton_seq ( p , a ) ) , b );
+            if (res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // '*' expression
+        expr_ty a;
+        Token * literal;
+        if (
+            (literal = _PyPegen_expect_token(p, 16))
+            &&
+            (a = expression_rule(p))
+        )
+        {
+            res = _PyPegen_singleton_seq ( p , a );
+            if (res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = mark;
+    }
+    { // '**' expression
+        expr_ty a;
+        Token * literal;
+        if (
+            (literal = _PyPegen_expect_token(p, 35))
+            &&
+            (a = expression_rule(p))
+        )
+        {
+            res = _PyPegen_singleton_seq ( p , a );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
