@@ -13,7 +13,6 @@ import gc
 import glob
 import importlib
 import importlib.util
-import locale
 import os
 import platform
 import re
@@ -2311,6 +2310,7 @@ def skip_if_buggy_ucrt_strfptime(test):
     See bpo-37552 [Windows] strptime/strftime return invalid
     results with UCRT version 17763.615
     """
+    import locale
     global _buggy_ucrt
     if _buggy_ucrt is None:
         if(sys.platform == 'win32' and
