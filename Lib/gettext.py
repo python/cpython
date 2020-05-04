@@ -46,6 +46,7 @@ internationalized, to the local language and cultural habits.
 #   find this format documented anywhere.
 
 
+import locale
 import os
 import re
 import sys
@@ -209,7 +210,6 @@ def c2py(plural):
 
 
 def _expand_lang(loc):
-    import locale
     loc = locale.normalize(loc)
     COMPONENT_CODESET   = 1 << 0
     COMPONENT_TERRITORY = 1 << 1
@@ -275,7 +275,6 @@ class NullTranslations:
         return message
 
     def lgettext(self, message):
-        import locale
         import warnings
         warnings.warn('lgettext() is deprecated, use gettext() instead',
                       DeprecationWarning, 2)
@@ -297,7 +296,6 @@ class NullTranslations:
             return msgid2
 
     def lngettext(self, msgid1, msgid2, n):
-        import locale
         import warnings
         warnings.warn('lngettext() is deprecated, use ngettext() instead',
                       DeprecationWarning, 2)
@@ -461,7 +459,6 @@ class GNUTranslations(NullTranslations):
             transidx += 8
 
     def lgettext(self, message):
-        import locale
         import warnings
         warnings.warn('lgettext() is deprecated, use gettext() instead',
                       DeprecationWarning, 2)
@@ -476,7 +473,6 @@ class GNUTranslations(NullTranslations):
         return tmsg.encode(locale.getpreferredencoding())
 
     def lngettext(self, msgid1, msgid2, n):
-        import locale
         import warnings
         warnings.warn('lngettext() is deprecated, use ngettext() instead',
                       DeprecationWarning, 2)
@@ -669,7 +665,6 @@ def dgettext(domain, message):
     return t.gettext(message)
 
 def ldgettext(domain, message):
-    import locale
     import warnings
     warnings.warn('ldgettext() is deprecated, use dgettext() instead',
                   DeprecationWarning, 2)
@@ -697,7 +692,6 @@ def dngettext(domain, msgid1, msgid2, n):
     return t.ngettext(msgid1, msgid2, n)
 
 def ldngettext(domain, msgid1, msgid2, n):
-    import locale
     import warnings
     warnings.warn('ldngettext() is deprecated, use dngettext() instead',
                   DeprecationWarning, 2)
