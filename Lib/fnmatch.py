@@ -146,8 +146,7 @@ def translate(pat):
     # Now deal with STAR fixed STAR fixed ...
     # For an interior `STAR fixed` pairing, we want to do a minimal
     # .*? match followed by `fixed`, with no possibility of backtracking.
-    # We can't spell that directly, but can trick it into working by
-    # by matching
+    # We can't spell that directly, but can trick it into working by matching
     #    .*?fixed
     # in a lookahead assertion, save the matched part in a group, then
     # consume that group via a backreference. If the overall match fails,

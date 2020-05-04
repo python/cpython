@@ -59,7 +59,7 @@ class FnmatchTestCase(unittest.TestCase):
         check = self.check_match
         check('a' * 50, '*a*a*a*a*a*a*a*a*a*a')
         # The next "takes forever" if the regexp translation is
-        # straightforward.
+        # straightforward.  See bpo-40480.
         check('a' * 50 + 'b', '*a*a*a*a*a*a*a*a*a*a', False)
 
     def test_mix_bytes_str(self):
