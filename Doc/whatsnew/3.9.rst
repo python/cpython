@@ -608,6 +608,16 @@ Deprecated
 * Passing ``None`` as the first argument to the :func:`shlex.split` function
   has been deprecated.  (Contributed by Zackery Spytz in :issue:`33262`.)
 
+* The :mod:`lib2to3` module now emits a :exc:`PendingDeprecationWarning`.
+  Python 3.9 switched to a PEG parser (see :pep:`617`), and Python 3.10 may
+  include new language syntax that is not parsable by lib2to3's LL(1) parser.
+  The ``lib2to3`` module may be removed from the standard library in a future
+  Python version. Consider third-party alternatives such as `LibCST`_ or
+  `parso`_.
+  (Contributed by Carl Meyer in :issue:`40360`.)
+
+.. _LibCST: https://libcst.readthedocs.io/
+.. _parso: https://parso.readthedocs.io/
 
 Removed
 =======
