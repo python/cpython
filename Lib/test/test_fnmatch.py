@@ -44,6 +44,23 @@ class FnmatchTestCase(unittest.TestCase):
         check('foo\nbar\n', 'foo*')
         check('\nfoo', 'foo*', False)
         check('\n', '*')
+        # from the docs
+        self.assertEqual(translate('*.txt'), r'(?s:.*\.txt)\Z')
+        # squash consecutive stars
+        self.assertEqual(translate('*********'), r'(?s:.*)\Z')
+        self.assertEqual(translate('A*********'), r'(?s:A.*)\Z')
+        self.assertEqual(translate('*********A'), r'(?s:.*A)\Z')
+        self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[?].)\Z')
+        # fancy translation to prevent exponential-time match failure
+        self.assertEqual(translate('**a*a****a'),
+             r'(?s:(?=(?P<g1>.*?a))(?P=g1)(?=(?P<g2>.*?a))(?P=g2).*a)\Z')
+
+    def test_slow_fnmatch(self):
+        check = self.check_match
+        check('a' * 50, '*a*a*a*a*a*a*a*a*a*a')
+        # The next "takes forever" if the regexp translation is
+        # straightforward.
+        check('a' * 50 + 'b', '*a*a*a*a*a*a*a*a*a*a', False)
 
     def test_mix_bytes_str(self):
         self.assertRaises(TypeError, fnmatch, 'test', b'*')
