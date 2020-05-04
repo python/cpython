@@ -936,7 +936,7 @@ type_expressions_rule(Parser *p)
             (b = expression_rule(p))
         )
         {
-            res = _PyPegen_seq_append_to_end ( p , _PyPegen_singleton_seq ( p , a ) , b );
+            res = _PyPegen_seq_append_to_end ( p , CHECK ( _PyPegen_singleton_seq ( p , a ) ) , b );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
