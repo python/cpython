@@ -141,7 +141,8 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 }
 
 static void
-drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
+drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
+         PyThreadState *tstate)
 {
     struct _gil_runtime_state *gil = &ceval->gil;
     if (!_Py_atomic_load_relaxed(&gil->locked)) {
@@ -163,7 +164,7 @@ drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
     MUTEX_UNLOCK(gil->mutex);
 
 #ifdef FORCE_SWITCHING
-    if (_Py_atomic_load_relaxed(&ceval->gil_drop_request) && tstate != NULL) {
+    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request) && tstate != NULL) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
@@ -226,6 +227,7 @@ take_gil(PyThreadState *tstate)
     assert(is_tstate_valid(tstate));
     PyInterpreterState *interp = tstate->interp;
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
+    struct _ceval_state *ceval2 = &interp->ceval;
     struct _gil_runtime_state *gil = &ceval->gil;
 
     /* Check that _PyEval_InitThreads() was called to create the lock */
@@ -289,12 +291,12 @@ _ready:
            in take_gil() while the main thread called
            wait_for_thread_shutdown() from Py_Finalize(). */
         MUTEX_UNLOCK(gil->mutex);
-        drop_gil(ceval, tstate);
+        drop_gil(ceval, ceval2, tstate);
         PyThread_exit_thread();
     }
     assert(is_tstate_valid(tstate));
 
-    if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
+    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request)) {
         RESET_GIL_DROP_REQUEST(interp);
     }
     else {
@@ -303,8 +305,7 @@ _ready:
            handle signals.
 
            Note: RESET_GIL_DROP_REQUEST() calls COMPUTE_EVAL_BREAKER(). */
-        struct _ceval_state *ceval2 = &interp->ceval;
-        COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
+        COMPUTE_EVAL_BREAKER(interp, ceval2);
     }
 
     /* Don't access tstate if the thread must exit */
