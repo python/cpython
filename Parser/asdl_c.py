@@ -699,10 +699,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields, *field_defaults;
-    if (_PyObject_LookupAttr(Py_TYPE(self), astmodulestate_global->_fields, &fields) < 0) {
+    if (_PyObject_LookupAttr(self, astmodulestate_global->_fields, &fields) < 0) {
         goto cleanup;
     }
-    if (_PyObject_LookupAttr(Py_TYPE(self), astmodulestate_global->_field_defaults, &field_defaults) < 0) {
+    if (_PyObject_LookupAttr(self, astmodulestate_global->_field_defaults, &field_defaults) < 0) {
         goto cleanup;
     }
     if (fields) {
@@ -833,7 +833,7 @@ make_type(
 )
 {
     Py_ssize_t i;
-    PyObject *fnames, *fdefaults;
+    PyObject *fnames, *fdefaults = NULL;
     PyObject *result = NULL;
 
     fnames = PyTuple_New(num_fields);
@@ -1004,7 +1004,8 @@ static int add_ast_fields(void)
     empty_tuple = PyTuple_New(0);
     if (!empty_tuple ||
         PyObject_SetAttrString(astmodulestate_global->AST_type, "_fields", empty_tuple) < 0 ||
-        PyObject_SetAttrString(astmodulestate_global->AST_type, "_attributes", empty_tuple) < 0) {
+        PyObject_SetAttrString(astmodulestate_global->AST_type, "_attributes", empty_tuple) < 0 ||
+        PyObject_SetAttrString(astmodulestate_global->AST_type, "_field_defaults", empty_tuple) < 0) {
         Py_XDECREF(empty_tuple);
         return -1;
     }
