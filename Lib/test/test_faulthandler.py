@@ -757,7 +757,7 @@ class FaultHandlerTests(unittest.TestCase):
         for exc, name in (
             ('EXCEPTION_ACCESS_VIOLATION', 'access violation'),
             ('EXCEPTION_INT_DIVIDE_BY_ZERO', 'int divide by zero'),
-            ('EXCEPTION_STACK_OVERFLOW', r'stack overflow(\s+\(.+\))?'),
+            ('EXCEPTION_STACK_OVERFLOW', 'stack overflow'),
         ):
             self.check_windows_exception(f"""
                 import faulthandler

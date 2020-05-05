@@ -386,7 +386,6 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     const int fd = fatal_error.fd;
     DWORD code = exc_info->ExceptionRecord->ExceptionCode;
     DWORD flags = exc_info->ExceptionRecord->ExceptionFlags;
-    PyThreadState *tstate;
 
     if (faulthandler_ignore_exception(code)) {
         /* ignore the exception: call the next exception handler */
@@ -403,16 +402,7 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     case EXCEPTION_INT_DIVIDE_BY_ZERO: PUTS(fd, "int divide by zero"); break;
     case EXCEPTION_INT_OVERFLOW: PUTS(fd, "integer overflow"); break;
     case EXCEPTION_IN_PAGE_ERROR: PUTS(fd, "page error"); break;
-    case EXCEPTION_STACK_OVERFLOW:
-        PUTS(fd, "stack overflow");
-        /* call UncheckedGet directly to avoid setting exceptions */
-        tstate = _PyThreadState_UncheckedGet();
-        if (tstate != NULL) {
-            PUTS(fd, " (recursion depth=");
-            _Py_DumpDecimal(fd, tstate->recursion_depth);
-            PUTS(fd, ")");
-        }
-        break;
+    case EXCEPTION_STACK_OVERFLOW: PUTS(fd, "stack overflow"); break;
     default:
         PUTS(fd, "code 0x");
         _Py_DumpHexadecimal(fd, code, 8);
