@@ -654,5 +654,5 @@ invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
 invalid_del_target:
-    | a=star_expression &(')' | ']' | ',' | ';' | NEWLINE) {
+    | a=star_expression &del_target_end {
         RAISE_SYNTAX_ERROR("cannot delete %s", _PyPegen_get_expr_name(a)) }
