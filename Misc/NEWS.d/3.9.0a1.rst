@@ -3372,7 +3372,7 @@ markup and any values in the message. Patch by Paul Ganssle
 .. section: Library
 
 Removed methods Element.getchildren(), Element.getiterator() and
-ElementTree.getiterator() and the xml.etree.cElementTree module.
+ElementTree.getiterator().
 
 ..
 
