@@ -1764,7 +1764,15 @@ class TestEnum(unittest.TestCase):
             A = auto()
             B = auto()
 
+        class G(Enum):
+            first = auto()
+            def _generate_next_value_(name, *args):
+                return 12
+            second = first + 9
+
         self.assertEqual(E.B.value, F.B.value)
+        self.assertEqual(G.first.value, 12)
+        self.assertEqual(G.second.value, 21)
 
 
     def test_duplicate_auto(self):
@@ -2287,6 +2295,16 @@ class TestFlag(unittest.TestCase):
             first = primero = auto()
             second = auto()
             third = auto()
+        self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
+
+    def test_duplicate_auto_generate_next_value(self):
+        class Dupes(Enum):
+            first = primero = auto()
+            second = auto()
+            def _generate_next_value_(name, *args):
+                return name
+            third = primero2 = auto()
+
         self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
 
     def test_bizarre(self):

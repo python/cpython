@@ -60,7 +60,7 @@ class _EnumDict(dict):
         self._member_names = []
         self._last_values = []
         self._ignore = []
-        self._auto_called = False
+        self._maybe_recalculate_auto_obj = {}
 
     def __setitem__(self, key, value):
         """Changes anything not dundered or not a descriptor.
@@ -79,6 +79,15 @@ class _EnumDict(dict):
                 raise ValueError('_names_ are reserved for future Enum use')
             if key == '_generate_next_value_':
                 setattr(self, '_generate_next_value', value)
+                if value.__qualname__ != 'Enum._generate_next_value':
+                    # subclass define _generate_next_value_, recalculate auto()
+                    self._subclass_define_generate_next_value = True
+                    for i, origin_value in self._maybe_recalculate_auto_obj.items():
+                        name, _value = self._member_names[i], self._last_values[i]
+                        if _value == origin_value.value:
+                            origin_value.value = self._generate_next_value(name, 1, len(self._member_names[:i]),
+                                                                           self._last_values[:i])
+                        super().__setitem__(name, origin_value.value)
             elif key == '_ignore_':
                 if isinstance(value, str):
                     value = value.replace(',',' ').split()
@@ -101,12 +110,11 @@ class _EnumDict(dict):
                 # enum overwriting a descriptor?
                 raise TypeError('%r already defined as: %r' % (key, self[key]))
             if isinstance(value, auto):
-                _value = value.value
-                if _value == _auto_null and self._auto_called:
-                    _value = self._generate_next_value(key, 1, len(self._member_names), self._last_values[:])
-                else:
-                    _value = value
-                value = _value
+                # if self._subclass_define_generate_next_value:
+                self._maybe_recalculate_auto_obj[len(self._member_names)] = value
+                if value.value == _auto_null:
+                    value.value = self._generate_next_value(key, 1, len(self._member_names), self._last_values[:])
+                value = value.value
             self._member_names.append(key)
             self._last_values.append(value)
         super().__setitem__(key, value)
@@ -147,14 +155,7 @@ class EnumMeta(type):
 
         # save enum items into separate mapping so they don't get baked into
         # the new class
-        for i,name in enumerate(classdict._member_names):
-            value = classdict[name]
-            if isinstance(value, auto):
-                if value.value == _auto_null:
-                    value.value = classdict._generate_next_value(name, 1, len(classdict._member_names[:i]), classdict._last_values[:i])
-                super(type(classdict), classdict).__setitem__(name, value.value)
-                classdict._last_values[i] = value.value
-        super(type(classdict), classdict).__setitem__('_auto_called', True)
+        classdict._maybe_recalculate_auto_obj.clear()
         enum_members = {k: classdict[k] for k in classdict._member_names}
         for name in classdict._member_names:
             del classdict[name]
