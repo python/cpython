@@ -2635,13 +2635,15 @@ _curses_color_content_impl(PyObject *module, int color_number)
 
     if (color_number < _NCURSES_COLOR_VAL_MIN) {
         PyErr_SetString(PyExc_OverflowError,
-                        "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
-      return NULL;
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color number is less than minimum.");
+        return NULL;
     }
     else if (color_number > _NCURSES_COLOR_VAL_MAX) {
         PyErr_SetString(PyExc_OverflowError,
-                        "signed " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
-      return NULL;
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color number is greater than maximum.");
+        return NULL;
     }
 
     if (_COLOR_CONTENT_FUNC(color_number, &r, &g, &b) != ERR)
@@ -2677,12 +2679,14 @@ _curses_color_pair_impl(PyObject *module, int color_number)
 
     if (color_number < _NCURSES_COLOR_VAL_MIN) {
         PyErr_SetString(PyExc_OverflowError,
-                        "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color number is less than minimum.");
         return NULL;
     }
     else if (color_number > _NCURSES_COLOR_VAL_MAX) {
         PyErr_SetString(PyExc_OverflowError,
-                        "signed " _NCURSES_COLOR_VAL_TYPE_STR "is greater than maximum");
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color number is greater than maximum.");
         return NULL;
     }
 
