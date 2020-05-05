@@ -66,43 +66,15 @@ _inscode(PyObject *d, PyObject *de, const char *name, int code)
     Py_XDECREF(v);
 }
 
-PyDoc_STRVAR(errno__doc__,
-"This module makes available standard errno system symbols.\n\
-\n\
-The value of each symbol is the corresponding integer value,\n\
-e.g., on most systems, errno.ENOENT equals the integer 2.\n\
-\n\
-The dictionary errno.errorcode maps numeric codes to symbol names,\n\
-e.g., errno.errorcode[2] could be the string 'ENOENT'.\n\
-\n\
-Symbols that are not relevant to the underlying system are not defined.\n\
-\n\
-To map error codes to error messages, use the function os.strerror(),\n\
-e.g. os.strerror(2) could return 'No such file or directory'.");
-
-static struct PyModuleDef errnomodule = {
-    PyModuleDef_HEAD_INIT,
-    "errno",
-    errno__doc__,
-    -1,
-    errno_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_errno(void)
+static int
+errno_exec(PyObject *module)
 {
-    PyObject *m, *d, *de;
-    m = PyModule_Create(&errnomodule);
-    if (m == NULL)
-        return NULL;
-    d = PyModule_GetDict(m);
+    PyObject *d, *de;
+    d = PyModule_GetDict(module);
     de = PyDict_New();
-    if (!d || !de || PyDict_SetItemString(d, "errorcode", de) < 0)
-        return NULL;
+    if (!d || !de || PyDict_SetItemString(d, "errorcode", de) < 0) {
+        return -1;
+    }
 
 /* Macro so I don't have to edit each and every line below... */
 #define inscode(d, ds, de, name, code, comment) _inscode(d, de, name, code)
@@ -931,5 +903,39 @@ PyInit_errno(void)
 #endif
 
     Py_DECREF(de);
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot errno_slots[] = {
+    {Py_mod_exec, errno_exec},
+    {0, NULL}
+};
+
+PyDoc_STRVAR(errno__doc__,
+"This module makes available standard errno system symbols.\n\
+\n\
+The value of each symbol is the corresponding integer value,\n\
+e.g., on most systems, errno.ENOENT equals the integer 2.\n\
+\n\
+The dictionary errno.errorcode maps numeric codes to symbol names,\n\
+e.g., errno.errorcode[2] could be the string 'ENOENT'.\n\
+\n\
+Symbols that are not relevant to the underlying system are not defined.\n\
+\n\
+To map error codes to error messages, use the function os.strerror(),\n\
+e.g. os.strerror(2) could return 'No such file or directory'.");
+
+static struct PyModuleDef errnomodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "errno",
+    .m_doc = errno__doc__,
+    .m_size = 0,
+    .m_methods = errno_methods,
+    .m_slots = errno_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_errno(void)
+{
+    return PyModuleDef_Init(&errnomodule);
 }
