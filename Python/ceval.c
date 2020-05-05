@@ -148,7 +148,7 @@ COMPUTE_EVAL_BREAKER(PyInterpreterState *interp,
 {
     _Py_atomic_store_relaxed(&ceval2->eval_breaker,
         _Py_atomic_load_relaxed(&ceval->gil_drop_request)
-        | (_Py_atomic_load_relaxed(&ceval->signals_pending)
+        | (_Py_atomic_load_relaxed(&ceval2->signals_pending)
            && _Py_ThreadCanHandleSignals(interp))
         | (_Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)
            && _Py_ThreadCanHandlePendingCalls())
@@ -201,7 +201,7 @@ SIGNAL_PENDING_SIGNALS(PyInterpreterState *interp)
 {
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
-    _Py_atomic_store_relaxed(&ceval->signals_pending, 1);
+    _Py_atomic_store_relaxed(&ceval2->signals_pending, 1);
     /* eval_breaker is not set to 1 if thread_can_handle_signals() is false */
     COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
 }
@@ -212,7 +212,7 @@ UNSIGNAL_PENDING_SIGNALS(PyInterpreterState *interp)
 {
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
-    _Py_atomic_store_relaxed(&ceval->signals_pending, 0);
+    _Py_atomic_store_relaxed(&ceval2->signals_pending, 0);
     COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
 }
 
@@ -830,16 +830,16 @@ eval_frame_handle_pending(PyThreadState *tstate)
 {
     _PyRuntimeState * const runtime = &_PyRuntime;
     struct _ceval_runtime_state *ceval = &runtime->ceval;
+    struct _ceval_state *ceval2 = &tstate->interp->ceval;
 
     /* Pending signals */
-    if (_Py_atomic_load_relaxed(&ceval->signals_pending)) {
+    if (_Py_atomic_load_relaxed(&ceval2->signals_pending)) {
         if (handle_signals(tstate) != 0) {
             return -1;
         }
     }
 
     /* Pending calls */
-    struct _ceval_state *ceval2 = &tstate->interp->ceval;
     if (_Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)) {
         if (make_pending_calls(tstate) != 0) {
             return -1;
