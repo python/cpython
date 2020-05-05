@@ -747,18 +747,16 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         if not name_value and not strict_parsing:
             continue
 
+        default_value = '' if keep_blank_values else None
         name_value = iter(name_value.split('=', 1))
         name = next(name_value)
-        value = next(name_value, None)
+        value = next(name_value, default_value)
 
-        if not value:
-            if strict_parsing:
-                raise ValueError("bad query field: %r" % (name_value,))
-            # Handle case of a control-name with no equal sign
-            if keep_blank_values:
-                value = ''
-            else:
-                continue
+        if strict_parsing and not value:
+            raise ValueError("bad query field: %r" % (name_value,))
+
+        if not value and not keep_blank_values:
+            continue
 
         result = []
         for token in [name, value]:
