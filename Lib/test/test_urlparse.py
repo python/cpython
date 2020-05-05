@@ -150,14 +150,21 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_qs(self):
         for orig, expect in parse_qs_test_cases:
-            expect = {v: self._coalesce_empty(orig, expect[v]) for v in expect}
+            expect_with_blanks = {v: self._coalesce_empty(orig, expect[v])
+                                  for v in expect}
             result = urllib.parse.parse_qs(orig, keep_blank_values=True)
-            self.assertEqual(result, expect, "Error parsing %r" % orig)
+            self.assertEqual(result, expect_with_blanks,
+                            "Error parsing %r" % orig)
 
-            expect_without_blanks = {v: expect[v]
-                                     for v in expect if len(expect[v][0])}
+            expect_without_blanks = {v: self._coalesce_empty(orig, expect[v])
+                                     for v in expect_with_blanks
+                                     if expect[v][0]}
             result = urllib.parse.parse_qs(orig, keep_blank_values=False)
             self.assertEqual(result, expect_without_blanks,
+                            "Error parsing %r" % orig)
+
+            result = urllib.parse.parse_qs(orig, standalone_keys=True)
+            self.assertEqual(result, expect,
                             "Error parsing %r" % orig)
 
     def test_roundtrips(self):
