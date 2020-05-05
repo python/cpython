@@ -760,9 +760,9 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
 
         result = []
         for token in [name, value]:
-            if len(token) or keep_blank_values:
+            if token is not None:
                 token = unquote_plus(token, encoding=encoding, errors=errors)
-            token = _coerce_result(token)
+                token = _coerce_result(token)
             result.append(token)
         results.append(tuple(result))
     return results
