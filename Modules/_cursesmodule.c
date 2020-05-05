@@ -3882,57 +3882,6 @@ _curses_pair_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number)
     return Py_BuildValue("(ii)", f, b);
 }
 
-PyDoc_STRVAR(_curses_pair_content__doc__,
-"pair_content($module, pair_number, /)\n"
-"--\n"
-"\n"
-"Return a tuple (fg, bg) containing the colors for the requested color pair.\n"
-"\n"
-"  pair_number\n"
-"    The number of the color pair (1 - (COLOR_PAIRS-1)).");
-
-#define _CURSES_PAIR_CONTENT_METHODDEF    \
-    {"pair_content", (PyCFunction)_curses_pair_content, METH_O, _curses_pair_content__doc__},
-
-static PyObject *
-_curses_pair_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number);
-
-static PyObject *
-_curses_pair_content(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    _NCURSES_COLOR_VAL_TYPE pair_number;
-
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    {
-        long ival = PyLong_AsLong(arg);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < _NCURSES_COLOR_VAL_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
-            goto exit;
-        }
-        else if (ival > _NCURSES_COLOR_VAL_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
-            goto exit;
-        }
-        else {
-            pair_number = (_NCURSES_COLOR_VAL_TYPE) ival;
-        }
-    }
-    return_value = _curses_pair_content_impl(module, pair_number);
-
-exit:
-    return return_value;
-}
-
 /*[clinic input]
 _curses.pair_number
 
