@@ -14,7 +14,6 @@ extern "C" {
 /* ceval state */
 
 struct _ceval_runtime_state {
-    int recursion_limit;
     struct _gil_runtime_state gil;
 };
 
