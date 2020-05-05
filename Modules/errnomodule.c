@@ -69,15 +69,14 @@ _inscode(PyObject *d, PyObject *de, const char *name, int code)
 static int
 errno_exec(PyObject *module)
 {
-    PyObject *d, *de;
-    d = PyModule_GetDict(module);
-    de = PyDict_New();
-    if (!d || !de || PyDict_SetItemString(d, "errorcode", de) < 0) {
+    PyObject *module_dict = PyModule_GetDict(module);
+    PyObject *error_dict = PyDict_New();
+    if (!module_dict || !error_dict || PyDict_SetItemString(module_dict, "errorcode", error_dict) < 0) {
         return -1;
     }
 
 /* Macro so I don't have to edit each and every line below... */
-#define inscode(d, ds, de, name, code, comment) _inscode(d, de, name, code)
+#define inscode(module_dict, error_dict, name, code, comment) _inscode(module_dict, error_dict, name, code)
 
     /*
      * The names and comments are borrowed from linux/include/errno.h,
@@ -88,821 +87,821 @@ errno_exec(PyObject *module)
      */
 
 #ifdef ENODEV
-    inscode(d, ds, de, "ENODEV", ENODEV, "No such device");
+    inscode(module_dict, error_dict, "ENODEV", ENODEV, "No such device");
 #endif
 #ifdef ENOCSI
-    inscode(d, ds, de, "ENOCSI", ENOCSI, "No CSI structure available");
+    inscode(module_dict, error_dict, "ENOCSI", ENOCSI, "No CSI structure available");
 #endif
 #ifdef EHOSTUNREACH
-    inscode(d, ds, de, "EHOSTUNREACH", EHOSTUNREACH, "No route to host");
+    inscode(module_dict, error_dict, "EHOSTUNREACH", EHOSTUNREACH, "No route to host");
 #else
 #ifdef WSAEHOSTUNREACH
-    inscode(d, ds, de, "EHOSTUNREACH", WSAEHOSTUNREACH, "No route to host");
+    inscode(module_dict, error_dict, "EHOSTUNREACH", WSAEHOSTUNREACH, "No route to host");
 #endif
 #endif
 #ifdef ENOMSG
-    inscode(d, ds, de, "ENOMSG", ENOMSG, "No message of desired type");
+    inscode(module_dict, error_dict, "ENOMSG", ENOMSG, "No message of desired type");
 #endif
 #ifdef EUCLEAN
-    inscode(d, ds, de, "EUCLEAN", EUCLEAN, "Structure needs cleaning");
+    inscode(module_dict, error_dict, "EUCLEAN", EUCLEAN, "Structure needs cleaning");
 #endif
 #ifdef EL2NSYNC
-    inscode(d, ds, de, "EL2NSYNC", EL2NSYNC, "Level 2 not synchronized");
+    inscode(module_dict, error_dict, "EL2NSYNC", EL2NSYNC, "Level 2 not synchronized");
 #endif
 #ifdef EL2HLT
-    inscode(d, ds, de, "EL2HLT", EL2HLT, "Level 2 halted");
+    inscode(module_dict, error_dict, "EL2HLT", EL2HLT, "Level 2 halted");
 #endif
 #ifdef ENODATA
-    inscode(d, ds, de, "ENODATA", ENODATA, "No data available");
+    inscode(module_dict, error_dict, "ENODATA", ENODATA, "No data available");
 #endif
 #ifdef ENOTBLK
-    inscode(d, ds, de, "ENOTBLK", ENOTBLK, "Block device required");
+    inscode(module_dict, error_dict, "ENOTBLK", ENOTBLK, "Block device required");
 #endif
 #ifdef ENOSYS
-    inscode(d, ds, de, "ENOSYS", ENOSYS, "Function not implemented");
+    inscode(module_dict, error_dict, "ENOSYS", ENOSYS, "Function not implemented");
 #endif
 #ifdef EPIPE
-    inscode(d, ds, de, "EPIPE", EPIPE, "Broken pipe");
+    inscode(module_dict, error_dict, "EPIPE", EPIPE, "Broken pipe");
 #endif
 #ifdef EINVAL
-    inscode(d, ds, de, "EINVAL", EINVAL, "Invalid argument");
+    inscode(module_dict, error_dict, "EINVAL", EINVAL, "Invalid argument");
 #else
 #ifdef WSAEINVAL
-    inscode(d, ds, de, "EINVAL", WSAEINVAL, "Invalid argument");
+    inscode(module_dict, error_dict, "EINVAL", WSAEINVAL, "Invalid argument");
 #endif
 #endif
 #ifdef EOVERFLOW
-    inscode(d, ds, de, "EOVERFLOW", EOVERFLOW, "Value too large for defined data type");
+    inscode(module_dict, error_dict, "EOVERFLOW", EOVERFLOW, "Value too large for defined data type");
 #endif
 #ifdef EADV
-    inscode(d, ds, de, "EADV", EADV, "Advertise error");
+    inscode(module_dict, error_dict, "EADV", EADV, "Advertise error");
 #endif
 #ifdef EINTR
-    inscode(d, ds, de, "EINTR", EINTR, "Interrupted system call");
+    inscode(module_dict, error_dict, "EINTR", EINTR, "Interrupted system call");
 #else
 #ifdef WSAEINTR
-    inscode(d, ds, de, "EINTR", WSAEINTR, "Interrupted system call");
+    inscode(module_dict, error_dict, "EINTR", WSAEINTR, "Interrupted system call");
 #endif
 #endif
 #ifdef EUSERS
-    inscode(d, ds, de, "EUSERS", EUSERS, "Too many users");
+    inscode(module_dict, error_dict, "EUSERS", EUSERS, "Too many users");
 #else
 #ifdef WSAEUSERS
-    inscode(d, ds, de, "EUSERS", WSAEUSERS, "Too many users");
+    inscode(module_dict, error_dict, "EUSERS", WSAEUSERS, "Too many users");
 #endif
 #endif
 #ifdef ENOTEMPTY
-    inscode(d, ds, de, "ENOTEMPTY", ENOTEMPTY, "Directory not empty");
+    inscode(module_dict, error_dict, "ENOTEMPTY", ENOTEMPTY, "Directory not empty");
 #else
 #ifdef WSAENOTEMPTY
-    inscode(d, ds, de, "ENOTEMPTY", WSAENOTEMPTY, "Directory not empty");
+    inscode(module_dict, error_dict, "ENOTEMPTY", WSAENOTEMPTY, "Directory not empty");
 #endif
 #endif
 #ifdef ENOBUFS
-    inscode(d, ds, de, "ENOBUFS", ENOBUFS, "No buffer space available");
+    inscode(module_dict, error_dict, "ENOBUFS", ENOBUFS, "No buffer space available");
 #else
 #ifdef WSAENOBUFS
-    inscode(d, ds, de, "ENOBUFS", WSAENOBUFS, "No buffer space available");
+    inscode(module_dict, error_dict, "ENOBUFS", WSAENOBUFS, "No buffer space available");
 #endif
 #endif
 #ifdef EPROTO
-    inscode(d, ds, de, "EPROTO", EPROTO, "Protocol error");
+    inscode(module_dict, error_dict, "EPROTO", EPROTO, "Protocol error");
 #endif
 #ifdef EREMOTE
-    inscode(d, ds, de, "EREMOTE", EREMOTE, "Object is remote");
+    inscode(module_dict, error_dict, "EREMOTE", EREMOTE, "Object is remote");
 #else
 #ifdef WSAEREMOTE
-    inscode(d, ds, de, "EREMOTE", WSAEREMOTE, "Object is remote");
+    inscode(module_dict, error_dict, "EREMOTE", WSAEREMOTE, "Object is remote");
 #endif
 #endif
 #ifdef ENAVAIL
-    inscode(d, ds, de, "ENAVAIL", ENAVAIL, "No XENIX semaphores available");
+    inscode(module_dict, error_dict, "ENAVAIL", ENAVAIL, "No XENIX semaphores available");
 #endif
 #ifdef ECHILD
-    inscode(d, ds, de, "ECHILD", ECHILD, "No child processes");
+    inscode(module_dict, error_dict, "ECHILD", ECHILD, "No child processes");
 #endif
 #ifdef ELOOP
-    inscode(d, ds, de, "ELOOP", ELOOP, "Too many symbolic links encountered");
+    inscode(module_dict, error_dict, "ELOOP", ELOOP, "Too many symbolic links encountered");
 #else
 #ifdef WSAELOOP
-    inscode(d, ds, de, "ELOOP", WSAELOOP, "Too many symbolic links encountered");
+    inscode(module_dict, error_dict, "ELOOP", WSAELOOP, "Too many symbolic links encountered");
 #endif
 #endif
 #ifdef EXDEV
-    inscode(d, ds, de, "EXDEV", EXDEV, "Cross-device link");
+    inscode(module_dict, error_dict, "EXDEV", EXDEV, "Cross-device link");
 #endif
 #ifdef E2BIG
-    inscode(d, ds, de, "E2BIG", E2BIG, "Arg list too long");
+    inscode(module_dict, error_dict, "E2BIG", E2BIG, "Arg list too long");
 #endif
 #ifdef ESRCH
-    inscode(d, ds, de, "ESRCH", ESRCH, "No such process");
+    inscode(module_dict, error_dict, "ESRCH", ESRCH, "No such process");
 #endif
 #ifdef EMSGSIZE
-    inscode(d, ds, de, "EMSGSIZE", EMSGSIZE, "Message too long");
+    inscode(module_dict, error_dict, "EMSGSIZE", EMSGSIZE, "Message too long");
 #else
 #ifdef WSAEMSGSIZE
-    inscode(d, ds, de, "EMSGSIZE", WSAEMSGSIZE, "Message too long");
+    inscode(module_dict, error_dict, "EMSGSIZE", WSAEMSGSIZE, "Message too long");
 #endif
 #endif
 #ifdef EAFNOSUPPORT
-    inscode(d, ds, de, "EAFNOSUPPORT", EAFNOSUPPORT, "Address family not supported by protocol");
+    inscode(module_dict, error_dict, "EAFNOSUPPORT", EAFNOSUPPORT, "Address family not supported by protocol");
 #else
 #ifdef WSAEAFNOSUPPORT
-    inscode(d, ds, de, "EAFNOSUPPORT", WSAEAFNOSUPPORT, "Address family not supported by protocol");
+    inscode(module_dict, error_dict, "EAFNOSUPPORT", WSAEAFNOSUPPORT, "Address family not supported by protocol");
 #endif
 #endif
 #ifdef EBADR
-    inscode(d, ds, de, "EBADR", EBADR, "Invalid request descriptor");
+    inscode(module_dict, error_dict, "EBADR", EBADR, "Invalid request descriptor");
 #endif
 #ifdef EHOSTDOWN
-    inscode(d, ds, de, "EHOSTDOWN", EHOSTDOWN, "Host is down");
+    inscode(module_dict, error_dict, "EHOSTDOWN", EHOSTDOWN, "Host is down");
 #else
 #ifdef WSAEHOSTDOWN
-    inscode(d, ds, de, "EHOSTDOWN", WSAEHOSTDOWN, "Host is down");
+    inscode(module_dict, error_dict, "EHOSTDOWN", WSAEHOSTDOWN, "Host is down");
 #endif
 #endif
 #ifdef EPFNOSUPPORT
-    inscode(d, ds, de, "EPFNOSUPPORT", EPFNOSUPPORT, "Protocol family not supported");
+    inscode(module_dict, error_dict, "EPFNOSUPPORT", EPFNOSUPPORT, "Protocol family not supported");
 #else
 #ifdef WSAEPFNOSUPPORT
-    inscode(d, ds, de, "EPFNOSUPPORT", WSAEPFNOSUPPORT, "Protocol family not supported");
+    inscode(module_dict, error_dict, "EPFNOSUPPORT", WSAEPFNOSUPPORT, "Protocol family not supported");
 #endif
 #endif
 #ifdef ENOPROTOOPT
-    inscode(d, ds, de, "ENOPROTOOPT", ENOPROTOOPT, "Protocol not available");
+    inscode(module_dict, error_dict, "ENOPROTOOPT", ENOPROTOOPT, "Protocol not available");
 #else
 #ifdef WSAENOPROTOOPT
-    inscode(d, ds, de, "ENOPROTOOPT", WSAENOPROTOOPT, "Protocol not available");
+    inscode(module_dict, error_dict, "ENOPROTOOPT", WSAENOPROTOOPT, "Protocol not available");
 #endif
 #endif
 #ifdef EBUSY
-    inscode(d, ds, de, "EBUSY", EBUSY, "Device or resource busy");
+    inscode(module_dict, error_dict, "EBUSY", EBUSY, "Device or resource busy");
 #endif
 #ifdef EWOULDBLOCK
-    inscode(d, ds, de, "EWOULDBLOCK", EWOULDBLOCK, "Operation would block");
+    inscode(module_dict, error_dict, "EWOULDBLOCK", EWOULDBLOCK, "Operation would block");
 #else
 #ifdef WSAEWOULDBLOCK
-    inscode(d, ds, de, "EWOULDBLOCK", WSAEWOULDBLOCK, "Operation would block");
+    inscode(module_dict, error_dict, "EWOULDBLOCK", WSAEWOULDBLOCK, "Operation would block");
 #endif
 #endif
 #ifdef EBADFD
-    inscode(d, ds, de, "EBADFD", EBADFD, "File descriptor in bad state");
+    inscode(module_dict, error_dict, "EBADFD", EBADFD, "File descriptor in bad state");
 #endif
 #ifdef EDOTDOT
-    inscode(d, ds, de, "EDOTDOT", EDOTDOT, "RFS specific error");
+    inscode(module_dict, error_dict, "EDOTDOT", EDOTDOT, "RFS specific error");
 #endif
 #ifdef EISCONN
-    inscode(d, ds, de, "EISCONN", EISCONN, "Transport endpoint is already connected");
+    inscode(module_dict, error_dict, "EISCONN", EISCONN, "Transport endpoint is already connected");
 #else
 #ifdef WSAEISCONN
-    inscode(d, ds, de, "EISCONN", WSAEISCONN, "Transport endpoint is already connected");
+    inscode(module_dict, error_dict, "EISCONN", WSAEISCONN, "Transport endpoint is already connected");
 #endif
 #endif
 #ifdef ENOANO
-    inscode(d, ds, de, "ENOANO", ENOANO, "No anode");
+    inscode(module_dict, error_dict, "ENOANO", ENOANO, "No anode");
 #endif
 #ifdef ESHUTDOWN
-    inscode(d, ds, de, "ESHUTDOWN", ESHUTDOWN, "Cannot send after transport endpoint shutdown");
+    inscode(module_dict, error_dict, "ESHUTDOWN", ESHUTDOWN, "Cannot send after transport endpoint shutdown");
 #else
 #ifdef WSAESHUTDOWN
-    inscode(d, ds, de, "ESHUTDOWN", WSAESHUTDOWN, "Cannot send after transport endpoint shutdown");
+    inscode(module_dict, error_dict, "ESHUTDOWN", WSAESHUTDOWN, "Cannot send after transport endpoint shutdown");
 #endif
 #endif
 #ifdef ECHRNG
-    inscode(d, ds, de, "ECHRNG", ECHRNG, "Channel number out of range");
+    inscode(module_dict, error_dict, "ECHRNG", ECHRNG, "Channel number out of range");
 #endif
 #ifdef ELIBBAD
-    inscode(d, ds, de, "ELIBBAD", ELIBBAD, "Accessing a corrupted shared library");
+    inscode(module_dict, error_dict, "ELIBBAD", ELIBBAD, "Accessing a corrupted shared library");
 #endif
 #ifdef ENONET
-    inscode(d, ds, de, "ENONET", ENONET, "Machine is not on the network");
+    inscode(module_dict, error_dict, "ENONET", ENONET, "Machine is not on the network");
 #endif
 #ifdef EBADE
-    inscode(d, ds, de, "EBADE", EBADE, "Invalid exchange");
+    inscode(module_dict, error_dict, "EBADE", EBADE, "Invalid exchange");
 #endif
 #ifdef EBADF
-    inscode(d, ds, de, "EBADF", EBADF, "Bad file number");
+    inscode(module_dict, error_dict, "EBADF", EBADF, "Bad file number");
 #else
 #ifdef WSAEBADF
-    inscode(d, ds, de, "EBADF", WSAEBADF, "Bad file number");
+    inscode(module_dict, error_dict, "EBADF", WSAEBADF, "Bad file number");
 #endif
 #endif
 #ifdef EMULTIHOP
-    inscode(d, ds, de, "EMULTIHOP", EMULTIHOP, "Multihop attempted");
+    inscode(module_dict, error_dict, "EMULTIHOP", EMULTIHOP, "Multihop attempted");
 #endif
 #ifdef EIO
-    inscode(d, ds, de, "EIO", EIO, "I/O error");
+    inscode(module_dict, error_dict, "EIO", EIO, "I/O error");
 #endif
 #ifdef EUNATCH
-    inscode(d, ds, de, "EUNATCH", EUNATCH, "Protocol driver not attached");
+    inscode(module_dict, error_dict, "EUNATCH", EUNATCH, "Protocol driver not attached");
 #endif
 #ifdef EPROTOTYPE
-    inscode(d, ds, de, "EPROTOTYPE", EPROTOTYPE, "Protocol wrong type for socket");
+    inscode(module_dict, error_dict, "EPROTOTYPE", EPROTOTYPE, "Protocol wrong type for socket");
 #else
 #ifdef WSAEPROTOTYPE
-    inscode(d, ds, de, "EPROTOTYPE", WSAEPROTOTYPE, "Protocol wrong type for socket");
+    inscode(module_dict, error_dict, "EPROTOTYPE", WSAEPROTOTYPE, "Protocol wrong type for socket");
 #endif
 #endif
 #ifdef ENOSPC
-    inscode(d, ds, de, "ENOSPC", ENOSPC, "No space left on device");
+    inscode(module_dict, error_dict, "ENOSPC", ENOSPC, "No space left on device");
 #endif
 #ifdef ENOEXEC
-    inscode(d, ds, de, "ENOEXEC", ENOEXEC, "Exec format error");
+    inscode(module_dict, error_dict, "ENOEXEC", ENOEXEC, "Exec format error");
 #endif
 #ifdef EALREADY
-    inscode(d, ds, de, "EALREADY", EALREADY, "Operation already in progress");
+    inscode(module_dict, error_dict, "EALREADY", EALREADY, "Operation already in progress");
 #else
 #ifdef WSAEALREADY
-    inscode(d, ds, de, "EALREADY", WSAEALREADY, "Operation already in progress");
+    inscode(module_dict, error_dict, "EALREADY", WSAEALREADY, "Operation already in progress");
 #endif
 #endif
 #ifdef ENETDOWN
-    inscode(d, ds, de, "ENETDOWN", ENETDOWN, "Network is down");
+    inscode(module_dict, error_dict, "ENETDOWN", ENETDOWN, "Network is down");
 #else
 #ifdef WSAENETDOWN
-    inscode(d, ds, de, "ENETDOWN", WSAENETDOWN, "Network is down");
+    inscode(module_dict, error_dict, "ENETDOWN", WSAENETDOWN, "Network is down");
 #endif
 #endif
 #ifdef ENOTNAM
-    inscode(d, ds, de, "ENOTNAM", ENOTNAM, "Not a XENIX named type file");
+    inscode(module_dict, error_dict, "ENOTNAM", ENOTNAM, "Not a XENIX named type file");
 #endif
 #ifdef EACCES
-    inscode(d, ds, de, "EACCES", EACCES, "Permission denied");
+    inscode(module_dict, error_dict, "EACCES", EACCES, "Permission denied");
 #else
 #ifdef WSAEACCES
-    inscode(d, ds, de, "EACCES", WSAEACCES, "Permission denied");
+    inscode(module_dict, error_dict, "EACCES", WSAEACCES, "Permission denied");
 #endif
 #endif
 #ifdef ELNRNG
-    inscode(d, ds, de, "ELNRNG", ELNRNG, "Link number out of range");
+    inscode(module_dict, error_dict, "ELNRNG", ELNRNG, "Link number out of range");
 #endif
 #ifdef EILSEQ
-    inscode(d, ds, de, "EILSEQ", EILSEQ, "Illegal byte sequence");
+    inscode(module_dict, error_dict, "EILSEQ", EILSEQ, "Illegal byte sequence");
 #endif
 #ifdef ENOTDIR
-    inscode(d, ds, de, "ENOTDIR", ENOTDIR, "Not a directory");
+    inscode(module_dict, error_dict, "ENOTDIR", ENOTDIR, "Not a directory");
 #endif
 #ifdef ENOTUNIQ
-    inscode(d, ds, de, "ENOTUNIQ", ENOTUNIQ, "Name not unique on network");
+    inscode(module_dict, error_dict, "ENOTUNIQ", ENOTUNIQ, "Name not unique on network");
 #endif
 #ifdef EPERM
-    inscode(d, ds, de, "EPERM", EPERM, "Operation not permitted");
+    inscode(module_dict, error_dict, "EPERM", EPERM, "Operation not permitted");
 #endif
 #ifdef EDOM
-    inscode(d, ds, de, "EDOM", EDOM, "Math argument out of domain of func");
+    inscode(module_dict, error_dict, "EDOM", EDOM, "Math argument out of domain of func");
 #endif
 #ifdef EXFULL
-    inscode(d, ds, de, "EXFULL", EXFULL, "Exchange full");
+    inscode(module_dict, error_dict, "EXFULL", EXFULL, "Exchange full");
 #endif
 #ifdef ECONNREFUSED
-    inscode(d, ds, de, "ECONNREFUSED", ECONNREFUSED, "Connection refused");
+    inscode(module_dict, error_dict, "ECONNREFUSED", ECONNREFUSED, "Connection refused");
 #else
 #ifdef WSAECONNREFUSED
-    inscode(d, ds, de, "ECONNREFUSED", WSAECONNREFUSED, "Connection refused");
+    inscode(module_dict, error_dict, "ECONNREFUSED", WSAECONNREFUSED, "Connection refused");
 #endif
 #endif
 #ifdef EISDIR
-    inscode(d, ds, de, "EISDIR", EISDIR, "Is a directory");
+    inscode(module_dict, error_dict, "EISDIR", EISDIR, "Is a directory");
 #endif
 #ifdef EPROTONOSUPPORT
-    inscode(d, ds, de, "EPROTONOSUPPORT", EPROTONOSUPPORT, "Protocol not supported");
+    inscode(module_dict, error_dict, "EPROTONOSUPPORT", EPROTONOSUPPORT, "Protocol not supported");
 #else
 #ifdef WSAEPROTONOSUPPORT
-    inscode(d, ds, de, "EPROTONOSUPPORT", WSAEPROTONOSUPPORT, "Protocol not supported");
+    inscode(module_dict, error_dict, "EPROTONOSUPPORT", WSAEPROTONOSUPPORT, "Protocol not supported");
 #endif
 #endif
 #ifdef EROFS
-    inscode(d, ds, de, "EROFS", EROFS, "Read-only file system");
+    inscode(module_dict, error_dict, "EROFS", EROFS, "Read-only file system");
 #endif
 #ifdef EADDRNOTAVAIL
-    inscode(d, ds, de, "EADDRNOTAVAIL", EADDRNOTAVAIL, "Cannot assign requested address");
+    inscode(module_dict, error_dict, "EADDRNOTAVAIL", EADDRNOTAVAIL, "Cannot assign requested address");
 #else
 #ifdef WSAEADDRNOTAVAIL
-    inscode(d, ds, de, "EADDRNOTAVAIL", WSAEADDRNOTAVAIL, "Cannot assign requested address");
+    inscode(module_dict, error_dict, "EADDRNOTAVAIL", WSAEADDRNOTAVAIL, "Cannot assign requested address");
 #endif
 #endif
 #ifdef EIDRM
-    inscode(d, ds, de, "EIDRM", EIDRM, "Identifier removed");
+    inscode(module_dict, error_dict, "EIDRM", EIDRM, "Identifier removed");
 #endif
 #ifdef ECOMM
-    inscode(d, ds, de, "ECOMM", ECOMM, "Communication error on send");
+    inscode(module_dict, error_dict, "ECOMM", ECOMM, "Communication error on send");
 #endif
 #ifdef ESRMNT
-    inscode(d, ds, de, "ESRMNT", ESRMNT, "Srmount error");
+    inscode(module_dict, error_dict, "ESRMNT", ESRMNT, "Srmount error");
 #endif
 #ifdef EREMOTEIO
-    inscode(d, ds, de, "EREMOTEIO", EREMOTEIO, "Remote I/O error");
+    inscode(module_dict, error_dict, "EREMOTEIO", EREMOTEIO, "Remote I/O error");
 #endif
 #ifdef EL3RST
-    inscode(d, ds, de, "EL3RST", EL3RST, "Level 3 reset");
+    inscode(module_dict, error_dict, "EL3RST", EL3RST, "Level 3 reset");
 #endif
 #ifdef EBADMSG
-    inscode(d, ds, de, "EBADMSG", EBADMSG, "Not a data message");
+    inscode(module_dict, error_dict, "EBADMSG", EBADMSG, "Not a data message");
 #endif
 #ifdef ENFILE
-    inscode(d, ds, de, "ENFILE", ENFILE, "File table overflow");
+    inscode(module_dict, error_dict, "ENFILE", ENFILE, "File table overflow");
 #endif
 #ifdef ELIBMAX
-    inscode(d, ds, de, "ELIBMAX", ELIBMAX, "Attempting to link in too many shared libraries");
+    inscode(module_dict, error_dict, "ELIBMAX", ELIBMAX, "Attempting to link in too many shared libraries");
 #endif
 #ifdef ESPIPE
-    inscode(d, ds, de, "ESPIPE", ESPIPE, "Illegal seek");
+    inscode(module_dict, error_dict, "ESPIPE", ESPIPE, "Illegal seek");
 #endif
 #ifdef ENOLINK
-    inscode(d, ds, de, "ENOLINK", ENOLINK, "Link has been severed");
+    inscode(module_dict, error_dict, "ENOLINK", ENOLINK, "Link has been severed");
 #endif
 #ifdef ENETRESET
-    inscode(d, ds, de, "ENETRESET", ENETRESET, "Network dropped connection because of reset");
+    inscode(module_dict, error_dict, "ENETRESET", ENETRESET, "Network dropped connection because of reset");
 #else
 #ifdef WSAENETRESET
-    inscode(d, ds, de, "ENETRESET", WSAENETRESET, "Network dropped connection because of reset");
+    inscode(module_dict, error_dict, "ENETRESET", WSAENETRESET, "Network dropped connection because of reset");
 #endif
 #endif
 #ifdef ETIMEDOUT
-    inscode(d, ds, de, "ETIMEDOUT", ETIMEDOUT, "Connection timed out");
+    inscode(module_dict, error_dict, "ETIMEDOUT", ETIMEDOUT, "Connection timed out");
 #else
 #ifdef WSAETIMEDOUT
-    inscode(d, ds, de, "ETIMEDOUT", WSAETIMEDOUT, "Connection timed out");
+    inscode(module_dict, error_dict, "ETIMEDOUT", WSAETIMEDOUT, "Connection timed out");
 #endif
 #endif
 #ifdef ENOENT
-    inscode(d, ds, de, "ENOENT", ENOENT, "No such file or directory");
+    inscode(module_dict, error_dict, "ENOENT", ENOENT, "No such file or directory");
 #endif
 #ifdef EEXIST
-    inscode(d, ds, de, "EEXIST", EEXIST, "File exists");
+    inscode(module_dict, error_dict, "EEXIST", EEXIST, "File exists");
 #endif
 #ifdef EDQUOT
-    inscode(d, ds, de, "EDQUOT", EDQUOT, "Quota exceeded");
+    inscode(module_dict, error_dict, "EDQUOT", EDQUOT, "Quota exceeded");
 #else
 #ifdef WSAEDQUOT
-    inscode(d, ds, de, "EDQUOT", WSAEDQUOT, "Quota exceeded");
+    inscode(module_dict, error_dict, "EDQUOT", WSAEDQUOT, "Quota exceeded");
 #endif
 #endif
 #ifdef ENOSTR
-    inscode(d, ds, de, "ENOSTR", ENOSTR, "Device not a stream");
+    inscode(module_dict, error_dict, "ENOSTR", ENOSTR, "Device not a stream");
 #endif
 #ifdef EBADSLT
-    inscode(d, ds, de, "EBADSLT", EBADSLT, "Invalid slot");
+    inscode(module_dict, error_dict, "EBADSLT", EBADSLT, "Invalid slot");
 #endif
 #ifdef EBADRQC
-    inscode(d, ds, de, "EBADRQC", EBADRQC, "Invalid request code");
+    inscode(module_dict, error_dict, "EBADRQC", EBADRQC, "Invalid request code");
 #endif
 #ifdef ELIBACC
-    inscode(d, ds, de, "ELIBACC", ELIBACC, "Can not access a needed shared library");
+    inscode(module_dict, error_dict, "ELIBACC", ELIBACC, "Can not access a needed shared library");
 #endif
 #ifdef EFAULT
-    inscode(d, ds, de, "EFAULT", EFAULT, "Bad address");
+    inscode(module_dict, error_dict, "EFAULT", EFAULT, "Bad address");
 #else
 #ifdef WSAEFAULT
-    inscode(d, ds, de, "EFAULT", WSAEFAULT, "Bad address");
+    inscode(module_dict, error_dict, "EFAULT", WSAEFAULT, "Bad address");
 #endif
 #endif
 #ifdef EFBIG
-    inscode(d, ds, de, "EFBIG", EFBIG, "File too large");
+    inscode(module_dict, error_dict, "EFBIG", EFBIG, "File too large");
 #endif
 #ifdef EDEADLK
-    inscode(d, ds, de, "EDEADLK", EDEADLK, "Resource deadlock would occur");
+    inscode(module_dict, error_dict, "EDEADLK", EDEADLK, "Resource deadlock would occur");
 #endif
 #ifdef ENOTCONN
-    inscode(d, ds, de, "ENOTCONN", ENOTCONN, "Transport endpoint is not connected");
+    inscode(module_dict, error_dict, "ENOTCONN", ENOTCONN, "Transport endpoint is not connected");
 #else
 #ifdef WSAENOTCONN
-    inscode(d, ds, de, "ENOTCONN", WSAENOTCONN, "Transport endpoint is not connected");
+    inscode(module_dict, error_dict, "ENOTCONN", WSAENOTCONN, "Transport endpoint is not connected");
 #endif
 #endif
 #ifdef EDESTADDRREQ
-    inscode(d, ds, de, "EDESTADDRREQ", EDESTADDRREQ, "Destination address required");
+    inscode(module_dict, error_dict, "EDESTADDRREQ", EDESTADDRREQ, "Destination address required");
 #else
 #ifdef WSAEDESTADDRREQ
-    inscode(d, ds, de, "EDESTADDRREQ", WSAEDESTADDRREQ, "Destination address required");
+    inscode(module_dict, error_dict, "EDESTADDRREQ", WSAEDESTADDRREQ, "Destination address required");
 #endif
 #endif
 #ifdef ELIBSCN
-    inscode(d, ds, de, "ELIBSCN", ELIBSCN, ".lib section in a.out corrupted");
+    inscode(module_dict, error_dict, "ELIBSCN", ELIBSCN, ".lib section in a.out corrupted");
 #endif
 #ifdef ENOLCK
-    inscode(d, ds, de, "ENOLCK", ENOLCK, "No record locks available");
+    inscode(module_dict, error_dict, "ENOLCK", ENOLCK, "No record locks available");
 #endif
 #ifdef EISNAM
-    inscode(d, ds, de, "EISNAM", EISNAM, "Is a named type file");
+    inscode(module_dict, error_dict, "EISNAM", EISNAM, "Is a named type file");
 #endif
 #ifdef ECONNABORTED
-    inscode(d, ds, de, "ECONNABORTED", ECONNABORTED, "Software caused connection abort");
+    inscode(module_dict, error_dict, "ECONNABORTED", ECONNABORTED, "Software caused connection abort");
 #else
 #ifdef WSAECONNABORTED
-    inscode(d, ds, de, "ECONNABORTED", WSAECONNABORTED, "Software caused connection abort");
+    inscode(module_dict, error_dict, "ECONNABORTED", WSAECONNABORTED, "Software caused connection abort");
 #endif
 #endif
 #ifdef ENETUNREACH
-    inscode(d, ds, de, "ENETUNREACH", ENETUNREACH, "Network is unreachable");
+    inscode(module_dict, error_dict, "ENETUNREACH", ENETUNREACH, "Network is unreachable");
 #else
 #ifdef WSAENETUNREACH
-    inscode(d, ds, de, "ENETUNREACH", WSAENETUNREACH, "Network is unreachable");
+    inscode(module_dict, error_dict, "ENETUNREACH", WSAENETUNREACH, "Network is unreachable");
 #endif
 #endif
 #ifdef ESTALE
-    inscode(d, ds, de, "ESTALE", ESTALE, "Stale NFS file handle");
+    inscode(module_dict, error_dict, "ESTALE", ESTALE, "Stale NFS file handle");
 #else
 #ifdef WSAESTALE
-    inscode(d, ds, de, "ESTALE", WSAESTALE, "Stale NFS file handle");
+    inscode(module_dict, error_dict, "ESTALE", WSAESTALE, "Stale NFS file handle");
 #endif
 #endif
 #ifdef ENOSR
-    inscode(d, ds, de, "ENOSR", ENOSR, "Out of streams resources");
+    inscode(module_dict, error_dict, "ENOSR", ENOSR, "Out of streams resources");
 #endif
 #ifdef ENOMEM
-    inscode(d, ds, de, "ENOMEM", ENOMEM, "Out of memory");
+    inscode(module_dict, error_dict, "ENOMEM", ENOMEM, "Out of memory");
 #endif
 #ifdef ENOTSOCK
-    inscode(d, ds, de, "ENOTSOCK", ENOTSOCK, "Socket operation on non-socket");
+    inscode(module_dict, error_dict, "ENOTSOCK", ENOTSOCK, "Socket operation on non-socket");
 #else
 #ifdef WSAENOTSOCK
-    inscode(d, ds, de, "ENOTSOCK", WSAENOTSOCK, "Socket operation on non-socket");
+    inscode(module_dict, error_dict, "ENOTSOCK", WSAENOTSOCK, "Socket operation on non-socket");
 #endif
 #endif
 #ifdef ESTRPIPE
-    inscode(d, ds, de, "ESTRPIPE", ESTRPIPE, "Streams pipe error");
+    inscode(module_dict, error_dict, "ESTRPIPE", ESTRPIPE, "Streams pipe error");
 #endif
 #ifdef EMLINK
-    inscode(d, ds, de, "EMLINK", EMLINK, "Too many links");
+    inscode(module_dict, error_dict, "EMLINK", EMLINK, "Too many links");
 #endif
 #ifdef ERANGE
-    inscode(d, ds, de, "ERANGE", ERANGE, "Math result not representable");
+    inscode(module_dict, error_dict, "ERANGE", ERANGE, "Math result not representable");
 #endif
 #ifdef ELIBEXEC
-    inscode(d, ds, de, "ELIBEXEC", ELIBEXEC, "Cannot exec a shared library directly");
+    inscode(module_dict, error_dict, "ELIBEXEC", ELIBEXEC, "Cannot exec a shared library directly");
 #endif
 #ifdef EL3HLT
-    inscode(d, ds, de, "EL3HLT", EL3HLT, "Level 3 halted");
+    inscode(module_dict, error_dict, "EL3HLT", EL3HLT, "Level 3 halted");
 #endif
 #ifdef ECONNRESET
-    inscode(d, ds, de, "ECONNRESET", ECONNRESET, "Connection reset by peer");
+    inscode(module_dict, error_dict, "ECONNRESET", ECONNRESET, "Connection reset by peer");
 #else
 #ifdef WSAECONNRESET
-    inscode(d, ds, de, "ECONNRESET", WSAECONNRESET, "Connection reset by peer");
+    inscode(module_dict, error_dict, "ECONNRESET", WSAECONNRESET, "Connection reset by peer");
 #endif
 #endif
 #ifdef EADDRINUSE
-    inscode(d, ds, de, "EADDRINUSE", EADDRINUSE, "Address already in use");
+    inscode(module_dict, error_dict, "EADDRINUSE", EADDRINUSE, "Address already in use");
 #else
 #ifdef WSAEADDRINUSE
-    inscode(d, ds, de, "EADDRINUSE", WSAEADDRINUSE, "Address already in use");
+    inscode(module_dict, error_dict, "EADDRINUSE", WSAEADDRINUSE, "Address already in use");
 #endif
 #endif
 #ifdef EOPNOTSUPP
-    inscode(d, ds, de, "EOPNOTSUPP", EOPNOTSUPP, "Operation not supported on transport endpoint");
+    inscode(module_dict, error_dict, "EOPNOTSUPP", EOPNOTSUPP, "Operation not supported on transport endpoint");
 #else
 #ifdef WSAEOPNOTSUPP
-    inscode(d, ds, de, "EOPNOTSUPP", WSAEOPNOTSUPP, "Operation not supported on transport endpoint");
+    inscode(module_dict, error_dict, "EOPNOTSUPP", WSAEOPNOTSUPP, "Operation not supported on transport endpoint");
 #endif
 #endif
 #ifdef EREMCHG
-    inscode(d, ds, de, "EREMCHG", EREMCHG, "Remote address changed");
+    inscode(module_dict, error_dict, "EREMCHG", EREMCHG, "Remote address changed");
 #endif
 #ifdef EAGAIN
-    inscode(d, ds, de, "EAGAIN", EAGAIN, "Try again");
+    inscode(module_dict, error_dict, "EAGAIN", EAGAIN, "Try again");
 #endif
 #ifdef ENAMETOOLONG
-    inscode(d, ds, de, "ENAMETOOLONG", ENAMETOOLONG, "File name too long");
+    inscode(module_dict, error_dict, "ENAMETOOLONG", ENAMETOOLONG, "File name too long");
 #else
 #ifdef WSAENAMETOOLONG
-    inscode(d, ds, de, "ENAMETOOLONG", WSAENAMETOOLONG, "File name too long");
+    inscode(module_dict, error_dict, "ENAMETOOLONG", WSAENAMETOOLONG, "File name too long");
 #endif
 #endif
 #ifdef ENOTTY
-    inscode(d, ds, de, "ENOTTY", ENOTTY, "Not a typewriter");
+    inscode(module_dict, error_dict, "ENOTTY", ENOTTY, "Not a typewriter");
 #endif
 #ifdef ERESTART
-    inscode(d, ds, de, "ERESTART", ERESTART, "Interrupted system call should be restarted");
+    inscode(module_dict, error_dict, "ERESTART", ERESTART, "Interrupted system call should be restarted");
 #endif
 #ifdef ESOCKTNOSUPPORT
-    inscode(d, ds, de, "ESOCKTNOSUPPORT", ESOCKTNOSUPPORT, "Socket type not supported");
+    inscode(module_dict, error_dict, "ESOCKTNOSUPPORT", ESOCKTNOSUPPORT, "Socket type not supported");
 #else
 #ifdef WSAESOCKTNOSUPPORT
-    inscode(d, ds, de, "ESOCKTNOSUPPORT", WSAESOCKTNOSUPPORT, "Socket type not supported");
+    inscode(module_dict, error_dict, "ESOCKTNOSUPPORT", WSAESOCKTNOSUPPORT, "Socket type not supported");
 #endif
 #endif
 #ifdef ETIME
-    inscode(d, ds, de, "ETIME", ETIME, "Timer expired");
+    inscode(module_dict, error_dict, "ETIME", ETIME, "Timer expired");
 #endif
 #ifdef EBFONT
-    inscode(d, ds, de, "EBFONT", EBFONT, "Bad font file format");
+    inscode(module_dict, error_dict, "EBFONT", EBFONT, "Bad font file format");
 #endif
 #ifdef EDEADLOCK
-    inscode(d, ds, de, "EDEADLOCK", EDEADLOCK, "Error EDEADLOCK");
+    inscode(module_dict, error_dict, "EDEADLOCK", EDEADLOCK, "Error EDEADLOCK");
 #endif
 #ifdef ETOOMANYREFS
-    inscode(d, ds, de, "ETOOMANYREFS", ETOOMANYREFS, "Too many references: cannot splice");
+    inscode(module_dict, error_dict, "ETOOMANYREFS", ETOOMANYREFS, "Too many references: cannot splice");
 #else
 #ifdef WSAETOOMANYREFS
-    inscode(d, ds, de, "ETOOMANYREFS", WSAETOOMANYREFS, "Too many references: cannot splice");
+    inscode(module_dict, error_dict, "ETOOMANYREFS", WSAETOOMANYREFS, "Too many references: cannot splice");
 #endif
 #endif
 #ifdef EMFILE
-    inscode(d, ds, de, "EMFILE", EMFILE, "Too many open files");
+    inscode(module_dict, error_dict, "EMFILE", EMFILE, "Too many open files");
 #else
 #ifdef WSAEMFILE
-    inscode(d, ds, de, "EMFILE", WSAEMFILE, "Too many open files");
+    inscode(module_dict, error_dict, "EMFILE", WSAEMFILE, "Too many open files");
 #endif
 #endif
 #ifdef ETXTBSY
-    inscode(d, ds, de, "ETXTBSY", ETXTBSY, "Text file busy");
+    inscode(module_dict, error_dict, "ETXTBSY", ETXTBSY, "Text file busy");
 #endif
 #ifdef EINPROGRESS
-    inscode(d, ds, de, "EINPROGRESS", EINPROGRESS, "Operation now in progress");
+    inscode(module_dict, error_dict, "EINPROGRESS", EINPROGRESS, "Operation now in progress");
 #else
 #ifdef WSAEINPROGRESS
-    inscode(d, ds, de, "EINPROGRESS", WSAEINPROGRESS, "Operation now in progress");
+    inscode(module_dict, error_dict, "EINPROGRESS", WSAEINPROGRESS, "Operation now in progress");
 #endif
 #endif
 #ifdef ENXIO
-    inscode(d, ds, de, "ENXIO", ENXIO, "No such device or address");
+    inscode(module_dict, error_dict, "ENXIO", ENXIO, "No such device or address");
 #endif
 #ifdef ENOPKG
-    inscode(d, ds, de, "ENOPKG", ENOPKG, "Package not installed");
+    inscode(module_dict, error_dict, "ENOPKG", ENOPKG, "Package not installed");
 #endif
 #ifdef WSASY
-    inscode(d, ds, de, "WSASY", WSASY, "Error WSASY");
+    inscode(module_dict, error_dict, "WSASY", WSASY, "Error WSASY");
 #endif
 #ifdef WSAEHOSTDOWN
-    inscode(d, ds, de, "WSAEHOSTDOWN", WSAEHOSTDOWN, "Host is down");
+    inscode(module_dict, error_dict, "WSAEHOSTDOWN", WSAEHOSTDOWN, "Host is down");
 #endif
 #ifdef WSAENETDOWN
-    inscode(d, ds, de, "WSAENETDOWN", WSAENETDOWN, "Network is down");
+    inscode(module_dict, error_dict, "WSAENETDOWN", WSAENETDOWN, "Network is down");
 #endif
 #ifdef WSAENOTSOCK
-    inscode(d, ds, de, "WSAENOTSOCK", WSAENOTSOCK, "Socket operation on non-socket");
+    inscode(module_dict, error_dict, "WSAENOTSOCK", WSAENOTSOCK, "Socket operation on non-socket");
 #endif
 #ifdef WSAEHOSTUNREACH
-    inscode(d, ds, de, "WSAEHOSTUNREACH", WSAEHOSTUNREACH, "No route to host");
+    inscode(module_dict, error_dict, "WSAEHOSTUNREACH", WSAEHOSTUNREACH, "No route to host");
 #endif
 #ifdef WSAELOOP
-    inscode(d, ds, de, "WSAELOOP", WSAELOOP, "Too many symbolic links encountered");
+    inscode(module_dict, error_dict, "WSAELOOP", WSAELOOP, "Too many symbolic links encountered");
 #endif
 #ifdef WSAEMFILE
-    inscode(d, ds, de, "WSAEMFILE", WSAEMFILE, "Too many open files");
+    inscode(module_dict, error_dict, "WSAEMFILE", WSAEMFILE, "Too many open files");
 #endif
 #ifdef WSAESTALE
-    inscode(d, ds, de, "WSAESTALE", WSAESTALE, "Stale NFS file handle");
+    inscode(module_dict, error_dict, "WSAESTALE", WSAESTALE, "Stale NFS file handle");
 #endif
 #ifdef WSAVERNOTSUPPORTED
-    inscode(d, ds, de, "WSAVERNOTSUPPORTED", WSAVERNOTSUPPORTED, "Error WSAVERNOTSUPPORTED");
+    inscode(module_dict, error_dict, "WSAVERNOTSUPPORTED", WSAVERNOTSUPPORTED, "Error WSAVERNOTSUPPORTED");
 #endif
 #ifdef WSAENETUNREACH
-    inscode(d, ds, de, "WSAENETUNREACH", WSAENETUNREACH, "Network is unreachable");
+    inscode(module_dict, error_dict, "WSAENETUNREACH", WSAENETUNREACH, "Network is unreachable");
 #endif
 #ifdef WSAEPROCLIM
-    inscode(d, ds, de, "WSAEPROCLIM", WSAEPROCLIM, "Error WSAEPROCLIM");
+    inscode(module_dict, error_dict, "WSAEPROCLIM", WSAEPROCLIM, "Error WSAEPROCLIM");
 #endif
 #ifdef WSAEFAULT
-    inscode(d, ds, de, "WSAEFAULT", WSAEFAULT, "Bad address");
+    inscode(module_dict, error_dict, "WSAEFAULT", WSAEFAULT, "Bad address");
 #endif
 #ifdef WSANOTINITIALISED
-    inscode(d, ds, de, "WSANOTINITIALISED", WSANOTINITIALISED, "Error WSANOTINITIALISED");
+    inscode(module_dict, error_dict, "WSANOTINITIALISED", WSANOTINITIALISED, "Error WSANOTINITIALISED");
 #endif
 #ifdef WSAEUSERS
-    inscode(d, ds, de, "WSAEUSERS", WSAEUSERS, "Too many users");
+    inscode(module_dict, error_dict, "WSAEUSERS", WSAEUSERS, "Too many users");
 #endif
 #ifdef WSAMAKEASYNCREPL
-    inscode(d, ds, de, "WSAMAKEASYNCREPL", WSAMAKEASYNCREPL, "Error WSAMAKEASYNCREPL");
+    inscode(module_dict, error_dict, "WSAMAKEASYNCREPL", WSAMAKEASYNCREPL, "Error WSAMAKEASYNCREPL");
 #endif
 #ifdef WSAENOPROTOOPT
-    inscode(d, ds, de, "WSAENOPROTOOPT", WSAENOPROTOOPT, "Protocol not available");
+    inscode(module_dict, error_dict, "WSAENOPROTOOPT", WSAENOPROTOOPT, "Protocol not available");
 #endif
 #ifdef WSAECONNABORTED
-    inscode(d, ds, de, "WSAECONNABORTED", WSAECONNABORTED, "Software caused connection abort");
+    inscode(module_dict, error_dict, "WSAECONNABORTED", WSAECONNABORTED, "Software caused connection abort");
 #endif
 #ifdef WSAENAMETOOLONG
-    inscode(d, ds, de, "WSAENAMETOOLONG", WSAENAMETOOLONG, "File name too long");
+    inscode(module_dict, error_dict, "WSAENAMETOOLONG", WSAENAMETOOLONG, "File name too long");
 #endif
 #ifdef WSAENOTEMPTY
-    inscode(d, ds, de, "WSAENOTEMPTY", WSAENOTEMPTY, "Directory not empty");
+    inscode(module_dict, error_dict, "WSAENOTEMPTY", WSAENOTEMPTY, "Directory not empty");
 #endif
 #ifdef WSAESHUTDOWN
-    inscode(d, ds, de, "WSAESHUTDOWN", WSAESHUTDOWN, "Cannot send after transport endpoint shutdown");
+    inscode(module_dict, error_dict, "WSAESHUTDOWN", WSAESHUTDOWN, "Cannot send after transport endpoint shutdown");
 #endif
 #ifdef WSAEAFNOSUPPORT
-    inscode(d, ds, de, "WSAEAFNOSUPPORT", WSAEAFNOSUPPORT, "Address family not supported by protocol");
+    inscode(module_dict, error_dict, "WSAEAFNOSUPPORT", WSAEAFNOSUPPORT, "Address family not supported by protocol");
 #endif
 #ifdef WSAETOOMANYREFS
-    inscode(d, ds, de, "WSAETOOMANYREFS", WSAETOOMANYREFS, "Too many references: cannot splice");
+    inscode(module_dict, error_dict, "WSAETOOMANYREFS", WSAETOOMANYREFS, "Too many references: cannot splice");
 #endif
 #ifdef WSAEACCES
-    inscode(d, ds, de, "WSAEACCES", WSAEACCES, "Permission denied");
+    inscode(module_dict, error_dict, "WSAEACCES", WSAEACCES, "Permission denied");
 #endif
 #ifdef WSATR
-    inscode(d, ds, de, "WSATR", WSATR, "Error WSATR");
+    inscode(module_dict, error_dict, "WSATR", WSATR, "Error WSATR");
 #endif
 #ifdef WSABASEERR
-    inscode(d, ds, de, "WSABASEERR", WSABASEERR, "Error WSABASEERR");
+    inscode(module_dict, error_dict, "WSABASEERR", WSABASEERR, "Error WSABASEERR");
 #endif
 #ifdef WSADESCRIPTIO
-    inscode(d, ds, de, "WSADESCRIPTIO", WSADESCRIPTIO, "Error WSADESCRIPTIO");
+    inscode(module_dict, error_dict, "WSADESCRIPTIO", WSADESCRIPTIO, "Error WSADESCRIPTIO");
 #endif
 #ifdef WSAEMSGSIZE
-    inscode(d, ds, de, "WSAEMSGSIZE", WSAEMSGSIZE, "Message too long");
+    inscode(module_dict, error_dict, "WSAEMSGSIZE", WSAEMSGSIZE, "Message too long");
 #endif
 #ifdef WSAEBADF
-    inscode(d, ds, de, "WSAEBADF", WSAEBADF, "Bad file number");
+    inscode(module_dict, error_dict, "WSAEBADF", WSAEBADF, "Bad file number");
 #endif
 #ifdef WSAECONNRESET
-    inscode(d, ds, de, "WSAECONNRESET", WSAECONNRESET, "Connection reset by peer");
+    inscode(module_dict, error_dict, "WSAECONNRESET", WSAECONNRESET, "Connection reset by peer");
 #endif
 #ifdef WSAGETSELECTERRO
-    inscode(d, ds, de, "WSAGETSELECTERRO", WSAGETSELECTERRO, "Error WSAGETSELECTERRO");
+    inscode(module_dict, error_dict, "WSAGETSELECTERRO", WSAGETSELECTERRO, "Error WSAGETSELECTERRO");
 #endif
 #ifdef WSAETIMEDOUT
-    inscode(d, ds, de, "WSAETIMEDOUT", WSAETIMEDOUT, "Connection timed out");
+    inscode(module_dict, error_dict, "WSAETIMEDOUT", WSAETIMEDOUT, "Connection timed out");
 #endif
 #ifdef WSAENOBUFS
-    inscode(d, ds, de, "WSAENOBUFS", WSAENOBUFS, "No buffer space available");
+    inscode(module_dict, error_dict, "WSAENOBUFS", WSAENOBUFS, "No buffer space available");
 #endif
 #ifdef WSAEDISCON
-    inscode(d, ds, de, "WSAEDISCON", WSAEDISCON, "Error WSAEDISCON");
+    inscode(module_dict, error_dict, "WSAEDISCON", WSAEDISCON, "Error WSAEDISCON");
 #endif
 #ifdef WSAEINTR
-    inscode(d, ds, de, "WSAEINTR", WSAEINTR, "Interrupted system call");
+    inscode(module_dict, error_dict, "WSAEINTR", WSAEINTR, "Interrupted system call");
 #endif
 #ifdef WSAEPROTOTYPE
-    inscode(d, ds, de, "WSAEPROTOTYPE", WSAEPROTOTYPE, "Protocol wrong type for socket");
+    inscode(module_dict, error_dict, "WSAEPROTOTYPE", WSAEPROTOTYPE, "Protocol wrong type for socket");
 #endif
 #ifdef WSAHOS
-    inscode(d, ds, de, "WSAHOS", WSAHOS, "Error WSAHOS");
+    inscode(module_dict, error_dict, "WSAHOS", WSAHOS, "Error WSAHOS");
 #endif
 #ifdef WSAEADDRINUSE
-    inscode(d, ds, de, "WSAEADDRINUSE", WSAEADDRINUSE, "Address already in use");
+    inscode(module_dict, error_dict, "WSAEADDRINUSE", WSAEADDRINUSE, "Address already in use");
 #endif
 #ifdef WSAEADDRNOTAVAIL
-    inscode(d, ds, de, "WSAEADDRNOTAVAIL", WSAEADDRNOTAVAIL, "Cannot assign requested address");
+    inscode(module_dict, error_dict, "WSAEADDRNOTAVAIL", WSAEADDRNOTAVAIL, "Cannot assign requested address");
 #endif
 #ifdef WSAEALREADY
-    inscode(d, ds, de, "WSAEALREADY", WSAEALREADY, "Operation already in progress");
+    inscode(module_dict, error_dict, "WSAEALREADY", WSAEALREADY, "Operation already in progress");
 #endif
 #ifdef WSAEPROTONOSUPPORT
-    inscode(d, ds, de, "WSAEPROTONOSUPPORT", WSAEPROTONOSUPPORT, "Protocol not supported");
+    inscode(module_dict, error_dict, "WSAEPROTONOSUPPORT", WSAEPROTONOSUPPORT, "Protocol not supported");
 #endif
 #ifdef WSASYSNOTREADY
-    inscode(d, ds, de, "WSASYSNOTREADY", WSASYSNOTREADY, "Error WSASYSNOTREADY");
+    inscode(module_dict, error_dict, "WSASYSNOTREADY", WSASYSNOTREADY, "Error WSASYSNOTREADY");
 #endif
 #ifdef WSAEWOULDBLOCK
-    inscode(d, ds, de, "WSAEWOULDBLOCK", WSAEWOULDBLOCK, "Operation would block");
+    inscode(module_dict, error_dict, "WSAEWOULDBLOCK", WSAEWOULDBLOCK, "Operation would block");
 #endif
 #ifdef WSAEPFNOSUPPORT
-    inscode(d, ds, de, "WSAEPFNOSUPPORT", WSAEPFNOSUPPORT, "Protocol family not supported");
+    inscode(module_dict, error_dict, "WSAEPFNOSUPPORT", WSAEPFNOSUPPORT, "Protocol family not supported");
 #endif
 #ifdef WSAEOPNOTSUPP
-    inscode(d, ds, de, "WSAEOPNOTSUPP", WSAEOPNOTSUPP, "Operation not supported on transport endpoint");
+    inscode(module_dict, error_dict, "WSAEOPNOTSUPP", WSAEOPNOTSUPP, "Operation not supported on transport endpoint");
 #endif
 #ifdef WSAEISCONN
-    inscode(d, ds, de, "WSAEISCONN", WSAEISCONN, "Transport endpoint is already connected");
+    inscode(module_dict, error_dict, "WSAEISCONN", WSAEISCONN, "Transport endpoint is already connected");
 #endif
 #ifdef WSAEDQUOT
-    inscode(d, ds, de, "WSAEDQUOT", WSAEDQUOT, "Quota exceeded");
+    inscode(module_dict, error_dict, "WSAEDQUOT", WSAEDQUOT, "Quota exceeded");
 #endif
 #ifdef WSAENOTCONN
-    inscode(d, ds, de, "WSAENOTCONN", WSAENOTCONN, "Transport endpoint is not connected");
+    inscode(module_dict, error_dict, "WSAENOTCONN", WSAENOTCONN, "Transport endpoint is not connected");
 #endif
 #ifdef WSAEREMOTE
-    inscode(d, ds, de, "WSAEREMOTE", WSAEREMOTE, "Object is remote");
+    inscode(module_dict, error_dict, "WSAEREMOTE", WSAEREMOTE, "Object is remote");
 #endif
 #ifdef WSAEINVAL
-    inscode(d, ds, de, "WSAEINVAL", WSAEINVAL, "Invalid argument");
+    inscode(module_dict, error_dict, "WSAEINVAL", WSAEINVAL, "Invalid argument");
 #endif
 #ifdef WSAEINPROGRESS
-    inscode(d, ds, de, "WSAEINPROGRESS", WSAEINPROGRESS, "Operation now in progress");
+    inscode(module_dict, error_dict, "WSAEINPROGRESS", WSAEINPROGRESS, "Operation now in progress");
 #endif
 #ifdef WSAGETSELECTEVEN
-    inscode(d, ds, de, "WSAGETSELECTEVEN", WSAGETSELECTEVEN, "Error WSAGETSELECTEVEN");
+    inscode(module_dict, error_dict, "WSAGETSELECTEVEN", WSAGETSELECTEVEN, "Error WSAGETSELECTEVEN");
 #endif
 #ifdef WSAESOCKTNOSUPPORT
-    inscode(d, ds, de, "WSAESOCKTNOSUPPORT", WSAESOCKTNOSUPPORT, "Socket type not supported");
+    inscode(module_dict, error_dict, "WSAESOCKTNOSUPPORT", WSAESOCKTNOSUPPORT, "Socket type not supported");
 #endif
 #ifdef WSAGETASYNCERRO
-    inscode(d, ds, de, "WSAGETASYNCERRO", WSAGETASYNCERRO, "Error WSAGETASYNCERRO");
+    inscode(module_dict, error_dict, "WSAGETASYNCERRO", WSAGETASYNCERRO, "Error WSAGETASYNCERRO");
 #endif
 #ifdef WSAMAKESELECTREPL
-    inscode(d, ds, de, "WSAMAKESELECTREPL", WSAMAKESELECTREPL, "Error WSAMAKESELECTREPL");
+    inscode(module_dict, error_dict, "WSAMAKESELECTREPL", WSAMAKESELECTREPL, "Error WSAMAKESELECTREPL");
 #endif
 #ifdef WSAGETASYNCBUFLE
-    inscode(d, ds, de, "WSAGETASYNCBUFLE", WSAGETASYNCBUFLE, "Error WSAGETASYNCBUFLE");
+    inscode(module_dict, error_dict, "WSAGETASYNCBUFLE", WSAGETASYNCBUFLE, "Error WSAGETASYNCBUFLE");
 #endif
 #ifdef WSAEDESTADDRREQ
-    inscode(d, ds, de, "WSAEDESTADDRREQ", WSAEDESTADDRREQ, "Destination address required");
+    inscode(module_dict, error_dict, "WSAEDESTADDRREQ", WSAEDESTADDRREQ, "Destination address required");
 #endif
 #ifdef WSAECONNREFUSED
-    inscode(d, ds, de, "WSAECONNREFUSED", WSAECONNREFUSED, "Connection refused");
+    inscode(module_dict, error_dict, "WSAECONNREFUSED", WSAECONNREFUSED, "Connection refused");
 #endif
 #ifdef WSAENETRESET
-    inscode(d, ds, de, "WSAENETRESET", WSAENETRESET, "Network dropped connection because of reset");
+    inscode(module_dict, error_dict, "WSAENETRESET", WSAENETRESET, "Network dropped connection because of reset");
 #endif
 #ifdef WSAN
-    inscode(d, ds, de, "WSAN", WSAN, "Error WSAN");
+    inscode(module_dict, error_dict, "WSAN", WSAN, "Error WSAN");
 #endif
 #ifdef ENOMEDIUM
-    inscode(d, ds, de, "ENOMEDIUM", ENOMEDIUM, "No medium found");
+    inscode(module_dict, error_dict, "ENOMEDIUM", ENOMEDIUM, "No medium found");
 #endif
 #ifdef EMEDIUMTYPE
-    inscode(d, ds, de, "EMEDIUMTYPE", EMEDIUMTYPE, "Wrong medium type");
+    inscode(module_dict, error_dict, "EMEDIUMTYPE", EMEDIUMTYPE, "Wrong medium type");
 #endif
 #ifdef ECANCELED
-    inscode(d, ds, de, "ECANCELED", ECANCELED, "Operation Canceled");
+    inscode(module_dict, error_dict, "ECANCELED", ECANCELED, "Operation Canceled");
 #endif
 #ifdef ENOKEY
-    inscode(d, ds, de, "ENOKEY", ENOKEY, "Required key not available");
+    inscode(module_dict, error_dict, "ENOKEY", ENOKEY, "Required key not available");
 #endif
 #ifdef EKEYEXPIRED
-    inscode(d, ds, de, "EKEYEXPIRED", EKEYEXPIRED, "Key has expired");
+    inscode(module_dict, error_dict, "EKEYEXPIRED", EKEYEXPIRED, "Key has expired");
 #endif
 #ifdef EKEYREVOKED
-    inscode(d, ds, de, "EKEYREVOKED", EKEYREVOKED, "Key has been revoked");
+    inscode(module_dict, error_dict, "EKEYREVOKED", EKEYREVOKED, "Key has been revoked");
 #endif
 #ifdef EKEYREJECTED
-    inscode(d, ds, de, "EKEYREJECTED", EKEYREJECTED, "Key was rejected by service");
+    inscode(module_dict, error_dict, "EKEYREJECTED", EKEYREJECTED, "Key was rejected by service");
 #endif
 #ifdef EOWNERDEAD
-    inscode(d, ds, de, "EOWNERDEAD", EOWNERDEAD, "Owner died");
+    inscode(module_dict, error_dict, "EOWNERDEAD", EOWNERDEAD, "Owner died");
 #endif
 #ifdef ENOTRECOVERABLE
-    inscode(d, ds, de, "ENOTRECOVERABLE", ENOTRECOVERABLE, "State not recoverable");
+    inscode(module_dict, error_dict, "ENOTRECOVERABLE", ENOTRECOVERABLE, "State not recoverable");
 #endif
 #ifdef ERFKILL
-    inscode(d, ds, de, "ERFKILL", ERFKILL, "Operation not possible due to RF-kill");
+    inscode(module_dict, error_dict, "ERFKILL", ERFKILL, "Operation not possible due to RF-kill");
 #endif
 
     /* Solaris-specific errnos */
 #ifdef ECANCELED
-    inscode(d, ds, de, "ECANCELED", ECANCELED, "Operation canceled");
+    inscode(module_dict, error_dict, "ECANCELED", ECANCELED, "Operation canceled");
 #endif
 #ifdef ENOTSUP
-    inscode(d, ds, de, "ENOTSUP", ENOTSUP, "Operation not supported");
+    inscode(module_dict, error_dict, "ENOTSUP", ENOTSUP, "Operation not supported");
 #endif
 #ifdef EOWNERDEAD
-    inscode(d, ds, de, "EOWNERDEAD", EOWNERDEAD, "Process died with the lock");
+    inscode(module_dict, error_dict, "EOWNERDEAD", EOWNERDEAD, "Process died with the lock");
 #endif
 #ifdef ENOTRECOVERABLE
-    inscode(d, ds, de, "ENOTRECOVERABLE", ENOTRECOVERABLE, "Lock is not recoverable");
+    inscode(module_dict, error_dict, "ENOTRECOVERABLE", ENOTRECOVERABLE, "Lock is not recoverable");
 #endif
 #ifdef ELOCKUNMAPPED
-    inscode(d, ds, de, "ELOCKUNMAPPED", ELOCKUNMAPPED, "Locked lock was unmapped");
+    inscode(module_dict, error_dict, "ELOCKUNMAPPED", ELOCKUNMAPPED, "Locked lock was unmapped");
 #endif
 #ifdef ENOTACTIVE
-    inscode(d, ds, de, "ENOTACTIVE", ENOTACTIVE, "Facility is not active");
+    inscode(module_dict, error_dict, "ENOTACTIVE", ENOTACTIVE, "Facility is not active");
 #endif
 
     /* MacOSX specific errnos */
 #ifdef EAUTH
-    inscode(d, ds, de, "EAUTH", EAUTH, "Authentication error");
+    inscode(module_dict, error_dict, "EAUTH", EAUTH, "Authentication error");
 #endif
 #ifdef EBADARCH
-    inscode(d, ds, de, "EBADARCH", EBADARCH, "Bad CPU type in executable");
+    inscode(module_dict, error_dict, "EBADARCH", EBADARCH, "Bad CPU type in executable");
 #endif
 #ifdef EBADEXEC
-    inscode(d, ds, de, "EBADEXEC", EBADEXEC, "Bad executable (or shared library)");
+    inscode(module_dict, error_dict, "EBADEXEC", EBADEXEC, "Bad executable (or shared library)");
 #endif
 #ifdef EBADMACHO
-    inscode(d, ds, de, "EBADMACHO", EBADMACHO, "Malformed Mach-o file");
+    inscode(module_dict, error_dict, "EBADMACHO", EBADMACHO, "Malformed Mach-o file");
 #endif
 #ifdef EBADRPC
-    inscode(d, ds, de, "EBADRPC", EBADRPC, "RPC struct is bad");
+    inscode(module_dict, error_dict, "EBADRPC", EBADRPC, "RPC struct is bad");
 #endif
 #ifdef EDEVERR
-    inscode(d, ds, de, "EDEVERR", EDEVERR, "Device error");
+    inscode(module_dict, error_dict, "EDEVERR", EDEVERR, "Device error");
 #endif
 #ifdef EFTYPE
-    inscode(d, ds, de, "EFTYPE", EFTYPE, "Inappropriate file type or format");
+    inscode(module_dict, error_dict, "EFTYPE", EFTYPE, "Inappropriate file type or format");
 #endif
 #ifdef ENEEDAUTH
-    inscode(d, ds, de, "ENEEDAUTH", ENEEDAUTH, "Need authenticator");
+    inscode(module_dict, error_dict, "ENEEDAUTH", ENEEDAUTH, "Need authenticator");
 #endif
 #ifdef ENOATTR
-    inscode(d, ds, de, "ENOATTR", ENOATTR, "Attribute not found");
+    inscode(module_dict, error_dict, "ENOATTR", ENOATTR, "Attribute not found");
 #endif
 #ifdef ENOPOLICY
-    inscode(d, ds, de, "ENOPOLICY", ENOPOLICY, "Policy not found");
+    inscode(module_dict, error_dict, "ENOPOLICY", ENOPOLICY, "Policy not found");
 #endif
 #ifdef EPROCLIM
-    inscode(d, ds, de, "EPROCLIM", EPROCLIM, "Too many processes");
+    inscode(module_dict, error_dict, "EPROCLIM", EPROCLIM, "Too many processes");
 #endif
 #ifdef EPROCUNAVAIL
-    inscode(d, ds, de, "EPROCUNAVAIL", EPROCUNAVAIL, "Bad procedure for program");
+    inscode(module_dict, error_dict, "EPROCUNAVAIL", EPROCUNAVAIL, "Bad procedure for program");
 #endif
 #ifdef EPROGMISMATCH
-    inscode(d, ds, de, "EPROGMISMATCH", EPROGMISMATCH, "Program version wrong");
+    inscode(module_dict, error_dict, "EPROGMISMATCH", EPROGMISMATCH, "Program version wrong");
 #endif
 #ifdef EPROGUNAVAIL
-    inscode(d, ds, de, "EPROGUNAVAIL", EPROGUNAVAIL, "RPC prog. not avail");
+    inscode(module_dict, error_dict, "EPROGUNAVAIL", EPROGUNAVAIL, "RPC prog. not avail");
 #endif
 #ifdef EPWROFF
-    inscode(d, ds, de, "EPWROFF", EPWROFF, "Device power is off");
+    inscode(module_dict, error_dict, "EPWROFF", EPWROFF, "Device power is off");
 #endif
 #ifdef ERPCMISMATCH
-    inscode(d, ds, de, "ERPCMISMATCH", ERPCMISMATCH, "RPC version wrong");
+    inscode(module_dict, error_dict, "ERPCMISMATCH", ERPCMISMATCH, "RPC version wrong");
 #endif
 #ifdef ESHLIBVERS
-    inscode(d, ds, de, "ESHLIBVERS", ESHLIBVERS, "Shared library version mismatch");
+    inscode(module_dict, error_dict, "ESHLIBVERS", ESHLIBVERS, "Shared library version mismatch");
 #endif
 
-    Py_DECREF(de);
+    Py_DECREF(error_dict);
     return 0;
 }
 
