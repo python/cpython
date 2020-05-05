@@ -512,15 +512,15 @@ throw_here:
     }
 
     PyErr_Restore(typ, val, tb);
-    /* XXX It seems like we shouldn't have to check not equal to Py_None
-       here because exc_type should only ever be a class.  But not including
-       this check was causing crashes on certain tests e.g. on Fedora. */
-    if (gen->gi_exc_state.exc_type && gen->gi_exc_state.exc_type != Py_None) {
-        Py_INCREF(gen->gi_exc_state.exc_type);
-        Py_XINCREF(gen->gi_exc_state.exc_value);
-        Py_XINCREF(gen->gi_exc_state.exc_traceback);
-        _PyErr_ChainExceptions(gen->gi_exc_state.exc_type,
-            gen->gi_exc_state.exc_value, gen->gi_exc_state.exc_traceback);
+
+    _PyErr_StackItem *gi_exc_state = &gen->gi_exc_state;
+    if (gi_exc_state->exc_type != NULL && gi_exc_state->exc_type != Py_None) {
+        Py_INCREF(gi_exc_state->exc_type);
+        Py_XINCREF(gi_exc_state->exc_value);
+        Py_XINCREF(gi_exc_state->exc_traceback);
+        _PyErr_ChainExceptions(gi_exc_state->exc_type,
+                               gi_exc_state->exc_value,
+                               gi_exc_state->exc_traceback);
     }
     return gen_send_ex(gen, Py_None, 1, 0);
 
