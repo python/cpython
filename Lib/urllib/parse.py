@@ -662,7 +662,8 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
-             encoding='utf-8', errors='replace', max_num_fields=None):
+             encoding='utf-8', errors='replace', max_num_fields=None,
+             standalone_keys=False):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -696,6 +697,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
         encoding=encoding,
         errors=errors,
         max_num_fields=max_num_fields,
+        standalone_keys=standalone_keys,
     )
     for name, value in pairs:
         if name in parsed_result:
@@ -706,7 +708,8 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
 
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
-              encoding='utf-8', errors='replace', max_num_fields=None):
+              encoding='utf-8', errors='replace', max_num_fields=None,
+              standalone_keys=False):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -747,7 +750,12 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         if not name_value and not strict_parsing:
             continue
 
-        default_value = '' if keep_blank_values else None
+        default_value = None
+        if keep_blank_values:
+            default_value = ''
+        if standalone_keys and name_value.endswith('='):
+            default_value = ''
+
         name_value = iter(name_value.split('=', 1))
         name = next(name_value)
         value = next(name_value, default_value)
@@ -755,7 +763,11 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         if not value:
             if strict_parsing:
                 raise ValueError("bad query field: %r" % (name_value,))
-            if not keep_blank_values:
+            elif keep_blank_values:
+                pass
+            elif standalone_keys:
+                pass
+            else:
                 continue
 
         result = []
