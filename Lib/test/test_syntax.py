@@ -63,10 +63,9 @@ SyntaxError: cannot assign to __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
 
-# Pegen does not support this yet
-# >>> del f()
-# Traceback (most recent call last):
-# SyntaxError: cannot delete function call
+>>> del f()
+Traceback (most recent call last):
+SyntaxError: cannot delete function call
 
 >>> a + 1 = 2
 Traceback (most recent call last):
