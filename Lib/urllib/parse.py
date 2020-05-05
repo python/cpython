@@ -760,12 +760,13 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
             else:
                 continue
 
-        if len(value) or keep_blank_values:
-            name = unquote_plus(name, encoding=encoding, errors=errors)
-            name = _coerce_result(name)
-            value = unquote_plus(value, encoding=encoding, errors=errors)
-            value = _coerce_result(value)
-            results.append((name, value))
+        result = []
+        for token in [name, value]:
+            if len(token) or keep_blank_values:
+                token = unquote_plus(token, encoding=encoding, errors=errors)
+            token = _coerce_result(token)
+            result.append(token)
+        results.append(tuple(result))
     return results
 
 def unquote_plus(string, encoding='utf-8', errors='replace'):
