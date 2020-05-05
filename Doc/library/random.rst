@@ -104,20 +104,15 @@ Bookkeeping functions
    the time :func:`getstate` was called.
 
 
-.. function:: getrandbits(k)
-
-   Returns a Python integer with *k* random bits. This method is supplied with
-   the Mersenne Twister generator and some other generators may also provide it
-   as an optional part of the API. When available, :meth:`getrandbits` enables
-   :meth:`randrange` to handle arbitrarily large ranges.
-
-   .. versionchanged:: 3.9
-      This method now accepts zero for *k*.
-
+Functions for bytes
+-------------------
 
 .. function:: randbytes(n)
 
    Generate *n* random bytes.
+
+   This method should not be used for generating security tokens.
+   Use :func:`secrets.token_bytes` instead.
 
    .. versionadded:: 3.9
 
@@ -144,6 +139,16 @@ Functions for integers
 
    Return a random integer *N* such that ``a <= N <= b``.  Alias for
    ``randrange(a, b+1)``.
+
+.. function:: getrandbits(k)
+
+   Returns a Python integer with *k* random bits. This method is supplied with
+   the MersenneTwister generator and some other generators may also provide it
+   as an optional part of the API. When available, :meth:`getrandbits` enables
+   :meth:`randrange` to handle arbitrarily large ranges.
+
+   .. versionchanged:: 3.9
+      This method now accepts zero for *k*.
 
 
 Functions for sequences
