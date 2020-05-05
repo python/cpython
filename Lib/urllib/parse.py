@@ -742,7 +742,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
             raise ValueError('Max number of fields exceeded')
 
     pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
-    r = []
+    results = []
     for name_value in pairs:
         if not name_value and not strict_parsing:
             continue
@@ -765,8 +765,8 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
             name = _coerce_result(name)
             value = unquote_plus(value, encoding=encoding, errors=errors)
             value = _coerce_result(value)
-            r.append((name, value))
-    return r
+            results.append((name, value))
+    return results
 
 def unquote_plus(string, encoding='utf-8', errors='replace'):
     """Like unquote(), but also replace plus signs by spaces, as required for
