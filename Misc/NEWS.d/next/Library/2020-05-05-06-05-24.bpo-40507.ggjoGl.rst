@@ -1,0 +1,1 @@
+The os.exec* family of functions now includes the filename when raising a FileNotFound error.
