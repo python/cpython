@@ -746,20 +746,25 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
     for name_value in pairs:
         if not name_value and not strict_parsing:
             continue
-        nv = name_value.split('=', 1)
-        if len(nv) != 2:
+
+        name_value = iter(name_value.split('=', 1))
+        name = next(name_value)
+        value = next(name_value, None)
+
+        if not value:
             if strict_parsing:
                 raise ValueError("bad query field: %r" % (name_value,))
             # Handle case of a control-name with no equal sign
             if keep_blank_values:
-                nv.append('')
+                value = ''
             else:
                 continue
-        if len(nv[1]) or keep_blank_values:
-            name = nv[0].replace('+', ' ')
+
+        if len(value) or keep_blank_values:
+            name = name.replace('+', ' ')
             name = unquote(name, encoding=encoding, errors=errors)
             name = _coerce_result(name)
-            value = nv[1].replace('+', ' ')
+            value = value.replace('+', ' ')
             value = unquote(value, encoding=encoding, errors=errors)
             value = _coerce_result(value)
             r.append((name, value))
