@@ -79,12 +79,12 @@ class _EnumDict(dict):
                 raise ValueError('_names_ are reserved for future Enum use')
             if key == '_generate_next_value_':
                 setattr(self, '_generate_next_value', value)
-                if value.__qualname__ != 'Enum._generate_next_value':
+                if value is not getattr(Enum, '_generate_next_value_', None):
                     # subclass define _generate_next_value_, recalculate auto()
                     self._subclass_define_generate_next_value = True
                     for i, origin_value in self._maybe_recalculate_auto_obj.items():
                         name, _value = self._member_names[i], self._last_values[i]
-                        if _value == origin_value.value:
+                        if _value is origin_value.value:
                             origin_value.value = self._generate_next_value(name, 1, len(self._member_names[:i]),
                                                                            self._last_values[:i])
                         super().__setitem__(name, origin_value.value)
