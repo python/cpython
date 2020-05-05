@@ -3094,11 +3094,11 @@ _curses.init_color
 
     color_number: int
         The number of the color to be changed (0 - COLORS).
-    r: int
+    r: short
         Red component (0 - 1000).
-    g: int
+    g: short
         Green component (0 - 1000).
-    b: int
+    b: short
         Blue component (0 - 1000).
     /
 
@@ -3110,54 +3110,56 @@ most terminals; it is active only if can_change_color() returns 1.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_init_color_impl(PyObject *module, int color_number, int r, int g,
-                        int b)
-/*[clinic end generated code: output=3824cf242d9174fc input=3ba3d1700bff7a8a]*/
+_curses_init_color_impl(PyObject *module, int color_number, short r, short g,
+                        short b)
+/*[clinic end generated code: output=d7ed71b2d818cdf2 input=c6359369570b9219]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
     if (color_number < _NCURSES_COLOR_VAL_MIN) {
         PyErr_SetString(PyExc_OverflowError,
-                        "signed short integer is less than minimum");
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color number is less than minimum");
         return NULL;
     }
     else if (color_number > _NCURSES_COLOR_VAL_MAX) {
         PyErr_SetString(PyExc_OverflowError,
-                        "signed short integer is greater than maximum");
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color number is greater than maximum");
         return NULL;
     }
 
-    if (r < _NCURSES_COLOR_VAL_MIN) {
+    if (r < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "signed short integer is less than minimum");
+                        "Red value is less than minimum");
         return NULL;
     }
-    else if (r > _NCURSES_COLOR_VAL_MAX) {
+    else if (r > 1000) {
         PyErr_SetString(PyExc_OverflowError,
-                        "signed short integer is greater than maximum");
-        return NULL;
-    }
-
-    if (g < _NCURSES_COLOR_VAL_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "signed short integer is less than minimum");
-        return NULL;
-    }
-    else if (g > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "signed short integer is greater than maximum");
+                        "Red value is greater than maximum");
         return NULL;
     }
 
-    if (b < _NCURSES_COLOR_VAL_MIN) {
+    if (g < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "signed short integer is less than minimum");
+                        "Green value is less than minimum");
         return NULL;
     }
-    else if (b > _NCURSES_COLOR_VAL_MAX) {
+    else if (g > 1000) {
         PyErr_SetString(PyExc_OverflowError,
-                        "signed short integer is greater than maximum");
+                        "Green value is greater than maximum");
+        return NULL;
+    }
+
+    if (b < 0) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Blue value is less than minimum");
+        return NULL;
+    }
+    else if (b > 1000) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Blue value is greater than maximum");
         return NULL;
     }
 

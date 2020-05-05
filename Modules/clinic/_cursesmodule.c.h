@@ -2570,17 +2570,17 @@ PyDoc_STRVAR(_curses_init_color__doc__,
     {"init_color", (PyCFunction)(void(*)(void))_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
 
 static PyObject *
-_curses_init_color_impl(PyObject *module, int color_number, int r, int g,
-                        int b);
+_curses_init_color_impl(PyObject *module, int color_number, short r, short g,
+                        short b);
 
 static PyObject *
 _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int color_number;
-    int r;
-    int g;
-    int b;
+    short r;
+    short g;
+    short b;
 
     if (!_PyArg_CheckPositional("init_color", nargs, 4, 4)) {
         goto exit;
@@ -2599,27 +2599,72 @@ _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    r = _PyLong_AsInt(args[1]);
-    if (r == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(args[1]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            r = (short) ival;
+        }
     }
     if (PyFloat_Check(args[2])) {
         PyErr_SetString(PyExc_TypeError,
                         "integer argument expected, got float" );
         goto exit;
     }
-    g = _PyLong_AsInt(args[2]);
-    if (g == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(args[2]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            g = (short) ival;
+        }
     }
     if (PyFloat_Check(args[3])) {
         PyErr_SetString(PyExc_TypeError,
                         "integer argument expected, got float" );
         goto exit;
     }
-    b = _PyLong_AsInt(args[3]);
-    if (b == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(args[3]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            b = (short) ival;
+        }
     }
     return_value = _curses_init_color_impl(module, color_number, r, g, b);
 
