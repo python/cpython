@@ -3463,37 +3463,22 @@ PyDoc_STRVAR(_curses_pair_content__doc__,
     {"pair_content", (PyCFunction)_curses_pair_content, METH_O, _curses_pair_content__doc__},
 
 static PyObject *
-_curses_pair_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number);
+_curses_pair_content_impl(PyObject *module, int pair_number);
 
 static PyObject *
 _curses_pair_content(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    _NCURSES_COLOR_VAL_TYPE pair_number;
+    int pair_number;
 
     if (PyFloat_Check(arg)) {
         PyErr_SetString(PyExc_TypeError,
                         "integer argument expected, got float" );
         goto exit;
     }
-    {
-        long ival = PyLong_AsLong(arg);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < _NCURSES_COLOR_VAL_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
-            goto exit;
-        }
-        else if (ival > _NCURSES_COLOR_VAL_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
-            goto exit;
-        }
-        else {
-            pair_number = (_NCURSES_COLOR_VAL_TYPE) ival;
-        }
+    pair_number = _PyLong_AsInt(arg);
+    if (pair_number == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     return_value = _curses_pair_content_impl(module, pair_number);
 

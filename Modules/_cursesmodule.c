@@ -3855,23 +3855,37 @@ NoArgNoReturnFunctionBody(noraw)
 #define _CURSES_PAIR_NUMBER_FUNC  pair_content
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
-/*
+/*[clinic input]
 _curses.pair_content
 
-    pair_number: _NCURSES_COLOR_VAL_TYPE
+    pair_number: int
         The number of the color pair (1 - (COLOR_PAIRS-1)).
     /
 
 Return a tuple (fg, bg) containing the colors for the requested color pair.
-*/
+[clinic start generated code]*/
 
 static PyObject *
-_curses_pair_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number)
+_curses_pair_content_impl(PyObject *module, int pair_number)
+/*[clinic end generated code: output=4a726dd0e6885f3f input=8adcfdbe1687095d]*/
 {
     _NCURSES_COLOR_VAL_TYPE f, b;
 
     PyCursesInitialised;
     PyCursesInitialisedColor;
+
+    if (pair_number < _NCURSES_COLOR_VAL_MIN) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color pair is less than minimum.");
+        return NULL;
+    }
+    else if (pair_number > _NCURSES_COLOR_VAL_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color pair is greater than maximum.");
+        return NULL;
+    }
 
     if (_CURSES_PAIR_NUMBER_FUNC(pair_number, &f, &b)==ERR) {
         PyErr_SetString(PyCursesError,
