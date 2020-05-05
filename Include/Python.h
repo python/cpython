@@ -90,8 +90,6 @@
 #include "typeslots.h"
 #include "pyhash.h"
 
-#include "pydebug.h"
-
 #include "bytearrayobject.h"
 #include "bytesobject.h"
 #include "unicodeobject.h"

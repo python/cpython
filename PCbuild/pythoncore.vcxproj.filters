@@ -351,9 +351,6 @@
     <ClInclude Include="..\Include\pyctype.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pydebug.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\pyerrors.h">
       <Filter>Include</Filter>
     </ClInclude>
