@@ -1,0 +1,2 @@
+Re-add :mod:`xml.etree.cElementTree`, deprecate it in 3.9, and schedule it
+for removal in 3.10.

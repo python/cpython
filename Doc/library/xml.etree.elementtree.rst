@@ -17,6 +17,8 @@ for parsing and creating XML data.
    This module will use a fast implementation whenever available.
    The :mod:`xml.etree.cElementTree` module is deprecated.
 
+.. versionchanged:: 3.9
+   The :mod:`xml.etree.cElementTree` will be removed in Python 3.10.
 
 .. warning::
 

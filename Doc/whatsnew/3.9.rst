@@ -626,6 +626,10 @@ Deprecated
   `parso`_.
   (Contributed by Carl Meyer in :issue:`40360`.)
 
+* The :mod:`xml.etree.cElementTree` module has been deprecated since Python
+  3.3 and is scheduled to be removed in Python 3.10.
+  (Contributed by Serhiy Storchaka and Christian Heimes in :issue:`36543`)
+
 .. _LibCST: https://libcst.readthedocs.io/
 .. _parso: https://parso.readthedocs.io/
 
