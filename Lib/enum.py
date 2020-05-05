@@ -110,7 +110,6 @@ class _EnumDict(dict):
                 # enum overwriting a descriptor?
                 raise TypeError('%r already defined as: %r' % (key, self[key]))
             if isinstance(value, auto):
-                # if self._subclass_define_generate_next_value:
                 self._maybe_recalculate_auto_obj[len(self._member_names)] = value
                 if value.value == _auto_null:
                     value.value = self._generate_next_value(key, 1, len(self._member_names), self._last_values[:])
