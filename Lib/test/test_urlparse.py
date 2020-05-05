@@ -163,10 +163,6 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(result, expect_without_blanks,
                             "Error parsing %r" % orig)
 
-            result = urllib.parse.parse_qs(orig, standalone_keys=True)
-            self.assertEqual(result, expect,
-                            "Error parsing %r" % orig)
-
     def test_roundtrips(self):
         str_cases = [
             ('file:///tmp/junk.txt',
