@@ -53,7 +53,7 @@ parse_qs_test_cases = [
     ("&&", {}),
     ("=", {'': ['']}),
     ("=a", {'': ['a']}),
-    ("a", {'a': ['']}),
+    ("a", {'a': [None]}),
     ("a=", {'a': ['']}),
     ("&a=b", {'a': ['b']}),
     ("a=a+b&b=b+c", {'a': ['a b'], 'b': ['b c']}),
@@ -63,7 +63,7 @@ parse_qs_test_cases = [
     (b"&&", {}),
     (b"=", {b'': [b'']}),
     (b"=a", {b'': [b'a']}),
-    (b"a", {b'a': [b'']}),
+    (b"a", {b'a': [None]}),
     (b"a=", {b'a': [b'']}),
     (b"&a=b", {b'a': [b'b']}),
     (b"a=a+b&b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
@@ -133,10 +133,16 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(result3.hostname, result.hostname)
         self.assertEqual(result3.port,     result.port)
 
+    def _coalesce_empty(self, orig, expect):
+        empty_string = orig[0:0]
+        return [v or empty_string for v in expect]
+
     def test_qsl(self):
         for orig, expect in parse_qsl_test_cases:
+            expect = self._coalesce_empty(orig, expect)
             result = urllib.parse.parse_qsl(orig, keep_blank_values=True)
             self.assertEqual(result, expect, "Error parsing %r" % orig)
+
             expect_without_blanks = [v for v in expect if len(v[1])]
             result = urllib.parse.parse_qsl(orig, keep_blank_values=False)
             self.assertEqual(result, expect_without_blanks,
@@ -144,8 +150,10 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_qs(self):
         for orig, expect in parse_qs_test_cases:
+            expect = {v: self._coalesce_empty(orig, expect[v]) for v in expect}
             result = urllib.parse.parse_qs(orig, keep_blank_values=True)
             self.assertEqual(result, expect, "Error parsing %r" % orig)
+
             expect_without_blanks = {v: expect[v]
                                      for v in expect if len(expect[v][0])}
             result = urllib.parse.parse_qs(orig, keep_blank_values=False)
