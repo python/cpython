@@ -664,7 +664,7 @@ class SyntaxTestCase(unittest.TestCase):
                 self.fail("SyntaxError is not a %s" % subclass.__name__)
             mo = re.search(errtext, str(err))
             if mo is None:
-                self.fail("SyntaxError did not contain '%r'" % (errtext,))
+                self.fail("SyntaxError did not contain %r" % (errtext,))
             self.assertEqual(err.filename, filename)
             if lineno is not None:
                 self.assertEqual(err.lineno, lineno)
@@ -677,6 +677,7 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("f() = 1", "assign")
 
     def test_assign_del(self):
+        self._check_error("del (,)", "invalid syntax")
         self._check_error("del 1", "delete literal")
         self._check_error("del (1, 2)", "delete literal")
         self._check_error("del None", "delete None")
@@ -690,12 +691,17 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("del a[0]()", "delete function call")
         self._check_error("del x, f()", "delete function call")
         self._check_error("del f(), x", "delete function call")
+        self._check_error("del [a, b, ((c), (d,), e.f())]", "delete function call")
         self._check_error("del (a if True else b)", "delete conditional")
         self._check_error("del +a", "delete operator")
         self._check_error("del a, +b", "delete operator")
         self._check_error("del a + b", "delete operator")
         self._check_error("del (a + b, c)", "delete operator")
         self._check_error("del (c[0], a + b)", "delete operator")
+        self._check_error("del a.b.c + 2", "delete operator")
+        self._check_error("del a.b.c[0] + 2", "delete operator")
+        self._check_error("del (a, b, (c, d.e.f + 2))", "delete operator")
+        self._check_error("del [a, b, (c, d.e.f[0] + 2)]", "delete operator")
         self._check_error("del (a := 5)", "delete named expression")
         # We don't have a special message for this, but make sure we don't
         # report "cannot delete name"

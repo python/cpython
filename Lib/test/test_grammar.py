@@ -805,6 +805,7 @@ class GrammarTests(unittest.TestCase):
         del x
         del y,
         del (z)
+        del ()
 
         a, b, c, d, e, f, g = "abcdefg"
         del a, (b, c), (d, (e, f))
