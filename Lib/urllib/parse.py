@@ -892,7 +892,7 @@ def quote_from_bytes(bs, safe='/'):
     return ''.join([quoter(char) for char in bs])
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
-              quote_via=quote_plus):
+              quote_via=quote_plus, standalone_keys=False):
     """Encode a dict or sequence of two-element tuples into a URL query string.
 
     If any values in the query arg are sequences and doseq is true, each
