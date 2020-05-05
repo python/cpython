@@ -890,6 +890,11 @@ class UrlParseTestCase(unittest.TestCase):
             urllib.parse.parse_qs(';'.join(['a=a']*11), max_num_fields=10)
         urllib.parse.parse_qs('&'.join(['a=a']*10), max_num_fields=10)
 
+    def test_urlencode(self):
+        result = urllib.parse.urlencode({'a': 1, 'b': None})
+        # bpo-18857: urlencode of a None value uses the string 'None'
+        assert set(result.split('&')) == {'a=1', 'b=None'}
+
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:
         # Sequence and object values.
