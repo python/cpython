@@ -3392,12 +3392,15 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
      * This is for Mac OS X 10.3, which doesn't have lchown.
      * (But we still have an lchown symbol because of weak-linking.)
      * It doesn't have fchownat either.  So there's no possibility
-     * of a graceful failover.
+     * of a graceful failover. GCC 9 complains about this so we silence his
+     * warning.
      */
+    #pragma GCC diagnostic ignored "-Waddress"
     if ((!follow_symlinks) && (lchown == NULL)) {
         follow_symlinks_specified("chown", follow_symlinks);
         return NULL;
     }
+    #pragma GCC diagnostic pop
 #endif
 
     if (PySys_Audit("os.chown", "OIIi", path->object, uid, gid,
@@ -14936,11 +14939,14 @@ INITFUNC(void)
 #endif /* HAVE_STATVFS */
 
 # ifdef HAVE_LCHOWN
+    /* GCC 9 complains about lchown always being defined so silence it here. */
+    #pragma GCC diagnostic ignored "-Waddress"
     if (lchown == NULL) {
         if (PyObject_DelAttrString(m, "lchown") == -1) {
             return NULL;
         }
     }
+    #pragma GCC diagnostic pop
 #endif /* HAVE_LCHOWN */
 
 

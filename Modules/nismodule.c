@@ -213,7 +213,9 @@ nis_cat (PyObject *self, PyObject *args, PyObject *kwdict)
     dict = PyDict_New ();
     if (dict == NULL)
         return NULL;
+    #pragma GCC diagnostic ignored "-Wcast-function-type"
     cb.foreach = (foreachfunc)nis_foreach;
+    #pragma GCC diagnostic pop
     data.dict = dict;
     map = nis_mapname (map, &data.fix);
     cb.data = (char *)&data;
@@ -298,11 +300,12 @@ nis_xdr_ypmaplist(XDR *xdrs, nismaplist *objp)
     if (!nis_xdr_mapname(xdrs, &objp->map)) {
         return (FALSE);
     }
+    #pragma GCC diagnostic ignored "-Wcast-function-type"
     if (!xdr_pointer(xdrs, (char **)&objp->next,
-                     sizeof(nismaplist), (xdrproc_t)nis_xdr_ypmaplist))
-    {
+                     sizeof(nismaplist), (xdrproc_t)nis_xdr_ypmaplist)) {
         return (FALSE);
     }
+    #pragma GCC diagnostic pop
     return (TRUE);
 }
 
@@ -324,11 +327,12 @@ nis_xdr_ypresp_maplist(XDR *xdrs, nisresp_maplist *objp)
     if (!nis_xdr_ypstat(xdrs, &objp->stat)) {
         return (FALSE);
     }
+    #pragma GCC diagnostic ignored "-Wcast-function-type"
     if (!xdr_pointer(xdrs, (char **)&objp->maps,
-                     sizeof(nismaplist), (xdrproc_t)nis_xdr_ypmaplist))
-    {
+                     sizeof(nismaplist), (xdrproc_t)nis_xdr_ypmaplist)){
         return (FALSE);
     }
+    #pragma GCC diagnostic pop
     return (TRUE);
 }
 
@@ -340,13 +344,14 @@ nisproc_maplist_2(domainname *argp, CLIENT *clnt)
     static nisresp_maplist res;
 
     memset(&res, 0, sizeof(res));
+    #pragma GCC diagnostic ignored "-Wcast-function-type"
     if (clnt_call(clnt, YPPROC_MAPLIST,
                   (xdrproc_t)nis_xdr_domainname, (caddr_t)argp,
                   (xdrproc_t)nis_xdr_ypresp_maplist, (caddr_t)&res,
-                  TIMEOUT) != RPC_SUCCESS)
-    {
+                  TIMEOUT) != RPC_SUCCESS) {
         return (NULL);
     }
+    #pragma GCC diagnostic pop
     return (&res);
 }
 
