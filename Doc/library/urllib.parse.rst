@@ -640,6 +640,10 @@ task isn't already covered by the URL parsing functions above.
    *quote_via* (the *encoding* and *errors* parameters are only passed
    when a query element is a :class:`str`).
 
+   To encode ``None`` values in a way that ensures that a reader can
+   distinguish them from empty strings, enable the *standalone_keys*
+   parameter.
+
    To reverse this encoding process, :func:`parse_qs` and :func:`parse_qsl` are
    provided in this module to parse query strings into Python data structures.
 
