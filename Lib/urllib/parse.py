@@ -935,11 +935,14 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
             else:
                 k = quote_via(str(k), safe, encoding, errors)
 
-            if isinstance(v, bytes):
+            if v is None and standalone_keys:
+                l.append(k)
+            elif isinstance(v, bytes):
                 v = quote_via(v, safe)
+                l.append(k + '=' + v)
             else:
                 v = quote_via(str(v), safe, encoding, errors)
-            l.append(k + '=' + v)
+                l.append(k + '=' + v)
     else:
         for k, v in query:
             if isinstance(k, bytes):
@@ -947,7 +950,9 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
             else:
                 k = quote_via(str(k), safe, encoding, errors)
 
-            if isinstance(v, bytes):
+            if v is None and standalone_keys:
+                l.append(k)
+            elif isinstance(v, bytes):
                 v = quote_via(v, safe)
                 l.append(k + '=' + v)
             elif isinstance(v, str):
@@ -964,11 +969,14 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
                 else:
                     # loop over the sequence
                     for elt in v:
-                        if isinstance(elt, bytes):
+                        if elt is None and standalone_keys:
+                            l.append(k)
+                        elif isinstance(elt, bytes):
                             elt = quote_via(elt, safe)
+                            l.append(k + '=' + elt)
                         else:
                             elt = quote_via(str(elt), safe, encoding, errors)
-                        l.append(k + '=' + elt)
+                            l.append(k + '=' + elt)
     return '&'.join(l)
 
 
