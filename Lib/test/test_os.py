@@ -1816,9 +1816,19 @@ def _execvpe_mockup(defpath=None):
 class ExecTests(unittest.TestCase):
     @unittest.skipIf(USING_LINUXTHREADS,
                      "avoid triggering a linuxthreads bug: see issue #4970")
+    def test_execv_with_bad_program(self):
+        bad_filename = 'nosuchapp'
+        with self.assertRaises(OSError) as ctx:
+            os.execv(bad_filename, [bad_filename])
+        self.assertEqual(ctx.exception.filename, bad_filename)
+        self.assertIn(bad_filename, str(ctx.exception))
+
     def test_execvpe_with_bad_program(self):
-        self.assertRaises(OSError, os.execvpe, 'no such app-',
-                          ['no such app-'], None)
+        bad_filename = 'nosuchapp'
+        with self.assertRaises(OSError) as ctx:
+            os.execvpe(bad_filename, [bad_filename], None)
+        self.assertEqual(ctx.exception.filename, bad_filename)
+        self.assertIn(bad_filename, str(ctx.exception))
 
     def test_execv_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execv, 'notepad', ())
