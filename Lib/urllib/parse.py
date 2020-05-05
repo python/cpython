@@ -752,11 +752,11 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         name = next(name_value)
         value = next(name_value, default_value)
 
-        if strict_parsing and not value:
-            raise ValueError("bad query field: %r" % (name_value,))
-
-        if not value and not keep_blank_values:
-            continue
+        if not value:
+            if strict_parsing:
+                raise ValueError("bad query field: %r" % (name_value,))
+            if not keep_blank_values:
+                continue
 
         result = []
         for token in [name, value]:
