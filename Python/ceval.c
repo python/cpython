@@ -380,9 +380,13 @@ PyEval_AcquireThread(PyThreadState *tstate)
     take_gil(tstate);
 
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    (void)_PyThreadState_Swap(gilstate, tstate);
+#else
     if (_PyThreadState_Swap(gilstate, tstate) != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
+#endif
 }
 
 void
@@ -443,7 +447,12 @@ PyThreadState *
 PyEval_SaveThread(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    PyThreadState *old_tstate = _PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, old_tstate);
+#else
     PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
+#endif
     ensure_tstate_not_null(__func__, tstate);
 
     struct _ceval_runtime_state *ceval = &runtime->ceval;
@@ -866,9 +875,13 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
         take_gil(tstate);
 
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+        (void)_PyThreadState_Swap(&runtime->gilstate, tstate);
+#else
         if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
             Py_FatalError("orphan tstate");
         }
+#endif
     }
 
     /* Check for asynchronous exception. */
