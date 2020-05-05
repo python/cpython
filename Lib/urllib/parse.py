@@ -689,9 +689,14 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
         Returns a dictionary.
     """
     parsed_result = {}
-    pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
-                      encoding=encoding, errors=errors,
-                      max_num_fields=max_num_fields)
+    pairs = parse_qsl(
+        qs=qs,
+        keep_blank_values=keep_blank_values,
+        strict_parsing=strict_parsing,
+        encoding=encoding,
+        errors=errors,
+        max_num_fields=max_num_fields,
+    )
     for name, value in pairs:
         if name in parsed_result:
             parsed_result[name].append(value)
