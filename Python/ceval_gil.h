@@ -144,7 +144,11 @@ static void
 drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
          PyThreadState *tstate)
 {
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    struct _gil_runtime_state *gil = &ceval2->gil;
+#else
     struct _gil_runtime_state *gil = &ceval->gil;
+#endif
     if (!_Py_atomic_load_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
@@ -228,7 +232,11 @@ take_gil(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    struct _gil_runtime_state *gil = &ceval2->gil;
+#else
     struct _gil_runtime_state *gil = &ceval->gil;
+#endif
 
     /* Check that _PyEval_InitThreads() was called to create the lock */
     assert(gil_created(gil));
@@ -320,10 +328,22 @@ _ready:
 
 void _PyEval_SetSwitchInterval(unsigned long microseconds)
 {
-    _PyRuntime.ceval.gil.interval = microseconds;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    struct _gil_runtime_state *gil = &interp->ceval.gil;
+#else
+    struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
+#endif
+    gil->interval = microseconds;
 }
 
 unsigned long _PyEval_GetSwitchInterval()
 {
-    return _PyRuntime.ceval.gil.interval;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    struct _gil_runtime_state *gil = &interp->ceval.gil;
+#else
+    struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
+#endif
+    return gil->interval;
 }
