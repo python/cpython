@@ -595,7 +595,7 @@ del_t_atom[expr_ty]:
     | '(' a=[del_targets] ')' { _Py_Tuple(a, Del, EXTRA) }
     | '[' a=[del_targets] ']' { _Py_List(a, Del, EXTRA) }
     | invalid_del_target
-del_target_end: ')' | ']' | ',' | ';' | NEWLINE
+del_target_end: ')' | ']' | ',' | ';' | NEWLINE | ENDMARKER
 
 targets[asdl_seq*]: a=','.target+ [','] { a }
 target[expr_ty] (memo):
