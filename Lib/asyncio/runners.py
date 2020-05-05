@@ -5,7 +5,10 @@ from . import events
 from . import tasks
 
 
-def run(main, *, debug=False):
+_marker = object()
+
+
+def run(main, *, debug=_marker):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
@@ -39,7 +42,8 @@ def run(main, *, debug=False):
     loop = events.new_event_loop()
     try:
         events.set_event_loop(loop)
-        loop.set_debug(debug or coroutines._DEBUG)
+        if debug is not _marker:
+            loop.set_debug(debug)
         return loop.run_until_complete(main)
     finally:
         try:
