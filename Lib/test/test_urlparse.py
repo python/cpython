@@ -897,6 +897,7 @@ class UrlParseTestCase(unittest.TestCase):
         # we cannot rely on ordering here
         assert set(result.split('&')) == {'a=1', 'a=2', 'b=3', 'b=4', 'b=5'}
 
+    def test_urlencode_sequences_trivial(self):
         class Trivial:
             def __str__(self):
                 return 'trivial'
