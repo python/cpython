@@ -1073,6 +1073,11 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 #endif
 
 /*
+ * Max number of arguments _ctypes_callproc will accept.
+ */
+#define CTYPES_MAX_ARGCOUNT 1024
+
+/*
  * Requirements, must be ensured by the caller:
  * - argtuple is tuple of arguments
  * - argtypes is either NULL, or a tuple of the same size as argtuple
@@ -1106,6 +1111,12 @@ PyObject *_ctypes_callproc(PPROC pProc,
     if (pIunk)
         ++argcount;
 #endif
+
+    if (argcount > CTYPES_MAX_ARGCOUNT)
+    {
+        PyErr_SetString(PyExc_ArgError, "too many arguments");
+        return NULL;
+    }
 
     args = (struct argument *)alloca(sizeof(struct argument) * argcount);
     if (!args) {

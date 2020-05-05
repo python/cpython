@@ -287,6 +287,17 @@ class SampleCallbacksTestCase(unittest.TestCase):
         self.assertEqual(s.second, check.second)
         self.assertEqual(s.third, check.third)
 
+    def test_callback_too_many_args(self):
+        def func(*args):
+            return (1, "abc", None)
+
+        nargs = 2 ** 20
+        proto = CFUNCTYPE(None, *(c_int,) * nargs)
+        cb = proto(func)
+        with self.assertRaises(ArgumentError):
+            cb(*(1,) * nargs)
+
+
 ################################################################
 
 if __name__ == '__main__':
