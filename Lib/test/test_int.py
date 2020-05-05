@@ -1,3 +1,4 @@
+import contextlib
 import sys
 
 import unittest
@@ -25,6 +26,17 @@ L = [
         ('  \t\t  ', ValueError),
         ("\u0200", ValueError)
 ]
+
+
+@contextlib.contextmanager
+def setintmaxdigits(maxdigits):
+    current = sys.getintmaxdigits()
+    try:
+        sys.setintmaxdigits(maxdigits)
+        yield
+    finally:
+        sys.setintmaxdigits(current)
+
 
 class IntSubclass(int):
     pass
@@ -576,6 +588,40 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('1_2_3_4_5_6_7_8_9', 16), 0x123456789)
         self.assertEqual(int('1_2_3_4_5_6_7', 32), 1144132807)
 
+    def _test_maxdigits(self, c):
+        maxdigits = sys.getintmaxdigits()
+        # edge cases
+        c('1' * maxdigits)
+        c(' ' + '1' * maxdigits)
+        c('+' + '1' * maxdigits)
+        self.assertEqual(len(str(10 ** (maxdigits - 1))), maxdigits)
+
+        # disable limitation
+        with setintmaxdigits(0):
+            c('1' * (maxdigits + 1))
+            c('1' * (maxdigits + 1))
+
+        # OverflowError
+        def check(i, base=None):
+            with self.assertRaises(OverflowError):
+                if base is None:
+                    c(i)
+                else:
+                    c(i, base)
+
+        with setintmaxdigits(1024):
+            maxdigits = 1024
+            check('1' * (maxdigits + 1))
+            check('+' + '1' * (maxdigits + 1))
+            check('1' * (maxdigits + 1))
+
+            i = 10 ** maxdigits
+            with self.assertRaises(OverflowError):
+                str(i)
+
+    def test_maxdigits(self):
+        self._test_maxdigits(int)
+        self._test_maxdigits(IntSubclass)
 
 if __name__ == "__main__":
     unittest.main()

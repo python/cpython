@@ -23,6 +23,11 @@ is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
 (although it is not a strict subset of JavaScript [#rfc-errata]_ ).
 
+.. warning::
+   Be cautious when parsing JSON data from untrusted sources. A malicious
+   JSON string may cause the decoder to consume considerable CPU and memory
+   resources. It's advised to limit the input to a sensible length.
+
 :mod:`json` exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
 
@@ -252,6 +257,10 @@ Basic Usage
    to be decoded.  By default, this is equivalent to ``int(num_str)``.  This can
    be used to use another datatype or parser for JSON integers
    (e.g. :class:`float`).
+
+   .. versionchanged:: 3.9
+      The default implementation of *parse_int* limits the input string to
+      5,000 digits to prevent denial of service attacks.
 
    *parse_constant*, if specified, will be called with one of the following
    strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.

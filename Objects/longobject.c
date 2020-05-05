@@ -1815,6 +1815,15 @@ long_to_decimal_string_internal(PyObject *aa,
         tenpow *= 10;
         strlen++;
     }
+    if (strlen > _PY_LONG_MAX_DIGITS_TRESHOLD) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if ((interp->intmaxdigits > 0) && (strlen > interp->intmaxdigits)) {
+            Py_DECREF(scratch);
+            PyErr_SetString(PyExc_OverflowError,
+                           "too many digits in integer");
+            return -1;
+        }
+    }
     if (writer) {
         if (_PyUnicodeWriter_Prepare(writer, strlen, '9') == -1) {
             Py_DECREF(scratch);
@@ -2267,6 +2276,7 @@ long_from_binary_base(const char **str, int base, PyLongObject **res)
  *
  * If unsuccessful, NULL will be returned.
  */
+
 PyObject *
 PyLong_FromString(const char *str, char **pend, int base)
 {
@@ -2328,6 +2338,7 @@ PyLong_FromString(const char *str, char **pend, int base)
 
     start = str;
     if ((base & (base - 1)) == 0) {
+        /* binary bases are not limited by intmaxdigits */
         int res = long_from_binary_base(&str, base, &z);
         if (res < 0) {
             /* Syntax error. */
@@ -2477,6 +2488,16 @@ digit beyond the first.
             /* Set error pointer to first underscore. */
             str = lastdigit + 1;
             goto onError;
+        }
+
+        slen = scan - str;
+        if (slen > _PY_LONG_MAX_DIGITS_TRESHOLD) {
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            if ((interp->intmaxdigits > 0 ) && (slen > interp->intmaxdigits)) {
+                PyErr_SetString(PyExc_OverflowError,
+                               "too many digits in integer");
+                return NULL;
+            }
         }
 
         /* Create an int object that can contain the largest possible
@@ -5355,18 +5376,20 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
         }
         return PyLong_FromLong(0L);
     }
+    /* default base and limit, forward to standard implementation */
     if (obase == NULL)
         return PyNumber_Long(x);
 
-    base = PyNumber_AsSsize_t(obase, NULL);
-    if (base == -1 && PyErr_Occurred())
-        return NULL;
-    if ((base != 0 && base < 2) || base > 36) {
-        PyErr_SetString(PyExc_ValueError,
-                        "int() base must be >= 2 and <= 36, or 0");
-        return NULL;
+    if (obase != NULL) {
+        base = PyNumber_AsSsize_t(obase, NULL);
+        if (base == -1 && PyErr_Occurred())
+            return NULL;
+        if ((base != 0 && base < 2) || base > 36) {
+            PyErr_SetString(PyExc_ValueError,
+                            "int() base must be >= 2 and <= 36, or 0");
+            return NULL;
+        }
     }
-
     if (PyUnicode_Check(x))
         return PyLong_FromUnicodeObject(x, (int)base);
     else if (PyByteArray_Check(x) || PyBytes_Check(x)) {
@@ -6090,6 +6113,8 @@ internal representation of integers.  The attributes are read only.");
 static PyStructSequence_Field int_info_fields[] = {
     {"bits_per_digit", "size of a digit in bits"},
     {"sizeof_digit", "size in bytes of the C type used to represent a digit"},
+    {"default_max_digits", "maximum digits limitation"},
+    {"max_digits_threshold", "minimum threshold to check for max digits"},
     {NULL, NULL}
 };
 
@@ -6097,7 +6122,7 @@ static PyStructSequence_Desc int_info_desc = {
     "sys.int_info",   /* name */
     int_info__doc__,  /* doc */
     int_info_fields,  /* fields */
-    2                 /* number of fields */
+    4                 /* number of fields */
 };
 
 PyObject *
@@ -6112,6 +6137,10 @@ PyLong_GetInfo(void)
                               PyLong_FromLong(PyLong_SHIFT));
     PyStructSequence_SET_ITEM(int_info, field++,
                               PyLong_FromLong(sizeof(digit)));
+    PyStructSequence_SET_ITEM(int_info, field++,
+                              PyLong_FromLong(_PY_LONG_DEFAULT_MAX_DIGITS));
+        PyStructSequence_SET_ITEM(int_info, field++,
+                              PyLong_FromLong(_PY_LONG_MAX_DIGITS_TRESHOLD));
     if (PyErr_Occurred()) {
         Py_CLEAR(int_info);
         return NULL;
@@ -6139,6 +6168,7 @@ _PyLong_InitTypes(PyInterpreterState *interp)
             return _PyStatus_ERR("can't init int info type");
         }
     }
+    interp->intmaxdigits = _PyInterpreterState_GetConfig(interp)->intmaxdigits;
 
     return _PyStatus_OK();
 }

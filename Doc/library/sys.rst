@@ -723,6 +723,12 @@ always available.
 
    .. versionadded:: 3.6
 
+.. function:: getintmaxdigits()
+
+   Return limit for int digits, :func:`setintmaxdigits` TODO
+
+   .. versionadded:: 3.9
+
 .. function:: getrefcount(object)
 
    Return the reference count of the *object*.  The count returned is generally one
@@ -1307,6 +1313,12 @@ always available.
    :data:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
+
+.. function:: setintmaxdigits(n)
+
+   Set maximum amount of int digits, :func:`getintmaxdigits` TODO
+
+   .. versionadded:: 3.9
 
 .. function:: setprofile(profilefunc)
 

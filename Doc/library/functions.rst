@@ -910,6 +910,8 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       The delegation to :meth:`__trunc__` is deprecated.
 
+   .. versionchanged:: 3.12
+      :class:`int` are now limited, :func:`sys.setintmaxdigits` TODO
 
 .. function:: isinstance(object, classinfo)
 

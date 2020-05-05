@@ -745,6 +745,67 @@ exit:
 
 #endif /* defined(USE_MALLOPT) */
 
+PyDoc_STRVAR(sys_getintmaxdigits__doc__,
+"getintmaxdigits($module, /)\n"
+"--\n"
+"\n"
+"TODO");
+
+#define SYS_GETINTMAXDIGITS_METHODDEF    \
+    {"getintmaxdigits", (PyCFunction)sys_getintmaxdigits, METH_NOARGS, sys_getintmaxdigits__doc__},
+
+static PyObject *
+sys_getintmaxdigits_impl(PyObject *module);
+
+static PyObject *
+sys_getintmaxdigits(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_getintmaxdigits_impl(module);
+}
+
+PyDoc_STRVAR(sys_setintmaxdigits__doc__,
+"setintmaxdigits($module, /, maxdigits)\n"
+"--\n"
+"\n"
+"TODO");
+
+#define SYS_SETINTMAXDIGITS_METHODDEF    \
+    {"setintmaxdigits", _PyCFunction_CAST(sys_setintmaxdigits), METH_FASTCALL|METH_KEYWORDS, sys_setintmaxdigits__doc__},
+
+static PyObject *
+sys_setintmaxdigits_impl(PyObject *module, Py_ssize_t maxdigits);
+
+static PyObject *
+sys_setintmaxdigits(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"maxdigits", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "setintmaxdigits", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t maxdigits;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        maxdigits = ival;
+    }
+    return_value = sys_setintmaxdigits_impl(module, maxdigits);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_getrefcount__doc__,
 "getrefcount($module, object, /)\n"
 "--\n"

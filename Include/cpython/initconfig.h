@@ -218,6 +218,10 @@ typedef struct PyConfig {
 
     // If non-zero, we believe we're running from a source tree.
     int _is_python_build;
+
+    /* global limit for long digits */
+    Py_ssize_t intmaxdigits;
+
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);

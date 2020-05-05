@@ -71,6 +71,11 @@ PyAPI_FUNC(unsigned long long) PyLong_AsUnsignedLongLong(PyObject *);
 PyAPI_FUNC(unsigned long long) PyLong_AsUnsignedLongLongMask(PyObject *);
 PyAPI_FUNC(long long) PyLong_AsLongLongAndOverflow(PyObject *, int *);
 
+/* Default limitation */
+#define _PY_LONG_DEFAULT_MAX_DIGITS 5000
+/* Don't check unless input / output is larger than threshold */
+#define _PY_LONG_MAX_DIGITS_TRESHOLD 1024
+
 PyAPI_FUNC(PyObject *) PyLong_FromString(const char *, char **, int);
 
 /* These aren't really part of the int object, but they're handy. The

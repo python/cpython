@@ -124,7 +124,9 @@ The following implementation-specific options are available:\n\
     do nothing if is not supported on the current system. The default value is \"off\".\n\
 \n\
 -X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
-   The default is \"on\" (or \"off\" if you are running a local build).";
+   The default is \"on\" (or \"off\" if you are running a local build).\n\
+\n\
+-X intmaxdigits=number: limit maximum digits ints.";
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars[] =
@@ -144,6 +146,7 @@ static const char usage_envvars[] =
 "   to seed the hashes of str and bytes objects.  It can also be set to an\n"
 "   integer in the range [0,4294967295] to get hash values with a\n"
 "   predictable seed.\n"
+"PYTHONINTMAXDIGITS: limt maximum digits when converting from or to int\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
 "   hooks.\n"
@@ -782,6 +785,8 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->safe_path = 0;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
+    /* config_init_intmaxdigits() sets default limit */
+    config->intmaxdigits = -1;
 }
 
 
@@ -1008,6 +1013,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(safe_path);
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
+    COPY_ATTR(intmaxdigits);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -1115,6 +1121,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(use_frozen_modules);
     SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
+    SET_ITEM_INT(intmaxdigits);
 
     return dict;
 
@@ -1762,6 +1769,42 @@ config_init_tracemalloc(PyConfig *config)
     return _PyStatus_OK();
 }
 
+static PyStatus
+config_init_intmaxdigits(PyConfig *config)
+{
+    int maxdigits;
+    int valid = 0;
+
+    /* set default limitation */
+    config->intmaxdigits = _PY_LONG_DEFAULT_MAX_DIGITS;
+
+    const char *env = config_get_env(config, "PYTHONINTMAXDIGITS");
+    if (env) {
+        if (!_Py_str_to_int(env, &maxdigits)) {
+            valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_TRESHOLD));
+        }
+        if (!valid) {
+            return _PyStatus_ERR("PYTHONINTMAXDIGITS: invalid limit");
+        }
+        config->intmaxdigits = maxdigits;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"intmaxdigits");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep) {
+            if (!config_wstr_to_int(sep + 1, &maxdigits)) {
+                valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_DIGITS_TRESHOLD));
+            }
+        }
+        if (!valid) {
+            return _PyStatus_ERR("-X intmaxdigits: "
+                                 "invalid limit");
+        }
+        config->intmaxdigits = maxdigits;
+    }
+    return _PyStatus_OK();
+}
 
 static PyStatus
 config_init_pycache_prefix(PyConfig *config)
@@ -1818,8 +1861,16 @@ config_read_complex_options(PyConfig *config)
             return status;
         }
     }
+
     if (config->perf_profiling < 0) {
         status = config_init_perf_profiling(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->intmaxdigits < 0) {
+        status = config_init_intmaxdigits(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
