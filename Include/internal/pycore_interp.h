@@ -33,6 +33,7 @@ struct _pending_calls {
 };
 
 struct _ceval_state {
+    int recursion_limit;
     /* Records whether tracing is on for any thread.  Counts the number
        of threads for which tstate->c_tracefunc is non-NULL, so if the
        value is 0, we know we don't have to check this thread's
