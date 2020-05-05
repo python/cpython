@@ -305,7 +305,7 @@ _ready:
            handle signals.
 
            Note: RESET_GIL_DROP_REQUEST() calls COMPUTE_EVAL_BREAKER(). */
-        COMPUTE_EVAL_BREAKER(interp, ceval2);
+        COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
     }
 
     /* Don't access tstate if the thread must exit */
