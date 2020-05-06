@@ -26,7 +26,7 @@ class ASDLLexer(RegexLexer):
             include("ws"),
             (
                 r"(module)" + _text_ws + _name,
-                bygroups(Keyword, Text, Name.Entity),
+                bygroups(Keyword, Text, Name.Tag),
             ),
             (
                 r"(\w+)(\*\s|\?\s|\s)(\w+)",
