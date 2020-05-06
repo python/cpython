@@ -68,6 +68,7 @@ class FunctionCall:
     return_type: Optional[str] = None
     nodetype: Optional[NodeTypes] = None
     force_true: bool = False
+    comment: Optional[str] = None
 
     def __str__(self) -> str:
         parts = []
@@ -78,6 +79,8 @@ class FunctionCall:
             parts.append(", 1")
         if self.assigned_variable:
             parts = ["(", self.assigned_variable, " = ", *parts, ")"]
+        if self.comment:
+            parts.append(f"  // {self.comment}")
         return "".join(parts)
 
 
@@ -103,6 +106,7 @@ class CCallMakerVisitor(GrammarVisitor):
             arguments=["p", self.keyword_cache[keyword]],
             return_type="Token *",
             nodetype=NodeTypes.KEYWORD,
+            comment=f"token='{keyword}'",
         )
 
     def visit_NameLeaf(self, node: NameLeaf) -> FunctionCall:
@@ -115,6 +119,7 @@ class CCallMakerVisitor(GrammarVisitor):
                     arguments=["p"],
                     nodetype=BASE_NODETYPES[name],
                     return_type="expr_ty",
+                    comment=name,
                 )
             return FunctionCall(
                 assigned_variable=f"{name.lower()}_var",
@@ -122,6 +127,7 @@ class CCallMakerVisitor(GrammarVisitor):
                 arguments=["p", name],
                 nodetype=NodeTypes.GENERIC_TOKEN,
                 return_type="Token *",
+                comment=f"token='{name}'",
             )
 
         type = None
@@ -134,6 +140,7 @@ class CCallMakerVisitor(GrammarVisitor):
             function=f"{name}_rule",
             arguments=["p"],
             return_type=type,
+            comment=f"{node}"
         )
 
     def visit_StringLeaf(self, node: StringLeaf) -> FunctionCall:
@@ -149,6 +156,7 @@ class CCallMakerVisitor(GrammarVisitor):
                 arguments=["p", type],
                 nodetype=NodeTypes.GENERIC_TOKEN,
                 return_type="Token *",
+                comment=f"token='{val}'",
             )
 
     def visit_Rhs(self, node: Rhs) -> FunctionCall:
@@ -168,6 +176,7 @@ class CCallMakerVisitor(GrammarVisitor):
             name = self.gen.name_node(node)
             self.cache[node] = FunctionCall(
                 assigned_variable=f"{name}_var", function=f"{name}_rule", arguments=["p"],
+                comment=f"{node}"
             )
         return self.cache[node]
 
@@ -190,6 +199,7 @@ class CCallMakerVisitor(GrammarVisitor):
                 function=f"_PyPegen_lookahead_with_int",
                 arguments=[positive, call.function, *call.arguments],
                 return_type="int",
+                comment=f"token={node.node}",
             )
         else:
             return FunctionCall(
@@ -211,6 +221,7 @@ class CCallMakerVisitor(GrammarVisitor):
             function=call.function,
             arguments=call.arguments,
             force_true=True,
+            comment=f"{node}"
         )
 
     def visit_Repeat0(self, node: Repeat0) -> FunctionCall:
@@ -222,6 +233,7 @@ class CCallMakerVisitor(GrammarVisitor):
             function=f"{name}_rule",
             arguments=["p"],
             return_type="asdl_seq *",
+            comment=f"{node}",
         )
         return self.cache[node]
 
@@ -234,6 +246,7 @@ class CCallMakerVisitor(GrammarVisitor):
             function=f"{name}_rule",
             arguments=["p"],
             return_type="asdl_seq *",
+            comment=f"{node}",
         )
         return self.cache[node]
 
@@ -246,6 +259,7 @@ class CCallMakerVisitor(GrammarVisitor):
             function=f"{name}_rule",
             arguments=["p"],
             return_type="asdl_seq *",
+            comment=f"{node}",
         )
         return self.cache[node]
 
