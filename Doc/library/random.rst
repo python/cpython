@@ -217,7 +217,7 @@ Functions for sequences
       The optional parameter *random*.
 
 
-.. function:: sample(population, k)
+.. function:: sample(population, k, *, weights=None)
 
    Return a *k* length list of unique elements chosen from the population sequence
    or set. Used for random sampling without replacement.
@@ -231,12 +231,19 @@ Functions for sequences
    Members of the population need not be :term:`hashable` or unique.  If the population
    contains repeats, then each occurrence is a possible selection in the sample.
 
+   If *weights* are given, they must be non-negative integer counts.
+   Each selection effectively reduces the count by one, lowering
+   the probablity for the next selection.
+
    To choose a sample from a range of integers, use a :func:`range` object as an
    argument.  This is especially fast and space efficient for sampling from a large
    population:  ``sample(range(10000000), k=60)``.
 
    If the sample size is larger than the population size, a :exc:`ValueError`
    is raised.
+
+   .. versionchanged 3.9
+      Added the *weights* parameter.
 
    .. deprecated:: 3.9
       In the future, the *population* must be a sequence.  Instances of
@@ -420,12 +427,11 @@ Simulations::
    >>> choices(['red', 'black', 'green'], [18, 18, 2], k=6)
    ['red', 'green', 'black', 'black', 'red', 'black']
 
-   >>> # Deal 20 cards without replacement from a deck of 52 playing cards
-   >>> # and determine the proportion of cards with a ten-value
-   >>> # (a ten, jack, queen, or king).
-   >>> deck = collections.Counter(tens=16, low_cards=36)
-   >>> seen = sample(list(deck.elements()), k=20)
-   >>> seen.count('tens') / 20
+   >>> # Deal 20 cards without replacement from a deck
+   >>> # of 52 playing cards, and determine the proportion of cards
+   >>> # with a ten-value:  ten, jack, queen, or king.
+   >>> dealt = sample(['tens', 'low cards'], weights=[16, 36], k=20)
+   >>> dealt.count('tens') / 20
    0.15
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins
