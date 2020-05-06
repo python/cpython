@@ -19,6 +19,12 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #include "clinic/typeobject.c.h"
 
+/* bpo-40521: Type method cache is shared by all subinterpreters */
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  define MCACHE
+#endif
+
+#ifdef MCACHE
 /* Support type attribute cache */
 
 /* The cache can keep references to the names alive for longer than
@@ -47,6 +53,7 @@ struct method_cache_entry {
 
 static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP];
 static unsigned int next_version_tag = 0;
+#endif
 
 #define MCACHE_STATS 0
 
@@ -216,6 +223,7 @@ _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_d
 unsigned int
 PyType_ClearCache(void)
 {
+#ifdef MCACHE
     Py_ssize_t i;
     unsigned int cur_version_tag = next_version_tag - 1;
 
@@ -240,6 +248,9 @@ PyType_ClearCache(void)
     /* mark all version tags as invalid */
     PyType_Modified(&PyBaseObject_Type);
     return cur_version_tag;
+#else
+    return 0;
+#endif
 }
 
 void
@@ -350,6 +361,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
                         Py_TPFLAGS_VALID_VERSION_TAG);
 }
 
+#ifdef MCACHE
 static int
 assign_version_tag(PyTypeObject *type)
 {
@@ -396,6 +408,7 @@ assign_version_tag(PyTypeObject *type)
     type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
     return 1;
 }
+#endif
 
 
 static PyMemberDef type_members[] = {
@@ -3232,12 +3245,12 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 {
     PyObject *res;
     int error;
-    unsigned int h;
 
+#ifdef MCACHE
     if (MCACHE_CACHEABLE_NAME(name) &&
         _PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
         /* fast path */
-        h = MCACHE_HASH_METHOD(type, name);
+        unsigned int h = MCACHE_HASH_METHOD(type, name);
         if (method_cache[h].version == type->tp_version_tag &&
             method_cache[h].name == name) {
 #if MCACHE_STATS
@@ -3246,6 +3259,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
             return method_cache[h].value;
         }
     }
+#endif
 
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
@@ -3267,8 +3281,9 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         return NULL;
     }
 
+#ifdef MCACHE
     if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(type)) {
-        h = MCACHE_HASH_METHOD(type, name);
+        unsigned int h = MCACHE_HASH_METHOD(type, name);
         method_cache[h].version = type->tp_version_tag;
         method_cache[h].value = res;  /* borrowed */
         Py_INCREF(name);
@@ -3281,6 +3296,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 #endif
         Py_SETREF(method_cache[h].name, name);
     }
+#endif
     return res;
 }
 
