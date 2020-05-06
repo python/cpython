@@ -1,6 +1,2 @@
-Added an option to the user to make completions with case insensitive / sensitive.
+Added an option to the user to make rl completions with case insensitive / sensitive.
 rlcompleter.set_case_insensitive(True) # to enable case insensitive
-Added documentation accordingly.
-
-bpo-40529
-skip news
