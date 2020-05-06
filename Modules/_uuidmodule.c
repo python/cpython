@@ -1,5 +1,5 @@
 /*
- * Python UUID module that wraps libuuid or rpcrt4.dll
+ * Python UUID module that wraps libuuid or Windows rpcrt4.dll.
  * DCE compatible Universally Unique Identifier library.
  */
 
