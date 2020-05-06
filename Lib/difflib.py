@@ -648,8 +648,8 @@ class SequenceMatcher:
     def quick_ratio(self):
         """Return an upper bound on ratio() relatively quickly.
 
-        This isn't defined beyond that it is an upper bound on .ratio(), and
-        is faster to compute.
+        This is the highest possible ratio() given these letters, regardless
+        of their order.
         """
 
         # viewing a and b as multisets, set matches to the cardinality
@@ -677,8 +677,9 @@ class SequenceMatcher:
     def real_quick_ratio(self):
         """Return an upper bound on ratio() very quickly.
 
-        This isn't defined beyond that it is an upper bound on .ratio(), and
-        is faster to compute than either .ratio() or .quick_ratio().
+        This is the highest possible ratio() given the lengths of a and b,
+        regardless of their letters. i.e.
+        2*(min(len(a), len(b))/(len(a) + len(b))
         """
 
         la, lb = len(self.a), len(self.b)

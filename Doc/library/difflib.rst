@@ -562,16 +562,22 @@ The :class:`SequenceMatcher` class has this constructor:
 
       Return an upper bound on :meth:`ratio` relatively quickly.
 
+      This is the highest possible :meth:`ratio` given the letters in ``a``
+      and ``b``, regardless of their order.
+
 
    .. method:: real_quick_ratio()
 
       Return an upper bound on :meth:`ratio` very quickly.
 
+      This is the highest possible :meth:`ratio` given the lengths of ``a`` and ``b``,
+      regardless of their letters.
+      i.e. ``2 * min(len(a), len(b))/(len(a) + len(b))``
+
 
 The three methods that return the ratio of matching to total characters can give
 different results due to differing levels of approximation, although
-:meth:`quick_ratio` and :meth:`real_quick_ratio` are always at least as large as
-:meth:`ratio`:
+:meth:`ratio` <= :meth:`quick_ratio` <= :meth:`real_quick_ratio`:
 
    >>> s = SequenceMatcher(None, "abcd", "bcde")
    >>> s.ratio()
