@@ -242,7 +242,7 @@ Functions for sequences
    If the sample size is larger than the population size, a :exc:`ValueError`
    is raised.
 
-   .. versionchanged 3.9
+   .. versionchanged:: 3.9
       Added the *weights* parameter.
 
    .. deprecated:: 3.9
