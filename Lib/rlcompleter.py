@@ -11,6 +11,10 @@ Tip: to use the tab key as the completion key, call
 
     readline.parse_and_bind("tab: complete")
 
+And to make completion with case insensitive, call
+
+    rlcompleter.set_case_insensitive(True)
+
 Notes:
 
 - Exceptions raised by the completer function are *ignored* (and generally cause
@@ -166,7 +170,7 @@ class Completer:
             noprefix = None
         while True:
             for word in words:
-                if (word[:n] == attr and
+                if (re.match(attr, word[:n], flags=_re_ignorecase_flags) and
                     not (noprefix and word[:n+1] == noprefix)):
                     match = "%s.%s" % (expr, word)
                     try:
@@ -184,6 +188,12 @@ class Completer:
                 noprefix = None
         matches.sort()
         return matches
+
+_re_ignorecase_flags = 0
+def set_case_insensitive(option):
+    import re
+    global _re_ignorecase_flags
+    _re_ignorecase_flags = option and re.IGNORECASE or 0
 
 def get_class_members(klass):
     ret = dir(klass)
