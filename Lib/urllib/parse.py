@@ -756,9 +756,9 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         if standalone_keys and name_value.endswith('='):
             default_value = ''
 
-        name_value = iter(name_value.split('=', 1))
-        name = next(name_value)
-        value = next(name_value, default_value)
+        tokens = iter(name_value.split('=', 1))
+        name = next(tokens)
+        value = next(tokens, default_value)
 
         if not value:
             if strict_parsing:
