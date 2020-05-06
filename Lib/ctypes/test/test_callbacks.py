@@ -292,12 +292,12 @@ class SampleCallbacksTestCase(unittest.TestCase):
             return len(args)
 
         CTYPES_MAX_ARGCOUNT = 1024
-        proto = CFUNCTYPE(None, *(c_int,) * nargs)
+        proto = CFUNCTYPE(c_int, *(c_int,) * CTYPES_MAX_ARGCOUNT)
         cb = proto(func)
-        args1 = (None,) * CTYPES_MAX_ARGCOUNT
+        args1 = (1,) * CTYPES_MAX_ARGCOUNT
         self.assertEqual(cb(*args1), CTYPES_MAX_ARGCOUNT)
         
-        args2 = (None,) * (CTYPES_MAX_ARGCOUNT + 1)
+        args2 = (1,) * (CTYPES_MAX_ARGCOUNT + 1)
         with self.assertRaises(ArgumentError):
             cb(*args2)
 
