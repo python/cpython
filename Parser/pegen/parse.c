@@ -378,7 +378,7 @@ static asdl_seq* statement_newline_rule(Parser *p);
 static asdl_seq* simple_stmt_rule(Parser *p);
 static stmt_ty small_stmt_rule(Parser *p);
 static stmt_ty compound_stmt_rule(Parser *p);
-static void *assignment_rule(Parser *p);
+static stmt_ty assignment_rule(Parser *p);
 static AugOperator* augassign_rule(Parser *p);
 static stmt_ty global_stmt_rule(Parser *p);
 static stmt_ty nonlocal_stmt_rule(Parser *p);
@@ -1256,7 +1256,7 @@ small_stmt_rule(Parser *p)
     int start_col_offset = p->tokens[mark]->col_offset;
     UNUSED(start_col_offset); // Only used by EXTRA macro
     { // assignment
-        void *assignment_var;
+        stmt_ty assignment_var;
         if (
             (assignment_var = assignment_rule(p))
         )
@@ -1586,13 +1586,13 @@ compound_stmt_rule(Parser *p)
 //     | ((star_targets '='))+ (yield_expr | star_expressions) TYPE_COMMENT?
 //     | target augassign (yield_expr | star_expressions)
 //     | invalid_assignment
-static void *
+static stmt_ty
 assignment_rule(Parser *p)
 {
     if (p->error_indicator) {
         return NULL;
     }
-    void * res = NULL;
+    stmt_ty res = NULL;
     int mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
