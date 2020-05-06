@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_fileutils.h"
-#include "osdefs.h"
+#include "osdefs.h"               // SEP
 #include <locale.h>
 
 #ifdef MS_WINDOWS

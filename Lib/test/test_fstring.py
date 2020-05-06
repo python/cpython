@@ -713,7 +713,7 @@ non-important content
 
         # lambda doesn't work without parens, because the colon
         #  makes the parser think it's a format_spec
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
+        self.assertAllRaise(SyntaxError, 'invalid syntax',
                             ["f'{lambda x:x}'",
                              ])
 
@@ -864,7 +864,7 @@ non-important content
                              "Bf''",
                              "BF''",]
         double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
-        self.assertAllRaise(SyntaxError, 'invalid string prefix',
+        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
                             single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):

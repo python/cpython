@@ -4,51 +4,40 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
-#include "pycore_ceval.h"
-#include "pycore_context.h"
-#include "pycore_import.h"   /* _PyImport_FindBuiltin */
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
-#include "pycore_hamt.h"
-#include "pycore_object.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "pycore_sysmodule.h"
-#include "pycore_traceback.h"
-#include "grammar.h"
-#include "node.h"
-#include "token.h"
-#include "parsetok.h"
-#include "errcode.h"
-#include "code.h"
-#include "symtable.h"
-#include "ast.h"
-#include "marshal.h"
-#include "osdefs.h"
-#include <locale.h>
+
+#include "pycore_ceval.h"         // _PyEval_FiniGIL()
+#include "pycore_context.h"       // _PyContext_Init()
+#include "pycore_fileutils.h"     // _Py_ResetForceASCII()
+#include "pycore_import.h"        // _PyImport_Cleanup()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
+#include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_pylifecycle.h"   // _PyErr_Print()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
+#include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+
+#include "grammar.h"              // PyGrammar_RemoveAccelerators()
+#include <locale.h>               // setlocale()
 
 #ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-
-#ifdef MS_WINDOWS
-#include "malloc.h" /* for alloca */
+#  include <signal.h>             // SIG_IGN
 #endif
 
 #ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
+#  include <langinfo.h>           // nl_langinfo(CODESET)
 #endif
 
 #ifdef MS_WINDOWS
-#undef BYTE
-#include "windows.h"
+#  undef BYTE
+#  include "windows.h"
 
-extern PyTypeObject PyWindowsConsoleIO_Type;
-#define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
+   extern PyTypeObject PyWindowsConsoleIO_Type;
+#  define PyWindowsConsoleIO_Check(op) \
+       (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
 #endif
+
 
 _Py_IDENTIFIER(flush);
 _Py_IDENTIFIER(name);
@@ -1537,7 +1526,7 @@ Py_Finalize(void)
 */
 
 static PyStatus
-new_interpreter(PyThreadState **tstate_p)
+new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 {
     PyStatus status;
 
@@ -1553,7 +1542,7 @@ new_interpreter(PyThreadState **tstate_p)
 
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
-    _PyGILState_check_enabled = 0;
+    runtime->gilstate.check_enabled = 0;
 
     PyInterpreterState *interp = PyInterpreterState_New();
     if (interp == NULL) {
@@ -1572,15 +1561,25 @@ new_interpreter(PyThreadState **tstate_p)
 
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *config;
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     if (save_tstate != NULL) {
         config = _PyInterpreterState_GetConfig(save_tstate->interp);
-    } else {
+    }
+    else
+#endif
+    {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = PyInterpreterState_Main();
         config = _PyInterpreterState_GetConfig(main_interp);
     }
 
     status = _PyInterpreterState_SetConfig(interp, config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
+    interp->config._isolated_interpreter = isolated_subinterpreter;
+
+    status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
@@ -1593,11 +1592,6 @@ new_interpreter(PyThreadState **tstate_p)
     status = init_interp_main(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
-    }
-
-    status = init_interp_create_gil(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
     }
 
     *tstate_p = tstate;
@@ -1617,15 +1611,21 @@ error:
 }
 
 PyThreadState *
-Py_NewInterpreter(void)
+_Py_NewInterpreter(int isolated_subinterpreter)
 {
     PyThreadState *tstate = NULL;
-    PyStatus status = new_interpreter(&tstate);
+    PyStatus status = new_interpreter(&tstate, isolated_subinterpreter);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
     return tstate;
 
+}
+
+PyThreadState *
+Py_NewInterpreter(void)
+{
+    return _Py_NewInterpreter(0);
 }
 
 /* Delete an interpreter and its last thread.  This requires that the
@@ -2350,12 +2350,10 @@ Py_ExitStatusException(PyStatus status)
 
 /* Clean up and exit */
 
-#  include "pythread.h"
-
 /* For the atexit module. */
 void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
 {
-    PyInterpreterState *is = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *is = _PyInterpreterState_GET();
 
     /* Guard against API misuse (see bpo-17852) */
     assert(is->pyexitfunc == NULL || is->pyexitfunc == func);

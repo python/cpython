@@ -4,9 +4,9 @@
 
 #include "Python.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
-#include "structmember.h" /* offsetof */
-#include "pythread.h"
+#include "pycore_interp.h"        // _PyInterpreterState.num_threads
+#include "pycore_pystate.h"       // _PyThreadState_Init()
+#include <stddef.h>               // offsetof()
 
 static PyObject *ThreadError;
 static PyObject *str_dict;
@@ -587,8 +587,6 @@ newlockobject(void)
 
 /* Thread-local objects */
 
-#include "structmember.h"
-
 /* Quick overview:
 
    We need to be able to reclaim reference cycles as soon as possible
@@ -1087,10 +1085,18 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
                         "optional 3rd arg must be a dictionary");
         return NULL;
     }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->config._isolated_interpreter) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "thread is not supported for isolated subinterpreters");
+        return NULL;
+    }
+
     boot = PyMem_NEW(struct bootstate, 1);
     if (boot == NULL)
         return PyErr_NoMemory();
-    boot->interp = _PyInterpreterState_GET_UNSAFE();
+    boot->interp = _PyInterpreterState_GET();
     boot->func = func;
     boot->args = args;
     boot->keyw = keyw;
@@ -1212,7 +1218,7 @@ particular thread within a system.");
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     return PyLong_FromLong(interp->num_threads);
 }
 
@@ -1555,7 +1561,7 @@ PyInit__thread(void)
     PyObject *m, *d, *v;
     double time_max;
     double timeout_max;
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* Initialize types: */
     if (PyType_Ready(&localdummytype) < 0)

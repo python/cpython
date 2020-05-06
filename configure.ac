@@ -2236,8 +2236,8 @@ AC_CHECK_HEADERS(linux/vm_sockets.h,,,[
 #endif
 ])
 
-# On Linux, can.h and can/raw.h require sys/socket.h
-AC_CHECK_HEADERS(linux/can.h linux/can/raw.h linux/can/bcm.h,,,[
+# On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
+AC_CHECK_HEADERS(linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h,,,[
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -5397,7 +5397,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
+SRCDIRS="Parser Parser/pegen Objects Python Modules Modules/_io Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
@@ -5716,6 +5716,23 @@ esac
 AC_MSG_RESULT(python)
 AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
 ])
+
+# --with-experimental-isolated-subinterpreters
+AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
+            [Better isolate subinterpreters, experimental build mode.])
+AC_MSG_CHECKING(for --with-experimental-isolated-subinterpreters)
+AC_ARG_WITH(experimental-isolated-subinterpreters,
+  AS_HELP_STRING([--with-experimental-isolated-subinterpreters],
+                 [better isolate subinterpreters, experimental build mode (default is no)]),
+[
+if test "$withval" != no
+then
+  AC_MSG_RESULT(yes);
+  AC_DEFINE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS)
+else
+  AC_MSG_RESULT(no);
+fi],
+[AC_MSG_RESULT(no)])
 
 
 # generate output files

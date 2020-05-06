@@ -29,7 +29,8 @@ argument in quotes and using leading spaces.  Multiple -s options are
 treated similarly.
 
 If -n is not given, a suitable number of loops is calculated by trying
-successive powers of 10 until the total time is at least 0.2 seconds.
+increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the
+total time is at least 0.2 seconds.
 
 Note: there is a certain baseline overhead associated with executing a
 pass statement.  It differs between versions.  The code here doesn't try

@@ -8,14 +8,13 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pyhash.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"
 #include "errcode.h"
 #include "marshal.h"
 #include "code.h"
-#include "frameobject.h"
-#include "osdefs.h"
 #include "importdl.h"
 #include "pydtrace.h"
 
@@ -149,8 +148,6 @@ _PyImportZip_Init(PyThreadState *tstate)
    in different threads to return with a partially loaded module.
    These calls are serialized by the global interpreter lock. */
 
-#include "pythread.h"
-
 static PyThread_type_lock import_lock = 0;
 static unsigned long import_lock_thread = PYTHREAD_INVALID_THREAD_ID;
 static int import_lock_level = 0;
@@ -199,6 +196,7 @@ _PyImport_ReleaseLock(void)
     return 1;
 }
 
+#ifdef HAVE_FORK
 /* This function is called from PyOS_AfterFork_Child to ensure that newly
    created child processes do not share locks with the parent.
    We now acquire the import lock around fork() calls but on some platforms
@@ -208,8 +206,7 @@ void
 _PyImport_ReInitLock(void)
 {
     if (import_lock != NULL) {
-        import_lock = PyThread_allocate_lock();
-        if (import_lock == NULL) {
+        if (_PyThread_at_fork_reinit(&import_lock) < 0) {
             _Py_FatalErrorFunc(__func__, "failed to create a new lock");
         }
     }
@@ -228,6 +225,7 @@ _PyImport_ReInitLock(void)
         import_lock_level = 0;
     }
 }
+#endif
 
 /*[clinic input]
 _imp.lock_held
@@ -300,6 +298,7 @@ _PyImport_Fini2(void)
 
     /* Free memory allocated by PyImport_ExtendInittab() */
     PyMem_RawFree(inittab_copy);
+    inittab_copy = NULL;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -309,7 +308,7 @@ _PyImport_Fini2(void)
 PyObject *
 PyImport_GetModuleDict(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->modules == NULL) {
         Py_FatalError("interpreter has no modules dictionary");
     }
@@ -643,7 +642,7 @@ long
 PyImport_GetMagicNumber(void)
 {
     long res;
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *external, *pyc_magic;
 
     external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
@@ -979,7 +978,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
             goto error;
     }
     else if (cpathobj != NULL) {
-        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+        PyInterpreterState *interp = _PyInterpreterState_GET();
         _Py_IDENTIFIER(_get_sourcefile);
 
         if (interp == NULL) {
@@ -1537,7 +1536,7 @@ remove_importlib_frames(PyThreadState *tstate)
         PyTracebackObject *traceback = (PyTracebackObject *)tb;
         PyObject *next = (PyObject *) traceback->tb_next;
         PyFrameObject *frame = traceback->tb_frame;
-        PyCodeObject *code = frame->f_code;
+        PyCodeObject *code = PyFrame_GetCode(frame);
         int now_in_importlib;
 
         assert(PyTraceBack_Check(tb));
@@ -1559,6 +1558,7 @@ remove_importlib_frames(PyThreadState *tstate)
         else {
             prev_link = (PyObject **) &traceback->tb_next;
         }
+        Py_DECREF(code);
         tb = next;
     }
 done:
@@ -1978,23 +1978,23 @@ PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals
 PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
-    _Py_IDENTIFIER(imp);
+    _Py_IDENTIFIER(importlib);
     _Py_IDENTIFIER(reload);
     PyObject *reloaded_module = NULL;
-    PyObject *imp = _PyImport_GetModuleId(&PyId_imp);
-    if (imp == NULL) {
+    PyObject *importlib = _PyImport_GetModuleId(&PyId_importlib);
+    if (importlib == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
         }
 
-        imp = PyImport_ImportModule("imp");
-        if (imp == NULL) {
+        importlib = PyImport_ImportModule("importlib");
+        if (importlib == NULL) {
             return NULL;
         }
     }
 
-    reloaded_module = _PyObject_CallMethodIdOneArg(imp, &PyId_reload, m);
-    Py_DECREF(imp);
+    reloaded_module = _PyObject_CallMethodIdOneArg(importlib, &PyId_reload, m);
+    Py_DECREF(importlib);
     return reloaded_module;
 }
 

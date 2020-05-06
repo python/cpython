@@ -9,7 +9,6 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"
 #include "_iomodule.h"
 
 #ifdef HAVE_SYS_TYPES_H

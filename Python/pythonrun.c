@@ -12,35 +12,34 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
-#include "pycore_object.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
-#include "pycore_sysmodule.h"
-#include "grammar.h"
-#include "node.h"
-#include "token.h"
-#include "parsetok.h"
-#include "errcode.h"
-#include "code.h"
-#include "symtable.h"
-#include "ast.h"
-#include "marshal.h"
-#include "osdefs.h"
-#include <locale.h>
 
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
+#include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
+#include "pycore_pyerrors.h"      // _PyErr_Fetch
+#include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+
+#include "node.h"                 // node
+#include "token.h"                // INDENT
+#include "parsetok.h"             // perrdetail
+#include "errcode.h"              // E_EOF
+#include "code.h"                 // PyCodeObject
+#include "symtable.h"             // PySymtable_BuildObject()
+#include "ast.h"                  // PyAST_FromNodeObject()
+#include "marshal.h"              // PyMarshal_ReadLongFromFile()
+
+#include "pegen_interface.h"      // PyPegen_ASTFrom*
+
+#ifdef MS_WINDOWS
+#  include "malloc.h"             // alloca()
 #endif
 
 #ifdef MS_WINDOWS
-#include "malloc.h" /* for alloca */
+#  undef BYTE
+#  include "windows.h"
 #endif
 
-#ifdef MS_WINDOWS
-#undef BYTE
-#include "windows.h"
-#endif
 
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(excepthook);
@@ -186,6 +185,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     PyArena *arena;
     const char *ps1 = "", *ps2 = "", *enc = NULL;
     int errcode = 0;
+    int use_peg = _PyInterpreterState_GET()->config._use_peg_parser;
     _Py_IDENTIFIER(encoding);
     _Py_IDENTIFIER(__main__);
 
@@ -238,9 +238,17 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         Py_XDECREF(oenc);
         return -1;
     }
-    mod = PyParser_ASTFromFileObject(fp, filename, enc,
-                                     Py_single_input, ps1, ps2,
-                                     flags, &errcode, arena);
+
+    if (use_peg) {
+        mod = PyPegen_ASTFromFileObject(fp, filename, Py_single_input,
+                                        enc, ps1, ps2, flags, &errcode, arena);
+    }
+    else {
+        mod = PyParser_ASTFromFileObject(fp, filename, enc,
+                                         Py_single_input, ps1, ps2,
+                                         flags, &errcode, arena);
+    }
+
     Py_XDECREF(v);
     Py_XDECREF(w);
     Py_XDECREF(oenc);
@@ -347,7 +355,7 @@ set_main_loader(PyObject *d, const char *filename, const char *loader_name)
     filename_obj = PyUnicode_DecodeFSDefault(filename);
     if (filename_obj == NULL)
         return -1;
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     bootstrap = PyObject_GetAttrString(interp->importlib,
                                        "_bootstrap_external");
     if (bootstrap != NULL) {
@@ -1022,6 +1030,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     mod_ty mod;
     PyArena *arena;
     PyObject *filename;
+    int use_peg = _PyInterpreterState_GET()->config._use_peg_parser;
 
     filename = _PyUnicode_FromId(&PyId_string); /* borrowed */
     if (filename == NULL)
@@ -1031,7 +1040,13 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    if (use_peg) {
+        mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
+    }
+    else {
+        mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    }
+
     if (mod != NULL)
         ret = run_mod(mod, filename, globals, locals, flags, arena);
     PyArena_Free(arena);
@@ -1046,6 +1061,7 @@ PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globa
     mod_ty mod;
     PyArena *arena = NULL;
     PyObject *filename;
+    int use_peg = _PyInterpreterState_GET()->config._use_peg_parser;
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
     if (filename == NULL)
@@ -1055,8 +1071,15 @@ PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globa
     if (arena == NULL)
         goto exit;
 
-    mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, 0, 0,
-                                     flags, NULL, arena);
+    if (use_peg) {
+        mod = PyPegen_ASTFromFileObject(fp, filename, start, NULL, NULL, NULL,
+                                        flags, NULL, arena);
+    }
+    else {
+        mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, 0, 0,
+                                         flags, NULL, arena);
+    }
+
     if (closeit)
         fclose(fp);
     if (mod == NULL) {
@@ -1199,11 +1222,17 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
 {
     PyCodeObject *co;
     mod_ty mod;
+    int use_peg = _PyInterpreterState_GET()->config._use_peg_parser;
     PyArena *arena = PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    if (use_peg) {
+        mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
+    }
+    else {
+        mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    }
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
@@ -1300,13 +1329,19 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename, int start, Py
 {
     struct symtable *st;
     mod_ty mod;
+    int use_peg = _PyInterpreterState_GET()->config._use_peg_parser;
     PyArena *arena;
 
     arena = PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    if (use_peg) {
+        mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
+    }
+    else {
+        mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    }
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
@@ -1573,9 +1608,6 @@ err_input(perrdetail *err)
         break;
     case E_BADSINGLE:
         msg = "multiple statements found while compiling a single statement";
-        break;
-    case E_BADPREFIX:
-        msg = "invalid string prefix";
         break;
     default:
         fprintf(stderr, "error=%d\n", err->error);

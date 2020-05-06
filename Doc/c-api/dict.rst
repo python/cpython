@@ -232,10 +232,3 @@ Dictionary Objects
           for key, value in seq2:
               if override or key not in a:
                   a[key] = value
-
-
-.. c:function:: int PyDict_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
-   .. versionadded:: 3.3
