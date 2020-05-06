@@ -3031,9 +3031,9 @@ for_stmt_rule(Parser *p)
 }
 
 // with_stmt:
-//     | 'with' '(' ','.with_item+ ')' ':' block
+//     | 'with' '(' ','.with_item+ ','? ')' ':' block
 //     | 'with' ','.with_item+ ':' TYPE_COMMENT? block
-//     | ASYNC 'with' '(' ','.with_item+ ')' ':' block
+//     | ASYNC 'with' '(' ','.with_item+ ','? ')' ':' block
 //     | ASYNC 'with' ','.with_item+ ':' TYPE_COMMENT? block
 static stmt_ty
 with_stmt_rule(Parser *p)
@@ -3051,19 +3051,23 @@ with_stmt_rule(Parser *p)
     UNUSED(start_lineno); // Only used by EXTRA macro
     int start_col_offset = p->tokens[mark]->col_offset;
     UNUSED(start_col_offset); // Only used by EXTRA macro
-    { // 'with' '(' ','.with_item+ ')' ':' block
+    { // 'with' '(' ','.with_item+ ','? ')' ':' block
         asdl_seq * a;
         asdl_seq* b;
         Token * keyword;
         Token * literal;
         Token * literal_1;
         Token * literal_2;
+        void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (keyword = _PyPegen_expect_token(p, 519))
             &&
             (literal = _PyPegen_expect_token(p, 7))
             &&
             (a = _gather_38_rule(p))
+            &&
+            (opt_var = _PyPegen_expect_token(p, 12), 1)
             &&
             (literal_1 = _PyPegen_expect_token(p, 8))
             &&
@@ -3124,7 +3128,7 @@ with_stmt_rule(Parser *p)
         }
         p->mark = mark;
     }
-    { // ASYNC 'with' '(' ','.with_item+ ')' ':' block
+    { // ASYNC 'with' '(' ','.with_item+ ','? ')' ':' block
         asdl_seq * a;
         Token * async_var;
         asdl_seq* b;
@@ -3132,6 +3136,8 @@ with_stmt_rule(Parser *p)
         Token * literal;
         Token * literal_1;
         Token * literal_2;
+        void *opt_var;
+        UNUSED(opt_var); // Silence compiler warnings
         if (
             (async_var = _PyPegen_expect_token(p, ASYNC))
             &&
@@ -3140,6 +3146,8 @@ with_stmt_rule(Parser *p)
             (literal = _PyPegen_expect_token(p, 7))
             &&
             (a = _gather_42_rule(p))
+            &&
+            (opt_var = _PyPegen_expect_token(p, 12), 1)
             &&
             (literal_1 = _PyPegen_expect_token(p, 8))
             &&
