@@ -190,6 +190,9 @@ or on combining URL components into a URL string.
    read. If set, then throws a :exc:`ValueError` if there are more than
    *max_num_fields* fields read.
 
+   To decode ``None`` as the result for keys which do not have a following
+   ``=`` present in *qs*, enable the *standalone_keys* parameter.
+
    Use the :func:`urllib.parse.urlencode` function (with the ``doseq``
    parameter set to ``True``) to convert such dictionaries into query
    strings.
@@ -225,6 +228,9 @@ or on combining URL components into a URL string.
    The optional argument *max_num_fields* is the maximum number of fields to
    read. If set, then throws a :exc:`ValueError` if there are more than
    *max_num_fields* fields read.
+
+   To decode ``None`` as the result for keys which do not have a following
+   ``=`` present in *qs*, enable the *standalone_keys* parameter.
 
    Use the :func:`urllib.parse.urlencode` function to convert such lists of pairs into
    query strings.
