@@ -9,7 +9,7 @@ from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
 from fractions import Fraction
-
+from collections import Counter
 
 class TestBasicOps:
     # Superclass with tests common to all generators.
@@ -160,6 +160,43 @@ class TestBasicOps:
         with self.assertWarns(DeprecationWarning):
             population = {10, 20, 30, 40, 50, 60, 70}
             self.gen.sample(population, k=5)
+
+    def test_sample_with_weights(self):
+        sample = self.gen.sample
+
+        # General case
+        colors =  ['red', 'green', 'blue', 'orange', 'black', 'brown', 'amber']
+        weights = [500,      200,     20,       10,       5,       0,       1 ]
+        k = 700
+        summary = Counter(sample(colors, weights=weights, k=k))
+        self.assertEqual(sum(summary.values()), k)
+        for color, weight in zip(colors, weights):
+            self.assertLessEqual(summary[color], weight)
+        self.assertNotIn('brown', summary)
+
+        # Case that exhausts the population
+        k = sum(weights)
+        summary = Counter(sample(colors, weights=weights, k=k))
+        self.assertEqual(sum(summary.values()), k)
+        for color, weight in zip(colors, weights):
+            self.assertLessEqual(summary[color], weight)
+        self.assertNotIn('brown', summary)
+
+        # Case with population size of 1
+        summary = Counter(sample(['x'], weights=[10], k=8))
+        self.assertEqual(summary, Counter(x=8))
+
+        # Test error handling
+        with self.assertRaises(TypeError):
+            sample(['red', 'green', 'blue'], weights=10, k=10)               # weights not iterable
+        with self.assertRaises(ValueError):
+            sample(['red', 'green', 'blue'], weights=[-3, -7, -8], k=2)      # weights are negative
+        with self.assertRaises(ValueError):
+            sample(['red', 'green'], weights=[10, 10], k=21)                 # population too small
+        with self.assertRaises(ValueError):
+            sample(['red', 'green', 'blue'], weights=[1, 2], k=2)            # too few weights
+        with self.assertRaises(ValueError):
+            sample(['red', 'green', 'blue'], weights=[1, 2, 3, 4], k=2)      # too many weights
 
     def test_choices(self):
         choices = self.gen.choices

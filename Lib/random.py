@@ -383,8 +383,11 @@ class Random(_random.Random):
             population = tuple(population)
         if not isinstance(population, _Sequence):
             raise TypeError("Population must be a sequence.  For dicts or sets, use sorted(d).")
+        n = len(population)
         if weights is not None:
             cum_weights = list(_accumulate(weights))
+            if len(cum_weights) != n:
+                raise ValueError('The number of weights does not match the population')
             total = cum_weights.pop()
             if not isinstance(total, int):
                 raise TypeError('Weights must be integers')
@@ -394,7 +397,6 @@ class Random(_random.Random):
             bisect = _bisect
             return [population[bisect(cum_weights, s)] for s in selections]
         randbelow = self._randbelow
-        n = len(population)
         if not 0 <= k <= n:
             raise ValueError("Sample larger than population or is negative")
         result = [None] * k
