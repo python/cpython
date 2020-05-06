@@ -47,40 +47,33 @@ static PyMethodDef errno_methods[] = {
 /* Helper function doing the dictionary inserting */
 
 static int
-_add_errcode(PyObject *d, PyObject *de, const char *name, int code)
+_add_errcode(PyObject *module_dict, PyObject *error_dict, const char *name_str, int code_int)
 {
-    PyObject *u = PyUnicode_FromString(name);
-    if (!u) {
+    PyObject *name = PyUnicode_FromString(name_str);
+    if (!name) {
         return -1;
     }
 
-    PyObject *v = PyLong_FromLong((long) code);
-    if (!v) {
-        Py_DECREF(u);
+    PyObject *code = PyLong_FromLong(code_int);
+    if (!code) {
+        Py_DECREF(name);
         return -1;
     }
 
-    /* Don't bother checking for errors; they'll be caught at the end
-     * of the module initialization function by the caller of
-     * initerrno().
-     */
-    if (u && v) {
-        /* insert in modules dict */
-        if (PyDict_SetItem(d, u, v) < 0) {
-            Py_DECREF(u);
-            Py_DECREF(v);
-            return -1;
-        }
-        /* insert in errorcode dict */
-        if (PyDict_SetItem(de, v, u) < 0) {
-            Py_DECREF(u);
-            Py_DECREF(v);
-            return -1;
-        }
+    int ret = -1;
+    /* insert in modules dict */
+    if (PyDict_SetItem(module_dict, name, code) < 0) {
+        goto end;
     }
-    Py_DECREF(u);
-    Py_DECREF(v);
-    return 0;
+    /* insert in errorcode dict */
+    if (PyDict_SetItem(error_dict, code, name) < 0) {
+        goto end;
+    }
+    ret = 0;
+end:
+    Py_DECREF(name);
+    Py_DECREF(code);
+    return ret;
 }
 
 static int
