@@ -26,13 +26,11 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
                to get a more accurate error report */
             PyErr_Clear();
 
-            /* This is a hack, in order for the SyntaxError to point to the token t,
-               since _PyPegen_raise_error always uses p->tokens[p->fill - 1] for the
-               error location. */
-            Token *old_end = p->tokens[p->fill - 1];
-            p->tokens[p->fill - 1] = t;
+            /* This is needed, in order for the SyntaxError to point to the token t,
+               since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
+               error location, if p->known_err_token is not set. */
+            p->known_err_token = t;
             RAISE_SYNTAX_ERROR("invalid escape sequence \\%c", first_invalid_escape_char);
-            p->tokens[p->fill - 1] = old_end;
         }
         Py_DECREF(msg);
         return -1;

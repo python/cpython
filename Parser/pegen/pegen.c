@@ -383,7 +383,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number, const ch
     PyObject *errstr = NULL;
     PyObject *loc = NULL;
     PyObject *tmp = NULL;
-    Token *t = p->tokens[p->fill - 1];
+    Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t col_number = !with_col_number;
     va_list va;
     p->error_indicator = 1;
@@ -1053,6 +1053,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->starting_col_offset = 0;
     p->flags = flags;
     p->feature_version = feature_version;
+    p->known_err_token = NULL;
 
     return p;
 }
