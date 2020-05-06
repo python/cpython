@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include <stddef.h>               // offsetof()
 
 
@@ -72,7 +73,8 @@ typedef enum {
     int prefix##_log_tb;                                                    \
     int prefix##_blocking;                                                  \
     PyObject *dict;                                                         \
-    PyObject *prefix##_weakreflist;
+    PyObject *prefix##_weakreflist;                                         \
+    _PyErr_StackItem prefix##_cancelled_exc_state;
 
 typedef struct {
     FutureObj_HEAD(fut)
@@ -482,6 +484,7 @@ future_init(FutureObj *fut, PyObject *loop)
     Py_CLEAR(fut->fut_exception);
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
+    _PyErr_ClearExcState(&fut->fut_cancelled_exc_state);
 
     fut->fut_state = STATE_PENDING;
     fut->fut_log_tb = 0;
@@ -623,6 +626,7 @@ future_get_result(FutureObj *fut, PyObject **result)
 {
     if (fut->fut_state == STATE_CANCELLED) {
         set_cancelled_error(fut->fut_cancel_msg);
+        _PyErr_ChainStackItem(&fut->fut_cancelled_exc_state);
         return -1;
     }
 
@@ -777,6 +781,7 @@ FutureObj_clear(FutureObj *fut)
     Py_CLEAR(fut->fut_exception);
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
+    _PyErr_ClearExcState(&fut->fut_cancelled_exc_state);
     Py_CLEAR(fut->dict);
     return 0;
 }
@@ -793,6 +798,12 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->dict);
+
+    _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
+    Py_VISIT(exc_state->exc_type);
+    Py_VISIT(exc_state->exc_value);
+    Py_VISIT(exc_state->exc_traceback);
+
     return 0;
 }
 
@@ -2767,11 +2778,13 @@ task_step_impl(TaskObj *task, PyObject *exc)
                 cancel_msg = ev;
             }
 
-            Py_DECREF(et);
-            Py_XDECREF(tb);
-            Py_XDECREF(ev);
+            FutureObj *fut = (FutureObj*)task;
+            _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
+            exc_state->exc_type = et;
+            exc_state->exc_value = ev;
+            exc_state->exc_traceback = tb;
 
-            return future_cancel((FutureObj*)task, cancel_msg);
+            return future_cancel(fut, cancel_msg);
         }
 
         /* Some other exception; pop it and call Task.set_exception() */
