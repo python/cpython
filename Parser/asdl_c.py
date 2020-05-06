@@ -323,7 +323,7 @@ class FunctionVisitor(PrototypeVisitor):
             if not opt and argtype != "int":
                 emit("if (!%s) {" % argname, 1)
                 emit("PyErr_SetString(PyExc_ValueError,", 2)
-                msg = "field %s is required for %s" % (argname, name)
+                msg = "field '%s' is required for %s" % (argname, name)
                 emit('                "%s");' % msg,
                      2, reflow=False)
                 emit('return NULL;', 2)
@@ -853,11 +853,9 @@ static PyObject* ast2obj_object(void *o)
     Py_INCREF((PyObject*)o);
     return (PyObject*)o;
 }
-#define ast2obj_singleton ast2obj_object
 #define ast2obj_constant ast2obj_object
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
-#define ast2obj_bytes ast2obj_object
 
 static PyObject* ast2obj_int(long b)
 {
@@ -1147,12 +1145,8 @@ class ObjVisitor(PickleVisitor):
             self.emit("case %s:" % t.name, 2)
             self.emit("Py_INCREF(astmodulestate_global->%s_singleton);" % t.name, 3)
             self.emit("return astmodulestate_global->%s_singleton;" % t.name, 3)
-        self.emit("default:", 2)
-        self.emit('/* should never happen, but just in case ... */', 3)
-        code = "PyErr_Format(PyExc_SystemError, \"unknown %s found\");" % name
-        self.emit(code, 3, reflow=False)
-        self.emit("return NULL;", 3)
         self.emit("}", 1)
+        self.emit("Py_UNREACHABLE();", 1);
         self.emit("}", 0)
 
     def visitProduct(self, prod, name):
