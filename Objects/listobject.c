@@ -101,7 +101,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 #  define PyList_MAXFREELIST 80
 #endif
 
-/* bpo-40521: tuple free lists are shared by all interpreters. */
+/* bpo-40521: list free lists are shared by all interpreters. */
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
 #  undef PyList_MAXFREELIST
 #  define PyList_MAXFREELIST 0
