@@ -563,7 +563,7 @@ def _netbios_getnode():
     """[DEPRECATED] Get the hardware address on Windows."""
     # bpo-40501: UuidCreateSequential() is now the only supported approach
     return _windll_getnode()
-    
+
 
 
 _generate_time_safe = _UuidCreate = None
