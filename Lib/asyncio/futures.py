@@ -52,6 +52,8 @@ class Future:
     _loop = None
     _source_traceback = None
     _cancel_message = None
+    # A saved CancelledError for later chaining.
+    _cancelled_exc = None
 
     # This field is used for a dual purpose:
     # - Its presence is a marker to declare that a class implements
@@ -175,9 +177,10 @@ class Future:
         the future is done and has an exception set, this exception is raised.
         """
         if self._state == _CANCELLED:
-            raise exceptions.CancelledError(
+            exc = exceptions.CancelledError(
                 '' if self._cancel_message is None else self._cancel_message)
-
+            exc.__context__ = self._cancelled_exc
+            raise exc
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
