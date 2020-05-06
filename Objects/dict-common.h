@@ -20,7 +20,13 @@ typedef Py_ssize_t (*dict_lookup_func)
 
 /* See dictobject.c for actual layout of DictKeysObject */
 struct _dictkeysobject {
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    /* bpo-40533: Use an atomic variables until subinterpreters stop sharing
+       Python dictionaries. */
+    _Atomic Py_ssize_t dk_refcnt;
+#else
     Py_ssize_t dk_refcnt;
+#endif
 
     /* Size of the hash table (dk_indices). It must be a power of 2. */
     Py_ssize_t dk_size;

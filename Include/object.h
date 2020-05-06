@@ -104,7 +104,14 @@ typedef struct _typeobject PyTypeObject;
  */
 typedef struct _object {
     _PyObject_HEAD_EXTRA
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    /* bpo-40533: Use an atomic variable for PyObject.ob_refcnt, to ensure that
+       Py_INCREF() and Py_DECREF() are safe when called in parallel, until
+       subinterpreters stop sharing Python objects. */
+    _Atomic Py_ssize_t ob_refcnt;
+#else
     Py_ssize_t ob_refcnt;
+#endif
     PyTypeObject *ob_type;
 } PyObject;
 
