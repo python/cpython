@@ -45,6 +45,13 @@ class FnmatchTestCase(unittest.TestCase):
         check('\nfoo', 'foo*', False)
         check('\n', '*')
 
+    def test_slow_fnmatch(self):
+        check = self.check_match
+        check('a' * 50, '*a*a*a*a*a*a*a*a*a*a')
+        # The next "takes forever" if the regexp translation is
+        # straightforward.  See bpo-40480.
+        check('a' * 50 + 'b', '*a*a*a*a*a*a*a*a*a*a', False)
+
     def test_mix_bytes_str(self):
         self.assertRaises(TypeError, fnmatch, 'test', b'*')
         self.assertRaises(TypeError, fnmatch, b'test', '*')
@@ -107,6 +114,16 @@ class TranslateTestCase(unittest.TestCase):
         self.assertEqual(translate('[!x]'), r'(?s:[^x])\Z')
         self.assertEqual(translate('[^x]'), r'(?s:[\^x])\Z')
         self.assertEqual(translate('[x'), r'(?s:\[x)\Z')
+        # from the docs
+        self.assertEqual(translate('*.txt'), r'(?s:.*\.txt)\Z')
+        # squash consecutive stars
+        self.assertEqual(translate('*********'), r'(?s:.*)\Z')
+        self.assertEqual(translate('A*********'), r'(?s:A.*)\Z')
+        self.assertEqual(translate('*********A'), r'(?s:.*A)\Z')
+        self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[?].)\Z')
+        # fancy translation to prevent exponential-time match failure
+        self.assertEqual(translate('**a*a****a'),
+             r'(?s:(?=(?P<g1>.*?a))(?P=g1)(?=(?P<g2>.*?a))(?P=g2).*a)\Z')
 
 
 class FilterTestCase(unittest.TestCase):
