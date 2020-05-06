@@ -170,11 +170,11 @@ for_stmt[stmt_ty]:
         CHECK_VERSION(5, "Async for loops are", _Py_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
 
 with_stmt[stmt_ty]:
-    | 'with' '(' a=','.with_item+ ')' ':' b=block {
+    | 'with' '(' a=','.with_item+ ','? ')' ':' b=block {
         _Py_With(a, b, NULL, EXTRA) }
     | 'with' a=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
         _Py_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | ASYNC 'with' '(' a=','.with_item+ ')' ':' b=block {
+    | ASYNC 'with' '(' a=','.with_item+ ','? ')' ':' b=block {
        CHECK_VERSION(5, "Async with statements are", _Py_AsyncWith(a, b, NULL, EXTRA)) }
     | ASYNC 'with' a=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
        CHECK_VERSION(5, "Async with statements are", _Py_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
