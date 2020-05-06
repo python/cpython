@@ -81,7 +81,11 @@ errno_exec(PyObject *module)
 {
     PyObject *module_dict = PyModule_GetDict(module);
     PyObject *error_dict = PyDict_New();
-    if (!module_dict || !error_dict || PyDict_SetItemString(module_dict, "errorcode", error_dict) < 0) {
+    if (!module_dict || !error_dict) {
+        return -1;
+    }
+    if (PyDict_SetItemString(module_dict, "errorcode", error_dict) < 0) {
+        Py_DECREF(error_dict);
         return -1;
     }
 
