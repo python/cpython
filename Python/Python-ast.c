@@ -4600,9 +4600,8 @@ PyObject* ast2obj_expr_context(expr_context_ty o)
         case Del:
             Py_INCREF(astmodulestate_global->Del_singleton);
             return astmodulestate_global->Del_singleton;
-        default:
-            Py_UNREACHABLE();
     }
+    Py_UNREACHABLE();
 }
 PyObject* ast2obj_boolop(boolop_ty o)
 {
@@ -4613,9 +4612,8 @@ PyObject* ast2obj_boolop(boolop_ty o)
         case Or:
             Py_INCREF(astmodulestate_global->Or_singleton);
             return astmodulestate_global->Or_singleton;
-        default:
-            Py_UNREACHABLE();
     }
+    Py_UNREACHABLE();
 }
 PyObject* ast2obj_operator(operator_ty o)
 {
@@ -4659,9 +4657,8 @@ PyObject* ast2obj_operator(operator_ty o)
         case FloorDiv:
             Py_INCREF(astmodulestate_global->FloorDiv_singleton);
             return astmodulestate_global->FloorDiv_singleton;
-        default:
-            Py_UNREACHABLE();
     }
+    Py_UNREACHABLE();
 }
 PyObject* ast2obj_unaryop(unaryop_ty o)
 {
@@ -4678,9 +4675,8 @@ PyObject* ast2obj_unaryop(unaryop_ty o)
         case USub:
             Py_INCREF(astmodulestate_global->USub_singleton);
             return astmodulestate_global->USub_singleton;
-        default:
-            Py_UNREACHABLE();
     }
+    Py_UNREACHABLE();
 }
 PyObject* ast2obj_cmpop(cmpop_ty o)
 {
@@ -4715,9 +4711,8 @@ PyObject* ast2obj_cmpop(cmpop_ty o)
         case NotIn:
             Py_INCREF(astmodulestate_global->NotIn_singleton);
             return astmodulestate_global->NotIn_singleton;
-        default:
-            Py_UNREACHABLE();
     }
+    Py_UNREACHABLE();
 }
 PyObject*
 ast2obj_comprehension(void* _o)

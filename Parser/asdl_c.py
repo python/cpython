@@ -1145,9 +1145,8 @@ class ObjVisitor(PickleVisitor):
             self.emit("case %s:" % t.name, 2)
             self.emit("Py_INCREF(astmodulestate_global->%s_singleton);" % t.name, 3)
             self.emit("return astmodulestate_global->%s_singleton;" % t.name, 3)
-        self.emit("default:", 2)
-        self.emit("Py_UNREACHABLE();", 3);
         self.emit("}", 1)
+        self.emit("Py_UNREACHABLE();", 1);
         self.emit("}", 0)
 
     def visitProduct(self, prod, name):
