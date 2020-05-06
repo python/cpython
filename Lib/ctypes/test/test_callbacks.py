@@ -296,7 +296,7 @@ class SampleCallbacksTestCase(unittest.TestCase):
         cb = proto(func)
         args1 = (1,) * CTYPES_MAX_ARGCOUNT
         self.assertEqual(cb(*args1), CTYPES_MAX_ARGCOUNT)
-        
+
         args2 = (1,) * (CTYPES_MAX_ARGCOUNT + 1)
         with self.assertRaises(ArgumentError):
             cb(*args2)
