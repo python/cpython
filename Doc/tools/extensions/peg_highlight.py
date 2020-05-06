@@ -7,7 +7,7 @@ from sphinx.highlighting import lexers
 class PEGLexer(RegexLexer):
     """Pygments Lexer for PEG grammar (.gram) files
 
-    This lexer stripts the following elements from the grammar:
+    This lexer strips the following elements from the grammar:
 
         - Meta-tags
         - Variable assignments
