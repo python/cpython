@@ -153,9 +153,14 @@ decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len, Token *t)
    If the string is an f-string, set *fstr and *fstrlen to the unparsed
    string object.  Return 0 if no errors occurred.  */
 int
-_PyPegen_parsestr(Parser *p, const char *s, int *bytesmode, int *rawmode, PyObject **result,
+_PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
                   const char **fstr, Py_ssize_t *fstrlen, Token *t)
 {
+    const char *s = PyBytes_AsString(t->bytes);
+    if (s == NULL) {
+        return -1;
+    }
+
     size_t len;
     int quote = Py_CHARMASK(*s);
     int fmode = 0;

@@ -1972,12 +1972,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
         const char *fstr;
         Py_ssize_t fstrlen = -1;
 
-        char *this_str = PyBytes_AsString(t->bytes);
-        if (!this_str) {
-            goto error;
-        }
-
-        if (_PyPegen_parsestr(p, this_str, &this_bytesmode, &this_rawmode, &s, &fstr, &fstrlen, t) != 0) {
+        if (_PyPegen_parsestr(p, &this_bytesmode, &this_rawmode, &s, &fstr, &fstrlen, t) != 0) {
             goto error;
         }
 
