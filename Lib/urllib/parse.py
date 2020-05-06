@@ -750,10 +750,10 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         if not name_value and not strict_parsing:
             continue
 
-        empty_value = name_value.endswith('=')
+        empty_value = '' if name_value.endswith('=') else None
         tokens = iter(name_value.split('=', 1))
         name = next(tokens)
-        value = '' if empty_value else next(tokens, None)
+        value = next(tokens, empty_value)
 
         if value is None and strict_parsing:
             raise ValueError("bad query field: %r" % (name_value,))
