@@ -1,0 +1,1 @@
+Added an optional *weights* parameter to random.sample().
