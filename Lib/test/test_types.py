@@ -771,8 +771,9 @@ class MappingProxyTests(unittest.TestCase):
 
     def test_reversed(self):
         d = {'a': 1, 'b': 2, 'foo': 0, 'c': 3, 'd': 4}
+        mp = self.mappingproxy(d)
         del d['foo']
-        r = reversed(self.mappingproxy(d))
+        r = reversed(mp)
         self.assertEqual(list(r), list('dcba'))
         self.assertRaises(StopIteration, next, r)
 

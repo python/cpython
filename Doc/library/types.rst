@@ -329,6 +329,12 @@ Standard names are defined for the following types:
 
       Return a new view of the underlying mapping's values.
 
+   .. describe:: reversed(proxy)
+
+      Return a reverse iterator over the keys of the underlying mapping.
+
+      .. versionadded:: 3.9
+
 
 Additional Utility Classes and Functions
 ----------------------------------------
