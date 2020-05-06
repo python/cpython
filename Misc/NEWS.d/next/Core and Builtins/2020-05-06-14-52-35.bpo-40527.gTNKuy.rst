@@ -1,0 +1,2 @@
+Fix command line argument parsing: no longer write errors multiple times
+into stderr.
