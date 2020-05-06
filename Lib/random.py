@@ -331,7 +331,7 @@ class Random(_random.Random):
                 j = _int(random() * (i+1))
                 x[i], x[j] = x[j], x[i]
 
-    def sample(self, population, k):
+    def sample(self, population, k, *, weights=None):
         """Chooses k unique random elements from a population sequence or set.
 
         Returns a new list containing elements from the population while
@@ -339,6 +339,10 @@ class Random(_random.Random):
         in selection order so that all sub-slices will also be valid random
         samples.  This allows raffle winners (the sample) to be partitioned
         into grand prize and second place winners (the subslices).
+
+        If weights are given, they must be non-negative integer counts.
+        Each selection effectively reduces the count by one, lowering
+        the probablity for the next selection.
 
         Members of the population need not be hashable or unique.  If the
         population contains repeats, then each occurrence is a possible
@@ -379,6 +383,16 @@ class Random(_random.Random):
             population = tuple(population)
         if not isinstance(population, _Sequence):
             raise TypeError("Population must be a sequence.  For dicts or sets, use sorted(d).")
+        if weights is not None:
+            cum_weights = list(_accumulate(weights))
+            total = cum_weights.pop()
+            if not isinstance(total, int):
+                raise TypeError('Weights must be integers')
+            if total < 0:
+                raise ValueError('Total of weights must be greater than zero')
+            selections = sample(range(total), k=k)
+            bisect = _bisect
+            return [population[bisect(cum_weights, s)] for s in selections]
         randbelow = self._randbelow
         n = len(population)
         if not 0 <= k <= n:
