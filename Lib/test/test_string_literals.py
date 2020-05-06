@@ -128,6 +128,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(w, [])
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)
+        self.assertEqual(exc.offset, 1)
 
     def test_eval_str_raw(self):
         self.assertEqual(eval(""" r'x' """), 'x')
