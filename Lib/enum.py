@@ -1,4 +1,5 @@
 import sys
+import operator
 from types import MappingProxyType, DynamicClassAttribute
 
 
@@ -46,6 +47,72 @@ class auto:
     Instances are replaced with an appropriate value in Enum class suites.
     """
     value = _auto_null
+    operate = op1 = op2 = _auto_null
+
+    def _create_operate(self, operate, op1, op2):
+        ret = auto()
+        ret.operate = operate
+        ret.op1 = op1
+        ret.op2 = op2
+        return ret
+
+    def __add__(self, other):
+        return self._create_operate(operator.add, self, other)
+
+    def __sub__(self, other):
+        return self._create_operate(operator.sub, self, other)
+
+    def __mul__(self, other):
+        return self._create_operate(operator.mul, self, other)
+
+    def __truediv__(self, other):
+        return self._create_operate(operator.truediv, self, other)
+
+    def __floordiv__(self, other):
+        return self._create_operate(operator.floordiv, self, other)
+
+    def __neg__(self):
+        return self._create_operate(operator.neg, self, _auto_null)
+
+    def __and__(self, other):
+        return self._create_operate(operator.and_, self, other)
+
+    def __or__(self, other):
+        return self._create_operate(operator.or_, self, other)
+
+    def __xor__(self, other):
+        return self._create_operate(operator.xor, self, other)
+
+    def __invert__(self):
+        return self._create_operate(operator.invert, self, _auto_null)
+
+    def __lshift__(self, other):
+        return self._create_operate(operator.lshift, self, other)
+
+    def __rshift__(self, other):
+        return self._create_operate(operator.rshift, self, other)
+
+    def __call__(self, generate_next_value, name, start, count, last_values):
+        if self.value is _auto_null:
+            if self.operate is _auto_null:
+                self.value = generate_next_value(name, start, count, last_values)
+            else:
+                op1, op2 = self.op1, self.op2
+                if isinstance(op1, auto):
+                    if op1.value is _auto_null:
+                        op1(generate_next_value, name, start, count, last_values)
+                    op1 = op1.value
+                if isinstance(op2, auto):
+                    if op2.value is _auto_null:
+                        op2(generate_next_value, name, start, count, last_values)
+                    op2 = op2.value
+                if op2 is not _auto_null:
+                    self.value = self.operate(op1, op2)
+                else:
+                    self.value = self.operate(op1)
+                self.operate = self.op1 = self.op2 = None
+
+        return self.value
 
 
 class _EnumDict(dict):
@@ -60,7 +127,6 @@ class _EnumDict(dict):
         self._member_names = []
         self._last_values = []
         self._ignore = []
-        self._maybe_recalculate_auto_obj = {}
 
     def __setitem__(self, key, value):
         """Changes anything not dundered or not a descriptor.
@@ -79,15 +145,6 @@ class _EnumDict(dict):
                 raise ValueError('_names_ are reserved for future Enum use')
             if key == '_generate_next_value_':
                 setattr(self, '_generate_next_value', value)
-                if value is not getattr(Enum, '_generate_next_value_', None):
-                    # subclass define _generate_next_value_, recalculate auto()
-                    self._subclass_define_generate_next_value = True
-                    for i, origin_value in self._maybe_recalculate_auto_obj.items():
-                        name, _value = self._member_names[i], self._last_values[i]
-                        if _value is origin_value.value:
-                            origin_value.value = self._generate_next_value(name, 1, len(self._member_names[:i]),
-                                                                           self._last_values[:i])
-                        super().__setitem__(name, origin_value.value)
             elif key == '_ignore_':
                 if isinstance(value, str):
                     value = value.replace(',',' ').split()
@@ -109,11 +166,6 @@ class _EnumDict(dict):
             if key in self:
                 # enum overwriting a descriptor?
                 raise TypeError('%r already defined as: %r' % (key, self[key]))
-            if isinstance(value, auto):
-                self._maybe_recalculate_auto_obj[len(self._member_names)] = value
-                if value.value == _auto_null:
-                    value.value = self._generate_next_value(key, 1, len(self._member_names), self._last_values[:])
-                value = value.value
             self._member_names.append(key)
             self._last_values.append(value)
         super().__setitem__(key, value)
@@ -152,9 +204,17 @@ class EnumMeta(type):
         __new__, save_new, use_args = metacls._find_new_(classdict, member_type,
                                                         first_enum)
 
+        # calculate the value of auto()
+        for i, name in enumerate(classdict._member_names):
+            _value = classdict._last_values[i]
+            if isinstance(_value, auto):
+                if _value.value is _auto_null:
+                    _value(classdict._generate_next_value, name, 1, i, classdict._last_values[:i])
+                classdict._last_values[i] = _value.value
+                super(type(classdict), classdict).__setitem__(name, _value.value)
+
         # save enum items into separate mapping so they don't get baked into
         # the new class
-        classdict._maybe_recalculate_auto_obj.clear()
         enum_members = {k: classdict[k] for k in classdict._member_names}
         for name in classdict._member_names:
             del classdict[name]
