@@ -679,7 +679,7 @@ class SequenceMatcher:
 
         This is the highest possible ratio() given the lengths of a and b,
         regardless of their letters. i.e.
-        2*(min(len(a), len(b))/(len(a) + len(b))
+        2*min(len(a), len(b))/(len(a) + len(b))
         """
 
         la, lb = len(self.a), len(self.b)
