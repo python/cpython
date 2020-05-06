@@ -82,7 +82,7 @@ compound_stmt[stmt_ty]:
     | &'while' while_stmt
 
 # NOTE: annotated_rhs may start with 'yield'; yield_expr must start with 'yield'
-assignment:
+assignment[stmt_ty]:
     | a=NAME ':' b=expression c=['=' d=annotated_rhs { d }] {
         CHECK_VERSION(
             6,
