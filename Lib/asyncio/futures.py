@@ -197,8 +197,10 @@ class Future:
         InvalidStateError.
         """
         if self._state == _CANCELLED:
-            raise exceptions.CancelledError(
+            exc = exceptions.CancelledError(
                 '' if self._cancel_message is None else self._cancel_message)
+            exc.__context__ = self._cancelled_exc
+            raise exc
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Exception is not set.')
         self.__log_traceback = False

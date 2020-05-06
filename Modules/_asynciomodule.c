@@ -869,6 +869,7 @@ _asyncio_Future_exception_impl(FutureObj *self)
 
     if (self->fut_state == STATE_CANCELLED) {
         set_cancelled_error(self->fut_cancel_msg);
+        _PyErr_ChainStackItem(&self->fut_cancelled_exc_state);
         return NULL;
     }
 

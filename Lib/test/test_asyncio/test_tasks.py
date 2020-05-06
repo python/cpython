@@ -810,9 +810,9 @@ class BaseTaskTests:
         if substr not in text:
             raise RuntimeError(f'text {substr!r} not found in:\n>>>{text}<<<')
 
-    def test_cancel_exception_traceback(self):
-        # Test that the line of code running when a task is cancelled
-        # is included in the traceback.
+    def test_cancel_traceback_for_future_result(self):
+        # When calling Future.result() on a cancelled task, check that the
+        # line of code that was interrupted is included in the traceback.
         loop = asyncio.new_event_loop()
         self.set_event_loop(loop)
 
@@ -834,6 +834,35 @@ class BaseTaskTests:
             self.assert_text_contains(tb, "await asyncio.sleep(10)")
             # The intermediate await should also be included.
             self.assert_text_contains(tb, "await task  # search target")
+        else:
+            self.fail('CancelledError did not occur')
+
+    def test_cancel_traceback_for_future_exception(self):
+        # When calling Future.exception() on a cancelled task, check that the
+        # line of code that was interrupted is included in the traceback.
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+
+        async def nested():
+            # This will get cancelled immediately.
+            await asyncio.sleep(10)
+
+        async def coro():
+            task = self.new_task(loop, nested())
+            await asyncio.sleep(0)
+            task.cancel()
+            done, pending = await asyncio.wait([task])
+            task.exception()  # search target
+
+        task = self.new_task(loop, coro())
+        try:
+            loop.run_until_complete(task)
+        except asyncio.CancelledError:
+            tb = traceback.format_exc()
+            self.assert_text_contains(tb, "await asyncio.sleep(10)")
+            # The intermediate await should also be included.
+            self.assert_text_contains(tb,
+                "task.exception()  # search target")
         else:
             self.fail('CancelledError did not occur')
 
