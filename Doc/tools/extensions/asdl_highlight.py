@@ -26,7 +26,7 @@ class ASDLLexer(RegexLexer):
             include("ws"),
             (
                 r"(module)" + _text_ws + _name,
-                bygroups(Keyword, Text, Name.Class),
+                bygroups(Keyword, Text, Name.Entity),
             ),
             (
                 r"(\w+)(\*\s|\?\s|\s)(\w+)",
@@ -38,7 +38,7 @@ class ASDLLexer(RegexLexer):
                 _name + _text_ws + "(=)",
                 bygroups(Name, Text, Operator),
             ),
-            (_name, Name.Function),
+            (_name, Name.Class),
             (r"\|", Operator),
             (r"{|}|\(|\)", Punctuation),
             (r".", Text),
