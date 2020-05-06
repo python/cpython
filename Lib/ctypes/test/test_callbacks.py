@@ -289,13 +289,17 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
     def test_callback_too_many_args(self):
         def func(*args):
-            return (1, "abc", None)
+            return len(args)
 
-        nargs = 2 ** 20
+        CTYPES_MAX_ARGCOUNT = 1024
         proto = CFUNCTYPE(None, *(c_int,) * nargs)
         cb = proto(func)
+        args1 = (None,) * CTYPES_MAX_ARGCOUNT
+        self.assertEqual(cb(*args1), CTYPES_MAX_ARGCOUNT)
+        
+        args2 = (None,) * (CTYPES_MAX_ARGCOUNT + 1)
         with self.assertRaises(ArgumentError):
-            cb(*(1,) * nargs)
+            cb(*args2)
 
 
 ################################################################

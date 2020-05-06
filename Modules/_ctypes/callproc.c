@@ -1114,7 +1114,8 @@ PyObject *_ctypes_callproc(PPROC pProc,
 
     if (argcount > CTYPES_MAX_ARGCOUNT)
     {
-        PyErr_SetString(PyExc_ArgError, "too many arguments");
+        PyErr_Format(PyExc_ArgError, "too many arguments (%zi), maximum is %i",
+                     argcount, CTYPES_MAX_ARGCOUNT);
         return NULL;
     }
 
