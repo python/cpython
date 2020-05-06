@@ -597,7 +597,7 @@ class AST_Tests(unittest.TestCase):
         empty_yield_from.body[0].body[0].value.value = None
         with self.assertRaises(ValueError) as cm:
             compile(empty_yield_from, "<test>", "exec")
-        self.assertIn("field value is required", str(cm.exception))
+        self.assertIn("field 'value' is required", str(cm.exception))
 
     @support.cpython_only
     def test_issue31592(self):
