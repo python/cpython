@@ -1977,7 +1977,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
             goto error;
         }
 
-        if (_PyPegen_parsestr(p, this_str, &this_bytesmode, &this_rawmode, &s, &fstr, &fstrlen) != 0) {
+        if (_PyPegen_parsestr(p, this_str, &this_bytesmode, &this_rawmode, &s, &fstr, &fstrlen, t) != 0) {
             goto error;
         }
 

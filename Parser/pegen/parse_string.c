@@ -12,7 +12,7 @@
 // file (like "_PyPegen_raise_syntax_error").
 
 static int
-warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char)
+warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char, Token *t)
 {
     PyObject *msg =
         PyUnicode_FromFormat("invalid escape sequence \\%c", first_invalid_escape_char);
@@ -20,12 +20,19 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char)
         return -1;
     }
     if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg, p->tok->filename,
-                                 p->tok->lineno, NULL, NULL) < 0) {
+                                 t->lineno, NULL, NULL) < 0) {
         if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
             /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
+
+            /* This is a hack, in order for the SyntaxError to point to the token t,
+               since _PyPegen_raise_error always uses p->tokens[p->fill - 1] for the
+               error location. */
+            Token *old_end = p->tokens[p->fill - 1];
+            p->tokens[p->fill - 1] = t;
             RAISE_SYNTAX_ERROR("invalid escape sequence \\%c", first_invalid_escape_char);
+            p->tokens[p->fill - 1] = old_end;
         }
         Py_DECREF(msg);
         return -1;
@@ -47,7 +54,7 @@ decode_utf8(const char **sPtr, const char *end)
 }
 
 static PyObject *
-decode_unicode_with_escapes(Parser *parser, const char *s, size_t len)
+decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
 {
     PyObject *v, *u;
     char *buf;
@@ -110,7 +117,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len)
     v = _PyUnicode_DecodeUnicodeEscape(s, len, NULL, &first_invalid_escape);
 
     if (v != NULL && first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(parser, *first_invalid_escape) < 0) {
+        if (warn_invalid_escape_sequence(parser, *first_invalid_escape, t) < 0) {
             /* We have not decref u before because first_invalid_escape points
                inside u. */
             Py_XDECREF(u);
@@ -123,7 +130,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len)
 }
 
 static PyObject *
-decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len)
+decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len, Token *t)
 {
     const char *first_invalid_escape;
     PyObject *result = _PyBytes_DecodeEscape(s, len, NULL, &first_invalid_escape);
@@ -132,7 +139,7 @@ decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len)
     }
 
     if (first_invalid_escape != NULL) {
-        if (warn_invalid_escape_sequence(p, *first_invalid_escape) < 0) {
+        if (warn_invalid_escape_sequence(p, *first_invalid_escape, t) < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -147,7 +154,7 @@ decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len)
    string object.  Return 0 if no errors occurred.  */
 int
 _PyPegen_parsestr(Parser *p, const char *s, int *bytesmode, int *rawmode, PyObject **result,
-         const char **fstr, Py_ssize_t *fstrlen)
+                  const char **fstr, Py_ssize_t *fstrlen, Token *t)
 {
     size_t len;
     int quote = Py_CHARMASK(*s);
@@ -245,7 +252,7 @@ _PyPegen_parsestr(Parser *p, const char *s, int *bytesmode, int *rawmode, PyObje
             *result = PyBytes_FromStringAndSize(s, len);
         }
         else {
-            *result = decode_bytes_with_escapes(p, s, len);
+            *result = decode_bytes_with_escapes(p, s, len, t);
         }
     }
     else {
@@ -253,7 +260,7 @@ _PyPegen_parsestr(Parser *p, const char *s, int *bytesmode, int *rawmode, PyObje
             *result = PyUnicode_DecodeUTF8Stateful(s, len, NULL, NULL);
         }
         else {
-            *result = decode_unicode_with_escapes(p, s, len);
+            *result = decode_unicode_with_escapes(p, s, len, t);
         }
     }
     return *result == NULL ? -1 : 0;
@@ -637,7 +644,7 @@ exit:
 */
 static int
 fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
-                     PyObject **literal, int recurse_lvl)
+                     PyObject **literal, int recurse_lvl, Token *t)
 {
     /* Get any literal string. It ends when we hit an un-doubled left
        brace (which isn't part of a unicode name escape such as
@@ -660,7 +667,7 @@ fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
                 }
                 break;
             }
-            if (ch == '{' && warn_invalid_escape_sequence(p, ch) < 0) {
+            if (ch == '{' && warn_invalid_escape_sequence(p, ch, t) < 0) {
                 return -1;
             }
         }
@@ -704,7 +711,7 @@ done:
                                                     NULL, NULL);
         else
             *literal = decode_unicode_with_escapes(p, literal_start,
-                                                   s - literal_start);
+                                                   s - literal_start, t);
         if (!*literal)
             return -1;
     }
@@ -1041,7 +1048,7 @@ fstring_find_literal_and_expr(Parser *p, const char **str, const char *end, int 
     assert(*literal == NULL && *expression == NULL);
 
     /* Get any literal string. */
-    result = fstring_find_literal(p, str, end, raw, literal, recurse_lvl);
+    result = fstring_find_literal(p, str, end, raw, literal, recurse_lvl, t);
     if (result < 0)
         goto error;
 
