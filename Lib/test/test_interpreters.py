@@ -566,4 +566,3 @@ class TestSendRecv(TestBase):
         r, s = interpreters.create_channel()
         with self.assertRaises(interpreters.ChannelEmptyError):
             r.recv_nowait()
-    
