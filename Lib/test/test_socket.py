@@ -1073,6 +1073,11 @@ class GeneralModuleTests(unittest.TestCase):
     def testInvalidInterfaceIndexToName(self):
         self.assertRaises(OSError, socket.if_indextoname, 0)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
+        for i in 2**32-1, 2**32, 2**64-1, 2**64:
+            try:
+                socket.if_indextoname(i)
+            except (OSError, OverflowError):
+                pass
 
     @unittest.skipUnless(hasattr(socket, 'if_nametoindex'),
                          'socket.if_nametoindex() not available.')

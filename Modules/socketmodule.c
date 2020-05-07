@@ -6856,6 +6856,11 @@ socket_if_indextoname(PyObject *self, PyObject *arg)
         return NULL;
     }
 
+    if ((unsigned long)(unsigned int)index != index) {
+        PyErr_SetString(PyExc_OverflowError, "index is too large");
+        return NULL;
+    }
+
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
