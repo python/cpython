@@ -10,7 +10,7 @@
 
 This module provides high-level tools for working with sub-interpreters,
 such as creating them, running code in them, or sending data between them.
-It is a wrapper around the low-level `_xxsubinterpreters` module.
+It is a wrapper around the low-level ``__xxsubinterpreters`` module.
 
 .. versionchanged:: added in 3.9
 
@@ -25,7 +25,7 @@ The Interpreter object represents a single interpreter.
 
     .. method:: is_running()
 
-       Return `True` if the identified interpreter is running.
+       Return ``True`` if the identified interpreter is running.
 
     .. method:: close()
 
@@ -35,7 +35,7 @@ The Interpreter object represents a single interpreter.
     .. method:: run(self, src_str, /, *, channels=None):
 
        Run the given source code in the interpreter. This blocks
-       the current thread until done. `channels` should be in
+       the current thread until done. ``channels`` should be in
        the form : `(RecvChannel, SendChannel)`.
 
 RecvChannel Objects
