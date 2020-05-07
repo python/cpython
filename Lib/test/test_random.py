@@ -186,6 +186,11 @@ class TestBasicOps:
         summary = Counter(sample(['x'], weights=[10], k=8))
         self.assertEqual(summary, Counter(x=8))
 
+        # Case with all weights equal.
+        nc = len(colors)
+        summary = Counter(sample(colors, weights=[10]*nc, k=10*nc))
+        self.assertEqual(summary, Counter(10*colors))
+
         # Test error handling
         with self.assertRaises(TypeError):
             sample(['red', 'green', 'blue'], weights=10, k=10)               # weights not iterable
