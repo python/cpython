@@ -12824,7 +12824,8 @@ DirEntry_get_lstat(DirEntry *self)
 {
     if (!self->lstat) {
 #ifdef MS_WINDOWS
-        self->lstat = _pystat_fromstructstat(&self->win32_lstat);
+        self->lstat = _pystat_fromstructstat(DirEntry_get_module(self),
+                                             &self->win32_lstat);
 #else /* POSIX */
         self->lstat = DirEntry_fetch_stat(self, 0);
 #endif
@@ -13114,7 +13115,6 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     entry = PyObject_New(DirEntry, (PyTypeObject *)DirEntryType);
     if (!entry)
         return NULL;
-    entry->module = module;
     entry->name = NULL;
     entry->path = NULL;
     entry->stat = NULL;
@@ -13319,8 +13319,10 @@ ScandirIterator_iternext(ScandirIterator *iterator)
 
         /* Skip over . and .. */
         if (wcscmp(file_data->cFileName, L".") != 0 &&
-            wcscmp(file_data->cFileName, L"..") != 0) {
-            entry = DirEntry_from_find_data(iterator->module, &iterator->path, file_data);
+            wcscmp(file_data->cFileName, L"..") != 0)
+        {
+            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
+            entry = DirEntry_from_find_data(module, &iterator->path, file_data);
             if (!entry)
                 break;
             return entry;
