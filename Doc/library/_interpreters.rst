@@ -18,6 +18,7 @@ Interpreter Objects
 -------------------
 
 The Interpreter object represents a single interpreter.
+
 .. class:: Interpreter(id)
 
     The class implementing a subinterpreter object.
