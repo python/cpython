@@ -340,13 +340,18 @@ class Random(_random.Random):
         samples.  This allows raffle winners (the sample) to be partitioned
         into grand prize and second place winners (the subslices).
 
-        If counts are given, they must be non-negative integer counts.
-        Each selection effectively reduces the count by one, lowering
-        the probablity for the next selection.
-
         Members of the population need not be hashable or unique.  If the
         population contains repeats, then each occurrence is a possible
         selection in the sample.
+
+        Repeated elements can be specified one at a time or with the optional
+        counts parameter.  For example:
+
+            sample(['red', 'blue'], counts=[4, 2], k=5)
+
+        is equivalent to:
+
+            sample(['red', 'red', 'red', 'red', 'blue', 'blue'], k=5)
 
         To choose a sample in a range of integers, use range as an argument.
         This is especially fast and space efficient for sampling from a
