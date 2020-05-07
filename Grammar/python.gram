@@ -548,10 +548,12 @@ kwarg_or_starred[KeywordOrStarred*]:
     | a=NAME '=' b=expression {
         _PyPegen_keyword_or_starred(p, CHECK(_Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
     | a=starred_expression { _PyPegen_keyword_or_starred(p, a, 0) }
+    | invalid_kwarg
 kwarg_or_double_starred[KeywordOrStarred*]:
     | a=NAME '=' b=expression {
         _PyPegen_keyword_or_starred(p, CHECK(_Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
     | '**' a=expression { _PyPegen_keyword_or_starred(p, CHECK(_Py_keyword(NULL, a, EXTRA)), 1) }
+    | invalid_kwarg
 
 # NOTE: star_targets may contain *bitwise_or, targets may not.
 star_targets[expr_ty]:
@@ -620,6 +622,8 @@ incorrect_arguments:
     | expression for_if_clauses ',' [args | expression for_if_clauses] {
         RAISE_SYNTAX_ERROR("Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
+invalid_kwarg:
+    | expression '=' { RAISE_SYNTAX_ERROR("expression cannot contain assignment, perhaps you meant \"==\"?") }
 invalid_named_expression:
     | a=expression ':=' expression {
         RAISE_SYNTAX_ERROR("cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
