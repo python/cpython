@@ -514,6 +514,86 @@ class BaseTaskTests:
         self.assertTrue(t.cancelled())
         self.assertFalse(t.cancel())
 
+    def test_cancel_with_message_then_future_result(self):
+        # Test Future.result() after calling cancel() with a message.
+        cases = [
+            ((), (None,)),
+            ((None,), (None,)),
+            (('my message',), ('my message',)),
+            # Non-string values should roundtrip.
+            ((5,), (5,)),
+        ]
+        for cancel_args, expected_args in cases:
+            with self.subTest(cancel_args=cancel_args):
+                loop = asyncio.new_event_loop()
+                self.set_event_loop(loop)
+
+                async def sleep():
+                    await asyncio.sleep(10)
+
+                async def coro():
+                    task = self.new_task(loop, sleep())
+                    await asyncio.sleep(0)
+                    task.cancel(*cancel_args)
+                    done, pending = await asyncio.wait([task])
+                    task.result()
+
+                task = self.new_task(loop, coro())
+                with self.assertRaises(asyncio.CancelledError) as cm:
+                    loop.run_until_complete(task)
+                exc = cm.exception
+                self.assertEqual(exc.args, expected_args)
+
+    def test_cancel_with_message_then_future_exception(self):
+        # Test Future.exception() after calling cancel() with a message.
+        cases = [
+            ((), (None,)),
+            ((None,), (None,)),
+            (('my message',), ('my message',)),
+            # Non-string values should roundtrip.
+            ((5,), (5,)),
+        ]
+        for cancel_args, expected_args in cases:
+            with self.subTest(cancel_args=cancel_args):
+                loop = asyncio.new_event_loop()
+                self.set_event_loop(loop)
+
+                async def sleep():
+                    await asyncio.sleep(10)
+
+                async def coro():
+                    task = self.new_task(loop, sleep())
+                    await asyncio.sleep(0)
+                    task.cancel(*cancel_args)
+                    done, pending = await asyncio.wait([task])
+                    task.exception()
+
+                task = self.new_task(loop, coro())
+                with self.assertRaises(asyncio.CancelledError) as cm:
+                    loop.run_until_complete(task)
+                exc = cm.exception
+                self.assertEqual(exc.args, expected_args)
+
+    def test_cancel_with_message_before_starting_task(self):
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+
+        async def sleep():
+            await asyncio.sleep(10)
+
+        async def coro():
+            task = self.new_task(loop, sleep())
+            # We deliberately leave out the sleep here.
+            task.cancel('my message')
+            done, pending = await asyncio.wait([task])
+            task.exception()
+
+        task = self.new_task(loop, coro())
+        with self.assertRaises(asyncio.CancelledError) as cm:
+            loop.run_until_complete(task)
+        exc = cm.exception
+        self.assertEqual(exc.args, ('my message',))
+
     def test_cancel_yield(self):
         with self.assertWarns(DeprecationWarning):
             @asyncio.coroutine
@@ -2238,31 +2318,42 @@ class BaseTaskTests:
         self.assertEqual(gather_task.result(), [42])
 
     def test_cancel_gather_2(self):
-        loop = asyncio.new_event_loop()
-        self.addCleanup(loop.close)
+        cases = [
+            ((), (None,)),
+            ((None,), (None,)),
+            (('my message',), ('my message',)),
+            # Non-string values should roundtrip.
+            ((5,), (5,)),
+        ]
+        for cancel_args, expected_args in cases:
+            with self.subTest(cancel_args=cancel_args):
 
-        async def test():
-            time = 0
-            while True:
-                time += 0.05
-                await asyncio.gather(asyncio.sleep(0.05),
-                                     return_exceptions=True,
-                                     loop=loop)
-                if time > 1:
-                    return
+                loop = asyncio.new_event_loop()
+                self.addCleanup(loop.close)
 
-        async def main():
-            qwe = self.new_task(loop, test())
-            await asyncio.sleep(0.2)
-            qwe.cancel()
-            try:
-                await qwe
-            except asyncio.CancelledError:
-                pass
-            else:
-                self.fail('gather did not propagate the cancellation request')
+                async def test():
+                    time = 0
+                    while True:
+                        time += 0.05
+                        await asyncio.gather(asyncio.sleep(0.05),
+                                             return_exceptions=True,
+                                             loop=loop)
+                        if time > 1:
+                            return
 
-        loop.run_until_complete(main())
+                async def main():
+                    qwe = self.new_task(loop, test())
+                    await asyncio.sleep(0.2)
+                    qwe.cancel(*cancel_args)
+                    try:
+                        await qwe
+                    except asyncio.CancelledError as exc:
+                        self.assertEqual(exc.args, expected_args)
+                    else:
+                        self.fail('gather did not propagate the cancellation '
+                                  'request')
+
+                loop.run_until_complete(main())
 
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843
