@@ -820,16 +820,12 @@ static PyModuleDef_Slot meth_state_access_slots[] = {
 };
 
 static PyModuleDef def_meth_state_access = {
-    PyModuleDef_HEAD_INIT,                      /* m_base */
-    "_testmultiphase_meth_state_access",        /* m_name */
-    PyDoc_STR("Module testing access"
-              " to state from methods."),
-    sizeof(meth_state),                         /* m_size */
-    NULL,                                       /* m_methods */
-    meth_state_access_slots,                    /* m_slots */
-    0,                                          /* m_traverse */
-    0,                                          /* m_clear */
-    0,                                          /* m_free */
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testmultiphase_meth_state_access",
+    .m_doc = PyDoc_STR("Module testing access"
+                       " to state from methods."),
+    .m_size = sizeof(meth_state),
+    .m_slots = meth_state_access_slots,
 };
 
 PyMODINIT_FUNC
