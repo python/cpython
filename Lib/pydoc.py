@@ -907,9 +907,12 @@ class HTMLDoc(Doc):
 
         decl = ''
         try:
-            signature = inspect.signature(object)
-        except (ValueError, TypeError):
-            signature = None
+            signature = inspect.signature(object, resolve_type_hints=True)
+        except (NameError, AttributeError, SyntaxError, TypeError, ValueError):
+            try:
+                signature = inspect.signature(object, resolve_type_hints=False)
+            except (ValueError, TypeError):
+                signature = None
         if signature:
             argspec = str(signature)
             if argspec and argspec != '()':
@@ -967,9 +970,12 @@ class HTMLDoc(Doc):
         argspec = None
         if inspect.isroutine(object):
             try:
-                signature = inspect.signature(object)
-            except (ValueError, TypeError):
-                signature = None
+                signature = inspect.signature(object, resolve_type_hints=True)
+            except (NameError, AttributeError, SyntaxError, TypeError, ValueError):
+                try:
+                    signature = inspect.signature(object, resolve_type_hints=False)
+                except (ValueError, TypeError):
+                    signature = None
             if signature:
                 argspec = str(signature)
                 if realname == '<lambda>':
@@ -1226,9 +1232,12 @@ location listed above.
         push = contents.append
 
         try:
-            signature = inspect.signature(object)
-        except (ValueError, TypeError):
-            signature = None
+            signature = inspect.signature(object, resolve_type_hints=True)
+        except (NameError, AttributeError, SyntaxError, TypeError, ValueError):
+            try:
+                signature = inspect.signature(object, resolve_type_hints=False)
+            except (ValueError, TypeError):
+                signature = None
         if signature:
             argspec = str(signature)
             if argspec and argspec != '()':
@@ -1397,9 +1406,12 @@ location listed above.
 
         if inspect.isroutine(object):
             try:
-                signature = inspect.signature(object)
-            except (ValueError, TypeError):
-                signature = None
+                signature = inspect.signature(object, resolve_type_hints=True)
+            except (NameError, AttributeError, SyntaxError, TypeError, ValueError):
+                try:
+                    signature = inspect.signature(object, resolve_type_hints=False)
+                except (ValueError, TypeError):
+                    signature = None
             if signature:
                 argspec = str(signature)
                 if realname == '<lambda>':
