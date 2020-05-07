@@ -331,7 +331,7 @@ class Random(_random.Random):
                 j = _int(random() * (i+1))
                 x[i], x[j] = x[j], x[i]
 
-    def sample(self, population, k, *, weights=None):
+    def sample(self, population, k, *, counts=None):
         """Chooses k unique random elements from a population sequence or set.
 
         Returns a new list containing elements from the population while
@@ -340,7 +340,7 @@ class Random(_random.Random):
         samples.  This allows raffle winners (the sample) to be partitioned
         into grand prize and second place winners (the subslices).
 
-        If weights are given, they must be non-negative integer counts.
+        If counts are given, they must be non-negative integer counts.
         Each selection effectively reduces the count by one, lowering
         the probablity for the next selection.
 
@@ -384,18 +384,18 @@ class Random(_random.Random):
         if not isinstance(population, _Sequence):
             raise TypeError("Population must be a sequence.  For dicts or sets, use sorted(d).")
         n = len(population)
-        if weights is not None:
-            cum_weights = list(_accumulate(weights))
-            if len(cum_weights) != n:
-                raise ValueError('The number of weights does not match the population')
-            total = cum_weights.pop()
+        if counts is not None:
+            cum_counts = list(_accumulate(counts))
+            if len(cum_counts) != n:
+                raise ValueError('The number of counts does not match the population')
+            total = cum_counts.pop()
             if not isinstance(total, int):
-                raise TypeError('Weights must be integers')
+                raise TypeError('Counts must be integers')
             if total <= 0:
-                raise ValueError('Total of weights must be greater than zero')
+                raise ValueError('Total of counts must be greater than zero')
             selections = sample(range(total), k=k)
             bisect = _bisect
-            return [population[bisect(cum_weights, s)] for s in selections]
+            return [population[bisect(cum_counts, s)] for s in selections]
         randbelow = self._randbelow
         if not 0 <= k <= n:
             raise ValueError("Sample larger than population or is negative")

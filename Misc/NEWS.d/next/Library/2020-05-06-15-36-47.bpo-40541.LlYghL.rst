@@ -1,1 +1,1 @@
-Added an optional *weights* parameter to random.sample().
+Added an optional *counts* parameter to random.sample().

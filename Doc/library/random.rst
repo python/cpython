@@ -217,7 +217,7 @@ Functions for sequences
       The optional parameter *random*.
 
 
-.. function:: sample(population, k, *, weights=None)
+.. function:: sample(population, k, *, counts=None)
 
    Return a *k* length list of unique elements chosen from the population sequence
    or set. Used for random sampling without replacement.
@@ -231,9 +231,10 @@ Functions for sequences
    Members of the population need not be :term:`hashable` or unique.  If the population
    contains repeats, then each occurrence is a possible selection in the sample.
 
-   If *weights* are given, they must be non-negative integer counts.
-   Each selection effectively reduces the count by one, lowering
-   the probablity for the next selection.
+   Repeated elements can be specified one at a time or with the optional
+   keyword-only *counts* parameter.  For example, ``sample(['red', 'blue'],
+   counts=[4, 2], k=5)`` is equivalent to ``sample(['red', 'red', 'red', 'red',
+   'blue', 'blue'], k=5)``.
 
    To choose a sample from a range of integers, use a :func:`range` object as an
    argument.  This is especially fast and space efficient for sampling from a large
@@ -243,7 +244,7 @@ Functions for sequences
    is raised.
 
    .. versionchanged:: 3.9
-      Added the *weights* parameter.
+      Added the *counts* parameter.
 
    .. deprecated:: 3.9
       In the future, the *population* must be a sequence.  Instances of
@@ -430,7 +431,7 @@ Simulations::
    >>> # Deal 20 cards without replacement from a deck
    >>> # of 52 playing cards, and determine the proportion of cards
    >>> # with a ten-value:  ten, jack, queen, or king.
-   >>> dealt = sample(['tens', 'low cards'], weights=[16, 36], k=20)
+   >>> dealt = sample(['tens', 'low cards'], counts=[16, 36], k=20)
    >>> dealt.count('tens') / 20
    0.15
 
