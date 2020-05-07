@@ -150,7 +150,7 @@ Implementing functions and methods
    The function signature is::
 
       PyObject *PyCFunction(PyObject *self,
-                            PyObject *const *args);
+                            PyObject *args);
 
 .. c:type:: PyCFunctionWithKeywords
 
@@ -159,7 +159,7 @@ Implementing functions and methods
    The function signature is::
 
       PyObject *PyCFunctionWithKeywords(PyObject *self,
-                                        PyObject *const *args,
+                                        PyObject *args,
                                         PyObject *kwargs);
 
 
