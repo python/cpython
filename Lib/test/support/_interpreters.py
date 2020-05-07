@@ -6,7 +6,7 @@ import _xxsubinterpreters as _interpreters
 __all__ = ['Interpreter', 'SendChannel', 'RecvChannel',
             'is_shareable', 'create_channel',
             'list_all_channels', 'get_current',
-            'get_current', 'create']
+            'get_main', 'create']
 
 
 def create(*, isolated=True):
