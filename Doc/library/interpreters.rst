@@ -8,7 +8,7 @@
 
 --------------
 
-This module provides highlevel tools for working with sub-interpreters,
+This module provides high-level tools for working with sub-interpreters,
 such as creating them, running code in them, or sending data between them.
 It is a wrapper around the low-level :mod:`_interpreters` module.
 
