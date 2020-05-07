@@ -197,6 +197,8 @@ class TestBasicOps:
         with self.assertRaises(ValueError):
             sample(['red', 'green', 'blue'], weights=[-3, -7, -8], k=2)      # weights are negative
         with self.assertRaises(ValueError):
+            sample(['red', 'green', 'blue'], weights=[0, 0, 0], k=2)         # weights are zero
+        with self.assertRaises(ValueError):
             sample(['red', 'green'], weights=[10, 10], k=21)                 # population too small
         with self.assertRaises(ValueError):
             sample(['red', 'green', 'blue'], weights=[1, 2], k=2)            # too few weights

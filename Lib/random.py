@@ -391,7 +391,7 @@ class Random(_random.Random):
             total = cum_weights.pop()
             if not isinstance(total, int):
                 raise TypeError('Weights must be integers')
-            if total < 0:
+            if total <= 0:
                 raise ValueError('Total of weights must be greater than zero')
             selections = sample(range(total), k=k)
             bisect = _bisect
