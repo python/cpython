@@ -77,3 +77,4 @@ the `Python Package Index <https://pypi.org>`_.
    unix.rst
    superseded.rst
    undoc.rst
+   _interpreters.rst

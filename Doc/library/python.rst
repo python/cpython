@@ -25,4 +25,3 @@ overview:
    gc.rst
    inspect.rst
    site.rst
-   _interpreters.rst
