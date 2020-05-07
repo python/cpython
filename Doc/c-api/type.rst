@@ -109,6 +109,30 @@ Type Objects
 
    .. versionadded:: 3.4
 
+.. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
+
+   Return the module object associated with the given type when the type was
+   created using :c:func:`PyType_FromModuleAndSpec`.
+
+   If no module is associated with the given type, sets :py:class:`TypeError`
+   and returns ``NULL``.
+
+   .. versionadded:: 3.9
+
+.. c:function:: void* PyType_GetModuleState(PyTypeObject *type)
+
+   Return the state of the module object associated with the given type.
+   This is a shortcut for calling :c:func:`PyModule_GetState()` on the result
+   of :c:func:`PyType_GetModule`.
+
+   If no module is associated with the given type, sets :py:class:`TypeError`
+   and returns ``NULL``.
+
+   If the *type* has an associated module but its state is ``NULL``,
+   returns ``NULL`` without setting an exception.
+
+   .. versionadded:: 3.9
+
 
 Creating Heap-Allocated Types
 .............................
@@ -116,7 +140,7 @@ Creating Heap-Allocated Types
 The following functions and structs are used to create
 :ref:`heap types <heap-types>`.
 
-.. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
+.. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
    Creates and returns a heap type object from the *spec*
    (:const:`Py_TPFLAGS_HEAPTYPE`).
@@ -127,7 +151,17 @@ The following functions and structs are used to create
    If *bases* is ``NULL``, the *Py_tp_base* slot is used instead.
    If that also is ``NULL``, the new type derives from :class:`object`.
 
+   The *module* must be a module object or ``NULL``.
+   If not ``NULL``, the module is associated with the new type and can later be
+   retreived with :c:func:`PyType_GetModule`.
+
    This function calls :c:func:`PyType_Ready` on the new type.
+
+   .. versionadded:: 3.9
+
+.. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
+
+   Equivalent to ``PyType_FromModuleAndSpec(NULL, spec, bases)``.
 
    .. versionadded:: 3.3
 
