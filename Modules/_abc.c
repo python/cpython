@@ -74,14 +74,14 @@ static PyObject *
 abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     _abc_data *self = (_abc_data *) type->tp_alloc(type, 0);
-    if (self == NULL) {
+    _abcmodule_state *state = PyType_GetModuleState(type);
+    if (self == NULL || state == NULL) {
         return NULL;
     }
 
     self->_abc_registry = NULL;
     self->_abc_cache = NULL;
     self->_abc_negative_cache = NULL;
-    _abcmodule_state * state = PyType_GetModuleState(type);
     self->_abc_negative_cache_version = state->abc_invalidation_counter;
     return (PyObject *) self;
 }
@@ -606,6 +606,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     PyObject *ok, *subclasses = NULL, *result = NULL;
+    _abcmodule_state *state = NULL;
     Py_ssize_t pos;
     int incache;
     _abc_data *impl = _get_impl(module, self);
@@ -623,7 +624,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
 
-    _abcmodule_state *state = get_abc_state(module);
+    state = get_abc_state(module);
     /* 2. Check negative cache; may have to invalidate. */
     if (impl->_abc_negative_cache_version < state->abc_invalidation_counter) {
         /* Invalidate the negative cache. */
