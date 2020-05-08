@@ -1,0 +1,3 @@
+Add a way to queue various operations in one interpreter to run safely in
+another.  This includes moving the pending calls from a circular queue to a
+linked list, to allow for a more flexible queue.
