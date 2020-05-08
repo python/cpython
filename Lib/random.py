@@ -331,7 +331,7 @@ class Random(_random.Random):
                 j = _int(random() * (i+1))
                 x[i], x[j] = x[j], x[i]
 
-    def sample(self, population, k, *, counts=None):
+    def sample(self, population, k, *, counts=None, weights=None):
         """Chooses k unique random elements from a population sequence or set.
 
         Returns a new list containing elements from the population while
@@ -392,6 +392,18 @@ class Random(_random.Random):
         if not isinstance(population, _Sequence):
             raise TypeError("Population must be a sequence.  For dicts or sets, use sorted(d).")
         n = len(population)
+        if weights is not None:
+            if counts is not None:
+                raise TypeError('Cannot specify both counts and weights')
+            weights = list(weights)
+            positions = range(n)
+            indices = []
+            while (needed := k - len(indices)):
+                for i in choices(positions, weights, k=needed):
+                    if weights[i]:
+                        weights[i] = 0.0
+                        indices.append(i)
+            return [population[i] for i in indices]
         if counts is not None:
             cum_counts = list(_accumulate(counts))
             if len(cum_counts) != n:
