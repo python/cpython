@@ -10,7 +10,7 @@ Build Status
 
 - 3.8
 
-  + `Stable buildbots <https://buildbot.python.org/all/#/grid?branch=3.8&tag=stable/>`_
+  + `Stable buildbots <http://buildbot.python.org/3.8.stable/>`_
 
 - 3.7
 
