@@ -198,6 +198,8 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 /* cross-interpreter operations */
 
 PyAPI_FUNC(int) _Py_DECREF_in_interpreter(PyInterpreterState *, PyObject *);
+PyAPI_FUNC(int) _PyBuffer_Release_in_interpreter(PyInterpreterState *,
+                                                 Py_buffer *);
 
 /* cross-interpreter data */
 

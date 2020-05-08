@@ -1495,6 +1495,19 @@ _Py_DECREF_in_interpreter(PyInterpreterState *interp, PyObject *obj)
     return _PyEval_AddPendingCall(interp, _decref_pyobj, obj);
 }
 
+static int
+_release_pybuf(void *view)
+{
+    PyBuffer_Release((Py_buffer *)view);
+    return 0;
+}
+
+int
+_PyBuffer_Release_in_interpreter(PyInterpreterState *interp, Py_buffer *view)
+{
+    return _PyEval_AddPendingCall(interp, _release_pybuf, view);
+}
+
 /* cross-interpreter data */
 
 crossinterpdatafunc _PyCrossInterpreterData_Lookup(PyObject *);
