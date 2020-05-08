@@ -11437,7 +11437,7 @@ _loop1_11_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -11876,7 +11876,7 @@ _loop1_22_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -12252,7 +12252,7 @@ _loop1_31_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -12911,7 +12911,7 @@ _loop1_47_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -13267,7 +13267,7 @@ _loop1_56_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -13369,7 +13369,7 @@ _loop1_58_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -13422,7 +13422,7 @@ _loop1_59_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -13475,7 +13475,7 @@ _loop1_60_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -13577,7 +13577,7 @@ _loop1_62_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -13679,7 +13679,7 @@ _loop1_64_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -13781,7 +13781,7 @@ _loop1_66_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -13834,7 +13834,7 @@ _loop1_67_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14007,7 +14007,7 @@ _loop1_71_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14145,7 +14145,7 @@ _loop1_74_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14345,7 +14345,7 @@ _loop1_78_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14447,7 +14447,7 @@ _loop1_80_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14500,7 +14500,7 @@ _loop1_81_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14553,7 +14553,7 @@ _loop1_82_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14655,7 +14655,7 @@ _loop1_84_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14757,7 +14757,7 @@ _loop1_86_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14859,7 +14859,7 @@ _loop1_88_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14912,7 +14912,7 @@ _loop1_89_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -14965,7 +14965,7 @@ _loop1_90_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -15018,7 +15018,7 @@ _loop1_91_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -15358,7 +15358,7 @@ _loop1_99_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -15567,7 +15567,7 @@ _loop1_104_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
@@ -17165,7 +17165,7 @@ _loop1_145_rule(Parser *p)
         }
         p->mark = mark;
     }
-    if (n == 0) {
+    if (n == 0 || p->error_indicator) {
         PyMem_Free(children);
         return NULL;
     }
