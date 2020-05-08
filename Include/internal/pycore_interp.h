@@ -20,6 +20,11 @@ struct _Py_parser_state {
     } listnode;
 };
 
+struct _pending_call {
+    int (*func)(void *);
+    void *arg;
+};
+
 struct _pending_calls {
     PyThread_type_lock lock;
     /* Request for running pending calls. */
@@ -29,10 +34,7 @@ struct _pending_calls {
        Guarded by the GIL. */
     int async_exc;
 #define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
+    struct _pending_call calls[NPENDINGCALLS];
     int first;
     int last;
 };
