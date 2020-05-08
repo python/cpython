@@ -97,6 +97,31 @@ class BaseTaskTests:
         self.loop.set_task_factory(self.new_task)
         self.loop.create_future = lambda: self.new_future(self.loop)
 
+    def test_task_cancel_message_getter(self):
+        async def coro():
+            pass
+        t = self.new_task(self.loop, coro())
+        self.assertTrue(hasattr(t, '_cancel_message'))
+        self.assertEqual(t._cancel_message, None)
+
+        t.cancel('my message')
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(t)
+        self.assertEqual(t._cancel_message, 'my message')
+
+    def test_task_cancel_message_setter(self):
+        async def coro():
+            pass
+        t = self.new_task(self.loop, coro())
+        t.cancel('my message')
+        t._cancel_message = 'my new message'
+        self.assertEqual(t._cancel_message, 'my new message')
+
+        # Also check that the value is used for cancel().
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(t)
+        self.assertEqual(t._cancel_message, 'my new message')
+
     def test_task_del_collect(self):
         class Evil:
             def __del__(self):
