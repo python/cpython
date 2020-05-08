@@ -1549,7 +1549,7 @@ class OtherTests(unittest.TestCase):
     def test_writestr_pathlike_issue40506(self):
         with zipfile.ZipFile(TESTFN2, 'w') as orig_zip:
             path = 'foo/bar.txt'
-            orig_zip.writestr(pathlib.PurePath(path), '1234')
+            orig_zip.writestr(pathlib.PurePosixPath(path), '1234')
             self.assertEqual(orig_zip.open(path).read(4), b'1234')
 
     def test_close(self):
