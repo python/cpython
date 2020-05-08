@@ -69,6 +69,15 @@ def get(using=None):
 # instead of "from webbrowser import *".
 
 def open(url, new=0, autoraise=True):
+    """Display url using the default browser.
+
+    If new is:
+    - 0: url is opened in the same browser window, if possible
+    - 1: a new browser window is opened, if possible
+    - 2: a new browser page ("tab") is opened, if possible
+
+    If autoraise is True, the window is raised, if possible.
+    """
     if _tryorder is None:
         with _lock:
             if _tryorder is None:
@@ -80,9 +89,17 @@ def open(url, new=0, autoraise=True):
     return False
 
 def open_new(url):
+    """Open url in a new window of the default browser.
+
+    If not possible, then open url in the only browser window.
+    """
     return open(url, 1)
 
 def open_new_tab(url):
+    """Open url in a new page ("tab") of the default browser.
+
+    If not possible, then the behavior becomes equivalent to open_new().
+    """
     return open(url, 2)
 
 
