@@ -1482,6 +1482,19 @@ _call_in_interpreter(struct _gilstate_runtime_state *gilstate,
     }
 }
 
+static int
+_decref_pyobj(void *obj)
+{
+    Py_DECREF(obj);
+    return 0;
+}
+
+int
+_Py_DECREF_in_interpreter(PyInterpreterState *interp, PyObject *obj)
+{
+    return _PyEval_AddPendingCall(interp, _decref_pyobj, obj);
+}
+
 /* cross-interpreter data */
 
 crossinterpdatafunc _PyCrossInterpreterData_Lookup(PyObject *);

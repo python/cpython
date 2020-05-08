@@ -195,6 +195,10 @@ PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *in
 PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
 
+/* cross-interpreter operations */
+
+PyAPI_FUNC(int) _Py_DECREF_in_interpreter(PyInterpreterState *, PyObject *);
+
 /* cross-interpreter data */
 
 struct _xid;
