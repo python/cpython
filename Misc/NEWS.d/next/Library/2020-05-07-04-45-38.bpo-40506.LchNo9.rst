@@ -1,0 +1,2 @@
+Add support for :class:`os.Pathlike` filenames in
+:meth:`zipfile.ZipFile.writestr`.
