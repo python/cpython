@@ -21,10 +21,7 @@ steps:
   displayName: 'Display build info'
   condition: and(succeeded(), variables['testRunPlatform'])
 
-- script: |
-    python.bat -m ensurepip --user
-    python.bat -m pip install --user -r Misc/requirements-tests.txt
-    PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results.xml" --tempdir="$(Build.BinariesDirectory)\test"
+- script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results.xml" --tempdir="$(Build.BinariesDirectory)\test"
   displayName: 'Tests'
   condition: and(succeeded(), variables['testRunPlatform'])
   env:
