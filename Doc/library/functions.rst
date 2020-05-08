@@ -458,9 +458,9 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: eval(expression[, globals[, locals]])
 
-   The arguments are a string and optional globals and locals.  If provided,
-   *globals* must be a dictionary.  If provided, *locals* can be any mapping
-   object.
+   The arguments are a string or compiled code object, optionally along
+   with globals and locals.  If provided; globals must be a dictionary,
+   locals can be any mapping object.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
