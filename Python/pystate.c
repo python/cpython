@@ -1508,6 +1508,13 @@ _PyBuffer_Release_in_interpreter(PyInterpreterState *interp, Py_buffer *view)
     return _PyEval_AddPendingCall(interp, _release_pybuf, view);
 }
 
+int
+_PyMem_Free_in_interpreter(PyInterpreterState *interp, void *data,
+                           _deallocfunc dealloc)
+{
+    return _PyEval_AddPendingCall(interp, (int (*)(void *))dealloc, data);
+}
+
 /* cross-interpreter data */
 
 crossinterpdatafunc _PyCrossInterpreterData_Lookup(PyObject *);

@@ -200,6 +200,9 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 PyAPI_FUNC(int) _Py_DECREF_in_interpreter(PyInterpreterState *, PyObject *);
 PyAPI_FUNC(int) _PyBuffer_Release_in_interpreter(PyInterpreterState *,
                                                  Py_buffer *);
+typedef void (*_deallocfunc)(void *);
+PyAPI_FUNC(int) _PyMem_Free_in_interpreter(PyInterpreterState *, void *,
+                                           _deallocfunc);
 
 /* cross-interpreter data */
 
