@@ -270,7 +270,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 f'_step(): already done: {self!r}, {exc!r}')
         if self._must_cancel:
             if not isinstance(exc, exceptions.CancelledError):
-                exc = exceptions.CancelledError(self._cancel_message)
+                exc = futures._create_cancelled_error(self._cancel_message)
             self._must_cancel = False
         coro = self._coro
         self._fut_waiter = None
@@ -778,7 +778,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                 # Check if 'fut' is cancelled first, as
                 # 'fut.exception()' will *raise* a CancelledError
                 # instead of returning it.
-                exc = exceptions.CancelledError(fut._cancel_message)
+                exc = futures._create_cancelled_error(fut._cancel_message)
                 outer.set_exception(exc)
                 return
             else:
@@ -797,7 +797,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                     # Check if 'fut' is cancelled first, as
                     # 'fut.exception()' will *raise* a CancelledError
                     # instead of returning it.
-                    res = exceptions.CancelledError(fut._cancel_message)
+                    res = futures._create_cancelled_error(fut._cancel_message)
                 else:
                     res = fut.exception()
                     if res is None:
@@ -809,7 +809,7 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
                 # cancellation regardless of *return_exceptions* argument.
                 # See issue 32684.
                 outer.set_exception(
-                    exceptions.CancelledError(fut._cancel_message))
+                    futures._create_cancelled_error(fut._cancel_message))
             else:
                 outer.set_result(results)
 

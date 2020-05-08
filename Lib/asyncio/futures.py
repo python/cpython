@@ -175,7 +175,7 @@ class Future:
         the future is done and has an exception set, this exception is raised.
         """
         if self._state == _CANCELLED:
-            raise exceptions.CancelledError(self._cancel_message)
+            raise _create_cancelled_error(self._cancel_message)
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
@@ -192,7 +192,7 @@ class Future:
         InvalidStateError.
         """
         if self._state == _CANCELLED:
-            raise exceptions.CancelledError(self._cancel_message)
+            raise _create_cancelled_error(self._cancel_message)
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Exception is not set.')
         self.__log_traceback = False
@@ -291,6 +291,15 @@ def _set_result_unless_cancelled(fut, result):
     if fut.cancelled():
         return
     fut.set_result(result)
+
+
+# This provides a nicer-looking traceback when no msg is passed, which
+# has been asyncio's default behavior.
+def _create_cancelled_error(msg=None):
+    if msg is None:
+        return exceptions.CancelledError()
+
+    return exceptions.CancelledError(msg)
 
 
 def _convert_future_exc(exc):

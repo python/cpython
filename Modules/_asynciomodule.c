@@ -599,11 +599,12 @@ future_set_exception(FutureObj *fut, PyObject *exc)
 static PyObject *
 create_cancelled_error(PyObject *msg)
 {
-    if (msg == NULL) {
-        msg = Py_None;
+    PyObject *exc;
+    if (msg == NULL || msg == Py_None) {
+        exc = PyObject_CallNoArgs(asyncio_CancelledError);
+    } else {
+        exc = PyObject_CallOneArg(asyncio_CancelledError, msg);
     }
-    PyObject *exc = PyObject_CallOneArg(asyncio_CancelledError, msg);
-
     return exc;
 }
 
