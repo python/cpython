@@ -627,9 +627,9 @@ Corner-cases that used to fail to raise the correct error:
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
-    # >>> with (lambda *:0): pass
-    # Traceback (most recent call last):
-    # SyntaxError: named arguments must follow bare *
+    >>> with (lambda *:0): pass
+    Traceback (most recent call last):
+    SyntaxError: named arguments must follow bare *
 
 Corner-cases that used to crash:
 
@@ -644,7 +644,6 @@ Corner-cases that used to crash:
 """
 
 import re
-import sys
 import unittest
 
 from test import support

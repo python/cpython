@@ -107,8 +107,7 @@ The :mod:`functools` module defines the following functions:
            return sum(sentence.count(vowel) for vowel in 'aeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
-   grow without bound.  The LRU feature performs best when *maxsize* is a
-   power-of-two.
+   grow without bound.
 
    If *typed* is set to true, function arguments of different types will be
    cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated

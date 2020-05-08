@@ -35,7 +35,6 @@ EXPORTS
   PyBytes_Size=python39.PyBytes_Size
   PyBytes_Type=python39.PyBytes_Type DATA
   PyCFunction_Call=python39.PyCFunction_Call
-  PyCFunction_ClearFreeList=python39.PyCFunction_ClearFreeList
   PyCFunction_GetFlags=python39.PyCFunction_GetFlags
   PyCFunction_GetFunction=python39.PyCFunction_GetFunction
   PyCFunction_GetSelf=python39.PyCFunction_GetSelf
@@ -584,7 +583,6 @@ EXPORTS
   PyTraceBack_Print=python39.PyTraceBack_Print
   PyTraceBack_Type=python39.PyTraceBack_Type DATA
   PyTupleIter_Type=python39.PyTupleIter_Type DATA
-  PyTuple_ClearFreeList=python39.PyTuple_ClearFreeList
   PyTuple_GetItem=python39.PyTuple_GetItem
   PyTuple_GetSlice=python39.PyTuple_GetSlice
   PyTuple_New=python39.PyTuple_New

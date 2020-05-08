@@ -22,6 +22,12 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 #define PyTuple_MAXFREELIST  2000  /* Maximum number of tuples of each size to save */
 #endif
 
+/* bpo-40521: tuple free lists are shared by all interpreters. */
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  undef PyTuple_MAXSAVESIZE
+#  define PyTuple_MAXSAVESIZE 0
+#endif
+
 #if PyTuple_MAXSAVESIZE > 0
 /* Entries 1 up to PyTuple_MAXSAVESIZE are free lists, entry 0 is the empty
    tuple () of which at most one instance will be allocated.
@@ -248,7 +254,9 @@ tupledealloc(PyTupleObject *op)
 #endif
     }
     Py_TYPE(op)->tp_free((PyObject *)op);
+#if PyTuple_MAXSAVESIZE > 0
 done:
+#endif
     Py_TRASHCAN_END
 }
 
@@ -955,26 +963,22 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     return 0;
 }
 
-int
-PyTuple_ClearFreeList(void)
+void
+_PyTuple_ClearFreeList(void)
 {
-    int freelist_size = 0;
 #if PyTuple_MAXSAVESIZE > 0
-    int i;
-    for (i = 1; i < PyTuple_MAXSAVESIZE; i++) {
-        PyTupleObject *p, *q;
-        p = free_list[i];
-        freelist_size += numfree[i];
+    for (Py_ssize_t i = 1; i < PyTuple_MAXSAVESIZE; i++) {
+        PyTupleObject *p = free_list[i];
         free_list[i] = NULL;
         numfree[i] = 0;
         while (p) {
-            q = p;
+            PyTupleObject *q = p;
             p = (PyTupleObject *)(p->ob_item[0]);
             PyObject_GC_Del(q);
         }
     }
+    // the empty tuple singleton is only cleared by _PyTuple_Fini()
 #endif
-    return freelist_size;
 }
 
 void
@@ -985,7 +989,7 @@ _PyTuple_Fini(void)
      * rely on the fact that an empty tuple is a singleton. */
     Py_CLEAR(free_list[0]);
 
-    (void)PyTuple_ClearFreeList();
+    _PyTuple_ClearFreeList();
 #endif
 }
 

@@ -11,7 +11,6 @@ import tempfile
 import time
 import unittest
 import io
-import errno
 
 from unittest import mock, skipUnless
 try:

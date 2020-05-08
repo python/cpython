@@ -10,9 +10,7 @@
 import ast
 import types
 import decimal
-import sys
 import unittest
-from test import support
 
 a_global = 'global variable'
 
@@ -207,8 +205,7 @@ f'{a * f"-{x()}-"}'"""
         call = binop.right.values[1].value
         self.assertEqual(type(call), ast.Call)
         self.assertEqual(call.lineno, 3)
-        if support.use_old_parser():
-            self.assertEqual(call.col_offset, 11)
+        self.assertEqual(call.col_offset, 11)
 
     def test_ast_line_numbers_duplicate_expression(self):
         """Duplicate expression
@@ -867,7 +864,7 @@ non-important content
                              "Bf''",
                              "BF''",]
         double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
-        self.assertAllRaise(SyntaxError, 'invalid string prefix',
+        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
                             single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):

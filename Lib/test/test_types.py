@@ -627,6 +627,7 @@ class MappingProxyTests(unittest.TestCase):
              '__iter__',
              '__len__',
              '__or__',
+             '__reversed__',
              '__ror__',
              'copy',
              'get',
@@ -767,6 +768,14 @@ class MappingProxyTests(unittest.TestCase):
         self.assertEqual(set(view.keys()), set(keys))
         self.assertEqual(set(view.values()), set(values))
         self.assertEqual(set(view.items()), set(items))
+
+    def test_reversed(self):
+        d = {'a': 1, 'b': 2, 'foo': 0, 'c': 3, 'd': 4}
+        mp = self.mappingproxy(d)
+        del d['foo']
+        r = reversed(mp)
+        self.assertEqual(list(r), list('dcba'))
+        self.assertRaises(StopIteration, next, r)
 
     def test_copy(self):
         original = {'key1': 27, 'key2': 51, 'key3': 93}

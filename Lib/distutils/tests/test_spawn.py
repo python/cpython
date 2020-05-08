@@ -2,8 +2,7 @@
 import os
 import stat
 import sys
-import unittest
-from unittest import mock
+import unittest.mock
 from test.support import run_unittest, unix_shell
 from test import support as test_support
 

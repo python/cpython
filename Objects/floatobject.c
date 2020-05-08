@@ -1998,25 +1998,22 @@ _PyFloat_Init(void)
     return 1;
 }
 
-int
-PyFloat_ClearFreeList(void)
+void
+_PyFloat_ClearFreeList(void)
 {
     PyFloatObject *f = free_list, *next;
-    int i = numfree;
-    while (f) {
+    for (; f; f = next) {
         next = (PyFloatObject*) Py_TYPE(f);
         PyObject_FREE(f);
-        f = next;
     }
     free_list = NULL;
     numfree = 0;
-    return i;
 }
 
 void
 _PyFloat_Fini(void)
 {
-    (void)PyFloat_ClearFreeList();
+    _PyFloat_ClearFreeList();
 }
 
 /* Print summary info about the state of the optimized allocator */

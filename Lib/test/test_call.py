@@ -1,4 +1,3 @@
-import datetime
 import unittest
 from test.support import cpython_only
 try:

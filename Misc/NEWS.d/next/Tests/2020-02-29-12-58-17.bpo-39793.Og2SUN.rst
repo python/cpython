@@ -1,1 +1,0 @@
-Use the same domain when testing ``make_msgid``. Patch by Batuhan Taskaya.

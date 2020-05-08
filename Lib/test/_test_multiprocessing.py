@@ -3860,7 +3860,9 @@ class _TestSharedMemory(BaseTestCase):
         sms.close()
 
     def test_shared_memory_across_processes(self):
-        sms = shared_memory.SharedMemory('test02_tsmap', True, size=512)
+        # bpo-40135: don't define shared memory block's name in case of
+        # the failure when we run multiprocessing tests in parallel.
+        sms = shared_memory.SharedMemory(create=True, size=512)
         self.addCleanup(sms.unlink)
 
         # Verify remote attachment to existing block by name is working.
@@ -5243,6 +5245,20 @@ class TestSimpleQueue(unittest.TestCase):
         self.assertTrue(queue.empty())
 
         proc.join()
+
+    def test_close(self):
+        queue = multiprocessing.SimpleQueue()
+        queue.close()
+        # closing a queue twice should not fail
+        queue.close()
+
+    # Test specific to CPython since it tests private attributes
+    @test.support.cpython_only
+    def test_closed(self):
+        queue = multiprocessing.SimpleQueue()
+        queue.close()
+        self.assertTrue(queue._reader.closed)
+        self.assertTrue(queue._writer.closed)
 
 
 class TestPoolNotLeakOnFailure(unittest.TestCase):
