@@ -392,19 +392,9 @@ class Random(_random.Random):
         if not isinstance(population, _Sequence):
             raise TypeError("Population must be a sequence.  For dicts or sets, use sorted(d).")
         n = len(population)
-        if weights is not None:
-            if counts is not None:
-                raise TypeError('Cannot specify both counts and weights')
-            weights = list(weights)
-            positions = range(n)
-            indices = []
-            while (needed := k - len(indices)):
-                for i in choices(positions, weights, k=needed):
-                    if weights[i]:
-                        weights[i] = 0.0
-                        indices.append(i)
-            return [population[i] for i in indices]
         if counts is not None:
+            if weights is not None:
+                raise TypeError('Cannot specify both counts and weights')
             cum_counts = list(_accumulate(counts))
             if len(cum_counts) != n:
                 raise ValueError('The number of counts does not match the population')
@@ -419,6 +409,16 @@ class Random(_random.Random):
         randbelow = self._randbelow
         if not 0 <= k <= n:
             raise ValueError("Sample larger than population or is negative")
+        if weights is not None:
+            weights = list(weights)
+            positions = range(n)
+            indices = []
+            while (needed := k - len(indices)):
+                for i in choices(positions, weights, k=needed):
+                    if weights[i]:
+                        weights[i] = 0.0
+                        indices.append(i)
+            return [population[i] for i in indices]
         result = [None] * k
         setsize = 21        # size of a small set minus size of an empty list
         if k > 5:
