@@ -8,17 +8,13 @@ Build Status
 
   + `Stable buildbots <http://buildbot.python.org/3.x.stable/>`_
 
+- 3.8
+
+  + `Stable buildbots <https://buildbot.python.org/all/#/grid?branch=3.8&tag=stable/>`_
+
 - 3.7
 
   + `Stable buildbots <http://buildbot.python.org/3.7.stable/>`_
-
-- 3.6
-
-  + `Stable buildbots <http://buildbot.python.org/3.6.stable/>`_
-
-- 2.7
-
-  + `Stable buildbots <http://buildbot.python.org/2.7.stable/>`_
 
 
 Thank You
