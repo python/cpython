@@ -1457,31 +1457,6 @@ PyGILState_Release(PyGILState_STATE oldstate)
 
 /* cross-interpreter operations */
 
-static void
-_call_in_interpreter(struct _gilstate_runtime_state *gilstate,
-                     PyInterpreterState *interp,
-                     void (*func)(void *), void *arg)
-{
-    /* We would use Py_AddPendingCall() if it weren't specific to the
-     * main interpreter (see bpo-33608).  In the meantime we take a
-     * naive approach.
-     */
-    PyThreadState *save_tstate = NULL;
-    if (interp != _PyRuntimeGILState_GetThreadState(gilstate)->interp) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        // XXX Possible GILState issues?
-        save_tstate = _PyThreadState_Swap(gilstate, tstate);
-    }
-
-    func(arg);
-
-    // Switch back.
-    if (save_tstate != NULL) {
-        _PyThreadState_Swap(gilstate, save_tstate);
-    }
-}
-
 static int
 _decref_pyobj(void *obj)
 {
@@ -1597,16 +1572,6 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     return 0;
 }
 
-static void
-_release_xidata(void *arg)
-{
-    _PyCrossInterpreterData *data = (_PyCrossInterpreterData *)arg;
-    if (data->free != NULL) {
-        data->free(data->data);
-    }
-    Py_XDECREF(data->obj);
-}
-
 void
 _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
 {
@@ -1626,8 +1591,16 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
     }
 
     // "Release" the data and/or the object.
-    struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
-    _call_in_interpreter(gilstate, interp, _release_xidata, data);
+    if (data->free != NULL) {
+        _PyMem_Free_in_interpreter(interp, data->data, data->free);
+    }
+    if (data->obj != NULL) {
+        _Py_DECREF_in_interpreter(interp, data->obj);
+    }
+    // Note that we do not free "data" itself.  That should be done by
+    // the caller after this completes.  That implies that the memory
+    // for "data" is either owned by the calling interpreter or
+    // on the heap.
 }
 
 PyObject *
