@@ -544,14 +544,26 @@ static int
 _push_pending_call(struct _pending_calls *pending,
                    int (*func)(void *), void *arg)
 {
-    int i = pending->last;
-    int j = (i + 1) % NPENDINGCALLS;
-    if (j == pending->first) {
+    // XXX Drop the limit?
+    if (pending->ncalls == NPENDINGCALLS) {
         return -1; /* Queue full */
     }
-    pending->calls[i].func = func;
-    pending->calls[i].arg = arg;
-    pending->last = j;
+    // XXX Avoid allocation if possible...freelist?  circular queue + LL fallback?
+    struct _pending_call *call = PyMem_RawMalloc(sizeof(struct _pending_call));
+    if (call == NULL) {
+        return -1;
+    }
+    call->func = func;
+    call->arg = arg;
+    call->next = NULL;
+
+    if (pending->head == NULL) {
+        pending->head = call;
+    } else {
+        pending->last->next = call;
+    }
+    pending->last = call;
+    pending->ncalls++;
     return 0;
 }
 
@@ -560,14 +572,16 @@ static void
 _pop_pending_call(struct _pending_calls *pending,
                   int (**func)(void *), void **arg)
 {
-    int i = pending->first;
-    if (i == pending->last) {
+    struct _pending_call *call = pending->head;
+    if (call == NULL) {
         return; /* Queue empty */
     }
+    pending->head = call->next;
+    pending->ncalls--;
 
-    *func = pending->calls[i].func;
-    *arg = pending->calls[i].arg;
-    pending->first = (i + 1) % NPENDINGCALLS;
+    *func = call->func;
+    *arg = call->arg;
+    PyMem_RawFree(call);
 }
 
 /* This implementation is thread-safe.  It allows

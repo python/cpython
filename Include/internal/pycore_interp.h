@@ -23,7 +23,13 @@ struct _Py_parser_state {
 struct _pending_call {
     int (*func)(void *);
     void *arg;
+    struct _pending_call *next;
 };
+
+// We technically do not need this limit around any longer since we
+// moved from a circular queue to a linked list.  However, having a
+// size limit is still a good idea so we keep the one we already had.
+#define NPENDINGCALLS 32
 
 struct _pending_calls {
     PyThread_type_lock lock;
@@ -33,10 +39,9 @@ struct _pending_calls {
        thread state.
        Guarded by the GIL. */
     int async_exc;
-#define NPENDINGCALLS 32
-    struct _pending_call calls[NPENDINGCALLS];
-    int first;
-    int last;
+    int ncalls;
+    struct _pending_call *head;
+    struct _pending_call *last;
 };
 
 struct _ceval_state {
