@@ -525,7 +525,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 rulename=node.name if memoize else None,
             )
             if is_repeat1:
-                self.print("if (n == 0) {")
+                self.print("if (n == 0 || p->error_indicator) {")
                 with self.indent():
                     self.print("PyMem_Free(children);")
                     self.print("return NULL;")
