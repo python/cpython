@@ -207,7 +207,7 @@ class TestBasicOps:
 
     def test_sample_counts_equivalence(self):
         # Test the documented strong equivalence to a sample with repeated elements.
-        # We run this test on random.Random() which makes deteriministic selections
+        # We run this test on random.Random() which makes deterministic selections
         # for a given seed value.
         sample = random.sample
         seed = random.seed

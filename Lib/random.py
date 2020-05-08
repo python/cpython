@@ -353,9 +353,12 @@ class Random(_random.Random):
 
             sample(['red', 'red', 'red', 'red', 'blue', 'blue'], k=5)
 
-        To choose a sample in a range of integers, use range as an argument.
-        This is especially fast and space efficient for sampling from a
-        large population:   sample(range(10000000), 60)
+        To choose a sample from a range of integers, use range() for the
+        population argument.  This is especially fast and space efficient
+        for sampling from a large population:
+
+            sample(range(10000000), 60)
+
         """
 
         # Sampling without replacement entails tracking either potential
