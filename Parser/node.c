@@ -17,6 +17,7 @@ PyNode_New(int type)
     n->n_end_col_offset = -1;
     n->n_nchildren = 0;
     n->n_child = NULL;
+    n->n_col_offset = 0;
     return n;
 }
 
