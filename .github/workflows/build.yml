@@ -25,6 +25,10 @@ jobs:
       run: .\PCbuild\build.bat -e -p Win32
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
+    - name: Install test dependencies
+      run: |
+        .\python.bat -m ensurepip --user
+        .\python.bat -m pip install --user -r Misc/requirements-test.txt
     - name: Tests
       run: .\PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
@@ -37,6 +41,10 @@ jobs:
       run: .\PCbuild\build.bat -e -p x64
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
+    - name: Install test dependencies
+      run: |
+        .\python.bat -m ensurepip --user
+        .\python.bat -m pip install --user -r Misc/requirements-test.txt
     - name: Tests
       run: .\PCbuild\rt.bat -x64 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
@@ -51,6 +59,10 @@ jobs:
       run: make -j4
     - name: Display build info
       run: make pythoninfo
+    - name: Install test dependencies
+      run: |
+        ./python.exe -m ensurepip --user
+        ./python.exe -m pip install --user -r Misc/requirements-test.txt
     - name: Tests
       run: make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
@@ -78,5 +90,9 @@ jobs:
       run: make -j4
     - name: Display build info
       run: make pythoninfo
+    - name: Install test dependencies
+      run: |
+        ./python -m ensurepip --user
+        ./python -m pip install --user -r Misc/requirements-test.txt
     - name: Tests
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
