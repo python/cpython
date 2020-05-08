@@ -802,6 +802,9 @@ class uname_result(
             return self.processor
         return super().__getitem__(key)
 
+    def __len__(self):
+        return super().__len__() + 1  # Add 1 for self.processor.
+
 
 _uname_cache = None
 

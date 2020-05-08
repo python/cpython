@@ -153,6 +153,7 @@ class PlatformTest(unittest.TestCase):
     def test_uname(self):
         res = platform.uname()
         self.assertTrue(any(res))
+        self.assertEqual(len(res), 6)
         self.assertEqual(res[0], res.system)
         self.assertEqual(res[1], res.node)
         self.assertEqual(res[2], res.release)
