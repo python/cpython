@@ -461,7 +461,7 @@ class SubprocessMixin:
 
     def test_close_kill_running(self):
         if isinstance(asyncio.get_child_watcher(),
-                      unix_events.MultiLoopChildWatcher):
+                      asyncio.MultiLoopChildWatcher):
             raise unittest.SkipTest("Temporary skip until bpo-38323 is fixed")
 
         async def kill_running():
