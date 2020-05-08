@@ -525,6 +525,9 @@ class TZDataTests(ZoneInfoTest):
     def zone_from_key(self, key):
         return self.klass(key=key)
 
+    def test_if_skipped(self):
+        self.assertTrue(False)
+
 
 @unittest.skipIf(
     not HAS_TZDATA_PKG, "Skipping tzdata-specific tests: tzdata not installed"
