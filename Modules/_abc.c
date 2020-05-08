@@ -74,8 +74,14 @@ static PyObject *
 abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     _abc_data *self = (_abc_data *) type->tp_alloc(type, 0);
-    _abcmodule_state *state = PyType_GetModuleState(type);
-    if (self == NULL || state == NULL) {
+    _abcmodule_state *state = NULL;
+    if (self == NULL) {
+        return NULL;
+    }
+
+    state = PyType_GetModuleState(type);
+    if (state == NULL) {
+        Py_DECREF(self);
         return NULL;
     }
 
