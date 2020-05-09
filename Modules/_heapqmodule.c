@@ -983,6 +983,7 @@ static PyObject *
 merge_next(mergeobject *mo) {
     PyObject *result;
     PyObject **tree = mo->tree;
+    Py_ssize_t i, n;
 
     switch (mo->status) {
     case 0:
@@ -990,8 +991,7 @@ merge_next(mergeobject *mo) {
         /* Heapify, except leaves are supplied by iterators;
            repeatedly replace null parents with their smaller child
            until the tree is filled to the root */
-        Py_ssize_t i;
-        Py_ssize_t n = mo->num_iters;
+        n = mo->num_iters;
         mo->status = 1;
         if (mo->keyfunc == NULL) {
             for (i = 2 * n - 2; i > 0; i--) {
