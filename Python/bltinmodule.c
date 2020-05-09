@@ -2198,8 +2198,13 @@ sorted as builtin_sorted
 
 Return a new list containing all items from the iterable in ascending order.
 
-A custom key function can be supplied to customize the sort order, and the
-reverse flag can be set to request the result in descending order.
+The sort is guaranteed to be stable (i.e. the relative order of elements
+that compare equal is preserved).
+
+If a key function is given, apply it once to each element and use the results
+as the comparison keys when sorting.
+
+If reverse is True, instead sort in descending order.
 [end disabled clinic input]*/
 
 PyDoc_STRVAR(builtin_sorted__doc__,
@@ -2208,8 +2213,15 @@ PyDoc_STRVAR(builtin_sorted__doc__,
 "\n"
 "Return a new list containing all items from the iterable in ascending order.\n"
 "\n"
-"A custom key function can be supplied to customize the sort order, and the\n"
-"reverse flag can be set to request the result in descending order.");
+"The sort is guaranteed to be stable (i.e. the relative order of elements\n"
+"that compare equal is preserved).\n"
+"\n"
+"If a key function is given, apply it once to each element and use the results\n"
+"as the comparison keys when sorting.\n"
+"\n"
+"If reverse is True, instead sort in descending order. Note that forward\n"
+"sort stability is preserved when doing so.\n"
+);
 
 #define BUILTIN_SORTED_METHODDEF    \
     {"sorted", (PyCFunction)(void(*)(void))builtin_sorted, METH_FASTCALL | METH_KEYWORDS, builtin_sorted__doc__},

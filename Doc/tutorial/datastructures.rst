@@ -82,7 +82,7 @@ objects:
    :noindex:
 
    Sort the items of the list in place (the arguments can be used for sort
-   customization, see :func:`sorted` for their explanation).
+   customization, see :meth:`list.sort` for their explanation).
 
 
 .. method:: list.reverse()

@@ -158,13 +158,15 @@ PyDoc_STRVAR(list_sort__doc__,
 "\n"
 "Sort the list in ascending order and return None.\n"
 "\n"
-"The sort is in-place (i.e. the list itself is modified) and stable (i.e. the\n"
-"order of two equal elements is maintained).\n"
+"The sort is in-place (i.e. the list itself is modified) and guaranteed to be\n"
+"stable (i.e. the relative order of elements that compare equal is preserved).\n"
 "\n"
-"If a key function is given, apply it once to each list item and sort them,\n"
-"ascending or descending, according to their function values.\n"
+"If a key function is given, apply it once to each list element and use\n"
+"the results as the comparison keys when sorting.\n"
 "\n"
-"The reverse flag can be set to sort in descending order.");
+"If reverse is True, instead sort in descending order. Note that forward\n"
+"sort stability is preserved when doing so.\n"
+);
 
 #define LIST_SORT_METHODDEF    \
     {"sort", (PyCFunction)(void(*)(void))list_sort, METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},

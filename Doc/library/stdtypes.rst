@@ -1175,7 +1175,7 @@ application).
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
 
-   .. method:: list.sort(*, key=None, reverse=False)
+   .. method:: list.sort(self, /, *, key=None, reverse=False)
 
       This method sorts the list in place, using only ``<`` comparisons
       between items. Exceptions are not suppressed - if any comparison operations
@@ -1185,28 +1185,46 @@ application).
       :meth:`sort` accepts two arguments that can only be passed by keyword
       (:ref:`keyword-only arguments <keyword-only_parameter>`):
 
-      *key* specifies a function of one argument that is used to extract a
-      comparison key from each list element (for example, ``key=str.lower``).
-      The key corresponding to each item in the list is calculated once and
-      then used for the entire sorting process. The default value of ``None``
-      means that list items are sorted directly without calculating a separate
-      key value.
+      *key* specifies a function of one argument used to generate a comparison
+      key for each list element (e.g. ``key=str.lower``) to use when sorting.
+
+      The key for each element in the list is calculated exactly once and then
+      used for each comparison invoked by the sort.
+
+      The default value of ``None`` means that list elements are compared
+      directly to each other without calculating a separate comparison key.
 
       The :func:`functools.cmp_to_key` utility is available to convert a 2.x
       style *cmp* function to a *key* function.
 
       *reverse* is a boolean value.  If set to ``True``, then the list elements
-      are sorted as if each comparison were reversed.
+      are sorted in descending order, preserving forward sort stability when
+      applicable (see below for an example).
 
-      This method modifies the sequence in place for economy of space when
+      :meth:`sort` modifies the sequence in place for economy of space when
       sorting a large sequence.  To remind users that it operates by side
-      effect, it does not return the sorted sequence (use :func:`sorted` to
-      explicitly request a new sorted list instance).
+      effect, it does not return the sorted sequence (see
+      :ref:`faq-list-sort-return-type` for an explanation).
 
-      The :meth:`sort` method is guaranteed to be stable.  A sort is stable if it
-      guarantees not to change the relative order of elements that compare equal
-      --- this is helpful for sorting in multiple passes (for example, sort by
-      department, then by salary grade).
+      :func:`sorted` (which effectively delegates to :meth:`sort`) can be used
+      to explicitly request a new sorted list instance.
+
+      The :meth:`sort` method (and consequently also :func:`sorted`) is
+      guaranteed to be stable, which means that the relative order of elements
+      that compare equal is preserved::
+
+        >>> sorted([7, 5.2, 5.1, 5.3], key=round)
+        [5.2, 5.1, 5.3, 7]
+
+      When *reverse* is set to ``True``, forward stability is preserved::
+
+        >>> sorted([7, 5.2, 5.1, 5.3], key=round, reverse=True)
+        [7, 5.2, 5.1, 5.3]
+
+      Note that this behaves differently than simply reversing a sort::
+
+        >>> list(reversed(sorted([7, 5.2, 5.1, 5.3], key=round)))
+        [7, 5.3, 5.1, 5.2]
 
       For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 

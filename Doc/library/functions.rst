@@ -1511,26 +1511,18 @@ are always available.  They are listed here in alphabetical order.
    :func:`itertools.islice` for an alternate version that returns an iterator.
 
 
-.. function:: sorted(iterable, *, key=None, reverse=False)
+.. function:: sorted(iterable, /, *, key=None, reverse=False)
 
-   Return a new sorted list from the items in *iterable*.
+   Return a new list containing all items from *iterable* in ascending order.
 
-   Has two optional arguments which must be specified as keyword arguments.
+   Roughly equivalent to::
 
-   *key* specifies a function of one argument that is used to extract a comparison
-   key from each element in *iterable* (for example, ``key=str.lower``).  The
-   default value is ``None`` (compare the elements directly).
+        def sorted(iterable, key=None, reverse=False):
+            l = list(iterable)
+            l.sort(key=key, reverse=reverse)
+            return l
 
-   *reverse* is a boolean value.  If set to ``True``, then the list elements are
-   sorted as if each comparison were reversed.
-
-   Use :func:`functools.cmp_to_key` to convert an old-style *cmp* function to a
-   *key* function.
-
-   The built-in :func:`sorted` function is guaranteed to be stable. A sort is
-   stable if it guarantees not to change the relative order of elements that
-   compare equal --- this is helpful for sorting in multiple passes (for
-   example, sort by department, then by salary grade).
+   See :meth:`list.sort` for an explanation of the arguments.
 
    For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 

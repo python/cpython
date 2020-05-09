@@ -538,6 +538,7 @@ wrapped list must not change to avoid anomalies.  Don't do this unless you are
 prepared to think hard about the requirements and the consequences of not
 meeting them correctly.  Consider yourself warned.
 
+.. _faq-list-sort-return-type:
 
 Why doesn't list.sort() return the sorted list?
 -----------------------------------------------
