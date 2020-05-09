@@ -34,6 +34,7 @@ def get_modules():
     get one copy of each module rather than a fresh import each time.
     """
     import zoneinfo as c_module
+
     py_module = import_fresh_module("zoneinfo", blocked=["_czoneinfo"])
 
     return py_module, c_module
