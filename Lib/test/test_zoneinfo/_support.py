@@ -25,6 +25,14 @@ def call_once(f):
 
 @call_once
 def get_modules():
+    """Retrieve two copies of zoneinfo: pure Python and C accelerated.
+
+    Because this function manipulates the import system in a way that might
+    be fragile or do unexpected things if it is run many times, it uses a
+    `call_once` decorator to ensure that this is only ever called exactly
+    one time — in other words, when using this function you will only ever
+    get one copy of each module rather than a fresh import each time.
+    """
     import zoneinfo as c_module
     py_module = import_fresh_module("zoneinfo", blocked=["_czoneinfo"])
 
