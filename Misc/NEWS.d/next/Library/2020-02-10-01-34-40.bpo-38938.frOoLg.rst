@@ -1,1 +1,2 @@
-Reduced the number of comparisons required in the heapq.merge algorithm, and added a C implementation. Heapq.merge is now a class whose instance are iterators, rather than a generator function.
+Changed the :func:`heap.merge` algorithm to reduce the number of
+comparisons, added a C accelerator.

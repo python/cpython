@@ -496,7 +496,8 @@ class TestErrorHandling:
             # test error during key computation
             mo = merge(range(10), range(10), key=lambda x: x // 0, reverse=reverse)
             self.assertRaises(ZeroDivisionError, list, mo)
-            self.assertRaises(TypeError, merge, key=object(), reverse=reverse)
+            mo = merge(range(10), key=object(), reverse=reverse)
+            self.assertRaises(TypeError, list, merge)
 
 class TestErrorHandlingPython(TestErrorHandling, TestCase):
     module = py_heapq

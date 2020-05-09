@@ -572,7 +572,7 @@ static PyTypeObject merge_type;
 
 
 /* Siftup, except replace the leaves using the iterators, not the root. */
-static int
+static inline int
 _tree_sift(mergeobject *mo, Py_ssize_t pos) {
     PyObject **tree = mo->tree;
     Py_ssize_t n;
@@ -668,7 +668,7 @@ _tree_sift(mergeobject *mo, Py_ssize_t pos) {
     return 0;
 }
 
-static int
+static inline int
 _tree_sift_key(mergeobject *mo, Py_ssize_t pos) {
     PyObject **tree = mo->tree;
     Py_ssize_t n;
@@ -823,11 +823,6 @@ merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         keyfunc = NULL;
     }
     Py_XINCREF(keyfunc);
-
-    if (keyfunc != NULL && !PyCallable_Check(keyfunc)) {
-        PyErr_SetString(PyExc_TypeError, "Key must be callable or None.");
-        goto error;
-    }
 
     assert(PyTuple_CheckExact(args));
     num_iters = PyTuple_GET_SIZE(args);
@@ -990,14 +985,15 @@ merge_next(mergeobject *mo) {
     PyObject *result;
     PyObject **tree = mo->tree;
 
-    if (mo->status == 2) {
-        return NULL;
-    }
-    if (mo->status == 0) {
+    switch (mo->status) {
+    case 0:
+        /* Tree is empty. */
+        /* Heapify, except leaves are supplied by iterators;
+           repeatedly replace null parents with their smaller child
+           until the tree is filled to the root */
         Py_ssize_t i;
         Py_ssize_t n = mo->num_iters;
         mo->status = 1;
-        /* Heapify, except leaves are supplied by iterators. */
         if (mo->keyfunc == NULL) {
             for (i = 2 * n - 2; i > 0; i--) {
                 if (_tree_sift(mo, i) < 0) {
@@ -1012,27 +1008,37 @@ merge_next(mergeobject *mo) {
                 }
             }
         }
-    }
-    if (mo->keyfunc == NULL) {
-        if (_tree_sift(mo, 0) < 0) {
+    /* Fallthrough */
+    case 1:
+        /* Tree is full. */
+        /* Only the root is empty, so we can just replace it then
+           yield its contents. */
+        if (mo->keyfunc == NULL) {
+            if (_tree_sift(mo, 0) < 0) {
+                goto stop;
+            }
+            result = tree[0];
+            tree[0] = NULL;
+        }
+        else {
+            if (_tree_sift_key(mo, 0) < 0) {
+                goto stop;
+            }
+            Py_CLEAR(tree[0]);
+            result = tree[1];
+            tree[1] = NULL;
+        }
+        if (result == NULL) {
             goto stop;
         }
-        result = tree[0];
-        tree[0] = NULL;
+        return result;
+    case 2:
+        /* All iterators are consumed and the tree is empty or an
+           exception occurred so we can't produce more values. */
+        return NULL;
+    default:
+        Py_UNREACHABLE();
     }
-    else {
-        if (_tree_sift_key(mo, 0) < 0) {
-            goto stop;
-        }
-        Py_CLEAR(tree[0]);
-        result = tree[1];
-        tree[1] = NULL;
-    }
-    if (result == NULL) {
-        goto stop;
-    }
-    return result;
-
 stop:
     mo->status = 2;
     return NULL;
@@ -1051,7 +1057,7 @@ PyDoc_STRVAR(merge_doc,
 \n\
 Merge multiple sorted inputs into a single sorted output.\n\
 \n\
-Similar to sorted(itertools.chain(*iterables)) but returns an iterator,\n\
+Similar to sorted(itertools.chain(*iterables)) but returns a generator,\n\
 does not pull the data into memory all at once, and assumes that each of\n\
 the input streams is already sorted (smallest to largest).\n\
 \n\
@@ -1066,7 +1072,7 @@ its sort order.\n\
 
 static PyTypeObject merge_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_heapq.merge",
+    .tp_name = "heapq.merge",
     .tp_basicsize = sizeof(mergeobject),
     .tp_dealloc = (destructor)merge_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
