@@ -460,9 +460,10 @@ class SubprocessMixin:
             test_utils.run_briefly(self.loop)
 
     def test_close_kill_running(self):
-        if isinstance(asyncio.get_child_watcher(),
-                      asyncio.MultiLoopChildWatcher):
-            self.skipTest("Temporary skip until bpo-38323 is fixed")
+        if sys.platform != "win32":
+            if isinstance(asyncio.get_child_watcher(),
+                          asyncio.MultiLoopChildWatcher):
+                self.skipTest("Temporary skip until bpo-38323 is fixed")
 
         async def kill_running():
             create = self.loop.subprocess_exec(asyncio.SubprocessProtocol,
