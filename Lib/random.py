@@ -192,6 +192,12 @@ class Random(_random.Random):
 ## ---- Methods below this point do not need to be overridden when
 ## ---- subclassing for the purpose of using a different core generator.
 
+## -------------------- bytes methods ---------------------
+
+    def randbytes(self, n):
+        """Generate n random bytes."""
+        return self.getrandbits(n * 8).to_bytes(n, 'little')
+
 ## -------------------- pickle support  -------------------
 
     # Issue 17489: Since __reduce__ was defined to fix #759889 this is no
@@ -259,8 +265,10 @@ class Random(_random.Random):
         return self.randrange(a, b+1)
 
     def _randbelow_with_getrandbits(self, n):
-        "Return a random int in the range [0,n).  Raises ValueError if n==0."
+        "Return a random int in the range [0,n).  Returns 0 if n==0."
 
+        if not n:
+            return 0
         getrandbits = self.getrandbits
         k = n.bit_length()  # don't use (n-1) here because n can be 1
         r = getrandbits(k)          # 0 <= r < 2**k
@@ -269,7 +277,7 @@ class Random(_random.Random):
         return r
 
     def _randbelow_without_getrandbits(self, n, int=int, maxsize=1<<BPF):
-        """Return a random int in the range [0,n).  Raises ValueError if n==0.
+        """Return a random int in the range [0,n).  Returns 0 if n==0.
 
         The implementation does not use getrandbits, but only random.
         """
@@ -281,7 +289,7 @@ class Random(_random.Random):
                 "To remove the range limitation, add a getrandbits() method.")
             return int(random() * n)
         if n == 0:
-            raise ValueError("Boundary cannot be zero")
+            return 0
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
         r = random()
@@ -295,11 +303,7 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        try:
-            i = self._randbelow(len(seq))
-        except ValueError:
-            raise IndexError('Cannot choose from an empty sequence') from None
-        return seq[i]
+        return seq[self._randbelow(len(seq))] # raises IndexError if seq is empty
 
     def shuffle(self, x, random=None):
         """Shuffle list x in place, and return None.
@@ -317,13 +321,17 @@ class Random(_random.Random):
                 j = randbelow(i+1)
                 x[i], x[j] = x[j], x[i]
         else:
+            _warn('The *random* parameter to shuffle() has been deprecated\n'
+                  'since Python 3.9 and will be removed in a subsequent '
+                  'version.',
+                  DeprecationWarning, 2)
             _int = int
             for i in reversed(range(1, len(x))):
                 # pick an element in x[:i+1] with which to exchange x[i]
                 j = _int(random() * (i+1))
                 x[i], x[j] = x[j], x[i]
 
-    def sample(self, population, k):
+    def sample(self, population, k, *, counts=None):
         """Chooses k unique random elements from a population sequence or set.
 
         Returns a new list containing elements from the population while
@@ -336,9 +344,21 @@ class Random(_random.Random):
         population contains repeats, then each occurrence is a possible
         selection in the sample.
 
-        To choose a sample in a range of integers, use range as an argument.
-        This is especially fast and space efficient for sampling from a
-        large population:   sample(range(10000000), 60)
+        Repeated elements can be specified one at a time or with the optional
+        counts parameter.  For example:
+
+            sample(['red', 'blue'], counts=[4, 2], k=5)
+
+        is equivalent to:
+
+            sample(['red', 'red', 'red', 'red', 'blue', 'blue'], k=5)
+
+        To choose a sample from a range of integers, use range() for the
+        population argument.  This is especially fast and space efficient
+        for sampling from a large population:
+
+            sample(range(10000000), 60)
+
         """
 
         # Sampling without replacement entails tracking either potential
@@ -365,11 +385,26 @@ class Random(_random.Random):
         # causing them to eat more entropy than necessary.
 
         if isinstance(population, _Set):
+            _warn('Sampling from a set deprecated\n'
+                  'since Python 3.9 and will be removed in a subsequent version.',
+                  DeprecationWarning, 2)
             population = tuple(population)
         if not isinstance(population, _Sequence):
-            raise TypeError("Population must be a sequence or set.  For dicts, use list(d).")
-        randbelow = self._randbelow
+            raise TypeError("Population must be a sequence.  For dicts or sets, use sorted(d).")
         n = len(population)
+        if counts is not None:
+            cum_counts = list(_accumulate(counts))
+            if len(cum_counts) != n:
+                raise ValueError('The number of counts does not match the population')
+            total = cum_counts.pop()
+            if not isinstance(total, int):
+                raise TypeError('Counts must be integers')
+            if total <= 0:
+                raise ValueError('Total of counts must be greater than zero')
+            selections = sample(range(total), k=k)
+            bisect = _bisect
+            return [population[bisect(cum_counts, s)] for s in selections]
+        randbelow = self._randbelow
         if not 0 <= k <= n:
             raise ValueError("Sample larger than population or is negative")
         result = [None] * k
@@ -733,11 +768,17 @@ class SystemRandom(Random):
 
     def getrandbits(self, k):
         """getrandbits(k) -> x.  Generates an int with k random bits."""
-        if k <= 0:
-            raise ValueError('number of bits must be greater than zero')
+        if k < 0:
+            raise ValueError('number of bits must be non-negative')
         numbytes = (k + 7) // 8                       # bits / 8 and rounded up
         x = int.from_bytes(_urandom(numbytes), 'big')
         return x >> (numbytes * 8 - k)                # trim excess bits
+
+    def randbytes(self, n):
+        """Generate n random bytes."""
+        # os.urandom(n) fails with ValueError for n < 0
+        # and returns an empty bytes string for n == 0.
+        return _urandom(n)
 
     def seed(self, *args, **kwds):
         "Stub method.  Not used for a system random number generator."
@@ -819,6 +860,7 @@ weibullvariate = _inst.weibullvariate
 getstate = _inst.getstate
 setstate = _inst.setstate
 getrandbits = _inst.getrandbits
+randbytes = _inst.randbytes
 
 if hasattr(_os, "fork"):
     _os.register_at_fork(after_in_child=_inst.seed)

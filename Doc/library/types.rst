@@ -282,6 +282,11 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.9
+
+      Updated to support the new union (``|``) operator from :pep:`584`, which
+      simply delegates to the underlying mapping.
+
    .. describe:: key in proxy
 
       Return ``True`` if the underlying mapping has a key *key*, else
@@ -323,6 +328,12 @@ Standard names are defined for the following types:
    .. method:: values()
 
       Return a new view of the underlying mapping's values.
+
+   .. describe:: reversed(proxy)
+
+      Return a reverse iterator over the keys of the underlying mapping.
+
+      .. versionadded:: 3.9
 
 
 Additional Utility Classes and Functions

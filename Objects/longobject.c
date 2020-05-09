@@ -3,7 +3,8 @@
 /* XXX The functional organization of this file is terrible */
 
 #include "Python.h"
-#include "pycore_pystate.h"   /* _Py_IsMainInterpreter() */
+#include "pycore_interp.h"    // _PY_NSMALLPOSINTS
+#include "pycore_pystate.h"   // _Py_IsMainInterpreter()
 #include "longintrepr.h"
 
 #include <float.h>
@@ -2851,7 +2852,8 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
 {
     Py_ssize_t a_size, a_bits, shift_digits, shift_bits, x_size;
     /* See below for why x_digits is always large enough. */
-    digit rem, x_digits[2 + (DBL_MANT_DIG + 1) / PyLong_SHIFT];
+    digit rem;
+    digit x_digits[2 + (DBL_MANT_DIG + 1) / PyLong_SHIFT] = {0,};
     double dx;
     /* Correction term for round-half-to-even rounding.  For a digit x,
        "x + half_even_correction[x & 7]" gives x rounded to the nearest
@@ -2901,9 +2903,7 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
     if (a_bits <= DBL_MANT_DIG + 2) {
         shift_digits = (DBL_MANT_DIG + 2 - a_bits) / PyLong_SHIFT;
         shift_bits = (DBL_MANT_DIG + 2 - a_bits) % PyLong_SHIFT;
-        x_size = 0;
-        while (x_size < shift_digits)
-            x_digits[x_size++] = 0;
+        x_size = shift_digits;
         rem = v_lshift(x_digits + x_size, a->ob_digit, a_size,
                        (int)shift_bits);
         x_size += a_size;
@@ -5071,7 +5071,7 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
     if (PyUnicode_Check(x))
         return PyLong_FromUnicodeObject(x, (int)base);
     else if (PyByteArray_Check(x) || PyBytes_Check(x)) {
-        char *string;
+        const char *string;
         if (PyByteArray_Check(x))
             string = PyByteArray_AS_STRING(x);
         else
@@ -5547,7 +5547,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     Py_DECREF(bytes);
 
     if (long_obj != NULL && type != &PyLong_Type) {
-        Py_SETREF(long_obj, _PyObject_CallOneArg((PyObject *)type, long_obj));
+        Py_SETREF(long_obj, PyObject_CallOneArg((PyObject *)type, long_obj));
     }
 
     return long_obj;

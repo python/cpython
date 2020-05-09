@@ -240,6 +240,16 @@ access internal read-only data of Unicode objects:
       :c:func:`PyUnicode_nBYTE_DATA` family of macros.
 
 
+.. c:function:: int PyUnicode_IsIdentifier(PyObject *o)
+
+   Return ``1`` if the string is a valid identifier according to the language
+   definition, section :ref:`identifiers`. Return ``0`` otherwise.
+
+   .. versionchanged:: 3.9
+      The function does not call :c:func:`Py_FatalError` anymore if the string
+      is not ready.
+
+
 Unicode Character Properties
 """"""""""""""""""""""""""""
 
@@ -978,7 +988,7 @@ have the same semantics as the ones of the built-in :func:`str` string object
 constructor.
 
 Setting encoding to ``NULL`` causes the default encoding to be used
-which is ASCII.  The file system calls should use
+which is UTF-8.  The file system calls should use
 :c:func:`PyUnicode_FSConverter` for encoding file names. This uses the
 variable :c:data:`Py_FileSystemDefaultEncoding` internally. This
 variable should be treated as read-only: on some systems, it will be a

@@ -555,7 +555,6 @@ _heapq__heapify_max(PyObject *module, PyObject *heap)
     return heapify_internal(heap, siftup_max);
 }
 
-
 /* merge object *************************************************************/
 
 typedef struct mergeobject{
@@ -1225,13 +1224,32 @@ Believe me, real good tape sorts were quite spectacular to watch!\n\
 From all times, sorting has always been a Great Art! :-)\n");
 
 
+static int
+heapq_exec(PyObject *m)
+{
+    PyObject *about = PyUnicode_FromString(__about__);
+    if (PyModule_AddObject(m, "__about__", about) < 0) {
+        Py_DECREF(about);
+        return -1;
+    }
+    if (PyModule_AddType(m, &merge_type) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static struct PyModuleDef_Slot heapq_slots[] = {
+    {Py_mod_exec, heapq_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef _heapqmodule = {
     PyModuleDef_HEAD_INIT,
     "_heapq",
     module_doc,
-    -1,
+    0,
     heapq_methods,
-    NULL,
+    heapq_slots,
     NULL,
     NULL,
     NULL
@@ -1240,20 +1258,5 @@ static struct PyModuleDef _heapqmodule = {
 PyMODINIT_FUNC
 PyInit__heapq(void)
 {
-    PyObject *m, *about;
-
-    m = PyModule_Create(&_heapqmodule);
-    if (m == NULL)
-        return NULL;
-
-    if (PyType_Ready(&merge_type) < 0) {
-        return NULL;
-    }
-    Py_INCREF(&merge_type);
-    PyModule_AddObject(m, _PyType_Name(&merge_type), (PyObject *)&merge_type);
-
-    about = PyUnicode_DecodeUTF8(__about__, strlen(__about__), NULL);
-    PyModule_AddObject(m, "__about__", about);
-    return m;
+    return PyModuleDef_Init(&_heapqmodule);
 }
-

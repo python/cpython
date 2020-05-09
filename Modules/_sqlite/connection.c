@@ -23,14 +23,12 @@
 
 #include "cache.h"
 #include "module.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
 #include "prepare_protocol.h"
 #include "util.h"
-
-#include "pythread.h"
 
 #define ACTION_FINALIZE 1
 #define ACTION_RESET 2
@@ -79,7 +77,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
         NULL
     };
 
-    char* database;
+    const char* database;
     PyObject* database_obj;
     int detect_types = 0;
     PyObject* isolation_level = NULL;
@@ -308,7 +306,7 @@ PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, 
         factory = (PyObject*)&pysqlite_CursorType;
     }
 
-    cursor = _PyObject_CallOneArg(factory, (PyObject *)self);
+    cursor = PyObject_CallOneArg(factory, (PyObject *)self);
     if (cursor == NULL)
         return NULL;
     if (!PyObject_TypeCheck(cursor, &pysqlite_CursorType)) {
@@ -975,7 +973,7 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     py_statement = PyUnicode_DecodeUTF8(statement_string,
             strlen(statement_string), "replace");
     if (py_statement) {
-        ret = _PyObject_CallOneArg((PyObject*)user_arg, py_statement);
+        ret = PyObject_CallOneArg((PyObject*)user_arg, py_statement);
         Py_DECREF(py_statement);
     }
 
@@ -1472,7 +1470,7 @@ pysqlite_connection_iterdump(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    retval = _PyObject_CallOneArg(pyfn_iterdump, (PyObject *)self);
+    retval = PyObject_CallOneArg(pyfn_iterdump, (PyObject *)self);
 
 finally:
     Py_XDECREF(module);
@@ -1644,7 +1642,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     const char *uppercase_name_str;
     int rc;
     unsigned int kind;
-    void *data;
+    const void *data;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         goto finally;

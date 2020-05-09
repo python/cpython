@@ -6,7 +6,7 @@
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
 
 _Py_IDENTIFIER(__builtins__);
@@ -56,7 +56,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
             }
             continue;
         }
-        new_base = _PyObject_CallOneArg(meth, bases);
+        new_base = PyObject_CallOneArg(meth, bases);
         Py_DECREF(meth);
         if (!new_base) {
             goto error;
@@ -203,7 +203,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     }
     else {
         PyObject *pargs[2] = {name, bases};
-        ns = _PyObject_FastCallDict(prep, pargs, 2, mkw);
+        ns = PyObject_VectorcallDict(prep, pargs, 2, mkw);
         Py_DECREF(prep);
     }
     if (ns == NULL) {
@@ -229,7 +229,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             }
         }
         PyObject *margs[3] = {name, bases, ns};
-        cls = _PyObject_FastCallDict(meta, margs, 3, mkw);
+        cls = PyObject_VectorcallDict(meta, margs, 3, mkw);
         if (cls != NULL && PyType_Check(cls) && PyCell_Check(cell)) {
             PyObject *cell_cls = PyCell_GET(cell);
             if (cell_cls != cls) {
@@ -489,7 +489,7 @@ builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     }
 
     Py_INCREF(hook);
-    PyObject *retval = _PyObject_Vectorcall(hook, args, nargs, keywords);
+    PyObject *retval = PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 }
@@ -575,7 +575,7 @@ filter_next(filterobject *lz)
             ok = PyObject_IsTrue(item);
         } else {
             PyObject *good;
-            good = _PyObject_CallOneArg(lz->func, item);
+            good = PyObject_CallOneArg(lz->func, item);
             if (good == NULL) {
                 Py_DECREF(item);
                 return NULL;
@@ -739,7 +739,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     }
 
     if (flags &
-        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST | PyCF_TYPE_COMMENTS))
+        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_COMPILE_MASK))
     {
         PyErr_SetString(PyExc_ValueError,
                         "compile(): unrecognised flags");
@@ -817,6 +817,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto error;
 
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+
     Py_XDECREF(source_copy);
     goto finally;
 
@@ -1631,7 +1632,7 @@ min_max(PyObject *args, PyObject *kwds, int op)
     while (( item = PyIter_Next(it) )) {
         /* get the value from the key function */
         if (keyfunc != NULL) {
-            val = _PyObject_CallOneArg(keyfunc, item);
+            val = PyObject_CallOneArg(keyfunc, item);
             if (val == NULL)
                 goto Fail_it_item;
         }
@@ -2178,7 +2179,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
     if (ndigits == Py_None)
         result = _PyObject_CallNoArg(round);
     else
-        result = _PyObject_CallOneArg(round, ndigits);
+        result = PyObject_CallOneArg(round, ndigits);
     Py_DECREF(round);
     return result;
 }
@@ -2234,7 +2235,7 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
 
     assert(nargs >= 1);
-    v = _PyObject_Vectorcall(callable, args + 1, nargs - 1, kwnames);
+    v = PyObject_Vectorcall(callable, args + 1, nargs - 1, kwnames);
     Py_DECREF(callable);
     if (v == NULL) {
         Py_DECREF(newlist);
@@ -2770,7 +2771,7 @@ _PyBuiltin_Init(PyThreadState *tstate)
 {
     PyObject *mod, *dict, *debug;
 
-    const PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
 
     if (PyType_Ready(&PyFilter_Type) < 0 ||
         PyType_Ready(&PyMap_Type) < 0 ||

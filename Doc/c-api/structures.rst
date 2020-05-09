@@ -70,6 +70,14 @@ the definition of all other Python objects.
       (((PyObject*)(o))->ob_type)
 
 
+.. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
+
+   Return non-zero if the object *o* type is *type*. Return zero otherwise.
+   Equivalent to: ``Py_TYPE(o) == type``.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: void Py_SET_TYPE(PyObject *o, PyTypeObject *type)
 
    Set the object *o* type to *type*.
@@ -103,7 +111,7 @@ the definition of all other Python objects.
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
 
-   Set the object *o* size of *size*.
+   Set the object *o* size to *size*.
 
    .. versionadded:: 3.9
 
@@ -139,23 +147,56 @@ Implementing functions and methods
    value of the function as exposed in Python.  The function must return a new
    reference.
 
+   The function signature is::
+
+      PyObject *PyCFunction(PyObject *self,
+                            PyObject *args);
 
 .. c:type:: PyCFunctionWithKeywords
 
    Type of the functions used to implement Python callables in C
    with signature :const:`METH_VARARGS | METH_KEYWORDS`.
+   The function signature is::
+
+      PyObject *PyCFunctionWithKeywords(PyObject *self,
+                                        PyObject *args,
+                                        PyObject *kwargs);
 
 
 .. c:type:: _PyCFunctionFast
 
    Type of the functions used to implement Python callables in C
    with signature :const:`METH_FASTCALL`.
+   The function signature is::
 
+      PyObject *_PyCFunctionFast(PyObject *self,
+                                 PyObject *const *args,
+                                 Py_ssize_t nargs);
 
 .. c:type:: _PyCFunctionFastWithKeywords
 
    Type of the functions used to implement Python callables in C
    with signature :const:`METH_FASTCALL | METH_KEYWORDS`.
+   The function signature is::
+
+      PyObject *_PyCFunctionFastWithKeywords(PyObject *self,
+                                             PyObject *const *args,
+                                             Py_ssize_t nargs,
+                                             PyObject *kwnames);
+
+.. c:type:: PyCMethod
+
+   Type of the functions used to implement Python callables in C
+   with signature :const:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`.
+   The function signature is::
+
+      PyObject *PyCMethod(PyObject *self,
+                          PyTypeObject *defining_class,
+                          PyObject *const *args,
+                          Py_ssize_t nargs,
+                          PyObject *kwnames)
+
+   .. versionadded:: 3.9
 
 
 .. c:type:: PyMethodDef
@@ -189,9 +230,7 @@ The :attr:`ml_flags` field is a bitfield which can include the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.
 
-There are four basic calling conventions for positional arguments
-and two of them can be combined with :const:`METH_KEYWORDS` to support
-also keyword arguments.  So there are a total of 6 calling conventions:
+There are these calling conventions:
 
 .. data:: METH_VARARGS
 
@@ -240,6 +279,19 @@ also keyword arguments.  So there are a total of 6 calling conventions:
    This is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.7
+
+
+.. data:: METH_METHOD | METH_FASTCALL | METH_KEYWORDS
+
+   Extension of :const:`METH_FASTCALL | METH_KEYWORDS` supporting the *defining
+   class*, that is, the class that contains the method in question.
+   The defining class might be a superclass of ``Py_TYPE(self)``.
+
+   The method needs to be of type :c:type:`PyCMethod`, the same as for
+   ``METH_FASTCALL | METH_KEYWORDS`` with ``defining_class`` argument added after
+   ``self``.
+
+   .. versionadded:: 3.9
 
 
 .. data:: METH_NOARGS

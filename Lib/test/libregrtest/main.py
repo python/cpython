@@ -394,7 +394,10 @@ class Regrtest:
 
         save_modules = sys.modules.keys()
 
-        self.log("Run tests sequentially")
+        msg = "Run tests sequentially"
+        if self.ns.timeout:
+            msg += " (timeout: %s)" % format_duration(self.ns.timeout)
+        self.log(msg)
 
         previous_test = None
         for test_index, test_name in enumerate(self.tests, 1):

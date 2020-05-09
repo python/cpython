@@ -4,6 +4,7 @@
    for any kind of float exception without losing portability. */
 
 #include "Python.h"
+#include "pycore_dtoa.h"
 
 #include <ctype.h>
 #include <float.h>
@@ -1490,7 +1491,7 @@ float_fromhex(PyTypeObject *type, PyObject *string)
         goto parse_error;
     result = PyFloat_FromDouble(negate ? -x : x);
     if (type != &PyFloat_Type && result != NULL) {
-        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 
@@ -1997,25 +1998,22 @@ _PyFloat_Init(void)
     return 1;
 }
 
-int
-PyFloat_ClearFreeList(void)
+void
+_PyFloat_ClearFreeList(void)
 {
     PyFloatObject *f = free_list, *next;
-    int i = numfree;
-    while (f) {
+    for (; f; f = next) {
         next = (PyFloatObject*) Py_TYPE(f);
         PyObject_FREE(f);
-        f = next;
     }
     free_list = NULL;
     numfree = 0;
-    return i;
 }
 
 void
 _PyFloat_Fini(void)
 {
-    (void)PyFloat_ClearFreeList();
+    _PyFloat_ClearFreeList();
 }
 
 /* Print summary info about the state of the optimized allocator */
