@@ -55,7 +55,7 @@ def set_zoneinfo_module(module):
     yield
     if old_zoneinfo is not NOT_PRESENT:
         sys.modules["zoneinfo"] = old_zoneinfo
-    else: # pragma: nocover
+    else:  # pragma: nocover
         sys.modules.pop("zoneinfo")
 
 
