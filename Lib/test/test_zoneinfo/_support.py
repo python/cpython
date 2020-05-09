@@ -10,7 +10,20 @@ TZPATH_LOCK = threading.Lock()
 TZPATH_TEST_LOCK = threading.Lock()
 
 
-@functools.lru_cache(1)
+def call_once(f):
+    """Decorator that ensures a function is only ever called once."""
+    lock = threading.Lock()
+    cached = functools.lru_cache(None)(f)
+
+    @functools.wraps(f)
+    def inner():
+        with lock:
+            return cached()
+
+    return inner
+
+
+@call_once
 def get_modules():
     import zoneinfo as c_module
     py_module = import_fresh_module("zoneinfo", blocked=["_czoneinfo"])
