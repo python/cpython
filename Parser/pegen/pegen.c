@@ -310,8 +310,12 @@ get_error_line(char *buffer, int is_file)
         newline = strchr(buffer, '\n');
     }
 
+    while (newline && *newline == '\n') {
+        newline -= 1;
+    }
+
     if (newline) {
-        return PyUnicode_DecodeUTF8(buffer, newline - buffer, "replace");
+        return PyUnicode_DecodeUTF8(buffer, newline - buffer + 1, "replace");
     }
     else {
         return PyUnicode_DecodeUTF8(buffer, strlen(buffer), "replace");
