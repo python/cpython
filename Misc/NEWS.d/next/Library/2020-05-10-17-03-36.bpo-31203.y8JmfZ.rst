@@ -1,0 +1,1 @@
+Expose :data:`socket.IP_PKTINFO` in the :mod:`socket` module.
