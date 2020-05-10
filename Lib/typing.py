@@ -741,6 +741,10 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return (self.__origin__,)
 
 
+# _nparams is the number of accepted parameters, e.g. 0 for Hashable,
+# 1 for List and 2 for Dict.  It may be -1 if variable number of
+# parameters are accepted (needs custom __getitem__).
+
 class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __init__(self, origin, nparams, *, inst=True, name=None):
         if name is None:
@@ -1584,7 +1588,7 @@ Reversible = _alias(collections.abc.Reversible, 1)
 Sized = _alias(collections.abc.Sized, 0)  # Not generic.
 Container = _alias(collections.abc.Container, 1)
 Collection = _alias(collections.abc.Collection, 1)
-Callable = _CallableType(collections.abc.Callable, -1)
+Callable = _CallableType(collections.abc.Callable, 2)
 Callable.__doc__ = \
     """Callable type; Callable[[int], str] is a function of (int) -> str.
 
@@ -1603,6 +1607,7 @@ MutableMapping = _alias(collections.abc.MutableMapping, 2)
 Sequence = _alias(collections.abc.Sequence, 1)
 MutableSequence = _alias(collections.abc.MutableSequence, 1)
 ByteString = _alias(collections.abc.ByteString, 0)  # Not generic
+# Tuple accepts variable number of parameters.
 Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
 Tuple.__doc__ = \
     """Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
