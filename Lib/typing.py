@@ -753,7 +753,10 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
             name = origin.__name__
         super().__init__(origin, inst=inst, name=name)
         self._nparams = nparams
-        self.__doc__ = f'A generic version of {origin.__module__}.{origin.__qualname__}'
+        if origin.__module__ == 'builtins':
+            self.__doc__ = f'A generic version of {origin.__qualname__}.'
+        else:
+            self.__doc__ = f'A generic version of {origin.__module__}.{origin.__qualname__}.'
 
     @_tp_cache
     def __getitem__(self, params):
