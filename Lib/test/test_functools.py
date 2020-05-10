@@ -1432,6 +1432,25 @@ class TestTopologicalSort(unittest.TestCase):
         self.assertEqual(run1, run2)
 
 
+class TestCache:
+    # This tests that the pass-through is working as designed.
+    # The underlying functionality is tested in TestLRU.
+
+    def test_cache(self):
+        @self.module.cache
+        def fib(n):
+            if n < 2:
+                return n
+            return fib(n-1) + fib(n-2)
+        self.assertEqual([fib(n) for n in range(16)],
+            [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610])
+        self.assertEqual(fib.cache_info(),
+            self.module._CacheInfo(hits=28, misses=16, maxsize=None, currsize=16))
+        fib.cache_clear()
+        self.assertEqual(fib.cache_info(),
+            self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
+
+
 class TestLRU:
 
     def test_lru(self):

@@ -894,7 +894,7 @@ except ImportError:
 
 def cache(user_function, /):
     'Simple lightweight unbounded cache.  Sometimes called "memoize".'
-    return lru_cache(maxsize=None, typed=False)(user_function)
+    return lru_cache(maxsize=None)(user_function)
 
 
 ################################################################################
