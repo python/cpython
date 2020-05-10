@@ -71,12 +71,11 @@ def get(using=None):
 def open(url, new=0, autoraise=True):
     """Display url using the default browser.
 
-    If new is:
-    - 0: url is opened in the same browser window, if possible
-    - 1: a new browser window is opened, if possible
-    - 2: a new browser page ("tab") is opened, if possible
-
-    If autoraise is True, the window is raised, if possible.
+    If possible, open url in a location determined by new.
+    - 0: the same browser window (the default).
+    - 1: a new browser window.
+    - 2: a new browser page ("tab").
+    If possible, autoraise raises the window (the default) or not.
     """
     if _tryorder is None:
         with _lock:
