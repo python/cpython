@@ -504,6 +504,13 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(mod.StupidGit, 21, 51)
         self.assertSourceEqual(mod.lobbest, 75, 76)
 
+    def test_getsource_nested_methodtype(self):
+        m1 = types.MethodType((lambda self: self) ,object())
+        m2 = types.MethodType(m1,object())
+        source1 = inspect.getsource(m1)
+        source2 = inspect.getsource(m2)
+        self.assertEqual(source1, source2)
+
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
         self.assertEqual(normcase(inspect.getsourcefile(git.abuse)), modfile)
@@ -546,6 +553,13 @@ class TestRetrievingSourceCode(GetSourceBase):
             pass
         with self.assertRaises(TypeError):
             inspect.getfile(C)
+
+    def test_getfile_nested_methodtype(self):
+        m1 = types.MethodType((lambda self: self), object())
+        m2 = types.MethodType(m1, object())
+        source1 = inspect.getfile(m1)
+        source2 = inspect.getfile(m2)
+        self.assertEqual(source1, source2)
 
     def test_getfile_broken_repr(self):
         class ErrorRepr:
@@ -703,6 +717,13 @@ class TestBuggyCases(GetSourceBase):
             co = compile('x=1', fname, "exec")
             self.assertRaises(IOError, inspect.findsource, co)
             self.assertRaises(IOError, inspect.getsource, co)
+
+    def test_findsource_nested_methodtype(self):
+         m1 = types.MethodType((lambda self: self), object())
+         m2 = types.MethodType(m1, object())
+         source1 = inspect.findsource(m1)
+         source2 = inspect.findsource(m2)
+         self.assertEqual(source1, source2)
 
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)

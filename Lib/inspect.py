@@ -665,7 +665,7 @@ def getfile(object):
             if getattr(module, '__file__', None):
                 return module.__file__
         raise TypeError('{!r} is a built-in class'.format(object))
-    if ismethod(object):
+    while ismethod(object):
         object = object.__func__
     if isfunction(object):
         object = object.__code__
@@ -851,7 +851,7 @@ def findsource(object):
         else:
             raise OSError('could not find class definition')
 
-    if ismethod(object):
+    while ismethod(object):
         object = object.__func__
     if isfunction(object):
         object = object.__code__
