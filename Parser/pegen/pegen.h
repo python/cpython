@@ -132,7 +132,7 @@ void *_PyPegen_dummy_name(Parser *p, ...);
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define EXTRA_EXPR(head, tail) head->lineno, head->col_offset, tail->end_lineno, tail->end_col_offset, p->arena
-#define EXTRA start_lineno, start_col_offset, end_lineno, end_col_offset, p->arena
+#define EXTRA _start_lineno, _start_col_offset, _end_lineno, _end_col_offset, p->arena
 #define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, 1, msg, ##__VA_ARGS__)
 #define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, 1, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_NO_COL_OFFSET(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, 0, msg, ##__VA_ARGS__)
