@@ -702,8 +702,10 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             if isinstance(arg, TypeVar):
                 arg = subst[arg]
             elif isinstance(arg, (_GenericAlias, GenericAlias)):
-                subargs = tuple(subst[x] for x in arg.__parameters__)
-                arg = arg[subargs]
+                subparams = arg.__parameters__
+                if subparams:
+                    subargs = tuple(subst[x] for x in subparams)
+                    arg = arg[subargs]
             new_args.append(arg)
         return self.copy_with(tuple(new_args))
 
