@@ -13,7 +13,11 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
-#define PyCFunction_Check(op) (Py_IS_TYPE(op, &PyCFunction_Type) || (PyType_IsSubtype(Py_TYPE(op), &PyCFunction_Type)))
+#define PyCFunction_CheckExact(op) Py_IS_TYPE(op, &PyCFunction_Type)
+#define PyCFunction_Check(op) PyObject_TypeCheck(op, &PyCFunction_Type)
+
+#define PyCMethod_CheckExact(op) Py_IS_TYPE(op, &PyCMethod_Type)
+#define PyCMethod_Check(op) PyObject_TypeCheck(op, &PyCMethod_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
