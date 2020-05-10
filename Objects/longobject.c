@@ -416,6 +416,21 @@ PyLong_FromSize_t(size_t ival)
 PyObject *
 PyLong_FromDouble(double dval)
 {
+    /* Try to get out cheap if this fits in a long. When a finite value of real
+     * floating type is converted to an integer type, the value is truncated
+     * toward zero. If the value of the integral part cannot be represented by
+     * the integer type, the behavior is undefined. Thus, we must check that
+     * value is in range (LONG_MIN - 1, LONG_MAX + 1). If a long has more bits
+     * of precision than a double, casting LONG_MIN - 1 to double may yield an
+     * approximation, but LONG_MAX + 1 is a power of two and can be represented
+     * as double exactly (assuming FLT_RADIX is 2 or 16), so for simplicity
+     * check against [-(LONG_MAX + 1), LONG_MAX + 1).
+     */
+    const double int_max = (unsigned long)LONG_MAX + 1;
+    if (-int_max < dval && dval < int_max) {
+        return PyLong_FromLong((long)dval);
+    }
+
     PyLongObject *v;
     double frac;
     int i, ndig, expo, neg;
@@ -435,8 +450,7 @@ PyLong_FromDouble(double dval)
         dval = -dval;
     }
     frac = frexp(dval, &expo); /* dval = frac*2**expo; 0.0 <= frac < 1.0 */
-    if (expo <= 0)
-        return PyLong_FromLong(0L);
+    assert(expo > 0);
     ndig = (expo-1) / PyLong_SHIFT + 1; /* Number of 'digits' in result */
     v = _PyLong_New(ndig);
     if (v == NULL)
