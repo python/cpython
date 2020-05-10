@@ -4108,7 +4108,7 @@ a dictionary key or as an element of another set.
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
 of elements within braces, for example: ``{'jack', 'sjoerd'}``, by using a set
 comprehension, for example ``{x for x in iterable}``, in addition to the
- :class:`set` constructor.
+:class:`set` constructor.
 
 The constructors for both classes work the same:
 
@@ -4302,8 +4302,8 @@ then they can be used interchangeably to index the same dictionary entry.  (Note
 however, that since computers store floating-point numbers as approximations it
 is usually unwise to use them as dictionary keys.)
 
- Dictionaries can be created by placing a comma-separated list of ``key: value``
- pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
+Dictionaries can be created by placing a comma-separated list of ``key: value``
+pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 'jack', 4127: 'sjoerd'}``, by a dict comprehension, for example:
 ``{x: x**2 for x in iterable}`` or by the :class:`dict` constructor.
 
