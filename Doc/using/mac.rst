@@ -159,7 +159,7 @@ https://riverbankcomputing.com/software/pyqt/intro.
 Distributing Python Applications on the Mac
 ===========================================
 
-The "Build Applet" tool that is placed in the MacPython 3.6 folder is fine for
+The "Build Applet" tool that is placed in the MacPython 3.9 folder is fine for
 packaging small Python scripts on your own machine to run as a standard Mac
 application. This tool, however, is not robust enough to distribute Python
 applications to other users.
