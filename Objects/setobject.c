@@ -60,12 +60,12 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t perturb = hash;
     size_t mask = so->mask;
     size_t i = (size_t)hash & mask; /* Unsigned for defined overflow behavior */
-    size_t j;
+    int probes;
     int cmp;
 
     while (1) {
         entry = &so->table[i];
-        j = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
+        probes = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
         do {
             if (entry->hash == 0 && entry->key == NULL)
                 return entry;
@@ -91,7 +91,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 mask = so->mask;
             }
             entry++;
-        } while (j--);
+        } while (probes--);
         perturb >>= PERTURB_SHIFT;
         i = (i * 5 + 1 + perturb) & mask;
     }
@@ -107,7 +107,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t perturb;
     size_t mask;
     size_t i;                       /* Unsigned for defined overflow behavior */
-    size_t j;
+    int probes;
     int cmp;
 
     /* Pre-increment is necessary to prevent arbitrary code in the rich
@@ -122,7 +122,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 
     while (1) {
         entry = &so->table[i];
-        j = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
+        probes = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
         do {
             if (entry->hash == 0 && entry->key == NULL)
                 goto found_unused;
@@ -148,7 +148,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                 mask = so->mask;
             }
             entry++;
-        } while (j--);
+        } while (probes--);
         perturb >>= PERTURB_SHIFT;
         i = (i * 5 + 1 + perturb) & mask;
     }
