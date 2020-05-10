@@ -31,7 +31,7 @@ The :mod:`functools` module defines the following functions:
    Simple lightweight unbounded function cache.  Sometimes called
    `"memoize" <https://en.wikipedia.org/wiki/Memoization>`_.
 
-   Returns the same as ``lru_cache(maxsize=None, typed=False)``, creating a thin
+   Returns the same as ``lru_cache(maxsize=None)``, creating a thin
    wrapper around a dictionary lookup for the function arguments.  Because it
    never needs to evict old values, this is smaller and faster than
    :func:`lru_cache()` with a size limit.
