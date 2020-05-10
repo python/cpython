@@ -10550,7 +10550,7 @@ incorrect_arguments_rule(Parser *p)
             (opt_var = _tmp_125_rule(p), 1)  // [args | expression for_if_clauses]
         )
         {
-            res = RAISE_SYNTAX_ERROR ( "Generator expression must be parenthesized" );
+            res = RAISE_SYNTAX_ERROR_NO_COL_OFFSET ( "Generator expression must be parenthesized" );
             if (res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;

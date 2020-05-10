@@ -620,7 +620,7 @@ t_atom[expr_ty]:
 incorrect_arguments:
     | args ',' '*' { RAISE_SYNTAX_ERROR("iterable argument unpacking follows keyword argument unpacking") }
     | expression for_if_clauses ',' [args | expression for_if_clauses] {
-        RAISE_SYNTAX_ERROR("Generator expression must be parenthesized") }
+        RAISE_SYNTAX_ERROR_NO_COL_OFFSET("Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
     | expression '=' { RAISE_SYNTAX_ERROR("expression cannot contain assignment, perhaps you meant \"==\"?") }

@@ -413,7 +413,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number, const ch
         }
         col_number = byte_offset_to_character_offset(loc, col_offset);
     }
-    else if (!loc) {
+    else {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
