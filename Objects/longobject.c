@@ -444,7 +444,7 @@ PyLong_FromDouble(double dval)
      * check against [-(LONG_MAX + 1), LONG_MAX + 1).
      */
     const double int_max = (unsigned long)LONG_MAX + 1;
-    if (-int_max <= dval && dval < int_max) {
+    if (-int_max < dval && dval < int_max) {
         return PyLong_FromLong((long)dval);
     }
 
