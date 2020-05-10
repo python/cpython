@@ -29,7 +29,7 @@ class RuleCheckingVisitor(GrammarVisitor):
 
     def visit_NamedItem(self, node: NameLeaf) -> None:
         if node.name and node.name.startswith("_"):
-            raise GrammarError(f"Variable name '{node.name}' collides with parser reserved names")
+            raise GrammarError(f"Variable names cannot start with underscore: '{node.name}'")
         self.visit(node.item)
 
 
@@ -59,8 +59,8 @@ class ParserGenerator:
 
     def validate_rule_names(self):
         for rule in self.rules:
-            if rule.startswith("__"):
-                raise GrammarError(f"Rule '{rule}' collides with parser reserved names")
+            if rule.startswith("_"):
+                raise GrammarError(f"Rule names cannot start with underscore: '{rule}'")
 
     @contextlib.contextmanager
     def local_variable_context(self) -> Iterator[None]:
