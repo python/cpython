@@ -719,11 +719,11 @@ class TestBuggyCases(GetSourceBase):
             self.assertRaises(IOError, inspect.getsource, co)
 
     def test_findsource_nested_methodtype(self):
-         m1 = types.MethodType((lambda self: self), object())
-         m2 = types.MethodType(m1, object())
-         source1 = inspect.findsource(m1)
-         source2 = inspect.findsource(m2)
-         self.assertEqual(source1, source2)
+        m1 = types.MethodType((lambda self: self), object())
+        m2 = types.MethodType(m1, object())
+        source1 = inspect.findsource(m1)
+        source2 = inspect.findsource(m2)
+        self.assertEqual(source1, source2)
 
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
