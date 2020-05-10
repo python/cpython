@@ -1,1 +1,1 @@
-Provide docstrings for public-facing webbrowser functions.
+Provide docstrings for webbrowser open functions.
