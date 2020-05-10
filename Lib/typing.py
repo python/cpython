@@ -186,14 +186,13 @@ def _collect_type_vars(types):
     return tuple(tvars)
 
 
-def _check_generic(cls, parameters):
+def _check_generic(cls, parameters, elen):
     """Check correct count for parameters of a generic cls (internal helper).
     This gives a nice error message in case of count mismatch.
     """
-    if not cls.__parameters__:
+    if not elen:
         raise TypeError(f"{cls} is not a generic class")
     alen = len(parameters)
-    elen = len(cls.__parameters__)
     if alen != elen:
         raise TypeError(f"Too {'many' if alen > elen else 'few'} parameters for {cls};"
                         f" actual {alen}, expected {elen}")
@@ -592,17 +591,6 @@ class TypeVar(_Final, _Immutable, _root=True):
         return self.__name__
 
 
-# Special typing constructs Union, Optional, Generic, Callable and Tuple
-# use three special attributes for internal bookkeeping of generic types:
-# * __parameters__ is a tuple of unique free type parameters of a generic
-#   type, for example, Dict[T, T].__parameters__ == (T,);
-# * __origin__ keeps a reference to a type that was subscripted,
-#   e.g., Union[T, int].__origin__ == Union, or the non-generic version of
-#   the type.
-# * __args__ is a tuple of all arguments used in subscripting,
-#   e.g., Dict[T, int].__args__ == (T, int).
-
-
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
 
@@ -615,28 +603,11 @@ class _BaseGenericAlias(_Final, _root=True):
     have 'name' always set. If 'inst' is False, then the alias can't be instantiated,
     this is used by e.g. typing.List and typing.Dict.
     """
-    def __init__(self, origin, params, *, inst=True, name=None):
+    def __init__(self, origin, *, inst=True, name=None):
         self._inst = inst
         self._name = name
-        if not isinstance(params, tuple):
-            params = (params,)
         self.__origin__ = origin
-        self.__args__ = tuple(... if a is _TypingEllipsis else
-                              () if a is _TypingEmpty else
-                              a for a in params)
-        self.__parameters__ = _collect_type_vars(params)
         self.__slots__ = None  # This is not documented.
-        if not name:
-            self.__module__ = origin.__module__
-
-    def __eq__(self, other):
-        if not isinstance(other, _BaseGenericAlias):
-            return NotImplemented
-        return (self.__origin__ == other.__origin__
-                and self.__args__ == other.__args__)
-
-    def __hash__(self):
-        return hash((self.__origin__, self.__args__))
 
     def __call__(self, *args, **kwargs):
         if not self._inst:
@@ -669,7 +640,7 @@ class _BaseGenericAlias(_Final, _root=True):
         raise AttributeError(attr)
 
     def __setattr__(self, attr, val):
-        if _is_dunder(attr) or attr in ('_name', '_inst'):
+        if _is_dunder(attr) or attr in ('_name', '_inst', '_nparams'):
             super().__setattr__(attr, val)
         else:
             setattr(self.__origin__, attr, val)
@@ -682,7 +653,38 @@ class _BaseGenericAlias(_Final, _root=True):
                         " class and instance checks")
 
 
+# Special typing constructs Union, Optional, Generic, Callable and Tuple
+# use three special attributes for internal bookkeeping of generic types:
+# * __parameters__ is a tuple of unique free type parameters of a generic
+#   type, for example, Dict[T, T].__parameters__ == (T,);
+# * __origin__ keeps a reference to a type that was subscripted,
+#   e.g., Union[T, int].__origin__ == Union, or the non-generic version of
+#   the type.
+# * __args__ is a tuple of all arguments used in subscripting,
+#   e.g., Dict[T, int].__args__ == (T, int).
+
+
 class _GenericAlias(_BaseGenericAlias, _root=True):
+    def __init__(self, origin, params, *, inst=True, name=None):
+        super().__init__(origin, inst=inst, name=name)
+        if not isinstance(params, tuple):
+            params = (params,)
+        self.__args__ = tuple(... if a is _TypingEllipsis else
+                              () if a is _TypingEmpty else
+                              a for a in params)
+        self.__parameters__ = _collect_type_vars(params)
+        if not name:
+            self.__module__ = origin.__module__
+
+    def __eq__(self, other):
+        if not isinstance(other, _GenericAlias):
+            return NotImplemented
+        return (self.__origin__ == other.__origin__
+                and self.__args__ == other.__args__)
+
+    def __hash__(self):
+        return hash((self.__origin__, self.__args__))
+
     @_tp_cache
     def __getitem__(self, params):
         if self.__origin__ in (Generic, Protocol):
@@ -692,14 +694,14 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             params = (params,)
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
-        _check_generic(self, params)
+        _check_generic(self, params, len(self.__parameters__))
 
         subst = dict(zip(self.__parameters__, params))
         new_args = []
         for arg in self.__args__:
             if isinstance(arg, TypeVar):
                 arg = subst[arg]
-            elif isinstance(arg, (_BaseGenericAlias, GenericAlias)):
+            elif isinstance(arg, (_GenericAlias, GenericAlias)):
                 subargs = tuple(subst[x] for x in arg.__parameters__)
                 arg = arg[subargs]
             new_args.append(arg)
@@ -739,11 +741,16 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return (self.__origin__,)
 
 
+# _nparams is the number of accepted parameters, e.g. 0 for Hashable,
+# 1 for List and 2 for Dict.  It may be -1 if variable number of
+# parameters are accepted (needs custom __getitem__).
+
 class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
-    def __init__(self, origin, params, *, inst=True, name=None):
+    def __init__(self, origin, nparams, *, inst=True, name=None):
         if name is None:
             name = origin.__name__
-        super().__init__(origin, params, inst=inst, name=name)
+        super().__init__(origin, inst=inst, name=name)
+        self._nparams = nparams
         self.__doc__ = f'A generic version of {origin.__module__}.{origin.__qualname__}'
 
     @_tp_cache
@@ -752,8 +759,7 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
             params = (params,)
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
-        _check_generic(self, params)
-        assert self.__args__ == self.__parameters__
+        _check_generic(self, params, self._nparams)
         return self.copy_with(params)
 
     def copy_with(self, params):
@@ -912,7 +918,7 @@ class Generic:
                     f"Parameters to {cls.__name__}[...] must all be unique")
         else:
             # Subscripting a regular Generic subclass.
-            _check_generic(cls, params)
+            _check_generic(cls, params, len(cls.__parameters__))
         return _GenericAlias(cls, params)
 
     def __init_subclass__(cls, *args, **kwargs):
@@ -1571,18 +1577,18 @@ AnyStr = TypeVar('AnyStr', bytes, str)
 # Various ABCs mimicking those in collections.abc.
 _alias = _SpecialGenericAlias
 
-Hashable = _alias(collections.abc.Hashable, ())  # Not generic.
-Awaitable = _alias(collections.abc.Awaitable, T_co)
-Coroutine = _alias(collections.abc.Coroutine, (T_co, T_contra, V_co))
-AsyncIterable = _alias(collections.abc.AsyncIterable, T_co)
-AsyncIterator = _alias(collections.abc.AsyncIterator, T_co)
-Iterable = _alias(collections.abc.Iterable, T_co)
-Iterator = _alias(collections.abc.Iterator, T_co)
-Reversible = _alias(collections.abc.Reversible, T_co)
-Sized = _alias(collections.abc.Sized, ())  # Not generic.
-Container = _alias(collections.abc.Container, T_co)
-Collection = _alias(collections.abc.Collection, T_co)
-Callable = _CallableType(collections.abc.Callable, ())
+Hashable = _alias(collections.abc.Hashable, 0)  # Not generic.
+Awaitable = _alias(collections.abc.Awaitable, 1)
+Coroutine = _alias(collections.abc.Coroutine, 3)
+AsyncIterable = _alias(collections.abc.AsyncIterable, 1)
+AsyncIterator = _alias(collections.abc.AsyncIterator, 1)
+Iterable = _alias(collections.abc.Iterable, 1)
+Iterator = _alias(collections.abc.Iterator, 1)
+Reversible = _alias(collections.abc.Reversible, 1)
+Sized = _alias(collections.abc.Sized, 0)  # Not generic.
+Container = _alias(collections.abc.Container, 1)
+Collection = _alias(collections.abc.Collection, 1)
+Callable = _CallableType(collections.abc.Callable, 2)
 Callable.__doc__ = \
     """Callable type; Callable[[int], str] is a function of (int) -> str.
 
@@ -1593,15 +1599,16 @@ Callable.__doc__ = \
     There is no syntax to indicate optional or keyword arguments,
     such function types are rarely used as callback types.
     """
-AbstractSet = _alias(collections.abc.Set, T_co, name='AbstractSet')
-MutableSet = _alias(collections.abc.MutableSet, T)
+AbstractSet = _alias(collections.abc.Set, 1, name='AbstractSet')
+MutableSet = _alias(collections.abc.MutableSet, 1)
 # NOTE: Mapping is only covariant in the value type.
-Mapping = _alias(collections.abc.Mapping, (KT, VT_co))
-MutableMapping = _alias(collections.abc.MutableMapping, (KT, VT))
-Sequence = _alias(collections.abc.Sequence, T_co)
-MutableSequence = _alias(collections.abc.MutableSequence, T)
-ByteString = _alias(collections.abc.ByteString, ())  # Not generic
-Tuple = _TupleType(tuple, (), inst=False, name='Tuple')
+Mapping = _alias(collections.abc.Mapping, 2)
+MutableMapping = _alias(collections.abc.MutableMapping, 2)
+Sequence = _alias(collections.abc.Sequence, 1)
+MutableSequence = _alias(collections.abc.MutableSequence, 1)
+ByteString = _alias(collections.abc.ByteString, 0)  # Not generic
+# Tuple accepts variable number of parameters.
+Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
 Tuple.__doc__ = \
     """Tuple type; Tuple[X, Y] is the cross-product type of X and Y.
 
@@ -1611,24 +1618,24 @@ Tuple.__doc__ = \
 
     To specify a variable-length tuple of homogeneous type, use Tuple[T, ...].
     """
-List = _alias(list, T, inst=False, name='List')
-Deque = _alias(collections.deque, T, name='Deque')
-Set = _alias(set, T, inst=False, name='Set')
-FrozenSet = _alias(frozenset, T_co, inst=False, name='FrozenSet')
-MappingView = _alias(collections.abc.MappingView, T_co)
-KeysView = _alias(collections.abc.KeysView, KT)
-ItemsView = _alias(collections.abc.ItemsView, (KT, VT_co))
-ValuesView = _alias(collections.abc.ValuesView, VT_co)
-ContextManager = _alias(contextlib.AbstractContextManager, T_co, name='ContextManager')
-AsyncContextManager = _alias(contextlib.AbstractAsyncContextManager, T_co, name='AsyncContextManager')
-Dict = _alias(dict, (KT, VT), inst=False, name='Dict')
-DefaultDict = _alias(collections.defaultdict, (KT, VT), name='DefaultDict')
-OrderedDict = _alias(collections.OrderedDict, (KT, VT))
-Counter = _alias(collections.Counter, T)
-ChainMap = _alias(collections.ChainMap, (KT, VT))
-Generator = _alias(collections.abc.Generator, (T_co, T_contra, V_co))
-AsyncGenerator = _alias(collections.abc.AsyncGenerator, (T_co, T_contra))
-Type = _alias(type, CT_co, inst=False, name='Type')
+List = _alias(list, 1, inst=False, name='List')
+Deque = _alias(collections.deque, 1, name='Deque')
+Set = _alias(set, 1, inst=False, name='Set')
+FrozenSet = _alias(frozenset, 1, inst=False, name='FrozenSet')
+MappingView = _alias(collections.abc.MappingView, 1)
+KeysView = _alias(collections.abc.KeysView, 1)
+ItemsView = _alias(collections.abc.ItemsView, 2)
+ValuesView = _alias(collections.abc.ValuesView, 1)
+ContextManager = _alias(contextlib.AbstractContextManager, 1, name='ContextManager')
+AsyncContextManager = _alias(contextlib.AbstractAsyncContextManager, 1, name='AsyncContextManager')
+Dict = _alias(dict, 2, inst=False, name='Dict')
+DefaultDict = _alias(collections.defaultdict, 2, name='DefaultDict')
+OrderedDict = _alias(collections.OrderedDict, 2)
+Counter = _alias(collections.Counter, 1)
+ChainMap = _alias(collections.ChainMap, 2)
+Generator = _alias(collections.abc.Generator, 3)
+AsyncGenerator = _alias(collections.abc.AsyncGenerator, 2)
+Type = _alias(type, 1, inst=False, name='Type')
 Type.__doc__ = \
     """A special construct usable to annotate class objects.
 
@@ -2122,8 +2129,8 @@ class io:
 io.__name__ = __name__ + '.io'
 sys.modules[io.__name__] = io
 
-Pattern = _alias(stdlib_re.Pattern, AnyStr)
-Match = _alias(stdlib_re.Match, AnyStr)
+Pattern = _alias(stdlib_re.Pattern, 1)
+Match = _alias(stdlib_re.Match, 1)
 
 class re:
     """Wrapper namespace for re type aliases."""
