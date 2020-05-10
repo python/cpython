@@ -565,54 +565,31 @@ def _netbios_getnode():
     return _windll_getnode()
 
 
-
-_generate_time_safe = _UuidCreate = None
-_has_uuid_generate_time_safe = None
-
 # Import optional C extension at toplevel, to help disabling it when testing
 try:
     import _uuid
+    _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
+    _UuidCreate = getattr(_uuid, "UuidCreate", None)
+    _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
 except ImportError:
     _uuid = None
+    _generate_time_safe = None
+    _UuidCreate = None
+    _has_uuid_generate_time_safe = None
 
 
 def _load_system_functions():
-    """
-    Try to load platform-specific functions for generating uuids.
-    """
-    global _generate_time_safe, _UuidCreate, _has_uuid_generate_time_safe
-
-    if _has_uuid_generate_time_safe is not None:
-        return
-
-    _has_uuid_generate_time_safe = False
-
-    if sys.platform == "darwin" and int(os.uname().release.split('.')[0]) < 9:
-        # The uuid_generate_* functions are broken on MacOS X 10.5, as noted
-        # in issue #8621 the function generates the same sequence of values
-        # in the parent process and all children created using fork (unless
-        # those children use exec as well).
-        #
-        # Assume that the uuid_generate functions are broken from 10.5 onward,
-        # the test can be adjusted when a later version is fixed.
-        pass
-    elif _uuid is not None:
-        _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
-        _UuidCreate = getattr(_uuid, "UuidCreate", None)
-        _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
+    """[DEPRECATED] Platform-specific functions loaded at import time"""
 
 
 def _unix_getnode():
-    """Get the hardware address on Unix using the _uuid extension module
-    or ctypes."""
-    _load_system_functions()
+    """Get the hardware address on Unix using the _uuid extension module."""
     if _generate_time_safe:
         uuid_time, _ = _generate_time_safe()
         return UUID(bytes=uuid_time).node
 
 def _windll_getnode():
-    """Get the hardware address on Windows using UuidCreateSequential."""
-    _load_system_functions()
+    """Get the hardware address on Windows using the _uuid extension module."""
     if _UuidCreate:
         uuid_bytes = _UuidCreate()
         return UUID(bytes_le=uuid_bytes).node
@@ -692,7 +669,6 @@ def uuid1(node=None, clock_seq=None):
 
     # When the system provides a version-1 UUID generator, use it (but don't
     # use UuidCreate here because its UUIDs don't conform to RFC 4122).
-    _load_system_functions()
     if _generate_time_safe is not None and node is clock_seq is None:
         uuid_time, safely_generated = _generate_time_safe()
         try:
