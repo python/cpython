@@ -72,6 +72,8 @@ typedef struct {
     int feature_version;
     growable_comment_array type_ignore_comments;
     Token *known_err_token;
+    int last_err_line;
+    PyObject* err_tokens;
 } Parser;
 
 typedef struct {

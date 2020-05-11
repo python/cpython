@@ -780,6 +780,26 @@ _PyPegen_expect_token(Parser *p, int type)
     }
     Token *t = p->tokens[p->mark];
     if (t->type != type) {
+        int current = p->mark;
+        if (current >= p->last_err_line) {
+            if (current > p->last_err_line) {
+                Py_DECREF(p->err_tokens);
+                p->err_tokens = PySet_New(0);
+                p->last_err_line= current;
+            }
+            if (PyBytes_AS_STRING(t->bytes)[0] != '\0') {
+                for (int i=0; i < p->n_keyword_lists; i++) {
+                    if (p->keywords[i] == NULL) {
+                            continue;
+                    }
+                    for (KeywordToken *k = p->keywords[i]; k->type != -1; k++) {
+                        if (k->type == type) {
+                            PySet_Add(p->err_tokens, PyUnicode_FromString(k->str));
+                        }
+                    }
+                }
+            }
+        }
         return NULL;
     }
     p->mark += 1;
@@ -979,6 +999,7 @@ void
 _PyPegen_Parser_Free(Parser *p)
 {
     Py_XDECREF(p->normalize);
+    Py_XDECREF(p->err_tokens);
     for (int i = 0; i < p->size; i++) {
         PyMem_Free(p->tokens[i]);
     }
@@ -1054,6 +1075,8 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->parsing_started = 0;
     p->normalize = NULL;
     p->error_indicator = 0;
+    p->last_err_line = 0;
+    p->err_tokens = PySet_New(0);
 
     p->starting_lineno = 0;
     p->starting_col_offset = 0;
@@ -1086,7 +1109,22 @@ _PyPegen_run_parser(Parser *p)
                 RAISE_INDENTATION_ERROR("unexpected unindent");
             }
             else {
-                RAISE_SYNTAX_ERROR("invalid syntax");
+                if (PySet_Size(p->err_tokens)) {
+                    PyObject* comma = PyUnicode_FromString(", ");
+                    if (comma == NULL) {
+                        return NULL;
+                    }
+                    PyObject* error_names = PyUnicode_Join(comma, p->err_tokens);
+                    Py_DECREF(comma);
+                    if (error_names == NULL) {
+                        return NULL;
+                    }
+                    RAISE_SYNTAX_ERROR("Invalid syntax. Expected one of: %U", error_names);
+                    Py_DECREF(error_names);
+                }
+                else {
+                    RAISE_SYNTAX_ERROR("Invalid syntax");
+                }
             }
         }
         return NULL;
