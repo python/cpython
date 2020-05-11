@@ -583,15 +583,19 @@ ann_assign_subscript_attribute_target[expr_ty]:
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
 
 del_targets[asdl_seq*]: a=','.del_target+ [','] { a }
+# The lookaheads to del_target_end ensure that we don't match expressions where a prefix of the
+# expression matches our rule, thereby letting these cases fall through to invalid_del_target.
 del_target[expr_ty] (memo):
-    | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Del, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Del, EXTRA) }
+    | a=t_primary '.' b=NAME &del_target_end { _Py_Attribute(a, b->v.Name.id, Del, EXTRA) }
+    | a=t_primary '[' b=slices ']' &del_target_end { _Py_Subscript(a, b, Del, EXTRA) }
     | del_t_atom
 del_t_atom[expr_ty]:
-    | a=NAME { _PyPegen_set_expr_context(p, a, Del) }
+    | a=NAME &del_target_end { _PyPegen_set_expr_context(p, a, Del) }
     | '(' a=del_target ')' { _PyPegen_set_expr_context(p, a, Del) }
     | '(' a=[del_targets] ')' { _Py_Tuple(a, Del, EXTRA) }
     | '[' a=[del_targets] ']' { _Py_List(a, Del, EXTRA) }
+    | invalid_del_target
+del_target_end: ')' | ']' | ',' | ';' | NEWLINE
 
 targets[asdl_seq*]: a=','.target+ [','] { a }
 target[expr_ty] (memo):
@@ -649,3 +653,6 @@ invalid_lambda_star_etc:
 invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
+invalid_del_target:
+    | a=star_expression &del_target_end {
+        RAISE_SYNTAX_ERROR("cannot delete %s", _PyPegen_get_expr_name(a)) }
