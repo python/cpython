@@ -310,8 +310,10 @@ get_error_line(char *buffer, int is_file)
         newline = strchr(buffer, '\n');
     }
 
-    while (is_file && newline > buffer && newline[-1] == '\n') {
-        --newline;
+    if (is_file) {
+        while (newline > buffer && newline[-1] == '\n') {
+            --newline;
+        }
     }
 
     if (newline) {
