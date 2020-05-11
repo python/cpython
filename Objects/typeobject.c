@@ -2979,7 +2979,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
                     // The PyMemberDef must be a Py_ssize_t and readonly
                     assert(memb->type == T_PYSSIZET);
                     assert(memb->flags == READONLY);
-                    dictoffset = memb->offset;
+                    vectorcalloffset = memb->offset;
                 }
             }
         }
