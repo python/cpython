@@ -539,13 +539,13 @@ class Executive(object):
         self.calltip = calltip.Calltip()
         self.autocomplete = autocomplete.AutoComplete()
 
-    def runcode(self, code):
+    def runcode(self, code, user=True):
         global interruptable
         try:
             self.usr_exc_info = None
             interruptable = True
             try:
-                exec(code, self.locals)
+                exec(code, self.locals if user else {})
             finally:
                 interruptable = False
         except SystemExit as e:
@@ -564,6 +564,9 @@ class Executive(object):
                 self.rpchandler.interp.open_remote_stack_viewer()
         else:
             flush_stdout()
+
+    def runcommand(self, code):
+        return self.runcode(code, user=False)
 
     def interrupt_the_server(self):
         if interruptable:

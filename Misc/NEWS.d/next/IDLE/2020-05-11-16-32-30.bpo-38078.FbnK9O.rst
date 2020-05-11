@@ -1,0 +1,1 @@
+Stop running internal IDLE code in the user namespace.

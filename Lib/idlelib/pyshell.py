@@ -749,7 +749,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.display_executing_dialog()
             return 0
         if self.rpcclt:
-            self.rpcclt.remotequeue("exec", "runcode", (code,), {})
+            self.rpcclt.remotequeue("exec", "runcommand", (code,), {})
         else:
             exec(code, self.locals)
         return 1
