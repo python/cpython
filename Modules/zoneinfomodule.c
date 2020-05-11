@@ -223,7 +223,8 @@ error:
     self = NULL;
 cleanup:
     if (file_obj != NULL) {
-        PyObject_CallMethod(file_obj, "close", NULL);
+        PyObject *tmp = PyObject_CallMethod(file_obj, "close", NULL);
+        Py_DECREF(tmp);
         Py_DECREF(file_obj);
     }
     Py_DECREF(file_path);
