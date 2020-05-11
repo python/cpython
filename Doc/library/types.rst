@@ -379,7 +379,7 @@ Additional Utility Classes and Functions
    class's __getattr__ method; this is done by raising AttributeError.
 
    This allows one to have properties active on an instance, and have virtual
-   attributes on the class with the same name (see Enum for an example).
+   attributes on the class with the same name (see :class:`enum.Enum` for an example).
 
    .. versionadded:: 3.4
 

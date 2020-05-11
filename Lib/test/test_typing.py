@@ -10,7 +10,7 @@ from typing import Any, NoReturn
 from typing import TypeVar, AnyStr
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
-from typing import Tuple, List, MutableMapping
+from typing import Tuple, List, Dict, MutableMapping
 from typing import Callable
 from typing import Generic, ClassVar, Final, final, Protocol
 from typing import cast, runtime_checkable
@@ -3172,6 +3172,17 @@ class CollectionsAbcTests(BaseTestCase):
 
     def test_dict(self):
         self.assertIsSubclass(dict, typing.Dict)
+
+    def test_dict_subscribe(self):
+        K = TypeVar('K')
+        V = TypeVar('V')
+        self.assertEqual(Dict[K, V][str, int], Dict[str, int])
+        self.assertEqual(Dict[K, int][str], Dict[str, int])
+        self.assertEqual(Dict[str, V][int], Dict[str, int])
+        self.assertEqual(Dict[K, List[V]][str, int], Dict[str, List[int]])
+        self.assertEqual(Dict[K, List[int]][str], Dict[str, List[int]])
+        self.assertEqual(Dict[K, list[V]][str, int], Dict[str, list[int]])
+        self.assertEqual(Dict[K, list[int]][str], Dict[str, list[int]])
 
     def test_no_list_instantiation(self):
         with self.assertRaises(TypeError):

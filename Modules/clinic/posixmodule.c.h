@@ -2886,7 +2886,7 @@ PyDoc_STRVAR(os_sched_setscheduler__doc__,
 
 static PyObject *
 os_sched_setscheduler_impl(PyObject *module, pid_t pid, int policy,
-                           struct sched_param *param);
+                           PyObject *param_obj);
 
 static PyObject *
 os_sched_setscheduler(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -2894,13 +2894,13 @@ os_sched_setscheduler(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     pid_t pid;
     int policy;
-    struct sched_param param;
+    PyObject *param_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "iO&:sched_setscheduler",
-        &pid, &policy, convert_sched_param, &param)) {
+    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "iO:sched_setscheduler",
+        &pid, &policy, &param_obj)) {
         goto exit;
     }
-    return_value = os_sched_setscheduler_impl(module, pid, policy, &param);
+    return_value = os_sched_setscheduler_impl(module, pid, policy, param_obj);
 
 exit:
     return return_value;
@@ -2957,21 +2957,20 @@ PyDoc_STRVAR(os_sched_setparam__doc__,
     {"sched_setparam", (PyCFunction)(void(*)(void))os_sched_setparam, METH_FASTCALL, os_sched_setparam__doc__},
 
 static PyObject *
-os_sched_setparam_impl(PyObject *module, pid_t pid,
-                       struct sched_param *param);
+os_sched_setparam_impl(PyObject *module, pid_t pid, PyObject *param_obj);
 
 static PyObject *
 os_sched_setparam(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pid;
-    struct sched_param param;
+    PyObject *param_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "O&:sched_setparam",
-        &pid, convert_sched_param, &param)) {
+    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "O:sched_setparam",
+        &pid, &param_obj)) {
         goto exit;
     }
-    return_value = os_sched_setparam_impl(module, pid, &param);
+    return_value = os_sched_setparam_impl(module, pid, param_obj);
 
 exit:
     return return_value;
@@ -9418,4 +9417,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=ba73b68f1c435ff6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=be90d3aba972098b input=a9049054013a1b77]*/

@@ -27,6 +27,11 @@ class RuleCheckingVisitor(GrammarVisitor):
             # TODO: Add line/col info to (leaf) nodes
             raise GrammarError(f"Dangling reference to rule {node.value!r}")
 
+    def visit_NamedItem(self, node: NameLeaf) -> None:
+        if node.name and node.name.startswith("_"):
+            raise GrammarError(f"Variable names cannot start with underscore: '{node.name}'")
+        self.visit(node.item)
+
 
 class ParserGenerator:
 
@@ -36,6 +41,7 @@ class ParserGenerator:
         self.grammar = grammar
         self.tokens = tokens
         self.rules = grammar.rules
+        self.validate_rule_names()
         if "trailer" not in grammar.metas and "start" not in self.rules:
             raise GrammarError("Grammar without a trailer must have a 'start' rule")
         checker = RuleCheckingVisitor(self.rules, self.tokens)
@@ -50,6 +56,11 @@ class ParserGenerator:
         self.keyword_counter = 499  # For keyword_type()
         self.all_rules: Dict[str, Rule] = {}  # Rules + temporal rules
         self._local_variable_stack: List[List[str]] = []
+
+    def validate_rule_names(self):
+        for rule in self.rules:
+            if rule.startswith("_"):
+                raise GrammarError(f"Rule names cannot start with underscore: '{rule}'")
 
     @contextlib.contextmanager
     def local_variable_context(self) -> Iterator[None]:
