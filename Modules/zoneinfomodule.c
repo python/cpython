@@ -324,6 +324,8 @@ zoneinfo_dealloc(PyObject *obj_self)
 
     Py_XDECREF(self->key);
     Py_XDECREF(self->file_repr);
+
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
