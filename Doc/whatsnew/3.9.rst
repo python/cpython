@@ -786,6 +786,12 @@ Changes in the Python API
   ``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
   (Contributed by Batuhan Taskaya in :issue:`39562`)
 
+* ``array('u')`` now uses ``wchar_t`` as C type instead of ``Py_UNICODE``.
+  This change doesn't affect to its behavior because ``Py_UNICODE`` is alias
+  of ``wchar_t`` since Python 3.3.
+  (Contributed by Inada Naoki in :issue:`34538`.)
+
+
 CPython bytecode changes
 ------------------------
 
