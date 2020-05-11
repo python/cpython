@@ -847,6 +847,13 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     size_t ttinfos_allocated = 0;
 
     data_tuple = PyObject_CallMethod(_common_mod, "load_data", "O", file_obj);
+
+    if (!PyTuple_CheckExact(data_tuple)) {
+        PyErr_Format(PyExc_TypeError, "Invalid data result type: %r",
+                     data_tuple);
+        goto error;
+    }
+
     if (data_tuple == NULL) {
         goto error;
     }
