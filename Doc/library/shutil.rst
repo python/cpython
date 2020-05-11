@@ -321,6 +321,9 @@ Directory and files operations
       Added a symlink attack resistant version that is used automatically
       if platform supports fd-based functions.
 
+   .. versionchanged:: 3.6
+      The *path* parameter can now be a :term:`path-like object`.
+
    .. versionchanged:: 3.8
       On Windows, will no longer delete the contents of a directory junction
       before removing the junction.
