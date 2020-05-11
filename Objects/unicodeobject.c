@@ -12373,6 +12373,12 @@ static PyObject *
 unicode_isidentifier_impl(PyObject *self)
 /*[clinic end generated code: output=fe585a9666572905 input=2d807a104f21c0c5]*/
 {
+    /* Since there is no way to return an error from PyUnicode_IsIdentifier()
+       we have to call PyUnicode_READY() to ensure that the string object is
+       in the "canonical" representation. */
+    if (PyUnicode_READY(self) < 0) {
+        return NULL;
+    }
     return PyBool_FromLong(PyUnicode_IsIdentifier(self));
 }
 
