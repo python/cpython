@@ -186,6 +186,7 @@ zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
     else if (file_path == Py_None) {
         file_obj = PyObject_CallMethod(_common_mod, "load_tzdata", "O", key);
         if (file_obj == NULL) {
+            Py_DECREF(file_path);
             return NULL;
         }
     }
@@ -269,12 +270,12 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     if (instance == Py_None) {
+        Py_DECREF(instance);
         PyObject *tmp = zoneinfo_new_instance(type, key);
         if (tmp == NULL) {
             return NULL;
         }
 
-        Py_DECREF(instance);
         instance =
             PyObject_CallMethod(weak_cache, "setdefault", "OO", key, tmp);
         ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
@@ -573,20 +574,17 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
             PyObject *replace = PyObject_GetAttrString(tmp, "replace");
             PyObject *args = PyTuple_New(0);
             PyObject *kwargs = PyDict_New();
-            PyObject *one = PyLong_FromLong(1);
 
             Py_DECREF(tmp);
-            if (args == NULL || kwargs == NULL || replace == NULL ||
-                one == NULL) {
+            if (args == NULL || kwargs == NULL || replace == NULL) {
                 Py_XDECREF(args);
                 Py_XDECREF(kwargs);
                 Py_XDECREF(replace);
-                Py_XDECREF(one);
                 return NULL;
             }
 
             dt = NULL;
-            if (!PyDict_SetItemString(kwargs, "fold", one)) {
+            if (!PyDict_SetItemString(kwargs, "fold", _PyLong_One)) {
                 dt = PyObject_Call(replace, args, kwargs);
             }
 
@@ -850,13 +848,13 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 
     data_tuple = PyObject_CallMethod(_common_mod, "load_data", "O", file_obj);
 
-    if (!PyTuple_CheckExact(data_tuple)) {
-        PyErr_Format(PyExc_TypeError, "Invalid data result type: %r",
-                     data_tuple);
+    if (data_tuple == NULL) {
         goto error;
     }
 
-    if (data_tuple == NULL) {
+    if (!PyTuple_CheckExact(data_tuple)) {
+        PyErr_Format(PyExc_TypeError, "Invalid data result type: %r",
+                     data_tuple);
         goto error;
     }
 
