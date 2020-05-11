@@ -43,12 +43,10 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
    _PyObject_{Get,Set,Has}AttrId are __getattr__ versions using _Py_Identifier*.
 */
 typedef struct _Py_Identifier {
-    struct _Py_Identifier *next;
     const char* string;
-    PyObject *object;
 } _Py_Identifier;
 
-#define _Py_static_string_init(value) { .next = NULL, .string = value, .object = NULL }
+#define _Py_static_string_init(value) { .string = value}
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 

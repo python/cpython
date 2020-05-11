@@ -43,6 +43,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_abstract.h"       // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
 #include "pycore_fileutils.h"
+#include "pycore_hashtable.h"      // _Py_hashtable_new()
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"         // PyInterpreterState.fs_codec
 #include "pycore_object.h"
@@ -286,7 +287,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
                     Py_ssize_t *consumed);
 
 /* List of static strings. */
-static _Py_Identifier *static_strings = NULL;
+static _Py_hashtable_t *static_strings = NULL;
 
 /* bpo-40521: Latin1 singletons are shared by all interpreters. */
 #ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
@@ -2275,31 +2276,43 @@ PyUnicode_FromString(const char *u)
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
-    if (!id->object) {
-        id->object = PyUnicode_DecodeUTF8Stateful(id->string,
-                                                  strlen(id->string),
-                                                  NULL, NULL);
-        if (!id->object)
-            return NULL;
-        PyUnicode_InternInPlace(&id->object);
-        assert(!id->next);
-        id->next = static_strings;
-        static_strings = id;
+    PyObject *object = _Py_hashtable_get(static_strings, id);
+    if (object) {
+        // Return a borrowed reference
+        return object;
     }
-    return id->object;
+
+    object = PyUnicode_DecodeUTF8Stateful(id->string, strlen(id->string),
+                                          NULL, NULL);
+    if (object == NULL) {
+        return NULL;
+    }
+    PyUnicode_InternInPlace(&object);
+
+    // Store a strong reference
+    if (_Py_hashtable_set(static_strings, id, object) < 0) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    // Return a borrowed reference
+    return object;
+}
+
+static void
+static_strings_decref(void *data)
+{
+    PyObject *object = (PyObject *)data;
+    Py_DECREF(object);
 }
 
 void
 _PyUnicode_ClearStaticStrings()
 {
-    _Py_Identifier *tmp, *s = static_strings;
-    while (s) {
-        Py_CLEAR(s->object);
-        tmp = s->next;
-        s->next = NULL;
-        s = tmp;
+    if (static_strings) {
+        _Py_hashtable_destroy(static_strings);
+        static_strings = NULL;
     }
-    static_strings = NULL;
 }
 
 /* Internal function, doesn't check maximum character */
@@ -15508,6 +15521,22 @@ PyTypeObject PyUnicode_Type = {
 };
 
 /* Initialize the Unicode implementation */
+
+PyStatus
+_PyUnicode_PreInit(PyThreadState *tstate)
+{
+    if (_Py_IsMainInterpreter(tstate)) {
+        static_strings = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
+                                                _Py_hashtable_compare_direct,
+                                                NULL, static_strings_decref,
+                                                NULL);
+        if (static_strings == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
+    }
+    return _PyStatus_OK();
+}
+
 
 PyStatus
 _PyUnicode_Init(void)
