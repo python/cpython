@@ -12309,6 +12309,43 @@ unicode_isnumeric_impl(PyObject *self)
     Py_RETURN_TRUE;
 }
 
+Py_ssize_t
+_PyUnicode_ScanIdentifier(PyObject *self)
+{
+    Py_ssize_t i;
+    if (PyUnicode_READY(self) == -1)
+        return -1;
+
+    Py_ssize_t len = PyUnicode_GET_LENGTH(self);
+    if (len == 0) {
+        /* an empty string is not a valid identifier */
+        return 0;
+    }
+
+    int kind = PyUnicode_KIND(self);
+    const void *data = PyUnicode_DATA(self);
+    Py_UCS4 ch = PyUnicode_READ(kind, data, 0);
+    /* PEP 3131 says that the first character must be in
+       XID_Start and subsequent characters in XID_Continue,
+       and for the ASCII range, the 2.x rules apply (i.e
+       start with letters and underscore, continue with
+       letters, digits, underscore). However, given the current
+       definition of XID_Start and XID_Continue, it is sufficient
+       to check just for these, except that _ must be allowed
+       as starting an identifier.  */
+    if (!_PyUnicode_IsXidStart(ch) && ch != 0x5F /* LOW LINE */) {
+        return 0;
+    }
+
+    for (i = 1; i < len; i++) {
+        ch = PyUnicode_READ(kind, data, i);
+        if (!_PyUnicode_IsXidContinue(ch)) {
+            return i;
+        }
+    }
+    return i;
+}
+
 int
 PyUnicode_IsIdentifier(PyObject *self)
 {
