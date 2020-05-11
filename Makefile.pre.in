@@ -197,6 +197,9 @@ OPENSSL_INCLUDES=@OPENSSL_INCLUDES@
 OPENSSL_LIBS=@OPENSSL_LIBS@
 OPENSSL_LDFLAGS=@OPENSSL_LDFLAGS@
 
+# Default zoneinfo.TZPATH. Added here to expose it in sysconfig.get_config_var
+TZPATH=@TZPATH@
+
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
 DIRMODE=	755

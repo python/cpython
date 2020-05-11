@@ -304,6 +304,17 @@ def find_library_file(compiler, libname, std_dirs, paths):
     else:
         assert False, "Internal error: Path not found in std_dirs or paths"
 
+def validate_tzpath():
+    base_tzpath = sysconfig.get_config_var('TZPATH')
+    if not base_tzpath:
+        return
+
+    tzpaths = base_tzpath.split(os.pathsep)
+    bad_paths = [tzpath for tzpath in tzpaths if not os.path.isabs(tzpath)]
+    if bad_paths:
+        raise ValueError('TZPATH must contain only absolute paths, '
+                         + f'found:\n{tzpaths!r}\nwith invalid paths:\n'
+                         + f'{bad_paths!r}')
 
 def find_module_file(module, dirlist):
     """Find a module in a set of possible folders. If it is not found
@@ -2451,6 +2462,7 @@ def main():
         ProcessPoolExecutor = None
 
     sys.modules['concurrent.futures.process'] = DummyProcess
+    validate_tzpath()
 
     # turn off warnings when deprecated modules are imported
     import warnings

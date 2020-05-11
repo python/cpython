@@ -1,5 +1,6 @@
 import os
 import sys
+import sysconfig
 
 
 def reset_tzpath(to=None):
@@ -19,17 +20,10 @@ def reset_tzpath(to=None):
         env_var = os.environ.get("PYTHONTZPATH", None)
         if env_var is not None:
             base_tzpath = _parse_python_tzpath(env_var)
-        elif sys.platform != "win32":
-            base_tzpath = [
-                "/usr/share/zoneinfo",
-                "/usr/lib/zoneinfo",
-                "/usr/share/lib/zoneinfo",
-                "/etc/zoneinfo",
-            ]
-
-            base_tzpath.sort(key=lambda x: not os.path.exists(x))
         else:
-            base_tzpath = ()
+            base_tzpath = _parse_python_tzpath(
+                sysconfig.get_config_var("TZPATH")
+            )
 
     TZPATH = tuple(base_tzpath)
 
