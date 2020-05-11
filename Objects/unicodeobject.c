@@ -12349,52 +12349,33 @@ _PyUnicode_ScanIdentifier(PyObject *self)
 int
 PyUnicode_IsIdentifier(PyObject *self)
 {
-    Py_ssize_t i;
-    int ready = PyUnicode_IS_READY(self);
-
-    Py_ssize_t len = ready ? PyUnicode_GET_LENGTH(self) : PyUnicode_GET_SIZE(self);
-    if (len == 0) {
+    if (PyUnicode_IS_READY(self)) {
+        Py_ssize_t i = _PyUnicode_ScanIdentifier(self);
+        Py_ssize_t len = PyUnicode_GET_LENGTH(self);
         /* an empty string is not a valid identifier */
-        return 0;
-    }
-
-    int kind = 0;
-    const void *data = NULL;
-    const wchar_t *wstr = NULL;
-    Py_UCS4 ch;
-    if (ready) {
-        kind = PyUnicode_KIND(self);
-        data = PyUnicode_DATA(self);
-        ch = PyUnicode_READ(kind, data, 0);
+        return len && i == len;
     }
     else {
-        wstr = _PyUnicode_WSTR(self);
-        ch = wstr[0];
-    }
-    /* PEP 3131 says that the first character must be in
-       XID_Start and subsequent characters in XID_Continue,
-       and for the ASCII range, the 2.x rules apply (i.e
-       start with letters and underscore, continue with
-       letters, digits, underscore). However, given the current
-       definition of XID_Start and XID_Continue, it is sufficient
-       to check just for these, except that _ must be allowed
-       as starting an identifier.  */
-    if (!_PyUnicode_IsXidStart(ch) && ch != 0x5F /* LOW LINE */) {
-        return 0;
-    }
-
-    for (i = 1; i < len; i++) {
-        if (ready) {
-            ch = PyUnicode_READ(kind, data, i);
-        }
-        else {
-            ch = wstr[i];
-        }
-        if (!_PyUnicode_IsXidContinue(ch)) {
+        Py_ssize_t i, len = PyUnicode_GET_SIZE(self);
+        if (len == 0) {
+            /* an empty string is not a valid identifier */
             return 0;
         }
+
+        const wchar_t *wstr = _PyUnicode_WSTR(self);
+        Py_UCS4 ch = wstr[0];
+        if (!_PyUnicode_IsXidStart(ch) && ch != 0x5F /* LOW LINE */) {
+            return 0;
+        }
+
+        for (i = 1; i < len; i++) {
+            ch = wstr[i];
+            if (!_PyUnicode_IsXidContinue(ch)) {
+                return 0;
+            }
+        }
+        return 1;
     }
-    return 1;
 }
 
 /*[clinic input]
