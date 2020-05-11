@@ -63,10 +63,9 @@ SyntaxError: cannot assign to __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
 
-# Pegen does not support this yet
-# >>> del f()
-# Traceback (most recent call last):
-# SyntaxError: cannot delete function call
+>>> del f()
+Traceback (most recent call last):
+SyntaxError: cannot delete function call
 
 >>> a + 1 = 2
 Traceback (most recent call last):
@@ -665,7 +664,7 @@ class SyntaxTestCase(unittest.TestCase):
                 self.fail("SyntaxError is not a %s" % subclass.__name__)
             mo = re.search(errtext, str(err))
             if mo is None:
-                self.fail("SyntaxError did not contain '%r'" % (errtext,))
+                self.fail("SyntaxError did not contain %r" % (errtext,))
             self.assertEqual(err.filename, filename)
             if lineno is not None:
                 self.assertEqual(err.lineno, lineno)
@@ -677,10 +676,36 @@ class SyntaxTestCase(unittest.TestCase):
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
 
-    @support.skip_if_new_parser("Pegen does not produce a specialized error "
-                                "message yet")
     def test_assign_del(self):
-        self._check_error("del f()", "delete")
+        self._check_error("del (,)", "invalid syntax")
+        self._check_error("del 1", "delete literal")
+        self._check_error("del (1, 2)", "delete literal")
+        self._check_error("del None", "delete None")
+        self._check_error("del *x", "delete starred")
+        self._check_error("del (*x)", "delete starred")
+        self._check_error("del (*x,)", "delete starred")
+        self._check_error("del [*x,]", "delete starred")
+        self._check_error("del f()", "delete function call")
+        self._check_error("del f(a, b)", "delete function call")
+        self._check_error("del o.f()", "delete function call")
+        self._check_error("del a[0]()", "delete function call")
+        self._check_error("del x, f()", "delete function call")
+        self._check_error("del f(), x", "delete function call")
+        self._check_error("del [a, b, ((c), (d,), e.f())]", "delete function call")
+        self._check_error("del (a if True else b)", "delete conditional")
+        self._check_error("del +a", "delete operator")
+        self._check_error("del a, +b", "delete operator")
+        self._check_error("del a + b", "delete operator")
+        self._check_error("del (a + b, c)", "delete operator")
+        self._check_error("del (c[0], a + b)", "delete operator")
+        self._check_error("del a.b.c + 2", "delete operator")
+        self._check_error("del a.b.c[0] + 2", "delete operator")
+        self._check_error("del (a, b, (c, d.e.f + 2))", "delete operator")
+        self._check_error("del [a, b, (c, d.e.f[0] + 2)]", "delete operator")
+        self._check_error("del (a := 5)", "delete named expression")
+        # We don't have a special message for this, but make sure we don't
+        # report "cannot delete name"
+        self._check_error("del a += b", "invalid syntax")
 
     def test_global_param_err_first(self):
         source = """if 1:
