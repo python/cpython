@@ -154,7 +154,7 @@ def translate(pat):
     # in a lookahead assertion, save the matched part in a group, then
     # consume that group via a backreference. If the overall match fails,
     # the lookahead assertion won't try alternatives. So the translation is:
-    #     (P?=(P<name>.*?fixed))(?P=name)
+    #     (?=(?P<name>.*?fixed))(?P=name)
     # Group names are created as needed: g0, g1, g2, ...
     # The numbers are obtained from _nextgroupnum() to ensure they're unique
     # across calls and across threads. This is because people rely on the
