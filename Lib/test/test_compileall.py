@@ -390,8 +390,12 @@ class CompileallTestsBase:
 
                 pycs = {}
                 for opt_level in opt_combination:
+                    # We need this because importlib.util.cache_from_source
+                    # produces different results when called with
+                    # optimization=0 and without optimization
+                    optimization_kwarg = {"optimization": opt_level} if opt_level > 0 else {}
                     pycs[opt_level] = importlib.util.cache_from_source(
-                        simple_script, optimization=opt_level
+                        simple_script, **optimization_kwarg
                     )
 
                 compileall.compile_dir(
@@ -414,6 +418,9 @@ class CompileallTestsBase:
                 # Deduplication disabled, all pyc files should have different inodes
                 for pair in itertools.combinations(opt_combination, 2):
                     self.assertFalse(self.is_hardlink(pycs[pair[0]], pycs[pair[1]]))
+
+                for pyc_file in pycs.values():
+                    os.unlink(pyc_file)
 
     def test_hardlink_deduplication_different_bytecode_all_opt(self):
         # "'''string'''\nassert 1" produces a different bytecode for
