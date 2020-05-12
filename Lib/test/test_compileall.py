@@ -12,6 +12,7 @@ import time
 import unittest
 import io
 import filecmp
+import itertools
 
 from unittest import mock, skipUnless
 try:
@@ -374,88 +375,45 @@ class CompileallTestsBase:
             compileall.compile_dir(self.directory, quiet=True, optimize=0,
                                    hardlink_dupes=True)
 
-    def test_hardlink_deduplication_same_bytecode_all_opt(self):
+    def test_hardlink_deduplication_same_bytecode(self):
         # 'a = 0' produces the same bytecode for all optimization levels
-        path = os.path.join(self.directory, "test", "same_all")
+        path = os.path.join(self.directory, "test", "same")
         os.makedirs(path)
 
         simple_script = script_helper.make_script(path, "test_same_bytecode",
                                                   "a = 0")
-        pyc_opt0 = importlib.util.cache_from_source(simple_script)
-        pyc_opt1 = importlib.util.cache_from_source(simple_script,
-                                                    optimization=1)
-        pyc_opt2 = importlib.util.cache_from_source(simple_script,
-                                                    optimization=2)
 
-        compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
-                               hardlink_dupes=True)
+        opt_combinations = ((0, 1, 2), (1, 2), (0, 2))
 
-        # All three files should have the same inode (hardlinks)
-        self.assertTrue(self.is_hardlink(pyc_opt0, pyc_opt1))
-        self.assertTrue(self.is_hardlink(pyc_opt1, pyc_opt2))
+        for opt_combination in opt_combinations:
+            with self.subTest(opt_combination=opt_combination):
 
-        for pyc_file in {pyc_opt0, pyc_opt1, pyc_opt2}:
-            os.unlink(pyc_file)
+                pycs = {}
+                for opt_level in opt_combination:
+                    pycs[opt_level] = importlib.util.cache_from_source(
+                        simple_script, optimization=opt_level
+                    )
 
-        compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
-                               hardlink_dupes=False)
+                compileall.compile_dir(
+                    path, quiet=True, optimize=opt_combination,
+                    hardlink_dupes=True
+                )
 
-        # Deduplication disabled, all pyc files should have different inodes
-        self.assertFalse(self.is_hardlink(pyc_opt0, pyc_opt1))
-        self.assertFalse(self.is_hardlink(pyc_opt1, pyc_opt2))
+                # All three files should have the same inode (hardlinks)
+                for pair in itertools.combinations(opt_combination, 2):
+                    self.assertTrue(self.is_hardlink(pycs[pair[0]], pycs[pair[1]]))
 
-    def test_hardlink_deduplication_same_bytecode_some_opt(self):
-        # 'a = 0' produces the same bytecode for all optimization levels
-        # only two levels of optimization [0, 1] tested
-        path = os.path.join(self.directory, "test", "same_some")
-        os.makedirs(path)
+                for pyc_file in pycs.values():
+                    os.unlink(pyc_file)
 
-        simple_script = script_helper.make_script(path, "test_same_bytecode",
-                                                  "a = 0")
-        pyc_opt0 = importlib.util.cache_from_source(simple_script)
-        pyc_opt2 = importlib.util.cache_from_source(simple_script,
-                                                    optimization=2)
+                compileall.compile_dir(
+                    path, quiet=True, optimize=opt_combination,
+                    hardlink_dupes=False
+                )
 
-        compileall.compile_dir(path, quiet=True, optimize=[0, 2],
-                               hardlink_dupes=True)
-
-        # Both files should have the same inode (hardlink)
-        self.assertTrue(self.is_hardlink(pyc_opt0, pyc_opt2))
-
-        for pyc_file in {pyc_opt0, pyc_opt2}:
-            os.unlink(pyc_file)
-
-        compileall.compile_dir(path, quiet=True, force=True, optimize=[0, 2],
-                               hardlink_dupes=False)
-
-        # Deduplication disabled, both pyc files should have different inodes
-        self.assertFalse(self.is_hardlink(pyc_opt0, pyc_opt2))
-
-    def test_hardlink_deduplication_same_bytecode_some_opt_2(self):
-        # 'a = 0' produces the same bytecode for all optimization levels
-        path = os.path.join(self.directory, "test", "same_some_2")
-        os.makedirs(path)
-
-        simple_script = script_helper.make_script(path, "test_same_bytecode",
-                                                  "a = 0")
-        pyc_opt1 = importlib.util.cache_from_source(simple_script,
-                                                    optimization=1)
-        pyc_opt2 = importlib.util.cache_from_source(simple_script,
-                                                    optimization=2)
-
-        compileall.compile_dir(path, quiet=True, optimize=[1, 2],
-                               hardlink_dupes=True)
-
-        # Both files should have the same inode (hardlinks)
-        self.assertTrue(self.is_hardlink(pyc_opt1, pyc_opt2))
-
-        for pyc_file in {pyc_opt1, pyc_opt2}:
-            os.unlink(pyc_file)
-
-        compileall.compile_dir(path, quiet=True, optimize=[1, 2])
-
-        # Deduplication disabled, all pyc files should have different inodes
-        self.assertFalse(self.is_hardlink(pyc_opt1, pyc_opt2))
+                # Deduplication disabled, all pyc files should have different inodes
+                for pair in itertools.combinations(opt_combination, 2):
+                    self.assertFalse(self.is_hardlink(pycs[pair[0]], pycs[pair[1]]))
 
     def test_hardlink_deduplication_different_bytecode_all_opt(self):
         # "'''string'''\nassert 1" produces a different bytecode for
