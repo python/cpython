@@ -106,6 +106,7 @@ class FnmatchTestCase(unittest.TestCase):
 class TranslateTestCase(unittest.TestCase):
 
     def test_translate(self):
+        import re
         self.assertEqual(translate('*'), r'(?s:.*)\Z')
         self.assertEqual(translate('?'), r'(?s:.)\Z')
         self.assertEqual(translate('a?b*'), r'(?s:a.b.*)\Z')
@@ -122,8 +123,15 @@ class TranslateTestCase(unittest.TestCase):
         self.assertEqual(translate('*********A'), r'(?s:.*A)\Z')
         self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[?].)\Z')
         # fancy translation to prevent exponential-time match failure
-        self.assertEqual(translate('**a*a****a'),
-             r'(?s:(?=(?P<g1>.*?a))(?P=g1)(?=(?P<g2>.*?a))(?P=g2).*a)\Z')
+        t = translate('**a*a****a')
+        digits = re.findall(r'\d+', t)
+        self.assertEqual(len(digits), 4)
+        self.assertEqual(digits[0], digits[1])
+        self.assertEqual(digits[2], digits[3])
+        g1 = f"g{digits[0]}"  # e.g., group name "g4"
+        g2 = f"g{digits[2]}"  # e.g., group name "g5"
+        self.assertEqual(t,
+         fr'(?s:(?=(?P<{g1}>.*?a))(?P={g1})(?=(?P<{g2}>.*?a))(?P={g2}).*a)\Z')
 
 
 class FilterTestCase(unittest.TestCase):
