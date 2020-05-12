@@ -355,7 +355,7 @@ Additional Utility Classes and Functions
                self.__dict__.update(kwargs)
 
            def __repr__(self):
-               items = ("{}={!r}".format(k, v) for k, v in self.__dict__.items())
+               items = (f"{k}={v!r}" for k, v in self.__dict__.items())
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
@@ -368,7 +368,8 @@ Additional Utility Classes and Functions
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.9
-      Attributes are no longer sorted in the repr.
+      Attribute order in the repr changed from alphabetical to insertion (like
+      ``dict``).
 
 .. function:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
 

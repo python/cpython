@@ -1,1 +1,2 @@
-:class:`types.SimpleNamespace` no longer sorts the attributes in its repr.
+The repr for :class:`types.SimpleNamespace` is now insertion ordered rather
+than alphabetical.
