@@ -395,6 +395,16 @@ class CAPITest(unittest.TestCase):
             del L
             self.assertEqual(PyList.num, 0)
 
+    def test_subclass_of_base_that_uses_old_macros(self):
+        class Daisy(_testcapi.OldTrashcanMacros):
+            pass
+
+        DEPTH=150
+        daisyChain = Daisy()
+        for x in range(DEPTH):
+            daisyChain = (Daisy(), daisyChain, Daisy())
+        daisyChain = None
+
     def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
         class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
             def __init__(self):
