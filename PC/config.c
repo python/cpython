@@ -49,6 +49,7 @@ extern PyObject* PyInit_parser(void);
 extern PyObject* PyInit_winreg(void);
 extern PyObject* PyInit__struct(void);
 extern PyObject* PyInit__datetime(void);
+extern PyObject* PyInit__czoneinfo(void);
 extern PyObject* PyInit__functools(void);
 extern PyObject* PyInit__json(void);
 #ifdef _Py_HAVE_ZLIB
@@ -131,6 +132,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"winreg", PyInit_winreg},
     {"_struct", PyInit__struct},
     {"_datetime", PyInit__datetime},
+    {"_czoneinfo", PyInit__czoneinfo},
     {"_functools", PyInit__functools},
     {"_json", PyInit__json},
 
