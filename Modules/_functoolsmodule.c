@@ -51,10 +51,14 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    PyObject *module = PyType_GetModule(type);
+    if (module == NULL) {
+        return NULL;
+    }
+    _functools_state *state = get_functools_state(module);
+
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
-    PyObject *module = PyType_GetModule(type);
-    _functools_state *state = get_functools_state(module);
     if (Py_IS_TYPE(func, state->partial_type)
         && type == state->partial_type) {
         partialobject *part = (partialobject *)func;
@@ -1364,6 +1368,14 @@ static PyGetSetDef lru_cache_getsetlist[] = {
     {NULL}
 };
 
+static PyMemberDef lru_cache_memberlist[] = {
+    {"__dictoffset__", T_PYSSIZET,
+     offsetof(lru_cache_object, dict), READONLY},
+    {"__weaklistoffset__", T_PYSSIZET,
+     offsetof(lru_cache_object, weakreflist), READONLY},
+    {NULL}  /* Sentinel */
+};
+
 static PyType_Slot lru_cache_type_slots[] = {
     {Py_tp_dealloc, lru_cache_dealloc},
     {Py_tp_call, lru_cache_call},
@@ -1371,9 +1383,11 @@ static PyType_Slot lru_cache_type_slots[] = {
     {Py_tp_traverse, lru_cache_tp_traverse},
     {Py_tp_clear, lru_cache_tp_clear},
     {Py_tp_methods, lru_cache_methods},
+    {Py_tp_members, lru_cache_memberlist},
     {Py_tp_getset, lru_cache_getsetlist},
     {Py_tp_descr_get, lru_cache_descr_get},
-    {Py_tp_new, lru_cache_new}
+    {Py_tp_new, lru_cache_new},
+    {0, 0}
 };
 
 static PyType_Spec lru_cache_type_spec = {
@@ -1401,11 +1415,9 @@ static int
 _functools_exec(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
+    state->kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
     if (state->kwd_mark == NULL) {
-        state->kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
-        if (state->kwd_mark == NULL) {
-            return -1;
-        }
+        return -1;
     }
 
     PyTypeObject *partial_type =
@@ -1434,18 +1446,20 @@ _functools_exec(PyObject *module)
 static int
 _functools_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Py_VISIT(get_functools_state(module)->kwd_mark);
-    Py_VISIT(get_functools_state(module)->partial_type);
-    Py_VISIT(get_functools_state(module)->lru_cache_type);
+    _functools_state *state = get_functools_state(module);
+    Py_VISIT(state->kwd_mark);
+    Py_VISIT(state->partial_type);
+    Py_VISIT(state->lru_cache_type);
     return 0;
 }
 
 static int
 _functools_clear(PyObject *module)
 {
-    Py_CLEAR(get_functools_state(module)->kwd_mark);
-    Py_CLEAR(get_functools_state(module)->partial_type);
-    Py_CLEAR(get_functools_state(module)->lru_cache_type);
+    _functools_state *state = get_functools_state(module);
+    Py_CLEAR(state->kwd_mark);
+    Py_CLEAR(state->partial_type);
+    Py_CLEAR(state->lru_cache_type);
     return 0;
 }
 
@@ -1464,6 +1478,7 @@ static struct PyModuleDef _functools_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_functools",
     .m_doc = _functools_doc,
+    .m_size = sizeof(_functools_state),
     .m_methods = _functools_methods,
     .m_slots = _functools_slots,
     .m_traverse = _functools_traverse, 
