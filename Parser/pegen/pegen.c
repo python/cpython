@@ -432,7 +432,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     int col_number = byte_offset_to_character_offset(error_line, col_offset);
 
-    if (!error_line || !with_col_number) {
+    if (!error_line || (!with_col_number && p->start_rule != Py_file_input)) {
         Py_INCREF(Py_None);
         error_line = Py_None;
     }
