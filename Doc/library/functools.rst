@@ -26,6 +26,32 @@ function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
 
+.. decorator:: cache(user_function)
+
+   Simple lightweight unbounded function cache.  Sometimes called
+   `"memoize" <https://en.wikipedia.org/wiki/Memoization>`_.
+
+   Returns the same as ``lru_cache(maxsize=None)``, creating a thin
+   wrapper around a dictionary lookup for the function arguments.  Because it
+   never needs to evict old values, this is smaller and faster than
+   :func:`lru_cache()` with a size limit.
+
+   For example::
+
+        @cache
+        def factorial(n):
+            return n * factorial(n-1) if n else 1
+
+        >>> factorial(10)      # no previously cached result, makes 11 recursive calls
+        3628800
+        >>> factorial(5)       # just looks up cached value result
+        120
+        >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
+        479001600
+
+   .. versionadded:: 3.9
+
+
 .. decorator:: cached_property(func)
 
    Transform a method of a class into a property whose value is computed once
