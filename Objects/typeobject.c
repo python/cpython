@@ -1231,6 +1231,8 @@ subtype_dealloc(PyObject *self)
     PyTypeObject *type, *base;
     destructor basedealloc;
     int has_finalizer;
+    PyThreadState *tstate = _PyThreadState_GET();
+    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
 
     /* Extract the type; we expect it to be a heap type */
     type = Py_TYPE(self);
@@ -1283,7 +1285,11 @@ subtype_dealloc(PyObject *self)
     /* UnTrack and re-Track around the trashcan macro, alas */
     /* See explanation at end of function for full disclosure */
     PyObject_GC_UnTrack(self);
+    ++ tstate->trash_delete_nesting;
+    ++ gcstate->trash_delete_nesting;
     Py_TRASHCAN_BEGIN(self, subtype_dealloc);
+    -- tstate->trash_delete_nesting;
+    -- gcstate->trash_delete_nesting;
 
     /* Find the nearest base with a different tp_dealloc */
     base = type;
@@ -1378,7 +1384,11 @@ subtype_dealloc(PyObject *self)
       Py_DECREF(type);
 
   endlabel:
+    ++ tstate->trash_delete_nesting;
+    ++ gcstate->trash_delete_nesting;
     Py_TRASHCAN_END
+    -- tstate->trash_delete_nesting;
+    -- gcstate->trash_delete_nesting;
 
     /* Explanation of the weirdness around the trashcan macros:
 

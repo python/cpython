@@ -6011,6 +6011,66 @@ static PyTypeObject MyList_Type = {
     MyList_new,                                 /* tp_new */
 };
 
+/* create baseclass using the old trashcan macros (Py_TRASHCAN_SAFE_BEGIN/END) to test backwards compatibility */
+
+typedef struct {
+} OldTrashcanMacros;
+
+static PyObject* OldTrashcanMacros_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
+{
+    OldTrashcanMacros *self;
+    self = (OldTrashcanMacros*)type->tp_alloc(type, 0);
+    return (PyObject*)self;
+}
+
+static void OldTrashcanMacros_dealloc(OldTrashcanMacros* self)
+{
+    PyObject_GC_UnTrack(self);
+    Py_TRASHCAN_SAFE_BEGIN(self)
+    Py_TYPE(self)->tp_free((PyObject*)self);
+    Py_TRASHCAN_SAFE_END(self)
+}
+
+PyTypeObject OldTrashcanMacros_Type = {
+    PyVarObject_HEAD_INIT(NULL,0)
+    "OldTrashcanMacros",                   /* tp_name */
+    (sizeof(OldTrashcanMacros)),           /* tp_basicsize */
+    0,                                     /* tp_itemsize */
+    (destructor)OldTrashcanMacros_dealloc, /* tp-dealloc */
+    0,                                     /* tp_print */
+    0,                                     /* tp_getattr */
+    0,                                     /* tp_setattr */
+    0,                                     /* tp_compare */
+    0,                                     /* tp_repr */
+    0,                                     /* tp_as_number */
+    0,                                     /* tp_as_sequence */
+    0,                                     /* tp_as_mapping */
+    0,                                     /* tp_hash */
+    0,                                     /* tp_call */
+    0,                                     /* tp_str */
+    0,                                     /* tp_getattro */
+    0,                                     /* tp_setattro */
+    0,                                     /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
+    "Old Trashcan Macros Test",            /* tp_doc */
+    0,                                     /* tp_traverse */
+    0,                                     /* tp_clear */
+    0,                                     /* tp_richcompare */
+    0,                                     /* tp_weaklistoffset */
+    0,                                     /* tp_iter */
+    0,                                     /* tp_iternext */
+    0,                                     /* tp_methods */
+    0,                                     /* tp_members */
+    0,                                     /* tp_getset */
+    0,                                     /* tp_base */
+    0,                                     /* tp_dict */
+    0,                                     /* tp_descr_get */
+    0,                                     /* tp_descr_set */
+    0,                                     /* tp_dictoffset */
+    0,                                     /* tp_init */
+    0,                                     /* tp_alloc */
+    OldTrashcanMacros_new,                 /* tp_new */
+};
 
 /* Test PEP 560 */
 
@@ -6640,6 +6700,11 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&MyList_Type);
     PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
+
+    if (PyType_Ready(&OldTrashcanMacros_Type) < 0)
+        return NULL;
+    Py_INCREF(&OldTrashcanMacros_Type);
+    PyModule_AddObject(m, "OldTrashcanMacros", (PyObject*)&OldTrashcanMacros_Type);
 
     if (PyType_Ready(&MethodDescriptorBase_Type) < 0)
         return NULL;
