@@ -1193,7 +1193,7 @@ class cached_property:
 
         # copy across the annotation for runtime introspection
         try:
-            prop_ann = self.fget.__annotations__['return']
+            prop_ann = self.func.__annotations__['return']
         except KeyError:
             return
 
