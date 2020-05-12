@@ -549,7 +549,7 @@ static int
 w_init_refs(WFILE *wf, int version)
 {
     if (version >= 3) {
-        wf->hashtable = _Py_hashtable_new(sizeof(PyObject *), sizeof(int),
+        wf->hashtable = _Py_hashtable_new(sizeof(int),
                                           _Py_hashtable_hash_ptr,
                                           _Py_hashtable_compare_direct);
         if (wf->hashtable == NULL) {
@@ -564,9 +564,7 @@ static int
 w_decref_entry(_Py_hashtable_t *ht, _Py_hashtable_entry_t *entry,
                void *Py_UNUSED(data))
 {
-    PyObject *entry_key;
-
-    _Py_HASHTABLE_ENTRY_READ_KEY(ht, entry, entry_key);
+    PyObject *entry_key = (PyObject *)entry->key;
     Py_XDECREF(entry_key);
     return 0;
 }
