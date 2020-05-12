@@ -1,7 +1,12 @@
-#ifndef Py_HASHTABLE_H
-#define Py_HASHTABLE_H
-/* The whole API is private */
-#ifndef Py_LIMITED_API
+#ifndef Py_INTERNAL_HASHTABLE_H
+#define Py_INTERNAL_HASHTABLE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
 
 /* Single linked list */
 
@@ -207,5 +212,7 @@ PyAPI_FUNC(int) _Py_hashtable_pop(
     _Py_hashtable_pop(TABLE, sizeof(KEY), &(KEY), sizeof(DATA), &(DATA))
 
 
-#endif   /* Py_LIMITED_API */
+#ifdef __cplusplus
+}
 #endif
+#endif   /* !Py_INTERNAL_HASHTABLE_H */

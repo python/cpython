@@ -12,7 +12,7 @@
 #include "longintrepr.h"
 #include "code.h"
 #include "marshal.h"
-#include "../Modules/hashtable.h"
+#include "pycore_hashtable.h"
 
 /*[clinic input]
 module marshal
