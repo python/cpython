@@ -2678,17 +2678,31 @@ check:
 }
 
 static PyObject *
-zip_getnewargs_ex(zipobject *lz, PyObject *Py_UNUSED(ignored))
+zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* Just recreate the zip with the internal iterator tuple */
     if (lz->tuplesize < 0) {
-        return Py_BuildValue("O{sO}", lz->ittuple, "strict", Py_True);
+        return Py_BuildValue("OOO", Py_TYPE(lz), lz->ittuple, Py_True);
     }
-    return Py_BuildValue("O{}", lz->ittuple);
+    return Py_BuildValue("OO", Py_TYPE(lz), lz->ittuple);
+}
+
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
+static PyObject *
+zip_setstate(zipobject *lz, PyObject *state)
+{
+    int strict = PyObject_IsTrue(state);
+    if (strict < 0) {
+        return NULL;
+    }
+    lz->tuplesize = strict ? -Py_ABS(lz->tuplesize) : Py_ABS(lz->tuplesize);
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef zip_methods[] = {
-    {"__getnewargs_ex__", (PyCFunction)zip_getnewargs_ex, METH_NOARGS, NULL},
+    {"__reduce__",   (PyCFunction)zip_reduce,   METH_NOARGS, reduce_doc},
+    {"__setstate__", (PyCFunction)zip_setstate, METH_O,      setstate_doc},
     {NULL}  /* sentinel */
 };
 
