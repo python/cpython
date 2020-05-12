@@ -2320,8 +2320,7 @@ valid_identifier(PyObject *s)
         return 0;
     }
     /* Since there is no way to return an error from PyUnicode_IsIdentifier()
-       we have to call PyUnicode_READY() to ensure that the string object is
-       in the "canonical" representation. */
+       we have to call explicitly PyUnicode_READY(). */
     if (PyUnicode_READY(s) < 0) {
         return 0;
     }
