@@ -109,7 +109,7 @@ _Py_hashtable_hash_ptr(struct _Py_hashtable_t *ht, const void *pkey)
 {
     void *key;
     _Py_HASHTABLE_READ_KEY(ht, pkey, key);
-    return (Py_uhash_t)_Py_HashPointer(key);
+    return (Py_uhash_t)_Py_HashPointerRaw(key);
 }
 
 
