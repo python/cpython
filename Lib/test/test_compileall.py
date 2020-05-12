@@ -384,8 +384,6 @@ class CompileallTestsBase:
         compileall.compile_dir(path, quiet=True, optimize=[0, 1, 2],
                                hardlink_dupes=True)
 
-        # import pdb; pdb.set_trace()
-
         # All three files should have the same inode (hardlinks)
         self.assertEqual(os.stat(pyc_opt0).st_ino, os.stat(pyc_opt1).st_ino)
         self.assertEqual(os.stat(pyc_opt1).st_ino, os.stat(pyc_opt2).st_ino)
