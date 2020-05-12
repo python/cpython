@@ -1,9 +1,8 @@
 #include "Python.h"
 
 #include "pycore_hamt.h"
-#include "pycore_object.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include <stddef.h>               // offsetof()
 
 /*
 This file provides an implementation of an immutable mapping using the

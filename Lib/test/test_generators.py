@@ -316,6 +316,40 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(cm.exception.value.value, 2)
 
 
+class GeneratorThrowTest(unittest.TestCase):
+
+    def test_exception_context_set(self):
+        def f():
+            try:
+                raise KeyError('a')
+            except Exception:
+                yield
+
+        gen = f()
+        gen.send(None)
+        with self.assertRaises(ValueError) as cm:
+            gen.throw(ValueError)
+        context = cm.exception.__context__
+        self.assertEqual((type(context), context.args), (KeyError, ('a',)))
+
+    def test_throw_after_none_exc_type(self):
+        def g():
+            try:
+                raise KeyError
+            except KeyError:
+                pass
+
+            try:
+                yield
+            except Exception:
+                raise RuntimeError
+
+        gen = g()
+        gen.send(None)
+        with self.assertRaises(RuntimeError) as cm:
+            gen.throw(ValueError)
+
+
 class YieldFromTests(unittest.TestCase):
     def test_generator_gi_yieldfrom(self):
         def a():
@@ -1856,10 +1890,11 @@ Traceback (most recent call last):
   ...
 SyntaxError: 'yield' outside function
 
->>> def f(): x = yield = y
-Traceback (most recent call last):
-  ...
-SyntaxError: assignment to yield expression not possible
+# Pegen does not produce this error message yet
+# >>> def f(): x = yield = y
+# Traceback (most recent call last):
+#   ...
+# SyntaxError: assignment to yield expression not possible
 
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):

@@ -466,8 +466,7 @@ later:
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 #include "dict-common.h"
 #include <stddef.h>
 
@@ -890,7 +889,7 @@ odict_inplace_or(PyObject *self, PyObject *other)
     if (mutablemapping_update_arg(self, other) < 0) {
         return NULL;
     }
-    Py_INCREF(self); 
+    Py_INCREF(self);
     return self;
 }
 

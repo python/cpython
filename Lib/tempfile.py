@@ -738,7 +738,7 @@ class SpooledTemporaryFile:
         return self._file.readlines(*args)
 
     def seek(self, *args):
-        self._file.seek(*args)
+        return self._file.seek(*args)
 
     def tell(self):
         return self._file.tell()
@@ -829,3 +829,5 @@ class TemporaryDirectory(object):
     def cleanup(self):
         if self._finalizer.detach():
             self._rmtree(self.name)
+
+    __class_getitem__ = classmethod(_types.GenericAlias)

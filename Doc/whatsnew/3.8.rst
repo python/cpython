@@ -428,8 +428,8 @@ Other Language Changes
             lastname, *members = family.split()
             return lastname.upper(), *members
 
-    >>> parse('simpsons homer marge bart lisa sally')
-    ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'sally')
+    >>> parse('simpsons homer marge bart lisa maggie')
+    ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'maggie')
 
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 

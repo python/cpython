@@ -2,13 +2,14 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_context.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -1788,6 +1789,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyCode_Type, "code");
     INIT_TYPE(&PyFrame_Type, "frame");
     INIT_TYPE(&PyCFunction_Type, "builtin function");
+    INIT_TYPE(&PyCMethod_Type, "builtin method");
     INIT_TYPE(&PyMethod_Type, "method");
     INIT_TYPE(&PyFunction_Type, "function");
     INIT_TYPE(&PyDictProxy_Type, "dict proxy");
@@ -2030,7 +2032,7 @@ _PyTrash_deposit_object(PyObject *op)
     PyThreadState *tstate = _PyThreadState_GET();
     struct _gc_runtime_state *gcstate = &tstate->interp->gc;
 
-    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), gcstate->trash_delete_later);
@@ -2042,7 +2044,7 @@ void
 _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);

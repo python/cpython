@@ -17,12 +17,18 @@ from test.support import findfile, python_is_optimized
 
 def get_gdb_version():
     try:
-        proc = subprocess.Popen(["gdb", "-nx", "--version"],
+        cmd = ["gdb", "-nx", "--version"]
+        proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 universal_newlines=True)
         with proc:
-            version = proc.communicate()[0]
+            version, stderr = proc.communicate()
+
+        if proc.returncode:
+            raise Exception(f"Command {' '.join(cmd)!r} failed "
+                            f"with exit code {proc.returncode}: "
+                            f"stdout={version!r} stderr={stderr!r}")
     except OSError:
         # This is what "no gdb" looks like.  There may, however, be other
         # errors that manifest this way too.

@@ -100,29 +100,30 @@ expression inside that contain should still cause a syntax error.
 This test just checks a couple of cases rather than enumerating all of
 them.
 
->>> (a, "b", c) = (1, 2, 3)
-Traceback (most recent call last):
-SyntaxError: cannot assign to literal
+# All of the following also produce different error messages with pegen
+# >>> (a, "b", c) = (1, 2, 3)
+# Traceback (most recent call last):
+# SyntaxError: cannot assign to literal
 
->>> (a, True, c) = (1, 2, 3)
-Traceback (most recent call last):
-SyntaxError: cannot assign to True
+# >>> (a, True, c) = (1, 2, 3)
+# Traceback (most recent call last):
+# SyntaxError: cannot assign to True
 
 >>> (a, __debug__, c) = (1, 2, 3)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
->>> (a, *True, c) = (1, 2, 3)
-Traceback (most recent call last):
-SyntaxError: cannot assign to True
+# >>> (a, *True, c) = (1, 2, 3)
+# Traceback (most recent call last):
+# SyntaxError: cannot assign to True
 
 >>> (a, *__debug__, c) = (1, 2, 3)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
->>> [a, b, c + 1] = [1, 2, 3]
-Traceback (most recent call last):
-SyntaxError: cannot assign to operator
+# >>> [a, b, c + 1] = [1, 2, 3]
+# Traceback (most recent call last):
+# SyntaxError: cannot assign to operator
 
 >>> a if 1 else b = 1
 Traceback (most recent call last):
@@ -186,9 +187,11 @@ SyntaxError: Generator expression must be parenthesized
 >>> f(x for x in L, **{})
 Traceback (most recent call last):
 SyntaxError: Generator expression must be parenthesized
->>> f(L, x for x in L)
-Traceback (most recent call last):
-SyntaxError: Generator expression must be parenthesized
+
+# >>> f(L, x for x in L)
+# Traceback (most recent call last):
+# SyntaxError: Generator expression must be parenthesized
+
 >>> f(x for x in L, y for y in L)
 Traceback (most recent call last):
 SyntaxError: Generator expression must be parenthesized
@@ -297,29 +300,32 @@ SyntaxError: invalid syntax
 ...   290, 291, 292, 293, 294, 295, 296, 297, 298, 299)  # doctest: +ELLIPSIS
 (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ..., 297, 298, 299)
 
->>> f(lambda x: x[0] = 3)
-Traceback (most recent call last):
-SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+# >>> f(lambda x: x[0] = 3)
+# Traceback (most recent call last):
+# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 
 The grammar accepts any test (basically, any expression) in the
 keyword slot of a call site.  Test a few different options.
 
->>> f(x()=2)
-Traceback (most recent call last):
-SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
->>> f(a or b=1)
-Traceback (most recent call last):
-SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
->>> f(x.y=1)
-Traceback (most recent call last):
-SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
->>> f((x)=2)
-Traceback (most recent call last):
-SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
->>> f(True=2)
-Traceback (most recent call last):
-SyntaxError: cannot assign to True
+# >>> f(x()=2)
+# Traceback (most recent call last):
+# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+# >>> f(a or b=1)
+# Traceback (most recent call last):
+# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+# >>> f(x.y=1)
+# Traceback (most recent call last):
+# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+# >>> f((x)=2)
+# Traceback (most recent call last):
+# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+# >>> f(True=2)
+# Traceback (most recent call last):
+# SyntaxError: cannot assign to True
 >>> f(__debug__=1)
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+>>> __debug__: int
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
@@ -658,7 +664,7 @@ class SyntaxTestCase(unittest.TestCase):
                 self.fail("SyntaxError is not a %s" % subclass.__name__)
             mo = re.search(errtext, str(err))
             if mo is None:
-                self.fail("SyntaxError did not contain '%r'" % (errtext,))
+                self.fail("SyntaxError did not contain %r" % (errtext,))
             self.assertEqual(err.filename, filename)
             if lineno is not None:
                 self.assertEqual(err.lineno, lineno)
@@ -671,7 +677,35 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("f() = 1", "assign")
 
     def test_assign_del(self):
-        self._check_error("del f()", "delete")
+        self._check_error("del (,)", "invalid syntax")
+        self._check_error("del 1", "delete literal")
+        self._check_error("del (1, 2)", "delete literal")
+        self._check_error("del None", "delete None")
+        self._check_error("del *x", "delete starred")
+        self._check_error("del (*x)", "delete starred")
+        self._check_error("del (*x,)", "delete starred")
+        self._check_error("del [*x,]", "delete starred")
+        self._check_error("del f()", "delete function call")
+        self._check_error("del f(a, b)", "delete function call")
+        self._check_error("del o.f()", "delete function call")
+        self._check_error("del a[0]()", "delete function call")
+        self._check_error("del x, f()", "delete function call")
+        self._check_error("del f(), x", "delete function call")
+        self._check_error("del [a, b, ((c), (d,), e.f())]", "delete function call")
+        self._check_error("del (a if True else b)", "delete conditional")
+        self._check_error("del +a", "delete operator")
+        self._check_error("del a, +b", "delete operator")
+        self._check_error("del a + b", "delete operator")
+        self._check_error("del (a + b, c)", "delete operator")
+        self._check_error("del (c[0], a + b)", "delete operator")
+        self._check_error("del a.b.c + 2", "delete operator")
+        self._check_error("del a.b.c[0] + 2", "delete operator")
+        self._check_error("del (a, b, (c, d.e.f + 2))", "delete operator")
+        self._check_error("del [a, b, (c, d.e.f[0] + 2)]", "delete operator")
+        self._check_error("del (a := 5)", "delete named expression")
+        # We don't have a special message for this, but make sure we don't
+        # report "cannot delete name"
+        self._check_error("del a += b", "invalid syntax")
 
     def test_global_param_err_first(self):
         source = """if 1:

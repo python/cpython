@@ -62,11 +62,12 @@ def literal_eval(node_or_string):
         node_or_string = parse(node_or_string, mode='eval')
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
+    def _raise_malformed_node(node):
+        raise ValueError(f'malformed node or string: {node!r}')
     def _convert_num(node):
-        if isinstance(node, Constant):
-            if type(node.value) in (int, float, complex):
-                return node.value
-        raise ValueError('malformed node or string: ' + repr(node))
+        if not isinstance(node, Constant) or type(node.value) not in (int, float, complex):
+            _raise_malformed_node(node)
+        return node.value
     def _convert_signed_num(node):
         if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
             operand = _convert_num(node.operand)
@@ -88,6 +89,8 @@ def literal_eval(node_or_string):
               node.func.id == 'set' and node.args == node.keywords == []):
             return set()
         elif isinstance(node, Dict):
+            if len(node.keys) != len(node.values):
+                _raise_malformed_node(node)
             return dict(zip(map(_convert, node.keys),
                             map(_convert, node.values)))
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
@@ -669,10 +672,16 @@ class _Unparser(NodeVisitor):
         else:
             self.interleave(lambda: self.write(", "), traverser, items)
 
+    def maybe_newline(self):
+        """Adds a newline if it isn't the start of generated source"""
+        if self._source:
+            self.write("\n")
+
     def fill(self, text=""):
         """Indent a piece of text and append it, according to the current
         indentation level"""
-        self.write("\n" + "    " * self._indent + text)
+        self.maybe_newline()
+        self.write("    " * self._indent + text)
 
     def write(self, text):
         """Append a piece of text"""
@@ -916,7 +925,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def visit_ClassDef(self, node):
-        self.write("\n")
+        self.maybe_newline()
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
@@ -946,7 +955,7 @@ class _Unparser(NodeVisitor):
         self._function_helper(node, "async def")
 
     def _function_helper(self, node, fill_suffix):
-        self.write("\n")
+        self.maybe_newline()
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
@@ -1043,7 +1052,7 @@ class _Unparser(NodeVisitor):
         write("{")
         unparser = type(self)()
         unparser.set_precedence(_Precedence.TEST.next(), node.value)
-        expr = unparser.visit(node.value).rstrip("\n")
+        expr = unparser.visit(node.value)
         if expr.startswith("{"):
             write(" ")  # Separate pair of opening brackets as "{ {"
         write(expr)
@@ -1149,7 +1158,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Set(self, node):
         if not node.elts:
-            raise ValueError("Set node should has at least one item")
+            raise ValueError("Set node should have at least one item")
         with self.delimit("{", "}"):
             self.interleave(lambda: self.write(", "), self.traverse, node.elts)
 

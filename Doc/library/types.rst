@@ -329,6 +329,12 @@ Standard names are defined for the following types:
 
       Return a new view of the underlying mapping's values.
 
+   .. describe:: reversed(proxy)
+
+      Return a reverse iterator over the keys of the underlying mapping.
+
+      .. versionadded:: 3.9
+
 
 Additional Utility Classes and Functions
 ----------------------------------------
@@ -374,7 +380,7 @@ Additional Utility Classes and Functions
    class's __getattr__ method; this is done by raising AttributeError.
 
    This allows one to have properties active on an instance, and have virtual
-   attributes on the class with the same name (see Enum for an example).
+   attributes on the class with the same name (see :class:`enum.Enum` for an example).
 
    .. versionadded:: 3.4
 

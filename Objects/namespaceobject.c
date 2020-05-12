@@ -1,7 +1,7 @@
 // namespace object implementation
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 
 typedef struct {

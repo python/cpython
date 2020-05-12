@@ -8,8 +8,10 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_object.h"
-#include "structmember.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "structmember.h"         // PyMemberDef
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -340,7 +342,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
             goto error;
         kind = PyUnicode_KIND(modified);
         out = PyUnicode_DATA(modified);
-        PyUnicode_WRITE(kind, PyUnicode_DATA(modified), 0, '\r');
+        PyUnicode_WRITE(kind, out, 0, '\r');
         memcpy(out + kind, PyUnicode_DATA(output), kind * output_len);
         Py_DECREF(output);
         output = modified; /* output remains ready */
@@ -367,7 +369,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
     /* Record which newlines are read and do newline translation if desired,
        all in one pass. */
     {
-        void *in_str;
+        const void *in_str;
         Py_ssize_t len;
         int seennl = self->seennl;
         int only_lf = 0;
@@ -447,7 +449,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
         else {
             void *translated;
             int kind = PyUnicode_KIND(output);
-            void *in_str = PyUnicode_DATA(output);
+            const void *in_str = PyUnicode_DATA(output);
             Py_ssize_t in, out;
             /* XXX: Previous in-place translation here is disabled as
                resizing is not possible anymore */
@@ -993,10 +995,10 @@ io_check_errors(PyObject *errors)
 {
     assert(errors != NULL && errors != Py_None);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifndef Py_DEBUG
     /* In release mode, only check in development mode (-X dev) */
-    if (!interp->config.dev_mode) {
+    if (!_PyInterpreterState_GetConfig(interp)->dev_mode) {
         return 0;
     }
 #else
@@ -2085,7 +2087,7 @@ _PyIO_find_line_ending(
     else {
         /* Non-universal mode. */
         Py_ssize_t readnl_len = PyUnicode_GET_LENGTH(readnl);
-        Py_UCS1 *nl = PyUnicode_1BYTE_DATA(readnl);
+        const Py_UCS1 *nl = PyUnicode_1BYTE_DATA(readnl);
         /* Assume that readnl is an ASCII character. */
         assert(PyUnicode_KIND(readnl) == PyUnicode_1BYTE_KIND);
         if (readnl_len == 1) {
@@ -2139,7 +2141,7 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
     chunked = 0;
 
     while (1) {
-        char *ptr;
+        const char *ptr;
         Py_ssize_t line_len;
         int kind;
         Py_ssize_t consumed = 0;
@@ -2640,7 +2642,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     Py_ssize_t chars_to_skip, chars_decoded;
     Py_ssize_t skip_bytes, skip_back;
     PyObject *saved_state = NULL;
-    char *input, *input_end;
+    const char *input, *input_end;
     Py_ssize_t dec_buffer_len;
     int dec_flags;
 

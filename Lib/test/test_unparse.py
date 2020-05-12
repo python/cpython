@@ -11,11 +11,8 @@ import ast
 def read_pyfile(filename):
     """Read and return the contents of a Python source file (as a
     string), taking into account the file encoding."""
-    with open(filename, "rb") as pyfile:
-        encoding = tokenize.detect_encoding(pyfile.readline)[0]
-    with open(filename, "r", encoding=encoding) as pyfile:
-        source = pyfile.read()
-    return source
+    with tokenize.open(filename) as stream:
+        return stream.read()
 
 
 for_else = """\
@@ -131,19 +128,17 @@ class ASTTestCase(unittest.TestCase):
     def check_invalid(self, node, raises=ValueError):
         self.assertRaises(raises, ast.unparse, node)
 
-    def get_source(self, code1, code2=None, strip=True):
+    def get_source(self, code1, code2=None):
         code2 = code2 or code1
         code1 = ast.unparse(ast.parse(code1))
-        if strip:
-            code1 = code1.strip()
         return code1, code2
 
-    def check_src_roundtrip(self, code1, code2=None, strip=True):
-        code1, code2 = self.get_source(code1, code2, strip)
+    def check_src_roundtrip(self, code1, code2=None):
+        code1, code2 = self.get_source(code1, code2)
         self.assertEqual(code2, code1)
 
-    def check_src_dont_roundtrip(self, code1, code2=None, strip=True):
-        code1, code2 = self.get_source(code1, code2, strip)
+    def check_src_dont_roundtrip(self, code1, code2=None):
+        code1, code2 = self.get_source(code1, code2)
         self.assertNotEqual(code2, code1)
 
 class UnparseTestCase(ASTTestCase):

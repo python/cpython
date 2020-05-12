@@ -4,7 +4,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"    // _PyThreadState_GET()
 #include "pycore_sysmodule.h"
 #include "pycore_traceback.h"
 
@@ -107,7 +107,8 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
     if (exception != NULL &&
         !PyExceptionClass_Check(exception)) {
         _PyErr_Format(tstate, PyExc_SystemError,
-                      "exception %R not a BaseException subclass",
+                      "_PyErr_SetObject: "
+                      "exception %R is not a BaseException subclass",
                       exception);
         return;
     }
@@ -484,6 +485,15 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
         return;
 
     PyThreadState *tstate = _PyThreadState_GET();
+
+    if (!PyExceptionClass_Check(exc)) {
+        _PyErr_Format(tstate, PyExc_SystemError,
+                      "_PyErr_ChainExceptions: "
+                      "exception %R is not a BaseException subclass",
+                      exc);
+        return;
+    }
+
     if (_PyErr_Occurred(tstate)) {
         PyObject *exc2, *val2, *tb2;
         _PyErr_Fetch(tstate, &exc2, &val2, &tb2);
@@ -1372,7 +1382,7 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
     }
 
     if (exc_tb == NULL) {
-        struct _frame *frame = tstate->frame;
+        PyFrameObject *frame = tstate->frame;
         if (frame != NULL) {
             exc_tb = _PyTraceBack_FromFrame(NULL, frame);
             if (exc_tb == NULL) {
