@@ -4106,9 +4106,10 @@ its contents cannot be altered after it is created; it can therefore be used as
 a dictionary key or as an element of another set.
 
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
-of elements within braces, for example: ``{'jack', 'sjoerd'}``, by using a set
-comprehension, for example ``{x for x in iterable}``, in addition to the
-:class:`set` constructor.
+of elements within braces, for example: ``{'jack', 'sjoerd'}``.  Non-empty sets can
+be created by using a setcomprehension, for example ``{x for x in iterable}``.
+Also, set comprehensions can make both empty and non-empty sets.  In addition to
+the :class:`set` constructor.
 
 The constructors for both classes work the same:
 
@@ -4304,8 +4305,9 @@ is usually unwise to use them as dictionary keys.)
 
 Dictionaries can be created by placing a comma-separated list of ``key: value``
 pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
-'jack', 4127: 'sjoerd'}``, by a dict comprehension, for example:
-``{x: x**2 for x in iterable}`` or by the :class:`dict` constructor.
+'jack', 4127: 'sjoerd'}``, by a dict comprehension, for example: ``{x: x**2 for
+x in iterable}``.  Dictionaries can be created by the :class:`dict` constructor,
+for example: ``dict(jack=4098, sjoerd=4127)``.
 
 .. class:: dict(**kwarg)
            dict(mapping, **kwarg)
