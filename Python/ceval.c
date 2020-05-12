@@ -5054,7 +5054,7 @@ trace_call_function(PyThreadState *tstate,
                     PyObject *kwnames)
 {
     PyObject *x;
-    if (PyCFunction_Check(func)) {
+    if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         C_TRACE(x, PyObject_Vectorcall(func, args, nargs, kwnames));
         return x;
     }
@@ -5115,7 +5115,7 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
 {
     PyObject *result;
 
-    if (PyCFunction_Check(func)) {
+    if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
     }
