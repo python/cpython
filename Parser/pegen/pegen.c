@@ -337,9 +337,6 @@ tokenizer_error(Parser *p)
         case E_TOKEN:
             msg = "invalid token";
             break;
-        case E_IDENTIFIER:
-            msg = "invalid character in identifier";
-            break;
         case E_EOFS:
             RAISE_SYNTAX_ERROR("EOF while scanning triple-quoted string literal");
             return -1;

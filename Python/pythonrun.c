@@ -1603,9 +1603,6 @@ err_input(perrdetail *err)
         msg = "unexpected character after line continuation character";
         break;
 
-    case E_IDENTIFIER:
-        msg = "invalid character in identifier";
-        break;
     case E_BADSINGLE:
         msg = "multiple statements found while compiling a single statement";
         break;

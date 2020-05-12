@@ -1222,6 +1222,8 @@ PyAPI_FUNC(void) _PyUnicode_ClearStaticStrings(void);
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
 
+PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);
+
 #ifdef __cplusplus
 }
 #endif
