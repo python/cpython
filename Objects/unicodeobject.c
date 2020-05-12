@@ -12364,6 +12364,7 @@ PyUnicode_IsIdentifier(PyObject *self)
 
         const wchar_t *wstr = _PyUnicode_WSTR(self);
         Py_UCS4 ch = wstr[i++];
+#if SIZEOF_WCHAR_T == 2
         if (Py_UNICODE_IS_HIGH_SURROGATE(ch)
             && i < len
             && Py_UNICODE_IS_LOW_SURROGATE(wstr[i]))
@@ -12371,12 +12372,14 @@ PyUnicode_IsIdentifier(PyObject *self)
             ch = Py_UNICODE_JOIN_SURROGATES(ch, wstr[i]);
             i++;
         }
+#endif
         if (!_PyUnicode_IsXidStart(ch) && ch != 0x5F /* LOW LINE */) {
             return 0;
         }
 
-        for (; i < len; i++) {
-            ch = wstr[i];
+        while (i < len) {
+            ch = wstr[i++];
+#if SIZEOF_WCHAR_T == 2
             if (Py_UNICODE_IS_HIGH_SURROGATE(ch)
                 && i < len
                 && Py_UNICODE_IS_LOW_SURROGATE(wstr[i]))
@@ -12384,6 +12387,7 @@ PyUnicode_IsIdentifier(PyObject *self)
                 ch = Py_UNICODE_JOIN_SURROGATES(ch, wstr[i]);
                 i++;
             }
+#endif
             if (!_PyUnicode_IsXidContinue(ch)) {
                 return 0;
             }
