@@ -545,13 +545,21 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
 }
 
+static void
+w_decref_entry(void *key)
+{
+    PyObject *entry_key = (PyObject *)key;
+    Py_XDECREF(entry_key);
+}
+
 static int
 w_init_refs(WFILE *wf, int version)
 {
     if (version >= 3) {
-        wf->hashtable = _Py_hashtable_new(sizeof(int),
-                                          _Py_hashtable_hash_ptr,
-                                          _Py_hashtable_compare_direct);
+        wf->hashtable = _Py_hashtable_new_full(sizeof(int), 0,
+                                               _Py_hashtable_hash_ptr,
+                                               _Py_hashtable_compare_direct,
+                                               w_decref_entry, NULL, NULL);
         if (wf->hashtable == NULL) {
             PyErr_NoMemory();
             return -1;
@@ -560,20 +568,10 @@ w_init_refs(WFILE *wf, int version)
     return 0;
 }
 
-static int
-w_decref_entry(_Py_hashtable_t *ht, _Py_hashtable_entry_t *entry,
-               void *Py_UNUSED(data))
-{
-    PyObject *entry_key = (PyObject *)entry->key;
-    Py_XDECREF(entry_key);
-    return 0;
-}
-
 static void
 w_clear_refs(WFILE *wf)
 {
     if (wf->hashtable != NULL) {
-        _Py_hashtable_foreach(wf->hashtable, w_decref_entry, NULL);
         _Py_hashtable_destroy(wf->hashtable);
     }
 }
