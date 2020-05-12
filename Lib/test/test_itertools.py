@@ -903,17 +903,17 @@ class TestBasicOps(unittest.TestCase):
         ans = [(x,y) for x, y in copy.deepcopy(zip('abc',count()))]
         self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
 
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             ans = [(x,y) for x, y in pickle.loads(pickle.dumps(zip('abc',count()), proto))]
             self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
 
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             testIntermediate = zip('abc',count())
             next(testIntermediate)
             ans = [(x,y) for x, y in pickle.loads(pickle.dumps(testIntermediate, proto))]
             self.assertEqual(ans, [('b', 1), ('c', 2)])
 
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, zip('abc', count()))
 
     def test_ziplongest(self):
@@ -1202,7 +1202,7 @@ class TestBasicOps(unittest.TestCase):
         c = starmap(operator.pow, zip(range(3), range(1,7)))
         self.assertEqual(list(copy.deepcopy(c)), ans)
 
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             c = starmap(operator.pow, zip(range(3), range(1,7)))
             self.pickletest(proto, c)
 
