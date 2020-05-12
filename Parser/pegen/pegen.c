@@ -383,8 +383,7 @@ tokenizer_error(Parser *p)
 }
 
 void *
-_PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number,
-                     const char *errmsg, ...)
+_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     int col_offset;
@@ -397,7 +396,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number,
 
     va_list va;
     va_start(va, errmsg);
-    _PyPegen_raise_error_known_location(p, errtype, with_col_number, t->lineno,
+    _PyPegen_raise_error_known_location(p, errtype, t->lineno,
                                         col_offset, errmsg, va);
     va_end(va);
 
@@ -407,9 +406,8 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number,
 
 void *
 _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
-                                   int with_col_number,
-                                   int lineno, int col_offset,
-                                   const char *errmsg, va_list va)
+                                    int lineno, int col_offset,
+                                    const char *errmsg, va_list va)
 {
     PyObject *value = NULL;
     PyObject *errstr = NULL;
@@ -428,14 +426,12 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     if (!error_line) {
         error_line = get_error_line(p->tok->buf, p->start_rule == Py_file_input);
+        if (!error_line) {
+            goto error;
+        }
     }
 
     int col_number = byte_offset_to_character_offset(error_line, col_offset);
-
-    if (!error_line || (!with_col_number && p->start_rule != Py_file_input)) {
-        Py_INCREF(Py_None);
-        error_line = Py_None;
-    }
 
     tmp = Py_BuildValue("(OiiN)", p->tok->filename, lineno, col_number, error_line);
     if (!tmp) {
