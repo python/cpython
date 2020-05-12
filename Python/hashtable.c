@@ -149,11 +149,12 @@ _Py_hashtable_new_full(size_t key_size, size_t data_size,
     _Py_hashtable_allocator_t alloc;
 
     if (allocator == NULL) {
-        alloc.malloc = PyMem_RawMalloc;
-        alloc.free = PyMem_RawFree;
+        alloc.malloc = PyMem_Malloc;
+        alloc.free = PyMem_Free;
     }
-    else
+    else {
         alloc = *allocator;
+    }
 
     ht = (_Py_hashtable_t *)alloc.malloc(sizeof(_Py_hashtable_t));
     if (ht == NULL)
