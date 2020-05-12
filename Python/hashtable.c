@@ -193,6 +193,29 @@ _Py_hashtable_get_entry_generic(_Py_hashtable_t *ht, const void *key)
 }
 
 
+// Specialized for:
+// hash_func == _Py_hashtable_hash_ptr
+// compare_func == _Py_hashtable_compare_direct
+static _Py_hashtable_entry_t *
+_Py_hashtable_get_entry_ptr(_Py_hashtable_t *ht, const void *key)
+{
+    Py_uhash_t key_hash = _Py_hashtable_hash_ptr(key);
+    size_t index = key_hash & (ht->num_buckets - 1);
+    _Py_hashtable_entry_t *entry = entry = TABLE_HEAD(ht, index);
+    while (1) {
+        if (entry == NULL) {
+            return NULL;
+        }
+        // Compare directly keys (ignore entry->key_hash)
+        if (entry->key == key) {
+            break;
+        }
+        entry = ENTRY_NEXT(entry);
+    }
+    return entry;
+}
+
+
 void*
 _Py_hashtable_steal(_Py_hashtable_t *ht, const void *key)
 {
@@ -272,30 +295,6 @@ _Py_hashtable_get(_Py_hashtable_t *ht, const void *key)
     else {
         return NULL;
     }
-}
-
-
-// Specialized for:
-// hash_func == _Py_hashtable_hash_ptr
-// compare_func == _Py_hashtable_compare_direct
-_Py_hashtable_entry_t *
-_Py_hashtable_get_entry_ptr(_Py_hashtable_t *ht, const void *key)
-{
-    Py_uhash_t key_hash = _Py_hashtable_hash_ptr(key);
-    size_t index = key_hash & (ht->num_buckets - 1);
-    _Py_hashtable_entry_t *entry = entry = TABLE_HEAD(ht, index);
-    while (1) {
-        if (entry == NULL) {
-            return NULL;
-        }
-        if (entry->key_hash == key_hash) {
-            if (entry->key == key) {
-                break;
-            }
-        }
-        entry = ENTRY_NEXT(entry);
-    }
-    return entry;
 }
 
 
