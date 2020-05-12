@@ -198,7 +198,7 @@ Public functions
    the ``-s``, ``-p`` and ``-e`` options described above.
    They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
 
-   If *hardlink_dupes* is ``True``, hardlinks are used to prevent duplicates
+   If *hardlink_dupes* is true, hardlinks are used to prevent duplicates
    if ``.pyc`` files for multiple optimization levels have the same content.
 
    .. versionchanged:: 3.2
