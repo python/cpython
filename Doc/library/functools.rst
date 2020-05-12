@@ -158,11 +158,11 @@ The :mod:`functools` module defines the following functions:
    bypassing the cache, or for rewrapping the function with a different cache.
 
    An `LRU (least recently used) cache
-   <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_ works
-   best when the most recent calls are the best predictors of upcoming calls (for
-   example, the most popular articles on a news server tend to change each day).
-   The cache's size limit assures that the cache does not grow without bound on
-   long-running processes such as web servers.
+   <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
+   works best when the most recent calls are the best predictors of upcoming
+   calls (for example, the most popular articles on a news server tend to
+   change each day).  The cache's size limit assures that the cache does not
+   grow without bound on long-running processes such as web servers.
 
    In general, the LRU cache should only be used when you want to reuse
    previously computed values.  Accordingly, it doesn't make sense to cache
