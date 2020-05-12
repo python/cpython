@@ -132,7 +132,17 @@ class TranslateTestCase(unittest.TestCase):
         g2 = f"g{digits[2]}"  # e.g., group name "g5"
         self.assertEqual(t,
          fr'(?s:(?=(?P<{g1}>.*?a))(?P={g1})(?=(?P<{g2}>.*?a))(?P={g2}).*a)\Z')
-
+        # and try pasting multiple translate results - it's an undocumented
+        # feature that this works; all the pain of generating unique group
+        # names across calls exists to support this
+        r1 = translate('**a**a**a*')
+        r2 = translate('**b**b**b*')
+        r3 = translate('*c*c*c*')
+        fatre = "|".join([r1, r2, r3])
+        self.assertTrue(re.match(fatre, 'abaccad'))
+        self.assertTrue(re.match(fatre, 'abxbcab'))
+        self.assertTrue(re.match(fatre, 'cbabcaxc'))
+        self.assertFalse(re.match(fatre, 'dabccbad'))
 
 class FilterTestCase(unittest.TestCase):
 
