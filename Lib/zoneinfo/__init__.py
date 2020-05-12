@@ -26,4 +26,4 @@ def __getattr__(name):
 
 
 def __dir__():
-    return sorted(__all__)
+    return sorted(list(globals()) + ["TZPATH"])
