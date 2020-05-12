@@ -67,7 +67,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{384C224A-7474-476E-A01B-750EA7DE918C}</ProjectGuid>
+    <ProjectGuid>{FCBE1EF2-E0F0-40B1-88B5-00A35D378742}</ProjectGuid>
     <RootNamespace>_czoneinfo</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

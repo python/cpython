@@ -91,7 +91,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_testconsole", "_testconsol
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_asyncio", "_asyncio.vcxproj", "{384C224A-7474-476E-A01B-750EA7DE918C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_czoneinfo", "_czoneinfo.vcxproj", "{384C224A-7474-476E-A01B-750EA7DE918C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_czoneinfo", "_czoneinfo.vcxproj", "{FCBE1EF2-E0F0-40B1-88B5-00A35D378742}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_queue", "_queue.vcxproj", "{78D80A15-BD8C-44E2-B49E-1F05B0A0A687}"
 EndProject
