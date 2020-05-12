@@ -115,8 +115,8 @@ compile Python sources.
 
 .. cmdoption:: --hardlink-dupes
 
-   Use hardlinks to prevent duplicates if ``.pyc`` files for multiple
-   optimization levels have the same content.
+   If two ``.pyc`` files with different optimization level have
+   the same content, use hard links to consolidate duplicate files.
 
 .. versionchanged:: 3.2
    Added the ``-i``, ``-b`` and ``-h`` options.
@@ -198,8 +198,8 @@ Public functions
    the ``-s``, ``-p`` and ``-e`` options described above.
    They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
 
-   If *hardlink_dupes* is true, hardlinks are used to prevent duplicates
-   if ``.pyc`` files for multiple optimization levels have the same content.
+   If *hardlink_dupes* is true and two ``.pyc`` files with different optimization
+   level have the same content, use hard links to consolidate duplicate files.
 
    .. versionchanged:: 3.2
       Added the *legacy* and *optimize* parameter.
@@ -265,8 +265,8 @@ Public functions
    the ``-s``, ``-p`` and ``-e`` options described above.
    They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
 
-   If *hardlink_dupes* is ``True``, hardlinks are used to prevent duplicates
-   if ``.pyc`` files for multiple optimization levels have the same content.
+   If *hardlink_dupes* is true and two ``.pyc`` files with different optimization
+   level have the same content, use hard links to consolidate duplicate files.
 
    .. versionadded:: 3.2
 
