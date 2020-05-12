@@ -37,23 +37,23 @@ def reset_tzpath(to=None):
 def _parse_python_tzpath(env_var):
     if not env_var:
         return ()
-    else:
-        raw_tzpath = env_var.split(os.pathsep)
-        new_tzpath = tuple(filter(os.path.isabs, raw_tzpath))
 
-        # If anything has been filtered out, we will warn about it
-        if len(new_tzpath) != len(raw_tzpath):
-            import warnings
+    raw_tzpath = env_var.split(os.pathsep)
+    new_tzpath = tuple(filter(os.path.isabs, raw_tzpath))
 
-            msg = _get_invalid_paths_message(raw_tzpath)
+    # If anything has been filtered out, we will warn about it
+    if len(new_tzpath) != len(raw_tzpath):
+        import warnings
 
-            warnings.warn(
-                "Invalid paths specified in PYTHONTZPATH environment variable."
-                + msg,
-                InvalidTZPathWarning,
-            )
+        msg = _get_invalid_paths_message(raw_tzpath)
 
-        return new_tzpath
+        warnings.warn(
+            "Invalid paths specified in PYTHONTZPATH environment variable."
+            + msg,
+            InvalidTZPathWarning,
+        )
+
+    return new_tzpath
 
 
 def _get_invalid_paths_message(tzpaths):
