@@ -76,12 +76,17 @@ typedef struct {
 
 /* Forward declaration */
 struct _Py_hashtable_t;
+typedef struct _Py_hashtable_t _Py_hashtable_t;
 
-typedef Py_uhash_t (*_Py_hashtable_hash_func) (struct _Py_hashtable_t *ht,
+typedef Py_uhash_t (*_Py_hashtable_hash_func) (_Py_hashtable_t *ht,
                                                const void *pkey);
-typedef int (*_Py_hashtable_compare_func) (struct _Py_hashtable_t *ht,
+typedef int (*_Py_hashtable_compare_func) (_Py_hashtable_t *ht,
                                            const void *pkey,
                                            const _Py_hashtable_entry_t *he);
+typedef _Py_hashtable_entry_t* (*_Py_hashtable_get_entry_func)(_Py_hashtable_t *ht,
+                                                               const void *pkey);
+typedef int (*_Py_hashtable_get_func) (_Py_hashtable_t *ht,
+                                       const void *pkey, void *data);
 
 typedef struct {
     /* allocate a memory block */
@@ -93,18 +98,19 @@ typedef struct {
 
 
 /* _Py_hashtable: table */
-
-typedef struct _Py_hashtable_t {
+struct _Py_hashtable_t {
     size_t num_buckets;
     size_t entries; /* Total number of entries in the table. */
     _Py_slist_t *buckets;
     size_t key_size;
     size_t data_size;
 
+    _Py_hashtable_get_func get_func;
+    _Py_hashtable_get_entry_func get_entry_func;
     _Py_hashtable_hash_func hash_func;
     _Py_hashtable_compare_func compare_func;
     _Py_hashtable_allocator_t alloc;
-} _Py_hashtable_t;
+};
 
 /* hash a pointer (void*) */
 PyAPI_FUNC(Py_uhash_t) _Py_hashtable_hash_ptr(
@@ -176,10 +182,12 @@ PyAPI_FUNC(int) _Py_hashtable_set(
 
    Don't call directly this function, but use _Py_HASHTABLE_GET_ENTRY()
    macro */
-PyAPI_FUNC(_Py_hashtable_entry_t*) _Py_hashtable_get_entry(
-    _Py_hashtable_t *ht,
-    size_t key_size,
-    const void *pkey);
+static inline _Py_hashtable_entry_t *
+_Py_hashtable_get_entry(_Py_hashtable_t *ht, size_t key_size, const void *pkey)
+{
+    assert(key_size == ht->key_size);
+    return ht->get_entry_func(ht, pkey);
+}
 
 #define _Py_HASHTABLE_GET_ENTRY(TABLE, KEY) \
     _Py_hashtable_get_entry(TABLE, sizeof(KEY), &(KEY))
@@ -189,12 +197,14 @@ PyAPI_FUNC(_Py_hashtable_entry_t*) _Py_hashtable_get_entry(
    exists, return 0 if the entry does not exist.
 
    Don't call directly this function, but use _Py_HASHTABLE_GET() macro */
-PyAPI_FUNC(int) _Py_hashtable_get(
-    _Py_hashtable_t *ht,
-    size_t key_size,
-    const void *pkey,
-    size_t data_size,
-    void *data);
+static inline int
+_Py_hashtable_get(_Py_hashtable_t *ht, size_t key_size, const void *pkey,
+                  size_t data_size, void *data)
+{
+    assert(key_size == ht->key_size);
+    assert(data_size == ht->data_size);
+    return ht->get_func(ht, pkey, data);
+}
 
 #define _Py_HASHTABLE_GET(TABLE, KEY, DATA) \
     _Py_hashtable_get(TABLE, sizeof(KEY), &(KEY), sizeof(DATA), &(DATA))
