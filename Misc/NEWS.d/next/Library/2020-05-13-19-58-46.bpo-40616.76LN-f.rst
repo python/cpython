@@ -1,0 +1,2 @@
+Added :class:`asyncio.BufferQueue` which implements the circular buffer
+concept.

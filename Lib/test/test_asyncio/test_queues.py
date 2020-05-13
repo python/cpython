@@ -635,6 +635,20 @@ class PriorityQueueTests(_QueueTestBase):
         self.assertEqual([1, 2, 3], items)
 
 
+class BufferQueueTests(_QueueTestBase):
+
+    def test_buffer(self):
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.BufferQueue(maxsize=2, loop=self.loop)
+        for i in [1, 3, 2]:
+            q.put_nowait(i)
+
+        self.assertEqual(2, q.qsize())
+
+        items = [q.get_nowait() for _ in range(2)]
+        self.assertEqual([3, 2], items)
+
+
 class _QueueJoinTestMixin:
 
     q_class = None
@@ -712,6 +726,10 @@ class LifoQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
 
 class PriorityQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
     q_class = asyncio.PriorityQueue
+
+
+class BufferQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
+    q_class = asyncio.BufferQueue
 
 
 if __name__ == '__main__':

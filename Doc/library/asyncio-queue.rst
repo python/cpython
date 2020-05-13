@@ -130,6 +130,15 @@ LIFO Queue
    entries first (last in, first out).
 
 
+Buffer Queue
+============
+
+.. class:: BufferQueue
+
+   A variant of :class:`Queue` that drops earliest added entries when
+   :meth:`qsize` exceeds :attr:`maxsize`.
+
+
 Exceptions
 ==========
 

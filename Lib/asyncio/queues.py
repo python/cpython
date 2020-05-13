@@ -1,4 +1,6 @@
-__all__ = ('Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty')
+__all__ = (
+    'Queue', 'PriorityQueue', 'LifoQueue', 'BufferQueue', 'QueueFull', 'QueueEmpty',
+)
 
 import collections
 import heapq
@@ -250,3 +252,28 @@ class LifoQueue(Queue):
 
     def _get(self):
         return self._queue.pop()
+
+
+class BufferQueue(Queue):
+    """A subclass of Queue that drops earliest added entries when `BufferQueue.qsize()`
+    exceeds `BufferQueue.maxsize`.
+
+    Acts exactly as Queue if maxsize is not provided or less than or equal to zero.
+    """
+
+    def _init(self, maxsize):
+        """Leverages `colections.deque` built-in functionality."""
+        maxlen = maxsize if maxsize is not None and maxsize > 0 else None
+        self._queue = collections.deque(maxlen=maxlen)
+
+    def _put(self, item):
+        """Fixes counters when BufferQueue is about to drop an item to allow join to
+        work properly.
+        """
+        if Queue.full(self):
+            self.task_done()
+        self._queue.append(item)
+
+    def full(self):
+        """Always returns `False` as BufferQueue can never be overflown."""
+        return False
