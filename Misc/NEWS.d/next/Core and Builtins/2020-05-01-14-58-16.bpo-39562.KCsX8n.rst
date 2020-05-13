@@ -1,3 +1,0 @@
-The constant values of future flags in the :mod:`__future__` module are
-updated in order to prevent collision with compiler flags. Previously
-``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
