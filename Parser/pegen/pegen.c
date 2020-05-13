@@ -2068,8 +2068,9 @@ _PyPegen_get_invalid_target(expr_ty e)
             Py_ssize_t len = asdl_seq_LEN(e->v.List.elts);
             for (Py_ssize_t i = 0; i < len; i++) {
                 expr_ty other = asdl_seq_GET(e->v.List.elts, i);
-                if (_PyPegen_get_invalid_target(other)) {
-                    return other;
+                expr_ty child = _PyPegen_get_invalid_target(other);
+                if (child != NULL) {
+                    return child;
                 }
             }
             return NULL;
@@ -2088,6 +2089,8 @@ _PyPegen_get_invalid_target(expr_ty e)
         case Starred_kind:
             return _PyPegen_get_invalid_target(e->v.Starred.value);
         case Name_kind:
+        case Subscript_kind:
+        case Attribute_kind:
             return NULL;
         default:
             return e;
