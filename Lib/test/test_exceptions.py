@@ -242,16 +242,13 @@ class ExceptionTests(unittest.TestCase):
         check('from __future__ import doesnt_exist', 1, 1)
         check('from __future__ import braces', 1, 1)
         check('x=1\nfrom __future__ import division', 2, 1)
-        check('(yield i) = 2', 1, 1)
+        check('foo(1=2)', 1, 5)
+        check('def f():\n  x, y: int', 2, 3)
+        check('[*x for x in xs]', 1, 2)
+        check('foo(x for x in range(10), 100)', 1, 5)
+        check('(yield i) = 2', 1, 1 if support.use_old_parser() else 2)
         check('def f(*):\n  pass', 1, 7 if support.use_old_parser() else 8)
-        check('foo(1=2)', 1, 5 if support.use_old_parser() else 6)
-
-    @support.skip_if_new_parser("Pegen column offsets might be different")
-    def testSyntaxErrorOffsetCustom(self):
-        self.check('for 1 in []: pass', 1, 5)
-        self.check('[*x for x in xs]', 1, 2)
-        self.check('def f():\n  x, y: int', 2, 3)
-        self.check('foo(x for x in range(10), 100)', 1, 5)
+        check('for 1 in []: pass', 1, 5 if support.use_old_parser() else 7)
 
     @cpython_only
     def testSettingException(self):
