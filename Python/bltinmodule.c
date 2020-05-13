@@ -2666,8 +2666,7 @@ check:
         item = (*Py_TYPE(it)->tp_iternext)(it);
         if (item) {
             Py_DECREF(item);
-            return PyErr_Format(PyExc_ValueError,
-                                "%s() argument %d is too long",
+            return PyErr_Format(PyExc_ValueError, "%s() argument %d is too long",
                                 Py_TYPE(lz)->tp_name, i + 1);
         }
         if (PyErr_Occurred()) {
