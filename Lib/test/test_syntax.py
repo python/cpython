@@ -100,30 +100,29 @@ expression inside that contain should still cause a syntax error.
 This test just checks a couple of cases rather than enumerating all of
 them.
 
-# All of the following also produce different error messages with pegen
-# >>> (a, "b", c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to literal
+>>> (a, "b", c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to literal
 
-# >>> (a, True, c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to True
+>>> (a, True, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
 
 >>> (a, __debug__, c) = (1, 2, 3)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
-# >>> (a, *True, c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to True
+>>> (a, *True, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
 
 >>> (a, *__debug__, c) = (1, 2, 3)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
-# >>> [a, b, c + 1] = [1, 2, 3]
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to operator
+>>> [a, b, c + 1] = [1, 2, 3]
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
 
 >>> a if 1 else b = 1
 Traceback (most recent call last):
