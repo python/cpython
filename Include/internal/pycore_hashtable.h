@@ -30,32 +30,13 @@ typedef struct {
     _Py_slist_item_t _Py_slist_item;
 
     Py_uhash_t key_hash;
-
-    /* key (key_size bytes) and then data (data_size bytes) follows */
+    void *key;
+    /* data (data_size bytes) follows */
 } _Py_hashtable_entry_t;
-
-#define _Py_HASHTABLE_ENTRY_PKEY(ENTRY) \
-        ((const void *)((char *)(ENTRY) \
-                        + sizeof(_Py_hashtable_entry_t)))
 
 #define _Py_HASHTABLE_ENTRY_PDATA(TABLE, ENTRY) \
         ((const void *)((char *)(ENTRY) \
-                        + sizeof(_Py_hashtable_entry_t) \
-                        + (TABLE)->key_size))
-
-/* Get a key value from pkey: use memcpy() rather than a pointer dereference
-   to avoid memory alignment issues. */
-#define _Py_HASHTABLE_READ_KEY(TABLE, PKEY, DST_KEY) \
-    do { \
-        assert(sizeof(DST_KEY) == (TABLE)->key_size); \
-        memcpy(&(DST_KEY), (PKEY), sizeof(DST_KEY)); \
-    } while (0)
-
-#define _Py_HASHTABLE_ENTRY_READ_KEY(TABLE, ENTRY, KEY) \
-    do { \
-        assert(sizeof(KEY) == (TABLE)->key_size); \
-        memcpy(&(KEY), _Py_HASHTABLE_ENTRY_PKEY(ENTRY), sizeof(KEY)); \
-    } while (0)
+                        + sizeof(_Py_hashtable_entry_t)))
 
 #define _Py_HASHTABLE_ENTRY_READ_DATA(TABLE, ENTRY, DATA) \
     do { \
@@ -78,15 +59,12 @@ typedef struct {
 struct _Py_hashtable_t;
 typedef struct _Py_hashtable_t _Py_hashtable_t;
 
-typedef Py_uhash_t (*_Py_hashtable_hash_func) (_Py_hashtable_t *ht,
-                                               const void *pkey);
-typedef int (*_Py_hashtable_compare_func) (_Py_hashtable_t *ht,
-                                           const void *pkey,
-                                           const _Py_hashtable_entry_t *he);
+typedef Py_uhash_t (*_Py_hashtable_hash_func) (const void *key);
+typedef int (*_Py_hashtable_compare_func) (const void *key1, const void *key2);
 typedef _Py_hashtable_entry_t* (*_Py_hashtable_get_entry_func)(_Py_hashtable_t *ht,
-                                                               const void *pkey);
+                                                               const void *key);
 typedef int (*_Py_hashtable_get_func) (_Py_hashtable_t *ht,
-                                       const void *pkey, void *data);
+                                       const void *key, void *data);
 
 typedef struct {
     /* allocate a memory block */
@@ -102,7 +80,6 @@ struct _Py_hashtable_t {
     size_t num_buckets;
     size_t entries; /* Total number of entries in the table. */
     _Py_slist_t *buckets;
-    size_t key_size;
     size_t data_size;
 
     _Py_hashtable_get_func get_func;
@@ -113,24 +90,19 @@ struct _Py_hashtable_t {
 };
 
 /* hash a pointer (void*) */
-PyAPI_FUNC(Py_uhash_t) _Py_hashtable_hash_ptr(
-    struct _Py_hashtable_t *ht,
-    const void *pkey);
+PyAPI_FUNC(Py_uhash_t) _Py_hashtable_hash_ptr(const void *key);
 
 /* comparison using memcmp() */
 PyAPI_FUNC(int) _Py_hashtable_compare_direct(
-    _Py_hashtable_t *ht,
-    const void *pkey,
-    const _Py_hashtable_entry_t *entry);
+    const void *key1,
+    const void *key2);
 
 PyAPI_FUNC(_Py_hashtable_t *) _Py_hashtable_new(
-    size_t key_size,
     size_t data_size,
     _Py_hashtable_hash_func hash_func,
     _Py_hashtable_compare_func compare_func);
 
 PyAPI_FUNC(_Py_hashtable_t *) _Py_hashtable_new_full(
-    size_t key_size,
     size_t data_size,
     size_t init_size,
     _Py_hashtable_hash_func hash_func,
@@ -165,16 +137,15 @@ PyAPI_FUNC(size_t) _Py_hashtable_size(_Py_hashtable_t *ht);
    but use _Py_HASHTABLE_SET() and _Py_HASHTABLE_SET_NODATA() macros */
 PyAPI_FUNC(int) _Py_hashtable_set(
     _Py_hashtable_t *ht,
-    size_t key_size,
-    const void *pkey,
+    const void *key,
     size_t data_size,
     const void *data);
 
 #define _Py_HASHTABLE_SET(TABLE, KEY, DATA) \
-    _Py_hashtable_set(TABLE, sizeof(KEY), &(KEY), sizeof(DATA), &(DATA))
+    _Py_hashtable_set(TABLE, (KEY), sizeof(DATA), &(DATA))
 
 #define _Py_HASHTABLE_SET_NODATA(TABLE, KEY) \
-    _Py_hashtable_set(TABLE, sizeof(KEY), &(KEY), 0, NULL)
+    _Py_hashtable_set(TABLE, (KEY), 0, NULL)
 
 
 /* Get an entry.
@@ -183,14 +154,13 @@ PyAPI_FUNC(int) _Py_hashtable_set(
    Don't call directly this function, but use _Py_HASHTABLE_GET_ENTRY()
    macro */
 static inline _Py_hashtable_entry_t *
-_Py_hashtable_get_entry(_Py_hashtable_t *ht, size_t key_size, const void *pkey)
+_Py_hashtable_get_entry(_Py_hashtable_t *ht, const void *key)
 {
-    assert(key_size == ht->key_size);
-    return ht->get_entry_func(ht, pkey);
+    return ht->get_entry_func(ht, key);
 }
 
 #define _Py_HASHTABLE_GET_ENTRY(TABLE, KEY) \
-    _Py_hashtable_get_entry(TABLE, sizeof(KEY), &(KEY))
+    _Py_hashtable_get_entry(TABLE, (const void *)(KEY))
 
 
 /* Get data from an entry. Copy entry data into data and return 1 if the entry
@@ -198,28 +168,26 @@ _Py_hashtable_get_entry(_Py_hashtable_t *ht, size_t key_size, const void *pkey)
 
    Don't call directly this function, but use _Py_HASHTABLE_GET() macro */
 static inline int
-_Py_hashtable_get(_Py_hashtable_t *ht, size_t key_size, const void *pkey,
+_Py_hashtable_get(_Py_hashtable_t *ht, const void *key,
                   size_t data_size, void *data)
 {
-    assert(key_size == ht->key_size);
     assert(data_size == ht->data_size);
-    return ht->get_func(ht, pkey, data);
+    return ht->get_func(ht, key, data);
 }
 
 #define _Py_HASHTABLE_GET(TABLE, KEY, DATA) \
-    _Py_hashtable_get(TABLE, sizeof(KEY), &(KEY), sizeof(DATA), &(DATA))
+    _Py_hashtable_get(TABLE, (KEY), sizeof(DATA), &(DATA))
 
 
 /* Don't call directly this function, but use _Py_HASHTABLE_POP() macro */
 PyAPI_FUNC(int) _Py_hashtable_pop(
     _Py_hashtable_t *ht,
-    size_t key_size,
-    const void *pkey,
+    const void *key,
     size_t data_size,
     void *data);
 
 #define _Py_HASHTABLE_POP(TABLE, KEY, DATA) \
-    _Py_hashtable_pop(TABLE, sizeof(KEY), &(KEY), sizeof(DATA), &(DATA))
+    _Py_hashtable_pop(TABLE, (KEY), sizeof(DATA), &(DATA))
 
 
 #ifdef __cplusplus
