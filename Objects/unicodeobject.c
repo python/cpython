@@ -2289,8 +2289,8 @@ _PyUnicode_FromId(_Py_Identifier *id)
     return id->object;
 }
 
-void
-_PyUnicode_ClearStaticStrings()
+static void
+unicode_clear_static_strings(void)
 {
     _Py_Identifier *tmp, *s = static_strings;
     while (s) {
@@ -16196,7 +16196,7 @@ _PyUnicode_Fini(PyThreadState *tstate)
             Py_CLEAR(unicode_latin1[i]);
         }
 #endif
-        _PyUnicode_ClearStaticStrings();
+        unicode_clear_static_strings();
     }
 
     _PyUnicode_FiniEncodings(tstate);
