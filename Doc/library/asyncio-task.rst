@@ -575,7 +575,7 @@ Waiting Primitives
           if task in done:
               # Everything will work as expected now.
 
-   .. deprecated:: 3.8
+   .. deprecated-removed:: 3.8 3.11
 
       Passing coroutine objects to ``wait()`` directly is
       deprecated.
