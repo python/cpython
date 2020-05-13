@@ -12747,17 +12747,20 @@ DirEntry_dealloc(DirEntry *entry)
 
 /* Forward reference */
 static int
-DirEntry_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits);
+DirEntry_test_mode(PyTypeObject *defining_class, DirEntry *self,
+                   int follow_symlinks, unsigned short mode_bits);
 
 /*[clinic input]
 os.DirEntry.is_symlink -> bool
+    defining_class: defining_class
+    /
 
 Return True if the entry is a symbolic link; cached per entry.
 [clinic start generated code]*/
 
 static int
-os_DirEntry_is_symlink_impl(DirEntry *self)
-/*[clinic end generated code: output=42244667d7bcfc25 input=1605a1b4b96976c3]*/
+os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class)
+/*[clinic end generated code: output=293096d589b6d47c input=e9acc5ee4d511113]*/
 {
 #ifdef MS_WINDOWS
     return (self->win32_lstat.st_mode & S_IFMT) == S_IFLNK;
@@ -12766,21 +12769,16 @@ os_DirEntry_is_symlink_impl(DirEntry *self)
     if (self->d_type != DT_UNKNOWN)
         return self->d_type == DT_LNK;
     else
-        return DirEntry_test_mode(self, 0, S_IFLNK);
+        return DirEntry_test_mode(defining_class, self, 0, S_IFLNK);
 #else
     /* POSIX without d_type */
-    return DirEntry_test_mode(self, 0, S_IFLNK);
+    return DirEntry_test_mode(defining_class, self, 0, S_IFLNK);
 #endif
 }
 
-static inline PyObject*
-DirEntry_get_module(DirEntry *self)
-{
-    return PyType_GetModule(Py_TYPE(self));
-}
-
 static PyObject *
-DirEntry_fetch_stat(DirEntry *self, int follow_symlinks)
+DirEntry_fetch_stat(PyTypeObject *defining_class, DirEntry *self,
+                    int follow_symlinks)
 {
     int result;
     STRUCT_STAT st;
@@ -12816,18 +12814,18 @@ DirEntry_fetch_stat(DirEntry *self, int follow_symlinks)
     if (result != 0)
         return path_object_error(self->path);
 
-    return _pystat_fromstructstat(DirEntry_get_module(self), &st);
+    return _pystat_fromstructstat(PyType_GetModule(defining_class), &st);
 }
 
 static PyObject *
-DirEntry_get_lstat(DirEntry *self)
+DirEntry_get_lstat(PyTypeObject *defining_class, DirEntry *self)
 {
     if (!self->lstat) {
 #ifdef MS_WINDOWS
-        self->lstat = _pystat_fromstructstat(DirEntry_get_module(self),
+        self->lstat = _pystat_fromstructstat(PyType_GetModule(defining_class),
                                              &self->win32_lstat);
 #else /* POSIX */
-        self->lstat = DirEntry_fetch_stat(self, 0);
+        self->lstat = DirEntry_fetch_stat(defining_class, self, 0);
 #endif
     }
     Py_XINCREF(self->lstat);
@@ -12836,6 +12834,8 @@ DirEntry_get_lstat(DirEntry *self)
 
 /*[clinic input]
 os.DirEntry.stat
+    defining_class: defining_class
+    /
     *
     follow_symlinks: bool = True
 
@@ -12843,20 +12843,25 @@ Return stat_result object for the entry; cached per entry.
 [clinic start generated code]*/
 
 static PyObject *
-os_DirEntry_stat_impl(DirEntry *self, int follow_symlinks)
-/*[clinic end generated code: output=008593b3a6d01305 input=280d14c1d6f1d00d]*/
+os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
+                      int follow_symlinks)
+/*[clinic end generated code: output=23f803e19c3e780e input=e816273c4e67ee98]*/
 {
-    if (!follow_symlinks)
-        return DirEntry_get_lstat(self);
+    if (!follow_symlinks) {
+        return DirEntry_get_lstat(defining_class, self);
+    }
 
     if (!self->stat) {
-        int result = os_DirEntry_is_symlink_impl(self);
-        if (result == -1)
+        int result = os_DirEntry_is_symlink_impl(self, defining_class);
+        if (result == -1) {
             return NULL;
-        else if (result)
-            self->stat = DirEntry_fetch_stat(self, 1);
-        else
-            self->stat = DirEntry_get_lstat(self);
+        }
+        if (result) {
+            self->stat = DirEntry_fetch_stat(defining_class, self, 1);
+        }
+        else {
+            self->stat = DirEntry_get_lstat(defining_class, self);
+        }
     }
 
     Py_XINCREF(self->stat);
@@ -12865,7 +12870,8 @@ os_DirEntry_stat_impl(DirEntry *self, int follow_symlinks)
 
 /* Set exception and return -1 on error, 0 for False, 1 for True */
 static int
-DirEntry_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits)
+DirEntry_test_mode(PyTypeObject *defining_class, DirEntry *self,
+                   int follow_symlinks, unsigned short mode_bits)
 {
     PyObject *stat = NULL;
     PyObject *st_mode = NULL;
@@ -12890,7 +12896,7 @@ DirEntry_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits
 #if defined(MS_WINDOWS) || defined(HAVE_DIRENT_D_TYPE)
     if (need_stat) {
 #endif
-        stat = os_DirEntry_stat_impl(self, follow_symlinks);
+        stat = os_DirEntry_stat_impl(self, defining_class, follow_symlinks);
         if (!stat) {
             if (PyErr_ExceptionMatches(PyExc_FileNotFoundError)) {
                 /* If file doesn't exist (anymore), then return False
@@ -12900,7 +12906,7 @@ DirEntry_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits
             }
             goto error;
         }
-        st_mode = PyObject_GetAttr(stat, get_posix_state(DirEntry_get_module(self))->st_mode);
+        st_mode = PyObject_GetAttr(stat, get_posix_state(PyType_GetModule(defining_class))->st_mode);
         if (!st_mode)
             goto error;
 
@@ -12943,6 +12949,8 @@ error:
 
 /*[clinic input]
 os.DirEntry.is_dir -> bool
+    defining_class: defining_class
+    /
     *
     follow_symlinks: bool = True
 
@@ -12950,14 +12958,17 @@ Return True if the entry is a directory; cached per entry.
 [clinic start generated code]*/
 
 static int
-os_DirEntry_is_dir_impl(DirEntry *self, int follow_symlinks)
-/*[clinic end generated code: output=ad2e8d54365da287 input=0135232766f53f58]*/
+os_DirEntry_is_dir_impl(DirEntry *self, PyTypeObject *defining_class,
+                        int follow_symlinks)
+/*[clinic end generated code: output=0cd453b9c0987fdf input=1a4ffd6dec9920cb]*/
 {
-    return DirEntry_test_mode(self, follow_symlinks, S_IFDIR);
+    return DirEntry_test_mode(defining_class, self, follow_symlinks, S_IFDIR);
 }
 
 /*[clinic input]
 os.DirEntry.is_file -> bool
+    defining_class: defining_class
+    /
     *
     follow_symlinks: bool = True
 
@@ -12965,10 +12976,11 @@ Return True if the entry is a file; cached per entry.
 [clinic start generated code]*/
 
 static int
-os_DirEntry_is_file_impl(DirEntry *self, int follow_symlinks)
-/*[clinic end generated code: output=8462ade481d8a476 input=0dc90be168b041ee]*/
+os_DirEntry_is_file_impl(DirEntry *self, PyTypeObject *defining_class,
+                         int follow_symlinks)
+/*[clinic end generated code: output=f7c277ab5ba80908 input=0a64c5a12e802e3b]*/
 {
-    return DirEntry_test_mode(self, follow_symlinks, S_IFREG);
+    return DirEntry_test_mode(defining_class, self, follow_symlinks, S_IFREG);
 }
 
 /*[clinic input]
@@ -13496,6 +13508,8 @@ static PyType_Spec ScandirIteratorType_spec = {
     MODNAME ".ScandirIterator",
     sizeof(ScandirIterator),
     0,
+    // bpo-40549: Py_TPFLAGS_BASETYPE should not be used, since
+    // PyType_GetModule(Py_TYPE(self)) doesn't work on a subclass instance.
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE,
     ScandirIteratorType_slots
 };
