@@ -64,14 +64,14 @@
 #define ENTRY_READ_PDATA(TABLE, ENTRY, DATA_SIZE, PDATA) \
     do { \
         assert((DATA_SIZE) == (TABLE)->data_size); \
-        memcpy((PDATA), _Py_HASHTABLE_ENTRY_PDATA(TABLE, (ENTRY)), \
+        memcpy((PDATA), _Py_HASHTABLE_ENTRY_PDATA(ENTRY), \
                   (DATA_SIZE)); \
     } while (0)
 
 #define ENTRY_WRITE_PDATA(TABLE, ENTRY, DATA_SIZE, PDATA) \
     do { \
         assert((DATA_SIZE) == (TABLE)->data_size); \
-        memcpy((void *)_Py_HASHTABLE_ENTRY_PDATA((TABLE), (ENTRY)), \
+        memcpy((void *)_Py_HASHTABLE_ENTRY_PDATA(ENTRY), \
                   (PDATA), (DATA_SIZE)); \
     } while (0)
 
@@ -432,6 +432,8 @@ _Py_hashtable_t *
 _Py_hashtable_new_full(size_t data_size, size_t init_size,
                        _Py_hashtable_hash_func hash_func,
                        _Py_hashtable_compare_func compare_func,
+                       _Py_hashtable_destroy_func key_destroy_func,
+                       _Py_hashtable_value_destroy_func value_destroy_func,
                        _Py_hashtable_allocator_t *allocator)
 {
     _Py_hashtable_t *ht;
@@ -466,6 +468,8 @@ _Py_hashtable_new_full(size_t data_size, size_t init_size,
     ht->get_entry_func = _Py_hashtable_get_entry_generic;
     ht->hash_func = hash_func;
     ht->compare_func = compare_func;
+    ht->key_destroy_func = key_destroy_func;
+    ht->value_destroy_func = value_destroy_func;
     ht->alloc = alloc;
     if (ht->hash_func == _Py_hashtable_hash_ptr
         && ht->compare_func == _Py_hashtable_compare_direct)
@@ -484,7 +488,7 @@ _Py_hashtable_new(size_t data_size,
 {
     return _Py_hashtable_new_full(data_size, HASHTABLE_MIN_SIZE,
                                   hash_func, compare_func,
-                                  NULL);
+                                  NULL, NULL, NULL);
 }
 
 
@@ -506,16 +510,27 @@ _Py_hashtable_clear(_Py_hashtable_t *ht)
 }
 
 
+static void
+_Py_hashtable_destroy_entry(_Py_hashtable_t *ht, _Py_hashtable_entry_t *entry)
+{
+    if (ht->key_destroy_func) {
+        ht->key_destroy_func(entry->key);
+    }
+    if (ht->value_destroy_func) {
+        ht->value_destroy_func(ht, entry);
+    }
+    ht->alloc.free(entry);
+}
+
+
 void
 _Py_hashtable_destroy(_Py_hashtable_t *ht)
 {
-    size_t i;
-
-    for (i = 0; i < ht->num_buckets; i++) {
-        _Py_slist_item_t *entry = ht->buckets[i].head;
+    for (size_t i = 0; i < ht->num_buckets; i++) {
+        _Py_hashtable_entry_t *entry = TABLE_HEAD(ht, i);
         while (entry) {
-            _Py_slist_item_t *entry_next = entry->next;
-            ht->alloc.free(entry);
+            _Py_hashtable_entry_t *entry_next = ENTRY_NEXT(entry);
+            _Py_hashtable_destroy_entry(ht, entry);
             entry = entry_next;
         }
     }
@@ -537,6 +552,8 @@ _Py_hashtable_copy(_Py_hashtable_t *src)
     dst = _Py_hashtable_new_full(data_size, src->num_buckets,
                                  src->hash_func,
                                  src->compare_func,
+                                 src->key_destroy_func,
+                                 src->value_destroy_func,
                                  &src->alloc);
     if (dst == NULL)
         return NULL;
@@ -545,7 +562,7 @@ _Py_hashtable_copy(_Py_hashtable_t *src)
         entry = TABLE_HEAD(src, bucket);
         for (; entry; entry = ENTRY_NEXT(entry)) {
             const void *key = entry->key;
-            const void *pdata = _Py_HASHTABLE_ENTRY_PDATA(src, entry);
+            const void *pdata = _Py_HASHTABLE_ENTRY_PDATA(entry);
             err = _Py_hashtable_set(dst, key, data_size, pdata);
             if (err) {
                 _Py_hashtable_destroy(dst);
