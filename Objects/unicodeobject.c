@@ -463,7 +463,7 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
 
     /* Avoid calling _PyCodec_Lookup() and PyCodec_LookupError() before the
        codec registry is ready: before_PyUnicode_InitEncodings() is called. */
-    if (!interp->fs_codec.encoding) {
+    if (!interp->unicode.fs_codec.encoding) {
         return 0;
     }
 
@@ -3650,16 +3650,17 @@ PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->fs_codec.utf8) {
+    struct _Py_unicode_fs_codec *fs_codec = &interp->unicode.fs_codec;
+    if (fs_codec->utf8) {
         return unicode_encode_utf8(unicode,
-                                   interp->fs_codec.error_handler,
-                                   interp->fs_codec.errors);
+                                   fs_codec->error_handler,
+                                   fs_codec->errors);
     }
 #ifndef _Py_FORCE_UTF8_FS_ENCODING
-    else if (interp->fs_codec.encoding) {
+    else if (fs_codec->encoding) {
         return PyUnicode_AsEncodedString(unicode,
-                                         interp->fs_codec.encoding,
-                                         interp->fs_codec.errors);
+                                         fs_codec->encoding,
+                                         fs_codec->errors);
     }
 #endif
     else {
@@ -3886,17 +3887,18 @@ PyObject*
 PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->fs_codec.utf8) {
+    struct _Py_unicode_fs_codec *fs_codec = &interp->unicode.fs_codec;
+    if (fs_codec->utf8) {
         return unicode_decode_utf8(s, size,
-                                   interp->fs_codec.error_handler,
-                                   interp->fs_codec.errors,
+                                   fs_codec->error_handler,
+                                   fs_codec->errors,
                                    NULL);
     }
 #ifndef _Py_FORCE_UTF8_FS_ENCODING
-    else if (interp->fs_codec.encoding) {
+    else if (fs_codec->encoding) {
         return PyUnicode_Decode(s, size,
-                                interp->fs_codec.encoding,
-                                interp->fs_codec.errors);
+                                fs_codec->encoding,
+                                fs_codec->errors);
     }
 #endif
     else {
@@ -16071,16 +16073,17 @@ init_fs_codec(PyInterpreterState *interp)
         return -1;
     }
 
-    PyMem_RawFree(interp->fs_codec.encoding);
-    interp->fs_codec.encoding = encoding;
+    struct _Py_unicode_fs_codec *fs_codec = &interp->unicode.fs_codec;
+    PyMem_RawFree(fs_codec->encoding);
+    fs_codec->encoding = encoding;
     /* encoding has been normalized by init_fs_encoding() */
-    interp->fs_codec.utf8 = (strcmp(encoding, "utf-8") == 0);
-    PyMem_RawFree(interp->fs_codec.errors);
-    interp->fs_codec.errors = errors;
-    interp->fs_codec.error_handler = error_handler;
+    fs_codec->utf8 = (strcmp(encoding, "utf-8") == 0);
+    PyMem_RawFree(fs_codec->errors);
+    fs_codec->errors = errors;
+    fs_codec->error_handler = error_handler;
 
 #ifdef _Py_FORCE_UTF8_FS_ENCODING
-    assert(interp->fs_codec.utf8 == 1);
+    assert(fs_codec->utf8 == 1);
 #endif
 
     /* At this point, PyUnicode_EncodeFSDefault() and
@@ -16089,8 +16092,8 @@ init_fs_codec(PyInterpreterState *interp)
 
     /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
        global configuration variables. */
-    if (_Py_SetFileSystemEncoding(interp->fs_codec.encoding,
-                                  interp->fs_codec.errors) < 0) {
+    if (_Py_SetFileSystemEncoding(fs_codec->encoding,
+                                  fs_codec->errors) < 0) {
         PyErr_NoMemory();
         return -1;
     }
@@ -16133,15 +16136,14 @@ _PyUnicode_InitEncodings(PyThreadState *tstate)
 
 
 static void
-_PyUnicode_FiniEncodings(PyThreadState *tstate)
+_PyUnicode_FiniEncodings(struct _Py_unicode_fs_codec *fs_codec)
 {
-    PyInterpreterState *interp = tstate->interp;
-    PyMem_RawFree(interp->fs_codec.encoding);
-    interp->fs_codec.encoding = NULL;
-    interp->fs_codec.utf8 = 0;
-    PyMem_RawFree(interp->fs_codec.errors);
-    interp->fs_codec.errors = NULL;
-    interp->fs_codec.error_handler = _Py_ERROR_UNKNOWN;
+    PyMem_RawFree(fs_codec->encoding);
+    fs_codec->encoding = NULL;
+    fs_codec->utf8 = 0;
+    PyMem_RawFree(fs_codec->errors);
+    fs_codec->errors = NULL;
+    fs_codec->error_handler = _Py_ERROR_UNKNOWN;
 }
 
 
@@ -16199,7 +16201,7 @@ _PyUnicode_Fini(PyThreadState *tstate)
         unicode_clear_static_strings();
     }
 
-    _PyUnicode_FiniEncodings(tstate);
+    _PyUnicode_FiniEncodings(&tstate->interp->unicode.fs_codec);
 }
 
 
