@@ -320,8 +320,8 @@ Random generation
 
 .. function:: RAND_status()
 
-   Return ``True`` if the SSL pseudo-random number generator has been seeded
-   with 'enough' randomness, and ``False`` otherwise.  You can use
+   Return ``1`` if the SSL pseudo-random number generator has been seeded
+   with 'enough' randomness, and ``0`` otherwise.  You can use
    :func:`ssl.RAND_egd` and :func:`ssl.RAND_add` to increase the randomness of
    the pseudo-random number generator.
 
