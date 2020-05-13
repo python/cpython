@@ -964,3 +964,6 @@ Removed
   * ``PyTuple_ClearFreeList()``
   * ``PyUnicode_ClearFreeList()``: the Unicode free list has been removed in
     Python 3.3.
+
+* Remove ``_PyUnicode_ClearStaticStrings()`` function.
+  (Contributed by Victor Stinner in :issue:`39465`.)
