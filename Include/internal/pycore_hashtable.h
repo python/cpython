@@ -45,13 +45,6 @@ typedef struct {
                   sizeof(DATA)); \
     } while (0)
 
-#define _Py_HASHTABLE_ENTRY_WRITE_DATA(TABLE, ENTRY, DATA) \
-    do { \
-        assert(sizeof(DATA) == (TABLE)->data_size); \
-        memcpy((void *)_Py_HASHTABLE_ENTRY_PDATA(ENTRY), \
-                  &(DATA), sizeof(DATA)); \
-    } while (0)
-
 
 /* _Py_hashtable: prototypes */
 
@@ -117,9 +110,6 @@ PyAPI_FUNC(_Py_hashtable_t *) _Py_hashtable_new_full(
     _Py_hashtable_allocator_t *allocator);
 
 PyAPI_FUNC(void) _Py_hashtable_destroy(_Py_hashtable_t *ht);
-
-/* Return a copy of the hash table */
-PyAPI_FUNC(_Py_hashtable_t *) _Py_hashtable_copy(_Py_hashtable_t *src);
 
 PyAPI_FUNC(void) _Py_hashtable_clear(_Py_hashtable_t *ht);
 
