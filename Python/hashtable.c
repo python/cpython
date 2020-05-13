@@ -350,21 +350,6 @@ _Py_hashtable_pop(_Py_hashtable_t *ht, const void *key,
 }
 
 
-/* Code commented since the function is not needed in Python */
-#if 0
-void
-_Py_hashtable_delete(_Py_hashtable_t *ht, size_t const void *key)
-{
-#ifndef NDEBUG
-    int found = _Py_hashtable_pop_entry(ht, key, NULL, 0);
-    assert(found);
-#else
-    (void)_Py_hashtable_pop_entry(ht, key, NULL, 0);
-#endif
-}
-#endif
-
-
 int
 _Py_hashtable_foreach(_Py_hashtable_t *ht,
                       _Py_hashtable_foreach_func func,
@@ -537,38 +522,4 @@ _Py_hashtable_destroy(_Py_hashtable_t *ht)
 
     ht->alloc.free(ht->buckets);
     ht->alloc.free(ht);
-}
-
-
-_Py_hashtable_t *
-_Py_hashtable_copy(_Py_hashtable_t *src)
-{
-    const size_t data_size = src->data_size;
-    _Py_hashtable_t *dst;
-    _Py_hashtable_entry_t *entry;
-    size_t bucket;
-    int err;
-
-    dst = _Py_hashtable_new_full(data_size, src->num_buckets,
-                                 src->hash_func,
-                                 src->compare_func,
-                                 src->key_destroy_func,
-                                 src->value_destroy_func,
-                                 &src->alloc);
-    if (dst == NULL)
-        return NULL;
-
-    for (bucket=0; bucket < src->num_buckets; bucket++) {
-        entry = TABLE_HEAD(src, bucket);
-        for (; entry; entry = ENTRY_NEXT(entry)) {
-            const void *key = entry->key;
-            const void *pdata = _Py_HASHTABLE_ENTRY_PDATA(entry);
-            err = _Py_hashtable_set(dst, key, data_size, pdata);
-            if (err) {
-                _Py_hashtable_destroy(dst);
-                return NULL;
-            }
-        }
-    }
-    return dst;
 }
