@@ -122,7 +122,7 @@ static traceback_t *tracemalloc_traceback = NULL;
    Protected by the GIL */
 static _Py_hashtable_t *tracemalloc_tracebacks = NULL;
 
-/* pointer (void*) => trace (trace_t).
+/* pointer (void*) => trace (trace_t*).
    Protected by TABLES_LOCK(). */
 static _Py_hashtable_t *tracemalloc_traces = NULL;
 
@@ -467,13 +467,23 @@ traceback_new(void)
 }
 
 
+static void
+tracemalloc_destroy_trace_cb(_Py_hashtable_t *traces,
+                             _Py_hashtable_entry_t *entry)
+{
+    trace_t *trace;
+    _Py_HASHTABLE_ENTRY_READ_DATA(traces, entry, trace);
+    raw_free(trace);
+}
+
+
 static _Py_hashtable_t*
 tracemalloc_create_traces_table(void)
 {
-    return hashtable_new(sizeof(trace_t),
+    return hashtable_new(sizeof(trace_t*),
                          _Py_hashtable_hash_ptr,
                          _Py_hashtable_compare_direct,
-                         NULL);
+                         tracemalloc_destroy_trace_cb);
 }
 
 
@@ -528,12 +538,13 @@ tracemalloc_remove_trace(unsigned int domain, uintptr_t ptr)
         return;
     }
 
-    trace_t trace;
+    trace_t *trace;
     if (!_Py_HASHTABLE_POP(traces, TO_PTR(ptr), trace)) {
         return;
     }
-    assert(tracemalloc_traced_memory >= trace.size);
-    tracemalloc_traced_memory -= trace.size;
+    assert(tracemalloc_traced_memory >= trace->size);
+    tracemalloc_traced_memory -= trace->size;
+    raw_free(trace);
 }
 
 #define REMOVE_TRACE(ptr) \
@@ -565,23 +576,27 @@ tracemalloc_add_trace(unsigned int domain, uintptr_t ptr,
     }
 
     _Py_hashtable_entry_t* entry = _Py_HASHTABLE_GET_ENTRY(traces, ptr);
-    trace_t trace;
     if (entry != NULL) {
         /* the memory block is already tracked */
+        trace_t *trace;
         _Py_HASHTABLE_ENTRY_READ_DATA(traces, entry, trace);
-        assert(tracemalloc_traced_memory >= trace.size);
-        tracemalloc_traced_memory -= trace.size;
+        assert(tracemalloc_traced_memory >= trace->size);
+        tracemalloc_traced_memory -= trace->size;
 
-        trace.size = size;
-        trace.traceback = traceback;
-        _Py_HASHTABLE_ENTRY_WRITE_DATA(traces, entry, trace);
+        trace->size = size;
+        trace->traceback = traceback;
     }
     else {
-        trace.size = size;
-        trace.traceback = traceback;
+        trace_t *trace = raw_malloc(sizeof(trace_t));
+        if (trace == NULL) {
+            return -1;
+        }
+        trace->size = size;
+        trace->traceback = traceback;
 
         int res = _Py_HASHTABLE_SET(traces, TO_PTR(ptr), trace);
         if (res != 0) {
+            raw_free(trace);
             return res;
         }
     }
@@ -1225,23 +1240,85 @@ typedef struct {
     unsigned int domain;
 } get_traces_t;
 
+
 static int
-tracemalloc_get_traces_copy_domain(_Py_hashtable_t *domains,
-                                   _Py_hashtable_entry_t *entry,
-                                   void *user_data)
+tracemalloc_copy_trace(_Py_hashtable_t *traces,
+                       _Py_hashtable_entry_t *entry,
+                       void *traces2_raw)
 {
-    get_traces_t *get_traces = user_data;
+    _Py_hashtable_t *traces2 = (_Py_hashtable_t *)traces2_raw;
+
+    trace_t *trace;
+    _Py_HASHTABLE_ENTRY_READ_DATA(traces, entry, trace);
+
+    trace_t *trace2 = raw_malloc(sizeof(trace_t));
+    if (traces2 == NULL) {
+        return -1;
+    }
+    *trace2 = *trace;
+    if (_Py_HASHTABLE_SET(traces2, entry->key, trace2) < 0) {
+        raw_free(trace2);
+        return -1;
+    }
+    return 0;
+}
+
+
+static _Py_hashtable_t*
+tracemalloc_copy_traces(_Py_hashtable_t *traces)
+{
+    _Py_hashtable_t *traces2 = tracemalloc_create_traces_table();
+    if (traces2 == NULL) {
+        return NULL;
+    }
+
+    int err = _Py_hashtable_foreach(traces,
+                                    tracemalloc_copy_trace,
+                                    traces2);
+    if (err) {
+        _Py_hashtable_destroy(traces2);
+        return NULL;
+    }
+    return traces2;
+}
+
+
+static int
+tracemalloc_copy_domain(_Py_hashtable_t *domains,
+                        _Py_hashtable_entry_t *entry,
+                        void *domains2_raw)
+{
+    _Py_hashtable_t *domains2 = (_Py_hashtable_t *)domains2_raw;
 
     unsigned int domain = (unsigned int)FROM_PTR(entry->key);
     _Py_hashtable_t *traces;
     _Py_HASHTABLE_ENTRY_READ_DATA(domains, entry, traces);
 
-    _Py_hashtable_t *traces2 = _Py_hashtable_copy(traces);
-    if (_Py_HASHTABLE_SET(get_traces->domains, TO_PTR(domain), traces2) < 0) {
+    _Py_hashtable_t *traces2 = tracemalloc_copy_traces(traces);
+    if (_Py_HASHTABLE_SET(domains2, TO_PTR(domain), traces2) < 0) {
         _Py_hashtable_destroy(traces2);
         return -1;
     }
     return 0;
+}
+
+
+static _Py_hashtable_t*
+tracemalloc_copy_domains(_Py_hashtable_t *domains)
+{
+    _Py_hashtable_t *domains2 = tracemalloc_create_domains_table();
+    if (domains2 == NULL) {
+        return NULL;
+    }
+
+    int err = _Py_hashtable_foreach(domains,
+                                    tracemalloc_copy_domain,
+                                    domains2);
+    if (err) {
+        _Py_hashtable_destroy(domains2);
+        return NULL;
+    }
+    return domains2;
 }
 
 
@@ -1250,13 +1327,13 @@ tracemalloc_get_traces_fill(_Py_hashtable_t *traces, _Py_hashtable_entry_t *entr
                             void *user_data)
 {
     get_traces_t *get_traces = user_data;
-    trace_t trace;
+    trace_t *trace;
     PyObject *tracemalloc_obj;
     int res;
 
     _Py_HASHTABLE_ENTRY_READ_DATA(traces, entry, trace);
 
-    tracemalloc_obj = trace_to_pyobject(get_traces->domain, &trace, get_traces->tracebacks);
+    tracemalloc_obj = trace_to_pyobject(get_traces->domain, trace, get_traces->tracebacks);
     if (tracemalloc_obj == NULL)
         return 1;
 
@@ -1335,37 +1412,34 @@ _tracemalloc__get_traces_impl(PyObject *module)
         goto no_memory;
     }
 
-    get_traces.domains = tracemalloc_create_domains_table();
-    if (get_traces.domains == NULL) {
-        goto no_memory;
-    }
-
-    int err;
-
     // Copy all traces so tracemalloc_get_traces_fill() doesn't have to disable
     // temporarily tracemalloc which would impact other threads and so would
     // miss allocations while get_traces() is called.
     TABLES_LOCK();
-    get_traces.traces = _Py_hashtable_copy(tracemalloc_traces);
-    err = _Py_hashtable_foreach(tracemalloc_domains,
-                                tracemalloc_get_traces_copy_domain,
-                                &get_traces);
+    get_traces.traces = tracemalloc_copy_traces(tracemalloc_traces);
     TABLES_UNLOCK();
 
     if (get_traces.traces == NULL) {
         goto no_memory;
     }
-    if (err) {
+
+    TABLES_LOCK();
+    get_traces.domains = tracemalloc_copy_domains(tracemalloc_domains);
+    TABLES_UNLOCK();
+
+    if (get_traces.domains == NULL) {
         goto no_memory;
     }
 
     // Convert traces to a list of tuples
     set_reentrant(1);
-    err = _Py_hashtable_foreach(get_traces.traces,
-                                tracemalloc_get_traces_fill, &get_traces);
+    int err = _Py_hashtable_foreach(get_traces.traces,
+                                    tracemalloc_get_traces_fill,
+                                    &get_traces);
     if (!err) {
         err = _Py_hashtable_foreach(get_traces.domains,
-                                    tracemalloc_get_traces_domain, &get_traces);
+                                    tracemalloc_get_traces_domain,
+                                    &get_traces);
     }
     set_reentrant(0);
     if (err) {
@@ -1398,7 +1472,7 @@ finally:
 static traceback_t*
 tracemalloc_get_traceback(unsigned int domain, uintptr_t ptr)
 {
-    trace_t trace;
+    trace_t *trace;
     int found;
 
     if (!_Py_tracemalloc_config.tracing)
@@ -1414,10 +1488,11 @@ tracemalloc_get_traceback(unsigned int domain, uintptr_t ptr)
     }
     TABLES_UNLOCK();
 
-    if (!found)
+    if (!found) {
         return NULL;
+    }
 
-    return trace.traceback;
+    return trace->traceback;
 }
 
 
@@ -1758,10 +1833,9 @@ _PyTraceMalloc_NewReference(PyObject *op)
         /* update the traceback of the memory block */
         traceback_t *traceback = traceback_new();
         if (traceback != NULL) {
-            trace_t trace;
+            trace_t *trace;
             _Py_HASHTABLE_ENTRY_READ_DATA(tracemalloc_traces, entry, trace);
-            trace.traceback = traceback;
-            _Py_HASHTABLE_ENTRY_WRITE_DATA(tracemalloc_traces, entry, trace);
+            trace->traceback = traceback;
             res = 0;
         }
     }
