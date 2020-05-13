@@ -302,10 +302,10 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     if (Py_REFCNT(v) == 1)
         return 0;
 
-    entry = _Py_HASHTABLE_GET_ENTRY(p->hashtable, v);
+    entry = _Py_hashtable_get_entry(p->hashtable, v);
     if (entry != NULL) {
         /* write the reference index to the stream */
-        _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, entry, w);
+        w = (int)(uintptr_t)entry->value;
         /* we don't store "long" indices in the dict */
         assert(0 <= w && w <= 0x7fffffff);
         w_byte(TYPE_REF, p);
@@ -320,7 +320,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         }
         w = (int)s;
         Py_INCREF(v);
-        if (_Py_HASHTABLE_SET(p->hashtable, v, w) < 0) {
+        if (_Py_hashtable_set(p->hashtable, v, (void *)(uintptr_t)w) < 0) {
             Py_DECREF(v);
             goto err;
         }
@@ -556,8 +556,7 @@ static int
 w_init_refs(WFILE *wf, int version)
 {
     if (version >= 3) {
-        wf->hashtable = _Py_hashtable_new_full(sizeof(int), 0,
-                                               _Py_hashtable_hash_ptr,
+        wf->hashtable = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
                                                _Py_hashtable_compare_direct,
                                                w_decref_entry, NULL, NULL);
         if (wf->hashtable == NULL) {
