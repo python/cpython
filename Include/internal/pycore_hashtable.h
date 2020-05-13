@@ -34,21 +34,21 @@ typedef struct {
     /* data (data_size bytes) follows */
 } _Py_hashtable_entry_t;
 
-#define _Py_HASHTABLE_ENTRY_PDATA(TABLE, ENTRY) \
+#define _Py_HASHTABLE_ENTRY_PDATA(ENTRY) \
         ((const void *)((char *)(ENTRY) \
                         + sizeof(_Py_hashtable_entry_t)))
 
 #define _Py_HASHTABLE_ENTRY_READ_DATA(TABLE, ENTRY, DATA) \
     do { \
         assert(sizeof(DATA) == (TABLE)->data_size); \
-        memcpy(&(DATA), _Py_HASHTABLE_ENTRY_PDATA(TABLE, (ENTRY)), \
+        memcpy(&(DATA), _Py_HASHTABLE_ENTRY_PDATA((ENTRY)), \
                   sizeof(DATA)); \
     } while (0)
 
 #define _Py_HASHTABLE_ENTRY_WRITE_DATA(TABLE, ENTRY, DATA) \
     do { \
         assert(sizeof(DATA) == (TABLE)->data_size); \
-        memcpy((void *)_Py_HASHTABLE_ENTRY_PDATA((TABLE), (ENTRY)), \
+        memcpy((void *)_Py_HASHTABLE_ENTRY_PDATA(ENTRY), \
                   &(DATA), sizeof(DATA)); \
     } while (0)
 
@@ -61,6 +61,9 @@ typedef struct _Py_hashtable_t _Py_hashtable_t;
 
 typedef Py_uhash_t (*_Py_hashtable_hash_func) (const void *key);
 typedef int (*_Py_hashtable_compare_func) (const void *key1, const void *key2);
+typedef void (*_Py_hashtable_destroy_func) (void *key);
+typedef void (*_Py_hashtable_value_destroy_func) (_Py_hashtable_t *ht,
+                                                  _Py_hashtable_entry_t *entry);
 typedef _Py_hashtable_entry_t* (*_Py_hashtable_get_entry_func)(_Py_hashtable_t *ht,
                                                                const void *key);
 typedef int (*_Py_hashtable_get_func) (_Py_hashtable_t *ht,
@@ -86,6 +89,8 @@ struct _Py_hashtable_t {
     _Py_hashtable_get_entry_func get_entry_func;
     _Py_hashtable_hash_func hash_func;
     _Py_hashtable_compare_func compare_func;
+    _Py_hashtable_destroy_func key_destroy_func;
+    _Py_hashtable_value_destroy_func value_destroy_func;
     _Py_hashtable_allocator_t alloc;
 };
 
@@ -107,6 +112,8 @@ PyAPI_FUNC(_Py_hashtable_t *) _Py_hashtable_new_full(
     size_t init_size,
     _Py_hashtable_hash_func hash_func,
     _Py_hashtable_compare_func compare_func,
+    _Py_hashtable_destroy_func key_destroy_func,
+    _Py_hashtable_value_destroy_func value_destroy_func,
     _Py_hashtable_allocator_t *allocator);
 
 PyAPI_FUNC(void) _Py_hashtable_destroy(_Py_hashtable_t *ht);
