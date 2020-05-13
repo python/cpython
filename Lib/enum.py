@@ -1,5 +1,4 @@
 import sys
-import operator
 from types import MappingProxyType, DynamicClassAttribute
 
 
