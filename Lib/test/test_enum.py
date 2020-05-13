@@ -1765,63 +1765,21 @@ class TestEnum(unittest.TestCase):
             B = auto()
 
         class G(Enum):
-            first = auto()
             def _generate_next_value_(name, *args):
                 return 12
+            first = auto()
             second = first + 9
 
-        class H(Enum):
-            first = auto()
-            second = first + 9
-            def _generate_next_value_(name, *args):
-                return 12
+        with self.assertRaises(TypeError):
+            class H(Enum):
+                first = auto()
+                def _generate_next_value_(name, *args):
+                    return 12
+                second = first + 9
 
         self.assertEqual(E.B.value, F.B.value)
-        self.assertEqual(G.first.value, 12)
         self.assertEqual(G.second.value, 21)
-        self.assertEqual(H.first.value, 12)
-        self.assertEqual(H.second.value, 21)
 
-    def test_operate_auto_with_generate_next_value(self):
-        class E(Enum):
-            first = auto()
-            second = first + 3 - 1
-            third = auto() * (first + second + auto())
-            fourth = third / 5
-            fifth = third // 6
-            sixth = -auto()
-        self.assertEqual(E.first.value, 1)
-        self.assertEqual(E.second.value, 3)
-        self.assertEqual(E.third.value, 4 * (1 + 3 + 4))
-        self.assertEqual(E.fourth.value, 6.4)
-        self.assertEqual(E.fifth.value, 5)
-        self.assertEqual(E.sixth.value, -6)
-
-        class F(Enum):
-            first = auto()
-            second = first + 3 - 1
-            third = auto() * (first + second + auto())
-            fourth = third / 5
-            fifth = third // 6
-            sixth = -auto()
-            def _generate_next_value_(name, *args):
-                return 12
-        self.assertEqual(F.first.value, 12)
-        self.assertEqual(F.second.value, 14)
-        self.assertEqual(F.third.value, 12 * (12 + 14 + 12))
-        self.assertEqual(F.fourth.value, 91.2)
-        self.assertEqual(F.fifth.value, 76)
-        self.assertEqual(F.sixth.value, -12)
-
-        class Color(Flag):
-            BLACK = 0
-            RED = auto()
-            GREEN = auto()
-            BLUE = auto()
-            PURPLE = RED|BLUE
-            YELLOW = RED<<19
-        self.assertEqual(Color.PURPLE.value, 5)
-        self.assertEqual(Color.YELLOW.value, 1<<19)
 
     def test_duplicate_auto(self):
         class Dupes(Enum):
@@ -2343,16 +2301,6 @@ class TestFlag(unittest.TestCase):
             first = primero = auto()
             second = auto()
             third = auto()
-        self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
-
-    def test_duplicate_auto_generate_next_value(self):
-        class Dupes(Enum):
-            first = primero = auto()
-            second = auto()
-            def _generate_next_value_(name, *args):
-                return name
-            third = primero2 = auto()
-
         self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
 
     def test_bizarre(self):
