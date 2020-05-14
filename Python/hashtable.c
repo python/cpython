@@ -119,59 +119,13 @@ round_size(size_t s)
 size_t
 _Py_hashtable_size(const _Py_hashtable_t *ht)
 {
-    size_t size;
-
-    size = sizeof(_Py_hashtable_t);
-
+    size_t size = sizeof(_Py_hashtable_t);
     /* buckets */
     size += ht->nbuckets * sizeof(_Py_hashtable_entry_t *);
-
     /* entries */
     size += ht->nentries * sizeof(_Py_hashtable_entry_t);
-
     return size;
 }
-
-
-#ifdef Py_DEBUG
-void
-_Py_hashtable_print_stats(_Py_hashtable_t *ht)
-{
-    size_t size;
-    size_t chain_len, max_chain_len, total_chain_len, nchains;
-    _Py_hashtable_entry_t *entry;
-    size_t hv;
-    double load;
-
-    size = _Py_hashtable_size(ht);
-
-    load = (double)ht->nentries / ht->nbuckets;
-
-    max_chain_len = 0;
-    total_chain_len = 0;
-    nchains = 0;
-    for (hv = 0; hv < ht->nbuckets; hv++) {
-        entry = TABLE_HEAD(ht, hv);
-        if (entry != NULL) {
-            chain_len = 0;
-            for (; entry; entry = ENTRY_NEXT(entry)) {
-                chain_len++;
-            }
-            if (chain_len > max_chain_len)
-                max_chain_len = chain_len;
-            total_chain_len += chain_len;
-            nchains++;
-        }
-    }
-    printf("hash table %p: entries=%"
-           PY_FORMAT_SIZE_T "u/%" PY_FORMAT_SIZE_T "u (%.0f%%), ",
-           (void *)ht, ht->nentries, ht->nbuckets, load * 100.0);
-    if (nchains)
-        printf("avg_chain_len=%.1f, ", (double)total_chain_len / nchains);
-    printf("max_chain_len=%" PY_FORMAT_SIZE_T "u, %" PY_FORMAT_SIZE_T "u KiB\n",
-           max_chain_len, size / 1024);
-}
-#endif
 
 
 _Py_hashtable_entry_t *
@@ -263,8 +217,6 @@ _Py_hashtable_set(_Py_hashtable_t *ht, const void *key, void *value)
     assert(entry == NULL);
 #endif
 
-    Py_uhash_t key_hash = ht->hash_func(key);
-    size_t index = key_hash & (ht->nbuckets - 1);
 
     entry = ht->alloc.malloc(sizeof(_Py_hashtable_entry_t));
     if (entry == NULL) {
@@ -272,15 +224,17 @@ _Py_hashtable_set(_Py_hashtable_t *ht, const void *key, void *value)
         return -1;
     }
 
-    entry->key_hash = key_hash;
+    entry->key_hash = ht->hash_func(key);
     entry->key = (void *)key;
     entry->value = value;
 
+    size_t index = entry->key_hash & (ht->nbuckets - 1);
     _Py_slist_prepend(&ht->buckets[index], (_Py_slist_item_t*)entry);
     ht->nentries++;
 
-    if ((float)ht->nentries / (float)ht->nbuckets > HASHTABLE_HIGH)
+    if ((float)ht->nentries / (float)ht->nbuckets > HASHTABLE_HIGH) {
         hashtable_rehash(ht);
+    }
     return 0;
 }
 
@@ -303,14 +257,14 @@ _Py_hashtable_foreach(_Py_hashtable_t *ht,
                       _Py_hashtable_foreach_func func,
                       void *user_data)
 {
-    _Py_hashtable_entry_t *entry;
-    size_t hv;
-
-    for (hv = 0; hv < ht->nbuckets; hv++) {
-        for (entry = TABLE_HEAD(ht, hv); entry; entry = ENTRY_NEXT(entry)) {
+    for (size_t hv = 0; hv < ht->nbuckets; hv++) {
+        _Py_hashtable_entry_t *entry = TABLE_HEAD(ht, hv);
+        while (entry != NULL) {
             int res = func(ht, entry->key, entry->value, user_data);
-            if (res)
+            if (res) {
                 return res;
+            }
+            entry = ENTRY_NEXT(entry);
         }
     }
     return 0;
@@ -320,44 +274,35 @@ _Py_hashtable_foreach(_Py_hashtable_t *ht,
 static void
 hashtable_rehash(_Py_hashtable_t *ht)
 {
-    size_t buckets_size, new_size, bucket;
-    _Py_slist_t *old_buckets = NULL;
-    size_t old_num_buckets;
-
-    new_size = round_size((size_t)(ht->nentries * HASHTABLE_REHASH_FACTOR));
-    if (new_size == ht->nbuckets)
+    size_t new_size = round_size((size_t)(ht->nentries * HASHTABLE_REHASH_FACTOR));
+    if (new_size == ht->nbuckets) {
         return;
+    }
 
-    old_num_buckets = ht->nbuckets;
-
-    buckets_size = new_size * sizeof(ht->buckets[0]);
-    old_buckets = ht->buckets;
-    ht->buckets = ht->alloc.malloc(buckets_size);
-    if (ht->buckets == NULL) {
-        /* cancel rehash on memory allocation failure */
-        ht->buckets = old_buckets ;
+    size_t buckets_size = new_size * sizeof(ht->buckets[0]);
+    _Py_slist_t *new_buckets = ht->alloc.malloc(buckets_size);
+    if (new_buckets == NULL) {
         /* memory allocation failed */
         return;
     }
-    memset(ht->buckets, 0, buckets_size);
+    memset(new_buckets, 0, buckets_size);
 
-    ht->nbuckets = new_size;
-
-    for (bucket = 0; bucket < old_num_buckets; bucket++) {
-        _Py_hashtable_entry_t *entry, *next;
-        for (entry = BUCKETS_HEAD(old_buckets[bucket]); entry != NULL; entry = next) {
-            size_t entry_index;
-
-
+    for (size_t bucket = 0; bucket < ht->nbuckets; bucket++) {
+        _Py_hashtable_entry_t *entry = BUCKETS_HEAD(ht->buckets[bucket]);
+        while (entry != NULL) {
             assert(ht->hash_func(entry->key) == entry->key_hash);
-            next = ENTRY_NEXT(entry);
-            entry_index = entry->key_hash & (new_size - 1);
+            _Py_hashtable_entry_t *next = ENTRY_NEXT(entry);
+            size_t entry_index = entry->key_hash & (new_size - 1);
 
-            _Py_slist_prepend(&ht->buckets[entry_index], (_Py_slist_item_t*)entry);
+            _Py_slist_prepend(&new_buckets[entry_index], (_Py_slist_item_t*)entry);
+
+            entry = next;
         }
     }
 
-    ht->alloc.free(old_buckets);
+    ht->alloc.free(ht->buckets);
+    ht->nbuckets = new_size;
+    ht->buckets = new_buckets;
 }
 
 
@@ -368,10 +313,7 @@ _Py_hashtable_new_full(_Py_hashtable_hash_func hash_func,
                        _Py_hashtable_destroy_func value_destroy_func,
                        _Py_hashtable_allocator_t *allocator)
 {
-    _Py_hashtable_t *ht;
-    size_t buckets_size;
     _Py_hashtable_allocator_t alloc;
-
     if (allocator == NULL) {
         alloc.malloc = PyMem_Malloc;
         alloc.free = PyMem_Free;
@@ -380,14 +322,15 @@ _Py_hashtable_new_full(_Py_hashtable_hash_func hash_func,
         alloc = *allocator;
     }
 
-    ht = (_Py_hashtable_t *)alloc.malloc(sizeof(_Py_hashtable_t));
-    if (ht == NULL)
+    _Py_hashtable_t *ht = (_Py_hashtable_t *)alloc.malloc(sizeof(_Py_hashtable_t));
+    if (ht == NULL) {
         return ht;
+    }
 
     ht->nbuckets = HASHTABLE_MIN_SIZE;
     ht->nentries = 0;
 
-    buckets_size = ht->nbuckets * sizeof(ht->buckets[0]);
+    size_t buckets_size = ht->nbuckets * sizeof(ht->buckets[0]);
     ht->buckets = alloc.malloc(buckets_size);
     if (ht->buckets == NULL) {
         alloc.free(ht);
@@ -435,13 +378,12 @@ _Py_hashtable_destroy_entry(_Py_hashtable_t *ht, _Py_hashtable_entry_t *entry)
 void
 _Py_hashtable_clear(_Py_hashtable_t *ht)
 {
-    _Py_hashtable_entry_t *entry, *next;
-    size_t i;
-
-    for (i=0; i < ht->nbuckets; i++) {
-        for (entry = TABLE_HEAD(ht, i); entry != NULL; entry = next) {
-            next = ENTRY_NEXT(entry);
+    for (size_t i=0; i < ht->nbuckets; i++) {
+        _Py_hashtable_entry_t *entry = TABLE_HEAD(ht, i);
+        while (entry != NULL) {
+            _Py_hashtable_entry_t *next = ENTRY_NEXT(entry);
             _Py_hashtable_destroy_entry(ht, entry);
+            entry = next;
         }
         _Py_slist_init(&ht->buckets[i]);
     }
