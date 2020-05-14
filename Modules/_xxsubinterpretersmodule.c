@@ -329,7 +329,6 @@ _objsnapshot_clear(_objsnapshot *osn)
 //    PyMem_Free(osn);
 //}
 
-#ifndef NDEBUG
 static int
 _objsnapshot_is_clear(_objsnapshot *osn)
 {
@@ -337,7 +336,6 @@ _objsnapshot_is_clear(_objsnapshot *osn)
         && _rawstring_is_clear(&osn->modname)
         && _rawstring_is_clear(&osn->clsname);
 }
-#endif
 
 static void
 _objsnapshot_summarize(_objsnapshot *osn, _rawstring *rawbuf, const char *msg)
@@ -599,7 +597,6 @@ _tbsnapshot_free(_tbsnapshot *tbs)
     PyMem_Free(tbs);
 }
 
-#ifndef NDEBUG
 static int
 _tbsnapshot_is_clear(_tbsnapshot *tbs)
 {
@@ -607,7 +604,6 @@ _tbsnapshot_is_clear(_tbsnapshot *tbs)
         && _rawstring_is_clear(&tbs->tbs_funcname)
         && _rawstring_is_clear(&tbs->tbs_filename);
 }
-#endif
 
 static int
 _tbsnapshot_from_pytb(_tbsnapshot *tbs, PyTracebackObject *pytb)
@@ -752,7 +748,6 @@ _excsnapshot_free(_excsnapshot *es)
     PyMem_Free(es);
 }
 
-#ifndef NDEBUG
 static int
 _excsnapshot_is_clear(_excsnapshot *es)
 {
@@ -763,7 +758,6 @@ _excsnapshot_is_clear(_excsnapshot *es)
         && es->es_msg == NULL
         && _objsnapshot_is_clear(&es->es_object);
 }
-#endif
 
 static PyObject *
 _excsnapshot_get_exc_naive(_excsnapshot *es)
@@ -1091,7 +1085,6 @@ _sharedexception_free(_sharedexception *she)
     PyMem_Free(she);
 }
 
-#ifndef NDEBUG
 static int
 _sharedexception_is_clear(_sharedexception *she)
 {
@@ -1099,7 +1092,6 @@ _sharedexception_is_clear(_sharedexception *she)
         && _excsnapshot_is_clear(&she->snapshot)
         && _rawstring_is_clear(&she->msg);
 }
-#endif
 
 static PyObject *
 _sharedexception_get_cause(_sharedexception *sharedexc)
