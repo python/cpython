@@ -14802,12 +14802,10 @@ static const char * const have_functions[] = {
 static int
 posixmodule_exec(PyObject *m)
 {
-    PyObject *v;
-    PyObject *list;
-    const char * const *trace;
+    _posixstate *state = get_posix_state(m);
 
     /* Initialize environ dictionary */
-    v = convertenviron();
+    PyObject *v = convertenviron();
     Py_XINCREF(v);
     if (v == NULL || PyModule_AddObject(m, "environ", v) != 0)
         return -1;
@@ -14830,7 +14828,7 @@ posixmodule_exec(PyObject *m)
     }
     Py_INCREF(WaitidResultType);
     PyModule_AddObject(m, "waitid_result", WaitidResultType);
-    get_posix_state(m)->WaitidResultType = WaitidResultType;
+    state->WaitidResultType = WaitidResultType;
 #endif
 
     stat_result_desc.name = "os.stat_result"; /* see issue #19209 */
@@ -14843,7 +14841,7 @@ posixmodule_exec(PyObject *m)
     }
     Py_INCREF(StatResultType);
     PyModule_AddObject(m, "stat_result", StatResultType);
-    get_posix_state(m)->StatResultType = StatResultType;
+    state->StatResultType = StatResultType;
     structseq_new = ((PyTypeObject *)StatResultType)->tp_new;
     ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
 
@@ -14854,7 +14852,7 @@ posixmodule_exec(PyObject *m)
     }
     Py_INCREF(StatVFSResultType);
     PyModule_AddObject(m, "statvfs_result", StatVFSResultType);
-    get_posix_state(m)->StatVFSResultType = StatVFSResultType;
+    state->StatVFSResultType = StatVFSResultType;
 #ifdef NEED_TICKS_PER_SECOND
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
     ticks_per_second = sysconf(_SC_CLK_TCK);
@@ -14873,7 +14871,7 @@ posixmodule_exec(PyObject *m)
     }
     Py_INCREF(SchedParamType);
     PyModule_AddObject(m, "sched_param", SchedParamType);
-    get_posix_state(m)->SchedParamType = SchedParamType;
+    state->SchedParamType = SchedParamType;
     ((PyTypeObject *)SchedParamType)->tp_new = os_sched_param;
 #endif
 
@@ -14884,14 +14882,14 @@ posixmodule_exec(PyObject *m)
     }
     Py_INCREF(TerminalSizeType);
     PyModule_AddObject(m, "terminal_size", TerminalSizeType);
-    get_posix_state(m)->TerminalSizeType = TerminalSizeType;
+    state->TerminalSizeType = TerminalSizeType;
 
     /* initialize scandir types */
     PyObject *ScandirIteratorType = PyType_FromModuleAndSpec(m, &ScandirIteratorType_spec, NULL);
     if (ScandirIteratorType == NULL) {
         return -1;
     }
-    get_posix_state(m)->ScandirIteratorType = ScandirIteratorType;
+    state->ScandirIteratorType = ScandirIteratorType;
 
     PyObject *DirEntryType = PyType_FromModuleAndSpec(m, &DirEntryType_spec, NULL);
     if (DirEntryType == NULL) {
@@ -14899,7 +14897,7 @@ posixmodule_exec(PyObject *m)
     }
     Py_INCREF(DirEntryType);
     PyModule_AddObject(m, "DirEntry", DirEntryType);
-    get_posix_state(m)->DirEntryType = DirEntryType;
+    state->DirEntryType = DirEntryType;
 
     times_result_desc.name = MODNAME ".times_result";
     PyObject *TimesResultType = (PyObject *)PyStructSequence_NewType(&times_result_desc);
@@ -14908,7 +14906,7 @@ posixmodule_exec(PyObject *m)
     }
     Py_INCREF(TimesResultType);
     PyModule_AddObject(m, "times_result", TimesResultType);
-    get_posix_state(m)->TimesResultType = TimesResultType;
+    state->TimesResultType = TimesResultType;
 
     PyTypeObject *UnameResultType = PyStructSequence_NewType(&uname_result_desc);
     if (UnameResultType == NULL) {
@@ -14916,7 +14914,7 @@ posixmodule_exec(PyObject *m)
     }
     Py_INCREF(UnameResultType);
     PyModule_AddObject(m, "uname_result", (PyObject *)UnameResultType);
-    get_posix_state(m)->UnameResultType = (PyObject *)UnameResultType;
+    state->UnameResultType = (PyObject *)UnameResultType;
 
 #ifdef __APPLE__
     /*
@@ -14956,15 +14954,15 @@ posixmodule_exec(PyObject *m)
 
 #endif /* __APPLE__ */
 
-    if ((get_posix_state(m)->billion = PyLong_FromLong(1000000000)) == NULL)
+    if ((state->billion = PyLong_FromLong(1000000000)) == NULL)
         return -1;
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
-    get_posix_state(m)->struct_rusage = PyUnicode_InternFromString("struct_rusage");
-    if (get_posix_state(m)->struct_rusage == NULL)
+    state->struct_rusage = PyUnicode_InternFromString("struct_rusage");
+    if (state->struct_rusage == NULL)
         return -1;
 #endif
-    get_posix_state(m)->st_mode = PyUnicode_InternFromString("st_mode");
-    if (get_posix_state(m)->st_mode == NULL)
+    state->st_mode = PyUnicode_InternFromString("st_mode");
+    if (state->st_mode == NULL)
         return -1;
 
     /* suppress "function not used" warnings */
@@ -14981,10 +14979,11 @@ posixmodule_exec(PyObject *m)
      * provide list of locally available functions
      * so os.py can populate support_* lists
      */
-    list = PyList_New(0);
-    if (!list)
+    PyObject *list = PyList_New(0);
+    if (!list) {
         return -1;
-    for (trace = have_functions; *trace; trace++) {
+    }
+    for (const char * const *trace = have_functions; *trace; trace++) {
         PyObject *unicode = PyUnicode_DecodeASCII(*trace, strlen(*trace), NULL);
         if (!unicode)
             return -1;
