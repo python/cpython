@@ -87,6 +87,17 @@ class ThreadPoolTests(unittest.TestCase):
         result = self.loop.run_until_complete(main())
         self.assertEqual(result, 42)
 
+    def test_run_exception(self):
+        def raise_runtime():
+            raise RuntimeError("test")
+
+        async def main():
+            async with asyncio.ThreadPool(concurrency=5) as pool:
+                await pool.run(raise_runtime)
+
+        with self.assertRaisesRegex(RuntimeError, "test"):
+            self.loop.run_until_complete(main())
+
     def test_run_once(self):
         func = mock.Mock()
 
