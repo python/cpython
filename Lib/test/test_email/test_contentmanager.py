@@ -329,6 +329,21 @@ class TestRawDataManager(TestEmailBase):
         self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
         self.assertEqual(m.get_content(), content)
 
+    def test_set_text_plain_long_line_heuristics(self):
+        m = self._make_message()
+        content = ("Simple but long message that is over 78 characters"
+                   " long to force transfer encoding.\n")
+        raw_data_manager.set_content(m, content)
+        self.assertEqual(str(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: quoted-printable
+
+            Simple but long message that is over 78 characters long to =
+            force transfer encoding.
+            """))
+        self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
+        self.assertEqual(m.get_content(), content)
+
     def test_set_text_short_line_minimal_non_ascii_heuristics(self):
         m = self._make_message()
         content = "et là il est monté sur moi et il commence à m'éto.\n"
