@@ -143,7 +143,7 @@ class ThreadPool(AbstractPool):
             self._running = True
             self._loop.call_soon_threadsafe(future.set_result, None)
         except Exception as ex:
-            self._loop.call_soon_threadsafe(future.exception, ex)
+            self._loop.call_soon_threadsafe(future.set_exception, ex)
 
     async def _shutdown_threadpool(self):
         """Schedule the shutdown of the threadpool.
@@ -170,4 +170,4 @@ class ThreadPool(AbstractPool):
             self._closed = True
             self._loop.call_soon_threadsafe(future.set_result, None)
         except Exception as ex:
-            self._loop.call_soon_threadsafe(future.exception, ex)
+            self._loop.call_soon_threadsafe(future.set_exception, ex)

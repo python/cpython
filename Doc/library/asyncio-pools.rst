@@ -37,7 +37,7 @@ thread or process) without blocking the event loop.
    ``None``, the amount of threads used will scale based on the
    number of processors.
 
-   .. coroutinemethod:: run(/, func, *args, **kwargs)
+   .. coroutinemethod:: run(func, /, *args, **kwargs)
 
       Asynchronously run *func* with its arguments and keyword-arguments
       within the thread pool, and return a :class:`asyncio.Future` object
