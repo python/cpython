@@ -49,7 +49,7 @@ jobs:
         source ./.venv/bin/activate
         python -m pip install -U coverage
         python -m test.pythoninfo
-        export PYTHONPATH=./.venv/lib/python3.9/site-packages/coverage/fullcoverage
+        export PYTHONPATH=`find .venv -name fullcoverage`
     - name: 'Tests with coverage'
       run: >
         source ./.venv/bin/activate &&
