@@ -2063,27 +2063,25 @@ _PyPegen_get_invalid_target(expr_ty e)
     if (e == NULL) {
         return NULL;
     }
+
+#define VISIT_CONTAINER(CONTAINER, TYPE) do { \
+        Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
+        for (Py_ssize_t i = 0; i < len; i++) {\
+            expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
+            expr_ty child = _PyPegen_get_invalid_target(other);\
+            if (child != NULL) {\
+                return child;\
+            }\
+        }\
+    } while (0)
+
     switch (e->kind) {
         case List_kind: {
-            Py_ssize_t len = asdl_seq_LEN(e->v.List.elts);
-            for (Py_ssize_t i = 0; i < len; i++) {
-                expr_ty other = asdl_seq_GET(e->v.List.elts, i);
-                expr_ty child = _PyPegen_get_invalid_target(other);
-                if (child != NULL) {
-                    return child;
-                }
-            }
+            VISIT_CONTAINER(e, List);
             return NULL;
         }
         case Tuple_kind: {
-            Py_ssize_t len = asdl_seq_LEN(e->v.Tuple.elts);
-            for (Py_ssize_t i = 0; i < len; i++) {
-                expr_ty other = asdl_seq_GET(e->v.Tuple.elts, i);
-                expr_ty child = _PyPegen_get_invalid_target(other);
-                if (child != NULL) {
-                    return child;
-                }
-            }
+            VISIT_CONTAINER(e, Tuple);
             return NULL;
         }
         case Starred_kind:
