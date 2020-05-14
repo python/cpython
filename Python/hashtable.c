@@ -60,7 +60,7 @@
         ((_Py_hashtable_entry_t *)_Py_SLIST_ITEM_NEXT(ENTRY))
 
 /* Forward declaration */
-static void hashtable_rehash(_Py_hashtable_t *ht);
+static int hashtable_rehash(_Py_hashtable_t *ht);
 
 static void
 _Py_slist_init(_Py_slist_t *list)
@@ -198,6 +198,7 @@ _Py_hashtable_steal(_Py_hashtable_t *ht, const void *key)
     ht->alloc.free(entry);
 
     if ((float)ht->nentries / (float)ht->nbuckets < HASHTABLE_LOW) {
+        // Ignore failure: error cannot be reported to the caller
         hashtable_rehash(ht);
     }
     return value;
@@ -228,13 +229,17 @@ _Py_hashtable_set(_Py_hashtable_t *ht, const void *key, void *value)
     entry->key = (void *)key;
     entry->value = value;
 
+    ht->nentries++;
+    if ((float)ht->nentries / (float)ht->nbuckets > HASHTABLE_HIGH) {
+        if (hashtable_rehash(ht) < 0) {
+            ht->nentries--;
+            ht->alloc.free(entry);
+            return -1;
+        }
+    }
+
     size_t index = entry->key_hash & (ht->nbuckets - 1);
     _Py_slist_prepend(&ht->buckets[index], (_Py_slist_item_t*)entry);
-    ht->nentries++;
-
-    if ((float)ht->nentries / (float)ht->nbuckets > HASHTABLE_HIGH) {
-        hashtable_rehash(ht);
-    }
     return 0;
 }
 
@@ -271,19 +276,19 @@ _Py_hashtable_foreach(_Py_hashtable_t *ht,
 }
 
 
-static void
+static int
 hashtable_rehash(_Py_hashtable_t *ht)
 {
     size_t new_size = round_size((size_t)(ht->nentries * HASHTABLE_REHASH_FACTOR));
     if (new_size == ht->nbuckets) {
-        return;
+        return 0;
     }
 
     size_t buckets_size = new_size * sizeof(ht->buckets[0]);
     _Py_slist_t *new_buckets = ht->alloc.malloc(buckets_size);
     if (new_buckets == NULL) {
         /* memory allocation failed */
-        return;
+        return -1;
     }
     memset(new_buckets, 0, buckets_size);
 
@@ -303,6 +308,7 @@ hashtable_rehash(_Py_hashtable_t *ht)
     ht->alloc.free(ht->buckets);
     ht->nbuckets = new_size;
     ht->buckets = new_buckets;
+    return 0;
 }
 
 
@@ -388,7 +394,9 @@ _Py_hashtable_clear(_Py_hashtable_t *ht)
         _Py_slist_init(&ht->buckets[i]);
     }
     ht->nentries = 0;
-    hashtable_rehash(ht);
+    // Ignore failure: clear function is not expected to fail
+    // because of a memory allocation failure.
+    (void)hashtable_rehash(ht);
 }
 
 
