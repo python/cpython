@@ -1467,6 +1467,10 @@ _decref_pyobj(void *obj)
 int
 _Py_DECREF_in_interpreter(PyInterpreterState *interp, PyObject *obj)
 {
+    if (interp == _PyInterpreterState_GET()) {
+        Py_DECREF(obj);
+        return 0;
+    }
     return _PyEval_AddPendingCall(interp, _decref_pyobj, obj);
 }
 
@@ -1480,6 +1484,10 @@ _release_pybuf(void *view)
 int
 _PyBuffer_Release_in_interpreter(PyInterpreterState *interp, Py_buffer *view)
 {
+    if (interp == _PyInterpreterState_GET()) {
+        PyBuffer_Release((Py_buffer *)view);
+        return 0;
+    }
     return _PyEval_AddPendingCall(interp, _release_pybuf, view);
 }
 
@@ -1487,6 +1495,10 @@ int
 _PyMem_Free_in_interpreter(PyInterpreterState *interp, void *data,
                            _deallocfunc dealloc)
 {
+    if (interp == _PyInterpreterState_GET()) {
+        dealloc(data);
+        return 0;
+    }
     return _PyEval_AddPendingCall(interp, (int (*)(void *))dealloc, data);
 }
 
@@ -1606,6 +1618,15 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
 PyObject *
 _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
 {
+    if (data->obj) {
+        // Return the object directly if the current interpreter
+        // is the one that owns the object.
+        PyInterpreterState *owner = _PyInterpreterState_LookUpID(data->interp);
+        if (owner == _PyInterpreterState_GET()) {
+            Py_INCREF(data->obj);
+            return data->obj;
+        }
+    }
     return data->new_object(data);
 }
 
