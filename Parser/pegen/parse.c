@@ -3350,7 +3350,7 @@ try_stmt_rule(Parser *p)
     return _res;
 }
 
-// except_block: 'except' expression ['as' target] ':' block | 'except' ':' block
+// except_block: 'except' expression ['as' NAME] ':' block | 'except' ':' block
 static excepthandler_ty
 except_block_rule(Parser *p)
 {
@@ -3367,7 +3367,7 @@ except_block_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // 'except' expression ['as' target] ':' block
+    { // 'except' expression ['as' NAME] ':' block
         Token * _keyword;
         Token * _literal;
         asdl_seq* b;
@@ -3378,7 +3378,7 @@ except_block_rule(Parser *p)
             &&
             (e = expression_rule(p))  // expression
             &&
-            (t = _tmp_48_rule(p), 1)  // ['as' target]
+            (t = _tmp_48_rule(p), 1)  // ['as' NAME]
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -13073,7 +13073,7 @@ _loop1_47_rule(Parser *p)
     return _seq;
 }
 
-// _tmp_48: 'as' target
+// _tmp_48: 'as' NAME
 static void *
 _tmp_48_rule(Parser *p)
 {
@@ -13082,13 +13082,13 @@ _tmp_48_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // 'as' target
+    { // 'as' NAME
         Token * _keyword;
         expr_ty z;
         if (
             (_keyword = _PyPegen_expect_token(p, 531))  // token='as'
             &&
-            (z = target_rule(p))  // target
+            (z = _PyPegen_name_token(p))  // NAME
         )
         {
             _res = z;
