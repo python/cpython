@@ -679,7 +679,6 @@ class BaseExceptionReportingTests:
         self.assertIn('Exception\n', err)
 
     def test_syntax_error_various_offsets(self):
-        print()
         for offset in range(-5, 10):
             for add in [0, 2]:
                 text = " "*add + "text%d" % offset
@@ -696,9 +695,6 @@ class BaseExceptionReportingTests:
                 expected.append("")
                 err = self.get_report(SyntaxError("msg", ("file.py", 1, offset+add, text)))
                 exp = "\n".join(expected)
-                if exp != err:
-                    print(f">>> offset={offset}; add={add}; text={text!r}")
-                    print(err)
                 self.assertEqual(exp, err)
 
 
