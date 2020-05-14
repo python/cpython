@@ -89,12 +89,12 @@ assignment[stmt_ty]:
             "Variable annotation syntax is",
             _Py_AnnAssign(CHECK(_PyPegen_set_expr_context(p, a, Store)), b, c, 1, EXTRA)
         ) }
-    | a=('(' b=inside_paren_ann_assign_target ')' { b }
-         | ann_assign_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
+    | a=('(' b=single_target ')' { b }
+         | single_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
         CHECK_VERSION(6, "Variable annotations syntax is", _Py_AnnAssign(a, b, c, 0, EXTRA)) }
     | a=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) tc=[TYPE_COMMENT] {
          _Py_Assign(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | a=target b=augassign c=(yield_expr | star_expressions) {
+    | a=single_target b=augassign c=(yield_expr | star_expressions) {
          _Py_AugAssign(a, b->kind, c, EXTRA) }
     | invalid_assignment
 
@@ -185,7 +185,7 @@ try_stmt[stmt_ty]:
     | 'try' ':' b=block f=finally_block { _Py_Try(b, NULL, NULL, f, EXTRA) }
     | 'try' ':' b=block ex=except_block+ el=[else_block] f=[finally_block] { _Py_Try(b, ex, el, f, EXTRA) }
 except_block[excepthandler_ty]:
-    | 'except' e=expression t=['as' z=target { z }] ':' b=block {
+    | 'except' e=expression t=['as' z=NAME { z }] ':' b=block {
         _Py_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
     | 'except' ':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
 finally_block[asdl_seq*]: 'finally' ':' a=block { a }
@@ -573,12 +573,11 @@ star_atom[expr_ty]:
     | '(' a=[star_targets_seq] ')' { _Py_Tuple(a, Store, EXTRA) }
     | '[' a=[star_targets_seq] ']' { _Py_List(a, Store, EXTRA) }
 
-inside_paren_ann_assign_target[expr_ty]:
-    | ann_assign_subscript_attribute_target
+single_target[expr_ty]:
+    | single_subscript_attribute_target
     | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' a=inside_paren_ann_assign_target ')' { a }
-
-ann_assign_subscript_attribute_target[expr_ty]:
+    | '(' a=single_target ')' { a }
+single_subscript_attribute_target[expr_ty]:
     | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
 
