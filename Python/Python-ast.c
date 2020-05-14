@@ -1305,7 +1305,8 @@ static PyObject* ast2obj_int(long b)
 
 /* Conversion Python -> AST */
 
-static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_object(PyObject* obj, PyObject** out,
+                          const char* Py_UNUSED(field), PyArena* arena)
 {
     if (obj == Py_None)
         obj = NULL;
@@ -1320,7 +1321,8 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
     return 0;
 }
 
-static int obj2ast_constant(PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_constant(PyObject* obj, PyObject** out,
+                            const char* Py_UNUSED(field), PyArena* arena)
 {
     if (PyArena_AddPyObject(arena, obj) < 0) {
         *out = NULL;
@@ -1331,29 +1333,29 @@ static int obj2ast_constant(PyObject* obj, PyObject** out, PyArena* arena)
     return 0;
 }
 
-static int obj2ast_identifier(PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_identifier(PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
-        PyErr_SetString(PyExc_TypeError, "AST identifier must be of type str");
+        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting an AST identifier (must be of type str)", field);
         return 1;
     }
-    return obj2ast_object(obj, out, arena);
+    return obj2ast_object(obj, out, field, arena);
 }
 
-static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
+static int obj2ast_string(PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
+        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting an AST string (must be of type str or bytes)", field);
         return 1;
     }
-    return obj2ast_object(obj, out, arena);
+    return obj2ast_object(obj, out, field, arena);
 }
 
-static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
+static int obj2ast_int(PyObject* obj, int* out, const char* field, PyArena* arena)
 {
     int i;
     if (!PyLong_Check(obj)) {
-        PyErr_Format(PyExc_ValueError, "invalid integer value: %R", obj);
+        PyErr_Format(PyExc_ValueError, "field \"%s\" got an invalid integer value: %R", field, obj);
         return 1;
     }
 
@@ -2023,26 +2025,38 @@ static int init_types(void)
     return 1;
 }
 
-static int obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena);
-static int obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena);
-static int obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena);
-static int obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena*
-                                arena);
-static int obj2ast_boolop(PyObject* obj, boolop_ty* out, PyArena* arena);
-static int obj2ast_operator(PyObject* obj, operator_ty* out, PyArena* arena);
-static int obj2ast_unaryop(PyObject* obj, unaryop_ty* out, PyArena* arena);
-static int obj2ast_cmpop(PyObject* obj, cmpop_ty* out, PyArena* arena);
-static int obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena*
-                                 arena);
-static int obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena*
-                                 arena);
-static int obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena);
-static int obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena);
-static int obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena);
-static int obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena);
-static int obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena);
-static int obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena*
-                               arena);
+static int obj2ast_mod(PyObject* obj, mod_ty* out, const char* field, PyArena*
+                       arena);
+static int obj2ast_stmt(PyObject* obj, stmt_ty* out, const char* field,
+                        PyArena* arena);
+static int obj2ast_expr(PyObject* obj, expr_ty* out, const char* field,
+                        PyArena* arena);
+static int obj2ast_expr_context(PyObject* obj, expr_context_ty* out, const
+                                char* field, PyArena* arena);
+static int obj2ast_boolop(PyObject* obj, boolop_ty* out, const char* field,
+                          PyArena* arena);
+static int obj2ast_operator(PyObject* obj, operator_ty* out, const char* field,
+                            PyArena* arena);
+static int obj2ast_unaryop(PyObject* obj, unaryop_ty* out, const char* field,
+                           PyArena* arena);
+static int obj2ast_cmpop(PyObject* obj, cmpop_ty* out, const char* field,
+                         PyArena* arena);
+static int obj2ast_comprehension(PyObject* obj, comprehension_ty* out, const
+                                 char* field, PyArena* arena);
+static int obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, const
+                                 char* field, PyArena* arena);
+static int obj2ast_arguments(PyObject* obj, arguments_ty* out, const char*
+                             field, PyArena* arena);
+static int obj2ast_arg(PyObject* obj, arg_ty* out, const char* field, PyArena*
+                       arena);
+static int obj2ast_keyword(PyObject* obj, keyword_ty* out, const char* field,
+                           PyArena* arena);
+static int obj2ast_alias(PyObject* obj, alias_ty* out, const char* field,
+                         PyArena* arena);
+static int obj2ast_withitem(PyObject* obj, withitem_ty* out, const char* field,
+                            PyArena* arena);
+static int obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, const char*
+                               field, PyArena* arena);
 
 mod_ty
 Module(asdl_seq * body, asdl_seq * type_ignores, PyArena *arena)
@@ -5080,7 +5094,7 @@ failed:
 
 
 int
-obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
+obj2ast_mod(PyObject* obj, mod_ty* out, const char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -5090,6 +5104,14 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
     if (obj == Py_None) {
         *out = NULL;
         return 0;
+    }
+    tp = astmodulestate_global->mod_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    } else if (isinstance == 0 && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting mod type node, got %s", field, _PyType_Name(Py_TYPE(obj)));
+        return 1;
     }
     tp = astmodulestate_global->Module_type;
     isinstance = PyObject_IsInstance(obj, tp);
@@ -5122,7 +5144,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5156,7 +5178,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
                 type_ignore_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_type_ignore(tmp2, &val, arena);
+                res = obj2ast_type_ignore(tmp2, &val, "type_ignores", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5201,7 +5223,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5233,7 +5255,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &body, arena);
+            res = obj2ast_expr(tmp, &body, "body", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5273,7 +5295,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "argtypes", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5294,7 +5316,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &returns, arena);
+            res = obj2ast_expr(tmp, &returns, "returns", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5310,7 +5332,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
 }
 
 int
-obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
+obj2ast_stmt(PyObject* obj, stmt_ty* out, const char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -5325,6 +5347,14 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         *out = NULL;
         return 0;
     }
+    tp = astmodulestate_global->stmt_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    } else if (isinstance == 0 && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting stmt type node, got %s", field, _PyType_Name(Py_TYPE(obj)));
+        return 1;
+    }
     if (_PyObject_LookupAttr(obj, astmodulestate_global->lineno, &tmp) < 0) {
         return 1;
     }
@@ -5334,7 +5364,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &lineno, arena);
+        res = obj2ast_int(tmp, &lineno, "lineno", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -5348,7 +5378,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &col_offset, arena);
+        res = obj2ast_int(tmp, &col_offset, "col_offset", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -5362,7 +5392,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &end_lineno, arena);
+        res = obj2ast_int(tmp, &end_lineno, "end_lineno", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -5376,7 +5406,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &end_col_offset, arena);
+        res = obj2ast_int(tmp, &end_col_offset, "end_col_offset", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -5402,7 +5432,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_identifier(tmp, &name, arena);
+            res = obj2ast_identifier(tmp, &name, "name", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5415,7 +5445,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_arguments(tmp, &args, arena);
+            res = obj2ast_arguments(tmp, &args, "args", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5441,7 +5471,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5475,7 +5505,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "decorator_list", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5496,7 +5526,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &returns, arena);
+            res = obj2ast_expr(tmp, &returns, "returns", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5510,7 +5540,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_string(tmp, &type_comment, arena);
+            res = obj2ast_string(tmp, &type_comment, "type_comment", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5542,7 +5572,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_identifier(tmp, &name, arena);
+            res = obj2ast_identifier(tmp, &name, "name", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5555,7 +5585,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_arguments(tmp, &args, arena);
+            res = obj2ast_arguments(tmp, &args, "args", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5581,7 +5611,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5615,7 +5645,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "decorator_list", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5636,7 +5666,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &returns, arena);
+            res = obj2ast_expr(tmp, &returns, "returns", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5650,7 +5680,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_string(tmp, &type_comment, arena);
+            res = obj2ast_string(tmp, &type_comment, "type_comment", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5681,7 +5711,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_identifier(tmp, &name, arena);
+            res = obj2ast_identifier(tmp, &name, "name", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5707,7 +5737,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "bases", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5741,7 +5771,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 keyword_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_keyword(tmp2, &val, arena);
+                res = obj2ast_keyword(tmp2, &val, "keywords", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5774,7 +5804,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5808,7 +5838,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "decorator_list", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5841,7 +5871,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5881,7 +5911,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "targets", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5930,7 +5960,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "targets", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -5950,7 +5980,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5964,7 +5994,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_string(tmp, &type_comment, arena);
+            res = obj2ast_string(tmp, &type_comment, "type_comment", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -5993,7 +6023,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &target, arena);
+            res = obj2ast_expr(tmp, &target, "target", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6006,7 +6036,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_operator(tmp, &op, arena);
+            res = obj2ast_operator(tmp, &op, "op", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6019,7 +6049,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6049,7 +6079,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &target, arena);
+            res = obj2ast_expr(tmp, &target, "target", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6063,7 +6093,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &annotation, arena);
+            res = obj2ast_expr(tmp, &annotation, "annotation", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6076,7 +6106,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6090,7 +6120,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_int(tmp, &simple, arena);
+            res = obj2ast_int(tmp, &simple, "simple", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6121,7 +6151,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &target, arena);
+            res = obj2ast_expr(tmp, &target, "target", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6134,7 +6164,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &iter, arena);
+            res = obj2ast_expr(tmp, &iter, "iter", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6160,7 +6190,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6194,7 +6224,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "orelse", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6215,7 +6245,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_string(tmp, &type_comment, arena);
+            res = obj2ast_string(tmp, &type_comment, "type_comment", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6246,7 +6276,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &target, arena);
+            res = obj2ast_expr(tmp, &target, "target", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6259,7 +6289,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &iter, arena);
+            res = obj2ast_expr(tmp, &iter, "iter", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6285,7 +6315,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6319,7 +6349,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "orelse", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6340,7 +6370,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_string(tmp, &type_comment, arena);
+            res = obj2ast_string(tmp, &type_comment, "type_comment", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6368,7 +6398,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &test, arena);
+            res = obj2ast_expr(tmp, &test, "test", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6394,7 +6424,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6428,7 +6458,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "orelse", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6463,7 +6493,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &test, arena);
+            res = obj2ast_expr(tmp, &test, "test", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6489,7 +6519,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6523,7 +6553,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "orelse", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6571,7 +6601,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 withitem_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_withitem(tmp2, &val, arena);
+                res = obj2ast_withitem(tmp2, &val, "items", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6604,7 +6634,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6625,7 +6655,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_string(tmp, &type_comment, arena);
+            res = obj2ast_string(tmp, &type_comment, "type_comment", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6666,7 +6696,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 withitem_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_withitem(tmp2, &val, arena);
+                res = obj2ast_withitem(tmp2, &val, "items", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6699,7 +6729,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6720,7 +6750,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_string(tmp, &type_comment, arena);
+            res = obj2ast_string(tmp, &type_comment, "type_comment", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6747,7 +6777,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &exc, arena);
+            res = obj2ast_expr(tmp, &exc, "exc", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6760,7 +6790,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &cause, arena);
+            res = obj2ast_expr(tmp, &cause, "cause", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6802,7 +6832,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6836,7 +6866,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 excepthandler_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_excepthandler(tmp2, &val, arena);
+                res = obj2ast_excepthandler(tmp2, &val, "handlers", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6870,7 +6900,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "orelse", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6904,7 +6934,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "finalbody", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -6938,7 +6968,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &test, arena);
+            res = obj2ast_expr(tmp, &test, "test", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6951,7 +6981,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &msg, arena);
+            res = obj2ast_expr(tmp, &msg, "msg", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6990,7 +7020,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 alias_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_alias(tmp2, &val, arena);
+                res = obj2ast_alias(tmp2, &val, "names", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7026,7 +7056,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_identifier(tmp, &module, arena);
+            res = obj2ast_identifier(tmp, &module, "module", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7052,7 +7082,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 alias_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_alias(tmp2, &val, arena);
+                res = obj2ast_alias(tmp2, &val, "names", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7072,7 +7102,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_int(tmp, &level, arena);
+            res = obj2ast_int(tmp, &level, "level", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7111,7 +7141,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 identifier val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_identifier(tmp2, &val, arena);
+                res = obj2ast_identifier(tmp2, &val, "names", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7157,7 +7187,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 identifier val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_identifier(tmp2, &val, arena);
+                res = obj2ast_identifier(tmp2, &val, "names", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7190,7 +7220,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7240,7 +7270,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
 }
 
 int
-obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
+obj2ast_expr(PyObject* obj, expr_ty* out, const char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -7255,6 +7285,14 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         *out = NULL;
         return 0;
     }
+    tp = astmodulestate_global->expr_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    } else if (isinstance == 0 && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting expr type node, got %s", field, _PyType_Name(Py_TYPE(obj)));
+        return 1;
+    }
     if (_PyObject_LookupAttr(obj, astmodulestate_global->lineno, &tmp) < 0) {
         return 1;
     }
@@ -7264,7 +7302,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &lineno, arena);
+        res = obj2ast_int(tmp, &lineno, "lineno", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -7278,7 +7316,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &col_offset, arena);
+        res = obj2ast_int(tmp, &col_offset, "col_offset", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -7292,7 +7330,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &end_lineno, arena);
+        res = obj2ast_int(tmp, &end_lineno, "end_lineno", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -7306,7 +7344,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &end_col_offset, arena);
+        res = obj2ast_int(tmp, &end_col_offset, "end_col_offset", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -7328,7 +7366,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_boolop(tmp, &op, arena);
+            res = obj2ast_boolop(tmp, &op, "op", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7355,7 +7393,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "values", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7390,7 +7428,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &target, arena);
+            res = obj2ast_expr(tmp, &target, "target", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7403,7 +7441,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7431,7 +7469,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &left, arena);
+            res = obj2ast_expr(tmp, &left, "left", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7444,7 +7482,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_operator(tmp, &op, arena);
+            res = obj2ast_operator(tmp, &op, "op", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7457,7 +7495,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &right, arena);
+            res = obj2ast_expr(tmp, &right, "right", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7484,7 +7522,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_unaryop(tmp, &op, arena);
+            res = obj2ast_unaryop(tmp, &op, "op", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7498,7 +7536,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &operand, arena);
+            res = obj2ast_expr(tmp, &operand, "operand", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7525,7 +7563,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_arguments(tmp, &args, arena);
+            res = obj2ast_arguments(tmp, &args, "args", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7538,7 +7576,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &body, arena);
+            res = obj2ast_expr(tmp, &body, "body", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7566,7 +7604,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &test, arena);
+            res = obj2ast_expr(tmp, &test, "test", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7579,7 +7617,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &body, arena);
+            res = obj2ast_expr(tmp, &body, "body", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7593,7 +7631,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &orelse, arena);
+            res = obj2ast_expr(tmp, &orelse, "orelse", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7633,7 +7671,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "keys", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7667,7 +7705,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "values", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7713,7 +7751,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "elts", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7746,7 +7784,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &elt, arena);
+            res = obj2ast_expr(tmp, &elt, "elt", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7773,7 +7811,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 comprehension_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_comprehension(tmp2, &val, arena);
+                res = obj2ast_comprehension(tmp2, &val, "generators", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7807,7 +7845,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &elt, arena);
+            res = obj2ast_expr(tmp, &elt, "elt", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7834,7 +7872,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 comprehension_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_comprehension(tmp2, &val, arena);
+                res = obj2ast_comprehension(tmp2, &val, "generators", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7869,7 +7907,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &key, arena);
+            res = obj2ast_expr(tmp, &key, "key", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7882,7 +7920,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7909,7 +7947,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 comprehension_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_comprehension(tmp2, &val, arena);
+                res = obj2ast_comprehension(tmp2, &val, "generators", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -7943,7 +7981,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &elt, arena);
+            res = obj2ast_expr(tmp, &elt, "elt", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -7970,7 +8008,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 comprehension_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_comprehension(tmp2, &val, arena);
+                res = obj2ast_comprehension(tmp2, &val, "generators", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -8003,7 +8041,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8029,7 +8067,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8055,7 +8093,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8083,7 +8121,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &left, arena);
+            res = obj2ast_expr(tmp, &left, "left", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8109,7 +8147,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 cmpop_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_cmpop(tmp2, &val, arena);
+                res = obj2ast_cmpop(tmp2, &val, "ops", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -8143,7 +8181,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "comparators", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -8178,7 +8216,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &func, arena);
+            res = obj2ast_expr(tmp, &func, "func", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8204,7 +8242,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "args", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -8238,7 +8276,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 keyword_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_keyword(tmp2, &val, arena);
+                res = obj2ast_keyword(tmp2, &val, "keywords", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -8273,7 +8311,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8287,7 +8325,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_int(tmp, &conversion, arena);
+            res = obj2ast_int(tmp, &conversion, "conversion", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8301,7 +8339,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &format_spec, arena);
+            res = obj2ast_expr(tmp, &format_spec, "format_spec", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8341,7 +8379,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "values", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -8375,7 +8413,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_constant(tmp, &value, arena);
+            res = obj2ast_constant(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8388,7 +8426,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_string(tmp, &kind, arena);
+            res = obj2ast_string(tmp, &kind, "kind", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8416,7 +8454,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8429,7 +8467,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_identifier(tmp, &attr, arena);
+            res = obj2ast_identifier(tmp, &attr, "attr", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8442,7 +8480,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr_context(tmp, &ctx, arena);
+            res = obj2ast_expr_context(tmp, &ctx, "ctx", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8470,7 +8508,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8483,7 +8521,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &slice, arena);
+            res = obj2ast_expr(tmp, &slice, "slice", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8496,7 +8534,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr_context(tmp, &ctx, arena);
+            res = obj2ast_expr_context(tmp, &ctx, "ctx", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8523,7 +8561,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &value, arena);
+            res = obj2ast_expr(tmp, &value, "value", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8536,7 +8574,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr_context(tmp, &ctx, arena);
+            res = obj2ast_expr_context(tmp, &ctx, "ctx", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8563,7 +8601,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_identifier(tmp, &id, arena);
+            res = obj2ast_identifier(tmp, &id, "id", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8576,7 +8614,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr_context(tmp, &ctx, arena);
+            res = obj2ast_expr_context(tmp, &ctx, "ctx", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8616,7 +8654,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "elts", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -8636,7 +8674,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr_context(tmp, &ctx, arena);
+            res = obj2ast_expr_context(tmp, &ctx, "ctx", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8676,7 +8714,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 expr_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_expr(tmp2, &val, arena);
+                res = obj2ast_expr(tmp2, &val, "elts", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -8696,7 +8734,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr_context(tmp, &ctx, arena);
+            res = obj2ast_expr_context(tmp, &ctx, "ctx", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8724,7 +8762,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &lower, arena);
+            res = obj2ast_expr(tmp, &lower, "lower", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8737,7 +8775,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &upper, arena);
+            res = obj2ast_expr(tmp, &upper, "upper", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8750,7 +8788,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &step, arena);
+            res = obj2ast_expr(tmp, &step, "step", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -8767,7 +8805,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
 }
 
 int
-obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena* arena)
+obj2ast_expr_context(PyObject* obj, expr_context_ty* out, const char* field,
+                     PyArena* arena)
 {
     int isinstance;
 
@@ -8801,7 +8840,7 @@ obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena* arena)
 }
 
 int
-obj2ast_boolop(PyObject* obj, boolop_ty* out, PyArena* arena)
+obj2ast_boolop(PyObject* obj, boolop_ty* out, const char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -8827,7 +8866,8 @@ obj2ast_boolop(PyObject* obj, boolop_ty* out, PyArena* arena)
 }
 
 int
-obj2ast_operator(PyObject* obj, operator_ty* out, PyArena* arena)
+obj2ast_operator(PyObject* obj, operator_ty* out, const char* field, PyArena*
+                 arena)
 {
     int isinstance;
 
@@ -8941,7 +8981,8 @@ obj2ast_operator(PyObject* obj, operator_ty* out, PyArena* arena)
 }
 
 int
-obj2ast_unaryop(PyObject* obj, unaryop_ty* out, PyArena* arena)
+obj2ast_unaryop(PyObject* obj, unaryop_ty* out, const char* field, PyArena*
+                arena)
 {
     int isinstance;
 
@@ -8983,7 +9024,7 @@ obj2ast_unaryop(PyObject* obj, unaryop_ty* out, PyArena* arena)
 }
 
 int
-obj2ast_cmpop(PyObject* obj, cmpop_ty* out, PyArena* arena)
+obj2ast_cmpop(PyObject* obj, cmpop_ty* out, const char* field, PyArena* arena)
 {
     int isinstance;
 
@@ -9073,7 +9114,8 @@ obj2ast_cmpop(PyObject* obj, cmpop_ty* out, PyArena* arena)
 }
 
 int
-obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
+obj2ast_comprehension(PyObject* obj, comprehension_ty* out, const char* field,
+                      PyArena* arena)
 {
     PyObject* tmp = NULL;
     expr_ty target;
@@ -9090,7 +9132,7 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_expr(tmp, &target, arena);
+        res = obj2ast_expr(tmp, &target, "target", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9103,7 +9145,7 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_expr(tmp, &iter, arena);
+        res = obj2ast_expr(tmp, &iter, "iter", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9129,7 +9171,7 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
             expr_ty val;
             PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
             Py_INCREF(tmp2);
-            res = obj2ast_expr(tmp2, &val, arena);
+            res = obj2ast_expr(tmp2, &val, "ifs", arena);
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
             if (len != PyList_GET_SIZE(tmp)) {
@@ -9149,7 +9191,7 @@ obj2ast_comprehension(PyObject* obj, comprehension_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &is_async, arena);
+        res = obj2ast_int(tmp, &is_async, "is_async", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9161,7 +9203,8 @@ failed:
 }
 
 int
-obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
+obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, const char* field,
+                      PyArena* arena)
 {
     int isinstance;
 
@@ -9176,6 +9219,14 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
         *out = NULL;
         return 0;
     }
+    tp = astmodulestate_global->excepthandler_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    } else if (isinstance == 0 && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting excepthandler type node, got %s", field, _PyType_Name(Py_TYPE(obj)));
+        return 1;
+    }
     if (_PyObject_LookupAttr(obj, astmodulestate_global->lineno, &tmp) < 0) {
         return 1;
     }
@@ -9185,7 +9236,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &lineno, arena);
+        res = obj2ast_int(tmp, &lineno, "lineno", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9199,7 +9250,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &col_offset, arena);
+        res = obj2ast_int(tmp, &col_offset, "col_offset", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9213,7 +9264,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &end_lineno, arena);
+        res = obj2ast_int(tmp, &end_lineno, "end_lineno", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9227,7 +9278,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &end_col_offset, arena);
+        res = obj2ast_int(tmp, &end_col_offset, "end_col_offset", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9250,7 +9301,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_expr(tmp, &type, arena);
+            res = obj2ast_expr(tmp, &type, "type", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -9263,7 +9314,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_identifier(tmp, &name, arena);
+            res = obj2ast_identifier(tmp, &name, "name", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -9289,7 +9340,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
                 stmt_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
                 Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
+                res = obj2ast_stmt(tmp2, &val, "body", arena);
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
@@ -9313,7 +9364,8 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
 }
 
 int
-obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
+obj2ast_arguments(PyObject* obj, arguments_ty* out, const char* field, PyArena*
+                  arena)
 {
     PyObject* tmp = NULL;
     asdl_seq* posonlyargs;
@@ -9347,7 +9399,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
             arg_ty val;
             PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
             Py_INCREF(tmp2);
-            res = obj2ast_arg(tmp2, &val, arena);
+            res = obj2ast_arg(tmp2, &val, "posonlyargs", arena);
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
             if (len != PyList_GET_SIZE(tmp)) {
@@ -9380,7 +9432,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
             arg_ty val;
             PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
             Py_INCREF(tmp2);
-            res = obj2ast_arg(tmp2, &val, arena);
+            res = obj2ast_arg(tmp2, &val, "args", arena);
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
             if (len != PyList_GET_SIZE(tmp)) {
@@ -9400,7 +9452,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_arg(tmp, &vararg, arena);
+        res = obj2ast_arg(tmp, &vararg, "vararg", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9427,7 +9479,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
             arg_ty val;
             PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
             Py_INCREF(tmp2);
-            res = obj2ast_arg(tmp2, &val, arena);
+            res = obj2ast_arg(tmp2, &val, "kwonlyargs", arena);
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
             if (len != PyList_GET_SIZE(tmp)) {
@@ -9461,7 +9513,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
             expr_ty val;
             PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
             Py_INCREF(tmp2);
-            res = obj2ast_expr(tmp2, &val, arena);
+            res = obj2ast_expr(tmp2, &val, "kw_defaults", arena);
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
             if (len != PyList_GET_SIZE(tmp)) {
@@ -9481,7 +9533,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_arg(tmp, &kwarg, arena);
+        res = obj2ast_arg(tmp, &kwarg, "kwarg", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9507,7 +9559,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
             expr_ty val;
             PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
             Py_INCREF(tmp2);
-            res = obj2ast_expr(tmp2, &val, arena);
+            res = obj2ast_expr(tmp2, &val, "defaults", arena);
             Py_DECREF(tmp2);
             if (res != 0) goto failed;
             if (len != PyList_GET_SIZE(tmp)) {
@@ -9527,7 +9579,7 @@ failed:
 }
 
 int
-obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
+obj2ast_arg(PyObject* obj, arg_ty* out, const char* field, PyArena* arena)
 {
     PyObject* tmp = NULL;
     identifier arg;
@@ -9547,7 +9599,7 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_identifier(tmp, &arg, arena);
+        res = obj2ast_identifier(tmp, &arg, "arg", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9561,7 +9613,7 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_expr(tmp, &annotation, arena);
+        res = obj2ast_expr(tmp, &annotation, "annotation", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9575,7 +9627,7 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_string(tmp, &type_comment, arena);
+        res = obj2ast_string(tmp, &type_comment, "type_comment", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9588,7 +9640,7 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &lineno, arena);
+        res = obj2ast_int(tmp, &lineno, "lineno", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9602,7 +9654,7 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &col_offset, arena);
+        res = obj2ast_int(tmp, &col_offset, "col_offset", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9616,7 +9668,7 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &end_lineno, arena);
+        res = obj2ast_int(tmp, &end_lineno, "end_lineno", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9630,7 +9682,7 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &end_col_offset, arena);
+        res = obj2ast_int(tmp, &end_col_offset, "end_col_offset", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9643,7 +9695,8 @@ failed:
 }
 
 int
-obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
+obj2ast_keyword(PyObject* obj, keyword_ty* out, const char* field, PyArena*
+                arena)
 {
     PyObject* tmp = NULL;
     identifier arg;
@@ -9662,7 +9715,7 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_identifier(tmp, &arg, arena);
+        res = obj2ast_identifier(tmp, &arg, "arg", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9675,7 +9728,7 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_expr(tmp, &value, arena);
+        res = obj2ast_expr(tmp, &value, "value", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9688,7 +9741,7 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &lineno, arena);
+        res = obj2ast_int(tmp, &lineno, "lineno", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9702,7 +9755,7 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &col_offset, arena);
+        res = obj2ast_int(tmp, &col_offset, "col_offset", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9716,7 +9769,7 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &end_lineno, arena);
+        res = obj2ast_int(tmp, &end_lineno, "end_lineno", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9730,7 +9783,7 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_int(tmp, &end_col_offset, arena);
+        res = obj2ast_int(tmp, &end_col_offset, "end_col_offset", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9743,7 +9796,7 @@ failed:
 }
 
 int
-obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena)
+obj2ast_alias(PyObject* obj, alias_ty* out, const char* field, PyArena* arena)
 {
     PyObject* tmp = NULL;
     identifier name;
@@ -9758,7 +9811,7 @@ obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_identifier(tmp, &name, arena);
+        res = obj2ast_identifier(tmp, &name, "name", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9771,7 +9824,7 @@ obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_identifier(tmp, &asname, arena);
+        res = obj2ast_identifier(tmp, &asname, "asname", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9783,7 +9836,8 @@ failed:
 }
 
 int
-obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena)
+obj2ast_withitem(PyObject* obj, withitem_ty* out, const char* field, PyArena*
+                 arena)
 {
     PyObject* tmp = NULL;
     expr_ty context_expr;
@@ -9799,7 +9853,7 @@ obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_expr(tmp, &context_expr, arena);
+        res = obj2ast_expr(tmp, &context_expr, "context_expr", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9813,7 +9867,7 @@ obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena)
     }
     else {
         int res;
-        res = obj2ast_expr(tmp, &optional_vars, arena);
+        res = obj2ast_expr(tmp, &optional_vars, "optional_vars", arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -9825,7 +9879,8 @@ failed:
 }
 
 int
-obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
+obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, const char* field,
+                    PyArena* arena)
 {
     int isinstance;
 
@@ -9835,6 +9890,14 @@ obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
     if (obj == Py_None) {
         *out = NULL;
         return 0;
+    }
+    tp = astmodulestate_global->type_ignore_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    } else if (isinstance == 0 && field != NULL) {
+        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting type_ignore type node, got %s", field, _PyType_Name(Py_TYPE(obj)));
+        return 1;
     }
     tp = astmodulestate_global->TypeIgnore_type;
     isinstance = PyObject_IsInstance(obj, tp);
@@ -9855,7 +9918,7 @@ obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_int(tmp, &lineno, arena);
+            res = obj2ast_int(tmp, &lineno, "lineno", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -9868,7 +9931,7 @@ obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
         }
         else {
             int res;
-            res = obj2ast_string(tmp, &tag, arena);
+            res = obj2ast_string(tmp, &tag, "tag", arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -10427,7 +10490,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     }
 
     mod_ty res = NULL;
-    if (obj2ast_mod(ast, &res, arena) != 0)
+    if (obj2ast_mod(ast, &res, NULL, arena) != 0)
         return NULL;
     else
         return res;
