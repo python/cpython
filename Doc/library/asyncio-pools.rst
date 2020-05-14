@@ -50,7 +50,7 @@ thread or process) without blocking the event loop.
 
    .. coroutinemethod:: astart()
 
-      Schedule the start of the thread pool and spawn its threads. Note that
+      Start the thread pool and spawn its threads. Note that
       this function is called automatically when using ``asyncio.ThreadPool``
       as an asynchronous context manager, and does not need to be called
       directly.
@@ -60,7 +60,7 @@ thread or process) without blocking the event loop.
 
    .. coroutinemethod:: aclose()
 
-      Schedule the closing of the thread pool. Note that this function is
+      Close the thread pool. Note that this function is
       called automatically when using ``asyncio.ThreadPool`` as an
       asynchronous context manager, and does not need to be called directly.
 
