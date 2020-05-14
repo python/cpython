@@ -45,18 +45,18 @@ class AbstractPool(ABC):
 
 
 class ThreadPool(AbstractPool):
-    """Asynchronous threadpool for running IO-bound functions.
+    """Asynchronous thread pool for running IO-bound functions.
 
     Directly calling an IO-bound function within the main thread will block
     other operations from occurring until it is completed. By using a
-    threadpool, several IO-bound functions can be ran concurrently within
+    thread pool, several IO-bound functions can be ran concurrently within
     their own threads, without blocking other operations.
 
     The optional argument *concurrency* sets the number of threads within the
-    threadpool. If *concurrency* is `None`, the maximum number of threads will
+    thread pool. If *concurrency* is `None`, the maximum number of threads will
     be used; based on the number of CPU cores.
 
-    This threadpool is intended to be used as an asynchronous context manager,
+    This thread pool is intended to be used as an asynchronous context manager,
     using the `async with` syntax, which provides automatic initialization and
     finalization of resources. For example:
 
@@ -110,7 +110,7 @@ class ThreadPool(AbstractPool):
     async def run(self, /, func, *args, **kwargs):
         if not self._running:
             raise RuntimeError(f"unable to run {func!r}, "
-                               "threadpool is not running")
+                               "thread pool is not running")
 
         func_call = functools.partial(func, *args, **kwargs)
         executor = self._pool
@@ -118,15 +118,15 @@ class ThreadPool(AbstractPool):
             executor.submit(func_call), loop=self._loop)
 
     async def _spawn_threadpool(self):
-        """Schedule the spawning of the threadpool.
+        """Spawn the thread pool.
 
-        Asynchronously spawns a threadpool with *concurrency* threads.
+        Asynchronously spawns a thread pool with *concurrency* threads.
         """
         if self._running:
-            raise RuntimeError("threadpool is already running")
+            raise RuntimeError("thread pool is already running")
 
         if self._closed:
-            raise RuntimeError("threadpool is closed")
+            raise RuntimeError("thread pool is closed")
 
         await self._loop.run_in_executor(None, self._do_spawn)
 
@@ -136,12 +136,12 @@ class ThreadPool(AbstractPool):
         self._running = True
 
     async def _shutdown_threadpool(self):
-        """Schedule the shutdown of the threadpool.
+        """Shutdown the thread pool.
 
-        Asynchronously joins all of the threads in the threadpool.
+        Asynchronously joins all of the threads in the thread pool.
         """
         if self._closed:
-            raise RuntimeError("threadpool is already closed")
+            raise RuntimeError("thread pool is already closed")
 
         # Set _running to False as early as possible
         self._running = False
