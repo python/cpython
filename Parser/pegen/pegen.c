@@ -399,9 +399,10 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     if (!error_line) {
         Py_ssize_t size = p->tok->inp - p->tok->buf;
-        error_line = PyUnicode_DecodeUTF8(p->tok->buf,
-                                          p->tok->buf[size-1] == '\n' ? size - 1 : size,
-                                          "replace");
+        if (size && p->tok->buf[size-1] == '\n') {
+            size--;
+        }
+        error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         if (!error_line) {
             goto error;
         }
