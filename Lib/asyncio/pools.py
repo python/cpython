@@ -128,22 +128,12 @@ class ThreadPool(AbstractPool):
         if self._closed:
             raise RuntimeError("threadpool is closed")
 
-        future = self._loop.create_future()
-        thread = threading.Thread(target=self._do_spawn, args=(future,))
-        thread.start()
-        try:
-            await future
-        finally:
-            thread.join()
+        await self._loop.run_in_executor(None, self._do_spawn)
 
-    def _do_spawn(self, future):
-        try:
-            self._pool = concurrent.futures.ThreadPoolExecutor(
-                                                max_workers=self._concurrency)
-            self._running = True
-            self._loop.call_soon_threadsafe(future.set_result, None)
-        except Exception as ex:
-            self._loop.call_soon_threadsafe(future.set_exception, ex)
+    def _do_spawn(self):
+        self._pool = concurrent.futures.ThreadPoolExecutor(
+                                            max_workers=self._concurrency)
+        self._running = True
 
     async def _shutdown_threadpool(self):
         """Schedule the shutdown of the threadpool.
@@ -155,19 +145,8 @@ class ThreadPool(AbstractPool):
 
         # Set _running to False as early as possible
         self._running = False
+        await self._loop.run_in_executor(None, self._do_shutdown)
 
-        future = self._loop.create_future()
-        thread = threading.Thread(target=self._do_shutdown, args=(future,))
-        thread.start()
-        try:
-            await future
-        finally:
-            thread.join()
-
-    def _do_shutdown(self, future):
-        try:
-            self._pool.shutdown()
-            self._closed = True
-            self._loop.call_soon_threadsafe(future.set_result, None)
-        except Exception as ex:
-            self._loop.call_soon_threadsafe(future.set_exception, ex)
+    def _do_shutdown(self):
+        self._pool.shutdown()
+        self._closed = True
