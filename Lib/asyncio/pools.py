@@ -36,7 +36,7 @@ class AbstractPool(ABC):
         await self.aclose()
 
     @abstractmethod
-    async def run(self, /, func, *args, **kwargs):
+    async def run(self, func, /, *args, **kwargs):
         """Asynchronously run function *func* using the pool.
 
         Return a future, representing the eventual result of *func*.
