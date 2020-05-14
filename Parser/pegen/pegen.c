@@ -300,30 +300,6 @@ error:
     Py_XDECREF(tuple);
 }
 
-static inline PyObject *
-get_error_line(char *buffer, int is_file)
-{
-    const char *newline;
-    if (is_file) {
-        newline = strrchr(buffer, '\n');
-    } else {
-        newline = strchr(buffer, '\n');
-    }
-
-    if (is_file) {
-        while (newline > buffer && newline[-1] == '\n') {
-            --newline;
-        }
-    }
-
-    if (newline) {
-        return PyUnicode_DecodeUTF8(buffer, newline - buffer, "replace");
-    }
-    else {
-        return PyUnicode_DecodeUTF8(buffer, strlen(buffer), "replace");
-    }
-}
-
 static int
 tokenizer_error(Parser *p)
 {
@@ -422,7 +398,11 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (!error_line) {
-        error_line = get_error_line(p->tok->buf, p->start_rule == Py_file_input);
+        Py_ssize_t size = p->tok->inp - p->tok->buf;
+        if (size && p->tok->buf[size-1] == '\n') {
+            size--;
+        }
+        error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         if (!error_line) {
             goto error;
         }
