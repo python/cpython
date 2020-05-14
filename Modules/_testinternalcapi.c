@@ -98,6 +98,11 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
         return PyErr_NoMemory();
     }
 
+    // Using an newly allocated table must not crash
+    assert(table->nentries == 0);
+    assert(table->nbuckets > 0);
+    assert(_Py_hashtable_get(table, TO_PTR('x')) == NULL);
+
     // Test _Py_hashtable_set()
     char key;
     for (key='a'; key <= 'z'; key++) {
@@ -121,17 +126,15 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
     // Test _Py_hashtable_get()
     for (key='a'; key <= 'z'; key++) {
         void *value_ptr = _Py_hashtable_get(table, TO_PTR(key));
-        int value = (int)FROM_PTR(value_ptr);
-        assert(value == VALUE(key));
+        assert((int)FROM_PTR(value_ptr) == VALUE(key));
     }
 
     // Test _Py_hashtable_steal()
     key = 'p';
     void *value_ptr = _Py_hashtable_steal(table, TO_PTR(key));
-    int value = (int)FROM_PTR(value_ptr);
-    assert(value == VALUE(key));
-
+    assert((int)FROM_PTR(value_ptr) == VALUE(key));
     assert(table->nentries == 25);
+    assert(_Py_hashtable_get_entry(table, TO_PTR(key)) == NULL);
 
     // Test _Py_hashtable_foreach()
     int count = 0;
@@ -142,6 +145,7 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
     // Test _Py_hashtable_clear()
     _Py_hashtable_clear(table);
     assert(table->nentries == 0);
+    assert(table->nbuckets > 0);
     assert(_Py_hashtable_get(table, TO_PTR('x')) == NULL);
 
     _Py_hashtable_destroy(table);
