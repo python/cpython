@@ -2101,48 +2101,50 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 _posix_clear(PyObject *module)
 {
-    Py_CLEAR(get_posix_state(module)->billion);
-    Py_CLEAR(get_posix_state(module)->DirEntryType);
-    Py_CLEAR(get_posix_state(module)->ScandirIteratorType);
+    _posixstate *state = get_posix_state(module);
+    Py_CLEAR(state->billion);
+    Py_CLEAR(state->DirEntryType);
+    Py_CLEAR(state->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-    Py_CLEAR(get_posix_state(module)->SchedParamType);
+    Py_CLEAR(state->SchedParamType);
 #endif
-    Py_CLEAR(get_posix_state(module)->StatResultType);
-    Py_CLEAR(get_posix_state(module)->StatVFSResultType);
-    Py_CLEAR(get_posix_state(module)->TerminalSizeType);
-    Py_CLEAR(get_posix_state(module)->TimesResultType);
-    Py_CLEAR(get_posix_state(module)->UnameResultType);
+    Py_CLEAR(state->StatResultType);
+    Py_CLEAR(state->StatVFSResultType);
+    Py_CLEAR(state->TerminalSizeType);
+    Py_CLEAR(state->TimesResultType);
+    Py_CLEAR(state->UnameResultType);
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
-    Py_CLEAR(get_posix_state(module)->WaitidResultType);
+    Py_CLEAR(state->WaitidResultType);
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
-    Py_CLEAR(get_posix_state(module)->struct_rusage);
+    Py_CLEAR(state->struct_rusage);
 #endif
-    Py_CLEAR(get_posix_state(module)->st_mode);
+    Py_CLEAR(state->st_mode);
     return 0;
 }
 
 static int
 _posix_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Py_VISIT(get_posix_state(module)->billion);
-    Py_VISIT(get_posix_state(module)->DirEntryType);
-    Py_VISIT(get_posix_state(module)->ScandirIteratorType);
+    _posixstate *state = get_posix_state(module);
+    Py_VISIT(state->billion);
+    Py_VISIT(state->DirEntryType);
+    Py_VISIT(state->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-    Py_VISIT(get_posix_state(module)->SchedParamType);
+    Py_VISIT(state->SchedParamType);
 #endif
-    Py_VISIT(get_posix_state(module)->StatResultType);
-    Py_VISIT(get_posix_state(module)->StatVFSResultType);
-    Py_VISIT(get_posix_state(module)->TerminalSizeType);
-    Py_VISIT(get_posix_state(module)->TimesResultType);
-    Py_VISIT(get_posix_state(module)->UnameResultType);
+    Py_VISIT(state->StatResultType);
+    Py_VISIT(state->StatVFSResultType);
+    Py_VISIT(state->TerminalSizeType);
+    Py_VISIT(state->TimesResultType);
+    Py_VISIT(state->UnameResultType);
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
-    Py_VISIT(get_posix_state(module)->WaitidResultType);
+    Py_VISIT(state->WaitidResultType);
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
-    Py_VISIT(get_posix_state(module)->struct_rusage);
+    Py_VISIT(state->struct_rusage);
 #endif
-    Py_VISIT(get_posix_state(module)->st_mode);
+    Py_VISIT(state->st_mode);
     return 0;
 }
 
@@ -12777,8 +12779,7 @@ os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class)
 }
 
 static PyObject *
-DirEntry_fetch_stat(PyTypeObject *defining_class, DirEntry *self,
-                    int follow_symlinks)
+DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
 {
     int result;
     STRUCT_STAT st;
@@ -12814,18 +12815,18 @@ DirEntry_fetch_stat(PyTypeObject *defining_class, DirEntry *self,
     if (result != 0)
         return path_object_error(self->path);
 
-    return _pystat_fromstructstat(PyType_GetModule(defining_class), &st);
+    return _pystat_fromstructstat(module, &st);
 }
 
 static PyObject *
 DirEntry_get_lstat(PyTypeObject *defining_class, DirEntry *self)
 {
     if (!self->lstat) {
+        PyObject *module = PyType_GetModule(defining_class);
 #ifdef MS_WINDOWS
-        self->lstat = _pystat_fromstructstat(PyType_GetModule(defining_class),
-                                             &self->win32_lstat);
+        self->lstat = _pystat_fromstructstat(module, &self->win32_lstat);
 #else /* POSIX */
-        self->lstat = DirEntry_fetch_stat(defining_class, self, 0);
+        self->lstat = DirEntry_fetch_stat(module, self, 0);
 #endif
     }
     Py_XINCREF(self->lstat);
@@ -12857,7 +12858,8 @@ os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
             return NULL;
         }
         if (result) {
-            self->stat = DirEntry_fetch_stat(defining_class, self, 1);
+            PyObject *module = PyType_GetModule(defining_class);
+            self->stat = DirEntry_fetch_stat(module, self, 1);
         }
         else {
             self->stat = DirEntry_get_lstat(defining_class, self);
@@ -12906,7 +12908,8 @@ DirEntry_test_mode(PyTypeObject *defining_class, DirEntry *self,
             }
             goto error;
         }
-        st_mode = PyObject_GetAttr(stat, get_posix_state(PyType_GetModule(defining_class))->st_mode);
+        _posixstate* state = get_posix_state(PyType_GetModule(defining_class));
+        st_mode = PyObject_GetAttr(stat, state->st_mode);
         if (!st_mode)
             goto error;
 
