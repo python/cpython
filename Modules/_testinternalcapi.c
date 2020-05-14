@@ -103,8 +103,8 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
             return PyErr_NoMemory();
         }
     }
-    assert(table->entries == 26);
-    assert(table->num_buckets > table->entries);
+    assert(table->nentries == 26);
+    assert(table->nbuckets > table->nentries);
 
     // Test _Py_hashtable_get_entry()
     for (key='a'; key <= 'z'; key++) {
@@ -127,7 +127,7 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
     int value = (int)FROM_PTR(value_ptr);
     assert(value == VALUE(key));
 
-    assert(table->entries == 25);
+    assert(table->nentries == 25);
 
     // Test _Py_hashtable_foreach()
     int count = 0;
@@ -137,7 +137,7 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
 
     // Test _Py_hashtable_clear()
     _Py_hashtable_clear(table);
-    assert(table->entries == 0);
+    assert(table->nentries == 0);
     assert(_Py_hashtable_get(table, TO_PTR('x')) == NULL);
 
     _Py_hashtable_destroy(table);
