@@ -312,7 +312,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         w_long(w, p);
         return 1;
     } else {
-        size_t s = p->hashtable->entries;
+        size_t s = p->hashtable->nentries;
         /* we don't support long indices */
         if (s >= 0x7fffffff) {
             PyErr_SetString(PyExc_ValueError, "too many objects");
