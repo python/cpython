@@ -181,9 +181,13 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     if isinstance(optimize, int):
         optimize = [optimize]
 
-        if hardlink_dupes:
-            raise ValueError("Hardlinking of duplicated bytecode makes sense "
-                              "only for more than one optimization level")
+    # Use set() to remove duplicates.
+    # Use sorted() to create pyc files in a deterministic order.
+    optimize = sorted(set(optimize))
+
+    if hardlink_dupes and len(optimize) < 2:
+        raise ValueError("Hardlinking of duplicated bytecode makes sense "
+                          "only for more than one optimization level")
 
     if rx is not None:
         mo = rx.search(fullname)
@@ -229,7 +233,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
             if not quiet:
                 print('Compiling {!r}...'.format(fullname))
             try:
-                for index, opt_level in enumerate(sorted(optimize)):
+                for index, opt_level in enumerate(optimize):
                     cfile = opt_cfiles[opt_level]
                     ok = py_compile.compile(fullname, cfile, dfile, True,
                                             optimize=opt_level,

@@ -911,10 +911,15 @@ class HardlinkDedupTestsBase:
     def test_bad_args(self):
         # Bad arguments combination, hardlink deduplication make sense
         # only for more than one optimization level
-        with self.assertRaises(ValueError):
-            with self.temporary_directory():
-                self.make_script("pass")
+        with self.temporary_directory():
+            self.make_script("pass")
+            with self.assertRaises(ValueError):
                 compileall.compile_dir(self.path, quiet=True, optimize=0,
+                                       hardlink_dupes=True)
+            with self.assertRaises(ValueError):
+                # same optimization level specified twice:
+                # compile_dir() removes duplicates
+                compileall.compile_dir(self.path, quiet=True, optimize=[0, 0],
                                        hardlink_dupes=True)
 
     def create_code(self, docstring=False, assertion=False):
@@ -974,6 +979,18 @@ class HardlinkDedupTestsBase:
                     pyc1 = get_pyc(script, opts[0])
                     pyc2 = get_pyc(script, opts[1])
                     self.assertTrue(is_hardlink(pyc1, pyc2))
+
+    def test_duplicated_levels(self):
+        # compile_dir() must not fail if optimize contains duplicated
+        # optimization levels and/or if optimization levels are not sorted.
+        with self.temporary_directory():
+            # code with no dostring and no assertion:
+            # same bytecode for all optimization levels
+            script = self.make_script(self.create_code())
+            self.compile_dir(optimize=[1, 0, 1, 0])
+            pyc1 = get_pyc(script, 0)
+            pyc2 = get_pyc(script, 1)
+            self.assertTrue(is_hardlink(pyc1, pyc2))
 
     def test_recompilation(self):
         # Test compile_dir() when pyc files already exists and the script
