@@ -529,6 +529,31 @@ From https://bugs.python.org/issue25973
      ...
    SyntaxError: no binding for nonlocal '_A__x' found
 
+Tests for try-except clauses:
+   >>> try:
+   ...     ...
+   ... except Exception as a.b:
+   ...   pass
+   Traceback (most recent call last):
+     ...
+   SyntaxError: invalid syntax
+
+   >>> try:
+   ...     ...
+   ... except Exception as a[0]:
+   ...   pass
+   Traceback (most recent call last):
+     ...
+   SyntaxError: invalid syntax
+
+   >>> try:
+   ...     ...
+   ... except Exception as (a):
+   ...   pass
+   Traceback (most recent call last):
+     ...
+   SyntaxError: invalid syntax
+
 
 This tests assignment-context; there was a bug in Python 2.5 where compiling
 a complex 'if' (one with 'elif') would fail to notice an invalid suite,
