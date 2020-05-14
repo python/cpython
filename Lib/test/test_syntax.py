@@ -138,15 +138,15 @@ SyntaxError: cannot assign to conditional expression
 
 >>> a, b += 1, 2
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: illegal expression for augmented assignment
 
 >>> (a, b) += 1, 2
 Traceback (most recent call last):
-SyntaxError: cannot assign to tuple
+SyntaxError: illegal expression for augmented assignment
 
 >>> [a, b] += 1, 2
 Traceback (most recent call last):
-SyntaxError: cannot assign to list
+SyntaxError: illegal expression for augmented assignment
 
 From compiler_complex_args():
 

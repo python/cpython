@@ -10878,7 +10878,7 @@ invalid_assignment_rule(Parser *p)
             (_tmp_129_var = _tmp_129_rule(p))  // yield_expr | star_expressions
         )
         {
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( _PyPegen_get_invalid_target ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( _PyPegen_get_invalid_target ( a ) ) );
+            _res = _PyPegen_raise_syntax_error_for_augassign ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;

@@ -641,20 +641,13 @@ invalid_assignment:
     | a=expression ':' expression ['=' annotated_rhs] {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal target for annotation") }
     | a=star_expressions '=' (yield_expr | star_expressions) {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION( 
-            _PyPegen_get_invalid_target(a), 
-            "cannot assign to %s", _PyPegen_get_expr_name(_PyPegen_get_invalid_target(a))
-        )}
-    | a=expression augassign (yield_expr | star_expressions) {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION( 
-            _PyPegen_get_invalid_target(a), 
-            "cannot assign to %s", _PyPegen_get_expr_name(_PyPegen_get_invalid_target(a))
-        )}
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            _PyPegen_get_invalid_target(a),
+            "cannot assign to %s", _PyPegen_get_expr_name(_PyPegen_get_invalid_target(a))) }
+    | a=expression augassign (yield_expr | star_expressions) { _PyPegen_raise_syntax_error_for_augassign(p, a) }
     | a=star_expressions augassign (yield_expr | star_expressions) {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION( 
-            a, 
-            "illegal expression for augmented assignment"
-        )}
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal expression for augmented assignment") }
+ 
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
