@@ -129,7 +129,7 @@ _Py_hashtable_get_entry(_Py_hashtable_t *ht, const void *key)
 
    Use _Py_hashtable_get_entry() to distinguish entry value equal to NULL
    and entry not found. */
-extern void *_Py_hashtable_get(_Py_hashtable_t *ht, const void *key);
+PyAPI_FUNC(void*) _Py_hashtable_get(_Py_hashtable_t *ht, const void *key);
 
 
 // Remove a key and its associated value without calling key and value destroy
