@@ -29,42 +29,42 @@ thread or process) without blocking the event loop.
 
 .. class:: ThreadPool(concurrency=None)
 
-   An asynchronous threadpool that provides methods to concurrently
+   An asynchronous thread pool that provides methods to concurrently
    run IO-bound functions, without blocking the event loop.
 
    *concurrency* is an optional argument that limits the number of
-   threads to utilize in the threadpool. With the default value of
+   threads to utilize in the thread pool. With the default value of
    ``None``, the amount of threads used will scale based on the
    number of processors.
 
    .. coroutinemethod:: run(/, func, *args, **kwargs)
 
       Asynchronously run *func* with its arguments and keyword-arguments
-      within the threadpool, and return a :class:`asyncio.Future` object
+      within the thread pool, and return a :class:`asyncio.Future` object
       that represents the eventual result of its execution. ::
 
           async with asyncio.ThreadPool() as pool:
               await pool.run(time.sleep, 1)
 
-      Raises a :exc:`RuntimeError` if the threadpool is *not* running.
+      Raises a :exc:`RuntimeError` if the thread pool is *not* running.
 
    .. coroutinemethod:: astart()
 
-      Schedule the start of the threadpool and spawn its threads. Note that
+      Schedule the start of the thread pool and spawn its threads. Note that
       this function is called automatically when using ``asyncio.ThreadPool``
       as an asynchronous context manager, and does not need to be called
       directly.
 
-      Raises a :exc:`RuntimeError` if the threadpool is already running or
+      Raises a :exc:`RuntimeError` if the thread pool is already running or
       if it's been closed.
 
    .. coroutinemethod:: aclose()
 
-      Schedule the closing of the threadpool. Note that this function is
+      Schedule the closing of the thread pool. Note that this function is
       called automatically when using ``asyncio.ThreadPool`` as an
       asynchronous context manager, and does not need to be called directly.
 
-      Raises a :exc:`RuntimeError` if the threadpool has already been closed.
+      Raises a :exc:`RuntimeError` if the thread pool has already been closed.
 
 Examples
 ========
