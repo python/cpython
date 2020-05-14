@@ -1,0 +1,1 @@
+shutil.which returns not None anymore with ; at the end of PATHEXT
