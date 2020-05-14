@@ -65,6 +65,7 @@ test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
 
 #define TO_PTR(ch) ((void*)(uintptr_t)ch)
 #define FROM_PTR(ptr) ((uintptr_t)ptr)
+#define VALUE(key) (1 + ((int)(key) - 'a'))
 
 static Py_uhash_t
 hash_char(const void *key)
@@ -75,9 +76,14 @@ hash_char(const void *key)
 
 
 static int
-hashtable_cb(_Py_hashtable_t *table, const void *key, const void *value, void *user_data)
+hashtable_cb(_Py_hashtable_t *table,
+             const void *key_ptr, const void *value_ptr,
+             void *user_data)
 {
     int *count = (int *)user_data;
+    char key = (char)FROM_PTR(key_ptr);
+    int value = (int)FROM_PTR(value_ptr);
+    assert(value == VALUE(key));
     *count += 1;
     return 0;
 }
@@ -91,8 +97,6 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
     if (table == NULL) {
         return PyErr_NoMemory();
     }
-
-#define VALUE(key) (1 + ((int)(key) - 'a'))
 
     // Test _Py_hashtable_set()
     char key;
