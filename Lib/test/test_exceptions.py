@@ -228,6 +228,7 @@ class ExceptionTests(unittest.TestCase):
             def baz():
                 '''quux'''
             """, 9, 20)
+        check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 5)
