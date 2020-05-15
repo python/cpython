@@ -1921,7 +1921,7 @@ SyntaxError: cannot assign to yield expression
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):
   ...
-SyntaxError: yield expression is an illegal expression for augmented assignment
+SyntaxError: 'yield expression' is an illegal expression for augmented assignment
 
 
 Now check some throw() conditions:
