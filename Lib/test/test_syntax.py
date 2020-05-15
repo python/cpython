@@ -148,6 +148,49 @@ SyntaxError: 'tuple' is an illegal expression for augmented assignment
 Traceback (most recent call last):
 SyntaxError: 'list' is an illegal expression for augmented assignment
 
+Invalid targets in `for` loops and `with` statements should also
+produce a specialized error message
+
+>>> for a() in b: pass
+Traceback (most recent call last):
+SyntaxError: 'function call' is an illegal 'for' target
+
+>>> for (a, b()) in b: pass
+Traceback (most recent call last):
+SyntaxError: 'function call' is an illegal 'for' target
+
+>>> for [a, b()] in b: pass
+Traceback (most recent call last):
+SyntaxError: 'function call' is an illegal 'for' target
+
+>>> for (*a, b, c+1) in b: pass
+Traceback (most recent call last):
+SyntaxError: 'operator' is an illegal 'for' target
+
+>>> for (x, *(y, z.d())) in b: pass
+Traceback (most recent call last):
+SyntaxError: 'function call' is an illegal 'for' target
+
+>>> with a as b(): pass
+Traceback (most recent call last):
+SyntaxError: 'function call' is an illegal 'with' target
+
+>>> with a as (b, c()): pass
+Traceback (most recent call last):
+SyntaxError: 'function call' is an illegal 'with' target
+
+>>> with a as [b, c()]: pass
+Traceback (most recent call last):
+SyntaxError: 'function call' is an illegal 'with' target
+
+>>> with a as (*b, c, d+1): pass
+Traceback (most recent call last):
+SyntaxError: 'operator' is an illegal 'with' target
+
+>>> with a as (x, *(y, z.d())): pass
+Traceback (most recent call last):
+SyntaxError: 'function call' is an illegal 'with' target
+
 From compiler_complex_args():
 
 >>> def f(None=1):

@@ -261,8 +261,9 @@ int _PyPegen_check_barry_as_flufl(Parser *);
 mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
 
 // Error reporting helpers
-
-expr_ty _PyPegen_get_invalid_target(expr_ty e);
+expr_ty _PyPegen_get_invalid_target(expr_ty e, int del_targets);
+#define GET_INVALID_TARGET(e) _PyPegen_get_invalid_target(e, 0)
+#define GET_INVALID_DEL_TARGET(e) _PyPegen_get_invalid_target(e, 1)
 
 void *_PyPegen_parse(Parser *);
 
