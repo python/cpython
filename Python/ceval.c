@@ -1396,7 +1396,7 @@ main_loop:
         /* Do periodic things.  Doing this every time through
            the loop would add too much overhead, so we do it
            only every Nth instruction.  We also do it if
-           ``pendingcalls_to_do'' is set, i.e. when an asynchronous
+           ``pending.calls_to_do'' is set, i.e. when an asynchronous
            event needs attention (e.g. a signal handler or
            async I/O handler); see Py_AddPendingCall() and
            Py_MakePendingCalls() above. */
