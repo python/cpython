@@ -42,6 +42,8 @@ class ThreadPoolTests(unittest.TestCase):
         asyncio.set_event_loop(self.loop)
 
     def tearDown(self):
+        self.loop.run_until_complete(
+                self.loop.shutdown_default_executor())
         self.loop.close()
         asyncio.set_event_loop(None)
         self.loop = None
