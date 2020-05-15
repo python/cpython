@@ -724,7 +724,7 @@ Task Object
    .. deprecated-removed:: 3.8 3.10
       The *loop* parameter.
 
-   .. method:: cancel()
+   .. method:: cancel(msg=None)
 
       Request the Task to be cancelled.
 
@@ -738,6 +738,9 @@ Task Object
       not guarantee that the Task will be cancelled, although
       suppressing cancellation completely is not common and is actively
       discouraged.
+
+      .. versionchanged:: 3.9
+         Added the ``msg`` parameter.
 
       .. _asyncio_example_task_cancel:
 
