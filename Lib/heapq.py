@@ -326,6 +326,7 @@ def merge(*iterables, key=None, reverse=False):
 
     >>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))
     ['dog', 'cat', 'fish', 'horse', 'kangaroo']
+
     '''
 
     n = len(iterables)

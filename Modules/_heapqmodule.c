@@ -571,7 +571,7 @@ static PyTypeObject merge_type;
 
 
 /* Siftup, except replace the leaves using the iterators, not the root. */
-static inline int
+static int
 _tree_sift(mergeobject *mo, Py_ssize_t pos) {
     PyObject **tree = mo->tree;
     Py_ssize_t n;
@@ -667,7 +667,7 @@ _tree_sift(mergeobject *mo, Py_ssize_t pos) {
     return 0;
 }
 
-static inline int
+static int
 _tree_sift_key(mergeobject *mo, Py_ssize_t pos) {
     PyObject **tree = mo->tree;
     Py_ssize_t n;
