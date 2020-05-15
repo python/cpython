@@ -4,6 +4,7 @@ import io
 import os
 import subprocess
 import sys
+import _tkinter
 from tkinter import messagebox as tkMessageBox
 
 
@@ -78,8 +79,10 @@ class FileList:
                     # we work directly with stdin as '.communicate' & '.__exit__' call '.wait'
                     with subprocess.Popen('clip', shell=True, stdin=subprocess.PIPE).stdin as p:
                         p.write(clip)
-            except OSError:
+            except (OSError,
+                    _tkinter.TclError):
                 # 'OSError's can probably be ignored (others may not)
+                # 'TclError's are due to an empty clipboard
                 pass
             finally:
                 self.root.quit()
