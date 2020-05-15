@@ -1213,7 +1213,7 @@ class tzinfo:
 
 class IsoCalendarDate(tuple):
 
-    def __new__(cls, year, week, weekday):
+    def __new__(cls, year, week, weekday, /):
         return super().__new__(cls, (year, week, weekday))
 
     @property
