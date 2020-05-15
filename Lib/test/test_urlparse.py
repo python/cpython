@@ -167,6 +167,13 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(result, expect,
                             "Error parsing %r" % orig)
 
+            # Ensure that standalone_keys parsing remains stable when the
+            # keep_blank_values flag is enabled
+            result = urllib.parse.parse_qs(orig, keep_blank_values=True,
+                                           standalone_keys=True)
+            self.assertEqual(result, expect,
+                            "Error parsing %r" % orig)
+
     def test_roundtrips(self):
         str_cases = [
             ('file:///tmp/junk.txt',
