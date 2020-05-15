@@ -374,8 +374,10 @@ running.
 time
 ----
 
-:func:`~time.thread_time` now output in nanosecond resolution via
-``thread_cputime`` on AIX. (Contributed by Batuhan Taskaya in :issue:`40192`)
+On AIX, :func:`~time.thread_time` is now implemented with ``thread_cputime()``
+which has nanosecond resolution, rather than
+``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 ms.
+(Contributed by Batuhan Taskaya in :issue:`40192`)
 
 sys
 ---

@@ -1353,9 +1353,9 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 static int
 _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
-    /* bpo-40192: On AIX, thread_cputime is preffered because
-    it is using nano-second time resolution (compared to 10ms)
-    resolution of clock_gettime(CLOCK_THREAD_CPUTIME_ID) */
+    /* bpo-40192: On AIX, thread_cputime() is preferred: it has nanosecond
+       resolution, whereas clock_gettime(CLOCK_THREAD_CPUTIME_ID)
+       has a resolution of 10 ms. */
     thread_cputime_t tc;
     if (thread_cputime(-1, &tc) != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
