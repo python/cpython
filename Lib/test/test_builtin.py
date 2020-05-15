@@ -75,6 +75,23 @@ class BitBucket:
     def write(self, line):
         pass
 
+class MalformedInputStream:
+    def readline(self):
+        return "foobar\n"
+
+    def fileno(self):
+        return 0
+
+class MalformedOutputStream:
+    def __init__(self):
+        self.value = ""
+
+    def fileno(self):
+        return 1
+
+    def write(self, value):
+        self.value += value
+
 test_conv_no_sign = [
         ('0', 0),
         ('1', 1),
@@ -1301,6 +1318,13 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(input(), "    'whitespace'")
             sys.stdin = io.StringIO()
             self.assertRaises(EOFError, input)
+
+            # input() in tty mode with a malformed input stream should attempt
+            # to call .readline()
+            sys.stdin = MalformedInputStream()
+            sys.stdout = MalformedOutputStream()
+            self.assertEqual(input("baz"), "foobar")  # strips \n
+            self.assertEqual(sys.stdout.value, "baz")
 
             del sys.stdout
             self.assertRaises(RuntimeError, input, 'prompt')

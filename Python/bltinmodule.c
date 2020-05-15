@@ -2010,17 +2010,21 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
 
         /* stdin is a text stream, so it must have an encoding. */
         stdin_encoding = _PyObject_GetAttrId(fin, &PyId_encoding);
+        if (!stdin_encoding || !PyUnicode_Check(stdin_encoding)) {
+            goto _readline_disable_tty_and_fall_back;
+        }
         stdin_errors = _PyObject_GetAttrId(fin, &PyId_errors);
-        if (!stdin_encoding || !stdin_errors ||
-                !PyUnicode_Check(stdin_encoding) ||
-                !PyUnicode_Check(stdin_errors)) {
-            tty = 0;
-            goto _readline_errors;
+        if (!stdin_errors || !PyUnicode_Check(stdin_errors)) {
+            goto _readline_disable_tty_and_fall_back;
         }
         stdin_encoding_str = PyUnicode_AsUTF8(stdin_encoding);
-        stdin_errors_str = PyUnicode_AsUTF8(stdin_errors);
-        if (!stdin_encoding_str || !stdin_errors_str)
+        if (!stdin_encoding_str) {
             goto _readline_errors;
+        }
+        stdin_errors_str = PyUnicode_AsUTF8(stdin_errors);
+        if (!stdin_errors_str) {
+            goto _readline_errors;
+        }
         tmp = _PyObject_CallMethodIdNoArgs(fout, &PyId_flush);
         if (tmp == NULL)
             PyErr_Clear();
@@ -2099,6 +2103,8 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
 
         return result;
 
+    _readline_disable_tty_and_fall_back:
+        tty = 0;
     _readline_errors:
         Py_XDECREF(stdin_encoding);
         Py_XDECREF(stdout_encoding);
