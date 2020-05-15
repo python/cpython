@@ -625,7 +625,7 @@ FAIL_SPECIALIZED_MESSAGE_CASES = [
     ("(a, b): int", "only single target (not tuple) can be annotated"),
     ("[a, b]: int", "only single target (not list) can be annotated"),
     ("a(): int", "illegal target for annotation"),
-    ("1 += 1", "cannot assign to literal"),
+    ("1 += 1", "'literal' is an illegal expression for augmented assignment"),
     ("pass\n    pass", "unexpected indent"),
     ("def f():\npass", "expected an indented block"),
     ("def f(*): pass", "named arguments must follow bare *"),

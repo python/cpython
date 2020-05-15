@@ -10747,7 +10747,8 @@ invalid_named_expression_rule(Parser *p)
 //     | tuple ':'
 //     | star_named_expression ',' star_named_expressions* ':'
 //     | expression ':' expression ['=' annotated_rhs]
-//     | expression ('=' | augassign) (yield_expr | star_expressions)
+//     | star_expressions '=' (yield_expr | star_expressions)
+//     | star_expressions augassign (yield_expr | star_expressions)
 static void *
 invalid_assignment_rule(Parser *p)
 {
@@ -10841,19 +10842,40 @@ invalid_assignment_rule(Parser *p)
         }
         p->mark = _mark;
     }
-    { // expression ('=' | augassign) (yield_expr | star_expressions)
+    { // star_expressions '=' (yield_expr | star_expressions)
+        Token * _literal;
         void *_tmp_128_var;
-        void *_tmp_129_var;
         expr_ty a;
         if (
-            (a = expression_rule(p))  // expression
+            (a = star_expressions_rule(p))  // star_expressions
             &&
-            (_tmp_128_var = _tmp_128_rule(p))  // '=' | augassign
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (_tmp_128_var = _tmp_128_rule(p))  // yield_expr | star_expressions
+        )
+        {
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( _PyPegen_get_invalid_target ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( _PyPegen_get_invalid_target ( a ) ) );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+    }
+    { // star_expressions augassign (yield_expr | star_expressions)
+        void *_tmp_129_var;
+        expr_ty a;
+        AugOperator* augassign_var;
+        if (
+            (a = star_expressions_rule(p))  // star_expressions
+            &&
+            (augassign_var = augassign_rule(p))  // augassign
             &&
             (_tmp_129_var = _tmp_129_rule(p))  // yield_expr | star_expressions
         )
         {
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot assign to %s" , _PyPegen_get_expr_name ( a ) );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -16675,7 +16697,7 @@ _tmp_127_rule(Parser *p)
     return _res;
 }
 
-// _tmp_128: '=' | augassign
+// _tmp_128: yield_expr | star_expressions
 static void *
 _tmp_128_rule(Parser *p)
 {
@@ -16684,24 +16706,24 @@ _tmp_128_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // '='
-        Token * _literal;
+    { // yield_expr
+        expr_ty yield_expr_var;
         if (
-            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            (yield_expr_var = yield_expr_rule(p))  // yield_expr
         )
         {
-            _res = _literal;
+            _res = yield_expr_var;
             goto done;
         }
         p->mark = _mark;
     }
-    { // augassign
-        AugOperator* augassign_var;
+    { // star_expressions
+        expr_ty star_expressions_var;
         if (
-            (augassign_var = augassign_rule(p))  // augassign
+            (star_expressions_var = star_expressions_rule(p))  // star_expressions
         )
         {
-            _res = augassign_var;
+            _res = star_expressions_var;
             goto done;
         }
         p->mark = _mark;
