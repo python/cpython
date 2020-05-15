@@ -201,8 +201,8 @@ PyAPI_FUNC(int) _Py_DECREF_in_interpreter(PyInterpreterState *, PyObject *);
 PyAPI_FUNC(int) _PyBuffer_Release_in_interpreter(PyInterpreterState *,
                                                  Py_buffer *);
 typedef void (*_deallocfunc)(void *);
-PyAPI_FUNC(int) _PyMem_Free_in_interpreter(PyInterpreterState *, void *,
-                                           _deallocfunc);
+PyAPI_FUNC(int) _PyMem_Free_in_interpreter(PyInterpreterState *, void *);
+PyAPI_FUNC(int) _PyMem_RawFree_in_interpreter(PyInterpreterState *, void *);
 
 /* cross-interpreter data */
 

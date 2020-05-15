@@ -1491,15 +1491,38 @@ _PyBuffer_Release_in_interpreter(PyInterpreterState *interp, Py_buffer *view)
     return _PyEval_AddPendingCall(interp, _release_pybuf, view);
 }
 
+static int
+_pymem_free(void *data)
+{
+    PyMem_Free(data);
+    return 0;
+}
+
 int
-_PyMem_Free_in_interpreter(PyInterpreterState *interp, void *data,
-                           _deallocfunc dealloc)
+_PyMem_Free_in_interpreter(PyInterpreterState *interp, void *data)
 {
     if (interp == _PyInterpreterState_GET()) {
-        dealloc(data);
+        PyMem_Free(data);
         return 0;
     }
-    return _PyEval_AddPendingCall(interp, (int (*)(void *))dealloc, data);
+    return _PyEval_AddPendingCall(interp, _pymem_free, data);
+}
+
+static int
+_pymem_rawfree(void *data)
+{
+    PyMem_RawFree(data);
+    return 0;
+}
+
+int
+_PyMem_RawFree_in_interpreter(PyInterpreterState *interp, void *data)
+{
+    if (interp == _PyInterpreterState_GET()) {
+        PyMem_RawFree(data);
+        return 0;
+    }
+    return _PyEval_AddPendingCall(interp, _pymem_rawfree, data);
 }
 
 /* cross-interpreter data */
@@ -1604,7 +1627,14 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
 
     // "Release" the data and/or the object.
     if (data->free != NULL) {
-        _PyMem_Free_in_interpreter(interp, data->data, data->free);
+        if (data->free == PyMem_Free) {
+            _PyMem_Free_in_interpreter(interp, data->data);
+        } else if (data->free == PyMem_RawFree) {
+            _PyMem_RawFree_in_interpreter(interp, data->data);
+        } else {
+            // We only worry about the PyMem_* deallocators.
+            data->free(data->data);
+        }
     }
     if (data->obj != NULL) {
         _Py_DECREF_in_interpreter(interp, data->obj);
