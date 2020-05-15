@@ -260,6 +260,10 @@ void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 int _PyPegen_check_barry_as_flufl(Parser *);
 mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
 
+// Error reporting helpers
+
+expr_ty _PyPegen_get_invalid_target(expr_ty e);
+
 void *_PyPegen_parse(Parser *);
 
 #endif
