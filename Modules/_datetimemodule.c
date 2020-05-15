@@ -3257,7 +3257,7 @@ iso_calendar_date_repr(PyDateTime_IsoCalendarDate *self)
 }
 
 static PyObject *
-isocalendardate_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+iso_calendar_date_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Construct the tuple that this reduces to
     PyObject * reduce_tuple = Py_BuildValue(
@@ -3311,50 +3311,22 @@ static PyGetSetDef iso_calendar_date_getset[] = {
 };
 
 static PyMethodDef iso_calendar_date_methods[] = {
-    {"__reduce__", (PyCFunction)isocalendardate_reduce, METH_NOARGS,
+    {"__reduce__", (PyCFunction)iso_calendar_date_reduce, METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
     {NULL, NULL},
 };
 
 static PyTypeObject PyDateTime_IsoCalendarDateType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "datetime.IsoCalendarDate",                         /* tp_name */
-    sizeof(PyDateTime_IsoCalendarDate),                 /* tp_basicsize */
-    0,                                                  /* tp_itemsize */
-    0,                                                  /* tp_dealloc */
-    0,                                                  /* tp_vectorcall_offset */
-    0,                                                  /* tp_getattr */
-    0,                                                  /* tp_setattr */
-    0,                                                  /* tp_as_async */
-    (reprfunc) iso_calendar_date_repr,                  /* tp_repr */
-    0,                                                  /* tp_as_number */
-    0,                                                  /* tp_as_sequence */
-    0,                                                  /* tp_as_mapping */
-    0,                                                  /* tp_hash */
-    0,                                                  /* tp_call */
-    0,                                                  /* tp_str */
-    0,                                                  /* tp_getattro */
-    0,                                                  /* tp_setattro */
-    0,                                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                                 /* tp_flags */
-    iso_calendar_date__doc__,                           /* tp_doc */
-    0,                                                  /* tp_traverse */
-    0,                                                  /* tp_clear */
-    0,                                                  /* tp_richcompare */
-    0,                                                  /* tp_weaklistoffset */
-    0,                                                  /* tp_iter */
-    0,                                                  /* tp_iternext */
-    iso_calendar_date_methods,                          /* tp_methods */
-    0,                                                  /* tp_members */
-    iso_calendar_date_getset,                           /* tp_getset */
-    &PyTuple_Type,                                      /* tp_base */
-    0,                                                  /* tp_dict */
-    0,                                                  /* tp_descr_get */
-    0,                                                  /* tp_descr_set */
-    0,                                                  /* tp_dictoffset */
-    0,                                                  /* tp_init */
-    0,                                                  /* tp_alloc */
-    iso_calendar_date_new,                              /* tp_new */
+    .tp_name = "datetime.IsoCalendarDate",
+    .tp_basicsize = sizeof(PyDateTime_IsoCalendarDate),
+    .tp_repr = (reprfunc) iso_calendar_date_repr,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_doc = iso_calendar_date__doc__,
+    .tp_methods = iso_calendar_date_methods,
+    .tp_getset = iso_calendar_date_getset,
+    .tp_base = &PyTuple_Type,
+    .tp_new = iso_calendar_date_new,
 };
 
 /*[clinic input]
@@ -6552,6 +6524,7 @@ PyInit__datetime(void)
     if (m == NULL)
         return NULL;
 
+
     PyTypeObject *types[] = {
         &PyDateTime_DateType,
         &PyDateTime_DateTimeType,
@@ -6559,7 +6532,6 @@ PyInit__datetime(void)
         &PyDateTime_DeltaType,
         &PyDateTime_TZInfoType,
         &PyDateTime_TimeZoneType,
-        &PyDateTime_IsoCalendarDateType,
     };
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
@@ -6567,6 +6539,11 @@ PyInit__datetime(void)
             return NULL;
         }
     }
+
+    if (PyType_Ready(&PyDateTime_IsoCalendarDateType) < 0) {
+        return NULL;
+    }
+    Py_INCREF(&PyDateTime_IsoCalendarDateType);
 
     /* timedelta values */
     d = PyDateTime_DeltaType.tp_dict;
