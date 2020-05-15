@@ -2649,17 +2649,17 @@ static PyMethodDef zip_methods[] = {
 };
 
 PyDoc_STRVAR(zip_doc,
-"zip(*iterables) --> An iterable zip object that yields tuples.\n\
+"zip(*iterables) --> A zip object yielding tuples until an input is exhausted.\n\
 \n\
-Upon any of the input iterables being exhausted, the zip stops.\n\
+Upon any of the input iterables being exhausted, the zipping stops.\n\
 \n\
    >>> list(zip('abcdefg', range(3), range(4)))\n\
    [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]\n\
 \n\
-Returns a zip object whose .__next__() method returns a tuple where\n\
-the i-th element comes from the i-th iterable argument.  The .__next__()\n\
-method continues until the shortest iterable in the argument sequence\n\
-is exhausted and then it raises StopIteration.");
+The zip object yields n-length tuples where n is the number of iterables\n\
+passed as positional arguments to zip().  The i-th element in every tuple\n\
+comes from the i-th iterable argument to zip().  This continues until the\n\
+shortest iterable in the argument sequences is exhausted.");
 
 PyTypeObject PyZip_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
