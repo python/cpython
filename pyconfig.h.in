@@ -1386,7 +1386,7 @@
 #undef PYLONG_BITS_IN_DIGIT
 
 /* enabled builtin hash modules */
-#undef PY_BUILTIN_HASH_MODULES
+#undef PY_BUILTIN_HASHLIB_HASHES
 
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE

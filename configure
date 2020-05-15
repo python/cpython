@@ -845,7 +845,7 @@ with_computed_gotos
 with_ensurepip
 with_openssl
 with_ssl_default_suites
-with_builtin_hashes
+with_builtin_hashlib_hashes
 with_experimental_isolated_subinterpreters
 '
       ac_precious_vars='build_alias
@@ -1577,7 +1577,7 @@ Optional Packages:
                           leave OpenSSL's defaults untouched, STRING: use a
                           custom string, PROTOCOL_SSLv2 ignores the setting,
                           see Doc/library/ssl.rst
-  --with-builtin-hashes=$default_hash_modules
+  --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
                           builtin hash modules, md5, sha1, sha256, sha512,
                           sha3 (with shake), blake2
   --with-experimental-isolated-subinterpreters
@@ -17498,19 +17498,19 @@ fi
 
 
 # builtin hash modules
-default_hash_modules="md5,sha1,sha256,sha512,sha3,blake2"
+default_hashlib_hashes="md5,sha1,sha256,sha512,sha3,blake2"
 
-$as_echo "#define PY_BUILTIN_HASH_MODULES /**/" >>confdefs.h
+$as_echo "#define PY_BUILTIN_HASHLIB_HASHES /**/" >>confdefs.h
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-builtin-hashes" >&5
-$as_echo_n "checking for --with-builtin-hashes... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-builtin-hashlib-hashes" >&5
+$as_echo_n "checking for --with-builtin-hashlib-hashes... " >&6; }
 
-# Check whether --with-builtin-hashes was given.
-if test "${with_builtin_hashes+set}" = set; then :
-  withval=$with_builtin_hashes;
+# Check whether --with-builtin-hashlib-hashes was given.
+if test "${with_builtin_hashlib_hashes+set}" = set; then :
+  withval=$with_builtin_hashlib_hashes;
 case "$withval" in
     yes)
-        withval=$default_hash_modules
+        withval=$default_hashlib_hashes
         ;;
     no)
         withval=""
@@ -17519,16 +17519,16 @@ esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 $as_echo "$withval" >&6; }
 cat >>confdefs.h <<_ACEOF
-#define PY_BUILTIN_HASH_MODULES "$withval"
+#define PY_BUILTIN_HASHLIB_HASHES "$withval"
 _ACEOF
 
 
 else
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $default_hash_modules" >&5
-$as_echo "$default_hash_modules" >&6; };
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $default_hashlib_hashes" >&5
+$as_echo "$default_hashlib_hashes" >&6; };
 cat >>confdefs.h <<_ACEOF
-#define PY_BUILTIN_HASH_MODULES "$default_hash_modules"
+#define PY_BUILTIN_HASHLIB_HASHES "$default_hashlib_hashes"
 _ACEOF
 
 

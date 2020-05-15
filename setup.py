@@ -2310,7 +2310,7 @@ class PyBuildExt(build_ext):
         # Modules can be disabled with --with-builtin-hashes configure flag.
         supported = {"md5", "sha1", "sha256", "sha512", "sha3", "blake2"}
 
-        configured = sysconfig.get_config_var("PY_BUILTIN_HASH_MODULES")
+        configured = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
         configured = configured.strip('"').lower()
         configured = {
             m.strip() for m in configured.split(",")
