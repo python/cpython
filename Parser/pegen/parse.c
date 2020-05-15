@@ -11189,7 +11189,7 @@ invalid_with_target_rule(Parser *p)
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
         )
         {
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_TARGET ( a ) , "'%s' is an illegal 'with' target" , _PyPegen_get_expr_name ( GET_INVALID_TARGET ( a ) ) );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_TARGET ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( GET_INVALID_TARGET ( a ) ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -11225,7 +11225,7 @@ invalid_for_target_rule(Parser *p)
             (a = comparison_rule(p))  // comparison
         )
         {
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_TARGET ( a -> v . Compare . left ) , "'%s' is an illegal 'for' target" , _PyPegen_get_expr_name ( GET_INVALID_TARGET ( a -> v . Compare . left ) ) );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_TARGET ( a -> v . Compare . left ) , "cannot assign to %s" , _PyPegen_get_expr_name ( GET_INVALID_TARGET ( a -> v . Compare . left ) ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;

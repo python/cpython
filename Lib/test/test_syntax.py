@@ -153,43 +153,43 @@ produce a specialized error message
 
 >>> for a() in b: pass
 Traceback (most recent call last):
-SyntaxError: 'function call' is an illegal 'for' target
+SyntaxError: cannot assign to function call
 
 >>> for (a, b()) in b: pass
 Traceback (most recent call last):
-SyntaxError: 'function call' is an illegal 'for' target
+SyntaxError: cannot assign to function call
 
 >>> for [a, b()] in b: pass
 Traceback (most recent call last):
-SyntaxError: 'function call' is an illegal 'for' target
+SyntaxError: cannot assign to function call
 
 >>> for (*a, b, c+1) in b: pass
 Traceback (most recent call last):
-SyntaxError: 'operator' is an illegal 'for' target
+SyntaxError: cannot assign to operator
 
 >>> for (x, *(y, z.d())) in b: pass
 Traceback (most recent call last):
-SyntaxError: 'function call' is an illegal 'for' target
+SyntaxError: cannot assign to function call
 
 >>> with a as b(): pass
 Traceback (most recent call last):
-SyntaxError: 'function call' is an illegal 'with' target
+SyntaxError: cannot assign to function call
 
 >>> with a as (b, c()): pass
 Traceback (most recent call last):
-SyntaxError: 'function call' is an illegal 'with' target
+SyntaxError: cannot assign to function call
 
 >>> with a as [b, c()]: pass
 Traceback (most recent call last):
-SyntaxError: 'function call' is an illegal 'with' target
+SyntaxError: cannot assign to function call
 
 >>> with a as (*b, c, d+1): pass
 Traceback (most recent call last):
-SyntaxError: 'operator' is an illegal 'with' target
+SyntaxError: cannot assign to operator
 
 >>> with a as (x, *(y, z.d())): pass
 Traceback (most recent call last):
-SyntaxError: 'function call' is an illegal 'with' target
+SyntaxError: cannot assign to function call
 
 From compiler_complex_args():
 

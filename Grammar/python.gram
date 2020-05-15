@@ -684,7 +684,7 @@ invalid_with_target:
     | ASYNC? 'with' expression 'as' a=expressions ':' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             GET_INVALID_TARGET(a),
-            "'%s' is an illegal 'with' target", _PyPegen_get_expr_name(GET_INVALID_TARGET(a))
+            "cannot assign to %s", _PyPegen_get_expr_name(GET_INVALID_TARGET(a))
         ) }
 
 # Comparison is used here, because the `a() in b` in `for a() in b: pass` is parsed
@@ -694,5 +694,5 @@ invalid_for_target:
     | ASYNC? 'for' a=comparison {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             GET_INVALID_TARGET(a->v.Compare.left),
-            "'%s' is an illegal 'for' target", _PyPegen_get_expr_name(GET_INVALID_TARGET(a->v.Compare.left))
+            "cannot assign to %s", _PyPegen_get_expr_name(GET_INVALID_TARGET(a->v.Compare.left))
         ) }
