@@ -245,6 +245,16 @@ that schedules a shutdown for the default executor that waits on the
 Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
 implementation that polls process file descriptors. (:issue:`38692`)
 
+compileall
+----------
+
+Added new possibility to use hardlinks for duplicated ``.pyc`` files: *hardlink_dupes* parameter and --hardlink-dupes command line option.
+(Contributed by  Lumír 'Frenzy' Balhar in :issue:`40495`.)
+
+Added new options for path manipulation in resulting ``.pyc`` files: *stripdir*, *prependdir*, *limit_sl_dest* parameters and -s, -p, -e command line options.
+Added the possibility to specify the option for an optimization level multiple times.
+(Contributed by Lumír 'Frenzy' Balhar in :issue:`38112`.)
+
 concurrent.futures
 ------------------
 
@@ -964,3 +974,6 @@ Removed
   * ``PyTuple_ClearFreeList()``
   * ``PyUnicode_ClearFreeList()``: the Unicode free list has been removed in
     Python 3.3.
+
+* Remove ``_PyUnicode_ClearStaticStrings()`` function.
+  (Contributed by Victor Stinner in :issue:`39465`.)

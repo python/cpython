@@ -724,7 +724,7 @@ class CLanguage(Language):
 
         parser_prototype_def_class = normalize_snippet("""
             static PyObject *
-            {c_basename}({self_type}{self_name}, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+            {c_basename}({self_type}{self_name}, PyTypeObject *{defining_class_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
         """)
 
         # parser_body_fields remembers the fields passed in to the
@@ -1305,7 +1305,8 @@ class CLanguage(Language):
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
         template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
-        f_self.converter.set_template_dict(template_dict)
+        for converter in converters:
+            converter.set_template_dict(template_dict)
 
         f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
@@ -2697,6 +2698,10 @@ class CConverter(metaclass=CConverterAutoRegister):
                 {paramname} = {cast}{argname};
                 """.format(argname=argname, paramname=self.name, cast=cast)
         return None
+
+    def set_template_dict(self, template_dict):
+        pass
+
 
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),

@@ -199,8 +199,8 @@ static KeywordToken *reserved_keywords[] = {
 #define star_targets_seq_type 1128
 #define star_target_type 1129
 #define star_atom_type 1130
-#define inside_paren_ann_assign_target_type 1131
-#define ann_assign_subscript_attribute_target_type 1132
+#define single_target_type 1131
+#define single_subscript_attribute_target_type 1132
 #define del_targets_type 1133
 #define del_target_type 1134
 #define del_t_atom_type 1135
@@ -501,8 +501,8 @@ static expr_ty star_targets_rule(Parser *p);
 static asdl_seq* star_targets_seq_rule(Parser *p);
 static expr_ty star_target_rule(Parser *p);
 static expr_ty star_atom_rule(Parser *p);
-static expr_ty inside_paren_ann_assign_target_rule(Parser *p);
-static expr_ty ann_assign_subscript_attribute_target_rule(Parser *p);
+static expr_ty single_target_rule(Parser *p);
+static expr_ty single_subscript_attribute_target_rule(Parser *p);
 static asdl_seq* del_targets_rule(Parser *p);
 static expr_ty del_target_rule(Parser *p);
 static expr_ty del_t_atom_rule(Parser *p);
@@ -1590,9 +1590,9 @@ compound_stmt_rule(Parser *p)
 
 // assignment:
 //     | NAME ':' expression ['=' annotated_rhs]
-//     | ('(' inside_paren_ann_assign_target ')' | ann_assign_subscript_attribute_target) ':' expression ['=' annotated_rhs]
+//     | ('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]
 //     | ((star_targets '='))+ (yield_expr | star_expressions) TYPE_COMMENT?
-//     | target augassign (yield_expr | star_expressions)
+//     | single_target augassign (yield_expr | star_expressions)
 //     | invalid_assignment
 static stmt_ty
 assignment_rule(Parser *p)
@@ -1642,13 +1642,13 @@ assignment_rule(Parser *p)
         }
         p->mark = _mark;
     }
-    { // ('(' inside_paren_ann_assign_target ')' | ann_assign_subscript_attribute_target) ':' expression ['=' annotated_rhs]
+    { // ('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]
         Token * _literal;
         void *a;
         expr_ty b;
         void *c;
         if (
-            (a = _tmp_20_rule(p))  // '(' inside_paren_ann_assign_target ')' | ann_assign_subscript_attribute_target
+            (a = _tmp_20_rule(p))  // '(' single_target ')' | single_subscript_attribute_target
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -1703,12 +1703,12 @@ assignment_rule(Parser *p)
         }
         p->mark = _mark;
     }
-    { // target augassign (yield_expr | star_expressions)
+    { // single_target augassign (yield_expr | star_expressions)
         expr_ty a;
         AugOperator* b;
         void *c;
         if (
-            (a = target_rule(p))  // target
+            (a = single_target_rule(p))  // single_target
             &&
             (b = augassign_rule(p))  // augassign
             &&
@@ -3350,7 +3350,7 @@ try_stmt_rule(Parser *p)
     return _res;
 }
 
-// except_block: 'except' expression ['as' target] ':' block | 'except' ':' block
+// except_block: 'except' expression ['as' NAME] ':' block | 'except' ':' block
 static excepthandler_ty
 except_block_rule(Parser *p)
 {
@@ -3367,7 +3367,7 @@ except_block_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // 'except' expression ['as' target] ':' block
+    { // 'except' expression ['as' NAME] ':' block
         Token * _keyword;
         Token * _literal;
         asdl_seq* b;
@@ -3378,7 +3378,7 @@ except_block_rule(Parser *p)
             &&
             (e = expression_rule(p))  // expression
             &&
-            (t = _tmp_48_rule(p), 1)  // ['as' target]
+            (t = _tmp_48_rule(p), 1)  // ['as' NAME]
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -9605,25 +9605,22 @@ star_atom_rule(Parser *p)
     return _res;
 }
 
-// inside_paren_ann_assign_target:
-//     | ann_assign_subscript_attribute_target
-//     | NAME
-//     | '(' inside_paren_ann_assign_target ')'
+// single_target: single_subscript_attribute_target | NAME | '(' single_target ')'
 static expr_ty
-inside_paren_ann_assign_target_rule(Parser *p)
+single_target_rule(Parser *p)
 {
     if (p->error_indicator) {
         return NULL;
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    { // ann_assign_subscript_attribute_target
-        expr_ty ann_assign_subscript_attribute_target_var;
+    { // single_subscript_attribute_target
+        expr_ty single_subscript_attribute_target_var;
         if (
-            (ann_assign_subscript_attribute_target_var = ann_assign_subscript_attribute_target_rule(p))  // ann_assign_subscript_attribute_target
+            (single_subscript_attribute_target_var = single_subscript_attribute_target_rule(p))  // single_subscript_attribute_target
         )
         {
-            _res = ann_assign_subscript_attribute_target_var;
+            _res = single_subscript_attribute_target_var;
             goto done;
         }
         p->mark = _mark;
@@ -9643,14 +9640,14 @@ inside_paren_ann_assign_target_rule(Parser *p)
         }
         p->mark = _mark;
     }
-    { // '(' inside_paren_ann_assign_target ')'
+    { // '(' single_target ')'
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
         if (
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
-            (a = inside_paren_ann_assign_target_rule(p))  // inside_paren_ann_assign_target
+            (a = single_target_rule(p))  // single_target
             &&
             (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
         )
@@ -9669,11 +9666,11 @@ inside_paren_ann_assign_target_rule(Parser *p)
     return _res;
 }
 
-// ann_assign_subscript_attribute_target:
+// single_subscript_attribute_target:
 //     | t_primary '.' NAME !t_lookahead
 //     | t_primary '[' slices ']' !t_lookahead
 static expr_ty
-ann_assign_subscript_attribute_target_rule(Parser *p)
+single_subscript_attribute_target_rule(Parser *p)
 {
     if (p->error_indicator) {
         return NULL;
@@ -10750,7 +10747,8 @@ invalid_named_expression_rule(Parser *p)
 //     | tuple ':'
 //     | star_named_expression ',' star_named_expressions* ':'
 //     | expression ':' expression ['=' annotated_rhs]
-//     | expression ('=' | augassign) (yield_expr | star_expressions)
+//     | star_expressions '=' (yield_expr | star_expressions)
+//     | star_expressions augassign (yield_expr | star_expressions)
 static void *
 invalid_assignment_rule(Parser *p)
 {
@@ -10844,19 +10842,40 @@ invalid_assignment_rule(Parser *p)
         }
         p->mark = _mark;
     }
-    { // expression ('=' | augassign) (yield_expr | star_expressions)
+    { // star_expressions '=' (yield_expr | star_expressions)
+        Token * _literal;
         void *_tmp_128_var;
-        void *_tmp_129_var;
         expr_ty a;
         if (
-            (a = expression_rule(p))  // expression
+            (a = star_expressions_rule(p))  // star_expressions
             &&
-            (_tmp_128_var = _tmp_128_rule(p))  // '=' | augassign
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (_tmp_128_var = _tmp_128_rule(p))  // yield_expr | star_expressions
+        )
+        {
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( _PyPegen_get_invalid_target ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( _PyPegen_get_invalid_target ( a ) ) );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+    }
+    { // star_expressions augassign (yield_expr | star_expressions)
+        void *_tmp_129_var;
+        expr_ty a;
+        AugOperator* augassign_var;
+        if (
+            (a = star_expressions_rule(p))  // star_expressions
+            &&
+            (augassign_var = augassign_rule(p))  // augassign
             &&
             (_tmp_129_var = _tmp_129_rule(p))  // yield_expr | star_expressions
         )
         {
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot assign to %s" , _PyPegen_get_expr_name ( a ) );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -11907,7 +11926,7 @@ _tmp_19_rule(Parser *p)
     return _res;
 }
 
-// _tmp_20: '(' inside_paren_ann_assign_target ')' | ann_assign_subscript_attribute_target
+// _tmp_20: '(' single_target ')' | single_subscript_attribute_target
 static void *
 _tmp_20_rule(Parser *p)
 {
@@ -11916,14 +11935,14 @@ _tmp_20_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // '(' inside_paren_ann_assign_target ')'
+    { // '(' single_target ')'
         Token * _literal;
         Token * _literal_1;
         expr_ty b;
         if (
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
-            (b = inside_paren_ann_assign_target_rule(p))  // inside_paren_ann_assign_target
+            (b = single_target_rule(p))  // single_target
             &&
             (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
         )
@@ -11937,13 +11956,13 @@ _tmp_20_rule(Parser *p)
         }
         p->mark = _mark;
     }
-    { // ann_assign_subscript_attribute_target
-        expr_ty ann_assign_subscript_attribute_target_var;
+    { // single_subscript_attribute_target
+        expr_ty single_subscript_attribute_target_var;
         if (
-            (ann_assign_subscript_attribute_target_var = ann_assign_subscript_attribute_target_rule(p))  // ann_assign_subscript_attribute_target
+            (single_subscript_attribute_target_var = single_subscript_attribute_target_rule(p))  // single_subscript_attribute_target
         )
         {
-            _res = ann_assign_subscript_attribute_target_var;
+            _res = single_subscript_attribute_target_var;
             goto done;
         }
         p->mark = _mark;
@@ -13073,7 +13092,7 @@ _loop1_47_rule(Parser *p)
     return _seq;
 }
 
-// _tmp_48: 'as' target
+// _tmp_48: 'as' NAME
 static void *
 _tmp_48_rule(Parser *p)
 {
@@ -13082,13 +13101,13 @@ _tmp_48_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // 'as' target
+    { // 'as' NAME
         Token * _keyword;
         expr_ty z;
         if (
             (_keyword = _PyPegen_expect_token(p, 531))  // token='as'
             &&
-            (z = target_rule(p))  // target
+            (z = _PyPegen_name_token(p))  // NAME
         )
         {
             _res = z;
@@ -16678,7 +16697,7 @@ _tmp_127_rule(Parser *p)
     return _res;
 }
 
-// _tmp_128: '=' | augassign
+// _tmp_128: yield_expr | star_expressions
 static void *
 _tmp_128_rule(Parser *p)
 {
@@ -16687,24 +16706,24 @@ _tmp_128_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // '='
-        Token * _literal;
+    { // yield_expr
+        expr_ty yield_expr_var;
         if (
-            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            (yield_expr_var = yield_expr_rule(p))  // yield_expr
         )
         {
-            _res = _literal;
+            _res = yield_expr_var;
             goto done;
         }
         p->mark = _mark;
     }
-    { // augassign
-        AugOperator* augassign_var;
+    { // star_expressions
+        expr_ty star_expressions_var;
         if (
-            (augassign_var = augassign_rule(p))  // augassign
+            (star_expressions_var = star_expressions_rule(p))  // star_expressions
         )
         {
-            _res = augassign_var;
+            _res = star_expressions_var;
             goto done;
         }
         p->mark = _mark;
