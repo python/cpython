@@ -4,9 +4,10 @@
 #include "pegen.h"
 
 mod_ty
-PyPegen_ASTFromString(const char *str, int mode, PyCompilerFlags *flags, PyArena *arena)
+PyPegen_ASTFromString(const char *str, const char *filename, int mode,
+                      PyCompilerFlags *flags, PyArena *arena)
 {
-    PyObject *filename_ob = PyUnicode_FromString("<string>");
+    PyObject *filename_ob = PyUnicode_FromString(filename);
     if (filename_ob == NULL) {
         return NULL;
     }
@@ -16,7 +17,8 @@ PyPegen_ASTFromString(const char *str, int mode, PyCompilerFlags *flags, PyArena
 }
 
 mod_ty
-PyPegen_ASTFromStringObject(const char *str, PyObject* filename, int mode, PyCompilerFlags *flags, PyArena *arena)
+PyPegen_ASTFromStringObject(const char *str, PyObject* filename, int mode,
+                            PyCompilerFlags *flags, PyArena *arena)
 {
     if (PySys_Audit("compile", "yO", str, filename) < 0) {
         return NULL;
@@ -27,7 +29,7 @@ PyPegen_ASTFromStringObject(const char *str, PyObject* filename, int mode, PyCom
 }
 
 mod_ty
-PyPegen_ASTFromFile(const char *filename, int mode, PyCompilerFlags *flags, PyArena *arena)
+PyPegen_ASTFromFilename(const char *filename, int mode, PyCompilerFlags *flags, PyArena *arena)
 {
     PyObject *filename_ob = PyUnicode_FromString(filename);
     if (filename_ob == NULL) {
@@ -49,85 +51,4 @@ PyPegen_ASTFromFileObject(FILE *fp, PyObject *filename_ob, int mode,
     }
     return _PyPegen_run_parser_from_file_pointer(fp, mode, filename_ob, enc, ps1, ps2,
                                         flags, errcode, arena);
-}
-
-PyCodeObject *
-PyPegen_CodeObjectFromString(const char *str, int mode, PyCompilerFlags *flags)
-{
-    PyArena *arena = PyArena_New();
-    if (arena == NULL) {
-        return NULL;
-    }
-
-    PyCodeObject *result = NULL;
-
-    PyObject *filename_ob = PyUnicode_FromString("<string>");
-    if (filename_ob == NULL) {
-        goto error;
-    }
-
-    mod_ty res = PyPegen_ASTFromString(str, mode, flags, arena);
-    if (res == NULL) {
-        goto error;
-    }
-
-    result = PyAST_CompileObject(res, filename_ob, NULL, -1, arena);
-
-error:
-    Py_XDECREF(filename_ob);
-    PyArena_Free(arena);
-    return result;
-}
-
-PyCodeObject *
-PyPegen_CodeObjectFromFile(const char *filename, int mode, PyCompilerFlags* flags)
-{
-    PyArena *arena = PyArena_New();
-    if (arena == NULL) {
-        return NULL;
-    }
-
-    PyCodeObject *result = NULL;
-
-    PyObject *filename_ob = PyUnicode_FromString(filename);
-    if (filename_ob == NULL) {
-        goto error;
-    }
-
-    mod_ty res = PyPegen_ASTFromFile(filename, mode, flags, arena);
-    if (res == NULL) {
-        goto error;
-    }
-
-    result = PyAST_CompileObject(res, filename_ob, NULL, -1, arena);
-
-error:
-    Py_XDECREF(filename_ob);
-    PyArena_Free(arena);
-    return result;
-}
-
-PyCodeObject *
-PyPegen_CodeObjectFromFileObject(FILE *fp, PyObject *filename_ob, int mode,
-                                 const char *ps1, const char *ps2, 
-                                 PyCompilerFlags *flags, const char *enc, int *errcode)
-{
-    PyArena *arena = PyArena_New();
-    if (arena == NULL) {
-        return NULL;
-    }
-
-    PyCodeObject *result = NULL;
-
-    mod_ty res = PyPegen_ASTFromFileObject(fp, filename_ob, mode, enc, ps1, ps2,
-                                           flags, errcode, arena);
-    if (res == NULL) {
-        goto error;
-    }
-
-    result = PyAST_CompileObject(res, filename_ob, NULL, -1, arena);
-
-error:
-    PyArena_Free(arena);
-    return result;
 }

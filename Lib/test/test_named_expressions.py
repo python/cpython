@@ -1,4 +1,3 @@
-import os
 import unittest
 
 GLOBAL_VAR = None

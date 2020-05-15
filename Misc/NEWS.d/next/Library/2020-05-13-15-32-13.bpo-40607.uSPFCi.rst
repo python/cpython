@@ -1,0 +1,3 @@
+When cancelling a task due to timeout, :meth:`asyncio.wait_for` will now
+propagate the exception if an error happens during cancellation.
+Patch by Roman Skurikhin.

@@ -111,6 +111,9 @@
     <ClInclude Include="..\Include\cpython\listobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\methodobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\object.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -232,6 +235,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_hamt.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_hashtable.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_import.h">
@@ -1031,6 +1037,9 @@
     <ClCompile Include="..\Python\hamt.h">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\hashtable.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\import.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1137,9 +1146,6 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_tracemalloc.c">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\hashtable.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\PC\invalid_parameter_handler.c">

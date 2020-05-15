@@ -19,6 +19,12 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #include "clinic/typeobject.c.h"
 
+/* bpo-40521: Type method cache is shared by all subinterpreters */
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  define MCACHE
+#endif
+
+#ifdef MCACHE
 /* Support type attribute cache */
 
 /* The cache can keep references to the names alive for longer than
@@ -47,6 +53,7 @@ struct method_cache_entry {
 
 static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP];
 static unsigned int next_version_tag = 0;
+#endif
 
 #define MCACHE_STATS 0
 
@@ -54,6 +61,11 @@ static unsigned int next_version_tag = 0;
 static size_t method_cache_hits = 0;
 static size_t method_cache_misses = 0;
 static size_t method_cache_collisions = 0;
+#endif
+
+/* bpo-40521: Interned strings are shared by all subinterpreters */
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  define INTERN_NAME_STRINGS
 #endif
 
 /* alphabetical order */
@@ -211,6 +223,7 @@ _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_d
 unsigned int
 PyType_ClearCache(void)
 {
+#ifdef MCACHE
     Py_ssize_t i;
     unsigned int cur_version_tag = next_version_tag - 1;
 
@@ -235,6 +248,9 @@ PyType_ClearCache(void)
     /* mark all version tags as invalid */
     PyType_Modified(&PyBaseObject_Type);
     return cur_version_tag;
+#else
+    return 0;
+#endif
 }
 
 void
@@ -345,6 +361,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
                         Py_TPFLAGS_VALID_VERSION_TAG);
 }
 
+#ifdef MCACHE
 static int
 assign_version_tag(PyTypeObject *type)
 {
@@ -391,6 +408,7 @@ assign_version_tag(PyTypeObject *type)
     type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
     return 1;
 }
+#endif
 
 
 static PyMemberDef type_members[] = {
@@ -1501,7 +1519,7 @@ lookup_method(PyObject *self, _Py_Identifier *attrid, int *unbound)
 {
     PyObject *res = lookup_maybe_method(self, attrid, unbound);
     if (res == NULL && !PyErr_Occurred()) {
-        PyErr_SetObject(PyExc_AttributeError, attrid->object);
+        PyErr_SetObject(PyExc_AttributeError, _PyUnicode_FromId(attrid));
     }
     return res;
 }
@@ -2690,6 +2708,9 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     if (qualname != NULL && _PyDict_DelItemId(dict, &PyId___qualname__) < 0)
         goto error;
 
+    /* Set ht_module */
+    et->ht_module = NULL;
+
     /* Set tp_doc to a copy of dict['__doc__'], if the latter is there
        and is a string.  The __doc__ accessor will first look for tp_doc;
        if that fails, it will still look into __dict__.
@@ -2922,15 +2943,21 @@ PyType_FromSpec_tp_traverse(PyObject *self, visitproc visit, void *arg)
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
+    return PyType_FromModuleAndSpec(NULL, spec, bases);
+}
+
+PyObject *
+PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+{
     PyHeapTypeObject *res;
     PyObject *modname;
     PyTypeObject *type, *base;
 
     const PyType_Slot *slot;
-    Py_ssize_t nmembers, weaklistoffset, dictoffset;
+    Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
 
-    nmembers = weaklistoffset = dictoffset = 0;
+    nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot == Py_tp_members) {
             nmembers = 0;
@@ -2947,6 +2974,12 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
                     assert(memb->type == T_PYSSIZET);
                     assert(memb->flags == READONLY);
                     dictoffset = memb->offset;
+                }
+                if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
+                    // The PyMemberDef must be a Py_ssize_t and readonly
+                    assert(memb->type == T_PYSSIZET);
+                    assert(memb->flags == READONLY);
+                    vectorcalloffset = memb->offset;
                 }
             }
         }
@@ -2979,6 +3012,9 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     res->ht_qualname = res->ht_name;
     Py_INCREF(res->ht_qualname);
     type->tp_name = spec->name;
+
+    Py_XINCREF(module);
+    res->ht_module = module;
 
     /* Adjust for empty tuple bases */
     if (!bases) {
@@ -3093,6 +3129,10 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         type->tp_dealloc = subtype_dealloc;
     }
 
+    if (vectorcalloffset) {
+        type->tp_vectorcall_offset = vectorcalloffset;
+    }
+
     if (PyType_Ready(type) < 0)
         goto fail;
 
@@ -3156,6 +3196,40 @@ PyType_GetSlot(PyTypeObject *type, int slot)
         return NULL;
     }
     return  *(void**)(((char*)type) + slotoffsets[slot]);
+}
+
+PyObject *
+PyType_GetModule(PyTypeObject *type)
+{
+    assert(PyType_Check(type));
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "PyType_GetModule: Type '%s' is not a heap type",
+            type->tp_name);
+        return NULL;
+    }
+
+    PyHeapTypeObject* et = (PyHeapTypeObject*)type;
+    if (!et->ht_module) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "PyType_GetModule: Type '%s' has no associated module",
+            type->tp_name);
+        return NULL;
+    }
+    return et->ht_module;
+
+}
+
+void *
+PyType_GetModuleState(PyTypeObject *type)
+{
+    PyObject *m = PyType_GetModule(type);
+    if (m == NULL) {
+        return NULL;
+    }
+    return PyModule_GetState(m);
 }
 
 /* Internal API to look for a name through the MRO, bypassing the method cache.
@@ -3227,12 +3301,12 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 {
     PyObject *res;
     int error;
-    unsigned int h;
 
+#ifdef MCACHE
     if (MCACHE_CACHEABLE_NAME(name) &&
         _PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
         /* fast path */
-        h = MCACHE_HASH_METHOD(type, name);
+        unsigned int h = MCACHE_HASH_METHOD(type, name);
         if (method_cache[h].version == type->tp_version_tag &&
             method_cache[h].name == name) {
 #if MCACHE_STATS
@@ -3241,6 +3315,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
             return method_cache[h].value;
         }
     }
+#endif
 
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
@@ -3262,8 +3337,9 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         return NULL;
     }
 
+#ifdef MCACHE
     if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(type)) {
-        h = MCACHE_HASH_METHOD(type, name);
+        unsigned int h = MCACHE_HASH_METHOD(type, name);
         method_cache[h].version = type->tp_version_tag;
         method_cache[h].value = res;  /* borrowed */
         Py_INCREF(name);
@@ -3276,6 +3352,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 #endif
         Py_SETREF(method_cache[h].name, name);
     }
+#endif
     return res;
 }
 
@@ -3418,6 +3495,7 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             if (name == NULL)
                 return -1;
         }
+#ifdef INTERN_NAME_STRINGS
         if (!PyUnicode_CHECK_INTERNED(name)) {
             PyUnicode_InternInPlace(&name);
             if (!PyUnicode_CHECK_INTERNED(name)) {
@@ -3427,6 +3505,7 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
                 return -1;
             }
         }
+#endif
     }
     else {
         /* Will fail in _PyObject_GenericSetAttrWithDict. */
@@ -3480,8 +3559,10 @@ type_dealloc(PyTypeObject *type)
     Py_XDECREF(et->ht_name);
     Py_XDECREF(et->ht_qualname);
     Py_XDECREF(et->ht_slots);
-    if (et->ht_cached_keys)
+    if (et->ht_cached_keys) {
         _PyDictKeys_DecRef(et->ht_cached_keys);
+    }
+    Py_XDECREF(et->ht_module);
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 
@@ -3671,6 +3752,7 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
     Py_VISIT(type->tp_mro);
     Py_VISIT(type->tp_bases);
     Py_VISIT(type->tp_base);
+    Py_VISIT(((PyHeapTypeObject *)type)->ht_module);
 
     /* There's no need to visit type->tp_subclasses or
        ((PyHeapTypeObject *)type)->ht_slots, because they can't be involved
@@ -3692,10 +3774,13 @@ type_clear(PyTypeObject *type)
        the dict, so that other objects caught in a reference cycle
        don't start calling destroyed methods.
 
-       Otherwise, the only field we need to clear is tp_mro, which is
+       Otherwise, the we need to clear tp_mro, which is
        part of a hard cycle (its first element is the class itself) that
        won't be broken otherwise (it's a tuple and tuples don't have a
-       tp_clear handler).  None of the other fields need to be
+       tp_clear handler).
+       We also need to clear ht_module, if present: the module usually holds a
+       reference to its class. None of the other fields need to be
+
        cleared, and here's why:
 
        tp_cache:
@@ -3720,8 +3805,11 @@ type_clear(PyTypeObject *type)
         ((PyHeapTypeObject *)type)->ht_cached_keys = NULL;
         _PyDictKeys_DecRef(cached_keys);
     }
-    if (type->tp_dict)
+    if (type->tp_dict) {
         PyDict_Clear(type->tp_dict);
+    }
+    Py_CLEAR(((PyHeapTypeObject *)type)->ht_module);
+
     Py_CLEAR(type->tp_mro);
 
     return 0;
@@ -6306,7 +6394,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
         stack[1] = other; \
         r = vectorcall_maybe(tstate, &op_id, stack, 2); \
         if (r != Py_NotImplemented || \
-            Py_TYPE(other) == Py_TYPE(self)) \
+            Py_IS_TYPE(other, Py_TYPE(self))) \
             return r; \
         Py_DECREF(r); \
     } \
@@ -6776,12 +6864,12 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 }
 
 static _Py_Identifier name_op[] = {
-    {0, "__lt__", 0},
-    {0, "__le__", 0},
-    {0, "__eq__", 0},
-    {0, "__ne__", 0},
-    {0, "__gt__", 0},
-    {0, "__ge__", 0}
+    _Py_static_string_init("__lt__"),
+    _Py_static_string_init("__le__"),
+    _Py_static_string_init("__eq__"),
+    _Py_static_string_init("__ne__"),
+    _Py_static_string_init("__gt__"),
+    _Py_static_string_init("__ge__"),
 };
 
 static PyObject *
@@ -7531,10 +7619,17 @@ _PyTypes_InitSlotDefs(void)
     for (slotdef *p = slotdefs; p->name; p++) {
         /* Slots must be ordered by their offset in the PyHeapTypeObject. */
         assert(!p[1].name || p->offset <= p[1].offset);
+#ifdef INTERN_NAME_STRINGS
         p->name_strobj = PyUnicode_InternFromString(p->name);
         if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj)) {
             return _PyStatus_NO_MEMORY();
         }
+#else
+        p->name_strobj = PyUnicode_FromString(p->name);
+        if (!p->name_strobj) {
+            return _PyStatus_NO_MEMORY();
+        }
+#endif
     }
     slotdefs_initialized = 1;
     return _PyStatus_OK();
@@ -7559,7 +7654,9 @@ update_slot(PyTypeObject *type, PyObject *name)
     int offset;
 
     assert(PyUnicode_CheckExact(name));
+#ifdef INTERN_NAME_STRINGS
     assert(PyUnicode_CHECK_INTERNED(name));
+#endif
 
     assert(slotdefs_initialized);
     pp = ptrs;

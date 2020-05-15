@@ -2886,7 +2886,7 @@ PyDoc_STRVAR(os_sched_setscheduler__doc__,
 
 static PyObject *
 os_sched_setscheduler_impl(PyObject *module, pid_t pid, int policy,
-                           struct sched_param *param);
+                           PyObject *param_obj);
 
 static PyObject *
 os_sched_setscheduler(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -2894,13 +2894,13 @@ os_sched_setscheduler(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     pid_t pid;
     int policy;
-    struct sched_param param;
+    PyObject *param_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "iO&:sched_setscheduler",
-        &pid, &policy, convert_sched_param, &param)) {
+    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "iO:sched_setscheduler",
+        &pid, &policy, &param_obj)) {
         goto exit;
     }
-    return_value = os_sched_setscheduler_impl(module, pid, policy, &param);
+    return_value = os_sched_setscheduler_impl(module, pid, policy, param_obj);
 
 exit:
     return return_value;
@@ -2957,21 +2957,20 @@ PyDoc_STRVAR(os_sched_setparam__doc__,
     {"sched_setparam", (PyCFunction)(void(*)(void))os_sched_setparam, METH_FASTCALL, os_sched_setparam__doc__},
 
 static PyObject *
-os_sched_setparam_impl(PyObject *module, pid_t pid,
-                       struct sched_param *param);
+os_sched_setparam_impl(PyObject *module, pid_t pid, PyObject *param_obj);
 
 static PyObject *
 os_sched_setparam(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pid;
-    struct sched_param param;
+    PyObject *param_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "O&:sched_setparam",
-        &pid, convert_sched_param, &param)) {
+    if (!_PyArg_ParseStack(args, nargs, "" _Py_PARSE_PID "O:sched_setparam",
+        &pid, &param_obj)) {
         goto exit;
     }
-    return_value = os_sched_setparam_impl(module, pid, &param);
+    return_value = os_sched_setparam_impl(module, pid, param_obj);
 
 exit:
     return return_value;
@@ -8389,18 +8388,24 @@ PyDoc_STRVAR(os_DirEntry_is_symlink__doc__,
 "Return True if the entry is a symbolic link; cached per entry.");
 
 #define OS_DIRENTRY_IS_SYMLINK_METHODDEF    \
-    {"is_symlink", (PyCFunction)os_DirEntry_is_symlink, METH_NOARGS, os_DirEntry_is_symlink__doc__},
+    {"is_symlink", (PyCFunction)(void(*)(void))os_DirEntry_is_symlink, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_symlink__doc__},
 
 static int
-os_DirEntry_is_symlink_impl(DirEntry *self);
+os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class);
 
 static PyObject *
-os_DirEntry_is_symlink(DirEntry *self, PyObject *Py_UNUSED(ignored))
+os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":is_symlink", _keywords, 0};
     int _return_value;
 
-    _return_value = os_DirEntry_is_symlink_impl(self);
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    _return_value = os_DirEntry_is_symlink_impl(self, defining_class);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -8417,34 +8422,25 @@ PyDoc_STRVAR(os_DirEntry_stat__doc__,
 "Return stat_result object for the entry; cached per entry.");
 
 #define OS_DIRENTRY_STAT_METHODDEF    \
-    {"stat", (PyCFunction)(void(*)(void))os_DirEntry_stat, METH_FASTCALL|METH_KEYWORDS, os_DirEntry_stat__doc__},
+    {"stat", (PyCFunction)(void(*)(void))os_DirEntry_stat, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_stat__doc__},
 
 static PyObject *
-os_DirEntry_stat_impl(DirEntry *self, int follow_symlinks);
+os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
+                      int follow_symlinks);
 
 static PyObject *
-os_DirEntry_stat(DirEntry *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_stat(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "stat", 0};
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    static _PyArg_Parser _parser = {"|$p:stat", _keywords, 0};
     int follow_symlinks = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &follow_symlinks)) {
         goto exit;
     }
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    follow_symlinks = PyObject_IsTrue(args[0]);
-    if (follow_symlinks < 0) {
-        goto exit;
-    }
-skip_optional_kwonly:
-    return_value = os_DirEntry_stat_impl(self, follow_symlinks);
+    return_value = os_DirEntry_stat_impl(self, defining_class, follow_symlinks);
 
 exit:
     return return_value;
@@ -8457,35 +8453,26 @@ PyDoc_STRVAR(os_DirEntry_is_dir__doc__,
 "Return True if the entry is a directory; cached per entry.");
 
 #define OS_DIRENTRY_IS_DIR_METHODDEF    \
-    {"is_dir", (PyCFunction)(void(*)(void))os_DirEntry_is_dir, METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_dir__doc__},
+    {"is_dir", (PyCFunction)(void(*)(void))os_DirEntry_is_dir, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_dir__doc__},
 
 static int
-os_DirEntry_is_dir_impl(DirEntry *self, int follow_symlinks);
+os_DirEntry_is_dir_impl(DirEntry *self, PyTypeObject *defining_class,
+                        int follow_symlinks);
 
 static PyObject *
-os_DirEntry_is_dir(DirEntry *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_dir(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "is_dir", 0};
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    static _PyArg_Parser _parser = {"|$p:is_dir", _keywords, 0};
     int follow_symlinks = 1;
     int _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &follow_symlinks)) {
         goto exit;
     }
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    follow_symlinks = PyObject_IsTrue(args[0]);
-    if (follow_symlinks < 0) {
-        goto exit;
-    }
-skip_optional_kwonly:
-    _return_value = os_DirEntry_is_dir_impl(self, follow_symlinks);
+    _return_value = os_DirEntry_is_dir_impl(self, defining_class, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -8502,35 +8489,26 @@ PyDoc_STRVAR(os_DirEntry_is_file__doc__,
 "Return True if the entry is a file; cached per entry.");
 
 #define OS_DIRENTRY_IS_FILE_METHODDEF    \
-    {"is_file", (PyCFunction)(void(*)(void))os_DirEntry_is_file, METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_file__doc__},
+    {"is_file", (PyCFunction)(void(*)(void))os_DirEntry_is_file, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_file__doc__},
 
 static int
-os_DirEntry_is_file_impl(DirEntry *self, int follow_symlinks);
+os_DirEntry_is_file_impl(DirEntry *self, PyTypeObject *defining_class,
+                         int follow_symlinks);
 
 static PyObject *
-os_DirEntry_is_file(DirEntry *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_file(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"follow_symlinks", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "is_file", 0};
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    static _PyArg_Parser _parser = {"|$p:is_file", _keywords, 0};
     int follow_symlinks = 1;
     int _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &follow_symlinks)) {
         goto exit;
     }
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    follow_symlinks = PyObject_IsTrue(args[0]);
-    if (follow_symlinks < 0) {
-        goto exit;
-    }
-skip_optional_kwonly:
-    _return_value = os_DirEntry_is_file_impl(self, follow_symlinks);
+    _return_value = os_DirEntry_is_file_impl(self, defining_class, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -9418,4 +9396,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=ba73b68f1c435ff6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=005919eaaef3f8e6 input=a9049054013a1b77]*/

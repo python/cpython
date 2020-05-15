@@ -1,0 +1,2 @@
+Update :mod:`dbm.gnu` to use gdbm_count if possible when calling
+:func:`len`. Patch by Dong-hee Na.

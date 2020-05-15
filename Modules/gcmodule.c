@@ -1181,6 +1181,14 @@ collect(PyThreadState *tstate, int generation,
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
 
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    if (tstate->interp->config._isolated_interpreter) {
+        // bpo-40533: The garbage collector must not be run on parallel on
+        // Python objects shared by multiple interpreters.
+        return 0;
+    }
+#endif
+
     if (gcstate->debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);

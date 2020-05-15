@@ -8,7 +8,6 @@
 
 import array
 from binascii import unhexlify
-import functools
 import hashlib
 import importlib
 import itertools
@@ -855,6 +854,11 @@ class HashLibTestCase(unittest.TestCase):
             thread.join()
 
         self.assertEqual(expected_hash, hasher.hexdigest())
+
+    @unittest.skipUnless(hasattr(c_hashlib, 'get_fips_mode'),
+                         'need _hashlib.get_fips_mode')
+    def test_get_fips_mode(self):
+        self.assertIsInstance(c_hashlib.get_fips_mode(), int)
 
 
 class KDFTests(unittest.TestCase):

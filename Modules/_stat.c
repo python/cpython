@@ -492,113 +492,140 @@ ST_CTIME\n\
 ");
 
 
+static int
+stat_exec(PyObject *module)
+{
+#define ADD_INT_MACRO(module, macro)                                  \
+    do {                                                              \
+        if (PyModule_AddIntConstant(module, #macro, macro) < 0) {     \
+            return -1;                                                \
+        }                                                             \
+    } while (0)
+
+    ADD_INT_MACRO(module, S_IFDIR);
+    ADD_INT_MACRO(module, S_IFCHR);
+    ADD_INT_MACRO(module, S_IFBLK);
+    ADD_INT_MACRO(module, S_IFREG);
+    ADD_INT_MACRO(module, S_IFIFO);
+    ADD_INT_MACRO(module, S_IFLNK);
+    ADD_INT_MACRO(module, S_IFSOCK);
+    ADD_INT_MACRO(module, S_IFDOOR);
+    ADD_INT_MACRO(module, S_IFPORT);
+    ADD_INT_MACRO(module, S_IFWHT);
+
+    ADD_INT_MACRO(module, S_ISUID);
+    ADD_INT_MACRO(module, S_ISGID);
+    ADD_INT_MACRO(module, S_ISVTX);
+    ADD_INT_MACRO(module, S_ENFMT);
+
+    ADD_INT_MACRO(module, S_IREAD);
+    ADD_INT_MACRO(module, S_IWRITE);
+    ADD_INT_MACRO(module, S_IEXEC);
+
+    ADD_INT_MACRO(module, S_IRWXU);
+    ADD_INT_MACRO(module, S_IRUSR);
+    ADD_INT_MACRO(module, S_IWUSR);
+    ADD_INT_MACRO(module, S_IXUSR);
+
+    ADD_INT_MACRO(module, S_IRWXG);
+    ADD_INT_MACRO(module, S_IRGRP);
+    ADD_INT_MACRO(module, S_IWGRP);
+    ADD_INT_MACRO(module, S_IXGRP);
+
+    ADD_INT_MACRO(module, S_IRWXO);
+    ADD_INT_MACRO(module, S_IROTH);
+    ADD_INT_MACRO(module, S_IWOTH);
+    ADD_INT_MACRO(module, S_IXOTH);
+
+    ADD_INT_MACRO(module, UF_NODUMP);
+    ADD_INT_MACRO(module, UF_IMMUTABLE);
+    ADD_INT_MACRO(module, UF_APPEND);
+    ADD_INT_MACRO(module, UF_OPAQUE);
+    ADD_INT_MACRO(module, UF_NOUNLINK);
+    ADD_INT_MACRO(module, UF_COMPRESSED);
+    ADD_INT_MACRO(module, UF_HIDDEN);
+    ADD_INT_MACRO(module, SF_ARCHIVED);
+    ADD_INT_MACRO(module, SF_IMMUTABLE);
+    ADD_INT_MACRO(module, SF_APPEND);
+    ADD_INT_MACRO(module, SF_NOUNLINK);
+    ADD_INT_MACRO(module, SF_SNAPSHOT);
+
+    const char* st_constants[] = {
+        "ST_MODE",
+        "ST_INO",
+        "ST_DEV",
+        "ST_NLINK",
+        "ST_UID",
+        "ST_GID",
+        "ST_SIZE",
+        "ST_ATIME",
+        "ST_MTIME",
+        "ST_CTIME"
+    };
+
+    for (int i = 0; i < (int)Py_ARRAY_LENGTH(st_constants); i++) {
+        if (PyModule_AddIntConstant(module, st_constants[i], i) < 0) {
+            return -1;
+        }
+    }
+
+#ifdef MS_WINDOWS
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_ARCHIVE);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_COMPRESSED);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_DEVICE);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_DIRECTORY);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_ENCRYPTED);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_HIDDEN);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_INTEGRITY_STREAM);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_NORMAL);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_NO_SCRUB_DATA);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_OFFLINE);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_READONLY);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_REPARSE_POINT);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_SPARSE_FILE);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_SYSTEM);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_TEMPORARY);
+    ADD_INT_MACRO(module, FILE_ATTRIBUTE_VIRTUAL);
+
+    if (PyModule_AddObject(module, "IO_REPARSE_TAG_SYMLINK",
+                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
+            return -1;
+    }
+    if (PyModule_AddObject(module, "IO_REPARSE_TAG_MOUNT_POINT",
+                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
+            return -1;
+    }
+    if (PyModule_AddObject(module, "IO_REPARSE_TAG_APPEXECLINK",
+                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
+            return -1;
+    }
+#endif
+
+    return 0;
+}
+
+
+static PyModuleDef_Slot stat_slots[] = {
+    {Py_mod_exec, stat_exec},
+    {0, NULL}
+};
+
+
 static struct PyModuleDef statmodule = {
     PyModuleDef_HEAD_INIT,
-    "_stat",
-    module_doc,
-    -1,
-    stat_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_stat",
+    .m_doc = module_doc,
+    .m_size = 0,
+    .m_methods = stat_methods,
+    .m_slots = stat_slots,
 };
+
 
 PyMODINIT_FUNC
 PyInit__stat(void)
 {
-    PyObject *m;
-    m = PyModule_Create(&statmodule);
-    if (m == NULL)
-        return NULL;
-
-    if (PyModule_AddIntMacro(m, S_IFDIR)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IFCHR)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IFBLK)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IFREG)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IFIFO)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IFLNK)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IFSOCK)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IFDOOR)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IFPORT)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IFWHT)) return NULL;
-
-    if (PyModule_AddIntMacro(m, S_ISUID)) return NULL;
-    if (PyModule_AddIntMacro(m, S_ISGID)) return NULL;
-    if (PyModule_AddIntMacro(m, S_ISVTX)) return NULL;
-    if (PyModule_AddIntMacro(m, S_ENFMT)) return NULL;
-
-    if (PyModule_AddIntMacro(m, S_IREAD)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IWRITE)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IEXEC)) return NULL;
-
-    if (PyModule_AddIntMacro(m, S_IRWXU)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IRUSR)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IWUSR)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IXUSR)) return NULL;
-
-    if (PyModule_AddIntMacro(m, S_IRWXG)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IRGRP)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IWGRP)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IXGRP)) return NULL;
-
-    if (PyModule_AddIntMacro(m, S_IRWXO)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IROTH)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IWOTH)) return NULL;
-    if (PyModule_AddIntMacro(m, S_IXOTH)) return NULL;
-
-    if (PyModule_AddIntMacro(m, UF_NODUMP)) return NULL;
-    if (PyModule_AddIntMacro(m, UF_IMMUTABLE)) return NULL;
-    if (PyModule_AddIntMacro(m, UF_APPEND)) return NULL;
-    if (PyModule_AddIntMacro(m, UF_OPAQUE)) return NULL;
-    if (PyModule_AddIntMacro(m, UF_NOUNLINK)) return NULL;
-    if (PyModule_AddIntMacro(m, UF_COMPRESSED)) return NULL;
-    if (PyModule_AddIntMacro(m, UF_HIDDEN)) return NULL;
-    if (PyModule_AddIntMacro(m, SF_ARCHIVED)) return NULL;
-    if (PyModule_AddIntMacro(m, SF_IMMUTABLE)) return NULL;
-    if (PyModule_AddIntMacro(m, SF_APPEND)) return NULL;
-    if (PyModule_AddIntMacro(m, SF_NOUNLINK)) return NULL;
-    if (PyModule_AddIntMacro(m, SF_SNAPSHOT)) return NULL;
-
-    if (PyModule_AddIntConstant(m, "ST_MODE", 0)) return NULL;
-    if (PyModule_AddIntConstant(m, "ST_INO", 1)) return NULL;
-    if (PyModule_AddIntConstant(m, "ST_DEV", 2)) return NULL;
-    if (PyModule_AddIntConstant(m, "ST_NLINK", 3)) return NULL;
-    if (PyModule_AddIntConstant(m, "ST_UID", 4)) return NULL;
-    if (PyModule_AddIntConstant(m, "ST_GID", 5)) return NULL;
-    if (PyModule_AddIntConstant(m, "ST_SIZE", 6)) return NULL;
-    if (PyModule_AddIntConstant(m, "ST_ATIME", 7)) return NULL;
-    if (PyModule_AddIntConstant(m, "ST_MTIME", 8)) return NULL;
-    if (PyModule_AddIntConstant(m, "ST_CTIME", 9)) return NULL;
-
-#ifdef MS_WINDOWS
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_ARCHIVE)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_COMPRESSED)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_DEVICE)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_DIRECTORY)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_ENCRYPTED)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_HIDDEN)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_INTEGRITY_STREAM)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_NORMAL)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_NO_SCRUB_DATA)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_OFFLINE)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_READONLY)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_REPARSE_POINT)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_SPARSE_FILE)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_SYSTEM)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_TEMPORARY)) return NULL;
-    if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_VIRTUAL)) return NULL;
-
-    if (PyModule_AddObject(m, "IO_REPARSE_TAG_SYMLINK",
-        PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK))) return NULL;
-    if (PyModule_AddObject(m, "IO_REPARSE_TAG_MOUNT_POINT",
-        PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT))) return NULL;
-    if (PyModule_AddObject(m, "IO_REPARSE_TAG_APPEXECLINK",
-        PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK))) return NULL;
-#endif
-
-    return m;
+    return PyModuleDef_Init(&statmodule);
 }
 
 #ifdef __cplusplus

@@ -132,7 +132,7 @@ faulthandler faulthandler.c
 #
 # bpo-35053: The module must be builtin since _Py_NewReference()
 # can call _PyTraceMalloc_NewReference().
-_tracemalloc _tracemalloc.c hashtable.c
+_tracemalloc _tracemalloc.c
 
 # PEG-based parser module -- slated to be *the* parser
 _peg_parser _peg_parser.c

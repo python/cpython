@@ -496,7 +496,15 @@ async def wait_for(fut, timeout, *, loop=None):
             # after wait_for() returns.
             # See https://bugs.python.org/issue32751
             await _cancel_and_wait(fut, loop=loop)
-            raise exceptions.TimeoutError()
+            # In case task cancellation failed with some
+            # exception, we should re-raise it
+            # See https://bugs.python.org/issue40607
+            try:
+                fut.result()
+            except exceptions.CancelledError as exc:
+                raise exceptions.TimeoutError() from exc
+            else:
+                raise exceptions.TimeoutError()
     finally:
         timeout_handle.cancel()
 

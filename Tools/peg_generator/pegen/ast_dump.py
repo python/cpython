@@ -6,16 +6,17 @@ always fail. We rely on string comparison of the base classes instead.
 TODO: Remove the above-described hack.
 """
 
+
 def ast_dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     def _format(node, level=0):
         if indent is not None:
             level += 1
-            prefix = '\n' + indent * level
-            sep = ',\n' + indent * level
+            prefix = "\n" + indent * level
+            sep = ",\n" + indent * level
         else:
-            prefix = ''
-            sep = ', '
-        if any(cls.__name__ == 'AST' for cls in node.__class__.__mro__):
+            prefix = ""
+            sep = ", "
+        if any(cls.__name__ == "AST" for cls in node.__class__.__mro__):
             cls = type(node)
             args = []
             allsimple = True
@@ -32,7 +33,7 @@ def ast_dump(node, annotate_fields=True, include_attributes=False, *, indent=Non
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
-                    args.append('%s=%s' % (name, value))
+                    args.append("%s=%s" % (name, value))
                 else:
                     args.append(value)
             if include_attributes and node._attributes:
@@ -45,18 +46,18 @@ def ast_dump(node, annotate_fields=True, include_attributes=False, *, indent=Non
                         continue
                     value, simple = _format(value, level)
                     allsimple = allsimple and simple
-                    args.append('%s=%s' % (name, value))
+                    args.append("%s=%s" % (name, value))
             if allsimple and len(args) <= 3:
-                return '%s(%s)' % (node.__class__.__name__, ', '.join(args)), not args
-            return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args)), False
+                return "%s(%s)" % (node.__class__.__name__, ", ".join(args)), not args
+            return "%s(%s%s)" % (node.__class__.__name__, prefix, sep.join(args)), False
         elif isinstance(node, list):
             if not node:
-                return '[]', True
-            return '[%s%s]' % (prefix, sep.join(_format(x, level)[0] for x in node)), False
+                return "[]", True
+            return "[%s%s]" % (prefix, sep.join(_format(x, level)[0] for x in node)), False
         return repr(node), True
 
-    if all(cls.__name__ != 'AST' for cls in node.__class__.__mro__):
-        raise TypeError('expected AST, got %r' % node.__class__.__name__)
+    if all(cls.__name__ != "AST" for cls in node.__class__.__mro__):
+        raise TypeError("expected AST, got %r" % node.__class__.__name__)
     if indent is not None and not isinstance(indent, str):
-        indent = ' ' * indent
+        indent = " " * indent
     return _format(node)[0]

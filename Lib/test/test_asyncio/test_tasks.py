@@ -80,6 +80,12 @@ class CoroLikeObject:
         return self
 
 
+# The following value can be used as a very small timeout:
+# it passes check "timeout > 0", but has almost
+# no effect on the test performance
+_EPSILON = 0.0001
+
+
 class BaseTaskTests:
 
     Task = None
@@ -465,6 +471,33 @@ class BaseTaskTests:
 
         t = outer()
         self.assertEqual(self.loop.run_until_complete(t), 1042)
+
+    def test_exception_chaining_after_await(self):
+        # Test that when awaiting on a task when an exception is already
+        # active, if the task raises an exception it will be chained
+        # with the original.
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+
+        async def raise_error():
+            raise ValueError
+
+        async def run():
+            try:
+                raise KeyError(3)
+            except Exception as exc:
+                task = self.new_task(loop, raise_error())
+                try:
+                    await task
+                except Exception as exc:
+                    self.assertEqual(type(exc), ValueError)
+                    chained = exc.__context__
+                    self.assertEqual((type(chained), chained.args),
+                        (KeyError, (3,)))
+
+        task = self.new_task(loop, run())
+        loop.run_until_complete(task)
+        loop.close()
 
     def test_cancel(self):
 
@@ -877,12 +910,53 @@ class BaseTaskTests:
 
             inner_task = self.new_task(loop, inner())
 
-            with self.assertRaises(asyncio.TimeoutError):
-                await asyncio.wait_for(inner_task, timeout=0.1)
+            await asyncio.wait_for(inner_task, timeout=_EPSILON)
 
-            self.assertTrue(task_done)
+        with self.assertRaises(asyncio.TimeoutError) as cm:
+            loop.run_until_complete(foo())
 
-        loop.run_until_complete(foo())
+        self.assertTrue(task_done)
+        chained = cm.exception.__context__
+        self.assertEqual(type(chained), asyncio.CancelledError)
+
+    def test_wait_for_reraises_exception_during_cancellation(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        class FooException(Exception):
+            pass
+
+        async def foo():
+            async def inner():
+                try:
+                    await asyncio.sleep(0.2)
+                finally:
+                    raise FooException
+
+            inner_task = self.new_task(loop, inner())
+
+            await asyncio.wait_for(inner_task, timeout=_EPSILON)
+
+        with self.assertRaises(FooException):
+            loop.run_until_complete(foo())
+
+    def test_wait_for_raises_timeout_error_if_returned_during_cancellation(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        async def foo():
+            async def inner():
+                try:
+                    await asyncio.sleep(0.2)
+                except asyncio.CancelledError:
+                    return 42
+
+            inner_task = self.new_task(loop, inner())
+
+            await asyncio.wait_for(inner_task, timeout=_EPSILON)
+
+        with self.assertRaises(asyncio.TimeoutError):
+            loop.run_until_complete(foo())
 
     def test_wait_for_self_cancellation(self):
         loop = asyncio.new_event_loop()
