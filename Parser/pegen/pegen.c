@@ -2054,3 +2054,49 @@ _PyPegen_make_module(Parser *p, asdl_seq *a) {
     }
     return Module(a, type_ignores, p->arena);
 }
+
+// Error reporting helpers
+
+expr_ty
+_PyPegen_get_invalid_target(expr_ty e)
+{
+    if (e == NULL) {
+        return NULL;
+    }
+
+#define VISIT_CONTAINER(CONTAINER, TYPE) do { \
+        Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
+        for (Py_ssize_t i = 0; i < len; i++) {\
+            expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
+            expr_ty child = _PyPegen_get_invalid_target(other);\
+            if (child != NULL) {\
+                return child;\
+            }\
+        }\
+    } while (0)
+
+    // We only need to visit List and Tuple nodes recursively as those
+    // are the only ones that can contain valid names in targets when
+    // they are parsed as expressions. Any other kind of expression
+    // that is a container (like Sets or Dicts) is directly invalid and
+    // we don't need to visit it recursively.
+
+    switch (e->kind) {
+        case List_kind: {
+            VISIT_CONTAINER(e, List);
+            return NULL;
+        }
+        case Tuple_kind: {
+            VISIT_CONTAINER(e, Tuple);
+            return NULL;
+        }
+        case Starred_kind:
+            return _PyPegen_get_invalid_target(e->v.Starred.value);
+        case Name_kind:
+        case Subscript_kind:
+        case Attribute_kind:
+            return NULL;
+        default:
+            return e;
+    }
+}
