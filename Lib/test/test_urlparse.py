@@ -161,18 +161,18 @@ class UrlParseTestCase(unittest.TestCase):
                                      if expect[v][0]}
             result = urllib.parse.parse_qs(orig, keep_blank_values=False)
             self.assertEqual(result, expect_without_blanks,
-                            "Error parsing %r" % orig)
+                             "Error parsing %r" % orig)
 
             result = urllib.parse.parse_qs(orig, standalone_keys=True)
             self.assertEqual(result, expect,
-                            "Error parsing %r" % orig)
+                             "Error parsing %r" % orig)
 
             # Ensure that standalone_keys parsing remains stable when the
             # keep_blank_values flag is enabled
             result = urllib.parse.parse_qs(orig, keep_blank_values=True,
                                            standalone_keys=True)
             self.assertEqual(result, expect,
-                            "Error parsing %r" % orig)
+                             "Error parsing %r" % orig)
 
     def test_roundtrips(self):
         str_cases = [
