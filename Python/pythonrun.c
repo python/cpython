@@ -570,21 +570,25 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
 
     /* Calculate text length excluding trailing newline */
     Py_ssize_t len = strlen(text);
-    if (len > 0 && text[len-1] == '\n')
+    if (len > 0 && text[len-1] == '\n') {
         len--;
+    }
 
     /* Clip offset to at most len */
-    if (offset > len)
+    if (offset > len) {
         offset = len;
+    }
 
     /* Skip past newlines embedded in text */
     for (;;) {
         const char *nl = strchr(text, '\n');
-        if (nl == NULL)
+        if (nl == NULL) {
             break;
+        }
         Py_ssize_t inl = nl - text;
-        if (inl >= (Py_ssize_t)offset)
+        if (inl >= (Py_ssize_t)offset) {
             break;
+        }
         inl += 1;
         text += inl;
         len -= inl;
@@ -596,8 +600,9 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
     PyFile_WriteString(text, f);
 
     /* Make sure there's a newline at the end */
-    if (text[len] != '\n')
+    if (text[len] != '\n') {
         PyFile_WriteString("\n", f);
+    }
 
     /* Don't print caret if it points to the left of the text */
     if (offset < 0)
@@ -605,8 +610,9 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
 
     /* Write caret line */
     PyFile_WriteString("    ", f);
-    while (--offset >= 0)
+    while (--offset >= 0) {
         PyFile_WriteString(" ", f);
+    }
     PyFile_WriteString("^\n", f);
 }
 
