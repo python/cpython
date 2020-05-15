@@ -1,0 +1,1 @@
+Builtin hash modules can now be disabled or selectively enabled with ``./configure --with-builtin-hashes=sha3,blake1``

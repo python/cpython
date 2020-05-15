@@ -5717,6 +5717,32 @@ AC_MSG_RESULT(python)
 AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
 ])
 
+# builtin hash modules
+default_hash_modules="md5,sha1,sha256,sha512,sha3,blake2"
+AC_DEFINE([PY_BUILTIN_HASH_MODULES], [], [enabled builtin hash modules]
+)
+AC_MSG_CHECKING(for --with-builtin-hashes)
+AC_ARG_WITH(builtin-hashes,
+            AS_HELP_STRING([--with-builtin-hashes=$default_hash_modules],
+                           [builtin hash modules,
+                            md5, sha1, sha256, sha512, sha3 (with shake), blake2]),
+[
+case "$withval" in
+    yes)
+        withval=$default_hash_modules
+        ;;
+    no)
+        withval=""
+        ;;
+esac
+AC_MSG_RESULT($withval)
+AC_DEFINE_UNQUOTED(PY_BUILTIN_HASH_MODULES, "$withval")
+],
+[
+AC_MSG_RESULT($default_hash_modules);
+AC_DEFINE_UNQUOTED(PY_BUILTIN_HASH_MODULES, "$default_hash_modules")
+])
+
 # --with-experimental-isolated-subinterpreters
 AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
             [Better isolate subinterpreters, experimental build mode.])
