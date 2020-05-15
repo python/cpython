@@ -1848,12 +1848,13 @@ class TestWhich(BaseTest, unittest.TestCase):
             rv = shutil.which(program, path=self.temp_dir)
             self.assertEqual(rv, temp_filexyz.name)
 
+    # Issue 40592: See https://bugs.python.org/issue40592
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext_with_empty_str(self):
         ext = ".xyz"
         temp_filexyz = tempfile.NamedTemporaryFile(dir=self.temp_dir,
                                                    prefix="Tmp2", suffix=ext)
-        os.chmod(temp_filexyz.name, stat.S_IXUSR)
+        os.chmod(temp_filexyz.name, stat.S_IXUSR | stat.S_IWUSR)
         self.addCleanup(temp_filexyz.close)
 
         # strip path and extension
