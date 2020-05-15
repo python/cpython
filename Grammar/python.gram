@@ -493,7 +493,9 @@ listcomp[expr_ty]:
 tuple[expr_ty]:
     | '(' a=[y=star_named_expression ',' z=[star_named_expressions] { _PyPegen_seq_insert_in_front(p, y, z) } ] ')' {
         _Py_Tuple(a, Load, EXTRA) }
-group[expr_ty]: '(' a=(yield_expr | named_expression) ')' { a }
+group[expr_ty]:
+    | '(' a=(yield_expr | named_expression) ')' { a }
+    | invalid_group
 genexp[expr_ty]:
     | '(' a=expression ~ b=for_if_clauses ')' { _Py_GeneratorExp(a, b, EXTRA) }
     | invalid_comprehension
@@ -659,12 +661,6 @@ invalid_del_stmt:
             "cannot delete %s", _PyPegen_get_expr_name(GET_INVALID_DEL_TARGET(a))
         ) :
         RAISE_SYNTAX_ERROR("invalid syntax") }
-    # This additional alternative is necessary, because (*a) is not a valid star_expression
-    # and will not be caught by the previous one.
-    | 'del' '(' a=starred_expression ')' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            a,
-            "cannot delete starred") }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
@@ -696,3 +692,9 @@ invalid_for_target:
             GET_INVALID_TARGET(a->v.Compare.left),
             "cannot assign to %s", _PyPegen_get_expr_name(GET_INVALID_TARGET(a->v.Compare.left))
         ) }
+
+invalid_group:
+    | '(' a=starred_expression ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a,
+            "can't use starred expression here") }

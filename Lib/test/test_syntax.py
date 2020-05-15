@@ -745,7 +745,7 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("del (1, 2)", "delete literal")
         self._check_error("del None", "delete None")
         self._check_error("del *x", "delete starred")
-        self._check_error("del (*x)", "delete starred")
+        self._check_error("del (*x)", "use starred expression")
         self._check_error("del (*x,)", "delete starred")
         self._check_error("del [*x,]", "delete starred")
         self._check_error("del f()", "delete function call")
