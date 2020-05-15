@@ -289,6 +289,26 @@ Functions
    :mod:`tracemalloc` module as a tuple: ``(current: int, peak: int)``.
 
 
+.. function:: reset_peak()
+
+   Set the peak size of memory blocks traced by the :mod:`tracemalloc` module
+   to the current size.
+
+   The peak memory usage of a specific section of code can be determined as
+   follows::
+
+     tracemalloc.reset_peak()
+
+     # some code
+
+     current, peak = tracemalloc.get_traced_memory()
+
+   ``peak`` will then be the peak size of traced memory blocks after the
+   :func:`reset_peak` call, even if there was a higher peak before that.
+
+   See also :func:`get_traced_memory`.
+
+
 .. function:: get_tracemalloc_memory()
 
    Get the memory usage in bytes of the :mod:`tracemalloc` module used to store
