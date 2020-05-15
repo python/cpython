@@ -2306,8 +2306,8 @@ class PyBuildExt(build_ext):
     def detect_hash_builtins(self):
         # By default we always compile these even when OpenSSL is available
         # (issue #14693). It's harmless and the object code is tiny
-        # (40-50 KiB per module, only loaded when actually used).
-        # Modules can be disabled with --with-builtin-hashes configure flag.
+        # (40-50 KiB per module, only loaded when actually used).  Modules can
+        # be disabled via the --with-builtin-hashlib-hashes configure flag.
         supported = {"md5", "sha1", "sha256", "sha512", "sha3", "blake2"}
 
         configured = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
