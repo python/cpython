@@ -127,15 +127,32 @@ expr_ty _PyPegen_name_token(Parser *p);
 expr_ty _PyPegen_number_token(Parser *p);
 void *_PyPegen_string_token(Parser *p);
 const char *_PyPegen_get_expr_name(expr_ty);
-void *_PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number, const char *errmsg, ...);
+void *_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...);
+void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
+                                          int lineno, int col_offset,
+                                          const char *errmsg, va_list va);
 void *_PyPegen_dummy_name(Parser *p, ...);
+
+Py_LOCAL_INLINE(void *)
+RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype, int lineno,
+                           int col_offset, const char *errmsg, ...)
+{
+    va_list va;
+    va_start(va, errmsg);
+    _PyPegen_raise_error_known_location(p, errtype, lineno, col_offset + 1,
+                                        errmsg, va);
+    va_end(va);
+    return NULL;
+}
+
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define EXTRA_EXPR(head, tail) head->lineno, head->col_offset, tail->end_lineno, tail->end_col_offset, p->arena
 #define EXTRA _start_lineno, _start_col_offset, _end_lineno, _end_col_offset, p->arena
-#define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, 1, msg, ##__VA_ARGS__)
-#define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, 1, msg, ##__VA_ARGS__)
-#define RAISE_SYNTAX_ERROR_NO_COL_OFFSET(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, 0, msg, ##__VA_ARGS__)
+#define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
+#define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
+#define RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, msg, ...) \
+    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->col_offset, msg, ##__VA_ARGS__)
 
 Py_LOCAL_INLINE(void *)
 CHECK_CALL(Parser *p, void *result)

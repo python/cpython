@@ -623,26 +623,31 @@ t_atom[expr_ty]:
 # From here on, there are rules for invalid syntax with specialised error messages
 incorrect_arguments:
     | args ',' '*' { RAISE_SYNTAX_ERROR("iterable argument unpacking follows keyword argument unpacking") }
-    | expression for_if_clauses ',' [args | expression for_if_clauses] {
-        RAISE_SYNTAX_ERROR("Generator expression must be parenthesized") }
+    | a=expression for_if_clauses ',' [args | expression for_if_clauses] {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
-    | expression '=' { RAISE_SYNTAX_ERROR("expression cannot contain assignment, perhaps you meant \"==\"?") }
+    | a=expression '=' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a, "expression cannot contain assignment, perhaps you meant \"==\"?") }
 invalid_named_expression:
     | a=expression ':=' expression {
-        RAISE_SYNTAX_ERROR("cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
 invalid_assignment:
-    | list ':' { RAISE_SYNTAX_ERROR("only single target (not list) can be annotated") }
-    | tuple ':' { RAISE_SYNTAX_ERROR("only single target (not tuple) can be annotated") }
-    | expression ':' expression ['=' annotated_rhs] {
-        RAISE_SYNTAX_ERROR("illegal target for annotation") }
+    | a=list ':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not list) can be annotated") }
+    | a=tuple ':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
+    | a=star_named_expression ',' star_named_expressions* ':' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
+    | a=expression ':' expression ['=' annotated_rhs] {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal target for annotation") }
     | a=expression ('=' | augassign) (yield_expr | star_expressions) {
-        RAISE_SYNTAX_ERROR_NO_COL_OFFSET("cannot assign to %s", _PyPegen_get_expr_name(a)) }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot assign to %s", _PyPegen_get_expr_name(a)) }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
-    | ('[' | '(' | '{') '*' expression for_if_clauses {
-        RAISE_SYNTAX_ERROR("iterable unpacking cannot be used in comprehension") }
+    | ('[' | '(' | '{') a=starred_expression for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable unpacking cannot be used in comprehension") }
 invalid_parameters:
     | param_no_default* (slash_with_default | param_with_default+) param_no_default {
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
@@ -655,4 +660,4 @@ invalid_double_type_comments:
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
 invalid_del_target:
     | a=star_expression &del_target_end {
-        RAISE_SYNTAX_ERROR("cannot delete %s", _PyPegen_get_expr_name(a)) }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot delete %s", _PyPegen_get_expr_name(a)) }

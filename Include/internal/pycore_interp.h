@@ -51,6 +51,19 @@ struct _ceval_state {
 #endif
 };
 
+/* fs_codec.encoding is initialized to NULL.
+   Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
+struct _Py_unicode_fs_codec {
+    char *encoding;   // Filesystem encoding (encoded to UTF-8)
+    int utf8;         // encoding=="utf-8"?
+    char *errors;     // Filesystem errors (encoded to UTF-8)
+    _Py_error_handler error_handler;
+};
+
+struct _Py_unicode_state {
+    struct _Py_unicode_fs_codec fs_codec;
+};
+
 
 /* interpreter state */
 
@@ -97,14 +110,7 @@ struct _is {
     PyObject *codec_error_registry;
     int codecs_initialized;
 
-    /* fs_codec.encoding is initialized to NULL.
-       Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
-    struct {
-        char *encoding;   /* Filesystem encoding (encoded to UTF-8) */
-        int utf8;         /* encoding=="utf-8"? */
-        char *errors;     /* Filesystem errors (encoded to UTF-8) */
-        _Py_error_handler error_handler;
-    } fs_codec;
+    struct _Py_unicode_state unicode;
 
     PyConfig config;
 #ifdef HAVE_DLOPEN
