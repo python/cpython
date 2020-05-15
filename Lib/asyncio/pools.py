@@ -107,7 +107,7 @@ class ThreadPool(AbstractPool):
     async def __aexit__(self, exc_type, exc_value, exc_traceback):
         await self.aclose()
 
-    async def run(self, /, func, *args, **kwargs):
+    async def run(self, func, /, *args, **kwargs):
         if not self._running:
             raise RuntimeError(f"unable to run {func!r}, "
                                "thread pool is not running")
