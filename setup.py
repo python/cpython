@@ -327,6 +327,7 @@ class PyBuildExt(build_ext):
         self.failed = []
         self.failed_on_import = []
         self.missing = []
+        self.disabled_configure = []
         if '-j' in os.environ.get('MAKEFLAGS', ''):
             self.parallel = True
 
@@ -481,6 +482,14 @@ class PyBuildExt(build_ext):
             " setup.py have not")
             print("been built, they are *disabled* in the Setup files:")
             print_three_column([ext.name for ext in mods_disabled])
+            print()
+
+        if self.disabled_configure:
+            print()
+            print("The following modules found by detect_modules() in"
+            " setup.py have not")
+            print("been built, they are *disabled* by configure:")
+            print_three_column(self.disabled_configure)
             print()
 
         if self.failed:
@@ -2295,36 +2304,73 @@ class PyBuildExt(build_ext):
                            libraries=openssl_libs))
 
     def detect_hash_builtins(self):
-        # We always compile these even when OpenSSL is available (issue #14693).
-        # It's harmless and the object code is tiny (40-50 KiB per module,
-        # only loaded when actually used).
-        self.add(Extension('_sha256', ['sha256module.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
-                           depends=['hashlib.h']))
-        self.add(Extension('_sha512', ['sha512module.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
-                           depends=['hashlib.h']))
-        self.add(Extension('_md5', ['md5module.c'],
-                           depends=['hashlib.h']))
-        self.add(Extension('_sha1', ['sha1module.c'],
-                           depends=['hashlib.h']))
+        # By default we always compile these even when OpenSSL is available
+        # (issue #14693). It's harmless and the object code is tiny
+        # (40-50 KiB per module, only loaded when actually used).  Modules can
+        # be disabled via the --with-builtin-hashlib-hashes configure flag.
+        supported = {"md5", "sha1", "sha256", "sha512", "sha3", "blake2"}
 
-        blake2_deps = glob(os.path.join(self.srcdir,
-                                        'Modules/_blake2/impl/*'))
-        blake2_deps.append('hashlib.h')
+        configured = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
+        configured = configured.strip('"').lower()
+        configured = {
+            m.strip() for m in configured.split(",")
+        }
 
-        self.add(Extension('_blake2',
-                           ['_blake2/blake2module.c',
-                            '_blake2/blake2b_impl.c',
-                            '_blake2/blake2s_impl.c'],
-                           depends=blake2_deps))
+        self.disabled_configure.extend(
+            sorted(supported.difference(configured))
+        )
 
-        sha3_deps = glob(os.path.join(self.srcdir,
-                                      'Modules/_sha3/kcp/*'))
-        sha3_deps.append('hashlib.h')
-        self.add(Extension('_sha3',
-                           ['_sha3/sha3module.c'],
-                           depends=sha3_deps))
+        if "sha256" in configured:
+            self.add(Extension(
+                '_sha256', ['sha256module.c'],
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
+                depends=['hashlib.h']
+            ))
+
+        if "sha512" in configured:
+            self.add(Extension(
+                '_sha512', ['sha512module.c'],
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
+                depends=['hashlib.h']
+            ))
+
+        if "md5" in configured:
+            self.add(Extension(
+                '_md5', ['md5module.c'],
+                depends=['hashlib.h']
+            ))
+
+        if "sha1" in configured:
+            self.add(Extension(
+                '_sha1', ['sha1module.c'],
+                depends=['hashlib.h']
+            ))
+
+        if "blake2" in configured:
+            blake2_deps = glob(
+                os.path.join(self.srcdir, 'Modules/_blake2/impl/*')
+            )
+            blake2_deps.append('hashlib.h')
+            self.add(Extension(
+                '_blake2',
+                [
+                    '_blake2/blake2module.c',
+                    '_blake2/blake2b_impl.c',
+                    '_blake2/blake2s_impl.c'
+                ],
+                depends=blake2_deps
+            ))
+
+        if "sha3" in configured:
+            sha3_deps = glob(
+                os.path.join(self.srcdir, 'Modules/_sha3/kcp/*')
+            )
+            sha3_deps.append('hashlib.h')
+            self.add(Extension(
+                '_sha3',
+                ['_sha3/sha3module.c'],
+                depends=sha3_deps
+            ))
 
     def detect_nis(self):
         if MS_WINDOWS or CYGWIN or HOST_PLATFORM == 'qnx6':
