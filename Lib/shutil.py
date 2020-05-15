@@ -52,6 +52,8 @@ elif _WINDOWS:
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 _USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
+
+# CMD defaults in Windows 10
 _WIN_DEFAULT_PATHEXT = ".COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC"
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
