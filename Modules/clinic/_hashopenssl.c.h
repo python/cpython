@@ -733,10 +733,12 @@ PyDoc_STRVAR(_hashlib_get_fips_mode__doc__,
 "\n"
 "Determine the OpenSSL FIPS mode of operation.\n"
 "\n"
-"Effectively any non-zero return value indicates FIPS mode;\n"
-"values other than 1 may have additional significance.\n"
+"For OpenSSL 3.0.0 and newer it returns the state of the default provider\n"
+"in the default OSSL context. It\'s not quite the same as FIPS_mode() but good\n"
+"enough for unittests.\n"
 "\n"
-"See OpenSSL documentation for the FIPS_mode() function for details.");
+"Effectively any non-zero return value indicates FIPS mode;\n"
+"values other than 1 may have additional significance.");
 
 #define _HASHLIB_GET_FIPS_MODE_METHODDEF    \
     {"get_fips_mode", (PyCFunction)_hashlib_get_fips_mode, METH_NOARGS, _hashlib_get_fips_mode__doc__},
@@ -769,4 +771,4 @@ exit:
 #ifndef _HASHLIB_GET_FIPS_MODE_METHODDEF
     #define _HASHLIB_GET_FIPS_MODE_METHODDEF
 #endif /* !defined(_HASHLIB_GET_FIPS_MODE_METHODDEF) */
-/*[clinic end generated code: output=b0703dd5a043394d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4babbd88389a196b input=a9049054013a1b77]*/
