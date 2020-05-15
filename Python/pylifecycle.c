@@ -1561,9 +1561,13 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *config;
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     if (save_tstate != NULL) {
         config = _PyInterpreterState_GetConfig(save_tstate->interp);
-    } else {
+    }
+    else
+#endif
+    {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = PyInterpreterState_Main();
         config = _PyInterpreterState_GetConfig(main_interp);
@@ -1575,6 +1579,11 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
     }
     interp->config._isolated_interpreter = isolated_subinterpreter;
 
+    status = init_interp_create_gil(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
+
     status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
@@ -1583,11 +1592,6 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
     status = init_interp_main(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
-    }
-
-    status = init_interp_create_gil(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
     }
 
     *tstate_p = tstate;

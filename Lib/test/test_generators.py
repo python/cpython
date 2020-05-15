@@ -318,7 +318,7 @@ class ExceptionTest(unittest.TestCase):
 
 class GeneratorThrowTest(unittest.TestCase):
 
-    def test_exception_context_set(self):
+    def test_exception_context_with_yield(self):
         def f():
             try:
                 raise KeyError('a')
@@ -326,6 +326,23 @@ class GeneratorThrowTest(unittest.TestCase):
                 yield
 
         gen = f()
+        gen.send(None)
+        with self.assertRaises(ValueError) as cm:
+            gen.throw(ValueError)
+        context = cm.exception.__context__
+        self.assertEqual((type(context), context.args), (KeyError, ('a',)))
+
+    def test_exception_context_with_yield_from(self):
+        def f():
+            yield
+
+        def g():
+            try:
+                raise KeyError('a')
+            except Exception:
+                yield from f()
+
+        gen = g()
         gen.send(None)
         with self.assertRaises(ValueError) as cm:
             gen.throw(ValueError)
@@ -342,9 +359,6 @@ class GeneratorThrowTest(unittest.TestCase):
             try:
                 yield
             except Exception:
-                # Without the `gi_exc_state.exc_type != Py_None` in
-                # _gen_throw(), this line was causing a crash ("Segmentation
-                # fault (core dumped)") on e.g. Fedora 32.
                 raise RuntimeError
 
         gen = g()
@@ -1907,7 +1921,7 @@ SyntaxError: cannot assign to yield expression
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):
   ...
-SyntaxError: cannot assign to yield expression
+SyntaxError: 'yield expression' is an illegal expression for augmented assignment
 
 
 Now check some throw() conditions:

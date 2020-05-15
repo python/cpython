@@ -845,6 +845,7 @@ with_computed_gotos
 with_ensurepip
 with_openssl
 with_ssl_default_suites
+with_experimental_isolated_subinterpreters
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1575,6 +1576,9 @@ Optional Packages:
                           leave OpenSSL's defaults untouched, STRING: use a
                           custom string, PROTOCOL_SSLv2 ignores the setting,
                           see Doc/library/ssl.rst
+  --with-experimental-isolated-subinterpreters
+                          better isolate subinterpreters, experimental build
+                          mode (default is no)
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -17486,6 +17490,30 @@ $as_echo "python" >&6; }
 $as_echo "#define PY_SSL_DEFAULT_CIPHERS 1" >>confdefs.h
 
 
+fi
+
+
+# --with-experimental-isolated-subinterpreters
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-experimental-isolated-subinterpreters" >&5
+$as_echo_n "checking for --with-experimental-isolated-subinterpreters... " >&6; }
+
+# Check whether --with-experimental-isolated-subinterpreters was given.
+if test "${with_experimental_isolated_subinterpreters+set}" = set; then :
+  withval=$with_experimental_isolated_subinterpreters;
+if test "$withval" != no
+then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+  $as_echo "#define EXPERIMENTAL_ISOLATED_SUBINTERPRETERS 1" >>confdefs.h
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 

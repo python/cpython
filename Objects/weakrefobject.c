@@ -665,10 +665,12 @@ proxy_iternext(PyWeakReference *proxy)
 
 
 WRAP_METHOD(proxy_bytes, __bytes__)
+WRAP_METHOD(proxy_reversed, __reversed__)
 
 
 static PyMethodDef proxy_methods[] = {
         {"__bytes__", proxy_bytes, METH_NOARGS},
+        {"__reversed__", proxy_reversed, METH_NOARGS},
         {NULL, NULL}
 };
 
@@ -730,6 +732,21 @@ static PyMappingMethods proxy_as_mapping = {
 };
 
 
+static Py_hash_t
+proxy_hash(PyObject *self)
+{
+    PyWeakReference *proxy = (PyWeakReference *)self;
+    if (!proxy_checkref(proxy)) {
+        return -1;
+    }
+    PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    Py_INCREF(obj);
+    Py_hash_t res = PyObject_Hash(obj);
+    Py_DECREF(obj);
+    return res;
+}
+
+
 PyTypeObject
 _PyWeakref_ProxyType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -746,7 +763,7 @@ _PyWeakref_ProxyType = {
     &proxy_as_number,                   /* tp_as_number */
     &proxy_as_sequence,                 /* tp_as_sequence */
     &proxy_as_mapping,                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
+    proxy_hash,                         /* tp_hash */
     0,                                  /* tp_call */
     proxy_str,                          /* tp_str */
     proxy_getattr,                      /* tp_getattro */
