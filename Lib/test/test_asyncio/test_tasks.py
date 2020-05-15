@@ -542,8 +542,8 @@ class BaseTaskTests:
     def test_cancel_with_message_then_future_result(self):
         # Test Future.result() after calling cancel() with a message.
         cases = [
-            ((), ()),
-            ((None,), ()),
+            ((), ('',)),
+            ((None,), ('',)),
             (('my message',), ('my message',)),
             # Non-string values should roundtrip.
             ((5,), (5,)),
@@ -572,8 +572,8 @@ class BaseTaskTests:
     def test_cancel_with_message_then_future_exception(self):
         # Test Future.exception() after calling cancel() with a message.
         cases = [
-            ((), ()),
-            ((None,), ()),
+            ((), ('',)),
+            ((None,), ('',)),
             (('my message',), ('my message',)),
             # Non-string values should roundtrip.
             ((5,), (5,)),
@@ -2344,8 +2344,8 @@ class BaseTaskTests:
 
     def test_cancel_gather_2(self):
         cases = [
-            ((), ()),
-            ((None,), ()),
+            ((), ('',)),
+            ((None,), ('',)),
             (('my message',), ('my message',)),
             # Non-string values should roundtrip.
             ((5,), (5,)),

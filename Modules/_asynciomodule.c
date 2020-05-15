@@ -601,7 +601,9 @@ create_cancelled_error(PyObject *msg)
 {
     PyObject *exc;
     if (msg == NULL || msg == Py_None) {
-        exc = PyObject_CallNoArgs(asyncio_CancelledError);
+        msg = PyUnicode_FromString("");
+        exc = PyObject_CallOneArg(asyncio_CancelledError, msg);
+        Py_DECREF(msg);
     } else {
         exc = PyObject_CallOneArg(asyncio_CancelledError, msg);
     }
