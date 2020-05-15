@@ -77,7 +77,7 @@ PyDoc_STRVAR(EVPXOF_digest__doc__,
     {"digest", (PyCFunction)(void(*)(void))EVPXOF_digest, METH_FASTCALL|METH_KEYWORDS, EVPXOF_digest__doc__},
 
 static PyObject *
-EVPXOF_digest_impl(EVPobject *self, size_t length);
+EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length);
 
 static PyObject *
 EVPXOF_digest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -86,14 +86,28 @@ EVPXOF_digest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     static const char * const _keywords[] = {"length", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "digest", 0};
     PyObject *argsbuf[1];
-    size_t length;
+    Py_ssize_t length;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_Size_t_Converter(args[0], &length)) {
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
     return_value = EVPXOF_digest_impl(self, length);
 
@@ -115,7 +129,7 @@ PyDoc_STRVAR(EVPXOF_hexdigest__doc__,
     {"hexdigest", (PyCFunction)(void(*)(void))EVPXOF_hexdigest, METH_FASTCALL|METH_KEYWORDS, EVPXOF_hexdigest__doc__},
 
 static PyObject *
-EVPXOF_hexdigest_impl(EVPobject *self, size_t length);
+EVPXOF_hexdigest_impl(EVPobject *self, Py_ssize_t length);
 
 static PyObject *
 EVPXOF_hexdigest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -124,14 +138,28 @@ EVPXOF_hexdigest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
     static const char * const _keywords[] = {"length", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "hexdigest", 0};
     PyObject *argsbuf[1];
-    size_t length;
+    Py_ssize_t length;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_Size_t_Converter(args[0], &length)) {
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
     return_value = EVPXOF_hexdigest_impl(self, length);
 
@@ -1215,4 +1243,4 @@ exit:
 #ifndef _HASHLIB_GET_FIPS_MODE_METHODDEF
     #define _HASHLIB_GET_FIPS_MODE_METHODDEF
 #endif /* !defined(_HASHLIB_GET_FIPS_MODE_METHODDEF) */
-/*[clinic end generated code: output=b0e27228e104763d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a39bf0a766d7cdf7 input=a9049054013a1b77]*/

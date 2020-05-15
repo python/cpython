@@ -1,2 +1,2 @@
 The :mod:`hashlib` module can now use SHA3 hashes and SHAKE XOF from OpenSSL
-1.1.1 by default.
+when available.

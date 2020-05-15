@@ -550,14 +550,14 @@ static PyType_Spec EVPtype_spec = {
 /*[clinic input]
 _hashlib.HASHXOF.digest as EVPXOF_digest
 
-  length: size_t
+  length: Py_ssize_t
 
 Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
-EVPXOF_digest_impl(EVPobject *self, size_t length)
-/*[clinic end generated code: output=332f67f4c7e51390 input=18ab5815ce63eb88]*/
+EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length)
+/*[clinic end generated code: output=ef9320c23280efad input=816a6537cea3d1db]*/
 {
     EVP_MD_CTX *temp_ctx;
     PyObject *retval = PyBytes_FromStringAndSize(NULL, length);
@@ -594,14 +594,14 @@ EVPXOF_digest_impl(EVPobject *self, size_t length)
 /*[clinic input]
 _hashlib.HASHXOF.hexdigest as EVPXOF_hexdigest
 
-    length: size_t
+    length: Py_ssize_t
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
-EVPXOF_hexdigest_impl(EVPobject *self, size_t length)
-/*[clinic end generated code: output=840206a4bcb9ec18 input=f9540ebfe5881bdd]*/
+EVPXOF_hexdigest_impl(EVPobject *self, Py_ssize_t length)
+/*[clinic end generated code: output=eb3e6ee7788bf5b2 input=5f9d6a8f269e34df]*/
 {
     unsigned char *digest;
     EVP_MD_CTX *temp_ctx;
@@ -635,7 +635,7 @@ EVPXOF_hexdigest_impl(EVPobject *self, size_t length)
 
     EVP_MD_CTX_free(temp_ctx);
 
-    retval = _Py_strhex((const char *)digest, (Py_ssize_t)length);
+    retval = _Py_strhex((const char *)digest, length);
     PyMem_Free(digest);
     return retval;
 }
@@ -1545,6 +1545,7 @@ PyInit__hashlib(void)
     );
     Py_DECREF(bases);
     if (EVPXOFtype == NULL) {
+        Py_DECREF(m);
         return NULL;
     }
     state->EVPXOFtype = EVPXOFtype;
