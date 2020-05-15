@@ -138,15 +138,15 @@ SyntaxError: cannot assign to conditional expression
 
 >>> a, b += 1, 2
 Traceback (most recent call last):
-SyntaxError: illegal expression for augmented assignment
+SyntaxError: tuple is an illegal expression for augmented assignment
 
 >>> (a, b) += 1, 2
 Traceback (most recent call last):
-SyntaxError: illegal expression for augmented assignment
+SyntaxError: tuple is an illegal expression for augmented assignment
 
 >>> [a, b] += 1, 2
 Traceback (most recent call last):
-SyntaxError: illegal expression for augmented assignment
+SyntaxError: list is an illegal expression for augmented assignment
 
 From compiler_complex_args():
 
@@ -353,16 +353,16 @@ More set_context():
 
 >>> (x for x in x) += 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to generator expression
+SyntaxError: generator expression is an illegal expression for augmented assignment
 >>> None += 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to None
+SyntaxError: None is an illegal expression for augmented assignment
 >>> __debug__ += 1
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 >>> f() += 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to function call
+SyntaxError: function call is an illegal expression for augmented assignment
 
 
 Test continue in finally in weird combinations.
@@ -695,6 +695,7 @@ class SyntaxTestCase(unittest.TestCase):
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
 
+    @unittest.skipIf(support.use_old_parser(), "The old parser cannot generate these error messages")
     def test_assign_del(self):
         self._check_error("del (,)", "invalid syntax")
         self._check_error("del 1", "delete literal")

@@ -2094,17 +2094,3 @@ _PyPegen_get_invalid_target(expr_ty e)
             return e;
     }
 }
-
-void *
-_PyPegen_raise_syntax_error_for_augassign(Parser *p, expr_ty e) {
-    expr_ty invalid_target = _PyPegen_get_invalid_target(e);
-
-    if (invalid_target != NULL) {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(invalid_target,
-        "cannot assign to %s", _PyPegen_get_expr_name(invalid_target));
-    } else {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(e, "illegal expression for augmented assignment");
-    }
-    return NULL;
-}
-
