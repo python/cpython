@@ -1,0 +1,1 @@
+Produce better error messages for invalid targets. The error message remains the same for invalid `del` targets (`cannot delete <expr_type>`) and changes for invalid targets in `for` and `with` statements. In `for` statements the new error message is `'<expr_type>' is an illegal 'for' target`, while in `with` statements it is `'<expr_type>' is an illegal 'with' target`.
