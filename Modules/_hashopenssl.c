@@ -32,6 +32,10 @@ module _hashlib
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=c2b4ff081bac4be1]*/
 
+#ifndef OPENSSL_THREADS
+#  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
+#endif
+
 #define MUNCH_SIZE INT_MAX
 
 #ifndef HASH_OBJ_CONSTRUCTOR
