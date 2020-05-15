@@ -2657,7 +2657,7 @@ PyDoc_STRVAR(zip_doc,
 The zip object yields n-length tuples, where n is the number of iterables\n\
 passed as positional arguments to zip().  The i-th element in every tuple\n\
 comes from the i-th iterable argument to zip().  This continues until the\n\
-shortest iterable in the argument iterables is exhausted.");
+shortest argument is exhausted.");
 
 PyTypeObject PyZip_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
