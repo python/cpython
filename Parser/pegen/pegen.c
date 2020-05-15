@@ -2075,6 +2075,12 @@ _PyPegen_get_invalid_target(expr_ty e)
         }\
     } while (0)
 
+    // We only need to visit List and Tuple nodes recursively as those
+    // are the only ones that can contain valid names in targets when
+    // they are parsed as expressions. Any other kind of expression
+    // that is a container (like Sets or Dicts) is directly invalid and
+    // we don't need to visit it recursively.
+
     switch (e->kind) {
         case List_kind: {
             VISIT_CONTAINER(e, List);
