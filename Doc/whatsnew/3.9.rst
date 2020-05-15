@@ -314,6 +314,15 @@ Added a new function :func:`gc.is_finalized` to check if an object has been
 finalized by the garbage collector. (Contributed by Pablo Galindo in
 :issue:`39322`.)
 
+hashlib
+-------
+
+Builtin hash modules can now be disabled with
+``./configure --without-builtin-hashlib-hashes`` or selectively enabled with
+e.g. ``./configure --with-builtin-hashlib-hashes=sha3,blake2`` to force use
+of OpenSSL based implementation.
+(Contributed by Christian Heimes in :issue:`40479`)
+
 http
 ----
 
