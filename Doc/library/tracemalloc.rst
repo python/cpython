@@ -249,6 +249,45 @@ Example of output of the Python test suite::
 
 See :meth:`Snapshot.statistics` for more options.
 
+Get the peak memory usage of a specific piece of code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Code to determine the peak memory usage of a specific section of code::
+
+  import tracemalloc
+
+  tracemalloc.start()
+
+  # Example: allocate a large piece of memory, temporarily
+  large_sum = sum(list(range(100000)))
+
+  first_size, first_peak = tracemalloc.get_traced_memory()
+
+  tracemalloc.reset_peak()
+
+  # Example: allocate a smaller piece of memory
+  small_sum = sum(list(range(1000)))
+
+  second_size, second_peak = tracemalloc.get_traced_memory()
+
+  print(f"{first_size=}, {first_peak=}")
+  print(f"{second_size=}, {second_peak=}")
+
+Output::
+
+  first_size=664, first_peak=3592984
+  second_size=804, second_peak=29704
+
+``second_peak`` is the peak size of traced memory blocks during the computation
+of ``small_sum`` (after the :func:`reset_peak` call). Notably, the computation
+of ``large_sum`` results in a higher peak, but we have still been able to
+observe a smaller peak. In this case, both peaks are much higher than the final
+memory usage, and which suggests we could optimise (by removing the unnecessary
+call to :class:`list`, and writing ``sum(range(...))``).
+
+:func:`reset_peak` only modifies the recorded peak size, and does not modify or
+clear any traces. Snapshots from before a call to :func:`reset_peak` can be
+meaningfully compared to snapshots after the call.
 
 API
 ---
@@ -293,18 +332,6 @@ Functions
 
    Set the peak size of memory blocks traced by the :mod:`tracemalloc` module
    to the current size.
-
-   The peak memory usage of a specific section of code can be determined as
-   follows::
-
-     tracemalloc.reset_peak()
-
-     # some code
-
-     current, peak = tracemalloc.get_traced_memory()
-
-   ``peak`` will then be the peak size of traced memory blocks after the
-   :func:`reset_peak` call, even if there was a higher peak before that.
 
    See also :func:`get_traced_memory`.
 
