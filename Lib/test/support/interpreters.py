@@ -11,7 +11,7 @@ __all__ = [
 
 
 def create(*, isolated=True):
-    """ 
+    """
     Initialize a new (idle) Python interpreter.
 
     """
@@ -19,14 +19,14 @@ def create(*, isolated=True):
     return Interpreter(id, isolated=isolated)
 
 def list_all():
-    """ 
+    """
     Get all existing interpreters.
     """
     return [Interpreter(id) for id in
             _interpreters.list_all()]
 
 def get_current():
-    """ 
+    """
     Get the currently running interpreter.
     """
     id = _interpreters.get_current()
@@ -88,14 +88,14 @@ class Interpreter:
 
 
 def is_shareable(obj):
-    """ 
+    """
     Return `True` if the object's data can be
     shared between interpreters and `False` otherwise.
     """
     return _interpreters.is_shareable(obj)
 
 def create_channel():
-    """ 
+    """
     Create a new channel for passing data between
     interpreters.
     """
@@ -104,7 +104,7 @@ def create_channel():
     return (RecvChannel(cid), SendChannel(cid))
 
 def list_all_channels():
-    """ 
+    """
     Get all open channels.
     """
     return [(RecvChannel(cid), SendChannel(cid))
@@ -133,7 +133,7 @@ class RecvChannel:
             time.sleep(_delay)
             obj = _interpreters.channel_recv(self._id, sentinel)
         return obj
-    
+
     _NOT_SET = object()
 
     def recv_nowait(self, default=None):
@@ -158,7 +158,7 @@ class SendChannel:
         self._id = id
 
     def send(self, obj):
-        """ 
+        """
         Send the object (i.e. its data) to the receiving
         end of the channel and wait. Associate the interpreter
         with the channel.
@@ -168,7 +168,7 @@ class SendChannel:
         time.sleep(2)
 
     def send_nowait(self, obj):
-        """ 
+        """
         Like send(), but return False if not received.
         """
 
