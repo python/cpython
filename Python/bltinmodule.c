@@ -2649,9 +2649,14 @@ static PyMethodDef zip_methods[] = {
 };
 
 PyDoc_STRVAR(zip_doc,
-"zip(*iterables) --> zip object\n\
+"zip(*iterables) --> An iterable zip object that yields tuples.\n\
 \n\
-Return a zip object whose .__next__() method returns a tuple where\n\
+Upon any of the input iterables being exhausted, the zip stops.\n\
+\n\
+   >>> list(zip('abcdefg', range(3), range(4)))\n\
+   [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]\n\
+\n\
+Returns a zip object whose .__next__() method returns a tuple where\n\
 the i-th element comes from the i-th iterable argument.  The .__next__()\n\
 method continues until the shortest iterable in the argument sequence\n\
 is exhausted and then it raises StopIteration.");
