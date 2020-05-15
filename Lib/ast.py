@@ -62,20 +62,23 @@ def literal_eval(node_or_string):
         node_or_string = parse(node_or_string, mode='eval')
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
-    def _raise_malformed_node(node):
-        raise ValueError(f'malformed node or string: {node!r}')
-    def _convert_num(node):
+    def _raise_malformed_node(node, context = None):
+        message = "malformed node or string"
+        if context is not None and isinstance(node, AST):
+            message += f" in {context} context"
+        raise ValueError(f'{message}: {node!r}')
+    def _convert_num(node, context):
         if not isinstance(node, Constant) or type(node.value) not in (int, float, complex):
-            _raise_malformed_node(node)
+            _raise_malformed_node(node, context)
         return node.value
-    def _convert_signed_num(node):
+    def _convert_signed_num(node, context):
         if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
-            operand = _convert_num(node.operand)
+            operand = _convert_num(node.operand, "unary operation")
             if isinstance(node.op, UAdd):
                 return + operand
             else:
                 return - operand
-        return _convert_num(node)
+        return _convert_num(node, context)
     def _convert(node):
         if isinstance(node, Constant):
             return node.value
@@ -90,18 +93,18 @@ def literal_eval(node_or_string):
             return set()
         elif isinstance(node, Dict):
             if len(node.keys) != len(node.values):
-                _raise_malformed_node(node)
+                _raise_malformed_node(node, "dictionary")
             return dict(zip(map(_convert, node.keys),
                             map(_convert, node.values)))
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
-            left = _convert_signed_num(node.left)
-            right = _convert_num(node.right)
+            left = _convert_signed_num(node.left, "binary operation")
+            right = _convert_num(node.right, "binary operation")
             if isinstance(left, (int, float)) and isinstance(right, complex):
                 if isinstance(node.op, Add):
                     return left + right
                 else:
                     return left - right
-        return _convert_signed_num(node)
+        return _convert_signed_num(node, "literal")
     return _convert(node_or_string)
 
 
