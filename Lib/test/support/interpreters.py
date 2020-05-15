@@ -6,7 +6,6 @@ __all__ = [
     'Interpreter', 'get_current', 'get_main', 'create', 'list_all',
     'SendChannel', 'RecvChannel',
     'create_channel', 'list_all_channels', 'is_shareable',
-    'RunFailedError',
     ]
 
 
