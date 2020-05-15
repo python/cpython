@@ -72,16 +72,17 @@ class FileList:
             try:
                 clip = self.root.clipboard_get().encode('utf-8')
                 if clip and sys.platform[:3] == 'win' and \
-                   len(clip) <= io.DEFAULT_BUFFER_SIZE:  # Required to avoid exceeding the pipe bufsize
-                    p = subprocess.Popen('clip', shell=True, stdin=subprocess.PIPE)
-                    p.stdin.write(clip)
-                    p.stdin.close()
-            except:
-                # Ignore anything that goes wrong
-                # Partly because it doesn't matter
-                # Mostly because we must reach the quit
+                   len(clip) <= io.DEFAULT_BUFFER_SIZE:
+                    # content size check required to avoid exceeding the pipe bufsize
+                    
+                    # we work directly with stdin as '.communicate' & '.__exit__' call '.wait'
+                    with subprocess.Popen('clip', shell=True, stdin=subprocess.PIPE).stdin as p:
+                        p.write(clip)
+            except OSError:
+                # 'OSError's can probably be ignored (others may not)
                 pass
-            self.root.quit()
+            finally:
+                self.root.quit()
 
     def filename_changed_edit(self, edit):
         edit.saved_change_hook()
