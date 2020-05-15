@@ -10875,7 +10875,7 @@ invalid_assignment_rule(Parser *p)
             (_tmp_129_var = _tmp_129_rule(p))  // yield_expr | star_expressions
         )
         {
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "%s is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;

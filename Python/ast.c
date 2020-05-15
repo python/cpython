@@ -3173,7 +3173,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             case Subscript_kind:
                 break;
             default:
-                ast_error(c, ch, "%s is an illegal expression for augmented assignment",
+                ast_error(c, ch, "'%s' is an illegal expression for augmented assignment",
                           get_expr_name(expr1));
                 return NULL;
         }
