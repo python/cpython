@@ -155,7 +155,7 @@ Public functions
    and a false value otherwise.
 
    The *maxlevels* parameter is used to limit the depth of the recursion; it
-   defaults to ``10``.
+   defaults to ``sys.getrecursionlimit()``.
 
    If *ddir* is given, it is prepended to the path to each file being compiled
    for use in compilation time tracebacks, and is also compiled in to the
@@ -228,6 +228,7 @@ Public functions
 
    .. versionchanged:: 3.9
       Added *stripdir*, *prependdir*, *limit_sl_dest* and *hardlink_dupes* arguments.
+      Default value of *maxlevels* was changed from ``10`` to ``sys.getrecursionlimit()``
 
 .. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, invalidation_mode=None, \*, stripdir=None, prependdir=None, limit_sl_dest=None, hardlink_dupes=False)
 
