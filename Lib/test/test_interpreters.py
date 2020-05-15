@@ -6,7 +6,7 @@ import unittest
 import time
 
 import _xxsubinterpreters as _interpreters
-from test.support import _interpreters as interpreters
+from test.support import interpreters
 
 def _captured_script(script):
     r, w = os.pipe()
@@ -88,30 +88,11 @@ class CreateTests(TestBase):
         main, = interpreters.list_all()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
-            from test.support import _interpreters as interpreters
+            from test.support import interpreters
             interp = interpreters.create()
             print(interp)
             """))
         interp2 = out.strip()
-
-        self.assertEqual(len(set(interpreters.list_all())), len({main, interp, interp2}))
-
-    def test_in_threaded_subinterpreter(self):
-        main, = interpreters.list_all()
-        interp = interpreters.create()
-        interp2 = None
-        def f():
-            nonlocal interp2
-            out = _run_output(interp, dedent("""
-                from test.support import _interpreters as interpreters
-                interp = interpreters.create()
-                print(interp)
-                """))
-            interp2 = int(out.strip())
-
-        t = threading.Thread(target=f)
-        t.start()
-        t.join()
 
         self.assertEqual(len(set(interpreters.list_all())), len({main, interp, interp2}))
 
@@ -154,7 +135,7 @@ class GetCurrentTests(TestBase):
         main = _interpreters.get_main()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
-            from test.support import _interpreters as interpreters
+            from test.support import interpreters
             cur = interpreters.get_current()
             print(cur)
             """))
@@ -284,7 +265,7 @@ class TestInterpreterDestroy(TestBase):
         main, = interpreters.list_all()
         interp = interpreters.create()
         script = dedent(f"""
-            from test.support import _interpreters as interpreters
+            from test.support import interpreters
             try:
                 main = interpreters.get_current()
                 main.close()
@@ -299,7 +280,7 @@ class TestInterpreterDestroy(TestBase):
         main, = interpreters.list_all()
         interp1 = interpreters.create()
         script = dedent(f"""
-            from test.support import _interpreters as interpreters
+            from test.support import interpreters
             interp2 = interpreters.create()
             interp2.close()
             """)
@@ -473,6 +454,7 @@ class TestChannel(TestBase):
         self.assertEqual(len(set(after) - set(before)),
                          len({channels1, channels2, channels3}))
 
+
 class TestSendRecv(TestBase):
 
     def test_send_recv_main(self):
@@ -487,7 +469,7 @@ class TestSendRecv(TestBase):
     def test_send_recv_same_interpreter(self):
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
-            from test.support import _interpreters as interpreters
+            from test.support import interpreters
             r, s = interpreters.create_channel()
             orig = b'spam'
             s.send(orig)
@@ -516,11 +498,6 @@ class TestSendRecv(TestBase):
 
         self.assertEqual(obj, b'spam')
 
-    def test_recv_empty(self):
-        r, s = interpreters.create_channel()
-        with self.assertRaises(interpreters.ChannelEmptyError):
-            r.recv()
-
     def test_send_recv_nowait_main(self):
         r, s = interpreters.create_channel()
         orig = b'spam'
@@ -533,7 +510,7 @@ class TestSendRecv(TestBase):
     def test_send_recv_nowait_same_interpreter(self):
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
-            from test.support import _interpreters as interpreters
+            from test.support import interpreters
             r, s = interpreters.create_channel()
             orig = b'spam'
             s.send(orig)
@@ -542,7 +519,7 @@ class TestSendRecv(TestBase):
             assert obj == orig
             """))
 
-    def test_send_recv_nowait_different_threads(self):
+
         r, s = interpreters.create_channel()
 
         def f():
@@ -550,7 +527,7 @@ class TestSendRecv(TestBase):
                 try:
                     obj = r.recv_nowait()
                     break
-                except interpreters.ChannelEmptyError:
+                except _interpreters.ChannelEmptyError:
                     time.sleep(0.1)
             s.send(obj)
         t = threading.Thread(target=f)
@@ -564,5 +541,5 @@ class TestSendRecv(TestBase):
 
     def test_recv_nowait_empty(self):
         r, s = interpreters.create_channel()
-        with self.assertRaises(interpreters.ChannelEmptyError):
+        with self.assertRaises(_interpreters.ChannelEmptyError):
             r.recv_nowait()

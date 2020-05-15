@@ -1,8 +1,5 @@
-:mod:`_interpreters` --- High-level Subinterpreters Module
-==========================================================
-
-.. module:: _interpreters
-   :synopsis: High-level Subinterpreters Module.
+High-level implementation of Subinterpreters
+============================================
 
 **Source code:** :source:`Lib/test/support/_interpreters.py`
 
@@ -17,7 +14,7 @@ It is a wrapper around the low-level ``__xxsubinterpreters`` module.
 Interpreter Objects
 -------------------
 
-The Interpreter object represents a single interpreter.
+The ``Interpreter`` object represents a single interpreter.
 
 .. class:: Interpreter(id)
 
@@ -41,7 +38,7 @@ The Interpreter object represents a single interpreter.
 RecvChannel Objects
 -------------------
 
-The RecvChannel object represents a recieving channel.
+The ``RecvChannel`` object represents a recieving channel.
 
 .. class:: RecvChannel(id)
 
