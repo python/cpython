@@ -583,7 +583,7 @@ non-important content
                              ])
 
         # Different error message is raised for other whitespace characters.
-        self.assertAllRaise(SyntaxError, 'invalid character in identifier',
+        self.assertAllRaise(SyntaxError, r"invalid non-printable character U\+00A0",
                             ["f'''{\xa0}'''",
                              "\xa0",
                              ])

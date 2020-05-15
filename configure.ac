@@ -5717,6 +5717,23 @@ AC_MSG_RESULT(python)
 AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
 ])
 
+# --with-experimental-isolated-subinterpreters
+AH_TEMPLATE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS,
+            [Better isolate subinterpreters, experimental build mode.])
+AC_MSG_CHECKING(for --with-experimental-isolated-subinterpreters)
+AC_ARG_WITH(experimental-isolated-subinterpreters,
+  AS_HELP_STRING([--with-experimental-isolated-subinterpreters],
+                 [better isolate subinterpreters, experimental build mode (default is no)]),
+[
+if test "$withval" != no
+then
+  AC_MSG_RESULT(yes);
+  AC_DEFINE(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS)
+else
+  AC_MSG_RESULT(no);
+fi],
+[AC_MSG_RESULT(no)])
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)

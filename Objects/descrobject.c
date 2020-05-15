@@ -127,7 +127,11 @@ classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
                      ((PyTypeObject *)type)->tp_name);
         return NULL;
     }
-    return PyCFunction_NewEx(descr->d_method, type, NULL);
+    PyTypeObject *cls = NULL;
+    if (descr->d_method->ml_flags & METH_METHOD) {
+        cls = descr->d_common.d_type;
+    }
+    return PyCMethod_New(descr->d_method, type, NULL, cls);
 }
 
 static PyObject *
@@ -137,7 +141,19 @@ method_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
 
     if (descr_check((PyDescrObject *)descr, obj, &res))
         return res;
-    return PyCFunction_NewEx(descr->d_method, obj, NULL);
+    if (descr->d_method->ml_flags & METH_METHOD) {
+        if (PyType_Check(type)) {
+            return PyCMethod_New(descr->d_method, obj, NULL, descr->d_common.d_type);
+        } else {
+            PyErr_Format(PyExc_TypeError,
+                        "descriptor '%V' needs a type, not '%s', as arg 2",
+                        descr_name((PyDescrObject *)descr),
+                        Py_TYPE(type)->tp_name);
+            return NULL;
+        }
+    } else {
+        return PyCFunction_NewEx(descr->d_method, obj, NULL);
+    }
 }
 
 static PyObject *
@@ -332,6 +348,27 @@ method_vectorcall_VARARGS_KEYWORDS(
 exit:
     Py_DECREF(argstuple);
     Py_XDECREF(kwdict);
+    return result;
+}
+
+static PyObject *
+method_vectorcall_FASTCALL_KEYWORDS_METHOD(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (method_check_args(func, args, nargs, NULL)) {
+        return NULL;
+    }
+     NULL;
+    PyCMethod meth = (PyCMethod) method_enter_call(tstate, func);
+    if (meth == NULL) {
+        return NULL;
+    }
+    PyObject *result = meth(args[0],
+                            ((PyMethodDescrObject *)func)->d_common.d_type,
+                            args+1, nargs-1, kwnames);
+    Py_LeaveRecursiveCall();
     return result;
 }
 
@@ -868,7 +905,8 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
 {
     /* Figure out correct vectorcall function to use */
     vectorcallfunc vectorcall;
-    switch (method->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O | METH_KEYWORDS))
+    switch (method->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS |
+                                METH_O | METH_KEYWORDS | METH_METHOD))
     {
         case METH_VARARGS:
             vectorcall = method_vectorcall_VARARGS;
@@ -887,6 +925,9 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
             break;
         case METH_O:
             vectorcall = method_vectorcall_O;
+            break;
+        case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
+            vectorcall = method_vectorcall_FASTCALL_KEYWORDS_METHOD;
             break;
         default:
             PyErr_Format(PyExc_SystemError,
@@ -1077,6 +1118,13 @@ mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
     return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId_copy);
 }
 
+static PyObject *
+mappingproxy_reversed(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
+{
+    _Py_IDENTIFIER(__reversed__);
+    return _PyObject_CallMethodIdNoArgs(pp->mapping, &PyId___reversed__);
+}
+
 /* WARNING: mappingproxy methods must not give access
             to the underlying mapping */
 
@@ -1094,6 +1142,8 @@ static PyMethodDef mappingproxy_methods[] = {
      PyDoc_STR("D.copy() -> a shallow copy of D")},
     {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
+    {"__reversed__", (PyCFunction)mappingproxy_reversed, METH_NOARGS,
+     PyDoc_STR("D.__reversed__() -> reverse iterator")},
     {0}
 };
 

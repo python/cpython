@@ -1,0 +1,2 @@
+Add pass-throughs for :func:`hash` and :func:`reversed` to
+:class:`weakref.proxy` objects. Patch by Pablo Galindo.

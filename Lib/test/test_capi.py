@@ -13,6 +13,8 @@ import threading
 import time
 import unittest
 import weakref
+import importlib.machinery
+import importlib.util
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support.script_helper import assert_python_failure, assert_python_ok
@@ -772,6 +774,77 @@ class PyMemPymallocDebugTests(PyMemDebugTests):
 class PyMemDefaultTests(PyMemDebugTests):
     # test default allocator of Python compiled in debug mode
     PYTHONMALLOC = ''
+
+
+class Test_ModuleStateAccess(unittest.TestCase):
+    """Test access to module start (PEP 573)"""
+
+    # The C part of the tests lives in _testmultiphase, in a module called
+    # _testmultiphase_meth_state_access.
+    # This module has multi-phase initialization, unlike _testcapi.
+
+    def setUp(self):
+        fullname = '_testmultiphase_meth_state_access'  # XXX
+        origin = importlib.util.find_spec('_testmultiphase').origin
+        loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+        spec = importlib.util.spec_from_loader(fullname, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        self.module = module
+
+    def test_subclass_get_module(self):
+        """PyType_GetModule for defining_class"""
+        class StateAccessType_Subclass(self.module.StateAccessType):
+            pass
+
+        instance = StateAccessType_Subclass()
+        self.assertIs(instance.get_defining_module(), self.module)
+
+    def test_subclass_get_module_with_super(self):
+        class StateAccessType_Subclass(self.module.StateAccessType):
+            def get_defining_module(self):
+                return super().get_defining_module()
+
+        instance = StateAccessType_Subclass()
+        self.assertIs(instance.get_defining_module(), self.module)
+
+    def test_state_access(self):
+        """Checks methods defined with and without argument clinic
+
+        This tests a no-arg method (get_count) and a method with
+        both a positional and keyword argument.
+        """
+
+        a = self.module.StateAccessType()
+        b = self.module.StateAccessType()
+
+        methods = {
+            'clinic': a.increment_count_clinic,
+            'noclinic': a.increment_count_noclinic,
+        }
+
+        for name, increment_count in methods.items():
+            with self.subTest(name):
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 0)
+
+                increment_count()
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 1)
+
+                increment_count(3)
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 4)
+
+                increment_count(-2, twice=True)
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 0)
+
+                with self.assertRaises(TypeError):
+                    increment_count(thrice=3)
+
+                with self.assertRaises(TypeError):
+                    increment_count(1, 2, 3)
 
 
 if __name__ == "__main__":

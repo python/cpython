@@ -1101,25 +1101,53 @@ static int
 verify_identifier(struct tok_state *tok)
 {
     PyObject *s;
-    int result;
     if (tok->decoding_erred)
         return 0;
     s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
     if (s == NULL) {
         if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
-            PyErr_Clear();
-            tok->done = E_IDENTIFIER;
-        } else {
+            tok->done = E_DECODE;
+        }
+        else {
             tok->done = E_ERROR;
         }
         return 0;
     }
-    result = PyUnicode_IsIdentifier(s);
-    Py_DECREF(s);
-    if (result == 0) {
-        tok->done = E_IDENTIFIER;
+    Py_ssize_t invalid = _PyUnicode_ScanIdentifier(s);
+    if (invalid < 0) {
+        Py_DECREF(s);
+        tok->done = E_ERROR;
+        return 0;
     }
-    return result;
+    assert(PyUnicode_GET_LENGTH(s) > 0);
+    if (invalid < PyUnicode_GET_LENGTH(s)) {
+        Py_UCS4 ch = PyUnicode_READ_CHAR(s, invalid);
+        if (invalid + 1 < PyUnicode_GET_LENGTH(s)) {
+            /* Determine the offset in UTF-8 encoded input */
+            Py_SETREF(s, PyUnicode_Substring(s, 0, invalid + 1));
+            if (s != NULL) {
+                Py_SETREF(s, PyUnicode_AsUTF8String(s));
+            }
+            if (s == NULL) {
+                tok->done = E_ERROR;
+                return 0;
+            }
+            tok->cur = (char *)tok->start + PyBytes_GET_SIZE(s);
+        }
+        Py_DECREF(s);
+        // PyUnicode_FromFormatV() does not support %X
+        char hex[9];
+        snprintf(hex, sizeof(hex), "%04X", ch);
+        if (Py_UNICODE_ISPRINTABLE(ch)) {
+            syntaxerror(tok, "invalid character '%c' (U+%s)", ch, hex);
+        }
+        else {
+            syntaxerror(tok, "invalid non-printable character U+%s", hex);
+        }
+        return 0;
+    }
+    Py_DECREF(s);
+    return 1;
 }
 
 static int

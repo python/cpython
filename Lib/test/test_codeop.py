@@ -288,6 +288,15 @@ class CodeopTests(unittest.TestCase):
 
         ai("[i for i in range(10)] = (1, 2, 3)")
 
+    def test_invalid_exec(self):
+        ai = self.assertInvalid
+        ai("raise = 4", symbol="exec")
+        ai('def a-b', symbol='exec')
+        ai('await?', symbol='exec')
+        ai('=!=', symbol='exec')
+        ai('a await raise b', symbol='exec')
+        ai('a await raise b?+1', symbol='exec')
+
     def test_filename(self):
         self.assertEqual(compile_command("a = 1\n", "abc").co_filename,
                          compile("a = 1\n", "abc", 'single').co_filename)
