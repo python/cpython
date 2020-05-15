@@ -759,10 +759,10 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
             raise ValueError("bad query field: %r" % (name_value,))
 
         if not value:
-            if keep_blank_values:
-                value = ''
-            elif standalone_keys:
+            if standalone_keys:
                 pass
+            elif keep_blank_values:
+                value = ''
             else:
                 continue
 
