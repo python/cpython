@@ -30,10 +30,12 @@ import logging
 import os
 try:
     from urllib.request import urlopen
+    from urllib.error import HTTPError
 except ImportError:
-    from urllib2 import urlopen
-import subprocess
+    from urllib2 import urlopen, HTTPError
 import shutil
+import string
+import subprocess
 import sys
 import tarfile
 
@@ -163,7 +165,7 @@ activate = 1
 
 class AbstractBuilder(object):
     library = None
-    url_template = None
+    url_templates = None
     src_template = None
     build_template = None
     install_target = 'install'
@@ -201,6 +203,11 @@ class AbstractBuilder(object):
 
     def __hash__(self):
         return hash((self.library, self.version))
+
+    @property
+    def short_version(self):
+        """Short version for OpenSSL download URL"""
+        return None
 
     @property
     def openssl_cli(self):
@@ -255,11 +262,23 @@ class AbstractBuilder(object):
         src_dir = os.path.dirname(self.src_file)
         if not os.path.isdir(src_dir):
             os.makedirs(src_dir)
-        url = self.url_template.format(self.version)
-        log.info("Downloading from {}".format(url))
-        req = urlopen(url)
-        # KISS, read all, write all
-        data = req.read()
+        data = None
+        for url_template in self.url_templates:
+            url = url_template.format(v=self.version, s=self.short_version)
+            log.info("Downloading from {}".format(url))
+            try:
+                req = urlopen(url)
+                # KISS, read all, write all
+                data = req.read()
+            except HTTPError as e:
+                log.error(
+                    "Download from {} has from failed: {}".format(url, e)
+                )
+            else:
+                log.info("Successfully downloaded from {}".format(url))
+                break
+        if data is None:
+            raise ValueError("All download URLs have failed")
         log.info("Storing {}".format(self.src_file))
         with open(self.src_file, "wb") as f:
             f.write(data)
@@ -380,7 +399,10 @@ class AbstractBuilder(object):
 
 class BuildOpenSSL(AbstractBuilder):
     library = "OpenSSL"
-    url_template = "https://www.openssl.org/source/openssl-{}.tar.gz"
+    url_templates = (
+        "https://www.openssl.org/source/openssl-{v}.tar.gz",
+        "https://www.openssl.org/source/old/{s}/openssl-{v}.tar.gz"
+    )
     src_template = "openssl-{}.tar.gz"
     build_template = "openssl-{}"
     # only install software, skip docs
@@ -419,12 +441,20 @@ class BuildOpenSSL(AbstractBuilder):
         )
         with open(openssl_fips_cnf, "w") as f:
             f.write(OPENSSL_FIPS_CNF.format(self=self))
+    @property
+    def short_version(self):
+        """Short version for OpenSSL download URL"""
+        short_version = self.version.rstrip(string.ascii_letters)
+        if short_version.startswith("0.9"):
+            short_version = "0.9.x"
+        return short_version
 
 
 class BuildLibreSSL(AbstractBuilder):
     library = "LibreSSL"
-    url_template = (
-        "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-{}.tar.gz")
+    url_templates = (
+        "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-{v}.tar.gz",
+    )
     src_template = "libressl-{}.tar.gz"
     build_template = "libressl-{}"
 
