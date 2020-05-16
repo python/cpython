@@ -43,20 +43,21 @@ import tarfile
 log = logging.getLogger("multissl")
 
 OPENSSL_OLD_VERSIONS = [
+    "1.0.2u",
+    "1.1.0l",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.0.2u",
-    "1.1.0l",
     "1.1.1g",
     # "3.0.0-alpha2"
 ]
 
 LIBRESSL_OLD_VERSIONS = [
+    "2.9.2",
 ]
 
 LIBRESSL_RECENT_VERSIONS = [
-    "2.9.2",
+    "3.1.0",
 ]
 
 # store files in ../multissl
@@ -80,7 +81,7 @@ parser.add_argument(
 parser.add_argument(
     '--disable-ancient',
     action='store_true',
-    help="Don't test OpenSSL < 1.0.2 and LibreSSL < 2.5.3.",
+    help="Don't test OpenSSL and LibreSSL versions without upstream support",
 )
 parser.add_argument(
     '--openssl',
