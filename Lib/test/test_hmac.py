@@ -409,11 +409,11 @@ class CopyTestCase(unittest.TestCase):
         # Testing if attributes are of same type.
         h1 = hmac.HMAC(b"key", digestmod="sha256")
         h2 = h1.copy()
-        self.assertTrue(h1.digest_cons == h2.digest_cons,
+        self.assertTrue(h1._digest_cons == h2._digest_cons,
             "digest constructors don't match.")
-        self.assertEqual(type(h1.inner), type(h2.inner),
+        self.assertEqual(type(h1._inner), type(h2._inner),
             "Types of inner don't match.")
-        self.assertEqual(type(h1.outer), type(h2.outer),
+        self.assertEqual(type(h1._outer), type(h2._outer),
             "Types of outer don't match.")
 
     @hashlib_helper.requires_hashdigest('sha256')
@@ -423,10 +423,21 @@ class CopyTestCase(unittest.TestCase):
         h2 = h1.copy()
         # Using id() in case somebody has overridden __eq__/__ne__.
         self.assertTrue(id(h1) != id(h2), "No real copy of the HMAC instance.")
-        self.assertTrue(id(h1.inner) != id(h2.inner),
+        self.assertTrue(id(h1._inner) != id(h2._inner),
             "No real copy of the attribute 'inner'.")
-        self.assertTrue(id(h1.outer) != id(h2.outer),
+        self.assertTrue(id(h1._outer) != id(h2._outer),
             "No real copy of the attribute 'outer'.")
+        self.assertEqual(h1._inner, h1.inner)
+        self.assertEqual(h1._outer, h1.outer)
+        self.assertEqual(h1._digest_cons, h1.digest_cons)
+
+    @hashlib_helper.requires_hashdigest('sha256')
+    def test_properties(self):
+        # deprecated properties
+        h1 = hmac.HMAC(b"key", digestmod="sha256")
+        self.assertEqual(h1._inner, h1.inner)
+        self.assertEqual(h1._outer, h1.outer)
+        self.assertEqual(h1._digest_cons, h1.digest_cons)
 
     @hashlib_helper.requires_hashdigest('sha256')
     def test_equality(self):
