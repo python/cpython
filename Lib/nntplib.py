@@ -96,7 +96,7 @@ _MAXLINE = 2048
 class NNTPError(Exception):
     """Base class for all nntplib exceptions"""
     def __init__(self, *args):
-        super().__init__(*args)
+        Exception.__init__(self, *args)
         try:
             self.response = args[0]
         except IndexError:
@@ -345,6 +345,9 @@ class NNTP:
             raise
 
     def _base_init(self, readermode):
+        """Partial initialization for the NNTP protocol.
+        This instance method is extracted for supporting testing code.
+        """
         self.debugging = 0
         self.welcome = self._getresp()
 
