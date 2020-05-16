@@ -2946,6 +2946,42 @@ esac
 ],
 [AC_MSG_RESULT(default)])
 
+validate_tzpath() {
+    # Checks that each element of hte path is an absolute path
+    if test -z "$1"; then
+        # Empty string is allowed: it indicates no system TZPATH
+        return 0
+    fi
+
+    # Bad paths are those that don't start with /
+    dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
+    if ( echo $1 | grep -qE '(^|:)(@<:@^/@:>@|$)' ); then
+        AC_MSG_ERROR([--with-tzpath must contain only absolute paths, not $1])
+        return 1;
+    fi
+}
+
+TZPATH="/usr/share/zoneinfo:/usr/lib/zoneinfo:/usr/share/lib/zoneinfo:/etc/zoneinfo"
+AC_MSG_CHECKING(for --with-tzpath)
+AC_ARG_WITH(tzpath,
+            AS_HELP_STRING([--with-tzpath=<list of absolute paths separated by pathsep>]
+                           [Select the default time zone search path for zoneinfo.TZPATH]),
+[
+case "$withval" in
+    yes)
+        AC_MSG_ERROR([--with-tzpath requires a value])
+        ;;
+    *)
+        validate_tzpath "$withval"
+        TZPATH="$withval"
+        AC_MSG_RESULT("$withval")
+        ;;
+esac
+],
+[validate_tzpath "$TZPATH"
+ AC_MSG_RESULT("$TZPATH")])
+AC_SUBST(TZPATH)
+
 AC_MSG_CHECKING(for --with-address-sanitizer)
 AC_ARG_WITH(address_sanitizer,
             AS_HELP_STRING([--with-address-sanitizer],
