@@ -127,9 +127,16 @@ class Future:
         return loop
 
     def _make_cancelled_error(self):
+        """
+        Create a CancelledError for raising purposes.
+
+        This should only be called once since it erases self._cancelled_exc.
+        """
         exc = exceptions.CancelledError(
             '' if self._cancel_message is None else self._cancel_message)
         exc.__context__ = self._cancelled_exc
+        # Remove a reference since we don't need this anymore.
+        self._cancelled_exc = None
         return exc
 
     def cancel(self, msg=None):

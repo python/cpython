@@ -1350,17 +1350,22 @@ FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
 /*[clinic input]
 _asyncio.Future._make_cancelled_error
 
-Create the CancelledError to raise if the Future is cancelled.
+Create a CancelledError for raising purposes.
+
+This should only be called once since it erases the context exception value.
 [clinic start generated code]*/
 
 static PyObject *
 _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
-/*[clinic end generated code: output=a5df276f6c1213de input=374e7bf8dd6edc60]*/
+/*[clinic end generated code: output=a5df276f6c1213de input=b0a790c6d0c33e9c]*/
 {
     PyObject *exc = create_cancelled_error(self->fut_cancel_msg);
     _PyErr_StackItem *exc_state = &self->fut_cancelled_exc_state;
-    Py_XINCREF(exc_state->exc_value);
+    /* Transfer ownership of exc_value from exc_state to exc since we are
+       done with it. */
     PyException_SetContext(exc, exc_state->exc_value);
+    exc_state->exc_value = NULL;
+
     return exc;
 }
 
