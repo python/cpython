@@ -118,6 +118,15 @@ _setException(PyObject *exc)
 }
 /* LCOV_EXCL_STOP */
 
+/* {Py_tp_new, NULL} doesn't block __new__ */
+static PyObject *
+_disabled_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot create '%.100s' instances", _PyType_Name(type));
+    return NULL;
+}
+
 static PyObject*
 py_digest_name(const EVP_MD *md)
 {
@@ -534,6 +543,7 @@ static PyType_Slot EVPtype_slots[] = {
     {Py_tp_doc, (char *)hashtype_doc},
     {Py_tp_methods, EVP_methods},
     {Py_tp_getset, EVP_getseters},
+    {Py_tp_new, _disabled_new},
     {0, 0},
 };
 
@@ -683,6 +693,7 @@ static PyType_Slot EVPXOFtype_slots[] = {
     {Py_tp_doc, (char *)hashxoftype_doc},
     {Py_tp_methods, EVPXOF_methods},
     {Py_tp_getset, EVPXOF_getseters},
+    {Py_tp_new, _disabled_new},
     {0, 0},
 };
 
