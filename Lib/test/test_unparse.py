@@ -347,7 +347,7 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("(1 + 2) / 3")
         self.check_src_roundtrip("(1 + 2) * 3 + 4 * (5 + 2)")
         self.check_src_roundtrip("(1 + 2) * 3 + 4 * (5 + 2) ** 2")
-        self.check_src_roundtrip("~ x")
+        self.check_src_roundtrip("~x")
         self.check_src_roundtrip("x and y")
         self.check_src_roundtrip("x and y and z")
         self.check_src_roundtrip("x and (y and x)")
@@ -400,6 +400,12 @@ class CosmeticTestCase(ASTTestCase):
                 src = f"{prefix}{negative}"
                 self.check_ast_roundtrip(src)
                 self.check_src_dont_roundtrip(src)
+
+    def test_unary_op_factor(self):
+        for prefix in ("+", "-", "~"):
+            self.check_src_roundtrip(f"{prefix}1")
+        for prefix in ("not",):
+            self.check_src_roundtrip(f"{prefix} 1")
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
