@@ -10,6 +10,8 @@ how this parsing engine works.
 
 """
 
+import contextlib
+
 # Local imports
 from . import token
 
@@ -201,7 +203,5 @@ class Parser(object):
                 node[-1].append(newnode)
             else:
                 self.rootnode = newnode
-                try:
+                with contextlib.suppress(AttributeError):
                     self.rootnode.used_names = self.used_names
-                except AttributeError:
-                    pass # skip if an attribute can't be assigned
