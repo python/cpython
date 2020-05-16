@@ -1753,8 +1753,8 @@ and classes for traversing abstract syntax trees:
 Compiler Flags
 --------------
 
-Following flags may passed to :func:`compile` in order to change
-affects on compilation of a program:
+The following flags may be passed to :func:`compile` in order to change
+effects on compilation of a program:
 
 .. data:: PyCF_ALLOW_TOP_LEVEL_AWAIT
 
