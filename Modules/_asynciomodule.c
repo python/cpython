@@ -1348,6 +1348,23 @@ FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
 }
 
 /*[clinic input]
+_asyncio.Future._make_cancelled_error
+
+Create the CancelledError to raise if the Future is cancelled.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Future__make_cancelled_error_impl(FutureObj *self)
+/*[clinic end generated code: output=a5df276f6c1213de input=374e7bf8dd6edc60]*/
+{
+    PyObject *exc = create_cancelled_error(self->fut_cancel_msg);
+    _PyErr_StackItem *exc_state = &self->fut_cancelled_exc_state;
+    Py_XINCREF(exc_state->exc_value);
+    PyException_SetContext(exc, exc_state->exc_value);
+    return exc;
+}
+
+/*[clinic input]
 _asyncio.Future._repr_info
 [clinic start generated code]*/
 
@@ -1473,6 +1490,7 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_CANCELLED_METHODDEF
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
+    _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
     _ASYNCIO_FUTURE__REPR_INFO_METHODDEF
     {"__class_getitem__", future_cls_getitem, METH_O|METH_CLASS, NULL},
     {NULL, NULL}        /* Sentinel */
@@ -2245,6 +2263,21 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
 }
 
 /*[clinic input]
+_asyncio.Task._make_cancelled_error
+
+Create the CancelledError to raise if the Task is cancelled.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task__make_cancelled_error_impl(TaskObj *self)
+/*[clinic end generated code: output=55a819e8b4276fab input=fc5485bb07d5c36b]*/
+{
+    FutureObj *fut = (FutureObj*)self;
+    return _asyncio_Future__make_cancelled_error_impl(fut);
+}
+
+
+/*[clinic input]
 _asyncio.Task._repr_info
 [clinic start generated code]*/
 
@@ -2551,6 +2584,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_CANCEL_METHODDEF
     _ASYNCIO_TASK_GET_STACK_METHODDEF
     _ASYNCIO_TASK_PRINT_STACK_METHODDEF
+    _ASYNCIO_TASK__MAKE_CANCELLED_ERROR_METHODDEF
     _ASYNCIO_TASK__REPR_INFO_METHODDEF
     _ASYNCIO_TASK_GET_NAME_METHODDEF
     _ASYNCIO_TASK_SET_NAME_METHODDEF
@@ -2766,26 +2800,13 @@ task_step_impl(TaskObj *task, PyObject *exc)
             /* CancelledError */
             PyErr_Fetch(&et, &ev, &tb);
 
-            PyObject *cancel_msg;
-            if (ev != NULL && PyExceptionInstance_Check(ev)) {
-                PyObject *exc_args = ((PyBaseExceptionObject*)ev)->args;
-                Py_ssize_t size = PyTuple_GET_SIZE(exc_args);
-                if (size > 0) {
-                    cancel_msg = PyTuple_GET_ITEM(exc_args, 0);
-                } else {
-                    cancel_msg = NULL;
-                }
-            } else {
-                cancel_msg = ev;
-            }
-
             FutureObj *fut = (FutureObj*)task;
             _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
             exc_state->exc_type = et;
             exc_state->exc_value = ev;
             exc_state->exc_traceback = tb;
 
-            return future_cancel(fut, cancel_msg);
+            return future_cancel(fut, NULL);
         }
 
         /* Some other exception; pop it and call Task.set_exception() */

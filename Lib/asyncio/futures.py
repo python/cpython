@@ -126,6 +126,12 @@ class Future:
             raise RuntimeError("Future object is not initialized.")
         return loop
 
+    def _make_cancelled_error(self):
+        exc = exceptions.CancelledError(
+            '' if self._cancel_message is None else self._cancel_message)
+        exc.__context__ = self._cancelled_exc
+        return exc
+
     def cancel(self, msg=None):
         """Cancel the future and schedule callbacks.
 
@@ -177,9 +183,7 @@ class Future:
         the future is done and has an exception set, this exception is raised.
         """
         if self._state == _CANCELLED:
-            exc = exceptions.CancelledError(
-                '' if self._cancel_message is None else self._cancel_message)
-            exc.__context__ = self._cancelled_exc
+            exc = self._make_cancelled_error()
             raise exc
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Result is not ready.')
@@ -197,9 +201,7 @@ class Future:
         InvalidStateError.
         """
         if self._state == _CANCELLED:
-            exc = exceptions.CancelledError(
-                '' if self._cancel_message is None else self._cancel_message)
-            exc.__context__ = self._cancelled_exc
+            exc = self._make_cancelled_error()
             raise exc
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Exception is not set.')
