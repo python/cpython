@@ -1398,7 +1398,8 @@ class ChannelTests(TestBase):
         obj = interpreters.channel_recv(cid)
 
         self.assertEqual(obj, orig)
-        self.assertIsNot(obj, orig)
+        # When going back to the same interpreter we get the same object.
+        self.assertIs(obj, orig)
 
     def test_send_recv_same_interpreter(self):
         id1 = interpreters.create()
@@ -1408,8 +1409,9 @@ class ChannelTests(TestBase):
             orig = b'spam'
             _interpreters.channel_send(cid, orig)
             obj = _interpreters.channel_recv(cid)
-            assert obj is not orig
             assert obj == orig
+            # When going back to the same interpreter we get the same object.
+            assert obj is orig
             """))
 
     def test_send_recv_different_interpreters(self):
@@ -1422,6 +1424,37 @@ class ChannelTests(TestBase):
         obj = interpreters.channel_recv(cid)
 
         self.assertEqual(obj, b'spam')
+
+    def test_send_recv_round_trip_same_channel(self):
+        cid = interpreters.channel_create()
+        id1 = interpreters.create()
+        orig = b'spam'
+        interpreters.channel_send(cid, orig)
+        out = _run_output(id1, dedent(f"""
+            import _xxsubinterpreters as _interpreters
+            obj = _interpreters.channel_recv({cid})
+            _interpreters.channel_send({cid}, obj)
+            """))
+        obj = interpreters.channel_recv(cid)
+
+        self.assertEqual(obj, orig)
+        self.assertIsNot(obj, orig)
+
+    def test_send_recv_round_trip_different_channel(self):
+        cid1 = interpreters.channel_create()
+        cid2 = interpreters.channel_create()
+        id1 = interpreters.create()
+        orig = b'spam'
+        interpreters.channel_send(cid1, orig)
+        out = _run_output(id1, dedent(f"""
+            import _xxsubinterpreters as _interpreters
+            obj = _interpreters.channel_recv({cid1})
+            _interpreters.channel_send({cid2}, obj)
+            """))
+        obj = interpreters.channel_recv(cid2)
+
+        self.assertEqual(obj, orig)
+        self.assertIsNot(obj, orig)
 
     def test_send_recv_different_threads(self):
         cid = interpreters.channel_create()
