@@ -6,23 +6,19 @@ if __name__ != 'test.support':
 import collections.abc
 import contextlib
 import errno
-import faulthandler
 import fnmatch
 import functools
-import gc
 import glob
 import importlib
 import importlib.util
 import os
 import platform
 import re
-import shutil
 import stat
 import struct
 import subprocess
 import sys
 import sysconfig
-import tempfile
 import _thread
 import threading
 import time
@@ -439,6 +435,7 @@ else:
     _rmdir = os.rmdir
 
     def _rmtree(path):
+        import shutil
         try:
             shutil.rmtree(path)
             return
@@ -891,6 +888,7 @@ def temp_dir(path=None, quiet=False):
         created, only a warning is issued.
 
     """
+    import tempfile
     dir_created = False
     if path is None:
         path = tempfile.mkdtemp()
@@ -1436,6 +1434,7 @@ def gc_collect():
     longer than expected.  This function tries its best to force all garbage
     objects to disappear.
     """
+    import gc
     gc.collect()
     if is_jython:
         time.sleep(0.1)
@@ -1444,6 +1443,7 @@ def gc_collect():
 
 @contextlib.contextmanager
 def disable_gc():
+    import gc
     have_gc = gc.isenabled()
     gc.disable()
     try:
@@ -2136,6 +2136,7 @@ def reap_children():
 
 @contextlib.contextmanager
 def start_threads(threads, unlock=None):
+    import faulthandler
     threads = list(threads)
     started = []
     try:
@@ -2401,6 +2402,7 @@ class PythonSymlink:
 
 _can_xattr = None
 def can_xattr():
+    import tempfile
     global _can_xattr
     if _can_xattr is not None:
         return _can_xattr
@@ -2445,6 +2447,7 @@ def skip_if_pgo_task(test):
 
 def fs_is_case_insensitive(directory):
     """Detects if the file system for the specified directory is case-insensitive."""
+    import tempfile
     with tempfile.NamedTemporaryFile(dir=directory) as base:
         base_path = base.name
         case_path = base_path.upper()
@@ -2740,6 +2743,8 @@ def setswitchinterval(interval):
 
 @contextlib.contextmanager
 def disable_faulthandler():
+    import faulthandler
+
     # use sys.__stderr__ instead of sys.stderr, since regrtest replaces
     # sys.stderr with a StringIO which has no file descriptor when a test
     # is run with -W/--verbose3.
