@@ -930,7 +930,7 @@ class _Unparser(NodeVisitor):
             self.fill("@")
             self.traverse(deco)
         self.fill("class " + node.name)
-        with self.delimit("(", ")"):
+        with self.delimit_if("(", ")", condition = node.bases or node.keywords):
             comma = False
             for e in node.bases:
                 if comma:

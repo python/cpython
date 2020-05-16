@@ -110,7 +110,7 @@ with f() as x, g() as y:
 
 docstring_prefixes = [
     "",
-    "class foo():\n    ",
+    "class foo:\n    ",
     "def foo():\n    ",
     "async def foo():\n    ",
 ]
@@ -366,6 +366,19 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("yield from x")
         self.check_src_roundtrip("call((yield x))")
         self.check_src_roundtrip("return x + (yield x)")
+
+
+    def test_class_bases_and_keywords(self):
+        self.check_src_roundtrip("class X:\n    pass")
+        self.check_src_roundtrip("class X(A):\n    pass")
+        self.check_src_roundtrip("class X(A, B, C, D):\n    pass")
+        self.check_src_roundtrip("class X(x=y):\n    pass")
+        self.check_src_roundtrip("class X(metaclass=z):\n    pass")
+        self.check_src_roundtrip("class X(x=y, z=d):\n    pass")
+        self.check_src_roundtrip("class X(A, x=y):\n    pass")
+        self.check_src_roundtrip("class X(A, **kw):\n    pass")
+        self.check_src_roundtrip("class X(*args):\n    pass")
+        self.check_src_roundtrip("class X(*args, **kwargs):\n    pass")
 
     def test_docstrings(self):
         docstrings = (
