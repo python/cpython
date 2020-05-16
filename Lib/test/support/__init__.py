@@ -28,31 +28,6 @@ import warnings
 
 from .testresult import get_test_runner
 
-try:
-    import zlib
-except ImportError:
-    zlib = None
-
-try:
-    import gzip
-except ImportError:
-    gzip = None
-
-try:
-    import bz2
-except ImportError:
-    bz2 = None
-
-try:
-    import lzma
-except ImportError:
-    lzma = None
-
-try:
-    import resource
-except ImportError:
-    resource = None
-
 __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
@@ -705,17 +680,38 @@ requires_IEEE_754 = unittest.skipUnless(
     float.__getformat__("double").startswith("IEEE"),
     "test requires IEEE 754 doubles")
 
-requires_zlib = unittest.skipUnless(zlib, 'requires zlib')
+def requires_zlib(reason='requires zlib'):
+    try:
+        import zlib
+    except ImportError:
+        zlib = None
+    return unittest.skipUnless(zlib, reason)
 
-requires_gzip = unittest.skipUnless(gzip, 'requires gzip')
+def requires_gzip(reason='requires gzip'):
+    try:
+        import gzip
+    except ImportError:
+        gzip = None
+    return unittest.skipUnless(gzip, reason)
 
-requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
+def requires_bz2(reason='requires bz2'):
+    try:
+        import bz2
+    except ImportError:
+        bz2 = None
+    return unittest.skipUnless(bz2, reason)
 
-requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
+def requires_lzma(reason='requires lzma'):
+    try:
+        import lzma
+    except ImportError:
+        lzma = None
+    return unittest.skipUnless(lzma, reason)
 
 is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
+
 
 if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -2579,6 +2575,10 @@ class SuppressCrashReport:
                     self.old_modes[report_type] = old_mode, old_file
 
         else:
+            try:
+                import resource
+            except ImportError:
+                resource = None
             if resource is not None:
                 try:
                     self.old_value = resource.getrlimit(resource.RLIMIT_CORE)
@@ -2621,6 +2621,10 @@ class SuppressCrashReport:
                     msvcrt.CrtSetReportMode(report_type, old_mode)
                     msvcrt.CrtSetReportFile(report_type, old_file)
         else:
+            try:
+                import resource
+            except ImportError:
+                resource = None
             if resource is not None:
                 try:
                     resource.setrlimit(resource.RLIMIT_CORE, self.old_value)
