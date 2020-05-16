@@ -141,12 +141,19 @@ class TestFilemode:
             self.assertEqual(modestr, '-r--r--r--')
             self.assertEqual(self.statmod.S_IMODE(st_mode), 0o444)
         else:
+            os.chmod(TESTFN, 0o500)
+            st_mode, modestr = self.get_mode()
+            self.assertEqual(modestr[:3], '-r-')
+            self.assertS_IS("REG", st_mode)
+            self.assertEqual(self.statmod.S_IMODE(st_mode), 0o444)
+
             os.chmod(TESTFN, 0o700)
             st_mode, modestr = self.get_mode()
             self.assertEqual(modestr[:3], '-rw')
             self.assertS_IS("REG", st_mode)
             self.assertEqual(self.statmod.S_IFMT(st_mode),
                              self.statmod.S_IFREG)
+            self.assertEqual(self.statmod.S_IMODE(st_mode), 0o666)
 
     def test_directory(self):
         os.mkdir(TESTFN)
