@@ -52,7 +52,7 @@ class Future:
     _loop = None
     _source_traceback = None
     _cancel_message = None
-    # A saved CancelledError for later chaining.
+    # A saved CancelledError for later chaining as an exception context.
     _cancelled_exc = None
 
     # This field is used for a dual purpose:
@@ -128,14 +128,15 @@ class Future:
 
     def _make_cancelled_error(self):
         """
-        Create a CancelledError for raising purposes.
+        Create the CancelledError to raise if the Future is cancelled.
 
-        This should only be called once since it erases self._cancelled_exc.
+        This should only be called once when handling a cancellation since
+        it erases self._cancelled_exc.
         """
         exc = exceptions.CancelledError(
             '' if self._cancel_message is None else self._cancel_message)
         exc.__context__ = self._cancelled_exc
-        # Remove a reference since we don't need this anymore.
+        # Remove the reference since we don't need this anymore.
         self._cancelled_exc = None
         return exc
 

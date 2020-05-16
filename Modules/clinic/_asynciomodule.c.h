@@ -275,9 +275,10 @@ PyDoc_STRVAR(_asyncio_Future__make_cancelled_error__doc__,
 "_make_cancelled_error($self, /)\n"
 "--\n"
 "\n"
-"Create a CancelledError for raising purposes.\n"
+"Create the CancelledError to raise if the Future is cancelled.\n"
 "\n"
-"This should only be called once since it erases the context exception value.");
+"This should only be called once when handling a cancellation since\n"
+"it erases the context exception value.");
 
 #define _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF    \
     {"_make_cancelled_error", (PyCFunction)_asyncio_Future__make_cancelled_error, METH_NOARGS, _asyncio_Future__make_cancelled_error__doc__},
@@ -438,7 +439,10 @@ PyDoc_STRVAR(_asyncio_Task__make_cancelled_error__doc__,
 "_make_cancelled_error($self, /)\n"
 "--\n"
 "\n"
-"Create the CancelledError to raise if the Task is cancelled.");
+"Create the CancelledError to raise if the Task is cancelled.\n"
+"\n"
+"This should only be called once when handling a cancellation since\n"
+"it erases the context exception value.");
 
 #define _ASYNCIO_TASK__MAKE_CANCELLED_ERROR_METHODDEF    \
     {"_make_cancelled_error", (PyCFunction)_asyncio_Task__make_cancelled_error, METH_NOARGS, _asyncio_Task__make_cancelled_error__doc__},
@@ -908,4 +912,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f6e561a44879afd9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e5c1eb8b692977b input=a9049054013a1b77]*/
