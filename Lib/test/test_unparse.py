@@ -108,12 +108,12 @@ with f() as x, g() as y:
     suite1
 """
 
-docstring_prefixes = [
+docstring_prefixes = (
     "",
     "class foo:\n    ",
     "def foo():\n    ",
     "async def foo():\n    ",
-]
+)
 
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
@@ -339,6 +339,37 @@ class UnparseTestCase(ASTTestCase):
             "(Callable[complex], More[Complex(call.to_typevar())]) -> None"
         ):
             self.check_ast_roundtrip(function_type, mode="func_type")
+
+    def test_type_comments(self):
+        for statement in (
+            "a = 5 # type:",
+            "a = 5 # type: int",
+            "a = 5 # type: int and more",
+            "def x(): # type: () -> None\n\tpass",
+            "def x(y): # type: (int) -> None and more\n\tpass",
+            "async def x(): # type: () -> None\n\tpass",
+            "async def x(y): # type: (int) -> None and more\n\tpass",
+            "for x in y: # type: int\n\tpass",
+            "async for x in y: # type: int\n\tpass",
+            "with x(): # type: int\n\tpass",
+            "async with x(): # type: int\n\tpass"
+        ):
+            self.check_ast_roundtrip(statement, type_comments=True)
+
+    def test_type_ignore(self):
+        for statement in (
+            "a = 5 # type: ignore",
+            "a = 5 # type: ignore and more",
+            "def x(): # type: ignore\n\tpass",
+            "def x(y): # type: ignore and more\n\tpass",
+            "async def x(): # type: ignore\n\tpass",
+            "async def x(y): # type: ignore and more\n\tpass",
+            "for x in y: # type: ignore\n\tpass",
+            "async for x in y: # type: ignore\n\tpass",
+            "with x(): # type: ignore\n\tpass",
+            "async with x(): # type: ignore\n\tpass"
+        ):
+            self.check_ast_roundtrip(statement, type_comments=True)
 
 
 class CosmeticTestCase(ASTTestCase):
