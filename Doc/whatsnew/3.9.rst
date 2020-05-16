@@ -205,8 +205,6 @@ Other Language Changes
 New Modules
 ===========
 
-.. _whatsnew39-pep615:
-
 zoneinfo
 --------
 
