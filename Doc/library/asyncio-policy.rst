@@ -219,7 +219,7 @@ implementation used by the asyncio event loop:
 
    This implementation registers a :py:data:`SIGCHLD` signal handler on
    instantiation. That can break third-party code that installs a custom handler for
-   `SIGCHLD`.  signal).
+   the :py:data:`SIGCHLD` signal).
 
    The watcher avoids disrupting other code spawning processes
    by polling every process explicitly on a :py:data:`SIGCHLD` signal.
@@ -232,6 +232,17 @@ implementation used by the asyncio event loop:
    :py:data:`SIGCHLD` is received).
 
    .. versionadded:: 3.8
+
+   .. method:: attach_loop(loop)
+
+      Registers the :py:data:`SIGCHLD` signal handler.  Like
+      :meth:`loop.add_signal_handler`, this method can only be invoked
+      from the main thread.
+
+     .. versionchanged:: 3.9
+
+        The method now calls :func:`signal.set_wakeup_fd` as part of the
+        handler initialization.
 
 .. class:: SafeChildWatcher
 

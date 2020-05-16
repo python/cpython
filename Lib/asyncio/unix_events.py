@@ -78,6 +78,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def add_signal_handler(self, sig, callback, *args):
         """Add a handler for a signal.  UNIX only.
 
+        This method can only be called from the main thread.
+
         Raise ValueError if the signal number is invalid or uncatchable.
         Raise RuntimeError if there is a problem setting up the handler.
         """
@@ -1232,10 +1234,15 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         self._callbacks.clear()
         if self._saved_sighandler is not None:
             handler = signal.getsignal(signal.SIGCHLD)
-            if handler != self._sig_chld:
+            # add_signal_handler() sets the handler to _sighandler_noop.
+            if handler != _sighandler_noop:
                 logger.warning("SIGCHLD handler was changed by outside code")
             else:
+                loop = self._loop
+                # This clears the wakeup file descriptor if necessary.
+                loop.remove_signal_handler(signal.SIGCHLD)
                 signal.signal(signal.SIGCHLD, self._saved_sighandler)
+
             self._saved_sighandler = None
 
     def __enter__(self):
@@ -1263,15 +1270,24 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         # The reason to do it here is that attach_loop() is called from
         # unix policy only for the main thread.
         # Main thread is required for subscription on SIGCHLD signal
-        if self._saved_sighandler is None:
-            self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
-            if self._saved_sighandler is None:
-                logger.warning("Previous SIGCHLD handler was set by non-Python code, "
-                               "restore to default handler on watcher close.")
-                self._saved_sighandler = signal.SIG_DFL
+        if loop is None or self._saved_sighandler is not None:
+            return
 
-            # Set SA_RESTART to limit EINTR occurrences.
-            signal.siginterrupt(signal.SIGCHLD, False)
+        self._loop = loop
+        self._saved_sighandler = signal.getsignal(signal.SIGCHLD)
+        if self._saved_sighandler is None:
+            logger.warning("Previous SIGCHLD handler was set by non-Python code, "
+                           "restore to default handler on watcher close.")
+            self._saved_sighandler = signal.SIG_DFL
+
+        if self._callbacks:
+            warnings.warn(
+                'A loop is being detached '
+                'from a child watcher with pending handlers',
+                RuntimeWarning)
+
+        # This also sets up the wakeup file descriptor.
+        loop.add_signal_handler(signal.SIGCHLD, self._sig_chld)
 
     def _do_waitpid_all(self):
         for pid in list(self._callbacks):
@@ -1314,7 +1330,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
                                  expected_pid, returncode)
                 loop.call_soon_threadsafe(callback, pid, returncode, *args)
 
-    def _sig_chld(self, signum, frame):
+    def _sig_chld(self, *args):
         try:
             self._do_waitpid_all()
         except (SystemExit, KeyboardInterrupt):

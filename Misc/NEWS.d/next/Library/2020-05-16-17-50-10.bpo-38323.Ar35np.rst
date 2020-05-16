@@ -1,0 +1,2 @@
+Fix rare cases with ``MultiLoopChildWatcher`` where the event loop can
+fail to awaken in response to a :py:data:`SIGCHLD` signal.

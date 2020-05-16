@@ -1036,7 +1036,9 @@ Unix signals
    The callback will be invoked by *loop*, along with other queued callbacks
    and runnable coroutines of that event loop. Unlike signal handlers
    registered using :func:`signal.signal`, a callback registered with this
-   function is allowed to interact with the event loop.
+   method is allowed to interact with the event loop. Using
+   :func:`signal.signal` instead of this method can also cause the event
+   loop not to awaken in rare situations when a signal is received.
 
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
