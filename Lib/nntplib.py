@@ -346,7 +346,7 @@ class NNTP:
 
     def _base_init(self, readermode):
         """Partial initialization for the NNTP protocol.
-        This instance method is extracted for supporting testing code.
+        This instance method is extracted for supporting the test code.
         """
         self.debugging = 0
         self.welcome = self._getresp()
