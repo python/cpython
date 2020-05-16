@@ -2094,9 +2094,7 @@ _PyPegen_get_invalid_target(expr_ty e, int del_targets)
             if (del_targets) {
                 return e;
             }
-            else {
-                return _PyPegen_get_invalid_target(e->v.Starred.value, del_targets);
-            }
+            return _PyPegen_get_invalid_target(e->v.Starred.value, del_targets);
         case Name_kind:
         case Subscript_kind:
         case Attribute_kind:
