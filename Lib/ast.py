@@ -1075,11 +1075,14 @@ class _Unparser(NodeVisitor):
         if node.kind == "u":
             self.write("u")
 
-        # Preserve quotes in the docstring by escaping them
-        value = node.value.replace("\\", "\\\\")
-        value = value.replace('"""', '""\"')
-        if value[-1] == '"':
-            value = value.replace('"', '\\"', -1)
+        value = node.value
+        if value:
+            # Preserve quotes in the docstring by escaping them
+            value = value.replace("\\", "\\\\")
+            value = value.replace('"""', '""\"')
+            value = value.replace("\r", "\\r")
+            if value[-1] == '"':
+                value = value.replace('"', '\\"', -1)
 
         self.write(f'"""{value}"""')
 
