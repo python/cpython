@@ -1095,7 +1095,7 @@ class date:
         return self.toordinal() % 7 or 7
 
     def isocalendar(self):
-        """Return a 3-tuple containing ISO year, week number, and weekday.
+        """Return a named tuple containing ISO year, week number, and weekday.
 
         The first ISO week of the year is the (Mon-Sun) week
         containing the year's first Thursday; everything else derives
@@ -1120,7 +1120,7 @@ class date:
             if today >= _isoweek1monday(year+1):
                 year += 1
                 week = 0
-        return year, week+1, day+1
+        return _IsoCalendarDate(year, week+1, day+1)
 
     # Pickle support.
 
@@ -1210,6 +1210,36 @@ class tzinfo:
         else:
             return (self.__class__, args, state)
 
+
+class IsoCalendarDate(tuple):
+
+    def __new__(cls, year, week, weekday, /):
+        return super().__new__(cls, (year, week, weekday))
+
+    @property
+    def year(self):
+        return self[0]
+
+    @property
+    def week(self):
+        return self[1]
+
+    @property
+    def weekday(self):
+        return self[2]
+
+    def __reduce__(self):
+        # This code is intended to pickle the object without making the
+        # class public. See https://bugs.python.org/msg352381
+        return (tuple, (tuple(self),))
+
+    def __repr__(self):
+        return (f'{self.__class__.__name__}'
+                f'(year={self[0]}, week={self[1]}, weekday={self[2]})')
+
+
+_IsoCalendarDate = IsoCalendarDate
+del IsoCalendarDate
 _tzinfo_class = tzinfo
 
 class time:
@@ -1558,6 +1588,7 @@ _time_class = time  # so functions w/ args named "time" can get at the class
 time.min = time(0, 0, 0)
 time.max = time(23, 59, 59, 999999)
 time.resolution = timedelta(microseconds=1)
+
 
 class datetime(date):
     """datetime(year, month, day[, hour[, minute[, second[, microsecond[,tzinfo]]]]])
@@ -2514,7 +2545,7 @@ else:
          _format_time, _format_offset, _is_leap, _isoweek1monday, _math,
          _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
          _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
-         _parse_hh_mm_ss_ff)
+         _parse_hh_mm_ss_ff, _IsoCalendarDate)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and
