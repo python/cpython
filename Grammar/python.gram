@@ -695,6 +695,4 @@ invalid_for_target:
 
 invalid_group:
     | '(' a=starred_expression ')' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            a,
-            "can't use starred expression here") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "can't use starred expression here") }
