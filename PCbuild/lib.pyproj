@@ -1396,6 +1396,10 @@
     <Compile Include="test\test_zipimport.py" />
     <Compile Include="test\test_zipimport_support.py" />
     <Compile Include="test\test_zlib.py" />
+    <Compile Include="test\test_zoneinfo\__init__.py" />
+    <Compile Include="test\test_zoneinfo\__main__.py" />
+    <Compile Include="test\test_zoneinfo\_support.py" />
+    <Compile Include="test\test_zoneinfo\test_zoneinfo.py" />
     <Compile Include="test\test__locale.py" />
     <Compile Include="test\test__opcode.py" />
     <Compile Include="test\test__osx_support.py" />
@@ -1563,6 +1567,10 @@
     <Compile Include="xml\__init__.py" />
     <Compile Include="zipapp.py" />
     <Compile Include="zipfile.py" />
+    <Compile Include="zoneinfo\_common.py" />
+    <Compile Include="zoneinfo\__init__.py" />
+    <Compile Include="zoneinfo\_tzpath.py" />
+    <Compile Include="zoneinfo\_zoneinfo.py" />
     <Compile Include="_bootlocale.py" />
     <Compile Include="_collections_abc.py" />
     <Compile Include="_compat_pickle.py" />
