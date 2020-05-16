@@ -205,7 +205,44 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+zoneinfo
+--------
+
+The :mod:`zoneinfo` module brings support for the IANA time zone database to
+the standard library. It adds :class:`zoneinfo.ZoneInfo`, a concrete
+:class:`datetime.tzinfo` implementation backed by the system's time zone data.
+
+Example::
+
+    >>> from zoneinfo import ZoneInfo
+    >>> from datetime import datetime, timedelta
+
+    >>> # Daylight saving time
+    >>> dt = datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
+    >>> print(dt)
+    2020-10-31 12:00:00-07:00
+    >>> dt.tzname()
+    'PDT'
+
+    >>> # Standard time
+    >>> dt += timedelta(days=7)
+    >>> print(dt)
+    2020-11-07 12:00:00-08:00
+    >>> print(dt.tzname())
+    PST
+
+
+As a fall-back source of data for platforms that don't ship the IANA database,
+the |tzdata|_ module was released as a first-party package -- distributed via
+PyPI and maintained by the CPython core team.
+
+.. |tzdata| replace:: ``tzdata``
+.. _tzdata: https://pypi.org/project/tzdata/
+
+.. seealso::
+
+    :pep:`615` -- Support for the IANA Time Zone Database in the Standard Library
+        PEP written and implemented by Paul Ganssle
 
 
 Improved Modules
