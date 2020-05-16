@@ -12,17 +12,12 @@ typedef struct interpid {
 } interpid;
 
 static interpid *
-newinterpid(PyTypeObject *cls, int64_t id, int force)
+newinterpid(PyTypeObject *cls, int64_t id, PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(id);
-    if (interp == NULL) {
-        if (force) {
-            PyErr_Clear();
-        }
-        else {
-            return NULL;
-        }
-    }
+    if (_PyInterpreterState_IDInitref(interp) != 0) {
+        return NULL;
+    };
+    _PyInterpreterState_IDIncref(interp);
 
     interpid *self = PyObject_New(interpid, cls);
     if (self == NULL) {
@@ -30,9 +25,6 @@ newinterpid(PyTypeObject *cls, int64_t id, int force)
     }
     self->id = id;
 
-    if (interp != NULL) {
-        _PyInterpreterState_IDIncref(interp);
-    }
     return self;
 }
 
@@ -67,16 +59,19 @@ interp_id_converter(PyObject *arg, void *ptr)
 static PyObject *
 interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "force", NULL};
+    static char *kwlist[] = {"id", NULL};
     int64_t id;
-    int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&|$p:InterpreterID.__init__", kwlist,
-                                     interp_id_converter, &id, &force)) {
+                                     "O&:InterpreterID.__init__", kwlist,
+                                     interp_id_converter, &id)) {
         return NULL;
     }
 
-    return (PyObject *)newinterpid(cls, id, force);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+    return (PyObject *)newinterpid(cls, id, interp);
 }
 
 static void
@@ -261,20 +256,21 @@ PyTypeObject _PyInterpreterID_Type = {
 
 PyObject *_PyInterpreterID_New(int64_t id)
 {
-    return (PyObject *)newinterpid(&_PyInterpreterID_Type, id, 0);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+    return (PyObject *)newinterpid(&_PyInterpreterID_Type, id, interp);
 }
 
 PyObject *
 _PyInterpreterState_GetIDObject(PyInterpreterState *interp)
 {
-    if (_PyInterpreterState_IDInitref(interp) != 0) {
-        return NULL;
-    };
     int64_t id = PyInterpreterState_GetID(interp);
     if (id < 0) {
         return NULL;
     }
-    return (PyObject *)newinterpid(&_PyInterpreterID_Type, id, 0);
+    return (PyObject *)newinterpid(&_PyInterpreterID_Type, id, interp);
 }
 
 PyInterpreterState *

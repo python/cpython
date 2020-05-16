@@ -480,6 +480,9 @@ _PyInterpreterState_IDInitref(PyInterpreterState *interp)
     if (interp->id_mutex != NULL) {
         return 0;
     }
+    if (interp == PyInterpreterState_Main()) {
+        return 0;
+    }
     interp->id_mutex = PyThread_allocate_lock();
     if (interp->id_mutex == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
