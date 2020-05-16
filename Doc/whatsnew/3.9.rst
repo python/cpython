@@ -281,6 +281,13 @@ Add :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
 :func:`curses.get_tabsize`, and :func:`curses.set_tabsize` functions.
 (Contributed by Anthony Sottile in :issue:`38312`.)
 
+datetime
+--------
+The :meth:`~datetime.date.isocalendar()` of :class:`datetime.date`
+and :meth:`~datetime.datetime.isocalendar()` of :class:`datetime.datetime`
+methods now returns a :func:`~collections.namedtuple` instead of a :class:`tuple`.
+(Contributed by Dong-hee Na in :issue:`24416`.)
+
 fcntl
 -----
 
