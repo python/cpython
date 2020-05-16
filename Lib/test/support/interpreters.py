@@ -1,18 +1,26 @@
 """Subinterpreters High Level Module."""
 
 import _xxsubinterpreters as _interpreters
+# aliases:
+from _xxsubinterpreters import (
+    ChannelError, ChannelNotFoundError,
+    ChannelEmptyError, ChannelNotEmptyError, NotReceivedError,
+    is_shareable,
+)
 
 __all__ = [
     'Interpreter', 'get_current', 'get_main', 'create', 'list_all',
     'SendChannel', 'RecvChannel',
     'create_channel', 'list_all_channels', 'is_shareable',
+    'ChannelError', 'ChannelNotFoundError',
+    'ChannelEmptyError', 'ChannelNotEmptyError',
+    'NotReceivedError',
     ]
 
 
 def create(*, isolated=True):
     """
     Initialize a new (idle) Python interpreter.
-
     """
     id = _interpreters.create(isolated=isolated)
     return Interpreter(id, isolated=isolated)
@@ -80,18 +88,8 @@ class Interpreter:
         Run the given source code in the interpreter.
         This blocks the current Python thread until done.
         """
-        try:
-            _interpreters.run_string(self._id, src_str)
-        except _interpreters.RunFailedError as err:
-            raise
+        _interpreters.run_string(self._id, src_str)
 
-
-def is_shareable(obj):
-    """
-    Return `True` if the object's data can be
-    shared between interpreters and `False` otherwise.
-    """
-    return _interpreters.is_shareable(obj)
 
 def create_channel():
     """
@@ -119,8 +117,8 @@ class RecvChannel:
     def __init__(self, id):
         self._id = id
 
-    def recv(self, *, _delay=10 / 1000):  # seconds
-        """ channel_recv() -> obj
+    def recv(self, *, _delay=10 / 1000):  # 10 milliseconds
+        """
         Get the next object from the channel,
         and wait if none have been sent.
         Associate the interpreter with the channel.
@@ -133,19 +131,22 @@ class RecvChannel:
             obj = _interpreters.channel_recv(self._id, sentinel)
         return obj
 
-    _NOT_SET = object()
-
     def recv_nowait(self, default=None):
         """
         Like recv(), but return the default
         instead of waiting.
-        """
 
+        This function is blocked by a missing low-level
+        implementation of channel_recv_wait().
+        """
         if default is None:
+            default = _NOT_SET
+        if default is _NOT_SET:
             return _interpreters.channel_recv(self._id)
         else:
             return _interpreters.channel_recv(self._id, default)
 
+_NOT_SET = object()
 
 class SendChannel:
     """
@@ -169,6 +170,9 @@ class SendChannel:
     def send_nowait(self, obj):
         """
         Like send(), but return False if not received.
+
+        This function is blocked by a missing low-level
+        implementation of channel_send_wait().
         """
 
         _interpreters.channel_send(self._id, obj)

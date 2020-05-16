@@ -530,16 +530,3 @@ class TestSendRecv(TestBase):
                 except _interpreters.ChannelEmptyError:
                     time.sleep(0.1)
             s.send(obj)
-        t = threading.Thread(target=f)
-        t.start()
-
-        s.send(b'spam')
-        t.join()
-        obj = r.recv_nowait()
-
-        self.assertEqual(obj, b'spam')
-
-    def test_recv_nowait_empty(self):
-        r, s = interpreters.create_channel()
-        with self.assertRaises(_interpreters.ChannelEmptyError):
-            r.recv_nowait()
