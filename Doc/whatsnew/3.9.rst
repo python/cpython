@@ -480,6 +480,14 @@ The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
 constant on Linux 4.1 and greater.
 (Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
 
+time
+----
+
+On AIX, :func:`~time.thread_time` is now implemented with ``thread_cputime()``
+which has nanosecond resolution, rather than
+``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 ms.
+(Contributed by Batuhan Taskaya in :issue:`40192`)
+
 sys
 ---
 
