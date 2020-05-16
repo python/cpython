@@ -171,6 +171,10 @@ SyntaxError: cannot assign to operator
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
 
+>>> for i < (): pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
 >>> with a as b(): pass
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
@@ -188,6 +192,10 @@ Traceback (most recent call last):
 SyntaxError: cannot assign to operator
 
 >>> with a as (x, *(y, z.d())): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> with a as b, c as d(): pass
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
 

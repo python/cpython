@@ -181,9 +181,10 @@ with_stmt[stmt_ty]:
        CHECK_VERSION(5, "Async with statements are", _Py_AsyncWith(a, b, NULL, EXTRA)) }
     | ASYNC 'with' a=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
        CHECK_VERSION(5, "Async with statements are", _Py_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
-    | invalid_with_target
 with_item[withitem_ty]:
-    | e=expression o=['as' t=target { t }] { _Py_withitem(e, o, p->arena) }
+    | e=expression 'as' t=target &(',' | ')' | ':') { _Py_withitem(e, t, p->arena) }
+    | invalid_with_item
+    | e=expression { _Py_withitem(e, NULL, p->arena) }
 
 try_stmt[stmt_ty]:
     | 'try' ':' b=block f=finally_block { _Py_Try(b, NULL, NULL, f, EXTRA) }
@@ -676,8 +677,8 @@ invalid_lambda_star_etc:
 invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
-invalid_with_target:
-    | ASYNC? 'with' expression 'as' a=expressions ':' {
+invalid_with_item:
+    | expression 'as' a=expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             GET_INVALID_TARGET(a),
             "cannot assign to %s", _PyPegen_get_expr_name(GET_INVALID_TARGET(a))
@@ -688,10 +689,12 @@ invalid_with_target:
 # for invalid targets.
 invalid_for_target:
     | ASYNC? 'for' a=comparison {
+        _PyPegen_get_invalid_for_target(a) != NULL ?
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            GET_INVALID_TARGET(a->v.Compare.left),
-            "cannot assign to %s", _PyPegen_get_expr_name(GET_INVALID_TARGET(a->v.Compare.left))
-        ) }
+            _PyPegen_get_invalid_for_target(a),
+            "cannot assign to %s", _PyPegen_get_expr_name(_PyPegen_get_invalid_for_target(a))
+        ) :
+        NULL }
 
 invalid_group:
     | '(' a=starred_expression ')' {
