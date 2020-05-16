@@ -1190,10 +1190,10 @@ class _Unparser(NodeVisitor):
 
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
     unop_precedence = {
-        "~": _Precedence.FACTOR,
         "not": _Precedence.NOT,
+        "~": _Precedence.FACTOR,
         "+": _Precedence.FACTOR,
-        "-": _Precedence.FACTOR
+        "-": _Precedence.FACTOR,
     }
 
     def visit_UnaryOp(self, node):
@@ -1201,7 +1201,10 @@ class _Unparser(NodeVisitor):
         operator_precedence = self.unop_precedence[operator]
         with self.require_parens(operator_precedence, node):
             self.write(operator)
-            self.write(" ")
+            # factor prefixes (+, -, ~) shouldn't be seperated
+            # from the value they belong, (e.g: +1 instead of + 1)
+            if operator_precedence is not _Precedence.FACTOR:
+                self.write(" ")
             self.set_precedence(operator_precedence, node.operand)
             self.traverse(node.operand)
 
