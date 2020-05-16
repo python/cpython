@@ -1057,6 +1057,10 @@ def check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=No
 
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
+    try:
+        import gzip
+    except ImportError:
+        gzip = None
 
     check = kw.pop('check', None)
 
