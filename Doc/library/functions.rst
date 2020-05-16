@@ -250,7 +250,7 @@ are always available.  They are listed here in alphabetical order.
    :ref:`compiler options <ast-compiler-flags>` should be activated
    and which :ref:`future features <future>` should be allowed. If neither
    is present (or both are zero) the code is compiled with the same flags that
-   are effecting the code that is calling :func:`compile`. If the *flags*
+   affect the code that is calling :func:`compile`. If the *flags*
    argument is given and *dont_inherit* is not (or is zero) then the compiler
    options and the future statements specified by the *flags* argument are used
    in addition to those that would be used anyway. If *dont_inherit* is a
