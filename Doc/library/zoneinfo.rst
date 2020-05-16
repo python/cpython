@@ -121,11 +121,14 @@ Compile-time configuration
 
 The default :data:`TZPATH` includes several common deployment locations for the
 time zone database (except on Windows, where there are no "well-known"
-locations for time zone data). Downstream distributors and those building
-Python from source who know where their system time zone data is deployed may
-change the default time zone path by specifying the compile-time option
-``PYTHONTZPATHDEFAULT``, which should be a string delimited by
-:data:`os.pathsep`.
+locations for time zone data). On POSIX systems, downstream distributors and
+those building Python from source who know where their system
+time zone data is deployed may change the default time zone path by specifying
+the compile-time option ``TZPATH`` (or, more likely, the ``configure`` flag
+``--with-tzpath``), which should be a string delimited by :data:`os.pathsep`.
+
+On all platforms, the configured value is available as the ``TZPATH`` key in
+:func:`sysconfig.get_config_var`.
 
 .. _zoneinfo_data_environment_var:
 
