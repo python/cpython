@@ -27,9 +27,10 @@ c_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
 py_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
 
 try:
-    from _hashlib import HASH
+    from _hashlib import HASH, HASHXOF
 except ImportError:
     HASH = None
+    HASHXOF = None
 
 try:
     import _blake2
@@ -253,6 +254,9 @@ class HashLibTestCase(unittest.TestCase):
         for cons in self.hash_constructors:
             h = cons()
             if h.name not in self.shakes:
+                continue
+            if HASH is not None and isinstance(h, HASH):
+                # _hashopenssl's take a size_t
                 continue
             for digest in h.digest, h.hexdigest:
                 self.assertRaises(ValueError, digest, -10)
@@ -859,6 +863,18 @@ class HashLibTestCase(unittest.TestCase):
                          'need _hashlib.get_fips_mode')
     def test_get_fips_mode(self):
         self.assertIsInstance(c_hashlib.get_fips_mode(), int)
+
+    @unittest.skipUnless(HASH is not None, 'need _hashlib')
+    def test_internal_types(self):
+        # internal types like _hashlib.HASH are not constructable
+        with self.assertRaisesRegex(
+            TypeError, "cannot create 'HASH' instance"
+        ):
+            HASH()
+        with self.assertRaisesRegex(
+            TypeError, "cannot create 'HASHXOF' instance"
+        ):
+            HASHXOF()
 
 
 class KDFTests(unittest.TestCase):

@@ -55,6 +55,9 @@ static PyModuleDef _hashlibmodule;
 
 typedef struct {
     PyTypeObject *EVPtype;
+#ifdef PY_OPENSSL_HAS_SHAKE
+    PyTypeObject *EVPXOFtype;
+#endif
 } _hashlibstate;
 
 static inline _hashlibstate*
@@ -79,8 +82,9 @@ typedef struct {
 /*[clinic input]
 module _hashlib
 class _hashlib.HASH "EVPobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPtype"
+class _hashlib.HASHXOF "EVPobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPXOFtype"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1adf85e8eb2ab979]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=813acc7b2d8f322c]*/
 
 
 /* LCOV_EXCL_START */
@@ -113,6 +117,15 @@ _setException(PyObject *exc)
     return NULL;
 }
 /* LCOV_EXCL_STOP */
+
+/* {Py_tp_new, NULL} doesn't block __new__ */
+static PyObject *
+_disabled_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot create '%.100s' instances", _PyType_Name(type));
+    return NULL;
+}
 
 static PyObject*
 py_digest_name(const EVP_MD *md)
@@ -249,11 +262,9 @@ py_digest_by_name(const char *name)
 }
 
 static EVPobject *
-newEVPobject(void)
+newEVPobject(PyTypeObject *type)
 {
-    EVPobject *retval = (EVPobject *)PyObject_New(
-        EVPobject, _hashlibstate_global->EVPtype
-    );
+    EVPobject *retval = (EVPobject *)PyObject_New(EVPobject, type);
     if (retval == NULL) {
         return NULL;
     }
@@ -327,7 +338,7 @@ EVP_copy_impl(EVPobject *self)
 {
     EVPobject *newobj;
 
-    if ( (newobj = newEVPobject())==NULL)
+    if ((newobj = newEVPobject(Py_TYPE(self))) == NULL)
         return NULL;
 
     if (!locked_EVP_MD_CTX_copy(newobj->ctx, self)) {
@@ -502,7 +513,8 @@ EVP_repr(EVPobject *self)
     if (!name_obj) {
         return NULL;
     }
-    repr = PyUnicode_FromFormat("<%U HASH object @ %p>", name_obj, self);
+    repr = PyUnicode_FromFormat("<%U %s object @ %p>",
+                                name_obj, Py_TYPE(self)->tp_name, self);
     Py_DECREF(name_obj);
     return repr;
 }
@@ -531,6 +543,7 @@ static PyType_Slot EVPtype_slots[] = {
     {Py_tp_doc, (char *)hashtype_doc},
     {Py_tp_methods, EVP_methods},
     {Py_tp_getset, EVP_getseters},
+    {Py_tp_new, _disabled_new},
     {0, 0},
 };
 
@@ -542,19 +555,179 @@ static PyType_Spec EVPtype_spec = {
     EVPtype_slots
 };
 
+#ifdef PY_OPENSSL_HAS_SHAKE
+
+/*[clinic input]
+_hashlib.HASHXOF.digest as EVPXOF_digest
+
+  length: Py_ssize_t
+
+Return the digest value as a bytes object.
+[clinic start generated code]*/
+
 static PyObject *
-EVPnew(const EVP_MD *digest,
+EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length)
+/*[clinic end generated code: output=ef9320c23280efad input=816a6537cea3d1db]*/
+{
+    EVP_MD_CTX *temp_ctx;
+    PyObject *retval = PyBytes_FromStringAndSize(NULL, length);
+
+    if (retval == NULL) {
+        return NULL;
+    }
+
+    temp_ctx = EVP_MD_CTX_new();
+    if (temp_ctx == NULL) {
+        Py_DECREF(retval);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    if (!locked_EVP_MD_CTX_copy(temp_ctx, self)) {
+        Py_DECREF(retval);
+        EVP_MD_CTX_free(temp_ctx);
+        return _setException(PyExc_ValueError);
+    }
+    if (!EVP_DigestFinalXOF(temp_ctx,
+                            (unsigned char*)PyBytes_AS_STRING(retval),
+                            length)) {
+        Py_DECREF(retval);
+        EVP_MD_CTX_free(temp_ctx);
+        _setException(PyExc_ValueError);
+        return NULL;
+    }
+
+    EVP_MD_CTX_free(temp_ctx);
+    return retval;
+}
+
+/*[clinic input]
+_hashlib.HASHXOF.hexdigest as EVPXOF_hexdigest
+
+    length: Py_ssize_t
+
+Return the digest value as a string of hexadecimal digits.
+[clinic start generated code]*/
+
+static PyObject *
+EVPXOF_hexdigest_impl(EVPobject *self, Py_ssize_t length)
+/*[clinic end generated code: output=eb3e6ee7788bf5b2 input=5f9d6a8f269e34df]*/
+{
+    unsigned char *digest;
+    EVP_MD_CTX *temp_ctx;
+    PyObject *retval;
+
+    digest = (unsigned char*)PyMem_Malloc(length);
+    if (digest == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    temp_ctx = EVP_MD_CTX_new();
+    if (temp_ctx == NULL) {
+        PyMem_Free(digest);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    /* Get the raw (binary) digest value */
+    if (!locked_EVP_MD_CTX_copy(temp_ctx, self)) {
+        PyMem_Free(digest);
+        EVP_MD_CTX_free(temp_ctx);
+        return _setException(PyExc_ValueError);
+    }
+    if (!EVP_DigestFinalXOF(temp_ctx, digest, length)) {
+        PyMem_Free(digest);
+        EVP_MD_CTX_free(temp_ctx);
+        _setException(PyExc_ValueError);
+        return NULL;
+    }
+
+    EVP_MD_CTX_free(temp_ctx);
+
+    retval = _Py_strhex((const char *)digest, length);
+    PyMem_Free(digest);
+    return retval;
+}
+
+static PyMethodDef EVPXOF_methods[] = {
+    EVPXOF_DIGEST_METHODDEF
+    EVPXOF_HEXDIGEST_METHODDEF
+    {NULL, NULL}  /* sentinel */
+};
+
+
+static PyObject *
+EVPXOF_get_digest_size(EVPobject *self, void *closure)
+{
+    return PyLong_FromLong(0);
+}
+
+static PyGetSetDef EVPXOF_getseters[] = {
+    {"digest_size",
+     (getter)EVPXOF_get_digest_size, NULL,
+     NULL,
+     NULL},
+    {NULL}  /* Sentinel */
+};
+
+PyDoc_STRVAR(hashxoftype_doc,
+"HASHXOF(name, string=b\'\')\n"
+"--\n"
+"\n"
+"A hash is an object used to calculate a checksum of a string of information.\n"
+"\n"
+"Methods:\n"
+"\n"
+"update() -- updates the current digest with an additional string\n"
+"digest(length) -- return the current digest value\n"
+"hexdigest(length) -- return the current digest as a string of hexadecimal digits\n"
+"copy() -- return a copy of the current hash object\n"
+"\n"
+"Attributes:\n"
+"\n"
+"name -- the hash algorithm being used by this object\n"
+"digest_size -- number of bytes in this hashes output");
+
+static PyType_Slot EVPXOFtype_slots[] = {
+    {Py_tp_doc, (char *)hashxoftype_doc},
+    {Py_tp_methods, EVPXOF_methods},
+    {Py_tp_getset, EVPXOF_getseters},
+    {Py_tp_new, _disabled_new},
+    {0, 0},
+};
+
+static PyType_Spec EVPXOFtype_spec = {
+    "_hashlib.HASHXOF",    /*tp_name*/
+    sizeof(EVPobject),  /*tp_basicsize*/
+    0,                  /*tp_itemsize*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    EVPXOFtype_slots
+};
+
+
+#endif
+
+static PyObject *
+EVPnew(PyObject *module, const EVP_MD *digest,
        const unsigned char *cp, Py_ssize_t len, int usedforsecurity)
 {
     int result = 0;
     EVPobject *self;
+    PyTypeObject *type = get_hashlib_state(module)->EVPtype;
 
     if (!digest) {
         PyErr_SetString(PyExc_ValueError, "unsupported hash type");
         return NULL;
     }
 
-    if ((self = newEVPobject()) == NULL)
+#ifdef PY_OPENSSL_HAS_SHAKE
+    if ((EVP_MD_flags(digest) & EVP_MD_FLAG_XOF) == EVP_MD_FLAG_XOF) {
+        type = get_hashlib_state(module)->EVPXOFtype;
+    }
+#endif
+
+    if ((self = newEVPobject(type)) == NULL)
         return NULL;
 
     if (!usedforsecurity) {
@@ -614,7 +787,7 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
     Py_buffer view = { 0 };
     PyObject *ret_obj;
     char *name;
-    const EVP_MD *digest;
+    const EVP_MD *digest = NULL;
 
     if (!PyArg_Parse(name_obj, "s", &name)) {
         PyErr_SetString(PyExc_TypeError, "name must be a string");
@@ -626,7 +799,7 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
 
     digest = py_digest_by_name(name);
 
-    ret_obj = EVPnew(digest,
+    ret_obj = EVPnew(module, digest,
                      (unsigned char*)view.buf, view.len,
                      usedforsecurity);
 
@@ -645,7 +818,7 @@ EVP_fast_new(PyObject *module, PyObject *data_obj, const EVP_MD *digest,
     if (data_obj)
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
 
-    ret_obj = EVPnew(digest,
+    ret_obj = EVPnew(module, digest,
                      (unsigned char*)view.buf, view.len,
                      usedforsecurity);
 
@@ -774,6 +947,125 @@ _hashlib_openssl_sha512_impl(PyObject *module, PyObject *data_obj,
     return EVP_fast_new(module, data_obj, EVP_sha512(), usedforsecurity);
 }
 
+
+#ifdef PY_OPENSSL_HAS_SHA3
+
+/*[clinic input]
+_hashlib.openssl_sha3_224
+
+    string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
+
+Returns a sha3-224 hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_sha3_224_impl(PyObject *module, PyObject *data_obj,
+                               int usedforsecurity)
+/*[clinic end generated code: output=144641c1d144b974 input=e3a01b2888916157]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_sha3_224(), usedforsecurity);
+}
+
+/*[clinic input]
+_hashlib.openssl_sha3_256
+
+    string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
+
+Returns a sha3-256 hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_sha3_256_impl(PyObject *module, PyObject *data_obj,
+                               int usedforsecurity)
+/*[clinic end generated code: output=c61f1ab772d06668 input=e2908126c1b6deed]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_sha3_256(), usedforsecurity);
+}
+
+/*[clinic input]
+_hashlib.openssl_sha3_384
+
+    string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
+
+Returns a sha3-384 hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_sha3_384_impl(PyObject *module, PyObject *data_obj,
+                               int usedforsecurity)
+/*[clinic end generated code: output=f68e4846858cf0ee input=ec0edf5c792f8252]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_sha3_384(), usedforsecurity);
+}
+
+/*[clinic input]
+_hashlib.openssl_sha3_512
+
+    string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
+
+Returns a sha3-512 hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_sha3_512_impl(PyObject *module, PyObject *data_obj,
+                               int usedforsecurity)
+/*[clinic end generated code: output=2eede478c159354a input=64e2cc0c094d56f4]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_sha3_512(), usedforsecurity);
+}
+#endif /* PY_OPENSSL_HAS_SHA3 */
+
+#ifdef PY_OPENSSL_HAS_SHAKE
+/*[clinic input]
+_hashlib.openssl_shake128
+
+    string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
+
+Returns a shake128 variable hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_shake128_impl(PyObject *module, PyObject *data_obj,
+                               int usedforsecurity)
+/*[clinic end generated code: output=c68a0e30b4c09e1a input=b6d1e9566bacbb64]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_shake128(), usedforsecurity);
+}
+
+/*[clinic input]
+_hashlib.openssl_shake256
+
+    string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
+
+Returns a shake256 variable hash object; optionally initialized with a string
+
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_openssl_shake256_impl(PyObject *module, PyObject *data_obj,
+                               int usedforsecurity)
+/*[clinic end generated code: output=d56387762dcad516 input=591b9b78c0498116]*/
+{
+    return EVP_fast_new(module, data_obj, EVP_shake256(), usedforsecurity);
+}
+#endif /* PY_OPENSSL_HAS_SHAKE */
 
 /*[clinic input]
 _hashlib.pbkdf2_hmac as pbkdf2_hmac
@@ -1163,6 +1455,12 @@ static struct PyMethodDef EVP_functions[] = {
     _HASHLIB_OPENSSL_SHA256_METHODDEF
     _HASHLIB_OPENSSL_SHA384_METHODDEF
     _HASHLIB_OPENSSL_SHA512_METHODDEF
+    _HASHLIB_OPENSSL_SHA3_224_METHODDEF
+    _HASHLIB_OPENSSL_SHA3_256_METHODDEF
+    _HASHLIB_OPENSSL_SHA3_384_METHODDEF
+    _HASHLIB_OPENSSL_SHA3_512_METHODDEF
+    _HASHLIB_OPENSSL_SHAKE128_METHODDEF
+    _HASHLIB_OPENSSL_SHAKE256_METHODDEF
     {NULL,      NULL}            /* Sentinel */
 };
 
@@ -1174,6 +1472,9 @@ hashlib_traverse(PyObject *m, visitproc visit, void *arg)
 {
     _hashlibstate *state = get_hashlib_state(m);
     Py_VISIT(state->EVPtype);
+#ifdef PY_OPENSSL_HAS_SHAKE
+    Py_VISIT(state->EVPXOFtype);
+#endif
     return 0;
 }
 
@@ -1182,6 +1483,9 @@ hashlib_clear(PyObject *m)
 {
     _hashlibstate *state = get_hashlib_state(m);
     Py_CLEAR(state->EVPtype);
+#ifdef PY_OPENSSL_HAS_SHAKE
+    Py_CLEAR(state->EVPXOFtype);
+#endif
     return 0;
 }
 
@@ -1208,6 +1512,10 @@ PyMODINIT_FUNC
 PyInit__hashlib(void)
 {
     PyObject *m, *openssl_md_meth_names;
+    _hashlibstate *state = NULL;
+#ifdef PY_OPENSSL_HAS_SHAKE
+    PyObject *bases;
+#endif
 
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
     /* Load all digest algorithms and initialize cpuid */
@@ -1225,10 +1533,37 @@ PyInit__hashlib(void)
     if (m == NULL)
         return NULL;
 
+    state = get_hashlib_state(m);
+
     PyTypeObject *EVPtype = (PyTypeObject *)PyType_FromSpec(&EVPtype_spec);
-    if (EVPtype == NULL)
+    if (EVPtype == NULL) {
+        Py_DECREF(m);
         return NULL;
-    get_hashlib_state(m)->EVPtype = EVPtype;
+    }
+    state->EVPtype = EVPtype;
+
+    Py_INCREF((PyObject *)state->EVPtype);
+    PyModule_AddObject(m, "HASH", (PyObject *)state->EVPtype);
+
+#ifdef PY_OPENSSL_HAS_SHAKE
+    bases = PyTuple_Pack(1, (PyObject *)EVPtype);
+    if (bases == NULL) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    PyTypeObject *EVPXOFtype = (PyTypeObject *)PyType_FromSpecWithBases(
+        &EVPXOFtype_spec, bases
+    );
+    Py_DECREF(bases);
+    if (EVPXOFtype == NULL) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    state->EVPXOFtype = EVPXOFtype;
+
+    Py_INCREF((PyObject *)state->EVPXOFtype);
+    PyModule_AddObject(m, "HASHXOF", (PyObject *)state->EVPXOFtype);
+#endif
 
     openssl_md_meth_names = generate_hash_name_list();
     if (openssl_md_meth_names == NULL) {
@@ -1239,9 +1574,6 @@ PyInit__hashlib(void)
         Py_DECREF(m);
         return NULL;
     }
-
-    Py_INCREF((PyObject *)get_hashlib_state(m)->EVPtype);
-    PyModule_AddObject(m, "HASH", (PyObject *)get_hashlib_state(m)->EVPtype);
 
     PyState_AddModule(m, &_hashlibmodule);
     return m;
