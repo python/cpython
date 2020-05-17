@@ -217,6 +217,18 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     assert(f->f_back == NULL);
     f->f_back = tstate->frame;
 
+    _PyErr_StackItem *gi_exc_state = &gen->gi_exc_state;
+    if (exc && gi_exc_state->exc_type != NULL &&
+        gi_exc_state->exc_type != Py_None)
+    {
+        Py_INCREF(gi_exc_state->exc_type);
+        Py_XINCREF(gi_exc_state->exc_value);
+        Py_XINCREF(gi_exc_state->exc_traceback);
+        _PyErr_ChainExceptions(gi_exc_state->exc_type,
+                               gi_exc_state->exc_value,
+                               gi_exc_state->exc_traceback);
+    }
+
     gen->gi_running = 1;
     gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
@@ -512,16 +524,6 @@ throw_here:
     }
 
     PyErr_Restore(typ, val, tb);
-
-    _PyErr_StackItem *gi_exc_state = &gen->gi_exc_state;
-    if (gi_exc_state->exc_type != NULL && gi_exc_state->exc_type != Py_None) {
-        Py_INCREF(gi_exc_state->exc_type);
-        Py_XINCREF(gi_exc_state->exc_value);
-        Py_XINCREF(gi_exc_state->exc_traceback);
-        _PyErr_ChainExceptions(gi_exc_state->exc_type,
-                               gi_exc_state->exc_value,
-                               gi_exc_state->exc_traceback);
-    }
     return gen_send_ex(gen, Py_None, 1, 0);
 
 failed_throw:

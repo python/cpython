@@ -1519,7 +1519,7 @@ lookup_method(PyObject *self, _Py_Identifier *attrid, int *unbound)
 {
     PyObject *res = lookup_maybe_method(self, attrid, unbound);
     if (res == NULL && !PyErr_Occurred()) {
-        PyErr_SetObject(PyExc_AttributeError, attrid->object);
+        PyErr_SetObject(PyExc_AttributeError, _PyUnicode_FromId(attrid));
     }
     return res;
 }
@@ -2954,10 +2954,10 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     PyTypeObject *type, *base;
 
     const PyType_Slot *slot;
-    Py_ssize_t nmembers, weaklistoffset, dictoffset;
+    Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
 
-    nmembers = weaklistoffset = dictoffset = 0;
+    nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot == Py_tp_members) {
             nmembers = 0;
@@ -2974,6 +2974,12 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
                     assert(memb->type == T_PYSSIZET);
                     assert(memb->flags == READONLY);
                     dictoffset = memb->offset;
+                }
+                if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
+                    // The PyMemberDef must be a Py_ssize_t and readonly
+                    assert(memb->type == T_PYSSIZET);
+                    assert(memb->flags == READONLY);
+                    vectorcalloffset = memb->offset;
                 }
             }
         }
@@ -3121,6 +3127,10 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
            subtype_dealloc will call the base type's tp_dealloc, if
            necessary. */
         type->tp_dealloc = subtype_dealloc;
+    }
+
+    if (vectorcalloffset) {
+        type->tp_vectorcall_offset = vectorcalloffset;
     }
 
     if (PyType_Ready(type) < 0)
@@ -6854,12 +6864,12 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 }
 
 static _Py_Identifier name_op[] = {
-    {0, "__lt__", 0},
-    {0, "__le__", 0},
-    {0, "__eq__", 0},
-    {0, "__ne__", 0},
-    {0, "__gt__", 0},
-    {0, "__ge__", 0}
+    _Py_static_string_init("__lt__"),
+    _Py_static_string_init("__le__"),
+    _Py_static_string_init("__eq__"),
+    _Py_static_string_init("__ne__"),
+    _Py_static_string_init("__gt__"),
+    _Py_static_string_init("__ge__"),
 };
 
 static PyObject *

@@ -197,6 +197,9 @@ OPENSSL_INCLUDES=@OPENSSL_INCLUDES@
 OPENSSL_LIBS=@OPENSSL_LIBS@
 OPENSSL_LDFLAGS=@OPENSSL_LDFLAGS@
 
+# Default zoneinfo.TZPATH. Added here to expose it in sysconfig.get_config_var
+TZPATH=@TZPATH@
+
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
 DIRMODE=	755
@@ -351,6 +354,7 @@ PYTHON_OBJS=	\
 		Python/getversion.o \
 		Python/graminit.o \
 		Python/hamt.o \
+		Python/hashtable.o \
 		Python/import.o \
 		Python/importdl.o \
 		Python/initconfig.o \
@@ -1131,6 +1135,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
+		$(srcdir)/Include/internal/pycore_hashtable.h \
 		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_interp.h \

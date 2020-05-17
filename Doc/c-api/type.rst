@@ -228,6 +228,7 @@ The following functions and structs are used to create
       * :c:member:`~PyTypeObject.tp_dictoffset`
         (see :ref:`PyMemberDef <pymemberdef-offsets>`)
       * :c:member:`~PyTypeObject.tp_vectorcall_offset`
+        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
       * :c:member:`~PyBufferProcs.bf_getbuffer`
       * :c:member:`~PyBufferProcs.bf_releasebuffer`
 

@@ -554,37 +554,65 @@ finally:
 static void
 print_error_text(PyObject *f, int offset, PyObject *text_obj)
 {
-    const char *text;
-    const char *nl;
-
-    text = PyUnicode_AsUTF8(text_obj);
+    /* Convert text to a char pointer; return if error */
+    const char *text = PyUnicode_AsUTF8(text_obj);
     if (text == NULL)
         return;
 
-    if (offset >= 0) {
-        if (offset > 0 && (size_t)offset == strlen(text) && text[offset - 1] == '\n')
-            offset--;
-        for (;;) {
-            nl = strchr(text, '\n');
-            if (nl == NULL || nl-text >= offset)
-                break;
-            offset -= (int)(nl+1-text);
-            text = nl+1;
-        }
-        while (*text == ' ' || *text == '\t' || *text == '\f') {
-            text++;
-            offset--;
-        }
+    /* Convert offset from 1-based to 0-based */
+    offset--;
+
+    /* Strip leading whitespace from text, adjusting offset as we go */
+    while (*text == ' ' || *text == '\t' || *text == '\f') {
+        text++;
+        offset--;
     }
+
+    /* Calculate text length excluding trailing newline */
+    Py_ssize_t len = strlen(text);
+    if (len > 0 && text[len-1] == '\n') {
+        len--;
+    }
+
+    /* Clip offset to at most len */
+    if (offset > len) {
+        offset = len;
+    }
+
+    /* Skip past newlines embedded in text */
+    for (;;) {
+        const char *nl = strchr(text, '\n');
+        if (nl == NULL) {
+            break;
+        }
+        Py_ssize_t inl = nl - text;
+        if (inl >= (Py_ssize_t)offset) {
+            break;
+        }
+        inl += 1;
+        text += inl;
+        len -= inl;
+        offset -= (int)inl;
+    }
+
+    /* Print text */
     PyFile_WriteString("    ", f);
     PyFile_WriteString(text, f);
-    if (*text == '\0' || text[strlen(text)-1] != '\n')
+
+    /* Make sure there's a newline at the end */
+    if (text[len] != '\n') {
         PyFile_WriteString("\n", f);
-    if (offset == -1)
+    }
+
+    /* Don't print caret if it points to the left of the text */
+    if (offset < 0)
         return;
+
+    /* Write caret line */
     PyFile_WriteString("    ", f);
-    while (--offset > 0)
+    while (--offset >= 0) {
         PyFile_WriteString(" ", f);
+    }
     PyFile_WriteString("^\n", f);
 }
 
@@ -1603,9 +1631,6 @@ err_input(perrdetail *err)
         msg = "unexpected character after line continuation character";
         break;
 
-    case E_IDENTIFIER:
-        msg = "invalid character in identifier";
-        break;
     case E_BADSINGLE:
         msg = "multiple statements found while compiling a single statement";
         break;

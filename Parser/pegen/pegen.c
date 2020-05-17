@@ -300,30 +300,6 @@ error:
     Py_XDECREF(tuple);
 }
 
-static inline PyObject *
-get_error_line(char *buffer, int is_file)
-{
-    const char *newline;
-    if (is_file) {
-        newline = strrchr(buffer, '\n');
-    } else {
-        newline = strchr(buffer, '\n');
-    }
-
-    if (is_file) {
-        while (newline > buffer && newline[-1] == '\n') {
-            --newline;
-        }
-    }
-
-    if (newline) {
-        return PyUnicode_DecodeUTF8(buffer, newline - buffer, "replace");
-    }
-    else {
-        return PyUnicode_DecodeUTF8(buffer, strlen(buffer), "replace");
-    }
-}
-
 static int
 tokenizer_error(Parser *p)
 {
@@ -336,9 +312,6 @@ tokenizer_error(Parser *p)
     switch (p->tok->done) {
         case E_TOKEN:
             msg = "invalid token";
-            break;
-        case E_IDENTIFIER:
-            msg = "invalid character in identifier";
             break;
         case E_EOFS:
             RAISE_SYNTAX_ERROR("EOF while scanning triple-quoted string literal");
@@ -383,48 +356,61 @@ tokenizer_error(Parser *p)
 }
 
 void *
-_PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number, const char *errmsg, ...)
+_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
+{
+    Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
+    int col_offset;
+    if (t->col_offset == -1) {
+        col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
+                                      intptr_t, int);
+    } else {
+        col_offset = t->col_offset + 1;
+    }
+
+    va_list va;
+    va_start(va, errmsg);
+    _PyPegen_raise_error_known_location(p, errtype, t->lineno,
+                                        col_offset, errmsg, va);
+    va_end(va);
+
+    return NULL;
+}
+
+
+void *
+_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
+                                    int lineno, int col_offset,
+                                    const char *errmsg, va_list va)
 {
     PyObject *value = NULL;
     PyObject *errstr = NULL;
-    PyObject *loc = NULL;
+    PyObject *error_line = NULL;
     PyObject *tmp = NULL;
-    Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
-    Py_ssize_t col_number = !with_col_number;
-    va_list va;
     p->error_indicator = 1;
 
-    va_start(va, errmsg);
     errstr = PyUnicode_FromFormatV(errmsg, va);
-    va_end(va);
     if (!errstr) {
         goto error;
     }
 
     if (p->start_rule == Py_file_input) {
-        loc = PyErr_ProgramTextObject(p->tok->filename, t->lineno);
+        error_line = PyErr_ProgramTextObject(p->tok->filename, lineno);
     }
 
-    if (!loc) {
-        loc = get_error_line(p->tok->buf, p->start_rule == Py_file_input);
-    }
-
-    if (loc && with_col_number) {
-        int col_offset;
-        if (t->col_offset == -1) {
-            col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
-                                          intptr_t, int);
-        } else {
-            col_offset = t->col_offset + 1;
+    if (!error_line) {
+        Py_ssize_t size = p->tok->inp - p->tok->buf;
+        if (size && p->tok->buf[size-1] == '\n') {
+            size--;
         }
-        col_number = byte_offset_to_character_offset(loc, col_offset);
-    }
-    else if (!loc) {
-        Py_INCREF(Py_None);
-        loc = Py_None;
+        error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
+        if (!error_line) {
+            goto error;
+        }
     }
 
-    tmp = Py_BuildValue("(OiiN)", p->tok->filename, t->lineno, col_number, loc);
+    int col_number = byte_offset_to_character_offset(error_line, col_offset);
+
+    tmp = Py_BuildValue("(OiiN)", p->tok->filename, lineno, col_number, error_line);
     if (!tmp) {
         goto error;
     }
@@ -441,7 +427,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int with_col_number, const ch
 
 error:
     Py_XDECREF(errstr);
-    Py_XDECREF(loc);
+    Py_XDECREF(error_line);
     return NULL;
 }
 
@@ -2067,4 +2053,50 @@ _PyPegen_make_module(Parser *p, asdl_seq *a) {
         }
     }
     return Module(a, type_ignores, p->arena);
+}
+
+// Error reporting helpers
+
+expr_ty
+_PyPegen_get_invalid_target(expr_ty e)
+{
+    if (e == NULL) {
+        return NULL;
+    }
+
+#define VISIT_CONTAINER(CONTAINER, TYPE) do { \
+        Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
+        for (Py_ssize_t i = 0; i < len; i++) {\
+            expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
+            expr_ty child = _PyPegen_get_invalid_target(other);\
+            if (child != NULL) {\
+                return child;\
+            }\
+        }\
+    } while (0)
+
+    // We only need to visit List and Tuple nodes recursively as those
+    // are the only ones that can contain valid names in targets when
+    // they are parsed as expressions. Any other kind of expression
+    // that is a container (like Sets or Dicts) is directly invalid and
+    // we don't need to visit it recursively.
+
+    switch (e->kind) {
+        case List_kind: {
+            VISIT_CONTAINER(e, List);
+            return NULL;
+        }
+        case Tuple_kind: {
+            VISIT_CONTAINER(e, Tuple);
+            return NULL;
+        }
+        case Starred_kind:
+            return _PyPegen_get_invalid_target(e->v.Starred.value);
+        case Name_kind:
+        case Subscript_kind:
+        case Attribute_kind:
+            return NULL;
+        default:
+            return e;
+    }
 }

@@ -18,7 +18,7 @@ struct _is;
 
 /* struct _ts is defined in cpython/pystate.h */
 typedef struct _ts PyThreadState;
-/* struct _is is defined in internal/pycore_pystate.h */
+/* struct _is is defined in internal/pycore_interp.h */
 typedef struct _is PyInterpreterState;
 
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);

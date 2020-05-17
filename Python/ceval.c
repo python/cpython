@@ -1396,7 +1396,7 @@ main_loop:
         /* Do periodic things.  Doing this every time through
            the loop would add too much overhead, so we do it
            only every Nth instruction.  We also do it if
-           ``pendingcalls_to_do'' is set, i.e. when an asynchronous
+           ``pending.calls_to_do'' is set, i.e. when an asynchronous
            event needs attention (e.g. a signal handler or
            async I/O handler); see Py_AddPendingCall() and
            Py_MakePendingCalls() above. */
@@ -4414,7 +4414,7 @@ special_lookup(PyThreadState *tstate, PyObject *o, _Py_Identifier *id)
     PyObject *res;
     res = _PyObject_LookupSpecial(o, id);
     if (res == NULL && !_PyErr_Occurred(tstate)) {
-        _PyErr_SetObject(tstate, PyExc_AttributeError, id->object);
+        _PyErr_SetObject(tstate, PyExc_AttributeError, _PyUnicode_FromId(id));
         return NULL;
     }
     return res;
@@ -5054,7 +5054,7 @@ trace_call_function(PyThreadState *tstate,
                     PyObject *kwnames)
 {
     PyObject *x;
-    if (PyCFunction_Check(func)) {
+    if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         C_TRACE(x, PyObject_Vectorcall(func, args, nargs, kwnames));
         return x;
     }
@@ -5115,7 +5115,7 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
 {
     PyObject *result;
 
-    if (PyCFunction_Check(func)) {
+    if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
     }

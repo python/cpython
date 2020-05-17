@@ -424,9 +424,11 @@ Accessing attributes of extension types
 
    Heap allocated types (created using :c:func:`PyType_FromSpec` or similar),
    ``PyMemberDef`` may contain definitions for the special members
-   ``__dictoffset__`` and ``__weaklistoffset__``, corresponding to
-   :c:member:`~PyTypeObject.tp_dictoffset` and
-   :c:member:`~PyTypeObject.tp_weaklistoffset` in type objects.
+   ``__dictoffset__``, ``__weaklistoffset__`` and ``__vectorcalloffset__``,
+   corresponding to
+   :c:member:`~PyTypeObject.tp_dictoffset`,
+   :c:member:`~PyTypeObject.tp_weaklistoffset` and
+   :c:member:`~PyTypeObject.tp_vectorcall_offset` in type objects.
    These must be defined with ``T_PYSSIZET`` and ``READONLY``, for example::
 
       static PyMemberDef spam_type_members[] = {

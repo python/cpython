@@ -36,7 +36,7 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 
    PyId_foo is a static variable, either on block level or file level. On first
    usage, the string "foo" is interned, and the structures are linked. On interpreter
-   shutdown, all strings are released (through _PyUnicode_ClearStaticStrings).
+   shutdown, all strings are released.
 
    Alternatively, _Py_static_string allows choosing the variable name.
    _PyUnicode_FromId returns a borrowed reference to the interned string.

@@ -88,17 +88,12 @@ struct _PyTraceMalloc_Config {
     /* limit of the number of frames in a traceback, 1 by default.
        Variable protected by the GIL. */
     int max_nframe;
-
-    /* use domain in trace key?
-       Variable protected by the GIL. */
-    int use_domain;
 };
 
 #define _PyTraceMalloc_Config_INIT \
     {.initialized = TRACEMALLOC_NOT_INITIALIZED, \
      .tracing = 0, \
-     .max_nframe = 1, \
-     .use_domain = 0}
+     .max_nframe = 1}
 
 PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
 
