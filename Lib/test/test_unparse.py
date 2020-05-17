@@ -127,7 +127,7 @@ class ASTTestCase(unittest.TestCase):
             self.assertASTEqual(ast1, ast2)
 
     def check_invalid(self, node, raises=ValueError):
-        with self.subTest(node=node, raises=raises):
+        with self.subTest(node=node):
             self.assertRaises(raises, ast.unparse, node)
 
     def get_source(self, code1, code2=None):
