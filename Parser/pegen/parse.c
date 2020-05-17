@@ -11160,9 +11160,7 @@ _loop0_1_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11215,9 +11213,7 @@ _loop0_2_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11278,9 +11274,7 @@ _loop0_4_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11369,9 +11363,7 @@ _loop0_6_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11460,9 +11452,7 @@ _loop0_8_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11551,9 +11541,7 @@ _loop0_10_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11634,9 +11622,7 @@ _loop1_11_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11701,9 +11687,7 @@ _loop0_13_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12085,9 +12069,7 @@ _loop1_22_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12224,9 +12206,7 @@ _loop0_26_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12315,9 +12295,7 @@ _loop0_28_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12430,9 +12408,7 @@ _loop0_30_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12485,9 +12461,7 @@ _loop1_31_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12552,9 +12526,7 @@ _loop0_33_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12675,9 +12647,7 @@ _loop0_36_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12798,9 +12768,7 @@ _loop0_39_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12889,9 +12857,7 @@ _loop0_41_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12980,9 +12946,7 @@ _loop0_43_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13071,9 +13035,7 @@ _loop0_45_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13186,9 +13148,7 @@ _loop1_47_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13401,9 +13361,7 @@ _loop0_53_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13456,9 +13414,7 @@ _loop0_54_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13511,9 +13467,7 @@ _loop0_55_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13566,9 +13520,7 @@ _loop1_56_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13625,9 +13577,7 @@ _loop0_57_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13680,9 +13630,7 @@ _loop1_58_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13739,9 +13687,7 @@ _loop1_59_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13798,9 +13744,7 @@ _loop1_60_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13857,9 +13801,7 @@ _loop0_61_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13912,9 +13854,7 @@ _loop1_62_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13971,9 +13911,7 @@ _loop0_63_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14026,9 +13964,7 @@ _loop1_64_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14085,9 +14021,7 @@ _loop0_65_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14140,9 +14074,7 @@ _loop1_66_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14199,9 +14131,7 @@ _loop1_67_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14301,9 +14231,7 @@ _loop0_70_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14384,9 +14312,7 @@ _loop1_71_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14451,9 +14377,7 @@ _loop0_73_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14534,9 +14458,7 @@ _loop1_74_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14593,9 +14515,7 @@ _loop0_75_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14648,9 +14568,7 @@ _loop0_76_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14703,9 +14621,7 @@ _loop0_77_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14758,9 +14674,7 @@ _loop1_78_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14817,9 +14731,7 @@ _loop0_79_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14872,9 +14784,7 @@ _loop1_80_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14931,9 +14841,7 @@ _loop1_81_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14990,9 +14898,7 @@ _loop1_82_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15049,9 +14955,7 @@ _loop0_83_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15104,9 +15008,7 @@ _loop1_84_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15163,9 +15065,7 @@ _loop0_85_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15218,9 +15118,7 @@ _loop1_86_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15277,9 +15175,7 @@ _loop0_87_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15332,9 +15228,7 @@ _loop1_88_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15391,9 +15285,7 @@ _loop1_89_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15450,9 +15342,7 @@ _loop1_90_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15509,9 +15399,7 @@ _loop1_91_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15605,9 +15493,7 @@ _loop0_94_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15861,9 +15747,7 @@ _loop1_99_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15999,9 +15883,7 @@ _loop0_103_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16082,9 +15964,7 @@ _loop1_104_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16141,9 +16021,7 @@ _loop0_105_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16196,9 +16074,7 @@ _loop0_106_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16323,9 +16199,7 @@ _loop0_110_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16414,9 +16288,7 @@ _loop0_112_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16505,9 +16377,7 @@ _loop0_114_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16596,9 +16466,7 @@ _loop0_116_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16679,9 +16547,7 @@ _loop0_117_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16742,9 +16608,7 @@ _loop0_119_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16860,9 +16724,7 @@ _loop0_122_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16951,9 +16813,7 @@ _loop0_124_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -17073,9 +16933,7 @@ _loop0_126_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -17275,9 +17133,7 @@ _loop0_131_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -17807,9 +17663,7 @@ _loop1_146_rule(Parser *p)
                     PyErr_NoMemory();
                     return NULL;
                 }
-                else {
-                    _children = _new_children;
-                }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
