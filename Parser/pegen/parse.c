@@ -677,11 +677,12 @@ static void *_tmp_148_rule(Parser *p);
 static mod_ty
 file_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     mod_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // statements? $
         void *a;
         Token * endmarker_var;
@@ -709,11 +710,12 @@ file_rule(Parser *p)
 static mod_ty
 interactive_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     mod_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // statement_newline
         asdl_seq* a;
         if (
@@ -738,11 +740,12 @@ interactive_rule(Parser *p)
 static mod_ty
 eval_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     mod_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expressions NEWLINE* $
         asdl_seq * _loop0_1_var;
         expr_ty a;
@@ -773,11 +776,12 @@ eval_rule(Parser *p)
 static mod_ty
 func_type_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     mod_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '(' type_expressions? ')' '->' expression NEWLINE* $
         Token * _literal;
         Token * _literal_1;
@@ -820,11 +824,12 @@ func_type_rule(Parser *p)
 static expr_ty
 fstring_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_expressions
         expr_ty star_expressions_var;
         if (
@@ -852,11 +857,12 @@ fstring_rule(Parser *p)
 static asdl_seq*
 type_expressions_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.expression+ ',' '*' expression ',' '**' expression
         Token * _literal;
         Token * _literal_1;
@@ -890,6 +896,10 @@ type_expressions_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.expression+ ',' '*' expression
         Token * _literal;
         Token * _literal_1;
@@ -914,6 +924,10 @@ type_expressions_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.expression+ ',' '**' expression
         Token * _literal;
         Token * _literal_1;
@@ -937,6 +951,10 @@ type_expressions_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '*' expression ',' '**' expression
         Token * _literal;
@@ -965,6 +983,10 @@ type_expressions_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '*' expression
         Token * _literal;
         expr_ty a;
@@ -983,6 +1005,10 @@ type_expressions_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '**' expression
         Token * _literal;
         expr_ty a;
@@ -1000,6 +1026,10 @@ type_expressions_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ','.expression+
         asdl_seq * _gather_9_var;
@@ -1021,11 +1051,12 @@ type_expressions_rule(Parser *p)
 static asdl_seq*
 statements_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // statement+
         asdl_seq * a;
         if (
@@ -1050,11 +1081,12 @@ statements_rule(Parser *p)
 static asdl_seq*
 statement_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // compound_stmt
         stmt_ty a;
         if (
@@ -1069,6 +1101,10 @@ statement_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // simple_stmt
         asdl_seq* simple_stmt_var;
@@ -1090,9 +1126,6 @@ statement_rule(Parser *p)
 static asdl_seq*
 statement_newline_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -1103,6 +1136,10 @@ statement_newline_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // compound_stmt NEWLINE
         stmt_ty a;
         Token * newline_var;
@@ -1121,6 +1158,10 @@ statement_newline_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // simple_stmt
         asdl_seq* simple_stmt_var;
         if (
@@ -1131,6 +1172,10 @@ statement_newline_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // NEWLINE
         Token * newline_var;
@@ -1154,6 +1199,10 @@ statement_newline_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // $
         Token * endmarker_var;
@@ -1179,11 +1228,12 @@ statement_newline_rule(Parser *p)
 static asdl_seq*
 simple_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // small_stmt !';' NEWLINE
         stmt_ty a;
         Token * newline_var;
@@ -1203,6 +1253,10 @@ simple_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ';'.small_stmt+ ';'? NEWLINE
         void *_opt_var;
@@ -1248,9 +1302,6 @@ simple_stmt_rule(Parser *p)
 static stmt_ty
 small_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     if (_PyPegen_is_memoized(p, small_stmt_type, &_res))
         return _res;
@@ -1263,6 +1314,10 @@ small_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // assignment
         stmt_ty assignment_var;
         if (
@@ -1273,6 +1328,10 @@ small_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // star_expressions
         expr_ty e;
@@ -1297,6 +1356,10 @@ small_stmt_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &'return' return_stmt
         stmt_ty return_stmt_var;
         if (
@@ -1309,6 +1372,10 @@ small_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // &('import' | 'from') import_stmt
         stmt_ty import_stmt_var;
@@ -1323,6 +1390,10 @@ small_stmt_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &'raise' raise_stmt
         stmt_ty raise_stmt_var;
         if (
@@ -1335,6 +1406,10 @@ small_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'pass'
         Token * _keyword;
@@ -1359,6 +1434,10 @@ small_stmt_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &'del' del_stmt
         stmt_ty del_stmt_var;
         if (
@@ -1371,6 +1450,10 @@ small_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // &'yield' yield_stmt
         stmt_ty yield_stmt_var;
@@ -1385,6 +1468,10 @@ small_stmt_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &'assert' assert_stmt
         stmt_ty assert_stmt_var;
         if (
@@ -1397,6 +1484,10 @@ small_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'break'
         Token * _keyword;
@@ -1421,6 +1512,10 @@ small_stmt_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'continue'
         Token * _keyword;
         if (
@@ -1444,6 +1539,10 @@ small_stmt_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &'global' global_stmt
         stmt_ty global_stmt_var;
         if (
@@ -1456,6 +1555,10 @@ small_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // &'nonlocal' nonlocal_stmt
         stmt_ty nonlocal_stmt_var;
@@ -1487,11 +1590,12 @@ small_stmt_rule(Parser *p)
 static stmt_ty
 compound_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &('def' | '@' | ASYNC) function_def
         stmt_ty function_def_var;
         if (
@@ -1504,6 +1608,10 @@ compound_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // &'if' if_stmt
         stmt_ty if_stmt_var;
@@ -1518,6 +1626,10 @@ compound_stmt_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &('class' | '@') class_def
         stmt_ty class_def_var;
         if (
@@ -1530,6 +1642,10 @@ compound_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // &('with' | ASYNC) with_stmt
         stmt_ty with_stmt_var;
@@ -1544,6 +1660,10 @@ compound_stmt_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &('for' | ASYNC) for_stmt
         stmt_ty for_stmt_var;
         if (
@@ -1557,6 +1677,10 @@ compound_stmt_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &'try' try_stmt
         stmt_ty try_stmt_var;
         if (
@@ -1569,6 +1693,10 @@ compound_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // &'while' while_stmt
         stmt_ty while_stmt_var;
@@ -1597,9 +1725,6 @@ compound_stmt_rule(Parser *p)
 static stmt_ty
 assignment_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -1610,6 +1735,10 @@ assignment_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME ':' expression ['=' annotated_rhs]
         Token * _literal;
         expr_ty a;
@@ -1641,6 +1770,10 @@ assignment_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]
         Token * _literal;
@@ -1674,6 +1807,10 @@ assignment_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ((star_targets '='))+ (yield_expr | star_expressions) TYPE_COMMENT?
         asdl_seq * a;
         void *b;
@@ -1703,6 +1840,10 @@ assignment_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // single_target augassign (yield_expr | star_expressions)
         expr_ty a;
         AugOperator* b;
@@ -1731,6 +1872,10 @@ assignment_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // invalid_assignment
         void *invalid_assignment_var;
@@ -1765,11 +1910,12 @@ assignment_rule(Parser *p)
 static AugOperator*
 augassign_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     AugOperator* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '+='
         Token * _literal;
         if (
@@ -1784,6 +1930,10 @@ augassign_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '-='
         Token * _literal;
@@ -1800,6 +1950,10 @@ augassign_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '*='
         Token * _literal;
         if (
@@ -1814,6 +1968,10 @@ augassign_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '@='
         Token * _literal;
@@ -1830,6 +1988,10 @@ augassign_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '/='
         Token * _literal;
         if (
@@ -1844,6 +2006,10 @@ augassign_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '%='
         Token * _literal;
@@ -1860,6 +2026,10 @@ augassign_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '&='
         Token * _literal;
         if (
@@ -1874,6 +2044,10 @@ augassign_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '|='
         Token * _literal;
@@ -1890,6 +2064,10 @@ augassign_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '^='
         Token * _literal;
         if (
@@ -1904,6 +2082,10 @@ augassign_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '<<='
         Token * _literal;
@@ -1920,6 +2102,10 @@ augassign_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '>>='
         Token * _literal;
         if (
@@ -1935,6 +2121,10 @@ augassign_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '**='
         Token * _literal;
         if (
@@ -1949,6 +2139,10 @@ augassign_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '//='
         Token * _literal;
@@ -1974,9 +2168,6 @@ augassign_rule(Parser *p)
 static stmt_ty
 global_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -1987,6 +2178,10 @@ global_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'global' ','.NAME+
         Token * _keyword;
         asdl_seq * a;
@@ -2022,9 +2217,6 @@ global_stmt_rule(Parser *p)
 static stmt_ty
 nonlocal_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -2035,6 +2227,10 @@ nonlocal_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'nonlocal' ','.NAME+
         Token * _keyword;
         asdl_seq * a;
@@ -2070,9 +2266,6 @@ nonlocal_stmt_rule(Parser *p)
 static stmt_ty
 yield_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -2083,6 +2276,10 @@ yield_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // yield_expr
         expr_ty y;
         if (
@@ -2115,9 +2312,6 @@ yield_stmt_rule(Parser *p)
 static stmt_ty
 assert_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -2128,6 +2322,10 @@ assert_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'assert' expression [',' expression]
         Token * _keyword;
         expr_ty a;
@@ -2166,9 +2364,6 @@ assert_stmt_rule(Parser *p)
 static stmt_ty
 del_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -2179,6 +2374,10 @@ del_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'del' del_targets
         Token * _keyword;
         asdl_seq* a;
@@ -2214,11 +2413,12 @@ del_stmt_rule(Parser *p)
 static stmt_ty
 import_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // import_name
         stmt_ty import_name_var;
         if (
@@ -2229,6 +2429,10 @@ import_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // import_from
         stmt_ty import_from_var;
@@ -2250,9 +2454,6 @@ import_stmt_rule(Parser *p)
 static stmt_ty
 import_name_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -2263,6 +2464,10 @@ import_name_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'import' dotted_as_names
         Token * _keyword;
         asdl_seq* a;
@@ -2300,9 +2505,6 @@ import_name_rule(Parser *p)
 static stmt_ty
 import_from_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -2313,6 +2515,10 @@ import_from_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
         Token * _keyword;
         Token * _keyword_1;
@@ -2347,6 +2553,10 @@ import_from_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'from' (('.' | '...'))+ 'import' import_from_targets
         Token * _keyword;
@@ -2389,11 +2599,12 @@ import_from_rule(Parser *p)
 static asdl_seq*
 import_from_targets_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '(' import_from_as_names ','? ')'
         Token * _literal;
         Token * _literal_1;
@@ -2419,6 +2630,10 @@ import_from_targets_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // import_from_as_names
         asdl_seq* import_from_as_names_var;
         if (
@@ -2429,6 +2644,10 @@ import_from_targets_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '*'
         Token * _literal;
@@ -2454,11 +2673,12 @@ import_from_targets_rule(Parser *p)
 static asdl_seq*
 import_from_as_names_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.import_from_as_name+
         asdl_seq * a;
         if (
@@ -2483,11 +2703,12 @@ import_from_as_names_rule(Parser *p)
 static alias_ty
 import_from_as_name_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     alias_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME ['as' NAME]
         expr_ty a;
         void *b;
@@ -2515,11 +2736,12 @@ import_from_as_name_rule(Parser *p)
 static asdl_seq*
 dotted_as_names_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.dotted_as_name+
         asdl_seq * a;
         if (
@@ -2544,11 +2766,12 @@ dotted_as_names_rule(Parser *p)
 static alias_ty
 dotted_as_name_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     alias_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // dotted_name ['as' NAME]
         expr_ty a;
         void *b;
@@ -2601,11 +2824,12 @@ dotted_name_rule(Parser *p)
 static expr_ty
 dotted_name_raw(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // dotted_name '.' NAME
         Token * _literal;
         expr_ty a;
@@ -2626,6 +2850,10 @@ dotted_name_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // NAME
         expr_ty name_var;
@@ -2649,9 +2877,6 @@ dotted_name_raw(Parser *p)
 static stmt_ty
 if_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -2662,6 +2887,10 @@ if_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'if' named_expression ':' block elif_stmt
         Token * _keyword;
         Token * _literal;
@@ -2696,6 +2925,10 @@ if_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'if' named_expression ':' block else_block?
         Token * _keyword;
@@ -2743,9 +2976,6 @@ if_stmt_rule(Parser *p)
 static stmt_ty
 elif_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -2756,6 +2986,10 @@ elif_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'elif' named_expression ':' block elif_stmt
         Token * _keyword;
         Token * _literal;
@@ -2790,6 +3024,10 @@ elif_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'elif' named_expression ':' block else_block?
         Token * _keyword;
@@ -2835,11 +3073,12 @@ elif_stmt_rule(Parser *p)
 static asdl_seq*
 else_block_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'else' ':' block
         Token * _keyword;
         Token * _literal;
@@ -2870,9 +3109,6 @@ else_block_rule(Parser *p)
 static stmt_ty
 while_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -2883,6 +3119,10 @@ while_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'while' named_expression ':' block else_block?
         Token * _keyword;
         Token * _literal;
@@ -2929,9 +3169,6 @@ while_stmt_rule(Parser *p)
 static stmt_ty
 for_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -2942,6 +3179,10 @@ for_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'for' star_targets 'in' star_expressions ':' TYPE_COMMENT? block else_block?
         Token * _keyword;
         Token * _keyword_1;
@@ -2985,6 +3226,10 @@ for_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ASYNC 'for' star_targets 'in' star_expressions ':' TYPE_COMMENT? block else_block?
         Token * _keyword;
@@ -3046,9 +3291,6 @@ for_stmt_rule(Parser *p)
 static stmt_ty
 with_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -3059,6 +3301,10 @@ with_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'with' '(' ','.with_item+ ','? ')' ':' block
         Token * _keyword;
         Token * _literal;
@@ -3101,6 +3347,10 @@ with_stmt_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'with' ','.with_item+ ':' TYPE_COMMENT? block
         Token * _keyword;
         Token * _literal;
@@ -3135,6 +3385,10 @@ with_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ASYNC 'with' '(' ','.with_item+ ','? ')' ':' block
         Token * _keyword;
@@ -3180,6 +3434,10 @@ with_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ASYNC 'with' ','.with_item+ ':' TYPE_COMMENT? block
         Token * _keyword;
@@ -3228,11 +3486,12 @@ with_stmt_rule(Parser *p)
 static withitem_ty
 with_item_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     withitem_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression ['as' target]
         expr_ty e;
         void *o;
@@ -3262,9 +3521,6 @@ with_item_rule(Parser *p)
 static stmt_ty
 try_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -3275,6 +3531,10 @@ try_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'try' ':' block finally_block
         Token * _keyword;
         Token * _literal;
@@ -3306,6 +3566,10 @@ try_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'try' ':' block except_block+ else_block? finally_block?
         Token * _keyword;
@@ -3354,9 +3618,6 @@ try_stmt_rule(Parser *p)
 static excepthandler_ty
 except_block_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     excepthandler_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -3367,6 +3628,10 @@ except_block_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'except' expression ['as' NAME] ':' block
         Token * _keyword;
         Token * _literal;
@@ -3401,6 +3666,10 @@ except_block_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'except' ':' block
         Token * _keyword;
@@ -3440,11 +3709,12 @@ except_block_rule(Parser *p)
 static asdl_seq*
 finally_block_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'finally' ':' block
         Token * _keyword;
         Token * _literal;
@@ -3475,9 +3745,6 @@ finally_block_rule(Parser *p)
 static stmt_ty
 return_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -3488,6 +3755,10 @@ return_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'return' star_expressions?
         Token * _keyword;
         void *a;
@@ -3523,9 +3794,6 @@ return_stmt_rule(Parser *p)
 static stmt_ty
 raise_stmt_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -3536,6 +3804,10 @@ raise_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'raise' expression ['from' expression]
         Token * _keyword;
         expr_ty a;
@@ -3564,6 +3836,10 @@ raise_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'raise'
         Token * _keyword;
@@ -3597,11 +3873,12 @@ raise_stmt_rule(Parser *p)
 static stmt_ty
 function_def_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // decorators function_def_raw
         asdl_seq* d;
         stmt_ty f;
@@ -3619,6 +3896,10 @@ function_def_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // function_def_raw
         stmt_ty function_def_raw_var;
@@ -3642,9 +3923,6 @@ function_def_rule(Parser *p)
 static stmt_ty
 function_def_raw_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -3655,6 +3933,10 @@ function_def_raw_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'def' NAME '(' params? ')' ['->' expression] ':' func_type_comment? block
         Token * _keyword;
         Token * _literal;
@@ -3701,6 +3983,10 @@ function_def_raw_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ASYNC 'def' NAME '(' params? ')' ['->' expression] ':' func_type_comment? block
         Token * _keyword;
@@ -3764,11 +4050,12 @@ function_def_raw_rule(Parser *p)
 static Token*
 func_type_comment_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     Token* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NEWLINE TYPE_COMMENT &(NEWLINE INDENT)
         Token * newline_var;
         Token * t;
@@ -3789,6 +4076,10 @@ func_type_comment_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // invalid_double_type_comments
         void *invalid_double_type_comments_var;
         if (
@@ -3799,6 +4090,10 @@ func_type_comment_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // TYPE_COMMENT
         Token * type_comment_var;
@@ -3820,11 +4115,12 @@ func_type_comment_rule(Parser *p)
 static arguments_ty
 params_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     arguments_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // invalid_parameters
         void *invalid_parameters_var;
         if (
@@ -3835,6 +4131,10 @@ params_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // parameters
         arguments_ty parameters_var;
@@ -3861,11 +4161,12 @@ params_rule(Parser *p)
 static arguments_ty
 parameters_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     arguments_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // slash_no_default param_no_default* param_with_default* star_etc?
         asdl_seq* a;
         asdl_seq * b;
@@ -3890,6 +4191,10 @@ parameters_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // slash_with_default param_with_default* star_etc?
         SlashWithDefault* a;
         asdl_seq * b;
@@ -3910,6 +4215,10 @@ parameters_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // param_no_default+ param_with_default* star_etc?
         asdl_seq * a;
@@ -3932,6 +4241,10 @@ parameters_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_with_default+ star_etc?
         asdl_seq * a;
         void *b;
@@ -3949,6 +4262,10 @@ parameters_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // star_etc
         StarEtc* a;
@@ -3974,11 +4291,12 @@ parameters_rule(Parser *p)
 static asdl_seq*
 slash_no_default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_no_default+ '/' ','
         Token * _literal;
         Token * _literal_1;
@@ -3999,6 +4317,10 @@ slash_no_default_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // param_no_default+ '/' &')'
         Token * _literal;
@@ -4031,11 +4353,12 @@ slash_no_default_rule(Parser *p)
 static SlashWithDefault*
 slash_with_default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     SlashWithDefault* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_no_default* param_with_default+ '/' ','
         Token * _literal;
         Token * _literal_1;
@@ -4059,6 +4382,10 @@ slash_with_default_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // param_no_default* param_with_default+ '/' &')'
         Token * _literal;
@@ -4096,11 +4423,12 @@ slash_with_default_rule(Parser *p)
 static StarEtc*
 star_etc_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     StarEtc* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '*' param_no_default param_maybe_default* kwds?
         Token * _literal;
         arg_ty a;
@@ -4124,6 +4452,10 @@ star_etc_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '*' ',' param_maybe_default+ kwds?
         Token * _literal;
@@ -4149,6 +4481,10 @@ star_etc_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // kwds
         arg_ty a;
         if (
@@ -4163,6 +4499,10 @@ star_etc_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // invalid_star_etc
         void *invalid_star_etc_var;
@@ -4184,11 +4524,12 @@ star_etc_rule(Parser *p)
 static arg_ty
 kwds_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     arg_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '**' param_no_default
         Token * _literal;
         arg_ty a;
@@ -4216,11 +4557,12 @@ kwds_rule(Parser *p)
 static arg_ty
 param_no_default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     arg_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param ',' TYPE_COMMENT?
         Token * _literal;
         arg_ty a;
@@ -4241,6 +4583,10 @@ param_no_default_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // param TYPE_COMMENT? &')'
         arg_ty a;
@@ -4271,11 +4617,12 @@ param_no_default_rule(Parser *p)
 static NameDefaultPair*
 param_with_default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param default ',' TYPE_COMMENT?
         Token * _literal;
         arg_ty a;
@@ -4299,6 +4646,10 @@ param_with_default_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // param default TYPE_COMMENT? &')'
         arg_ty a;
@@ -4334,11 +4685,12 @@ param_with_default_rule(Parser *p)
 static NameDefaultPair*
 param_maybe_default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param default? ',' TYPE_COMMENT?
         Token * _literal;
         arg_ty a;
@@ -4362,6 +4714,10 @@ param_maybe_default_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // param default? TYPE_COMMENT? &')'
         arg_ty a;
@@ -4395,9 +4751,6 @@ param_maybe_default_rule(Parser *p)
 static arg_ty
 param_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     arg_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -4408,6 +4761,10 @@ param_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME annotation?
         expr_ty a;
         void *b;
@@ -4443,11 +4800,12 @@ param_rule(Parser *p)
 static expr_ty
 annotation_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ':' expression
         Token * _literal;
         expr_ty a;
@@ -4475,11 +4833,12 @@ annotation_rule(Parser *p)
 static expr_ty
 default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '=' expression
         Token * _literal;
         expr_ty a;
@@ -4507,11 +4866,12 @@ default_rule(Parser *p)
 static asdl_seq*
 decorators_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // (('@' named_expression NEWLINE))+
         asdl_seq * a;
         if (
@@ -4536,11 +4896,12 @@ decorators_rule(Parser *p)
 static stmt_ty
 class_def_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // decorators class_def_raw
         asdl_seq* a;
         stmt_ty b;
@@ -4558,6 +4919,10 @@ class_def_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // class_def_raw
         stmt_ty class_def_raw_var;
@@ -4579,9 +4944,6 @@ class_def_rule(Parser *p)
 static stmt_ty
 class_def_raw_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -4592,6 +4954,10 @@ class_def_raw_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'class' NAME ['(' arguments? ')'] ':' block
         Token * _keyword;
         Token * _literal;
@@ -4636,13 +5002,14 @@ class_def_raw_rule(Parser *p)
 static asdl_seq*
 block_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     if (_PyPegen_is_memoized(p, block_type, &_res))
         return _res;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NEWLINE INDENT statements DEDENT
         asdl_seq* a;
         Token * dedent_var;
@@ -4667,6 +5034,10 @@ block_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // simple_stmt
         asdl_seq* simple_stmt_var;
         if (
@@ -4677,6 +5048,10 @@ block_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // invalid_block
         void *invalid_block_var;
@@ -4699,11 +5074,12 @@ block_rule(Parser *p)
 static asdl_seq*
 expressions_list_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.star_expression+ ','?
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -4735,9 +5111,6 @@ expressions_list_rule(Parser *p)
 static expr_ty
 star_expressions_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -4748,6 +5121,10 @@ star_expressions_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_expression ((',' star_expression))+ ','?
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -4778,6 +5155,10 @@ star_expressions_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_expression ','
         Token * _literal;
         expr_ty a;
@@ -4804,6 +5185,10 @@ star_expressions_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_expression
         expr_ty star_expression_var;
         if (
@@ -4824,9 +5209,6 @@ star_expressions_rule(Parser *p)
 static expr_ty
 star_expression_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, star_expression_type, &_res))
         return _res;
@@ -4839,6 +5221,10 @@ star_expression_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '*' bitwise_or
         Token * _literal;
         expr_ty a;
@@ -4865,6 +5251,10 @@ star_expression_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression
         expr_ty expression_var;
         if (
@@ -4886,11 +5276,12 @@ star_expression_rule(Parser *p)
 static asdl_seq*
 star_named_expressions_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.star_named_expression+ ','?
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -4919,9 +5310,6 @@ star_named_expressions_rule(Parser *p)
 static expr_ty
 star_named_expression_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -4932,6 +5320,10 @@ star_named_expression_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '*' bitwise_or
         Token * _literal;
         expr_ty a;
@@ -4958,6 +5350,10 @@ star_named_expression_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // named_expression
         expr_ty named_expression_var;
         if (
@@ -4978,9 +5374,6 @@ star_named_expression_rule(Parser *p)
 static expr_ty
 named_expression_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -4991,6 +5384,10 @@ named_expression_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME ':=' expression
         Token * _literal;
         expr_ty a;
@@ -5020,6 +5417,10 @@ named_expression_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression !':='
         expr_ty expression_var;
         if (
@@ -5032,6 +5433,10 @@ named_expression_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // invalid_named_expression
         void *invalid_named_expression_var;
@@ -5053,11 +5458,12 @@ named_expression_rule(Parser *p)
 static expr_ty
 annotated_rhs_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // yield_expr
         expr_ty yield_expr_var;
         if (
@@ -5068,6 +5474,10 @@ annotated_rhs_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // star_expressions
         expr_ty star_expressions_var;
@@ -5089,9 +5499,6 @@ annotated_rhs_rule(Parser *p)
 static expr_ty
 expressions_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -5102,6 +5509,10 @@ expressions_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression ((',' expression))+ ','?
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -5132,6 +5543,10 @@ expressions_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression ','
         Token * _literal;
         expr_ty a;
@@ -5158,6 +5573,10 @@ expressions_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression
         expr_ty expression_var;
         if (
@@ -5178,9 +5597,6 @@ expressions_rule(Parser *p)
 static expr_ty
 expression_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, expression_type, &_res))
         return _res;
@@ -5193,6 +5609,10 @@ expression_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // disjunction 'if' disjunction 'else' expression
         Token * _keyword;
         Token * _keyword_1;
@@ -5228,6 +5648,10 @@ expression_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // disjunction
         expr_ty disjunction_var;
         if (
@@ -5238,6 +5662,10 @@ expression_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // lambdef
         expr_ty lambdef_var;
@@ -5260,9 +5688,6 @@ expression_rule(Parser *p)
 static expr_ty
 lambdef_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -5273,6 +5698,10 @@ lambdef_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'lambda' lambda_parameters? ':' expression
         Token * _keyword;
         Token * _literal;
@@ -5319,11 +5748,12 @@ lambdef_rule(Parser *p)
 static arguments_ty
 lambda_parameters_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     arguments_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_slash_no_default lambda_param_no_default* lambda_param_with_default* lambda_star_etc?
         asdl_seq* a;
         asdl_seq * b;
@@ -5348,6 +5778,10 @@ lambda_parameters_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_slash_with_default lambda_param_with_default* lambda_star_etc?
         SlashWithDefault* a;
         asdl_seq * b;
@@ -5368,6 +5802,10 @@ lambda_parameters_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // lambda_param_no_default+ lambda_param_with_default* lambda_star_etc?
         asdl_seq * a;
@@ -5390,6 +5828,10 @@ lambda_parameters_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_with_default+ lambda_star_etc?
         asdl_seq * a;
         void *b;
@@ -5407,6 +5849,10 @@ lambda_parameters_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // lambda_star_etc
         StarEtc* a;
@@ -5434,11 +5880,12 @@ lambda_parameters_rule(Parser *p)
 static asdl_seq*
 lambda_slash_no_default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_no_default+ '/' ','
         Token * _literal;
         Token * _literal_1;
@@ -5459,6 +5906,10 @@ lambda_slash_no_default_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // lambda_param_no_default+ '/' &':'
         Token * _literal;
@@ -5491,11 +5942,12 @@ lambda_slash_no_default_rule(Parser *p)
 static SlashWithDefault*
 lambda_slash_with_default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     SlashWithDefault* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_no_default* lambda_param_with_default+ '/' ','
         Token * _literal;
         Token * _literal_1;
@@ -5519,6 +5971,10 @@ lambda_slash_with_default_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // lambda_param_no_default* lambda_param_with_default+ '/' &':'
         Token * _literal;
@@ -5556,11 +6012,12 @@ lambda_slash_with_default_rule(Parser *p)
 static StarEtc*
 lambda_star_etc_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     StarEtc* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '*' lambda_param_no_default lambda_param_maybe_default* lambda_kwds?
         Token * _literal;
         arg_ty a;
@@ -5584,6 +6041,10 @@ lambda_star_etc_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '*' ',' lambda_param_maybe_default+ lambda_kwds?
         Token * _literal;
@@ -5609,6 +6070,10 @@ lambda_star_etc_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_kwds
         arg_ty a;
         if (
@@ -5623,6 +6088,10 @@ lambda_star_etc_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // invalid_lambda_star_etc
         void *invalid_lambda_star_etc_var;
@@ -5644,11 +6113,12 @@ lambda_star_etc_rule(Parser *p)
 static arg_ty
 lambda_kwds_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     arg_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '**' lambda_param_no_default
         Token * _literal;
         arg_ty a;
@@ -5676,11 +6146,12 @@ lambda_kwds_rule(Parser *p)
 static arg_ty
 lambda_param_no_default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     arg_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param ','
         Token * _literal;
         arg_ty a;
@@ -5698,6 +6169,10 @@ lambda_param_no_default_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // lambda_param &':'
         arg_ty a;
@@ -5725,11 +6200,12 @@ lambda_param_no_default_rule(Parser *p)
 static NameDefaultPair*
 lambda_param_with_default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param default ','
         Token * _literal;
         arg_ty a;
@@ -5750,6 +6226,10 @@ lambda_param_with_default_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // lambda_param default &':'
         arg_ty a;
@@ -5780,11 +6260,12 @@ lambda_param_with_default_rule(Parser *p)
 static NameDefaultPair*
 lambda_param_maybe_default_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param default? ','
         Token * _literal;
         arg_ty a;
@@ -5805,6 +6286,10 @@ lambda_param_maybe_default_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // lambda_param default? &':'
         arg_ty a;
@@ -5835,9 +6320,6 @@ lambda_param_maybe_default_rule(Parser *p)
 static arg_ty
 lambda_param_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     arg_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -5848,6 +6330,10 @@ lambda_param_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME
         expr_ty a;
         if (
@@ -5880,9 +6366,6 @@ lambda_param_rule(Parser *p)
 static expr_ty
 disjunction_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, disjunction_type, &_res))
         return _res;
@@ -5895,6 +6378,10 @@ disjunction_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // conjunction (('or' conjunction))+
         expr_ty a;
         asdl_seq * b;
@@ -5921,6 +6408,10 @@ disjunction_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // conjunction
         expr_ty conjunction_var;
         if (
@@ -5942,9 +6433,6 @@ disjunction_rule(Parser *p)
 static expr_ty
 conjunction_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, conjunction_type, &_res))
         return _res;
@@ -5957,6 +6445,10 @@ conjunction_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // inversion (('and' inversion))+
         expr_ty a;
         asdl_seq * b;
@@ -5983,6 +6475,10 @@ conjunction_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // inversion
         expr_ty inversion_var;
         if (
@@ -6004,9 +6500,6 @@ conjunction_rule(Parser *p)
 static expr_ty
 inversion_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, inversion_type, &_res))
         return _res;
@@ -6019,6 +6512,10 @@ inversion_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'not' inversion
         Token * _keyword;
         expr_ty a;
@@ -6045,6 +6542,10 @@ inversion_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // comparison
         expr_ty comparison_var;
         if (
@@ -6066,9 +6567,6 @@ inversion_rule(Parser *p)
 static expr_ty
 comparison_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -6079,6 +6577,10 @@ comparison_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // bitwise_or compare_op_bitwise_or_pair+
         expr_ty a;
         asdl_seq * b;
@@ -6104,6 +6606,10 @@ comparison_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // bitwise_or
         expr_ty bitwise_or_var;
@@ -6135,11 +6641,12 @@ comparison_rule(Parser *p)
 static CmpopExprPair*
 compare_op_bitwise_or_pair_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // eq_bitwise_or
         CmpopExprPair* eq_bitwise_or_var;
         if (
@@ -6150,6 +6657,10 @@ compare_op_bitwise_or_pair_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // noteq_bitwise_or
         CmpopExprPair* noteq_bitwise_or_var;
@@ -6162,6 +6673,10 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lte_bitwise_or
         CmpopExprPair* lte_bitwise_or_var;
         if (
@@ -6172,6 +6687,10 @@ compare_op_bitwise_or_pair_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // lt_bitwise_or
         CmpopExprPair* lt_bitwise_or_var;
@@ -6184,6 +6703,10 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // gte_bitwise_or
         CmpopExprPair* gte_bitwise_or_var;
         if (
@@ -6194,6 +6717,10 @@ compare_op_bitwise_or_pair_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // gt_bitwise_or
         CmpopExprPair* gt_bitwise_or_var;
@@ -6206,6 +6733,10 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // notin_bitwise_or
         CmpopExprPair* notin_bitwise_or_var;
         if (
@@ -6216,6 +6747,10 @@ compare_op_bitwise_or_pair_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // in_bitwise_or
         CmpopExprPair* in_bitwise_or_var;
@@ -6228,6 +6763,10 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // isnot_bitwise_or
         CmpopExprPair* isnot_bitwise_or_var;
         if (
@@ -6238,6 +6777,10 @@ compare_op_bitwise_or_pair_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // is_bitwise_or
         CmpopExprPair* is_bitwise_or_var;
@@ -6259,11 +6802,12 @@ compare_op_bitwise_or_pair_rule(Parser *p)
 static CmpopExprPair*
 eq_bitwise_or_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '==' bitwise_or
         Token * _literal;
         expr_ty a;
@@ -6291,11 +6835,12 @@ eq_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 noteq_bitwise_or_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ('!=') bitwise_or
         void *_tmp_92_var;
         expr_ty a;
@@ -6323,11 +6868,12 @@ noteq_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 lte_bitwise_or_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '<=' bitwise_or
         Token * _literal;
         expr_ty a;
@@ -6355,11 +6901,12 @@ lte_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 lt_bitwise_or_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '<' bitwise_or
         Token * _literal;
         expr_ty a;
@@ -6387,11 +6934,12 @@ lt_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 gte_bitwise_or_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '>=' bitwise_or
         Token * _literal;
         expr_ty a;
@@ -6419,11 +6967,12 @@ gte_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 gt_bitwise_or_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '>' bitwise_or
         Token * _literal;
         expr_ty a;
@@ -6451,11 +7000,12 @@ gt_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 notin_bitwise_or_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'not' 'in' bitwise_or
         Token * _keyword;
         Token * _keyword_1;
@@ -6486,11 +7036,12 @@ notin_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 in_bitwise_or_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'in' bitwise_or
         Token * _keyword;
         expr_ty a;
@@ -6518,11 +7069,12 @@ in_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 isnot_bitwise_or_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'is' 'not' bitwise_or
         Token * _keyword;
         Token * _keyword_1;
@@ -6553,11 +7105,12 @@ isnot_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 is_bitwise_or_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'is' bitwise_or
         Token * _keyword;
         expr_ty a;
@@ -6610,9 +7163,6 @@ bitwise_or_rule(Parser *p)
 static expr_ty
 bitwise_or_raw(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -6623,6 +7173,10 @@ bitwise_or_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // bitwise_or '|' bitwise_xor
         Token * _literal;
         expr_ty a;
@@ -6651,6 +7205,10 @@ bitwise_or_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // bitwise_xor
         expr_ty bitwise_xor_var;
@@ -6697,9 +7255,6 @@ bitwise_xor_rule(Parser *p)
 static expr_ty
 bitwise_xor_raw(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -6710,6 +7265,10 @@ bitwise_xor_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // bitwise_xor '^' bitwise_and
         Token * _literal;
         expr_ty a;
@@ -6738,6 +7297,10 @@ bitwise_xor_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // bitwise_and
         expr_ty bitwise_and_var;
@@ -6784,9 +7347,6 @@ bitwise_and_rule(Parser *p)
 static expr_ty
 bitwise_and_raw(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -6797,6 +7357,10 @@ bitwise_and_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // bitwise_and '&' shift_expr
         Token * _literal;
         expr_ty a;
@@ -6825,6 +7389,10 @@ bitwise_and_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // shift_expr
         expr_ty shift_expr_var;
@@ -6871,9 +7439,6 @@ shift_expr_rule(Parser *p)
 static expr_ty
 shift_expr_raw(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -6884,6 +7449,10 @@ shift_expr_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // shift_expr '<<' sum
         Token * _literal;
         expr_ty a;
@@ -6913,6 +7482,10 @@ shift_expr_raw(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // shift_expr '>>' sum
         Token * _literal;
         expr_ty a;
@@ -6941,6 +7514,10 @@ shift_expr_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // sum
         expr_ty sum_var;
@@ -6987,9 +7564,6 @@ sum_rule(Parser *p)
 static expr_ty
 sum_raw(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -7000,6 +7574,10 @@ sum_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // sum '+' term
         Token * _literal;
         expr_ty a;
@@ -7029,6 +7607,10 @@ sum_raw(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // sum '-' term
         Token * _literal;
         expr_ty a;
@@ -7057,6 +7639,10 @@ sum_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // term
         expr_ty term_var;
@@ -7109,9 +7695,6 @@ term_rule(Parser *p)
 static expr_ty
 term_raw(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -7122,6 +7705,10 @@ term_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // term '*' factor
         Token * _literal;
         expr_ty a;
@@ -7150,6 +7737,10 @@ term_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // term '/' factor
         Token * _literal;
@@ -7180,6 +7771,10 @@ term_raw(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // term '//' factor
         Token * _literal;
         expr_ty a;
@@ -7208,6 +7803,10 @@ term_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // term '%' factor
         Token * _literal;
@@ -7238,6 +7837,10 @@ term_raw(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // term '@' factor
         Token * _literal;
         expr_ty a;
@@ -7267,6 +7870,10 @@ term_raw(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // factor
         expr_ty factor_var;
         if (
@@ -7287,9 +7894,6 @@ term_raw(Parser *p)
 static expr_ty
 factor_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, factor_type, &_res))
         return _res;
@@ -7302,6 +7906,10 @@ factor_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '+' factor
         Token * _literal;
         expr_ty a;
@@ -7327,6 +7935,10 @@ factor_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '-' factor
         Token * _literal;
@@ -7354,6 +7966,10 @@ factor_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '~' factor
         Token * _literal;
         expr_ty a;
@@ -7380,6 +7996,10 @@ factor_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // power
         expr_ty power_var;
         if (
@@ -7401,9 +8021,6 @@ factor_rule(Parser *p)
 static expr_ty
 power_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -7414,6 +8031,10 @@ power_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // await_primary '**' factor
         Token * _literal;
         expr_ty a;
@@ -7443,6 +8064,10 @@ power_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // await_primary
         expr_ty await_primary_var;
         if (
@@ -7463,9 +8088,6 @@ power_rule(Parser *p)
 static expr_ty
 await_primary_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, await_primary_type, &_res))
         return _res;
@@ -7478,6 +8100,10 @@ await_primary_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // AWAIT primary
         expr_ty a;
         Token * await_var;
@@ -7503,6 +8129,10 @@ await_primary_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // primary
         expr_ty primary_var;
@@ -7555,9 +8185,6 @@ primary_rule(Parser *p)
 static expr_ty
 primary_raw(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -7568,6 +8195,10 @@ primary_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // primary '.' NAME
         Token * _literal;
         expr_ty a;
@@ -7597,6 +8228,10 @@ primary_raw(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // primary genexp
         expr_ty a;
         expr_ty b;
@@ -7622,6 +8257,10 @@ primary_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // primary '(' arguments? ')'
         Token * _literal;
@@ -7655,6 +8294,10 @@ primary_raw(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // primary '[' slices ']'
         Token * _literal;
         Token * _literal_1;
@@ -7687,6 +8330,10 @@ primary_raw(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // atom
         expr_ty atom_var;
         if (
@@ -7707,9 +8354,6 @@ primary_raw(Parser *p)
 static expr_ty
 slices_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -7720,6 +8364,10 @@ slices_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // slice !','
         expr_ty a;
         if (
@@ -7736,6 +8384,10 @@ slices_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ','.slice+ ','?
         void *_opt_var;
@@ -7773,9 +8425,6 @@ slices_rule(Parser *p)
 static expr_ty
 slice_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -7786,6 +8435,10 @@ slice_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression? ':' expression? [':' expression?]
         Token * _literal;
         void *a;
@@ -7817,6 +8470,10 @@ slice_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // expression
         expr_ty a;
@@ -7853,9 +8510,6 @@ slice_rule(Parser *p)
 static expr_ty
 atom_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -7866,6 +8520,10 @@ atom_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME
         expr_ty name_var;
         if (
@@ -7876,6 +8534,10 @@ atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'True'
         Token * _keyword;
@@ -7900,6 +8562,10 @@ atom_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'False'
         Token * _keyword;
         if (
@@ -7922,6 +8588,10 @@ atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'None'
         Token * _keyword;
@@ -7946,6 +8616,10 @@ atom_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '__new_parser__'
         Token * _keyword;
         if (
@@ -7961,6 +8635,10 @@ atom_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &STRING strings
         expr_ty strings_var;
         if (
@@ -7974,6 +8652,10 @@ atom_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NUMBER
         expr_ty number_var;
         if (
@@ -7984,6 +8666,10 @@ atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // &'(' (tuple | group | genexp)
         void *_tmp_96_var;
@@ -7998,6 +8684,10 @@ atom_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &'[' (list | listcomp)
         void *_tmp_97_var;
         if (
@@ -8011,6 +8701,10 @@ atom_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // &'{' (dict | set | dictcomp | setcomp)
         void *_tmp_98_var;
         if (
@@ -8023,6 +8717,10 @@ atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '...'
         Token * _literal;
@@ -8056,13 +8754,14 @@ atom_rule(Parser *p)
 static expr_ty
 strings_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, strings_type, &_res))
         return _res;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // STRING+
         asdl_seq * a;
         if (
@@ -8088,9 +8787,6 @@ strings_rule(Parser *p)
 static expr_ty
 list_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -8101,6 +8797,10 @@ list_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '[' star_named_expressions? ']'
         Token * _literal;
         Token * _literal_1;
@@ -8139,9 +8839,6 @@ list_rule(Parser *p)
 static expr_ty
 listcomp_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -8152,6 +8849,10 @@ listcomp_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '[' named_expression for_if_clauses ']'
         Token * _literal;
         Token * _literal_1;
@@ -8184,6 +8885,10 @@ listcomp_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // invalid_comprehension
         void *invalid_comprehension_var;
         if (
@@ -8204,9 +8909,6 @@ listcomp_rule(Parser *p)
 static expr_ty
 tuple_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -8217,6 +8919,10 @@ tuple_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '(' [star_named_expression ',' star_named_expressions?] ')'
         Token * _literal;
         Token * _literal_1;
@@ -8255,11 +8961,12 @@ tuple_rule(Parser *p)
 static expr_ty
 group_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '(' (yield_expr | named_expression) ')'
         Token * _literal;
         Token * _literal_1;
@@ -8290,9 +8997,6 @@ group_rule(Parser *p)
 static expr_ty
 genexp_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -8303,6 +9007,10 @@ genexp_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '(' expression for_if_clauses ')'
         Token * _literal;
         Token * _literal_1;
@@ -8335,6 +9043,10 @@ genexp_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // invalid_comprehension
         void *invalid_comprehension_var;
         if (
@@ -8355,9 +9067,6 @@ genexp_rule(Parser *p)
 static expr_ty
 set_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -8368,6 +9077,10 @@ set_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '{' expressions_list '}'
         Token * _literal;
         Token * _literal_1;
@@ -8406,9 +9119,6 @@ set_rule(Parser *p)
 static expr_ty
 setcomp_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -8419,6 +9129,10 @@ setcomp_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '{' expression for_if_clauses '}'
         Token * _literal;
         Token * _literal_1;
@@ -8451,6 +9165,10 @@ setcomp_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // invalid_comprehension
         void *invalid_comprehension_var;
         if (
@@ -8471,9 +9189,6 @@ setcomp_rule(Parser *p)
 static expr_ty
 dict_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -8484,6 +9199,10 @@ dict_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '{' kvpairs? '}'
         Token * _literal;
         Token * _literal_1;
@@ -8522,9 +9241,6 @@ dict_rule(Parser *p)
 static expr_ty
 dictcomp_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -8535,6 +9251,10 @@ dictcomp_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '{' kvpair for_if_clauses '}'
         Token * _literal;
         Token * _literal_1;
@@ -8576,11 +9296,12 @@ dictcomp_rule(Parser *p)
 static asdl_seq*
 kvpairs_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.kvpair+ ','?
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -8609,11 +9330,12 @@ kvpairs_rule(Parser *p)
 static KeyValuePair*
 kvpair_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     KeyValuePair* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '**' bitwise_or
         Token * _literal;
         expr_ty a;
@@ -8631,6 +9353,10 @@ kvpair_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // expression ':' expression
         Token * _literal;
@@ -8662,11 +9388,12 @@ kvpair_rule(Parser *p)
 static asdl_seq*
 for_if_clauses_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // for_if_clause+
         asdl_seq * _loop1_104_var;
         if (
@@ -8689,11 +9416,12 @@ for_if_clauses_rule(Parser *p)
 static comprehension_ty
 for_if_clause_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     comprehension_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ASYNC 'for' star_targets 'in' disjunction (('if' disjunction))*
         Token * _keyword;
         Token * _keyword_1;
@@ -8723,6 +9451,10 @@ for_if_clause_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'for' star_targets 'in' disjunction (('if' disjunction))*
         Token * _keyword;
@@ -8760,9 +9492,6 @@ for_if_clause_rule(Parser *p)
 static expr_ty
 yield_expr_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -8773,6 +9502,10 @@ yield_expr_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'yield' 'from' expression
         Token * _keyword;
         Token * _keyword_1;
@@ -8801,6 +9534,10 @@ yield_expr_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'yield' star_expressions?
         Token * _keyword;
@@ -8837,13 +9574,14 @@ yield_expr_rule(Parser *p)
 static expr_ty
 arguments_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, arguments_type, &_res))
         return _res;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // args ','? &')'
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -8864,6 +9602,10 @@ arguments_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // incorrect_arguments
         void *incorrect_arguments_var;
@@ -8886,9 +9628,6 @@ arguments_rule(Parser *p)
 static expr_ty
 args_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -8899,6 +9638,10 @@ args_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // starred_expression [',' args]
         expr_ty a;
         void *b;
@@ -8925,6 +9668,10 @@ args_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // kwargs
         asdl_seq* a;
         if (
@@ -8947,6 +9694,10 @@ args_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // named_expression [',' args]
         expr_ty a;
@@ -8986,11 +9737,12 @@ args_rule(Parser *p)
 static asdl_seq*
 kwargs_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.kwarg_or_starred+ ',' ','.kwarg_or_double_starred+
         Token * _literal;
         asdl_seq * a;
@@ -9012,6 +9764,10 @@ kwargs_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.kwarg_or_starred+
         asdl_seq * _gather_113_var;
         if (
@@ -9022,6 +9778,10 @@ kwargs_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ','.kwarg_or_double_starred+
         asdl_seq * _gather_115_var;
@@ -9043,9 +9803,6 @@ kwargs_rule(Parser *p)
 static expr_ty
 starred_expression_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -9056,6 +9813,10 @@ starred_expression_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '*' expression
         Token * _literal;
         expr_ty a;
@@ -9091,9 +9852,6 @@ starred_expression_rule(Parser *p)
 static KeywordOrStarred*
 kwarg_or_starred_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     KeywordOrStarred* _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -9104,6 +9862,10 @@ kwarg_or_starred_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME '=' expression
         Token * _literal;
         expr_ty a;
@@ -9133,6 +9895,10 @@ kwarg_or_starred_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // starred_expression
         expr_ty a;
         if (
@@ -9147,6 +9913,10 @@ kwarg_or_starred_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // invalid_kwarg
         void *invalid_kwarg_var;
@@ -9168,9 +9938,6 @@ kwarg_or_starred_rule(Parser *p)
 static KeywordOrStarred*
 kwarg_or_double_starred_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     KeywordOrStarred* _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -9181,6 +9948,10 @@ kwarg_or_double_starred_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME '=' expression
         Token * _literal;
         expr_ty a;
@@ -9209,6 +9980,10 @@ kwarg_or_double_starred_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '**' expression
         Token * _literal;
@@ -9236,6 +10011,10 @@ kwarg_or_double_starred_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // invalid_kwarg
         void *invalid_kwarg_var;
         if (
@@ -9256,9 +10035,6 @@ kwarg_or_double_starred_rule(Parser *p)
 static expr_ty
 star_targets_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -9269,6 +10045,10 @@ star_targets_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_target !','
         expr_ty a;
         if (
@@ -9285,6 +10065,10 @@ star_targets_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // star_target ((',' star_target))* ','?
         void *_opt_var;
@@ -9325,11 +10109,12 @@ star_targets_rule(Parser *p)
 static asdl_seq*
 star_targets_seq_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.star_target+ ','?
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -9362,9 +10147,6 @@ star_targets_seq_rule(Parser *p)
 static expr_ty
 star_target_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, star_target_type, &_res))
         return _res;
@@ -9377,6 +10159,10 @@ star_target_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '*' (!'*' star_target)
         Token * _literal;
         void *a;
@@ -9402,6 +10188,10 @@ star_target_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // t_primary '.' NAME !t_lookahead
         Token * _literal;
@@ -9433,6 +10223,10 @@ star_target_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // t_primary '[' slices ']' !t_lookahead
         Token * _literal;
@@ -9468,6 +10262,10 @@ star_target_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_atom
         expr_ty star_atom_var;
         if (
@@ -9493,9 +10291,6 @@ star_target_rule(Parser *p)
 static expr_ty
 star_atom_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -9506,6 +10301,10 @@ star_atom_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME
         expr_ty a;
         if (
@@ -9520,6 +10319,10 @@ star_atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '(' star_target ')'
         Token * _literal;
@@ -9541,6 +10344,10 @@ star_atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '(' star_targets_seq? ')'
         Token * _literal;
@@ -9570,6 +10377,10 @@ star_atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '[' star_targets_seq? ']'
         Token * _literal;
@@ -9609,11 +10420,12 @@ star_atom_rule(Parser *p)
 static expr_ty
 single_target_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // single_subscript_attribute_target
         expr_ty single_subscript_attribute_target_var;
         if (
@@ -9624,6 +10436,10 @@ single_target_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // NAME
         expr_ty a;
@@ -9639,6 +10455,10 @@ single_target_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '(' single_target ')'
         Token * _literal;
@@ -9672,9 +10492,6 @@ single_target_rule(Parser *p)
 static expr_ty
 single_subscript_attribute_target_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -9685,6 +10502,10 @@ single_subscript_attribute_target_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // t_primary '.' NAME !t_lookahead
         Token * _literal;
         expr_ty a;
@@ -9715,6 +10536,10 @@ single_subscript_attribute_target_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // t_primary '[' slices ']' !t_lookahead
         Token * _literal;
@@ -9759,11 +10584,12 @@ single_subscript_attribute_target_rule(Parser *p)
 static asdl_seq*
 del_targets_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.del_target+ ','?
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -9795,9 +10621,6 @@ del_targets_rule(Parser *p)
 static expr_ty
 del_target_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, del_target_type, &_res))
         return _res;
@@ -9810,6 +10633,10 @@ del_target_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // t_primary '.' NAME &del_target_end
         Token * _literal;
         expr_ty a;
@@ -9840,6 +10667,10 @@ del_target_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // t_primary '[' slices ']' &del_target_end
         Token * _literal;
@@ -9875,6 +10706,10 @@ del_target_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // del_t_atom
         expr_ty del_t_atom_var;
         if (
@@ -9901,9 +10736,6 @@ del_target_rule(Parser *p)
 static expr_ty
 del_t_atom_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -9914,6 +10746,10 @@ del_t_atom_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME &del_target_end
         expr_ty a;
         if (
@@ -9930,6 +10766,10 @@ del_t_atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '(' del_target ')'
         Token * _literal;
@@ -9951,6 +10791,10 @@ del_t_atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '(' del_targets? ')'
         Token * _literal;
@@ -9981,6 +10825,10 @@ del_t_atom_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '[' del_targets? ']'
         Token * _literal;
         Token * _literal_1;
@@ -10010,6 +10858,10 @@ del_t_atom_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // invalid_del_target
         void *invalid_del_target_var;
         if (
@@ -10030,11 +10882,12 @@ del_t_atom_rule(Parser *p)
 static void *
 del_target_end_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ')'
         Token * _literal;
         if (
@@ -10045,6 +10898,10 @@ del_target_end_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ']'
         Token * _literal;
@@ -10057,6 +10914,10 @@ del_target_end_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','
         Token * _literal;
         if (
@@ -10068,6 +10929,10 @@ del_target_end_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ';'
         Token * _literal;
         if (
@@ -10078,6 +10943,10 @@ del_target_end_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // NEWLINE
         Token * newline_var;
@@ -10099,11 +10968,12 @@ del_target_end_rule(Parser *p)
 static asdl_seq*
 targets_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ','.target+ ','?
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -10135,9 +11005,6 @@ targets_rule(Parser *p)
 static expr_ty
 target_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, target_type, &_res))
         return _res;
@@ -10150,6 +11017,10 @@ target_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // t_primary '.' NAME !t_lookahead
         Token * _literal;
         expr_ty a;
@@ -10180,6 +11051,10 @@ target_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // t_primary '[' slices ']' !t_lookahead
         Token * _literal;
@@ -10214,6 +11089,10 @@ target_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // t_atom
         expr_ty t_atom_var;
@@ -10266,9 +11145,6 @@ t_primary_rule(Parser *p)
 static expr_ty
 t_primary_raw(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -10279,6 +11155,10 @@ t_primary_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // t_primary '.' NAME &t_lookahead
         Token * _literal;
         expr_ty a;
@@ -10309,6 +11189,10 @@ t_primary_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // t_primary '[' slices ']' &t_lookahead
         Token * _literal;
@@ -10344,6 +11228,10 @@ t_primary_raw(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // t_primary genexp &t_lookahead
         expr_ty a;
         expr_ty b;
@@ -10371,6 +11259,10 @@ t_primary_raw(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // t_primary '(' arguments? ')' &t_lookahead
         Token * _literal;
@@ -10406,6 +11298,10 @@ t_primary_raw(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // atom &t_lookahead
         expr_ty a;
         if (
@@ -10432,11 +11328,12 @@ t_primary_raw(Parser *p)
 static void *
 t_lookahead_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '('
         Token * _literal;
         if (
@@ -10448,6 +11345,10 @@ t_lookahead_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '['
         Token * _literal;
         if (
@@ -10458,6 +11359,10 @@ t_lookahead_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '.'
         Token * _literal;
@@ -10479,9 +11384,6 @@ t_lookahead_rule(Parser *p)
 static expr_ty
 t_atom_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
@@ -10492,6 +11394,10 @@ t_atom_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME
         expr_ty a;
         if (
@@ -10506,6 +11412,10 @@ t_atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '(' target ')'
         Token * _literal;
@@ -10527,6 +11437,10 @@ t_atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '(' targets? ')'
         Token * _literal;
@@ -10556,6 +11470,10 @@ t_atom_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '[' targets? ']'
         Token * _literal;
@@ -10598,11 +11516,12 @@ t_atom_rule(Parser *p)
 static void *
 incorrect_arguments_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // args ',' '*'
         Token * _literal;
         Token * _literal_1;
@@ -10623,6 +11542,10 @@ incorrect_arguments_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // expression for_if_clauses ',' [args | expression for_if_clauses]
         Token * _literal;
@@ -10648,6 +11571,10 @@ incorrect_arguments_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // args ',' args
         Token * _literal;
@@ -10679,11 +11606,12 @@ incorrect_arguments_rule(Parser *p)
 static void *
 invalid_kwarg_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression '='
         Token * _literal;
         expr_ty a;
@@ -10711,11 +11639,12 @@ invalid_kwarg_rule(Parser *p)
 static void *
 invalid_named_expression_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression ':=' expression
         Token * _literal;
         expr_ty a;
@@ -10752,11 +11681,12 @@ invalid_named_expression_rule(Parser *p)
 static void *
 invalid_assignment_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // list ':'
         Token * _literal;
         expr_ty a;
@@ -10775,6 +11705,10 @@ invalid_assignment_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // tuple ':'
         Token * _literal;
         expr_ty a;
@@ -10792,6 +11726,10 @@ invalid_assignment_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // star_named_expression ',' star_named_expressions* ':'
         Token * _literal;
@@ -10816,6 +11754,10 @@ invalid_assignment_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // expression ':' expression ['=' annotated_rhs]
         Token * _literal;
@@ -10842,6 +11784,10 @@ invalid_assignment_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_expressions '=' (yield_expr | star_expressions)
         Token * _literal;
         void *_tmp_128_var;
@@ -10862,6 +11808,10 @@ invalid_assignment_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // star_expressions augassign (yield_expr | star_expressions)
         void *_tmp_129_var;
@@ -10893,11 +11843,12 @@ invalid_assignment_rule(Parser *p)
 static void *
 invalid_block_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NEWLINE !INDENT
         Token * newline_var;
         if (
@@ -10924,11 +11875,12 @@ invalid_block_rule(Parser *p)
 static void *
 invalid_comprehension_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ('[' | '(' | '{') starred_expression for_if_clauses
         void *_tmp_130_var;
         expr_ty a;
@@ -10960,11 +11912,12 @@ invalid_comprehension_rule(Parser *p)
 static void *
 invalid_parameters_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_no_default* (slash_with_default | param_with_default+) param_no_default
         asdl_seq * _loop0_131_var;
         void *_tmp_132_var;
@@ -10995,11 +11948,12 @@ invalid_parameters_rule(Parser *p)
 static void *
 invalid_star_etc_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '*' (')' | ',' (')' | '**'))
         Token * _literal;
         void *_tmp_133_var;
@@ -11027,11 +11981,12 @@ invalid_star_etc_rule(Parser *p)
 static void *
 invalid_lambda_star_etc_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '*' (':' | ',' (':' | '**'))
         Token * _literal;
         void *_tmp_134_var;
@@ -11059,11 +12014,12 @@ invalid_lambda_star_etc_rule(Parser *p)
 static void *
 invalid_double_type_comments_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT
         Token * indent_var;
         Token * newline_var;
@@ -11100,11 +12056,12 @@ invalid_double_type_comments_rule(Parser *p)
 static void *
 invalid_del_target_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_expression &del_target_end
         expr_ty a;
         if (
@@ -11145,6 +12102,10 @@ _loop0_1_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NEWLINE
         Token * newline_var;
         while (
@@ -11198,6 +12159,10 @@ _loop0_2_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NEWLINE
         Token * newline_var;
         while (
@@ -11251,6 +12216,10 @@ _loop0_4_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' expression
         Token * _literal;
         expr_ty elem;
@@ -11298,11 +12267,12 @@ _loop0_4_rule(Parser *p)
 static asdl_seq *
 _gather_3_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression _loop0_4
         expr_ty elem;
         asdl_seq * seq;
@@ -11340,6 +12310,10 @@ _loop0_6_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' expression
         Token * _literal;
         expr_ty elem;
@@ -11387,11 +12361,12 @@ _loop0_6_rule(Parser *p)
 static asdl_seq *
 _gather_5_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression _loop0_6
         expr_ty elem;
         asdl_seq * seq;
@@ -11429,6 +12404,10 @@ _loop0_8_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' expression
         Token * _literal;
         expr_ty elem;
@@ -11476,11 +12455,12 @@ _loop0_8_rule(Parser *p)
 static asdl_seq *
 _gather_7_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression _loop0_8
         expr_ty elem;
         asdl_seq * seq;
@@ -11518,6 +12498,10 @@ _loop0_10_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' expression
         Token * _literal;
         expr_ty elem;
@@ -11565,11 +12549,12 @@ _loop0_10_rule(Parser *p)
 static asdl_seq *
 _gather_9_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // expression _loop0_10
         expr_ty elem;
         asdl_seq * seq;
@@ -11607,6 +12592,10 @@ _loop1_11_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // statement
         asdl_seq* statement_var;
         while (
@@ -11664,6 +12653,10 @@ _loop0_13_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ';' small_stmt
         Token * _literal;
         stmt_ty elem;
@@ -11711,11 +12704,12 @@ _loop0_13_rule(Parser *p)
 static asdl_seq *
 _gather_12_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // small_stmt _loop0_13
         stmt_ty elem;
         asdl_seq * seq;
@@ -11739,11 +12733,12 @@ _gather_12_rule(Parser *p)
 static void *
 _tmp_14_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'import'
         Token * _keyword;
         if (
@@ -11754,6 +12749,10 @@ _tmp_14_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // 'from'
         Token * _keyword;
@@ -11775,11 +12774,12 @@ _tmp_14_rule(Parser *p)
 static void *
 _tmp_15_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'def'
         Token * _keyword;
         if (
@@ -11791,6 +12791,10 @@ _tmp_15_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '@'
         Token * _literal;
         if (
@@ -11801,6 +12805,10 @@ _tmp_15_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ASYNC
         Token * async_var;
@@ -11822,11 +12830,12 @@ _tmp_15_rule(Parser *p)
 static void *
 _tmp_16_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'class'
         Token * _keyword;
         if (
@@ -11837,6 +12846,10 @@ _tmp_16_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '@'
         Token * _literal;
@@ -11858,11 +12871,12 @@ _tmp_16_rule(Parser *p)
 static void *
 _tmp_17_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'with'
         Token * _keyword;
         if (
@@ -11873,6 +12887,10 @@ _tmp_17_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ASYNC
         Token * async_var;
@@ -11894,11 +12912,12 @@ _tmp_17_rule(Parser *p)
 static void *
 _tmp_18_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'for'
         Token * _keyword;
         if (
@@ -11909,6 +12928,10 @@ _tmp_18_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ASYNC
         Token * async_var;
@@ -11930,11 +12953,12 @@ _tmp_18_rule(Parser *p)
 static void *
 _tmp_19_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '=' annotated_rhs
         Token * _literal;
         expr_ty d;
@@ -11962,11 +12986,12 @@ _tmp_19_rule(Parser *p)
 static void *
 _tmp_20_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '(' single_target ')'
         Token * _literal;
         Token * _literal_1;
@@ -11988,6 +13013,10 @@ _tmp_20_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // single_subscript_attribute_target
         expr_ty single_subscript_attribute_target_var;
         if (
@@ -12008,11 +13037,12 @@ _tmp_20_rule(Parser *p)
 static void *
 _tmp_21_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '=' annotated_rhs
         Token * _literal;
         expr_ty d;
@@ -12054,6 +13084,10 @@ _loop1_22_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // (star_targets '=')
         void *_tmp_135_var;
         while (
@@ -12097,11 +13131,12 @@ _loop1_22_rule(Parser *p)
 static void *
 _tmp_23_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // yield_expr
         expr_ty yield_expr_var;
         if (
@@ -12112,6 +13147,10 @@ _tmp_23_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // star_expressions
         expr_ty star_expressions_var;
@@ -12133,11 +13172,12 @@ _tmp_23_rule(Parser *p)
 static void *
 _tmp_24_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // yield_expr
         expr_ty yield_expr_var;
         if (
@@ -12148,6 +13188,10 @@ _tmp_24_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // star_expressions
         expr_ty star_expressions_var;
@@ -12183,6 +13227,10 @@ _loop0_26_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' NAME
         Token * _literal;
         expr_ty elem;
@@ -12230,11 +13278,12 @@ _loop0_26_rule(Parser *p)
 static asdl_seq *
 _gather_25_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME _loop0_26
         expr_ty elem;
         asdl_seq * seq;
@@ -12272,6 +13321,10 @@ _loop0_28_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' NAME
         Token * _literal;
         expr_ty elem;
@@ -12319,11 +13372,12 @@ _loop0_28_rule(Parser *p)
 static asdl_seq *
 _gather_27_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NAME _loop0_28
         expr_ty elem;
         asdl_seq * seq;
@@ -12347,11 +13401,12 @@ _gather_27_rule(Parser *p)
 static void *
 _tmp_29_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' expression
         Token * _literal;
         expr_ty z;
@@ -12393,6 +13448,10 @@ _loop0_30_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ('.' | '...')
         void *_tmp_136_var;
         while (
@@ -12446,6 +13505,10 @@ _loop1_31_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ('.' | '...')
         void *_tmp_137_var;
         while (
@@ -12503,6 +13566,10 @@ _loop0_33_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' import_from_as_name
         Token * _literal;
         alias_ty elem;
@@ -12550,11 +13617,12 @@ _loop0_33_rule(Parser *p)
 static asdl_seq *
 _gather_32_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // import_from_as_name _loop0_33
         alias_ty elem;
         asdl_seq * seq;
@@ -12578,11 +13646,12 @@ _gather_32_rule(Parser *p)
 static void *
 _tmp_34_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'as' NAME
         Token * _keyword;
         expr_ty z;
@@ -12624,6 +13693,10 @@ _loop0_36_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' dotted_as_name
         Token * _literal;
         alias_ty elem;
@@ -12671,11 +13744,12 @@ _loop0_36_rule(Parser *p)
 static asdl_seq *
 _gather_35_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // dotted_as_name _loop0_36
         alias_ty elem;
         asdl_seq * seq;
@@ -12699,11 +13773,12 @@ _gather_35_rule(Parser *p)
 static void *
 _tmp_37_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'as' NAME
         Token * _keyword;
         expr_ty z;
@@ -12745,6 +13820,10 @@ _loop0_39_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' with_item
         Token * _literal;
         withitem_ty elem;
@@ -12792,11 +13871,12 @@ _loop0_39_rule(Parser *p)
 static asdl_seq *
 _gather_38_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // with_item _loop0_39
         withitem_ty elem;
         asdl_seq * seq;
@@ -12834,6 +13914,10 @@ _loop0_41_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' with_item
         Token * _literal;
         withitem_ty elem;
@@ -12881,11 +13965,12 @@ _loop0_41_rule(Parser *p)
 static asdl_seq *
 _gather_40_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // with_item _loop0_41
         withitem_ty elem;
         asdl_seq * seq;
@@ -12923,6 +14008,10 @@ _loop0_43_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' with_item
         Token * _literal;
         withitem_ty elem;
@@ -12970,11 +14059,12 @@ _loop0_43_rule(Parser *p)
 static asdl_seq *
 _gather_42_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // with_item _loop0_43
         withitem_ty elem;
         asdl_seq * seq;
@@ -13012,6 +14102,10 @@ _loop0_45_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' with_item
         Token * _literal;
         withitem_ty elem;
@@ -13059,11 +14153,12 @@ _loop0_45_rule(Parser *p)
 static asdl_seq *
 _gather_44_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // with_item _loop0_45
         withitem_ty elem;
         asdl_seq * seq;
@@ -13087,11 +14182,12 @@ _gather_44_rule(Parser *p)
 static void *
 _tmp_46_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'as' target
         Token * _keyword;
         expr_ty t;
@@ -13133,6 +14229,10 @@ _loop1_47_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // except_block
         excepthandler_ty except_block_var;
         while (
@@ -13176,11 +14276,12 @@ _loop1_47_rule(Parser *p)
 static void *
 _tmp_48_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'as' NAME
         Token * _keyword;
         expr_ty z;
@@ -13208,11 +14309,12 @@ _tmp_48_rule(Parser *p)
 static void *
 _tmp_49_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'from' expression
         Token * _keyword;
         expr_ty z;
@@ -13240,11 +14342,12 @@ _tmp_49_rule(Parser *p)
 static void *
 _tmp_50_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '->' expression
         Token * _literal;
         expr_ty z;
@@ -13272,11 +14375,12 @@ _tmp_50_rule(Parser *p)
 static void *
 _tmp_51_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '->' expression
         Token * _literal;
         expr_ty z;
@@ -13304,11 +14408,12 @@ _tmp_51_rule(Parser *p)
 static void *
 _tmp_52_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // NEWLINE INDENT
         Token * indent_var;
         Token * newline_var;
@@ -13346,6 +14451,10 @@ _loop0_53_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_no_default
         arg_ty param_no_default_var;
         while (
@@ -13399,6 +14508,10 @@ _loop0_54_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_with_default
         NameDefaultPair* param_with_default_var;
         while (
@@ -13452,6 +14565,10 @@ _loop0_55_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_with_default
         NameDefaultPair* param_with_default_var;
         while (
@@ -13505,6 +14622,10 @@ _loop1_56_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_no_default
         arg_ty param_no_default_var;
         while (
@@ -13562,6 +14683,10 @@ _loop0_57_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_with_default
         NameDefaultPair* param_with_default_var;
         while (
@@ -13615,6 +14740,10 @@ _loop1_58_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_with_default
         NameDefaultPair* param_with_default_var;
         while (
@@ -13672,6 +14801,10 @@ _loop1_59_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_no_default
         arg_ty param_no_default_var;
         while (
@@ -13729,6 +14862,10 @@ _loop1_60_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_no_default
         arg_ty param_no_default_var;
         while (
@@ -13786,6 +14923,10 @@ _loop0_61_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_no_default
         arg_ty param_no_default_var;
         while (
@@ -13839,6 +14980,10 @@ _loop1_62_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_with_default
         NameDefaultPair* param_with_default_var;
         while (
@@ -13896,6 +15041,10 @@ _loop0_63_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_no_default
         arg_ty param_no_default_var;
         while (
@@ -13949,6 +15098,10 @@ _loop1_64_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_with_default
         NameDefaultPair* param_with_default_var;
         while (
@@ -14006,6 +15159,10 @@ _loop0_65_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_maybe_default
         NameDefaultPair* param_maybe_default_var;
         while (
@@ -14059,6 +15216,10 @@ _loop1_66_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_maybe_default
         NameDefaultPair* param_maybe_default_var;
         while (
@@ -14116,6 +15277,10 @@ _loop1_67_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ('@' named_expression NEWLINE)
         void *_tmp_138_var;
         while (
@@ -14159,11 +15324,12 @@ _loop1_67_rule(Parser *p)
 static void *
 _tmp_68_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '(' arguments? ')'
         Token * _literal;
         Token * _literal_1;
@@ -14208,6 +15374,10 @@ _loop0_70_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' star_expression
         Token * _literal;
         expr_ty elem;
@@ -14255,11 +15425,12 @@ _loop0_70_rule(Parser *p)
 static asdl_seq *
 _gather_69_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_expression _loop0_70
         expr_ty elem;
         asdl_seq * seq;
@@ -14297,6 +15468,10 @@ _loop1_71_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // (',' star_expression)
         void *_tmp_139_var;
         while (
@@ -14354,6 +15529,10 @@ _loop0_73_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' star_named_expression
         Token * _literal;
         expr_ty elem;
@@ -14401,11 +15580,12 @@ _loop0_73_rule(Parser *p)
 static asdl_seq *
 _gather_72_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_named_expression _loop0_73
         expr_ty elem;
         asdl_seq * seq;
@@ -14443,6 +15623,10 @@ _loop1_74_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // (',' expression)
         void *_tmp_140_var;
         while (
@@ -14500,6 +15684,10 @@ _loop0_75_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_no_default
         arg_ty lambda_param_no_default_var;
         while (
@@ -14553,6 +15741,10 @@ _loop0_76_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_with_default
         NameDefaultPair* lambda_param_with_default_var;
         while (
@@ -14606,6 +15798,10 @@ _loop0_77_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_with_default
         NameDefaultPair* lambda_param_with_default_var;
         while (
@@ -14659,6 +15855,10 @@ _loop1_78_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_no_default
         arg_ty lambda_param_no_default_var;
         while (
@@ -14716,6 +15916,10 @@ _loop0_79_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_with_default
         NameDefaultPair* lambda_param_with_default_var;
         while (
@@ -14769,6 +15973,10 @@ _loop1_80_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_with_default
         NameDefaultPair* lambda_param_with_default_var;
         while (
@@ -14826,6 +16034,10 @@ _loop1_81_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_no_default
         arg_ty lambda_param_no_default_var;
         while (
@@ -14883,6 +16095,10 @@ _loop1_82_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_no_default
         arg_ty lambda_param_no_default_var;
         while (
@@ -14940,6 +16156,10 @@ _loop0_83_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_no_default
         arg_ty lambda_param_no_default_var;
         while (
@@ -14993,6 +16213,10 @@ _loop1_84_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_with_default
         NameDefaultPair* lambda_param_with_default_var;
         while (
@@ -15050,6 +16274,10 @@ _loop0_85_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_no_default
         arg_ty lambda_param_no_default_var;
         while (
@@ -15103,6 +16331,10 @@ _loop1_86_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_with_default
         NameDefaultPair* lambda_param_with_default_var;
         while (
@@ -15160,6 +16392,10 @@ _loop0_87_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_maybe_default
         NameDefaultPair* lambda_param_maybe_default_var;
         while (
@@ -15213,6 +16449,10 @@ _loop1_88_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // lambda_param_maybe_default
         NameDefaultPair* lambda_param_maybe_default_var;
         while (
@@ -15270,6 +16510,10 @@ _loop1_89_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ('or' conjunction)
         void *_tmp_141_var;
         while (
@@ -15327,6 +16571,10 @@ _loop1_90_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ('and' inversion)
         void *_tmp_142_var;
         while (
@@ -15384,6 +16632,10 @@ _loop1_91_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // compare_op_bitwise_or_pair
         CmpopExprPair* compare_op_bitwise_or_pair_var;
         while (
@@ -15427,11 +16679,12 @@ _loop1_91_rule(Parser *p)
 static void *
 _tmp_92_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '!='
         Token * tok;
         if (
@@ -15470,6 +16723,10 @@ _loop0_94_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' slice
         Token * _literal;
         expr_ty elem;
@@ -15517,11 +16774,12 @@ _loop0_94_rule(Parser *p)
 static asdl_seq *
 _gather_93_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // slice _loop0_94
         expr_ty elem;
         asdl_seq * seq;
@@ -15545,11 +16803,12 @@ _gather_93_rule(Parser *p)
 static void *
 _tmp_95_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ':' expression?
         Token * _literal;
         void *d;
@@ -15577,11 +16836,12 @@ _tmp_95_rule(Parser *p)
 static void *
 _tmp_96_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // tuple
         expr_ty tuple_var;
         if (
@@ -15593,6 +16853,10 @@ _tmp_96_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // group
         expr_ty group_var;
         if (
@@ -15603,6 +16867,10 @@ _tmp_96_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // genexp
         expr_ty genexp_var;
@@ -15624,11 +16892,12 @@ _tmp_96_rule(Parser *p)
 static void *
 _tmp_97_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // list
         expr_ty list_var;
         if (
@@ -15639,6 +16908,10 @@ _tmp_97_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // listcomp
         expr_ty listcomp_var;
@@ -15660,11 +16933,12 @@ _tmp_97_rule(Parser *p)
 static void *
 _tmp_98_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // dict
         expr_ty dict_var;
         if (
@@ -15675,6 +16949,10 @@ _tmp_98_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // set
         expr_ty set_var;
@@ -15687,6 +16965,10 @@ _tmp_98_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // dictcomp
         expr_ty dictcomp_var;
         if (
@@ -15697,6 +16979,10 @@ _tmp_98_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // setcomp
         expr_ty setcomp_var;
@@ -15732,6 +17018,10 @@ _loop1_99_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // STRING
         expr_ty string_var;
         while (
@@ -15775,11 +17065,12 @@ _loop1_99_rule(Parser *p)
 static void *
 _tmp_100_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_named_expression ',' star_named_expressions?
         Token * _literal;
         expr_ty y;
@@ -15810,11 +17101,12 @@ _tmp_100_rule(Parser *p)
 static void *
 _tmp_101_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // yield_expr
         expr_ty yield_expr_var;
         if (
@@ -15825,6 +17117,10 @@ _tmp_101_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // named_expression
         expr_ty named_expression_var;
@@ -15860,6 +17156,10 @@ _loop0_103_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' kvpair
         Token * _literal;
         KeyValuePair* elem;
@@ -15907,11 +17207,12 @@ _loop0_103_rule(Parser *p)
 static asdl_seq *
 _gather_102_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // kvpair _loop0_103
         KeyValuePair* elem;
         asdl_seq * seq;
@@ -15949,6 +17250,10 @@ _loop1_104_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // for_if_clause
         comprehension_ty for_if_clause_var;
         while (
@@ -16006,6 +17311,10 @@ _loop0_105_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ('if' disjunction)
         void *_tmp_143_var;
         while (
@@ -16059,6 +17368,10 @@ _loop0_106_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ('if' disjunction)
         void *_tmp_144_var;
         while (
@@ -16098,11 +17411,12 @@ _loop0_106_rule(Parser *p)
 static void *
 _tmp_107_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' args
         Token * _literal;
         expr_ty c;
@@ -16130,11 +17444,12 @@ _tmp_107_rule(Parser *p)
 static void *
 _tmp_108_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' args
         Token * _literal;
         expr_ty c;
@@ -16176,6 +17491,10 @@ _loop0_110_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' kwarg_or_starred
         Token * _literal;
         KeywordOrStarred* elem;
@@ -16223,11 +17542,12 @@ _loop0_110_rule(Parser *p)
 static asdl_seq *
 _gather_109_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // kwarg_or_starred _loop0_110
         KeywordOrStarred* elem;
         asdl_seq * seq;
@@ -16265,6 +17585,10 @@ _loop0_112_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' kwarg_or_double_starred
         Token * _literal;
         KeywordOrStarred* elem;
@@ -16312,11 +17636,12 @@ _loop0_112_rule(Parser *p)
 static asdl_seq *
 _gather_111_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // kwarg_or_double_starred _loop0_112
         KeywordOrStarred* elem;
         asdl_seq * seq;
@@ -16354,6 +17679,10 @@ _loop0_114_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' kwarg_or_starred
         Token * _literal;
         KeywordOrStarred* elem;
@@ -16401,11 +17730,12 @@ _loop0_114_rule(Parser *p)
 static asdl_seq *
 _gather_113_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // kwarg_or_starred _loop0_114
         KeywordOrStarred* elem;
         asdl_seq * seq;
@@ -16443,6 +17773,10 @@ _loop0_116_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' kwarg_or_double_starred
         Token * _literal;
         KeywordOrStarred* elem;
@@ -16490,11 +17824,12 @@ _loop0_116_rule(Parser *p)
 static asdl_seq *
 _gather_115_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // kwarg_or_double_starred _loop0_116
         KeywordOrStarred* elem;
         asdl_seq * seq;
@@ -16532,6 +17867,10 @@ _loop0_117_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // (',' star_target)
         void *_tmp_145_var;
         while (
@@ -16585,6 +17924,10 @@ _loop0_119_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' star_target
         Token * _literal;
         expr_ty elem;
@@ -16632,11 +17975,12 @@ _loop0_119_rule(Parser *p)
 static asdl_seq *
 _gather_118_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_target _loop0_119
         expr_ty elem;
         asdl_seq * seq;
@@ -16660,11 +18004,12 @@ _gather_118_rule(Parser *p)
 static void *
 _tmp_120_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // !'*' star_target
         expr_ty star_target_var;
         if (
@@ -16701,6 +18046,10 @@ _loop0_122_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' del_target
         Token * _literal;
         expr_ty elem;
@@ -16748,11 +18097,12 @@ _loop0_122_rule(Parser *p)
 static asdl_seq *
 _gather_121_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // del_target _loop0_122
         expr_ty elem;
         asdl_seq * seq;
@@ -16790,6 +18140,10 @@ _loop0_124_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' target
         Token * _literal;
         expr_ty elem;
@@ -16837,11 +18191,12 @@ _loop0_124_rule(Parser *p)
 static asdl_seq *
 _gather_123_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // target _loop0_124
         expr_ty elem;
         asdl_seq * seq;
@@ -16865,11 +18220,12 @@ _gather_123_rule(Parser *p)
 static void *
 _tmp_125_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // args
         expr_ty args_var;
         if (
@@ -16880,6 +18236,10 @@ _tmp_125_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // expression for_if_clauses
         expr_ty expression_var;
@@ -16918,6 +18278,10 @@ _loop0_126_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_named_expressions
         asdl_seq* star_named_expressions_var;
         while (
@@ -16957,11 +18321,12 @@ _loop0_126_rule(Parser *p)
 static void *
 _tmp_127_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '=' annotated_rhs
         Token * _literal;
         expr_ty annotated_rhs_var;
@@ -16985,11 +18350,12 @@ _tmp_127_rule(Parser *p)
 static void *
 _tmp_128_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // yield_expr
         expr_ty yield_expr_var;
         if (
@@ -17000,6 +18366,10 @@ _tmp_128_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // star_expressions
         expr_ty star_expressions_var;
@@ -17021,11 +18391,12 @@ _tmp_128_rule(Parser *p)
 static void *
 _tmp_129_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // yield_expr
         expr_ty yield_expr_var;
         if (
@@ -17036,6 +18407,10 @@ _tmp_129_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // star_expressions
         expr_ty star_expressions_var;
@@ -17057,11 +18432,12 @@ _tmp_129_rule(Parser *p)
 static void *
 _tmp_130_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '['
         Token * _literal;
         if (
@@ -17073,6 +18449,10 @@ _tmp_130_rule(Parser *p)
         }
         p->mark = _mark;
     }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '('
         Token * _literal;
         if (
@@ -17083,6 +18463,10 @@ _tmp_130_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '{'
         Token * _literal;
@@ -17118,6 +18502,10 @@ _loop0_131_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_no_default
         arg_ty param_no_default_var;
         while (
@@ -17157,11 +18545,12 @@ _loop0_131_rule(Parser *p)
 static void *
 _tmp_132_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // slash_with_default
         SlashWithDefault* slash_with_default_var;
         if (
@@ -17172,6 +18561,10 @@ _tmp_132_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // param_with_default+
         asdl_seq * _loop1_146_var;
@@ -17193,11 +18586,12 @@ _tmp_132_rule(Parser *p)
 static void *
 _tmp_133_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ')'
         Token * _literal;
         if (
@@ -17208,6 +18602,10 @@ _tmp_133_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ',' (')' | '**')
         Token * _literal;
@@ -17232,11 +18630,12 @@ _tmp_133_rule(Parser *p)
 static void *
 _tmp_134_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ':'
         Token * _literal;
         if (
@@ -17247,6 +18646,10 @@ _tmp_134_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // ',' (':' | '**')
         Token * _literal;
@@ -17271,11 +18674,12 @@ _tmp_134_rule(Parser *p)
 static void *
 _tmp_135_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // star_targets '='
         Token * _literal;
         expr_ty z;
@@ -17303,11 +18707,12 @@ _tmp_135_rule(Parser *p)
 static void *
 _tmp_136_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '.'
         Token * _literal;
         if (
@@ -17318,6 +18723,10 @@ _tmp_136_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '...'
         Token * _literal;
@@ -17339,11 +18748,12 @@ _tmp_136_rule(Parser *p)
 static void *
 _tmp_137_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '.'
         Token * _literal;
         if (
@@ -17354,6 +18764,10 @@ _tmp_137_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '...'
         Token * _literal;
@@ -17375,11 +18789,12 @@ _tmp_137_rule(Parser *p)
 static void *
 _tmp_138_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // '@' named_expression NEWLINE
         Token * _literal;
         expr_ty f;
@@ -17410,11 +18825,12 @@ _tmp_138_rule(Parser *p)
 static void *
 _tmp_139_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' star_expression
         Token * _literal;
         expr_ty c;
@@ -17442,11 +18858,12 @@ _tmp_139_rule(Parser *p)
 static void *
 _tmp_140_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' expression
         Token * _literal;
         expr_ty c;
@@ -17474,11 +18891,12 @@ _tmp_140_rule(Parser *p)
 static void *
 _tmp_141_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'or' conjunction
         Token * _keyword;
         expr_ty c;
@@ -17506,11 +18924,12 @@ _tmp_141_rule(Parser *p)
 static void *
 _tmp_142_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'and' inversion
         Token * _keyword;
         expr_ty c;
@@ -17538,11 +18957,12 @@ _tmp_142_rule(Parser *p)
 static void *
 _tmp_143_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'if' disjunction
         Token * _keyword;
         expr_ty z;
@@ -17570,11 +18990,12 @@ _tmp_143_rule(Parser *p)
 static void *
 _tmp_144_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // 'if' disjunction
         Token * _keyword;
         expr_ty z;
@@ -17602,11 +19023,12 @@ _tmp_144_rule(Parser *p)
 static void *
 _tmp_145_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ',' star_target
         Token * _literal;
         expr_ty c;
@@ -17648,6 +19070,10 @@ _loop1_146_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // param_with_default
         NameDefaultPair* param_with_default_var;
         while (
@@ -17691,11 +19117,12 @@ _loop1_146_rule(Parser *p)
 static void *
 _tmp_147_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ')'
         Token * _literal;
         if (
@@ -17706,6 +19133,10 @@ _tmp_147_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '**'
         Token * _literal;
@@ -17727,11 +19158,12 @@ _tmp_147_rule(Parser *p)
 static void *
 _tmp_148_rule(Parser *p)
 {
-    if (p->error_indicator) {
-        return NULL;
-    }
     void * _res = NULL;
     int _mark = p->mark;
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
+    }
     { // ':'
         Token * _literal;
         if (
@@ -17742,6 +19174,10 @@ _tmp_148_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
+    }
+    if (p->error_indicator == 1 || PyErr_Occurred()) {
+        p->error_indicator = 1;
+        return NULL;
     }
     { // '**'
         Token * _literal;

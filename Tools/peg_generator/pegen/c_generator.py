@@ -468,10 +468,6 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         memoize = self._should_memoize(node)
 
         with self.indent():
-            self.print("if (p->error_indicator) {")
-            with self.indent():
-                self.print("return NULL;")
-            self.print("}")
             self.print(f"{result_type} _res = NULL;")
             if memoize:
                 self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res))")
@@ -685,6 +681,12 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def visit_Alt(
         self, node: Alt, is_loop: bool, is_gather: bool, rulename: Optional[str]
     ) -> None:
+        self.print("if (p->error_indicator == 1 || PyErr_Occurred()) {")
+        with self.indent():
+            self.print("p->error_indicator = 1;")
+            self.print("return NULL;")
+        self.print("}")
+
         self.print(f"{{ // {node}")
         with self.indent():
             # Prepare variable declarations for the alternative
