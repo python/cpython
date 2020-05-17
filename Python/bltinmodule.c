@@ -1355,7 +1355,7 @@ PyTypeObject PyMap_Type = {
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)map_next,     /* tp_iternext */
+    (iternextfunc)map_next,             /* tp_iternext */
     map_methods,                        /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -2683,12 +2683,12 @@ PyTypeObject PyZip_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     zip_doc,                            /* tp_doc */
-    (traverseproc)zip_traverse,    /* tp_traverse */
+    (traverseproc)zip_traverse,         /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)zip_next,     /* tp_iternext */
+    (iternextfunc)zip_next,             /* tp_iternext */
     zip_methods,                        /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -2723,7 +2723,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_EVAL_METHODDEF
     BUILTIN_EXEC_METHODDEF
     BUILTIN_FORMAT_METHODDEF
-    {"getattr",         (PyCFunction)(void(*)(void))builtin_getattr, METH_FASTCALL, getattr_doc},
+    {"getattr",         (PyCFunction)(void(*)(void))builtin_getattr,    METH_FASTCALL, getattr_doc},
     BUILTIN_GLOBALS_METHODDEF
     BUILTIN_HASATTR_METHODDEF
     BUILTIN_HASH_METHODDEF
@@ -2747,7 +2747,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_SETATTR_METHODDEF
     BUILTIN_SORTED_METHODDEF
     BUILTIN_SUM_METHODDEF
-    {"vars",            builtin_vars,       METH_VARARGS, vars_doc},
+    {"vars",            builtin_vars,                                  METH_VARARGS, vars_doc},
     {NULL,              NULL},
 };
 
@@ -2809,7 +2809,7 @@ _PyBuiltin_Init(PyThreadState *tstate)
     SETBUILTIN("False",                 Py_False);
     SETBUILTIN("True",                  Py_True);
     SETBUILTIN("bool",                  &PyBool_Type);
-    SETBUILTIN("memoryview",        &PyMemoryView_Type);
+    SETBUILTIN("memoryview",            &PyMemoryView_Type);
     SETBUILTIN("bytearray",             &PyByteArray_Type);
     SETBUILTIN("bytes",                 &PyBytes_Type);
     SETBUILTIN("classmethod",           &PyClassMethod_Type);
