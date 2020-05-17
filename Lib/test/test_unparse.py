@@ -136,8 +136,8 @@ class ASTTestCase(unittest.TestCase):
         return code1, code2
 
     def check_src_roundtrip(self, code1, code2=None):
+        code1, code2 = self.get_source(code1, code2)
         with self.subTest(code1=code1, code2=code2):
-            code1, code2 = self.get_source(code1, code2)
             self.assertEqual(code2, code1)
 
     def check_src_dont_roundtrip(self, code1, code2=None):
