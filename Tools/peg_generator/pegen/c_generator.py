@@ -468,10 +468,6 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         memoize = self._should_memoize(node)
 
         with self.indent():
-            self.print("if (p->error_indicator) {")
-            with self.indent():
-                self.print("return NULL;")
-            self.print("}")
             self.print(f"{result_type} _res = NULL;")
             if memoize:
                 self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res))")
@@ -687,6 +683,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     ) -> None:
         self.print(f"{{ // {node}")
         with self.indent():
+            self.print("if (p->error_indicator) {")
+            with self.indent():
+                self.print("return NULL;")
+            self.print("}")
             # Prepare variable declarations for the alternative
             vars = self.collect_vars(node)
             for v, var_type in sorted(item for item in vars.items() if item[0] is not None):
