@@ -1,8 +1,9 @@
 /* Range object implementation */
 
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_tupleobject.h"
+#include "structmember.h"         // PyMemberDef
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
@@ -631,7 +632,7 @@ range_reduce(rangeobject *r, PyObject *args)
 static PyObject *
 range_subscript(rangeobject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         PyObject *i, *result;
         i = PyNumber_Index(item);
         if (!i)

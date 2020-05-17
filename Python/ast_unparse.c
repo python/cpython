@@ -1,3 +1,4 @@
+#include <float.h>   /* DBL_MAX_10_EXP */
 #include <stdbool.h>
 #include "Python.h"
 #include "Python-ast.h"
@@ -6,6 +7,8 @@ static PyObject *_str_open_br;
 static PyObject *_str_dbl_open_br;
 static PyObject *_str_close_br;
 static PyObject *_str_dbl_close_br;
+static PyObject *_str_inf;
+static PyObject *_str_replace_inf;
 
 /* Forward declarations for recursion via helper functions. */
 static PyObject *
@@ -61,13 +64,28 @@ append_charp(_PyUnicodeWriter *writer, const char *charp)
 static int
 append_repr(_PyUnicodeWriter *writer, PyObject *obj)
 {
-    int ret;
-    PyObject *repr;
-    repr = PyObject_Repr(obj);
+    PyObject *repr = PyObject_Repr(obj);
+
     if (!repr) {
         return -1;
     }
-    ret = _PyUnicodeWriter_WriteStr(writer, repr);
+
+    if ((PyFloat_CheckExact(obj) && Py_IS_INFINITY(PyFloat_AS_DOUBLE(obj))) ||
+       PyComplex_CheckExact(obj))
+    {
+        PyObject *new_repr = PyUnicode_Replace(
+            repr,
+            _str_inf,
+            _str_replace_inf,
+            -1
+        );
+        Py_DECREF(repr);
+        if (!new_repr) {
+            return -1;
+        }
+        repr = new_repr;
+    }
+    int ret = _PyUnicodeWriter_WriteStr(writer, repr);
     Py_DECREF(repr);
     return ret;
 }
@@ -698,6 +716,28 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
+append_ast_constant(_PyUnicodeWriter *writer, PyObject *constant)
+{
+    if (PyTuple_CheckExact(constant)) {
+        Py_ssize_t i, elem_count;
+
+        elem_count = PyTuple_GET_SIZE(constant);
+        APPEND_STR("(");
+        for (i = 0; i < elem_count; i++) {
+            APPEND_STR_IF(i > 0, ", ");
+            if (append_ast_constant(writer, PyTuple_GET_ITEM(constant, i)) < 0) {
+                return -1;
+            }
+        }
+
+        APPEND_STR_IF(elem_count == 1, ",");
+        APPEND_STR(")");
+        return 0;
+    }
+    return append_repr(writer, constant);
+}
+
+static int
 append_ast_attribute(_PyUnicodeWriter *writer, expr_ty e)
 {
     const char *period;
@@ -789,7 +829,7 @@ append_named_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     APPEND_STR_IF(level > PR_TUPLE, "(");
     APPEND_EXPR(e->v.NamedExpr.target, PR_ATOM);
-    APPEND_STR(":=");
+    APPEND_STR(" := ");
     APPEND_EXPR(e->v.NamedExpr.value, PR_ATOM);
     APPEND_STR_IF(level > PR_TUPLE, ")");
     return 0;
@@ -835,7 +875,11 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         if (e->v.Constant.value == Py_Ellipsis) {
             APPEND_STR_FINISH("...");
         }
-        return append_repr(writer, e->v.Constant.value);
+        if (e->v.Constant.kind != NULL
+            && -1 == _PyUnicodeWriter_WriteStr(writer, e->v.Constant.kind)) {
+            return -1;
+        }
+        return append_ast_constant(writer, e->v.Constant.value);
     case JoinedStr_kind:
         return append_joinedstr(writer, e, false);
     case FormattedValue_kind:
@@ -881,6 +925,14 @@ maybe_init_static_strings(void)
     }
     if (!_str_dbl_close_br &&
         !(_str_dbl_close_br = PyUnicode_InternFromString("}}"))) {
+        return -1;
+    }
+    if (!_str_inf &&
+        !(_str_inf = PyUnicode_FromString("inf"))) {
+        return -1;
+    }
+    if (!_str_replace_inf &&
+        !(_str_replace_inf = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP))) {
         return -1;
     }
     return 0;

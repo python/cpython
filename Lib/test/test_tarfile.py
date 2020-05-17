@@ -11,7 +11,7 @@ import unittest.mock
 import tarfile
 
 from test import support
-from test.support import script_helper, requires_hashdigest
+from test.support import script_helper
 
 # Check for our compression modules.
 try:
@@ -386,7 +386,7 @@ class CommonReadTest(ReadTest):
     def test_ignore_zeros(self):
         # Test TarFile's ignore_zeros option.
         # generate 512 pseudorandom bytes
-        data = Random(0).getrandbits(512*8).to_bytes(512, 'big')
+        data = Random(0).randbytes(512)
         for char in (b'\0', b'a'):
             # Test if EOFHeaderError ('\0') and InvalidHeaderError ('a')
             # are ignored correctly.

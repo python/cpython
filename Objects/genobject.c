@@ -1,11 +1,11 @@
 /* Generator object implementation */
 
 #include "Python.h"
-#include "pycore_ceval.h"   /* _PyEval_EvalFrame() */
+#include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "opcode.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
@@ -216,6 +216,18 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     Py_XINCREF(tstate->frame);
     assert(f->f_back == NULL);
     f->f_back = tstate->frame;
+
+    _PyErr_StackItem *gi_exc_state = &gen->gi_exc_state;
+    if (exc && gi_exc_state->exc_type != NULL &&
+        gi_exc_state->exc_type != Py_None)
+    {
+        Py_INCREF(gi_exc_state->exc_type);
+        Py_XINCREF(gi_exc_state->exc_value);
+        Py_XINCREF(gi_exc_state->exc_traceback);
+        _PyErr_ChainExceptions(gi_exc_state->exc_type,
+                               gi_exc_state->exc_value,
+                               gi_exc_state->exc_traceback);
+    }
 
     gen->gi_running = 1;
     gen->gi_exc_state.previous_item = tstate->exc_info;
@@ -1117,11 +1129,11 @@ compute_cr_origin(int origin_depth)
     }
     frame = PyEval_GetFrame();
     for (int i = 0; i < frame_count; ++i) {
-        PyObject *frameinfo = Py_BuildValue(
-            "OiO",
-            frame->f_code->co_filename,
-            PyFrame_GetLineNumber(frame),
-            frame->f_code->co_name);
+        PyCodeObject *code = frame->f_code;
+        PyObject *frameinfo = Py_BuildValue("OiO",
+                                            code->co_filename,
+                                            PyFrame_GetLineNumber(frame),
+                                            code->co_name);
         if (!frameinfo) {
             Py_DECREF(cr_origin);
             return NULL;
@@ -1346,6 +1358,8 @@ static PyMethodDef async_gen_methods[] = {
     {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
     {"athrow",(PyCFunction)async_gen_athrow, METH_VARARGS, async_athrow_doc},
     {"aclose", (PyCFunction)async_gen_aclose, METH_NOARGS, async_aclose_doc},
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1427,11 +1441,9 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 }
 
 
-int
-PyAsyncGen_ClearFreeLists(void)
+void
+_PyAsyncGen_ClearFreeLists(void)
 {
-    int ret = ag_value_freelist_free + ag_asend_freelist_free;
-
     while (ag_value_freelist_free) {
         _PyAsyncGenWrappedValue *o;
         o = ag_value_freelist[--ag_value_freelist_free];
@@ -1445,14 +1457,12 @@ PyAsyncGen_ClearFreeLists(void)
         assert(Py_IS_TYPE(o, &_PyAsyncGenASend_Type));
         PyObject_GC_Del(o);
     }
-
-    return ret;
 }
 
 void
 _PyAsyncGen_Fini(void)
 {
-    PyAsyncGen_ClearFreeLists();
+    _PyAsyncGen_ClearFreeLists();
 }
 
 

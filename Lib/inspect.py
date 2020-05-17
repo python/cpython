@@ -32,6 +32,7 @@ __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
 import abc
+import ast
 import dis
 import collections.abc
 import enum
@@ -542,17 +543,6 @@ def _findclass(func):
     return cls
 
 def _finddoc(obj):
-    if isclass(obj):
-        for base in obj.__mro__:
-            if base is not object:
-                try:
-                    doc = base.__doc__
-                except AttributeError:
-                    continue
-                if doc is not None:
-                    return doc
-        return None
-
     if ismethod(obj):
         name = obj.__func__.__name__
         self = obj.__self__
@@ -596,12 +586,27 @@ def _finddoc(obj):
         return None
     for base in cls.__mro__:
         try:
-            doc = getattr(base, name).__doc__
+            doc = _getowndoc(getattr(base, name))
         except AttributeError:
             continue
         if doc is not None:
             return doc
     return None
+
+def _getowndoc(obj):
+    """Get the documentation string for an object if it is not
+    inherited from its class."""
+    try:
+        doc = object.__getattribute__(obj, '__doc__')
+        if doc is None:
+            return None
+        if obj is not type:
+            typedoc = type(obj).__doc__
+            if isinstance(typedoc, str) and typedoc == doc:
+                return None
+        return doc
+    except AttributeError:
+        return None
 
 def getdoc(object):
     """Get the documentation string for an object.
@@ -609,10 +614,7 @@ def getdoc(object):
     All tabs are expanded to spaces.  To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
     uniformly removed from the second line onwards is removed."""
-    try:
-        doc = object.__doc__
-    except AttributeError:
-        return None
+    doc = _getowndoc(object)
     if doc is None:
         try:
             doc = _finddoc(object)
@@ -769,6 +771,42 @@ def getmodule(object, _filename=None):
         if builtinobject is object:
             return builtin
 
+
+class ClassFoundException(Exception):
+    pass
+
+
+class _ClassFinder(ast.NodeVisitor):
+
+    def __init__(self, qualname):
+        self.stack = []
+        self.qualname = qualname
+
+    def visit_FunctionDef(self, node):
+        self.stack.append(node.name)
+        self.stack.append('<locals>')
+        self.generic_visit(node)
+        self.stack.pop()
+        self.stack.pop()
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+
+    def visit_ClassDef(self, node):
+        self.stack.append(node.name)
+        if self.qualname == '.'.join(self.stack):
+            # Return the decorator for the class if present
+            if node.decorator_list:
+                line_number = node.decorator_list[0].lineno
+            else:
+                line_number = node.lineno
+
+            # decrement by one since lines starts with indexing by zero
+            line_number -= 1
+            raise ClassFoundException(line_number)
+        self.generic_visit(node)
+        self.stack.pop()
+
+
 def findsource(object):
     """Return the entire source file and starting line number for an object.
 
@@ -801,25 +839,15 @@ def findsource(object):
         return lines, 0
 
     if isclass(object):
-        name = object.__name__
-        pat = re.compile(r'^(\s*)class\s*' + name + r'\b')
-        # make some effort to find the best matching class definition:
-        # use the one with the least indentation, which is the one
-        # that's most probably not inside a function definition.
-        candidates = []
-        for i in range(len(lines)):
-            match = pat.match(lines[i])
-            if match:
-                # if it's at toplevel, it's already the best one
-                if lines[i][0] == 'c':
-                    return lines, i
-                # else add whitespace to candidate list
-                candidates.append((match.group(1), i))
-        if candidates:
-            # this will sort by whitespace, and by line number,
-            # less whitespace first
-            candidates.sort()
-            return lines, candidates[0][1]
+        qualname = object.__qualname__
+        source = ''.join(lines)
+        tree = ast.parse(source)
+        class_finder = _ClassFinder(qualname)
+        try:
+            class_finder.visit(tree)
+        except ClassFoundException as e:
+            line_number = e.args[0]
+            return lines, line_number
         else:
             raise OSError('could not find class definition')
 

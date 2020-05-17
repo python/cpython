@@ -2,6 +2,7 @@
 /* Module support implementation */
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 
 #define FLAG_SIZE_T 1
 typedef double va_double;
@@ -20,7 +21,7 @@ _Py_convert_optional_to_ssize_t(PyObject *obj, void *result)
     if (obj == Py_None) {
         return 1;
     }
-    else if (PyIndex_Check(obj)) {
+    else if (_PyIndex_Check(obj)) {
         limit = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
         if (limit == -1 && PyErr_Occurred()) {
             return 0;

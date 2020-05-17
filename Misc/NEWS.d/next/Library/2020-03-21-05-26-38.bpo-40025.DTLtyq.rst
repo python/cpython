@@ -1,0 +1,1 @@
+Raise TypeError when _generate_next_value_ is defined after members. Patch by Ethan Onstott.

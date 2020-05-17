@@ -16,7 +16,7 @@ PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
 /* State unique per thread */
 
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
-typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
+typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 
 /* The following values are used for 'what' for tracefunc functions
  *
@@ -55,7 +55,8 @@ struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
-    struct _frame *frame;
+    /* Borrowed reference to the current frame (it can be NULL) */
+    PyFrameObject *frame;
     int recursion_depth;
     char overflowed; /* The stack has overflowed. Allow 50 more calls
                         to handle the runtime error. */
@@ -148,6 +149,8 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
 
+PyAPI_FUNC(PyObject *) _PyThreadState_GetDict(PyThreadState *tstate);
+
 /* PyGILState */
 
 /* Helper/diagnostic function - return 1 if the current thread
@@ -162,7 +165,7 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    This function doesn't check for error. Return NULL before _PyGILState_Init()
    is called and after _PyGILState_Fini() is called.
 
-   See also _PyInterpreterState_Get() and _PyInterpreterState_GET_UNSAFE(). */
+   See also _PyInterpreterState_Get() and _PyInterpreterState_GET(). */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
@@ -181,13 +184,20 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _frame *, int);
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *, int);
 
 PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
+
+PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *interp);
+
+// Get the configuration of the currrent interpreter.
+// The caller must hold the GIL.
+PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
+
 
 /* cross-interpreter data */
 
