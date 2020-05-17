@@ -152,7 +152,7 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype, int lineno,
 #define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
 #define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, msg, ...) \
-    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->col_offset, msg, ##__VA_ARGS__)
+    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, msg, ##__VA_ARGS__)
 
 Py_LOCAL_INLINE(void *)
 CHECK_CALL(Parser *p, void *result)

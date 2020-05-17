@@ -2117,7 +2117,7 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
     }
 
     return RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-        ((expr_ty) asdl_seq_GET(args->v.Call.args, len - 1)),
+        (expr_ty) asdl_seq_GET(args->v.Call.args, len - 1),
         "Generator expression must be parenthesized"
     );
 }
