@@ -609,6 +609,9 @@ Running in Threads
 
    Asynchronously run function *func* in a separate thread.
 
+   Any \*args and \*\*kwargs supplied for this function are directly passed
+   to *func*.
+
    Return an :class:`asyncio.Future` which represents the eventual result of
    *func*.
 
