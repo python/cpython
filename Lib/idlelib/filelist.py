@@ -74,7 +74,8 @@ class FileList:
                 if clip and sys.platform[:3] == 'win' and \
                    len(clip) <= io.DEFAULT_BUFFER_SIZE:
                     # Avoid exceeding the pipe bufsize.
-                    with subprocess.Popen('clip', shell=True, stdin=subprocess.PIPE).stdin as p:
+                    with subprocess.Popen('clip', shell=True,
+                                          stdin=subprocess.PIPE).stdin as p:
                         p.write(clip)
                         # Popen '.communicate' & '.__exit__' call '.wait'.
             except (OSError, TclError):
