@@ -10991,7 +10991,7 @@ invalid_parameters_rule(Parser *p)
     return _res;
 }
 
-// invalid_star_etc: '*' (')' | ',' (')' | '**'))
+// invalid_star_etc: '*' (')' | ',' (')' | '**')) | '*' ',' TYPE_COMMENT
 static void *
 invalid_star_etc_rule(Parser *p)
 {
@@ -11010,6 +11010,27 @@ invalid_star_etc_rule(Parser *p)
         )
         {
             _res = RAISE_SYNTAX_ERROR ( "named arguments must follow bare *" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+    }
+    { // '*' ',' TYPE_COMMENT
+        Token * _literal;
+        Token * _literal_1;
+        Token * a;
+        if (
+            (_literal = _PyPegen_expect_token(p, 16))  // token='*'
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 12))  // token=','
+            &&
+            (a = _PyPegen_expect_token(p, TYPE_COMMENT))  // token='TYPE_COMMENT'
+        )
+        {
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "bare * has associated type comment" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
