@@ -2103,14 +2103,3 @@ _PyPegen_get_invalid_target(expr_ty e, int is_del)
             return e;
     }
 }
-
-expr_ty _PyPegen_get_invalid_for_target(expr_ty e)
-{
-    assert(e != NULL && e->kind == Compare_kind);
-
-    cmpop_ty op = asdl_seq_GET(e->v.Compare.ops, 0);
-    if (op != In) {
-        return NULL;
-    }
-    return _PyPegen_get_invalid_target(e->v.Compare.left, 0);
-}
