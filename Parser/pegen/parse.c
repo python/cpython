@@ -11021,16 +11021,16 @@ invalid_star_etc_rule(Parser *p)
     { // '*' ',' TYPE_COMMENT
         Token * _literal;
         Token * _literal_1;
-        Token * a;
+        Token * type_comment_var;
         if (
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
             (_literal_1 = _PyPegen_expect_token(p, 12))  // token=','
             &&
-            (a = _PyPegen_expect_token(p, TYPE_COMMENT))  // token='TYPE_COMMENT'
+            (type_comment_var = _PyPegen_expect_token(p, TYPE_COMMENT))  // token='TYPE_COMMENT'
         )
         {
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "bare * has associated type comment" );
+            _res = RAISE_SYNTAX_ERROR ( "bare * has associated type comment" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
