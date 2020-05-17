@@ -674,7 +674,6 @@ Running in Threads
        # blocking_io complete at 19:50:54
        # finished main at 19:50:54
 
-
    .. note ::
 
       Due to the :term:`GIL`, `asyncio.to_thread()` can typically only be used
