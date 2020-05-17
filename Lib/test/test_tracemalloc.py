@@ -201,6 +201,51 @@ class TestTracemallocEnabled(unittest.TestCase):
         domain2, size2, traceback2, length2 = trace2
         self.assertIs(traceback2, traceback1)
 
+    def test_get_traced_memory(self):
+        # Python allocates some internals objects, so the test must tolerate
+        # a small difference between the expected size and the real usage
+        max_error = 2048
+
+        # allocate one object
+        obj_size = 1024 * 1024
+        tracemalloc.clear_traces()
+        obj, obj_traceback = allocate_bytes(obj_size)
+        size, peak_size = tracemalloc.get_traced_memory()
+        self.assertGreaterEqual(size, obj_size)
+        self.assertGreaterEqual(peak_size, size)
+
+        self.assertLessEqual(size - obj_size, max_error)
+        self.assertLessEqual(peak_size - size, max_error)
+
+        # destroy the object
+        obj = None
+        size2, peak_size2 = tracemalloc.get_traced_memory()
+        self.assertLess(size2, size)
+        self.assertGreaterEqual(size - size2, obj_size - max_error)
+        self.assertGreaterEqual(peak_size2, peak_size)
+
+        # clear_traces() must reset traced memory counters
+        tracemalloc.clear_traces()
+        self.assertEqual(tracemalloc.get_traced_memory(), (0, 0))
+
+        # allocate another object
+        obj, obj_traceback = allocate_bytes(obj_size)
+        size, peak_size = tracemalloc.get_traced_memory()
+        self.assertGreaterEqual(size, obj_size)
+
+        # stop() also resets traced memory counters
+        tracemalloc.stop()
+        self.assertEqual(tracemalloc.get_traced_memory(), (0, 0))
+
+    def test_clear_traces(self):
+        obj, obj_traceback = allocate_bytes(123)
+        traceback = tracemalloc.get_object_traceback(obj)
+        self.assertIsNotNone(traceback)
+
+        tracemalloc.clear_traces()
+        traceback2 = tracemalloc.get_object_traceback(obj)
+        self.assertIsNone(traceback2)
+
     def test_reset_peak(self):
         # Python allocates some internals objects, so the test must tolerate
         # a small difference between the expected size and the real usage
@@ -224,44 +269,6 @@ class TestTracemallocEnabled(unittest.TestCase):
         self.assertGreaterEqual(peak3, size3)
         self.assertGreater(peak3, peak2)
         self.assertGreaterEqual(peak3 - peak2, obj_size)
-
-    def test_clear_traces(self):
-        obj, obj_traceback = allocate_bytes(123)
-        traceback = tracemalloc.get_object_traceback(obj)
-        self.assertIsNotNone(traceback)
-
-        tracemalloc.clear_traces()
-        traceback2 = tracemalloc.get_object_traceback(obj)
-        self.assertIsNone(traceback2)
-
-    def test_reset_peak(self):
-        max_error = 2048
-        def valid(size):
-            return range(size, size + max_error)
-
-        obj_size = 1024 * 1024
-
-        tracemalloc.clear_traces()
-
-        obj, obj_traceback = allocate_bytes(obj_size)
-        # add to the peak
-        allocate_bytes(obj_size)
-
-        size, peak_size = tracemalloc.get_traced_memory()
-        self.assertIn(peak_size, valid(2 * obj_size))
-
-        tracemalloc.reset_peak()
-
-        size2, peak_size2 = tracemalloc.get_traced_memory()
-        self.assertIn(size2, valid(size))
-        # the peak should include 'obj', but not the other allocation
-        self.assertIn(peak_size2, valid(size2))
-
-        # the peak should continue to be updated
-        allocate_bytes(obj_size)
-        size3, peak_size3 = tracemalloc.get_traced_memory()
-        self.assertIn(size3, valid(obj_size))
-        self.assertIn(peak_size3, valid(2 * obj_size))
 
     def test_is_tracing(self):
         tracemalloc.stop()
