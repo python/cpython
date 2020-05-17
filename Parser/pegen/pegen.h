@@ -261,21 +261,10 @@ int _PyPegen_check_barry_as_flufl(Parser *);
 mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
 
 // Error reporting helpers
+expr_ty _PyPegen_get_invalid_for_target(expr_ty e);
 expr_ty _PyPegen_get_invalid_target(expr_ty e, int del_targets);
 #define GET_INVALID_TARGET(e) _PyPegen_get_invalid_target(e, 0)
 #define GET_INVALID_DEL_TARGET(e) _PyPegen_get_invalid_target(e, 1)
-
-Py_LOCAL_INLINE(expr_ty)
-_PyPegen_get_invalid_for_target(expr_ty e)
-{
-    assert(e != NULL && e->kind == Compare_kind);
-
-    cmpop_ty op = asdl_seq_GET(e->v.Compare.ops, 0);
-    if (op != In) {
-        return NULL;
-    }
-    return _PyPegen_get_invalid_target(e->v.Compare.left, 0);
-}
 
 // Generated function in parse.c - function definition in python.gram
 void *_PyPegen_parse(Parser *);
