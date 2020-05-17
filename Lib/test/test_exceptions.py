@@ -33,16 +33,17 @@ class BrokenStrException(Exception):
 class ExceptionTests(unittest.TestCase):
 
     def raise_catch(self, exc, excname):
-        try:
-            raise exc("spam")
-        except exc as err:
-            buf1 = str(err)
-        try:
-            raise exc("spam")
-        except exc as err:
-            buf2 = str(err)
-        self.assertEqual(buf1, buf2)
-        self.assertEqual(exc.__name__, excname)
+        with self.subTest(exc=exc, excname=excname):
+            try:
+                raise exc("spam")
+            except exc as err:
+                buf1 = str(err)
+            try:
+                raise exc("spam")
+            except exc as err:
+                buf2 = str(err)
+            self.assertEqual(buf1, buf2)
+            self.assertEqual(exc.__name__, excname)
 
     def testRaising(self):
         self.raise_catch(AttributeError, "AttributeError")
@@ -133,13 +134,14 @@ class ExceptionTests(unittest.TestCase):
         # these code fragments
 
         def ckmsg(src, msg):
-            try:
-                compile(src, '<fragment>', 'exec')
-            except SyntaxError as e:
-                if e.msg != msg:
-                    self.fail("expected %s, got %s" % (msg, e.msg))
-            else:
-                self.fail("failed to get expected SyntaxError")
+            with self.subTest(src=src, msg=msg):
+                try:
+                    compile(src, '<fragment>', 'exec')
+                except SyntaxError as e:
+                    if e.msg != msg:
+                        self.fail("expected %s, got %s" % (msg, e.msg))
+                else:
+                    self.fail("failed to get expected SyntaxError")
 
         s = '''if 1:
         try:
@@ -179,15 +181,16 @@ class ExceptionTests(unittest.TestCase):
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
 
     def check(self, src, lineno, offset, encoding='utf-8'):
-        with self.assertRaises(SyntaxError) as cm:
-            compile(src, '<fragment>', 'exec')
-        self.assertEqual(cm.exception.lineno, lineno)
-        self.assertEqual(cm.exception.offset, offset)
-        if cm.exception.text is not None:
-            if not isinstance(src, str):
-                src = src.decode(encoding, 'replace')
-            line = src.split('\n')[lineno-1]
-            self.assertIn(line, cm.exception.text)
+        with self.subTest(source=src, lineno=lineno, offset=offset):
+            with self.assertRaises(SyntaxError) as cm:
+                compile(src, '<fragment>', 'exec')
+            self.assertEqual(cm.exception.lineno, lineno)
+            self.assertEqual(cm.exception.offset, offset)
+            if cm.exception.text is not None:
+                if not isinstance(src, str):
+                    src = src.decode(encoding, 'replace')
+                line = src.split('\n')[lineno-1]
+                self.assertIn(line, cm.exception.text)
 
     def testSyntaxErrorOffset(self):
         check = self.check

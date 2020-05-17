@@ -11284,7 +11284,8 @@ _loop0_1_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -11298,11 +11299,13 @@ _loop0_1_rule(Parser *p)
             _res = newline_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11311,8 +11314,9 @@ _loop0_1_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_1");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -11333,7 +11337,8 @@ _loop0_2_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -11347,11 +11352,13 @@ _loop0_2_rule(Parser *p)
             _res = newline_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11360,8 +11367,9 @@ _loop0_2_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_2");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -11382,7 +11390,8 @@ _loop0_4_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -11404,11 +11413,13 @@ _loop0_4_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11417,8 +11428,9 @@ _loop0_4_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_4");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -11467,7 +11479,8 @@ _loop0_6_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -11489,11 +11502,13 @@ _loop0_6_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11502,8 +11517,9 @@ _loop0_6_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_6");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -11552,7 +11568,8 @@ _loop0_8_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -11574,11 +11591,13 @@ _loop0_8_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11587,8 +11606,9 @@ _loop0_8_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_8");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -11637,7 +11657,8 @@ _loop0_10_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -11659,11 +11680,13 @@ _loop0_10_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11672,8 +11695,9 @@ _loop0_10_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_10");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -11722,7 +11746,8 @@ _loop1_11_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -11736,11 +11761,13 @@ _loop1_11_rule(Parser *p)
             _res = statement_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11753,8 +11780,9 @@ _loop1_11_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_11");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -11775,7 +11803,8 @@ _loop0_13_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -11797,11 +11826,13 @@ _loop0_13_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -11810,8 +11841,9 @@ _loop0_13_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_13");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -12161,7 +12193,8 @@ _loop1_22_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -12175,11 +12208,13 @@ _loop1_22_rule(Parser *p)
             _res = _tmp_136_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12192,8 +12227,9 @@ _loop1_22_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_22");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -12286,7 +12322,8 @@ _loop0_26_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -12308,11 +12345,13 @@ _loop0_26_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12321,8 +12360,9 @@ _loop0_26_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_26");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -12371,7 +12411,8 @@ _loop0_28_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -12393,11 +12434,13 @@ _loop0_28_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12406,8 +12449,9 @@ _loop0_28_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_28");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -12524,7 +12568,8 @@ _loop0_31_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -12538,11 +12583,13 @@ _loop0_31_rule(Parser *p)
             _res = _tmp_137_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12551,8 +12598,9 @@ _loop0_31_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_31");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -12573,7 +12621,8 @@ _loop1_32_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -12587,11 +12636,13 @@ _loop1_32_rule(Parser *p)
             _res = _tmp_138_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12604,8 +12655,9 @@ _loop1_32_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_32");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -12626,7 +12678,8 @@ _loop0_34_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -12648,11 +12701,13 @@ _loop0_34_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12661,8 +12716,9 @@ _loop0_34_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_34");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -12743,7 +12799,8 @@ _loop0_37_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -12765,11 +12822,13 @@ _loop0_37_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12778,8 +12837,9 @@ _loop0_37_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_37");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -12860,7 +12920,8 @@ _loop0_40_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -12882,11 +12943,13 @@ _loop0_40_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12895,8 +12958,9 @@ _loop0_40_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_40");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -12945,7 +13009,8 @@ _loop0_42_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -12967,11 +13032,13 @@ _loop0_42_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -12980,8 +13047,9 @@ _loop0_42_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_42");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13030,7 +13098,8 @@ _loop0_44_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13052,11 +13121,13 @@ _loop0_44_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13065,8 +13136,9 @@ _loop0_44_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_44");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13115,7 +13187,8 @@ _loop0_46_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13137,11 +13210,13 @@ _loop0_46_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13150,8 +13225,9 @@ _loop0_46_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_46");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13247,7 +13323,8 @@ _loop1_48_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13261,11 +13338,13 @@ _loop1_48_rule(Parser *p)
             _res = except_block_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13278,8 +13357,9 @@ _loop1_48_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_48");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13456,7 +13536,8 @@ _loop0_54_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13470,11 +13551,13 @@ _loop0_54_rule(Parser *p)
             _res = param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13483,8 +13566,9 @@ _loop0_54_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_54");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13505,7 +13589,8 @@ _loop0_55_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13519,11 +13604,13 @@ _loop0_55_rule(Parser *p)
             _res = param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13532,8 +13619,9 @@ _loop0_55_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_55");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13554,7 +13642,8 @@ _loop0_56_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13568,11 +13657,13 @@ _loop0_56_rule(Parser *p)
             _res = param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13581,8 +13672,9 @@ _loop0_56_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_56");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13603,7 +13695,8 @@ _loop1_57_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13617,11 +13710,13 @@ _loop1_57_rule(Parser *p)
             _res = param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13634,8 +13729,9 @@ _loop1_57_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_57");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13656,7 +13752,8 @@ _loop0_58_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13670,11 +13767,13 @@ _loop0_58_rule(Parser *p)
             _res = param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13683,8 +13782,9 @@ _loop0_58_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_58");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13705,7 +13805,8 @@ _loop1_59_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13719,11 +13820,13 @@ _loop1_59_rule(Parser *p)
             _res = param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13736,8 +13839,9 @@ _loop1_59_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_59");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13758,7 +13862,8 @@ _loop1_60_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13772,11 +13877,13 @@ _loop1_60_rule(Parser *p)
             _res = param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13789,8 +13896,9 @@ _loop1_60_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_60");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13811,7 +13919,8 @@ _loop1_61_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13825,11 +13934,13 @@ _loop1_61_rule(Parser *p)
             _res = param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13842,8 +13953,9 @@ _loop1_61_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_61");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13864,7 +13976,8 @@ _loop0_62_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13878,11 +13991,13 @@ _loop0_62_rule(Parser *p)
             _res = param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13891,8 +14006,9 @@ _loop0_62_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_62");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13913,7 +14029,8 @@ _loop1_63_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13927,11 +14044,13 @@ _loop1_63_rule(Parser *p)
             _res = param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13944,8 +14063,9 @@ _loop1_63_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_63");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -13966,7 +14086,8 @@ _loop0_64_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -13980,11 +14101,13 @@ _loop0_64_rule(Parser *p)
             _res = param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -13993,8 +14116,9 @@ _loop0_64_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_64");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14015,7 +14139,8 @@ _loop1_65_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14029,11 +14154,13 @@ _loop1_65_rule(Parser *p)
             _res = param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14046,8 +14173,9 @@ _loop1_65_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_65");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14068,7 +14196,8 @@ _loop0_66_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14082,11 +14211,13 @@ _loop0_66_rule(Parser *p)
             _res = param_maybe_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14095,8 +14226,9 @@ _loop0_66_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_66");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14117,7 +14249,8 @@ _loop1_67_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14131,11 +14264,13 @@ _loop1_67_rule(Parser *p)
             _res = param_maybe_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14148,8 +14283,9 @@ _loop1_67_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_67");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14170,7 +14306,8 @@ _loop1_68_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14184,11 +14321,13 @@ _loop1_68_rule(Parser *p)
             _res = _tmp_139_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14201,8 +14340,9 @@ _loop1_68_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_68");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14258,7 +14398,8 @@ _loop0_71_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14280,11 +14421,13 @@ _loop0_71_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14293,8 +14436,9 @@ _loop0_71_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_71");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14343,7 +14487,8 @@ _loop1_72_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14357,11 +14502,13 @@ _loop1_72_rule(Parser *p)
             _res = _tmp_140_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14374,8 +14521,9 @@ _loop1_72_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_72");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14396,7 +14544,8 @@ _loop0_74_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14418,11 +14567,13 @@ _loop0_74_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14431,8 +14582,9 @@ _loop0_74_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_74");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14481,7 +14633,8 @@ _loop1_75_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14495,11 +14648,13 @@ _loop1_75_rule(Parser *p)
             _res = _tmp_141_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14512,8 +14667,9 @@ _loop1_75_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_75");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14534,7 +14690,8 @@ _loop0_76_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14548,11 +14705,13 @@ _loop0_76_rule(Parser *p)
             _res = lambda_param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14561,8 +14720,9 @@ _loop0_76_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_76");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14583,7 +14743,8 @@ _loop0_77_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14597,11 +14758,13 @@ _loop0_77_rule(Parser *p)
             _res = lambda_param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14610,8 +14773,9 @@ _loop0_77_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_77");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14632,7 +14796,8 @@ _loop0_78_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14646,11 +14811,13 @@ _loop0_78_rule(Parser *p)
             _res = lambda_param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14659,8 +14826,9 @@ _loop0_78_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_78");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14681,7 +14849,8 @@ _loop1_79_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14695,11 +14864,13 @@ _loop1_79_rule(Parser *p)
             _res = lambda_param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14712,8 +14883,9 @@ _loop1_79_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_79");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14734,7 +14906,8 @@ _loop0_80_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14748,11 +14921,13 @@ _loop0_80_rule(Parser *p)
             _res = lambda_param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14761,8 +14936,9 @@ _loop0_80_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_80");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14783,7 +14959,8 @@ _loop1_81_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14797,11 +14974,13 @@ _loop1_81_rule(Parser *p)
             _res = lambda_param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14814,8 +14993,9 @@ _loop1_81_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_81");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14836,7 +15016,8 @@ _loop1_82_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14850,11 +15031,13 @@ _loop1_82_rule(Parser *p)
             _res = lambda_param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14867,8 +15050,9 @@ _loop1_82_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_82");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14889,7 +15073,8 @@ _loop1_83_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14903,11 +15088,13 @@ _loop1_83_rule(Parser *p)
             _res = lambda_param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14920,8 +15107,9 @@ _loop1_83_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_83");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14942,7 +15130,8 @@ _loop0_84_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -14956,11 +15145,13 @@ _loop0_84_rule(Parser *p)
             _res = lambda_param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -14969,8 +15160,9 @@ _loop0_84_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_84");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -14991,7 +15183,8 @@ _loop1_85_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15005,11 +15198,13 @@ _loop1_85_rule(Parser *p)
             _res = lambda_param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15022,8 +15217,9 @@ _loop1_85_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_85");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15044,7 +15240,8 @@ _loop0_86_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15058,11 +15255,13 @@ _loop0_86_rule(Parser *p)
             _res = lambda_param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15071,8 +15270,9 @@ _loop0_86_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_86");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15093,7 +15293,8 @@ _loop1_87_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15107,11 +15308,13 @@ _loop1_87_rule(Parser *p)
             _res = lambda_param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15124,8 +15327,9 @@ _loop1_87_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_87");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15146,7 +15350,8 @@ _loop0_88_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15160,11 +15365,13 @@ _loop0_88_rule(Parser *p)
             _res = lambda_param_maybe_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15173,8 +15380,9 @@ _loop0_88_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_88");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15195,7 +15403,8 @@ _loop1_89_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15209,11 +15418,13 @@ _loop1_89_rule(Parser *p)
             _res = lambda_param_maybe_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15226,8 +15437,9 @@ _loop1_89_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_89");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15248,7 +15460,8 @@ _loop1_90_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15262,11 +15475,13 @@ _loop1_90_rule(Parser *p)
             _res = _tmp_142_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15279,8 +15494,9 @@ _loop1_90_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_90");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15301,7 +15517,8 @@ _loop1_91_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15315,11 +15532,13 @@ _loop1_91_rule(Parser *p)
             _res = _tmp_143_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15332,8 +15551,9 @@ _loop1_91_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_91");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15354,7 +15574,8 @@ _loop1_92_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15368,11 +15589,13 @@ _loop1_92_rule(Parser *p)
             _res = compare_op_bitwise_or_pair_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15385,8 +15608,9 @@ _loop1_92_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_92");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15436,7 +15660,8 @@ _loop0_95_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15458,11 +15683,13 @@ _loop0_95_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15471,8 +15698,9 @@ _loop0_95_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_95");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15694,7 +15922,8 @@ _loop1_100_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15708,11 +15937,13 @@ _loop1_100_rule(Parser *p)
             _res = string_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15725,8 +15956,9 @@ _loop1_100_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_100");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15818,7 +16050,8 @@ _loop0_104_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15840,11 +16073,13 @@ _loop0_104_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15853,8 +16088,9 @@ _loop0_104_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_104");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15903,7 +16139,8 @@ _loop1_105_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15917,11 +16154,13 @@ _loop1_105_rule(Parser *p)
             _res = for_if_clause_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15934,8 +16173,9 @@ _loop1_105_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_105");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -15956,7 +16196,8 @@ _loop0_106_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -15970,11 +16211,13 @@ _loop0_106_rule(Parser *p)
             _res = _tmp_144_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -15983,8 +16226,9 @@ _loop0_106_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_106");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -16005,7 +16249,8 @@ _loop0_107_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -16019,11 +16264,13 @@ _loop0_107_rule(Parser *p)
             _res = _tmp_145_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16032,8 +16279,9 @@ _loop0_107_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_107");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -16118,7 +16366,8 @@ _loop0_111_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -16140,11 +16389,13 @@ _loop0_111_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16153,8 +16404,9 @@ _loop0_111_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_111");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -16203,7 +16455,8 @@ _loop0_113_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -16225,11 +16478,13 @@ _loop0_113_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16238,8 +16493,9 @@ _loop0_113_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_113");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -16288,7 +16544,8 @@ _loop0_115_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -16310,11 +16567,13 @@ _loop0_115_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16323,8 +16582,9 @@ _loop0_115_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_115");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -16373,7 +16633,8 @@ _loop0_117_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -16395,11 +16656,13 @@ _loop0_117_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16408,8 +16671,9 @@ _loop0_117_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_117");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -16458,7 +16722,8 @@ _loop0_118_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -16472,11 +16737,13 @@ _loop0_118_rule(Parser *p)
             _res = _tmp_146_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16485,8 +16752,9 @@ _loop0_118_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_118");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -16507,7 +16775,8 @@ _loop0_120_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -16529,11 +16798,13 @@ _loop0_120_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16542,8 +16813,9 @@ _loop0_120_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_120");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -16619,7 +16891,8 @@ _loop0_123_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -16641,11 +16914,13 @@ _loop0_123_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16654,8 +16929,9 @@ _loop0_123_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_123");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -16704,7 +16980,8 @@ _loop0_125_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -16726,11 +17003,13 @@ _loop0_125_rule(Parser *p)
             }
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16739,8 +17018,9 @@ _loop0_125_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_125");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -16828,7 +17108,8 @@ _loop0_127_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -16842,11 +17123,13 @@ _loop0_127_rule(Parser *p)
             _res = star_named_expressions_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -16855,8 +17138,9 @@ _loop0_127_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_127");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -17024,7 +17308,8 @@ _loop0_132_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -17038,11 +17323,13 @@ _loop0_132_rule(Parser *p)
             _res = param_no_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -17051,8 +17338,9 @@ _loop0_132_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop0_132");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);
@@ -17550,7 +17838,8 @@ _loop1_147_rule(Parser *p)
     int _start_mark = p->mark;
     void **_children = PyMem_Malloc(sizeof(void *));
     if (!_children) {
-        PyErr_Format(PyExc_MemoryError, "Parser out of memory");
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     ssize_t _children_capacity = 1;
@@ -17564,11 +17853,13 @@ _loop1_147_rule(Parser *p)
             _res = param_with_default_var;
             if (_n == _children_capacity) {
                 _children_capacity *= 2;
-                _children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
-                if (!_children) {
-                    PyErr_Format(PyExc_MemoryError, "realloc None");
+                void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));
+                if (!_new_children) {
+                    p->error_indicator = 1;
+                    PyErr_NoMemory();
                     return NULL;
                 }
+                _children = _new_children;
             }
             _children[_n++] = _res;
             _mark = p->mark;
@@ -17581,8 +17872,9 @@ _loop1_147_rule(Parser *p)
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
-        PyErr_Format(PyExc_MemoryError, "asdl_seq_new _loop1_147");
         PyMem_Free(_children);
+        p->error_indicator = 1;
+        PyErr_NoMemory();
         return NULL;
     }
     for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);

@@ -108,25 +108,27 @@ with f() as x, g() as y:
     suite1
 """
 
-docstring_prefixes = [
+docstring_prefixes = (
     "",
-    "class foo():\n    ",
+    "class foo:\n    ",
     "def foo():\n    ",
     "async def foo():\n    ",
-]
+)
 
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
         self.assertEqual(ast.dump(ast1), ast.dump(ast2))
 
     def check_ast_roundtrip(self, code1, **kwargs):
-        ast1 = ast.parse(code1, **kwargs)
-        code2 = ast.unparse(ast1)
-        ast2 = ast.parse(code2, **kwargs)
-        self.assertASTEqual(ast1, ast2)
+        with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
+            ast1 = ast.parse(code1, **kwargs)
+            code2 = ast.unparse(ast1)
+            ast2 = ast.parse(code2, **kwargs)
+            self.assertASTEqual(ast1, ast2)
 
     def check_invalid(self, node, raises=ValueError):
-        self.assertRaises(raises, ast.unparse, node)
+        with self.subTest(node=node):
+            self.assertRaises(raises, ast.unparse, node)
 
     def get_source(self, code1, code2=None):
         code2 = code2 or code1
@@ -135,11 +137,13 @@ class ASTTestCase(unittest.TestCase):
 
     def check_src_roundtrip(self, code1, code2=None):
         code1, code2 = self.get_source(code1, code2)
-        self.assertEqual(code2, code1)
+        with self.subTest(code1=code1, code2=code2):
+            self.assertEqual(code2, code1)
 
     def check_src_dont_roundtrip(self, code1, code2=None):
         code1, code2 = self.get_source(code1, code2)
-        self.assertNotEqual(code2, code1)
+        with self.subTest(code1=code1, code2=code2):
+            self.assertNotEqual(code2, code1)
 
 class UnparseTestCase(ASTTestCase):
     # Tests for specific bugs found in earlier versions of unparse
@@ -313,11 +317,18 @@ class UnparseTestCase(ASTTestCase):
     def test_docstrings(self):
         docstrings = (
             'this ends with double quote"',
-            'this includes a """triple quote"""'
+            'this includes a """triple quote"""',
+            '\r',
+            '\\r',
+            '\t',
+            '\\t',
+            '\n',
+            '\\n',
+            '\r\\r\t\\t\n\\n'
         )
         for docstring in docstrings:
             # check as Module docstrings for easy testing
-            self.check_ast_roundtrip(f"'{docstring}'")
+            self.check_ast_roundtrip(f"'''{docstring}'''")
 
     def test_constant_tuples(self):
         self.check_src_roundtrip(ast.Constant(value=(1,), kind=None), "(1,)")
@@ -333,6 +344,37 @@ class UnparseTestCase(ASTTestCase):
         ):
             self.check_ast_roundtrip(function_type, mode="func_type")
 
+    def test_type_comments(self):
+        for statement in (
+            "a = 5 # type:",
+            "a = 5 # type: int",
+            "a = 5 # type: int and more",
+            "def x(): # type: () -> None\n\tpass",
+            "def x(y): # type: (int) -> None and more\n\tpass",
+            "async def x(): # type: () -> None\n\tpass",
+            "async def x(y): # type: (int) -> None and more\n\tpass",
+            "for x in y: # type: int\n\tpass",
+            "async for x in y: # type: int\n\tpass",
+            "with x(): # type: int\n\tpass",
+            "async with x(): # type: int\n\tpass"
+        ):
+            self.check_ast_roundtrip(statement, type_comments=True)
+
+    def test_type_ignore(self):
+        for statement in (
+            "a = 5 # type: ignore",
+            "a = 5 # type: ignore and more",
+            "def x(): # type: ignore\n\tpass",
+            "def x(y): # type: ignore and more\n\tpass",
+            "async def x(): # type: ignore\n\tpass",
+            "async def x(y): # type: ignore and more\n\tpass",
+            "for x in y: # type: ignore\n\tpass",
+            "async for x in y: # type: ignore\n\tpass",
+            "with x(): # type: ignore\n\tpass",
+            "async with x(): # type: ignore\n\tpass"
+        ):
+            self.check_ast_roundtrip(statement, type_comments=True)
+
 
 class CosmeticTestCase(ASTTestCase):
     """Test if there are cosmetic issues caused by unnecesary additions"""
@@ -347,7 +389,7 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("(1 + 2) / 3")
         self.check_src_roundtrip("(1 + 2) * 3 + 4 * (5 + 2)")
         self.check_src_roundtrip("(1 + 2) * 3 + 4 * (5 + 2) ** 2")
-        self.check_src_roundtrip("~ x")
+        self.check_src_roundtrip("~x")
         self.check_src_roundtrip("x and y")
         self.check_src_roundtrip("x and y and z")
         self.check_src_roundtrip("x and (y and x)")
@@ -367,6 +409,19 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("call((yield x))")
         self.check_src_roundtrip("return x + (yield x)")
 
+
+    def test_class_bases_and_keywords(self):
+        self.check_src_roundtrip("class X:\n    pass")
+        self.check_src_roundtrip("class X(A):\n    pass")
+        self.check_src_roundtrip("class X(A, B, C, D):\n    pass")
+        self.check_src_roundtrip("class X(x=y):\n    pass")
+        self.check_src_roundtrip("class X(metaclass=z):\n    pass")
+        self.check_src_roundtrip("class X(x=y, z=d):\n    pass")
+        self.check_src_roundtrip("class X(A, x=y):\n    pass")
+        self.check_src_roundtrip("class X(A, **kw):\n    pass")
+        self.check_src_roundtrip("class X(*args):\n    pass")
+        self.check_src_roundtrip("class X(*args, **kwargs):\n    pass")
+
     def test_docstrings(self):
         docstrings = (
             '"""simple doc string"""',
@@ -377,6 +432,10 @@ class CosmeticTestCase(ASTTestCase):
             empty newline"""''',
             '"""With some \t"""',
             '"""Foo "bar" baz """',
+            '"""\\r"""',
+            '""""""',
+            '"""\'\'\'"""',
+            '"""\'\'\'\'\'\'"""',
         )
 
         for prefix in docstring_prefixes:
@@ -400,6 +459,12 @@ class CosmeticTestCase(ASTTestCase):
                 src = f"{prefix}{negative}"
                 self.check_ast_roundtrip(src)
                 self.check_src_dont_roundtrip(src)
+
+    def test_unary_op_factor(self):
+        for prefix in ("+", "-", "~"):
+            self.check_src_roundtrip(f"{prefix}1")
+        for prefix in ("not",):
+            self.check_src_roundtrip(f"{prefix} 1")
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
