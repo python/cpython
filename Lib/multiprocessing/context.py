@@ -263,7 +263,7 @@ class DefaultContext(BaseContext):
                 else:
                     return ['fork', 'spawn', 'forkserver']
             else:
-                return ['fork', 'spawn']
+                return ['fork', 'spawn', 'forkserver']
 
 #
 # Context types for fixed start method
