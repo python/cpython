@@ -73,7 +73,7 @@ class ZoneInfoTestBase(unittest.TestCase):
                 if not modname.startswith("tzdata"):
                     continue
 
-                if len(modname) > 6 and modname[7] != ".":
+                if modname.split(".", 1)[0] != "tzdata":  # pragma: nocover
                     continue
 
                 tzdata_modules[modname] = sys.modules.pop(modname)
