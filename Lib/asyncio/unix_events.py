@@ -1266,6 +1266,11 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
             return False
 
     def attach_loop(self, loop):
+        """
+        This registers the SIGCHLD signal handler.
+
+        This method can only be called from the main thread.
+        """
         # Don't save the loop but initialize itself if called first time
         # The reason to do it here is that attach_loop() is called from
         # unix policy only for the main thread.
