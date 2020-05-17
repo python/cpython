@@ -4,8 +4,7 @@ import io
 import os
 import subprocess
 import sys
-import _tkinter
-from tkinter import messagebox as tkMessageBox
+from tkinter import TclError, messagebox as tkMessageBox
 
 
 class FileList:
@@ -74,15 +73,12 @@ class FileList:
                 clip = self.root.clipboard_get().encode('utf-8')
                 if clip and sys.platform[:3] == 'win' and \
                    len(clip) <= io.DEFAULT_BUFFER_SIZE:
-                    # content size check required to avoid exceeding the pipe bufsize
-                    
-                    # we work directly with stdin as '.communicate' & '.__exit__' call '.wait'
+                    # Avoid exceeding the pipe bufsize.
                     with subprocess.Popen('clip', shell=True, stdin=subprocess.PIPE).stdin as p:
                         p.write(clip)
-            except (OSError,
-                    _tkinter.TclError):
-                # 'OSError's can probably be ignored (others may not)
-                # 'TclError's are due to an empty clipboard
+                        # Popen '.communicate' & '.__exit__' call '.wait'.
+            except (OSError, TclError):
+                # 'TclError's are due to an empty clipboard.
                 pass
             finally:
                 self.root.quit()
