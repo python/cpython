@@ -1,0 +1,2 @@
+Added the :func:`~zoneinfo.available_timezones` function to the
+:mod:`zoneinfo` module. Patch by Paul Ganssle.
