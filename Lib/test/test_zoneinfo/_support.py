@@ -70,9 +70,6 @@ class ZoneInfoTestBase(unittest.TestCase):
         def pop_tzdata_modules():
             tzdata_modules = {}
             for modname in list(sys.modules):
-                if not modname.startswith("tzdata"):
-                    continue
-
                 if modname.split(".", 1)[0] != "tzdata":  # pragma: nocover
                     continue
 
