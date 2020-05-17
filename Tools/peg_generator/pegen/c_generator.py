@@ -676,10 +676,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print("_children_capacity *= 2;")
                 self.print("void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));")
                 self.out_of_memory_return(f"!_new_children")
-                self.print("else {") # out_of_memory_return generates an if
-                with self.indent():
-                    self.print("_children = _new_children;")
-                self.print("}")
+                self.print("_children = _new_children;")
             self.print("}")
             self.print("_children[_n++] = _res;")
             self.print("_mark = p->mark;")
