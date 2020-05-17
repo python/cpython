@@ -766,25 +766,25 @@ exit:
 
 #if defined(PY_OPENSSL_HAS_SHAKE)
 
-PyDoc_STRVAR(_hashlib_openssl_shake128__doc__,
-"openssl_shake128($module, /, string=b\'\', *, usedforsecurity=True)\n"
+PyDoc_STRVAR(_hashlib_openssl_shake_128__doc__,
+"openssl_shake_128($module, /, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
 "\n"
-"Returns a shake128 variable hash object; optionally initialized with a string");
+"Returns a shake-128 variable hash object; optionally initialized with a string");
 
-#define _HASHLIB_OPENSSL_SHAKE128_METHODDEF    \
-    {"openssl_shake128", (PyCFunction)(void(*)(void))_hashlib_openssl_shake128, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_shake128__doc__},
-
-static PyObject *
-_hashlib_openssl_shake128_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity);
+#define _HASHLIB_OPENSSL_SHAKE_128_METHODDEF    \
+    {"openssl_shake_128", (PyCFunction)(void(*)(void))_hashlib_openssl_shake_128, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_shake_128__doc__},
 
 static PyObject *
-_hashlib_openssl_shake128(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_hashlib_openssl_shake_128_impl(PyObject *module, PyObject *data_obj,
+                                int usedforsecurity);
+
+static PyObject *
+_hashlib_openssl_shake_128(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_shake128", 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_shake_128", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -812,7 +812,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_shake128_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_shake_128_impl(module, data_obj, usedforsecurity);
 
 exit:
     return return_value;
@@ -822,25 +822,25 @@ exit:
 
 #if defined(PY_OPENSSL_HAS_SHAKE)
 
-PyDoc_STRVAR(_hashlib_openssl_shake256__doc__,
-"openssl_shake256($module, /, string=b\'\', *, usedforsecurity=True)\n"
+PyDoc_STRVAR(_hashlib_openssl_shake_256__doc__,
+"openssl_shake_256($module, /, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
 "\n"
-"Returns a shake256 variable hash object; optionally initialized with a string");
+"Returns a shake-256 variable hash object; optionally initialized with a string");
 
-#define _HASHLIB_OPENSSL_SHAKE256_METHODDEF    \
-    {"openssl_shake256", (PyCFunction)(void(*)(void))_hashlib_openssl_shake256, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_shake256__doc__},
-
-static PyObject *
-_hashlib_openssl_shake256_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity);
+#define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF    \
+    {"openssl_shake_256", (PyCFunction)(void(*)(void))_hashlib_openssl_shake_256, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_shake_256__doc__},
 
 static PyObject *
-_hashlib_openssl_shake256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data_obj,
+                                int usedforsecurity);
+
+static PyObject *
+_hashlib_openssl_shake_256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_shake256", 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_shake_256", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -868,7 +868,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_shake256_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_shake_256_impl(module, data_obj, usedforsecurity);
 
 exit:
     return return_value;
@@ -1387,13 +1387,13 @@ exit:
     #define _HASHLIB_OPENSSL_SHA3_512_METHODDEF
 #endif /* !defined(_HASHLIB_OPENSSL_SHA3_512_METHODDEF) */
 
-#ifndef _HASHLIB_OPENSSL_SHAKE128_METHODDEF
-    #define _HASHLIB_OPENSSL_SHAKE128_METHODDEF
-#endif /* !defined(_HASHLIB_OPENSSL_SHAKE128_METHODDEF) */
+#ifndef _HASHLIB_OPENSSL_SHAKE_128_METHODDEF
+    #define _HASHLIB_OPENSSL_SHAKE_128_METHODDEF
+#endif /* !defined(_HASHLIB_OPENSSL_SHAKE_128_METHODDEF) */
 
-#ifndef _HASHLIB_OPENSSL_SHAKE256_METHODDEF
-    #define _HASHLIB_OPENSSL_SHAKE256_METHODDEF
-#endif /* !defined(_HASHLIB_OPENSSL_SHAKE256_METHODDEF) */
+#ifndef _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
+    #define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
+#endif /* !defined(_HASHLIB_OPENSSL_SHAKE_256_METHODDEF) */
 
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
@@ -1402,4 +1402,4 @@ exit:
 #ifndef _HASHLIB_GET_FIPS_MODE_METHODDEF
     #define _HASHLIB_GET_FIPS_MODE_METHODDEF
 #endif /* !defined(_HASHLIB_GET_FIPS_MODE_METHODDEF) */
-/*[clinic end generated code: output=972a198d2e8434bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a0bff5dcef88de6a input=a9049054013a1b77]*/
