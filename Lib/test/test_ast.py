@@ -580,7 +580,7 @@ class AST_Tests(unittest.TestCase):
         ast.fix_missing_locations(m)
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("AST identifier (must be of type str)", str(cm.exception))
+        self.assertIn("expecting a string object", str(cm.exception))
 
     def test_invalid_constant(self):
         for invalid_constant in int, (1, 2, int), frozenset((1, 2, int)):
@@ -655,19 +655,29 @@ class AST_Tests(unittest.TestCase):
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
 
     def test_required_field_messages(self):
-        binop = ast.BinOp(left=ast.Constant(value=2), right=ast.Constant(value=2), op=ast.Add())
+        binop = ast.BinOp(
+            left=ast.Constant(value=2),
+            right=ast.Constant(value=2),
+            op=ast.Add(),
+        )
         expr_without_position = ast.Expression(body=binop)
         expr_with_wrong_body = ast.Expression(body=[binop])
 
         with self.assertRaisesRegex(TypeError, "required field") as cm:
             compile(expr_without_position, "<test>", "eval")
-        with self.assertRaisesRegex(TypeError, "field \"body\" was expecting expr type node, got list"):
+        with self.assertRaisesRegex(
+            TypeError,
+            'field "body" was expecting node of type "expr", got "list"',
+        ):
             compile(expr_with_wrong_body, "<test>", "eval")
 
-        funcdef = ast.parse("def x(): pass")
-        funcdef.body[0].name = b"x"
-        with self.assertRaisesRegex(TypeError, "field \"name\" was expecting an AST identifier \(must be of type str\)"):
-            compile(funcdef, "<test>", "exec")
+        constant = ast.parse("u'test'", mode="eval")
+        constant.body.kind = 0xFF
+        with self.assertRaisesRegex(
+            TypeError, 'field "kind" was expecting a string or bytes object'
+        ):
+            compile(constant, "<test>", "eval")
+
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
