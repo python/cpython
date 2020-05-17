@@ -667,14 +667,14 @@ class AST_Tests(unittest.TestCase):
             compile(expr_without_position, "<test>", "eval")
         with self.assertRaisesRegex(
             TypeError,
-            'field "body" was expecting node of type "expr", got "list"',
+            "field 'body' was expecting node of type 'expr', got 'list'",
         ):
             compile(expr_with_wrong_body, "<test>", "eval")
 
         constant = ast.parse("u'test'", mode="eval")
         constant.body.kind = 0xFF
         with self.assertRaisesRegex(
-            TypeError, 'field "kind" was expecting a string or bytes object'
+            TypeError, "field 'kind' was expecting a string or bytes object"
         ):
             compile(constant, "<test>", "eval")
 

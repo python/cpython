@@ -434,7 +434,7 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("if (isinstance == -1) {", 1)
         self.emit("return 1;", 2)
         self.emit("} else if (isinstance == 0 && field != NULL) {", 1)
-        error = 'field \\"%%s\\" was expecting node of type \\"%s\\", got \\"%%s\\"' % name
+        error = "field '%%s' was expecting node of type '%s', got '%%s'" % name
         self.emit("PyErr_Format(PyExc_TypeError, \"%s\", field, _PyType_Name(Py_TYPE(obj)));" % error, 2, reflow=False)
         self.emit("return 1;", 2)
         self.emit("}", 1)
@@ -907,7 +907,7 @@ static int obj2ast_constant(PyObject* obj, PyObject** out,
 static int obj2ast_identifier(PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
-        PyErr_Format(PyExc_TypeError, "field \\"%s\\" was expecting a string object", field);
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string object", field);
         return 1;
     }
     return obj2ast_object(obj, out, field, arena);
@@ -916,7 +916,7 @@ static int obj2ast_identifier(PyObject* obj, PyObject** out, const char* field, 
 static int obj2ast_string(PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_Format(PyExc_TypeError, "field \\"%s\\" was expecting a string or bytes object", field);
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string or bytes object", field);
         return 1;
     }
     return obj2ast_object(obj, out, field, arena);

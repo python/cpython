@@ -1336,7 +1336,7 @@ static int obj2ast_constant(PyObject* obj, PyObject** out,
 static int obj2ast_identifier(PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
-        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting a string object", field);
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string object", field);
         return 1;
     }
     return obj2ast_object(obj, out, field, arena);
@@ -1345,7 +1345,7 @@ static int obj2ast_identifier(PyObject* obj, PyObject** out, const char* field, 
 static int obj2ast_string(PyObject* obj, PyObject** out, const char* field, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
-        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting a string or bytes object", field);
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting a string or bytes object", field);
         return 1;
     }
     return obj2ast_object(obj, out, field, arena);
@@ -5110,7 +5110,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, const char* field, PyArena* arena)
     if (isinstance == -1) {
         return 1;
     } else if (isinstance == 0 && field != NULL) {
-        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting node of type \"mod\", got \"%s\"", field, _PyType_Name(Py_TYPE(obj)));
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'mod', got '%s'", field, _PyType_Name(Py_TYPE(obj)));
         return 1;
     }
     tp = astmodulestate_global->Module_type;
@@ -5352,7 +5352,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, const char* field, PyArena* arena)
     if (isinstance == -1) {
         return 1;
     } else if (isinstance == 0 && field != NULL) {
-        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting node of type \"stmt\", got \"%s\"", field, _PyType_Name(Py_TYPE(obj)));
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'stmt', got '%s'", field, _PyType_Name(Py_TYPE(obj)));
         return 1;
     }
     if (_PyObject_LookupAttr(obj, astmodulestate_global->lineno, &tmp) < 0) {
@@ -7290,7 +7290,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, const char* field, PyArena* arena)
     if (isinstance == -1) {
         return 1;
     } else if (isinstance == 0 && field != NULL) {
-        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting node of type \"expr\", got \"%s\"", field, _PyType_Name(Py_TYPE(obj)));
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'expr', got '%s'", field, _PyType_Name(Py_TYPE(obj)));
         return 1;
     }
     if (_PyObject_LookupAttr(obj, astmodulestate_global->lineno, &tmp) < 0) {
@@ -9224,7 +9224,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, const char* field,
     if (isinstance == -1) {
         return 1;
     } else if (isinstance == 0 && field != NULL) {
-        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting node of type \"excepthandler\", got \"%s\"", field, _PyType_Name(Py_TYPE(obj)));
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'excepthandler', got '%s'", field, _PyType_Name(Py_TYPE(obj)));
         return 1;
     }
     if (_PyObject_LookupAttr(obj, astmodulestate_global->lineno, &tmp) < 0) {
@@ -9896,7 +9896,7 @@ obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, const char* field,
     if (isinstance == -1) {
         return 1;
     } else if (isinstance == 0 && field != NULL) {
-        PyErr_Format(PyExc_TypeError, "field \"%s\" was expecting node of type \"type_ignore\", got \"%s\"", field, _PyType_Name(Py_TYPE(obj)));
+        PyErr_Format(PyExc_TypeError, "field '%s' was expecting node of type 'type_ignore', got '%s'", field, _PyType_Name(Py_TYPE(obj)));
         return 1;
     }
     tp = astmodulestate_global->TypeIgnore_type;
