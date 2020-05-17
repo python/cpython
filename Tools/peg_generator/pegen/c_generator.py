@@ -320,24 +320,21 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def out_of_memory_return(
         self,
         expr: str,
-        returnval: str,
-        message: str = "Parser out of memory",
         cleanup_code: Optional[str] = None,
     ) -> None:
         self.print(f"if ({expr}) {{")
         with self.indent():
-            self.print(f'PyErr_Format(PyExc_MemoryError, "{message}");')
             if cleanup_code is not None:
                 self.print(cleanup_code)
-            self.print(f"return {returnval};")
+            self.print("p->error_indicator = 1;")
+            self.print("PyErr_NoMemory();");
+            self.print("return NULL;")
         self.print(f"}}")
 
-    def out_of_memory_goto(
-        self, expr: str, goto_target: str, message: str = "Parser out of memory"
-    ) -> None:
+    def out_of_memory_goto(self, expr: str, goto_target: str) -> None:
         self.print(f"if ({expr}) {{")
         with self.indent():
-            self.print(f'PyErr_Format(PyExc_MemoryError, "{message}");')
+            self.print("PyErr_NoMemory();")
             self.print(f"goto {goto_target};")
         self.print(f"}}")
 
@@ -487,7 +484,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 rhs,
                 is_loop=False,
                 is_gather=node.is_gather(),
-                rulename=node.name if memoize else None,
+                rulename=node.name,
             )
             if self.debug:
                 self.print('fprintf(stderr, "Fail at %d: {node.name}\\n", p->mark);')
@@ -515,7 +512,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("int _mark = p->mark;")
             self.print("int _start_mark = p->mark;")
             self.print("void **_children = PyMem_Malloc(sizeof(void *));")
-            self.out_of_memory_return(f"!_children", "NULL")
+            self.out_of_memory_return(f"!_children")
             self.print("ssize_t _children_capacity = 1;")
             self.print("ssize_t _n = 0;")
             if any(alt.action and "EXTRA" in alt.action for alt in rhs.alts):
@@ -524,7 +521,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 rhs,
                 is_loop=True,
                 is_gather=node.is_gather(),
-                rulename=node.name if memoize else None,
+                rulename=node.name,
             )
             if is_repeat1:
                 self.print("if (_n == 0 || p->error_indicator) {")
@@ -533,12 +530,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     self.print("return NULL;")
                 self.print("}")
             self.print("asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);")
-            self.out_of_memory_return(
-                "!_seq",
-                "NULL",
-                message=f"asdl_seq_new {node.name}",
-                cleanup_code="PyMem_Free(_children);",
-            )
+            self.out_of_memory_return(f"!_seq", cleanup_code="PyMem_Free(_children);")
             self.print("for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);")
             self.print("PyMem_Free(_children);")
             if node.name:
@@ -682,10 +674,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("if (_n == _children_capacity) {")
             with self.indent():
                 self.print("_children_capacity *= 2;")
-                self.print(
-                    "_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));"
-                )
-                self.out_of_memory_return(f"!_children", "NULL", message=f"realloc {rulename}")
+                self.print("void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));")
+                self.out_of_memory_return(f"!_new_children")
+                self.print("_children = _new_children;")
             self.print("}")
             self.print("_children[_n++] = _res;")
             self.print("_mark = p->mark;")
