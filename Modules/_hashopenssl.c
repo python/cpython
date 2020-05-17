@@ -1062,39 +1062,39 @@ _hashlib_openssl_sha3_512_impl(PyObject *module, PyObject *data_obj,
 
 #ifdef PY_OPENSSL_HAS_SHAKE
 /*[clinic input]
-_hashlib.openssl_shake128
+_hashlib.openssl_shake_128
 
     string as data_obj: object(py_default="b''") = NULL
     *
     usedforsecurity: bool = True
 
-Returns a shake128 variable hash object; optionally initialized with a string
+Returns a shake-128 variable hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_shake128_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity)
-/*[clinic end generated code: output=c68a0e30b4c09e1a input=b6d1e9566bacbb64]*/
+_hashlib_openssl_shake_128_impl(PyObject *module, PyObject *data_obj,
+                                int usedforsecurity)
+/*[clinic end generated code: output=bc49cdd8ada1fa97 input=6c9d67440eb33ec8]*/
 {
     return EVP_fast_new(module, data_obj, EVP_shake128(), usedforsecurity);
 }
 
 /*[clinic input]
-_hashlib.openssl_shake256
+_hashlib.openssl_shake_256
 
     string as data_obj: object(py_default="b''") = NULL
     *
     usedforsecurity: bool = True
 
-Returns a shake256 variable hash object; optionally initialized with a string
+Returns a shake-256 variable hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_shake256_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity)
-/*[clinic end generated code: output=d56387762dcad516 input=591b9b78c0498116]*/
+_hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data_obj,
+                                int usedforsecurity)
+/*[clinic end generated code: output=358d213be8852df7 input=479cbe9fefd4a9f8]*/
 {
     return EVP_fast_new(module, data_obj, EVP_shake256(), usedforsecurity);
 }
@@ -1841,8 +1841,8 @@ static struct PyMethodDef EVP_functions[] = {
     _HASHLIB_OPENSSL_SHA3_256_METHODDEF
     _HASHLIB_OPENSSL_SHA3_384_METHODDEF
     _HASHLIB_OPENSSL_SHA3_512_METHODDEF
-    _HASHLIB_OPENSSL_SHAKE128_METHODDEF
-    _HASHLIB_OPENSSL_SHAKE256_METHODDEF
+    _HASHLIB_OPENSSL_SHAKE_128_METHODDEF
+    _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
     {NULL,      NULL}            /* Sentinel */
 };
 
