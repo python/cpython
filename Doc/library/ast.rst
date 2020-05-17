@@ -1754,7 +1754,7 @@ Compiler Flags
 --------------
 
 The following flags may be passed to :func:`compile` in order to change
-effects on compilation of a program:
+effects on the compilation of a program:
 
 .. data:: PyCF_ALLOW_TOP_LEVEL_AWAIT
 
@@ -1765,7 +1765,7 @@ effects on compilation of a program:
 
 .. data:: PyCF_ONLY_AST
 
-   Generates and returns an abstract syntax tree instead of returning
+   Generates and returns an abstract syntax tree instead of returning a
    compiled code object.
 
 .. data:: PyCF_TYPE_COMMENTS
