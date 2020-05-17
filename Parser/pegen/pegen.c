@@ -2058,7 +2058,7 @@ _PyPegen_make_module(Parser *p, asdl_seq *a) {
 // Error reporting helpers
 
 expr_ty
-_PyPegen_get_invalid_target(expr_ty e, int is_del)
+_PyPegen_get_invalid_target(expr_ty e, int is_del, int is_for)
 {
     if (e == NULL) {
         return NULL;
@@ -2068,7 +2068,7 @@ _PyPegen_get_invalid_target(expr_ty e, int is_del)
         Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
         for (Py_ssize_t i = 0; i < len; i++) {\
             expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
-            expr_ty child = _PyPegen_get_invalid_target(other, is_del);\
+            expr_ty child = _PyPegen_get_invalid_target(other, is_del, is_for);\
             if (child != NULL) {\
                 return child;\
             }\
@@ -2094,7 +2094,15 @@ _PyPegen_get_invalid_target(expr_ty e, int is_del)
             if (is_del) {
                 return e;
             }
-            return _PyPegen_get_invalid_target(e->v.Starred.value, is_del);
+            return _PyPegen_get_invalid_target(e->v.Starred.value, is_del, is_for);
+        case Compare_kind:
+            // This is needed, because the `a in b` in `for a in b` gets parsed
+            // as a comparison, and so we need to search the left side of the comparison
+            // for invalid targets.
+            if (is_for) {
+                return _PyPegen_get_invalid_target(e->v.Compare.left, is_del, is_for);
+            }
+            return e;
         case Name_kind:
         case Subscript_kind:
         case Attribute_kind:
@@ -2102,16 +2110,4 @@ _PyPegen_get_invalid_target(expr_ty e, int is_del)
         default:
             return e;
     }
-}
-
-expr_ty
-_PyPegen_get_invalid_for_target(expr_ty e)
-{
-    assert(e != NULL && e->kind == Compare_kind);
-
-    cmpop_ty op = asdl_seq_GET(e->v.Compare.ops, 0);
-    if (op != In) {
-        return NULL;
-    }
-    return _PyPegen_get_invalid_target(e->v.Compare.left, 0);
 }

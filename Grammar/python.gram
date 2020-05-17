@@ -684,15 +684,12 @@ invalid_with_item:
             "cannot assign to %s", _PyPegen_get_expr_name(GET_INVALID_TARGET(a))
         ) }
 
-# Comparison is used here, because the `a() in b` in `for a() in b: pass` is parsed
-# as a comparison. Thus, we only need to search the left side of the comparison
-# for invalid targets.
 invalid_for_target:
-    | ASYNC? 'for' a=comparison {
-        _PyPegen_get_invalid_for_target(a) != NULL ?
+    | ASYNC? 'for' a=star_expressions {
+        GET_INVALID_FOR_TARGET(a) != NULL ?
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            _PyPegen_get_invalid_for_target(a),
-            "cannot assign to %s", _PyPegen_get_expr_name(_PyPegen_get_invalid_for_target(a))
+            GET_INVALID_FOR_TARGET(a),
+            "cannot assign to %s", _PyPegen_get_expr_name(GET_INVALID_FOR_TARGET(a))
         ) :
         NULL }
 

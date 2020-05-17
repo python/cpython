@@ -262,9 +262,10 @@ mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
 
 // Error reporting helpers
 expr_ty _PyPegen_get_invalid_for_target(expr_ty e);
-expr_ty _PyPegen_get_invalid_target(expr_ty e, int del_targets);
-#define GET_INVALID_TARGET(e) _PyPegen_get_invalid_target(e, 0)
-#define GET_INVALID_DEL_TARGET(e) _PyPegen_get_invalid_target(e, 1)
+expr_ty _PyPegen_get_invalid_target(expr_ty e, int is_del, int is_for);
+#define GET_INVALID_TARGET(e) _PyPegen_get_invalid_target(e, 0, 0)
+#define GET_INVALID_DEL_TARGET(e) _PyPegen_get_invalid_target(e, 1, 0)
+#define GET_INVALID_FOR_TARGET(e) _PyPegen_get_invalid_target(e, 0, 1)
 
 // Generated function in parse.c - function definition in python.gram
 void *_PyPegen_parse(Parser *);

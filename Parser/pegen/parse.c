@@ -11201,7 +11201,7 @@ invalid_with_item_rule(Parser *p)
     return _res;
 }
 
-// invalid_for_target: ASYNC? 'for' comparison
+// invalid_for_target: ASYNC? 'for' star_expressions
 static void *
 invalid_for_target_rule(Parser *p)
 {
@@ -11210,7 +11210,7 @@ invalid_for_target_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // ASYNC? 'for' comparison
+    { // ASYNC? 'for' star_expressions
         Token * _keyword;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -11220,10 +11220,10 @@ invalid_for_target_rule(Parser *p)
             &&
             (_keyword = _PyPegen_expect_token(p, 517))  // token='for'
             &&
-            (a = comparison_rule(p))  // comparison
+            (a = star_expressions_rule(p))  // star_expressions
         )
         {
-            _res = _PyPegen_get_invalid_for_target ( a ) != NULL ? RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( _PyPegen_get_invalid_for_target ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( _PyPegen_get_invalid_for_target ( a ) ) ) : NULL;
+            _res = GET_INVALID_FOR_TARGET ( a ) != NULL ? RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_FOR_TARGET ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( GET_INVALID_FOR_TARGET ( a ) ) ) : NULL;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;

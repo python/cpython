@@ -171,6 +171,14 @@ SyntaxError: cannot assign to operator
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
 
+>>> for a, b() in c: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> for a, b, (c + 1, d()): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
+
 >>> for i < (): pass
 Traceback (most recent call last):
 SyntaxError: invalid syntax
