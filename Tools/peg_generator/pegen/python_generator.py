@@ -1,3 +1,4 @@
+import token
 from typing import Any, Dict, Optional, IO, Text, Tuple
 
 from pegen.grammar import (
@@ -123,8 +124,13 @@ class PythonCallMakerVisitor(GrammarVisitor):
 
 
 class PythonParserGenerator(ParserGenerator, GrammarVisitor):
-    def __init__(self, grammar: grammar.Grammar, file: Optional[IO[Text]]):
-        super().__init__(grammar, file)
+    def __init__(
+        self,
+        grammar: grammar.Grammar,
+        file: Optional[IO[Text]],
+        tokens: Dict[int, str] = token.tok_name,
+    ):
+        super().__init__(grammar, tokens, file)
         self.callmakervisitor = PythonCallMakerVisitor(self)
 
     def generate(self, filename: str) -> None:

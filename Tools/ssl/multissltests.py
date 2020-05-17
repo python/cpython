@@ -30,10 +30,12 @@ import logging
 import os
 try:
     from urllib.request import urlopen
+    from urllib.error import HTTPError
 except ImportError:
-    from urllib2 import urlopen
-import subprocess
+    from urllib2 import urlopen, HTTPError
 import shutil
+import string
+import subprocess
 import sys
 import tarfile
 
@@ -41,20 +43,21 @@ import tarfile
 log = logging.getLogger("multissl")
 
 OPENSSL_OLD_VERSIONS = [
-    "1.0.2",
+    "1.0.2u",
+    "1.1.0l",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.0.2t",
-    "1.1.0l",
-    "1.1.1f",
+    "1.1.1g",
+    # "3.0.0-alpha2"
 ]
 
 LIBRESSL_OLD_VERSIONS = [
+    "2.9.2",
 ]
 
 LIBRESSL_RECENT_VERSIONS = [
-    "2.9.2",
+    "3.1.0",
 ]
 
 # store files in ../multissl
@@ -78,7 +81,7 @@ parser.add_argument(
 parser.add_argument(
     '--disable-ancient',
     action='store_true',
-    help="Don't test OpenSSL < 1.0.2 and LibreSSL < 2.5.3.",
+    help="Don't test OpenSSL and LibreSSL versions without upstream support",
 )
 parser.add_argument(
     '--openssl',
@@ -143,10 +146,27 @@ parser.add_argument(
     help="Keep original sources for debugging."
 )
 
+OPENSSL_FIPS_CNF = """\
+openssl_conf = openssl_init
+
+.include {self.install_dir}/ssl/fipsinstall.cnf
+# .include {self.install_dir}/ssl/openssl.cnf
+
+[openssl_init]
+providers = provider_sect
+
+[provider_sect]
+fips = fips_sect
+default = default_sect
+
+[default_sect]
+activate = 1
+"""
+
 
 class AbstractBuilder(object):
     library = None
-    url_template = None
+    url_templates = None
     src_template = None
     build_template = None
     install_target = 'install'
@@ -184,6 +204,11 @@ class AbstractBuilder(object):
 
     def __hash__(self):
         return hash((self.library, self.version))
+
+    @property
+    def short_version(self):
+        """Short version for OpenSSL download URL"""
+        return None
 
     @property
     def openssl_cli(self):
@@ -238,11 +263,23 @@ class AbstractBuilder(object):
         src_dir = os.path.dirname(self.src_file)
         if not os.path.isdir(src_dir):
             os.makedirs(src_dir)
-        url = self.url_template.format(self.version)
-        log.info("Downloading from {}".format(url))
-        req = urlopen(url)
-        # KISS, read all, write all
-        data = req.read()
+        data = None
+        for url_template in self.url_templates:
+            url = url_template.format(v=self.version, s=self.short_version)
+            log.info("Downloading from {}".format(url))
+            try:
+                req = urlopen(url)
+                # KISS, read all, write all
+                data = req.read()
+            except HTTPError as e:
+                log.error(
+                    "Download from {} has from failed: {}".format(url, e)
+                )
+            else:
+                log.info("Successfully downloaded from {}".format(url))
+                break
+        if data is None:
+            raise ValueError("All download URLs have failed")
         log.info("Storing {}".format(self.src_file))
         with open(self.src_file, "wb") as f:
             f.write(data)
@@ -291,8 +328,12 @@ class AbstractBuilder(object):
             ["make", "-j1", self.install_target],
             cwd=self.build_dir
         )
+        self._post_install()
         if not self.args.keep_sources:
             shutil.rmtree(self.build_dir)
+
+    def _post_install(self):
+        pass
 
     def install(self):
         log.info(self.openssl_cli)
@@ -359,17 +400,62 @@ class AbstractBuilder(object):
 
 class BuildOpenSSL(AbstractBuilder):
     library = "OpenSSL"
-    url_template = "https://www.openssl.org/source/openssl-{}.tar.gz"
+    url_templates = (
+        "https://www.openssl.org/source/openssl-{v}.tar.gz",
+        "https://www.openssl.org/source/old/{s}/openssl-{v}.tar.gz"
+    )
     src_template = "openssl-{}.tar.gz"
     build_template = "openssl-{}"
     # only install software, skip docs
     install_target = 'install_sw'
 
+    def _post_install(self):
+        if self.version.startswith("3.0"):
+            self._post_install_300()
+
+    def _post_install_300(self):
+        # create ssl/ subdir with example configs
+        self._subprocess_call(
+            ["make", "-j1", "install_ssldirs"],
+            cwd=self.build_dir
+        )
+        # Install FIPS module
+        # https://wiki.openssl.org/index.php/OpenSSL_3.0#Completing_the_installation_of_the_FIPS_Module
+        fipsinstall_cnf = os.path.join(
+            self.install_dir, "ssl", "fipsinstall.cnf"
+        )
+        openssl_fips_cnf = os.path.join(
+            self.install_dir, "ssl", "openssl-fips.cnf"
+        )
+        fips_mod = os.path.join(self.lib_dir, "ossl-modules/fips.so")
+        self._subprocess_call(
+            [
+                self.openssl_cli, "fipsinstall",
+                "-out", fipsinstall_cnf,
+                "-module", fips_mod,
+                "-provider_name", "fips",
+                "-mac_name", "HMAC",
+                "-macopt", "digest:SHA256",
+                "-macopt", "hexkey:00",
+                "-section_name", "fips_sect"
+            ]
+        )
+        with open(openssl_fips_cnf, "w") as f:
+            f.write(OPENSSL_FIPS_CNF.format(self=self))
+    @property
+    def short_version(self):
+        """Short version for OpenSSL download URL"""
+        short_version = self.version.rstrip(string.ascii_letters)
+        if short_version.startswith("0.9"):
+            short_version = "0.9.x"
+        return short_version
+
 
 class BuildLibreSSL(AbstractBuilder):
     library = "LibreSSL"
-    url_template = (
-        "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-{}.tar.gz")
+    url_templates = (
+        "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-{v}.tar.gz",
+    )
     src_template = "libressl-{}.tar.gz"
     build_template = "libressl-{}"
 

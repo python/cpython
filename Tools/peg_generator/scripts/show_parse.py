@@ -32,6 +32,9 @@ import tempfile
 
 from typing import List
 
+sys.path.insert(0, os.getcwd())
+from pegen.ast_dump import ast_dump
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "-d", "--diff", action="store_true", help="show diff between grammar and ast (requires -g)"
@@ -49,7 +52,7 @@ parser.add_argument("program", nargs="+", help="program to parse (will be concat
 
 def format_tree(tree: ast.AST, verbose: bool = False) -> str:
     with tempfile.NamedTemporaryFile("w+") as tf:
-        tf.write(ast.dump(tree, include_attributes=verbose))
+        tf.write(ast_dump(tree, include_attributes=verbose))
         tf.write("\n")
         tf.flush()
         cmd = f"black -q {tf.name}"

@@ -98,8 +98,15 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 
 /* Empty list reuse scheme to save calls to malloc and free */
 #ifndef PyList_MAXFREELIST
-#define PyList_MAXFREELIST 80
+#  define PyList_MAXFREELIST 80
 #endif
+
+/* bpo-40521: list free lists are shared by all interpreters. */
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  undef PyList_MAXFREELIST
+#  define PyList_MAXFREELIST 0
+#endif
+
 static PyListObject *free_list[PyList_MAXFREELIST];
 static int numfree = 0;
 

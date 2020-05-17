@@ -540,6 +540,33 @@ class TestPegen(unittest.TestCase):
         with self.assertRaises(GrammarError):
             parser_class = make_parser(grammar)
 
+    def test_invalid_rule_name(self) -> None:
+        grammar = """
+        start: _a b
+        _a: 'a'
+        b: 'b'
+        """
+        with self.assertRaisesRegex(GrammarError, "cannot start with underscore: '_a'"):
+            parser_class = make_parser(grammar)
+
+    def test_invalid_variable_name(self) -> None:
+        grammar = """
+        start: a b
+        a: _x='a'
+        b: 'b'
+        """
+        with self.assertRaisesRegex(GrammarError, "cannot start with underscore: '_x'"):
+            parser_class = make_parser(grammar)
+
+    def test_invalid_variable_name_in_temporal_rule(self) -> None:
+        grammar = """
+        start: a b
+        a: (_x='a' | 'b') | 'c'
+        b: 'b'
+        """
+        with self.assertRaisesRegex(GrammarError, "cannot start with underscore: '_x'"):
+            parser_class = make_parser(grammar)
+
 
 class TestGrammarVisitor:
     class Visitor(GrammarVisitor):

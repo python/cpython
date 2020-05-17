@@ -583,7 +583,7 @@ non-important content
                              ])
 
         # Different error message is raised for other whitespace characters.
-        self.assertAllRaise(SyntaxError, 'invalid character in identifier',
+        self.assertAllRaise(SyntaxError, r"invalid non-printable character U\+00A0",
                             ["f'''{\xa0}'''",
                              "\xa0",
                              ])
@@ -864,7 +864,7 @@ non-important content
                              "Bf''",
                              "BF''",]
         double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
-        self.assertAllRaise(SyntaxError, 'invalid string prefix',
+        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
                             single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):

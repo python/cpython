@@ -1,0 +1,1 @@
+Added an optional *counts* parameter to random.sample().
