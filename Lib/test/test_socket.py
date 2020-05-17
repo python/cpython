@@ -959,6 +959,37 @@ class GeneralModuleTests(unittest.TestCase):
         socket.IPPROTO_L2TP
         socket.IPPROTO_SCTP
 
+    @unittest.skipUnless(sys.platform == 'darwin', 'macOS specific test')
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
+    def test3542SocketOptions(self):
+        # Ref. issue #35569 and https://tools.ietf.org/html/rfc3542
+        opts = {
+            'IPV6_CHECKSUM',
+            'IPV6_DONTFRAG',
+            'IPV6_DSTOPTS',
+            'IPV6_HOPLIMIT',
+            'IPV6_HOPOPTS',
+            'IPV6_NEXTHOP',
+            'IPV6_PATHMTU',
+            'IPV6_PKTINFO',
+            'IPV6_RECVDSTOPTS',
+            'IPV6_RECVHOPLIMIT',
+            'IPV6_RECVHOPOPTS',
+            'IPV6_RECVPATHMTU',
+            'IPV6_RECVPKTINFO',
+            'IPV6_RECVRTHDR',
+            'IPV6_RECVTCLASS',
+            'IPV6_RTHDR',
+            'IPV6_RTHDRDSTOPTS',
+            'IPV6_RTHDR_TYPE_0',
+            'IPV6_TCLASS',
+            'IPV6_USE_MIN_MTU',
+        }
+        for opt in opts:
+            self.assertTrue(
+                hasattr(socket, opt), f"Missing RFC3542 socket option '{opt}'"
+            )
+
     def testHostnameRes(self):
         # Testing hostname resolution mechanisms
         hostname = socket.gethostname()
