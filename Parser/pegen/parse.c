@@ -11223,7 +11223,7 @@ invalid_for_target_rule(Parser *p)
             (a = star_expressions_rule(p))  // star_expressions
         )
         {
-            _res = GET_INVALID_FOR_TARGET ( a ) != NULL ? RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_FOR_TARGET ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( GET_INVALID_FOR_TARGET ( a ) ) ) : NULL;
+            _res = GET_INVALID_FOR_TARGET ( a ) != NULL ? RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_FOR_TARGET ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( GET_INVALID_FOR_TARGET ( a ) ) ) : RAISE_SYNTAX_ERROR ( "invalid syntax" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
