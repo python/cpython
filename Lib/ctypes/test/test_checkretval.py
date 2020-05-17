@@ -1,13 +1,14 @@
 import unittest
 
-from ctypes import *
+from ctypes import CDLL, c_int
 from ctypes.test import need_symbol
 
 class CHECKED(c_int):
+
+    @staticmethod
     def _check_retval_(value):
         # Receives a CHECKED instance.
         return str(value.value)
-    _check_retval_ = staticmethod(_check_retval_)
 
 class Test(unittest.TestCase):
 
@@ -28,6 +29,7 @@ class Test(unittest.TestCase):
 
     @need_symbol('oledll')
     def test_oledll(self):
+        from ctypes import oledll
         self.assertRaises(OSError,
                               oledll.oleaut32.CreateTypeLib2,
                               0, None, None)

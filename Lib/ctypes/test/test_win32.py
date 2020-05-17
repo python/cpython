@@ -1,10 +1,14 @@
 # Windows specific tests
 
-from ctypes import *
-import unittest, sys
+import _ctypes_test
+import sys
+import unittest
+from ctypes import (
+    CDLL, POINTER, Structure, byref, c_int, c_long, c_void_p, pointer, sizeof)
 from test import support
 
-import _ctypes_test
+if sys.platform == "win32":
+    from ctypes import FormatError, WinError, windll, c_char
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class FunctionCallTestCase(unittest.TestCase):

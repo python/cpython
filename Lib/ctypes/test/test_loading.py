@@ -1,11 +1,14 @@
-from ctypes import *
 import os
 import shutil
 import subprocess
 import sys
 import unittest
 import test.support
+from ctypes import CDLL, c_char_p, c_void_p, cdll
 from ctypes.util import find_library
+
+if os.name == "nt":
+    from ctypes import WinDLL, addressof, windll
 
 libc_name = None
 
@@ -59,13 +62,12 @@ class LoaderTest(unittest.TestCase):
             print(find_library("kernel32"))
             print(find_library("user32"))
 
-        if os.name == "nt":
-            windll.kernel32.GetModuleHandleW
-            windll["kernel32"].GetModuleHandleW
-            windll.LoadLibrary("kernel32").GetModuleHandleW
-            WinDLL("kernel32").GetModuleHandleW
-            # embedded null character
-            self.assertRaises(ValueError, windll.LoadLibrary, "kernel32\0")
+        windll.kernel32.GetModuleHandleW
+        windll["kernel32"].GetModuleHandleW
+        windll.LoadLibrary("kernel32").GetModuleHandleW
+        WinDLL("kernel32").GetModuleHandleW
+        # embedded null character
+        self.assertRaises(ValueError, windll.LoadLibrary, "kernel32\0")
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')

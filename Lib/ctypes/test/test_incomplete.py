@@ -1,5 +1,5 @@
 import unittest
-from ctypes import *
+from ctypes import POINTER, SetPointerType, Structure, c_char_p, pointer
 
 ################################################################
 #

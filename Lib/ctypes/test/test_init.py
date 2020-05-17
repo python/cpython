@@ -1,4 +1,4 @@
-from ctypes import *
+from ctypes import Structure, c_int
 import unittest
 
 class X(Structure):

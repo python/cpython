@@ -1,5 +1,7 @@
 import sys, unittest
-from ctypes import *
+from ctypes import (
+    BigEndianStructure, Structure, c_byte, c_double, c_float, c_int, c_long,
+    c_longlong, c_short, c_uint, c_ulong, c_ulonglong, c_ushort)
 
 structures = []
 byteswapped_structures = []

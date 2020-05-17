@@ -1,6 +1,6 @@
 import unittest
 from test import support
-from ctypes import *
+from ctypes import CDLL, POINTER, Structure, c_buffer, c_char, c_char_p
 
 import _ctypes_test
 

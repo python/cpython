@@ -1,4 +1,4 @@
-from ctypes import *
+from ctypes import Array, Structure, Union, c_char, c_int, sizeof
 import array
 import gc
 import unittest

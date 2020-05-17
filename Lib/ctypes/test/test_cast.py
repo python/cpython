@@ -1,4 +1,6 @@
-from ctypes import *
+from ctypes import (
+    POINTER, Structure, Union, addressof, c_byte, c_char_p, c_int, c_short,
+    c_void_p, c_wchar_p, cast, sizeof)
 from ctypes.test import need_symbol
 import unittest
 import sys

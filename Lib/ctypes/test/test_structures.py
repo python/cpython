@@ -1,7 +1,11 @@
 import platform
 import sys
 import unittest
-from ctypes import *
+from ctypes import (
+    CDLL, POINTER, Structure, Union, alignment, c_byte, c_char, c_double,
+    c_float, c_int, c_long, c_longlong, c_short, c_ubyte, c_uint, c_uint8,
+    c_uint16, c_uint32, c_ulong, c_ulonglong, c_ushort, c_void_p, c_wchar,
+    sizeof)
 from ctypes.test import need_symbol
 from struct import calcsize
 import _ctypes_test

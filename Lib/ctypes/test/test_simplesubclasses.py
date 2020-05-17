@@ -1,5 +1,5 @@
 import unittest
-from ctypes import *
+from ctypes import CFUNCTYPE, Structure, c_int
 
 class MyInt(c_int):
     def __eq__(self, other):

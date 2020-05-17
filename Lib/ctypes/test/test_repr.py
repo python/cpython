@@ -1,4 +1,6 @@
-from ctypes import *
+from ctypes import (
+    c_bool, c_byte, c_char, c_double, c_float, c_int, c_long, c_longdouble,
+    c_longlong, c_short, c_ubyte, c_uint, c_ulong, c_ulonglong, c_ushort)
 import unittest
 
 subclasses = []

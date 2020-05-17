@@ -1,5 +1,5 @@
 import unittest
-from ctypes import *
+from ctypes import byref, c_buffer, c_char, c_wchar, sizeof
 from ctypes.test import need_symbol
 
 class StringArrayTestCase(unittest.TestCase):

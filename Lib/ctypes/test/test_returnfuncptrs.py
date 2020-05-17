@@ -1,5 +1,5 @@
 import unittest
-from ctypes import *
+from ctypes import CDLL, CFUNCTYPE, ArgumentError, c_char, c_char_p, c_void_p
 
 import _ctypes_test
 

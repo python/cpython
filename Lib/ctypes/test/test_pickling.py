@@ -1,6 +1,8 @@
 import unittest
 import pickle
-from ctypes import *
+from ctypes import (
+    CDLL, CFUNCTYPE, Structure, c_char, c_char_p, c_double, c_int, c_void_p,
+    c_wchar, c_wchar_p, pointer)
 import _ctypes_test
 dll = CDLL(_ctypes_test.__file__)
 

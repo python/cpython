@@ -1,4 +1,5 @@
-from ctypes import *
+from ctypes import (
+    c_char, c_wchar, create_string_buffer, create_unicode_buffer, sizeof)
 from ctypes.test import need_symbol
 import unittest
 

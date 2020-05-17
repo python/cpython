@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-from ctypes import *
+from ctypes import POINTER, c_int16, cast
 
 @unittest.skipUnless(sys.platform.startswith('win'), 'Windows-only test')
 class WinTypesTest(unittest.TestCase):

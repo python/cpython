@@ -2,7 +2,9 @@
 # Byte order related?
 
 import unittest
-from ctypes import *
+from ctypes import (
+    CDLL, c_byte, c_char, c_double, c_float, c_int, c_long, c_longdouble,
+    c_longlong, c_short, c_ubyte, c_uint, c_ulong, c_ulonglong, c_ushort)
 from ctypes.test import need_symbol
 
 import _ctypes_test
@@ -192,8 +194,8 @@ class CFunctions(unittest.TestCase):
 # The following repeats the above tests with stdcall functions (where
 # they are available)
 try:
-    WinDLL
-except NameError:
+    from ctypes import WinDLL
+except ImportError:
     def stdcall_dll(*_): pass
 else:
     class stdcall_dll(WinDLL):

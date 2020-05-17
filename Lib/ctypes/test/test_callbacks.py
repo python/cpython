@@ -1,6 +1,13 @@
 import functools
 import unittest
-from ctypes import *
+from ctypes import (
+    CDLL, CFUNCTYPE, POINTER, Structure, c_byte, c_char, c_char_p, c_double,
+    c_float, c_int, c_long, c_longdouble, c_longlong, c_short, c_ubyte, c_uint,
+    c_ulong, c_ulonglong, c_ushort, py_object, sizeof)
+try:
+    from ctypes import WINFUNCTYPE
+except ImportError:
+    pass
 from ctypes.test import need_symbol
 import _ctypes_test
 
@@ -194,6 +201,7 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
     @need_symbol('WINFUNCTYPE')
     def test_issue_8959_b(self):
+        from ctypes import windll
         from ctypes.wintypes import BOOL, HWND, LPARAM
         global windowCount
         windowCount = 0

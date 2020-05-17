@@ -1,7 +1,10 @@
-import sys, unittest, struct, math, ctypes
+import sys, unittest, struct, math
 from binascii import hexlify
-
-from ctypes import *
+from ctypes import (
+    POINTER, BigEndianStructure, LittleEndianStructure, Structure,
+    _pointer_type_cache, c_byte, c_char, c_double, c_float, c_int, c_long,
+    c_longlong, c_short, c_ubyte, c_uint, c_uint32, c_ulong, c_ulonglong,
+    c_ushort, c_void_p, c_wchar, cast, sizeof)
 
 def bin(s):
     return hexlify(memoryview(s)).decode().upper()
@@ -229,7 +232,7 @@ class Test(unittest.TestCase):
                 self.assertEqual(len(data), sizeof(TestStructure))
                 ptr = POINTER(TestStructure)
                 s = cast(data, ptr)[0]
-                del ctypes._pointer_type_cache[TestStructure]
+                del _pointer_type_cache[TestStructure]
                 self.assertEqual(s.point.x, 1)
                 self.assertEqual(s.point.y, 2)
 

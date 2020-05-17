@@ -1,7 +1,7 @@
 import unittest, os, errno
 import threading
 
-from ctypes import *
+from ctypes import CDLL, c_char_p, c_int, c_wchar_p, get_errno, set_errno
 from ctypes.util import find_library
 
 class Test(unittest.TestCase):
@@ -44,6 +44,7 @@ class Test(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "nt", 'Test specific to Windows')
     def test_GetLastError(self):
+        from ctypes import WinDLL, get_last_error, set_last_error
         dll = WinDLL("kernel32", use_last_error=True)
         GetModuleHandle = dll.GetModuleHandleA
         GetModuleHandle.argtypes = [c_wchar_p]

@@ -5,7 +5,6 @@ import test.support
 class SimpleTypesTestCase(unittest.TestCase):
 
     def setUp(self):
-        import ctypes
         try:
             from _ctypes import set_conversion_mode
         except ImportError:

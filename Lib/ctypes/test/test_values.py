@@ -4,8 +4,8 @@ A testcase which accesses *values* in a dll.
 
 import unittest
 import sys
-from ctypes import *
-
+from ctypes import (
+    CDLL, POINTER, Structure, c_char_p, c_int, c_ubyte, pythonapi)
 import _ctypes_test
 
 class ValuesTestCase(unittest.TestCase):

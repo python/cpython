@@ -1,9 +1,10 @@
 import unittest
-from ctypes import *
-
+from ctypes import (
+    CDLL, CFUNCTYPE, Structure, c_char, c_char_p, c_int, c_long, c_uint,
+    c_voidp, sizeof)
 try:
-    WINFUNCTYPE
-except NameError:
+    from ctypes import WINFUNCTYPE
+except ImportError:
     # fake to enable this test on Linux
     WINFUNCTYPE = CFUNCTYPE
 
@@ -91,6 +92,7 @@ class CFuncPtrTestCase(unittest.TestCase):
 
         def NoNullHandle(value):
             if not value:
+                from ctypes import WinError
                 raise WinError()
             return value
 

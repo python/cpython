@@ -1,4 +1,4 @@
-from ctypes import *
+from ctypes import POINTER, Structure, c_char_p, c_int, pointer
 import unittest
 
 class SimpleTestCase(unittest.TestCase):

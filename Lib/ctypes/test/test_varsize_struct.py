@@ -1,4 +1,4 @@
-from ctypes import *
+from ctypes import Structure, c_int, resize, sizeof
 import unittest
 
 class VarSizeTest(unittest.TestCase):

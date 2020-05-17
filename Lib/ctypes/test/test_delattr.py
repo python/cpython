@@ -1,5 +1,5 @@
 import unittest
-from ctypes import *
+from ctypes import Structure, c_char, c_int
 
 class X(Structure):
     _fields_ = [("foo", c_int)]

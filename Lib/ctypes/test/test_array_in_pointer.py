@@ -1,5 +1,5 @@
 import unittest
-from ctypes import *
+from ctypes import POINTER, c_byte, cast, Structure
 from binascii import hexlify
 import re
 

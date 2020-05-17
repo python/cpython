@@ -1,6 +1,8 @@
 import unittest
 
-from ctypes import *
+from ctypes import (
+    CDLL, CFUNCTYPE, POINTER, c_char, c_double, c_int, c_size_t, c_void_p,
+    create_string_buffer, sizeof)
 import _ctypes_test
 
 lib = CDLL(_ctypes_test.__file__)

@@ -2,7 +2,7 @@ import unittest
 import os.path
 import sys
 import test.support
-from ctypes import *
+from ctypes import CDLL, RTLD_GLOBAL
 from ctypes.util import find_library
 
 # On some systems, loading the OpenGL libraries needs the RTLD_GLOBAL mode.

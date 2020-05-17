@@ -1,8 +1,10 @@
 import unittest
 from test.support import bigmemtest, _2G
 import sys
-from ctypes import *
-
+from ctypes import (
+    ARRAY, Array, Structure, addressof, c_byte, c_char, c_double, c_float,
+    c_int, c_long, c_longdouble, c_short, c_ubyte, c_uint, c_ulonglong,
+    c_ushort, c_wchar, create_string_buffer, create_unicode_buffer, sizeof)
 from ctypes.test import need_symbol
 
 formats = "bBhHiIlLqQfd"

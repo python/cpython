@@ -1,5 +1,9 @@
-from ctypes import *
-import unittest, sys
+import sys
+import unittest
+from ctypes import CFUNCTYPE, c_char_p, c_double, c_int, c_void_p
+
+if sys.platform == "win32":
+    from ctypes import windll
 
 def callback_func(arg):
     42 / arg

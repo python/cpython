@@ -1,4 +1,6 @@
-from ctypes import *
+from ctypes import (
+    POINTER, c_buffer, c_char, c_char_p, c_int, c_long, c_size_t, py_object,
+    pythonapi, sizeof)
 import unittest, sys
 from test import support
 

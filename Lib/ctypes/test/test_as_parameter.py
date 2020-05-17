@@ -1,13 +1,15 @@
 import unittest
-from ctypes import *
+from ctypes import (
+    CDLL, CFUNCTYPE, POINTER, ArgumentError, Structure, byref, c_byte,
+    c_double, c_float, c_int, c_long, c_longlong, c_short, c_wchar, pointer)
 from ctypes.test import need_symbol
 import _ctypes_test
 
 dll = CDLL(_ctypes_test.__file__)
 
 try:
-    CALLBACK_FUNCTYPE = WINFUNCTYPE
-except NameError:
+    from ctypes import WINFUNCTYPE as CALLBACK_FUNCTYPE
+except ImportError:
     # fake to enable this test on Linux
     CALLBACK_FUNCTYPE = CFUNCTYPE
 

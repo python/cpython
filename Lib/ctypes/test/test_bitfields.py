@@ -1,4 +1,8 @@
-from ctypes import *
+from ctypes import (
+    CDLL, POINTER, BigEndianStructure, LittleEndianStructure, Structure,
+    alignment, byref, c_byte, c_char, c_char_p, c_int, c_long, c_longlong,
+    c_short, c_ubyte, c_uint, c_uint32, c_uint64, c_ulong, c_ulonglong,
+    c_ushort, c_void_p, c_wchar, sizeof)
 from ctypes.test import need_symbol
 import unittest
 import os
