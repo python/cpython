@@ -1,0 +1,1 @@
+Reporting a specialised error message for invalid string prefixes, which was introduced in :issue:`40246`, is being reverted due to backwards compatibility concerns for strings that immediately follow a reserved keyword without whitespace between them. Constructs like `bg="#d00" if clear else"#fca"` were failing to parse, which is not an acceptable breakage on such short notice.

@@ -87,6 +87,7 @@ matrix:
         # Need a venv that can parse covered code.
         - ./python -m venv venv
         - ./venv/bin/python -m pip install -U coverage
+        - ./venv/bin/python -m pip install -r Misc/requirements-test.txt
         - ./venv/bin/python -m test.pythoninfo
       script:
         # Skip tests that re-run the entire test suite.

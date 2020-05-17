@@ -122,7 +122,6 @@ class CodeopTests(unittest.TestCase):
         av("def f():\n pass\n#foo\n")
         av("@a.b.c\ndef f():\n pass\n")
 
-    @support.skip_if_new_parser("Pegen does not support PyCF_DONT_INPLY_DEDENT yet")
     def test_incomplete(self):
         ai = self.assertIncomplete
 
@@ -288,6 +287,15 @@ class CodeopTests(unittest.TestCase):
         ai("del '1'")
 
         ai("[i for i in range(10)] = (1, 2, 3)")
+
+    def test_invalid_exec(self):
+        ai = self.assertInvalid
+        ai("raise = 4", symbol="exec")
+        ai('def a-b', symbol='exec')
+        ai('await?', symbol='exec')
+        ai('=!=', symbol='exec')
+        ai('a await raise b', symbol='exec')
+        ai('a await raise b?+1', symbol='exec')
 
     def test_filename(self):
         self.assertEqual(compile_command("a = 1\n", "abc").co_filename,

@@ -2,7 +2,6 @@
 #define Py_COMPILE_H
 
 #ifndef Py_LIMITED_API
-#include "code.h"
 
 #ifdef __cplusplus
 extern "C" {

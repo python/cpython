@@ -26,7 +26,15 @@ class EOFTestCase(unittest.TestCase):
         else:
             raise support.TestFailed
 
-    @support.skip_if_new_parser("TODO for PEG -- fails with new parser")
+    def test_eof_with_line_continuation(self):
+        expect = "unexpected EOF while parsing (<string>, line 1)"
+        try:
+            compile('"\\xhh" \\',  '<string>', 'exec', dont_inherit=True)
+        except SyntaxError as msg:
+            self.assertEqual(str(msg), expect)
+        else:
+            raise support.TestFailed
+
     def test_line_continuation_EOF(self):
         """A continuation at the end of input must be an error; bpo2180."""
         expect = 'unexpected EOF while parsing (<string>, line 1)'
@@ -37,7 +45,6 @@ class EOFTestCase(unittest.TestCase):
             exec('\\')
         self.assertEqual(str(excinfo.exception), expect)
 
-    @unittest.skip("TODO for PEG -- fails even with old parser now")
     @unittest.skipIf(not sys.executable, "sys.executable required")
     def test_line_continuation_EOF_from_file_bpo2180(self):
         """Ensure tok_nextc() does not add too many ending newlines."""

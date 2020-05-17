@@ -21,15 +21,8 @@ _Py_IDENTIFIER(__subclasshook__);
 
 typedef struct {
     PyTypeObject *_abc_data_type;
+    unsigned long long abc_invalidation_counter;
 } _abcmodule_state;
-
-/* A global counter that is incremented each time a class is
-   registered as a virtual subclass of anything.  It forces the
-   negative cache to be cleared before its next use.
-   Note: this counter is private. Use `abc.get_cache_token()` for
-   external code. */
-// FIXME: PEP 573: Move abc_invalidation_counter into _abcmodule_state.
-static unsigned long long abc_invalidation_counter = 0;
 
 static inline _abcmodule_state*
 get_abc_state(PyObject *module)
@@ -81,14 +74,21 @@ static PyObject *
 abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     _abc_data *self = (_abc_data *) type->tp_alloc(type, 0);
+    _abcmodule_state *state = NULL;
     if (self == NULL) {
+        return NULL;
+    }
+
+    state = PyType_GetModuleState(type);
+    if (state == NULL) {
+        Py_DECREF(self);
         return NULL;
     }
 
     self->_abc_registry = NULL;
     self->_abc_cache = NULL;
     self->_abc_negative_cache = NULL;
-    self->_abc_negative_cache_version = abc_invalidation_counter;
+    self->_abc_negative_cache_version = state->abc_invalidation_counter;
     return (PyObject *) self;
 }
 
@@ -495,7 +495,7 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     Py_DECREF(impl);
 
     /* Invalidate negative cache */
-    abc_invalidation_counter++;
+    get_abc_state(module)->abc_invalidation_counter++;
 
     Py_INCREF(subclass);
     return subclass;
@@ -540,7 +540,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
     }
     subtype = (PyObject *)Py_TYPE(instance);
     if (subtype == subclass) {
-        if (impl->_abc_negative_cache_version == abc_invalidation_counter) {
+        if (impl->_abc_negative_cache_version == get_abc_state(module)->abc_invalidation_counter) {
             incache = _in_weak_set(impl->_abc_negative_cache, subclass);
             if (incache < 0) {
                 goto end;
@@ -612,6 +612,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     PyObject *ok, *subclasses = NULL, *result = NULL;
+    _abcmodule_state *state = NULL;
     Py_ssize_t pos;
     int incache;
     _abc_data *impl = _get_impl(module, self);
@@ -629,15 +630,16 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
 
+    state = get_abc_state(module);
     /* 2. Check negative cache; may have to invalidate. */
-    if (impl->_abc_negative_cache_version < abc_invalidation_counter) {
+    if (impl->_abc_negative_cache_version < state->abc_invalidation_counter) {
         /* Invalidate the negative cache. */
         if (impl->_abc_negative_cache != NULL &&
                 PySet_Clear(impl->_abc_negative_cache) < 0)
         {
             goto end;
         }
-        impl->_abc_negative_cache_version = abc_invalidation_counter;
+        impl->_abc_negative_cache_version = state->abc_invalidation_counter;
     }
     else {
         incache = _in_weak_set(impl->_abc_negative_cache, subclass);
@@ -830,7 +832,8 @@ static PyObject *
 _abc_get_cache_token_impl(PyObject *module)
 /*[clinic end generated code: output=c7d87841e033dacc input=70413d1c423ad9f9]*/
 {
-    return PyLong_FromUnsignedLongLong(abc_invalidation_counter);
+    _abcmodule_state *state = get_abc_state(module);
+    return PyLong_FromUnsignedLongLong(state->abc_invalidation_counter);
 }
 
 static struct PyMethodDef _abcmodule_methods[] = {
@@ -849,7 +852,8 @@ static int
 _abcmodule_exec(PyObject *module)
 {
     _abcmodule_state *state = get_abc_state(module);
-    state->_abc_data_type = (PyTypeObject *)PyType_FromSpec(&_abc_data_type_spec);
+    state->abc_invalidation_counter = 0;
+    state->_abc_data_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &_abc_data_type_spec, NULL);
     if (state->_abc_data_type == NULL) {
         return -1;
     }

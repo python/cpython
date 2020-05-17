@@ -5,6 +5,7 @@ import textwrap
 import unittest
 import functools
 import contextlib
+import nntplib
 import os.path
 import re
 import threading
@@ -12,7 +13,6 @@ import threading
 from test import support
 from test.support import socket_helper
 from nntplib import NNTP, GroupInfo
-import nntplib
 from unittest.mock import patch
 try:
     import ssl
@@ -246,7 +246,7 @@ class NetworkedNNTPTestsMixin:
         def wrap_meth(meth):
             @functools.wraps(meth)
             def wrapped(self):
-                with support.transient_internet(self.NNTP_HOST):
+                with socket_helper.transient_internet(self.NNTP_HOST):
                     meth(self)
             return wrapped
         for name in dir(cls):
@@ -315,7 +315,7 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires("network")
-        with support.transient_internet(cls.NNTP_HOST):
+        with socket_helper.transient_internet(cls.NNTP_HOST):
             try:
                 cls.server = cls.NNTP_CLASS(cls.NNTP_HOST,
                                             timeout=support.INTERNET_TIMEOUT,
@@ -411,6 +411,18 @@ def make_mock_file(handler):
     return (sio, file)
 
 
+class NNTPServer(nntplib.NNTP):
+
+    def __init__(self, f, host, readermode=None):
+        self.file = f
+        self.host = host
+        self._base_init(readermode)
+
+    def _close(self):
+        self.file.close()
+        del self.file
+
+
 class MockedNNTPTestsMixin:
     # Override in derived classes
     handler_class = None
@@ -426,7 +438,7 @@ class MockedNNTPTestsMixin:
     def make_server(self, *args, **kwargs):
         self.handler = self.handler_class()
         self.sio, file = make_mock_file(self.handler)
-        self.server = nntplib._NNTPBase(file, 'test.server', *args, **kwargs)
+        self.server = NNTPServer(file, 'test.server', *args, **kwargs)
         return self.server
 
 

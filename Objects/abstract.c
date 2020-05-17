@@ -900,7 +900,7 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
         Py_DECREF(result);
 
         if (op_slot == NB_SLOT(nb_rshift) &&
-            PyCFunction_Check(v) &&
+            PyCFunction_CheckExact(v) &&
             strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
         {
             PyErr_Format(PyExc_TypeError,
@@ -2287,7 +2287,7 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
             PyErr_Format(PyExc_TypeError,
                          "%.200s.%U() returned a non-iterable (type %.200s)",
                          Py_TYPE(o)->tp_name,
-                         meth_id->object,
+                         _PyUnicode_FromId(meth_id),
                          Py_TYPE(meth_output)->tp_name);
         }
         Py_DECREF(meth_output);

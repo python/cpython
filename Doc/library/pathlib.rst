@@ -1185,6 +1185,7 @@ os and os.path                         pathlib
 :func:`os.path.abspath`                :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
+:func:`os.makedirs`                    :meth:`Path.mkdir`
 :func:`os.rename`                      :meth:`Path.rename`
 :func:`os.replace`                     :meth:`Path.replace`
 :func:`os.rmdir`                       :meth:`Path.rmdir`

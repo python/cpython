@@ -658,6 +658,7 @@ LIBFFI_INCLUDEDIR
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
 PKG_CONFIG
+TZPATH
 SHLIBS
 CFLAGSFORSHARED
 LINKFORSHARED
@@ -819,6 +820,7 @@ with_assertions
 enable_optimizations
 with_lto
 with_hash_algorithm
+with_tzpath
 with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
@@ -845,6 +847,8 @@ with_computed_gotos
 with_ensurepip
 with_openssl
 with_ssl_default_suites
+with_builtin_hashlib_hashes
+with_experimental_isolated_subinterpreters
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1523,6 +1527,9 @@ Optional Packages:
   --with-hash-algorithm=[fnv|siphash24]
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash24)
+  --with-tzpath=<list of absolute paths separated by pathsep>
+                           Select the default time zone search path for zoneinfo.TZPATH
+
   --with-address-sanitizer
                           enable AddressSanitizer memory error detector,
                           'asan' (default is no)
@@ -1575,6 +1582,12 @@ Optional Packages:
                           leave OpenSSL's defaults untouched, STRING: use a
                           custom string, PROTOCOL_SSLv2 ignores the setting,
                           see Doc/library/ssl.rst
+  --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
+                          builtin hash modules, md5, sha1, sha256, sha512,
+                          sha3 (with shake), blake2
+  --with-experimental-isolated-subinterpreters
+                          better isolate subinterpreters, experimental build
+                          mode (default is no)
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -8282,8 +8295,8 @@ fi
 done
 
 
-# On Linux, can.h and can/raw.h require sys/socket.h
-for ac_header in linux/can.h linux/can/raw.h linux/can/bcm.h
+# On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
+for ac_header in linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "
@@ -10144,6 +10157,47 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: default" >&5
 $as_echo "default" >&6; }
 fi
+
+
+validate_tzpath() {
+    # Checks that each element of hte path is an absolute path
+    if test -z "$1"; then
+        # Empty string is allowed: it indicates no system TZPATH
+        return 0
+    fi
+
+    # Bad paths are those that don't start with /
+        if ( echo $1 | grep -qE '(^|:)([^/]|$)' ); then
+        as_fn_error $? "--with-tzpath must contain only absolute paths, not $1" "$LINENO" 5
+        return 1;
+    fi
+}
+
+TZPATH="/usr/share/zoneinfo:/usr/lib/zoneinfo:/usr/share/lib/zoneinfo:/etc/zoneinfo"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-tzpath" >&5
+$as_echo_n "checking for --with-tzpath... " >&6; }
+
+# Check whether --with-tzpath was given.
+if test "${with_tzpath+set}" = set; then :
+  withval=$with_tzpath;
+case "$withval" in
+    yes)
+        as_fn_error $? "--with-tzpath requires a value" "$LINENO" 5
+        ;;
+    *)
+        validate_tzpath "$withval"
+        TZPATH="$withval"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$withval\"" >&5
+$as_echo "\"$withval\"" >&6; }
+        ;;
+esac
+
+else
+  validate_tzpath "$TZPATH"
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$TZPATH\"" >&5
+$as_echo "\"$TZPATH\"" >&6; }
+fi
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-address-sanitizer" >&5
@@ -17486,6 +17540,68 @@ $as_echo "python" >&6; }
 $as_echo "#define PY_SSL_DEFAULT_CIPHERS 1" >>confdefs.h
 
 
+fi
+
+
+# builtin hash modules
+default_hashlib_hashes="md5,sha1,sha256,sha512,sha3,blake2"
+
+$as_echo "#define PY_BUILTIN_HASHLIB_HASHES /**/" >>confdefs.h
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-builtin-hashlib-hashes" >&5
+$as_echo_n "checking for --with-builtin-hashlib-hashes... " >&6; }
+
+# Check whether --with-builtin-hashlib-hashes was given.
+if test "${with_builtin_hashlib_hashes+set}" = set; then :
+  withval=$with_builtin_hashlib_hashes;
+case "$withval" in
+    yes)
+        withval=$default_hashlib_hashes
+        ;;
+    no)
+        withval=""
+        ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+cat >>confdefs.h <<_ACEOF
+#define PY_BUILTIN_HASHLIB_HASHES "$withval"
+_ACEOF
+
+
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $default_hashlib_hashes" >&5
+$as_echo "$default_hashlib_hashes" >&6; };
+cat >>confdefs.h <<_ACEOF
+#define PY_BUILTIN_HASHLIB_HASHES "$default_hashlib_hashes"
+_ACEOF
+
+
+fi
+
+
+# --with-experimental-isolated-subinterpreters
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-experimental-isolated-subinterpreters" >&5
+$as_echo_n "checking for --with-experimental-isolated-subinterpreters... " >&6; }
+
+# Check whether --with-experimental-isolated-subinterpreters was given.
+if test "${with_experimental_isolated_subinterpreters+set}" = set; then :
+  withval=$with_experimental_isolated_subinterpreters;
+if test "$withval" != no
+then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+  $as_echo "#define EXPERIMENTAL_ISOLATED_SUBINTERPRETERS 1" >>confdefs.h
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 

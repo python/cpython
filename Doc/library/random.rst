@@ -104,20 +104,15 @@ Bookkeeping functions
    the time :func:`getstate` was called.
 
 
-.. function:: getrandbits(k)
-
-   Returns a Python integer with *k* random bits. This method is supplied with
-   the MersenneTwister generator and some other generators may also provide it
-   as an optional part of the API. When available, :meth:`getrandbits` enables
-   :meth:`randrange` to handle arbitrarily large ranges.
-
-   .. versionchanged:: 3.9
-      This method now accepts zero for *k*.
-
+Functions for bytes
+-------------------
 
 .. function:: randbytes(n)
 
    Generate *n* random bytes.
+
+   This method should not be used for generating security tokens.
+   Use :func:`secrets.token_bytes` instead.
 
    .. versionadded:: 3.9
 
@@ -144,6 +139,16 @@ Functions for integers
 
    Return a random integer *N* such that ``a <= N <= b``.  Alias for
    ``randrange(a, b+1)``.
+
+.. function:: getrandbits(k)
+
+   Returns a Python integer with *k* random bits. This method is supplied with
+   the MersenneTwister generator and some other generators may also provide it
+   as an optional part of the API. When available, :meth:`getrandbits` enables
+   :meth:`randrange` to handle arbitrarily large ranges.
+
+   .. versionchanged:: 3.9
+      This method now accepts zero for *k*.
 
 
 Functions for sequences
@@ -208,8 +213,11 @@ Functions for sequences
    generated.  For example, a sequence of length 2080 is the largest that
    can fit within the period of the Mersenne Twister random number generator.
 
+   .. deprecated-removed:: 3.9 3.11
+      The optional parameter *random*.
 
-.. function:: sample(population, k)
+
+.. function:: sample(population, k, *, counts=None)
 
    Return a *k* length list of unique elements chosen from the population sequence
    or set. Used for random sampling without replacement.
@@ -223,12 +231,20 @@ Functions for sequences
    Members of the population need not be :term:`hashable` or unique.  If the population
    contains repeats, then each occurrence is a possible selection in the sample.
 
+   Repeated elements can be specified one at a time or with the optional
+   keyword-only *counts* parameter.  For example, ``sample(['red', 'blue'],
+   counts=[4, 2], k=5)`` is equivalent to ``sample(['red', 'red', 'red', 'red',
+   'blue', 'blue'], k=5)``.
+
    To choose a sample from a range of integers, use a :func:`range` object as an
    argument.  This is especially fast and space efficient for sampling from a large
    population:  ``sample(range(10000000), k=60)``.
 
    If the sample size is larger than the population size, a :exc:`ValueError`
    is raised.
+
+   .. versionchanged:: 3.9
+      Added the *counts* parameter.
 
    .. deprecated:: 3.9
       In the future, the *population* must be a sequence.  Instances of
@@ -412,12 +428,11 @@ Simulations::
    >>> choices(['red', 'black', 'green'], [18, 18, 2], k=6)
    ['red', 'green', 'black', 'black', 'red', 'black']
 
-   >>> # Deal 20 cards without replacement from a deck of 52 playing cards
-   >>> # and determine the proportion of cards with a ten-value
-   >>> # (a ten, jack, queen, or king).
-   >>> deck = collections.Counter(tens=16, low_cards=36)
-   >>> seen = sample(list(deck.elements()), k=20)
-   >>> seen.count('tens') / 20
+   >>> # Deal 20 cards without replacement from a deck
+   >>> # of 52 playing cards, and determine the proportion of cards
+   >>> # with a ten-value:  ten, jack, queen, or king.
+   >>> dealt = sample(['tens', 'low cards'], counts=[16, 36], k=20)
+   >>> dealt.count('tens') / 20
    0.15
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins

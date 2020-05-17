@@ -30,7 +30,6 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"     // _PyThreadState_GET()
-#include "frameobject.h"        // PyFrame_ClearFreeList
 #include "pydtrace.h"
 #include "pytime.h"             // _PyTime_GetMonotonicClock()
 
@@ -1026,14 +1025,13 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
 static void
 clear_freelists(void)
 {
-    (void)PyFrame_ClearFreeList();
-    (void)PyTuple_ClearFreeList();
-    (void)PyFloat_ClearFreeList();
-    (void)PyList_ClearFreeList();
-    (void)PyDict_ClearFreeList();
-    (void)PySet_ClearFreeList();
-    (void)PyAsyncGen_ClearFreeLists();
-    (void)PyContext_ClearFreeList();
+    _PyFrame_ClearFreeList();
+    _PyTuple_ClearFreeList();
+    _PyFloat_ClearFreeList();
+    _PyList_ClearFreeList();
+    _PyDict_ClearFreeList();
+    _PyAsyncGen_ClearFreeLists();
+    _PyContext_ClearFreeList();
 }
 
 // Show stats for objects in each generations
@@ -1182,6 +1180,14 @@ collect(PyThreadState *tstate, int generation,
     PyGC_Head *gc;
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
+
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    if (tstate->interp->config._isolated_interpreter) {
+        // bpo-40533: The garbage collector must not be run on parallel on
+        // Python objects shared by multiple interpreters.
+        return 0;
+    }
+#endif
 
     if (gcstate->debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);

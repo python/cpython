@@ -6,25 +6,19 @@ if __name__ != 'test.support':
 import collections.abc
 import contextlib
 import errno
-import faulthandler
 import fnmatch
 import functools
-import gc
 import glob
-import hashlib
 import importlib
 import importlib.util
-import locale
 import os
 import platform
 import re
-import shutil
 import stat
 import struct
 import subprocess
 import sys
 import sysconfig
-import tempfile
 import _thread
 import threading
 import time
@@ -59,11 +53,6 @@ try:
 except ImportError:
     resource = None
 
-try:
-    import _hashlib
-except ImportError:
-    _hashlib = None
-
 __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
@@ -81,10 +70,10 @@ __all__ = [
     "create_empty_file", "can_symlink", "fs_is_case_insensitive",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
-    "requires_linux_version", "requires_mac_ver", "requires_hashdigest",
+    "requires_linux_version", "requires_mac_ver",
     "check_syntax_error", "check_syntax_warning",
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
-    "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
+    "BasicTestRunner", "run_unittest", "run_doctest",
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
@@ -149,8 +138,6 @@ SHORT_TIMEOUT = 30.0
 # "too long". The timeout value depends on the regrtest --timeout command line
 # option.
 LONG_TIMEOUT = 5 * 60.0
-
-_NOT_SET = object()
 
 
 class Error(Exception):
@@ -448,6 +435,7 @@ else:
     _rmdir = os.rmdir
 
     def _rmtree(path):
+        import shutil
         try:
             shutil.rmtree(path)
             return
@@ -685,36 +673,6 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
-def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
-    """Decorator raising SkipTest if a hashing algorithm is not available
-
-    The hashing algorithm could be missing or blocked by a strict crypto
-    policy.
-
-    If 'openssl' is True, then the decorator checks that OpenSSL provides
-    the algorithm. Otherwise the check falls back to built-in
-    implementations. The usedforsecurity flag is passed to the constructor.
-
-    ValueError: [digital envelope routines: EVP_DigestInit_ex] disabled for FIPS
-    ValueError: unsupported hash type md4
-    """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                if openssl and _hashlib is not None:
-                    _hashlib.new(digestname, usedforsecurity=usedforsecurity)
-                else:
-                    hashlib.new(digestname, usedforsecurity=usedforsecurity)
-            except ValueError:
-                raise unittest.SkipTest(
-                    f"hash digest '{digestname}' is not available."
-                )
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-
 def system_must_validate_cert(f):
     """Skip the test on TLS certificate validation failures."""
     @functools.wraps(f)
@@ -930,6 +888,7 @@ def temp_dir(path=None, quiet=False):
         created, only a warning is issued.
 
     """
+    import tempfile
     dir_created = False
     if path is None:
         path = tempfile.mkdtemp()
@@ -1423,90 +1382,6 @@ ioerror_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 
 
 @contextlib.contextmanager
-def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
-    """Return a context manager that raises ResourceDenied when various issues
-    with the Internet connection manifest themselves as exceptions."""
-    import socket
-    import nntplib
-    import urllib.error
-    if timeout is _NOT_SET:
-        timeout = INTERNET_TIMEOUT
-
-    default_errnos = [
-        ('ECONNREFUSED', 111),
-        ('ECONNRESET', 104),
-        ('EHOSTUNREACH', 113),
-        ('ENETUNREACH', 101),
-        ('ETIMEDOUT', 110),
-        # socket.create_connection() fails randomly with
-        # EADDRNOTAVAIL on Travis CI.
-        ('EADDRNOTAVAIL', 99),
-    ]
-    default_gai_errnos = [
-        ('EAI_AGAIN', -3),
-        ('EAI_FAIL', -4),
-        ('EAI_NONAME', -2),
-        ('EAI_NODATA', -5),
-        # Encountered when trying to resolve IPv6-only hostnames
-        ('WSANO_DATA', 11004),
-    ]
-
-    denied = ResourceDenied("Resource %r is not available" % resource_name)
-    captured_errnos = errnos
-    gai_errnos = []
-    if not captured_errnos:
-        captured_errnos = [getattr(errno, name, num)
-                           for (name, num) in default_errnos]
-        gai_errnos = [getattr(socket, name, num)
-                      for (name, num) in default_gai_errnos]
-
-    def filter_error(err):
-        n = getattr(err, 'errno', None)
-        if (isinstance(err, socket.timeout) or
-            (isinstance(err, socket.gaierror) and n in gai_errnos) or
-            (isinstance(err, urllib.error.HTTPError) and
-             500 <= err.code <= 599) or
-            (isinstance(err, urllib.error.URLError) and
-                 (("ConnectionRefusedError" in err.reason) or
-                  ("TimeoutError" in err.reason) or
-                  ("EOFError" in err.reason))) or
-            n in captured_errnos):
-            if not verbose:
-                sys.stderr.write(denied.args[0] + "\n")
-            raise denied from err
-
-    old_timeout = socket.getdefaulttimeout()
-    try:
-        if timeout is not None:
-            socket.setdefaulttimeout(timeout)
-        yield
-    except nntplib.NNTPTemporaryError as err:
-        if verbose:
-            sys.stderr.write(denied.args[0] + "\n")
-        raise denied from err
-    except OSError as err:
-        # urllib can wrap original socket errors multiple times (!), we must
-        # unwrap to get at the original error.
-        while True:
-            a = err.args
-            if len(a) >= 1 and isinstance(a[0], OSError):
-                err = a[0]
-            # The error can also be wrapped as args[1]:
-            #    except socket.error as msg:
-            #        raise OSError('socket error', msg).with_traceback(sys.exc_info()[2])
-            elif len(a) >= 2 and isinstance(a[1], OSError):
-                err = a[1]
-            else:
-                break
-        filter_error(err)
-        raise
-    # XXX should we catch generic exceptions and look for their
-    # __cause__ or __context__?
-    finally:
-        socket.setdefaulttimeout(old_timeout)
-
-
-@contextlib.contextmanager
 def captured_output(stream_name):
     """Return a context manager used by captured_stdout/stdin/stderr
     that temporarily replaces the sys stream *stream_name* with a StringIO."""
@@ -1559,6 +1434,7 @@ def gc_collect():
     longer than expected.  This function tries its best to force all garbage
     objects to disappear.
     """
+    import gc
     gc.collect()
     if is_jython:
         time.sleep(0.1)
@@ -1567,6 +1443,7 @@ def gc_collect():
 
 @contextlib.contextmanager
 def disable_gc():
+    import gc
     have_gc = gc.isenabled()
     gc.disable()
     try:
@@ -2259,6 +2136,7 @@ def reap_children():
 
 @contextlib.contextmanager
 def start_threads(threads, unlock=None):
+    import faulthandler
     threads = list(threads)
     started = []
     try:
@@ -2433,6 +2311,7 @@ def skip_if_buggy_ucrt_strfptime(test):
     See bpo-37552 [Windows] strptime/strftime return invalid
     results with UCRT version 17763.615
     """
+    import locale
     global _buggy_ucrt
     if _buggy_ucrt is None:
         if(sys.platform == 'win32' and
@@ -2523,6 +2402,7 @@ class PythonSymlink:
 
 _can_xattr = None
 def can_xattr():
+    import tempfile
     global _can_xattr
     if _can_xattr is not None:
         return _can_xattr
@@ -2567,6 +2447,7 @@ def skip_if_pgo_task(test):
 
 def fs_is_case_insensitive(directory):
     """Detects if the file system for the specified directory is case-insensitive."""
+    import tempfile
     with tempfile.NamedTemporaryFile(dir=directory) as base:
         base_path = base.name
         case_path = base_path.upper()
@@ -2862,6 +2743,8 @@ def setswitchinterval(interval):
 
 @contextlib.contextmanager
 def disable_faulthandler():
+    import faulthandler
+
     # use sys.__stderr__ instead of sys.stderr, since regrtest replaces
     # sys.stderr with a StringIO which has no file descriptor when a test
     # is run with -W/--verbose3.
