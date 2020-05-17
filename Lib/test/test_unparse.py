@@ -120,13 +120,15 @@ class ASTTestCase(unittest.TestCase):
         self.assertEqual(ast.dump(ast1), ast.dump(ast2))
 
     def check_ast_roundtrip(self, code1, **kwargs):
-        ast1 = ast.parse(code1, **kwargs)
-        code2 = ast.unparse(ast1)
-        ast2 = ast.parse(code2, **kwargs)
-        self.assertASTEqual(ast1, ast2)
+        with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
+            ast1 = ast.parse(code1, **kwargs)
+            code2 = ast.unparse(ast1)
+            ast2 = ast.parse(code2, **kwargs)
+            self.assertASTEqual(ast1, ast2)
 
     def check_invalid(self, node, raises=ValueError):
-        self.assertRaises(raises, ast.unparse, node)
+        with self.subTest(node=node):
+            self.assertRaises(raises, ast.unparse, node)
 
     def get_source(self, code1, code2=None):
         code2 = code2 or code1
@@ -135,11 +137,13 @@ class ASTTestCase(unittest.TestCase):
 
     def check_src_roundtrip(self, code1, code2=None):
         code1, code2 = self.get_source(code1, code2)
-        self.assertEqual(code2, code1)
+        with self.subTest(code1=code1, code2=code2):
+            self.assertEqual(code2, code1)
 
     def check_src_dont_roundtrip(self, code1, code2=None):
         code1, code2 = self.get_source(code1, code2)
-        self.assertNotEqual(code2, code1)
+        with self.subTest(code1=code1, code2=code2):
+            self.assertNotEqual(code2, code1)
 
 class UnparseTestCase(ASTTestCase):
     # Tests for specific bugs found in earlier versions of unparse
