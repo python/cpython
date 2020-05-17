@@ -1145,7 +1145,7 @@ calls these functions.
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
                            cwd=None, encoding=None, errors=None, \
-                           universal_newlines=None, timeout=None, text=None \
+                           universal_newlines=None, timeout=None, text=None, \
                            **other_popen_kwargs)
 
    Run command with arguments and return its output.
