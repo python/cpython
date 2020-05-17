@@ -206,11 +206,9 @@ SyntaxError: Generator expression must be parenthesized
 >>> f(x for x in L, **{})
 Traceback (most recent call last):
 SyntaxError: Generator expression must be parenthesized
-
-# >>> f(L, x for x in L)
-# Traceback (most recent call last):
-# SyntaxError: Generator expression must be parenthesized
-
+>>> f(L, x for x in L)
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
 >>> f(x for x in L, y for y in L)
 Traceback (most recent call last):
 SyntaxError: Generator expression must be parenthesized

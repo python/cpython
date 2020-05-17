@@ -10594,6 +10594,7 @@ t_atom_rule(Parser *p)
 // incorrect_arguments:
 //     | args ',' '*'
 //     | expression for_if_clauses ',' [args | expression for_if_clauses]
+//     | args for_if_clauses
 //     | args ',' args
 static void *
 incorrect_arguments_rule(Parser *p)
@@ -10641,6 +10642,24 @@ incorrect_arguments_rule(Parser *p)
         )
         {
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "Generator expression must be parenthesized" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+    }
+    { // args for_if_clauses
+        expr_ty a;
+        asdl_seq* for_if_clauses_var;
+        if (
+            (a = args_rule(p))  // args
+            &&
+            (for_if_clauses_var = for_if_clauses_rule(p))  // for_if_clauses
+        )
+        {
+            _res = _PyPegen_nonparen_genexp_in_call ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;

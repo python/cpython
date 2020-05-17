@@ -263,6 +263,7 @@ mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
 // Error reporting helpers
 
 expr_ty _PyPegen_get_invalid_target(expr_ty e);
+void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args);
 
 void *_PyPegen_parse(Parser *);
 
