@@ -201,41 +201,29 @@ class TestTracemallocEnabled(unittest.TestCase):
         domain2, size2, traceback2, length2 = trace2
         self.assertIs(traceback2, traceback1)
 
-    def test_get_traced_memory(self):
+    def test_reset_peak(self):
         # Python allocates some internals objects, so the test must tolerate
         # a small difference between the expected size and the real usage
-        max_error = 2048
+        tracemalloc.clear_traces()
 
-        # allocate one object
+        # Example: allocate a large piece of memory, temporarily
+        large_sum = sum(list(range(100000)))
+        size1, peak1 = tracemalloc.get_traced_memory()
+
+        # reset_peak() resets peak to traced memory: peak2 < peak1
+        tracemalloc.reset_peak()
+        size2, peak2 = tracemalloc.get_traced_memory()
+        self.assertGreaterEqual(peak2, size2)
+        self.assertLess(peak2, peak1)
+
+        # check that peak continue to be updated if new memory is allocated:
+        # peak3 > peak2
         obj_size = 1024 * 1024
-        tracemalloc.clear_traces()
         obj, obj_traceback = allocate_bytes(obj_size)
-        size, peak_size = tracemalloc.get_traced_memory()
-        self.assertGreaterEqual(size, obj_size)
-        self.assertGreaterEqual(peak_size, size)
-
-        self.assertLessEqual(size - obj_size, max_error)
-        self.assertLessEqual(peak_size - size, max_error)
-
-        # destroy the object
-        obj = None
-        size2, peak_size2 = tracemalloc.get_traced_memory()
-        self.assertLess(size2, size)
-        self.assertGreaterEqual(size - size2, obj_size - max_error)
-        self.assertGreaterEqual(peak_size2, peak_size)
-
-        # clear_traces() must reset traced memory counters
-        tracemalloc.clear_traces()
-        self.assertEqual(tracemalloc.get_traced_memory(), (0, 0))
-
-        # allocate another object
-        obj, obj_traceback = allocate_bytes(obj_size)
-        size, peak_size = tracemalloc.get_traced_memory()
-        self.assertGreaterEqual(size, obj_size)
-
-        # stop() also resets traced memory counters
-        tracemalloc.stop()
-        self.assertEqual(tracemalloc.get_traced_memory(), (0, 0))
+        size3, peak3 = tracemalloc.get_traced_memory()
+        self.assertGreaterEqual(peak3, size3)
+        self.assertGreater(peak3, peak2)
+        self.assertGreaterEqual(peak3 - peak2, obj_size)
 
     def test_clear_traces(self):
         obj, obj_traceback = allocate_bytes(123)
