@@ -70,7 +70,7 @@ class FileList:
         del self.inversedict[edit]
         if not self.inversedict:
             try:
-                clip = self.root.clipboard_get().encode('utf-8')
+                clip = self.root.clipboard_get().encode('utf-16')
                 if clip and sys.platform[:3] == 'win' and \
                    len(clip) <= io.DEFAULT_BUFFER_SIZE:
                     # Avoid exceeding the pipe bufsize.
