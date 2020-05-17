@@ -1349,7 +1349,11 @@ class _Unparser(NodeVisitor):
         self.set_precedence(_Precedence.ATOM, node.value)
         self.traverse(node.value)
         with self.delimit("[", "]"):
-            if isinstance(node.slice, Tuple) and node.slice.elts:
+            if (
+                isinstance(node.slice, Tuple)
+                and node.slice.elts
+                and not any(isinstance(elt, Starred) for elt in node.slice.elts)
+            ):
                 self.items_view(self.traverse, node.slice.elts)
             else:
                 self.traverse(node.slice)
