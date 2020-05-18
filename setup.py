@@ -150,7 +150,9 @@ def sysroot_paths(make_vars, subdirs):
                 break
     return dirs
 
+
 MACOS_SDK_ROOT = None
+MACOS_SDK_SPECIFIED = None
 
 def macosx_sdk_root():
     """Return the directory of the current macOS SDK.
@@ -162,8 +164,9 @@ def macosx_sdk_root():
     (The SDK may be supplied via Xcode or via the Command Line Tools).
     The SDK paths used by Apple-supplied tool chains depend on the
     setting of various variables; see the xcrun man page for more info.
+    Also sets MACOS_SDK_SPECIFIED for use by macosx_sdk_specified().
     """
-    global MACOS_SDK_ROOT
+    global MACOS_SDK_ROOT, MACOS_SDK_SPECIFIED
 
     # If already called, return cached result.
     if MACOS_SDK_ROOT:
@@ -173,8 +176,10 @@ def macosx_sdk_root():
     m = re.search(r'-isysroot\s*(\S+)', cflags)
     if m is not None:
         MACOS_SDK_ROOT = m.group(1)
+        MACOS_SDK_SPECIFIED = MACOS_SDK_ROOT != '/'
     else:
         MACOS_SDK_ROOT = '/'
+        MACOS_SDK_SPECIFIED = False
         cc = sysconfig.get_config_var('CC')
         tmpfile = '/tmp/setup_sdk_root.%d' % os.getpid()
         try:
@@ -201,6 +206,28 @@ def macosx_sdk_root():
             os.unlink(tmpfile)
 
     return MACOS_SDK_ROOT
+
+
+def macosx_sdk_specified():
+    """Returns true if an SDK was explicitly configured.
+
+    True if an SDK was selected at configure time, either by specifying
+    --enable-universalsdk=(something other than no or /) or by adding a
+    -isysroot option to CFLAGS.  In some cases, like when making
+    decisions about macOS Tk framework paths, we need to be able to
+    know whether the user explicitly asked to build with an SDK versus
+    the implicit use of an SDK when header files are no longer
+    installed on a running system by the Command Line Tools.
+    """
+    global MACOS_SDK_SPECIFIED
+
+    # If already called, return cached result.
+    if MACOS_SDK_SPECIFIED:
+        return MACOS_SDK_SPECIFIED
+
+    # Find the sdk root and set MACOS_SDK_SPECIFIED
+    macosx_sdk_root()
+    return MACOS_SDK_SPECIFIED
 
 
 def is_macosx_sdk_path(path):
@@ -1830,31 +1857,73 @@ class PyBuildExt(build_ext):
         return True
 
     def detect_tkinter_darwin(self):
-        # The _tkinter module, using frameworks. Since frameworks are quite
-        # different the UNIX search logic is not sharable.
+        # Build default _tkinter on macOS using Tcl and Tk frameworks.
+        #
+        # The macOS native Tk (AKA Aqua Tk) and Tcl are most commonly
+        # built and installed as macOS framework bundles.  However,
+        # for several reasons, we cannot take full advantage of the
+        # Apple-supplied compiler chain's -framework options here.
+        # Instead, we need to find and pass to the compiler the
+        # absolute paths of the Tcl and Tk headers files we want to use
+        # and the absolute path to the directory containing the Tcl
+        # and Tk frameworks for linking.
+        #
+        # We want to handle here two common use cases on macOS:
+        # 1. Build and link with system-wide third-party or user-built
+        #    Tcl and Tk frameworks installed in /Library/Frameworks.
+        # 2. Build and link using a user-specified macOS SDK so that the
+        #    built Python can be exported to other systems.  In this case,
+        #    search only the SDK's /Library/Frameworks (normally empty)
+        #    and /System/Library/Frameworks.
+        #
+        # Any other use case should be able to be handled explicitly by
+        # using the options described above in detect_tkinter_explicitly().
+        # In particular it would be good to handle here the case where
+        # you want to build and link with a framework build of Tcl and Tk
+        # that is not in /Library/Frameworks, say, in your private
+        # $HOME/Library/Frameworks directory or elsewhere. It turns
+        # out to be difficult to make that work automtically here
+        # without bringing into play more tools and magic. That case
+        # can be hamdled using a recipe with the right arguments
+        # to detect_tkinter_explicitly().
+        #
+        # Note also that the fallback case here is to try to use the
+        # Apple-supplied Tcl and Tk frameworks in /System/Library but
+        # be forewarned that they are deprecated by Apple and typically
+        # out-of-date and buggy; their use should be avoided if at
+        # all possible by installing a newer version of Tcl and Tk in
+        # /Library/Frameworks before bwfore building Python without
+        # an explicit SDK or by configuring build arguments explicitly.
+
         from os.path import join, exists
-        framework_dirs = [
-            '/Library/Frameworks',
-            '/System/Library/Frameworks/',
-            join(os.getenv('HOME'), '/Library/Frameworks')
-        ]
 
-        sysroot = macosx_sdk_root()
+        sysroot = macosx_sdk_root() # path to the SDK or '/'
 
-        # Find the directory that contains the Tcl.framework and Tk.framework
-        # bundles.
-        # XXX distutils should support -F!
+        if macosx_sdk_specified():
+            # Use case #2: an SDK other than '/' was specified.
+            # Only search there.
+            framework_dirs = [
+                join(sysroot, 'Library', 'Frameworks'),
+                join(sysroot, 'System', 'Library', 'Frameworks'),
+            ]
+        else:
+            # Use case #1: no explicit SDK selected.
+            # Search the local system-wide /Library/Frameworks,
+            # not the one in the default SDK, othewise fall back to
+            # /System/Library/Frameworks whose header files may be in
+            # the default SDK or, on older systems, actually installed.
+            framework_dirs = [
+                join('/', 'Library', 'Frameworks'),
+                join(sysroot, 'System', 'Library', 'Frameworks'),
+            ]
+
+        # Find the directory that contains the Tcl.framework and
+        # Tk.framework bundles.
         for F in framework_dirs:
             # both Tcl.framework and Tk.framework should be present
-
-
             for fw in 'Tcl', 'Tk':
-                if is_macosx_sdk_path(F):
-                    if not exists(join(sysroot, F[1:], fw + '.framework')):
-                        break
-                else:
-                    if not exists(join(F, fw + '.framework')):
-                        break
+                if not exists(join(F, fw + '.framework')):
+                    break
             else:
                 # ok, F is now directory with both frameworks. Continure
                 # building
@@ -1864,24 +1933,16 @@ class PyBuildExt(build_ext):
             # will now resume.
             return False
 
-        # For 8.4a2, we must add -I options that point inside the Tcl and Tk
-        # frameworks. In later release we should hopefully be able to pass
-        # the -F option to gcc, which specifies a framework lookup path.
-        #
         include_dirs = [
             join(F, fw + '.framework', H)
             for fw in ('Tcl', 'Tk')
-            for H in ('Headers', 'Versions/Current/PrivateHeaders')
+            for H in ('Headers',)
         ]
 
-        # For 8.4a2, the X11 headers are not included. Rather than include a
-        # complicated search, this is a hard-coded path. It could bail out
-        # if X11 libs are not found...
-        include_dirs.append('/usr/X11R6/include')
-        frameworks = ['-framework', 'Tcl', '-framework', 'Tk']
+        # Add the base framework directory as well
+        compile_args = ['-F', F]
 
-        # All existing framework builds of Tcl/Tk don't support 64-bit
-        # architectures.
+        # Do not build tkinter for archs that this Tk was not built with.
         cflags = sysconfig.get_config_vars('CFLAGS')[0]
         archs = re.findall(r'-arch\s+(\w+)', cflags)
 
@@ -1889,13 +1950,9 @@ class PyBuildExt(build_ext):
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
 
-        # Note: cannot use os.popen or subprocess here, that
-        # requires extensions that are not available here.
-        if is_macosx_sdk_path(F):
-            run_command("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(os.path.join(sysroot, F[1:]), tmpfile))
-        else:
-            run_command("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(F, tmpfile))
-
+        run_command(
+            "file {}/Tk.framework/Tk | grep 'for architecture' > {}".format(F, tmpfile)
+        )
         with open(tmpfile) as fp:
             detected_archs = []
             for ln in fp:
@@ -1904,16 +1961,26 @@ class PyBuildExt(build_ext):
                     detected_archs.append(ln.split()[-1])
         os.unlink(tmpfile)
 
+        arch_args = []
         for a in detected_archs:
-            frameworks.append('-arch')
-            frameworks.append(a)
+            arch_args.append('-arch')
+            arch_args.append(a)
+
+        compile_args += arch_args
+        link_args = [','.join(['-Wl', '-F', F, '-framework', 'Tcl', '-framework', 'Tk']), *arch_args]
+
+        # The X11/xlib.h file bundled in the Tk sources can cause function
+        # prototype warnings from the compiler. Since we cannot easily fix
+        # that, suppress the warnings here instead.
+        if '-Wstrict-prototypes' in cflags.split():
+            compile_args.append('-Wno-strict-prototypes')
 
         self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                            define_macros=[('WITH_APPINIT', 1)],
                            include_dirs=include_dirs,
                            libraries=[],
-                           extra_compile_args=frameworks[2:],
-                           extra_link_args=frameworks))
+                           extra_compile_args=compile_args,
+                           extra_link_args=link_args))
         return True
 
     def detect_tkinter(self):
