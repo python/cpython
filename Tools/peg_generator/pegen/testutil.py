@@ -17,6 +17,7 @@ from pegen.parser import Parser
 from pegen.python_generator import PythonParserGenerator
 from pegen.tokenizer import Tokenizer
 
+ALL_TOKENS = token.tok_name
 EXACT_TOKENS = token.EXACT_TOKEN_TYPES  # type: ignore
 NON_EXACT_TOKENS = {
     name for index, name in token.tok_name.items() if index not in EXACT_TOKENS.values()
@@ -76,7 +77,7 @@ def import_file(full_name: str, path: str) -> Any:
 
 def generate_c_parser_source(grammar: Grammar) -> str:
     out = io.StringIO()
-    genr = CParserGenerator(grammar, EXACT_TOKENS, NON_EXACT_TOKENS, out)
+    genr = CParserGenerator(grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, out)
     genr.generate("<string>")
     return out.getvalue()
 
@@ -96,7 +97,9 @@ def generate_parser_c_extension(
     assert not os.listdir(path)
     source = path / "parse.c"
     with open(source, "w") as file:
-        genr = CParserGenerator(grammar, EXACT_TOKENS, NON_EXACT_TOKENS, file, debug=debug)
+        genr = CParserGenerator(
+            grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, file, debug=debug
+        )
         genr.generate("parse.c")
     compile_c_extension(str(source), build_dir=str(path))
 

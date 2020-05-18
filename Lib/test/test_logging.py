@@ -36,7 +36,6 @@ import os
 import queue
 import random
 import re
-import signal
 import socket
 import struct
 import sys

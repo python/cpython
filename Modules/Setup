@@ -132,7 +132,7 @@ faulthandler faulthandler.c
 #
 # bpo-35053: The module must be builtin since _Py_NewReference()
 # can call _PyTraceMalloc_NewReference().
-_tracemalloc _tracemalloc.c hashtable.c
+_tracemalloc _tracemalloc.c
 
 # PEG-based parser module -- slated to be *the* parser
 _peg_parser _peg_parser.c
@@ -181,6 +181,7 @@ _symtable symtablemodule.c
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator
 #_datetime _datetimemodule.c	# datetime accelerator
+#_zoneinfo _zoneinfo.c	# zoneinfo accelerator
 #_bisect _bisectmodule.c	# Bisection algorithms
 #_heapq _heapqmodule.c	# Heap queue algorithm
 #_asyncio _asynciomodule.c  # Fast asyncio Future

@@ -107,7 +107,8 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
     if (exception != NULL &&
         !PyExceptionClass_Check(exception)) {
         _PyErr_Format(tstate, PyExc_SystemError,
-                      "exception %R not a BaseException subclass",
+                      "_PyErr_SetObject: "
+                      "exception %R is not a BaseException subclass",
                       exception);
         return;
     }
@@ -484,6 +485,15 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
         return;
 
     PyThreadState *tstate = _PyThreadState_GET();
+
+    if (!PyExceptionClass_Check(exc)) {
+        _PyErr_Format(tstate, PyExc_SystemError,
+                      "_PyErr_ChainExceptions: "
+                      "exception %R is not a BaseException subclass",
+                      exc);
+        return;
+    }
+
     if (_PyErr_Occurred(tstate)) {
         PyObject *exc2, *val2, *tb2;
         _PyErr_Fetch(tstate, &exc2, &val2, &tb2);
@@ -500,6 +510,20 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
     else {
         _PyErr_Restore(tstate, exc, val, tb);
     }
+}
+
+void
+_PyErr_ChainStackItem(_PyErr_StackItem *exc_state)
+{
+    if (exc_state->exc_type == NULL || exc_state->exc_type == Py_None) {
+        return;
+    }
+    Py_INCREF(exc_state->exc_type);
+    Py_XINCREF(exc_state->exc_value);
+    Py_XINCREF(exc_state->exc_traceback);
+    _PyErr_ChainExceptions(exc_state->exc_type,
+                           exc_state->exc_value,
+                           exc_state->exc_traceback);
 }
 
 static PyObject *

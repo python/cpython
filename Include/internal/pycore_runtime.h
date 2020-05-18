@@ -14,12 +14,14 @@ extern "C" {
 /* ceval state */
 
 struct _ceval_runtime_state {
-    int recursion_limit;
-    /* Request for dropping the GIL */
-    _Py_atomic_int gil_drop_request;
-    /* Request for checking signals. */
+    /* Request for checking signals. It is shared by all interpreters (see
+       bpo-40513). Any thread of any interpreter can receive a signal, but only
+       the main thread of the main interpreter can handle signals: see
+       _Py_ThreadCanHandleSignals(). */
     _Py_atomic_int signals_pending;
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     struct _gil_runtime_state gil;
+#endif
 };
 
 /* GIL state */

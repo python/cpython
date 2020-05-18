@@ -261,72 +261,55 @@ static PyMethodDef syslog_methods[] = {
     {NULL,              NULL,                   0}
 };
 
-/* Initialization function for the module */
 
-
-static struct PyModuleDef syslogmodule = {
-    PyModuleDef_HEAD_INIT,
-    "syslog",
-    NULL,
-    -1,
-    syslog_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_syslog(void)
+static int
+syslog_exec(PyObject *module)
 {
-    PyObject *m;
-
-    /* Create the module and add the functions */
-    m = PyModule_Create(&syslogmodule);
-    if (m == NULL)
-        return NULL;
-
-    /* Add some symbolic constants to the module */
-
+#define ADD_INT_MACRO(module, macro)                                  \
+    do {                                                              \
+        if (PyModule_AddIntConstant(module, #macro, macro) < 0) {     \
+            return -1;                                                \
+        }                                                             \
+    } while (0)
     /* Priorities */
-    PyModule_AddIntMacro(m, LOG_EMERG);
-    PyModule_AddIntMacro(m, LOG_ALERT);
-    PyModule_AddIntMacro(m, LOG_CRIT);
-    PyModule_AddIntMacro(m, LOG_ERR);
-    PyModule_AddIntMacro(m, LOG_WARNING);
-    PyModule_AddIntMacro(m, LOG_NOTICE);
-    PyModule_AddIntMacro(m, LOG_INFO);
-    PyModule_AddIntMacro(m, LOG_DEBUG);
+    ADD_INT_MACRO(module, LOG_EMERG);
+    ADD_INT_MACRO(module, LOG_ALERT);
+    ADD_INT_MACRO(module, LOG_CRIT);
+    ADD_INT_MACRO(module, LOG_ERR);
+    ADD_INT_MACRO(module, LOG_WARNING);
+    ADD_INT_MACRO(module, LOG_NOTICE);
+    ADD_INT_MACRO(module, LOG_INFO);
+    ADD_INT_MACRO(module, LOG_DEBUG);
 
     /* openlog() option flags */
-    PyModule_AddIntMacro(m, LOG_PID);
-    PyModule_AddIntMacro(m, LOG_CONS);
-    PyModule_AddIntMacro(m, LOG_NDELAY);
+    ADD_INT_MACRO(module, LOG_PID);
+    ADD_INT_MACRO(module, LOG_CONS);
+    ADD_INT_MACRO(module, LOG_NDELAY);
 #ifdef LOG_ODELAY
-    PyModule_AddIntMacro(m, LOG_ODELAY);
+    ADD_INT_MACRO(module, LOG_ODELAY);
 #endif
 #ifdef LOG_NOWAIT
-    PyModule_AddIntMacro(m, LOG_NOWAIT);
+    ADD_INT_MACRO(module, LOG_NOWAIT);
 #endif
 #ifdef LOG_PERROR
-    PyModule_AddIntMacro(m, LOG_PERROR);
+    ADD_INT_MACRO(module, LOG_PERROR);
 #endif
 
     /* Facilities */
-    PyModule_AddIntMacro(m, LOG_KERN);
-    PyModule_AddIntMacro(m, LOG_USER);
-    PyModule_AddIntMacro(m, LOG_MAIL);
-    PyModule_AddIntMacro(m, LOG_DAEMON);
-    PyModule_AddIntMacro(m, LOG_AUTH);
-    PyModule_AddIntMacro(m, LOG_LPR);
-    PyModule_AddIntMacro(m, LOG_LOCAL0);
-    PyModule_AddIntMacro(m, LOG_LOCAL1);
-    PyModule_AddIntMacro(m, LOG_LOCAL2);
-    PyModule_AddIntMacro(m, LOG_LOCAL3);
-    PyModule_AddIntMacro(m, LOG_LOCAL4);
-    PyModule_AddIntMacro(m, LOG_LOCAL5);
-    PyModule_AddIntMacro(m, LOG_LOCAL6);
-    PyModule_AddIntMacro(m, LOG_LOCAL7);
+    ADD_INT_MACRO(module, LOG_KERN);
+    ADD_INT_MACRO(module, LOG_USER);
+    ADD_INT_MACRO(module, LOG_MAIL);
+    ADD_INT_MACRO(module, LOG_DAEMON);
+    ADD_INT_MACRO(module, LOG_AUTH);
+    ADD_INT_MACRO(module, LOG_LPR);
+    ADD_INT_MACRO(module, LOG_LOCAL0);
+    ADD_INT_MACRO(module, LOG_LOCAL1);
+    ADD_INT_MACRO(module, LOG_LOCAL2);
+    ADD_INT_MACRO(module, LOG_LOCAL3);
+    ADD_INT_MACRO(module, LOG_LOCAL4);
+    ADD_INT_MACRO(module, LOG_LOCAL5);
+    ADD_INT_MACRO(module, LOG_LOCAL6);
+    ADD_INT_MACRO(module, LOG_LOCAL7);
 
 #ifndef LOG_SYSLOG
 #define LOG_SYSLOG              LOG_DAEMON
@@ -341,14 +324,35 @@ PyInit_syslog(void)
 #define LOG_CRON                LOG_DAEMON
 #endif
 
-    PyModule_AddIntMacro(m, LOG_SYSLOG);
-    PyModule_AddIntMacro(m, LOG_CRON);
-    PyModule_AddIntMacro(m, LOG_UUCP);
-    PyModule_AddIntMacro(m, LOG_NEWS);
+    ADD_INT_MACRO(module, LOG_SYSLOG);
+    ADD_INT_MACRO(module, LOG_CRON);
+    ADD_INT_MACRO(module, LOG_UUCP);
+    ADD_INT_MACRO(module, LOG_NEWS);
 
 #ifdef LOG_AUTHPRIV
-    PyModule_AddIntMacro(m, LOG_AUTHPRIV);
+    ADD_INT_MACRO(module, LOG_AUTHPRIV);
 #endif
 
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot syslog_slots[] = {
+    {Py_mod_exec, syslog_exec},
+    {0, NULL}
+};
+
+/* Initialization function for the module */
+
+static struct PyModuleDef syslogmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "syslog",
+    .m_size = 0,
+    .m_methods = syslog_methods,
+    .m_slots = syslog_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_syslog(void)
+{
+    return PyModuleDef_Init(&syslogmodule);
 }

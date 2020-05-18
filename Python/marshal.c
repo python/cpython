@@ -12,7 +12,7 @@
 #include "longintrepr.h"
 #include "code.h"
 #include "marshal.h"
-#include "../Modules/hashtable.h"
+#include "pycore_hashtable.h"
 
 /*[clinic input]
 module marshal
@@ -302,17 +302,17 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     if (Py_REFCNT(v) == 1)
         return 0;
 
-    entry = _Py_HASHTABLE_GET_ENTRY(p->hashtable, v);
+    entry = _Py_hashtable_get_entry(p->hashtable, v);
     if (entry != NULL) {
         /* write the reference index to the stream */
-        _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, entry, w);
+        w = (int)(uintptr_t)entry->value;
         /* we don't store "long" indices in the dict */
         assert(0 <= w && w <= 0x7fffffff);
         w_byte(TYPE_REF, p);
         w_long(w, p);
         return 1;
     } else {
-        size_t s = p->hashtable->entries;
+        size_t s = p->hashtable->nentries;
         /* we don't support long indices */
         if (s >= 0x7fffffff) {
             PyErr_SetString(PyExc_ValueError, "too many objects");
@@ -320,7 +320,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
         }
         w = (int)s;
         Py_INCREF(v);
-        if (_Py_HASHTABLE_SET(p->hashtable, v, w) < 0) {
+        if (_Py_hashtable_set(p->hashtable, v, (void *)(uintptr_t)w) < 0) {
             Py_DECREF(v);
             goto err;
         }
@@ -545,13 +545,20 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
 }
 
+static void
+w_decref_entry(void *key)
+{
+    PyObject *entry_key = (PyObject *)key;
+    Py_XDECREF(entry_key);
+}
+
 static int
 w_init_refs(WFILE *wf, int version)
 {
     if (version >= 3) {
-        wf->hashtable = _Py_hashtable_new(sizeof(PyObject *), sizeof(int),
-                                          _Py_hashtable_hash_ptr,
-                                          _Py_hashtable_compare_direct);
+        wf->hashtable = _Py_hashtable_new_full(_Py_hashtable_hash_ptr,
+                                               _Py_hashtable_compare_direct,
+                                               w_decref_entry, NULL, NULL);
         if (wf->hashtable == NULL) {
             PyErr_NoMemory();
             return -1;
@@ -560,22 +567,10 @@ w_init_refs(WFILE *wf, int version)
     return 0;
 }
 
-static int
-w_decref_entry(_Py_hashtable_t *ht, _Py_hashtable_entry_t *entry,
-               void *Py_UNUSED(data))
-{
-    PyObject *entry_key;
-
-    _Py_HASHTABLE_ENTRY_READ_KEY(ht, entry, entry_key);
-    Py_XDECREF(entry_key);
-    return 0;
-}
-
 static void
 w_clear_refs(WFILE *wf)
 {
     if (wf->hashtable != NULL) {
-        _Py_hashtable_foreach(wf->hashtable, w_decref_entry, NULL);
         _Py_hashtable_destroy(wf->hashtable);
     }
 }
