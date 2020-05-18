@@ -1346,14 +1346,20 @@ class _Unparser(NodeVisitor):
                 self.traverse(e)
 
     def visit_Subscript(self, node):
+        def is_simple_tuple(slice_value):
+            # return True if the slice is a non-empty tuple
+            # and there aren't any starred expression inside
+            # of the elements
+            return (
+                isinstance(slice_value, Tuple)
+                and slice_value.elts
+                and not any(isinstance(elt, Starred) for elt in slice_value.elts)
+            )
+
         self.set_precedence(_Precedence.ATOM, node.value)
         self.traverse(node.value)
         with self.delimit("[", "]"):
-            if (
-                isinstance(node.slice, Tuple)
-                and node.slice.elts
-                and not any(isinstance(elt, Starred) for elt in node.slice.elts)
-            ):
+            if is_simple_tuple(node.slice):
                 self.items_view(self.traverse, node.slice.elts)
             else:
                 self.traverse(node.slice)
