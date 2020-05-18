@@ -335,6 +335,9 @@ Functions
    Set the peak size of memory blocks traced by the :mod:`tracemalloc` module
    to the current size.
 
+   Do nothing if the :mod:`tracemalloc` module is not tracing memory
+   allocations.
+
    This function only modifies the recorded peak size, and does not modify or
    clear any traces, unlike :func:`clear_traces`. Snapshots taken with
    :func:`take_snapshot` before a call to :func:`reset_peak` can be

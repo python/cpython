@@ -1648,6 +1648,8 @@ _tracemalloc.reset_peak
 
 Set the peak size of memory blocks traced by tracemalloc to the current size.
 
+Do nothing if the tracemalloc module is not tracing memory allocations.
+
 [clinic start generated code]*/
 
 static PyObject *
