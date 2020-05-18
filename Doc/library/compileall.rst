@@ -181,7 +181,8 @@ Public functions
    coexist.
 
    *optimize* specifies the optimization level for the compiler.  It is passed to
-   the built-in :func:`compile` function.
+   the built-in :func:`compile` function. Accepts also a sequence of optimization
+   levels which lead to multiple compilations of one :file:`.py` file in one call.
 
    The argument *workers* specifies how many workers are used to
    compile files in parallel. The default is to not use multiple workers.
@@ -256,7 +257,8 @@ Public functions
    coexist.
 
    *optimize* specifies the optimization level for the compiler.  It is passed to
-   the built-in :func:`compile` function.
+   the built-in :func:`compile` function. Accepts also a sequence of optimization
+   levels which lead to multiple compilations of one :file:`.py` file in one call.
 
    *invalidation_mode* should be a member of the
    :class:`py_compile.PycInvalidationMode` enum and controls how the generated
