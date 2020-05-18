@@ -1,0 +1,7 @@
+On macOS, when building Python for macOS 10.4 and older, which wasn't the case
+for python.org macOS installer, :func:`socket.getaddrinfo` no longer uses an
+internal lock to prevent race conditions when calling ``getaddrinfo()`` which
+is thread-safe since macOS 10.5. Python 3.9 requires macOS 10.6 or newer. The
+internal lock caused random hang on fork when another thread was calling
+:func:`socket.getaddrinfo`. The lock was also used on FreeBSD older than 5.3,
+OpenBSD older than 201311 and NetBSD older than 4.
