@@ -7301,8 +7301,6 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 
 
 
-#ifdef HAVE_SYMLINK
-
 #if defined(MS_WINDOWS)
 
 /* Grab CreateSymbolicLinkW dynamically from kernel32 */
@@ -7340,6 +7338,12 @@ _dirnameW(WCHAR *path)
     *ptr = 0;
     return 0;
 }
+
+#endif
+
+#ifdef HAVE_SYMLINK
+
+#if defined(MS_WINDOWS)
 
 /* Is this path absolute? */
 static int
