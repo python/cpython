@@ -178,6 +178,16 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+>>> import ast; ast.parse('''
+... def f(
+...     *, # type: int
+...     a, # type: int
+... ):
+...     pass
+... ''', type_comments=True)
+Traceback (most recent call last):
+SyntaxError: bare * has associated type comment
+
 
 From ast_for_funcdef():
 
@@ -657,6 +667,9 @@ Corner-cases that used to crash:
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
+    >>> import ä £
+    Traceback (most recent call last):
+    SyntaxError: invalid character '£' (U+00A3)
 """
 
 import re

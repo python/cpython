@@ -433,6 +433,12 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("int _end_col_offset = _token->end_col_offset;")
         self.print("UNUSED(_end_col_offset); // Only used by EXTRA macro")
 
+    def _check_for_errors(self) -> None:
+        self.print("if (p->error_indicator) {")
+        with self.indent():
+            self.print("return NULL;")
+        self.print("}")
+
     def _set_up_rule_memoization(self, node: Rule, result_type: str) -> None:
         self.print("{")
         with self.indent():
@@ -468,10 +474,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         memoize = self._should_memoize(node)
 
         with self.indent():
-            self.print("if (p->error_indicator) {")
-            with self.indent():
-                self.print("return NULL;")
-            self.print("}")
+            self._check_for_errors()
             self.print(f"{result_type} _res = NULL;")
             if memoize:
                 self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res))")
@@ -500,10 +503,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         is_repeat1 = node.name.startswith("_loop1")
 
         with self.indent():
-            self.print("if (p->error_indicator) {")
-            with self.indent():
-                self.print("return NULL;")
-            self.print("}")
+            self._check_for_errors()
             self.print("void *_res = NULL;")
             if memoize:
                 self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res))")
@@ -687,6 +687,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     ) -> None:
         self.print(f"{{ // {node}")
         with self.indent():
+            self._check_for_errors()
             # Prepare variable declarations for the alternative
             vars = self.collect_vars(node)
             for v, var_type in sorted(item for item in vars.items() if item[0] is not None):
