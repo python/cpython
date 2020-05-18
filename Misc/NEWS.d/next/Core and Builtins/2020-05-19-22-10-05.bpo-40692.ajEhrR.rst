@@ -1,0 +1,1 @@
+In concurrent.futures.ProcessPoolExecutor, validate that multiprocess.synchronize is available on this platform. Rely on that check in the concurrent.futures test suite so we can run concurrent.futures tests unrelated to ProcessPoolExecutor on those platforms.
