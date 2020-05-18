@@ -260,10 +260,15 @@ int _PyPegen_check_barry_as_flufl(Parser *);
 mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
 
 // Error reporting helpers
-expr_ty _PyPegen_get_invalid_target(expr_ty e, int is_del, int is_for);
-#define GET_INVALID_TARGET(e) _PyPegen_get_invalid_target(e, 0, 0)
-#define GET_INVALID_DEL_TARGET(e) _PyPegen_get_invalid_target(e, 1, 0)
-#define GET_INVALID_FOR_TARGET(e) _PyPegen_get_invalid_target(e, 0, 1)
+typedef enum {
+    STAR_TARGETS,
+    DEL_TARGETS,
+    FOR_TARGETS
+} TARGETS_TYPE;
+expr_ty _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type);
+#define GET_INVALID_TARGET(e) _PyPegen_get_invalid_target(e, STAR_TARGETS)
+#define GET_INVALID_DEL_TARGET(e) _PyPegen_get_invalid_target(e, DEL_TARGETS)
+#define GET_INVALID_FOR_TARGET(e) _PyPegen_get_invalid_target(e, FOR_TARGETS)
 
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 
