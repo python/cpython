@@ -1347,9 +1347,9 @@ class _Unparser(NodeVisitor):
 
     def visit_Subscript(self, node):
         def is_simple_tuple(slice_value):
-            # return True if the slice is a non-empty tuple
-            # and there aren't any starred expression inside
-            # of the elements
+            # when unparsing a non-empty tuple, the parantheses can be safely
+            # omitted if there aren't any elements that explicitly requires
+            # parantheses (such as starred expressions).
             return (
                 isinstance(slice_value, Tuple)
                 and slice_value.elts
