@@ -46,7 +46,7 @@ regen-metaparser: pegen/metagrammar.gram pegen/*.py
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
 	$(VENVPYTHON) -m pip install -U pip setuptools
-	$(VENVPYTHON) -m pip install -U memory_profiler
+	$(VENVPYTHON) -m pip install -r requirements.pip
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 test: run
