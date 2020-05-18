@@ -279,10 +279,13 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip(r"""{**{'y': 2}, 'x': 1}""")
         self.check_ast_roundtrip(r"""{**{'y': 2}, **{'x': 1}}""")
 
-    def test_ext_slices(self):
+    def test_slices(self):
         self.check_ast_roundtrip("a[i]")
         self.check_ast_roundtrip("a[i,]")
         self.check_ast_roundtrip("a[i, j]")
+        self.check_ast_roundtrip("a[(*a,)]")
+        self.check_ast_roundtrip("a[(a:=b)]")
+        self.check_ast_roundtrip("a[(a:=b,c)]")
         self.check_ast_roundtrip("a[()]")
         self.check_ast_roundtrip("a[i:j]")
         self.check_ast_roundtrip("a[:j]")
@@ -469,6 +472,11 @@ class CosmeticTestCase(ASTTestCase):
             self.check_src_roundtrip(f"{prefix}1")
         for prefix in ("not",):
             self.check_src_roundtrip(f"{prefix} 1")
+
+    def test_slices(self):
+        self.check_src_roundtrip("a[1]")
+        self.check_src_roundtrip("a[1, 2]")
+        self.check_src_roundtrip("a[(1, *a)]")
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
