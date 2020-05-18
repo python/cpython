@@ -1259,7 +1259,7 @@ class EventLoopTestsMixin:
     def test_create_datagram_endpoint(self):
         self._test_create_datagram_endpoint(('127.0.0.1', 0), socket.AF_INET)
 
-    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 not supported or enabled')
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 not supported or enabled')
     def test_create_datagram_endpoint_ipv6(self):
         self._test_create_datagram_endpoint(('::1', 0), socket.AF_INET6)
 
