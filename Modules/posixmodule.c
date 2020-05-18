@@ -8156,8 +8156,6 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 }
 #endif /* defined(HAVE_READLINK) || defined(MS_WINDOWS) */
 
-#ifdef HAVE_SYMLINK
-
 #if defined(MS_WINDOWS)
 
 /* Remove the last portion of the path - return 0 on success */
@@ -8179,6 +8177,12 @@ _dirnameW(WCHAR *path)
     *ptr = 0;
     return 0;
 }
+
+#endif
+
+#ifdef HAVE_SYMLINK
+
+#if defined(MS_WINDOWS)
 
 /* Is this path absolute? */
 static int
