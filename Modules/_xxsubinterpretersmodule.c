@@ -1167,8 +1167,6 @@ static PyObject *ChannelNotFoundError;
 static PyObject *ChannelClosedError;
 static PyObject *ChannelEmptyError;
 static PyObject *ChannelNotEmptyError;
-static PyObject *ChannelReleasedError;
-static PyObject *NotReceivedError;
 
 static int
 channel_exceptions_init(PyObject *ns)
@@ -1202,27 +1200,6 @@ channel_exceptions_init(PyObject *ns)
         return -1;
     }
     if (PyDict_SetItemString(ns, "ChannelClosedError", ChannelClosedError) != 0) {
-        return -1;
-    }
-
-     // An operation tried to use a released channel.
-    ChannelReleasedError = PyErr_NewException(
-            "_interpreters.ChannelReleasedError", ChannelClosedError, NULL);
-    if (ChannelReleasedError == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(ns, "ChannelReleasedError", ChannelReleasedError) != 0) {
-        return -1;
-    }
-
-    // An operation trying to send an object when Nothing was waiting
-    // to receive it
-    NotReceivedError = PyErr_NewException(
-            "_interpreters.NotReceivedError", ChannelError, NULL);
-    if (NotReceivedError == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(ns, "NotReceivedError", NotReceivedError) != 0) {
         return -1;
     }
 

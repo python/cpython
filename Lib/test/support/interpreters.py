@@ -1,20 +1,20 @@
 """Subinterpreters High Level Module."""
 
 import _xxsubinterpreters as _interpreters
+
 # aliases:
 from _xxsubinterpreters import (
-    ChannelError, ChannelNotFoundError,
-    ChannelEmptyError, ChannelNotEmptyError, NotReceivedError,
+    ChannelError, ChannelNotFoundError, ChannelEmptyError,
     is_shareable,
 )
+
 
 __all__ = [
     'Interpreter', 'get_current', 'get_main', 'create', 'list_all',
     'SendChannel', 'RecvChannel',
     'create_channel', 'list_all_channels', 'is_shareable',
     'ChannelError', 'ChannelNotFoundError',
-    'ChannelEmptyError', 'ChannelNotEmptyError',
-    'NotReceivedError',
+    'ChannelEmptyError',
     ]
 
 
@@ -25,6 +25,7 @@ def create(*, isolated=True):
     id = _interpreters.create(isolated=isolated)
     return Interpreter(id, isolated=isolated)
 
+
 def list_all():
     """
     Get all existing interpreters.
@@ -32,12 +33,14 @@ def list_all():
     return [Interpreter(id) for id in
             _interpreters.list_all()]
 
+
 def get_current():
     """
     Get the currently running interpreter.
     """
     id = _interpreters.get_current()
     return Interpreter(id)
+
 
 def get_main():
     """
@@ -100,12 +103,16 @@ def create_channel():
     cid = _interpreters.channel_create()
     return (RecvChannel(cid), SendChannel(cid))
 
+
 def list_all_channels():
     """
     Get all open channels.
     """
     return [(RecvChannel(cid), SendChannel(cid))
             for cid in _interpreters.channel_list_all()]
+
+
+_NOT_SET = object()
 
 
 class RecvChannel:
@@ -131,7 +138,7 @@ class RecvChannel:
             obj = _interpreters.channel_recv(self._id, sentinel)
         return obj
 
-    def recv_nowait(self, default=None):
+    def recv_nowait(self, default=_NOT_SET):
         """
         Like recv(), but return the default
         instead of waiting.
@@ -139,14 +146,11 @@ class RecvChannel:
         This function is blocked by a missing low-level
         implementation of channel_recv_wait().
         """
-        if default is None:
-            default = _NOT_SET
         if default is _NOT_SET:
             return _interpreters.channel_recv(self._id)
         else:
             return _interpreters.channel_recv(self._id, default)
 
-_NOT_SET = object()
 
 class SendChannel:
     """

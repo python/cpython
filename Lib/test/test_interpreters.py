@@ -8,6 +8,7 @@ import time
 import _xxsubinterpreters as _interpreters
 from test.support import interpreters
 
+
 def _captured_script(script):
     r, w = os.pipe()
     indented = script.replace('\n', '\n                ')
@@ -19,6 +20,7 @@ def _captured_script(script):
         """)
     return wrapped, open(r)
 
+
 def clean_up_interpreters():
     for interp in interpreters.list_all():
         if interp.id == 0:  # main
@@ -28,11 +30,13 @@ def clean_up_interpreters():
         except RuntimeError:
             pass  # already destroyed
 
+
 def _run_output(interp, request, shared=None):
     script, rpipe = _captured_script(request)
     with rpipe:
         interp.run(script)
         return rpipe.read()
+
 
 @contextlib.contextmanager
 def _running(interp):
@@ -518,7 +522,6 @@ class TestSendRecv(TestBase):
             assert obj is not orig
             assert obj == orig
             """))
-
 
         r, s = interpreters.create_channel()
 
