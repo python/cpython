@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.9
+#!/usr/bin/env python3
 
 import argparse
 import ast
@@ -6,7 +6,12 @@ import sys
 import os
 from time import time
 
-import memory_profiler
+try:
+    import memory_profiler
+except ModuleNotFoundError:
+    print("Please run `make venv` to create a virtual environment and install"
+          " all the dependencies, before running this script.")
+    sys.exit(1)
 
 sys.path.insert(0, os.getcwd())
 from peg_extension import parse
