@@ -1095,8 +1095,7 @@ class _Unparser(NodeVisitor):
                 # \n and \t, because they are more likely to be unescaped
                 # in the source
                 return c
-            else:
-                return c.encode('unicode_escape').decode('ascii')
+            return c.encode('unicode_escape').decode('ascii')
 
         self.fill()
         if node.kind == "u":
