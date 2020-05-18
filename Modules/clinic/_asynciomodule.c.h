@@ -271,6 +271,27 @@ _asyncio_Future_get_loop(FutureObj *self, PyObject *Py_UNUSED(ignored))
     return _asyncio_Future_get_loop_impl(self);
 }
 
+PyDoc_STRVAR(_asyncio_Future__make_cancelled_error__doc__,
+"_make_cancelled_error($self, /)\n"
+"--\n"
+"\n"
+"Create the CancelledError to raise if the Future is cancelled.\n"
+"\n"
+"This should only be called once when handling a cancellation since\n"
+"it erases the context exception value.");
+
+#define _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF    \
+    {"_make_cancelled_error", (PyCFunction)_asyncio_Future__make_cancelled_error, METH_NOARGS, _asyncio_Future__make_cancelled_error__doc__},
+
+static PyObject *
+_asyncio_Future__make_cancelled_error_impl(FutureObj *self);
+
+static PyObject *
+_asyncio_Future__make_cancelled_error(FutureObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Future__make_cancelled_error_impl(self);
+}
+
 PyDoc_STRVAR(_asyncio_Future__repr_info__doc__,
 "_repr_info($self, /)\n"
 "--\n"
@@ -412,6 +433,27 @@ skip_optional_pos:
 
 exit:
     return return_value;
+}
+
+PyDoc_STRVAR(_asyncio_Task__make_cancelled_error__doc__,
+"_make_cancelled_error($self, /)\n"
+"--\n"
+"\n"
+"Create the CancelledError to raise if the Task is cancelled.\n"
+"\n"
+"This should only be called once when handling a cancellation since\n"
+"it erases the context exception value.");
+
+#define _ASYNCIO_TASK__MAKE_CANCELLED_ERROR_METHODDEF    \
+    {"_make_cancelled_error", (PyCFunction)_asyncio_Task__make_cancelled_error, METH_NOARGS, _asyncio_Task__make_cancelled_error__doc__},
+
+static PyObject *
+_asyncio_Task__make_cancelled_error_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task__make_cancelled_error(TaskObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Task__make_cancelled_error_impl(self);
 }
 
 PyDoc_STRVAR(_asyncio_Task__repr_info__doc__,
@@ -870,4 +912,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6ed4cfda8fc516ad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e5c1eb8b692977b input=a9049054013a1b77]*/
