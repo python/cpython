@@ -542,6 +542,10 @@ most platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit
 platforms.
 (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
 
+Previously, :attr:`sys.stderr` was block-buffered when non-interactive. Now
+``stderr`` defaults to always being line-buffered.
+(Contributed by Jendrik Seipp in :issue:`13601`.)
+
 
 typing
 ------
