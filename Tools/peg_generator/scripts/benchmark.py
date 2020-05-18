@@ -6,7 +6,11 @@ import sys
 import os
 from time import time
 
-import memory_profiler
+MEMORY_BENCHMARKS = True
+try:
+    import memory_profiler
+except ModuleNotFoundError:
+    MEMORY_BENCHMARKS = False
 
 sys.path.insert(0, os.getcwd())
 from peg_extension import parse
@@ -43,16 +47,17 @@ command_check = subcommands.add_parser(
 
 def benchmark(func):
     def wrapper(*args):
+        print(f"{func.__name__}")
         times = list()
         for _ in range(3):
             start = time()
             result = func(*args)
             end = time()
             times.append(end - start)
-        memory = memory_profiler.memory_usage((func, args))
-        print(f"{func.__name__}")
         print(f"\tTime: {sum(times)/3:.3f} seconds on an average of 3 runs")
-        print(f"\tMemory: {max(memory)} MiB on an average of 3 runs")
+        if MEMORY_BENCHMARKS:
+            memory = memory_profiler.memory_usage((func, args))
+            print(f"\tMemory: {max(memory)} MiB on an average of 3 runs")
         return result
 
     return wrapper
