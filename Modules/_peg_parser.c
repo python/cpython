@@ -2,56 +2,16 @@
 #include "pegen_interface.h"
 
 PyObject *
-_Py_parse_file(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *keywords[] = {"file", "mode", NULL};
-    char *filename;
-    char *mode_str = "exec";
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|s", keywords, &filename, &mode_str)) {
-        return NULL;
-    }
-
-    int mode;
-    if (strcmp(mode_str, "exec") == 0) {
-        mode = Py_file_input;
-    }
-    else if (strcmp(mode_str, "single") == 0) {
-        mode = Py_single_input;
-    }
-    else {
-        return PyErr_Format(PyExc_ValueError, "mode must be either 'exec' or 'single'");
-    }
-
-    PyArena *arena = PyArena_New();
-    if (arena == NULL) {
-        return NULL;
-    }
-
-    PyCompilerFlags flags = _PyCompilerFlags_INIT;
-    PyObject *result = NULL;
-
-    mod_ty res = PyPegen_ASTFromFilename(filename, mode, &flags, arena);
-    if (res == NULL) {
-        goto error;
-    }
-    result = PyAST_mod2obj(res);
-
-error:
-    PyArena_Free(arena);
-    return result;
-}
-
-PyObject *
 _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *keywords[] = {"string", "mode", "oldparser", NULL};
+    static char *keywords[] = {"string", "mode", "oldparser", "bytecode", NULL};
     char *the_string;
     char *mode_str = "exec";
     int oldparser = 0;
+    int bytecode = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sp", keywords,
-            &the_string, &mode_str, &oldparser)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|spp", keywords,
+            &the_string, &mode_str, &oldparser, &bytecode)) {
         return NULL;
     }
 
@@ -69,35 +29,46 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         return PyErr_Format(PyExc_ValueError, "mode must be either 'exec' or 'eval' or 'single'");
     }
 
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    flags.cf_flags = PyCF_IGNORE_COOKIE;
+
     PyArena *arena = PyArena_New();
     if (arena == NULL) {
         return NULL;
     }
 
-    PyObject *result = NULL;
-
-    PyCompilerFlags flags = _PyCompilerFlags_INIT;
-    flags.cf_flags = PyCF_IGNORE_COOKIE;
-
-    mod_ty res;
-    if (oldparser) {
-        res = PyParser_ASTFromString(the_string, "<string>", mode, &flags, arena);
+    mod_ty mod;
+    if (!oldparser) {
+        mod = PyPegen_ASTFromString(the_string, "<string>", mode, &flags, arena);
     }
     else {
-        res = PyPegen_ASTFromString(the_string, "<string>", mode, &flags, arena);
+        mod = PyParser_ASTFromString(the_string, "<string>", mode, &flags, arena);
     }
-    if (res == NULL) {
+    if (mod == NULL) {
         goto error;
     }
-    result = PyAST_mod2obj(res);
+
+    if (!bytecode) {
+        PyObject *result = PyAST_mod2obj(mod);
+        PyArena_Free(arena);
+        return result;
+    }
+
+    PyObject *filename = PyUnicode_DecodeFSDefault("<string>");
+    if (!filename) {
+        goto error;
+    }
+    PyCodeObject *co = PyAST_CompileObject(mod, filename, &flags, -1, arena);
+    Py_XDECREF(filename);
+    PyArena_Free(arena);
+    return (PyObject *)co;
 
 error:
     PyArena_Free(arena);
-    return result;
+    return NULL;
 }
 
 static PyMethodDef ParseMethods[] = {
-    {"parse_file", (PyCFunction)(void (*)(void))_Py_parse_file, METH_VARARGS|METH_KEYWORDS, "Parse a file."},
     {"parse_string", (PyCFunction)(void (*)(void))_Py_parse_string, METH_VARARGS|METH_KEYWORDS,"Parse a string."},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };

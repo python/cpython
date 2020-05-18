@@ -75,9 +75,6 @@ time_compile: venv peg_extension/parse.c data/xxl.py
 time_parse: venv peg_extension/parse.c data/xxl.py
 	$(VENVPYTHON) scripts/benchmark.py --parser=pegen --target=xxl parse
 
-time_check: venv peg_extension/parse.c data/xxl.py
-	$(VENVPYTHON) scripts/benchmark.py --parser=pegen --target=xxl check
-
 time_stdlib: time_stdlib_compile
 
 time_stdlib_compile: venv peg_extension/parse.c data/xxl.py
