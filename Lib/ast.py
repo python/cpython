@@ -1090,6 +1090,15 @@ class _Unparser(NodeVisitor):
         self.write(node.id)
 
     def _write_docstring(self, node):
+        def esc_char(c):
+            if c in ("\n", "\t"):
+                # In the AST form, we don't know the author's intentation
+                # about how this should be displayed. We'll only escape
+                # \n and \t, because they are more likely to be unescaped
+                # in the source
+                return c
+            return c.encode('unicode_escape').decode('ascii')
+
         self.fill()
         if node.kind == "u":
             self.write("u")
@@ -1097,11 +1106,10 @@ class _Unparser(NodeVisitor):
         value = node.value
         if value:
             # Preserve quotes in the docstring by escaping them
-            value = value.replace("\\", "\\\\")
-            value = value.replace('"""', '""\"')
-            value = value.replace("\r", "\\r")
+            value = "".join(map(esc_char, value))
             if value[-1] == '"':
                 value = value.replace('"', '\\"', -1)
+            value = value.replace('"""', '""\\"')
 
         self.write(f'"""{value}"""')
 
