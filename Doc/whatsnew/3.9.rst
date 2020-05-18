@@ -846,11 +846,6 @@ Changes in the Python API
   :class:`ftplib.FTP_TLS` as a keyword-only parameter, and the default encoding
   is changed from Latin-1 to UTF-8 to follow :rfc:`2640`.
 
-* :func:`inspect.getdoc` no longer returns docstring inherited from the type
-  of the object or from parent class if it is a class if it is not defined
-  in the object itself.
-  (Contributed by Serhiy Storchaka in :issue:`40257`.)
-
 * :meth:`asyncio.loop.shutdown_default_executor` has been added to
   :class:`~asyncio.AbstractEventLoop`, meaning alternative event loops that
   inherit from it should have this method defined.
