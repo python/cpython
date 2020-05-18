@@ -530,7 +530,7 @@ class EnsurePipTest(BaseTest):
 
     # Issue #26610: pip/pep425tags.py requires ctypes
     @unittest.skipUnless(ctypes, 'pip requires ctypes')
-    @requires_zlib
+    @requires_zlib()
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)
