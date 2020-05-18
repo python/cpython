@@ -845,17 +845,15 @@ regen-pegen:
 
 .PHONY=regen-ast
 regen-ast:
-	# Regenerate Include/Python-ast.h using Parser/asdl_c.py -h
+	# Regenerate Include/Python-ast.h and Python/Python-ast.c using Parser/asdl_c.py
 	$(MKDIR_P) $(srcdir)/Include
-	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
-		-h $(srcdir)/Include/Python-ast.h.new \
-		$(srcdir)/Parser/Python.asdl
-	$(UPDATE_FILE) $(srcdir)/Include/Python-ast.h $(srcdir)/Include/Python-ast.h.new
-	# Regenerate Python/Python-ast.c using Parser/asdl_c.py -c
 	$(MKDIR_P) $(srcdir)/Python
 	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
-		-c $(srcdir)/Python/Python-ast.c.new \
-		$(srcdir)/Parser/Python.asdl
+		$(srcdir)/Parser/Python.asdl \
+		-H $(srcdir)/Include/Python-ast.h.new \
+		-C $(srcdir)/Python/Python-ast.c.new
+
+	$(UPDATE_FILE) $(srcdir)/Include/Python-ast.h $(srcdir)/Include/Python-ast.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
 
 .PHONY: regen-opcode
