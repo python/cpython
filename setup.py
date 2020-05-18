@@ -1583,11 +1583,10 @@ class PyBuildExt(build_ext):
             self.missing.append('ossaudiodev')
 
         if MACOS:
-            self.add(Extension('_scproxy', [],
+            self.add(Extension('_scproxy', ['_scproxy.c'],
                                extra_link_args=[
                                    '-framework', 'SystemConfiguration',
-                                   '-framework', 'CoreFoundation'],
-                               extra_objects=['Modules/_scproxy.o']))
+                                   '-framework', 'CoreFoundation']))
 
     def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.  Note that some versions of zlib

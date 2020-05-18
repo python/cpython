@@ -663,25 +663,6 @@ AC_PROG_SED
 
 AC_SUBST(CXX)
 AC_SUBST(MAINCC)
-
-if test "$ac_sys_system" = "Darwin"
-then
-	# MacOSX requires an Objective C compiler to
-	# build some Mac-specific code.
-	AC_PROG_OBJC
-	AC_PROG_OBJCXX
-	AC_SUBST(OBJC)
-	AC_SUBST(OBJCXX)
-	SCPROXY=
-	NOSCPROXY=#
-else
-	SCPROXY=#
-	NOSCPROXY=
-fi
-
-AC_SUBST(SCPROXY)
-AC_SUBST(NOSCPROXY)
-
 AC_MSG_CHECKING(for --with-cxx-main=<compiler>)
 AC_ARG_WITH(cxx_main,
             AS_HELP_STRING([--with-cxx-main@<:@=COMPILER@:>@],
