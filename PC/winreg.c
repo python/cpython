@@ -1382,8 +1382,8 @@ winreg_QueryInfoKey_impl(PyObject *module, HKEY key)
   PyObject *l;
   PyObject *ret;
 
-  if ((rc = RegQueryInfoKey(key, NULL, NULL, 0, &nSubKeys, NULL, NULL,
-                            &nValues,  NULL,  NULL, NULL, &ft))
+  if ((rc = RegQueryInfoKeyW(key, NULL, NULL, 0, &nSubKeys, NULL, NULL,
+                             &nValues,  NULL,  NULL, NULL, &ft))
       != ERROR_SUCCESS)
     return PyErr_SetFromWindowsErrWithFunction(rc, "RegQueryInfoKey");
   li.LowPart = ft.dwLowDateTime;
