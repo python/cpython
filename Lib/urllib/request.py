@@ -234,6 +234,12 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
     Returns a tuple containing the path to the newly created
     data file as well as the resulting HTTPMessage object.
     """
+    warnings.warn(
+        "urlretrieve() is deprecated and will be removed in a future version.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+
     url_type, path = _splittype(url)
 
     with contextlib.closing(urlopen(url, data)) as fp:
@@ -283,6 +289,12 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
 
 def urlcleanup():
     """Clean up temporary files from urlretrieve calls."""
+    warnings.warn(
+        "urlcleanup() is deprecated and will be removed in a future version.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+
     for temp_file in _url_tempfiles:
         try:
             os.unlink(temp_file)

@@ -16,11 +16,17 @@ except ImportError:
     ssl = None
 import sys
 import tempfile
+import warnings
 from nturl2path import url2pathname, pathname2url
 
 from base64 import b64encode
 import collections
 
+
+def urlcleanup():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        urllib.request.urlcleanup()
 
 def hexescape(char):
     """Escape char as RFC 2396 specifies"""
@@ -609,7 +615,7 @@ class urlopen_DataTests(unittest.TestCase):
 
     def setUp(self):
         # clear _opener global variable
-        self.addCleanup(urllib.request.urlcleanup)
+        self.addCleanup(urlcleanup)
 
         # text containing URL special- and unicode-characters
         self.text = "test data URLs :;,%=& \u00f6 \u00c4 "
@@ -686,7 +692,7 @@ class urlretrieve_FileTests(unittest.TestCase):
 
     def setUp(self):
         # clear _opener global variable
-        self.addCleanup(urllib.request.urlcleanup)
+        self.addCleanup(urlcleanup)
 
         # Create a list of temporary files. Each item in the list is a file
         # name (absolute path or relative to the current working directory).
@@ -744,7 +750,8 @@ class urlretrieve_FileTests(unittest.TestCase):
     def test_basic(self):
         # Make sure that a local file just gets its own location returned and
         # a headers value is returned.
-        result = urllib.request.urlretrieve("file:%s" % support.TESTFN)
+        with self.assertWarns(DeprecationWarning):
+            result = urllib.request.urlretrieve("file:%s" % support.TESTFN)
         self.assertEqual(result[0], support.TESTFN)
         self.assertIsInstance(result[1], email.message.Message,
                               "did not get an email.message.Message instance "
@@ -754,8 +761,9 @@ class urlretrieve_FileTests(unittest.TestCase):
         # Test that setting the filename argument works.
         second_temp = "%s.2" % support.TESTFN
         self.registerFileForCleanUp(second_temp)
-        result = urllib.request.urlretrieve(self.constructLocalFileUrl(
-            support.TESTFN), second_temp)
+        with self.assertWarns(DeprecationWarning):
+            result = urllib.request.urlretrieve(self.constructLocalFileUrl(
+                support.TESTFN), second_temp)
         self.assertEqual(second_temp, result[0])
         self.assertTrue(os.path.exists(second_temp), "copy of the file was not "
                                                   "made")
@@ -778,9 +786,10 @@ class urlretrieve_FileTests(unittest.TestCase):
             count_holder[0] = count_holder[0] + 1
         second_temp = "%s.2" % support.TESTFN
         self.registerFileForCleanUp(second_temp)
-        urllib.request.urlretrieve(
-            self.constructLocalFileUrl(support.TESTFN),
-            second_temp, hooktester)
+        with self.assertWarns(DeprecationWarning):
+            urllib.request.urlretrieve(
+                self.constructLocalFileUrl(support.TESTFN),
+                second_temp, hooktester)
 
     def test_reporthook_0_bytes(self):
         # Test on zero length file. Should call reporthook only 1 time.
@@ -788,8 +797,9 @@ class urlretrieve_FileTests(unittest.TestCase):
         def hooktester(block_count, block_read_size, file_size, _report=report):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile()
-        urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+        with self.assertWarns(DeprecationWarning):
+            urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
+                support.TESTFN, hooktester)
         self.assertEqual(len(report), 1)
         self.assertEqual(report[0][2], 0)
 
@@ -801,8 +811,9 @@ class urlretrieve_FileTests(unittest.TestCase):
         def hooktester(block_count, block_read_size, file_size, _report=report):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile(b"x" * 5)
-        urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+        with self.assertWarns(DeprecationWarning):
+            urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
+                support.TESTFN, hooktester)
         self.assertEqual(len(report), 2)
         self.assertEqual(report[0][2], 5)
         self.assertEqual(report[1][2], 5)
@@ -828,7 +839,7 @@ class urlretrieve_HttpTests(unittest.TestCase, FakeHTTPMixin):
     """Test urllib.urlretrieve() using fake http connections"""
 
     def test_short_content_raises_ContentTooShortError(self):
-        self.addCleanup(urllib.request.urlcleanup)
+        self.addCleanup(urlcleanup)
 
         self.fakehttp(b'''HTTP/1.1 200 OK
 Date: Wed, 02 Jan 2008 03:03:54 GMT
@@ -845,13 +856,14 @@ FF
 
         with self.assertRaises(urllib.error.ContentTooShortError):
             try:
-                urllib.request.urlretrieve(support.TEST_HTTP_URL,
-                                           reporthook=_reporthook)
+                with self.assertWarns(DeprecationWarning):
+                    urllib.request.urlretrieve(support.TEST_HTTP_URL,
+                                            reporthook=_reporthook)
             finally:
                 self.unfakehttp()
 
     def test_short_content_raises_ContentTooShortError_without_reporthook(self):
-        self.addCleanup(urllib.request.urlcleanup)
+        self.addCleanup(urlcleanup)
 
         self.fakehttp(b'''HTTP/1.1 200 OK
 Date: Wed, 02 Jan 2008 03:03:54 GMT
@@ -864,7 +876,8 @@ FF
 ''')
         with self.assertRaises(urllib.error.ContentTooShortError):
             try:
-                urllib.request.urlretrieve(support.TEST_HTTP_URL)
+                with self.assertWarns(DeprecationWarning):
+                    urllib.request.urlretrieve(support.TEST_HTTP_URL)
             finally:
                 self.unfakehttp()
 

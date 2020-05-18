@@ -1349,6 +1349,8 @@ some point in the future.
 
 .. function:: urlretrieve(url, filename=None, reporthook=None, data=None)
 
+   .. deprecated:: 3.10
+
    Copy a network object denoted by a URL to a local file. If the URL
    points to a local file, the object will not be copied unless filename is supplied.
    Return a tuple ``(filename, headers)`` where *filename* is the
@@ -1395,6 +1397,8 @@ some point in the future.
    to assume that the download was successful.
 
 .. function:: urlcleanup()
+
+   .. deprecated:: 3.10
 
    Cleans up temporary files that may have been left behind by previous
    calls to :func:`urlretrieve`.

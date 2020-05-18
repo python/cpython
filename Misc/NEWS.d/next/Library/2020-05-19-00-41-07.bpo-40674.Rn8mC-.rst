@@ -1,0 +1,2 @@
+:func:`urllib.request.urlretrieve()` and :func:`urllib.request.urlcleanup()`
+are now deprecated.

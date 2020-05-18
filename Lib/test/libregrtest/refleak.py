@@ -220,7 +220,9 @@ def clear_caches():
     except KeyError:
         pass
     else:
-        urllib_request.urlcleanup()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            urllib_request.urlcleanup()
 
     try:
         linecache = sys.modules['linecache']
