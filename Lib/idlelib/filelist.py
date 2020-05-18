@@ -71,18 +71,16 @@ class FileList:
         if not self.inversedict:
             try:
                 clip = self.root.clipboard_get().encode('utf-16')
-                if clip and sys.platform[:3] == 'win' and \
-                   len(clip) <= io.DEFAULT_BUFFER_SIZE:
-                    # Avoid exceeding the pipe bufsize.
-                    with subprocess.Popen('clip', shell=True,
-                                          stdin=subprocess.PIPE).stdin as p:
-                        p.write(clip)
-                        # Popen '.communicate' & '.__exit__' call '.wait'.
-            except (OSError, TclError):
-                # 'TclError's are due to an empty clipboard.
-                pass
-            finally:
-                self.root.quit()
+            except TclError:
+                clip = ''
+            if (clip and sys.platform[:3] == 'win'
+                and len(clip) <= io.DEFAULT_BUFFER_SIZE):
+                # Avoid exceeding the pipe bufsize.
+                with subprocess.Popen('clip', stdin=subprocess.PIPE
+                                     ).stdin as p:
+                    p.write(clip)
+                    # Popen '.communicate' & '.__exit__' call '.wait'.
+            self.root.quit()
 
     def filename_changed_edit(self, edit):
         edit.saved_change_hook()
