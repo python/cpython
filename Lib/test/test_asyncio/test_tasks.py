@@ -564,8 +564,8 @@ class BaseTaskTests:
     def test_cancel_with_message_then_future_result(self):
         # Test Future.result() after calling cancel() with a message.
         cases = [
-            ((), ('',)),
-            ((None,), ('',)),
+            ((), ()),
+            ((None,), ()),
             (('my message',), ('my message',)),
             # Non-string values should roundtrip.
             ((5,), (5,)),
@@ -589,7 +589,7 @@ class BaseTaskTests:
                 with self.assertRaises(asyncio.CancelledError) as cm:
                     loop.run_until_complete(task)
                 exc = cm.exception
-                self.assertEqual(exc.args, ('',))
+                self.assertEqual(exc.args, ())
 
                 actual = get_innermost_context(exc)
                 self.assertEqual(actual,
@@ -598,8 +598,8 @@ class BaseTaskTests:
     def test_cancel_with_message_then_future_exception(self):
         # Test Future.exception() after calling cancel() with a message.
         cases = [
-            ((), ('',)),
-            ((None,), ('',)),
+            ((), ()),
+            ((None,), ()),
             (('my message',), ('my message',)),
             # Non-string values should roundtrip.
             ((5,), (5,)),
@@ -623,7 +623,7 @@ class BaseTaskTests:
                 with self.assertRaises(asyncio.CancelledError) as cm:
                     loop.run_until_complete(task)
                 exc = cm.exception
-                self.assertEqual(exc.args, ('',))
+                self.assertEqual(exc.args, ())
 
                 actual = get_innermost_context(exc)
                 self.assertEqual(actual,
@@ -647,7 +647,7 @@ class BaseTaskTests:
         with self.assertRaises(asyncio.CancelledError) as cm:
             loop.run_until_complete(task)
         exc = cm.exception
-        self.assertEqual(exc.args, ('',))
+        self.assertEqual(exc.args, ())
 
         actual = get_innermost_context(exc)
         self.assertEqual(actual,
@@ -2479,8 +2479,8 @@ class BaseTaskTests:
 
     def test_cancel_gather_2(self):
         cases = [
-            ((), ('',)),
-            ((None,), ('',)),
+            ((), ()),
+            ((None,), ()),
             (('my message',), ('my message',)),
             # Non-string values should roundtrip.
             ((5,), (5,)),
@@ -2509,7 +2509,7 @@ class BaseTaskTests:
                 try:
                     loop.run_until_complete(main())
                 except asyncio.CancelledError as exc:
-                    self.assertEqual(exc.args, ('',))
+                    self.assertEqual(exc.args, ())
                     exc_type, exc_args, depth = get_innermost_context(exc)
                     self.assertEqual((exc_type, exc_args),
                         (asyncio.CancelledError, expected_args))
