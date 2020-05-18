@@ -10,6 +10,7 @@ import random
 import re
 import sys
 import textwrap
+import traceback
 import types
 import unittest
 import weakref
@@ -55,6 +56,22 @@ def format_coroutine(qualname, state, src, source_traceback, generator=False):
                 % (qualname, state, src, frame[0], frame[1]))
     else:
         return 'coro=<%s() %s at %s>' % (qualname, state, src)
+
+
+def get_innermost_context(exc):
+    """
+    Return information about the innermost exception context in the chain.
+    """
+    depth = 0
+    while True:
+        context = exc.__context__
+        if context is None:
+            break
+
+        exc = context
+        depth += 1
+
+    return (type(exc), exc.args, depth)
 
 
 class Dummy:
@@ -111,9 +128,10 @@ class BaseTaskTests:
         self.assertEqual(t._cancel_message, None)
 
         t.cancel('my message')
+        self.assertEqual(t._cancel_message, 'my message')
+
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(t)
-        self.assertEqual(t._cancel_message, 'my message')
 
     def test_task_cancel_message_setter(self):
         async def coro():
@@ -123,10 +141,8 @@ class BaseTaskTests:
         t._cancel_message = 'my new message'
         self.assertEqual(t._cancel_message, 'my new message')
 
-        # Also check that the value is used for cancel().
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(t)
-        self.assertEqual(t._cancel_message, 'my new message')
 
     def test_task_del_collect(self):
         class Evil:
@@ -548,8 +564,8 @@ class BaseTaskTests:
     def test_cancel_with_message_then_future_result(self):
         # Test Future.result() after calling cancel() with a message.
         cases = [
-            ((), ('',)),
-            ((None,), ('',)),
+            ((), ()),
+            ((None,), ()),
             (('my message',), ('my message',)),
             # Non-string values should roundtrip.
             ((5,), (5,)),
@@ -573,13 +589,17 @@ class BaseTaskTests:
                 with self.assertRaises(asyncio.CancelledError) as cm:
                     loop.run_until_complete(task)
                 exc = cm.exception
-                self.assertEqual(exc.args, expected_args)
+                self.assertEqual(exc.args, ())
+
+                actual = get_innermost_context(exc)
+                self.assertEqual(actual,
+                    (asyncio.CancelledError, expected_args, 2))
 
     def test_cancel_with_message_then_future_exception(self):
         # Test Future.exception() after calling cancel() with a message.
         cases = [
-            ((), ('',)),
-            ((None,), ('',)),
+            ((), ()),
+            ((None,), ()),
             (('my message',), ('my message',)),
             # Non-string values should roundtrip.
             ((5,), (5,)),
@@ -603,7 +623,11 @@ class BaseTaskTests:
                 with self.assertRaises(asyncio.CancelledError) as cm:
                     loop.run_until_complete(task)
                 exc = cm.exception
-                self.assertEqual(exc.args, expected_args)
+                self.assertEqual(exc.args, ())
+
+                actual = get_innermost_context(exc)
+                self.assertEqual(actual,
+                    (asyncio.CancelledError, expected_args, 2))
 
     def test_cancel_with_message_before_starting_task(self):
         loop = asyncio.new_event_loop()
@@ -623,7 +647,11 @@ class BaseTaskTests:
         with self.assertRaises(asyncio.CancelledError) as cm:
             loop.run_until_complete(task)
         exc = cm.exception
-        self.assertEqual(exc.args, ('my message',))
+        self.assertEqual(exc.args, ())
+
+        actual = get_innermost_context(exc)
+        self.assertEqual(actual,
+            (asyncio.CancelledError, ('my message',), 2))
 
     def test_cancel_yield(self):
         with self.assertWarns(DeprecationWarning):
@@ -804,6 +832,66 @@ class BaseTaskTests:
         self.assertTrue(task.cancelled())
         self.assertTrue(nested_task.cancelled())
         self.assertTrue(fut.cancelled())
+
+    def assert_text_contains(self, text, substr):
+        if substr not in text:
+            raise RuntimeError(f'text {substr!r} not found in:\n>>>{text}<<<')
+
+    def test_cancel_traceback_for_future_result(self):
+        # When calling Future.result() on a cancelled task, check that the
+        # line of code that was interrupted is included in the traceback.
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+
+        async def nested():
+            # This will get cancelled immediately.
+            await asyncio.sleep(10)
+
+        async def coro():
+            task = self.new_task(loop, nested())
+            await asyncio.sleep(0)
+            task.cancel()
+            await task  # search target
+
+        task = self.new_task(loop, coro())
+        try:
+            loop.run_until_complete(task)
+        except asyncio.CancelledError:
+            tb = traceback.format_exc()
+            self.assert_text_contains(tb, "await asyncio.sleep(10)")
+            # The intermediate await should also be included.
+            self.assert_text_contains(tb, "await task  # search target")
+        else:
+            self.fail('CancelledError did not occur')
+
+    def test_cancel_traceback_for_future_exception(self):
+        # When calling Future.exception() on a cancelled task, check that the
+        # line of code that was interrupted is included in the traceback.
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+
+        async def nested():
+            # This will get cancelled immediately.
+            await asyncio.sleep(10)
+
+        async def coro():
+            task = self.new_task(loop, nested())
+            await asyncio.sleep(0)
+            task.cancel()
+            done, pending = await asyncio.wait([task])
+            task.exception()  # search target
+
+        task = self.new_task(loop, coro())
+        try:
+            loop.run_until_complete(task)
+        except asyncio.CancelledError:
+            tb = traceback.format_exc()
+            self.assert_text_contains(tb, "await asyncio.sleep(10)")
+            # The intermediate await should also be included.
+            self.assert_text_contains(tb,
+                "task.exception()  # search target")
+        else:
+            self.fail('CancelledError did not occur')
 
     def test_stop_while_run_in_complete(self):
 
@@ -2391,15 +2479,14 @@ class BaseTaskTests:
 
     def test_cancel_gather_2(self):
         cases = [
-            ((), ('',)),
-            ((None,), ('',)),
+            ((), ()),
+            ((None,), ()),
             (('my message',), ('my message',)),
             # Non-string values should roundtrip.
             ((5,), (5,)),
         ]
         for cancel_args, expected_args in cases:
             with self.subTest(cancel_args=cancel_args):
-
                 loop = asyncio.new_event_loop()
                 self.addCleanup(loop.close)
 
@@ -2417,15 +2504,20 @@ class BaseTaskTests:
                     qwe = self.new_task(loop, test())
                     await asyncio.sleep(0.2)
                     qwe.cancel(*cancel_args)
-                    try:
-                        await qwe
-                    except asyncio.CancelledError as exc:
-                        self.assertEqual(exc.args, expected_args)
-                    else:
-                        self.fail('gather did not propagate the cancellation '
-                                  'request')
+                    await qwe
 
-                loop.run_until_complete(main())
+                try:
+                    loop.run_until_complete(main())
+                except asyncio.CancelledError as exc:
+                    self.assertEqual(exc.args, ())
+                    exc_type, exc_args, depth = get_innermost_context(exc)
+                    self.assertEqual((exc_type, exc_args),
+                        (asyncio.CancelledError, expected_args))
+                    # The exact traceback seems to vary in CI.
+                    self.assertIn(depth, (2, 3))
+                else:
+                    self.fail('gather did not propagate the cancellation '
+                              'request')
 
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843

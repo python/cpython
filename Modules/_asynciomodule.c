@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include <stddef.h>               // offsetof()
 
 
@@ -72,7 +73,8 @@ typedef enum {
     int prefix##_log_tb;                                                    \
     int prefix##_blocking;                                                  \
     PyObject *dict;                                                         \
-    PyObject *prefix##_weakreflist;
+    PyObject *prefix##_weakreflist;                                         \
+    _PyErr_StackItem prefix##_cancelled_exc_state;
 
 typedef struct {
     FutureObj_HEAD(fut)
@@ -482,6 +484,7 @@ future_init(FutureObj *fut, PyObject *loop)
     Py_CLEAR(fut->fut_exception);
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
+    _PyErr_ClearExcState(&fut->fut_cancelled_exc_state);
 
     fut->fut_state = STATE_PENDING;
     fut->fut_log_tb = 0;
@@ -601,9 +604,7 @@ create_cancelled_error(PyObject *msg)
 {
     PyObject *exc;
     if (msg == NULL || msg == Py_None) {
-        msg = PyUnicode_FromString("");
-        exc = PyObject_CallOneArg(asyncio_CancelledError, msg);
-        Py_DECREF(msg);
+        exc = PyObject_CallNoArgs(asyncio_CancelledError);
     } else {
         exc = PyObject_CallOneArg(asyncio_CancelledError, msg);
     }
@@ -623,6 +624,7 @@ future_get_result(FutureObj *fut, PyObject **result)
 {
     if (fut->fut_state == STATE_CANCELLED) {
         set_cancelled_error(fut->fut_cancel_msg);
+        _PyErr_ChainStackItem(&fut->fut_cancelled_exc_state);
         return -1;
     }
 
@@ -777,6 +779,7 @@ FutureObj_clear(FutureObj *fut)
     Py_CLEAR(fut->fut_exception);
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
+    _PyErr_ClearExcState(&fut->fut_cancelled_exc_state);
     Py_CLEAR(fut->dict);
     return 0;
 }
@@ -793,6 +796,12 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->dict);
+
+    _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
+    Py_VISIT(exc_state->exc_type);
+    Py_VISIT(exc_state->exc_value);
+    Py_VISIT(exc_state->exc_traceback);
+
     return 0;
 }
 
@@ -858,6 +867,7 @@ _asyncio_Future_exception_impl(FutureObj *self)
 
     if (self->fut_state == STATE_CANCELLED) {
         set_cancelled_error(self->fut_cancel_msg);
+        _PyErr_ChainStackItem(&self->fut_cancelled_exc_state);
         return NULL;
     }
 
@@ -1336,6 +1346,29 @@ FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
 }
 
 /*[clinic input]
+_asyncio.Future._make_cancelled_error
+
+Create the CancelledError to raise if the Future is cancelled.
+
+This should only be called once when handling a cancellation since
+it erases the context exception value.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Future__make_cancelled_error_impl(FutureObj *self)
+/*[clinic end generated code: output=a5df276f6c1213de input=ac6effe4ba795ecc]*/
+{
+    PyObject *exc = create_cancelled_error(self->fut_cancel_msg);
+    _PyErr_StackItem *exc_state = &self->fut_cancelled_exc_state;
+    /* Transfer ownership of exc_value from exc_state to exc since we are
+       done with it. */
+    PyException_SetContext(exc, exc_state->exc_value);
+    exc_state->exc_value = NULL;
+
+    return exc;
+}
+
+/*[clinic input]
 _asyncio.Future._repr_info
 [clinic start generated code]*/
 
@@ -1461,6 +1494,7 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_CANCELLED_METHODDEF
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
+    _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF
     _ASYNCIO_FUTURE__REPR_INFO_METHODDEF
     {"__class_getitem__", future_cls_getitem, METH_O|METH_CLASS, NULL},
     {NULL, NULL}        /* Sentinel */
@@ -2233,6 +2267,24 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
 }
 
 /*[clinic input]
+_asyncio.Task._make_cancelled_error
+
+Create the CancelledError to raise if the Task is cancelled.
+
+This should only be called once when handling a cancellation since
+it erases the context exception value.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task__make_cancelled_error_impl(TaskObj *self)
+/*[clinic end generated code: output=55a819e8b4276fab input=52c0e32de8e2f840]*/
+{
+    FutureObj *fut = (FutureObj*)self;
+    return _asyncio_Future__make_cancelled_error_impl(fut);
+}
+
+
+/*[clinic input]
 _asyncio.Task._repr_info
 [clinic start generated code]*/
 
@@ -2539,6 +2591,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_CANCEL_METHODDEF
     _ASYNCIO_TASK_GET_STACK_METHODDEF
     _ASYNCIO_TASK_PRINT_STACK_METHODDEF
+    _ASYNCIO_TASK__MAKE_CANCELLED_ERROR_METHODDEF
     _ASYNCIO_TASK__REPR_INFO_METHODDEF
     _ASYNCIO_TASK_GET_NAME_METHODDEF
     _ASYNCIO_TASK_SET_NAME_METHODDEF
@@ -2754,24 +2807,13 @@ task_step_impl(TaskObj *task, PyObject *exc)
             /* CancelledError */
             PyErr_Fetch(&et, &ev, &tb);
 
-            PyObject *cancel_msg;
-            if (ev != NULL && PyExceptionInstance_Check(ev)) {
-                PyObject *exc_args = ((PyBaseExceptionObject*)ev)->args;
-                Py_ssize_t size = PyTuple_GET_SIZE(exc_args);
-                if (size > 0) {
-                    cancel_msg = PyTuple_GET_ITEM(exc_args, 0);
-                } else {
-                    cancel_msg = NULL;
-                }
-            } else {
-                cancel_msg = ev;
-            }
+            FutureObj *fut = (FutureObj*)task;
+            _PyErr_StackItem *exc_state = &fut->fut_cancelled_exc_state;
+            exc_state->exc_type = et;
+            exc_state->exc_value = ev;
+            exc_state->exc_traceback = tb;
 
-            Py_DECREF(et);
-            Py_XDECREF(tb);
-            Py_XDECREF(ev);
-
-            return future_cancel((FutureObj*)task, cancel_msg);
+            return future_cancel(fut, NULL);
         }
 
         /* Some other exception; pop it and call Task.set_exception() */

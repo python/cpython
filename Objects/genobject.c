@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "structmember.h"         // PyMemberDef
@@ -99,21 +100,6 @@ _PyGen_Finalize(PyObject *self)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
-static inline void
-exc_state_clear(_PyErr_StackItem *exc_state)
-{
-    PyObject *t, *v, *tb;
-    t = exc_state->exc_type;
-    v = exc_state->exc_value;
-    tb = exc_state->exc_traceback;
-    exc_state->exc_type = NULL;
-    exc_state->exc_value = NULL;
-    exc_state->exc_traceback = NULL;
-    Py_XDECREF(t);
-    Py_XDECREF(v);
-    Py_XDECREF(tb);
-}
-
 static void
 gen_dealloc(PyGenObject *gen)
 {
@@ -146,7 +132,7 @@ gen_dealloc(PyGenObject *gen)
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
-    exc_state_clear(&gen->gi_exc_state);
+    _PyErr_ClearExcState(&gen->gi_exc_state);
     PyObject_GC_Del(gen);
 }
 
@@ -286,7 +272,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     if (!result || f->f_stacktop == NULL) {
         /* generator can't be rerun, so release the frame */
         /* first clean reference cycle through stored exception traceback */
-        exc_state_clear(&gen->gi_exc_state);
+        _PyErr_ClearExcState(&gen->gi_exc_state);
         gen->gi_frame->f_gen = NULL;
         gen->gi_frame = NULL;
         Py_DECREF(f);

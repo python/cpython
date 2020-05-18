@@ -853,7 +853,8 @@ class PyBuildExt(build_ext):
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
-        self.add(Extension("_asyncio", ["_asynciomodule.c"]))
+        self.add(Extension("_asyncio", ["_asynciomodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _abc speedups
         self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
