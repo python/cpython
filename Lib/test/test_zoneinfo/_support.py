@@ -66,11 +66,35 @@ class ZoneInfoTestBase(unittest.TestCase):
         super().setUpClass()
 
     @contextlib.contextmanager
-    def tzpath_context(self, tzpath, lock=TZPATH_LOCK):
+    def tzpath_context(self, tzpath, block_tzdata=True, lock=TZPATH_LOCK):
+        def pop_tzdata_modules():
+            tzdata_modules = {}
+            for modname in list(sys.modules):
+                if modname.split(".", 1)[0] != "tzdata":  # pragma: nocover
+                    continue
+
+                tzdata_modules[modname] = sys.modules.pop(modname)
+
+            return tzdata_modules
+
         with lock:
+            if block_tzdata:
+                # In order to fully exclude tzdata from the path, we need to
+                # clear the sys.modules cache of all its contents — setting the
+                # root package to None is not enough to block direct access of
+                # already-imported submodules (though it will prevent new
+                # imports of submodules).
+                tzdata_modules = pop_tzdata_modules()
+                sys.modules["tzdata"] = None
+
             old_path = self.module.TZPATH
             try:
                 self.module.reset_tzpath(tzpath)
                 yield
             finally:
+                if block_tzdata:
+                    sys.modules.pop("tzdata")
+                    for modname, module in tzdata_modules.items():
+                        sys.modules[modname] = module
+
                 self.module.reset_tzpath(old_path)
