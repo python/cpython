@@ -116,13 +116,21 @@ behavior of the module.
    is already known the extension will be added to the list of known extensions.
 
    When *strict* is ``True`` (the default), the mapping will be added to the
-   official MIME types, otherwise to the non-standard ones.
+   official MIME types and the new type will persist after subsequent calls
+   to :func:`init`.  If *strict* is ``False``, the mapping will be added to the
+   to the non-standard MIME types and will be removed by subsequent calls to
+   :func:`init`.
 
 
 .. data:: inited
 
    Flag indicating whether or not the global data structures have been initialized.
    This is set to ``True`` by :func:`init`.
+
+   Note that if a module imports this attribute,
+   for example with ``from mimetypes import inited``,
+   the attribute in that module will not be updated
+   when :func:`init` is called.
 
 
 .. data:: knownfiles
