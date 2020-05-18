@@ -324,7 +324,11 @@ class UnparseTestCase(ASTTestCase):
             '\\t',
             '\n',
             '\\n',
-            '\r\\r\t\\t\n\\n'
+            '\r\\r\t\\t\n\\n',
+            '""">>> content = \"\"\"blabla\"\"\" <<<"""',
+            r'foo\n\x00',
+            '🐍⛎𩸽üéş^\X\BB\N{LONG RIGHTWARDS SQUIGGLE ARROW}'
+
         )
         for docstring in docstrings:
             # check as Module docstrings for easy testing
