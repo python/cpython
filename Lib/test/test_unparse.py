@@ -326,7 +326,7 @@ class UnparseTestCase(ASTTestCase):
             '\\n',
             '\r\\r\t\\t\n\\n',
             '""">>> content = \"\"\"blabla\"\"\" <<<"""',
-            r'foo\n\x00'
+            r'foo\n\x00',
             '🐍⛎𩸽üéş^\X\BB\N{LONG RIGHTWARDS SQUIGGLE ARROW}'
 
         )
