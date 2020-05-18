@@ -2580,13 +2580,14 @@ class SuppressCrashReport:
         else:
             try:
                 import resource
+                self.resource = resource
             except ImportError:
-                resource = None
-            if resource is not None:
+                self.resource = None
+            if self.resource is not None:
                 try:
-                    self.old_value = resource.getrlimit(resource.RLIMIT_CORE)
-                    resource.setrlimit(resource.RLIMIT_CORE,
-                                       (0, self.old_value[1]))
+                    self.old_value = self.resource.getrlimit(self.resource.RLIMIT_CORE)
+                    self.resource.setrlimit(self.resource.RLIMIT_CORE,
+                                            (0, self.old_value[1]))
                 except (ValueError, OSError):
                     pass
 
@@ -2624,13 +2625,9 @@ class SuppressCrashReport:
                     msvcrt.CrtSetReportMode(report_type, old_mode)
                     msvcrt.CrtSetReportFile(report_type, old_file)
         else:
-            try:
-                import resource
-            except ImportError:
-                resource = None
-            if resource is not None:
+            if self.resource is not None:
                 try:
-                    resource.setrlimit(resource.RLIMIT_CORE, self.old_value)
+                    self.resource.setrlimit(self.resource.RLIMIT_CORE, self.old_value)
                 except (ValueError, OSError):
                     pass
 
