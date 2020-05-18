@@ -531,27 +531,11 @@ def encodebytes(s):
         pieces.append(binascii.b2a_base64(chunk))
     return b"".join(pieces)
 
-def encodestring(s):
-    """Legacy alias of encodebytes()."""
-    import warnings
-    warnings.warn("encodestring() is a deprecated alias since 3.1, "
-                  "use encodebytes()",
-                  DeprecationWarning, 2)
-    return encodebytes(s)
-
 
 def decodebytes(s):
     """Decode a bytestring of base-64 data into a bytes object."""
     _input_type_check(s)
     return binascii.a2b_base64(s)
-
-def decodestring(s):
-    """Legacy alias of decodebytes()."""
-    import warnings
-    warnings.warn("decodestring() is a deprecated alias since Python 3.1, "
-                  "use decodebytes()",
-                  DeprecationWarning, 2)
-    return decodebytes(s)
 
 
 # Usable as a script...

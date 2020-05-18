@@ -1,2 +1,0 @@
-Correctly parenthesize filter-based statements that contain lambda
-expressions in mod:`lib2to3`. Patch by Dong-hee Na.

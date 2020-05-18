@@ -89,7 +89,7 @@ PyAPI_FUNC(void) _Py_DumpHexadecimal(
 
 PyAPI_FUNC(PyObject*) _PyTraceBack_FromFrame(
     PyObject *tb_next,
-    struct _frame *frame);
+    PyFrameObject *frame);
 
 #ifdef __cplusplus
 }

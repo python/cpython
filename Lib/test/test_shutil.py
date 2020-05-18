@@ -579,6 +579,48 @@ class TestCopyTree(BaseTest, unittest.TestCase):
             shutil.rmtree(src_dir)
             shutil.rmtree(os.path.dirname(dst_dir))
 
+    def test_copytree_arg_types_of_ignore(self):
+        join = os.path.join
+        exists = os.path.exists
+
+        tmp_dir = self.mkdtemp()
+        src_dir = join(tmp_dir, "source")
+
+        os.mkdir(join(src_dir))
+        os.mkdir(join(src_dir, 'test_dir'))
+        os.mkdir(os.path.join(src_dir, 'test_dir', 'subdir'))
+        write_file((src_dir, 'test_dir', 'subdir', 'test.txt'), '456')
+
+        invokations = []
+
+        def _ignore(src, names):
+            invokations.append(src)
+            self.assertIsInstance(src, str)
+            self.assertIsInstance(names, list)
+            self.assertEqual(len(names), len(set(names)))
+            for name in names:
+                self.assertIsInstance(name, str)
+            return []
+
+        dst_dir = join(self.mkdtemp(), 'destination')
+        shutil.copytree(src_dir, dst_dir, ignore=_ignore)
+        self.assertTrue(exists(join(dst_dir, 'test_dir', 'subdir',
+                                    'test.txt')))
+
+        dst_dir = join(self.mkdtemp(), 'destination')
+        shutil.copytree(pathlib.Path(src_dir), dst_dir, ignore=_ignore)
+        self.assertTrue(exists(join(dst_dir, 'test_dir', 'subdir',
+                                    'test.txt')))
+
+        dst_dir = join(self.mkdtemp(), 'destination')
+        src_dir_entry = list(os.scandir(tmp_dir))[0]
+        self.assertIsInstance(src_dir_entry, os.DirEntry)
+        shutil.copytree(src_dir_entry, dst_dir, ignore=_ignore)
+        self.assertTrue(exists(join(dst_dir, 'test_dir', 'subdir',
+                                    'test.txt')))
+
+        self.assertEqual(len(invokations), 9)
+
     def test_copytree_retains_permissions(self):
         tmp_dir = self.mkdtemp()
         src_dir = os.path.join(tmp_dir, 'source')
@@ -1624,12 +1666,17 @@ class TestMisc(BaseTest, unittest.TestCase):
         shutil.chown(dirname, group=gid)
         check_chown(dirname, gid=gid)
 
-        user = pwd.getpwuid(uid)[0]
-        group = grp.getgrgid(gid)[0]
-        shutil.chown(filename, user, group)
-        check_chown(filename, uid, gid)
-        shutil.chown(dirname, user, group)
-        check_chown(dirname, uid, gid)
+        try:
+            user = pwd.getpwuid(uid)[0]
+            group = grp.getgrgid(gid)[0]
+        except KeyError:
+            # On some systems uid/gid cannot be resolved.
+            pass
+        else:
+            shutil.chown(filename, user, group)
+            check_chown(filename, uid, gid)
+            shutil.chown(dirname, user, group)
+            check_chown(dirname, uid, gid)
 
 
 class TestWhich(BaseTest, unittest.TestCase):

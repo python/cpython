@@ -11,6 +11,7 @@ import errno
 import tempfile
 import time
 import traceback
+import types
 import selectors
 import sysconfig
 import select
@@ -682,7 +683,6 @@ class ProcessTestCase(BaseTestCase):
             # on adding even when the environment in exec is empty.
             # Gentoo sandboxes also force LD_PRELOAD and SANDBOX_* to exist.
             return ('VERSIONER' in n or '__CF' in n or  # MacOS
-                    '__PYVENV_LAUNCHER__' in n or # MacOS framework build
                     n == 'LD_PRELOAD' or n.startswith('SANDBOX') or # Gentoo
                     n == 'LC_CTYPE') # Locale coercion triggered
 
@@ -1436,8 +1436,8 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(c.exception.filename, '/some/nonexistent/directory')
 
     def test_class_getitems(self):
-        self.assertIs(subprocess.Popen[bytes], subprocess.Popen)
-        self.assertIs(subprocess.CompletedProcess[str], subprocess.CompletedProcess)
+        self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
+        self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
@@ -1791,7 +1791,12 @@ class POSIXProcessTestCase(BaseTestCase):
         name_uid = "nobody" if sys.platform != 'darwin' else "unknown"
 
         if pwd is not None:
-            test_users.append(name_uid)
+            try:
+                pwd.getpwnam(name_uid)
+                test_users.append(name_uid)
+            except KeyError:
+                # unknown user name
+                name_uid = None
 
         for user in test_users:
             # posix_spawn() may be used with close_fds=False
@@ -1819,7 +1824,7 @@ class POSIXProcessTestCase(BaseTestCase):
         with self.assertRaises(ValueError):
             subprocess.check_call(ZERO_RETURN_CMD, user=-1)
 
-        if pwd is None:
+        if pwd is None and name_uid is not None:
             with self.assertRaises(ValueError):
                 subprocess.check_call(ZERO_RETURN_CMD, user=name_uid)
 
@@ -3110,15 +3115,46 @@ class POSIXProcessTestCase(BaseTestCase):
         proc = subprocess.Popen(args)
 
         # Wait until the real process completes to avoid zombie process
-        pid = proc.pid
-        pid, status = os.waitpid(pid, 0)
-        self.assertEqual(status, 0)
+        support.wait_process(proc.pid, exitcode=0)
 
         status = _testcapi.W_STOPCODE(3)
-        with mock.patch('subprocess.os.waitpid', return_value=(pid, status)):
+        with mock.patch('subprocess.os.waitpid', return_value=(proc.pid, status)):
             returncode = proc.wait()
 
         self.assertEqual(returncode, -3)
+
+    def test_send_signal_race(self):
+        # bpo-38630: send_signal() must poll the process exit status to reduce
+        # the risk of sending the signal to the wrong process.
+        proc = subprocess.Popen(ZERO_RETURN_CMD)
+
+        # wait until the process completes without using the Popen APIs.
+        support.wait_process(proc.pid, exitcode=0)
+
+        # returncode is still None but the process completed.
+        self.assertIsNone(proc.returncode)
+
+        with mock.patch("os.kill") as mock_kill:
+            proc.send_signal(signal.SIGTERM)
+
+        # send_signal() didn't call os.kill() since the process already
+        # completed.
+        mock_kill.assert_not_called()
+
+        # Don't check the returncode value: the test reads the exit status,
+        # so Popen failed to read it and uses a default returncode instead.
+        self.assertIsNotNone(proc.returncode)
+
+    def test_communicate_repeated_call_after_stdout_close(self):
+        proc = subprocess.Popen([sys.executable, '-c',
+                                 'import os, time; os.close(1), time.sleep(2)'],
+                                stdout=subprocess.PIPE)
+        while True:
+            try:
+                proc.communicate(timeout=0.1)
+                return
+            except subprocess.TimeoutExpired:
+                pass
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

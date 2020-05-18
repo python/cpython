@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_pystate.h"   /* _PyRuntime.gc */
+#include "pycore_gc.h"         // _PyObject_GC_IS_TRACKED()
+#include "pycore_interp.h"     // PyInterpreterState.gc
+#include "pycore_pystate.h"    // _PyThreadState_GET()
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
@@ -76,6 +78,41 @@ static inline void _PyObject_GC_UNTRACK_impl(const char *filename, int lineno,
 
 #define _PyObject_GC_UNTRACK(op) \
     _PyObject_GC_UNTRACK_impl(__FILE__, __LINE__, _PyObject_CAST(op))
+
+#ifdef Py_REF_DEBUG
+extern void _PyDebug_PrintTotalRefs(void);
+#endif
+
+#ifdef Py_TRACE_REFS
+extern void _Py_AddToAllObjects(PyObject *op, int force);
+extern void _Py_PrintReferences(FILE *);
+extern void _Py_PrintReferenceAddresses(FILE *);
+#endif
+
+static inline PyObject **
+_PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
+{
+    Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
+    return (PyObject **)((char *)op + offset);
+}
+
+// Fast inlined version of PyType_HasFeature()
+static inline int
+_PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
+    return ((type->tp_flags & feature) != 0);
+}
+
+// Fast inlined version of PyObject_IS_GC()
+static inline int
+_PyObject_IS_GC(PyObject *obj)
+{
+    return (PyType_IS_GC(Py_TYPE(obj))
+            && (Py_TYPE(obj)->tp_is_gc == NULL
+                || Py_TYPE(obj)->tp_is_gc(obj)));
+}
+
+// Fast inlined version of PyType_IS_GC()
+#define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
 #ifdef __cplusplus
 }

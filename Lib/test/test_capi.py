@@ -13,6 +13,8 @@ import threading
 import time
 import unittest
 import weakref
+import importlib.machinery
+import importlib.util
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support.script_helper import assert_python_failure, assert_python_ok
@@ -23,6 +25,8 @@ except ImportError:
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = support.import_module('_testcapi')
+
+import _testinternalcapi
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
@@ -61,8 +65,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
         self.assertTrue(err.rstrip().startswith(
-                         b'Fatal Python error:'
-                         b' PyThreadState_Get: no current thread'))
+                         b'Fatal Python error: '
+                         b'PyThreadState_Get: '
+                         b'current thread state is NULL (released GIL?)'))
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
@@ -197,7 +202,8 @@ class CAPITest(unittest.TestCase):
             """)
             rc, out, err = assert_python_failure('-c', code)
             self.assertRegex(err.replace(b'\r', b''),
-                             br'Fatal Python error: a function returned NULL '
+                             br'Fatal Python error: _Py_CheckFunctionResult: '
+                                br'a function returned NULL '
                                 br'without setting an error\n'
                              br'Python runtime state: initialized\n'
                              br'SystemError: <built-in function '
@@ -225,8 +231,9 @@ class CAPITest(unittest.TestCase):
             """)
             rc, out, err = assert_python_failure('-c', code)
             self.assertRegex(err.replace(b'\r', b''),
-                             br'Fatal Python error: a function returned a '
-                                br'result with an error set\n'
+                             br'Fatal Python error: _Py_CheckFunctionResult: '
+                                 br'a function returned a result '
+                                 br'with an error set\n'
                              br'Python runtime state: initialized\n'
                              br'ValueError\n'
                              br'\n'
@@ -500,6 +507,20 @@ class CAPITest(unittest.TestCase):
         # Test that subtype_dealloc decref the newly assigned __class__ only once
         self.assertEqual(new_type_refcnt, sys.getrefcount(_testcapi.HeapCTypeSubclass))
 
+    def test_pynumber_tobase(self):
+        from _testcapi import pynumber_tobase
+        self.assertEqual(pynumber_tobase(123, 2), '0b1111011')
+        self.assertEqual(pynumber_tobase(123, 8), '0o173')
+        self.assertEqual(pynumber_tobase(123, 10), '123')
+        self.assertEqual(pynumber_tobase(123, 16), '0x7b')
+        self.assertEqual(pynumber_tobase(-123, 2), '-0b1111011')
+        self.assertEqual(pynumber_tobase(-123, 8), '-0o173')
+        self.assertEqual(pynumber_tobase(-123, 10), '-123')
+        self.assertEqual(pynumber_tobase(-123, 16), '-0x7b')
+        self.assertRaises(TypeError, pynumber_tobase, 123.0, 10)
+        self.assertRaises(TypeError, pynumber_tobase, '123', 10)
+        self.assertRaises(SystemError, pynumber_tobase, 123, 0)
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -641,6 +662,12 @@ class Test_testcapi(unittest.TestCase):
                     if name.startswith('test_') and not name.endswith('_code'))
 
 
+class Test_testinternalcapi(unittest.TestCase):
+    locals().update((name, getattr(_testinternalcapi, name))
+                    for name in dir(_testinternalcapi)
+                    if name.startswith('test_'))
+
+
 class PyMemDebugTests(unittest.TestCase):
     PYTHONMALLOC = 'debug'
     # '0x04c06e0' or '04C06E0'
@@ -668,7 +695,7 @@ class PyMemDebugTests(unittest.TestCase):
                  r"\n"
                  r"Enable tracemalloc to get the memory block allocation traceback\n"
                  r"\n"
-                 r"Fatal Python error: bad trailing pad byte")
+                 r"Fatal Python error: _PyMem_DebugRawFree: bad trailing pad byte")
         regex = regex.format(ptr=self.PTR_REGEX)
         regex = re.compile(regex, flags=re.DOTALL)
         self.assertRegex(out, regex)
@@ -684,14 +711,14 @@ class PyMemDebugTests(unittest.TestCase):
                  r"\n"
                  r"Enable tracemalloc to get the memory block allocation traceback\n"
                  r"\n"
-                 r"Fatal Python error: bad ID: Allocated using API 'm', verified using API 'r'\n")
+                 r"Fatal Python error: _PyMem_DebugRawFree: bad ID: Allocated using API 'm', verified using API 'r'\n")
         regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
 
     def check_malloc_without_gil(self, code):
         out = self.check(code)
-        expected = ('Fatal Python error: Python memory allocator called '
-                    'without holding the GIL')
+        expected = ('Fatal Python error: _PyMem_DebugMalloc: '
+                    'Python memory allocator called without holding the GIL')
         self.assertIn(expected, out)
 
     def test_pymem_malloc_without_gil(self):
@@ -747,6 +774,77 @@ class PyMemPymallocDebugTests(PyMemDebugTests):
 class PyMemDefaultTests(PyMemDebugTests):
     # test default allocator of Python compiled in debug mode
     PYTHONMALLOC = ''
+
+
+class Test_ModuleStateAccess(unittest.TestCase):
+    """Test access to module start (PEP 573)"""
+
+    # The C part of the tests lives in _testmultiphase, in a module called
+    # _testmultiphase_meth_state_access.
+    # This module has multi-phase initialization, unlike _testcapi.
+
+    def setUp(self):
+        fullname = '_testmultiphase_meth_state_access'  # XXX
+        origin = importlib.util.find_spec('_testmultiphase').origin
+        loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+        spec = importlib.util.spec_from_loader(fullname, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        self.module = module
+
+    def test_subclass_get_module(self):
+        """PyType_GetModule for defining_class"""
+        class StateAccessType_Subclass(self.module.StateAccessType):
+            pass
+
+        instance = StateAccessType_Subclass()
+        self.assertIs(instance.get_defining_module(), self.module)
+
+    def test_subclass_get_module_with_super(self):
+        class StateAccessType_Subclass(self.module.StateAccessType):
+            def get_defining_module(self):
+                return super().get_defining_module()
+
+        instance = StateAccessType_Subclass()
+        self.assertIs(instance.get_defining_module(), self.module)
+
+    def test_state_access(self):
+        """Checks methods defined with and without argument clinic
+
+        This tests a no-arg method (get_count) and a method with
+        both a positional and keyword argument.
+        """
+
+        a = self.module.StateAccessType()
+        b = self.module.StateAccessType()
+
+        methods = {
+            'clinic': a.increment_count_clinic,
+            'noclinic': a.increment_count_noclinic,
+        }
+
+        for name, increment_count in methods.items():
+            with self.subTest(name):
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 0)
+
+                increment_count()
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 1)
+
+                increment_count(3)
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 4)
+
+                increment_count(-2, twice=True)
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 0)
+
+                with self.assertRaises(TypeError):
+                    increment_count(thrice=3)
+
+                with self.assertRaises(TypeError):
+                    increment_count(1, 2, 3)
 
 
 if __name__ == "__main__":

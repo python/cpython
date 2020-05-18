@@ -81,8 +81,6 @@ PyAPI_FUNC(int) PyImport_ImportFrozenModule(
     const char *name            /* UTF-8 encoded string */
     );
 
-PyAPI_DATA(PyTypeObject) PyNullImporter_Type;
-
 PyAPI_FUNC(int) PyImport_AppendInittab(
     const char *name,           /* ASCII encoded string */
     PyObject* (*initfunc)(void)

@@ -1,24 +1,26 @@
 #include "Python.h"
-#include "osdefs.h"       /* DELIM */
-#include "pycore_fileutils.h"
-#include "pycore_getopt.h"
-#include "pycore_initconfig.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"   /* _PyRuntime */
-#include <locale.h>       /* setlocale() */
+#include "pycore_fileutils.h"     // _Py_HasFileSystemDefaultEncodeErrors
+#include "pycore_getopt.h"        // _PyOS_GetOpt()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp.h"        // _PyInterpreterState.runtime
+#include "pycore_pathconfig.h"    // _Py_path_config
+#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
+#include "osdefs.h"               // DELIM
+#include <locale.h>               // setlocale()
 #ifdef HAVE_LANGINFO_H
-#  include <langinfo.h>   /* nl_langinfo(CODESET) */
+#  include <langinfo.h>           // nl_langinfo(CODESET)
 #endif
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
-#  include <windows.h>    /* GetACP() */
+#  include <windows.h>            // GetACP()
 #  ifdef HAVE_IO_H
 #    include <io.h>
 #  endif
 #  ifdef HAVE_FCNTL_H
-#    include <fcntl.h>    /* O_BINARY */
+#    include <fcntl.h>            // O_BINARY
 #  endif
 #endif
 
@@ -63,7 +65,36 @@ static const char usage_3[] = "\
 -W arg : warning control; arg is action:message:category:module:lineno\n\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
--X opt : set implementation-specific option\n\
+-X opt : set implementation-specific option. The following options are available:\n\
+\n\
+         -X faulthandler: enable faulthandler\n\
+         -X oldparser: enable the traditional LL(1) parser; also PYTHONOLDPARSER\n\
+         -X showrefcount: output the total reference count and number of used\n\
+             memory blocks when the program finishes or after each statement in the\n\
+             interactive interpreter. This only works on debug builds\n\
+         -X tracemalloc: start tracing Python memory allocations using the\n\
+             tracemalloc module. By default, only the most recent frame is stored in a\n\
+             traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a\n\
+             traceback limit of NFRAME frames\n\
+         -X importtime: show how long each import takes. It shows module name,\n\
+             cumulative time (including nested imports) and self time (excluding\n\
+             nested imports). Note that its output may be broken in multi-threaded\n\
+             application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
+         -X dev: enable CPython’s “development mode”, introducing additional runtime\n\
+             checks which are too expensive to be enabled by default. Effect of the\n\
+             developer mode:\n\
+                * Add default warning filter, as -W default\n\
+                * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function\n\
+                * Enable the faulthandler module to dump the Python traceback on a crash\n\
+                * Enable asyncio debug mode\n\
+                * Set the dev_mode attribute of sys.flags to True\n\
+                * io.IOBase destructor logs close() exceptions\n\
+         -X utf8: enable UTF-8 mode for operating system interfaces, overriding the default\n\
+             locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would\n\
+             otherwise activate automatically)\n\
+         -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
+             given directory instead of to the code tree\n\
+\n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
 ";
@@ -601,9 +632,11 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->check_hash_pycs_mode = NULL;
     config->pathconfig_warnings = -1;
     config->_init_main = 1;
+    config->_isolated_interpreter = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
+    config->_use_peg_parser = 1;
 }
 
 
@@ -761,6 +794,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
+    COPY_ATTR(_use_peg_parser);
     COPY_ATTR(install_signal_handlers);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
@@ -769,7 +803,6 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(tracemalloc);
     COPY_ATTR(import_time);
     COPY_ATTR(show_ref_count);
-    COPY_ATTR(show_alloc_count);
     COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
 
@@ -818,6 +851,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTR_ATTR(check_hash_pycs_mode);
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
+    COPY_ATTR(_isolated_interpreter);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -865,6 +899,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
     SET_ITEM_INT(dev_mode);
+    SET_ITEM_INT(_use_peg_parser);
     SET_ITEM_INT(install_signal_handlers);
     SET_ITEM_INT(use_hash_seed);
     SET_ITEM_UINT(hash_seed);
@@ -872,7 +907,6 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(tracemalloc);
     SET_ITEM_INT(import_time);
     SET_ITEM_INT(show_ref_count);
-    SET_ITEM_INT(show_alloc_count);
     SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
     SET_ITEM_WSTR(filesystem_encoding);
@@ -917,6 +951,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_WSTR(check_hash_pycs_mode);
     SET_ITEM_INT(pathconfig_warnings);
     SET_ITEM_INT(_init_main);
+    SET_ITEM_INT(_isolated_interpreter);
 
     return dict;
 
@@ -1113,6 +1148,17 @@ config_init_program_name(PyConfig *config)
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
+
+            /*
+             * This environment variable is used to communicate between
+             * the stub launcher and the real interpreter and isn't needed
+             * beyond this point.
+             *
+             * Clean up to avoid problems when launching other programs
+             * later on.
+             */
+            (void)unsetenv("__PYVENV_LAUNCHER__");
+
             return _PyStatus_OK();
         }
     }
@@ -1389,6 +1435,11 @@ config_read_complex_options(PyConfig *config)
         config->import_time = 1;
     }
 
+    if (config_get_env(config, "PYTHONOLDPARSER")
+       || config_get_xoption(config, L"oldparser")) {
+        config->_use_peg_parser = 0;
+    }
+
     PyStatus status;
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
@@ -1408,7 +1459,7 @@ config_read_complex_options(PyConfig *config)
 
 
 static const wchar_t *
-config_get_stdio_errors(const PyConfig *config)
+config_get_stdio_errors(void)
 {
 #ifndef MS_WINDOWS
     const char *loc = setlocale(LC_CTYPE, NULL);
@@ -1564,7 +1615,7 @@ config_init_stdio_encoding(PyConfig *config,
         }
     }
     if (config->stdio_errors == NULL) {
-        const wchar_t *errors = config_get_stdio_errors(config);
+        const wchar_t *errors = config_get_stdio_errors();
         assert(errors != NULL);
 
         status = PyConfig_SetString(config, &config->stdio_errors, errors);
@@ -1659,9 +1710,6 @@ config_read(PyConfig *config)
     /* -X options */
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
-    }
-    if (config_get_xoption(config, L"showalloccount")) {
-        config->show_alloc_count = 1;
     }
 
     status = config_read_complex_options(config);
@@ -2471,6 +2519,7 @@ PyConfig_Read(PyConfig *config)
     assert(config->isolated >= 0);
     assert(config->use_environment >= 0);
     assert(config->dev_mode >= 0);
+    assert(config->_use_peg_parser >= 0);
     assert(config->install_signal_handlers >= 0);
     assert(config->use_hash_seed >= 0);
     assert(config->faulthandler >= 0);
@@ -2549,8 +2598,8 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* pre config */
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    const PyPreConfig *pre_config = &_PyRuntime.preconfig;
+    PyThreadState *tstate = _PyThreadState_GET();
+    const PyPreConfig *pre_config = &tstate->interp->runtime->preconfig;
     dict = _PyPreConfig_AsDict(pre_config);
     if (dict == NULL) {
         goto error;
@@ -2561,7 +2610,7 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* core config */
-    const PyConfig *config = &interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     dict = config_as_dict(config);
     if (dict == NULL) {
         goto error;
@@ -2628,7 +2677,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
             PySys_WriteStderr("\n"); \
         } while (0)
 
-    PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     DUMP_CONFIG("PYTHONHOME", home);
     DUMP_CONFIG("PYTHONPATH", pythonpath_env);
     DUMP_CONFIG("program name", program_name);

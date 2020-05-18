@@ -1,0 +1,2 @@
+Tutorial example for sorted() in the Loop Techniques section is given a better explanation.
+Also a new example is included to explain sorted()'s basic behavior.

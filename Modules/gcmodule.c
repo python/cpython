@@ -26,13 +26,12 @@
 #include "Python.h"
 #include "pycore_context.h"
 #include "pycore_initconfig.h"
+#include "pycore_interp.h"      // PyInterpreterState.gc
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "frameobject.h"        /* for PyFrame_ClearFreeList */
+#include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "pydtrace.h"
-#include "pytime.h"             /* for _PyTime_GetMonotonicClock() */
+#include "pytime.h"             // _PyTime_GetMonotonicClock()
 
 typedef struct _gc_runtime_state GCState;
 
@@ -117,9 +116,6 @@ gc_decref(PyGC_Head *g)
                               "refcount is too small");
     g->_gc_prev -= 1 << _PyGC_PREV_SHIFT;
 }
-
-/* Python string to use if unhandled exception occurs */
-static PyObject *gc_str = NULL;
 
 /* set for debugging information */
 #define DEBUG_STATS             (1<<0) /* print collection statistics */
@@ -444,7 +440,7 @@ visit_decref(PyObject *op, void *parent)
 {
     _PyObject_ASSERT(_PyObject_CAST(parent), !_PyObject_IsFreed(op));
 
-    if (PyObject_IS_GC(op)) {
+    if (_PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         /* We're only interested in gc_refs for objects in the
          * generation being collected, which can be recognized
@@ -480,7 +476,7 @@ subtract_refs(PyGC_Head *containers)
 static int
 visit_reachable(PyObject *op, PyGC_Head *reachable)
 {
-    if (!PyObject_IS_GC(op)) {
+    if (!_PyObject_IS_GC(op)) {
         return 0;
     }
 
@@ -656,7 +652,7 @@ untrack_dicts(PyGC_Head *head)
 static int
 has_legacy_finalizer(PyObject *op)
 {
-    return op->ob_type->tp_del != NULL;
+    return Py_TYPE(op)->tp_del != NULL;
 }
 
 /* Move the objects in unreachable with tp_del slots into `finalizers`.
@@ -707,7 +703,7 @@ clear_unreachable_mask(PyGC_Head *unreachable)
 static int
 visit_move(PyObject *op, PyGC_Head *tolist)
 {
-    if (PyObject_IS_GC(op)) {
+    if (_PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         if (gc_is_collecting(gc)) {
             gc_list_move(gc, tolist);
@@ -791,7 +787,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 
         /* It supports weakrefs.  Does it have any? */
         wrlist = (PyWeakReference **)
-                                PyObject_GET_WEAKREFS_LISTPTR(op);
+                                _PyObject_GET_WEAKREFS_LISTPTR(op);
 
         /* `op` may have some weakrefs.  March over the list, clear
          * all the weakrefs, and move the weakrefs with callbacks
@@ -875,7 +871,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         _PyObject_ASSERT(op, callback != NULL);
 
         /* copy-paste of weakrefobject.c's handle_callback() */
-        temp = _PyObject_CallOneArg(callback, (PyObject *)wr);
+        temp = PyObject_CallOneArg(callback, (PyObject *)wr);
         if (temp == NULL)
             PyErr_WriteUnraisable(callback);
         else
@@ -1029,14 +1025,13 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
 static void
 clear_freelists(void)
 {
-    (void)PyFrame_ClearFreeList();
-    (void)PyTuple_ClearFreeList();
-    (void)PyFloat_ClearFreeList();
-    (void)PyList_ClearFreeList();
-    (void)PyDict_ClearFreeList();
-    (void)PySet_ClearFreeList();
-    (void)PyAsyncGen_ClearFreeLists();
-    (void)PyContext_ClearFreeList();
+    _PyFrame_ClearFreeList();
+    _PyTuple_ClearFreeList();
+    _PyFloat_ClearFreeList();
+    _PyList_ClearFreeList();
+    _PyDict_ClearFreeList();
+    _PyAsyncGen_ClearFreeLists();
+    _PyContext_ClearFreeList();
 }
 
 // Show stats for objects in each generations
@@ -1186,6 +1181,14 @@ collect(PyThreadState *tstate, int generation,
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
 
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    if (tstate->interp->config._isolated_interpreter) {
+        // bpo-40533: The garbage collector must not be run on parallel on
+        // Python objects shared by multiple interpreters.
+        return 0;
+    }
+#endif
+
     if (gcstate->debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
@@ -1310,10 +1313,7 @@ collect(PyThreadState *tstate, int generation,
             _PyErr_Clear(tstate);
         }
         else {
-            if (gc_str == NULL)
-                gc_str = PyUnicode_FromString("garbage collection");
-            PyErr_WriteUnraisable(gc_str);
-            Py_FatalError("unexpected exception during garbage collection");
+            _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
         }
     }
 
@@ -1721,7 +1721,7 @@ gc_get_referents(PyObject *self, PyObject *args)
         traverseproc traverse;
         PyObject *obj = PyTuple_GET_ITEM(args, i);
 
-        if (! PyObject_IS_GC(obj))
+        if (!_PyObject_IS_GC(obj))
             continue;
         traverse = Py_TYPE(obj)->tp_traverse;
         if (! traverse)
@@ -1861,12 +1861,31 @@ gc_is_tracked(PyObject *module, PyObject *obj)
 {
     PyObject *result;
 
-    if (PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj))
+    if (_PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj))
         result = Py_True;
     else
         result = Py_False;
     Py_INCREF(result);
     return result;
+}
+
+/*[clinic input]
+gc.is_finalized
+
+    obj: object
+    /
+
+Returns true if the object has been already finalized by the GC.
+[clinic start generated code]*/
+
+static PyObject *
+gc_is_finalized(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=e1516ac119a918ed input=201d0c58f69ae390]*/
+{
+    if (_PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+         Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
 }
 
 /*[clinic input]
@@ -1942,6 +1961,7 @@ PyDoc_STRVAR(gc__doc__,
 "get_threshold() -- Return the current the collection thresholds.\n"
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
 "is_tracked() -- Returns true if a given object is tracked.\n"
+"is_finalized() -- Returns true if a given object has been already finalized.\n"
 "get_referrers() -- Return the list of objects that refer to an object.\n"
 "get_referents() -- Return the list of objects that an object refers to.\n"
 "freeze() -- Freeze all tracked objects and ignore them for future collections.\n"
@@ -1961,6 +1981,7 @@ static PyMethodDef GcMethods[] = {
     GC_GET_OBJECTS_METHODDEF
     GC_GET_STATS_METHODDEF
     GC_IS_TRACKED_METHODDEF
+    GC_IS_FINALIZED_METHODDEF
     {"get_referrers",  gc_get_referrers, METH_VARARGS,
         gc_get_referrers__doc__},
     {"get_referents",  gc_get_referents, METH_VARARGS,
@@ -2188,6 +2209,12 @@ PyObject_GC_UnTrack(void *op_raw)
     }
 }
 
+int
+PyObject_IS_GC(PyObject *obj)
+{
+    return _PyObject_IS_GC(obj);
+}
+
 static PyObject *
 _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
 {
@@ -2279,7 +2306,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
     if (g == NULL)
         return (PyVarObject *)PyErr_NoMemory();
     op = (PyVarObject *) FROM_GC(g);
-    Py_SIZE(op) = nitems;
+    Py_SET_SIZE(op, nitems);
     return op;
 }
 
@@ -2296,4 +2323,22 @@ PyObject_GC_Del(void *op)
         gcstate->generations[0].count--;
     }
     PyObject_FREE(g);
+}
+
+int
+PyObject_GC_IsTracked(PyObject* obj)
+{
+    if (_PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj)) {
+        return 1;
+    }
+    return 0;
+}
+
+int
+PyObject_GC_IsFinalized(PyObject *obj)
+{
+    if (_PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+         return 1;
+    }
+    return 0;
 }

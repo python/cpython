@@ -10,7 +10,6 @@ import pickle
 import operator
 import struct
 import sys
-import warnings
 
 import array
 from array import _array_reconstructor as array_reconstructor

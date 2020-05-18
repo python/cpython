@@ -35,7 +35,6 @@ EXPORTS
   PyBytes_Size=python39.PyBytes_Size
   PyBytes_Type=python39.PyBytes_Type DATA
   PyCFunction_Call=python39.PyCFunction_Call
-  PyCFunction_ClearFreeList=python39.PyCFunction_ClearFreeList
   PyCFunction_GetFlags=python39.PyCFunction_GetFlags
   PyCFunction_GetFunction=python39.PyCFunction_GetFunction
   PyCFunction_GetSelf=python39.PyCFunction_GetSelf
@@ -584,7 +583,6 @@ EXPORTS
   PyTraceBack_Print=python39.PyTraceBack_Print
   PyTraceBack_Type=python39.PyTraceBack_Type DATA
   PyTupleIter_Type=python39.PyTupleIter_Type DATA
-  PyTuple_ClearFreeList=python39.PyTuple_ClearFreeList
   PyTuple_GetItem=python39.PyTuple_GetItem
   PyTuple_GetSlice=python39.PyTuple_GetSlice
   PyTuple_New=python39.PyTuple_New
@@ -727,12 +725,15 @@ EXPORTS
   Py_DecodeLocale=python39.Py_DecodeLocale
   Py_EncodeLocale=python39.Py_EncodeLocale
   Py_EndInterpreter=python39.Py_EndInterpreter
+  Py_EnterRecursiveCall=python39.Py_EnterRecursiveCall
   Py_Exit=python39.Py_Exit
   Py_FatalError=python39.Py_FatalError
   Py_FileSystemDefaultEncodeErrors=python39.Py_FileSystemDefaultEncodeErrors DATA
   Py_FileSystemDefaultEncoding=python39.Py_FileSystemDefaultEncoding DATA
   Py_Finalize=python39.Py_Finalize
   Py_FinalizeEx=python39.Py_FinalizeEx
+  Py_GenericAlias=python39.Py_GenericAlias
+  Py_GenericAliasType=python39.Py_GenericAliasType
   Py_GetBuildInfo=python39.Py_GetBuildInfo
   Py_GetCompiler=python39.Py_GetCompiler
   Py_GetCopyright=python39.Py_GetCopyright
@@ -750,6 +751,7 @@ EXPORTS
   Py_Initialize=python39.Py_Initialize
   Py_InitializeEx=python39.Py_InitializeEx
   Py_IsInitialized=python39.Py_IsInitialized
+  Py_LeaveRecursiveCall=python39.Py_LeaveRecursiveCall
   Py_Main=python39.Py_Main
   Py_MakePendingCalls=python39.Py_MakePendingCalls
   Py_NewInterpreter=python39.Py_NewInterpreter

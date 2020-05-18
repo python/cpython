@@ -283,18 +283,17 @@ Basic Usage
    instance containing a JSON document) to a Python object using this
    :ref:`conversion table <json-to-py-table>`.
 
-   The other arguments have the same meaning as in :func:`load`, except
-   *encoding* which is ignored and deprecated since Python 3.1.
+   The other arguments have the same meaning as in :func:`load`.
 
    If the data being deserialized is not a valid JSON document, a
    :exc:`JSONDecodeError` will be raised.
 
-   .. deprecated-removed:: 3.1 3.9
-      *encoding* keyword argument.
-
    .. versionchanged:: 3.6
       *s* can now be of type :class:`bytes` or :class:`bytearray`. The
       input encoding should be UTF-8, UTF-16 or UTF-32.
+
+   .. versionchanged:: 3.9
+      The keyword argument *encoding* has been removed.
 
 
 Encoders and Decoders

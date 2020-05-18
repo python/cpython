@@ -466,13 +466,13 @@ PyConfig
 
    .. c:member:: int dev_mode
 
-      Development mode: see :option:`-X dev <-X>`.
+      If non-zero, enable the :ref:`Python Development Mode <devmode>`.
 
    .. c:member:: int dump_refs
 
       If non-zero, dump all objects which are still alive at exit.
 
-      Require a debug build of Python (``Py_REF_DEBUG`` macro must be defined).
+      ``Py_TRACE_REFS`` macro must be defined in build.
 
    .. c:member:: wchar_t* exec_prefix
 
@@ -627,14 +627,6 @@ PyConfig
 
       ``python3 -m MODULE`` argument. Used by :c:func:`Py_RunMain`.
 
-   .. c:member:: int show_alloc_count
-
-      Show allocation counts at exit?
-
-      Set to 1 by :option:`-X showalloccount <-X>` command line option.
-
-      Need a special Python build with ``COUNT_ALLOCS`` macro defined.
-
    .. c:member:: int show_ref_count
 
       Show total reference count at exit?
@@ -694,6 +686,16 @@ PyConfig
 
       :data:`sys._xoptions`.
 
+   .. c:member:: int _use_peg_parser
+
+      Enable PEG parser? Default: 1.
+
+      Set to 0 by :option:`-X oldparser <-X>` and :envvar:`PYTHONOLDPARSER`.
+
+      See also :pep:`617`.
+
+      .. deprecated-removed:: 3.9 3.10
+
 If ``parse_argv`` is non-zero, ``argv`` arguments are parsed the same
 way the regular Python parses command line arguments, and Python
 arguments are stripped from ``argv``: see :ref:`Command Line Arguments
@@ -701,6 +703,10 @@ arguments are stripped from ``argv``: see :ref:`Command Line Arguments
 
 The ``xoptions`` options are parsed to set other options: see :option:`-X`
 option.
+
+.. versionchanged:: 3.9
+
+   The ``show_alloc_count`` field has been removed.
 
 
 Initialization with PyConfig
@@ -998,6 +1004,8 @@ Private provisional API:
 
 * :c:member:`PyConfig._init_main`: if set to 0,
   :c:func:`Py_InitializeFromConfig` stops at the "Core" initialization phase.
+* :c:member:`PyConfig._isolated_interpreter`: if non-zero,
+  disallow threads, subprocesses and fork.
 
 .. c:function:: PyStatus _Py_InitializeMain(void)
 

@@ -3,7 +3,6 @@
 #define Py_PYTHREAD_H
 
 typedef void *PyThread_type_lock;
-typedef void *PyThread_type_sema;
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +35,15 @@ PyAPI_FUNC(void) PyThread_free_lock(PyThread_type_lock);
 PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
 #define WAIT_LOCK       1
 #define NOWAIT_LOCK     0
+
+#ifndef Py_LIMITED_API
+#ifdef HAVE_FORK
+/* Private function to reinitialize a lock at fork in the child process.
+   Reset the lock to the unlocked state.
+   Return 0 on success, return -1 on error. */
+PyAPI_FUNC(int) _PyThread_at_fork_reinit(PyThread_type_lock *lock);
+#endif  /* HAVE_FORK */
+#endif  /* !Py_LIMITED_API */
 
 /* PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
    on a lock (see PyThread_acquire_lock_timed() below).

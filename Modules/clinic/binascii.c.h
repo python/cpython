@@ -328,7 +328,7 @@ PyDoc_STRVAR(binascii_crc_hqx__doc__,
 #define BINASCII_CRC_HQX_METHODDEF    \
     {"crc_hqx", (PyCFunction)(void(*)(void))binascii_crc_hqx, METH_FASTCALL, binascii_crc_hqx__doc__},
 
-static unsigned int
+static PyObject *
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc);
 
 static PyObject *
@@ -337,7 +337,6 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     unsigned int crc;
-    unsigned int _return_value;
 
     if (!_PyArg_CheckPositional("crc_hqx", nargs, 2, 2)) {
         goto exit;
@@ -358,11 +357,7 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (crc == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
-    _return_value = binascii_crc_hqx_impl(module, &data, crc);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = binascii_crc_hqx_impl(module, &data, crc);
 
 exit:
     /* Cleanup for data */
@@ -801,4 +796,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ec26d03c2007eaac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1e878d3963b615e input=a9049054013a1b77]*/

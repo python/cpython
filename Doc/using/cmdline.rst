@@ -109,8 +109,8 @@ source.
    Many standard library modules contain code that is invoked on their execution
    as a script.  An example is the :mod:`timeit` module::
 
-       python -mtimeit -s 'setup here' 'benchmarked code here'
-       python -mtimeit -h # for details
+       python -m timeit -s 'setup here' 'benchmarked code here'
+       python -m timeit -h # for details
 
    .. audit-event:: cpython.run_module module-name cmdoption-m
 
@@ -426,6 +426,8 @@ Miscellaneous options
    defines the following possible values:
 
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
+   * ``-X oldparser``: enable the traditional LL(1) parser.  See also
+     :envvar:`PYTHONOLDPARSER` and :pep:`617`.
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
      interactive interpreter. This only works on debug builds.
@@ -434,32 +436,14 @@ Miscellaneous options
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
-   * ``-X showalloccount`` to output the total count of allocated objects for
-     each type when the program finishes. This only works when Python was built with
-     ``COUNT_ALLOCS`` defined.
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
-   * ``-X dev``: enable CPython's "development mode", introducing additional
-     runtime checks which are too expensive to be enabled by default. It should
-     not be more verbose than the default if the code is correct: new warnings
-     are only emitted when an issue is detected. Effect of the developer mode:
-
-     * Check *encoding* and *errors* arguments on string encoding and decoding
-       operations. Examples: :func:`open`, :meth:`str.encode` and
-       :meth:`bytes.decode`.
-     * Add ``default`` warning filter, as :option:`-W` ``default``.
-     * Install debug hooks on memory allocators: see the
-       :c:func:`PyMem_SetupDebugHooks` C function.
-     * Enable the :mod:`faulthandler` module to dump the Python traceback
-       on a crash.
-     * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
-     * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
-       ``True``.
-     * :class:`io.IOBase` destructor logs ``close()`` exceptions.
-
+   * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
+     additional runtime checks that are too expensive to be enabled by
+     default.
    * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
      mode (even when it would otherwise activate automatically).
@@ -493,6 +477,11 @@ Miscellaneous options
    .. versionchanged:: 3.9
       Using ``-X dev`` option, check *encoding* and *errors* arguments on
       string encoding and decoding operations.
+
+      The ``-X showalloccount`` option has been removed.
+
+   .. deprecated-removed:: 3.9 3.10
+      The ``-X oldparser`` option.
 
 
 Options you shouldn't use
@@ -588,6 +577,15 @@ conflict.
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-d` option.  If set to an integer, it is equivalent to specifying
    :option:`-d` multiple times.
+
+
+.. envvar:: PYTHONOLDPARSER
+
+   If this is set to a non-empty string, enable the traditional LL(1) parser.
+
+   See also the :option:`-X` ``oldparser`` option and :pep:`617`.
+
+   .. deprecated-removed:: 3.9 3.10
 
 
 .. envvar:: PYTHONINSPECT
@@ -890,8 +888,9 @@ conflict.
 
 .. envvar:: PYTHONDEVMODE
 
-   If this environment variable is set to a non-empty string, enable the
-   CPython "development mode". See the :option:`-X` ``dev`` option.
+   If this environment variable is set to a non-empty string, enable
+   :ref:`Python Development Mode <devmode>`, introducing additional runtime
+   checks that are too expensive to be enabled by default.
 
    .. versionadded:: 3.7
 
@@ -942,8 +941,6 @@ conflict.
    default to enabling UTF-8 mode unless explicitly instructed not to do so.
 
    Also available as the :option:`-X` ``utf8`` option.
-
-   .. availability:: \*nix.
 
    .. versionadded:: 3.7
       See :pep:`540` for more details.

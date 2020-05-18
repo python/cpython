@@ -358,7 +358,7 @@ an error value).
 .. c:function:: int PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level, const char *format, ...)
 
    Function similar to :c:func:`PyErr_WarnFormat`, but *category* is
-   :exc:`ResourceWarning` and pass *source* to :func:`warnings.WarningMessage`.
+   :exc:`ResourceWarning` and it passes *source* to :func:`warnings.WarningMessage`.
 
    .. versionadded:: 3.6
 
@@ -983,9 +983,6 @@ Notes:
    This is a base class for other standard exceptions.
 
 (2)
-   This is the same as :exc:`weakref.ReferenceError`.
-
-(3)
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
 
