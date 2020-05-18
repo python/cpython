@@ -659,6 +659,9 @@ Corner-cases that used to crash:
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
+    >>> import ä £
+    Traceback (most recent call last):
+    SyntaxError: invalid character '£' (U+00A3)
 """
 
 import re
