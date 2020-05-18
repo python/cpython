@@ -431,25 +431,6 @@ error:
     return NULL;
 }
 
-void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
-    int kwarg_unpacking = 0;
-    for (Py_ssize_t i = 0, l = asdl_seq_LEN(e->v.Call.keywords); i < l; i++) {
-        keyword_ty keyword = asdl_seq_GET(e->v.Call.keywords, i);
-        if (!keyword->arg) {
-            kwarg_unpacking = 1;
-        }
-    }
-
-    const char *msg = NULL;
-    if (kwarg_unpacking) {
-        msg = "positional argument follows keyword argument unpacking";
-    } else {
-        msg = "positional argument follows keyword argument";
-    }
-
-    return RAISE_SYNTAX_ERROR(msg);
-}
-
 #if 0
 static const char *
 token_name(int type)
@@ -2099,4 +2080,23 @@ _PyPegen_get_invalid_target(expr_ty e)
         default:
             return e;
     }
+}
+
+void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
+    int kwarg_unpacking = 0;
+    for (Py_ssize_t i = 0, l = asdl_seq_LEN(e->v.Call.keywords); i < l; i++) {
+        keyword_ty keyword = asdl_seq_GET(e->v.Call.keywords, i);
+        if (!keyword->arg) {
+            kwarg_unpacking = 1;
+        }
+    }
+
+    const char *msg = NULL;
+    if (kwarg_unpacking) {
+        msg = "positional argument follows keyword argument unpacking";
+    } else {
+        msg = "positional argument follows keyword argument";
+    }
+
+    return RAISE_SYNTAX_ERROR(msg);
 }
