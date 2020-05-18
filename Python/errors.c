@@ -512,6 +512,20 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
     }
 }
 
+void
+_PyErr_ChainStackItem(_PyErr_StackItem *exc_state)
+{
+    if (exc_state->exc_type == NULL || exc_state->exc_type == Py_None) {
+        return;
+    }
+    Py_INCREF(exc_state->exc_type);
+    Py_XINCREF(exc_state->exc_value);
+    Py_XINCREF(exc_state->exc_traceback);
+    _PyErr_ChainExceptions(exc_state->exc_type,
+                           exc_state->exc_value,
+                           exc_state->exc_traceback);
+}
+
 static PyObject *
 _PyErr_FormatVFromCause(PyThreadState *tstate, PyObject *exception,
                         const char *format, va_list vargs)
