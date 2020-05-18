@@ -203,16 +203,8 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     assert(f->f_back == NULL);
     f->f_back = tstate->frame;
 
-    _PyErr_StackItem *gi_exc_state = &gen->gi_exc_state;
-    if (exc && gi_exc_state->exc_type != NULL &&
-        gi_exc_state->exc_type != Py_None)
-    {
-        Py_INCREF(gi_exc_state->exc_type);
-        Py_XINCREF(gi_exc_state->exc_value);
-        Py_XINCREF(gi_exc_state->exc_traceback);
-        _PyErr_ChainExceptions(gi_exc_state->exc_type,
-                               gi_exc_state->exc_value,
-                               gi_exc_state->exc_traceback);
+    if (exc) {
+        _PyErr_ChainStackItem(&gen->gi_exc_state);
     }
 
     gen->gi_running = 1;
