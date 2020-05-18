@@ -35,6 +35,7 @@ abs_builddir=	@abs_builddir@
 
 CC=		@CC@
 CXX=		@CXX@
+OBJC=		@OBJC@
 MAINCC=		@MAINCC@
 LINKCC=		@LINKCC@
 AR=		@AR@
@@ -613,12 +614,22 @@ $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl
 	$(PYTHON_FOR_REGEN) $(srcdir)/Modules/_blake2/blake2b2s.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $@
 
+# _scproxy.o needs to be built outside of setup.py so that we can force
+# the use of the OBJC compiler when the CC compiler is different. For
+# example, it allows _scproxy.c to be compiled using the clang compiler
+# while the rest of the project uses the GNU C compiler.
+#
+# see issue #26317 for details
+@SCPROXY@Modules/_scproxy.o:	$(srcdir)/Modules/_scproxy.c $(srcdir)/Include/Python.h
+@SCPROXY@	$(OBJC) -c $(CCSHARED) $(PY_CORE_CFLAGS) -o $@ $<
+@NOSCPROXY@.PHONY:	Modules/_scproxy.o
+
 # Build the shared modules
 # Under GNU make, MAKEFLAGS are sorted and normalized; the 's' for
 # -s, --silent or --quiet is always the first char.
 # Under BSD make, MAKEFLAGS might be " -s -v x=y".
 # Ignore macros passed by GNU make, passed after --
-sharedmods: $(BUILDPYTHON) pybuilddir.txt Modules/_math.o
+sharedmods: $(BUILDPYTHON) pybuilddir.txt Modules/_math.o Modules/_scproxy.o
 	@case "`echo X $$MAKEFLAGS | sed 's/^X //;s/ -- .*//'`" in \
 	    *\ -s*|s*) quiet="-q";; \
 	    *) quiet="";; \
