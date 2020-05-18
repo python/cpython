@@ -892,14 +892,6 @@ Build Changes
   functions are now required to build Python.
   (Contributed by Victor Stinner in :issue:`39395`.)
 
-* The ``OBJC`` and ``OBJCXX`` standard command line options for the configure
-  script are now supported. This allows building fot macOS with a third-party
-  compiler, like GNU `gcc`, for everything except for the several
-  system-specific source files that need system headers that require the
-  Apple-supplied compile chain (e.g. the ``_scproxy`` helper module and
-  ``PythonLauncher.app``).
-  (Contributed by Jeffrey Kintscher in :issue:`26317`.)
-
 
 C API Changes
 =============
