@@ -1,0 +1,1 @@
+Fixed ast.get_source_segment() for ast nodes that have incomplete location information. Added the missing unit test.
