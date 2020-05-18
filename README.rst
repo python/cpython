@@ -1,5 +1,5 @@
-This is Python version 3.9.0 alpha 6
-====================================
+This is Python version 3.9.0 beta 1
+===================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
