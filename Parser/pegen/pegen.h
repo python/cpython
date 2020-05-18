@@ -256,16 +256,17 @@ asdl_seq *_PyPegen_seq_extract_starred_exprs(Parser *, asdl_seq *);
 asdl_seq *_PyPegen_seq_delete_starred_exprs(Parser *, asdl_seq *);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
-void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 int _PyPegen_check_barry_as_flufl(Parser *);
 mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
 
 // Error reporting helpers
-expr_ty _PyPegen_get_invalid_for_target(expr_ty e);
 expr_ty _PyPegen_get_invalid_target(expr_ty e, int is_del, int is_for);
 #define GET_INVALID_TARGET(e) _PyPegen_get_invalid_target(e, 0, 0)
 #define GET_INVALID_DEL_TARGET(e) _PyPegen_get_invalid_target(e, 1, 0)
 #define GET_INVALID_FOR_TARGET(e) _PyPegen_get_invalid_target(e, 0, 1)
+
+void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
+
 
 // Generated function in parse.c - function definition in python.gram
 void *_PyPegen_parse(Parser *);

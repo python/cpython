@@ -689,6 +689,9 @@ file_rule(Parser *p)
     mod_ty _res = NULL;
     int _mark = p->mark;
     { // statements? $
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *a;
         Token * endmarker_var;
         if (
@@ -721,6 +724,9 @@ interactive_rule(Parser *p)
     mod_ty _res = NULL;
     int _mark = p->mark;
     { // statement_newline
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* a;
         if (
             (a = statement_newline_rule(p))  // statement_newline
@@ -750,6 +756,9 @@ eval_rule(Parser *p)
     mod_ty _res = NULL;
     int _mark = p->mark;
     { // expressions NEWLINE* $
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * _loop0_1_var;
         expr_ty a;
         Token * endmarker_var;
@@ -785,6 +794,9 @@ func_type_rule(Parser *p)
     mod_ty _res = NULL;
     int _mark = p->mark;
     { // '(' type_expressions? ')' '->' expression NEWLINE* $
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         Token * _literal_2;
@@ -832,6 +844,9 @@ fstring_rule(Parser *p)
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // star_expressions
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty star_expressions_var;
         if (
             (star_expressions_var = star_expressions_rule(p))  // star_expressions
@@ -864,6 +879,9 @@ type_expressions_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.expression+ ',' '*' expression ',' '**' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         Token * _literal_2;
@@ -897,6 +915,9 @@ type_expressions_rule(Parser *p)
         p->mark = _mark;
     }
     { // ','.expression+ ',' '*' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         asdl_seq * a;
@@ -921,6 +942,9 @@ type_expressions_rule(Parser *p)
         p->mark = _mark;
     }
     { // ','.expression+ ',' '**' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         asdl_seq * a;
@@ -945,6 +969,9 @@ type_expressions_rule(Parser *p)
         p->mark = _mark;
     }
     { // '*' expression ',' '**' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         Token * _literal_2;
@@ -972,6 +999,9 @@ type_expressions_rule(Parser *p)
         p->mark = _mark;
     }
     { // '*' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -990,6 +1020,9 @@ type_expressions_rule(Parser *p)
         p->mark = _mark;
     }
     { // '**' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -1008,6 +1041,9 @@ type_expressions_rule(Parser *p)
         p->mark = _mark;
     }
     { // ','.expression+
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * _gather_9_var;
         if (
             (_gather_9_var = _gather_9_rule(p))  // ','.expression+
@@ -1033,6 +1069,9 @@ statements_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // statement+
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * a;
         if (
             (a = _loop1_11_rule(p))  // statement+
@@ -1062,6 +1101,9 @@ statement_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // compound_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty a;
         if (
             (a = compound_stmt_rule(p))  // compound_stmt
@@ -1077,6 +1119,9 @@ statement_rule(Parser *p)
         p->mark = _mark;
     }
     { // simple_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* simple_stmt_var;
         if (
             (simple_stmt_var = simple_stmt_rule(p))  // simple_stmt
@@ -1110,6 +1155,9 @@ statement_newline_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // compound_stmt NEWLINE
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty a;
         Token * newline_var;
         if (
@@ -1128,6 +1176,9 @@ statement_newline_rule(Parser *p)
         p->mark = _mark;
     }
     { // simple_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* simple_stmt_var;
         if (
             (simple_stmt_var = simple_stmt_rule(p))  // simple_stmt
@@ -1139,6 +1190,9 @@ statement_newline_rule(Parser *p)
         p->mark = _mark;
     }
     { // NEWLINE
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * newline_var;
         if (
             (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
@@ -1162,6 +1216,9 @@ statement_newline_rule(Parser *p)
         p->mark = _mark;
     }
     { // $
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * endmarker_var;
         if (
             (endmarker_var = _PyPegen_expect_token(p, ENDMARKER))  // token='ENDMARKER'
@@ -1191,6 +1248,9 @@ simple_stmt_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // small_stmt !';' NEWLINE
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty a;
         Token * newline_var;
         if (
@@ -1211,6 +1271,9 @@ simple_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // ';'.small_stmt+ ';'? NEWLINE
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * a;
@@ -1270,6 +1333,9 @@ small_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // assignment
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty assignment_var;
         if (
             (assignment_var = assignment_rule(p))  // assignment
@@ -1281,6 +1347,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_expressions
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty e;
         if (
             (e = star_expressions_rule(p))  // star_expressions
@@ -1304,6 +1373,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'return' return_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty return_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 500)  // token='return'
@@ -1317,6 +1389,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &('import' | 'from') import_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty import_stmt_var;
         if (
             _PyPegen_lookahead(1, _tmp_14_rule, p)
@@ -1330,6 +1405,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'raise' raise_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty raise_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 501)  // token='raise'
@@ -1343,6 +1421,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'pass'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 502))  // token='pass'
@@ -1366,6 +1447,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'del' del_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty del_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 503)  // token='del'
@@ -1379,6 +1463,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'yield' yield_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty yield_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 504)  // token='yield'
@@ -1392,6 +1479,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'assert' assert_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty assert_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 505)  // token='assert'
@@ -1405,6 +1495,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'break'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 506))  // token='break'
@@ -1428,6 +1521,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'continue'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 507))  // token='continue'
@@ -1451,6 +1547,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'global' global_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty global_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 508)  // token='global'
@@ -1464,6 +1563,9 @@ small_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'nonlocal' nonlocal_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty nonlocal_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 509)  // token='nonlocal'
@@ -1499,6 +1601,9 @@ compound_stmt_rule(Parser *p)
     stmt_ty _res = NULL;
     int _mark = p->mark;
     { // &('def' | '@' | ASYNC) function_def
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty function_def_var;
         if (
             _PyPegen_lookahead(1, _tmp_15_rule, p)
@@ -1512,6 +1617,9 @@ compound_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'if' if_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty if_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 510)  // token='if'
@@ -1525,6 +1633,9 @@ compound_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &('class' | '@') class_def
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty class_def_var;
         if (
             _PyPegen_lookahead(1, _tmp_16_rule, p)
@@ -1538,6 +1649,9 @@ compound_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &('with' | ASYNC) with_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty with_stmt_var;
         if (
             _PyPegen_lookahead(1, _tmp_17_rule, p)
@@ -1551,6 +1665,9 @@ compound_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &('for' | ASYNC) for_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty for_stmt_var;
         if (
             _PyPegen_lookahead(1, _tmp_18_rule, p)
@@ -1564,6 +1681,9 @@ compound_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'try' try_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty try_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 511)  // token='try'
@@ -1577,6 +1697,9 @@ compound_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'while' while_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty while_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 512)  // token='while'
@@ -1617,6 +1740,9 @@ assignment_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME ':' expression ['=' annotated_rhs]
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -1649,6 +1775,9 @@ assignment_rule(Parser *p)
         p->mark = _mark;
     }
     { // ('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *a;
         expr_ty b;
@@ -1681,6 +1810,9 @@ assignment_rule(Parser *p)
         p->mark = _mark;
     }
     { // ((star_targets '='))+ ~ (yield_expr | star_expressions) TYPE_COMMENT?
+        if (p->error_indicator) {
+            return NULL;
+        }
         int _cut_var = 0;
         asdl_seq * a;
         void *b;
@@ -1714,6 +1846,9 @@ assignment_rule(Parser *p)
         if (_cut_var) return NULL;
     }
     { // single_target augassign ~ (yield_expr | star_expressions)
+        if (p->error_indicator) {
+            return NULL;
+        }
         int _cut_var = 0;
         expr_ty a;
         AugOperator* b;
@@ -1747,6 +1882,9 @@ assignment_rule(Parser *p)
         if (_cut_var) return NULL;
     }
     { // invalid_assignment
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_assignment_var;
         if (
             (invalid_assignment_var = invalid_assignment_rule(p))  // invalid_assignment
@@ -1785,6 +1923,9 @@ augassign_rule(Parser *p)
     AugOperator* _res = NULL;
     int _mark = p->mark;
     { // '+='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 36))  // token='+='
@@ -1800,6 +1941,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '-='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 37))  // token='-='
@@ -1815,6 +1959,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '*='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 38))  // token='*='
@@ -1830,6 +1977,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '@='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 50))  // token='@='
@@ -1845,6 +1995,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '/='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 39))  // token='/='
@@ -1860,6 +2013,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '%='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 40))  // token='%='
@@ -1875,6 +2031,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '&='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 41))  // token='&='
@@ -1890,6 +2049,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '|='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 42))  // token='|='
@@ -1905,6 +2067,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '^='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 43))  // token='^='
@@ -1920,6 +2085,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '<<='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 44))  // token='<<='
@@ -1935,6 +2103,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '>>='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 45))  // token='>>='
@@ -1950,6 +2121,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '**='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 46))  // token='**='
@@ -1965,6 +2139,9 @@ augassign_rule(Parser *p)
         p->mark = _mark;
     }
     { // '//='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 48))  // token='//='
@@ -2002,6 +2179,9 @@ global_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'global' ','.NAME+
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         asdl_seq * a;
         if (
@@ -2050,6 +2230,9 @@ nonlocal_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'nonlocal' ','.NAME+
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         asdl_seq * a;
         if (
@@ -2098,6 +2281,9 @@ yield_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // yield_expr
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty y;
         if (
             (y = yield_expr_rule(p))  // yield_expr
@@ -2143,6 +2329,9 @@ assert_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'assert' expression [',' expression]
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty a;
         void *b;
@@ -2194,6 +2383,9 @@ del_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'del' del_targets &(';' | NEWLINE)
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         asdl_seq* a;
         if (
@@ -2222,6 +2414,9 @@ del_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // invalid_del_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_del_stmt_var;
         if (
             (invalid_del_stmt_var = invalid_del_stmt_rule(p))  // invalid_del_stmt
@@ -2247,6 +2442,9 @@ import_stmt_rule(Parser *p)
     stmt_ty _res = NULL;
     int _mark = p->mark;
     { // import_name
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty import_name_var;
         if (
             (import_name_var = import_name_rule(p))  // import_name
@@ -2258,6 +2456,9 @@ import_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // import_from
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty import_from_var;
         if (
             (import_from_var = import_from_rule(p))  // import_from
@@ -2291,6 +2492,9 @@ import_name_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'import' dotted_as_names
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         asdl_seq* a;
         if (
@@ -2341,6 +2545,9 @@ import_from_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _keyword_1;
         asdl_seq * a;
@@ -2376,6 +2583,9 @@ import_from_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'from' (('.' | '...'))+ 'import' import_from_targets
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _keyword_1;
         asdl_seq * a;
@@ -2422,6 +2632,9 @@ import_from_targets_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // '(' import_from_as_names ','? ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *_opt_var;
@@ -2447,6 +2660,9 @@ import_from_targets_rule(Parser *p)
         p->mark = _mark;
     }
     { // import_from_as_names
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* import_from_as_names_var;
         if (
             (import_from_as_names_var = import_from_as_names_rule(p))  // import_from_as_names
@@ -2458,6 +2674,9 @@ import_from_targets_rule(Parser *p)
         p->mark = _mark;
     }
     { // '*'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
@@ -2487,6 +2706,9 @@ import_from_as_names_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.import_from_as_name+
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * a;
         if (
             (a = _gather_33_rule(p))  // ','.import_from_as_name+
@@ -2516,6 +2738,9 @@ import_from_as_name_rule(Parser *p)
     alias_ty _res = NULL;
     int _mark = p->mark;
     { // NAME ['as' NAME]
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         void *b;
         if (
@@ -2548,6 +2773,9 @@ dotted_as_names_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.dotted_as_name+
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * a;
         if (
             (a = _gather_36_rule(p))  // ','.dotted_as_name+
@@ -2577,6 +2805,9 @@ dotted_as_name_rule(Parser *p)
     alias_ty _res = NULL;
     int _mark = p->mark;
     { // dotted_name ['as' NAME]
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         void *b;
         if (
@@ -2634,6 +2865,9 @@ dotted_name_raw(Parser *p)
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // dotted_name '.' NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -2655,6 +2889,9 @@ dotted_name_raw(Parser *p)
         p->mark = _mark;
     }
     { // NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty name_var;
         if (
             (name_var = _PyPegen_name_token(p))  // NAME
@@ -2690,6 +2927,9 @@ if_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'if' named_expression ':' block elif_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         expr_ty a;
@@ -2725,6 +2965,9 @@ if_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'if' named_expression ':' block else_block?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         expr_ty a;
@@ -2784,6 +3027,9 @@ elif_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'elif' named_expression ':' block elif_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         expr_ty a;
@@ -2819,6 +3065,9 @@ elif_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'elif' named_expression ':' block else_block?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         expr_ty a;
@@ -2868,6 +3117,9 @@ else_block_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // 'else' ':' block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         asdl_seq* b;
@@ -2911,6 +3163,9 @@ while_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'while' named_expression ':' block else_block?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         expr_ty a;
@@ -2971,6 +3226,9 @@ for_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'for' star_targets 'in' ~ star_expressions ':' TYPE_COMMENT? block else_block?
+        if (p->error_indicator) {
+            return NULL;
+        }
         int _cut_var = 0;
         Token * _keyword;
         Token * _keyword_1;
@@ -3019,6 +3277,9 @@ for_stmt_rule(Parser *p)
         if (_cut_var) return NULL;
     }
     { // ASYNC 'for' star_targets 'in' ~ star_expressions ':' TYPE_COMMENT? block else_block?
+        if (p->error_indicator) {
+            return NULL;
+        }
         int _cut_var = 0;
         Token * _keyword;
         Token * _keyword_1;
@@ -3070,6 +3331,9 @@ for_stmt_rule(Parser *p)
         if (_cut_var) return NULL;
     }
     { // invalid_for_target
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_for_target_var;
         if (
             (invalid_for_target_var = invalid_for_target_rule(p))  // invalid_for_target
@@ -3107,6 +3371,9 @@ with_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'with' '(' ','.with_item+ ','? ')' ':' block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         Token * _literal_1;
@@ -3149,6 +3416,9 @@ with_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'with' ','.with_item+ ':' TYPE_COMMENT? block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         asdl_seq * a;
@@ -3184,6 +3454,9 @@ with_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // ASYNC 'with' '(' ','.with_item+ ','? ')' ':' block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         Token * _literal_1;
@@ -3229,6 +3502,9 @@ with_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // ASYNC 'with' ','.with_item+ ':' TYPE_COMMENT? block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         asdl_seq * a;
@@ -3281,6 +3557,9 @@ with_item_rule(Parser *p)
     withitem_ty _res = NULL;
     int _mark = p->mark;
     { // expression 'as' target &(',' | ')' | ':')
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty e;
         expr_ty t;
@@ -3304,6 +3583,9 @@ with_item_rule(Parser *p)
         p->mark = _mark;
     }
     { // invalid_with_item
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_with_item_var;
         if (
             (invalid_with_item_var = invalid_with_item_rule(p))  // invalid_with_item
@@ -3315,6 +3597,9 @@ with_item_rule(Parser *p)
         p->mark = _mark;
     }
     { // expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty e;
         if (
             (e = expression_rule(p))  // expression
@@ -3354,6 +3639,9 @@ try_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'try' ':' block finally_block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         asdl_seq* b;
@@ -3386,6 +3674,9 @@ try_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'try' ':' block except_block+ else_block? finally_block?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         asdl_seq* b;
@@ -3446,6 +3737,9 @@ except_block_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'except' expression ['as' NAME] ':' block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         asdl_seq* b;
@@ -3481,6 +3775,9 @@ except_block_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'except' ':' block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         asdl_seq* b;
@@ -3524,6 +3821,9 @@ finally_block_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // 'finally' ':' block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         asdl_seq* a;
@@ -3567,6 +3867,9 @@ return_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'return' star_expressions?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         void *a;
         if (
@@ -3615,6 +3918,9 @@ raise_stmt_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'raise' expression ['from' expression]
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty a;
         void *b;
@@ -3644,6 +3950,9 @@ raise_stmt_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'raise'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 501))  // token='raise'
@@ -3681,6 +3990,9 @@ function_def_rule(Parser *p)
     stmt_ty _res = NULL;
     int _mark = p->mark;
     { // decorators function_def_raw
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* d;
         stmt_ty f;
         if (
@@ -3699,6 +4011,9 @@ function_def_rule(Parser *p)
         p->mark = _mark;
     }
     { // function_def_raw
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty function_def_raw_var;
         if (
             (function_def_raw_var = function_def_raw_rule(p))  // function_def_raw
@@ -3734,6 +4049,9 @@ function_def_raw_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'def' NAME '(' params? ')' ['->' expression] ':' func_type_comment? block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         Token * _literal_1;
@@ -3781,6 +4099,9 @@ function_def_raw_rule(Parser *p)
         p->mark = _mark;
     }
     { // ASYNC 'def' NAME '(' params? ')' ['->' expression] ':' func_type_comment? block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         Token * _literal_1;
@@ -3848,6 +4169,9 @@ func_type_comment_rule(Parser *p)
     Token* _res = NULL;
     int _mark = p->mark;
     { // NEWLINE TYPE_COMMENT &(NEWLINE INDENT)
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * newline_var;
         Token * t;
         if (
@@ -3868,6 +4192,9 @@ func_type_comment_rule(Parser *p)
         p->mark = _mark;
     }
     { // invalid_double_type_comments
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_double_type_comments_var;
         if (
             (invalid_double_type_comments_var = invalid_double_type_comments_rule(p))  // invalid_double_type_comments
@@ -3879,6 +4206,9 @@ func_type_comment_rule(Parser *p)
         p->mark = _mark;
     }
     { // TYPE_COMMENT
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * type_comment_var;
         if (
             (type_comment_var = _PyPegen_expect_token(p, TYPE_COMMENT))  // token='TYPE_COMMENT'
@@ -3904,6 +4234,9 @@ params_rule(Parser *p)
     arguments_ty _res = NULL;
     int _mark = p->mark;
     { // invalid_parameters
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_parameters_var;
         if (
             (invalid_parameters_var = invalid_parameters_rule(p))  // invalid_parameters
@@ -3915,6 +4248,9 @@ params_rule(Parser *p)
         p->mark = _mark;
     }
     { // parameters
+        if (p->error_indicator) {
+            return NULL;
+        }
         arguments_ty parameters_var;
         if (
             (parameters_var = parameters_rule(p))  // parameters
@@ -3945,6 +4281,9 @@ parameters_rule(Parser *p)
     arguments_ty _res = NULL;
     int _mark = p->mark;
     { // slash_no_default param_no_default* param_with_default* star_etc?
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* a;
         asdl_seq * b;
         asdl_seq * c;
@@ -3969,6 +4308,9 @@ parameters_rule(Parser *p)
         p->mark = _mark;
     }
     { // slash_with_default param_with_default* star_etc?
+        if (p->error_indicator) {
+            return NULL;
+        }
         SlashWithDefault* a;
         asdl_seq * b;
         void *c;
@@ -3990,6 +4332,9 @@ parameters_rule(Parser *p)
         p->mark = _mark;
     }
     { // param_no_default+ param_with_default* star_etc?
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * a;
         asdl_seq * b;
         void *c;
@@ -4011,6 +4356,9 @@ parameters_rule(Parser *p)
         p->mark = _mark;
     }
     { // param_with_default+ star_etc?
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * a;
         void *b;
         if (
@@ -4029,6 +4377,9 @@ parameters_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_etc
+        if (p->error_indicator) {
+            return NULL;
+        }
         StarEtc* a;
         if (
             (a = star_etc_rule(p))  // star_etc
@@ -4058,6 +4409,9 @@ slash_no_default_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // param_no_default+ '/' ','
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         asdl_seq * a;
@@ -4079,6 +4433,9 @@ slash_no_default_rule(Parser *p)
         p->mark = _mark;
     }
     { // param_no_default+ '/' &')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         asdl_seq * a;
         if (
@@ -4115,6 +4472,9 @@ slash_with_default_rule(Parser *p)
     SlashWithDefault* _res = NULL;
     int _mark = p->mark;
     { // param_no_default* param_with_default+ '/' ','
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         asdl_seq * a;
@@ -4139,6 +4499,9 @@ slash_with_default_rule(Parser *p)
         p->mark = _mark;
     }
     { // param_no_default* param_with_default+ '/' &')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         asdl_seq * a;
         asdl_seq * b;
@@ -4180,6 +4543,9 @@ star_etc_rule(Parser *p)
     StarEtc* _res = NULL;
     int _mark = p->mark;
     { // '*' param_no_default param_maybe_default* kwds?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         arg_ty a;
         asdl_seq * b;
@@ -4204,6 +4570,9 @@ star_etc_rule(Parser *p)
         p->mark = _mark;
     }
     { // '*' ',' param_maybe_default+ kwds?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         asdl_seq * b;
@@ -4228,6 +4597,9 @@ star_etc_rule(Parser *p)
         p->mark = _mark;
     }
     { // kwds
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty a;
         if (
             (a = kwds_rule(p))  // kwds
@@ -4243,6 +4615,9 @@ star_etc_rule(Parser *p)
         p->mark = _mark;
     }
     { // invalid_star_etc
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_star_etc_var;
         if (
             (invalid_star_etc_var = invalid_star_etc_rule(p))  // invalid_star_etc
@@ -4268,6 +4643,9 @@ kwds_rule(Parser *p)
     arg_ty _res = NULL;
     int _mark = p->mark;
     { // '**' param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         arg_ty a;
         if (
@@ -4300,6 +4678,9 @@ param_no_default_rule(Parser *p)
     arg_ty _res = NULL;
     int _mark = p->mark;
     { // param ',' TYPE_COMMENT?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         arg_ty a;
         void *tc;
@@ -4321,6 +4702,9 @@ param_no_default_rule(Parser *p)
         p->mark = _mark;
     }
     { // param TYPE_COMMENT? &')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty a;
         void *tc;
         if (
@@ -4355,6 +4739,9 @@ param_with_default_rule(Parser *p)
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
     { // param default ',' TYPE_COMMENT?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         arg_ty a;
         expr_ty c;
@@ -4379,6 +4766,9 @@ param_with_default_rule(Parser *p)
         p->mark = _mark;
     }
     { // param default TYPE_COMMENT? &')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty a;
         expr_ty c;
         void *tc;
@@ -4418,6 +4808,9 @@ param_maybe_default_rule(Parser *p)
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
     { // param default? ',' TYPE_COMMENT?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         arg_ty a;
         void *c;
@@ -4442,6 +4835,9 @@ param_maybe_default_rule(Parser *p)
         p->mark = _mark;
     }
     { // param default? TYPE_COMMENT? &')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty a;
         void *c;
         void *tc;
@@ -4487,6 +4883,9 @@ param_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME annotation?
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         void *b;
         if (
@@ -4527,6 +4926,9 @@ annotation_rule(Parser *p)
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // ':' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -4559,6 +4961,9 @@ default_rule(Parser *p)
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // '=' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -4591,6 +4996,9 @@ decorators_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // (('@' named_expression NEWLINE))+
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * a;
         if (
             (a = _loop1_68_rule(p))  // (('@' named_expression NEWLINE))+
@@ -4620,6 +5028,9 @@ class_def_rule(Parser *p)
     stmt_ty _res = NULL;
     int _mark = p->mark;
     { // decorators class_def_raw
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* a;
         stmt_ty b;
         if (
@@ -4638,6 +5049,9 @@ class_def_rule(Parser *p)
         p->mark = _mark;
     }
     { // class_def_raw
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty class_def_raw_var;
         if (
             (class_def_raw_var = class_def_raw_rule(p))  // class_def_raw
@@ -4671,6 +5085,9 @@ class_def_raw_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'class' NAME ['(' arguments? ')'] ':' block
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         expr_ty a;
@@ -4722,6 +5139,9 @@ block_rule(Parser *p)
         return _res;
     int _mark = p->mark;
     { // NEWLINE INDENT statements DEDENT
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* a;
         Token * dedent_var;
         Token * indent_var;
@@ -4746,6 +5166,9 @@ block_rule(Parser *p)
         p->mark = _mark;
     }
     { // simple_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* simple_stmt_var;
         if (
             (simple_stmt_var = simple_stmt_rule(p))  // simple_stmt
@@ -4757,6 +5180,9 @@ block_rule(Parser *p)
         p->mark = _mark;
     }
     { // invalid_block
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_block_var;
         if (
             (invalid_block_var = invalid_block_rule(p))  // invalid_block
@@ -4783,6 +5209,9 @@ expressions_list_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.star_expression+ ','?
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * a;
@@ -4827,6 +5256,9 @@ star_expressions_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // star_expression ((',' star_expression))+ ','?
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         expr_ty a;
@@ -4857,6 +5289,9 @@ star_expressions_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_expression ','
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -4883,6 +5318,9 @@ star_expressions_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty star_expression_var;
         if (
             (star_expression_var = star_expression_rule(p))  // star_expression
@@ -4918,6 +5356,9 @@ star_expression_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -4944,6 +5385,9 @@ star_expression_rule(Parser *p)
         p->mark = _mark;
     }
     { // expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty expression_var;
         if (
             (expression_var = expression_rule(p))  // expression
@@ -4970,6 +5414,9 @@ star_named_expressions_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.star_named_expression+ ','?
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * a;
@@ -5011,6 +5458,9 @@ star_named_expression_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -5037,6 +5487,9 @@ star_named_expression_rule(Parser *p)
         p->mark = _mark;
     }
     { // named_expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty named_expression_var;
         if (
             (named_expression_var = named_expression_rule(p))  // named_expression
@@ -5070,6 +5523,9 @@ named_expression_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME ':=' ~ expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         int _cut_var = 0;
         Token * _literal;
         expr_ty a;
@@ -5103,6 +5559,9 @@ named_expression_rule(Parser *p)
         if (_cut_var) return NULL;
     }
     { // expression !':='
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty expression_var;
         if (
             (expression_var = expression_rule(p))  // expression
@@ -5116,6 +5575,9 @@ named_expression_rule(Parser *p)
         p->mark = _mark;
     }
     { // invalid_named_expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_named_expression_var;
         if (
             (invalid_named_expression_var = invalid_named_expression_rule(p))  // invalid_named_expression
@@ -5141,6 +5603,9 @@ annotated_rhs_rule(Parser *p)
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // yield_expr
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty yield_expr_var;
         if (
             (yield_expr_var = yield_expr_rule(p))  // yield_expr
@@ -5152,6 +5617,9 @@ annotated_rhs_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_expressions
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty star_expressions_var;
         if (
             (star_expressions_var = star_expressions_rule(p))  // star_expressions
@@ -5185,6 +5653,9 @@ expressions_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // expression ((',' expression))+ ','?
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         expr_ty a;
@@ -5215,6 +5686,9 @@ expressions_rule(Parser *p)
         p->mark = _mark;
     }
     { // expression ','
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -5241,6 +5715,9 @@ expressions_rule(Parser *p)
         p->mark = _mark;
     }
     { // expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty expression_var;
         if (
             (expression_var = expression_rule(p))  // expression
@@ -5276,6 +5753,9 @@ expression_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // disjunction 'if' disjunction 'else' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _keyword_1;
         expr_ty a;
@@ -5311,6 +5791,9 @@ expression_rule(Parser *p)
         p->mark = _mark;
     }
     { // disjunction
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty disjunction_var;
         if (
             (disjunction_var = disjunction_rule(p))  // disjunction
@@ -5322,6 +5805,9 @@ expression_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambdef
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty lambdef_var;
         if (
             (lambdef_var = lambdef_rule(p))  // lambdef
@@ -5356,6 +5842,9 @@ lambdef_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'lambda' lambda_parameters? ':' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _literal;
         void *a;
@@ -5407,6 +5896,9 @@ lambda_parameters_rule(Parser *p)
     arguments_ty _res = NULL;
     int _mark = p->mark;
     { // lambda_slash_no_default lambda_param_no_default* lambda_param_with_default* lambda_star_etc?
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* a;
         asdl_seq * b;
         asdl_seq * c;
@@ -5431,6 +5923,9 @@ lambda_parameters_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambda_slash_with_default lambda_param_with_default* lambda_star_etc?
+        if (p->error_indicator) {
+            return NULL;
+        }
         SlashWithDefault* a;
         asdl_seq * b;
         void *c;
@@ -5452,6 +5947,9 @@ lambda_parameters_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambda_param_no_default+ lambda_param_with_default* lambda_star_etc?
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * a;
         asdl_seq * b;
         void *c;
@@ -5473,6 +5971,9 @@ lambda_parameters_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambda_param_with_default+ lambda_star_etc?
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * a;
         void *b;
         if (
@@ -5491,6 +5992,9 @@ lambda_parameters_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambda_star_etc
+        if (p->error_indicator) {
+            return NULL;
+        }
         StarEtc* a;
         if (
             (a = lambda_star_etc_rule(p))  // lambda_star_etc
@@ -5522,6 +6026,9 @@ lambda_slash_no_default_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // lambda_param_no_default+ '/' ','
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         asdl_seq * a;
@@ -5543,6 +6050,9 @@ lambda_slash_no_default_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambda_param_no_default+ '/' &':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         asdl_seq * a;
         if (
@@ -5579,6 +6089,9 @@ lambda_slash_with_default_rule(Parser *p)
     SlashWithDefault* _res = NULL;
     int _mark = p->mark;
     { // lambda_param_no_default* lambda_param_with_default+ '/' ','
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         asdl_seq * a;
@@ -5603,6 +6116,9 @@ lambda_slash_with_default_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambda_param_no_default* lambda_param_with_default+ '/' &':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         asdl_seq * a;
         asdl_seq * b;
@@ -5644,6 +6160,9 @@ lambda_star_etc_rule(Parser *p)
     StarEtc* _res = NULL;
     int _mark = p->mark;
     { // '*' lambda_param_no_default lambda_param_maybe_default* lambda_kwds?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         arg_ty a;
         asdl_seq * b;
@@ -5668,6 +6187,9 @@ lambda_star_etc_rule(Parser *p)
         p->mark = _mark;
     }
     { // '*' ',' lambda_param_maybe_default+ lambda_kwds?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         asdl_seq * b;
@@ -5692,6 +6214,9 @@ lambda_star_etc_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambda_kwds
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty a;
         if (
             (a = lambda_kwds_rule(p))  // lambda_kwds
@@ -5707,6 +6232,9 @@ lambda_star_etc_rule(Parser *p)
         p->mark = _mark;
     }
     { // invalid_lambda_star_etc
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_lambda_star_etc_var;
         if (
             (invalid_lambda_star_etc_var = invalid_lambda_star_etc_rule(p))  // invalid_lambda_star_etc
@@ -5732,6 +6260,9 @@ lambda_kwds_rule(Parser *p)
     arg_ty _res = NULL;
     int _mark = p->mark;
     { // '**' lambda_param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         arg_ty a;
         if (
@@ -5764,6 +6295,9 @@ lambda_param_no_default_rule(Parser *p)
     arg_ty _res = NULL;
     int _mark = p->mark;
     { // lambda_param ','
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         arg_ty a;
         if (
@@ -5782,6 +6316,9 @@ lambda_param_no_default_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambda_param &':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty a;
         if (
             (a = lambda_param_rule(p))  // lambda_param
@@ -5813,6 +6350,9 @@ lambda_param_with_default_rule(Parser *p)
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
     { // lambda_param default ','
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         arg_ty a;
         expr_ty c;
@@ -5834,6 +6374,9 @@ lambda_param_with_default_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambda_param default &':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty a;
         expr_ty c;
         if (
@@ -5868,6 +6411,9 @@ lambda_param_maybe_default_rule(Parser *p)
     NameDefaultPair* _res = NULL;
     int _mark = p->mark;
     { // lambda_param default? ','
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         arg_ty a;
         void *c;
@@ -5889,6 +6435,9 @@ lambda_param_maybe_default_rule(Parser *p)
         p->mark = _mark;
     }
     { // lambda_param default? &':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty a;
         void *c;
         if (
@@ -5931,6 +6480,9 @@ lambda_param_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         if (
             (a = _PyPegen_name_token(p))  // NAME
@@ -5978,6 +6530,9 @@ disjunction_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // conjunction (('or' conjunction))+
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         asdl_seq * b;
         if (
@@ -6004,6 +6559,9 @@ disjunction_rule(Parser *p)
         p->mark = _mark;
     }
     { // conjunction
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty conjunction_var;
         if (
             (conjunction_var = conjunction_rule(p))  // conjunction
@@ -6040,6 +6598,9 @@ conjunction_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // inversion (('and' inversion))+
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         asdl_seq * b;
         if (
@@ -6066,6 +6627,9 @@ conjunction_rule(Parser *p)
         p->mark = _mark;
     }
     { // inversion
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty inversion_var;
         if (
             (inversion_var = inversion_rule(p))  // inversion
@@ -6102,6 +6666,9 @@ inversion_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'not' inversion
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty a;
         if (
@@ -6128,6 +6695,9 @@ inversion_rule(Parser *p)
         p->mark = _mark;
     }
     { // comparison
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty comparison_var;
         if (
             (comparison_var = comparison_rule(p))  // comparison
@@ -6162,6 +6732,9 @@ comparison_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_or compare_op_bitwise_or_pair+
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         asdl_seq * b;
         if (
@@ -6188,6 +6761,9 @@ comparison_rule(Parser *p)
         p->mark = _mark;
     }
     { // bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty bitwise_or_var;
         if (
             (bitwise_or_var = bitwise_or_rule(p))  // bitwise_or
@@ -6223,6 +6799,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // eq_bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* eq_bitwise_or_var;
         if (
             (eq_bitwise_or_var = eq_bitwise_or_rule(p))  // eq_bitwise_or
@@ -6234,6 +6813,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
     }
     { // noteq_bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* noteq_bitwise_or_var;
         if (
             (noteq_bitwise_or_var = noteq_bitwise_or_rule(p))  // noteq_bitwise_or
@@ -6245,6 +6827,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
     }
     { // lte_bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* lte_bitwise_or_var;
         if (
             (lte_bitwise_or_var = lte_bitwise_or_rule(p))  // lte_bitwise_or
@@ -6256,6 +6841,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
     }
     { // lt_bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* lt_bitwise_or_var;
         if (
             (lt_bitwise_or_var = lt_bitwise_or_rule(p))  // lt_bitwise_or
@@ -6267,6 +6855,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
     }
     { // gte_bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* gte_bitwise_or_var;
         if (
             (gte_bitwise_or_var = gte_bitwise_or_rule(p))  // gte_bitwise_or
@@ -6278,6 +6869,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
     }
     { // gt_bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* gt_bitwise_or_var;
         if (
             (gt_bitwise_or_var = gt_bitwise_or_rule(p))  // gt_bitwise_or
@@ -6289,6 +6883,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
     }
     { // notin_bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* notin_bitwise_or_var;
         if (
             (notin_bitwise_or_var = notin_bitwise_or_rule(p))  // notin_bitwise_or
@@ -6300,6 +6897,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
     }
     { // in_bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* in_bitwise_or_var;
         if (
             (in_bitwise_or_var = in_bitwise_or_rule(p))  // in_bitwise_or
@@ -6311,6 +6911,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
     }
     { // isnot_bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* isnot_bitwise_or_var;
         if (
             (isnot_bitwise_or_var = isnot_bitwise_or_rule(p))  // isnot_bitwise_or
@@ -6322,6 +6925,9 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
     }
     { // is_bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* is_bitwise_or_var;
         if (
             (is_bitwise_or_var = is_bitwise_or_rule(p))  // is_bitwise_or
@@ -6347,6 +6953,9 @@ eq_bitwise_or_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // '==' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -6379,6 +6988,9 @@ noteq_bitwise_or_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // ('!=') bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_93_var;
         expr_ty a;
         if (
@@ -6411,6 +7023,9 @@ lte_bitwise_or_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // '<=' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -6443,6 +7058,9 @@ lt_bitwise_or_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // '<' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -6475,6 +7093,9 @@ gte_bitwise_or_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // '>=' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -6507,6 +7128,9 @@ gt_bitwise_or_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // '>' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -6539,6 +7163,9 @@ notin_bitwise_or_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // 'not' 'in' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _keyword_1;
         expr_ty a;
@@ -6574,6 +7201,9 @@ in_bitwise_or_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // 'in' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty a;
         if (
@@ -6606,6 +7236,9 @@ isnot_bitwise_or_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // 'is' 'not' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _keyword_1;
         expr_ty a;
@@ -6641,6 +7274,9 @@ is_bitwise_or_rule(Parser *p)
     CmpopExprPair* _res = NULL;
     int _mark = p->mark;
     { // 'is' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty a;
         if (
@@ -6706,6 +7342,9 @@ bitwise_or_raw(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_or '|' bitwise_xor
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -6735,6 +7374,9 @@ bitwise_or_raw(Parser *p)
         p->mark = _mark;
     }
     { // bitwise_xor
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty bitwise_xor_var;
         if (
             (bitwise_xor_var = bitwise_xor_rule(p))  // bitwise_xor
@@ -6793,6 +7435,9 @@ bitwise_xor_raw(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_xor '^' bitwise_and
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -6822,6 +7467,9 @@ bitwise_xor_raw(Parser *p)
         p->mark = _mark;
     }
     { // bitwise_and
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty bitwise_and_var;
         if (
             (bitwise_and_var = bitwise_and_rule(p))  // bitwise_and
@@ -6880,6 +7528,9 @@ bitwise_and_raw(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_and '&' shift_expr
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -6909,6 +7560,9 @@ bitwise_and_raw(Parser *p)
         p->mark = _mark;
     }
     { // shift_expr
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty shift_expr_var;
         if (
             (shift_expr_var = shift_expr_rule(p))  // shift_expr
@@ -6967,6 +7621,9 @@ shift_expr_raw(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // shift_expr '<<' sum
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -6996,6 +7653,9 @@ shift_expr_raw(Parser *p)
         p->mark = _mark;
     }
     { // shift_expr '>>' sum
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -7025,6 +7685,9 @@ shift_expr_raw(Parser *p)
         p->mark = _mark;
     }
     { // sum
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty sum_var;
         if (
             (sum_var = sum_rule(p))  // sum
@@ -7083,6 +7746,9 @@ sum_raw(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // sum '+' term
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -7112,6 +7778,9 @@ sum_raw(Parser *p)
         p->mark = _mark;
     }
     { // sum '-' term
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -7141,6 +7810,9 @@ sum_raw(Parser *p)
         p->mark = _mark;
     }
     { // term
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty term_var;
         if (
             (term_var = term_rule(p))  // term
@@ -7205,6 +7877,9 @@ term_raw(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // term '*' factor
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -7234,6 +7909,9 @@ term_raw(Parser *p)
         p->mark = _mark;
     }
     { // term '/' factor
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -7263,6 +7941,9 @@ term_raw(Parser *p)
         p->mark = _mark;
     }
     { // term '//' factor
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -7292,6 +7973,9 @@ term_raw(Parser *p)
         p->mark = _mark;
     }
     { // term '%' factor
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -7321,6 +8005,9 @@ term_raw(Parser *p)
         p->mark = _mark;
     }
     { // term '@' factor
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -7350,6 +8037,9 @@ term_raw(Parser *p)
         p->mark = _mark;
     }
     { // factor
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty factor_var;
         if (
             (factor_var = factor_rule(p))  // factor
@@ -7385,6 +8075,9 @@ factor_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '+' factor
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -7411,6 +8104,9 @@ factor_rule(Parser *p)
         p->mark = _mark;
     }
     { // '-' factor
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -7437,6 +8133,9 @@ factor_rule(Parser *p)
         p->mark = _mark;
     }
     { // '~' factor
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -7463,6 +8162,9 @@ factor_rule(Parser *p)
         p->mark = _mark;
     }
     { // power
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty power_var;
         if (
             (power_var = power_rule(p))  // power
@@ -7497,6 +8199,9 @@ power_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // await_primary '**' factor
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -7526,6 +8231,9 @@ power_rule(Parser *p)
         p->mark = _mark;
     }
     { // await_primary
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty await_primary_var;
         if (
             (await_primary_var = await_primary_rule(p))  // await_primary
@@ -7561,6 +8269,9 @@ await_primary_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // AWAIT primary
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         Token * await_var;
         if (
@@ -7587,6 +8298,9 @@ await_primary_rule(Parser *p)
         p->mark = _mark;
     }
     { // primary
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty primary_var;
         if (
             (primary_var = primary_rule(p))  // primary
@@ -7651,6 +8365,9 @@ primary_raw(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // primary '.' NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -7680,6 +8397,9 @@ primary_raw(Parser *p)
         p->mark = _mark;
     }
     { // primary genexp
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         expr_ty b;
         if (
@@ -7706,6 +8426,9 @@ primary_raw(Parser *p)
         p->mark = _mark;
     }
     { // primary '(' arguments? ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -7738,6 +8461,9 @@ primary_raw(Parser *p)
         p->mark = _mark;
     }
     { // primary '[' slices ']'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -7770,6 +8496,9 @@ primary_raw(Parser *p)
         p->mark = _mark;
     }
     { // atom
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty atom_var;
         if (
             (atom_var = atom_rule(p))  // atom
@@ -7803,6 +8532,9 @@ slices_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // slice !','
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         if (
             (a = slice_rule(p))  // slice
@@ -7820,6 +8552,9 @@ slices_rule(Parser *p)
         p->mark = _mark;
     }
     { // ','.slice+ ','?
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * a;
@@ -7869,6 +8604,9 @@ slice_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // expression? ':' expression? [':' expression?]
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *a;
         void *b;
@@ -7901,6 +8639,9 @@ slice_rule(Parser *p)
         p->mark = _mark;
     }
     { // expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         if (
             (a = expression_rule(p))  // expression
@@ -7949,6 +8690,9 @@ atom_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty name_var;
         if (
             (name_var = _PyPegen_name_token(p))  // NAME
@@ -7960,6 +8704,9 @@ atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'True'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 528))  // token='True'
@@ -7983,6 +8730,9 @@ atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'False'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 529))  // token='False'
@@ -8006,6 +8756,9 @@ atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'None'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 530))  // token='None'
@@ -8029,6 +8782,9 @@ atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '__new_parser__'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 531))  // token='__new_parser__'
@@ -8044,6 +8800,9 @@ atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // &STRING strings
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty strings_var;
         if (
             _PyPegen_lookahead(1, _PyPegen_string_token, p)
@@ -8057,6 +8816,9 @@ atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // NUMBER
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty number_var;
         if (
             (number_var = _PyPegen_number_token(p))  // NUMBER
@@ -8068,6 +8830,9 @@ atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'(' (tuple | group | genexp)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_97_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 7)  // token='('
@@ -8081,6 +8846,9 @@ atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'[' (list | listcomp)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_98_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 9)  // token='['
@@ -8094,6 +8862,9 @@ atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // &'{' (dict | set | dictcomp | setcomp)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_99_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 25)  // token='{'
@@ -8107,6 +8878,9 @@ atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '...'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 52))  // token='...'
@@ -8146,6 +8920,9 @@ strings_rule(Parser *p)
         return _res;
     int _mark = p->mark;
     { // STRING+
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * a;
         if (
             (a = _loop1_100_rule(p))  // STRING+
@@ -8184,6 +8961,9 @@ list_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '[' star_named_expressions? ']'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *a;
@@ -8235,6 +9015,9 @@ listcomp_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '[' named_expression ~ for_if_clauses ']'
+        if (p->error_indicator) {
+            return NULL;
+        }
         int _cut_var = 0;
         Token * _literal;
         Token * _literal_1;
@@ -8271,6 +9054,9 @@ listcomp_rule(Parser *p)
         if (_cut_var) return NULL;
     }
     { // invalid_comprehension
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_comprehension_var;
         if (
             (invalid_comprehension_var = invalid_comprehension_rule(p))  // invalid_comprehension
@@ -8304,6 +9090,9 @@ tuple_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '(' [star_named_expression ',' star_named_expressions?] ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *a;
@@ -8347,6 +9136,9 @@ group_rule(Parser *p)
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // '(' (yield_expr | named_expression) ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *a;
@@ -8368,6 +9160,9 @@ group_rule(Parser *p)
         p->mark = _mark;
     }
     { // invalid_group
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_group_var;
         if (
             (invalid_group_var = invalid_group_rule(p))  // invalid_group
@@ -8401,6 +9196,9 @@ genexp_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '(' expression ~ for_if_clauses ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         int _cut_var = 0;
         Token * _literal;
         Token * _literal_1;
@@ -8437,6 +9235,9 @@ genexp_rule(Parser *p)
         if (_cut_var) return NULL;
     }
     { // invalid_comprehension
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_comprehension_var;
         if (
             (invalid_comprehension_var = invalid_comprehension_rule(p))  // invalid_comprehension
@@ -8470,6 +9271,9 @@ set_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' expressions_list '}'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         asdl_seq* a;
@@ -8521,6 +9325,9 @@ setcomp_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' expression ~ for_if_clauses '}'
+        if (p->error_indicator) {
+            return NULL;
+        }
         int _cut_var = 0;
         Token * _literal;
         Token * _literal_1;
@@ -8557,6 +9364,9 @@ setcomp_rule(Parser *p)
         if (_cut_var) return NULL;
     }
     { // invalid_comprehension
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_comprehension_var;
         if (
             (invalid_comprehension_var = invalid_comprehension_rule(p))  // invalid_comprehension
@@ -8590,6 +9400,9 @@ dict_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' kvpairs? '}'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *a;
@@ -8641,6 +9454,9 @@ dictcomp_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' kvpair for_if_clauses '}'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         KeyValuePair* a;
@@ -8687,6 +9503,9 @@ kvpairs_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.kvpair+ ','?
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * a;
@@ -8720,6 +9539,9 @@ kvpair_rule(Parser *p)
     KeyValuePair* _res = NULL;
     int _mark = p->mark;
     { // '**' bitwise_or
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -8738,6 +9560,9 @@ kvpair_rule(Parser *p)
         p->mark = _mark;
     }
     { // expression ':' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -8773,6 +9598,9 @@ for_if_clauses_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // for_if_clause+
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * _loop1_105_var;
         if (
             (_loop1_105_var = _loop1_105_rule(p))  // for_if_clause+
@@ -8801,6 +9629,9 @@ for_if_clause_rule(Parser *p)
     comprehension_ty _res = NULL;
     int _mark = p->mark;
     { // ASYNC 'for' star_targets 'in' ~ disjunction (('if' disjunction))*
+        if (p->error_indicator) {
+            return NULL;
+        }
         int _cut_var = 0;
         Token * _keyword;
         Token * _keyword_1;
@@ -8835,6 +9666,9 @@ for_if_clause_rule(Parser *p)
         if (_cut_var) return NULL;
     }
     { // 'for' star_targets 'in' ~ disjunction (('if' disjunction))*
+        if (p->error_indicator) {
+            return NULL;
+        }
         int _cut_var = 0;
         Token * _keyword;
         Token * _keyword_1;
@@ -8866,6 +9700,9 @@ for_if_clause_rule(Parser *p)
         if (_cut_var) return NULL;
     }
     { // invalid_for_target
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_for_target_var;
         if (
             (invalid_for_target_var = invalid_for_target_rule(p))  // invalid_for_target
@@ -8899,6 +9736,9 @@ yield_expr_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'yield' 'from' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         Token * _keyword_1;
         expr_ty a;
@@ -8928,6 +9768,9 @@ yield_expr_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'yield' star_expressions?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         void *a;
         if (
@@ -8970,6 +9813,9 @@ arguments_rule(Parser *p)
         return _res;
     int _mark = p->mark;
     { // args ','? &')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         expr_ty a;
@@ -8991,6 +9837,9 @@ arguments_rule(Parser *p)
         p->mark = _mark;
     }
     { // incorrect_arguments
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *incorrect_arguments_var;
         if (
             (incorrect_arguments_var = incorrect_arguments_rule(p))  // incorrect_arguments
@@ -9025,6 +9874,9 @@ args_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // starred_expression [',' args]
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         void *b;
         if (
@@ -9051,6 +9903,9 @@ args_rule(Parser *p)
         p->mark = _mark;
     }
     { // kwargs
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* a;
         if (
             (a = kwargs_rule(p))  // kwargs
@@ -9074,6 +9929,9 @@ args_rule(Parser *p)
         p->mark = _mark;
     }
     { // named_expression [',' args]
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         void *b;
         if (
@@ -9117,6 +9975,9 @@ kwargs_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.kwarg_or_starred+ ',' ','.kwarg_or_double_starred+
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         asdl_seq * a;
         asdl_seq * b;
@@ -9138,6 +9999,9 @@ kwargs_rule(Parser *p)
         p->mark = _mark;
     }
     { // ','.kwarg_or_starred+
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * _gather_114_var;
         if (
             (_gather_114_var = _gather_114_rule(p))  // ','.kwarg_or_starred+
@@ -9149,6 +10013,9 @@ kwargs_rule(Parser *p)
         p->mark = _mark;
     }
     { // ','.kwarg_or_double_starred+
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * _gather_116_var;
         if (
             (_gather_116_var = _gather_116_rule(p))  // ','.kwarg_or_double_starred+
@@ -9182,6 +10049,9 @@ starred_expression_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -9230,6 +10100,9 @@ kwarg_or_starred_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME '=' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -9259,6 +10132,9 @@ kwarg_or_starred_rule(Parser *p)
         p->mark = _mark;
     }
     { // starred_expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         if (
             (a = starred_expression_rule(p))  // starred_expression
@@ -9274,6 +10150,9 @@ kwarg_or_starred_rule(Parser *p)
         p->mark = _mark;
     }
     { // invalid_kwarg
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_kwarg_var;
         if (
             (invalid_kwarg_var = invalid_kwarg_rule(p))  // invalid_kwarg
@@ -9307,6 +10186,9 @@ kwarg_or_double_starred_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME '=' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -9336,6 +10218,9 @@ kwarg_or_double_starred_rule(Parser *p)
         p->mark = _mark;
     }
     { // '**' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -9362,6 +10247,9 @@ kwarg_or_double_starred_rule(Parser *p)
         p->mark = _mark;
     }
     { // invalid_kwarg
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *invalid_kwarg_var;
         if (
             (invalid_kwarg_var = invalid_kwarg_rule(p))  // invalid_kwarg
@@ -9395,6 +10283,9 @@ star_targets_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // star_target !','
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         if (
             (a = star_target_rule(p))  // star_target
@@ -9412,6 +10303,9 @@ star_targets_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_target ((',' star_target))* ','?
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         expr_ty a;
@@ -9456,6 +10350,9 @@ star_targets_seq_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.star_target+ ','?
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * a;
@@ -9503,6 +10400,9 @@ star_target_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' (!'*' star_target)
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *a;
         if (
@@ -9529,6 +10429,9 @@ star_target_rule(Parser *p)
         p->mark = _mark;
     }
     { // t_primary '.' NAME !t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -9560,6 +10463,9 @@ star_target_rule(Parser *p)
         p->mark = _mark;
     }
     { // t_primary '[' slices ']' !t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -9594,6 +10500,9 @@ star_target_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_atom
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty star_atom_var;
         if (
             (star_atom_var = star_atom_rule(p))  // star_atom
@@ -9632,6 +10541,9 @@ star_atom_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         if (
             (a = _PyPegen_name_token(p))  // NAME
@@ -9647,6 +10559,9 @@ star_atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '(' star_target ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -9668,6 +10583,9 @@ star_atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '(' star_targets_seq? ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *a;
@@ -9697,6 +10615,9 @@ star_atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '[' star_targets_seq? ']'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *a;
@@ -9740,6 +10661,9 @@ single_target_rule(Parser *p)
     expr_ty _res = NULL;
     int _mark = p->mark;
     { // single_subscript_attribute_target
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty single_subscript_attribute_target_var;
         if (
             (single_subscript_attribute_target_var = single_subscript_attribute_target_rule(p))  // single_subscript_attribute_target
@@ -9751,6 +10675,9 @@ single_target_rule(Parser *p)
         p->mark = _mark;
     }
     { // NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         if (
             (a = _PyPegen_name_token(p))  // NAME
@@ -9766,6 +10693,9 @@ single_target_rule(Parser *p)
         p->mark = _mark;
     }
     { // '(' single_target ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -9811,6 +10741,9 @@ single_subscript_attribute_target_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME !t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -9842,6 +10775,9 @@ single_subscript_attribute_target_rule(Parser *p)
         p->mark = _mark;
     }
     { // t_primary '[' slices ']' !t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -9890,6 +10826,9 @@ del_targets_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.del_target+ ','?
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * a;
@@ -9936,6 +10875,9 @@ del_target_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME !t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -9967,6 +10909,9 @@ del_target_rule(Parser *p)
         p->mark = _mark;
     }
     { // t_primary '[' slices ']' !t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -10001,6 +10946,9 @@ del_target_rule(Parser *p)
         p->mark = _mark;
     }
     { // del_t_atom
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty del_t_atom_var;
         if (
             (del_t_atom_var = del_t_atom_rule(p))  // del_t_atom
@@ -10035,6 +10983,9 @@ del_t_atom_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         if (
             (a = _PyPegen_name_token(p))  // NAME
@@ -10050,6 +11001,9 @@ del_t_atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '(' del_target ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -10071,6 +11025,9 @@ del_t_atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '(' del_targets? ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *a;
@@ -10100,6 +11057,9 @@ del_t_atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '[' del_targets? ']'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *a;
@@ -10143,6 +11103,9 @@ targets_rule(Parser *p)
     asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.target+ ','?
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * a;
@@ -10189,6 +11152,9 @@ target_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME !t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -10220,6 +11186,9 @@ target_rule(Parser *p)
         p->mark = _mark;
     }
     { // t_primary '[' slices ']' !t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -10254,6 +11223,9 @@ target_rule(Parser *p)
         p->mark = _mark;
     }
     { // t_atom
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty t_atom_var;
         if (
             (t_atom_var = t_atom_rule(p))  // t_atom
@@ -10318,6 +11290,9 @@ t_primary_raw(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME &t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty b;
@@ -10349,6 +11324,9 @@ t_primary_raw(Parser *p)
         p->mark = _mark;
     }
     { // t_primary '[' slices ']' &t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -10383,6 +11361,9 @@ t_primary_raw(Parser *p)
         p->mark = _mark;
     }
     { // t_primary genexp &t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         expr_ty b;
         if (
@@ -10411,6 +11392,9 @@ t_primary_raw(Parser *p)
         p->mark = _mark;
     }
     { // t_primary '(' arguments? ')' &t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -10445,6 +11429,9 @@ t_primary_raw(Parser *p)
         p->mark = _mark;
     }
     { // atom &t_lookahead
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         if (
             (a = atom_rule(p))  // atom
@@ -10476,6 +11463,9 @@ t_lookahead_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '('
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
@@ -10487,6 +11477,9 @@ t_lookahead_rule(Parser *p)
         p->mark = _mark;
     }
     { // '['
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 9))  // token='['
@@ -10498,6 +11491,9 @@ t_lookahead_rule(Parser *p)
         p->mark = _mark;
     }
     { // '.'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 23))  // token='.'
@@ -10531,6 +11527,9 @@ t_atom_rule(Parser *p)
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty a;
         if (
             (a = _PyPegen_name_token(p))  // NAME
@@ -10546,6 +11545,9 @@ t_atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '(' target ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -10567,6 +11569,9 @@ t_atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '(' targets? ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *b;
@@ -10596,6 +11601,9 @@ t_atom_rule(Parser *p)
         p->mark = _mark;
     }
     { // '[' targets? ']'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *b;
@@ -10642,6 +11650,9 @@ incorrect_arguments_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // args ',' '*'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty args_var;
@@ -10663,6 +11674,9 @@ incorrect_arguments_rule(Parser *p)
         p->mark = _mark;
     }
     { // expression for_if_clauses ',' [args | expression for_if_clauses]
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -10688,6 +11702,9 @@ incorrect_arguments_rule(Parser *p)
         p->mark = _mark;
     }
     { // args ',' args
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty args_var;
@@ -10723,6 +11740,9 @@ invalid_kwarg_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // expression '='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -10755,6 +11775,9 @@ invalid_named_expression_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // expression ':=' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         expr_ty expression_var;
@@ -10796,6 +11819,9 @@ invalid_assignment_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // list ':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -10814,6 +11840,9 @@ invalid_assignment_rule(Parser *p)
         p->mark = _mark;
     }
     { // tuple ':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty a;
         if (
@@ -10832,6 +11861,9 @@ invalid_assignment_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_named_expression ',' star_named_expressions* ':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         asdl_seq * _loop0_127_var;
@@ -10856,6 +11888,9 @@ invalid_assignment_rule(Parser *p)
         p->mark = _mark;
     }
     { // expression ':' expression ['=' annotated_rhs]
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -10881,6 +11916,9 @@ invalid_assignment_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_expressions '=' (yield_expr | star_expressions)
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *_tmp_129_var;
         expr_ty a;
@@ -10902,6 +11940,9 @@ invalid_assignment_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_expressions augassign (yield_expr | star_expressions)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_130_var;
         expr_ty a;
         AugOperator* augassign_var;
@@ -10937,6 +11978,9 @@ invalid_del_stmt_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'del' star_expressions
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty a;
         if (
@@ -10969,6 +12013,9 @@ invalid_block_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // NEWLINE !INDENT
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * newline_var;
         if (
             (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
@@ -11000,6 +12047,9 @@ invalid_comprehension_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ('[' | '(' | '{') starred_expression for_if_clauses
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_131_var;
         expr_ty a;
         asdl_seq* for_if_clauses_var;
@@ -11036,6 +12086,9 @@ invalid_parameters_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // param_no_default* (slash_with_default | param_with_default+) param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * _loop0_132_var;
         void *_tmp_133_var;
         arg_ty param_no_default_var;
@@ -11061,7 +12114,7 @@ invalid_parameters_rule(Parser *p)
     return _res;
 }
 
-// invalid_star_etc: '*' (')' | ',' (')' | '**'))
+// invalid_star_etc: '*' (')' | ',' (')' | '**')) | '*' ',' TYPE_COMMENT
 static void *
 invalid_star_etc_rule(Parser *p)
 {
@@ -11071,6 +12124,9 @@ invalid_star_etc_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '*' (')' | ',' (')' | '**'))
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *_tmp_134_var;
         if (
@@ -11080,6 +12136,30 @@ invalid_star_etc_rule(Parser *p)
         )
         {
             _res = RAISE_SYNTAX_ERROR ( "named arguments must follow bare *" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+    }
+    { // '*' ',' TYPE_COMMENT
+        if (p->error_indicator) {
+            return NULL;
+        }
+        Token * _literal;
+        Token * _literal_1;
+        Token * type_comment_var;
+        if (
+            (_literal = _PyPegen_expect_token(p, 16))  // token='*'
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 12))  // token=','
+            &&
+            (type_comment_var = _PyPegen_expect_token(p, TYPE_COMMENT))  // token='TYPE_COMMENT'
+        )
+        {
+            _res = RAISE_SYNTAX_ERROR ( "bare * has associated type comment" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 return NULL;
@@ -11103,6 +12183,9 @@ invalid_lambda_star_etc_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '*' (':' | ',' (':' | '**'))
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *_tmp_135_var;
         if (
@@ -11135,6 +12218,9 @@ invalid_double_type_comments_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * indent_var;
         Token * newline_var;
         Token * newline_var_1;
@@ -11176,6 +12262,9 @@ invalid_with_item_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // expression 'as' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty a;
         expr_ty expression_var;
@@ -11211,6 +12300,9 @@ invalid_for_target_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ASYNC? 'for' star_expressions
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -11247,6 +12339,9 @@ invalid_group_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '(' starred_expression ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
@@ -11291,6 +12386,9 @@ _loop0_1_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // NEWLINE
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * newline_var;
         while (
             (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
@@ -11344,6 +12442,9 @@ _loop0_2_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // NEWLINE
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * newline_var;
         while (
             (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
@@ -11397,6 +12498,9 @@ _loop0_4_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -11449,6 +12553,9 @@ _gather_3_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // expression _loop0_4
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -11486,6 +12593,9 @@ _loop0_6_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -11538,6 +12648,9 @@ _gather_5_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // expression _loop0_6
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -11575,6 +12688,9 @@ _loop0_8_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -11627,6 +12743,9 @@ _gather_7_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // expression _loop0_8
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -11664,6 +12783,9 @@ _loop0_10_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -11716,6 +12838,9 @@ _gather_9_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // expression _loop0_10
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -11753,6 +12878,9 @@ _loop1_11_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // statement
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* statement_var;
         while (
             (statement_var = statement_rule(p))  // statement
@@ -11810,6 +12938,9 @@ _loop0_13_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ';' small_stmt
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         stmt_ty elem;
         while (
@@ -11862,6 +12993,9 @@ _gather_12_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // small_stmt _loop0_13
+        if (p->error_indicator) {
+            return NULL;
+        }
         stmt_ty elem;
         asdl_seq * seq;
         if (
@@ -11890,6 +13024,9 @@ _tmp_14_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'import'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 513))  // token='import'
@@ -11901,6 +13038,9 @@ _tmp_14_rule(Parser *p)
         p->mark = _mark;
     }
     { // 'from'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 514))  // token='from'
@@ -11926,6 +13066,9 @@ _tmp_15_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'def'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 523))  // token='def'
@@ -11937,6 +13080,9 @@ _tmp_15_rule(Parser *p)
         p->mark = _mark;
     }
     { // '@'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 49))  // token='@'
@@ -11948,6 +13094,9 @@ _tmp_15_rule(Parser *p)
         p->mark = _mark;
     }
     { // ASYNC
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * async_var;
         if (
             (async_var = _PyPegen_expect_token(p, ASYNC))  // token='ASYNC'
@@ -11973,6 +13122,9 @@ _tmp_16_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'class'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 524))  // token='class'
@@ -11984,6 +13136,9 @@ _tmp_16_rule(Parser *p)
         p->mark = _mark;
     }
     { // '@'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 49))  // token='@'
@@ -12009,6 +13164,9 @@ _tmp_17_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'with'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 519))  // token='with'
@@ -12020,6 +13178,9 @@ _tmp_17_rule(Parser *p)
         p->mark = _mark;
     }
     { // ASYNC
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * async_var;
         if (
             (async_var = _PyPegen_expect_token(p, ASYNC))  // token='ASYNC'
@@ -12045,6 +13206,9 @@ _tmp_18_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'for'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 517))  // token='for'
@@ -12056,6 +13220,9 @@ _tmp_18_rule(Parser *p)
         p->mark = _mark;
     }
     { // ASYNC
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * async_var;
         if (
             (async_var = _PyPegen_expect_token(p, ASYNC))  // token='ASYNC'
@@ -12081,6 +13248,9 @@ _tmp_19_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '=' annotated_rhs
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty d;
         if (
@@ -12113,6 +13283,9 @@ _tmp_20_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '(' single_target ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         expr_ty b;
@@ -12134,6 +13307,9 @@ _tmp_20_rule(Parser *p)
         p->mark = _mark;
     }
     { // single_subscript_attribute_target
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty single_subscript_attribute_target_var;
         if (
             (single_subscript_attribute_target_var = single_subscript_attribute_target_rule(p))  // single_subscript_attribute_target
@@ -12159,6 +13335,9 @@ _tmp_21_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '=' annotated_rhs
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty d;
         if (
@@ -12200,6 +13379,9 @@ _loop1_22_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // (star_targets '=')
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_136_var;
         while (
             (_tmp_136_var = _tmp_136_rule(p))  // star_targets '='
@@ -12248,6 +13430,9 @@ _tmp_23_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // yield_expr
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty yield_expr_var;
         if (
             (yield_expr_var = yield_expr_rule(p))  // yield_expr
@@ -12259,6 +13444,9 @@ _tmp_23_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_expressions
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty star_expressions_var;
         if (
             (star_expressions_var = star_expressions_rule(p))  // star_expressions
@@ -12284,6 +13472,9 @@ _tmp_24_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // yield_expr
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty yield_expr_var;
         if (
             (yield_expr_var = yield_expr_rule(p))  // yield_expr
@@ -12295,6 +13486,9 @@ _tmp_24_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_expressions
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty star_expressions_var;
         if (
             (star_expressions_var = star_expressions_rule(p))  // star_expressions
@@ -12329,6 +13523,9 @@ _loop0_26_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -12381,6 +13578,9 @@ _gather_25_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // NAME _loop0_26
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -12418,6 +13618,9 @@ _loop0_28_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -12470,6 +13673,9 @@ _gather_27_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // NAME _loop0_28
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -12498,6 +13704,9 @@ _tmp_29_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty z;
         if (
@@ -12530,6 +13739,9 @@ _tmp_30_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ';'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 13))  // token=';'
@@ -12541,6 +13753,9 @@ _tmp_30_rule(Parser *p)
         p->mark = _mark;
     }
     { // NEWLINE
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * newline_var;
         if (
             (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
@@ -12575,6 +13790,9 @@ _loop0_31_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ('.' | '...')
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_137_var;
         while (
             (_tmp_137_var = _tmp_137_rule(p))  // '.' | '...'
@@ -12628,6 +13846,9 @@ _loop1_32_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ('.' | '...')
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_138_var;
         while (
             (_tmp_138_var = _tmp_138_rule(p))  // '.' | '...'
@@ -12685,6 +13906,9 @@ _loop0_34_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' import_from_as_name
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         alias_ty elem;
         while (
@@ -12737,6 +13961,9 @@ _gather_33_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // import_from_as_name _loop0_34
+        if (p->error_indicator) {
+            return NULL;
+        }
         alias_ty elem;
         asdl_seq * seq;
         if (
@@ -12765,6 +13992,9 @@ _tmp_35_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty z;
         if (
@@ -12806,6 +14036,9 @@ _loop0_37_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' dotted_as_name
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         alias_ty elem;
         while (
@@ -12858,6 +14091,9 @@ _gather_36_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // dotted_as_name _loop0_37
+        if (p->error_indicator) {
+            return NULL;
+        }
         alias_ty elem;
         asdl_seq * seq;
         if (
@@ -12886,6 +14122,9 @@ _tmp_38_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty z;
         if (
@@ -12927,6 +14166,9 @@ _loop0_40_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' with_item
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         withitem_ty elem;
         while (
@@ -12979,6 +14221,9 @@ _gather_39_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // with_item _loop0_40
+        if (p->error_indicator) {
+            return NULL;
+        }
         withitem_ty elem;
         asdl_seq * seq;
         if (
@@ -13016,6 +14261,9 @@ _loop0_42_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' with_item
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         withitem_ty elem;
         while (
@@ -13068,6 +14316,9 @@ _gather_41_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // with_item _loop0_42
+        if (p->error_indicator) {
+            return NULL;
+        }
         withitem_ty elem;
         asdl_seq * seq;
         if (
@@ -13105,6 +14356,9 @@ _loop0_44_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' with_item
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         withitem_ty elem;
         while (
@@ -13157,6 +14411,9 @@ _gather_43_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // with_item _loop0_44
+        if (p->error_indicator) {
+            return NULL;
+        }
         withitem_ty elem;
         asdl_seq * seq;
         if (
@@ -13194,6 +14451,9 @@ _loop0_46_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' with_item
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         withitem_ty elem;
         while (
@@ -13246,6 +14506,9 @@ _gather_45_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // with_item _loop0_46
+        if (p->error_indicator) {
+            return NULL;
+        }
         withitem_ty elem;
         asdl_seq * seq;
         if (
@@ -13274,6 +14537,9 @@ _tmp_47_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ','
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
@@ -13285,6 +14551,9 @@ _tmp_47_rule(Parser *p)
         p->mark = _mark;
     }
     { // ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 8))  // token=')'
@@ -13296,6 +14565,9 @@ _tmp_47_rule(Parser *p)
         p->mark = _mark;
     }
     { // ':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
@@ -13330,6 +14602,9 @@ _loop1_48_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // except_block
+        if (p->error_indicator) {
+            return NULL;
+        }
         excepthandler_ty except_block_var;
         while (
             (except_block_var = except_block_rule(p))  // except_block
@@ -13378,6 +14653,9 @@ _tmp_49_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'as' NAME
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty z;
         if (
@@ -13410,6 +14688,9 @@ _tmp_50_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'from' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty z;
         if (
@@ -13442,6 +14723,9 @@ _tmp_51_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '->' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty z;
         if (
@@ -13474,6 +14758,9 @@ _tmp_52_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '->' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty z;
         if (
@@ -13506,6 +14793,9 @@ _tmp_53_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // NEWLINE INDENT
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * indent_var;
         Token * newline_var;
         if (
@@ -13543,6 +14833,9 @@ _loop0_54_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty param_no_default_var;
         while (
             (param_no_default_var = param_no_default_rule(p))  // param_no_default
@@ -13596,6 +14889,9 @@ _loop0_55_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* param_with_default_var;
         while (
             (param_with_default_var = param_with_default_rule(p))  // param_with_default
@@ -13649,6 +14945,9 @@ _loop0_56_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* param_with_default_var;
         while (
             (param_with_default_var = param_with_default_rule(p))  // param_with_default
@@ -13702,6 +15001,9 @@ _loop1_57_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty param_no_default_var;
         while (
             (param_no_default_var = param_no_default_rule(p))  // param_no_default
@@ -13759,6 +15061,9 @@ _loop0_58_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* param_with_default_var;
         while (
             (param_with_default_var = param_with_default_rule(p))  // param_with_default
@@ -13812,6 +15117,9 @@ _loop1_59_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* param_with_default_var;
         while (
             (param_with_default_var = param_with_default_rule(p))  // param_with_default
@@ -13869,6 +15177,9 @@ _loop1_60_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty param_no_default_var;
         while (
             (param_no_default_var = param_no_default_rule(p))  // param_no_default
@@ -13926,6 +15237,9 @@ _loop1_61_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty param_no_default_var;
         while (
             (param_no_default_var = param_no_default_rule(p))  // param_no_default
@@ -13983,6 +15297,9 @@ _loop0_62_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty param_no_default_var;
         while (
             (param_no_default_var = param_no_default_rule(p))  // param_no_default
@@ -14036,6 +15353,9 @@ _loop1_63_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* param_with_default_var;
         while (
             (param_with_default_var = param_with_default_rule(p))  // param_with_default
@@ -14093,6 +15413,9 @@ _loop0_64_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty param_no_default_var;
         while (
             (param_no_default_var = param_no_default_rule(p))  // param_no_default
@@ -14146,6 +15469,9 @@ _loop1_65_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* param_with_default_var;
         while (
             (param_with_default_var = param_with_default_rule(p))  // param_with_default
@@ -14203,6 +15529,9 @@ _loop0_66_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_maybe_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* param_maybe_default_var;
         while (
             (param_maybe_default_var = param_maybe_default_rule(p))  // param_maybe_default
@@ -14256,6 +15585,9 @@ _loop1_67_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_maybe_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* param_maybe_default_var;
         while (
             (param_maybe_default_var = param_maybe_default_rule(p))  // param_maybe_default
@@ -14313,6 +15645,9 @@ _loop1_68_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ('@' named_expression NEWLINE)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_139_var;
         while (
             (_tmp_139_var = _tmp_139_rule(p))  // '@' named_expression NEWLINE
@@ -14361,6 +15696,9 @@ _tmp_69_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '(' arguments? ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         void *z;
@@ -14405,6 +15743,9 @@ _loop0_71_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' star_expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -14457,6 +15798,9 @@ _gather_70_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // star_expression _loop0_71
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -14494,6 +15838,9 @@ _loop1_72_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // (',' star_expression)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_140_var;
         while (
             (_tmp_140_var = _tmp_140_rule(p))  // ',' star_expression
@@ -14551,6 +15898,9 @@ _loop0_74_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' star_named_expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -14603,6 +15953,9 @@ _gather_73_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // star_named_expression _loop0_74
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -14640,6 +15993,9 @@ _loop1_75_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // (',' expression)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_141_var;
         while (
             (_tmp_141_var = _tmp_141_rule(p))  // ',' expression
@@ -14697,6 +16053,9 @@ _loop0_76_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty lambda_param_no_default_var;
         while (
             (lambda_param_no_default_var = lambda_param_no_default_rule(p))  // lambda_param_no_default
@@ -14750,6 +16109,9 @@ _loop0_77_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* lambda_param_with_default_var;
         while (
             (lambda_param_with_default_var = lambda_param_with_default_rule(p))  // lambda_param_with_default
@@ -14803,6 +16165,9 @@ _loop0_78_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* lambda_param_with_default_var;
         while (
             (lambda_param_with_default_var = lambda_param_with_default_rule(p))  // lambda_param_with_default
@@ -14856,6 +16221,9 @@ _loop1_79_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty lambda_param_no_default_var;
         while (
             (lambda_param_no_default_var = lambda_param_no_default_rule(p))  // lambda_param_no_default
@@ -14913,6 +16281,9 @@ _loop0_80_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* lambda_param_with_default_var;
         while (
             (lambda_param_with_default_var = lambda_param_with_default_rule(p))  // lambda_param_with_default
@@ -14966,6 +16337,9 @@ _loop1_81_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* lambda_param_with_default_var;
         while (
             (lambda_param_with_default_var = lambda_param_with_default_rule(p))  // lambda_param_with_default
@@ -15023,6 +16397,9 @@ _loop1_82_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty lambda_param_no_default_var;
         while (
             (lambda_param_no_default_var = lambda_param_no_default_rule(p))  // lambda_param_no_default
@@ -15080,6 +16457,9 @@ _loop1_83_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty lambda_param_no_default_var;
         while (
             (lambda_param_no_default_var = lambda_param_no_default_rule(p))  // lambda_param_no_default
@@ -15137,6 +16517,9 @@ _loop0_84_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty lambda_param_no_default_var;
         while (
             (lambda_param_no_default_var = lambda_param_no_default_rule(p))  // lambda_param_no_default
@@ -15190,6 +16573,9 @@ _loop1_85_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* lambda_param_with_default_var;
         while (
             (lambda_param_with_default_var = lambda_param_with_default_rule(p))  // lambda_param_with_default
@@ -15247,6 +16633,9 @@ _loop0_86_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty lambda_param_no_default_var;
         while (
             (lambda_param_no_default_var = lambda_param_no_default_rule(p))  // lambda_param_no_default
@@ -15300,6 +16689,9 @@ _loop1_87_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* lambda_param_with_default_var;
         while (
             (lambda_param_with_default_var = lambda_param_with_default_rule(p))  // lambda_param_with_default
@@ -15357,6 +16749,9 @@ _loop0_88_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_maybe_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* lambda_param_maybe_default_var;
         while (
             (lambda_param_maybe_default_var = lambda_param_maybe_default_rule(p))  // lambda_param_maybe_default
@@ -15410,6 +16805,9 @@ _loop1_89_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // lambda_param_maybe_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* lambda_param_maybe_default_var;
         while (
             (lambda_param_maybe_default_var = lambda_param_maybe_default_rule(p))  // lambda_param_maybe_default
@@ -15467,6 +16865,9 @@ _loop1_90_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ('or' conjunction)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_142_var;
         while (
             (_tmp_142_var = _tmp_142_rule(p))  // 'or' conjunction
@@ -15524,6 +16925,9 @@ _loop1_91_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ('and' inversion)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_143_var;
         while (
             (_tmp_143_var = _tmp_143_rule(p))  // 'and' inversion
@@ -15581,6 +16985,9 @@ _loop1_92_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // compare_op_bitwise_or_pair
+        if (p->error_indicator) {
+            return NULL;
+        }
         CmpopExprPair* compare_op_bitwise_or_pair_var;
         while (
             (compare_op_bitwise_or_pair_var = compare_op_bitwise_or_pair_rule(p))  // compare_op_bitwise_or_pair
@@ -15629,6 +17036,9 @@ _tmp_93_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '!='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * tok;
         if (
             (tok = _PyPegen_expect_token(p, 28))  // token='!='
@@ -15667,6 +17077,9 @@ _loop0_95_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' slice
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -15719,6 +17132,9 @@ _gather_94_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // slice _loop0_95
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -15747,6 +17163,9 @@ _tmp_96_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ':' expression?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *d;
         if (
@@ -15779,6 +17198,9 @@ _tmp_97_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // tuple
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty tuple_var;
         if (
             (tuple_var = tuple_rule(p))  // tuple
@@ -15790,6 +17212,9 @@ _tmp_97_rule(Parser *p)
         p->mark = _mark;
     }
     { // group
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty group_var;
         if (
             (group_var = group_rule(p))  // group
@@ -15801,6 +17226,9 @@ _tmp_97_rule(Parser *p)
         p->mark = _mark;
     }
     { // genexp
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty genexp_var;
         if (
             (genexp_var = genexp_rule(p))  // genexp
@@ -15826,6 +17254,9 @@ _tmp_98_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // list
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty list_var;
         if (
             (list_var = list_rule(p))  // list
@@ -15837,6 +17268,9 @@ _tmp_98_rule(Parser *p)
         p->mark = _mark;
     }
     { // listcomp
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty listcomp_var;
         if (
             (listcomp_var = listcomp_rule(p))  // listcomp
@@ -15862,6 +17296,9 @@ _tmp_99_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // dict
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty dict_var;
         if (
             (dict_var = dict_rule(p))  // dict
@@ -15873,6 +17310,9 @@ _tmp_99_rule(Parser *p)
         p->mark = _mark;
     }
     { // set
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty set_var;
         if (
             (set_var = set_rule(p))  // set
@@ -15884,6 +17324,9 @@ _tmp_99_rule(Parser *p)
         p->mark = _mark;
     }
     { // dictcomp
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty dictcomp_var;
         if (
             (dictcomp_var = dictcomp_rule(p))  // dictcomp
@@ -15895,6 +17338,9 @@ _tmp_99_rule(Parser *p)
         p->mark = _mark;
     }
     { // setcomp
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty setcomp_var;
         if (
             (setcomp_var = setcomp_rule(p))  // setcomp
@@ -15929,6 +17375,9 @@ _loop1_100_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // STRING
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty string_var;
         while (
             (string_var = _PyPegen_string_token(p))  // STRING
@@ -15977,6 +17426,9 @@ _tmp_101_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // star_named_expression ',' star_named_expressions?
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty y;
         void *z;
@@ -16012,6 +17464,9 @@ _tmp_102_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // yield_expr
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty yield_expr_var;
         if (
             (yield_expr_var = yield_expr_rule(p))  // yield_expr
@@ -16023,6 +17478,9 @@ _tmp_102_rule(Parser *p)
         p->mark = _mark;
     }
     { // named_expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty named_expression_var;
         if (
             (named_expression_var = named_expression_rule(p))  // named_expression
@@ -16057,6 +17515,9 @@ _loop0_104_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' kvpair
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         KeyValuePair* elem;
         while (
@@ -16109,6 +17570,9 @@ _gather_103_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // kvpair _loop0_104
+        if (p->error_indicator) {
+            return NULL;
+        }
         KeyValuePair* elem;
         asdl_seq * seq;
         if (
@@ -16146,6 +17610,9 @@ _loop1_105_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // for_if_clause
+        if (p->error_indicator) {
+            return NULL;
+        }
         comprehension_ty for_if_clause_var;
         while (
             (for_if_clause_var = for_if_clause_rule(p))  // for_if_clause
@@ -16203,6 +17670,9 @@ _loop0_106_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ('if' disjunction)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_144_var;
         while (
             (_tmp_144_var = _tmp_144_rule(p))  // 'if' disjunction
@@ -16256,6 +17726,9 @@ _loop0_107_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ('if' disjunction)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_145_var;
         while (
             (_tmp_145_var = _tmp_145_rule(p))  // 'if' disjunction
@@ -16300,6 +17773,9 @@ _tmp_108_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' args
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty c;
         if (
@@ -16332,6 +17808,9 @@ _tmp_109_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' args
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty c;
         if (
@@ -16373,6 +17852,9 @@ _loop0_111_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' kwarg_or_starred
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         KeywordOrStarred* elem;
         while (
@@ -16425,6 +17907,9 @@ _gather_110_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // kwarg_or_starred _loop0_111
+        if (p->error_indicator) {
+            return NULL;
+        }
         KeywordOrStarred* elem;
         asdl_seq * seq;
         if (
@@ -16462,6 +17947,9 @@ _loop0_113_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' kwarg_or_double_starred
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         KeywordOrStarred* elem;
         while (
@@ -16514,6 +18002,9 @@ _gather_112_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // kwarg_or_double_starred _loop0_113
+        if (p->error_indicator) {
+            return NULL;
+        }
         KeywordOrStarred* elem;
         asdl_seq * seq;
         if (
@@ -16551,6 +18042,9 @@ _loop0_115_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' kwarg_or_starred
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         KeywordOrStarred* elem;
         while (
@@ -16603,6 +18097,9 @@ _gather_114_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // kwarg_or_starred _loop0_115
+        if (p->error_indicator) {
+            return NULL;
+        }
         KeywordOrStarred* elem;
         asdl_seq * seq;
         if (
@@ -16640,6 +18137,9 @@ _loop0_117_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' kwarg_or_double_starred
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         KeywordOrStarred* elem;
         while (
@@ -16692,6 +18192,9 @@ _gather_116_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // kwarg_or_double_starred _loop0_117
+        if (p->error_indicator) {
+            return NULL;
+        }
         KeywordOrStarred* elem;
         asdl_seq * seq;
         if (
@@ -16729,6 +18232,9 @@ _loop0_118_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // (',' star_target)
+        if (p->error_indicator) {
+            return NULL;
+        }
         void *_tmp_146_var;
         while (
             (_tmp_146_var = _tmp_146_rule(p))  // ',' star_target
@@ -16782,6 +18288,9 @@ _loop0_120_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' star_target
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -16834,6 +18343,9 @@ _gather_119_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // star_target _loop0_120
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -16862,6 +18374,9 @@ _tmp_121_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // !'*' star_target
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty star_target_var;
         if (
             _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 16)  // token='*'
@@ -16898,6 +18413,9 @@ _loop0_123_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' del_target
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -16950,6 +18468,9 @@ _gather_122_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // del_target _loop0_123
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -16987,6 +18508,9 @@ _loop0_125_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // ',' target
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty elem;
         while (
@@ -17039,6 +18563,9 @@ _gather_124_rule(Parser *p)
     asdl_seq * _res = NULL;
     int _mark = p->mark;
     { // target _loop0_125
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty elem;
         asdl_seq * seq;
         if (
@@ -17067,6 +18594,9 @@ _tmp_126_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // args
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty args_var;
         if (
             (args_var = args_rule(p))  // args
@@ -17078,6 +18608,9 @@ _tmp_126_rule(Parser *p)
         p->mark = _mark;
     }
     { // expression for_if_clauses
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty expression_var;
         asdl_seq* for_if_clauses_var;
         if (
@@ -17115,6 +18648,9 @@ _loop0_127_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // star_named_expressions
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq* star_named_expressions_var;
         while (
             (star_named_expressions_var = star_named_expressions_rule(p))  // star_named_expressions
@@ -17159,6 +18695,9 @@ _tmp_128_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '=' annotated_rhs
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty annotated_rhs_var;
         if (
@@ -17187,6 +18726,9 @@ _tmp_129_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // yield_expr
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty yield_expr_var;
         if (
             (yield_expr_var = yield_expr_rule(p))  // yield_expr
@@ -17198,6 +18740,9 @@ _tmp_129_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_expressions
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty star_expressions_var;
         if (
             (star_expressions_var = star_expressions_rule(p))  // star_expressions
@@ -17223,6 +18768,9 @@ _tmp_130_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // yield_expr
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty yield_expr_var;
         if (
             (yield_expr_var = yield_expr_rule(p))  // yield_expr
@@ -17234,6 +18782,9 @@ _tmp_130_rule(Parser *p)
         p->mark = _mark;
     }
     { // star_expressions
+        if (p->error_indicator) {
+            return NULL;
+        }
         expr_ty star_expressions_var;
         if (
             (star_expressions_var = star_expressions_rule(p))  // star_expressions
@@ -17259,6 +18810,9 @@ _tmp_131_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '['
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 9))  // token='['
@@ -17270,6 +18824,9 @@ _tmp_131_rule(Parser *p)
         p->mark = _mark;
     }
     { // '('
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
@@ -17281,6 +18838,9 @@ _tmp_131_rule(Parser *p)
         p->mark = _mark;
     }
     { // '{'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 25))  // token='{'
@@ -17315,6 +18875,9 @@ _loop0_132_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_no_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         arg_ty param_no_default_var;
         while (
             (param_no_default_var = param_no_default_rule(p))  // param_no_default
@@ -17359,6 +18922,9 @@ _tmp_133_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // slash_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         SlashWithDefault* slash_with_default_var;
         if (
             (slash_with_default_var = slash_with_default_rule(p))  // slash_with_default
@@ -17370,6 +18936,9 @@ _tmp_133_rule(Parser *p)
         p->mark = _mark;
     }
     { // param_with_default+
+        if (p->error_indicator) {
+            return NULL;
+        }
         asdl_seq * _loop1_147_var;
         if (
             (_loop1_147_var = _loop1_147_rule(p))  // param_with_default+
@@ -17395,6 +18964,9 @@ _tmp_134_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 8))  // token=')'
@@ -17406,6 +18978,9 @@ _tmp_134_rule(Parser *p)
         p->mark = _mark;
     }
     { // ',' (')' | '**')
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *_tmp_148_var;
         if (
@@ -17434,6 +19009,9 @@ _tmp_135_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
@@ -17445,6 +19023,9 @@ _tmp_135_rule(Parser *p)
         p->mark = _mark;
     }
     { // ',' (':' | '**')
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         void *_tmp_149_var;
         if (
@@ -17473,6 +19054,9 @@ _tmp_136_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // star_targets '='
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty z;
         if (
@@ -17505,6 +19089,9 @@ _tmp_137_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '.'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 23))  // token='.'
@@ -17516,6 +19103,9 @@ _tmp_137_rule(Parser *p)
         p->mark = _mark;
     }
     { // '...'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 52))  // token='...'
@@ -17541,6 +19131,9 @@ _tmp_138_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '.'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 23))  // token='.'
@@ -17552,6 +19145,9 @@ _tmp_138_rule(Parser *p)
         p->mark = _mark;
     }
     { // '...'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 52))  // token='...'
@@ -17577,6 +19173,9 @@ _tmp_139_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // '@' named_expression NEWLINE
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty f;
         Token * newline_var;
@@ -17612,6 +19211,9 @@ _tmp_140_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' star_expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty c;
         if (
@@ -17644,6 +19246,9 @@ _tmp_141_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' expression
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty c;
         if (
@@ -17676,6 +19281,9 @@ _tmp_142_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'or' conjunction
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty c;
         if (
@@ -17708,6 +19316,9 @@ _tmp_143_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'and' inversion
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty c;
         if (
@@ -17740,6 +19351,9 @@ _tmp_144_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'if' disjunction
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty z;
         if (
@@ -17772,6 +19386,9 @@ _tmp_145_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // 'if' disjunction
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _keyword;
         expr_ty z;
         if (
@@ -17804,6 +19421,9 @@ _tmp_146_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ',' star_target
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         expr_ty c;
         if (
@@ -17845,6 +19465,9 @@ _loop1_147_rule(Parser *p)
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
     { // param_with_default
+        if (p->error_indicator) {
+            return NULL;
+        }
         NameDefaultPair* param_with_default_var;
         while (
             (param_with_default_var = param_with_default_rule(p))  // param_with_default
@@ -17893,6 +19516,9 @@ _tmp_148_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ')'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 8))  // token=')'
@@ -17904,6 +19530,9 @@ _tmp_148_rule(Parser *p)
         p->mark = _mark;
     }
     { // '**'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 35))  // token='**'
@@ -17929,6 +19558,9 @@ _tmp_149_rule(Parser *p)
     void * _res = NULL;
     int _mark = p->mark;
     { // ':'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
@@ -17940,6 +19572,9 @@ _tmp_149_rule(Parser *p)
         p->mark = _mark;
     }
     { // '**'
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 35))  // token='**'

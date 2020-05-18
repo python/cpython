@@ -5,7 +5,8 @@ endif
 ifeq ($(UNAME_S),Darwin)
 	PYTHON ?= ../../python.exe
 endif
-
+VENVDIR ?= ./venv
+VENVPYTHON ?= $(VENVDIR)/bin/python
 CPYTHON ?= ../../Lib
 MYPY ?= mypy
 
@@ -27,6 +28,7 @@ peg_extension/parse.c: $(GRAMMAR) $(TOKENS) pegen/*.py peg_extension/peg_extensi
 clean:
 	-rm -f peg_extension/*.o peg_extension/*.so peg_extension/parse.c
 	-rm -f data/xxl.py
+	-rm -rf $(VENVDIR)
 
 dump: peg_extension/parse.c
 	cat -n $(TESTFILE)
@@ -40,6 +42,12 @@ regen-metaparser: pegen/metagrammar.gram pegen/*.py
 # parse.c by the use of --compile-extension.
 
 .PHONY: test
+
+venv:
+	$(PYTHON) -m venv $(VENVDIR)
+	$(VENVPYTHON) -m pip install -U pip setuptools
+	$(VENVPYTHON) -m pip install -r requirements.pip
+	@echo "The venv has been created in the $(VENVDIR) directory"
 
 test: run
 
@@ -61,22 +69,22 @@ stats: peg_extension/parse.c data/xxl.py
 
 time: time_compile
 
-time_compile: peg_extension/parse.c data/xxl.py
-	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl compile
+time_compile: venv peg_extension/parse.c data/xxl.py
+	$(VENVPYTHON) scripts/benchmark.py --parser=pegen --target=xxl compile
 
-time_parse: peg_extension/parse.c data/xxl.py
-	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl parse
+time_parse: venv peg_extension/parse.c data/xxl.py
+	$(VENVPYTHON) scripts/benchmark.py --parser=pegen --target=xxl parse
 
-time_check: peg_extension/parse.c data/xxl.py
-	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl check
+time_check: venv peg_extension/parse.c data/xxl.py
+	$(VENVPYTHON) scripts/benchmark.py --parser=pegen --target=xxl check
 
 time_stdlib: time_stdlib_compile
 
-time_stdlib_compile: data/xxl.py
-	$(PYTHON) scripts/benchmark.py --parser=cpython --target=xxl compile
+time_stdlib_compile: venv peg_extension/parse.c data/xxl.py
+	$(VENVPYTHON) scripts/benchmark.py --parser=cpython --target=xxl compile
 
-time_stdlib_parse: data/xxl.py
-	$(PYTHON) scripts/benchmark.py --parser=cpython --target=xxl parse
+time_stdlib_parse: venv peg_extension/parse.c data/xxl.py
+	$(VENVPYTHON) scripts/benchmark.py --parser=cpython --target=xxl parse
 
 test_local:
 	$(PYTHON) scripts/test_parse_directory.py \
@@ -105,8 +113,8 @@ mypy: regen-metaparser
 format-python:
 	black pegen scripts
 
-bench:
-	$(PYTHON) scripts/benchmark.py --parser=pegen --target=stdlib check
+bench: venv
+	$(VENVPYTHON) scripts/benchmark.py --parser=pegen --target=stdlib check
 
 format: format-python
 

@@ -1161,6 +1161,8 @@ variants of :func:`functools.lru_cache`::
             return value
 
         def __setitem__(self, key, value):
+            if key in self:
+                self.move_to_end(key)
             super().__setitem__(key, value)
             if len(self) > self.maxsize:
                 oldest = next(iter(self))
