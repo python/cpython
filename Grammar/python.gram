@@ -661,6 +661,7 @@ invalid_parameters:
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
 invalid_star_etc:
     | '*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
+    | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
 invalid_lambda_star_etc:
     | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
 invalid_double_type_comments:
