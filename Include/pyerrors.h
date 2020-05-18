@@ -121,6 +121,7 @@ PyAPI_DATA(PyObject *) PyExc_ConnectionError;
 PyAPI_DATA(PyObject *) PyExc_ConnectionAbortedError;
 PyAPI_DATA(PyObject *) PyExc_ConnectionRefusedError;
 PyAPI_DATA(PyObject *) PyExc_ConnectionResetError;
+PyAPI_DATA(PyObject *) PyExc_DirectoryNotEmptyError;
 PyAPI_DATA(PyObject *) PyExc_FileExistsError;
 PyAPI_DATA(PyObject *) PyExc_FileNotFoundError;
 PyAPI_DATA(PyObject *) PyExc_InterruptedError;

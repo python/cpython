@@ -58,6 +58,7 @@ class HierarchyTest(unittest.TestCase):
             +-- ConnectionAbortedError                           ECONNABORTED
             +-- ConnectionRefusedError                           ECONNREFUSED
             +-- ConnectionResetError                               ECONNRESET
+        +-- DirectoryNotEmptyError                                  ENOTEMPTY
         +-- FileExistsError                                            EEXIST
         +-- FileNotFoundError                                          ENOENT
         +-- InterruptedError                                            EINTR

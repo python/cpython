@@ -790,6 +790,7 @@ the variables:
    single: PyExc_ConnectionError
    single: PyExc_ConnectionRefusedError
    single: PyExc_ConnectionResetError
+   single: PyExc_DirectoryNotEmptyError
    single: PyExc_EOFError
    single: PyExc_FileExistsError
    single: PyExc_FileNotFoundError
@@ -860,6 +861,8 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ConnectionResetError`    | :exc:`ConnectionResetError`     |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_DirectoryNotEmptyError`  | :exc:`DirectoryNotEmptyError`   |          |
++--------------------------------------------------------------------------------------+
 | :c:data:`PyExc_EOFError`                | :exc:`EOFError`                 |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_FileExistsError`         | :exc:`FileExistsError`          |          |
@@ -956,6 +959,9 @@ the variables:
 
 .. versionadded:: 3.6
    :c:data:`PyExc_ModuleNotFoundError`.
+
+.. versionadded:: 3.9
+   :c:data:`PyExc_DirectoryNotEmptyError`.
 
 These are compatibility aliases to :c:data:`PyExc_OSError`:
 

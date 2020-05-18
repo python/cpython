@@ -230,6 +230,7 @@ PYTHON3_OSERROR_EXCEPTIONS = (
     'ConnectionError',
     'ConnectionRefusedError',
     'ConnectionResetError',
+    'DirectoryNotEmptyError',
     'FileExistsError',
     'FileNotFoundError',
     'InterruptedError',

@@ -29,6 +29,7 @@ BaseException
       |    |    +-- ConnectionAbortedError
       |    |    +-- ConnectionRefusedError
       |    |    +-- ConnectionResetError
+      |    +-- DirectoryNotEmptyError
       |    +-- FileExistsError
       |    +-- FileNotFoundError
       |    +-- InterruptedError

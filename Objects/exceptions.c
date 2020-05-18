@@ -1283,6 +1283,8 @@ MiddlingExtendsException(PyExc_OSError, FileNotFoundError, OSError,
                          "File not found.");
 MiddlingExtendsException(PyExc_OSError, IsADirectoryError, OSError,
                          "Operation doesn't work on directories.");
+MiddlingExtendsException(PyExc_OSError, DirectoryNotEmptyError, OSError,
+                         "Operation only works on empty directories.");
 MiddlingExtendsException(PyExc_OSError, NotADirectoryError, OSError,
                          "Operation only works on directories.");
 MiddlingExtendsException(PyExc_OSError, InterruptedError, OSError,
@@ -2585,11 +2587,12 @@ _PyExc_Init(void)
     PRE_INIT(ConnectionAbortedError);
     PRE_INIT(ConnectionRefusedError);
     PRE_INIT(ConnectionResetError);
+    PRE_INIT(DirectoryNotEmptyError);
     PRE_INIT(FileExistsError);
     PRE_INIT(FileNotFoundError);
+    PRE_INIT(InterruptedError);
     PRE_INIT(IsADirectoryError);
     PRE_INIT(NotADirectoryError);
-    PRE_INIT(InterruptedError);
     PRE_INIT(PermissionError);
     PRE_INIT(ProcessLookupError);
     PRE_INIT(TimeoutError);
@@ -2618,11 +2621,12 @@ _PyExc_Init(void)
     ADD_ERRNO(ConnectionAbortedError, ECONNABORTED);
     ADD_ERRNO(ConnectionRefusedError, ECONNREFUSED);
     ADD_ERRNO(ConnectionResetError, ECONNRESET);
+    ADD_ERRNO(DirectoryNotEmptyError, ENOTEMPTY);
     ADD_ERRNO(FileExistsError, EEXIST);
     ADD_ERRNO(FileNotFoundError, ENOENT);
+    ADD_ERRNO(InterruptedError, EINTR);
     ADD_ERRNO(IsADirectoryError, EISDIR);
     ADD_ERRNO(NotADirectoryError, ENOTDIR);
-    ADD_ERRNO(InterruptedError, EINTR);
     ADD_ERRNO(PermissionError, EACCES);
     ADD_ERRNO(PermissionError, EPERM);
     ADD_ERRNO(ProcessLookupError, ESRCH);
@@ -2725,11 +2729,12 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     POST_INIT(ConnectionAbortedError);
     POST_INIT(ConnectionRefusedError);
     POST_INIT(ConnectionResetError);
+    POST_INIT(DirectoryNotEmptyError);
     POST_INIT(FileExistsError);
     POST_INIT(FileNotFoundError);
+    POST_INIT(InterruptedError);
     POST_INIT(IsADirectoryError);
     POST_INIT(NotADirectoryError);
-    POST_INIT(InterruptedError);
     POST_INIT(PermissionError);
     POST_INIT(ProcessLookupError);
     POST_INIT(TimeoutError);

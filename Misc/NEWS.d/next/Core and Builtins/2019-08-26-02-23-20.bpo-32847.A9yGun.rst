@@ -1,0 +1,2 @@
+Add `DirectoryNotEmptyError` subclass of `OSError`.
+Patch by Joannah Nanjekye .
