@@ -80,10 +80,10 @@ time_check: venv peg_extension/parse.c data/xxl.py
 
 time_stdlib: time_stdlib_compile
 
-time_stdlib_compile: venv data/xxl.py
+time_stdlib_compile: venv peg_extension/parse.c data/xxl.py
 	$(VENVPYTHON) scripts/benchmark.py --parser=cpython --target=xxl compile
 
-time_stdlib_parse: venv data/xxl.py
+time_stdlib_parse: venv peg_extension/parse.c data/xxl.py
 	$(VENVPYTHON) scripts/benchmark.py --parser=cpython --target=xxl parse
 
 test_local:
