@@ -1,1 +1,0 @@
-Improved syntax errors for invalid characters in source code.
