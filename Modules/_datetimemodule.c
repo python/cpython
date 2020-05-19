@@ -2876,13 +2876,18 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
                                 cls);
 }
 
-/* Return new date from current time.
- * We say this is equivalent to fromtimestamp(time.time()), and the
- * only way to be sure of that is to *call* time.time().  That's not
- * generally the same as calling C's time.
- */
+/*[clinic input]
+@classmethod
+datetime.date.today
+
+Return new date from current time.
+
+Same as self.__class__.fromtimestamp(time.time())
+[clinic start generated code]*/
+
 static PyObject *
-date_today(PyObject *cls, PyObject *dummy)
+datetime_date_today_impl(PyTypeObject *type)
+/*[clinic end generated code: output=d5474697df6b251c input=22b09b5b306fdccb]*/
 {
     PyObject *time;
     PyObject *result;
@@ -2897,8 +2902,12 @@ date_today(PyObject *cls, PyObject *dummy)
      * datetime.fromtimestamp.  That's why we need all the accuracy
      * time.time() delivers; if someone were gonzo about optimization,
      * date.today() could get away with plain C time().
+     * Besides, we claim that this method is equivalent to
+     * fromtimestamp(time.time()), and the only way to be of that is to *call*
+     * time.time().  That's not generally the same as calling C's time.
      */
-    result = _PyObject_CallMethodIdOneArg(cls, &PyId_fromtimestamp, time);
+    result = _PyObject_CallMethodIdOneArg((PyObject *) type,
+                                          &PyId_fromtimestamp, time);
     Py_DECREF(time);
     return result;
 }
@@ -3503,10 +3512,7 @@ static PyMethodDef date_methods[] = {
     DATETIME_DATE_FROMORDINAL_METHODDEF
     DATETIME_DATE_FROMISOFORMAT_METHODDEF
     DATETIME_DATE_FROMISOCALENDAR_METHODDEF
-
-    {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
-     PyDoc_STR("Current date or datetime:  same as "
-               "self.__class__.fromtimestamp(time.time()).")},
+    DATETIME_DATE_TODAY_METHODDEF
 
     /* Instance methods: */
 

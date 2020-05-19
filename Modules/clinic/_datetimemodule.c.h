@@ -2,6 +2,26 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(datetime_date_today__doc__,
+"today($type, /)\n"
+"--\n"
+"\n"
+"Return new date from current time.\n"
+"\n"
+"Same as self.__class__.fromtimestamp(time.time())");
+
+#define DATETIME_DATE_TODAY_METHODDEF    \
+    {"today", (PyCFunction)datetime_date_today, METH_NOARGS|METH_CLASS, datetime_date_today__doc__},
+
+static PyObject *
+datetime_date_today_impl(PyTypeObject *type);
+
+static PyObject *
+datetime_date_today(PyTypeObject *type, PyObject *Py_UNUSED(ignored))
+{
+    return datetime_date_today_impl(type);
+}
+
 PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
 "fromtimestamp($type, timestamp, /)\n"
 "--\n"
@@ -216,4 +236,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=243be40ba706f2b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c55ed8e872d3207 input=a9049054013a1b77]*/
