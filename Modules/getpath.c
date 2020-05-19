@@ -1296,7 +1296,7 @@ calculate_zip_path(PyCalculatePath *calculate)
 {
     PyStatus res;
 
-    /* Path: <PLATLIBDIR> / "python00.zip" */
+    /* Path: <PLATLIBDIR> / "pythonXY.zip" */
     wchar_t *path = joinpath2(calculate->platlibdir_macro, L"python" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) L".zip");
     if (path == NULL) {
         return _PyStatus_NO_MEMORY();
