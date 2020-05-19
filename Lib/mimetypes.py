@@ -543,6 +543,10 @@ def _default_mime_types():
         '.webm'   : 'video/webm',
         '.avi'    : 'video/x-msvideo',
         '.movie'  : 'video/x-sgi-movie',
+        '.woff'   : 'application/font-woff',
+        '.woff2'  : 'application/font-woff2',
+        '.eot'    : 'application/vnd.ms-font',
+        '.ttf'    : 'application/x-font-ttf'
         }
 
     # These are non-standard types, commonly found in the wild.  They will
