@@ -617,41 +617,12 @@ Running in Threads
 
    This coroutine function is primarily intended to be used for executing
    IO-bound functions/methods that would otherwise block the event loop if
-   they were ran in the main thread. For example, the following code would
-   block the event loop::
-
-       # "async def" is just used here so we can submit to asyncio.gather()
-       async def blocking_io():
-           print(f"start blocking_io at {time.strftime('%X')}")
-           # If done in the same thread, blocking IO (such as file operations) will
-           # block the event loop.
-           time.sleep(1)
-           print(f"blocking_io complete at {time.strftime('%X')}")
-
-       async def main():
-           print(f"started main at {time.strftime('%X')}")
-
-           await asyncio.gather(
-               blocking_io(),
-               asyncio.sleep(1))
-
-           print(f"finished main at {time.strftime('%X')}")
-
-
-       asyncio.run(main())
-
-       # Expected output:
-       #
-       # started main at 19:50:49
-       # start blocking_io at 19:50:49
-       # blocking_io complete at 19:50:50
-       # finished main at 19:50:51
-
-   However, by using `asyncio.to_thread()` to run `blocking_io()` in a
-   separate thread, we can avoid blocking the event loop::
+   they were ran in the main thread. For example::
 
        def blocking_io():
            print(f"start blocking_io at {time.strftime('%X')}")
+           # Note that `time.sleep()` can be replaced with any blocking
+           # IO-bound operation, such as file operations.
            time.sleep(1)
            print(f"blocking_io complete at {time.strftime('%X')}")
 
@@ -673,6 +644,11 @@ Running in Threads
        # start blocking_io at 19:50:53
        # blocking_io complete at 19:50:54
        # finished main at 19:50:54
+
+   Directly calling `blocking_io()` in any coroutine would block the event loop
+   for its duration, resulting in an additional 1 second of run time. Instead,
+   by using `asyncio.to_thread()`, we can run it in a separate thread without
+   blocking the event loop.
 
    .. note::
 
