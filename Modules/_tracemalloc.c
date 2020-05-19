@@ -1654,7 +1654,7 @@ Do nothing if the tracemalloc module is not tracing memory allocations.
 
 static PyObject *
 _tracemalloc_reset_peak_impl(PyObject *module)
-/*[clinic end generated code: output=140c2870f691dbb2 input=5a7e962ebebf9836]*/
+/*[clinic end generated code: output=140c2870f691dbb2 input=18afd0635066e9ce]*/
 {
     if (!_Py_tracemalloc_config.tracing) {
         Py_RETURN_NONE;
