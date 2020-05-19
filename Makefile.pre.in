@@ -1429,6 +1429,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_importlib/source \
 		test/test_importlib/zipdata01 \
 		test/test_importlib/zipdata02 \
+		test/test_zoneinfo test/test_zoneinfo/data \
 		test/ziptestdata \
 		asyncio \
 		test/test_asyncio \
@@ -1450,7 +1451,8 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test unittest/test/testmock \
 		venv venv/scripts venv/scripts/common venv/scripts/posix \
-		curses pydoc_data
+		curses pydoc_data \
+		zoneinfo
 libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
