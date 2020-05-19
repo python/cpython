@@ -1403,6 +1403,12 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     HMACobject *self = NULL;
     int r;
 
+    if (key->len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "key is too long.");
+        return NULL;
+    }
+
     if ((digestmod == NULL) || !strlen(digestmod)) {
         PyErr_SetString(
             PyExc_TypeError, "Missing required parameter 'digestmod'.");
@@ -1424,7 +1430,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     r = HMAC_Init_ex(
         ctx,
         (const char*)key->buf,
-        key->len,
+        (int)key->len,
         digest,
         NULL /*impl*/);
     if (r == 0) {
