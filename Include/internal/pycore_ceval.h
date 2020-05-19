@@ -50,11 +50,7 @@ extern PyObject *_PyEval_EvalCode(
     PyObject *kwdefs, PyObject *closure,
     PyObject *name, PyObject *qualname);
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
-#else
 extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
-#endif
 extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
 extern void _PyEval_FiniGIL(PyThreadState *tstate);
 

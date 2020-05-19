@@ -19,10 +19,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #include "clinic/typeobject.c.h"
 
-/* bpo-40521: Type method cache is shared by all subinterpreters */
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  define MCACHE
-#endif
+#define MCACHE
 
 #ifdef MCACHE
 /* Support type attribute cache */
@@ -63,10 +60,7 @@ static size_t method_cache_misses = 0;
 static size_t method_cache_collisions = 0;
 #endif
 
-/* bpo-40521: Interned strings are shared by all subinterpreters */
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  define INTERN_NAME_STRINGS
-#endif
+#define INTERN_NAME_STRINGS
 
 /* alphabetical order */
 _Py_IDENTIFIER(__abstractmethods__);

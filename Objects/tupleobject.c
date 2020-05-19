@@ -22,12 +22,6 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 #define PyTuple_MAXFREELIST  2000  /* Maximum number of tuples of each size to save */
 #endif
 
-/* bpo-40521: tuple free lists are shared by all interpreters. */
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  undef PyTuple_MAXSAVESIZE
-#  define PyTuple_MAXSAVESIZE 0
-#endif
-
 #if PyTuple_MAXSAVESIZE > 0
 /* Entries 1 up to PyTuple_MAXSAVESIZE are free lists, entry 0 is the empty
    tuple () of which at most one instance will be allocated.

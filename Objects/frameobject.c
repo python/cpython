@@ -559,12 +559,6 @@ static PyGetSetDef frame_getsetlist[] = {
 /* max value for numfree */
 #define PyFrame_MAXFREELIST 200
 
-/* bpo-40521: frame free lists are shared by all interpreters. */
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  undef PyFrame_MAXFREELIST
-#  define PyFrame_MAXFREELIST 0
-#endif
-
 #if PyFrame_MAXFREELIST > 0
 static PyFrameObject *free_list = NULL;
 static int numfree = 0;         /* number of frames currently in free_list */
