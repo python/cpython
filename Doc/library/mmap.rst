@@ -358,5 +358,5 @@ MAP_* Constants
 
     These are the various flags that can be passed to :meth:`mmap.mmap`. Note that some options might not be present on some systems.
 
-    .. versionchanged:: 3.8
+    .. versionchanged:: 3.10
       Add MAP_POPULATE
