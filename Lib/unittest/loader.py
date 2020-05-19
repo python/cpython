@@ -189,7 +189,7 @@ class TestLoader(object):
 
         if isinstance(obj, types.ModuleType):
             return self.loadTestsFromModule(obj)
-        elif isinstance(obj, type) and issubclass(obj, case.TestCase):
+        elif isinstance(obj, type) and issubclass(obj, case.TestCase) and obj.__module__ != 'unittest.case':
             return self.loadTestsFromTestCase(obj)
         elif (isinstance(obj, types.FunctionType) and
               isinstance(parent, type) and
