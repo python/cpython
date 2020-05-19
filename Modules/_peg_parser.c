@@ -1,20 +1,9 @@
 #include <Python.h>
 #include "pegen_interface.h"
 
-PyObject *
-_Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
+int
+_mode_str_to_int(char *mode_str)
 {
-    static char *keywords[] = {"string", "mode", "oldparser", "bytecode", NULL};
-    char *the_string;
-    char *mode_str = "exec";
-    int oldparser = 0;
-    int bytecode = 0;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|spp", keywords,
-            &the_string, &mode_str, &oldparser, &bytecode)) {
-        return NULL;
-    }
-
     int mode;
     if (strcmp(mode_str, "exec") == 0) {
         mode = Py_file_input;
@@ -26,6 +15,39 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         mode = Py_single_input;
     }
     else {
+        mode = -1;
+    }
+    return mode;
+}
+
+mod_ty
+_run_parser(char *str, int mode, PyCompilerFlags *flags, PyArena *arena, int oldparser)
+{
+    mod_ty mod;
+    if (!oldparser) {
+        mod = PyPegen_ASTFromString(str, "<string>", mode, flags, arena);
+    }
+    else {
+        mod = PyParser_ASTFromString(str, "<string>", mode, flags, arena);
+    }
+    return mod;
+}
+
+PyObject *
+_Py_compile_string(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *keywords[] = {"string", "mode", "oldparser", NULL};
+    char *the_string;
+    char *mode_str = "exec";
+    int oldparser = 0;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sp", keywords,
+            &the_string, &mode_str, &oldparser)) {
+        return NULL;
+    }
+
+    int mode = _mode_str_to_int(mode_str);
+    if (mode == -1) {
         return PyErr_Format(PyExc_ValueError, "mode must be either 'exec' or 'eval' or 'single'");
     }
 
@@ -37,31 +59,59 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    mod_ty mod;
-    if (!oldparser) {
-        mod = PyPegen_ASTFromString(the_string, "<string>", mode, &flags, arena);
-    }
-    else {
-        mod = PyParser_ASTFromString(the_string, "<string>", mode, &flags, arena);
-    }
+    mod_ty mod = _run_parser(the_string, mode, &flags, arena, oldparser);
     if (mod == NULL) {
         goto error;
     }
 
-    if (!bytecode) {
-        PyObject *result = PyAST_mod2obj(mod);
-        PyArena_Free(arena);
-        return result;
-    }
-
     PyObject *filename = PyUnicode_DecodeFSDefault("<string>");
-    if (!filename) {
+    if (filename == NULL) {
         goto error;
     }
-    PyCodeObject *co = PyAST_CompileObject(mod, filename, &flags, -1, arena);
+    PyCodeObject *result = PyAST_CompileObject(mod, filename, &flags, -1, arena);
     Py_XDECREF(filename);
     PyArena_Free(arena);
-    return (PyObject *)co;
+    return (PyObject *)result;
+
+error:
+    PyArena_Free(arena);
+    return NULL;
+}
+
+PyObject *
+_Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *keywords[] = {"string", "mode", "oldparser", NULL};
+    char *the_string;
+    char *mode_str = "exec";
+    int oldparser = 0;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sp", keywords,
+            &the_string, &mode_str, &oldparser)) {
+        return NULL;
+    }
+
+    int mode = _mode_str_to_int(mode_str);
+    if (mode == -1) {
+        return PyErr_Format(PyExc_ValueError, "mode must be either 'exec' or 'eval' or 'single'");
+    }
+
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    flags.cf_flags = PyCF_IGNORE_COOKIE;
+
+    PyArena *arena = PyArena_New();
+    if (arena == NULL) {
+        return NULL;
+    }
+
+    mod_ty mod = _run_parser(the_string, mode, &flags, arena, oldparser);
+    if (mod == NULL) {
+        goto error;
+    }
+
+    PyObject *result = PyAST_mod2obj(mod);
+    PyArena_Free(arena);
+    return result;
 
 error:
     PyArena_Free(arena);
@@ -69,7 +119,18 @@ error:
 }
 
 static PyMethodDef ParseMethods[] = {
-    {"parse_string", (PyCFunction)(void (*)(void))_Py_parse_string, METH_VARARGS|METH_KEYWORDS,"Parse a string."},
+    {
+        "parse_string",
+        (PyCFunction)(void (*)(void))_Py_parse_string,
+        METH_VARARGS|METH_KEYWORDS,
+        "Parse a string."
+    },
+    {
+        "compile_string",
+        (PyCFunction)(void (*)(void))_Py_compile_string,
+        METH_VARARGS|METH_KEYWORDS,
+        "Compile a string to bytecode."
+    },
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 

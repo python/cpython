@@ -170,11 +170,15 @@ def parse_directory(
                         flags=ast.PyCF_ONLY_AST if mode == 1 else 0
                     )
                 else:
-                    tree = _peg_parser.parse_string(
+                    peg_parser_func = (
+                        _peg_parser.compile_string
+                        if mode == 2
+                        else _peg_parser.parse_string
+                    )
+                    tree = peg_parser_func(
                         source,
                         mode="exec",
                         oldparser=True,
-                        bytecode=mode == 2,
                     )
                 if tree_arg:
                     trees[file] = tree

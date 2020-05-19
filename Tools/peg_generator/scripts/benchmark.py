@@ -63,10 +63,9 @@ def benchmark(func):
 @benchmark
 def time_compile(source, parser):
     if parser == "cpython":
-        return _peg_parser.parse_string(
+        return _peg_parser.compile_string(
             source,
             oldparser=True,
-            bytecode=True,
         )
     else:
         return compile(source, "xxl.py", "exec")
@@ -93,6 +92,7 @@ def run_benchmark_stdlib(subcommand, parser):
         parse_directory(
             "../../Lib",
             "../../Grammar/python.gram",
+            "../../Grammar/Tokens",
             verbose=False,
             excluded_files=["*/bad*", "*/lib2to3/tests/data/*",],
             skip_actions=False,
