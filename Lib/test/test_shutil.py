@@ -1854,7 +1854,6 @@ class TestWhich(BaseTest, unittest.TestCase):
         ext = ".xyz"
         temp_filexyz = tempfile.NamedTemporaryFile(dir=self.temp_dir,
                                                    prefix="Tmp2", suffix=ext)
-        os.chmod(temp_filexyz.name, stat.S_IXUSR | stat.S_IWUSR)
         self.addCleanup(temp_filexyz.close)
 
         # strip path and extension
