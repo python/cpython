@@ -49,6 +49,15 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(datetime_date_fromisoformat__doc__,
+"fromisoformat($type, date_string, /)\n"
+"--\n"
+"\n"
+"str -> Construct a date from the output of date.isoformat()");
+
+#define DATETIME_DATE_FROMISOFORMAT_METHODDEF    \
+    {"fromisoformat", (PyCFunction)datetime_date_fromisoformat, METH_O|METH_CLASS, datetime_date_fromisoformat__doc__},
+
 static PyObject *
 iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
                            int weekday);
@@ -144,4 +153,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a78f8891b2c32698 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cc394af4e25d266a input=a9049054013a1b77]*/
