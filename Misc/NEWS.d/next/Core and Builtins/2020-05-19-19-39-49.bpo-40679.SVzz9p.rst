@@ -1,0 +1,1 @@
+Error messages about invalid arguments now refer to a function by its ``__qualname__``.
