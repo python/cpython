@@ -1,1 +1,0 @@
-Move _dirnameW out of HAVE_SYMLINK to fix a potential compiling issue.
