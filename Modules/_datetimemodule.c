@@ -2940,27 +2940,33 @@ datetime_date_fromtimestamp_capi(PyObject *cls, PyObject *args)
     return result;
 }
 
-/* Return new date from proleptic Gregorian ordinal.  Raises ValueError if
- * the ordinal is out of range.
- */
+
+/*[clinic input]
+@classmethod
+datetime.date.fromordinal
+
+    ordinal: int
+    /
+
+int -> date corresponding to a proleptic Gregorian ordinal.
+
+Raises ValueError if the ordinal is out of range.
+[clinic start generated code]*/
+
 static PyObject *
-date_fromordinal(PyObject *cls, PyObject *args)
+datetime_date_fromordinal_impl(PyTypeObject *type, int ordinal)
+/*[clinic end generated code: output=ea5cc69d86614a6b input=1d7158c082e677fd]*/
 {
     PyObject *result = NULL;
-    int ordinal;
+    int year;
+    int month;
+    int day;
 
-    if (PyArg_ParseTuple(args, "i:fromordinal", &ordinal)) {
-        int year;
-        int month;
-        int day;
-
-        if (ordinal < 1)
-            PyErr_SetString(PyExc_ValueError, "ordinal must be "
-                                              ">= 1");
-        else {
-            ord_to_ymd(ordinal, &year, &month, &day);
-            result = new_date_subclass_ex(year, month, day, cls);
-        }
+    if (ordinal < 1)
+        PyErr_SetString(PyExc_ValueError, "ordinal must be >= 1");
+    else {
+        ord_to_ymd(ordinal, &year, &month, &day);
+        result = new_date_subclass_ex(year, month, day, (PyObject *) type);
     }
     return result;
 }
@@ -3485,11 +3491,7 @@ static PyMethodDef date_methods[] = {
 
     /* Class methods: */
     DATETIME_DATE_FROMTIMESTAMP_METHODDEF
-
-    {"fromordinal", (PyCFunction)date_fromordinal,      METH_VARARGS |
-                                                    METH_CLASS,
-     PyDoc_STR("int -> date corresponding to a proleptic Gregorian "
-               "ordinal.")},
+    DATETIME_DATE_FROMORDINAL_METHODDEF
 
      {"fromisoformat", (PyCFunction)date_fromisoformat,  METH_O |
                                                          METH_CLASS,

@@ -14,6 +14,41 @@ PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
 #define DATETIME_DATE_FROMTIMESTAMP_METHODDEF    \
     {"fromtimestamp", (PyCFunction)datetime_date_fromtimestamp, METH_O|METH_CLASS, datetime_date_fromtimestamp__doc__},
 
+PyDoc_STRVAR(datetime_date_fromordinal__doc__,
+"fromordinal($type, ordinal, /)\n"
+"--\n"
+"\n"
+"int -> date corresponding to a proleptic Gregorian ordinal.\n"
+"\n"
+"Raises ValueError if the ordinal is out of range.");
+
+#define DATETIME_DATE_FROMORDINAL_METHODDEF    \
+    {"fromordinal", (PyCFunction)datetime_date_fromordinal, METH_O|METH_CLASS, datetime_date_fromordinal__doc__},
+
+static PyObject *
+datetime_date_fromordinal_impl(PyTypeObject *type, int ordinal);
+
+static PyObject *
+datetime_date_fromordinal(PyTypeObject *type, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int ordinal;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    ordinal = _PyLong_AsInt(arg);
+    if (ordinal == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = datetime_date_fromordinal_impl(type, ordinal);
+
+exit:
+    return return_value;
+}
+
 static PyObject *
 iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
                            int weekday);
@@ -109,4 +144,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5e17549f29a439a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a78f8891b2c32698 input=a9049054013a1b77]*/
