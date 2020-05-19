@@ -656,7 +656,7 @@ class AST_Tests(unittest.TestCase):
 
     def test_issue40614_feature_version(self):
         ast.parse('f"{x=}"', feature_version=(3, 8))
-        with self.assertRaises(SyntaxError) as e:
+        with self.assertRaises(SyntaxError):
             ast.parse('f"{x=}"', feature_version=(3, 7))
 
 
