@@ -122,7 +122,7 @@ Type Objects
    may not return the intended result.
    ``Py_TYPE(self)`` may be a *subclass* of the intended class, and subclasses
    are not necessarily defined in the same module as their superclass.
-   See :c:type:`PyCMethod` to get the defining class.
+   See :c:type:`PyCMethod` to get the class that defines the method.
 
    .. versionadded:: 3.9
 
