@@ -117,7 +117,7 @@ Type Objects
    If no module is associated with the given type, sets :py:class:`TypeError`
    and returns ``NULL``.
 
-   This function is usually used to get the module in wich a method is defined.
+   This function is usually used to get the module in which a method is defined.
    Note that in such a method, ``PyType_GetModule(Py_TYPE(self))``
    may not return the intended result.
    ``Py_TYPE(self)`` may be a *subclass* of the intended class, and subclasses
