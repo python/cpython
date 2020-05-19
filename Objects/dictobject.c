@@ -251,12 +251,6 @@ static uint64_t pydict_global_version = 0;
 #define PyDict_MAXFREELIST 80
 #endif
 
-/* bpo-40521: dict free lists are shared by all interpreters. */
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  undef PyDict_MAXFREELIST
-#  define PyDict_MAXFREELIST 0
-#endif
-
 #if PyDict_MAXFREELIST > 0
 static PyDictObject *free_list[PyDict_MAXFREELIST];
 static int numfree = 0;

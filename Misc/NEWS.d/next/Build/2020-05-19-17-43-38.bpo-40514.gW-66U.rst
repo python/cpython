@@ -1,0 +1,3 @@
+Remove ``--with-experimental-isolated-subinterpreters`` configure option in
+Python 3.9: the experiment continues in the master branch, but it's no
+longer needed in 3.9.
