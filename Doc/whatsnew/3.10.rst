@@ -45,7 +45,7 @@
    This saves the maintainer the effort of going through the Mercurial log
    when researching a change.
 
-This article explains the new features in Python 3.10, compared to 3.8.
+This article explains the new features in Python 3.10, compared to 3.9.
 
 For full details, see the :source:`Misc/NEWS` file.
 
