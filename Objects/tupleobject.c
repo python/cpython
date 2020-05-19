@@ -975,10 +975,9 @@ _PyTuple_ClearFreeList(PyThreadState *tstate)
 }
 
 void
-_PyTuple_Fini(void)
+_PyTuple_Fini(PyThreadState *tstate)
 {
 #if PyTuple_MAXSAVESIZE > 0
-    PyThreadState *tstate = _PyThreadState_GET();
     struct _Py_tuple_state *state = &tstate->interp->tuple;
     /* empty tuples are used all over the place and applications may
      * rely on the fact that an empty tuple is a singleton. */
