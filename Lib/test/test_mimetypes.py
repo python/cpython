@@ -134,11 +134,16 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_preferred_extension(self):
         def check_extensions():
+            self.assertEqual(mimetypes.guess_extension('application/font-woff'), '.woff')
+            self.assertEqual(mimetypes.guess_extension('application/font-woff2'), '.woff2')
             self.assertEqual(mimetypes.guess_extension('application/octet-stream'), '.bin')
             self.assertEqual(mimetypes.guess_extension('application/postscript'), '.ps')
             self.assertEqual(mimetypes.guess_extension('application/vnd.apple.mpegurl'), '.m3u')
             self.assertEqual(mimetypes.guess_extension('application/vnd.ms-excel'), '.xls')
+            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-font'), '.eot')
             self.assertEqual(mimetypes.guess_extension('application/vnd.ms-powerpoint'), '.ppt')
+            self.assertEqual(mimetypes.guess_extension('application/x-font-opentype'), '.otf')
+            self.assertEqual(mimetypes.guess_extension('application/x-font-ttf'), '.ttf')
             self.assertEqual(mimetypes.guess_extension('application/x-texinfo'), '.texi')
             self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
             self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
