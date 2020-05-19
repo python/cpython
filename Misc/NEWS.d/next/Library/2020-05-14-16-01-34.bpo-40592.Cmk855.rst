@@ -1,1 +1,1 @@
-shutil.which returns not None anymore with ; at the end of PATHEXT
+:func:`shutil.which` now ignores empty entries in :envvar:`PATHEXT` instead of treating them as a match.
