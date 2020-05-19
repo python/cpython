@@ -1,0 +1,2 @@
+Adds optional global :file:`python.exe` and :file:`python3.exe` commands to
+the Windows installer.

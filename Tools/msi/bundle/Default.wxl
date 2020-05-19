@@ -82,11 +82,12 @@ Select Customize to review current options.</String>
   
   <String Id="AssociateFilesLabel">Associate &amp;files with Python (requires the py launcher)</String>
   <String Id="ShortcutsLabel">Create shortcuts for installed applications</String>
-  <String Id="PrependPathLabel">Add Python to &amp;environment variables</String>
-  <String Id="ShortPrependPathLabel">Add &amp;Python [ShortVersion] to PATH</String>
+  <String Id="PrependPathLabel">Add Python install to &amp;environment variables</String>
+  <String Id="GlobalCommandLabel">Add &amp;global 'python(3).exe' commands (requires the py launcher)</String>
   <String Id="InstallAllUsersLabel">Install for &amp;all users</String>
   <String Id="InstallLauncherAllUsersLabel">for &amp;all users (requires elevation)</String>
-  <String Id="ShortInstallLauncherAllUsersLabel">Install &amp;launcher for all users (recommended)</String>
+  <String Id="InstallGlobalCommandLabel">Add global '&amp;python(3).exe' commands</String>
+  <String Id="ShortInstallLauncherAllUsersLabel">Instal&amp;l commands for all users</String>
   <String Id="PrecompileLabel">&amp;Precompile standard library</String>
   <String Id="Include_symbolsLabel">Download debugging &amp;symbols</String>
   <String Id="Include_debugLabel">Download debu&amp;g binaries (requires VS 2015 or later)</String>

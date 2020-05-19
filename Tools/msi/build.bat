@@ -9,6 +9,7 @@ set BUILDDOC=
 set BUILDTEST=
 set BUILDPACK=
 set REBUILD=
+set SKIPBUILD=
 
 :CheckOpts
 if "%~1" EQU "-h" goto Help
@@ -19,11 +20,15 @@ if "%~1" EQU "--no-test-marker" (set BUILDTEST=) && shift && goto CheckOpts
 if "%~1" EQU "--test-marker" (set BUILDTEST=--test-marker) && shift && goto CheckOpts
 if "%~1" EQU "--pack" (set BUILDPACK=1) && shift && goto CheckOpts
 if "%~1" EQU "-r" (set REBUILD=-r) && shift && goto CheckOpts
+if "%~1" EQU "-B" (set SKIPBUILD=1) && shift && goto CheckOpts
+if "%~1" EQU "--skip-build" (set SKIPBUILD=1) && shift && goto CheckOpts
+
+call "%PCBUILD%find_msbuild.bat" %MSBUILD%
+if defined SKIPBUILD goto :skipbuild
 
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 
 call "%D%get_externals.bat"
-call "%PCBUILD%find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
 if defined BUILDX86 (
@@ -43,6 +48,8 @@ if defined BUILDDOC (
     call "%PCBUILD%..\Doc\make.bat" htmlhelp
     if errorlevel 1 goto :eof
 )
+
+:skipbuild
 
 rem Build the launcher MSI separately
 %MSBUILD% "%D%launcher\launcher.wixproj" /p:Platform=x86

@@ -17,6 +17,9 @@
             <ComponentGroupRef Id="launcher_exe" />
             <ComponentGroupRef Id="launcher_reg" />
         </Feature>
+        <Feature Id="GlobalCommand" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="global_exe" Primary="yes" />
+        </Feature>
         
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="LauncherInstallDirectory" />

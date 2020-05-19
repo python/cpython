@@ -35,4 +35,13 @@
             </Component>
         </ComponentGroup>
     </Fragment>
+    <Fragment>
+        <ComponentGroup Id="global_exe">
+            <Component Id="python3.exe" Directory="LauncherInstallDirectory" Guid="{A06E5F56-718B-49FD-A23F-D442CF66411C}">
+                <File Id="python.exe" Name="python.exe" Source="py.exe" KeyPath="no" />
+                <File Id="python3.exe" Name="python3.exe" Source="py.exe" KeyPath="yes" />
+                <RegistryValue Root="HKMU" Key="Software\Python\PyLauncher" Name="GlobalCommand" Value="[#python3.exe]" Type="string" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
 </Wix>
