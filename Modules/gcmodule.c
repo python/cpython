@@ -1025,8 +1025,9 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
 static void
 clear_freelists(void)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     _PyFrame_ClearFreeList();
-    _PyTuple_ClearFreeList();
+    _PyTuple_ClearFreeList(tstate);
     _PyFloat_ClearFreeList();
     _PyList_ClearFreeList();
     _PyDict_ClearFreeList();
