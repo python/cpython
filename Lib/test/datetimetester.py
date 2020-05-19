@@ -1909,9 +1909,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (10000, 1, 1),
             (0, 1, 1),
             (9999999, 1, 1),
-            (2<<32, 1, 1),
-            (2019, 2<<32, 1),
-            (2019, 1, 2<<32),
         ]
 
         for isocal in isocals:

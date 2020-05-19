@@ -58,6 +58,69 @@ PyDoc_STRVAR(datetime_date_fromisoformat__doc__,
 #define DATETIME_DATE_FROMISOFORMAT_METHODDEF    \
     {"fromisoformat", (PyCFunction)datetime_date_fromisoformat, METH_O|METH_CLASS, datetime_date_fromisoformat__doc__},
 
+PyDoc_STRVAR(datetime_date_fromisocalendar__doc__,
+"fromisocalendar($type, /, year, week, day)\n"
+"--\n"
+"\n"
+"int, int, int -> Construct a date from the ISO year, week number and weekday.\n"
+"\n"
+"This is the inverse of the date.isocalendar() function");
+
+#define DATETIME_DATE_FROMISOCALENDAR_METHODDEF    \
+    {"fromisocalendar", (PyCFunction)(void(*)(void))datetime_date_fromisocalendar, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, datetime_date_fromisocalendar__doc__},
+
+static PyObject *
+datetime_date_fromisocalendar_impl(PyTypeObject *type, int year, int week,
+                                   int day);
+
+static PyObject *
+datetime_date_fromisocalendar(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"year", "week", "day", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fromisocalendar", 0};
+    PyObject *argsbuf[3];
+    int year;
+    int week;
+    int day;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    year = _PyLong_AsInt(args[0]);
+    if (year == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    week = _PyLong_AsInt(args[1]);
+    if (week == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    day = _PyLong_AsInt(args[2]);
+    if (day == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = datetime_date_fromisocalendar_impl(type, year, week, day);
+
+exit:
+    return return_value;
+}
+
 static PyObject *
 iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
                            int weekday);
@@ -153,4 +216,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cc394af4e25d266a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=243be40ba706f2b9 input=a9049054013a1b77]*/

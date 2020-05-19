@@ -3022,25 +3022,24 @@ invalid_string_error:
 }
 
 
+/*[clinic input]
+@classmethod
+datetime.date.fromisocalendar
+
+    year: int
+    week: int
+    day: int
+
+int, int, int -> Construct a date from the ISO year, week number and weekday.
+
+This is the inverse of the date.isocalendar() function
+[clinic start generated code]*/
+
 static PyObject *
-date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
+datetime_date_fromisocalendar_impl(PyTypeObject *type, int year, int week,
+                                   int day)
+/*[clinic end generated code: output=7b26e15115d24df6 input=f13669bbed6c8bb6]*/
 {
-    static char *keywords[] = {
-        "year", "week", "day", NULL
-    };
-
-    int year, week, day;
-    if (PyArg_ParseTupleAndKeywords(args, kw, "iii:fromisocalendar",
-                keywords,
-                &year, &week, &day) == 0) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            PyErr_Format(PyExc_ValueError,
-                    "ISO calendar component out of range");
-
-        }
-        return NULL;
-    }
-
     // Year is bounded to 0 < year < 10000 because 9999-12-31 is (9999, 52, 5)
     if (year < MINYEAR || year > MAXYEAR) {
         PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
@@ -3078,7 +3077,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
 
     ord_to_ymd(day_1 + day_offset, &year, &month, &day);
 
-    return new_date_subclass_ex(year, month, day, cls);
+    return new_date_subclass_ex(year, month, day, (PyObject *) type);
 }
 
 
@@ -3503,12 +3502,7 @@ static PyMethodDef date_methods[] = {
     DATETIME_DATE_FROMTIMESTAMP_METHODDEF
     DATETIME_DATE_FROMORDINAL_METHODDEF
     DATETIME_DATE_FROMISOFORMAT_METHODDEF
-
-     {"fromisocalendar", (PyCFunction)(void(*)(void))date_fromisocalendar,
-      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
-      PyDoc_STR("int, int, int -> Construct a date from the ISO year, week "
-                "number and weekday.\n\n"
-                "This is the inverse of the date.isocalendar() function")},
+    DATETIME_DATE_FROMISOCALENDAR_METHODDEF
 
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "
