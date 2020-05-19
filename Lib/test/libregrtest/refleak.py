@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import warnings
-from inspect import isabstract
 from test import support
 try:
     from _abc import _get_dump
@@ -26,6 +25,7 @@ def dash_R(ns, test_name, test_func):
     # This code is hackish and inelegant, but it seems to do the job.
     import copyreg
     import collections.abc
+    from inspect import isabstract
 
     if not hasattr(sys, 'gettotalrefcount'):
         raise Exception("Tracking reference leaks requires a debug build "
@@ -148,6 +148,7 @@ def dash_R(ns, test_name, test_func):
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     import copyreg
     import collections.abc
+    from inspect import isabstract
 
     # Restore some original values.
     warnings.filters[:] = fs

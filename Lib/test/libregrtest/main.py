@@ -1,13 +1,10 @@
 import datetime
-import faulthandler
 import locale
 import os
 import platform
-import random
 import re
 import sys
 import sysconfig
-import tempfile
 import time
 import unittest
 from test.libregrtest.cmdline import _parse_args
@@ -199,6 +196,7 @@ class Regrtest:
         self.ns = ns
 
     def find_tests(self, tests):
+        import random
         self.tests = tests
 
         if self.ns.single:
@@ -564,6 +562,7 @@ class Regrtest:
                 f.write(s)
 
     def set_temp_dir(self):
+        import tempfile
         if self.ns.tempdir:
             self.tmp_dir = self.ns.tempdir
 
@@ -613,6 +612,7 @@ class Regrtest:
                 support.unlink(name)
 
     def main(self, tests=None, **kwargs):
+        import faulthandler
         self.parse_args(kwargs)
 
         self.set_temp_dir()

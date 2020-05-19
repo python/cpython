@@ -1,18 +1,14 @@
-import asyncio
 import builtins
 import locale
-import logging
 import os
-import shutil
 import sys
 import sysconfig
 import threading
-import urllib.request
 import warnings
 from test import support
 from test.libregrtest.utils import print_warning
 try:
-    import _multiprocessing, multiprocessing.process
+    import multiprocessing.process
 except ImportError:
     multiprocessing = None
 
@@ -73,19 +69,25 @@ class saved_test_environment:
                 )
 
     def get_urllib_requests__url_tempfiles(self):
+        import urllib.request
         return list(urllib.request._url_tempfiles)
+
     def restore_urllib_requests__url_tempfiles(self, tempfiles):
         for filename in tempfiles:
             support.unlink(filename)
 
     def get_urllib_requests__opener(self):
+        import urllib.request
         return urllib.request._opener
+
     def restore_urllib_requests__opener(self, opener):
+        import urllib.request
         urllib.request._opener = opener
 
     def get_asyncio_events__event_loop_policy(self):
         return support.maybe_get_event_loop_policy()
     def restore_asyncio_events__event_loop_policy(self, policy):
+        import asyncio
         asyncio.set_event_loop_policy(policy)
 
     def get_sys_argv(self):
@@ -163,29 +165,39 @@ class saved_test_environment:
         # we could call get_archives_formats() but that only returns the
         # registry keys; we want to check the values too (the functions that
         # are registered)
+        import shutil
         return shutil._ARCHIVE_FORMATS, shutil._ARCHIVE_FORMATS.copy()
+
     def restore_shutil_archive_formats(self, saved):
+        import shutil
         shutil._ARCHIVE_FORMATS = saved[0]
         shutil._ARCHIVE_FORMATS.clear()
         shutil._ARCHIVE_FORMATS.update(saved[1])
 
     def get_shutil_unpack_formats(self):
+        import shutil
         return shutil._UNPACK_FORMATS, shutil._UNPACK_FORMATS.copy()
+
     def restore_shutil_unpack_formats(self, saved):
+        import shutil
         shutil._UNPACK_FORMATS = saved[0]
         shutil._UNPACK_FORMATS.clear()
         shutil._UNPACK_FORMATS.update(saved[1])
 
     def get_logging__handlers(self):
         # _handlers is a WeakValueDictionary
+        import logging
         return id(logging._handlers), logging._handlers, logging._handlers.copy()
+
     def restore_logging__handlers(self, saved_handlers):
         # Can't easily revert the logging state
         pass
 
     def get_logging__handlerList(self):
         # _handlerList is a list of weakrefs to handlers
+        import logging
         return id(logging._handlerList), logging._handlerList, logging._handlerList[:]
+
     def restore_logging__handlerList(self, saved_handlerList):
         # Can't easily revert the logging state
         pass

@@ -1,7 +1,6 @@
 import math
 import os.path
 import sys
-import textwrap
 from test import support
 
 
@@ -54,6 +53,7 @@ def printlist(x, width=70, indent=4, file=None):
     begin each line.
     """
 
+    import textwrap
     blanks = ' ' * indent
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
