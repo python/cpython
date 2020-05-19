@@ -300,7 +300,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
    constructed from ``ZoneInfo("Europe/Berlin")``, one would expect the
    following behavior:
 
-   .. code-block::
+   .. code-block:: pycon
 
        >>> a = ZoneInfo("Europe/Berlin")
        >>> b = pickle.loads(europe_berlin_pkl)
@@ -314,7 +314,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
    constructed from ``ZoneInfo.no_cache("Europe/Berlin")``, one would expect
    the following behavior:
 
-   .. code-block::
+   .. code-block:: pycon
 
        >>> a = ZoneInfo("Europe/Berlin")
        >>> b = pickle.loads(europe_berlin_pkl_nc)
