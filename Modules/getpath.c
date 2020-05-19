@@ -1296,8 +1296,20 @@ calculate_zip_path(PyCalculatePath *calculate)
 {
     PyStatus res;
 
+    // wsprintf() is not available on all platforms:
+    // use sprintf() + Py_DecodeLocale() instead
+    char filename[50];   // L"python310.zip\0"
+    wchar_t *wfilename;
+    sprintf(filename, "python%d%d.zip", PY_MAJOR_VERSION, PY_MINOR_VERSION);
+    size_t len;
+    wfilename = Py_DecodeLocale(filename, &len);
+    if (!wfilename) {
+        return DECODE_LOCALE_ERR("ZIP filename", len);
+    }
+
     /* Path: <PLATLIBDIR> / "python00.zip" */
-    wchar_t *path = joinpath2(calculate->platlibdir_macro, L"python000.zip");
+    wchar_t *path = joinpath2(calculate->platlibdir_macro, wfilename);
+    PyMem_RawFree(wfilename);
     if (path == NULL) {
         return _PyStatus_NO_MEMORY();
     }
@@ -1305,7 +1317,7 @@ calculate_zip_path(PyCalculatePath *calculate)
     if (calculate->prefix_found > 0) {
         /* Use the reduced prefix returned by Py_GetPrefix()
 
-           Path: <basename(basename(prefix))> / <PLATLIBDIR> / "python000.zip" */
+           Path: <basename(basename(prefix))> / <PLATLIBDIR> / "pythonXY.zip" */
         wchar_t *parent = _PyMem_RawWcsdup(calculate->prefix);
         if (parent == NULL) {
             res = _PyStatus_NO_MEMORY();
@@ -1324,12 +1336,6 @@ calculate_zip_path(PyCalculatePath *calculate)
         res = _PyStatus_NO_MEMORY();
         goto done;
     }
-
-    /* Replace "000" with the version */
-    size_t len = wcslen(calculate->zip_path);
-    calculate->zip_path[len - 7] = VERSION[0];
-    calculate->zip_path[len - 6] = VERSION[2];
-    calculate->zip_path[len - 5] = VERSION[3];
 
     res = _PyStatus_OK();
 
