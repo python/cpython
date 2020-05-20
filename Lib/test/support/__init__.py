@@ -6,23 +6,19 @@ if __name__ != 'test.support':
 import collections.abc
 import contextlib
 import errno
-import faulthandler
 import fnmatch
 import functools
-import gc
 import glob
 import importlib
 import importlib.util
 import os
 import platform
 import re
-import shutil
 import stat
 import struct
 import subprocess
 import sys
 import sysconfig
-import tempfile
 import _thread
 import threading
 import time
@@ -31,31 +27,6 @@ import unittest
 import warnings
 
 from .testresult import get_test_runner
-
-try:
-    import zlib
-except ImportError:
-    zlib = None
-
-try:
-    import gzip
-except ImportError:
-    gzip = None
-
-try:
-    import bz2
-except ImportError:
-    bz2 = None
-
-try:
-    import lzma
-except ImportError:
-    lzma = None
-
-try:
-    import resource
-except ImportError:
-    resource = None
 
 __all__ = [
     # globals
@@ -439,6 +410,7 @@ else:
     _rmdir = os.rmdir
 
     def _rmtree(path):
+        import shutil
         try:
             shutil.rmtree(path)
             return
@@ -708,13 +680,33 @@ requires_IEEE_754 = unittest.skipUnless(
     float.__getformat__("double").startswith("IEEE"),
     "test requires IEEE 754 doubles")
 
-requires_zlib = unittest.skipUnless(zlib, 'requires zlib')
+def requires_zlib(reason='requires zlib'):
+    try:
+        import zlib
+    except ImportError:
+        zlib = None
+    return unittest.skipUnless(zlib, reason)
 
-requires_gzip = unittest.skipUnless(gzip, 'requires gzip')
+def requires_gzip(reason='requires gzip'):
+    try:
+        import gzip
+    except ImportError:
+        gzip = None
+    return unittest.skipUnless(gzip, reason)
 
-requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
+def requires_bz2(reason='requires bz2'):
+    try:
+        import bz2
+    except ImportError:
+        bz2 = None
+    return unittest.skipUnless(bz2, reason)
 
-requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
+def requires_lzma(reason='requires lzma'):
+    try:
+        import lzma
+    except ImportError:
+        lzma = None
+    return unittest.skipUnless(lzma, reason)
 
 is_jython = sys.platform.startswith('java')
 
@@ -891,6 +883,7 @@ def temp_dir(path=None, quiet=False):
         created, only a warning is issued.
 
     """
+    import tempfile
     dir_created = False
     if path is None:
         path = tempfile.mkdtemp()
@@ -1064,6 +1057,10 @@ def check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=No
 
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
+    try:
+        import gzip
+    except ImportError:
+        gzip = None
 
     check = kw.pop('check', None)
 
@@ -1436,6 +1433,7 @@ def gc_collect():
     longer than expected.  This function tries its best to force all garbage
     objects to disappear.
     """
+    import gc
     gc.collect()
     if is_jython:
         time.sleep(0.1)
@@ -1444,6 +1442,7 @@ def gc_collect():
 
 @contextlib.contextmanager
 def disable_gc():
+    import gc
     have_gc = gc.isenabled()
     gc.disable()
     try:
@@ -2136,6 +2135,7 @@ def reap_children():
 
 @contextlib.contextmanager
 def start_threads(threads, unlock=None):
+    import faulthandler
     threads = list(threads)
     started = []
     try:
@@ -2401,6 +2401,7 @@ class PythonSymlink:
 
 _can_xattr = None
 def can_xattr():
+    import tempfile
     global _can_xattr
     if _can_xattr is not None:
         return _can_xattr
@@ -2445,6 +2446,7 @@ def skip_if_pgo_task(test):
 
 def fs_is_case_insensitive(directory):
     """Detects if the file system for the specified directory is case-insensitive."""
+    import tempfile
     with tempfile.NamedTemporaryFile(dir=directory) as base:
         base_path = base.name
         case_path = base_path.upper()
@@ -2576,11 +2578,16 @@ class SuppressCrashReport:
                     self.old_modes[report_type] = old_mode, old_file
 
         else:
-            if resource is not None:
+            try:
+                import resource
+                self.resource = resource
+            except ImportError:
+                self.resource = None
+            if self.resource is not None:
                 try:
-                    self.old_value = resource.getrlimit(resource.RLIMIT_CORE)
-                    resource.setrlimit(resource.RLIMIT_CORE,
-                                       (0, self.old_value[1]))
+                    self.old_value = self.resource.getrlimit(self.resource.RLIMIT_CORE)
+                    self.resource.setrlimit(self.resource.RLIMIT_CORE,
+                                            (0, self.old_value[1]))
                 except (ValueError, OSError):
                     pass
 
@@ -2618,9 +2625,9 @@ class SuppressCrashReport:
                     msvcrt.CrtSetReportMode(report_type, old_mode)
                     msvcrt.CrtSetReportFile(report_type, old_file)
         else:
-            if resource is not None:
+            if self.resource is not None:
                 try:
-                    resource.setrlimit(resource.RLIMIT_CORE, self.old_value)
+                    self.resource.setrlimit(self.resource.RLIMIT_CORE, self.old_value)
                 except (ValueError, OSError):
                     pass
 
@@ -2740,6 +2747,8 @@ def setswitchinterval(interval):
 
 @contextlib.contextmanager
 def disable_faulthandler():
+    import faulthandler
+
     # use sys.__stderr__ instead of sys.stderr, since regrtest replaces
     # sys.stderr with a StringIO which has no file descriptor when a test
     # is run with -W/--verbose3.

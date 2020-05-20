@@ -100,34 +100,53 @@ expression inside that contain should still cause a syntax error.
 This test just checks a couple of cases rather than enumerating all of
 them.
 
-# All of the following also produce different error messages with pegen
-# >>> (a, "b", c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to literal
+>>> (a, "b", c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to literal
 
-# >>> (a, True, c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to True
+>>> (a, True, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
 
 >>> (a, __debug__, c) = (1, 2, 3)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
-# >>> (a, *True, c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to True
+>>> (a, *True, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
 
 >>> (a, *__debug__, c) = (1, 2, 3)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
-# >>> [a, b, c + 1] = [1, 2, 3]
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to operator
+>>> [a, b, c + 1] = [1, 2, 3]
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
+
+>>> [a, b[1], c + 1] = [1, 2, 3]
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
+
+>>> [a, b.c.d, c + 1] = [1, 2, 3]
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
 
 >>> a if 1 else b = 1
 Traceback (most recent call last):
 SyntaxError: cannot assign to conditional expression
+
+>>> a, b += 1, 2
+Traceback (most recent call last):
+SyntaxError: 'tuple' is an illegal expression for augmented assignment
+
+>>> (a, b) += 1, 2
+Traceback (most recent call last):
+SyntaxError: 'tuple' is an illegal expression for augmented assignment
+
+>>> [a, b] += 1, 2
+Traceback (most recent call last):
+SyntaxError: 'list' is an illegal expression for augmented assignment
 
 From compiler_complex_args():
 
@@ -158,6 +177,16 @@ SyntaxError: invalid syntax
 ...     pass
 Traceback (most recent call last):
 SyntaxError: invalid syntax
+
+>>> import ast; ast.parse('''
+... def f(
+...     *, # type: int
+...     a, # type: int
+... ):
+...     pass
+... ''', type_comments=True)
+Traceback (most recent call last):
+SyntaxError: bare * has associated type comment
 
 
 From ast_for_funcdef():
@@ -334,16 +363,16 @@ More set_context():
 
 >>> (x for x in x) += 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to generator expression
+SyntaxError: 'generator expression' is an illegal expression for augmented assignment
 >>> None += 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to None
+SyntaxError: 'None' is an illegal expression for augmented assignment
 >>> __debug__ += 1
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 >>> f() += 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to function call
+SyntaxError: 'function call' is an illegal expression for augmented assignment
 
 
 Test continue in finally in weird combinations.
@@ -640,6 +669,9 @@ Corner-cases that used to crash:
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
+    >>> import ä £
+    Traceback (most recent call last):
+    SyntaxError: invalid character '£' (U+00A3)
 """
 
 import re
@@ -676,6 +708,7 @@ class SyntaxTestCase(unittest.TestCase):
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
 
+    @unittest.skipIf(support.use_old_parser(), "The old parser cannot generate these error messages")
     def test_assign_del(self):
         self._check_error("del (,)", "invalid syntax")
         self._check_error("del 1", "delete literal")

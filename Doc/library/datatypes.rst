@@ -20,6 +20,7 @@ The following modules are documented in this chapter:
 .. toctree::
 
    datetime.rst
+   zoneinfo.rst
    calendar.rst
    collections.rst
    collections.abc.rst

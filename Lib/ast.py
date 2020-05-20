@@ -332,6 +332,8 @@ def get_source_segment(source, node, *, padded=False):
     be padded with spaces to match its original position.
     """
     try:
+        if node.end_lineno is None or node.end_col_offset is None:
+            return None
         lineno = node.lineno - 1
         end_lineno = node.end_lineno - 1
         col_offset = node.col_offset
@@ -648,6 +650,7 @@ class _Unparser(NodeVisitor):
         self._source = []
         self._buffer = []
         self._precedences = {}
+        self._type_ignores = {}
         self._indent = 0
 
     def interleave(self, inter, f, seq):
@@ -697,11 +700,15 @@ class _Unparser(NodeVisitor):
         return value
 
     @contextmanager
-    def block(self):
+    def block(self, *, extra = None):
         """A context manager for preparing the source for blocks. It adds
         the character':', increases the indentation on enter and decreases
-        the indentation on exit."""
+        the indentation on exit. If *extra* is given, it will be directly
+        appended after the colon character.
+        """
         self.write(":")
+        if extra:
+            self.write(extra)
         self._indent += 1
         yield
         self._indent -= 1
@@ -748,6 +755,11 @@ class _Unparser(NodeVisitor):
         if isinstance(node, Constant) and isinstance(node.value, str):
             return node
 
+    def get_type_comment(self, node):
+        comment = self._type_ignores.get(node.lineno) or node.type_comment
+        if comment is not None:
+            return f" # type: {comment}"
+
     def traverse(self, node):
         if isinstance(node, list):
             for item in node:
@@ -770,7 +782,12 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def visit_Module(self, node):
+        self._type_ignores = {
+            ignore.lineno: f"ignore{ignore.tag}"
+            for ignore in node.type_ignores
+        }
         self._write_docstring_and_traverse_body(node)
+        self._type_ignores.clear()
 
     def visit_FunctionType(self, node):
         with self.delimit("(", ")"):
@@ -811,6 +828,8 @@ class _Unparser(NodeVisitor):
             self.traverse(target)
             self.write(" = ")
         self.traverse(node.value)
+        if type_comment := self.get_type_comment(node):
+            self.write(type_comment)
 
     def visit_AugAssign(self, node):
         self.fill()
@@ -930,7 +949,7 @@ class _Unparser(NodeVisitor):
             self.fill("@")
             self.traverse(deco)
         self.fill("class " + node.name)
-        with self.delimit("(", ")"):
+        with self.delimit_if("(", ")", condition = node.bases or node.keywords):
             comma = False
             for e in node.bases:
                 if comma:
@@ -966,7 +985,7 @@ class _Unparser(NodeVisitor):
         if node.returns:
             self.write(" -> ")
             self.traverse(node.returns)
-        with self.block():
+        with self.block(extra=self.get_type_comment(node)):
             self._write_docstring_and_traverse_body(node)
 
     def visit_For(self, node):
@@ -980,7 +999,7 @@ class _Unparser(NodeVisitor):
         self.traverse(node.target)
         self.write(" in ")
         self.traverse(node.iter)
-        with self.block():
+        with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
         if node.orelse:
             self.fill("else")
@@ -1018,13 +1037,13 @@ class _Unparser(NodeVisitor):
     def visit_With(self, node):
         self.fill("with ")
         self.interleave(lambda: self.write(", "), self.traverse, node.items)
-        with self.block():
+        with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
 
     def visit_AsyncWith(self, node):
         self.fill("async with ")
         self.interleave(lambda: self.write(", "), self.traverse, node.items)
-        with self.block():
+        with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
 
     def visit_JoinedStr(self, node):
@@ -1071,15 +1090,26 @@ class _Unparser(NodeVisitor):
         self.write(node.id)
 
     def _write_docstring(self, node):
+        def esc_char(c):
+            if c in ("\n", "\t"):
+                # In the AST form, we don't know the author's intentation
+                # about how this should be displayed. We'll only escape
+                # \n and \t, because they are more likely to be unescaped
+                # in the source
+                return c
+            return c.encode('unicode_escape').decode('ascii')
+
         self.fill()
         if node.kind == "u":
             self.write("u")
 
-        # Preserve quotes in the docstring by escaping them
-        value = node.value.replace("\\", "\\\\")
-        value = value.replace('"""', '""\"')
-        if value[-1] == '"':
-            value = value.replace('"', '\\"', -1)
+        value = node.value
+        if value:
+            # Preserve quotes in the docstring by escaping them
+            value = "".join(map(esc_char, value))
+            if value[-1] == '"':
+                value = value.replace('"', '\\"', -1)
+            value = value.replace('"""', '""\\"')
 
         self.write(f'"""{value}"""')
 
@@ -1190,10 +1220,10 @@ class _Unparser(NodeVisitor):
 
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
     unop_precedence = {
-        "~": _Precedence.FACTOR,
         "not": _Precedence.NOT,
+        "~": _Precedence.FACTOR,
         "+": _Precedence.FACTOR,
-        "-": _Precedence.FACTOR
+        "-": _Precedence.FACTOR,
     }
 
     def visit_UnaryOp(self, node):
@@ -1201,7 +1231,10 @@ class _Unparser(NodeVisitor):
         operator_precedence = self.unop_precedence[operator]
         with self.require_parens(operator_precedence, node):
             self.write(operator)
-            self.write(" ")
+            # factor prefixes (+, -, ~) shouldn't be seperated
+            # from the value they belong, (e.g: +1 instead of + 1)
+            if operator_precedence is not _Precedence.FACTOR:
+                self.write(" ")
             self.set_precedence(operator_precedence, node.operand)
             self.traverse(node.operand)
 
@@ -1323,10 +1356,20 @@ class _Unparser(NodeVisitor):
                 self.traverse(e)
 
     def visit_Subscript(self, node):
+        def is_simple_tuple(slice_value):
+            # when unparsing a non-empty tuple, the parantheses can be safely
+            # omitted if there aren't any elements that explicitly requires
+            # parantheses (such as starred expressions).
+            return (
+                isinstance(slice_value, Tuple)
+                and slice_value.elts
+                and not any(isinstance(elt, Starred) for elt in slice_value.elts)
+            )
+
         self.set_precedence(_Precedence.ATOM, node.value)
         self.traverse(node.value)
         with self.delimit("[", "]"):
-            if isinstance(node.slice, Tuple) and node.slice.elts:
+            if is_simple_tuple(node.slice):
                 self.items_view(self.traverse, node.slice.elts)
             else:
                 self.traverse(node.slice)

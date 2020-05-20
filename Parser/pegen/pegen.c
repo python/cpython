@@ -300,30 +300,6 @@ error:
     Py_XDECREF(tuple);
 }
 
-static inline PyObject *
-get_error_line(char *buffer, int is_file)
-{
-    const char *newline;
-    if (is_file) {
-        newline = strrchr(buffer, '\n');
-    } else {
-        newline = strchr(buffer, '\n');
-    }
-
-    if (is_file) {
-        while (newline > buffer && newline[-1] == '\n') {
-            --newline;
-        }
-    }
-
-    if (newline) {
-        return PyUnicode_DecodeUTF8(buffer, newline - buffer, "replace");
-    }
-    else {
-        return PyUnicode_DecodeUTF8(buffer, strlen(buffer), "replace");
-    }
-}
-
 static int
 tokenizer_error(Parser *p)
 {
@@ -422,7 +398,11 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (!error_line) {
-        error_line = get_error_line(p->tok->buf, p->start_rule == Py_file_input);
+        Py_ssize_t size = p->tok->inp - p->tok->buf;
+        if (size && p->tok->buf[size-1] == '\n') {
+            size--;
+        }
+        error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         if (!error_line) {
             goto error;
         }
@@ -449,25 +429,6 @@ error:
     Py_XDECREF(errstr);
     Py_XDECREF(error_line);
     return NULL;
-}
-
-void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
-    int kwarg_unpacking = 0;
-    for (Py_ssize_t i = 0, l = asdl_seq_LEN(e->v.Call.keywords); i < l; i++) {
-        keyword_ty keyword = asdl_seq_GET(e->v.Call.keywords, i);
-        if (!keyword->arg) {
-            kwarg_unpacking = 1;
-        }
-    }
-
-    const char *msg = NULL;
-    if (kwarg_unpacking) {
-        msg = "positional argument follows keyword argument unpacking";
-    } else {
-        msg = "positional argument follows keyword argument";
-    }
-
-    return RAISE_SYNTAX_ERROR(msg);
 }
 
 #if 0
@@ -2073,4 +2034,69 @@ _PyPegen_make_module(Parser *p, asdl_seq *a) {
         }
     }
     return Module(a, type_ignores, p->arena);
+}
+
+// Error reporting helpers
+
+expr_ty
+_PyPegen_get_invalid_target(expr_ty e)
+{
+    if (e == NULL) {
+        return NULL;
+    }
+
+#define VISIT_CONTAINER(CONTAINER, TYPE) do { \
+        Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
+        for (Py_ssize_t i = 0; i < len; i++) {\
+            expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
+            expr_ty child = _PyPegen_get_invalid_target(other);\
+            if (child != NULL) {\
+                return child;\
+            }\
+        }\
+    } while (0)
+
+    // We only need to visit List and Tuple nodes recursively as those
+    // are the only ones that can contain valid names in targets when
+    // they are parsed as expressions. Any other kind of expression
+    // that is a container (like Sets or Dicts) is directly invalid and
+    // we don't need to visit it recursively.
+
+    switch (e->kind) {
+        case List_kind: {
+            VISIT_CONTAINER(e, List);
+            return NULL;
+        }
+        case Tuple_kind: {
+            VISIT_CONTAINER(e, Tuple);
+            return NULL;
+        }
+        case Starred_kind:
+            return _PyPegen_get_invalid_target(e->v.Starred.value);
+        case Name_kind:
+        case Subscript_kind:
+        case Attribute_kind:
+            return NULL;
+        default:
+            return e;
+    }
+}
+
+void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
+    int kwarg_unpacking = 0;
+    for (Py_ssize_t i = 0, l = asdl_seq_LEN(e->v.Call.keywords); i < l; i++) {
+        keyword_ty keyword = asdl_seq_GET(e->v.Call.keywords, i);
+        if (!keyword->arg) {
+            kwarg_unpacking = 1;
+        }
+    }
+
+    const char *msg = NULL;
+    if (kwarg_unpacking) {
+        msg = "positional argument follows keyword argument unpacking";
+    } else {
+        msg = "positional argument follows keyword argument";
+    }
+
+    return RAISE_SYNTAX_ERROR(msg);
 }

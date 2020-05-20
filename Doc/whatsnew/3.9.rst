@@ -205,7 +205,44 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+zoneinfo
+--------
+
+The :mod:`zoneinfo` module brings support for the IANA time zone database to
+the standard library. It adds :class:`zoneinfo.ZoneInfo`, a concrete
+:class:`datetime.tzinfo` implementation backed by the system's time zone data.
+
+Example::
+
+    >>> from zoneinfo import ZoneInfo
+    >>> from datetime import datetime, timedelta
+
+    >>> # Daylight saving time
+    >>> dt = datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
+    >>> print(dt)
+    2020-10-31 12:00:00-07:00
+    >>> dt.tzname()
+    'PDT'
+
+    >>> # Standard time
+    >>> dt += timedelta(days=7)
+    >>> print(dt)
+    2020-11-07 12:00:00-08:00
+    >>> print(dt.tzname())
+    PST
+
+
+As a fall-back source of data for platforms that don't ship the IANA database,
+the |tzdata|_ module was released as a first-party package -- distributed via
+PyPI and maintained by the CPython core team.
+
+.. |tzdata| replace:: ``tzdata``
+.. _tzdata: https://pypi.org/project/tzdata/
+
+.. seealso::
+
+    :pep:`615` -- Support for the IANA Time Zone Database in the Standard Library
+        PEP written and implemented by Paul Ganssle
 
 
 Improved Modules
@@ -245,6 +282,22 @@ that schedules a shutdown for the default executor that waits on the
 Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
 implementation that polls process file descriptors. (:issue:`38692`)
 
+Added a new :term:`coroutine` :func:`asyncio.to_thread`. It is mainly used for
+running IO-bound functions in a separate thread to avoid blocking the event
+loop, and essentially works as a high-level version of
+:meth:`~asyncio.loop.run_in_executor` that can directly take keyword arguments.
+(Contributed by Kyle Stanley and Yury Selivanov in :issue:`32309`.)
+
+compileall
+----------
+
+Added new possibility to use hardlinks for duplicated ``.pyc`` files: *hardlink_dupes* parameter and --hardlink-dupes command line option.
+(Contributed by  Lumír 'Frenzy' Balhar in :issue:`40495`.)
+
+Added new options for path manipulation in resulting ``.pyc`` files: *stripdir*, *prependdir*, *limit_sl_dest* parameters and -s, -p, -e command line options.
+Added the possibility to specify the option for an optimization level multiple times.
+(Contributed by Lumír 'Frenzy' Balhar in :issue:`38112`.)
+
 concurrent.futures
 ------------------
 
@@ -270,6 +323,13 @@ curses
 Add :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
 :func:`curses.get_tabsize`, and :func:`curses.set_tabsize` functions.
 (Contributed by Anthony Sottile in :issue:`38312`.)
+
+datetime
+--------
+The :meth:`~datetime.date.isocalendar()` of :class:`datetime.date`
+and :meth:`~datetime.datetime.isocalendar()` of :class:`datetime.datetime`
+methods now returns a :func:`~collections.namedtuple` instead of a :class:`tuple`.
+(Contributed by Dong-hee Na in :issue:`24416`.)
 
 fcntl
 -----
@@ -303,6 +363,15 @@ unreachable. (Contributed by Pablo Galindo and Tim Peters in :issue:`38379`.)
 Added a new function :func:`gc.is_finalized` to check if an object has been
 finalized by the garbage collector. (Contributed by Pablo Galindo in
 :issue:`39322`.)
+
+hashlib
+-------
+
+Builtin hash modules can now be disabled with
+``./configure --without-builtin-hashlib-hashes`` or selectively enabled with
+e.g. ``./configure --with-builtin-hashlib-hashes=sha3,blake2`` to force use
+of OpenSSL based implementation.
+(Contributed by Christian Heimes in :issue:`40479`)
 
 http
 ----
@@ -461,6 +530,17 @@ The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
 constant on Linux 4.1 and greater.
 (Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
 
+The socket module now supports the :data:`~socket.CAN_J1939` protocol on
+platforms that support it.  (Contributed by Karl Ding in :issue:`40291`.)
+
+time
+----
+
+On AIX, :func:`~time.thread_time` is now implemented with ``thread_cputime()``
+which has nanosecond resolution, rather than
+``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 ms.
+(Contributed by Batuhan Taskaya in :issue:`40192`)
+
 sys
 ---
 
@@ -470,6 +550,10 @@ libraries and the path of the standard library. It is equal to ``"lib"`` on
 most platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit
 platforms.
 (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
+
+Previously, :attr:`sys.stderr` was block-buffered when non-interactive. Now
+``stderr`` defaults to always being line-buffered.
+(Contributed by Jendrik Seipp in :issue:`13601`.)
 
 
 typing
@@ -770,11 +854,6 @@ Changes in the Python API
 * The *encoding* parameter has been added to the classes :class:`ftplib.FTP` and
   :class:`ftplib.FTP_TLS` as a keyword-only parameter, and the default encoding
   is changed from Latin-1 to UTF-8 to follow :rfc:`2640`.
-
-* :func:`inspect.getdoc` no longer returns docstring inherited from the type
-  of the object or from parent class if it is a class if it is not defined
-  in the object itself.
-  (Contributed by Serhiy Storchaka in :issue:`40257`.)
 
 * :meth:`asyncio.loop.shutdown_default_executor` has been added to
   :class:`~asyncio.AbstractEventLoop`, meaning alternative event loops that

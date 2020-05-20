@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - master
+    - 3.9
     - 3.8
     - 3.7
     paths-ignore:
@@ -12,6 +13,7 @@ on:
   #pull_request:
   #  branches:
   #  - master
+  #  - 3.9
   #  - 3.8
   #  - 3.7
   #  paths-ignore:
@@ -48,6 +50,7 @@ jobs:
         ./python -m venv .venv
         source ./.venv/bin/activate
         python -m pip install -U coverage
+        python -m pip install -r Misc/requirements-test.txt
         python -m test.pythoninfo
     - name: 'Tests with coverage'
       run: >
