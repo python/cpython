@@ -169,7 +169,7 @@ class catch_threading_exception:
 
     Usage:
 
-        with support.catch_threading_exception() as cm:
+        with threading_helper.catch_threading_exception() as cm:
             # code spawning a thread which raises an exception
             ...
 

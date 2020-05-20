@@ -1626,7 +1626,7 @@ The :mod:`test.support.threading_helper` module provides support for threading t
 
    Usage::
 
-       with support.catch_threading_exception() as cm:
+       with threading_helper.catch_threading_exception() as cm:
            # code spawning a thread which raises an exception
            ...
 
