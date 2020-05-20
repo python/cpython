@@ -33,6 +33,7 @@ from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import socket_helper
+from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
 
 
@@ -706,7 +707,7 @@ class EventLoopTestsMixin:
         proto.transport.close()
         lsock.close()
 
-        support.join_thread(thread)
+        threading_helper.join_thread(thread)
         self.assertFalse(thread.is_alive())
         self.assertEqual(proto.state, 'CLOSED')
         self.assertEqual(proto.nbytes, len(message))
