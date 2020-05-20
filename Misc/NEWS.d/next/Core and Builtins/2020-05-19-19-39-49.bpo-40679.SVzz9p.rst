@@ -1,1 +1,1 @@
-Error messages about invalid arguments now refer to a function by its ``__qualname__``.
+Certain error messages about too few or too many arguments now refer to a function by its :term:`qualified name`.
