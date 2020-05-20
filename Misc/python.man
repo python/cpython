@@ -286,10 +286,6 @@ Set implementation specific option. The following options are available:
         traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a
         traceback limit of NFRAME frames
 
-    -X showalloccount: output the total count of allocated objects for each
-        type when the program finishes. This only works when Python was built with
-        COUNT_ALLOCS defined
-
     -X importtime: show how long each import takes. It shows module name,
         cumulative time (including nested imports) and self time (excluding
         nested imports). Note that its output may be broken in multi-threaded

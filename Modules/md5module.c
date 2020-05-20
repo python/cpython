@@ -119,7 +119,7 @@ typedef struct {
     a = (a + I(b,c,d) + M + t); a = ROLc(a, s) + b;
 
 
-static void md5_compress(struct md5_state *md5, unsigned char *buf)
+static void md5_compress(struct md5_state *md5, const unsigned char *buf)
 {
     MD5_INT32 i, W[16], a, b, c, d;
 
@@ -242,7 +242,7 @@ md5_process(struct md5_state *md5, const unsigned char *in, Py_ssize_t inlen)
 
     while (inlen > 0) {
         if (md5->curlen == 0 && inlen >= MD5_BLOCKSIZE) {
-           md5_compress(md5, (unsigned char *)in);
+           md5_compress(md5, in);
            md5->length    += MD5_BLOCKSIZE * 8;
            in             += MD5_BLOCKSIZE;
            inlen          -= MD5_BLOCKSIZE;
@@ -572,13 +572,15 @@ PyInit__md5(void)
 {
     PyObject *m;
 
-    Py_TYPE(&MD5type) = &PyType_Type;
-    if (PyType_Ready(&MD5type) < 0)
+    Py_SET_TYPE(&MD5type, &PyType_Type);
+    if (PyType_Ready(&MD5type) < 0) {
         return NULL;
+    }
 
     m = PyModule_Create(&_md5module);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
 
     Py_INCREF((PyObject *)&MD5type);
     PyModule_AddObject(m, "MD5Type", (PyObject *)&MD5type);

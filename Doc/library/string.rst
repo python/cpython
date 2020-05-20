@@ -302,9 +302,9 @@ specification is to be interpreted.
 Most built-in types implement the following options for format specifications,
 although some of the formatting options are only supported by the numeric types.
 
-A general convention is that an empty format string (``""``) produces
+A general convention is that an empty format specification produces
 the same result as if you had called :func:`str` on the value. A
-non-empty format string typically modifies the result.
+non-empty format specification typically modifies the result.
 
 The general form of a *standard format specifier* is:
 
@@ -415,8 +415,9 @@ error.
 .. versionchanged:: 3.6
    Added the ``'_'`` option (see also :pep:`515`).
 
-*width* is a decimal integer defining the minimum field width.  If not
-specified, then the field width will be determined by the content.
+*width* is a decimal integer defining the minimum total field width,
+including any prefixes, separators, and other formatting characters.
+If not specified, then the field width will be determined by the content.
 
 When no explicit alignment is given, preceding the *width* field by a zero
 (``'0'``) character enables

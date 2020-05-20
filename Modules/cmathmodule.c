@@ -3,6 +3,7 @@
 /* much code borrowed from mathmodule.c */
 
 #include "Python.h"
+#include "pycore_dtoa.h"
 #include "_math.h"
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */

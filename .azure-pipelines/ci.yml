@@ -35,7 +35,9 @@ jobs:
 - job: macOS_CI_Tests
   displayName: macOS CI Tests
   dependsOn: Prebuild
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  #condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  # bpo-39837: macOS tests on Azure Pipelines are disabled
+  condition: false
 
   variables:
     testRunTitle: '$(build.sourceBranchName)-macos'
@@ -59,7 +61,7 @@ jobs:
   variables:
     testRunTitle: '$(build.sourceBranchName)-linux'
     testRunPlatform: linux
-    openssl_version: 1.1.1d
+    openssl_version: 1.1.1f
 
   steps:
   - template: ./posix-steps.yml
@@ -116,7 +118,7 @@ jobs:
   variables:
     testRunTitle: '$(Build.SourceBranchName)-linux-coverage'
     testRunPlatform: linux-coverage
-    openssl_version: 1.1.1d
+    openssl_version: 1.1.1f
 
   steps:
   - template: ./posix-steps.yml
