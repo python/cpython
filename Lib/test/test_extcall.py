@@ -500,6 +500,50 @@ Same with keyword only args:
       ...
     TypeError: f() missing 5 required keyword-only arguments: 'a', 'b', 'c', 'd', and 'e'
 
+Test that functions are referred to by their __qualname__s:
+
+    >>> class A:
+    ...     def method(self, x, y):
+    ...         pass
+    ...     def method_noarg(self):
+    ...         pass
+    ...     @classmethod
+    ...     def class_method(cls):
+    ...         pass
+    ...     @staticmethod
+    ...     def static_method():
+    ...         pass
+    ...     @staticmethod
+    ...     def positional_only(arg, /):
+    ...         pass
+
+    >>> a_object = A()
+
+    >>> a_object.method("x")
+    Traceback (most recent call last):
+      ...
+    TypeError: A.method() missing 1 required positional argument: 'y'
+
+    >>> A.static_method("oops it's an argument")
+    Traceback (most recent call last):
+      ...
+    TypeError: A.static_method() takes 0 positional arguments but 1 was given
+
+    >>> A.positional_only(arg="x")
+    Traceback (most recent call last):
+      ...
+    TypeError: A.positional_only() got some positional-only arguments passed as keyword arguments: 'arg'
+
+    >>> a_object.method(bad='x')
+    Traceback (most recent call last):
+      ...
+    TypeError: A.method() got an unexpected keyword argument 'bad'
+
+    >>> a_object.method("x", "y", x="oops")
+    Traceback (most recent call last):
+      ...
+    TypeError: A.method() got multiple values for argument 'x'
+
 """
 
 import sys

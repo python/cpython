@@ -8,7 +8,6 @@ import struct
 import collections
 import itertools
 import gc
-import re
 
 
 class FunctionCalls(unittest.TestCase):
@@ -363,45 +362,10 @@ class PythonClass:
     def static_method():
         return "staticmethod"
 
-    @staticmethod
-    def positional_only(arg, /):
-        return arg
-
 
 PYTHON_INSTANCE = PythonClass()
 
 NULL_OR_EMPTY = object()
-
-
-@cpython_only
-class TestErrorMessagesUseQualifiedName(unittest.TestCase):
-
-    def test_missing_arguments(self):
-        msg = "PythonClass.method() missing 1 required positional argument: 'arg2'"
-        with self.assertRaisesRegex(TypeError, "^"+re.escape(msg)+"$"):
-            PYTHON_INSTANCE.method("arg1")
-
-    def test_too_many_positional(self):
-        msg = "PythonClass.static_method() takes 0 positional arguments but 1 was given"
-        with self.assertRaisesRegex(TypeError, "^"+re.escape(msg)+"$"):
-            PythonClass.static_method("oops it's an arg")
-
-    def test_positional_only_passed_as_keyword(self):
-        msg = "PythonClass.positional_only() got some positional-only arguments passed as keyword arguments: 'arg'"
-        with self.assertRaisesRegex(TypeError, "^"+re.escape(msg)+"$"):
-            PythonClass.positional_only(arg="x")
-
-    def test_unexpected_keyword(self):
-        msg = "PythonClass.method() got an unexpected keyword argument 'bad'"
-        with self.assertRaisesRegex(TypeError, "^"+re.escape(msg)+"$"):
-            PYTHON_INSTANCE.method(bad="x")
-
-    def test_multiple_values(self):
-        kwargs = {"arg1":2, "arg2":3}
-        msg = "PythonClass.method() got multiple values for argument 'arg1'"
-        with self.assertRaisesRegex(TypeError, "^"+re.escape(msg)+"$"):
-            PYTHON_INSTANCE.method("arg1", "arg2", arg1="oops")
-
 
 class FastCallTests(unittest.TestCase):
     """Test calling using various callables from C
