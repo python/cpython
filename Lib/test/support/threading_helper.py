@@ -21,8 +21,6 @@ def threading_setup():
     return _thread._count(), threading._dangling.copy()
 
 def threading_cleanup(*original_values):
-    global environment_altered
-
     _MAX_COUNT = 100
 
     for count in range(_MAX_COUNT):
