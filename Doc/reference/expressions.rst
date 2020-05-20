@@ -162,6 +162,8 @@ ambiguities and allow common typos to pass uncaught.
 Displays for lists, sets and dictionaries
 -----------------------------------------
 
+.. index:: single: comprehensions
+
 For constructing a list, a set or a dictionary Python provides special syntax
 called "displays", each of them in two flavors:
 
@@ -260,6 +262,7 @@ Set displays
 
 .. index::
    pair: set; display
+   pair: set; comprehensions
    object: set
    single: {} (curly brackets); set expression
    single: , (comma); expression list
@@ -287,6 +290,7 @@ Dictionary displays
 
 .. index::
    pair: dictionary; display
+   pair: dictionary; comprehensions
    key, datum, key/datum pair
    object: dictionary
    single: {} (curly brackets); dictionary expression

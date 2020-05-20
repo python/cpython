@@ -4114,6 +4114,12 @@ The constructors for both classes work the same:
 .. class:: set([iterable])
            frozenset([iterable])
 
+   Sets can be created by several means:
+
+   * Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
+   * Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
+   * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
+
    Return a new set or frozenset object whose elements are taken from
    *iterable*.  The elements of a set must be :term:`hashable`.  To
    represent sets of sets, the inner sets must be :class:`frozenset`
@@ -4308,6 +4314,14 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 .. class:: dict(**kwarg)
            dict(mapping, **kwarg)
            dict(iterable, **kwarg)
+
+   Dictionaries can be created by several means:
+
+   * Use a comma-separated list of ``key: value`` pairs within braces:
+     ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098: 'jack', 4127: 'sjoerd'}``
+   * Use a dict comprehension: ``{}``, ``{x: x ** 2 for x in range(10)}``
+   * Use the type constructor: ``dict()``,
+     ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
    Return a new dictionary initialized from an optional positional argument
    and a possibly empty set of keyword arguments.
