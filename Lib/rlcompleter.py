@@ -110,12 +110,13 @@ class Completer:
         defined in self.namespace that match.
 
         """
+        import re
         import keyword
         matches = []
         seen = {"__builtins__"}
         n = len(text)
         for word in keyword.kwlist:
-            if word[:n] == text:
+            if re.match(text, word[:n], flags=_re_ignorecase_flags):
                 seen.add(word)
                 if word in {'finally', 'try'}:
                     word = word + ':'
@@ -126,7 +127,8 @@ class Completer:
                 matches.append(word)
         for nspace in [self.namespace, builtins.__dict__]:
             for word, val in nspace.items():
-                if word[:n] == text and word not in seen:
+                if (re.match(text, word[:n], flags=_re_ignorecase_flags) and
+                    word not in seen):
                     seen.add(word)
                     matches.append(self._callable_postfix(val, word))
         return matches
@@ -193,7 +195,7 @@ _re_ignorecase_flags = 0
 def set_case_insensitive(option):
     import re
     global _re_ignorecase_flags
-    _re_ignorecase_flags = option and re.IGNORECASE or 0
+    _re_ignorecase_flags = re.IGNORECASE if option else 0
 
 def get_class_members(klass):
     ret = dir(klass)
