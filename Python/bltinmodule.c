@@ -2652,15 +2652,12 @@ zip_next(zipobject *lz)
         }
     }
     return result;
-check:;
-    PyObject *err = PyErr_Occurred();
-    if (err) {
-        if (!PyErr_GivenExceptionMatches(err, PyExc_StopIteration)) {
-            return NULL;
-        }
-        PyErr_Clear();
+check:
+    if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_StopIteration)) {
+        return NULL;
     }
     if (i) {
+        PyErr_Clear();
         return PyErr_Format(PyExc_ValueError, "%s() argument %d is too short",
                             Py_TYPE(lz)->tp_name, i + 1);
     }
@@ -2669,6 +2666,7 @@ check:;
         item = (*Py_TYPE(it)->tp_iternext)(it);
         if (item) {
             Py_DECREF(item);
+            PyErr_Clear();
             return PyErr_Format(PyExc_ValueError, "%s() argument %d is too long",
                                 Py_TYPE(lz)->tp_name, i + 1);
         }
