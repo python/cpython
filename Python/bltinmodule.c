@@ -2625,7 +2625,7 @@ zip_next(zipobject *lz)
             item = (*Py_TYPE(it)->tp_iternext)(it);
             if (item == NULL) {
                 Py_DECREF(result);
-                if (lz->tuplesize < 0 && !PyErr_Occurred()) {
+                if (lz->tuplesize < 0) {
                     goto check;
                 }
                 return NULL;
@@ -2643,7 +2643,7 @@ zip_next(zipobject *lz)
             item = (*Py_TYPE(it)->tp_iternext)(it);
             if (item == NULL) {
                 Py_DECREF(result);
-                if (lz->tuplesize < 0 && !PyErr_Occurred()) {
+                if (lz->tuplesize < 0) {
                     goto check;
                 }
                 return NULL;
@@ -2652,7 +2652,14 @@ zip_next(zipobject *lz)
         }
     }
     return result;
-check:
+check:;
+    PyObject *err = PyErr_Occurred();
+    if (err) {
+        if (!PyErr_GivenExceptionMatches(err, PyExc_StopIteration)) {
+            return NULL;
+        }
+        PyErr_Clear();
+    }
     if (i) {
         return PyErr_Format(PyExc_ValueError, "%s() argument %d is too short",
                             Py_TYPE(lz)->tp_name, i + 1);
