@@ -2079,7 +2079,7 @@ _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
             // as a comparison, and so we need to search the left side of the comparison
             // for invalid targets.
             if (targets_type == FOR_TARGETS) {
-                cmpop_ty cmpop = (cmpop_ty) asdl_seq_GET(e->v.Compare.comparators, 0);
+                cmpop_ty cmpop = (cmpop_ty) asdl_seq_GET(e->v.Compare.ops, 0);
                 if (cmpop == In) {
                     return _PyPegen_get_invalid_target(e->v.Compare.left, targets_type);
                 }
