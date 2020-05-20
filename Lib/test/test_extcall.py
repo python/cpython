@@ -505,11 +505,6 @@ Test that functions are referred to by their __qualname__s:
     >>> class A:
     ...     def method(self, x, y):
     ...         pass
-    ...     def method_noarg(self):
-    ...         pass
-    ...     @classmethod
-    ...     def class_method(cls):
-    ...         pass
     ...     @staticmethod
     ...     def static_method():
     ...         pass
