@@ -2627,6 +2627,7 @@ _PyExc_Init(void)
     ADD_ERRNO(PermissionError, EPERM);
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
+    ADD_ERRNO(TimeoutError, ETIME);
 
     return _PyStatus_OK();
 

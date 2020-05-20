@@ -1,0 +1,1 @@
+Map ``errno==ETIME`` to :exc:`TimeoutError`.
