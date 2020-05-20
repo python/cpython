@@ -175,13 +175,13 @@ def parse_directory(
                         if mode == 2
                         else _peg_parser.parse_string
                     )
-                    tree = peg_parser_func(
+                    result = peg_parser_func(
                         source,
                         mode="exec",
                         oldparser=True,
                     )
                 if tree_arg:
-                    trees[file] = tree
+                    trees[file] = result
                 if not short:
                     report_status(succeeded=True, file=file, verbose=verbose)
             except Exception as error:

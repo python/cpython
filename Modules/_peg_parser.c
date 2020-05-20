@@ -61,21 +61,19 @@ _Py_compile_string(PyObject *self, PyObject *args, PyObject *kwds)
 
     mod_ty mod = _run_parser(the_string, mode, &flags, arena, oldparser);
     if (mod == NULL) {
-        goto error;
+        PyArena_Free(arena);
+        return NULL;
     }
 
     PyObject *filename = PyUnicode_DecodeFSDefault("<string>");
     if (filename == NULL) {
-        goto error;
+        PyArena_Free(arena);
+        return NULL;
     }
     PyCodeObject *result = PyAST_CompileObject(mod, filename, &flags, -1, arena);
     Py_XDECREF(filename);
     PyArena_Free(arena);
     return (PyObject *)result;
-
-error:
-    PyArena_Free(arena);
-    return NULL;
 }
 
 PyObject *
@@ -106,16 +104,13 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 
     mod_ty mod = _run_parser(the_string, mode, &flags, arena, oldparser);
     if (mod == NULL) {
-        goto error;
+        PyArena_Free(arena);
+        return NULL;
     }
 
     PyObject *result = PyAST_mod2obj(mod);
     PyArena_Free(arena);
     return result;
-
-error:
-    PyArena_Free(arena);
-    return NULL;
 }
 
 static PyMethodDef ParseMethods[] = {
@@ -123,13 +118,13 @@ static PyMethodDef ParseMethods[] = {
         "parse_string",
         (PyCFunction)(void (*)(void))_Py_parse_string,
         METH_VARARGS|METH_KEYWORDS,
-        "Parse a string."
+        "Parse a string, return an AST."
     },
     {
         "compile_string",
         (PyCFunction)(void (*)(void))_Py_compile_string,
         METH_VARARGS|METH_KEYWORDS,
-        "Compile a string to bytecode."
+        "Compile a string, return a code object."
     },
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
