@@ -12,7 +12,7 @@ import random
 import shutil
 import subprocess
 import threading
-from test.support import threading_helper 
+from test.support import threading_helper
 from test.support import unlink
 import _compression
 import sys

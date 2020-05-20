@@ -1596,7 +1596,7 @@ The module defines the following class:
    Throws :exc:`AssertionError` if *opname* is found.
 
 
-:mod:`test.support.threading_helper` --- Utilities for threading tests 
+:mod:`test.support.threading_helper` --- Utilities for threading tests
 ======================================================================
 
 .. module:: test.support.threading_helper

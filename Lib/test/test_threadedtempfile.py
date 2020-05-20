@@ -15,7 +15,7 @@ provoking a 2.0 failure under Linux.
 
 import tempfile
 
-from test.support import threading_helper 
+from test.support import threading_helper
 import unittest
 import io
 import threading
