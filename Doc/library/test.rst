@@ -1604,10 +1604,10 @@ The module defines the following class:
 
 The :mod:`test.support.threading_helper` module provides support for threading tests.
 
-.. versionadded:: 3.9
+.. versionadded:: 3.10
 
 
-.. function:: join_thread(thread, timeout=30.0)
+.. function:: join_thread(thread, timeout=None)
 
    Join a *thread* within *timeout*.  Raise an :exc:`AssertionError` if thread
    is still alive after *timeout* seconds.
@@ -1635,7 +1635,7 @@ The :mod:`test.support.threading_helper` module provides support for threading t
    Return current thread count and copy of dangling threads.
 
 
-.. function:: wait_threads_exit(timeout=60.0)
+.. function:: wait_threads_exit(timeout=None)
 
    Context manager to wait until all threads created in the ``with`` statement
    exit.

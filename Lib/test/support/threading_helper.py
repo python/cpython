@@ -6,6 +6,7 @@ import time
 
 from test import support
 
+
 #=======================================================================
 # Threading support to prevent reporting refleaks when running regrtest.py -R
 
@@ -17,8 +18,10 @@ from test import support
 # __bootstrap() method has returned, which gives us reliable reference counts
 # at the end of a test run.
 
+
 def threading_setup():
     return _thread._count(), threading._dangling.copy()
+
 
 def threading_cleanup(*original_values):
     _MAX_COUNT = 100
