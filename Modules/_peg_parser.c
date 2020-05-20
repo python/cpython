@@ -1,7 +1,7 @@
 #include <Python.h>
 #include "pegen_interface.h"
 
-int
+static int
 _mode_str_to_int(char *mode_str)
 {
     int mode;
@@ -20,7 +20,7 @@ _mode_str_to_int(char *mode_str)
     return mode;
 }
 
-mod_ty
+static mod_ty
 _run_parser(char *str, int mode, PyCompilerFlags *flags, PyArena *arena, int oldparser)
 {
     mod_ty mod;
