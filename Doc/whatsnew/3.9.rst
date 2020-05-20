@@ -530,6 +530,9 @@ The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
 constant on Linux 4.1 and greater.
 (Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
 
+The socket module now supports the :data:`~socket.CAN_J1939` protocol on
+platforms that support it.  (Contributed by Karl Ding in :issue:`40291`.)
+
 time
 ----
 
