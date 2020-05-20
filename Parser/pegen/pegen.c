@@ -2063,14 +2063,12 @@ _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
     // we don't need to visit it recursively.
 
     switch (e->kind) {
-        case List_kind: {
+        case List_kind:
             VISIT_CONTAINER(e, List);
             return NULL;
-        }
-        case Tuple_kind: {
+        case Tuple_kind:
             VISIT_CONTAINER(e, Tuple);
             return NULL;
-        }
         case Starred_kind:
             if (targets_type == DEL_TARGETS) {
                 return e;
@@ -2081,7 +2079,13 @@ _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
             // as a comparison, and so we need to search the left side of the comparison
             // for invalid targets.
             if (targets_type == FOR_TARGETS) {
-                return _PyPegen_get_invalid_target(e->v.Compare.left, targets_type);
+                cmpop_ty cmpop = (cmpop_ty) asdl_seq_GET(e->v.Compare.comparators, 0);
+                if (cmpop == In) {
+                    return _PyPegen_get_invalid_target(e->v.Compare.left, targets_type);
+                }
+                else {
+                    return NULL;
+                }
             }
             return e;
         case Name_kind:
