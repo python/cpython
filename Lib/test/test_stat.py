@@ -173,11 +173,17 @@ class TestFilemode:
 
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'os.mkfifo not available')
     def test_fifo(self):
+        if sys.platform == "vxworks":
+            fifo_path = os.path.join("/fifos/", TESTFN)
+        else:
+            fifo_path = TESTFN
         try:
-            os.mkfifo(TESTFN, 0o700)
+            os.mkfifo(fifo_path, 0o700)
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
-        st_mode, modestr = self.get_mode()
+        st_mode, modestr = self.get_mode(fifo_path)
+        if sys.platform == "vxworks":
+            os.remove(fifo_path)
         self.assertEqual(modestr, 'prwx------')
         self.assertS_IS("FIFO", st_mode)
 
