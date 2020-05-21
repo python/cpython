@@ -3,6 +3,7 @@
 import asyncio
 import unittest
 
+from contextvars import ContextVar
 from unittest import mock
 from test.test_asyncio import utils as test_utils
 
@@ -73,6 +74,19 @@ class ToThreadTests(test_utils.TestCase):
 
         self.loop.run_until_complete(main())
         func.assert_called_once_with('test', something=True)
+
+    def test_to_thread_contextvars(self):
+        test_ctx = ContextVar('test_ctx')
+
+        def get_ctx():
+            return test_ctx.get()
+
+        async def main():
+            test_ctx.set('parrot')
+            return await asyncio.to_thread(get_ctx)
+
+        result = self.loop.run_until_complete(main())
+        self.assertEqual(result, 'parrot')
 
 
 if __name__ == "__main__":

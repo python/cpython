@@ -610,7 +610,9 @@ Running in Threads
    Asynchronously run function *func* in a separate thread.
 
    Any \*args and \*\*kwargs supplied for this function are directly passed
-   to *func*.
+   to *func*. Also, the current :class:`contextvars.Context` is propogated,
+   allowing context variables from the event loop thread to be accessed in the
+   separate thread.
 
    Return an :class:`asyncio.Future` which represents the eventual result of
    *func*.
@@ -656,6 +658,8 @@ Running in Threads
       to make IO-bound functions non-blocking. However, for extension modules
       that release the GIL or alternative Python implementations that don't
       have one, `asyncio.to_thread()` can also be used for CPU-bound functions.
+
+   .. versionadded:: 3.9
 
 
 Scheduling From Other Threads
