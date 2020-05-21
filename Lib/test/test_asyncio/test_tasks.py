@@ -540,6 +540,34 @@ class BaseTaskTests:
         loop.run_until_complete(task)
         loop.close()
 
+    def test_exception_chaining_after_await_with_context_cycle(self):
+        # Check trying to create an exception context cycle:
+        # https://bugs.python.org/issue40696
+        has_cycle = None
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+
+        async def process_exc(exc):
+            raise exc
+
+        async def run():
+            nonlocal has_cycle
+            try:
+                raise KeyError('a')
+            except Exception as exc:
+                task = asyncio.create_task(process_exc(exc))
+                try:
+                    await task
+                except BaseException as exc:
+                    has_cycle = (exc is exc.__context__)
+                    # Prevent a hang if has_cycle is True.
+                    exc.__context__ = None
+
+        task = self.new_task(loop, run())
+        loop.run_until_complete(task)
+        loop.close()
+        self.assertEqual(has_cycle, False)
+
     def test_cancel(self):
 
         def gen():
