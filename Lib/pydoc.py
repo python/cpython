@@ -2826,11 +2826,12 @@ def cli():
     Python keyword, topic, function, module, or package, or a dotted
     reference to a class or function within a module or module in a
     package.  If <name> contains a '{sep}', it is used as the path to a
-    Python source file to document. If name is 'keywords', 'topics',
-    or 'modules', a listing of these things is displayed.
+    Python source file to document.  If name is 'keywords', 'topics', or
+    'modules', a listing of these things is displayed.
 
 {cmd} -k <keyword>
-    Search for a keyword in the synopsis lines of all available modules.
+    Search for a keyword in the synopsis lines of all available
+    modules.
 
 {cmd} -n <hostname>
     Start an HTTP server with the given hostname (default: localhost).
@@ -2840,14 +2841,15 @@ def cli():
     number 0 can be used to get an arbitrary unused port.
 
 {cmd} -b
-    Start an HTTP server on an arbitrary unused port and open a Web browser
-    to interactively browse documentation.  This option can be used in
-    combination with -n and/or -p.
+    Start an HTTP server on an arbitrary unused port and open a Web
+    browser to interactively browse documentation.  This option can be
+    used in combination with -n and/or -p.
 
 {cmd} -w <name> ...
-    Write out the HTML documentation for a module to a file in the current
-    directory.  If <name> contains a '{sep}', it is treated as a filename; if
-    it names a directory, documentation is written for all the contents.
+    Write out the HTML documentation for a module to a file in the
+    current directory.  If <name> contains a '{sep}', it is treated as a
+    filename; if it names a directory, documentation is written for all
+    the contents.
 """.format(cmd=cmd, sep=os.sep))
 
 if __name__ == '__main__':
