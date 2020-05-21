@@ -555,7 +555,7 @@ class BaseTaskTests:
             try:
                 raise KeyError('a')
             except Exception as exc:
-                task = asyncio.create_task(process_exc(exc))
+                task = self.new_task(loop, process_exc(exc))
                 try:
                     await task
                 except BaseException as exc:
