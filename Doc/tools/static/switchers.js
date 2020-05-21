@@ -24,6 +24,7 @@
       'fr': 'French',
       'ja': 'Japanese',
       'ko': 'Korean',
+      'pt-br': 'Brazilian Portuguese',
   };
 
   function build_version_select(current_version, current_release) {
