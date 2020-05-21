@@ -134,8 +134,9 @@ import_from[stmt_ty]:
         _Py_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), EXTRA) }
 import_from_targets[asdl_seq*]:
     | '(' a=import_from_as_names [','] ')' { a }
-    | import_from_as_names
+    | import_from_as_names !','
     | '*' { _PyPegen_singleton_seq(p, CHECK(_PyPegen_alias_for_star(p))) }
+    | invalid_import_from_targets
 import_from_as_names[asdl_seq*]:
     | a=','.import_from_as_name+ { a }
 import_from_as_name[alias_ty]:
@@ -670,3 +671,6 @@ invalid_double_type_comments:
 invalid_del_target:
     | a=star_expression &del_target_end {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot delete %s", _PyPegen_get_expr_name(a)) }
+invalid_import_from_targets:
+    | import_from_as_names ',' {
+        RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
