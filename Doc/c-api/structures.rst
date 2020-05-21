@@ -62,12 +62,12 @@ the definition of all other Python objects.
    See documentation of :c:type:`PyVarObject` above.
 
 
-.. c:macro:: Py_TYPE(o)
+.. c:function:: PyTypeObject* Py_TYPE(PyObject *o)
 
-   This macro is used to access the :attr:`ob_type` member of a Python object.
-   It expands to::
+   This function is used to access the :attr:`ob_type` member of a Python object.
 
-      (((PyObject*)(o))->ob_type)
+   .. versionchanged:: 3.10
+      :c:func:`Py_TYPE()` is changed to the inline static function.
 
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
