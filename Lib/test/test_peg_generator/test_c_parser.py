@@ -391,6 +391,13 @@ class TestCParser(TempdirManager, unittest.TestCase):
         self.assertTrue("SOME SUBHEADER" in parser_source)
         self.assertTrue("SOME TRAILER" in parser_source)
 
+    def test_multiple_lookahead(self) -> None:
+        grammar_source = 'start: !"(" NEWLINE+ !")"'
+        grammar = parse_string(grammar_source, GrammarParser)
+        parser_source = generate_c_parser_source(grammar)
+
+        self.assertNotIn("int None_1", parser_source)
+
     def test_error_in_rules(self) -> None:
         grammar_source = """
         start: expr+ NEWLINE? ENDMARKER
