@@ -611,7 +611,7 @@ Running in Threads
 
    Any \*args and \*\*kwargs supplied for this function are directly passed
    to *func*. Also, the current :class:`contextvars.Context` is propogated,
-   allowing context variables from the main thread to be accessed in the
+   allowing context variables from the event loop thread to be accessed in the
    separate thread.
 
    Return an :class:`asyncio.Future` which represents the eventual result of
