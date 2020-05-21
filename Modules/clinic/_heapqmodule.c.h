@@ -21,12 +21,11 @@ _heapq_heappush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-<<<<<<< HEAD
     if (!_PyArg_CheckPositional("heappush", nargs, 2, 2)) {
-=======
-    if (!_PyArg_ParseStack(args, nargs, "O!O:heappush",
-        &PyList_Type, &heap, &item)) {
->>>>>>> Shift responsibility for type testing to the argument clinic
+        goto exit;
+    }
+    if (!PyList_Check(args[0])) {
+        _PyArg_BadArgument("heappush", "argument 1", "list", args[0]);
         goto exit;
     }
     heap = args[0];
@@ -55,9 +54,11 @@ _heapq_heappop(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *heap;
 
-    if (!PyArg_Parse(arg, "O!:heappop", &PyList_Type, &heap)) {
+    if (!PyList_Check(arg)) {
+        _PyArg_BadArgument("heappop", "argument", "list", arg);
         goto exit;
     }
+    heap = arg;
     return_value = _heapq_heappop_impl(module, heap);
 
 exit:
@@ -91,12 +92,11 @@ _heapq_heapreplace(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-<<<<<<< HEAD
     if (!_PyArg_CheckPositional("heapreplace", nargs, 2, 2)) {
-=======
-    if (!_PyArg_ParseStack(args, nargs, "O!O:heapreplace",
-        &PyList_Type, &heap, &item)) {
->>>>>>> Shift responsibility for type testing to the argument clinic
+        goto exit;
+    }
+    if (!PyList_Check(args[0])) {
+        _PyArg_BadArgument("heapreplace", "argument 1", "list", args[0]);
         goto exit;
     }
     heap = args[0];
@@ -129,12 +129,11 @@ _heapq_heappushpop(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-<<<<<<< HEAD
     if (!_PyArg_CheckPositional("heappushpop", nargs, 2, 2)) {
-=======
-    if (!_PyArg_ParseStack(args, nargs, "O!O:heappushpop",
-        &PyList_Type, &heap, &item)) {
->>>>>>> Shift responsibility for type testing to the argument clinic
+        goto exit;
+    }
+    if (!PyList_Check(args[0])) {
+        _PyArg_BadArgument("heappushpop", "argument 1", "list", args[0]);
         goto exit;
     }
     heap = args[0];
@@ -163,9 +162,11 @@ _heapq_heapify(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *heap;
 
-    if (!PyArg_Parse(arg, "O!:heapify", &PyList_Type, &heap)) {
+    if (!PyList_Check(arg)) {
+        _PyArg_BadArgument("heapify", "argument", "list", arg);
         goto exit;
     }
+    heap = arg;
     return_value = _heapq_heapify_impl(module, heap);
 
 exit:
@@ -190,9 +191,11 @@ _heapq__heappop_max(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *heap;
 
-    if (!PyArg_Parse(arg, "O!:_heappop_max", &PyList_Type, &heap)) {
+    if (!PyList_Check(arg)) {
+        _PyArg_BadArgument("_heappop_max", "argument", "list", arg);
         goto exit;
     }
+    heap = arg;
     return_value = _heapq__heappop_max_impl(module, heap);
 
 exit:
@@ -219,12 +222,11 @@ _heapq__heapreplace_max(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *heap;
     PyObject *item;
 
-<<<<<<< HEAD
     if (!_PyArg_CheckPositional("_heapreplace_max", nargs, 2, 2)) {
-=======
-    if (!_PyArg_ParseStack(args, nargs, "O!O:_heapreplace_max",
-        &PyList_Type, &heap, &item)) {
->>>>>>> Shift responsibility for type testing to the argument clinic
+        goto exit;
+    }
+    if (!PyList_Check(args[0])) {
+        _PyArg_BadArgument("_heapreplace_max", "argument 1", "list", args[0]);
         goto exit;
     }
     heap = args[0];
@@ -243,9 +245,6 @@ PyDoc_STRVAR(_heapq__heapify_max__doc__,
 
 #define _HEAPQ__HEAPIFY_MAX_METHODDEF    \
     {"_heapify_max", (PyCFunction)_heapq__heapify_max, METH_O, _heapq__heapify_max__doc__},
-<<<<<<< HEAD
-/*[clinic end generated code: output=37ef2a3319971c8d input=a9049054013a1b77]*/
-=======
 
 static PyObject *
 _heapq__heapify_max_impl(PyObject *module, PyObject *heap);
@@ -256,13 +255,14 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *heap;
 
-    if (!PyArg_Parse(arg, "O!:_heapify_max", &PyList_Type, &heap)) {
+    if (!PyList_Check(arg)) {
+        _PyArg_BadArgument("_heapify_max", "argument", "list", arg);
         goto exit;
     }
+    heap = arg;
     return_value = _heapq__heapify_max_impl(module, heap);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4ffac86cd73d9847 input=a9049054013a1b77]*/
->>>>>>> Shift responsibility for type testing to the argument clinic
+/*[clinic end generated code: output=9975cf51762878d5 input=a9049054013a1b77]*/
