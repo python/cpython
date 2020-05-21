@@ -499,8 +499,8 @@ setcomp[expr_ty]:
     | '{' a=expression b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
     | invalid_comprehension
 dict[expr_ty]:
-    | '{' a=[double_starred_kvpairs] '}' { _Py_Dict(CHECK(_PyPegen_get_keys(p, a)),
-                                     CHECK(_PyPegen_get_values(p, a)), EXTRA) }
+    | '{' a=[double_starred_kvpairs] '}' {
+        _Py_Dict(CHECK(_PyPegen_get_keys(p, a)), CHECK(_PyPegen_get_values(p, a)), EXTRA) }
 dictcomp[expr_ty]:
     | '{' a=kvpair b=for_if_clauses '}' { _Py_DictComp(a->key, a->value, b, EXTRA) }
     | invalid_dict_comprehension
