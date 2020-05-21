@@ -120,6 +120,8 @@ class Timer:
         if isinstance(stmt, str):
             # Check that the code can be compiled outside a function
             compile(stmtprefix + stmt, dummy_src_name, "exec")
+            if not stmt:
+                stmt = 'pass'
             stmt = reindent(stmt, 8)
         elif callable(stmt):
             local_ns['_stmt'] = stmt
