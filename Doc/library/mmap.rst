@@ -81,8 +81,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    private copy-on-write mapping, so changes to the contents of the mmap
    object will be private to this process, and :const:`MAP_SHARED` creates a
    mapping that's shared with all other processes mapping the same areas of
-   the file.  The default value is :const:`MAP_SHARED`. Some systems have 
-   additional possible flags with the full list specified in 
+   the file.  The default value is :const:`MAP_SHARED`. Some systems have
+   additional possible flags with the full list specified in
    :ref:`MAP_* constants <map-constants>`.
 
    *prot*, if specified, gives the desired memory protection; the two most
