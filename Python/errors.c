@@ -524,6 +524,7 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
 void
 _PyErr_ChainThreadState(PyThreadState *tstate)
 {
+    assert(_PyErr_Occurred(tstate));
     _PyErr_StackItem *exc_info = tstate->exc_info;
 
     if (exc_info->exc_type == NULL || exc_info->exc_type == Py_None) {
