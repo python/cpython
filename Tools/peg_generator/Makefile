@@ -75,15 +75,15 @@ time_compile: venv data/xxl.py
 time_parse: venv data/xxl.py
 	$(VENVPYTHON) scripts/benchmark.py --parser=pegen --target=xxl parse
 
-time_stdlib: time_stdlib_compile
+time_old: time_old_compile
 
-time_stdlib_compile: venv data/xxl.py
+time_old_compile: venv data/xxl.py
 	$(VENVPYTHON) scripts/benchmark.py --parser=cpython --target=xxl compile
 
-time_stdlib_parse: venv data/xxl.py
+time_old_parse: venv data/xxl.py
 	$(VENVPYTHON) scripts/benchmark.py --parser=cpython --target=xxl parse
 
-test_local:
+time_peg_dir:
 	$(PYTHON) scripts/test_parse_directory.py \
 		--grammar-file $(GRAMMAR) \
 		--tokens-file $(TOKENS) \
@@ -93,7 +93,7 @@ test_local:
 		--exclude "*/failset/**" \
 		--exclude "*/failset/**/*"
 
-test_global: $(CPYTHON)
+time_stdlib: $(CPYTHON)
 	$(PYTHON) scripts/test_parse_directory.py \
 		--grammar-file $(GRAMMAR) \
 		--tokens-file $(TOKENS) \
@@ -109,9 +109,6 @@ mypy: regen-metaparser
 
 format-python:
 	black pegen scripts
-
-bench: venv
-	$(VENVPYTHON) scripts/benchmark.py --parser=pegen --target=stdlib check
 
 format: format-python
 

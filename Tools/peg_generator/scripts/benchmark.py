@@ -68,7 +68,7 @@ def time_compile(source, parser):
             oldparser=True,
         )
     else:
-        return compile(source, "xxl.py", "exec")
+        return _peg_parser.compile_string(source)
 
 
 @benchmark
@@ -76,7 +76,7 @@ def time_parse(source, parser):
     if parser == "cpython":
         return _peg_parser.parse_string(source, oldparser=True)
     else:
-        return ast.parse(source)
+        return _peg_parser.parse_string(source)
 
 
 def run_benchmark_xxl(subcommand, parser, source):
@@ -98,7 +98,6 @@ def run_benchmark_stdlib(subcommand, parser):
             skip_actions=False,
             tree_arg=0,
             short=True,
-            extension=None,
             mode=modes[subcommand],
             parser=parser,
         )

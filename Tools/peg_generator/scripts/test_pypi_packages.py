@@ -72,7 +72,6 @@ def run_tests(dirname: str, tree: int) -> int:
         skip_actions=False,
         tree_arg=tree,
         short=True,
-        extension=None,
         mode=1,
         parser="pegen",
     )

@@ -120,7 +120,6 @@ def parse_directory(
     skip_actions: bool,
     tree_arg: int,
     short: bool,
-    extension: Any,
     mode: int,
     parser: str,
 ) -> int:
@@ -162,23 +161,15 @@ def parse_directory(
             try:
                 if tree_arg:
                     mode = 1
-                if parser == "pegen":
-                    compile(
+                if mode == 2:
+                    result = _peg_parser.compile_string(
                         source,
-                        file,
-                        "exec",
-                        flags=ast.PyCF_ONLY_AST if mode == 1 else 0
+                        oldparser=parser == "cpython",
                     )
                 else:
-                    peg_parser_func = (
-                        _peg_parser.compile_string
-                        if mode == 2
-                        else _peg_parser.parse_string
-                    )
-                    result = peg_parser_func(
+                    result = _peg_parser.parse_string(
                         source,
-                        mode="exec",
-                        oldparser=True,
+                        oldparser=parser == "cpython"
                     )
                 if tree_arg:
                     trees[file] = result
@@ -259,7 +250,6 @@ def main() -> None:
             skip_actions,
             tree,
             short,
-            None,
             0,
             "pegen",
         )

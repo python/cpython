@@ -92,7 +92,7 @@ def main() -> None:
         sep = " "
     program = sep.join(args.program)
     if args.grammar_file:
-        tree = ast.parse(program)
+        tree = _peg_parser.parse_string(program)
 
         if args.diff:
             a = tree
