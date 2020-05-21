@@ -184,9 +184,9 @@ static KeywordToken *reserved_keywords[] = {
 #define setcomp_type 1113
 #define dict_type 1114
 #define dictcomp_type 1115
-#define kvpairs_type 1116
-#define kvpair_type 1117
-#define simple_kvpair_type 1118
+#define double_starred_kvpairs_type 1116
+#define double_starred_kvpair_type 1117
+#define kvpair_type 1118
 #define for_if_clauses_type 1119
 #define for_if_clause_type 1120
 #define yield_expr_type 1121
@@ -489,9 +489,9 @@ static expr_ty set_rule(Parser *p);
 static expr_ty setcomp_rule(Parser *p);
 static expr_ty dict_rule(Parser *p);
 static expr_ty dictcomp_rule(Parser *p);
-static asdl_seq* kvpairs_rule(Parser *p);
+static asdl_seq* double_starred_kvpairs_rule(Parser *p);
+static KeyValuePair* double_starred_kvpair_rule(Parser *p);
 static KeyValuePair* kvpair_rule(Parser *p);
-static KeyValuePair* simple_kvpair_rule(Parser *p);
 static asdl_seq* for_if_clauses_rule(Parser *p);
 static comprehension_ty for_if_clause_rule(Parser *p);
 static expr_ty yield_expr_rule(Parser *p);
@@ -9288,7 +9288,7 @@ setcomp_rule(Parser *p)
     return _res;
 }
 
-// dict: '{' kvpairs? '}'
+// dict: '{' double_starred_kvpairs? '}'
 static expr_ty
 dict_rule(Parser *p)
 {
@@ -9305,7 +9305,7 @@ dict_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // '{' kvpairs? '}'
+    { // '{' double_starred_kvpairs? '}'
         if (p->error_indicator) {
             return NULL;
         }
@@ -9315,7 +9315,7 @@ dict_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 25))  // token='{'
             &&
-            (a = kvpairs_rule(p), 1)  // kvpairs?
+            (a = double_starred_kvpairs_rule(p), 1)  // double_starred_kvpairs?
             &&
             (_literal_1 = _PyPegen_expect_token(p, 26))  // token='}'
         )
@@ -9342,7 +9342,7 @@ dict_rule(Parser *p)
     return _res;
 }
 
-// dictcomp: '{' simple_kvpair for_if_clauses '}' | invalid_dict_comprehension
+// dictcomp: '{' kvpair for_if_clauses '}' | invalid_dict_comprehension
 static expr_ty
 dictcomp_rule(Parser *p)
 {
@@ -9359,7 +9359,7 @@ dictcomp_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // '{' simple_kvpair for_if_clauses '}'
+    { // '{' kvpair for_if_clauses '}'
         if (p->error_indicator) {
             return NULL;
         }
@@ -9370,7 +9370,7 @@ dictcomp_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 25))  // token='{'
             &&
-            (a = simple_kvpair_rule(p))  // simple_kvpair
+            (a = kvpair_rule(p))  // kvpair
             &&
             (b = for_if_clauses_rule(p))  // for_if_clauses
             &&
@@ -9413,16 +9413,16 @@ dictcomp_rule(Parser *p)
     return _res;
 }
 
-// kvpairs: ','.kvpair+ ','?
+// double_starred_kvpairs: ','.double_starred_kvpair+ ','?
 static asdl_seq*
-kvpairs_rule(Parser *p)
+double_starred_kvpairs_rule(Parser *p)
 {
     if (p->error_indicator) {
         return NULL;
     }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
-    { // ','.kvpair+ ','?
+    { // ','.double_starred_kvpair+ ','?
         if (p->error_indicator) {
             return NULL;
         }
@@ -9430,7 +9430,7 @@ kvpairs_rule(Parser *p)
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * a;
         if (
-            (a = _gather_102_rule(p))  // ','.kvpair+
+            (a = _gather_102_rule(p))  // ','.double_starred_kvpair+
             &&
             (_opt_var = _PyPegen_expect_token(p, 12), 1)  // ','?
         )
@@ -9449,9 +9449,9 @@ kvpairs_rule(Parser *p)
     return _res;
 }
 
-// kvpair: '**' bitwise_or | simple_kvpair
+// double_starred_kvpair: '**' bitwise_or | kvpair
 static KeyValuePair*
-kvpair_rule(Parser *p)
+double_starred_kvpair_rule(Parser *p)
 {
     if (p->error_indicator) {
         return NULL;
@@ -9479,16 +9479,16 @@ kvpair_rule(Parser *p)
         }
         p->mark = _mark;
     }
-    { // simple_kvpair
+    { // kvpair
         if (p->error_indicator) {
             return NULL;
         }
-        KeyValuePair* simple_kvpair_var;
+        KeyValuePair* kvpair_var;
         if (
-            (simple_kvpair_var = simple_kvpair_rule(p))  // simple_kvpair
+            (kvpair_var = kvpair_rule(p))  // kvpair
         )
         {
-            _res = simple_kvpair_var;
+            _res = kvpair_var;
             goto done;
         }
         p->mark = _mark;
@@ -9498,9 +9498,9 @@ kvpair_rule(Parser *p)
     return _res;
 }
 
-// simple_kvpair: expression ':' expression
+// kvpair: expression ':' expression
 static KeyValuePair*
-simple_kvpair_rule(Parser *p)
+kvpair_rule(Parser *p)
 {
     if (p->error_indicator) {
         return NULL;
@@ -17426,7 +17426,7 @@ _tmp_101_rule(Parser *p)
     return _res;
 }
 
-// _loop0_103: ',' kvpair
+// _loop0_103: ',' double_starred_kvpair
 static asdl_seq *
 _loop0_103_rule(Parser *p)
 {
@@ -17444,7 +17444,7 @@ _loop0_103_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
-    { // ',' kvpair
+    { // ',' double_starred_kvpair
         if (p->error_indicator) {
             return NULL;
         }
@@ -17453,7 +17453,7 @@ _loop0_103_rule(Parser *p)
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
-            (elem = kvpair_rule(p))  // kvpair
+            (elem = double_starred_kvpair_rule(p))  // double_starred_kvpair
         )
         {
             _res = elem;
@@ -17490,7 +17490,7 @@ _loop0_103_rule(Parser *p)
     return _seq;
 }
 
-// _gather_102: kvpair _loop0_103
+// _gather_102: double_starred_kvpair _loop0_103
 static asdl_seq *
 _gather_102_rule(Parser *p)
 {
@@ -17499,14 +17499,14 @@ _gather_102_rule(Parser *p)
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
-    { // kvpair _loop0_103
+    { // double_starred_kvpair _loop0_103
         if (p->error_indicator) {
             return NULL;
         }
         KeyValuePair* elem;
         asdl_seq * seq;
         if (
-            (elem = kvpair_rule(p))  // kvpair
+            (elem = double_starred_kvpair_rule(p))  // double_starred_kvpair
             &&
             (seq = _loop0_103_rule(p))  // _loop0_103
         )

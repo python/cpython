@@ -499,16 +499,16 @@ setcomp[expr_ty]:
     | '{' a=expression b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
     | invalid_comprehension
 dict[expr_ty]:
-    | '{' a=[kvpairs] '}' { _Py_Dict(CHECK(_PyPegen_get_keys(p, a)),
+    | '{' a=[double_starred_kvpairs] '}' { _Py_Dict(CHECK(_PyPegen_get_keys(p, a)),
                                      CHECK(_PyPegen_get_values(p, a)), EXTRA) }
 dictcomp[expr_ty]:
-    | '{' a=simple_kvpair b=for_if_clauses '}' { _Py_DictComp(a->key, a->value, b, EXTRA) }
+    | '{' a=kvpair b=for_if_clauses '}' { _Py_DictComp(a->key, a->value, b, EXTRA) }
     | invalid_dict_comprehension
-kvpairs[asdl_seq*]: a=','.kvpair+ [','] { a }
-kvpair[KeyValuePair*]:
+double_starred_kvpairs[asdl_seq*]: a=','.double_starred_kvpair+ [','] { a }
+double_starred_kvpair[KeyValuePair*]:
     | '**' a=bitwise_or { _PyPegen_key_value_pair(p, NULL, a) }
-    | simple_kvpair
-simple_kvpair[KeyValuePair*]: a=expression ':' b=expression { _PyPegen_key_value_pair(p, a, b) }
+    | kvpair
+kvpair[KeyValuePair*]: a=expression ':' b=expression { _PyPegen_key_value_pair(p, a, b) }
 for_if_clauses[asdl_seq*]:
     | for_if_clause+
 for_if_clause[comprehension_ty]:
