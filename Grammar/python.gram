@@ -499,14 +499,16 @@ setcomp[expr_ty]:
     | '{' a=expression b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
     | invalid_comprehension
 dict[expr_ty]:
-    | '{' a=[kvpairs] '}' { _Py_Dict(CHECK(_PyPegen_get_keys(p, a)),
-                                     CHECK(_PyPegen_get_values(p, a)), EXTRA) }
+    | '{' a=[double_starred_kvpairs] '}' {
+        _Py_Dict(CHECK(_PyPegen_get_keys(p, a)), CHECK(_PyPegen_get_values(p, a)), EXTRA) }
 dictcomp[expr_ty]:
     | '{' a=kvpair b=for_if_clauses '}' { _Py_DictComp(a->key, a->value, b, EXTRA) }
-kvpairs[asdl_seq*]: a=','.kvpair+ [','] { a }
-kvpair[KeyValuePair*]:
+    | invalid_dict_comprehension
+double_starred_kvpairs[asdl_seq*]: a=','.double_starred_kvpair+ [','] { a }
+double_starred_kvpair[KeyValuePair*]:
     | '**' a=bitwise_or { _PyPegen_key_value_pair(p, NULL, a) }
-    | a=expression ':' b=expression { _PyPegen_key_value_pair(p, a, b) }
+    | kvpair
+kvpair[KeyValuePair*]: a=expression ':' b=expression { _PyPegen_key_value_pair(p, a, b) }
 for_if_clauses[asdl_seq*]:
     | for_if_clause+
 for_if_clause[comprehension_ty]:
@@ -657,6 +659,9 @@ invalid_block:
 invalid_comprehension:
     | ('[' | '(' | '{') a=starred_expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable unpacking cannot be used in comprehension") }
+invalid_dict_comprehension:
+    | '{' a='**' bitwise_or for_if_clauses '}' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
     | param_no_default* (slash_with_default | param_with_default+) param_no_default {
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
