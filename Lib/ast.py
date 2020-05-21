@@ -1059,18 +1059,23 @@ class _Unparser(NodeVisitor):
                 # on that in Tools/unicode/makeunicodedata.py
                 c not in (' ', '\n', '\t') and unicodedata.category(c)[0] in ("C", "Z")
             )
+        use_repr = any(map(should_use_repr, value))
 
-        if not any(should_use_repr(c) for c in value):
+        if not use_repr:
+            quote_types = ["'", '"', '"""', "'''"]
+
             if "\n" in value:
-                quote_types = ["'''", '"""']
-            else:
-                quote_types = ["'", '"', '"""', "'''"]
+                quote_types = quote_types[2:]
 
             for quote_type in quote_types:
                 if quote_type not in value:
                     self.write(f"{quote_type}{value}{quote_type}")
-                    return
-        self.write(repr(value))
+                    break
+            else:
+                use_repr = True
+
+        if use_repr:
+            self.write(repr(value))
 
     def visit_JoinedStr(self, node):
         self.write("f")
