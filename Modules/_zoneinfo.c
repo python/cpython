@@ -1457,7 +1457,8 @@ parse_tz_str(PyObject *tz_str_obj, _tzrule *out)
     PyObject *dst_abbr = NULL;
     TransitionRuleType *start = NULL;
     TransitionRuleType *end = NULL;
-    long std_offset, dst_offset = 0;
+    long std_offset = 1 << 20;
+    long dst_offset = 1 << 20;
 
     char *tz_str = PyBytes_AsString(tz_str_obj);
     if (tz_str == NULL) {
