@@ -641,6 +641,14 @@ SyntaxError: cannot assign to f-string expression
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression
 
+>>> from t import x,
+Traceback (most recent call last):
+SyntaxError: trailing comma not allowed without surrounding parentheses
+
+>>> from t import x,y,
+Traceback (most recent call last):
+SyntaxError: trailing comma not allowed without surrounding parentheses
+
 Corner-cases that used to fail to raise the correct error:
 
     >>> def f(*, x=lambda __debug__:0): pass
