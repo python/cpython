@@ -214,6 +214,12 @@ class _BasePurePathTest(object):
         for part in p.parts:
             self.assertIs(type(part), str)
 
+    def test_init(self):
+        # See bpo-39783, creating a PurePath or a Path object from an other
+        # PurePath instance return the existing instance.
+        p = self.cls('foo')
+        self.assertIs(p, self.cls(p))
+
     def test_str_subclass_common(self):
         self._check_str_subclass('')
         self._check_str_subclass('.')
@@ -1401,6 +1407,10 @@ class _BasePathTest(object):
         self.assertEqualNormCase(str(p), str(q))
         self.assertIs(type(p), type(q))
         self.assertTrue(p.is_absolute())
+
+    def test_init(self):
+        p = self.cls('foo')
+        self.assertIs(p, self.cls(p))
 
     def test_cwd(self):
         p = self.cls.cwd()

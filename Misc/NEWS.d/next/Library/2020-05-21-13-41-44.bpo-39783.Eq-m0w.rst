@@ -1,0 +1,3 @@
+:class:`pathlib.PurePath`, :class:`pathlib.Path` and their subclasses now
+return the same object when their argument is already a Path. Patch
+contributed by Rémi Lapeyre.

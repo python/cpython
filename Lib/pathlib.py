@@ -658,6 +658,8 @@ class PurePath(object):
         """
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
+        if len(args) == 1 and type(args[0]) is cls:
+            return args[0]
         return cls._from_parts(args)
 
     def __reduce__(self):
@@ -1064,6 +1066,8 @@ class Path(PurePath):
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
+        if len(args) == 1 and len(kwargs) == 0 and type(args[0]) is cls:
+            return args[0]
         self = cls._from_parts(args, init=False)
         if not self._flavour.is_supported:
             raise NotImplementedError("cannot instantiate %r on your system"
