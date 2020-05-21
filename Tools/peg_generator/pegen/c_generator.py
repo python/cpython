@@ -722,4 +722,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
 
     def add_var(self, node: NamedItem) -> Tuple[Optional[str], Optional[str]]:
         call = self.callmakervisitor.visit(node.item)
-        return self.dedupe(node.name if node.name else call.assigned_variable), call.return_type
+        name = node.name if node.name else call.assigned_variable
+        if name is not None:
+            name = self.dedupe(name)
+        return name, call.return_type
