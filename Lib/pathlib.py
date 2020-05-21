@@ -650,7 +650,7 @@ class PurePath(object):
         '_str', '_hash', '_pparts', '_cached_cparts',
     )
 
-    def __new__(cls, *args):
+    def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
         PurePath objects.  The strings and path objects are combined so as
         to yield a canonicalized path, which is incorporated into the
@@ -659,6 +659,9 @@ class PurePath(object):
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
         return cls._from_parts(args)
+
+    def __init__(self, *_):
+        pass  # bpo-29847
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
@@ -1070,9 +1073,6 @@ class Path(PurePath):
                                       % (cls.__name__,))
         self._init()
         return self
-
-    def __init__(self, *_):
-        pass  # bpo-29847
 
     def _init(self,
               # Private non-constructor arguments

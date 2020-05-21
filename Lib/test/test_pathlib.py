@@ -681,6 +681,21 @@ class _BasePurePathTest(object):
             self.assertEqual(hash(pp), hash(p))
             self.assertEqual(str(pp), str(p))
 
+    def test_kwargs(self):
+        with self.assertRaisesRegex(TypeError, 'got an unexpected keyword argument'):
+            self.cls(arg=None)
+
+    def test_subclass_kwargs(self):
+        class _PathSubclass(self.cls):
+            _flavour = self.cls()._flavour
+
+            def __init__(self, *args, **kwargs):
+                self.kwargs = kwargs
+
+        _kwargs = {"a": 1, "b": 2}
+        p = _PathSubclass(**_kwargs)
+        self.assertEqual(p.kwargs, _kwargs)
+
 
 class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePosixPath
@@ -2299,21 +2314,6 @@ class _BasePathTest(object):
     @support.skip_unless_symlink
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
-
-    def test_kwargs(self):
-        with self.assertRaisesRegex(TypeError, 'got an unexpected keyword argument'):
-            self.cls(arg=None)
-
-    def test_subclass_kwargs(self):
-        class _PathSubclass(self.cls):
-            _flavour = self.cls()._flavour
-
-            def __init__(self, *args, **kwargs):
-                self.kwargs = kwargs
-
-        _kwargs = {"a": 1, "b": 2}
-        p = _PathSubclass(**_kwargs)
-        self.assertEqual(p.kwargs, _kwargs)
 
 
 class PathTest(_BasePathTest, unittest.TestCase):
