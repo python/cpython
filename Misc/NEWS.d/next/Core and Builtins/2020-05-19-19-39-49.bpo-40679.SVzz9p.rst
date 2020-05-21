@@ -1,1 +1,1 @@
-Certain error messages about too few or too many arguments now refer to a function by its :term:`qualified name`.
+Certain error messages about passing too few or too many arguments now inclue the function's :term:`qualified name`.

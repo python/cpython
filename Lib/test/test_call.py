@@ -667,11 +667,11 @@ class TestPEP590(unittest.TestCase):
 
 
 class A:
-    def method(self, x, y):
-        return x + y
+    def method_two_args(self, x, y):
+        pass
 
     @staticmethod
-    def static_method():
+    def static_no_args():
         pass
 
     @staticmethod
@@ -682,35 +682,35 @@ class A:
 class TestErrorMessagesUseQualifiedName(unittest.TestCase):
 
     @contextlib.contextmanager
-    def check_raises_exact(self, message, exception_type=TypeError):
-        with self.assertRaises(exception_type) as cm:
+    def check_raises_type_error(self, message):
+        with self.assertRaises(TypeError) as cm:
             yield
         self.assertEqual(str(cm.exception), message)
 
     def test_missing_arguments(self):
-        msg = "A.method() missing 1 required positional argument: 'y'"
-        with self.check_raises_exact(msg):
-            A().method("x")
+        msg = "A.method_two_args() missing 1 required positional argument: 'y'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args("x")
 
     def test_too_many_positional(self):
-        msg = "A.static_method() takes 0 positional arguments but 1 was given"
-        with self.check_raises_exact(msg):
-            A.static_method("oops it's an arg")
+        msg = "A.static_no_args() takes 0 positional arguments but 1 was given"
+        with self.check_raises_type_error(msg):
+            A.static_no_args("oops it's an arg")
 
     def test_positional_only_passed_as_keyword(self):
         msg = "A.positional_only() got some positional-only arguments passed as keyword arguments: 'arg'"
-        with self.check_raises_exact(msg):
+        with self.check_raises_type_error(msg):
             A.positional_only(arg="x")
 
     def test_unexpected_keyword(self):
-        msg = "A.method() got an unexpected keyword argument 'bad'"
-        with self.check_raises_exact(msg):
-            A().method(bad="x")
+        msg = "A.method_two_args() got an unexpected keyword argument 'bad'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args(bad="x")
 
     def test_multiple_values(self):
-        msg = "A.method() got multiple values for argument 'x'"
-        with self.check_raises_exact(msg):
-            A().method("x", "y", x="oops")
+        msg = "A.method_two_args() got multiple values for argument 'x'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args("x", "y", x="oops")
 
 
 if __name__ == "__main__":
