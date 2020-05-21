@@ -1457,7 +1457,8 @@ parse_tz_str(PyObject *tz_str_obj, _tzrule *out)
     PyObject *dst_abbr = NULL;
     TransitionRuleType *start = NULL;
     TransitionRuleType *end = NULL;
-    long std_offset, dst_offset;
+    long std_offset = 0;
+    long dst_offset = 0;
 
     char *tz_str = PyBytes_AsString(tz_str_obj);
     if (tz_str == NULL) {
@@ -1907,7 +1908,7 @@ build_tzrule(PyObject *std_abbr, PyObject *dst_abbr, long std_offset,
              long dst_offset, TransitionRuleType *start,
              TransitionRuleType *end, _tzrule *out)
 {
-    _tzrule rv = {0};
+    _tzrule rv = {{0}};
 
     rv.start = start;
     rv.end = end;
