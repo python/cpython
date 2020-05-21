@@ -8,6 +8,7 @@ import struct
 import collections
 import itertools
 import gc
+import contextlib
 
 
 class FunctionCalls(unittest.TestCase):
@@ -663,6 +664,53 @@ class TestPEP590(unittest.TestCase):
                 self.assertEqual(expected, vectorcall(func, args, kwargs))
                 self.assertEqual(expected, meth(*args1, **kwargs))
                 self.assertEqual(expected, wrapped(*args, **kwargs))
+
+
+class A:
+    def method(self, x, y):
+        return x + y
+
+    @staticmethod
+    def static_method():
+        pass
+
+    @staticmethod
+    def positional_only(arg, /):
+        pass
+
+@cpython_only
+class TestErrorMessagesUseQualifiedName(unittest.TestCase):
+
+    @contextlib.contextmanager
+    def check_raises_exact(self, message, exception_type=TypeError):
+        with self.assertRaises(exception_type) as cm:
+            yield
+        self.assertEqual(str(cm.exception), message)
+
+    def test_missing_arguments(self):
+        msg = "A.method() missing 1 required positional argument: 'y'"
+        with self.check_raises_exact(msg):
+            A().method("x")
+
+    def test_too_many_positional(self):
+        msg = "A.static_method() takes 0 positional arguments but 1 was given"
+        with self.check_raises_exact(msg):
+            A.static_method("oops it's an arg")
+
+    def test_positional_only_passed_as_keyword(self):
+        msg = "A.positional_only() got some positional-only arguments passed as keyword arguments: 'arg'"
+        with self.check_raises_exact(msg):
+            A.positional_only(arg="x")
+
+    def test_unexpected_keyword(self):
+        msg = "A.method() got an unexpected keyword argument 'bad'"
+        with self.check_raises_exact(msg):
+            A().method(bad="x")
+
+    def test_multiple_values(self):
+        msg = "A.method() got multiple values for argument 'x'"
+        with self.check_raises_exact(msg):
+            A().method("x", "y", x="oops")
 
 
 if __name__ == "__main__":
