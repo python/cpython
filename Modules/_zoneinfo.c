@@ -1457,6 +1457,7 @@ parse_tz_str(PyObject *tz_str_obj, _tzrule *out)
     PyObject *dst_abbr = NULL;
     TransitionRuleType *start = NULL;
     TransitionRuleType *end = NULL;
+    // Initialize offsets to invalid value (> 24 hours)
     long std_offset = 1 << 20;
     long dst_offset = 1 << 20;
 
