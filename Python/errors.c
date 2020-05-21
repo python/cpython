@@ -477,7 +477,9 @@ PyErr_SetExcInfo(PyObject *p_type, PyObject *p_value, PyObject *p_traceback)
 
 /* Like PyErr_Restore(), but if an exception is already set,
    set the context associated with it.
- */
+
+   The caller is responsible for ensuring that this call won't create
+   any cycles in the exception context chain. */
 void
 _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
 {
@@ -512,18 +514,38 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
     }
 }
 
+/* Set the context of the currently set exception to PyThreadState's
+   topmost exception.
+
+   This function won't create any cycles in the exception context chain
+   to the extent that _PyErr_SetObject ensures this.
+
+   This function can only be called when _PyErr_Occurred() is true. */
 void
-_PyErr_ChainStackItem(_PyErr_StackItem *exc_state)
+_PyErr_ChainThreadState(PyThreadState *tstate)
 {
-    if (exc_state->exc_type == NULL || exc_state->exc_type == Py_None) {
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+
+    if (exc_info->exc_type == NULL || exc_info->exc_type == Py_None) {
         return;
     }
-    Py_INCREF(exc_state->exc_type);
-    Py_XINCREF(exc_state->exc_value);
-    Py_XINCREF(exc_state->exc_traceback);
-    _PyErr_ChainExceptions(exc_state->exc_type,
-                           exc_state->exc_value,
-                           exc_state->exc_traceback);
+
+    PyObject *exc, *val, *tb;
+    exc = exc_info->exc_type;
+    val = exc_info->exc_value;
+    tb = exc_info->exc_traceback;
+    _PyErr_NormalizeException(tstate, &exc, &val, &tb);
+    if (tb != NULL) {
+        PyException_SetTraceback(val, tb);
+    }
+
+    PyObject *exc2, *val2, *tb2;
+    _PyErr_Fetch(tstate, &exc2, &val2, &tb2);
+    /* _PyErr_SetObject sets the context from PyThreadState. */
+    _PyErr_SetObject(tstate, exc2, val2);
+    Py_XDECREF(exc2);
+    Py_XDECREF(val2);
+    Py_XDECREF(tb2);
 }
 
 static PyObject *
