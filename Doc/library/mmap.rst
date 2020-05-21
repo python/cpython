@@ -81,7 +81,9 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    private copy-on-write mapping, so changes to the contents of the mmap
    object will be private to this process, and :const:`MAP_SHARED` creates a
    mapping that's shared with all other processes mapping the same areas of
-   the file.  The default value is :const:`MAP_SHARED`. Some systems have additional possible flags with the full list specified in :ref:`MAP_* constants <map-constants>`.
+   the file.  The default value is :const:`MAP_SHARED`. Some systems have 
+   additional possible flags with the full list specified in 
+   :ref:`MAP_* constants <map-constants>`.
 
    *prot*, if specified, gives the desired memory protection; the two most
    useful values are :const:`PROT_READ` and :const:`PROT_WRITE`, to specify
@@ -359,4 +361,4 @@ MAP_* Constants
     These are the various flags that can be passed to :meth:`mmap.mmap`. Note that some options might not be present on some systems.
 
     .. versionchanged:: 3.10
-      Add MAP_POPULATE
+       Added MAP_POPULATE constant.
