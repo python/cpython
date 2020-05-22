@@ -605,7 +605,7 @@ Optimizations
 
      sums = [s for s in [0] for x in data for s in [s + x]]
 
-  Unlike to the ``:=`` operator this idiom does not leak a variable to the
+  Unlike the ``:=`` operator this idiom does not leak a variable to the
   outer scope.
 
   (Contributed by Serhiy Storchaka in :issue:`32856`.)
