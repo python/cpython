@@ -686,6 +686,7 @@ class _BasePurePathTest(object):
             self.cls(arg=None)
 
     def test_subclass_kwargs(self):
+        # See bpo-29847
         class _PathSubclass(self.cls):
             _flavour = self.cls()._flavour
 
