@@ -1635,7 +1635,7 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         } else if (data->free == PyMem_RawFree) {
             _PyMem_RawFree_in_interpreter(interp, data->data);
         } else {
-            // We only worry about the PyMem_* deallocators.
+            // We only worry about special-casing the PyMem_* deallocators.
             data->free(data->data);
         }
     }
@@ -1645,7 +1645,7 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
     // Note that we do not free "data" itself.  That should be done by
     // the caller after this completes.  That implies that the memory
     // for "data" is either owned by the calling interpreter or
-    // on the heap.
+    // on the stack.
 }
 
 PyObject *
