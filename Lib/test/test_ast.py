@@ -830,6 +830,11 @@ Module(
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
+        src = ast.Call(
+            func=ast.Name("test", ast.Load()), args=[], keywords=[], lineno=1
+        )
+        self.assertEqual(ast.increment_lineno(src).lineno, 2)
+        self.assertIsNone(ast.increment_lineno(src).end_lineno)
 
     def test_iter_fields(self):
         node = ast.parse('foo()', mode='eval')
