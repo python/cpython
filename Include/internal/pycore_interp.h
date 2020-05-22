@@ -28,7 +28,8 @@ struct _pending_call {
 
 // We technically do not need this limit around any longer since we
 // moved from a circular queue to a linked list.  However, having a
-// size limit is still a good idea so we keep the one we already had.
+// size limit is still a good idea so we keep the one we already had,
+// for now.  We will increase the limit (or drop it) later.
 #define NPENDINGCALLS 32
 
 struct _pending_calls {
