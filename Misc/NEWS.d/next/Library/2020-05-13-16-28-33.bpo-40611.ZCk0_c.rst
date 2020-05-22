@@ -1,1 +1,1 @@
-MAP_POPULATE has now been added to the list of exported mmap flags.
+:data:`~mmap.MAP_POPULATE` constant has now been added to the list of exported :mod:`mmap` module flags.
