@@ -536,9 +536,11 @@ class BaseTaskTests:
                     self.assertEqual((type(chained), chained.args),
                         (KeyError, (3,)))
 
-        task = self.new_task(loop, run())
-        loop.run_until_complete(task)
-        loop.close()
+        try:
+            task = self.new_task(loop, run())
+            loop.run_until_complete(task)
+        finally:
+            loop.close()
 
     def test_exception_chaining_after_await_with_context_cycle(self):
         # Check trying to create an exception context cycle:
@@ -563,9 +565,12 @@ class BaseTaskTests:
                     # Prevent a hang if has_cycle is True.
                     exc.__context__ = None
 
-        task = self.new_task(loop, run())
-        loop.run_until_complete(task)
-        loop.close()
+        try:
+            task = self.new_task(loop, run())
+            loop.run_until_complete(task)
+        finally:
+            loop.close()
+        # This also distinguishes from the initial has_cycle=None.
         self.assertEqual(has_cycle, False)
 
     def test_cancel(self):

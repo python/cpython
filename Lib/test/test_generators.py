@@ -394,6 +394,7 @@ class GeneratorThrowTest(unittest.TestCase):
         gen = g(exc)
         gen.send(None)
         gen.throw(exc)
+        # This also distinguishes from the initial has_cycle=None.
         self.assertEqual(has_cycle, False)
 
     def test_throw_after_none_exc_type(self):

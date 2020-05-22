@@ -1,6 +1,5 @@
 #include "Python.h"
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
-#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <stddef.h>               // offsetof()
 
 
@@ -619,12 +618,7 @@ future_set_cancelled_error(FutureObj *fut)
     PyErr_SetObject(asyncio_CancelledError, exc);
     Py_DECREF(exc);
 
-    PyThreadState *tstate = _PyThreadState_GET();
-
-    _PyErr_StackItem *saved_exc_info = tstate->exc_info;
-    tstate->exc_info = &fut->fut_cancelled_exc_state;
-    _PyErr_ChainThreadState(tstate);
-    tstate->exc_info = saved_exc_info;
+    _PyErr_ChainStackItem(&fut->fut_cancelled_exc_state);
 }
 
 static int

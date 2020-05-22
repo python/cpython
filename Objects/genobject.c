@@ -207,9 +207,9 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
 
-    /* XXX: can we assert that _PyErr_Occurred() is true when exc is true? */
-    if (exc && _PyErr_Occurred(tstate)) {
-        _PyErr_ChainThreadState(tstate);
+    if (exc) {
+        assert(_PyErr_Occurred(tstate));
+        _PyErr_ChainStackItem(NULL);
     }
 
     result = _PyEval_EvalFrame(tstate, f, exc);
