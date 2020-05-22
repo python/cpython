@@ -1,3 +1,5 @@
-Add a way to queue various operations in one interpreter to run safely in
-another.  This includes moving the pending calls from a circular queue to a
-linked list, to allow for a more flexible queue.
+Allow one interpreter to request specific low-level (memory-related)
+operations to happen in another interpreter at some point in the future.
+This includes a new "private" C-API function for each operation, as well
+as moving the pending calls from a circular queue to a linked list
+(to allow for a more flexible queue).
