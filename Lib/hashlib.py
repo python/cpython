@@ -154,7 +154,7 @@ def __hash_new(name, data=b'', **kwargs):
         # salt, personal, tree hashing or SSE.
         return __get_builtin_constructor(name)(data, **kwargs)
     try:
-        return _hashlib.new(name, data)
+        return _hashlib.new(name, data, **kwargs)
     except ValueError:
         # If the _hashlib module (OpenSSL) doesn't support the named
         # hash, try using our builtin implementations.
