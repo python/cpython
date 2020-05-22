@@ -1,1 +1,1 @@
-Certain error messages about passing too few or too many arguments now inclue the function's :term:`qualified name`.
+Certain :exc:`TypeError` messages about missing or extra arguments now include the function's :term:`qualified name`.
