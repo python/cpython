@@ -167,7 +167,7 @@ def _factorise(n):
         yield from _factorise(n // d)
 
 
-def factorise(n: int) -> tuple[int]:
+def factorise(n: int):
     """Factorise an integer n using Pollard's rho algorithm.
 
     Returns an iterator of all prime divisors of n repeated so that
