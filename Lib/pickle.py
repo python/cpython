@@ -339,7 +339,7 @@ def whichmodule(obj, name):
         return module_name
     # Protect the iteration by using a list copy of sys.modules against dynamic
     # modules that trigger imports of other modules upon calls to getattr.
-    for module_name, module in list(sys.modules.items()):
+    for module_name, module in sys.modules.copy().items():
         if module_name == '__main__' or module is None:
             continue
         try:
