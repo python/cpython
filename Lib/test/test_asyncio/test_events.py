@@ -2190,11 +2190,10 @@ class HandleTests(test_utils.TestCase):
             filename, lineno = test_utils.get_function_source(method)
             h = asyncio.Handle(cb, (), self.loop)
 
-            cb_regex = r'<function HandleTests.test_handle_repr .*>'
-            cb_regex = (r'functools.partialmethod\(%s, , \)\(\)' % cb_regex)
-            regex = (r'^<Handle %s at %s:%s>$'
-                     % (cb_regex, re.escape(filename), lineno))
-            self.assertRegex(repr(h), regex)
+            cb_repr = "HandleTests.test_handle_repr()"
+            cb_repr = f"functools.partialmethod({cb_repr}, , )()"
+            expected = f"<Handle {cb_repr} at {filename}:{lineno}>"
+            self.assertEqual(repr(h), expected)
 
     def test_handle_repr_debug(self):
         self.loop.get_debug.return_value = True
