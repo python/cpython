@@ -487,7 +487,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 rhs, is_loop=False, is_gather=node.is_gather(), rulename=node.name,
             )
             if self.debug:
-                self.print('fprintf(stderr, "Fail at %d: {node.name}\\n", p->mark);')
+                self.print(f'fprintf(stderr, "Fail at %d: {node.name}\\n", p->mark);')
             self.print("_res = NULL;")
         self.print("  done:")
         with self.indent():
@@ -613,7 +613,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             else:
                 if self.debug:
                     self.print(
-                        f'fprintf(stderr, "Hit without action [%d:%d]: %s\\n", mark, p->mark, "{node}");'
+                        f'fprintf(stderr, "Hit without action [%d:%d]: %s\\n", _mark, p->mark, "{node}");'
                     )
                 self.print(
                     f"_res = _PyPegen_dummy_name(p, {', '.join(self.local_variable_names)});"
@@ -621,7 +621,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         else:
             if self.debug:
                 self.print(
-                    f'fprintf(stderr, "Hit with default action [%d:%d]: %s\\n", mark, p->mark, "{node}");'
+                    f'fprintf(stderr, "Hit with default action [%d:%d]: %s\\n", _mark, p->mark, "{node}");'
                 )
             self.print(f"_res = {self.local_variable_names[0]};")
 
