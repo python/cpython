@@ -159,13 +159,14 @@ def _rho_pollard(n):
 
 
 def _factorise(n):
-    if is_prime(n):
-        yield n
-    else:
-        d = _rho_pollard(n)
-        yield from _factorise(d)
-        yield from _factorise(n // d)
-
+    stack = [n]
+    while stack:
+        n = stack.pop()
+        if is_prime(n):
+            yield n
+        else:
+            d = _rho_pollard(n)
+            stack += [n//d, d]
 
 def factorise(n: int):
     """Factorise an integer n using Pollard's rho algorithm.

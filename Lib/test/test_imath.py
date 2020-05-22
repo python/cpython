@@ -51,6 +51,8 @@ class TestPrimes(unittest.TestCase):
                 self.assertEqual(factors[0], -1)
                 self.assertTrue(all(map(imath.is_prime, factors[1:])))
 
+        # Numbers with many factors can be factorised
+        self.assertEqual(set(imath.factorise(2**10000)), {2})
 
 
 def load_tests(loader, tests, pattern):
