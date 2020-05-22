@@ -791,6 +791,12 @@ Module(
             'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
             'col_offset=0, end_lineno=1, end_col_offset=5))'
         )
+        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1)
+        new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None))
+        self.assertIsNone(new.end_lineno)
+        self.assertIsNone(new.end_col_offset)
+        self.assertEqual(new.lineno, 1)
+        self.assertEqual(new.col_offset, 1)
 
     def test_fix_missing_locations(self):
         src = ast.parse('write("spam")')
