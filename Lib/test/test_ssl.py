@@ -3607,6 +3607,22 @@ class ThreadedTests(unittest.TestCase):
         self.assertEqual(s.recv(0), b"")
         self.assertEqual(s.recv_into(bytearray()), 0)
 
+    def test_recv_into_buffer_protocol_len(self):
+        server = ThreadedEchoServer(CERTFILE)
+        server.__enter__()
+        self.addCleanup(server.__exit__, None, None)
+        s = socket.create_connection((HOST, server.port))
+        self.addCleanup(s.close)
+        s = test_wrap_socket(s, suppress_ragged_eofs=False)
+        self.addCleanup(s.close)
+
+        class B(bytearray):
+            def __len__(self):
+                return 1
+
+        s.send(b"data")
+        self.assertEqual(s.recv_into(B(4)), 4)
+
     def test_nonblocking_send(self):
         server = ThreadedEchoServer(CERTFILE,
                                     certreqs=ssl.CERT_NONE,

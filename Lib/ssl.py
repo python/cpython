@@ -1230,7 +1230,7 @@ class SSLSocket(socket):
     def recv_into(self, buffer, nbytes=None, flags=0):
         self._checkClosed()
         if buffer and (nbytes is None):
-            nbytes = len(buffer)
+            nbytes = memoryview(buffer).nbytes
         elif nbytes is None:
             nbytes = 1024
         if self._sslobj is not None:
