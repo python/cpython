@@ -612,19 +612,20 @@ create_cancelled_error(PyObject *msg)
 }
 
 static void
-set_cancelled_error(PyObject *msg)
+future_set_cancelled_error(FutureObj *fut)
 {
-    PyObject *exc = create_cancelled_error(msg);
+    PyObject *exc = create_cancelled_error(fut->fut_cancel_msg);
     PyErr_SetObject(asyncio_CancelledError, exc);
     Py_DECREF(exc);
+
+    _PyErr_ChainStackItem(&fut->fut_cancelled_exc_state);
 }
 
 static int
 future_get_result(FutureObj *fut, PyObject **result)
 {
     if (fut->fut_state == STATE_CANCELLED) {
-        set_cancelled_error(fut->fut_cancel_msg);
-        _PyErr_ChainStackItem(&fut->fut_cancelled_exc_state);
+        future_set_cancelled_error(fut);
         return -1;
     }
 
@@ -866,8 +867,7 @@ _asyncio_Future_exception_impl(FutureObj *self)
     }
 
     if (self->fut_state == STATE_CANCELLED) {
-        set_cancelled_error(self->fut_cancel_msg);
-        _PyErr_ChainStackItem(&self->fut_cancelled_exc_state);
+        future_set_cancelled_error(self);
         return NULL;
     }
 
