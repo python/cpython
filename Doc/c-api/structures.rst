@@ -68,6 +68,7 @@ the definition of all other Python objects.
 
    .. versionchanged:: 3.10
       :c:func:`Py_TYPE()` is changed to the inline static function.
+      Use :c:func:`Py_SET_TYPE()` to set an object type.
 
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
