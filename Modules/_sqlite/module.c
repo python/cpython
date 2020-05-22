@@ -346,6 +346,16 @@ static struct PyModuleDef _sqlite3module = {
         NULL
 };
 
+#define ADD_OBJECT(module, name, type)                             \
+do {                                                               \
+    Py_INCREF(&type);                                              \
+    if (PyModule_AddObject(module, name, (PyObject *)&type) < 0) { \
+        Py_DECREF(module);                                         \
+        Py_DECREF(&type);                                          \
+        return NULL;                                               \
+    }                                                              \
+} while (0)
+
 PyMODINIT_FUNC PyInit__sqlite3(void)
 {
     PyObject *module, *dict;
@@ -366,14 +376,10 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         return NULL;
     }
 
-    Py_INCREF(&pysqlite_ConnectionType);
-    PyModule_AddObject(module, "Connection", (PyObject*) &pysqlite_ConnectionType);
-    Py_INCREF(&pysqlite_CursorType);
-    PyModule_AddObject(module, "Cursor", (PyObject*) &pysqlite_CursorType);
-    Py_INCREF(&pysqlite_PrepareProtocolType);
-    PyModule_AddObject(module, "PrepareProtocol", (PyObject*) &pysqlite_PrepareProtocolType);
-    Py_INCREF(&pysqlite_RowType);
-    PyModule_AddObject(module, "Row", (PyObject*) &pysqlite_RowType);
+    ADD_OBJECT(module, "Connection", pysqlite_ConnectionType);
+    ADD_OBJECT(module, "Cursor", pysqlite_CursorType);
+    ADD_OBJECT(module, "PrepareProtocol", pysqlite_PrepareProtocolType);
+    ADD_OBJECT(module, "Row", pysqlite_RowType);
 
     if (!(dict = PyModule_GetDict(module))) {
         goto error;
