@@ -11670,6 +11670,8 @@ t_atom_rule(Parser *p)
 // incorrect_arguments:
 //     | args ',' '*'
 //     | expression for_if_clauses ',' [args | expression for_if_clauses]
+//     | args for_if_clauses
+//     | args ',' expression for_if_clauses
 //     | args ',' args
 static void *
 incorrect_arguments_rule(Parser *p)
@@ -11720,6 +11722,54 @@ incorrect_arguments_rule(Parser *p)
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
             (_opt_var = _tmp_125_rule(p), 1)  // [args | expression for_if_clauses]
+        )
+        {
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "Generator expression must be parenthesized" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+    }
+    { // args for_if_clauses
+        if (p->error_indicator) {
+            return NULL;
+        }
+        expr_ty a;
+        asdl_seq* for_if_clauses_var;
+        if (
+            (a = args_rule(p))  // args
+            &&
+            (for_if_clauses_var = for_if_clauses_rule(p))  // for_if_clauses
+        )
+        {
+            _res = _PyPegen_nonparen_genexp_in_call ( p , a );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+    }
+    { // args ',' expression for_if_clauses
+        if (p->error_indicator) {
+            return NULL;
+        }
+        Token * _literal;
+        expr_ty a;
+        expr_ty args_var;
+        asdl_seq* for_if_clauses_var;
+        if (
+            (args_var = args_rule(p))  // args
+            &&
+            (_literal = _PyPegen_expect_token(p, 12))  // token=','
+            &&
+            (a = expression_rule(p))  // expression
+            &&
+            (for_if_clauses_var = for_if_clauses_rule(p))  // for_if_clauses
         )
         {
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "Generator expression must be parenthesized" );
