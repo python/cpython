@@ -647,7 +647,7 @@ class _Unparser(NodeVisitor):
     output source code for the abstract syntax; original formatting
     is disregarded."""
 
-    def __init__(self, avoid_backslashes=False):
+    def __init__(self, *, avoid_backslashes=False):
         self.avoid_backslashes = avoid_backslashes
         self._source = []
         self._buffer = []
