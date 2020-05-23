@@ -1745,6 +1745,10 @@ encoder_dealloc(PyObject *self)
 static int
 encoder_traverse(PyEncoderObject *self, visitproc visit, void *arg)
 {
+    PyTypeObject *parent = Py_TYPE(self);
+    if (parent->tp_traverse == (traverseproc)encoder_traverse) {
+        Py_VISIT(parent);
+    }
     Py_VISIT(self->markers);
     Py_VISIT(self->defaultfn);
     Py_VISIT(self->encoder);

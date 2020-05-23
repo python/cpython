@@ -673,6 +673,10 @@ ast_dealloc(AST_object *self)
 static int
 ast_traverse(AST_object *self, visitproc visit, void *arg)
 {
+    PyTypeObject *parent = Py_TYPE(self);
+    if (parent->tp_traverse == (traverseproc)ast_traverse) {
+        Py_VISIT(parent);
+    }
     Py_VISIT(self->dict);
     return 0;
 }
