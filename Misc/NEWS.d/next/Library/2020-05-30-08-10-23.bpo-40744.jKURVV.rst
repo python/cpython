@@ -1,0 +1,2 @@
+Drop support for SQLite3 pre v3.7.3. Patch by Sergey Fedoseev and Erlend E.
+Aasland.

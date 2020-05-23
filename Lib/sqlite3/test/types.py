@@ -401,8 +401,6 @@ class DateTimeTests(unittest.TestCase):
         ts2 = self.cur.fetchone()[0]
         self.assertEqual(ts, ts2)
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 1),
-                     'the date functions are available on 3.1 or later')
     def CheckSqlTimestamp(self):
         now = datetime.datetime.utcnow()
         self.cur.execute("insert into test(ts) values (current_timestamp)")
