@@ -294,7 +294,10 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         default_request_version = 'HTTP/1.1'
 
         def do_GET(self):
+            # bpo-25095: Tell the client we're not sending any content along
+            # with the response code.
             self.send_response(HTTPStatus.OK)
+            self.send_header('Content-Length', 0)
             self.end_headers()
 
         def do_ERROR(self):
@@ -311,8 +314,9 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
             # To combat this, we send the test server the "Connection" header
             # with "close" for the value forcing the server and client to
             # terminate the socket allowing the test to resume.
-            self.con.request('GET', '/', headers={'Content-Length': '0', 'Connection': 'close'})
+            self.con.request('GET', '/', headers={'Connection': 'close'})
             self.con.getresponse()
+            self.con.close()
 
         self.assertTrue(
             err.getvalue().endswith('"GET / HTTP/1.1" 200 -\n'))
