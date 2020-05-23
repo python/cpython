@@ -279,9 +279,10 @@ An :class:`SMTP` instance has the following methods:
    response for ESMTP option and store them for use by :meth:`has_extn`.
    Also sets several informational attributes: the message returned by
    the server is stored as the :attr:`ehlo_resp` attribute, :attr:`does_esmtp`
-   is set to true or false depending on whether the server supports ESMTP, and
-   :attr:`esmtp_features` will be a dictionary containing the names of the
-   SMTP service extensions this server supports, and their parameters (if any).
+   is set to ``True`` or ``False`` depending on whether the server supports
+   ESMTP, and :attr:`esmtp_features` will be a dictionary containing the names
+   of the SMTP service extensions this server supports, and their parameters
+   (if any).
 
    Unless you wish to use :meth:`has_extn` before sending mail, it should not be
    necessary to call this method explicitly.  It will be implicitly called by
