@@ -583,8 +583,8 @@ Waiting Primitives
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    set concurrently.  Return an iterator of coroutines.
-   Each coroutine allows to wait for the earliest next result from
-   the set of the remaining awaitables.
+   Each coroutine returned can be awaited to get the earliest next
+   result from the set of the remaining awaitables.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
@@ -594,8 +594,8 @@ Waiting Primitives
 
    Example::
 
-       for f in as_completed(aws):
-           earliest_result = await f
+       for coro in as_completed(aws):
+           earliest_result = await coro
            # ...
 
 
