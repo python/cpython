@@ -933,6 +933,35 @@ Changes in the Python API
   (Contributed by Inada Naoki in :issue:`34538`.)
 
 
+Changes in the C API
+--------------------
+
+* Instances of heap-allocated types (such as those created with
+  :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their type
+  object since Python 3.8. As indicated in the "Changes in the C API" of Python
+  3.8, for the vast majority of cases, there should be no side effect but for
+  types that have a custom :c:member:`~PyTypeObject.tp_traverse` function,
+  ensure that all custom ``tp_traverse`` functions of heap-allocated types
+  visit the object parent **but not for subclasses**.
+
+    Example:
+
+    .. code-block:: c
+
+        int
+        foo_traverse(foo_struct *self, visitproc visit, void *arg) {
+        // Rest of the traverse function
+        #if PY_VERSION_HEX >= 0x03080000
+            // This was not needed before Python 3.8 (Python issue 35810 and 40217)
+            PyObject *type = Py_TYPE(instance);
+            if (type->tp_traverse == (traverseproc)foo_traverse) {
+                Py_VISIT(type);
+            }
+        #endif
+        }
+
+  (See :issue:`35810` and :issue:`40217` for more information.)
+
 CPython bytecode changes
 ------------------------
 
