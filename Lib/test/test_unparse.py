@@ -330,7 +330,7 @@ class UnparseTestCase(ASTTestCase):
             '\r\\r\t\\t\n\\n',
             '""">>> content = \"\"\"blabla\"\"\" <<<"""',
             r'foo\n\x00',
-            '🐍⛎𩸽üéş^\X\BB\N{LONG RIGHTWARDS SQUIGGLE ARROW}'
+            '🐍⛎𩸽üéş^\N{LONG RIGHTWARDS SQUIGGLE ARROW}'
 
         )
         for docstring in docstrings:

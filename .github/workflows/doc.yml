@@ -4,6 +4,7 @@ on:
   #push:
   #  branches:
   #  - master
+  #  - 3.9
   #  - 3.8
   #  - 3.7
   #  paths:
@@ -11,6 +12,7 @@ on:
   pull_request:
     branches:
     - master
+    - 3.9
     - 3.8
     - 3.7
     paths:
@@ -22,7 +24,7 @@ jobs:
     name: 'Docs'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: 'Install Dependencies'
       run: sudo ./.github/workflows/posix-deps-apt.sh && sudo apt-get install wamerican
     - name: 'Configure CPython'
