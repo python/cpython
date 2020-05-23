@@ -103,10 +103,25 @@ def make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
             tarinfo.uname = owner
         return tarinfo
 
+    _filter = _set_uid_gid
+
+    # SOURCE_DATE EPOCH is defined there
+    # https://reproducible-builds.org/specs/source-date-epoch/
+    # we are at least sure that when it is set no timestamp can be later than
+    # this.
+    if (sde:= os.environ.get('SOURCE_DATE_EPOCH')):
+        timestamp = int(sde)
+
+        def _respect_SOURCE_DATE_EPOCH(tarinfo):
+            tarinfo.mtime = min(tarinfo.mtime, timestamp)
+            return tarinfo
+
+        _filter = lambda x: _respect_SOURCE_DATE_EPOCH(_set_uid_gid(x))
+
     if not dry_run:
         tar = tarfile.open(archive_name, 'w|%s' % tar_compression[compress])
         try:
-            tar.add(base_dir, filter=_set_uid_gid)
+            tar.add(base_dir, filter=_filter)
         finally:
             tar.close()
 

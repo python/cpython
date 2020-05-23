@@ -1,0 +1,5 @@
+Partial support for ``SOURCE_DATE_EPOCH`` environment variable for sdists
+has been added in distutils. When the ``SOURCE_DATE_EPOCH`` environment
+variable is set, the ``mtime`` of the files in an sdist tar archive will not
+be later than ``SOURCE_DATE_EPOCH``. This is a firs step to simplify getting
+byte identical reproducibility of source dists.

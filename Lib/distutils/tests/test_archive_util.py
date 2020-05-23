@@ -306,6 +306,24 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self.assertEqual(os.path.basename(res), 'archive.tar')
         self.assertEqual(self._tarinfo(res), self._created_files)
 
+    def test_make_archive_tar_source_date_epoch(self):
+        ORIGINAL_SDE = os.environ.get('SOURCE_DATE_EPOCH')
+        try:
+            os.environ['SOURCE_DATE_EPOCH'] = '1337'
+            base_dir =  self._create_files()
+            base_name = os.path.join(self.mkdtemp() , 'archive')
+            res = make_archive(base_name, 'tar', base_dir, 'dist')
+
+            archive = tarfile.open(res,mode='r')
+            for item in archive:
+                self.assertLessEqual(item.mtime, 1337)
+        finally:
+            archive.close()
+            if ORIGINAL_SDE is None:
+                del os.environ['SOURCE_DATE_EPOCH']
+            else:
+                os.environ['SOURCE_DATE_EPOCH'] = ORIGINAL_SDE
+
     @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
     def test_make_archive_gztar(self):
         base_dir =  self._create_files()
