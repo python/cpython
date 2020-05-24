@@ -712,12 +712,25 @@ class Counter(dict):
     # To strip negative and zero counts, add-in an empty counter:
     #       c += Counter()
     #
-    # Rich comparison operators for multiset subset and superset tests
-    # are deliberately omitted due to semantic conflicts with the
-    # existing inherited dict equality method.  Subset and superset
-    # semantics ignore zero counts and require that p≤q ∧ p≥q → p=q;
-    # however, that would not be the case for p=Counter(a=1, b=0)
-    # and q=Counter(a=1) where the dictionaries are not equal.
+    #
+    # When the multiplicities are zero or one, multiset operations are
+    # guaranteed to be equivalent to the corresponding operations for
+    # regular sets.
+    #     Given counter multisets such as:
+    #         cp = Counter(a=1, b=0, c=1)
+    #         cq = Counter(c=1, d=0, e=1)
+    #     The corresponding regular sets would be:
+    #         sp = {'a', 'c'}
+    #         cq = {'c', 'e'}
+    #     All of the following relations would hold:
+    #         set(cp + cq) == sp | sq
+    #         set(cp - cq) == sp - sq
+    #         set(cp | cq) == sp | sq
+    #         set(cp & cq) == sp & sq
+    #         cp.isequal(cq) == (sp == sq)
+    #         cp.issubset(cq) == sp.issubset(sq)
+    #         cp.issuperset(cq) == sp.issuperset(sq)
+    #         cp.isdisjoint(cq) == sp.isdisjoint(sq)
 
     def __add__(self, other):
         '''Add counts from two counters.
@@ -876,6 +889,45 @@ class Counter(dict):
                 self[elem] = other_count
         return self._keep_positive()
 
+    def isequal(self, other):
+        ''' Test whether positive counts agree exactly.
+
+        Unlike the __eq__() method, this test ignores counts that
+        are zero or negative.
+        '''
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return +self == +other
+
+    def issubset(self, other):
+        'True if positive counts in self <= counts in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return not self - other
+
+    def issuperset(self, other):
+        'True if positive counts in self >= counts in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return not other - self
+
+    def isdisjoint(self, other):
+        'True is none of the elements in self overlap with other'
+        return not self & other
+
+    # Rich comparison operators for multiset subset and superset tests
+    # have been deliberately omitted due to semantic conflicts with the
+    # existing inherited dict equality method.  Subset and superset
+    # semantics ignore zero counts and require that p≤q ∧ p≥q → p=q;
+    # however, that would not be the case for p=Counter(a=1, b=0)
+    # and q=Counter(a=1) where the dictionaries are not equal.
+
+    def __lt__(self, other):
+        raise TypeError(
+            'Rich comparison operators have been deliberately omitted. '
+            'Use the isequal(), issubset(), and issuperset() methods instead.')
+    __le__ = __gt__ = __ge__ = __lt__
+    
 
 ########################################################################
 ###  ChainMap
