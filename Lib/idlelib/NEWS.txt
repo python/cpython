@@ -3,6 +3,8 @@ Released on 2020-10-05?
 ======================================
 
 
+bpo-40723: Make test_idle pass when run after import.
+
 bpo-38689: IDLE will no longer freeze when inspect.signature fails
 when fetching a calltip.
 
