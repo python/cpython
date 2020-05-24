@@ -889,32 +889,76 @@ class Counter(dict):
         return self._keep_positive()
 
     def isequal(self, other):
-        ''' Test whether positive counts agree exactly.
+        ''' Test whether counts agree exactly.
 
-        Unlike the __eq__() method, this test ignores counts that
-        are zero or negative.
+        Negative or missing counts are treated as zero.
+
+        This is different that the __eq__() method which would treat
+        negative or missing counts as distinct from zero:
+
+            >>> Counter(a=1, b=0).isequal(Counter(a=1))
+            True
+            >>> Counter(a=1, b=0) == Counter(a=1)
+            False
+
+        Logically equivalent to:  +self == +other
         '''
         if not isinstance(other, Counter):
             other = Counter(other)
-        return +self == +other
+        for elem in set(self) | set(other):
+            left = self[elem]
+            if left < 0:
+                left = 0
+            right = other[elem]
+            if right < 0:
+                right = 0
+            if left != right:
+                return False
+        return True
+
+        return all(self[elem] == other[elem] for elem in _chain(self, other))
 
     def issubset(self, other):
-        'True if positive counts in self <= counts in other.'
+        '''True if the counts in self are less than or equal to those in other.
+
+        Negative or missing counts are treated as zero.
+
+        Logically equivalent to:  not self - (+other)
+        '''
         if not isinstance(other, Counter):
             other = Counter(other)
-        return not self - (+other)
+        for elem, count in self.items():
+            other_count = other[elem]
+            if other_count < 0:
+                other_count = 0
+            if count > other_count:
+                return False
+        return True
 
     def issuperset(self, other):
-        'True if positive counts in self >= counts in other.'
+        '''True if the counts in self are greater than or equal to those in other.
+
+        Negative or missing counts are treated as zero.
+
+        Logically equivalent to:  not other - (+self)
+        '''
         if not isinstance(other, Counter):
             other = Counter(other)
-        return not other - (+self)
+        return other.issubset(self)
 
     def isdisjoint(self, other):
-        'True is none of the elements in self overlap with other'
+        '''True if none of the elements in self overlap with those other
+
+        Negative or missing counts are ignored.
+
+        Logically equivalent to:  not (+self) & (+other)
+        '''
         if not isinstance(other, Counter):
             other = Counter(other)
-        return not self & other
+        for elem, count in self.items():
+            if count > 0 and other[elem] > 0:
+                return False
+        return True
 
     # Rich comparison operators for multiset subset and superset tests
     # have been deliberately omitted due to semantic conflicts with the
