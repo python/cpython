@@ -1020,6 +1020,10 @@ class PurePath(object):
                 return False
         return True
 
+    def __len__(self):
+        return len(str(self))
+
+
 # Can't subclass os.PathLike from PurePath and keep the constructor
 # optimizations in PurePath._parse_args().
 os.PathLike.register(PurePath)

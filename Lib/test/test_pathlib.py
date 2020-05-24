@@ -2300,6 +2300,14 @@ class _BasePathTest(object):
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
+    def test_len(self):
+        p = self.cls(BASE)
+        assert len(p) == len(str(p))
+        assert len(p / 'foofoo') == len(p) + 7
+
+
+
+
 
 class PathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.Path
