@@ -569,7 +569,7 @@ static PyTypeObject Dbmtype = {
 
 /*[clinic input]
 _gdbm.open as dbmopen
-    filename: unicode
+    filename: object
     flags: str="r"
     mode: int(py_default="0o666") = 0o666
     /
@@ -601,7 +601,7 @@ when the database has to be created.  It defaults to octal 0o666.
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
              int mode)
-/*[clinic end generated code: output=9527750f5df90764 input=3be0b0875974b928]*/
+/*[clinic end generated code: output=9527750f5df90764 input=0bf3159ce7952fee]*/
 {
     int iflags;
 
@@ -649,6 +649,16 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         }
     }
 
+    PyObject *filenamebytes = PyOS_FSPath(filename);
+    if (filenamebytes == NULL)
+        return NULL;
+    if (PyUnicode_Check(filenamebytes) {
+        PyObject *tmp = PyUnicode_EncodeFSDefault(filenamebytes);
+        Py_DECREF(filenamebytes);
+        filenamebytes = tmp;
+        if (tmp == NULL)
+            return NULL;
+    }
     PyObject *filenamebytes = PyUnicode_EncodeFSDefault(filename);
     if (filenamebytes == NULL) {
         return NULL;
