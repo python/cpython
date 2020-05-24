@@ -694,8 +694,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 if v == "_cut_var":
                     v += " = 0"  # cut_var must be initialized
                 self.print(f"{var_type}{v};")
-                if v == "_opt_var":
-                    self.print("UNUSED(_opt_var); // Silence compiler warnings")
+                if v.startswith("_opt_var"):
+                    self.print(f"UNUSED({v}); // Silence compiler warnings")
 
             with self.local_variable_context():
                 if is_loop:
