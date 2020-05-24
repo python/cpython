@@ -71,7 +71,7 @@ class Queue:
                 break
 
     def __repr__(self):
-        return f'<{type(self).__name__} at {id(self):#x} {self._format()}>'
+        return f'<{type(self).__name__} at {id(self)} - {self._format()}>'
 
     def __str__(self):
         return f'<{type(self).__name__} {self._format()}>'
