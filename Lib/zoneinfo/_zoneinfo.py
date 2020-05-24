@@ -2,10 +2,7 @@ import bisect
 import calendar
 import collections
 import functools
-import os
 import re
-import struct
-import sys
 import weakref
 from datetime import datetime, timedelta, timezone, tzinfo
 
