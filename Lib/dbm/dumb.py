@@ -46,6 +46,7 @@ class _Database(collections.abc.MutableMapping):
     _io = _io       # for _commit()
 
     def __init__(self, filebasename, mode, flag='c'):
+        filebasename = self._os.fspath(filebasename)
         self._mode = mode
         self._readonly = (flag == 'r')
 

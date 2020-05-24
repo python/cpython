@@ -3,6 +3,7 @@
 import unittest
 import glob
 import test.support
+from pathlib import Path
 
 # Skip tests if dbm module doesn't exist.
 dbm = test.support.import_module('dbm')
@@ -128,6 +129,9 @@ class AnyDBMTestCase:
         assert(f[key] == b"Python:")
         f.close()
 
+    def test_open_with_patlib_path(self):
+        dbm.open(Path(_fname), "c").close()
+
     def read_helper(self, f):
         keys = self.keys_helper(f)
         for key in self._dict:
@@ -143,34 +147,36 @@ class AnyDBMTestCase:
 
 class WhichDBTestCase(unittest.TestCase):
     def test_whichdb(self):
-        for module in dbm_iterator():
-            # Check whether whichdb correctly guesses module name
-            # for databases opened with "module" module.
-            # Try with empty files first
-            name = module.__name__
-            if name == 'dbm.dumb':
-                continue   # whichdb can't support dbm.dumb
-            delete_files()
-            f = module.open(_fname, 'c')
-            f.close()
-            self.assertEqual(name, self.dbm.whichdb(_fname))
-            # Now add a key
-            f = module.open(_fname, 'w')
-            f[b"1"] = b"1"
-            # and test that we can find it
-            self.assertIn(b"1", f)
-            # and read it
-            self.assertEqual(f[b"1"], b"1")
-            f.close()
-            self.assertEqual(name, self.dbm.whichdb(_fname))
+        for path in [_fname, Path(_fname)]:
+            for module in dbm_iterator():
+                # Check whether whichdb correctly guesses module name
+                # for databases opened with "module" module.
+                # Try with empty files first
+                name = module.__name__
+                if name == 'dbm.dumb':
+                    continue   # whichdb can't support dbm.dumb
+                delete_files()
+                f = module.open(path, 'c')
+                f.close()
+                self.assertEqual(name, self.dbm.whichdb(path))
+                # Now add a key
+                f = module.open(path, 'w')
+                f[b"1"] = b"1"
+                # and test that we can find it
+                self.assertIn(b"1", f)
+                # and read it
+                self.assertEqual(f[b"1"], b"1")
+                f.close()
+                self.assertEqual(name, self.dbm.whichdb(path))
 
     @unittest.skipUnless(ndbm, reason='Test requires ndbm')
     def test_whichdb_ndbm(self):
         # Issue 17198: check that ndbm which is referenced in whichdb is defined
         db_file = '{}_ndbm.db'.format(_fname)
-        with open(db_file, 'w'):
-            self.addCleanup(test.support.unlink, db_file)
-        self.assertIsNone(self.dbm.whichdb(db_file[:-3]))
+        for path in [db_file, Path(db_file)]:
+            with open(path, 'w'):
+                self.addCleanup(test.support.unlink, path)
+            self.assertIsNone(self.dbm.whichdb(path[:-3]))
 
     def tearDown(self):
         delete_files()
