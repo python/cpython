@@ -53,7 +53,7 @@ def _is_wildcard_pattern(pat):
     return "*" in pat or "?" in pat or "[" in pat
 
 
-class _Flavour(object):
+class _Flavour:
     """A flavour implements a particular (platform-specific) set of path
     semantics."""
 
@@ -636,7 +636,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(self._pathcls.__name__)
 
 
-class PurePath(object):
+class PurePath:
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
