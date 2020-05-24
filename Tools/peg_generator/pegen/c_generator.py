@@ -307,6 +307,16 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.debug = debug
         self.skip_actions = skip_actions
 
+    def add_level(self) -> None:
+        self.print("D(p->level++);")
+
+    def remove_level(self) -> None:
+        self.print("D(p->level--);")
+
+    def add_return(self, ret_val: str) -> None:
+        self.remove_level()
+        self.print(f"return {ret_val};")
+
     def unique_varname(self, name: str = "tmpvar") -> str:
         new_var = name + "_" + str(self._varname_counter)
         self._varname_counter += 1
@@ -317,8 +327,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"int {error_var} = {call_text};")
         self.print(f"if ({error_var}) {{")
         with self.indent():
-            self.print(f"return {returnval};")
-        self.print(f"}}")
+            self.add_return(returnval)
+        self.print("}")
 
     def call_with_errorcheck_goto(self, call_text: str, goto_target: str) -> None:
         error_var = self.unique_varname()
@@ -335,7 +345,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print(cleanup_code)
             self.print("p->error_indicator = 1;")
             self.print("PyErr_NoMemory();")
-            self.print("return NULL;")
+            self.add_return("NULL")
         self.print(f"}}")
 
     def out_of_memory_goto(self, expr: str, goto_target: str) -> None:
@@ -422,7 +432,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {")
         with self.indent():
             self.print("p->error_indicator = 1;")
-            self.print("return NULL;")
+            self.add_return("NULL")
         self.print("}")
         self.print("int _start_lineno = p->tokens[_mark]->lineno;")
         self.print("UNUSED(_start_lineno); // Only used by EXTRA macro")
@@ -433,7 +443,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);")
         self.print("if (_token == NULL) {")
         with self.indent():
-            self.print("return NULL;")
+            self.add_return("NULL")
         self.print("}")
         self.print("int _end_lineno = _token->end_lineno;")
         self.print("UNUSED(_end_lineno); // Only used by EXTRA macro")
@@ -443,16 +453,18 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def _check_for_errors(self) -> None:
         self.print("if (p->error_indicator) {")
         with self.indent():
-            self.print("return NULL;")
+            self.add_return("NULL")
         self.print("}")
 
     def _set_up_rule_memoization(self, node: Rule, result_type: str) -> None:
         self.print("{")
         with self.indent():
+            self.add_level()
             self.print(f"{result_type} _res = NULL;")
-            self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res))")
+            self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res)) {{")
             with self.indent():
-                self.print("return _res;")
+                self.add_return("_res")
+            self.print("}")
             self.print("int _mark = p->mark;")
             self.print("int _resmark = p->mark;")
             self.print("while (1) {")
@@ -469,7 +481,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print("_res = _raw;")
             self.print("}")
             self.print(f"p->mark = _resmark;")
-            self.print("return _res;")
+            self.add_return("_res")
         self.print("}")
         self.print(f"static {result_type}")
         self.print(f"{node.name}_raw(Parser *p)")
@@ -481,12 +493,13 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         memoize = self._should_memoize(node)
 
         with self.indent():
+            self.add_level()
             self._check_for_errors()
             self.print(f"{result_type} _res = NULL;")
             if memoize:
                 self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res)) {{")
                 with self.indent():
-                    self.print("return _res;")
+                    self.add_return("_res")
                 self.print("}")
             self.print("int _mark = p->mark;")
             if any(alt.action and "EXTRA" in alt.action for alt in rhs.alts):
@@ -501,19 +514,21 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         with self.indent():
             if memoize:
                 self.print(f"_PyPegen_insert_memo(p, _mark, {node.name}_type, _res);")
-            self.print("return _res;")
+            self.add_return("_res")
 
     def _handle_loop_rule_body(self, node: Rule, rhs: Rhs) -> None:
         memoize = self._should_memoize(node)
         is_repeat1 = node.name.startswith("_loop1")
 
         with self.indent():
+            self.add_level()
             self._check_for_errors()
             self.print("void *_res = NULL;")
             if memoize:
-                self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res))")
+                self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res)) {{")
                 with self.indent():
-                    self.print("return _res;")
+                    self.add_return("_res")
+                self.print("}")
             self.print("int _mark = p->mark;")
             self.print("int _start_mark = p->mark;")
             self.print("void **_children = PyMem_Malloc(sizeof(void *));")
@@ -529,7 +544,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print("if (_n == 0 || p->error_indicator) {")
                 with self.indent():
                     self.print("PyMem_Free(_children);")
-                    self.print("return NULL;")
+                    self.add_return("NULL")
                 self.print("}")
             self.print("asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);")
             self.out_of_memory_return(f"!_seq", cleanup_code="PyMem_Free(_children);")
@@ -537,7 +552,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("PyMem_Free(_children);")
             if node.name:
                 self.print(f"_PyPegen_insert_memo(p, _start_mark, {node.name}_type, _seq);")
-            self.print("return _seq;")
+            self.add_return("_seq")
 
     def visit_Rule(self, node: Rule) -> None:
         is_loop = node.is_loop()
@@ -602,7 +617,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("p->error_indicator = 1;")
             if cleanup_code:
                 self.print(cleanup_code)
-            self.print("return NULL;")
+            self.add_return("NULL")
         self.print("}")
 
         if self.debug:
@@ -641,6 +656,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("{")
         # We have parsed successfully all the conditions for the option.
         with self.indent():
+            self.print(
+                f'D(fprintf(stderr, "%*c✓ {rulename}[%d-%d]: %s\\n", p->level, \' \', _mark, p->mark, "{node}"));'
+            )
             # Prepare to emmit the rule action and do so
             if node.action and "EXTRA" in node.action:
                 self._set_up_token_end_metadata_extraction()
@@ -652,9 +670,6 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.emit_default_action(is_gather, node)
 
             # As the current option has parsed correctly, do not continue with the rest.
-            self.print(
-                f'D(fprintf(stderr, "✓ {rulename}[%d-%d]: %s\\n", _mark, p->mark, "{node}"));'
-            )
             self.print(f"goto done;")
         self.print("}")
 
@@ -694,10 +709,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     ) -> None:
         self.print(f"{{ // {node}")
         with self.indent():
-            self.print(
-                f'D(fprintf(stderr, "> {rulename}[%d-%d]: %s\\n", _mark, p->mark, "{node}"));'
-            )
             self._check_for_errors()
+            self.print(
+                f'D(fprintf(stderr, "%*c> {rulename}[%d-%d]: %s\\n", p->level, \' \', _mark, p->mark, "{node}"));'
+            )
             # Prepare variable declarations for the alternative
             vars = self.collect_vars(node)
             for v, var_type in sorted(item for item in vars.items() if item[0] is not None):
@@ -719,10 +734,14 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
 
             self.print("p->mark = _mark;")
             self.print(
-                f'D(fprintf(stderr, "✗ {rulename}[%d-%d]: %s failed!\\n", _mark, p->mark, "{node}"));'
+                f"D(fprintf(stderr, \"%*c%s {rulename}[%d-%d]: %s failed!\\n\", p->level, ' ',\n"
+                f'                  p->error_indicator ? "⚠️" : "✗", _mark, p->mark, "{node}"));'
             )
             if "_cut_var" in vars:
-                self.print("if (_cut_var) return NULL;")
+                self.print("if (_cut_var) {")
+                with self.indent():
+                    self.add_return("NULL")
+                self.print("}")
         self.print("}")
 
     def collect_vars(self, node: Alt) -> Dict[Optional[str], Optional[str]]:

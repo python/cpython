@@ -72,6 +72,7 @@ typedef struct {
     int feature_version;
     growable_comment_array type_ignore_comments;
     Token *known_err_token;
+    int level;
 } Parser;
 
 typedef struct {
