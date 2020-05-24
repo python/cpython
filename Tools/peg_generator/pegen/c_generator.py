@@ -29,6 +29,13 @@ from pegen.parser_generator import ParserGenerator
 EXTENSION_PREFIX = """\
 #include "pegen.h"
 
+#ifdef Py_DEBUG
+extern int Py_DebugFlag;
+#define D(x) if (!Py_DebugFlag); else x
+#else
+#define D(x)
+#endif
+
 """
 
 
@@ -477,9 +484,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self._check_for_errors()
             self.print(f"{result_type} _res = NULL;")
             if memoize:
-                self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res))")
+                self.print(f"if (_PyPegen_is_memoized(p, {node.name}_type, &_res)) {{")
                 with self.indent():
                     self.print("return _res;")
+                self.print("}")
             self.print("int _mark = p->mark;")
             if any(alt.action and "EXTRA" in alt.action for alt in rhs.alts):
                 self._set_up_token_start_metadata_extraction()
@@ -487,7 +495,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 rhs, is_loop=False, is_gather=node.is_gather(), rulename=node.name,
             )
             if self.debug:
-                self.print(f'fprintf(stderr, "Fail at %d: {node.name}\\n", p->mark);')
+                self.print(f'D(fprintf(stderr, "Fail at %d: {node.name}\\n", p->mark));')
             self.print("_res = NULL;")
         self.print("  done:")
         with self.indent():
@@ -599,7 +607,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
 
         if self.debug:
             self.print(
-                f'fprintf(stderr, "Hit with action [%d-%d]: %s\\n", _mark, p->mark, "{node}");'
+                f'D(fprintf(stderr, "Hit with action [%d-%d]: %s\\n", _mark, p->mark, "{node}"));'
             )
 
     def emit_default_action(self, is_gather: bool, node: Alt) -> None:
@@ -613,7 +621,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             else:
                 if self.debug:
                     self.print(
-                        f'fprintf(stderr, "Hit without action [%d:%d]: %s\\n", _mark, p->mark, "{node}");'
+                        f'D(fprintf(stderr, "Hit without action [%d:%d]: %s\\n", _mark, p->mark, "{node}"));'
                     )
                 self.print(
                     f"_res = _PyPegen_dummy_name(p, {', '.join(self.local_variable_names)});"
@@ -621,14 +629,14 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         else:
             if self.debug:
                 self.print(
-                    f'fprintf(stderr, "Hit with default action [%d:%d]: %s\\n", _mark, p->mark, "{node}");'
+                    f'D(fprintf(stderr, "Hit with default action [%d:%d]: %s\\n", _mark, p->mark, "{node}"));'
                 )
             self.print(f"_res = {self.local_variable_names[0]};")
 
     def emit_dummy_action(self) -> None:
         self.print("_res = _PyPegen_dummy_name(p);")
 
-    def handle_alt_normal(self, node: Alt, is_gather: bool) -> None:
+    def handle_alt_normal(self, node: Alt, is_gather: bool, rulename: Optional[str]) -> None:
         self.join_conditions(keyword="if", node=node)
         self.print("{")
         # We have parsed successfully all the conditions for the option.
@@ -644,6 +652,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.emit_default_action(is_gather, node)
 
             # As the current option has parsed correctly, do not continue with the rest.
+            self.print(
+                f'D(fprintf(stderr, "✓ {rulename}[%d-%d]: %s\\n", _mark, p->mark, "{node}"));'
+            )
             self.print(f"goto done;")
         self.print("}")
 
@@ -683,6 +694,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     ) -> None:
         self.print(f"{{ // {node}")
         with self.indent():
+            self.print(
+                f'D(fprintf(stderr, "> {rulename}[%d-%d]: %s\\n", _mark, p->mark, "{node}"));'
+            )
             self._check_for_errors()
             # Prepare variable declarations for the alternative
             vars = self.collect_vars(node)
@@ -701,9 +715,12 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 if is_loop:
                     self.handle_alt_loop(node, is_gather, rulename)
                 else:
-                    self.handle_alt_normal(node, is_gather)
+                    self.handle_alt_normal(node, is_gather, rulename)
 
             self.print("p->mark = _mark;")
+            self.print(
+                f'D(fprintf(stderr, "✗ {rulename}[%d-%d]: %s failed!\\n", _mark, p->mark, "{node}"));'
+            )
             if "_cut_var" in vars:
                 self.print("if (_cut_var) return NULL;")
         self.print("}")
