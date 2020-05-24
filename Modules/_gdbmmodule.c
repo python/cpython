@@ -590,7 +590,7 @@ static PyType_Spec gdbmtype_spec = {
 /*[clinic input]
 _gdbm.open as dbmopen
 
-    filename: unicode
+    filename: object
     flags: str="r"
     mode: int(py_default="0o666") = 0o666
     /
@@ -672,6 +672,16 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         }
     }
 
+    PyObject *filenamebytes = PyOS_FSPath(filename);
+    if (filenamebytes == NULL)
+        return NULL;
+    if (PyUnicode_Check(filenamebytes) {
+        PyObject *tmp = PyUnicode_EncodeFSDefault(filenamebytes);
+        Py_DECREF(filenamebytes);
+        filenamebytes = tmp;
+        if (tmp == NULL)
+            return NULL;
+    }
     PyObject *filenamebytes = PyUnicode_EncodeFSDefault(filename);
     if (filenamebytes == NULL) {
         return NULL;

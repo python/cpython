@@ -303,13 +303,6 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("open", nargs, 1, 3)) {
         goto exit;
     }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("open", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     filename = args[0];
     if (nargs < 2) {
         goto skip_optional;
