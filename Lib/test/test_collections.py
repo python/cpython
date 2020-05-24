@@ -2241,23 +2241,42 @@ class TestCounter(unittest.TestCase):
 
     def test_multiset_equal(self):
         self.assertTrue(Counter(a=3, b=2, c=0).isequal('ababa'))
-        self.assertTrue(Counter(a=0, b=-1, c=0).isequal(''))
         self.assertFalse(Counter(a=3, b=2).isequal('babab'))
 
     def test_multiset_subset(self):
         self.assertTrue(Counter(a=3, b=2, c=0).issubset('ababa'))
-        self.assertTrue(Counter(a=0, b=-1, c=0).issubset('ababa'))
-        self.assertTrue(Counter(a=3, b=2, c=0).issubset('abcabcabcd'))
         self.assertFalse(Counter(a=3, b=2).issubset('babab'))
 
     def test_multiset_superset(self):
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issuperset('aab'))
-        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).issuperset('aabd'))
+        self.assertTrue(Counter(a=3, b=2, c=0).issuperset('aab'))
+        self.assertFalse(Counter(a=3, b=2, c=0).issuperset('aabd'))
 
     def test_multiset_disjoint(self):
+        self.assertTrue(Counter(a=3, b=2, c=0).isdisjoint('cde'))
+        self.assertFalse(Counter(a=3, b=2, c=0).isdisjoint('bcd'))
+
+    def test_multiset_predicates_with_negative_counts(self):
+        # Multiset predicates run on the output of the elements() method,
+        # meaning that zero counts and negative counts are ignored.
+        # The tests below confirm that we get that same results as the
+        # tests above, even after a negative count has been included
+        # in either *self* or *other*.
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isequal('ababa'))
+        self.assertFalse(Counter(a=3, b=2, d=-1).isequal('babab'))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issubset('ababa'))
+        self.assertFalse(Counter(a=3, b=2, d=-1).issubset('babab'))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issuperset('aab'))
+        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).issuperset('aabd'))
         self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint('cde'))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint('efgg'))
         self.assertFalse(Counter(a=3, b=2, c=0, d=-1).isdisjoint('bcd'))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isequal(Counter(a=3, b=2, c=-1)))
+        self.assertFalse(Counter(a=3, b=2, d=-1).isequal(Counter(a=2, b=3, c=-1)))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issubset(Counter(a=3, b=2, c=-1)))
+        self.assertFalse(Counter(a=3, b=2, d=-1).issubset(Counter(a=2, b=3, c=-1)))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issuperset(Counter(a=2, b=1, c=-1)))
+        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).issuperset(Counter(a=2, b=1, c=-1, d=1)))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint(Counter(c=1, d=2, e=3, f=-1)))
+        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).isdisjoint(Counter(b=1, c=1, d=1, e=-1)))
 
 
 ################################################################################
