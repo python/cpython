@@ -2930,11 +2930,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 nargs++;
             else if (TYPE(CHILD(ch, 1)) == comp_for) {
                 nargs++;
-                if (!maybegenbeg) {
-                    ast_error(c, ch, "invalid syntax");
-                    return NULL;
-                }
-                if (NCH(n) > 1) {
+                if (!maybegenbeg || NCH(n) > 1) {
                     ast_error(c, ch, "Generator expression must be parenthesized");
                     return NULL;
                 }

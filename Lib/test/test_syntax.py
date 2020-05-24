@@ -230,7 +230,7 @@ SyntaxError: Generator expression must be parenthesized
 >>> class C(x for x in L):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: Generator expression must be parenthesized
 
 >>> def g(*args, **kwargs):
 ...     print(args, sorted(kwargs.items()))

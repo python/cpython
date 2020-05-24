@@ -286,11 +286,14 @@ class_def[stmt_ty]:
     | a=decorators b=class_def_raw { _PyPegen_class_def_decorators(p, a, b) }
     | class_def_raw
 class_def_raw[stmt_ty]:
-    | 'class' a=NAME b=['(' z=[arguments] ')' { z }] ':' c=block {
+    | 'class' a=NAME b=class_bases? ':' c=block {
         _Py_ClassDef(a->v.Name.id,
                      (b) ? ((expr_ty) b)->v.Call.args : NULL,
                      (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                      c, NULL, EXTRA) }
+class_bases:
+    | '(' z=[arguments] ')' { z }
+    | '(' invalid_class_bases ')'
 
 block[asdl_seq*] (memo):
     | NEWLINE INDENT a=statements DEDENT { a }
@@ -682,3 +685,6 @@ invalid_del_target:
 invalid_import_from_targets:
     | import_from_as_names ',' {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
+invalid_class_bases:
+    | a=args for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "Generator expression must be parenthesized") }
