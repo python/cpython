@@ -44,6 +44,8 @@ typedef struct _alias *alias_ty;
 
 typedef struct _withitem *withitem_ty;
 
+typedef struct _match_case *match_case_ty;
+
 typedef struct _type_ignore *type_ignore_ty;
 
 
@@ -77,10 +79,10 @@ enum _stmt_kind {FunctionDef_kind=1, AsyncFunctionDef_kind=2, ClassDef_kind=3,
                   Return_kind=4, Delete_kind=5, Assign_kind=6,
                   AugAssign_kind=7, AnnAssign_kind=8, For_kind=9,
                   AsyncFor_kind=10, While_kind=11, If_kind=12, With_kind=13,
-                  AsyncWith_kind=14, Raise_kind=15, Try_kind=16,
-                  Assert_kind=17, Import_kind=18, ImportFrom_kind=19,
-                  Global_kind=20, Nonlocal_kind=21, Expr_kind=22, Pass_kind=23,
-                  Break_kind=24, Continue_kind=25};
+                  AsyncWith_kind=14, Match_kind=15, Raise_kind=16, Try_kind=17,
+                  Assert_kind=18, Import_kind=19, ImportFrom_kind=20,
+                  Global_kind=21, Nonlocal_kind=22, Expr_kind=23, Pass_kind=24,
+                  Break_kind=25, Continue_kind=26};
 struct _stmt {
     enum _stmt_kind kind;
     union {
@@ -176,6 +178,11 @@ struct _stmt {
             asdl_seq *body;
             string type_comment;
         } AsyncWith;
+
+        struct {
+            expr_ty target;
+            asdl_seq *cases;
+        } Match;
 
         struct {
             expr_ty exc;
@@ -443,6 +450,12 @@ struct _withitem {
     expr_ty optional_vars;
 };
 
+struct _match_case {
+    expr_ty pattern;
+    expr_ty guard;
+    asdl_seq *body;
+};
+
 enum _type_ignore_kind {TypeIgnore_kind=1};
 struct _type_ignore {
     enum _type_ignore_kind kind;
@@ -523,6 +536,9 @@ stmt_ty _Py_With(asdl_seq * items, asdl_seq * body, string type_comment, int
 stmt_ty _Py_AsyncWith(asdl_seq * items, asdl_seq * body, string type_comment,
                       int lineno, int col_offset, int end_lineno, int
                       end_col_offset, PyArena *arena);
+#define Match(a0, a1, a2, a3, a4, a5, a6) _Py_Match(a0, a1, a2, a3, a4, a5, a6)
+stmt_ty _Py_Match(expr_ty target, asdl_seq * cases, int lineno, int col_offset,
+                  int end_lineno, int end_col_offset, PyArena *arena);
 #define Raise(a0, a1, a2, a3, a4, a5, a6) _Py_Raise(a0, a1, a2, a3, a4, a5, a6)
 stmt_ty _Py_Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, int
                   end_lineno, int end_col_offset, PyArena *arena);
@@ -683,6 +699,9 @@ alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
 #define withitem(a0, a1, a2) _Py_withitem(a0, a1, a2)
 withitem_ty _Py_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena
                          *arena);
+#define match_case(a0, a1, a2, a3) _Py_match_case(a0, a1, a2, a3)
+match_case_ty _Py_match_case(expr_ty pattern, expr_ty guard, asdl_seq * body,
+                             PyArena *arena);
 #define TypeIgnore(a0, a1, a2) _Py_TypeIgnore(a0, a1, a2)
 type_ignore_ty _Py_TypeIgnore(int lineno, string tag, PyArena *arena);
 

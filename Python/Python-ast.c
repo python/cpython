@@ -87,6 +87,7 @@ typedef struct {
     PyObject *Lt_type;
     PyObject *MatMult_singleton;
     PyObject *MatMult_type;
+    PyObject *Match_type;
     PyObject *Mod_singleton;
     PyObject *Mod_type;
     PyObject *Module_type;
@@ -149,6 +150,7 @@ typedef struct {
     PyObject *bases;
     PyObject *body;
     PyObject *boolop_type;
+    PyObject *cases;
     PyObject *cause;
     PyObject *cmpop_type;
     PyObject *col_offset;
@@ -171,6 +173,7 @@ typedef struct {
     PyObject *format_spec;
     PyObject *func;
     PyObject *generators;
+    PyObject *guard;
     PyObject *handlers;
     PyObject *id;
     PyObject *ifs;
@@ -189,6 +192,7 @@ typedef struct {
     PyObject *level;
     PyObject *lineno;
     PyObject *lower;
+    PyObject *match_case_type;
     PyObject *mod_type;
     PyObject *module;
     PyObject *msg;
@@ -200,6 +204,7 @@ typedef struct {
     PyObject *ops;
     PyObject *optional_vars;
     PyObject *orelse;
+    PyObject *pattern;
     PyObject *posonlyargs;
     PyObject *returns;
     PyObject *right;
@@ -307,6 +312,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->Lt_type);
     Py_CLEAR(astmodulestate(module)->MatMult_singleton);
     Py_CLEAR(astmodulestate(module)->MatMult_type);
+    Py_CLEAR(astmodulestate(module)->Match_type);
     Py_CLEAR(astmodulestate(module)->Mod_singleton);
     Py_CLEAR(astmodulestate(module)->Mod_type);
     Py_CLEAR(astmodulestate(module)->Module_type);
@@ -369,6 +375,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->bases);
     Py_CLEAR(astmodulestate(module)->body);
     Py_CLEAR(astmodulestate(module)->boolop_type);
+    Py_CLEAR(astmodulestate(module)->cases);
     Py_CLEAR(astmodulestate(module)->cause);
     Py_CLEAR(astmodulestate(module)->cmpop_type);
     Py_CLEAR(astmodulestate(module)->col_offset);
@@ -391,6 +398,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->format_spec);
     Py_CLEAR(astmodulestate(module)->func);
     Py_CLEAR(astmodulestate(module)->generators);
+    Py_CLEAR(astmodulestate(module)->guard);
     Py_CLEAR(astmodulestate(module)->handlers);
     Py_CLEAR(astmodulestate(module)->id);
     Py_CLEAR(astmodulestate(module)->ifs);
@@ -409,6 +417,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->level);
     Py_CLEAR(astmodulestate(module)->lineno);
     Py_CLEAR(astmodulestate(module)->lower);
+    Py_CLEAR(astmodulestate(module)->match_case_type);
     Py_CLEAR(astmodulestate(module)->mod_type);
     Py_CLEAR(astmodulestate(module)->module);
     Py_CLEAR(astmodulestate(module)->msg);
@@ -420,6 +429,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->ops);
     Py_CLEAR(astmodulestate(module)->optional_vars);
     Py_CLEAR(astmodulestate(module)->orelse);
+    Py_CLEAR(astmodulestate(module)->pattern);
     Py_CLEAR(astmodulestate(module)->posonlyargs);
     Py_CLEAR(astmodulestate(module)->returns);
     Py_CLEAR(astmodulestate(module)->right);
@@ -526,6 +536,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->Lt_type);
     Py_VISIT(astmodulestate(module)->MatMult_singleton);
     Py_VISIT(astmodulestate(module)->MatMult_type);
+    Py_VISIT(astmodulestate(module)->Match_type);
     Py_VISIT(astmodulestate(module)->Mod_singleton);
     Py_VISIT(astmodulestate(module)->Mod_type);
     Py_VISIT(astmodulestate(module)->Module_type);
@@ -588,6 +599,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->bases);
     Py_VISIT(astmodulestate(module)->body);
     Py_VISIT(astmodulestate(module)->boolop_type);
+    Py_VISIT(astmodulestate(module)->cases);
     Py_VISIT(astmodulestate(module)->cause);
     Py_VISIT(astmodulestate(module)->cmpop_type);
     Py_VISIT(astmodulestate(module)->col_offset);
@@ -610,6 +622,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->format_spec);
     Py_VISIT(astmodulestate(module)->func);
     Py_VISIT(astmodulestate(module)->generators);
+    Py_VISIT(astmodulestate(module)->guard);
     Py_VISIT(astmodulestate(module)->handlers);
     Py_VISIT(astmodulestate(module)->id);
     Py_VISIT(astmodulestate(module)->ifs);
@@ -628,6 +641,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->level);
     Py_VISIT(astmodulestate(module)->lineno);
     Py_VISIT(astmodulestate(module)->lower);
+    Py_VISIT(astmodulestate(module)->match_case_type);
     Py_VISIT(astmodulestate(module)->mod_type);
     Py_VISIT(astmodulestate(module)->module);
     Py_VISIT(astmodulestate(module)->msg);
@@ -639,6 +653,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->ops);
     Py_VISIT(astmodulestate(module)->optional_vars);
     Py_VISIT(astmodulestate(module)->orelse);
+    Py_VISIT(astmodulestate(module)->pattern);
     Py_VISIT(astmodulestate(module)->posonlyargs);
     Py_VISIT(astmodulestate(module)->returns);
     Py_VISIT(astmodulestate(module)->right);
@@ -699,6 +714,7 @@ static int init_identifiers(void)
     if ((state->attr = PyUnicode_InternFromString("attr")) == NULL) return 0;
     if ((state->bases = PyUnicode_InternFromString("bases")) == NULL) return 0;
     if ((state->body = PyUnicode_InternFromString("body")) == NULL) return 0;
+    if ((state->cases = PyUnicode_InternFromString("cases")) == NULL) return 0;
     if ((state->cause = PyUnicode_InternFromString("cause")) == NULL) return 0;
     if ((state->col_offset = PyUnicode_InternFromString("col_offset")) == NULL) return 0;
     if ((state->comparators = PyUnicode_InternFromString("comparators")) == NULL) return 0;
@@ -716,6 +732,7 @@ static int init_identifiers(void)
     if ((state->format_spec = PyUnicode_InternFromString("format_spec")) == NULL) return 0;
     if ((state->func = PyUnicode_InternFromString("func")) == NULL) return 0;
     if ((state->generators = PyUnicode_InternFromString("generators")) == NULL) return 0;
+    if ((state->guard = PyUnicode_InternFromString("guard")) == NULL) return 0;
     if ((state->handlers = PyUnicode_InternFromString("handlers")) == NULL) return 0;
     if ((state->id = PyUnicode_InternFromString("id")) == NULL) return 0;
     if ((state->ifs = PyUnicode_InternFromString("ifs")) == NULL) return 0;
@@ -742,6 +759,7 @@ static int init_identifiers(void)
     if ((state->ops = PyUnicode_InternFromString("ops")) == NULL) return 0;
     if ((state->optional_vars = PyUnicode_InternFromString("optional_vars")) == NULL) return 0;
     if ((state->orelse = PyUnicode_InternFromString("orelse")) == NULL) return 0;
+    if ((state->pattern = PyUnicode_InternFromString("pattern")) == NULL) return 0;
     if ((state->posonlyargs = PyUnicode_InternFromString("posonlyargs")) == NULL) return 0;
     if ((state->returns = PyUnicode_InternFromString("returns")) == NULL) return 0;
     if ((state->right = PyUnicode_InternFromString("right")) == NULL) return 0;
@@ -862,6 +880,10 @@ static const char * const AsyncWith_fields[]={
     "items",
     "body",
     "type_comment",
+};
+static const char * const Match_fields[]={
+    "target",
+    "cases",
 };
 static const char * const Raise_fields[]={
     "exc",
@@ -1079,6 +1101,12 @@ static PyObject* ast2obj_withitem(void*);
 static const char * const withitem_fields[]={
     "context_expr",
     "optional_vars",
+};
+static PyObject* ast2obj_match_case(void*);
+static const char * const match_case_fields[]={
+    "pattern",
+    "guard",
+    "body",
 };
 static PyObject* ast2obj_type_ignore(void*);
 static const char * const TypeIgnore_fields[]={
@@ -1430,6 +1458,7 @@ static int init_types(void)
         "     | If(expr test, stmt* body, stmt* orelse)\n"
         "     | With(withitem* items, stmt* body, string? type_comment)\n"
         "     | AsyncWith(withitem* items, stmt* body, string? type_comment)\n"
+        "     | Match(expr target, match_case* cases)\n"
         "     | Raise(expr? exc, expr? cause)\n"
         "     | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)\n"
         "     | Assert(expr test, expr? msg)\n"
@@ -1527,6 +1556,9 @@ static int init_types(void)
     if (PyObject_SetAttr(state->AsyncWith_type, state->type_comment, Py_None)
         == -1)
         return 0;
+    state->Match_type = make_type("Match", state->stmt_type, Match_fields, 2,
+        "Match(expr target, match_case* cases)");
+    if (!state->Match_type) return 0;
     state->Raise_type = make_type("Raise", state->stmt_type, Raise_fields, 2,
         "Raise(expr? exc, expr? cause)");
     if (!state->Raise_type) return 0;
@@ -2011,6 +2043,13 @@ static int init_types(void)
     if (PyObject_SetAttr(state->withitem_type, state->optional_vars, Py_None)
         == -1)
         return 0;
+    state->match_case_type = make_type("match_case", state->AST_type,
+                                       match_case_fields, 3,
+        "match_case(expr pattern, expr? guard, stmt* body)");
+    if (!state->match_case_type) return 0;
+    if (!add_attributes(state->match_case_type, NULL, 0)) return 0;
+    if (PyObject_SetAttr(state->match_case_type, state->guard, Py_None) == -1)
+        return 0;
     state->type_ignore_type = make_type("type_ignore", state->AST_type, NULL, 0,
         "type_ignore = TypeIgnore(int lineno, string tag)");
     if (!state->type_ignore_type) return 0;
@@ -2041,6 +2080,8 @@ static int obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena);
 static int obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena);
 static int obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena);
 static int obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena);
+static int obj2ast_match_case(PyObject* obj, match_case_ty* out, PyArena*
+                              arena);
 static int obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena*
                                arena);
 
@@ -2464,6 +2505,29 @@ AsyncWith(asdl_seq * items, asdl_seq * body, string type_comment, int lineno,
     p->v.AsyncWith.items = items;
     p->v.AsyncWith.body = body;
     p->v.AsyncWith.type_comment = type_comment;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+stmt_ty
+Match(expr_ty target, asdl_seq * cases, int lineno, int col_offset, int
+      end_lineno, int end_col_offset, PyArena *arena)
+{
+    stmt_ty p;
+    if (!target) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'target' is required for Match");
+        return NULL;
+    }
+    p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = Match_kind;
+    p->v.Match.target = target;
+    p->v.Match.cases = cases;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -3486,6 +3550,24 @@ withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
     return p;
 }
 
+match_case_ty
+match_case(expr_ty pattern, expr_ty guard, asdl_seq * body, PyArena *arena)
+{
+    match_case_ty p;
+    if (!pattern) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'pattern' is required for match_case");
+        return NULL;
+    }
+    p = (match_case_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->pattern = pattern;
+    p->guard = guard;
+    p->body = body;
+    return p;
+}
+
 type_ignore_ty
 TypeIgnore(int lineno, string tag, PyArena *arena)
 {
@@ -3936,6 +4018,22 @@ ast2obj_stmt(void* _o)
         if (!value) goto failed;
         if (PyObject_SetAttr(result, astmodulestate_global->type_comment,
             value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case Match_kind:
+        tp = (PyTypeObject *)astmodulestate_global->Match_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(o->v.Match.target);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->target, value) ==
+            -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_list(o->v.Match.cases, ast2obj_match_case);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->cases, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -5034,6 +5132,41 @@ ast2obj_withitem(void* _o)
     if (!value) goto failed;
     if (PyObject_SetAttr(result, astmodulestate_global->optional_vars, value)
         == -1)
+        goto failed;
+    Py_DECREF(value);
+    return result;
+failed:
+    Py_XDECREF(value);
+    Py_XDECREF(result);
+    return NULL;
+}
+
+PyObject*
+ast2obj_match_case(void* _o)
+{
+    match_case_ty o = (match_case_ty)_o;
+    PyObject *result = NULL, *value = NULL;
+    PyTypeObject *tp;
+    if (!o) {
+        Py_RETURN_NONE;
+    }
+
+    tp = (PyTypeObject *)astmodulestate_global->match_case_type;
+    result = PyType_GenericNew(tp, NULL, NULL);
+    if (!result) return NULL;
+    value = ast2obj_expr(o->pattern);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->pattern, value) == -1)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_expr(o->guard);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->guard, value) == -1)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_list(o->body, ast2obj_stmt);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->body, value) == -1)
         goto failed;
     Py_DECREF(value);
     return result;
@@ -6726,6 +6859,67 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         }
         *out = AsyncWith(items, body, type_comment, lineno, col_offset,
                          end_lineno, end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
+    tp = astmodulestate_global->Match_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        expr_ty target;
+        asdl_seq* cases;
+
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->target, &tmp) < 0)
+            {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from Match");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &target, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->cases, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"cases\" missing from Match");
+            return 1;
+        }
+        else {
+            int res;
+            Py_ssize_t len;
+            Py_ssize_t i;
+            if (!PyList_Check(tmp)) {
+                PyErr_Format(PyExc_TypeError, "Match field \"cases\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                goto failed;
+            }
+            len = PyList_GET_SIZE(tmp);
+            cases = _Py_asdl_seq_new(len, arena);
+            if (cases == NULL) goto failed;
+            for (i = 0; i < len; i++) {
+                match_case_ty val;
+                PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
+                Py_INCREF(tmp2);
+                res = obj2ast_match_case(tmp2, &val, arena);
+                Py_DECREF(tmp2);
+                if (res != 0) goto failed;
+                if (len != PyList_GET_SIZE(tmp)) {
+                    PyErr_SetString(PyExc_RuntimeError, "Match field \"cases\" changed size during iteration");
+                    goto failed;
+                }
+                asdl_seq_SET(cases, i, val);
+            }
+            Py_CLEAR(tmp);
+        }
+        *out = Match(target, cases, lineno, col_offset, end_lineno,
+                     end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -9825,6 +10019,80 @@ failed:
 }
 
 int
+obj2ast_match_case(PyObject* obj, match_case_ty* out, PyArena* arena)
+{
+    PyObject* tmp = NULL;
+    expr_ty pattern;
+    expr_ty guard;
+    asdl_seq* body;
+
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->pattern, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"pattern\" missing from match_case");
+        return 1;
+    }
+    else {
+        int res;
+        res = obj2ast_expr(tmp, &pattern, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->guard, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        guard = NULL;
+    }
+    else {
+        int res;
+        res = obj2ast_expr(tmp, &guard, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->body, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from match_case");
+        return 1;
+    }
+    else {
+        int res;
+        Py_ssize_t len;
+        Py_ssize_t i;
+        if (!PyList_Check(tmp)) {
+            PyErr_Format(PyExc_TypeError, "match_case field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+            goto failed;
+        }
+        len = PyList_GET_SIZE(tmp);
+        body = _Py_asdl_seq_new(len, arena);
+        if (body == NULL) goto failed;
+        for (i = 0; i < len; i++) {
+            stmt_ty val;
+            PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
+            Py_INCREF(tmp2);
+            res = obj2ast_stmt(tmp2, &val, arena);
+            Py_DECREF(tmp2);
+            if (res != 0) goto failed;
+            if (len != PyList_GET_SIZE(tmp)) {
+                PyErr_SetString(PyExc_RuntimeError, "match_case field \"body\" changed size during iteration");
+                goto failed;
+            }
+            asdl_seq_SET(body, i, val);
+        }
+        Py_CLEAR(tmp);
+    }
+    *out = match_case(pattern, guard, body, arena);
+    return 0;
+failed:
+    Py_XDECREF(tmp);
+    return 1;
+}
+
+int
 obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
 {
     int isinstance;
@@ -9998,6 +10266,10 @@ PyInit__ast(void)
         goto error;
     }
     Py_INCREF(astmodulestate(m)->AsyncWith_type);
+    if (PyModule_AddObject(m, "Match", astmodulestate_global->Match_type) < 0) {
+        goto error;
+    }
+    Py_INCREF(astmodulestate(m)->Match_type);
     if (PyModule_AddObject(m, "Raise", astmodulestate_global->Raise_type) < 0) {
         goto error;
     }
@@ -10373,6 +10645,11 @@ PyInit__ast(void)
         goto error;
     }
     Py_INCREF(astmodulestate(m)->withitem_type);
+    if (PyModule_AddObject(m, "match_case",
+        astmodulestate_global->match_case_type) < 0) {
+        goto error;
+    }
+    Py_INCREF(astmodulestate(m)->match_case_type);
     if (PyModule_AddObject(m, "type_ignore",
         astmodulestate_global->type_ignore_type) < 0) {
         goto error;

@@ -12072,6 +12072,9 @@ invalid_star_etc_rule(Parser *p)
         p->mark = _mark;
     }
     { // '*' ',' TYPE_COMMENT
+        if (p->error_indicator) {
+            return NULL;
+        }
         Token * _literal;
         Token * _literal_1;
         Token * type_comment_var;

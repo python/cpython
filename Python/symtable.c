@@ -207,6 +207,7 @@ static int symtable_visit_argannotations(struct symtable *st, asdl_seq *args);
 static int symtable_implicit_arg(struct symtable *st, int pos);
 static int symtable_visit_annotations(struct symtable *st, arguments_ty, expr_ty);
 static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
+static int symtable_visit_match_case(struct symtable *st, match_case_ty m);
 
 
 static identifier top = NULL, lambda = NULL, genexpr = NULL,
@@ -1291,6 +1292,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.If.orelse)
             VISIT_SEQ(st, stmt, s->v.If.orelse);
         break;
+    case Match_kind:
+        VISIT(st, expr, s->v.Match.target);
+        VISIT_SEQ(st, match_case, s->v.Match.cases);
+        break;
     case Raise_kind:
         if (s->v.Raise.exc) {
             VISIT(st, expr, s->v.Raise.exc);
@@ -1782,6 +1787,17 @@ symtable_visit_withitem(struct symtable *st, withitem_ty item)
     return 1;
 }
 
+
+static int
+symtable_visit_match_case(struct symtable *st, match_case_ty m)
+{
+    VISIT(st, expr, m->pattern);
+    if (m->guard) {
+        VISIT(st, expr, m->guard);
+    }
+    VISIT_SEQ(st, stmt, m->body);
+    return 1;
+}
 
 static int
 symtable_visit_alias(struct symtable *st, alias_ty a)

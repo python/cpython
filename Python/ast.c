@@ -303,6 +303,19 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 }
 
 static int
+validate_pattern(expr_ty p)
+{
+    switch (p->kind) {
+        case Constant_kind:
+            return validate_constant(p->v.Constant.value);
+        default:
+            break;
+    }
+    PyErr_SetString(PyExc_SystemError, "invalid match pattern");
+    return 0;
+}
+
+static int
 validate_nonempty_seq(asdl_seq *seq, const char *what, const char *owner)
 {
     if (asdl_seq_LEN(seq))
@@ -399,6 +412,22 @@ validate_stmt(stmt_ty stmt)
                 return 0;
         }
         return validate_body(stmt->v.AsyncWith.body, "AsyncWith");
+    case Match_kind:
+        if (!validate_expr(stmt->v.Match.target, Load)
+            || !validate_nonempty_seq(stmt->v.Match.cases, "cases", "Match")) {
+            return 0;
+        }
+        match_case_ty m;
+        Py_ssize_t cases = asdl_seq_LEN(stmt->v.Match.cases);
+        for (i = 0; i < cases; i++) {
+            m = asdl_seq_GET(stmt->v.Match.cases, i);
+            if (!validate_pattern(m->pattern)
+                || (m->guard && !validate_expr(m->guard, Load))
+                || !validate_body(m->body, "match_case")) {
+                return 0;
+            }
+        }
+        return 1;
     case Raise_kind:
         if (stmt->v.Raise.exc) {
             return validate_expr(stmt->v.Raise.exc, Load) &&

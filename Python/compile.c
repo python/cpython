@@ -2747,6 +2747,48 @@ compiler_if(struct compiler *c, stmt_ty s)
 }
 
 static int
+compiler_pattern(struct compiler *c, expr_ty p, basicblock *next)
+{
+    switch (p->kind) {
+        case Constant_kind:
+            VISIT(c, expr, p);
+            ADDOP_COMPARE(c, Eq);
+            ADDOP_JABS(c, POP_JUMP_IF_FALSE, next);
+            return 1;
+        default:
+            break;
+    }
+    PyErr_SetString(PyExc_SystemError, "invalid match pattern");
+    return 0;
+}
+
+static int
+compiler_match(struct compiler *c, stmt_ty s)
+{
+    basicblock *end = compiler_new_block(c);
+    VISIT(c, expr, s->v.Match.target);
+    match_case_ty m;
+    basicblock *next;
+    Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
+    for (Py_ssize_t i = 0; i < cases; i++) {
+        m = asdl_seq_GET(s->v.Match.cases, i);
+        next = compiler_new_block(c);
+        ADDOP(c, DUP_TOP);
+        compiler_pattern(c, m->pattern, next);
+        if (m->guard && !compiler_jump_if(c, m->guard, next, 0)) {
+            return 0;
+        }
+        ADDOP(c, POP_TOP);
+        VISIT_SEQ(c, stmt, m->body);
+        ADDOP_JREL(c, JUMP_FORWARD, end);
+        compiler_use_next_block(c, next);
+    }
+    ADDOP(c, POP_TOP);
+    compiler_use_next_block(c, end);
+    return 1;
+}
+
+static int
 compiler_for(struct compiler *c, stmt_ty s)
 {
     basicblock *start, *cleanup, *end;
@@ -3409,6 +3451,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         return compiler_while(c, s);
     case If_kind:
         return compiler_if(c, s);
+    case Match_kind:
+        return compiler_match(c, s);
     case Raise_kind:
         n = 0;
         if (s->v.Raise.exc) {

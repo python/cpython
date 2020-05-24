@@ -36,6 +36,8 @@ module Python
           | With(withitem* items, stmt* body, string? type_comment)
           | AsyncWith(withitem* items, stmt* body, string? type_comment)
 
+          | Match(expr target, match_case* cases)
+
           | Raise(expr? exc, expr? cause)
           | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
           | Assert(expr test, expr? msg)
@@ -120,6 +122,8 @@ module Python
     alias = (identifier name, identifier? asname)
 
     withitem = (expr context_expr, expr? optional_vars)
+
+    match_case = (expr pattern, expr? guard, stmt* body)
 
     type_ignore = TypeIgnore(int lineno, string tag)
 }
