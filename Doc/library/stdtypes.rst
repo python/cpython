@@ -438,8 +438,8 @@ Notes:
    without overflow check.
 
 (3)
-   A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
-   overflow check.
+   A right shift by *n* bits is equivalent to floor division by ``pow(2, n)``
+   without overflow check.
 
 (4)
    Performing these calculations with at least one extra sign extension bit in
