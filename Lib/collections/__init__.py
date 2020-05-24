@@ -947,7 +947,7 @@ class Counter(dict):
         return other.issubset(self)
 
     def isdisjoint(self, other):
-        '''True if none of the elements in self overlap with those other
+        '''True if none of the elements in self overlap with those in other.
 
         Negative or missing counts are ignored.
 
