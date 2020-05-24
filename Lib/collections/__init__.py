@@ -893,8 +893,8 @@ class Counter(dict):
 
         Negative or missing counts are treated as zero.
 
-        This is different that the __eq__() method which would treat
-        negative or missing counts as distinct from zero:
+        This is different than the inherited __eq__() method which
+        treats negative or missing counts as distinct from zero:
 
             >>> Counter(a=1, b=0).isequal(Counter(a=1))
             True
@@ -907,16 +907,16 @@ class Counter(dict):
             other = Counter(other)
         for elem in set(self) | set(other):
             left = self[elem]
+            right = other[elem]
+            if left == right:
+                continue
             if left < 0:
                 left = 0
-            right = other[elem]
             if right < 0:
                 right = 0
             if left != right:
                 return False
         return True
-
-        return all(self[elem] == other[elem] for elem in _chain(self, other))
 
     def issubset(self, other):
         '''True if the counts in self are less than or equal to those in other.
