@@ -1249,8 +1249,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. data:: RWF_APPEND
 
-    Provide a per-write equivalent of the :data:`O_APPEND` :func:``os.open()``
-    flag. This flag is meaningful only for :func:``os.pwritev()``, and its
+    Provide a per-write equivalent of the :data:`O_APPEND` :func:``os.open``
+    flag. This flag is meaningful only for :func:``os.pwritev``, and its
     effect applies only to the data range written by the system call. The
     *offset* argument does not affect the write operation; the data is always
     appended to the end of the file. However, if the *offset* argument is
