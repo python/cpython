@@ -963,7 +963,7 @@ class Counter(dict):
     # Rich comparison operators for multiset subset and superset tests
     # have been deliberately omitted due to semantic conflicts with the
     # existing inherited dict equality method.  Subset and superset
-    # semantics ignore zero counts and require that p≤q ∧ p≥q ⇔ p=q;
+    # semantics ignore zero counts and require that p⊆q ∧ p⊇q ⇔ p=q;
     # however, that would not be the case for p=Counter(a=1, b=0)
     # and q=Counter(a=1) where the dictionaries are not equal.
 
