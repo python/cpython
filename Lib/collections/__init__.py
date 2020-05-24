@@ -712,10 +712,9 @@ class Counter(dict):
     # To strip negative and zero counts, add-in an empty counter:
     #       c += Counter()
     #
-    #
-    # When the multiplicities are zero or one, multiset operations are
-    # guaranteed to be equivalent to the corresponding operations for
-    # regular sets.
+    # When the multiplicities are all zero or one, multiset operations
+    # are guaranteed to be equivalent to the corresponding operations
+    # for regular sets.
     #     Given counter multisets such as:
     #         cp = Counter(a=1, b=0, c=1)
     #         cq = Counter(c=1, d=0, e=1)
@@ -918,7 +917,7 @@ class Counter(dict):
     # Rich comparison operators for multiset subset and superset tests
     # have been deliberately omitted due to semantic conflicts with the
     # existing inherited dict equality method.  Subset and superset
-    # semantics ignore zero counts and require that p≤q ∧ p≥q → p=q;
+    # semantics ignore zero counts and require that p≤q ∧ p≥q ⇔ p=q;
     # however, that would not be the case for p=Counter(a=1, b=0)
     # and q=Counter(a=1) where the dictionaries are not equal.
 
