@@ -923,11 +923,12 @@ class Counter(dict):
     # however, that would not be the case for p=Counter(a=1, b=0)
     # and q=Counter(a=1) where the dictionaries are not equal.
 
-    def __lt__(self, other):
+    def _omitted(self, other):
         raise TypeError(
             'Rich comparison operators have been deliberately omitted. '
             'Use the isequal(), issubset(), and issuperset() methods instead.')
-    __le__ = __gt__ = __ge__ = __lt__
+
+    __lt__ = __le__ = __gt__ = __ge__ = __lt__ = _omitted
 
 
 ########################################################################
