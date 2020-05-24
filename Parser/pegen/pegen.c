@@ -408,7 +408,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         }
     }
 
-    int col_number = byte_offset_to_character_offset(error_line, col_offset);
+    Py_ssize_t col_number = byte_offset_to_character_offset(error_line, col_offset);
 
     tmp = Py_BuildValue("(OiiN)", p->tok->filename, lineno, col_number, error_line);
     if (!tmp) {

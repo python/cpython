@@ -203,13 +203,15 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     assert(f->f_back == NULL);
     f->f_back = tstate->frame;
 
-    if (exc) {
-        _PyErr_ChainStackItem(&gen->gi_exc_state);
-    }
-
     gen->gi_running = 1;
     gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
+
+    if (exc) {
+        assert(_PyErr_Occurred(tstate));
+        _PyErr_ChainStackItem(NULL);
+    }
+
     result = _PyEval_EvalFrame(tstate, f, exc);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
