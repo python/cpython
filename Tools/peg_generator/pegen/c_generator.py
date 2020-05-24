@@ -657,7 +657,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         # We have parsed successfully all the conditions for the option.
         with self.indent():
             self.print(
-                f'D(fprintf(stderr, "%*c✓ {rulename}[%d-%d]: %s\\n", p->level, \' \', _mark, p->mark, "{node}"));'
+                f'D(fprintf(stderr, "%*c✓ {rulename}[%d-%d]: %s succeeded!\\n", p->level, \' \', _mark, p->mark, "{node}"));'
             )
             # Prepare to emmit the rule action and do so
             if node.action and "EXTRA" in node.action:
