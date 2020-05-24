@@ -99,6 +99,8 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
     - uses: actions/checkout@v2
+    - name: Register MSVC problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p x64
     - name: Display build info
