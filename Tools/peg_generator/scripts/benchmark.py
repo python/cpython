@@ -87,7 +87,6 @@ def run_benchmark_xxl(subcommand, parser, source):
 
 
 def run_benchmark_stdlib(subcommand, parser):
-    modes = {"compile": 2, "parse": 1, "check": 0}
     for _ in range(3):
         parse_directory(
             "../../Lib",
@@ -98,7 +97,7 @@ def run_benchmark_stdlib(subcommand, parser):
             skip_actions=False,
             tree_arg=0,
             short=True,
-            mode=modes[subcommand],
+            mode=2 if subcommand == "compile" else 1,
             parser=parser,
         )
 

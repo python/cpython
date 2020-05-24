@@ -142,6 +142,9 @@ def parse_directory(
             "A grammar file or a tokens file was not provided - attempting to use existing parser from stdlib...\n"
         )
 
+    if tree_arg:
+        assert mode == 1, "Mode should be 1 (parse), when comparing the generated trees"
+
     # For a given directory, traverse files and attempt to parse each one
     # - Output success/failure for each file
     errors = 0
@@ -161,8 +164,6 @@ def parse_directory(
             with tokenize.open(file) as f:
                 source = f.read()
             try:
-                if tree_arg:
-                    mode = 1
                 t0 = time.time()
                 if mode == 2:
                     result = _peg_parser.compile_string(
@@ -246,6 +247,7 @@ def main() -> None:
     skip_actions = args.skip_actions
     tree = args.tree
     short = args.short
+    mode = 1 if args.tree else 2
     sys.exit(
         parse_directory(
             directory,
@@ -256,7 +258,7 @@ def main() -> None:
             skip_actions,
             tree,
             short,
-            1,
+            mode,
             "pegen",
         )
     )
