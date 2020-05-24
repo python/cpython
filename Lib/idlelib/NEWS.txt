@@ -1,9 +1,15 @@
-What's New in IDLE 3.8.1
-Released on 2019-12-16?
+What's New in IDLE 3.8.4
+Released on 2020-07-03?
 ======================================
 
 
 bpo-40723: Make test_idle pass when run after import.
+Patch by Florian Dahlitz.
+
+
+What's New in IDLE 3.8.3
+Released on 2020-05-13
+======================================
 
 bpo-38689: IDLE will no longer freeze when inspect.signature fails
 when fetching a calltip.
@@ -21,6 +27,11 @@ bpo-39781: Selecting code context lines no longer causes a jump.
 
 bpo-39663: Add tests for pyparse find_good_parse_start().
 
+
+What's New in IDLE 3.8.2
+Released on 2020-02-17
+======================================
+
 bpo-39600: Remove duplicate font names from configuration list.
 
 bpo-38792: Close a shell calltip if a :exc:`KeyboardInterrupt`
@@ -36,6 +47,11 @@ bpo-39050: Settings dialog Help button again displays help text.
 bpo-32989: Add tests for editor newline_and_indent_event method.
 Remove unneeded arguments and dead code from pyparse
 find_good_parse_start method.
+
+
+What's New in IDLE 3.8.1
+Released on 2019-12-18
+======================================
 
 bpo-38943: Fix autocomplete windows not always appearing on some
 systems.  Patch by Johnny Najera.
