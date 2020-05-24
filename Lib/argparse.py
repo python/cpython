@@ -1793,6 +1793,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return action
 
     def _add_action(self, action):
+        if type(action) == BooleanOptionalAction:
+            if self.formatter_class == HelpFormatter and action.default is not None:
+                action.help += f" (default: {action.default})"
         if action.option_strings:
             self._optionals._add_action(action)
         else:
