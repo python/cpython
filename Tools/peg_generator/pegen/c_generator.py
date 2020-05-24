@@ -31,7 +31,7 @@ EXTENSION_PREFIX = """\
 
 #ifdef Py_DEBUG
 extern int Py_DebugFlag;
-#define D(x) if (!Py_DebugFlag); else x
+#define D(x) if (Py_DebugFlag) x;
 #else
 #define D(x)
 #endif
@@ -657,7 +657,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         # We have parsed successfully all the conditions for the option.
         with self.indent():
             self.print(
-                f'D(fprintf(stderr, "%*c✓ {rulename}[%d-%d]: %s succeeded!\\n", p->level, \' \', _mark, p->mark, "{node}"));'
+                f'D(fprintf(stderr, "%*c+ {rulename}[%d-%d]: %s succeeded!\\n", p->level, \' \', _mark, p->mark, "{node}"));'
             )
             # Prepare to emmit the rule action and do so
             if node.action and "EXTRA" in node.action:
@@ -735,7 +735,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("p->mark = _mark;")
             self.print(
                 f"D(fprintf(stderr, \"%*c%s {rulename}[%d-%d]: %s failed!\\n\", p->level, ' ',\n"
-                f'                  p->error_indicator ? "⚠️" : "✗", _mark, p->mark, "{node}"));'
+                f'                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "{node}"));'
             )
             if "_cut_var" in vars:
                 self.print("if (_cut_var) {")
