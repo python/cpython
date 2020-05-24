@@ -37,6 +37,10 @@
 #define HAVE_TRACE_V2
 #endif
 
+#if SQLITE_VERSION_NUMBER >= 3025000
+#define HAVE_WINDOW_FUNCTIONS
+#endif
+
 #include "clinic/connection.c.h"
 /*[clinic input]
 module _sqlite3
@@ -821,6 +825,69 @@ static void _destructor(void* args)
     Py_DECREF((PyObject*)args);
 }
 
+#define NOT_SUPPORTED(name, ver)                                        \
+do {                                                                    \
+    if (is_set) {                                                       \
+        PyErr_SetString(pysqlite_NotSupportedError,                     \
+                        name "=True requires SQLite " ver "or higher"); \
+        return -1;                                                      \
+    }                                                                   \
+} while (0)
+
+#define SET_FLAG(fl)       \
+do {                       \
+    assert(flags != NULL); \
+    if (is_set) {          \
+        *flags |= fl;      \
+    }                      \
+} while (0)
+
+static int
+add_deterministic_flag_if_supported(int *flags, int is_set)
+{
+#if SQLITE_VERSION_NUMBER < 3008003
+    NOT_SUPPORTED("deterministic", "3.8.3");
+#else
+    if (sqlite3_libversion_number() < 3008003) {
+        NOT_SUPPORTED("deterministic", "3.8.3");
+    }
+    SET_FLAG(SQLITE_DETERMINISTIC);
+#endif
+    return 0;
+}
+
+static int
+add_innocuous_flag_if_supported(int *flags, int is_set)
+{
+#if SQLITE_VERSION_NUMBER < 3031000
+    NOT_SUPPORTED("innocuous", "3.31.0");
+#else
+    if (sqlite3_libversion_number() < 3031000) {
+        NOT_SUPPORTED("innocuous", "3.31.0");
+    }
+    SET_FLAG(SQLITE_INNOCUOUS);
+#endif
+    return 0;
+}
+
+static int
+add_directonly_flag_if_supported(int *flags, int is_set)
+{
+#if SQLITE_VERSION_NUMBER < 3030000
+    NOT_SUPPORTED("directonly", "3.30.0");
+#else
+    if (sqlite3_libversion_number() < 3030000) {
+        NOT_SUPPORTED("directonly", "3.30.0");
+    }
+    SET_FLAG(SQLITE_DIRECTONLY);
+#endif
+    return 0;
+}
+
+#undef SET_FLAG
+#undef NOT_SUPPORTED
+
+
 /*[clinic input]
 _sqlite3.Connection.create_function as pysqlite_connection_create_function
 
@@ -846,19 +913,8 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    if (deterministic) {
-#if SQLITE_VERSION_NUMBER < 3008003
-        PyErr_SetString(pysqlite_NotSupportedError,
-                        "deterministic=True requires SQLite 3.8.3 or higher");
+    if (add_deterministic_flag_if_supported(&flags, deterministic) < 0) {
         return NULL;
-#else
-        if (sqlite3_libversion_number() < 3008003) {
-            PyErr_SetString(pysqlite_NotSupportedError,
-                            "deterministic=True requires SQLite 3.8.3 or higher");
-            return NULL;
-        }
-        flags |= SQLITE_DETERMINISTIC;
-#endif
     }
     rc = sqlite3_create_function_v2(self->db,
                                     name,
@@ -877,6 +933,188 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
     }
     Py_RETURN_NONE;
 }
+
+#ifdef HAVE_WINDOW_FUNCTIONS
+/*
+ * Regarding the 'inverse' aggregate callback:
+ * This method is only required by window aggregate functions, not
+ * ordinary aggregate function implementations.  It is invoked to remove
+ * a row from the current window.  The function arguments, if any,
+ * correspond to the row being removed.
+ */
+static void
+inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
+{
+    PyGILState_STATE gilstate = PyGILState_Ensure();
+
+    PyObject **cls = (PyObject **)sqlite3_aggregate_context(context,
+                                                            sizeof(PyObject *));
+    assert(cls != NULL);
+    assert(*cls != NULL);
+    PyObject *method = PyObject_GetAttrString(*cls, "inverse");
+    if (method == NULL) {
+        sqlite3_result_error(context,
+                             "user-defined aggregate's 'inverse' method"
+                             " not defined",
+                             -1);
+        goto error;
+    }
+
+    PyObject *args = _pysqlite_build_py_params(context, argc, params);
+    if (args == NULL) {
+        sqlite3_result_error(context,
+                             "unable to build arguments for user-defined"
+                             " aggregate's 'inverse' method",
+                             -1);
+        Py_DECREF(method);
+        goto error;
+    }
+
+    PyObject *res = PyObject_CallObject(method, args);
+    Py_DECREF(method);
+    Py_DECREF(args);
+    if (res == NULL) {
+        sqlite3_result_error(context,
+                             "user-defined aggregate's 'inverse' method"
+                             " raised error",
+                             -1);
+        goto error;
+    }
+    Py_DECREF(res);
+
+error:
+    if (PyErr_Occurred()) {
+        if (_pysqlite_enable_callback_tracebacks) {
+            PyErr_Print();
+        } else {
+            PyErr_Clear();
+        }
+    }
+    PyGILState_Release(gilstate);
+}
+
+/*
+ * Regarding the 'value' aggregate callback:
+ * This method is only required by window aggregate functions, not
+ * ordinary aggregate function implementations.  It is invoked to return
+ * the current value of the aggregate.
+ */
+static void
+value_callback(sqlite3_context *context)
+{
+    PyGILState_STATE gilstate = PyGILState_Ensure();
+
+    PyObject **cls = NULL;  // Aggregate class instance.
+    cls = (PyObject **)sqlite3_aggregate_context(context, sizeof(PyObject *));
+    assert(cls != NULL);
+    assert(*cls != NULL);
+    _Py_IDENTIFIER(value);
+    PyObject *res = _PyObject_CallMethodIdNoArgs(*cls, &PyId_value);
+    if (res == NULL) {
+        sqlite3_result_error(context,
+                             "user-defined aggregate's 'value' method"
+                             " raised error",
+                             -1);
+        goto error;
+    }
+
+    int rc = _pysqlite_set_result(context, res);
+    Py_DECREF(res);
+    if (rc != 0) {
+        sqlite3_result_error(context,
+                             "unable to set result from user-defined"
+                             " aggregate's 'value' method",
+                             -1);
+        goto error;
+    }
+
+error:
+    if (PyErr_Occurred()) {
+        if (_pysqlite_enable_callback_tracebacks) {
+            PyErr_Print();
+        } else {
+            PyErr_Clear();
+        }
+    }
+    PyGILState_Release(gilstate);
+}
+
+/*[clinic input]
+_sqlite3.Connection.create_window_function as pysqlite_connection_create_window_function
+
+    name: str
+        The name of the SQL aggregate window function to be created or
+        redefined.
+    num_params: int
+        The number of arguments that the SQL aggregate window function
+        takes.
+    aggregate_class: object
+        A class with step(), finalize(), value(), and inverse() methods.
+        Set to None to clear the window function.
+    /
+    *
+    deterministic: bool = False
+    directonly: bool = False
+    innocuous: bool = False
+
+Creates or redefines an aggregate window function. Non-standard.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connection_create_window_function_impl(pysqlite_Connection *self,
+                                                const char *name,
+                                                int num_params,
+                                                PyObject *aggregate_class,
+                                                int deterministic,
+                                                int directonly,
+                                                int innocuous)
+/*[clinic end generated code: output=fbbfad556264ea1e input=877311e540865c3b]*/
+{
+    if (sqlite3_libversion_number() < 3025000) {
+        PyErr_SetString(pysqlite_NotSupportedError,
+                        "create_window_function() requires "
+                        "SQLite 3.25.0 or higher");
+        return NULL;
+    }
+
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    int flags = SQLITE_UTF8;
+    if (add_deterministic_flag_if_supported(&flags, deterministic) < 0) {
+        return NULL;
+    }
+    if (add_directonly_flag_if_supported(&flags, directonly) < 0) {
+        return NULL;
+    }
+    if (add_innocuous_flag_if_supported(&flags, innocuous) < 0) {
+        return NULL;
+    }
+
+    int rc;
+    if (Py_IsNone(aggregate_class)) {
+        rc = sqlite3_create_window_function(self->db, name, num_params, flags,
+                                            0, 0, 0, 0, 0, 0);
+    }
+    else {
+        rc = sqlite3_create_window_function(self->db, name, num_params, flags,
+                                            Py_NewRef(aggregate_class),
+                                            &_pysqlite_step_callback,
+                                            &_pysqlite_final_callback,
+                                            &value_callback,
+                                            &inverse_callback,
+                                            &_destructor);
+    }
+
+    if (rc != SQLITE_OK) {
+        PyErr_SetString(pysqlite_OperationalError,
+                        "Error creating window function");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+#endif
 
 /*[clinic input]
 _sqlite3.Connection.create_aggregate as pysqlite_connection_create_aggregate
@@ -1858,6 +2096,7 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_CREATE_AGGREGATE_METHODDEF
     PYSQLITE_CONNECTION_CREATE_COLLATION_METHODDEF
     PYSQLITE_CONNECTION_CREATE_FUNCTION_METHODDEF
+    PYSQLITE_CONNECTION_CREATE_WINDOW_FUNCTION_METHODDEF
     PYSQLITE_CONNECTION_CURSOR_METHODDEF
     PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF
     PYSQLITE_CONNECTION_ENTER_METHODDEF

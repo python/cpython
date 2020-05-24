@@ -321,6 +321,85 @@ class FunctionTests(unittest.TestCase):
             self.con.create_function("deterministic", 0, int, True)
 
 
+class WindowSumInt:
+    def __init__(self):
+        self.count = 0
+
+    def step(self, value):
+        self.count += value
+
+    def value(self):
+        return self.count
+
+    def inverse(self, value):
+        self.count -= value
+
+    def finalize(self):
+        return self.count
+
+
+@unittest.skipIf(sqlite.sqlite_version_info < (3, 25, 0),
+                 "Requires SQLite 3.25.0 or newer")
+class WindowFunctionTests(unittest.TestCase):
+    def setUp(self):
+        self.con = sqlite.connect(":memory:")
+
+        # Test case taken from https://www.sqlite.org/windowfunctions.html#udfwinfunc
+        values = [
+            ("a", 4),
+            ("b", 5),
+            ("c", 3),
+            ("d", 8),
+            ("e", 1),
+        ]
+        self.cur = self.con.execute("create table test(x, y)")
+        self.cur.executemany("insert into test values(?, ?)", values)
+        self.expected = [
+            ("a", 9),
+            ("b", 12),
+            ("c", 16),
+            ("d", 12),
+            ("e", 9),
+        ]
+        self.query = ("""
+            select x, %s(y) over (
+                order by x rows between 1 preceding and 1 following
+            ) as sum_y
+            from test order by x
+        """)
+        self.con.create_window_function("sumint", 1, WindowSumInt)
+
+    def test_sum_int(self):
+        self.cur.execute(self.query % "sumint")
+        self.assertEqual(self.cur.fetchall(), self.expected)
+
+    def test_error_on_create(self):
+        with self.assertRaises(sqlite.OperationalError):
+            self.con.create_window_function("shouldfail", -100, WindowSumInt)
+
+    def test_exception_in_method(self):
+        for meth in ["step", "value", "inverse"]:
+            with unittest.mock.patch.object(WindowSumInt, meth,
+                                            side_effect=Exception):
+                func = f"exc_{meth}"
+                self.con.create_window_function(func, 1, WindowSumInt)
+                with self.assertRaises(sqlite.OperationalError):
+                    self.cur.execute(self.query % func)
+                    ret = self.cur.fetchall()
+
+    def test_clear_function(self):
+        self.con.create_window_function("sumint", 1, None)
+        with self.assertRaises(sqlite.OperationalError):
+            self.cur.execute(self.query % "sumint")
+
+    def test_redefine_function(self):
+        class Redefined(WindowSumInt):
+            pass
+        self.con.create_window_function("sumint", 1, Redefined)
+        self.cur.execute(self.query % "sumint")
+        self.assertEqual(self.cur.fetchall(), self.expected)
+
+
 class AggregateTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
@@ -510,6 +589,7 @@ def suite():
         AuthorizerRaiseExceptionTests,
         AuthorizerTests,
         FunctionTests,
+        WindowFunctionTests,
     ]
     return unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
