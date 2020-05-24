@@ -36,8 +36,8 @@ typedef struct {
     PyObject *key;
     PyObject *file_repr;
     PyObject *weakreflist;
-    unsigned int num_transitions;
-    unsigned int num_ttinfos;
+    size_t num_transitions;
+    size_t num_ttinfos;
     int64_t *trans_list_utc;
     int64_t *trans_list_wall[2];
     _ttinfo **trans_ttinfos;  // References to the ttinfo for each transition
@@ -900,15 +900,15 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         goto error;
     }
 
-    self->num_transitions = (size_t)num_transitions;
-    self->num_ttinfos = (size_t)num_ttinfos;
+    self->num_transitions = num_transitions;
+    self->num_ttinfos = num_ttinfos;
 
     // Load the transition indices and list
     self->trans_list_utc =
         PyMem_Malloc(self->num_transitions * sizeof(int64_t));
     trans_idx = PyMem_Malloc(self->num_transitions * sizeof(Py_ssize_t));
 
-    for (Py_ssize_t i = 0; i < self->num_transitions; ++i) {
+    for (size_t i = 0; i < self->num_transitions; ++i) {
         PyObject *num = PyTuple_GetItem(trans_utc, i);
         if (num == NULL) {
             goto error;
@@ -946,7 +946,7 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     if (utcoff == NULL || isdst == NULL) {
         goto error;
     }
-    for (Py_ssize_t i = 0; i < self->num_ttinfos; ++i) {
+    for (size_t i = 0; i < self->num_ttinfos; ++i) {
         PyObject *num = PyTuple_GetItem(utcoff_list, i);
         if (num == NULL) {
             goto error;
@@ -1737,13 +1737,13 @@ parse_transition_rule(const char *const p, TransitionRuleType **out)
     //   3. Mm.n.d: Specifying by month, week and day-of-week.
 
     if (*ptr == 'M') {
-        uint8_t month, week, day;
+        ssize_t month, week, day;
         ptr++;
         ssize_t tmp = parse_uint(ptr);
         if (tmp < 0) {
             return -1;
         }
-        month = (uint8_t)tmp;
+        month = tmp;
         ptr++;
         if (*ptr != '.') {
             tmp = parse_uint(ptr);
@@ -1756,7 +1756,7 @@ parse_transition_rule(const char *const p, TransitionRuleType **out)
             ptr++;
         }
 
-        uint8_t *values[2] = {&week, &day};
+        ssize_t *values[2] = {&week, &day};
         for (size_t i = 0; i < 2; ++i) {
             if (*ptr != '.') {
                 return -1;
