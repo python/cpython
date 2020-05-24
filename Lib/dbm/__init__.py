@@ -75,6 +75,7 @@ def open(file, flag='r', mode=0o666):
             raise ImportError("no dbm clone found; tried %s" % _names)
 
     # guess the type of an existing database, if not creating a new one
+    file = os.fspath(file)
     result = whichdb(file) if 'n' not in flag else None
     if result is None:
         # db doesn't exist or 'n' flag was specified to create a new db
@@ -109,6 +110,7 @@ def whichdb(filename):
     """
 
     # Check for ndbm first -- this has a .pag and a .dir file
+    filename = os.fspath(filename)
     try:
         f = io.open(filename + ".pag", "rb")
         f.close()

@@ -65,29 +65,32 @@ class TestCase(unittest.TestCase):
         else:
             self.fail('Closed shelf should not find a key')
 
-    def test_ascii_file_shelf(self):
-        s = shelve.open(self.fn, protocol=0)
+    def test_open_template(self, filename=None, protocol=None):
+        kwargs = {
+            "filename": filename or self.fn,
+        }
+        if protocol:
+            kwargs["protocol"] = protocol
+        s = shelve.open(**kwargs)
         try:
             s['key1'] = (1,2,3,4)
             self.assertEqual(s['key1'], (1,2,3,4))
         finally:
             s.close()
+
+    def test_ascii_file_shelf(self):
+        self.test_open_template(protocol=0)
 
     def test_binary_file_shelf(self):
-        s = shelve.open(self.fn, protocol=1)
-        try:
-            s['key1'] = (1,2,3,4)
-            self.assertEqual(s['key1'], (1,2,3,4))
-        finally:
-            s.close()
+        self.test_open_template(protocol=1)
 
     def test_proto2_file_shelf(self):
-        s = shelve.open(self.fn, protocol=2)
-        try:
-            s['key1'] = (1,2,3,4)
-            self.assertEqual(s['key1'], (1,2,3,4))
-        finally:
-            s.close()
+        self.test_open_template(protocol=2)
+
+    def test_patlib_path_file_shelf(self):
+        from pathlib import Path
+        self.test_open_template(filename=Path(self.fn))
+
 
     def test_in_memory_shelf(self):
         d1 = byteskeydict()
