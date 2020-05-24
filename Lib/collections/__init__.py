@@ -902,13 +902,13 @@ class Counter(dict):
         'True if positive counts in self <= counts in other.'
         if not isinstance(other, Counter):
             other = Counter(other)
-        return not self - other
+        return not self - (+other)
 
     def issuperset(self, other):
         'True if positive counts in self >= counts in other.'
         if not isinstance(other, Counter):
             other = Counter(other)
-        return not other - self
+        return not other - (+self)
 
     def isdisjoint(self, other):
         'True is none of the elements in self overlap with other'

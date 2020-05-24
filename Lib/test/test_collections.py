@@ -2239,6 +2239,26 @@ class TestCounter(unittest.TestCase):
             self.assertEqual(cp.issuperset(cq), sp.issuperset(sq))
             self.assertEqual(cp.isdisjoint(cq), sp.isdisjoint(sq))
 
+    def test_multiset_equal(self):
+        self.assertTrue(Counter(a=3, b=2, c=0).isequal('ababa'))
+        self.assertTrue(Counter(a=0, b=-1, c=0).isequal(''))
+        self.assertFalse(Counter(a=3, b=2).isequal('babab'))
+
+    def test_multiset_subset(self):
+        self.assertTrue(Counter(a=3, b=2, c=0).issubset('ababa'))
+        self.assertTrue(Counter(a=0, b=-1, c=0).issubset('ababa'))
+        self.assertTrue(Counter(a=3, b=2, c=0).issubset('abcabcabcd'))
+        self.assertFalse(Counter(a=3, b=2).issubset('babab'))
+
+    def test_multiset_superset(self):
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issuperset('aab'))
+        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).issuperset('aabd'))
+
+    def test_multiset_disjoint(self):
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint('cde'))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint('efgg'))
+        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).isdisjoint('bcd'))
+
 
 ################################################################################
 ### Run tests
