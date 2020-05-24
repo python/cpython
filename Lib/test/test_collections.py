@@ -2224,7 +2224,7 @@ class TestCounter(unittest.TestCase):
         # When the multiplicities are all zero or one, multiset operations
         # are guaranteed to be equivalent to the corresponding operations
         # for regular sets.
-        s = list(product('abc', range(2)))
+        s = list(product(('a', 'b', 'c'), range(2)))
         powerset = chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
         counters = [Counter(dict(groups)) for groups in powerset]
         for cp, cq in product(counters, repeat=2):
