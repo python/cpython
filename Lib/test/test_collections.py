@@ -7,6 +7,7 @@ import inspect
 import operator
 import pickle
 from random import choice, randrange
+from itertools import product, chain, combinations
 import string
 import sys
 from test import support
@@ -2218,6 +2219,25 @@ class TestCounter(unittest.TestCase):
         c = CounterSubclassWithGet('abracadabra')
         self.assertTrue(c.called)
         self.assertEqual(dict(c), {'a': 5, 'b': 2, 'c': 1, 'd': 1, 'r':2 })
+
+    def test_multiset_operations_equivalent_to_set_operations(self):
+        # When the multiplicities are all zero or one, multiset operations
+        # are guaranteed to be equivalent to the corresponding operations
+        # for regular sets.
+        s = list(product('abc', range(2)))
+        powerset = chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+        counters = [Counter(dict(groups)) for groups in powerset]
+        for cp, cq in product(counters, repeat=2):
+            sp = set(cp.elements())
+            sq = set(cq.elements())
+            self.assertEqual(set(cp + cq), sp | sq)
+            self.assertEqual(set(cp - cq), sp - sq)
+            self.assertEqual(set(cp | cq), sp | sq)
+            self.assertEqual(set(cp & cq), sp & sq)
+            self.assertEqual(cp.isequal(cq), sp == sq)
+            self.assertEqual(cp.issubset(cq), sp.issubset(sq))
+            self.assertEqual(cp.issuperset(cq), sp.issuperset(sq))
+            self.assertEqual(cp.isdisjoint(cq), sp.isdisjoint(sq))
 
 
 ################################################################################

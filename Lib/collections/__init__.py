@@ -894,18 +894,26 @@ class Counter(dict):
         Unlike the __eq__() method, this test ignores counts that
         are zero or negative.
         '''
+        if not isinstance(other, Counter):
+            other = Counter(other)
         return +self == +other
 
     def issubset(self, other):
         'True if positive counts in self <= counts in other.'
+        if not isinstance(other, Counter):
+            other = Counter(other)
         return not self - other
 
     def issuperset(self, other):
         'True if positive counts in self >= counts in other.'
+        if not isinstance(other, Counter):
+            other = Counter(other)
         return not other - self
 
     def isdisjoint(self, other):
         'True is none of the elements in self overlap with other'
+        if not isinstance(other, Counter):
+            other = Counter(other)
         return not self & other
 
     # Rich comparison operators for multiset subset and superset tests
@@ -920,7 +928,7 @@ class Counter(dict):
             'Rich comparison operators have been deliberately omitted. '
             'Use the isequal(), issubset(), and issuperset() methods instead.')
     __le__ = __gt__ = __ge__ = __lt__
-    
+
 
 ########################################################################
 ###  ChainMap
