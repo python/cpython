@@ -6,6 +6,8 @@ import os
 import sys
 import time
 import traceback
+import tokenize
+import _peg_parser
 from glob import glob
 from pathlib import PurePath
 
@@ -145,8 +147,8 @@ def parse_directory(
     errors = 0
     files = []
     trees = {}  # Trees to compare (after everything else is done)
+    total_seconds = 0
 
-    t0 = time.time()
     for file in sorted(glob(f"{directory}/**/*.py", recursive=True)):
         # Only attempt to parse Python files and files that are not excluded
         should_exclude_file = False
@@ -154,23 +156,28 @@ def parse_directory(
             if PurePath(file).match(pattern):
                 should_exclude_file = True
                 break
-        with open(file, "rb") as f:
-            source = f.read()
 
         if not should_exclude_file:
+            with tokenize.open(file) as f:
+                source = f.read()
             try:
                 if tree_arg:
                     mode = 1
+                t0 = time.time()
                 if mode == 2:
                     result = _peg_parser.compile_string(
                         source,
+                        filename=file,
                         oldparser=parser == "cpython",
                     )
                 else:
                     result = _peg_parser.parse_string(
                         source,
+                        filename=file,
                         oldparser=parser == "cpython"
                     )
+                t1 = time.time()
+                total_seconds += (t1 - t0)
                 if tree_arg:
                     trees[file] = result
                 if not short:
@@ -189,7 +196,6 @@ def parse_directory(
             files.append(file)
     t1 = time.time()
 
-    total_seconds = t1 - t0
     total_files = len(files)
 
     total_bytes = 0
@@ -250,7 +256,7 @@ def main() -> None:
             skip_actions,
             tree,
             short,
-            0,
+            1,
             "pegen",
         )
     )

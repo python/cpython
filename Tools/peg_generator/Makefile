@@ -83,8 +83,8 @@ time_old_compile: venv data/xxl.py
 time_old_parse: venv data/xxl.py
 	$(VENVPYTHON) scripts/benchmark.py --parser=cpython --target=xxl parse
 
-time_peg_dir:
-	$(PYTHON) scripts/test_parse_directory.py \
+time_peg_dir: venv
+	$(VENVPYTHON) scripts/test_parse_directory.py \
 		--grammar-file $(GRAMMAR) \
 		--tokens-file $(TOKENS) \
 		-d $(TESTDIR) \
@@ -93,8 +93,8 @@ time_peg_dir:
 		--exclude "*/failset/**" \
 		--exclude "*/failset/**/*"
 
-time_stdlib: $(CPYTHON)
-	$(PYTHON) scripts/test_parse_directory.py \
+time_stdlib: $(CPYTHON) venv
+	$(VENVPYTHON) scripts/test_parse_directory.py \
 		--grammar-file $(GRAMMAR) \
 		--tokens-file $(TOKENS) \
 		-d $(CPYTHON) \

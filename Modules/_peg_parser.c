@@ -21,14 +21,14 @@ _mode_str_to_int(char *mode_str)
 }
 
 static mod_ty
-_run_parser(char *str, int mode, PyCompilerFlags *flags, PyArena *arena, int oldparser)
+_run_parser(char *str, char *filename, int mode, PyCompilerFlags *flags, PyArena *arena, int oldparser)
 {
     mod_ty mod;
     if (!oldparser) {
-        mod = PyPegen_ASTFromString(str, "<string>", mode, flags, arena);
+        mod = PyPegen_ASTFromString(str, filename, mode, flags, arena);
     }
     else {
-        mod = PyParser_ASTFromString(str, "<string>", mode, flags, arena);
+        mod = PyParser_ASTFromString(str, filename, mode, flags, arena);
     }
     return mod;
 }
@@ -36,13 +36,14 @@ _run_parser(char *str, int mode, PyCompilerFlags *flags, PyArena *arena, int old
 PyObject *
 _Py_compile_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *keywords[] = {"string", "mode", "oldparser", NULL};
+    static char *keywords[] = {"string", "filename", "mode", "oldparser", NULL};
     char *the_string;
+    char *filename = "<string>";
     char *mode_str = "exec";
     int oldparser = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sp", keywords,
-            &the_string, &mode_str, &oldparser)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|ssp", keywords,
+            &the_string, &filename, &mode_str, &oldparser)) {
         return NULL;
     }
 
@@ -59,19 +60,19 @@ _Py_compile_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    mod_ty mod = _run_parser(the_string, mode, &flags, arena, oldparser);
+    mod_ty mod = _run_parser(the_string, filename, mode, &flags, arena, oldparser);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
     }
 
-    PyObject *filename = PyUnicode_DecodeFSDefault("<string>");
-    if (filename == NULL) {
+    PyObject *filename_ob = PyUnicode_DecodeFSDefault(filename);
+    if (filename_ob == NULL) {
         PyArena_Free(arena);
         return NULL;
     }
-    PyCodeObject *result = PyAST_CompileObject(mod, filename, &flags, -1, arena);
-    Py_XDECREF(filename);
+    PyCodeObject *result = PyAST_CompileObject(mod, filename_ob, &flags, -1, arena);
+    Py_XDECREF(filename_ob);
     PyArena_Free(arena);
     return (PyObject *)result;
 }
@@ -79,13 +80,14 @@ _Py_compile_string(PyObject *self, PyObject *args, PyObject *kwds)
 PyObject *
 _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *keywords[] = {"string", "mode", "oldparser", NULL};
+    static char *keywords[] = {"string", "filename", "mode", "oldparser", NULL};
     char *the_string;
+    char *filename = "<string>";
     char *mode_str = "exec";
     int oldparser = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sp", keywords,
-            &the_string, &mode_str, &oldparser)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|ssp", keywords,
+            &the_string, &filename, &mode_str, &oldparser)) {
         return NULL;
     }
 
@@ -102,7 +104,7 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    mod_ty mod = _run_parser(the_string, mode, &flags, arena, oldparser);
+    mod_ty mod = _run_parser(the_string, filename, mode, &flags, arena, oldparser);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
