@@ -1,12 +1,18 @@
-What's New in IDLE 3.7.6
-Released on 2019-12-16?
+What's New in IDLE 3.7.8
+Released on 2020-06-27?
 ======================================
 
 
 bpo-40723: Make test_idle pass when run after import.
+Patch by Florian Dahlitz.
 
 bpo-38689: IDLE will no longer freeze when inspect.signature fails
 when fetching a calltip.
+
+
+What's New in IDLE 3.7.7
+Released on 2020-03-10
+======================================
 
 bpo-27115: For 'Go to Line', use a Query entry box subclass with
 IDLE standard behavior and improved error checking.
@@ -36,6 +42,11 @@ bpo-39050: Settings dialog Help button again displays help text.
 bpo-32989: Add tests for editor newline_and_indent_event method.
 Remove unneeded arguments and dead code from pyparse
 find_good_parse_start method.
+
+
+What's New in IDLE 3.7.6
+Released on 2019-12-18
+======================================
 
 bpo-38943: Fix autocomplete windows not always appearing on some
 systems.  Patch by Johnny Najera.
