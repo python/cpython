@@ -360,7 +360,6 @@ method_vectorcall_FASTCALL_KEYWORDS_METHOD(
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
     }
-     NULL;
     PyCMethod meth = (PyCMethod) method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;

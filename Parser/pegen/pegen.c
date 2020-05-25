@@ -408,7 +408,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         }
     }
 
-    int col_number = byte_offset_to_character_offset(error_line, col_offset);
+    Py_ssize_t col_number = byte_offset_to_character_offset(error_line, col_offset);
 
     tmp = Py_BuildValue("(OiiN)", p->tok->filename, lineno, col_number, error_line);
     if (!tmp) {
@@ -1051,6 +1051,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->flags = flags;
     p->feature_version = feature_version;
     p->known_err_token = NULL;
+    p->level = 0;
 
     return p;
 }
@@ -2123,4 +2124,25 @@ void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
     }
 
     return RAISE_SYNTAX_ERROR(msg);
+}
+
+void *
+_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
+{
+    /* The rule that calls this function is 'args for_if_clauses'.
+       For the input f(L, x for x in y), L and x are in args and
+       the for is parsed as a for_if_clause. We have to check if
+       len <= 1, so that input like dict((a, b) for a, b in x)
+       gets successfully parsed and then we pass the last
+       argument (x in the above example) as the location of the
+       error */
+    Py_ssize_t len = asdl_seq_LEN(args->v.Call.args);
+    if (len <= 1) {
+        return NULL;
+    }
+
+    return RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+        (expr_ty) asdl_seq_GET(args->v.Call.args, len - 1),
+        "Generator expression must be parenthesized"
+    );
 }

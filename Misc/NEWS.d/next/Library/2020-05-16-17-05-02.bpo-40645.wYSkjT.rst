@@ -1,1 +1,0 @@
-The internal module ``_hashlib`` wraps and exposes OpenSSL's HMAC API. The new code will be used in Python 3.10 after the internal implementation details of the pure Python HMAC module are no longer part of the public API.
