@@ -310,6 +310,12 @@ validate_pattern(expr_ty p)
             return validate_constant(p->v.Constant.value);
         case NamedExpr_kind:
             return validate_pattern(p->v.NamedExpr.value);
+        case BinOp_kind:
+            if (p->v.BinOp.op != BitOr) {
+                break;
+            }
+            return (validate_pattern(p->v.BinOp.left)
+                    && validate_pattern(p->v.BinOp.right));
         default:
             break;
     }
