@@ -46,6 +46,7 @@ import multiprocessing.heap
 import multiprocessing.managers
 import multiprocessing.pool
 import multiprocessing.queues
+from multiprocessing.connection import wait, AuthenticationError
 
 from multiprocessing import util
 
@@ -117,8 +118,6 @@ HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
 
 WIN32 = (sys.platform == "win32")
-
-from multiprocessing.connection import wait
 
 def wait_for_handle(handle, timeout):
     if timeout is not None and timeout < 0.0:
@@ -4493,6 +4492,35 @@ class OtherTest(unittest.TestCase):
         self.assertRaises(multiprocessing.AuthenticationError,
                           multiprocessing.connection.answer_challenge,
                           _FakeConnection(), b'abc')
+
+
+@hashlib_helper.requires_hashdigest('md5')
+@hashlib_helper.requires_hashdigest('sha256')
+class ChallengeResponseTest(unittest.TestCase):
+    authkey = b'supadupasecretkey'
+
+    def create_response(self, message):
+        return multiprocessing.connection._create_response(
+            self.authkey, message
+        )
+
+    def verify_challenge(self, message, response):
+        return multiprocessing.connection._verify_challenge(
+            self.authkey, message, response
+        )
+
+    def test_challengeresponse(self):
+        for algo in [None, "md5", "sha256"]:
+            msg = b'mymessage'
+            if algo is not None:
+                prefix = b'{%s}' % algo.encode("ascii")
+            else:
+                prefix = b''
+            msg = prefix + msg
+            response = self.create_response(msg)
+            if not response.startswith(prefix):
+                self.fail(response)
+            self.verify_challenge(msg, response)
 
 #
 # Test Manager.start()/Pool.__init__() initializer feature - see issue 5585

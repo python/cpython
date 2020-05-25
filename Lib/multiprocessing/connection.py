@@ -11,6 +11,7 @@ __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
 import io
 import os
+import re
 import sys
 import socket
 import struct
@@ -734,30 +735,93 @@ CHALLENGE = b'#CHALLENGE#'
 WELCOME = b'#WELCOME#'
 FAILURE = b'#FAILURE#'
 
-def deliver_challenge(connection, authkey):
+_mac_algo_re = re.compile(
+    rb'^{(?P<digestmod>(md5|sha256|sha384|sha3_256|sha3_384))}'
+    rb'(?P<payload>.*)$'
+)
+
+def _create_response(authkey, message):
+    """Create a MAC based on authkey and message
+
+    The MAC algorithm defaults to HMAC-MD5, unless MD5 is not available or
+    the message has a '{digestmod}' prefix. For legacy HMAC-MD5, the response
+    is the raw MAC, otherwise the response is prefixed with '{digestmod}',
+    e.g. b'{sha256}abcdefg...'
+
+    Note: The MAC protects the entire message including the digestmod prefix.
+    """
     import hmac
+    # message: {digest}payload, the MAC protects header and payload
+    mo = _mac_algo_re.match(message)
+    if mo is not None:
+        digestmod = mo.group('digestmod').decode('ascii')
+    else:
+        # old-style MD5 with fallback
+        digestmod = None
+
+    if digestmod is None:
+        try:
+            return hmac.new(authkey, message, 'md5').digest()
+        except ValueError:
+            # MD5 is not available, fall back to SHA2-256
+            digestmod = 'sha256'
+    prefix = b'{%s}' % digestmod.encode('ascii')
+    return prefix + hmac.new(authkey, message, digestmod).digest()
+
+
+def _verify_challenge(authkey, message, response):
+    """Verify MAC challenge
+
+    If our message did not include a digestmod prefix, the client is allowed
+    to select a stronger digestmod (HMAC-MD5 legacy to HMAC-SHA2-256).
+
+    In case our message is prefixed, a client cannot downgrade to a weaker
+    algorithm, because the MAC is calculated over the entire message
+    including the '{digestmod}' prefix.
+    """
+    import hmac
+    mo = _mac_algo_re.match(response)
+    if mo is not None:
+        # get digestmod from response.
+        digestmod = mo.group('digestmod').decode('ascii')
+        mac = mo.group('payload')
+    else:
+        digestmod = 'md5'
+        mac = response
+    try:
+        expected = hmac.new(authkey, message, digestmod).digest()
+    except ValueError:
+        raise AuthenticationError(f'unsupported digest {digestmod}')
+    if not hmac.compare_digest(expected, mac):
+        raise AuthenticationError('digest received was wrong')
+    return True
+
+
+def deliver_challenge(connection, authkey, digestmod=None):
     if not isinstance(authkey, bytes):
         raise ValueError(
             "Authkey must be bytes, not {0!s}".format(type(authkey)))
     message = os.urandom(MESSAGE_LENGTH)
+    if digestmod is not None:
+        message = b'{%s}%s' % (digestmod.encode('ascii'), message)
     connection.send_bytes(CHALLENGE + message)
-    digest = hmac.new(authkey, message, 'md5').digest()
     response = connection.recv_bytes(256)        # reject large message
-    if response == digest:
-        connection.send_bytes(WELCOME)
-    else:
+    try:
+        _verify_challenge(authkey, message, response)
+    except AuthenticationError:
         connection.send_bytes(FAILURE)
-        raise AuthenticationError('digest received was wrong')
+        raise
+    else:
+        connection.send_bytes(WELCOME)
 
 def answer_challenge(connection, authkey):
-    import hmac
     if not isinstance(authkey, bytes):
         raise ValueError(
             "Authkey must be bytes, not {0!s}".format(type(authkey)))
     message = connection.recv_bytes(256)         # reject large message
     assert message[:len(CHALLENGE)] == CHALLENGE, 'message = %r' % message
     message = message[len(CHALLENGE):]
-    digest = hmac.new(authkey, message, 'md5').digest()
+    digest = _create_response(authkey, message)
     connection.send_bytes(digest)
     response = connection.recv_bytes(256)        # reject large message
     if response != WELCOME:
