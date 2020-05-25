@@ -386,6 +386,12 @@ class TestSysConfig(unittest.TestCase):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
+    def test_SOABI_consistency(self):
+        SOABI = sysconfig.get_config_var('SOABI')
+        pynodot = sysconfig.get_config_var('py_version_nodot')
+        if SOABI is not None:
+            self.assertTrue(SOABI.split('-')[1] == pynodot)
+
 class MakefileTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'),
