@@ -64,7 +64,9 @@ the definition of all other Python objects.
 
 .. c:function:: PyTypeObject* Py_TYPE(PyObject *o)
 
-   This function is used to access the :attr:`ob_type` member of a Python object.
+   Get the type of the Python object *o*.
+
+   Return a borrowed reference.
 
    .. versionchanged:: 3.10
       :c:func:`Py_TYPE()` is changed to the inline static function.
