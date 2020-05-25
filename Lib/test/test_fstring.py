@@ -1051,11 +1051,11 @@ non-important content
     def test_filename_in_syntaxerror(self):
         # see issue 38964
         with temp_cwd() as cwd:
-            filename = os.path.join(cwd, 't.py')
-            with open(filename, 'w') as f:
+            file_path = os.path.join(cwd, 't.py')
+            with open(file_path, 'w') as f:
                 f.write('f"{a b}"') # This generates a SyntaxError
-            _, _, stderr = assert_python_failure(filename)
-        self.assertIn(filename, stderr.decode('utf-8'))
+            _, _, stderr = assert_python_failure(file_path)
+        self.assertIn(file_path, stderr.decode('utf-8'))
 
     def test_loop(self):
         for i in range(1000):
