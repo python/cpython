@@ -2755,6 +2755,13 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *next)
             ADDOP_COMPARE(c, Eq);
             ADDOP_JABS(c, POP_JUMP_IF_FALSE, next);
             return 1;
+        case NamedExpr_kind:
+            if (!compiler_pattern(c, p->v.NamedExpr.value, next)) {
+                return 0;
+            }
+            ADDOP(c, DUP_TOP);
+            VISIT(c, expr, p->v.NamedExpr.target);
+            return 1;
         default:
             break;
     }
