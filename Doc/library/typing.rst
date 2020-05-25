@@ -1023,7 +1023,7 @@ The module defines the following classes, functions and decorators:
 
 .. function:: NewType(typ)
 
-   A helper function to indicate a distinct types to a typechecker,
+   A helper function to indicate a distinct type to a typechecker,
    see :ref:`distinct`. At runtime it returns a function that returns
    its argument. Usage::
 
