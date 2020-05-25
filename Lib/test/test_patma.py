@@ -183,3 +183,11 @@ class PatMaTests(unittest.TestCase):
         self.assertEqual(namespace.get("x"), 0)
         self.assertNotIn("y", namespace)
         self.assertEqual(namespace.get("z"), 0)
+
+    def test_walrus_5(self) -> None:
+        match_cases = [MatchCase("(z := (w := 0))", "y = 0")]
+        namespace = self.execute_match("x = 0", "x", match_cases, "")
+        self.assertEqual(namespace.get("w"), 0)
+        self.assertEqual(namespace.get("x"), 0)
+        self.assertEqual(namespace.get("y"), 0)
+        self.assertEqual(namespace.get("z"), 0)
