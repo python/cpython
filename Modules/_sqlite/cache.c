@@ -345,18 +345,8 @@ PyTypeObject pysqlite_CacheType = {
         0                                               /* tp_free */
 };
 
-extern int pysqlite_cache_setup_types(void)
+extern void pysqlite_cache_setup_types(void)
 {
-    int rc;
-
     pysqlite_NodeType.tp_new = PyType_GenericNew;
     pysqlite_CacheType.tp_new = PyType_GenericNew;
-
-    rc = PyType_Ready(&pysqlite_NodeType);
-    if (rc < 0) {
-        return rc;
-    }
-
-    rc = PyType_Ready(&pysqlite_CacheType);
-    return rc;
 }

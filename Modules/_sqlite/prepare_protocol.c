@@ -75,9 +75,8 @@ PyTypeObject pysqlite_PrepareProtocolType= {
         0                                               /* tp_free */
 };
 
-extern int pysqlite_prepare_protocol_setup_types(void)
+extern void pysqlite_prepare_protocol_setup_types(void)
 {
     pysqlite_PrepareProtocolType.tp_new = PyType_GenericNew;
     Py_SET_TYPE(&pysqlite_PrepareProtocolType, &PyType_Type);
-    return PyType_Ready(&pysqlite_PrepareProtocolType);
 }

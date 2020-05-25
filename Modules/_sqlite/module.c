@@ -346,14 +346,12 @@ static struct PyModuleDef _sqlite3module = {
         NULL
 };
 
-#define ADD_TYPE(module, type)                             \
-do {                                                               \
-    Py_INCREF(&type);                                              \
-    if (PyModule_AddObject(module, name, (PyObject *)&type) < 0) { \
-        Py_DECREF(module);                                         \
-        Py_DECREF(&type);                                          \
-        return NULL;                                               \
-    }                                                              \
+#define ADD_TYPE(module, type)                 \
+do {                                           \
+    if (PyModule_AddType(module, &type) < 0) { \
+        Py_DECREF(module);                     \
+        return NULL;                           \
+    }                                          \
 } while (0)
 
 PyMODINIT_FUNC PyInit__sqlite3(void)
@@ -362,21 +360,18 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     PyObject *tmp_obj;
     int i;
 
-    module = PyModule_Create(&_sqlite3module);
-
-    if (!module ||
-        (pysqlite_row_setup_types() < 0) ||
-        (pysqlite_cursor_setup_types() < 0) ||
-        (pysqlite_connection_setup_types() < 0) ||
-        (pysqlite_cache_setup_types() < 0) ||
-        (pysqlite_statement_setup_types() < 0) ||
-        (pysqlite_prepare_protocol_setup_types() < 0)
-       ) {
-        Py_XDECREF(module);
+    if (!(module = PyModule_Create(&_sqlite3module))) {
         return NULL;
     }
 
-    ADD_TYPE(module,  pysqlite_ConnectionType);
+    pysqlite_row_setup_types();
+    pysqlite_cursor_setup_types();
+    pysqlite_connection_setup_types();
+    pysqlite_cache_setup_types();
+    pysqlite_statement_setup_types();
+    pysqlite_prepare_protocol_setup_types();
+
+    ADD_TYPE(module, pysqlite_ConnectionType);
     ADD_TYPE(module, pysqlite_CursorType);
     ADD_TYPE(module, pysqlite_PrepareProtocolType);
     ADD_TYPE(module, pysqlite_RowType);

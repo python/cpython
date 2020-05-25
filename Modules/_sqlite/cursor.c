@@ -946,8 +946,7 @@ PyTypeObject pysqlite_CursorType = {
         0                                               /* tp_free */
 };
 
-extern int pysqlite_cursor_setup_types(void)
+extern void pysqlite_cursor_setup_types(void)
 {
     pysqlite_CursorType.tp_new = PyType_GenericNew;
-    return PyType_Ready(&pysqlite_CursorType);
 }

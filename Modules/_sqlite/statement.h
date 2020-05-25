@@ -55,6 +55,6 @@ int pysqlite_statement_finalize(pysqlite_Statement* self);
 int pysqlite_statement_reset(pysqlite_Statement* self);
 void pysqlite_statement_mark_dirty(pysqlite_Statement* self);
 
-int pysqlite_statement_setup_types(void);
+void pysqlite_statement_setup_types(void);
 
 #endif

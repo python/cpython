@@ -64,7 +64,7 @@ PyObject* pysqlite_cursor_fetchall(pysqlite_Cursor* self, PyObject* args);
 PyObject* pysqlite_noop(pysqlite_Connection* self, PyObject* args);
 PyObject* pysqlite_cursor_close(pysqlite_Cursor* self, PyObject* args);
 
-int pysqlite_cursor_setup_types(void);
+void pysqlite_cursor_setup_types(void);
 
 #define UNKNOWN (-1)
 #endif
