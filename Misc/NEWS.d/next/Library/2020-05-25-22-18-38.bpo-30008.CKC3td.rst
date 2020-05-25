@@ -1,0 +1,2 @@
+Fix :mod:`ssl` code to be compatible with OpenSSL 1.1.x builds that use
+``no-deprecated`` and ``--api=1.1.0``.
