@@ -376,7 +376,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         return NULL;
     }
 
-    ADD_OBJECT(module, "Connection", pysqlite_ConnectionType);
+    ADD_TYPE(module,  pysqlite_ConnectionType);
     ADD_OBJECT(module, "Cursor", pysqlite_CursorType);
     ADD_OBJECT(module, "PrepareProtocol", pysqlite_PrepareProtocolType);
     ADD_OBJECT(module, "Row", pysqlite_RowType);
