@@ -1027,6 +1027,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->flags = flags;
     p->feature_version = feature_version;
     p->known_err_token = NULL;
+    p->level = 0;
 
     return p;
 }
