@@ -257,10 +257,10 @@ class DefaultContext(BaseContext):
         if sys.platform == 'win32':
             return ['spawn']
         else:
+            methods = ['spawn', 'fork'] if sys.platform == 'darwin' else ['fork', 'spawn']
             if reduction.HAVE_SEND_HANDLE:
-                return ['fork', 'spawn', 'forkserver']
-            if sys.platform == 'darwin':
-                return ['spawn', 'fork', 'forkserver']
+                methods.append('forkserver')
+            return methods
 
 
 #

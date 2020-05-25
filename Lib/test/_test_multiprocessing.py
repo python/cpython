@@ -5039,6 +5039,7 @@ class TestStartMethod(unittest.TestCase):
             self.assertEqual(methods, ['spawn'])
         else:
             self.assertTrue(methods == ['fork', 'spawn'] or
+                            methods == ['spawn', 'fork'] or
                             methods == ['fork', 'spawn', 'forkserver'] or
                             methods == ['spawn', 'fork', 'forkserver'])
 
