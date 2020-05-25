@@ -1021,7 +1021,7 @@ The module defines the following classes, functions and decorators:
    ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
-.. function:: NewType(typ)
+.. function:: NewType(name, tp)
 
    A helper function to indicate a distinct type to a typechecker,
    see :ref:`distinct`. At runtime it returns a function that returns
