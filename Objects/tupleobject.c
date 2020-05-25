@@ -83,7 +83,7 @@ tuple_alloc(Py_ssize_t size)
         /* Inline PyObject_InitVar */
 #ifdef Py_TRACE_REFS
         Py_SIZE(op) = size;
-        Py_TYPE(op) = &PyTuple_Type;
+        Py_SET_TYPE(op, &PyTuple_Type);
 #endif
         _Py_NewReference((PyObject *)op);
     }
