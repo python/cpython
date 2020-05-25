@@ -1077,7 +1077,7 @@ def run_unittest(*classes):
         elif isinstance(cls, valid_types):
             suite.addTest(cls)
         else:
-            suite.addTest(unittest.makeSuite(cls))
+            suite.addTest(unittest.TestLoader().loadTestsFromTestCase(cls))
     _filter_suite(suite, match_test)
     _run_suite(suite)
 

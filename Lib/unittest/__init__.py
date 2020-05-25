@@ -52,6 +52,7 @@ __all__ = ['TestResult', 'TestCase', 'IsolatedAsyncioTestCase', 'TestSuite',
            'addModuleCleanup']
 
 # Expose obsolete functions for backwards compatibility
+# Issue 5846: Deprecated in Python 3.10, scheduled for removal in Python 3.12.
 __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
 
 __unittest = True

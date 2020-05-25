@@ -503,15 +503,31 @@ def _makeLoader(prefix, sortUsing, suiteClass=None, testNamePatterns=None):
         loader.suiteClass = suiteClass
     return loader
 
+# Issue 5846: getTestCaseNames, makeSuite, and findTestCases are deprecated as
+#             of Python 3.10, scheduled for removal in Python 3.12.
 def getTestCaseNames(testCaseClass, prefix, sortUsing=util.three_way_cmp, testNamePatterns=None):
+    warnings.warn(
+        "getTestCaseNames() is deprecated and will be removed in Python 3.12.",
+        DeprecationWarning, stacklevel=2
+    )
     return _makeLoader(prefix, sortUsing, testNamePatterns=testNamePatterns).getTestCaseNames(testCaseClass)
 
 def makeSuite(testCaseClass, prefix='test', sortUsing=util.three_way_cmp,
               suiteClass=suite.TestSuite):
+    warnings.warn(
+        "makeSuite() is deprecated and will be removed in Python 3.12. "
+        "Please use loadTestsFromTestCase() instead.",
+        DeprecationWarning, stacklevel=2
+    )
     return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromTestCase(
         testCaseClass)
 
 def findTestCases(module, prefix='test', sortUsing=util.three_way_cmp,
                   suiteClass=suite.TestSuite):
+    warnings.warn(
+        "findTestCases() is deprecated and will be removed in Python 3.12. "
+        "Please use loadTestsFromModule() instead.",
+        DeprecationWarning, stacklevel=2
+    )
     return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromModule(\
         module)
