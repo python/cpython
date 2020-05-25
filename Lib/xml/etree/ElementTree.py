@@ -195,6 +195,13 @@ class Element:
         original tree.
 
         """
+        warnings.warn(
+            "elem.copy() is deprecated. Use copy.copy(elem) instead.",
+            DeprecationWarning
+            )
+        return self.__copy__()
+
+    def __copy__(self):
         elem = self.makeelement(self.tag, self.attrib)
         elem.text = self.text
         elem.tail = self.tail
@@ -272,19 +279,6 @@ class Element:
         """
         # assert iselement(element)
         self._children.remove(subelement)
-
-    def getchildren(self):
-        """(Deprecated) Return all subelements.
-
-        Elements are returned in document order.
-
-        """
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'list(elem)' or iteration over elem instead.",
-            DeprecationWarning, stacklevel=2
-            )
-        return self._children
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
@@ -408,15 +402,6 @@ class Element:
             yield self
         for e in self._children:
             yield from e.iter(tag)
-
-    # compatibility
-    def getiterator(self, tag=None):
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'elem.iter()' or 'list(elem.iter())' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        return list(self.iter(tag))
 
     def itertext(self):
         """Create text iterator.
@@ -616,15 +601,6 @@ class ElementTree:
         """
         # assert self._root is not None
         return self._root.iter(tag)
-
-    # compatibility
-    def getiterator(self, tag=None):
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'tree.iter()' or 'list(tree.iter())' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        return list(self.iter(tag))
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
@@ -1081,15 +1057,15 @@ def _escape_attrib(text):
             text = text.replace(">", "&gt;")
         if "\"" in text:
             text = text.replace("\"", "&quot;")
-        # The following business with carriage returns is to satisfy
-        # Section 2.11 of the XML specification, stating that
-        # CR or CR LN should be replaced with just LN
+        # Although section 2.11 of the XML specification states that CR or
+        # CR LN should be replaced with just LN, it applies only to EOLNs
+        # which take part of organizing file into lines. Within attributes,
+        # we are replacing these with entity numbers, so they do not count.
         # http://www.w3.org/TR/REC-xml/#sec-line-ends
-        if "\r\n" in text:
-            text = text.replace("\r\n", "\n")
+        # The current solution, contained in following six lines, was
+        # discussed in issue 17582 and 39011.
         if "\r" in text:
-            text = text.replace("\r", "\n")
-        #The following four lines are issue 17582
+            text = text.replace("\r", "&#13;")
         if "\n" in text:
             text = text.replace("\n", "&#10;")
         if "\t" in text:
@@ -1741,14 +1717,14 @@ class XMLParser:
     def feed(self, data):
         """Feed encoded data to parser."""
         try:
-            self.parser.Parse(data, 0)
+            self.parser.Parse(data, False)
         except self._error as v:
             self._raiseerror(v)
 
     def close(self):
         """Finish feeding data to parser and return element structure."""
         try:
-            self.parser.Parse("", 1) # end of data
+            self.parser.Parse(b"", True) # end of data
         except self._error as v:
             self._raiseerror(v)
         try:

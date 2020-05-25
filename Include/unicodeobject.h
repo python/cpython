@@ -113,7 +113,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 #define PyUnicode_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_UNICODE_SUBCLASS)
-#define PyUnicode_CheckExact(op) (Py_TYPE(op) == &PyUnicode_Type)
+#define PyUnicode_CheckExact(op) Py_IS_TYPE(op, &PyUnicode_Type)
 
 /* --- Constants ---------------------------------------------------------- */
 
@@ -327,17 +327,6 @@ PyAPI_FUNC(wchar_t*) PyUnicode_AsWideCharString(
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_FromOrdinal(int ordinal);
-
-/* --- Free-list management ----------------------------------------------- */
-
-/* Clear the free list used by the Unicode implementation.
-
-   This can be used to release memory used for objects on the free
-   list back to the Python memory allocator.
-
-*/
-
-PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
 
 /* === Builtin Codecs =====================================================
 
@@ -1031,16 +1020,6 @@ PyAPI_FUNC(int) PyUnicode_Contains(
 PyAPI_FUNC(int) PyUnicode_IsIdentifier(PyObject *s);
 
 /* === Characters Type APIs =============================================== */
-
-#if defined(Py_DEBUG) && !defined(Py_LIMITED_API)
-PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
-    PyObject *op,
-    int check_content);
-#elif !defined(NDEBUG)
-/* For asserts that call _PyUnicode_CheckConsistency(), which would
- * otherwise be a problem when building with asserts but without Py_DEBUG. */
-#define _PyUnicode_CheckConsistency(op, check_content) PyUnicode_Check(op)
-#endif
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_UNICODEOBJECT_H

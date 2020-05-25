@@ -1053,7 +1053,7 @@ class Misc:
         return self.tk.call('winfo', 'class', self._w)
 
     def winfo_colormapfull(self):
-        """Return true if at the last color request the colormap was full."""
+        """Return True if at the last color request the colormap was full."""
         return self.tk.getboolean(
             self.tk.call('winfo', 'colormapfull', self._w))
 
@@ -2241,7 +2241,7 @@ class Tk(Misc, Wm):
     _w = '.'
 
     def __init__(self, screenName=None, baseName=None, className='Tk',
-                 useTk=1, sync=0, use=None):
+                 useTk=True, sync=False, use=None):
         """Return a new Toplevel widget on screen SCREENNAME. A new Tcl interpreter will
         be created. BASENAME will be used for the identification of the profile file (see
         readprofile).
@@ -2259,7 +2259,7 @@ class Tk(Misc, Wm):
             baseName, ext = os.path.splitext(baseName)
             if ext not in ('.py', '.pyc'):
                 baseName = baseName + ext
-        interactive = 0
+        interactive = False
         self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk, sync, use)
         if useTk:
             self._loadtk()
@@ -2361,7 +2361,7 @@ class Tk(Misc, Wm):
 # copied into the Pack, Place or Grid class.
 
 
-def Tcl(screenName=None, baseName=None, className='Tk', useTk=0):
+def Tcl(screenName=None, baseName=None, className='Tk', useTk=False):
     return Tk(screenName, baseName, className, useTk)
 
 
@@ -3226,7 +3226,7 @@ class Listbox(Widget, XView, YView):
     select_clear = selection_clear
 
     def selection_includes(self, index):
-        """Return 1 if INDEX is part of the selection."""
+        """Return True if INDEX is part of the selection."""
         return self.tk.getboolean(self.tk.call(
             self._w, 'selection', 'includes', index))
 

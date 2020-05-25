@@ -45,8 +45,6 @@ PyAPI_FUNC(PyStatus) PyWideStringList_Insert(PyWideStringList *list,
 /* --- PyPreConfig ----------------------------------------------- */
 
 typedef struct {
-    int _config_version;  /* Internal configuration version,
-                             used for ABI compatibility */
     int _config_init;     /* _PyConfigInitEnum value */
 
     /* Parse Py_PreInitializeFromBytesArgs() arguments?
@@ -115,7 +113,11 @@ typedef struct {
        "POSIX", otherwise it is set to 0. Inherit Py_UTF8Mode value value. */
     int utf8_mode;
 
-    int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
+    /* If non-zero, enable the Python Development Mode.
+
+       Set to 1 by the -X dev command line option. Set by the PYTHONDEVMODE
+       environment variable. */
+    int dev_mode;
 
     /* Memory allocator: PYTHONMALLOC env var.
        See PyMemAllocatorName for valid values. */
@@ -129,13 +131,11 @@ PyAPI_FUNC(void) PyPreConfig_InitIsolatedConfig(PyPreConfig *config);
 /* --- PyConfig ---------------------------------------------- */
 
 typedef struct {
-    int _config_version;  /* Internal configuration version,
-                             used for ABI compatibility */
     int _config_init;     /* _PyConfigInitEnum value */
 
     int isolated;         /* Isolated mode? see PyPreConfig.isolated */
     int use_environment;  /* Use environment variables? see PyPreConfig.use_environment */
-    int dev_mode;         /* Development mode? See PyPreConfig.dev_mode */
+    int dev_mode;         /* Python Development Mode? See PyPreConfig.dev_mode */
 
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
@@ -147,13 +147,16 @@ typedef struct {
        Set to 1 by -X faulthandler and PYTHONFAULTHANDLER. -1 means unset. */
     int faulthandler;
 
+    /* Enable PEG parser?
+       1 by default, set to 0 by -X oldparser and PYTHONOLDPARSER */
+    int _use_peg_parser;
+
     /* Enable tracemalloc?
        Set by -X tracemalloc=N and PYTHONTRACEMALLOC. -1 means unset */
     int tracemalloc;
 
     int import_time;        /* PYTHONPROFILEIMPORTTIME, -X importtime */
     int show_ref_count;     /* -X showrefcount */
-    int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
 
@@ -216,7 +219,10 @@ typedef struct {
     wchar_t *program_name;
 
     PyWideStringList xoptions;     /* Command line -X options */
-    PyWideStringList warnoptions;  /* Warnings options */
+
+    /* Warnings options: lowest to highest priority. warnings.filters
+       is built in the reverse order (highest to lowest priority). */
+    PyWideStringList warnoptions;
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
@@ -404,10 +410,13 @@ typedef struct {
     /* If equal to 0, stop Python initialization before the "main" phase */
     int _init_main;
 
+    /* If non-zero, disallow threads, subprocesses, and fork.
+       Default: 0. */
+    int _isolated_interpreter;
 } PyConfig;
 
-PyAPI_FUNC(PyStatus) PyConfig_InitPythonConfig(PyConfig *config);
-PyAPI_FUNC(PyStatus) PyConfig_InitIsolatedConfig(PyConfig *config);
+PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
+PyAPI_FUNC(void) PyConfig_InitIsolatedConfig(PyConfig *config);
 PyAPI_FUNC(void) PyConfig_Clear(PyConfig *);
 PyAPI_FUNC(PyStatus) PyConfig_SetString(
     PyConfig *config,

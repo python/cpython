@@ -36,7 +36,7 @@ class RunTest(unittest.TestCase):
         self.assertIn('UnhashableException: ex1', tb[10])
 
 
-# PseudoFile tests.
+# StdioFile tests.
 
 class S(str):
     def __str__(self):
@@ -68,14 +68,14 @@ class MockShell:
         self.lines = list(lines)[::-1]
 
 
-class PseudeInputFilesTest(unittest.TestCase):
+class StdInputFilesTest(unittest.TestCase):
 
     def test_misc(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         self.assertIsInstance(f, io.TextIOBase)
         self.assertEqual(f.encoding, 'utf-8')
-        self.assertIsNone(f.errors)
+        self.assertEqual(f.errors, 'strict')
         self.assertIsNone(f.newlines)
         self.assertEqual(f.name, '<stdin>')
         self.assertFalse(f.closed)
@@ -86,7 +86,7 @@ class PseudeInputFilesTest(unittest.TestCase):
 
     def test_unsupported(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         self.assertRaises(OSError, f.fileno)
         self.assertRaises(OSError, f.tell)
         self.assertRaises(OSError, f.seek, 0)
@@ -95,7 +95,7 @@ class PseudeInputFilesTest(unittest.TestCase):
 
     def test_read(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         shell.push(['one\n', 'two\n', ''])
         self.assertEqual(f.read(), 'one\ntwo\n')
         shell.push(['one\n', 'two\n', ''])
@@ -115,7 +115,7 @@ class PseudeInputFilesTest(unittest.TestCase):
 
     def test_readline(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         shell.push(['one\n', 'two\n', 'three\n', 'four\n'])
         self.assertEqual(f.readline(), 'one\n')
         self.assertEqual(f.readline(-1), 'two\n')
@@ -140,7 +140,7 @@ class PseudeInputFilesTest(unittest.TestCase):
 
     def test_readlines(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         shell.push(['one\n', 'two\n', ''])
         self.assertEqual(f.readlines(), ['one\n', 'two\n'])
         shell.push(['one\n', 'two\n', ''])
@@ -161,7 +161,7 @@ class PseudeInputFilesTest(unittest.TestCase):
 
     def test_close(self):
         shell = MockShell()
-        f = run.PseudoInputFile(shell, 'stdin', 'utf-8')
+        f = run.StdInputFile(shell, 'stdin')
         shell.push(['one\n', 'two\n', ''])
         self.assertFalse(f.closed)
         self.assertEqual(f.readline(), 'one\n')
@@ -171,14 +171,14 @@ class PseudeInputFilesTest(unittest.TestCase):
         self.assertRaises(TypeError, f.close, 1)
 
 
-class PseudeOutputFilesTest(unittest.TestCase):
+class StdOutputFilesTest(unittest.TestCase):
 
     def test_misc(self):
         shell = MockShell()
-        f = run.PseudoOutputFile(shell, 'stdout', 'utf-8')
+        f = run.StdOutputFile(shell, 'stdout')
         self.assertIsInstance(f, io.TextIOBase)
         self.assertEqual(f.encoding, 'utf-8')
-        self.assertIsNone(f.errors)
+        self.assertEqual(f.errors, 'strict')
         self.assertIsNone(f.newlines)
         self.assertEqual(f.name, '<stdout>')
         self.assertFalse(f.closed)
@@ -189,7 +189,7 @@ class PseudeOutputFilesTest(unittest.TestCase):
 
     def test_unsupported(self):
         shell = MockShell()
-        f = run.PseudoOutputFile(shell, 'stdout', 'utf-8')
+        f = run.StdOutputFile(shell, 'stdout')
         self.assertRaises(OSError, f.fileno)
         self.assertRaises(OSError, f.tell)
         self.assertRaises(OSError, f.seek, 0)
@@ -198,16 +198,36 @@ class PseudeOutputFilesTest(unittest.TestCase):
 
     def test_write(self):
         shell = MockShell()
-        f = run.PseudoOutputFile(shell, 'stdout', 'utf-8')
+        f = run.StdOutputFile(shell, 'stdout')
         f.write('test')
         self.assertEqual(shell.written, [('test', 'stdout')])
         shell.reset()
-        f.write('t\xe8st')
-        self.assertEqual(shell.written, [('t\xe8st', 'stdout')])
+        f.write('t\xe8\u015b\U0001d599')
+        self.assertEqual(shell.written, [('t\xe8\u015b\U0001d599', 'stdout')])
         shell.reset()
 
-        f.write(S('t\xe8st'))
-        self.assertEqual(shell.written, [('t\xe8st', 'stdout')])
+        f.write(S('t\xe8\u015b\U0001d599'))
+        self.assertEqual(shell.written, [('t\xe8\u015b\U0001d599', 'stdout')])
+        self.assertEqual(type(shell.written[0][0]), str)
+        shell.reset()
+
+        self.assertRaises(TypeError, f.write)
+        self.assertEqual(shell.written, [])
+        self.assertRaises(TypeError, f.write, b'test')
+        self.assertRaises(TypeError, f.write, 123)
+        self.assertEqual(shell.written, [])
+        self.assertRaises(TypeError, f.write, 'test', 'spam')
+        self.assertEqual(shell.written, [])
+
+    def test_write_stderr_nonencodable(self):
+        shell = MockShell()
+        f = run.StdOutputFile(shell, 'stderr', 'iso-8859-15', 'backslashreplace')
+        f.write('t\xe8\u015b\U0001d599\xa4')
+        self.assertEqual(shell.written, [('t\xe8\\u015b\\U0001d599\\xa4', 'stderr')])
+        shell.reset()
+
+        f.write(S('t\xe8\u015b\U0001d599\xa4'))
+        self.assertEqual(shell.written, [('t\xe8\\u015b\\U0001d599\\xa4', 'stderr')])
         self.assertEqual(type(shell.written[0][0]), str)
         shell.reset()
 
@@ -221,7 +241,7 @@ class PseudeOutputFilesTest(unittest.TestCase):
 
     def test_writelines(self):
         shell = MockShell()
-        f = run.PseudoOutputFile(shell, 'stdout', 'utf-8')
+        f = run.StdOutputFile(shell, 'stdout')
         f.writelines([])
         self.assertEqual(shell.written, [])
         shell.reset()
@@ -251,7 +271,7 @@ class PseudeOutputFilesTest(unittest.TestCase):
 
     def test_close(self):
         shell = MockShell()
-        f = run.PseudoOutputFile(shell, 'stdout', 'utf-8')
+        f = run.StdOutputFile(shell, 'stdout')
         self.assertFalse(f.closed)
         f.write('test')
         f.close()

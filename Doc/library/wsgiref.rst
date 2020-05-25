@@ -144,7 +144,7 @@ also provides these miscellaneous utilities:
 
 .. function:: is_hop_by_hop(header_name)
 
-   Return true if 'header_name' is an HTTP/1.1 "Hop-by-Hop" header, as defined by
+   Return ``True`` if 'header_name' is an HTTP/1.1 "Hop-by-Hop" header, as defined by
    :rfc:`2616`.
 
 

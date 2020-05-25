@@ -378,7 +378,7 @@ methods:
 
 .. method:: CookiePolicy.domain_return_ok(domain, request)
 
-   Return false if cookies should not be returned, given cookie domain.
+   Return ``False`` if cookies should not be returned, given cookie domain.
 
    This method is an optimization.  It removes the need for checking every cookie
    with a particular domain (which might involve reading many files).  Returning
@@ -402,7 +402,7 @@ methods:
 
 .. method:: CookiePolicy.path_return_ok(path, request)
 
-   Return false if cookies should not be returned, given cookie path.
+   Return ``False`` if cookies should not be returned, given cookie path.
 
    See the documentation for :meth:`domain_return_ok`.
 
@@ -711,7 +711,7 @@ accessed using the following methods:
 
 .. method:: Cookie.has_nonstandard_attr(name)
 
-   Return true if cookie has the named cookie-attribute.
+   Return ``True`` if cookie has the named cookie-attribute.
 
 
 .. method:: Cookie.get_nonstandard_attr(name, default=None)

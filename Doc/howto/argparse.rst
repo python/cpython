@@ -353,7 +353,7 @@ Our program keeps growing in complexity::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbose:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    else:
        print(answer)
 
@@ -387,9 +387,9 @@ multiple verbosity values, and actually get to use them::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -421,9 +421,9 @@ Let's fix it by restricting the values the ``--verbosity`` option can accept::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -461,9 +461,9 @@ verbosity argument (check the output of ``python --help``)::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -529,9 +529,9 @@ Let's fix::
 
    # bugfix: replace == with >=
    if args.verbosity >= 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -566,9 +566,9 @@ Let's fix that bug::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity >= 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -606,9 +606,9 @@ not just squares::
    args = parser.parse_args()
    answer = args.x**args.y
    if args.verbosity >= 2:
-       print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print(f"{args.x} to the power {args.y} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^{} == {}".format(args.x, args.y, answer))
+       print(f"{args.x}^{args.y} == {answer}")
    else:
        print(answer)
 
@@ -645,9 +645,9 @@ to display *more* text instead::
    args = parser.parse_args()
    answer = args.x**args.y
    if args.verbosity >= 2:
-       print("Running '{}'".format(__file__))
+       print(f"Running '{__file__}'")
    if args.verbosity >= 1:
-       print("{}^{} == ".format(args.x, args.y), end="")
+       print(f"{args.x}^{args.y} == ", end="")
    print(answer)
 
 Output:
@@ -688,9 +688,9 @@ which will be the opposite of the ``--verbose`` one::
    if args.quiet:
        print(answer)
    elif args.verbose:
-       print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print(f"{args.x} to the power {args.y} equals {answer}")
    else:
-       print("{}^{} == {}".format(args.x, args.y, answer))
+       print(f"{args.x}^{args.y} == {answer}")
 
 Our program is now simpler, and we've lost some functionality for the sake of
 demonstration. Anyways, here's the output:

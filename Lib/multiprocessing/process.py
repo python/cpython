@@ -301,6 +301,8 @@ class BaseProcess(object):
             _current_process = self
             _parent_process = _ParentProcess(
                 self._parent_name, self._parent_pid, parent_sentinel)
+            if threading._HAVE_THREAD_NATIVE_ID:
+                threading.main_thread()._set_native_id()
             try:
                 util._finalizer_registry.clear()
                 util._run_after_forkers()
@@ -315,12 +317,12 @@ class BaseProcess(object):
             finally:
                 util._exit_function()
         except SystemExit as e:
-            if not e.args:
-                exitcode = 1
-            elif isinstance(e.args[0], int):
-                exitcode = e.args[0]
+            if e.code is None:
+                exitcode = 0
+            elif isinstance(e.code, int):
+                exitcode = e.code
             else:
-                sys.stderr.write(str(e.args[0]) + '\n')
+                sys.stderr.write(str(e.code) + '\n')
                 exitcode = 1
         except:
             exitcode = 1

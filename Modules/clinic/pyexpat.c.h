@@ -75,7 +75,7 @@ pyexpat_xmlparser_SetBase(xmlparseobject *self, PyObject *arg)
     const char *base;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("SetBase", 0, "str", arg);
+        _PyArg_BadArgument("SetBase", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t base_length;
@@ -133,7 +133,8 @@ pyexpat_xmlparser_GetInputContext(xmlparseobject *self, PyObject *Py_UNUSED(igno
 }
 
 PyDoc_STRVAR(pyexpat_xmlparser_ExternalEntityParserCreate__doc__,
-"ExternalEntityParserCreate($self, context, encoding=None, /)\n"
+"ExternalEntityParserCreate($self, context, encoding=<unrepresentable>,\n"
+"                           /)\n"
 "--\n"
 "\n"
 "Create a parser for parsing an external entity based on the information passed to the ExternalEntityRefHandler.");
@@ -171,14 +172,14 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyObject *con
         }
     }
     else {
-        _PyArg_BadArgument("ExternalEntityParserCreate", 1, "str or None", args[0]);
+        _PyArg_BadArgument("ExternalEntityParserCreate", "argument 1", "str or None", args[0]);
         goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("ExternalEntityParserCreate", 2, "str", args[1]);
+        _PyArg_BadArgument("ExternalEntityParserCreate", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t encoding_length;
@@ -280,7 +281,7 @@ exit:
 
 PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
 "ParserCreate($module, /, encoding=None, namespace_separator=None,\n"
-"             intern=None)\n"
+"             intern=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Return a new XML parser object.");
@@ -327,7 +328,7 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             }
         }
         else {
-            _PyArg_BadArgument("ParserCreate", 1, "str or None", args[0]);
+            _PyArg_BadArgument("ParserCreate", "argument 'encoding'", "str or None", args[0]);
             goto exit;
         }
         if (!--noptargs) {
@@ -350,7 +351,7 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             }
         }
         else {
-            _PyArg_BadArgument("ParserCreate", 2, "str or None", args[1]);
+            _PyArg_BadArgument("ParserCreate", "argument 'namespace_separator'", "str or None", args[1]);
             goto exit;
         }
         if (!--noptargs) {
@@ -401,4 +402,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=e48f37d326956bdd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=68ce25024280af41 input=a9049054013a1b77]*/

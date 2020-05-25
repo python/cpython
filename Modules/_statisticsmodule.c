@@ -1,7 +1,6 @@
-/* statistics accelerator C extensor: _statistics module. */
+/* statistics accelerator C extension: _statistics module. */
 
 #include "Python.h"
-#include "structmember.h"
 #include "clinic/_statisticsmodule.c.h"
 
 /*[clinic input]
@@ -10,11 +9,13 @@ module _statistics
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=864a6f59b76123b2]*/
 
-
-static PyMethodDef speedups_methods[] = {
-    _STATISTICS__NORMAL_DIST_INV_CDF_METHODDEF
-    {NULL, NULL, 0, NULL}
-};
+/*
+ * There is no closed-form solution to the inverse CDF for the normal
+ * distribution, so we use a rational approximation instead:
+ * Wichura, M.J. (1988). "Algorithm AS241: The Percentage Points of the
+ * Normal Distribution".  Applied Statistics. Blackwell Publishing. 37
+ * (3): 477–484. doi:10.2307/2347330. JSTOR 2347330.
+ */
 
 /*[clinic input]
 _statistics._normal_dist_inv_cdf -> double
@@ -30,11 +31,14 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
 /*[clinic end generated code: output=02fd19ddaab36602 input=24715a74be15296a]*/
 {
     double q, num, den, r, x;
+    if (p <= 0.0 || p >= 1.0 || sigma <= 0.0) {
+        goto error;
+    }
+
     q = p - 0.5;
-    // Algorithm AS 241: The Percentage Points of the Normal Distribution
     if(fabs(q) <= 0.425) {
         r = 0.180625 - q * q;
-        // Hash sum AB: 55.88319 28806 14901 4439
+        // Hash sum-55.8831928806149014439
         num = (((((((2.5090809287301226727e+3 * r +
                      3.3430575583588128105e+4) * r +
                      6.7265770927008700853e+4) * r +
@@ -51,14 +55,20 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
                      6.8718700749205790830e+2) * r +
                      4.2313330701600911252e+1) * r +
                      1.0);
+        if (den == 0.0) {
+            goto error;
+        }
         x = num / den;
         return mu + (x * sigma);
     }
-    r = q <= 0.0? p : 1.0-p;
+    r = (q <= 0.0) ? p : (1.0 - p);
+    if (r <= 0.0 || r >= 1.0) {
+        goto error;
+    }
     r = sqrt(-log(r));
     if (r <= 5.0) {
         r = r - 1.6;
-        // Hash sum CD: 49.33206 50330 16102 89036
+        // Hash sum-49.33206503301610289036
         num = (((((((7.74545014278341407640e-4 * r +
                      2.27238449892691845833e-2) * r +
                      2.41780725177450611770e-1) * r +
@@ -77,7 +87,7 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
                      1.0);
     } else {
         r -= 5.0;
-        // Hash sum EF: 47.52583 31754 92896 71629
+        // Hash sum-47.52583317549289671629
         num = (((((((2.01033439929228813265e-7 * r +
                      2.71155556874348757815e-5) * r +
                      1.24266094738807843860e-3) * r +
@@ -95,28 +105,47 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
                      5.99832206555887937690e-1) * r +
                      1.0);
     }
+    if (den == 0.0) {
+        goto error;
+    }
     x = num / den;
-    if (q < 0.0) x = -x;
+    if (q < 0.0) {
+        x = -x;
+    }
     return mu + (x * sigma);
+
+  error:
+    PyErr_SetString(PyExc_ValueError, "inv_cdf undefined for these parameters");
+    return -1.0;
 }
+
+
+static PyMethodDef statistics_methods[] = {
+    _STATISTICS__NORMAL_DIST_INV_CDF_METHODDEF
+    {NULL, NULL, 0, NULL}
+};
+
+PyDoc_STRVAR(statistics_doc,
+"Accelerators for the statistics module.\n");
+
+static struct PyModuleDef_Slot _statisticsmodule_slots[] = {
+    {0, NULL}
+};
 
 static struct PyModuleDef statisticsmodule = {
         PyModuleDef_HEAD_INIT,
         "_statistics",
-        _statistics__normal_dist_inv_cdf__doc__,
-        -1,
-        speedups_methods,
-        NULL,
+        statistics_doc,
+        0,
+        statistics_methods,
+        _statisticsmodule_slots,
         NULL,
         NULL,
         NULL
 };
 
-
 PyMODINIT_FUNC
 PyInit__statistics(void)
 {
-    PyObject *m = PyModule_Create(&statisticsmodule);
-    if (!m) return NULL;
-    return m;
+    return PyModuleDef_Init(&statisticsmodule);
 }

@@ -5,6 +5,7 @@ from asyncio import proactor_events
 from itertools import cycle, islice
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import socket_helper
 
 
 class MyProto(asyncio.Protocol):
@@ -16,8 +17,8 @@ class MyProto(asyncio.Protocol):
         self.state = 'INITIAL'
         self.nbytes = 0
         if loop is not None:
-            self.connected = asyncio.Future(loop=loop)
-            self.done = asyncio.Future(loop=loop)
+            self.connected = loop.create_future()
+            self.done = loop.create_future()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -225,7 +226,7 @@ class BaseSockTestsMixin:
             self.loop.run_until_complete(
                 self._basetest_huge_content_recvinto(httpd.address))
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_unix_sock_client_ops(self):
         with test_utils.run_test_unix_server() as httpd:
             sock = socket.socket(socket.AF_UNIX)
