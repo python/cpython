@@ -317,6 +317,15 @@ Deprecated
   It is untested and undocumented and also not used by webbrowser itself.
   (Contributed by Dong-hee Na in :issue:`42255`.)
 
+* Deprecated the following :mod:`unittest` methods, scheduled for removal in
+  Python 3.13:
+
+  * :meth:`~unittest.findTestCases`
+  * :meth:`~unittest.makeSuite`
+  * :meth:`~unittest.getTestCaseNames`
+
+  (Contributed by Erlend E. Aasland in :issue:`5846`.)
+
 
 Removed
 =======

@@ -1837,6 +1837,8 @@ Loading and running tests
       Return a sorted sequence of method names found within *testCaseClass*;
       this should be a subclass of :class:`TestCase`.
 
+      .. deprecated-removed:: 3.11 3.13
+
 
    .. method:: discover(start_dir, pattern='test*.py', top_level_dir=None)
 
