@@ -45,7 +45,10 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 typedef struct _Py_Identifier {
     struct _Py_Identifier *next;
     const char* string;
-    PyObject *object;
+    // bpo-39465: _PyUnicode_FromId() can be called by multiple threads
+    // running in different interpreters. Use an atomic variable rather
+    // than a lock for better parallelism.
+    _Atomic PyObject *object;
 } _Py_Identifier;
 
 #define _Py_static_string_init(value) { .next = NULL, .string = value, .object = NULL }

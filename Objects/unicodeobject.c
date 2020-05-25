@@ -2275,18 +2275,24 @@ PyUnicode_FromString(const char *u)
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
-    if (!id->object) {
-        id->object = PyUnicode_DecodeUTF8Stateful(id->string,
-                                                  strlen(id->string),
-                                                  NULL, NULL);
-        if (!id->object)
-            return NULL;
-        PyUnicode_InternInPlace(&id->object);
-        assert(!id->next);
-        id->next = static_strings;
-        static_strings = id;
+    if (id->object) {
+        return (PyObject *)id->object;
     }
-    return id->object;
+
+    PyObject *object;
+    object = PyUnicode_DecodeUTF8Stateful(id->string,
+                                          strlen(id->string),
+                                          NULL, NULL);
+    if (!object) {
+        return NULL;
+    }
+
+    PyUnicode_InternInPlace(&object);
+    id->object = (_Atomic PyObject *)object;
+    assert(!id->next);
+    id->next = static_strings;
+    static_strings = id;
+    return object;
 }
 
 static void
