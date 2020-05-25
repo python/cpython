@@ -1,1 +1,1 @@
-Handle PyModule_AddObject() errors in sqlite3 module init correctly.
+Fix possible reference leak for :mod:`sqlite3` initialization.
