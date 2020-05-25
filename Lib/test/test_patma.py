@@ -12,7 +12,9 @@ class MatchCase(typing.NamedTuple):
     guard: typing.Optional[str] = None
 
 
-class PatMaTests(unittest.TestCase):
+class TestAST(unittest.TestCase):
+    """Tests that predate parser support, and just execute ASTs instead."""
+
     @staticmethod
     def parse_stmts(stmts: str) -> typing.List[ast.stmt]:
         return ast.parse(stmts, FILENAME, "exec").body
@@ -191,3 +193,63 @@ class PatMaTests(unittest.TestCase):
         self.assertEqual(namespace.get("x"), 0)
         self.assertEqual(namespace.get("y"), 0)
         self.assertEqual(namespace.get("z"), 0)
+
+    def test_pipe_0(self) -> None:
+        match_cases = [MatchCase("0 | 1 | 2", "y = 0")]
+        namespace = self.execute_match("x = 0", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), 0)
+        self.assertEqual(namespace.get("y"), 0)
+
+    def test_pipe_1(self) -> None:
+        match_cases = [MatchCase("0 | 1 | 2", "y = 0")]
+        namespace = self.execute_match("x = 1", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), 1)
+        self.assertEqual(namespace.get("y"), 0)
+
+    def test_pipe_2(self) -> None:
+        match_cases = [MatchCase("0 | 1 | 2", "y = 0")]
+        namespace = self.execute_match("x = 2", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), 2)
+        self.assertEqual(namespace.get("y"), 0)
+
+    def test_pipe_3(self) -> None:
+        match_cases = [MatchCase("0 | 1 | 2", "y = 0")]
+        namespace = self.execute_match("x = 3", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), 3)
+        self.assertNotIn("y", namespace)
+
+    def test_pipe_4(self) -> None:
+        match_cases = [
+            MatchCase("(z := 0) | (z := 1) | (z := 2)", "y = 0", "z == x % 2")
+        ]
+        namespace = self.execute_match("x = 0", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), 0)
+        self.assertEqual(namespace.get("y"), 0)
+        self.assertEqual(namespace.get("z"), 0)
+
+    def test_pipe_5(self) -> None:
+        match_cases = [
+            MatchCase("(z := 0) | (z := 1) | (z := 2)", "y = 0", "z == x % 2")
+        ]
+        namespace = self.execute_match("x = 1", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), 1)
+        self.assertEqual(namespace.get("y"), 0)
+        self.assertEqual(namespace.get("z"), 1)
+
+    def test_pipe_6(self) -> None:
+        match_cases = [
+            MatchCase("(z := 0) | (z := 1) | (z := 2)", "y = 0", "z == x % 2")
+        ]
+        namespace = self.execute_match("x = 2", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), 2)
+        self.assertNotIn("y", namespace)
+        self.assertEqual(namespace.get("z"), 2)
+
+    def test_pipe_7(self) -> None:
+        match_cases = [
+            MatchCase("(z := 0) | (z := 1) | (z := 2)", "y = 0", "z == x % 2")
+        ]
+        namespace = self.execute_match("x = 3", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), 3)
+        self.assertNotIn("y", namespace)
+        self.assertNotIn("z", namespace)
