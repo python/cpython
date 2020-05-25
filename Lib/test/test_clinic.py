@@ -3,6 +3,7 @@
 # Licensed to the PSF under a contributor agreement.
 
 from test import support, test_tools
+from test.support import filesystem_helper
 from unittest import TestCase
 import collections
 import inspect
@@ -794,7 +795,7 @@ class ClinicExternalTest(TestCase):
     maxDiff = None
 
     def test_external(self):
-        source = support.findfile('clinic.test')
+        source = filesystem_helper.findfile('clinic.test')
         with open(source, 'r', encoding='utf-8') as f:
             original = f.read()
         with support.temp_dir() as testdir:

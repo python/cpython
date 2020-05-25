@@ -5,6 +5,8 @@ import time
 import unittest
 
 from test import support
+from test.support import filesystem_helper
+
 
 support.requires('audio')
 winsound = support.import_module('winsound')
@@ -103,7 +105,7 @@ class PlaySoundTest(unittest.TestCase):
         safe_PlaySound(flags=winsound.SND_ALIAS, sound="SystemExit")
 
     def test_snd_memory(self):
-        with open(support.findfile('pluck-pcm8.wav',
+        with open(filesystem_helper.findfile('pluck-pcm8.wav',
                                    subdir='audiodata'), 'rb') as f:
             audio_data = f.read()
         safe_PlaySound(audio_data, winsound.SND_MEMORY)
@@ -111,7 +113,7 @@ class PlaySoundTest(unittest.TestCase):
         safe_PlaySound(audio_data, winsound.SND_MEMORY)
 
     def test_snd_filename(self):
-        fn = support.findfile('pluck-pcm8.wav', subdir='audiodata')
+        fn = filesystem_helper.findfile('pluck-pcm8.wav', subdir='audiodata')
         safe_PlaySound(fn, winsound.SND_FILENAME | winsound.SND_NODEFAULT)
 
     def test_aliases(self):

@@ -6,6 +6,7 @@ import tkinter
 from tkinter.test.support import (AbstractTkTest, tcl_version, requires_tcl,
                                   get_tk_patchlevel, pixels_conv, tcl_obj_eq)
 import test.support
+from test.support import filesystem_helper
 
 
 noconv = False
@@ -271,7 +272,8 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkParam(widget, 'bitmap', 'questhead')
         self.checkParam(widget, 'bitmap', 'gray50')
-        filename = test.support.findfile('python.xbm', subdir='imghdrdata')
+        filename = filesystem_helper.findfile('python.xbm',
+                                              subdir='imghdrdata')
         self.checkParam(widget, 'bitmap', '@' + filename)
         # Cocoa Tk widgets don't detect invalid -bitmap values
         # See https://core.tcl.tk/tk/info/31cd33dbf0

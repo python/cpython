@@ -7,7 +7,8 @@ import sys
 import unittest
 import re
 from test import support
-from test.support import TESTFN, Error, captured_output, unlink, cpython_only, ALWAYS_EQ
+from test.support import Error, captured_output, cpython_only, ALWAYS_EQ
+from test.support import filesystem_helper
 from test.support.script_helper import assert_python_ok
 import textwrap
 
@@ -124,18 +125,19 @@ class TracebackCases(unittest.TestCase):
         def do_test(firstlines, message, charset, lineno):
             # Raise the message in a subprocess, and catch the output
             try:
-                with open(TESTFN, "w", encoding=charset) as output:
+                with open(filesystem_helper.TESTFN, "w", encoding=charset) as output:
                     output.write("""{0}if 1:
                         import traceback;
                         raise RuntimeError('{1}')
                         """.format(firstlines, message))
 
-                process = subprocess.Popen([sys.executable, TESTFN],
+                process = subprocess.Popen([sys.executable,
+                                            filesystem_helper.TESTFN],
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 stdout, stderr = process.communicate()
                 stdout = stdout.decode(output_encoding).splitlines()
             finally:
-                unlink(TESTFN)
+                filesystem_helper.unlink(filesystem_helper.TESTFN)
 
             # The source lines are encoded with the 'backslashreplace' handler
             encoded_message = message.encode(output_encoding,

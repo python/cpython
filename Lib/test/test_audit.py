@@ -5,11 +5,13 @@ import subprocess
 import sys
 import unittest
 from test import support
+from test.support import filesystem_helper
+
 
 if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
     raise unittest.SkipTest("test only relevant when sys.audit is available")
 
-AUDIT_TESTS_PY = support.findfile("audit-tests.py")
+AUDIT_TESTS_PY = filesystem_helper.findfile("audit-tests.py")
 
 
 class AuditTest(unittest.TestCase):

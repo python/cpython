@@ -8,6 +8,7 @@ import unittest
 import warnings
 
 from test import support
+from test.support import filesystem_helper
 
 
 class SortedDict(collections.UserDict):
@@ -536,7 +537,7 @@ boolean {0[0]} NO
                                 "[Foo]\n  wrong-indent\n")
             self.assertEqual(e.args, ('<???>',))
             # read_file on a real file
-            tricky = support.findfile("cfgparser.3")
+            tricky = filesystem_helper.findfile("cfgparser.3")
             if self.delimiters[0] == '=':
                 error = configparser.ParsingError
                 expected = (tricky,)
@@ -710,7 +711,7 @@ boolean {0[0]} NO
     def test_read_returns_file_list(self):
         if self.delimiters[0] != '=':
             self.skipTest('incompatible format')
-        file1 = support.findfile("cfgparser.1")
+        file1 = filesystem_helper.findfile("cfgparser.1")
         # check when we pass a mix of readable and non-readable files:
         cf = self.newconfig()
         parsed_files = cf.read([file1, "nonexistent-file"])
@@ -743,7 +744,7 @@ boolean {0[0]} NO
     def test_read_returns_file_list_with_bytestring_path(self):
         if self.delimiters[0] != '=':
             self.skipTest('incompatible format')
-        file1_bytestring = support.findfile("cfgparser.1").encode()
+        file1_bytestring = filesystem_helper.findfile("cfgparser.1").encode()
         # check when passing an existing bytestring path
         cf = self.newconfig()
         parsed_files = cf.read(file1_bytestring)
@@ -1143,7 +1144,7 @@ class RawConfigParserTestSambaConf(CfgParserTestCaseClass, unittest.TestCase):
     empty_lines_in_values = False
 
     def test_reading(self):
-        smbconf = support.findfile("cfgparser.2")
+        smbconf = filesystem_helper.findfile("cfgparser.2")
         # check when we pass a mix of readable and non-readable files:
         cf = self.newconfig()
         parsed_files = cf.read([smbconf, "nonexistent-file"], encoding='utf-8')
@@ -1338,7 +1339,7 @@ class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
     allow_no_value = True
 
     def test_cfgparser_dot_3(self):
-        tricky = support.findfile("cfgparser.3")
+        tricky = filesystem_helper.findfile("cfgparser.3")
         cf = self.newconfig()
         self.assertEqual(len(cf.read(tricky, encoding='utf-8')), 1)
         self.assertEqual(cf.sections(), ['strange',
@@ -1370,7 +1371,7 @@ class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
         self.assertEqual(cf.get('more interpolation', 'lets'), 'go shopping')
 
     def test_unicode_failure(self):
-        tricky = support.findfile("cfgparser.3")
+        tricky = filesystem_helper.findfile("cfgparser.3")
         cf = self.newconfig()
         with self.assertRaises(UnicodeDecodeError):
             cf.read(tricky, encoding='ascii')
@@ -1471,7 +1472,7 @@ class CopyTestCase(BasicTestCase, unittest.TestCase):
 
 class FakeFile:
     def __init__(self):
-        file_path = support.findfile("cfgparser.1")
+        file_path = filesystem_helper.findfile("cfgparser.1")
         with open(file_path) as f:
             self.lines = f.readlines()
             self.lines.reverse()
@@ -1492,7 +1493,7 @@ def readline_generator(f):
 
 class ReadFileTestCase(unittest.TestCase):
     def test_file(self):
-        file_paths = [support.findfile("cfgparser.1")]
+        file_paths = [filesystem_helper.findfile("cfgparser.1")]
         try:
             file_paths.append(file_paths[0].encode('utf8'))
         except UnicodeEncodeError:

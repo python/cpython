@@ -10,7 +10,8 @@ import importlib
 import importlib.util
 import unittest
 
-from test.support import create_empty_file, verbose
+from test.support import filesystem_helper.create_empty_file, verbose
+from test.support import filesystem_helper
 from reprlib import repr as r # Don't shadow builtin repr
 from reprlib import Repr
 from reprlib import recursive_repr
@@ -229,10 +230,10 @@ class LongReprTest(unittest.TestCase):
         # Make the package and subpackage
         shutil.rmtree(self.pkgname, ignore_errors=True)
         os.mkdir(self.pkgname)
-        create_empty_file(os.path.join(self.pkgname, '__init__.py'))
+        filesystem_helper.create_empty_file(os.path.join(self.pkgname, '__init__.py'))
         shutil.rmtree(self.subpkgname, ignore_errors=True)
         os.mkdir(self.subpkgname)
-        create_empty_file(os.path.join(self.subpkgname, '__init__.py'))
+        filesystem_helper.create_empty_file(os.path.join(self.subpkgname, '__init__.py'))
         # Remember where we are
         self.here = os.getcwd()
         sys.path.insert(0, self.here)
@@ -276,7 +277,8 @@ class LongReprTest(unittest.TestCase):
     def test_module(self):
         self.maxDiff = None
         self._check_path_limitations(self.pkgname)
-        create_empty_file(os.path.join(self.subpkgname, self.pkgname + '.py'))
+        filesystem_helper.create_empty_file(os.path.join(self.subpkgname,
+                                                         self.pkgname + '.py'))
         importlib.invalidate_caches()
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import areallylongpackageandmodulenametotestreprtruncation
         module = areallylongpackageandmodulenametotestreprtruncation

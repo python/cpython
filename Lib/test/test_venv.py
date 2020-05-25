@@ -15,8 +15,8 @@ import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
-                          can_symlink, EnvironmentVarGuard, rmtree,
-                          import_module)
+                          EnvironmentVarGuard, import_module)
+from test.support import filesystem_helper
 import unittest
 import venv
 from unittest.mock import patch
@@ -68,7 +68,7 @@ class BaseTest(unittest.TestCase):
             self.cannot_link_exe = False
 
     def tearDown(self):
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
 
     def run_with_capture(self, func, *args, **kwargs):
         with captured_stdout() as output:
@@ -95,7 +95,7 @@ class BasicTest(BaseTest):
         """
         Test the create function with default arguments.
         """
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         self.isdir(self.bindir)
         self.isdir(self.include)
@@ -122,7 +122,7 @@ class BasicTest(BaseTest):
     def test_prompt(self):
         env_name = os.path.split(self.env_dir)[1]
 
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         builder = venv.EnvBuilder()
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
@@ -130,7 +130,7 @@ class BasicTest(BaseTest):
         self.assertEqual(context.prompt, '(%s) ' % env_name)
         self.assertNotIn("prompt = ", data)
 
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         builder = venv.EnvBuilder(prompt='My prompt')
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
@@ -138,7 +138,7 @@ class BasicTest(BaseTest):
         self.assertEqual(context.prompt, '(My prompt) ')
         self.assertIn("prompt = 'My prompt'\n", data)
 
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         builder = venv.EnvBuilder(prompt='.')
         cwd = os.path.basename(os.getcwd())
         self.run_with_capture(builder.create, self.env_dir)
@@ -177,7 +177,7 @@ class BasicTest(BaseTest):
         Test that the prefix values are as expected.
         """
         # check a venv's prefixes
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         envpy = os.path.join(self.env_dir, self.bindir, self.exe)
         cmd = [envpy, '-c', None]
@@ -242,7 +242,7 @@ class BasicTest(BaseTest):
             if os.path.islink(fn) or os.path.isfile(fn):
                 os.remove(fn)
             elif os.path.isdir(fn):
-                rmtree(fn)
+                filesystem_helper.rmtree(fn)
 
     def test_unoverwritable_fails(self):
         #create a file clashing with directories in the env dir
@@ -284,7 +284,7 @@ class BasicTest(BaseTest):
             data = self.get_text_file_contents('pyvenv.cfg')
             self.assertIn('include-system-site-packages = %s\n' % s, data)
 
-    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    @unittest.skipUnless(filesystem_helper.can_symlink(), 'Needs symlinks')
     def test_symlinking(self):
         """
         Test symlinking works as expected
@@ -313,7 +313,7 @@ class BasicTest(BaseTest):
         """
         Test that the sys.executable value is as expected.
         """
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         envpy = os.path.join(os.path.realpath(self.env_dir),
                              self.bindir, self.exe)
@@ -321,12 +321,12 @@ class BasicTest(BaseTest):
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
 
-    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    @unittest.skipUnless(filesystem_helper.can_symlink(), 'Needs symlinks')
     def test_executable_symlinks(self):
         """
         Test that the sys.executable value is as expected.
         """
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         builder = venv.EnvBuilder(clear=True, symlinks=True)
         builder.create(self.env_dir)
         envpy = os.path.join(os.path.realpath(self.env_dir),
@@ -340,7 +340,7 @@ class BasicTest(BaseTest):
         """
         Test handling of Unicode paths
         """
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         env_dir = os.path.join(os.path.realpath(self.env_dir), 'ϼўТλФЙ')
         builder = venv.EnvBuilder(clear=True)
         builder.create(env_dir)
@@ -361,7 +361,7 @@ class BasicTest(BaseTest):
         # multiprocessing.synchronize module. Skip the test if this module
         # cannot be imported.
         import_module('multiprocessing.synchronize')
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         envpy = os.path.join(os.path.realpath(self.env_dir),
                              self.bindir, self.exe)
@@ -377,7 +377,7 @@ class BasicTest(BaseTest):
         bash = shutil.which("bash")
         if bash is None:
             self.skipTest("bash required for this test")
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         builder = venv.EnvBuilder(clear=True)
         builder.create(self.env_dir)
         activate = os.path.join(self.env_dir, self.bindir, "activate")
@@ -393,7 +393,7 @@ class BasicTest(BaseTest):
 
     @unittest.skipUnless(sys.platform == 'darwin', 'only relevant on macOS')
     def test_macos_env(self):
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         builder = venv.EnvBuilder()
         builder.create(self.env_dir)
 
@@ -420,12 +420,12 @@ class EnsurePipTest(BaseTest):
 
 
     def test_no_pip_by_default(self):
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         self.assert_pip_not_installed()
 
     def test_explicit_no_pip(self):
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir, with_pip=False)
         self.assert_pip_not_installed()
 
@@ -440,7 +440,7 @@ class EnsurePipTest(BaseTest):
         self.assertTrue(os.path.exists(os.devnull))
 
     def do_test_with_pip(self, system_site_packages):
-        rmtree(self.env_dir)
+        filesystem_helper.rmtree(self.env_dir)
         with EnvironmentVarGuard() as envvars:
             # pip's cross-version compatibility may trigger deprecation
             # warnings in current versions of Python. Ensure related

@@ -15,6 +15,7 @@ from asyncio import base_events
 from asyncio import constants
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import filesystem_helper
 from test.support.script_helper import assert_python_ok
 from test.support import socket_helper
 
@@ -1990,7 +1991,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     @classmethod
     def tearDownClass(cls):
         constants.SENDFILE_FALLBACK_READBUFFER_SIZE = cls.__old_bufsize
-        support.unlink(support.TESTFN)
+        filesystem_helper.unlink(support.TESTFN)
         super().tearDownClass()
 
     def setUp(self):

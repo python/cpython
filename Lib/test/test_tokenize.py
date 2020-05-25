@@ -1,4 +1,5 @@
 from test import support
+from test.support import filesystem_helper
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
@@ -1265,8 +1266,8 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(consumed_lines, [b'print("#coding=fake")'])
 
     def test_open(self):
-        filename = support.TESTFN + '.py'
-        self.addCleanup(support.unlink, filename)
+        filename = filesystem_helper.TESTFN + '.py'
+        self.addCleanup(filesystem_helper.unlink, filename)
 
         # test coding cookie
         for encoding in ('iso-8859-15', 'utf-8'):
@@ -1548,7 +1549,7 @@ class TestRoundtrip(TestCase):
 
         self.check_roundtrip("if x == 1 : \n"
                              "  print(x)\n")
-        fn = support.findfile("tokenize_tests.txt")
+        fn = filesystem_helper.findfile("tokenize_tests.txt")
         with open(fn, 'rb') as f:
             self.check_roundtrip(f)
         self.check_roundtrip("if x == 1:\n"
@@ -1603,7 +1604,7 @@ class TestRoundtrip(TestCase):
         # pass the '-ucpu' option to process the full directory.
 
         import glob, random
-        fn = support.findfile("tokenize_tests.txt")
+        fn = filesystem_helper.findfile("tokenize_tests.txt")
         tempdir = os.path.dirname(fn) or os.curdir
         testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
 

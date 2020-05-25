@@ -3,6 +3,7 @@
 import os
 import unittest
 from test import support
+from test.support import filesystem_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 from test.test_tools import scriptsdir, skip_if_missing
@@ -13,8 +14,8 @@ class MD5SumTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.script = os.path.join(scriptsdir, 'md5sum.py')
-        os.mkdir(support.TESTFN)
-        cls.fodder = os.path.join(support.TESTFN, 'md5sum.fodder')
+        os.mkdir(filesystem_helper.TESTFN)
+        cls.fodder = os.path.join(filesystem_helper.TESTFN, 'md5sum.fodder')
         with open(cls.fodder, 'wb') as f:
             f.write(b'md5sum\r\ntest file\r\n')
         cls.fodder_md5 = b'd38dae2eb1ab346a292ef6850f9e1a0d'
@@ -22,7 +23,7 @@ class MD5SumTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        support.rmtree(support.TESTFN)
+        filesystem_helper.rmtree(filesystem_helper.TESTFN)
 
     def test_noargs(self):
         rc, out, err = assert_python_ok(self.script)

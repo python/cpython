@@ -6,12 +6,13 @@ import struct
 import sys
 import unittest
 from multiprocessing import Process
-from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
+from test.support import (verbose, run_unittest, import_module,
                           cpython_only)
+from test.support import filesystem_helper
+
 
 # Skip test if no fcntl module.
 fcntl = import_module('fcntl')
-
 
 
 def get_lockdata():
@@ -74,11 +75,11 @@ class TestFcntl(unittest.TestCase):
     def tearDown(self):
         if self.f and not self.f.closed:
             self.f.close()
-        unlink(TESTFN)
+        filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def test_fcntl_fileno(self):
         # the example from the library docs
-        self.f = open(TESTFN, 'wb')
+        self.f = open(filesystem_helper.TESTFN, 'wb')
         rv = fcntl.fcntl(self.f.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
         if verbose:
             print('Status from fcntl with O_NONBLOCK: ', rv)
@@ -89,7 +90,7 @@ class TestFcntl(unittest.TestCase):
 
     def test_fcntl_file_descriptor(self):
         # again, but pass the file rather than numeric descriptor
-        self.f = open(TESTFN, 'wb')
+        self.f = open(filesystem_helper.TESTFN, 'wb')
         rv = fcntl.fcntl(self.f, fcntl.F_SETFL, os.O_NONBLOCK)
         if verbose:
             print('Status from fcntl with O_NONBLOCK: ', rv)
@@ -133,7 +134,8 @@ class TestFcntl(unittest.TestCase):
             flags = fcntl.DN_MULTISHOT
         except AttributeError:
             self.skipTest("F_NOTIFY or DN_MULTISHOT unavailable")
-        fd = os.open(os.path.dirname(os.path.abspath(TESTFN)), os.O_RDONLY)
+        fd = os.open(os.path.dirname(os.path.abspath(
+                                     filesystem_helper.TESTFN)), os.O_RDONLY)
         try:
             fcntl.fcntl(fd, cmd, flags)
         finally:
@@ -141,7 +143,7 @@ class TestFcntl(unittest.TestCase):
 
     def test_flock(self):
         # Solaris needs readable file for shared lock
-        self.f = open(TESTFN, 'wb+')
+        self.f = open(filesystem_helper.TESTFN, 'wb+')
         fileno = self.f.fileno()
         fcntl.flock(fileno, fcntl.LOCK_SH)
         fcntl.flock(fileno, fcntl.LOCK_UN)
@@ -155,10 +157,11 @@ class TestFcntl(unittest.TestCase):
 
     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
     def test_lockf_exclusive(self):
-        self.f = open(TESTFN, 'wb+')
+        self.f = open(filesystem_helper.TESTFN, 'wb+')
         cmd = fcntl.LOCK_EX | fcntl.LOCK_NB
         fcntl.lockf(self.f, cmd)
-        p = Process(target=try_lockf_on_other_process_fail, args=(TESTFN, cmd))
+        p = Process(target=try_lockf_on_other_process_fail,
+                    args=(filesystem_helper.TESTFN, cmd))
         p.start()
         p.join()
         fcntl.lockf(self.f, fcntl.LOCK_UN)
@@ -166,10 +169,11 @@ class TestFcntl(unittest.TestCase):
 
     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
     def test_lockf_share(self):
-        self.f = open(TESTFN, 'wb+')
+        self.f = open(filesystem_helper.TESTFN, 'wb+')
         cmd = fcntl.LOCK_SH | fcntl.LOCK_NB
         fcntl.lockf(self.f, cmd)
-        p = Process(target=try_lockf_on_other_process, args=(TESTFN, cmd))
+        p = Process(target=try_lockf_on_other_process,
+                    args=(filesystem_helper.TESTFN, cmd))
         p.start()
         p.join()
         fcntl.lockf(self.f, fcntl.LOCK_UN)
@@ -183,8 +187,8 @@ class TestFcntl(unittest.TestCase):
 
     @unittest.skipIf(sys.platform != 'darwin', "F_GETPATH is only available on macos")
     def test_fcntl_f_getpath(self):
-        self.f = open(TESTFN, 'wb')
-        expected = os.path.abspath(TESTFN).encode('utf-8')
+        self.f = open(filesystem_helper.TESTFN, 'wb')
+        expected = os.path.abspath(filesystem_helper.TESTFN).encode('utf-8')
         res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(expected)))
         self.assertEqual(expected, res)
 

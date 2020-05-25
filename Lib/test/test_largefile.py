@@ -8,26 +8,27 @@ import unittest
 import socket
 import shutil
 import threading
-from test.support import TESTFN, requires, unlink, bigmemtest
+from test.support import filesystem_helper.TESTFN, requires, unlink, bigmemtest
 from test.support import SHORT_TIMEOUT
+from test.support import filesystem_helper
 from test.support import socket_helper
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
 # size of file to create (>2 GiB; 2 GiB == 2,147,483,648 bytes)
 size = 2_500_000_000
-TESTFN2 = TESTFN + '2'
+TESTFN2 = filesystem_helper.TESTFN + '2'
 
 
 class LargeFileTest:
 
     def setUp(self):
-        if os.path.exists(TESTFN):
+        if os.path.exists(filesystem_helper.TESTFN):
             mode = 'r+b'
         else:
             mode = 'w+b'
 
-        with self.open(TESTFN, mode) as f:
+        with self.open(filesystem_helper.TESTFN, mode) as f:
             current_size = os.fstat(f.fileno())[stat.ST_SIZE]
             if current_size == size+1:
                 return
@@ -43,13 +44,12 @@ class LargeFileTest:
 
     @classmethod
     def tearDownClass(cls):
-        with cls.open(TESTFN, 'wb'):
+        with cls.open(filesystem_helper.TESTFN, 'wb'):
             pass
-        if not os.stat(TESTFN)[stat.ST_SIZE] == 0:
+        if not os.stat(filesystem_helper.TESTFN)[stat.ST_SIZE] == 0:
             raise cls.failureException('File was not truncated by opening '
                                        'with mode "wb"')
-        unlink(TESTFN2)
-
+        unlink(TESTFN2) 
 
 class TestFileMethods(LargeFileTest):
     """Test that each file function works as expected for large
@@ -61,15 +61,15 @@ class TestFileMethods(LargeFileTest):
     @bigmemtest(size=size, memuse=2, dry_run=False)
     def test_large_read(self, _size):
         # bpo-24658: Test that a read greater than 2GB does not fail.
-        with self.open(TESTFN, "rb") as f:
+        with self.open(filesystem_helper.TESTFN, "rb") as f:
             self.assertEqual(len(f.read()), size + 1)
             self.assertEqual(f.tell(), size + 1)
 
     def test_osstat(self):
-        self.assertEqual(os.stat(TESTFN)[stat.ST_SIZE], size+1)
+        self.assertEqual(os.stat(filesystem_helper.TESTFN)[stat.ST_SIZE], size+1)
 
     def test_seek_read(self):
-        with self.open(TESTFN, 'rb') as f:
+        with self.open(filesystem_helper.TESTFN, 'rb') as f:
             self.assertEqual(f.tell(), 0)
             self.assertEqual(f.read(1), b'z')
             self.assertEqual(f.tell(), 1)
@@ -100,7 +100,7 @@ class TestFileMethods(LargeFileTest):
             self.assertEqual(f.tell(), 1)
 
     def test_lseek(self):
-        with self.open(TESTFN, 'rb') as f:
+        with self.open(filesystem_helper.TESTFN, 'rb') as f:
             self.assertEqual(os.lseek(f.fileno(), 0, 0), 0)
             self.assertEqual(os.lseek(f.fileno(), 42, 0), 42)
             self.assertEqual(os.lseek(f.fileno(), 42, 1), 84)
@@ -113,7 +113,7 @@ class TestFileMethods(LargeFileTest):
             self.assertEqual(f.read(1), b'a')
 
     def test_truncate(self):
-        with self.open(TESTFN, 'r+b') as f:
+        with self.open(filesystem_helper.TESTFN, 'r+b') as f:
             if not hasattr(f, 'truncate'):
                 raise unittest.SkipTest("open().truncate() not available "
                                         "on this system")
@@ -147,7 +147,7 @@ class TestFileMethods(LargeFileTest):
         # Issue #5016; seekable() can return False when the current position
         # is negative when truncated to an int.
         for pos in (2**31-1, 2**31, 2**31+1):
-            with self.open(TESTFN, 'rb') as f:
+            with self.open(filesystem_helper.TESTFN, 'rb') as f:
                 f.seek(pos)
                 self.assertTrue(f.seekable())
 
@@ -169,12 +169,12 @@ class TestCopyfile(LargeFileTest, unittest.TestCase):
 
     # Exact required disk space would be (size * 2), but let's give it a
     # bit more tolerance.
-    @skip_no_disk_space(TESTFN, size * 2.5)
+    @skip_no_disk_space(filesystem_helper.TESTFN, size * 2.5)
     def test_it(self):
         # Internally shutil.copyfile() can use "fast copy" methods like
         # os.sendfile().
-        size = os.path.getsize(TESTFN)
-        shutil.copyfile(TESTFN, TESTFN2)
+        size = os.path.getsize(filesystem_helper.TESTFN)
+        shutil.copyfile(filesystem_helper.TESTFN, TESTFN2)
         self.assertEqual(os.path.getsize(TESTFN2), size)
         with open(TESTFN2, 'rb') as f:
             self.assertEqual(f.read(5), b'z\x00\x00\x00\x00')
@@ -218,17 +218,17 @@ class TestSocketSendfile(LargeFileTest, unittest.TestCase):
 
     # Exact required disk space would be (size * 2), but let's give it a
     # bit more tolerance.
-    @skip_no_disk_space(TESTFN, size * 2.5)
+    @skip_no_disk_space(filesystem_helper.TESTFN, size * 2.5)
     def test_it(self):
         port = socket_helper.find_unused_port()
         with socket.create_server(("", port)) as sock:
             self.tcp_server(sock)
             with socket.create_connection(("127.0.0.1", port)) as client:
-                with open(TESTFN, 'rb') as f:
+                with open(filesystem_helper.TESTFN, 'rb') as f:
                     client.sendfile(f)
         self.tearDown()
 
-        size = os.path.getsize(TESTFN)
+        size = os.path.getsize(filesystem_helper.TESTFN)
         self.assertEqual(os.path.getsize(TESTFN2), size)
         with open(TESTFN2, 'rb') as f:
             self.assertEqual(f.read(5), b'z\x00\x00\x00\x00')
@@ -257,7 +257,7 @@ def setUpModule():
         # Only run if the current filesystem supports large files.
         # (Skip this test on Windows, since we now always support
         # large files.)
-        f = open(TESTFN, 'wb', buffering=0)
+        f = open(filesystem_helper.TESTFN, 'wb', buffering=0)
         try:
             # 2**31 == 2147483648
             f.seek(2147483649)
@@ -269,7 +269,7 @@ def setUpModule():
                                     "largefile support")
         finally:
             f.close()
-            unlink(TESTFN)
+            unlink(filesystem_helper.TESTFN)
 
 
 class CLargeFileTest(TestFileMethods, unittest.TestCase):
@@ -281,7 +281,7 @@ class PyLargeFileTest(TestFileMethods, unittest.TestCase):
 
 
 def tearDownModule():
-    unlink(TESTFN)
+    unlink(filesystem_helper.TESTFN)
     unlink(TESTFN2)
 
 

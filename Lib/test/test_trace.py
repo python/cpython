@@ -1,6 +1,7 @@
 import os
 import sys
-from test.support import TESTFN, rmtree, unlink, captured_stdout
+from test.support import filesystem_helper
+from test.support import captured_stdout
 from test.support.script_helper import assert_python_ok, assert_python_failure
 import textwrap
 import unittest
@@ -352,15 +353,16 @@ class TestCoverage(unittest.TestCase):
         self.addCleanup(sys.settrace, sys.gettrace())
 
     def tearDown(self):
-        rmtree(TESTFN)
-        unlink(TESTFN)
+        filesystem_helper.rmtree(filesystem_helper.TESTFN)
+        filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def _coverage(self, tracer,
                   cmd='import test.support, test.test_pprint;'
                       'test.support.run_unittest(test.test_pprint.QueryTestCase)'):
         tracer.run(cmd)
         r = tracer.results()
-        r.write_results(show_missing=True, summary=True, coverdir=TESTFN)
+        r.write_results(show_missing=True, summary=True,
+                        coverdir=filesystem_helper.TESTFN)
 
     def test_coverage(self):
         tracer = trace.Trace(trace=0, count=1)
@@ -369,7 +371,7 @@ class TestCoverage(unittest.TestCase):
         stdout = stdout.getvalue()
         self.assertIn("pprint.py", stdout)
         self.assertIn("case.py", stdout)   # from unittest
-        files = os.listdir(TESTFN)
+        files = os.listdir(filesystem_helper.TESTFN)
         self.assertIn("pprint.cover", files)
         self.assertIn("unittest.case.cover", files)
 
@@ -381,8 +383,8 @@ class TestCoverage(unittest.TestCase):
                              libpath], trace=0, count=1)
         with captured_stdout() as stdout:
             self._coverage(tracer)
-        if os.path.exists(TESTFN):
-            files = os.listdir(TESTFN)
+        if os.path.exists(filesystem_helper.TESTFN):
+            files = os.listdir(filesystem_helper.TESTFN)
             self.assertEqual(files, ['_importlib.cover'])  # Ignore __import__
 
     def test_issue9936(self):
@@ -436,15 +438,15 @@ class TestCoverageCommandLineOutput(unittest.TestCase):
             '''))
 
     def tearDown(self):
-        unlink(self.codefile)
-        unlink(self.coverfile)
+        filesystem_helper.unlink(self.codefile)
+        filesystem_helper.unlink(self.coverfile)
 
     def test_cover_files_written_no_highlight(self):
         # Test also that the cover file for the trace module is not created
         # (issue #34171).
         tracedir = os.path.dirname(os.path.abspath(trace.__file__))
         tracecoverpath = os.path.join(tracedir, 'trace.cover')
-        unlink(tracecoverpath)
+        filesystem_helper.unlink(tracecoverpath)
 
         argv = '-m trace --count'.split() + [self.codefile]
         status, stdout, stderr = assert_python_ok(*argv)
@@ -485,28 +487,30 @@ class TestCommandLine(unittest.TestCase):
             self.assertIn(message, stderr)
 
     def test_listfuncs_flag_success(self):
-        with open(TESTFN, 'w') as fd:
-            self.addCleanup(unlink, TESTFN)
+        with open(filesystem_helper.TESTFN, 'w') as fd:
+            self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
             fd.write("a = 1\n")
-            status, stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
+            status, stdout, stderr = assert_python_ok('-m', 'trace', '-l',
+                                                      filesystem_helper.TESTFN)
             self.assertIn(b'functions called:', stdout)
 
     def test_sys_argv_list(self):
-        with open(TESTFN, 'w') as fd:
-            self.addCleanup(unlink, TESTFN)
+        with open(filesystem_helper.TESTFN, 'w') as fd:
+            self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
             fd.write("import sys\n")
             fd.write("print(type(sys.argv))\n")
 
-        status, direct_stdout, stderr = assert_python_ok(TESTFN)
-        status, trace_stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
+        status, direct_stdout, stderr = assert_python_ok(filesystem_helper.TESTFN)
+        status, trace_stdout, stderr = assert_python_ok('-m', 'trace', '-l',
+                                                        filesystem_helper.TESTFN)
         self.assertIn(direct_stdout.strip(), trace_stdout)
 
     def test_count_and_summary(self):
-        filename = f'{TESTFN}.py'
-        coverfilename = f'{TESTFN}.cover'
+        filename = f'{filesystem_helper.TESTFN}.py'
+        coverfilename = f'{filesystem_helper.TESTFN}.cover'
         with open(filename, 'w') as fd:
-            self.addCleanup(unlink, filename)
-            self.addCleanup(unlink, coverfilename)
+            self.addCleanup(filesystem_helper.unlink, filename)
+            self.addCleanup(filesystem_helper.unlink, coverfilename)
             fd.write(textwrap.dedent("""\
                 x = 1
                 y = 2
@@ -521,7 +525,8 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.decode()
         self.assertEqual(status, 0)
         self.assertIn('lines   cov%   module   (path)', stdout)
-        self.assertIn(f'6   100%   {TESTFN}   ({filename})', stdout)
+        self.assertIn(f'6   100%   {filesystem_helper.TESTFN}   ({filename})',
+                      stdout)
 
     def test_run_as_module(self):
         assert_python_ok('-m', 'trace', '-l', '--module', 'timeit', '-n', '1')

@@ -104,7 +104,7 @@ class SendfileBase:
 
     @classmethod
     def tearDownClass(cls):
-        support.unlink(support.TESTFN)
+        filesystem_helper.unlink(support.TESTFN)
         super().tearDownClass()
 
     def setUp(self):

@@ -10,8 +10,8 @@ import py_compile
 import warnings
 import pathlib
 from test.support import (
-    forget, make_legacy_pyc, unload, verbose, no_tracing,
-    create_empty_file, temp_dir)
+    forget, make_legacy_pyc, unload, verbose, no_tracing)
+from test.support import filesystem_helper
 from test.support.script_helper import make_script, make_zip_script
 
 
@@ -214,7 +214,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         if namespace:
             return None
         pkg_fname = os.path.join(pkg_dir, "__init__.py")
-        create_empty_file(pkg_fname)
+        filesystem_helper.create_empty_file(pkg_fname)
         return pkg_fname
 
     def _make_pkg(self, source, depth, mod_base="runpy_test",
@@ -374,7 +374,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             module_dir = os.path.join(module_dir, pkg_name)
         # Add sibling module
         sibling_fname = os.path.join(module_dir, "sibling.py")
-        create_empty_file(sibling_fname)
+        filesystem_helper.create_empty_file(sibling_fname)
         if verbose > 1: print("  Added sibling module:", sibling_fname)
         # Add nephew module
         uncle_dir = os.path.join(parent_dir, "uncle")
@@ -384,7 +384,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         self._add_pkg_dir(cousin_dir)
         if verbose > 1: print("  Added cousin package:", cousin_dir)
         nephew_fname = os.path.join(cousin_dir, "nephew.py")
-        create_empty_file(nephew_fname)
+        filesystem_helper.create_empty_file(nephew_fname)
         if verbose > 1: print("  Added nephew module:", nephew_fname)
 
     def _check_relative_imports(self, depth, run_name=None):
@@ -647,14 +647,14 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         self.assertRaisesRegex(ImportError, msg, run_path, script_name)
 
     def test_basic_script(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             mod_name = 'script'
             script_name = self._make_test_script(script_dir, mod_name)
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 
     def test_basic_script_with_path_object(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             mod_name = 'script'
             script_name = pathlib.Path(self._make_test_script(script_dir,
                                                               mod_name))
@@ -662,7 +662,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                                script_name, expect_spec=False)
 
     def test_basic_script_no_suffix(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             mod_name = 'script'
             script_name = self._make_test_script(script_dir, mod_name,
                                                  omit_suffix=True)
@@ -670,7 +670,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                                script_name, expect_spec=False)
 
     def test_script_compiled(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             mod_name = 'script'
             script_name = self._make_test_script(script_dir, mod_name)
             compiled_name = py_compile.compile(script_name, doraise=True)
@@ -679,14 +679,14 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                                compiled_name, expect_spec=False)
 
     def test_directory(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
             self._check_script(script_dir, "<run_path>", script_name,
                                script_dir, mod_name=mod_name)
 
     def test_directory_compiled(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
             compiled_name = py_compile.compile(script_name, doraise=True)
@@ -697,14 +697,14 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                                    script_dir, mod_name=mod_name)
 
     def test_directory_error(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             mod_name = 'not_main'
             script_name = self._make_test_script(script_dir, mod_name)
             msg = "can't find '__main__' module in %r" % script_dir
             self._check_import_error(script_dir, msg)
 
     def test_zipfile(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
             zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
@@ -712,7 +712,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                                mod_name=mod_name, check_loader=False)
 
     def test_zipfile_compiled(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
             compiled_name = py_compile.compile(script_name, doraise=True)
@@ -722,7 +722,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                                mod_name=mod_name, check_loader=False)
 
     def test_zipfile_error(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             mod_name = 'not_main'
             script_name = self._make_test_script(script_dir, mod_name)
             zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
@@ -731,7 +731,8 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
 
     @no_tracing
     def test_main_recursion_error(self):
-        with temp_dir() as script_dir, temp_dir() as dummy_dir:
+        with filesystem_helper.temp_dir() as script_dir,
+             filesystem_helper.temp_dir() as dummy_dir:
             mod_name = '__main__'
             source = ("import runpy\n"
                       "runpy.run_path(%r)\n") % dummy_dir
@@ -741,7 +742,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self.assertRaisesRegex(RecursionError, msg, run_path, zip_name)
 
     def test_encoding(self):
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             filename = os.path.join(script_dir, 'script.py')
             with open(filename, 'w', encoding='latin1') as f:
                 f.write("""

@@ -4,8 +4,7 @@ import shutil
 import sys
 import unittest
 
-from test.support import (TESTFN, skip_unless_symlink,
-                          can_symlink, create_empty_file, change_cwd)
+from test.support import filesystem_helper
 
 
 class GlobTests(unittest.TestCase):
@@ -21,10 +20,10 @@ class GlobTests(unittest.TestCase):
         base, file = os.path.split(filename)
         if not os.path.exists(base):
             os.makedirs(base)
-        create_empty_file(filename)
+        filesystem_helper.create_empty_file(filename)
 
     def setUp(self):
-        self.tempdir = TESTFN + "_dir"
+        self.tempdir = filesystem_helper.TESTFN + "_dir"
         self.mktemp('a', 'D')
         self.mktemp('aab', 'F')
         self.mktemp('.aa', 'G')
@@ -34,7 +33,7 @@ class GlobTests(unittest.TestCase):
         self.mktemp('EF')
         self.mktemp('a', 'bcd', 'EF')
         self.mktemp('a', 'bcd', 'efg', 'ha')
-        if can_symlink():
+        if filesystem_helper.can_symlink():
             os.symlink(self.norm('broken'), self.norm('sym1'))
             os.symlink('broken', self.norm('sym2'))
             os.symlink(os.path.join('a', 'bcd'), self.norm('sym3'))
@@ -141,7 +140,7 @@ class GlobTests(unittest.TestCase):
                        os.fsencode(self.norm('aab') + os.sep)},
                       ])
 
-    @skip_unless_symlink
+    @filesystem_helper.skip_unless_symlink
     def test_glob_symlinks(self):
         eq = self.assertSequencesEqual_noorder
         eq(self.glob('sym3'), [self.norm('sym3')])
@@ -153,7 +152,7 @@ class GlobTests(unittest.TestCase):
            [self.norm('aaa', 'zzzF'),
             self.norm('aab', 'F'), self.norm('sym3', 'EF')])
 
-    @skip_unless_symlink
+    @filesystem_helper.skip_unless_symlink
     def test_glob_broken_symlinks(self):
         eq = self.assertSequencesEqual_noorder
         eq(self.glob('sym*'), [self.norm('sym1'), self.norm('sym2'),
@@ -210,7 +209,7 @@ class GlobTests(unittest.TestCase):
                 ('aaa',), ('aaa', 'zzzF'),
                 ('aab',), ('aab', 'F'),
                ]
-        if can_symlink():
+        if filesystem_helper.can_symlink():
             full += [('sym1',), ('sym2',),
                      ('sym3',),
                      ('sym3', 'EF'),
@@ -222,7 +221,7 @@ class GlobTests(unittest.TestCase):
             self.joins((os.curdir, ''), *((os.curdir,) + i for i in full)))
         dirs = [('a', ''), ('a', 'bcd', ''), ('a', 'bcd', 'efg', ''),
                 ('aaa', ''), ('aab', '')]
-        if can_symlink():
+        if filesystem_helper.can_symlink():
             dirs += [('sym3', ''), ('sym3', 'efg', '')]
         eq(self.rglob('**', ''), self.joins(('',), *dirs))
 
@@ -231,11 +230,11 @@ class GlobTests(unittest.TestCase):
             ('a', 'bcd', 'efg'), ('a', 'bcd', 'efg', 'ha')))
         eq(self.rglob('a**'), self.joins(('a',), ('aaa',), ('aab',)))
         expect = [('a', 'bcd', 'EF'), ('EF',)]
-        if can_symlink():
+        if filesystem_helper.can_symlink():
             expect += [('sym3', 'EF')]
         eq(self.rglob('**', 'EF'), self.joins(*expect))
         expect = [('a', 'bcd', 'EF'), ('aaa', 'zzzF'), ('aab', 'F'), ('EF',)]
-        if can_symlink():
+        if filesystem_helper.can_symlink():
             expect += [('sym3', 'EF')]
         eq(self.rglob('**', '*F'), self.joins(*expect))
         eq(self.rglob('**', '*F', ''), [])
@@ -243,7 +242,7 @@ class GlobTests(unittest.TestCase):
             ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg')))
         eq(self.rglob('a', '**', 'bcd'), self.joins(('a', 'bcd')))
 
-        with change_cwd(self.tempdir):
+        with filesystem_helper.change_cwd(self.tempdir):
             join = os.path.join
             eq(glob.glob('**', recursive=True), [join(*i) for i in full])
             eq(glob.glob(join('**', ''), recursive=True),
@@ -260,7 +259,7 @@ class GlobTests(unittest.TestCase):
                 [join('aaa', 'zzzF')])
             eq(glob.glob('**zz*F', recursive=True), [])
             expect = [join('a', 'bcd', 'EF'), 'EF']
-            if can_symlink():
+            if filesystem_helper.can_symlink():
                 expect += [join('sym3', 'EF')]
             eq(glob.glob(join('**', 'EF'), recursive=True), expect)
 
@@ -282,16 +281,16 @@ class GlobTests(unittest.TestCase):
                 self.assertEqual(next(it), p)
 
 
-@skip_unless_symlink
+@filesystem_helper.skip_unless_symlink
 class SymlinkLoopGlobTests(unittest.TestCase):
 
     def test_selflink(self):
-        tempdir = TESTFN + "_dir"
+        tempdir = filesystem_helper.TESTFN + "_dir"
         os.makedirs(tempdir)
         self.addCleanup(shutil.rmtree, tempdir)
-        with change_cwd(tempdir):
+        with filesystem_helper.change_cwd(tempdir):
             os.makedirs('dir')
-            create_empty_file(os.path.join('dir', 'file'))
+            filesystem_helper.create_empty_file(os.path.join('dir', 'file'))
             os.symlink(os.curdir, os.path.join('dir', 'link'))
 
             results = glob.glob('**', recursive=True)

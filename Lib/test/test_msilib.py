@@ -1,13 +1,14 @@
 """ Test suite for the code in msilib """
 import os
 import unittest
-from test.support import TESTFN, import_module, unlink
+from test.support import import_module
+from test.support import filesystem_helper
 msilib = import_module('msilib')
 import msilib.schema
 
 
 def init_database():
-    path = TESTFN + '.msi'
+    path = filesystem_helper.TESTFN + '.msi'
     db = msilib.init_database(
         path,
         msilib.schema,
@@ -40,7 +41,7 @@ class MsiDatabaseTestCase(unittest.TestCase):
                 'Manufacturer', 'ProductLanguage',
             ]
         )
-        self.addCleanup(unlink, db_path)
+        self.addCleanup(filesystem_helper.unlink, db_path)
 
     def test_summaryinfo_getproperty_issue1104(self):
         db, db_path = init_database()
@@ -63,7 +64,7 @@ class MsiDatabaseTestCase(unittest.TestCase):
         finally:
             db = None
             sum_info = None
-            os.unlink(db_path)
+            os.filesystem_helper.unlink(db_path)
 
     def test_database_open_failed(self):
         with self.assertRaises(msilib.MSIError) as cm:
@@ -71,7 +72,7 @@ class MsiDatabaseTestCase(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'open failed')
 
     def test_database_create_failed(self):
-        db_path = os.path.join(TESTFN, 'test.msi')
+        db_path = os.path.join(filesystem_helper.TESTFN, 'test.msi')
         with self.assertRaises(msilib.MSIError) as cm:
             msilib.OpenDatabase(db_path, msilib.MSIDBOPEN_CREATE)
         self.assertEqual(str(cm.exception), 'create failed')
@@ -81,22 +82,23 @@ class MsiDatabaseTestCase(unittest.TestCase):
         summary = db.GetSummaryInformation(0)
         self.assertIsNone(summary.GetProperty(msilib.PID_SECURITY))
         db.Close()
-        self.addCleanup(unlink, db_path)
+        self.addCleanup(filesystem_helper.unlink, db_path)
 
     def test_directory_start_component_keyfile(self):
         db, db_path = init_database()
-        self.addCleanup(unlink, db_path)
+        self.addCleanup(filesystem_helper.unlink, db_path)
         self.addCleanup(db.Close)
         self.addCleanup(msilib._directories.clear)
         feature = msilib.Feature(db, 0, 'Feature', 'A feature', 'Python')
         cab = msilib.CAB('CAB')
-        dir = msilib.Directory(db, cab, None, TESTFN, 'TARGETDIR',
+        dir = msilib.Directory(db, cab, None,
+                               filesystem_helper.TESTFN, 'TARGETDIR',
                                'SourceDir', 0)
         dir.start_component(None, feature, None, 'keyfile')
 
     def test_getproperty_uninitialized_var(self):
         db, db_path = init_database()
-        self.addCleanup(unlink, db_path)
+        self.addCleanup(filesystem_helper.unlink, db_path)
         self.addCleanup(db.Close)
         si = db.GetSummaryInformation(0)
         with self.assertRaises(msilib.MSIError):

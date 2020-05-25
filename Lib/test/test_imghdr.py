@@ -4,7 +4,8 @@ import os
 import pathlib
 import unittest
 import warnings
-from test.support import findfile, TESTFN, unlink
+from test.support import filesystem_helper
+
 
 TEST_FILES = (
     ('python.png', 'png'),
@@ -32,16 +33,17 @@ class UnseekableIO(io.FileIO):
 class TestImghdr(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.testfile = findfile('python.png', subdir='imghdrdata')
+        cls.testfile = filesystem_helper.findfile('python.png',
+                                                  subdir='imghdrdata')
         with open(cls.testfile, 'rb') as stream:
             cls.testdata = stream.read()
 
     def tearDown(self):
-        unlink(TESTFN)
+        filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def test_data(self):
         for filename, expected in TEST_FILES:
-            filename = findfile(filename, subdir='imghdrdata')
+            filename = filesystem_helper.findfile(filename, subdir='imghdrdata')
             self.assertEqual(imghdr.what(filename), expected)
             with open(filename, 'rb') as stream:
                 self.assertEqual(imghdr.what(stream), expected)
@@ -53,7 +55,8 @@ class TestImghdr(unittest.TestCase):
     def test_pathlike_filename(self):
         for filename, expected in TEST_FILES:
             with self.subTest(filename=filename):
-                filename = findfile(filename, subdir='imghdrdata')
+                filename = filesystem_helper.findfile(filename,
+                                                      subdir='imghdrdata')
                 self.assertEqual(imghdr.what(pathlib.Path(filename)), expected)
 
     def test_register_test(self):
@@ -65,11 +68,11 @@ class TestImghdr(unittest.TestCase):
         self.assertEqual(imghdr.what(None, b'eggs'), 'ham')
 
     def test_file_pos(self):
-        with open(TESTFN, 'wb') as stream:
+        with open(filesystem_helper.TESTFN, 'wb') as stream:
             stream.write(b'ababagalamaga')
             pos = stream.tell()
             stream.write(self.testdata)
-        with open(TESTFN, 'rb') as stream:
+        with open(filesystem_helper.TESTFN, 'rb') as stream:
             stream.seek(pos)
             self.assertEqual(imghdr.what(stream), 'png')
             self.assertEqual(stream.tell(), pos)
@@ -100,7 +103,8 @@ class TestImghdr(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BytesWarning)
             for filename, _ in TEST_FILES:
-                filename = findfile(filename, subdir='imghdrdata')
+                filename = filesystem_helper.findfile(filename,
+                                                      subdir='imghdrdata')
                 with open(filename, 'rb') as stream:
                     data = stream.read().decode('latin1')
                 with self.assertRaises(TypeError):
@@ -123,14 +127,14 @@ class TestImghdr(unittest.TestCase):
             imghdr.what(stream)
 
     def test_unseekable(self):
-        with open(TESTFN, 'wb') as stream:
+        with open(filesystem_helper.TESTFN, 'wb') as stream:
             stream.write(self.testdata)
-        with UnseekableIO(TESTFN, 'rb') as stream:
+        with UnseekableIO(filesystem_helper.TESTFN, 'rb') as stream:
             with self.assertRaises(io.UnsupportedOperation):
                 imghdr.what(stream)
 
     def test_output_stream(self):
-        with open(TESTFN, 'wb') as stream:
+        with open(filesystem_helper.TESTFN, 'wb') as stream:
             stream.write(self.testdata)
             stream.seek(0)
             with self.assertRaises(OSError) as cm:

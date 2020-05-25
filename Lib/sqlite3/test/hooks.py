@@ -24,7 +24,8 @@
 import unittest
 import sqlite3 as sqlite
 
-from test.support import TESTFN, unlink
+from test.support import filesystem_helper
+
 
 class CollationTests(unittest.TestCase):
     def CheckCreateCollationNotString(self):
@@ -257,9 +258,9 @@ class TraceCallbackTests(unittest.TestCase):
 
         queries = ["create table foo(x)",
                    "insert into foo(x) values(1)"]
-        self.addCleanup(unlink, TESTFN)
-        con1 = sqlite.connect(TESTFN, isolation_level=None)
-        con2 = sqlite.connect(TESTFN)
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
+        con1 = sqlite.connect(filesystem_helper.TESTFN, isolation_level=None)
+        con2 = sqlite.connect(filesystem_helper.TESTFN)
         con1.set_trace_callback(trace)
         cur = con1.cursor()
         cur.execute(queries[0])

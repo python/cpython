@@ -13,7 +13,8 @@ from distutils.archive_util import (check_archive_formats, make_tarball,
                                     ARCHIVE_FORMATS)
 from distutils.spawn import find_executable, spawn
 from distutils.tests import support
-from test.support import check_warnings, run_unittest, patch, change_cwd
+from test.support import check_warnings, run_unittest, patch
+from test.support import filesystem_helper
 
 try:
     import grp
@@ -109,7 +110,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         base_name = os.path.join(tmpdir2, target_name)
 
         # working with relative paths to avoid tar warnings
-        with change_cwd(tmpdir):
+        with filesystem_helper.change_cwd(tmpdir):
             make_tarball(splitdrive(base_name)[1], 'dist', **kwargs)
 
         # check if the compressed tarball was created
@@ -238,7 +239,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         # creating something to tar
         tmpdir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        with change_cwd(tmpdir):
+        with filesystem_helper.change_cwd(tmpdir):
             make_zipfile(base_name, 'dist')
 
         # check if the compressed tarball was created
@@ -263,7 +264,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         # create something to tar and compress
         tmpdir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        with change_cwd(tmpdir):
+        with filesystem_helper.change_cwd(tmpdir):
             make_zipfile(base_name, 'dist')
 
         tarball = base_name + '.zip'

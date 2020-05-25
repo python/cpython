@@ -363,7 +363,7 @@ class BaseTestCase(unittest.TestCase):
         self.testdir = os.path.realpath(os.path.dirname(__file__))
 
         self.tmptestdir = tempfile.mkdtemp()
-        self.addCleanup(support.rmtree, self.tmptestdir)
+        self.addCleanup(filesystem_helper.rmtree, self.tmptestdir)
 
     def create_test(self, name=None, code=None):
         if not name:

@@ -1,5 +1,6 @@
 import difflib
-from test.support import run_unittest, findfile
+from test.support import run_unittest
+from test.support import filesystem_helper
 import unittest
 import doctest
 import sys
@@ -241,7 +242,8 @@ class TestSFpatches(unittest.TestCase):
         #with open('test_difflib_expect.html','w') as fp:
         #    fp.write(actual)
 
-        with open(findfile('test_difflib_expect.html')) as fp:
+        with open(filesystem_helper.findfile(
+                  'test_difflib_expect.html')) as fp:
             self.assertEqual(actual, fp.read())
 
     def test_recursion_limit(self):

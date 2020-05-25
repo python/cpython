@@ -3,12 +3,14 @@ import os
 import string
 import unittest
 import shutil
-from test.support import TESTFN, run_unittest, unlink, reap_children
+from test.support import run_unittest, unlink, reap_children
+from test.support import filesystem_helper
+
 
 if os.name != 'posix':
     raise unittest.SkipTest('pipes module only works on posix')
 
-TESTFN2 = TESTFN + "2"
+TESTFN2 = filesystem_helper.TESTFN + "2"
 
 # tr a-z A-Z is not portable, so make the ranges explicit
 s_command = 'tr %s %s' % (string.ascii_lowercase, string.ascii_uppercase)

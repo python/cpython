@@ -109,7 +109,7 @@ class WindowsConsoleIOTests(unittest.TestCase):
 
     def test_conout_path(self):
         temp_path = tempfile.mkdtemp()
-        self.addCleanup(support.rmtree, temp_path)
+        self.addCleanup(filesystem_helper.rmtree, temp_path)
 
         conout_path = os.path.join(temp_path, 'CONOUT$')
 

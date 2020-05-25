@@ -68,7 +68,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
             self.skipTest("The %r command is not found" % cmd)
         super(TestCParser, self).setUp()
         self.tmp_path = self.mkdtemp()
-        change_cwd = support.change_cwd(self.tmp_path)
+        change_cwd = filesystem_helper.change_cwd(self.tmp_path)
         change_cwd.__enter__()
         self.addCleanup(change_cwd.__exit__, None, None, None)
 

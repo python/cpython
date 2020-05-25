@@ -1,7 +1,7 @@
 from test import support
 support.requires('audio')
 
-from test.support import findfile
+from test.support import filesystem_helper
 
 ossaudiodev = support.import_module('ossaudiodev')
 
@@ -144,7 +144,8 @@ class OSSAudioDevTests(unittest.TestCase):
                 self.fail("expected OSSAudioError")
 
     def test_playback(self):
-        sound_info = read_sound_file(findfile('audiotest.au'))
+        sound_info = read_sound_file(filesystem_helper.findfile(
+                                     'audiotest.au'))
         self.play_sound_file(*sound_info)
 
     def test_set_parameters(self):

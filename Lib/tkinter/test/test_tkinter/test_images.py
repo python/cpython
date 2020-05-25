@@ -1,6 +1,7 @@
 import unittest
 import tkinter
 from test import support
+from test.support import filesystem_helper
 from tkinter.test.support import AbstractTkTest, requires_tcl
 
 support.requires('gui')
@@ -24,7 +25,8 @@ class BitmapImageTest(AbstractTkTest, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         AbstractTkTest.setUpClass.__func__(cls)
-        cls.testfile = support.findfile('python.xbm', subdir='imghdrdata')
+        cls.testfile = filesystem_helper.findfile('python.xbm',
+                                                  subdir='imghdrdata')
 
     def test_create_from_file(self):
         image = tkinter.BitmapImage('::img::test', master=self.root,
@@ -106,7 +108,8 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         AbstractTkTest.setUpClass.__func__(cls)
-        cls.testfile = support.findfile('python.gif', subdir='imghdrdata')
+        cls.testfile = filesystem_helper.findfile('python.gif',
+                                                  subdir='imghdrdata')
 
     def create(self):
         return tkinter.PhotoImage('::img::test', master=self.root,
@@ -119,7 +122,8 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
             return tkinter._join(args)
 
     def check_create_from_file(self, ext):
-        testfile = support.findfile('python.' + ext, subdir='imghdrdata')
+        testfile = filesystem_helper.findfile('python.' + ext,
+                                              subdir='imghdrdata')
         image = tkinter.PhotoImage('::img::test', master=self.root,
                                    file=testfile)
         self.assertEqual(str(image), '::img::test')
@@ -133,7 +137,8 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn('::img::test', self.root.image_names())
 
     def check_create_from_data(self, ext):
-        testfile = support.findfile('python.' + ext, subdir='imghdrdata')
+        testfile = filesystem_helper.findfile('python.' + ext,
+                                              subdir='imghdrdata')
         with open(testfile, 'rb') as f:
             data = f.read()
         image = tkinter.PhotoImage('::img::test', master=self.root,
@@ -296,12 +301,13 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
 
     def test_write(self):
         image = self.create()
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(filesystem_helper.unlink,
+                        filesystem_helper.TESTFN)
 
-        image.write(support.TESTFN)
+        image.write(filesystem_helper.TESTFN)
         image2 = tkinter.PhotoImage('::img::test2', master=self.root,
                                     format='ppm',
-                                    file=support.TESTFN)
+                                    file=filesystem_helper.TESTFN)
         self.assertEqual(str(image2), '::img::test2')
         self.assertEqual(image2.type(), 'photo')
         self.assertEqual(image2.width(), 16)
@@ -309,10 +315,11 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(0, 0), image.get(0, 0))
         self.assertEqual(image2.get(15, 8), image.get(15, 8))
 
-        image.write(support.TESTFN, format='gif', from_coords=(4, 6, 6, 9))
+        image.write(filesystem_helper.TESTFN,
+                    format='gif', from_coords=(4, 6, 6, 9))
         image3 = tkinter.PhotoImage('::img::test3', master=self.root,
                                     format='gif',
-                                    file=support.TESTFN)
+                                    file=filesystem_helper.TESTFN)
         self.assertEqual(str(image3), '::img::test3')
         self.assertEqual(image3.type(), 'photo')
         self.assertEqual(image3.width(), 2)

@@ -1,12 +1,13 @@
 import unittest
 from test import support
+from test.support import filesystem_helper
 import os
 import sys
 import sysconfig
 import subprocess
 
 
-SYMBOL_FILE              = support.findfile('symbol.py')
+SYMBOL_FILE              = filesystem_helper.findfile('symbol.py')
 GEN_SYMBOL_FILE          = os.path.join(os.path.dirname(__file__),
                                         '..', '..', 'Tools', 'scripts',
                                         'generate_symbol_py.py')
@@ -42,8 +43,8 @@ class TestSymbolGeneration(unittest.TestCase):
     @unittest.skipUnless(sysconfig.is_python_build(),
                          'test only works from source build directory')
     def test_real_grammar_and_symbol_file(self):
-        output = support.TESTFN
-        self.addCleanup(support.unlink, output)
+        output = filesystem_helper.TESTFN
+        self.addCleanup(filesystem_helper.unlink, output)
 
         self._copy_file_without_generated_symbols(SYMBOL_FILE, output)
 

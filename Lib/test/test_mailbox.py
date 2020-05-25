@@ -9,6 +9,7 @@ import re
 import io
 import tempfile
 from test import support
+from tesst.support import filesystem_helper
 import unittest
 import textwrap
 import mailbox
@@ -38,9 +39,9 @@ class TestBase:
     def _delete_recursively(self, target):
         # Delete a file or delete a directory recursively
         if os.path.isdir(target):
-            support.rmtree(target)
+            filesystem_helper.rmtree(target)
         elif os.path.exists(target):
-            support.unlink(target)
+            filesystem_helper.unlink(target)
 
 
 class TestMailbox(TestBase):
@@ -926,7 +927,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         # the mtime and should cause a re-read. Note that "sleep
         # emulation" is still in effect, as skewfactor is -3.
         filename = os.path.join(self._path, 'cur', 'stray-file')
-        support.create_empty_file(filename)
+        filesystem_helper.create_empty_file(filename)
         os.unlink(filename)
         self._box._refresh()
         self.assertTrue(refreshed())
@@ -980,7 +981,7 @@ class _TestMboxMMDF(_TestSingleFile):
         self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
-            support.unlink(lock_remnant)
+            filesystem_helper.unlink(lock_remnant)
 
     def assertMailboxEmpty(self):
         with open(self._path) as f:
@@ -1312,7 +1313,7 @@ class TestBabyl(_TestSingleFile, unittest.TestCase):
         self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
-            support.unlink(lock_remnant)
+            filesystem_helper.unlink(lock_remnant)
 
     def test_labels(self):
         # Get labels from the mailbox
@@ -2133,9 +2134,9 @@ class MaildirTestCase(unittest.TestCase):
         # create a new maildir mailbox to work with:
         self._dir = support.TESTFN
         if os.path.isdir(self._dir):
-            support.rmtree(self._dir)
+            filesystem_helper.rmtree(self._dir)
         elif os.path.isfile(self._dir):
-            support.unlink(self._dir)
+            filesystem_helper.unlink(self._dir)
         os.mkdir(self._dir)
         os.mkdir(os.path.join(self._dir, "cur"))
         os.mkdir(os.path.join(self._dir, "tmp"))

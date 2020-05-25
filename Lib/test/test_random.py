@@ -8,8 +8,10 @@ import warnings
 from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
+from test.support import filesystem_helper
 from fractions import Fraction
 from collections import Counter
+
 
 class TestBasicOps:
     # Superclass with tests common to all generators.
@@ -380,7 +382,7 @@ class TestBasicOps:
                  ("randv2_64.pck", 866),
                  ("randv3.pck", 343)]
         for file, value in files:
-            with open(support.findfile(file),"rb") as f:
+            with open(filesystem_helper.findfile(file),"rb") as f:
                 r = pickle.load(f)
             self.assertEqual(int(r.random()*1000), value)
 

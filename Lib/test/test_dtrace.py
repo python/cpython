@@ -6,11 +6,13 @@ import sys
 import types
 import unittest
 
-from test.support import findfile, run_unittest
+from test.support import run_unittest
+from test.support import filesystem_helper
 
 
 def abspath(filename):
-    return os.path.abspath(findfile(filename, subdir="dtracedata"))
+    return os.path.abspath(filesystem_helper.findfile(filename,
+                                                      subdir="dtracedata"))
 
 
 def normalize_trace_output(output):

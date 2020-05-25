@@ -31,6 +31,7 @@ from io import BytesIO
 import unittest
 from test import support
 from test.support import threading_helper
+from test.support import filesystem_helper
 
 
 class NoLogRequestHandler:
@@ -620,7 +621,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
         self._pythonexe_symlink = None
-        if support.can_symlink():
+        if filesystem_helper.can_symlink():
             self.pythonexe = os.path.join(self.parent_dir, 'python')
             self._pythonexe_symlink = support.PythonSymlink(self.pythonexe).__enter__()
         else:

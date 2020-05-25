@@ -5,7 +5,7 @@ import sys
 import unittest
 import subprocess
 import textwrap
-from test import support
+from test.support import filesystem_helper
 from test.support.script_helper import assert_python_ok
 
 from test.test_tools import scriptsdir, skip_if_missing
@@ -34,7 +34,7 @@ class PindentTests(unittest.TestCase):
 
     def test_selftest(self):
         self.maxDiff = None
-        with support.temp_dir() as directory:
+        with filesystem_helper.temp_dir() as directory:
             data_path = os.path.join(directory, '_test.py')
             with open(self.script) as f:
                 closed = f.read()

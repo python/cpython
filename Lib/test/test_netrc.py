@@ -1,5 +1,6 @@
 import netrc, os, unittest, sys, tempfile, textwrap
 from test import support
+from test.support import filesystem_helper
 
 
 class NetrcTestCase(unittest.TestCase):
@@ -110,7 +111,7 @@ class NetrcTestCase(unittest.TestCase):
         # therefore can't test the file ownership being wrong.
         d = support.TESTFN
         os.mkdir(d)
-        self.addCleanup(support.rmtree, d)
+        self.addCleanup(filesystem_helper.rmtree, d)
         fn = os.path.join(d, '.netrc')
         with open(fn, 'wt') as f:
             f.write("""\
@@ -129,7 +130,7 @@ class NetrcTestCase(unittest.TestCase):
     def test_file_not_found_in_home(self):
         d = support.TESTFN
         os.mkdir(d)
-        self.addCleanup(support.rmtree, d)
+        self.addCleanup(filesystem_helper.rmtree, d)
         with support.EnvironmentVarGuard() as environ:
             environ.set('HOME', d)
             self.assertRaises(FileNotFoundError, netrc.netrc)
@@ -141,7 +142,7 @@ class NetrcTestCase(unittest.TestCase):
     def test_home_not_set(self):
         fake_home = support.TESTFN
         os.mkdir(fake_home)
-        self.addCleanup(support.rmtree, fake_home)
+        self.addCleanup(filesystem_helper.rmtree, fake_home)
         fake_netrc_path = os.path.join(fake_home, '.netrc')
         with open(fake_netrc_path, 'w') as f:
             f.write('machine foo.domain.com login bar password pass')

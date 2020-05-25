@@ -4,7 +4,7 @@
 #
 
 from test import support
-from test.support import TESTFN
+from test.support import filesystem_helper
 import unittest, io, codecs, sys
 import _multibytecodec
 
@@ -57,7 +57,7 @@ class Test_MultibyteCodec(unittest.TestCase):
                 code = '# coding: {}\n'.format(enc)
                 exec(code)
         finally:
-            support.unlink(TESTFN)
+            filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def test_init_segfault(self):
         # bug #3305: this used to segfault
@@ -285,18 +285,18 @@ class Test_IncrementalDecoder(unittest.TestCase):
 class Test_StreamReader(unittest.TestCase):
     def test_bug1728403(self):
         try:
-            f = open(TESTFN, 'wb')
+            f = open(filesystem_helper.TESTFN, 'wb')
             try:
                 f.write(b'\xa1')
             finally:
                 f.close()
-            f = codecs.open(TESTFN, encoding='cp949')
+            f = codecs.open(filesystem_helper.TESTFN, encoding='cp949')
             try:
                 self.assertRaises(UnicodeDecodeError, f.read, 2)
             finally:
                 f.close()
         finally:
-            support.unlink(TESTFN)
+            filesystem_helper.unlink(filesystem_helper.TESTFN)
 
 class Test_StreamWriter(unittest.TestCase):
     def test_gb18030(self):

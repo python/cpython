@@ -58,6 +58,8 @@ import linecache
 from contextlib import contextmanager
 from itertools import islice, repeat
 import test.support
+from test.support import filesystem_helper
+
 
 class BdbException(Exception): pass
 class BdbError(BdbException): """Error raised by the Bdb instance."""
@@ -531,7 +533,7 @@ def run_test(modules, set_list, skip=None):
 
 @contextmanager
 def create_modules(modules):
-    with test.support.temp_cwd():
+    with filesystem_helper.temp_cwd():
         sys.path.append(os.getcwd())
         try:
             for m in modules:

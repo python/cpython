@@ -2975,7 +2975,7 @@ order (MRO) for bases """
         ##             self.ateof = 1
         ##        return s
         ##
-        ## f = file(name=support.TESTFN, mode='w')
+        ## f = file(name=filesystem_helper.TESTFN, mode='w')
         ## lines = ['a\n', 'b\n', 'c\n']
         ## try:
         ##     f.writelines(lines)
@@ -2992,7 +2992,7 @@ order (MRO) for bases """
         ##         f.close()
         ##     except:
         ##         pass
-        ##     support.unlink(support.TESTFN)
+        ##     filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def test_keywords(self):
         # Testing keyword args to basic type constructors ...

@@ -1,4 +1,5 @@
-from test.support import check_no_resource_warning, findfile, TESTFN, unlink
+from test.support import check_no_resource_warning
+from test.support import filesystem_helper
 import unittest
 from unittest import mock
 from test import audiotests
@@ -147,11 +148,12 @@ class AifcMiscTest(unittest.TestCase):
     def test_skipunknown(self):
         #Issue 2245
         #This file contains chunk types aifc doesn't recognize.
-        f = aifc.open(findfile('Sine-1000Hz-300ms.aif'))
+        f = aifc.open(filesystem_helper.findfile('Sine-1000Hz-300ms.aif'))
         f.close()
 
     def test_close_opened_files_on_error(self):
-        non_aifc_file = findfile('pluck-pcm8.wav', subdir='audiodata')
+        non_aifc_file = filesystem_helper.findfile('pluck-pcm8.wav',
+                                                   subdir='audiodata')
         with check_no_resource_warning(self):
             with self.assertRaises(aifc.Error):
                 # Try opening a non-AIFC file, with the expectation that
@@ -163,15 +165,15 @@ class AifcMiscTest(unittest.TestCase):
             with mock.patch.object(aifc.Aifc_write, 'initfp',
                                    side_effect=RuntimeError):
                 with self.assertRaises(RuntimeError):
-                    self.fout = aifc.open(TESTFN, 'wb')
+                    self.fout = aifc.open(filesystem_helper.TESTFN, 'wb')
 
     def test_params_added(self):
-        f = self.f = aifc.open(TESTFN, 'wb')
+        f = self.f = aifc.open(filesystem_helper.TESTFN, 'wb')
         f.aiff()
         f.setparams((1, 1, 1, 1, b'NONE', b''))
         f.close()
 
-        f = aifc.open(TESTFN, 'rb')
+        f = aifc.open(filesystem_helper.TESTFN, 'rb')
         self.addCleanup(f.close)
         params = f.getparams()
         self.assertEqual(params.nchannels, f.getnchannels())
@@ -201,14 +203,14 @@ class AifcMiscTest(unittest.TestCase):
         fout.initfp(None)
 
     def test_read_markers(self):
-        fout = self.fout = aifc.open(TESTFN, 'wb')
+        fout = self.fout = aifc.open(filesystem_helper.TESTFN, 'wb')
         fout.aiff()
         fout.setparams((1, 1, 1, 1, b'NONE', b''))
         fout.setmark(1, 0, b'odd')
         fout.setmark(2, 0, b'even')
         fout.writeframes(b'\x00')
         fout.close()
-        f = aifc.open(TESTFN, 'rb')
+        f = aifc.open(filesystem_helper.TESTFN, 'rb')
         self.addCleanup(f.close)
         self.assertEqual(f.getmarkers(), [(1, 0, b'odd'), (2, 0, b'even')])
         self.assertEqual(f.getmark(1), (1, 0, b'odd'))
@@ -253,7 +255,7 @@ class AIFCLowLevelTest(unittest.TestCase):
 
     def test_wrong_open_mode(self):
         with self.assertRaises(aifc.Error):
-            aifc.open(TESTFN, 'wrong_mode')
+            aifc.open(filesystem_helper.TESTFN, 'wrong_mode')
 
     def test_read_wrong_form(self):
         b1 = io.BytesIO(b'WRNG' + struct.pack('>L', 0))
@@ -418,9 +420,9 @@ class AIFCLowLevelTest(unittest.TestCase):
 
     def test_write_aiff_by_extension(self):
         sampwidth = 2
-        filename = TESTFN + '.aiff'
+        filename = filesystem_helper.TESTFN + '.aiff'
         fout = self.fout = aifc.open(filename, 'wb')
-        self.addCleanup(unlink, filename)
+        self.addCleanup(filesystem_helper.unlink, filename)
         fout.setparams((1, sampwidth, 1, 1, b'ULAW', b''))
         frames = b'\x00' * fout.getnchannels() * sampwidth
         fout.writeframes(frames)

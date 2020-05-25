@@ -9,6 +9,7 @@
 
 import unittest
 from test import support
+from test.support import filesystem_helper
 import os
 import platform
 import sys
@@ -27,10 +28,11 @@ class TestCase(unittest.TestCase):
         # we're not about to delete. If we're running under -j, that
         # means the test harness provided directory isn't a safe option.
         # See http://bugs.python.org/issue15526 for more details
-        with support.change_cwd(path.dirname(sys.executable)):
+        with filesystem_helper.change_cwd(path.dirname(sys.executable)):
             empty = path.join(path.dirname(__file__), "empty.vbs")
             startfile(empty)
             startfile(empty, "open")
+
 
 if __name__ == "__main__":
     unittest.main()

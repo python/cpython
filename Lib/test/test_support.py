@@ -12,10 +12,11 @@ import textwrap
 import time
 import unittest
 from test import support
+from test.support import filesystem_helper_helper
 from test.support import script_helper
 from test.support import socket_helper
 
-TESTFN = support.TESTFN
+TESTFN = filesystem_helper.TESTFN
 
 
 class TestSupport(unittest.TestCase):
@@ -45,9 +46,9 @@ class TestSupport(unittest.TestCase):
     def test_unlink(self):
         with open(TESTFN, "w") as f:
             pass
-        support.unlink(TESTFN)
+        filesystem_helper.unlink(TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
-        support.unlink(TESTFN)
+        filesystem_helper.unlink(TESTFN)
 
     def test_rmtree(self):
         dirpath = support.TESTFN + 'd'
@@ -87,7 +88,7 @@ class TestSupport(unittest.TestCase):
             self.assertNotIn(TESTFN, sys.modules)
         finally:
             del sys.path[0]
-            support.unlink(mod_filename)
+            filesystem_helper.unlink(mod_filename)
             support.rmtree('__pycache__')
 
     def test_HOST(self):
@@ -173,7 +174,7 @@ class TestSupport(unittest.TestCase):
         script_helper.assert_python_ok("-c", textwrap.dedent("""
             import os
             from test import support
-            with support.temp_cwd() as temp_path:
+            with filesystem_helper.temp_cwd() as temp_path:
                 pid = os.fork()
                 if pid != 0:
                     # parent process
@@ -195,7 +196,7 @@ class TestSupport(unittest.TestCase):
         original_cwd = os.getcwd()
 
         with support.temp_dir() as temp_path:
-            with support.change_cwd(temp_path) as new_cwd:
+            with filesystem_helper.change_cwd(temp_path) as new_cwd:
                 self.assertEqual(new_cwd, temp_path)
                 self.assertEqual(os.getcwd(), new_cwd)
 
@@ -206,7 +207,7 @@ class TestSupport(unittest.TestCase):
         original_cwd = os.getcwd()
 
         def call_change_cwd(path):
-            with support.change_cwd(path) as new_cwd:
+            with filesystem_helper.change_cwd(path) as new_cwd:
                 raise Exception("should not get here")
 
         with support.temp_dir() as parent_dir:
@@ -223,7 +224,8 @@ class TestSupport(unittest.TestCase):
         with support.temp_dir() as parent_dir:
             bad_dir = os.path.join(parent_dir, 'does_not_exist')
             with support.check_warnings() as recorder:
-                with support.change_cwd(bad_dir, quiet=True) as new_cwd:
+                with filesystem_helper.change_cwd(bad_dir,
+                                                  quiet=True) as new_cwd:
                     self.assertEqual(new_cwd, original_cwd)
                     self.assertEqual(os.getcwd(), new_cwd)
                 warnings = [str(w.message) for w in recorder.warnings]
@@ -241,7 +243,7 @@ class TestSupport(unittest.TestCase):
         """Check the warning message when os.chdir() fails."""
         path = TESTFN + '_does_not_exist'
         with support.check_warnings() as recorder:
-            with support.change_cwd(path=path, quiet=True):
+            with filesystem_helper.change_cwd(path=path, quiet=True):
                 pass
             messages = [str(w.message) for w in recorder.warnings]
 
@@ -256,7 +258,7 @@ class TestSupport(unittest.TestCase):
 
     def test_temp_cwd(self):
         here = os.getcwd()
-        with support.temp_cwd(name=TESTFN):
+        with filesystem_helper.temp_cwd(name=TESTFN):
             self.assertEqual(os.path.basename(os.getcwd()), TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
         self.assertEqual(os.getcwd(), here)
@@ -265,7 +267,7 @@ class TestSupport(unittest.TestCase):
     def test_temp_cwd__name_none(self):
         """Test passing None to temp_cwd()."""
         original_cwd = os.getcwd()
-        with support.temp_cwd(name=None) as new_cwd:
+        with filesystem_helper.temp_cwd(name=None) as new_cwd:
             self.assertNotEqual(new_cwd, original_cwd)
             self.assertTrue(os.path.isdir(new_cwd))
             self.assertEqual(os.getcwd(), new_cwd)

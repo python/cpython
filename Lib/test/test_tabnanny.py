@@ -11,8 +11,8 @@ import tabnanny
 import tokenize
 import tempfile
 import textwrap
-from test.support import (captured_stderr, captured_stdout, script_helper,
-                          findfile, unlink)
+from test.support import (captured_stderr, captured_stdout, script_helper)
+from test.support import filesystem_helper
 
 
 SOURCE_CODES = {
@@ -76,7 +76,7 @@ class TemporaryPyFile:
         return self.file_path
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        unlink(self.file_path)
+        filesystem_helper.unlink(self.file_path)
 
 
 class TestFormatWitnesses(TestCase):
@@ -319,7 +319,7 @@ class TestCommandLine(TestCase):
 
     def test_command_usage(self):
         """Should display usage on no arguments."""
-        path = findfile('tabnanny.py')
+        path = filesystem_helper.findfile('tabnanny.py')
         stderr = f"Usage: {path} [-v] file_or_directory ..."
         self.validate_cmd(stderr=stderr)
 

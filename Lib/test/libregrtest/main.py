@@ -20,6 +20,7 @@ from test.libregrtest.setup import setup_tests
 from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
+from test.support import filesystem_helper
 
 
 # bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
@@ -607,10 +608,10 @@ class Regrtest:
         for name in glob.glob(path):
             if os.path.isdir(name):
                 print("Remove directory: %s" % name)
-                support.rmtree(name)
+                filesystem_helper.rmtree(name)
             else:
                 print("Remove file: %s" % name)
-                support.unlink(name)
+                filesystem_helper.unlink(name)
 
     def main(self, tests=None, **kwargs):
         self.parse_args(kwargs)
@@ -628,7 +629,7 @@ class Regrtest:
             # to a temporary and writable directory. If it's not possible to
             # create or change the CWD, the original CWD will be used.
             # The original CWD is available from support.SAVEDCWD.
-            with support.temp_cwd(test_cwd, quiet=True):
+            with filesystem_helper.temp_cwd(test_cwd, quiet=True):
                 # When using multiprocessing, worker processes will use test_cwd
                 # as their parent temporary directory. So when the main process
                 # exit, it removes also subdirectories of worker processes.

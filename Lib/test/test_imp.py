@@ -5,6 +5,7 @@ import os.path
 import py_compile
 import sys
 from test import support
+from test.support import filesystem_helper
 from test.support import script_helper
 import unittest
 import warnings
@@ -107,8 +108,8 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(file.encoding, 'cp1252')
         finally:
             del sys.path[0]
-            support.unlink(temp_mod_name + '.py')
-            support.unlink(temp_mod_name + '.pyc')
+            filesystem_helper.unlink(temp_mod_name + '.py')
+            filesystem_helper.unlink(temp_mod_name + '.pyc')
 
     def test_issue5604(self):
         # Test cannot cover imp.load_compiled function.
@@ -192,10 +193,10 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
             for ext in ('.py', '.pyc'):
-                support.unlink(temp_mod_name + ext)
-                support.unlink(init_file_name + ext)
-            support.rmtree(test_package_name)
-            support.rmtree('__pycache__')
+                filesystem_helper.unlink(temp_mod_name + ext)
+                filesystem_helper.unlink(init_file_name + ext)
+            filesystem_helper.rmtree(test_package_name)
+            filesystem_helper.rmtree('__pycache__')
 
     def test_issue9319(self):
         path = os.path.dirname(__file__)
@@ -299,7 +300,7 @@ class ImportTests(unittest.TestCase):
     @unittest.skipIf(sys.dont_write_bytecode,
         "test meaningful only when writing bytecode")
     def test_bug7732(self):
-        with support.temp_cwd():
+        with filesystem_helper.temp_cwd():
             source = support.TESTFN + '.py'
             os.mkdir(source)
             self.assertRaisesRegex(ImportError, '^No module',
@@ -364,7 +365,7 @@ class ImportTests(unittest.TestCase):
 
     def test_find_and_load_checked_pyc(self):
         # issue 34056
-        with support.temp_cwd():
+        with filesystem_helper.temp_cwd():
             with open('mymod.py', 'wb') as fp:
                 fp.write(b'x = 42\n')
             py_compile.compile(

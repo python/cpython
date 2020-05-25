@@ -7,7 +7,8 @@ from idlelib import config
 import sys
 import os
 import tempfile
-from test.support import captured_stderr, findfile
+from test.support import captured_stderr
+from test.support import filesystem_helper
 import unittest
 from unittest import mock
 import idlelib
@@ -86,7 +87,7 @@ class IdleConfParserTest(unittest.TestCase):
 
     def test_load_file(self):
         # Borrow test/cfgparser.1 from test_configparser.
-        config_path = findfile('cfgparser.1')
+        config_path = filesystem_helper.findfile('cfgparser.1')
         parser = config.IdleConfParser(config_path)
         parser.Load()
 
@@ -295,7 +296,7 @@ class IdleConfTest(unittest.TestCase):
         conf = self.new_config(_utest=True)
 
         # Borrow test/cfgparser.1 from test_configparser.
-        config_path = findfile('cfgparser.1')
+        config_path = filesystem_helper.findfile('cfgparser.1')
         conf.defaultCfg['foo'] = config.IdleConfParser(config_path)
         conf.userCfg['foo'] = config.IdleUserConfParser(config_path)
 

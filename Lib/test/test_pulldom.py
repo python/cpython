@@ -6,10 +6,10 @@ from xml.sax.xmlreader import AttributesImpl
 from xml.sax.handler import feature_external_ges
 from xml.dom import pulldom
 
-from test.support import findfile
+from test.support import filesystem_helper
 
 
-tstfile = findfile("test.xml", subdir="xmltestdata")
+tstfile = filesystem_helper.findfile("test.xml", subdir="xmltestdata")
 
 # A handy XML snippet, containing attributes, a namespace prefix, and a
 # self-closing tag:

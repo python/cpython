@@ -5,6 +5,7 @@ import gettext
 import unittest
 
 from test import support
+from test.support import filesystem_helper
 
 
 # TODO:
@@ -136,7 +137,7 @@ class GettextBaseTest(unittest.TestCase):
     def tearDown(self):
         self.env.__exit__()
         del self.env
-        support.rmtree(os.path.split(LOCALEDIR)[0])
+        filesystem_helper.rmtree(os.path.split(LOCALEDIR)[0])
 
 GNU_MO_DATA_ISSUE_17898 = b'''\
 3hIElQAAAAABAAAAHAAAACQAAAAAAAAAAAAAAAAAAAAsAAAAggAAAC0AAAAAUGx1cmFsLUZvcm1z

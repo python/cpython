@@ -7,7 +7,7 @@ from textwrap import dedent
 
 from test.support.script_helper import assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
-from test.support import temp_cwd, temp_dir
+from test.support import filesystem_helper
 
 
 skip_if_missing()
@@ -56,7 +56,7 @@ class Test_pygettext(unittest.TestCase):
     def extract_docstrings_from_str(self, module_content):
         """ utility: return all msgids extracted from module_content """
         filename = 'test_docstrings.py'
-        with temp_cwd(None) as cwd:
+        with filesystem_helper.temp_cwd(None) as cwd:
             with open(filename, 'w') as fp:
                 fp.write(module_content)
             assert_python_ok(self.script, '-D', filename)
@@ -68,7 +68,7 @@ class Test_pygettext(unittest.TestCase):
         """Make sure the required fields are in the header, according to:
            http://www.gnu.org/software/gettext/manual/gettext.html#Header-Entry
         """
-        with temp_cwd(None) as cwd:
+        with filesystem_helper.temp_cwd(None) as cwd:
             assert_python_ok(self.script)
             with open('messages.pot') as fp:
                 data = fp.read()
@@ -95,7 +95,7 @@ class Test_pygettext(unittest.TestCase):
     def test_POT_Creation_Date(self):
         """ Match the date format from xgettext for POT-Creation-Date """
         from datetime import datetime
-        with temp_cwd(None) as cwd:
+        with filesystem_helper.temp_cwd(None) as cwd:
             assert_python_ok(self.script)
             with open('messages.pot') as fp:
                 data = fp.read()
@@ -227,7 +227,7 @@ class Test_pygettext(unittest.TestCase):
         text1 = 'Text to translate1'
         text2 = 'Text to translate2'
         text3 = 'Text to ignore'
-        with temp_cwd(None), temp_dir(None) as sdir:
+        with filesystem_helper.temp_cwd(None), filesystem_helper.temp_dir(None) as sdir:
             os.mkdir(os.path.join(sdir, 'pypkg'))
             with open(os.path.join(sdir, 'pypkg', 'pymod.py'), 'w') as sfile:
                 sfile.write(f'_({text1!r})')

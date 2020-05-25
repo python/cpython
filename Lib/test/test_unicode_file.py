@@ -5,12 +5,12 @@ import os, glob, time, shutil
 import unicodedata
 
 import unittest
-from test.support import (run_unittest, rmtree, change_cwd,
-    TESTFN_ENCODING, TESTFN_UNICODE, TESTFN_UNENCODABLE, create_empty_file)
+from test.support import (run_unittest)
 
 if not os.path.supports_unicode_filenames:
     try:
-        TESTFN_UNICODE.encode(TESTFN_ENCODING)
+        filesystem_helper.TESTFN_UNICODE.encode(
+            filesystem_helper.TESTFN_ENCODING)
     except (UnicodeError, TypeError):
         # Either the file system encoding is None, or the file name
         # cannot be encoded in the file system encoding.
@@ -83,10 +83,10 @@ class TestUnicodeFiles(unittest.TestCase):
 
     def _do_directory(self, make_name, chdir_name):
         if os.path.isdir(make_name):
-            rmtree(make_name)
+            filesystem_helper.rmtree(make_name)
         os.mkdir(make_name)
         try:
-            with change_cwd(chdir_name):
+            with filesystem_helper.change_cwd(chdir_name):
                 cwd_result = os.getcwd()
                 name_result = make_name
 
@@ -101,7 +101,7 @@ class TestUnicodeFiles(unittest.TestCase):
     # top-level 'test' functions would be if they could take params
     def _test_single(self, filename):
         remove_if_exists(filename)
-        create_empty_file(filename)
+        filesystem_helper.create_empty_file(filename)
         try:
             self._do_single(filename)
         finally:
@@ -118,20 +118,21 @@ class TestUnicodeFiles(unittest.TestCase):
     # The 'test' functions are unittest entry points, and simply call our
     # _test functions with each of the filename combinations we wish to test
     def test_single_files(self):
-        self._test_single(TESTFN_UNICODE)
-        if TESTFN_UNENCODABLE is not None:
-            self._test_single(TESTFN_UNENCODABLE)
+        self._test_single(filesystem_helper.TESTFN_UNICODE)
+        if filesystem_helper.TESTFN_UNENCODABLE is not None:
+            self._test_single(filesystem_helper.TESTFN_UNENCODABLE)
 
     def test_directories(self):
         # For all 'equivalent' combinations:
         #  Make dir with encoded, chdir with unicode, checkdir with encoded
         #  (or unicode/encoded/unicode, etc
         ext = ".dir"
-        self._do_directory(TESTFN_UNICODE+ext, TESTFN_UNICODE+ext)
+        self._do_directory(filesystem_helper.TESTFN_UNICODE+ext,
+                           filesystem_helper.TESTFN_UNICODE+ext)
         # Our directory name that can't use a non-unicode name.
-        if TESTFN_UNENCODABLE is not None:
-            self._do_directory(TESTFN_UNENCODABLE+ext,
-                               TESTFN_UNENCODABLE+ext)
+        if filesystem_helper.TESTFN_UNENCODABLE is not None:
+            self._do_directory(filesystem_helper.TESTFN_UNENCODABLE+ext,
+                               filesystem_helper.TESTFN_UNENCODABLE+ext)
 
 def test_main():
     run_unittest(__name__)

@@ -51,7 +51,7 @@ class ResourceTest(unittest.TestCase):
                     limit_set = True
                 except ValueError:
                     limit_set = False
-                f = open(support.TESTFN, "wb")
+                f = open(filesystem_helper.TESTFN, "wb")
                 try:
                     f.write(b"X" * 1024)
                     try:
@@ -77,7 +77,7 @@ class ResourceTest(unittest.TestCase):
             finally:
                 if limit_set:
                     resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
-                support.unlink(support.TESTFN)
+                filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def test_fsize_toobig(self):
         # Be sure that setrlimit is checking for really large values

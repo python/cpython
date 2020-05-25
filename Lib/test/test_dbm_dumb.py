@@ -277,12 +277,12 @@ class DumbDBMTestCase(unittest.TestCase):
                 self.assertEqual(sorted(f.keys()), sorted(self._dict))
                 f.close()  # don't write
 
-    @unittest.skipUnless(support.TESTFN_NONASCII,
+    @unittest.skipUnless(filesystem_helper.TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
-        filename = support.TESTFN_NONASCII
+        filename = filesystem_helper.TESTFN_NONASCII
         for suffix in ['.dir', '.dat', '.bak']:
-            self.addCleanup(support.unlink, filename + suffix)
+            self.addCleanup(filesystem_helper.unlink, filename + suffix)
         with dumbdbm.open(filename, 'c') as db:
             db[b'key'] = b'value'
         self.assertTrue(os.path.exists(filename + '.dat'))

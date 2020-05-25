@@ -499,7 +499,7 @@ class CmdLineTest(unittest.TestCase):
             # dummyvar to prevent extraneous -E
             dummyvar="")
         self.assertEqual(out.strip(), b'1 1 1')
-        with support.temp_cwd() as tmpdir:
+        with filesystem_helper.temp_cwd() as tmpdir:
             fake = os.path.join(tmpdir, "uuid.py")
             main = os.path.join(tmpdir, "main.py")
             with open(fake, "w") as f:
@@ -561,7 +561,7 @@ class CmdLineTest(unittest.TestCase):
             elif opt is not None:
                 args[:0] = ['-X', f'pycache_prefix={opt}']
             with self.subTest(envval=envval, opt=opt):
-                with support.temp_cwd():
+                with filesystem_helper.temp_cwd():
                     assert_python_ok(*args, **env)
 
     def run_xdev(self, *args, check_exitcode=True, xdev=True):

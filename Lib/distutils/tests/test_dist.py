@@ -12,8 +12,9 @@ from distutils.dist import Distribution, fix_help_options
 from distutils.cmd import Command
 
 from test.support import (
-     TESTFN, captured_stdout, captured_stderr, run_unittest
+     captured_stdout, captured_stderr, run_unittest
 )
+from test.support import filesystem_helper
 from distutils.tests import support
 from distutils import log
 
@@ -85,11 +86,11 @@ class DistributionTestCase(support.LoggingSilencer,
 
     def test_venv_install_options(self):
         sys.argv.append("install")
-        self.addCleanup(os.unlink, TESTFN)
+        self.addCleanup(os.unlink, filesystem_helper.TESTFN)
 
         fakepath = '/somedir'
 
-        with open(TESTFN, "w") as f:
+        with open(filesystem_helper.TESTFN, "w") as f:
             print(("[install]\n"
                    "install-base = {0}\n"
                    "install-platbase = {0}\n"
@@ -107,9 +108,9 @@ class DistributionTestCase(support.LoggingSilencer,
 
         # Base case: Not in a Virtual Environment
         with mock.patch.multiple(sys, prefix='/a', base_prefix='/a') as values:
-            d = self.create_distribution([TESTFN])
+            d = self.create_distribution([filesystem_helper.TESTFN])
 
-        option_tuple = (TESTFN, fakepath)
+        option_tuple = (filesystem_helper.TESTFN, fakepath)
 
         result_dict = {
             'install_base': option_tuple,
@@ -136,35 +137,35 @@ class DistributionTestCase(support.LoggingSilencer,
 
         # Test case: In a Virtual Environment
         with mock.patch.multiple(sys, prefix='/a', base_prefix='/b') as values:
-            d = self.create_distribution([TESTFN])
+            d = self.create_distribution([filesystem_helper.TESTFN])
 
         for key in result_dict.keys():
             self.assertNotIn(key, d.command_options.get('install', {}))
 
     def test_command_packages_configfile(self):
         sys.argv.append("build")
-        self.addCleanup(os.unlink, TESTFN)
-        f = open(TESTFN, "w")
+        self.addCleanup(os.unlink, filesystem_helper.TESTFN)
+        f = open(filesystem_helper.TESTFN, "w")
         try:
             print("[global]", file=f)
             print("command_packages = foo.bar, splat", file=f)
         finally:
             f.close()
 
-        d = self.create_distribution([TESTFN])
+        d = self.create_distribution([filesystem_helper.TESTFN])
         self.assertEqual(d.get_command_packages(),
                          ["distutils.command", "foo.bar", "splat"])
 
         # ensure command line overrides config:
         sys.argv[1:] = ["--command-packages", "spork", "build"]
-        d = self.create_distribution([TESTFN])
+        d = self.create_distribution([filesystem_helper.TESTFN])
         self.assertEqual(d.get_command_packages(),
                          ["distutils.command", "spork"])
 
         # Setting --command-packages to '' should cause the default to
         # be used even if a config file specified something else:
         sys.argv[1:] = ["--command-packages", "", "build"]
-        d = self.create_distribution([TESTFN])
+        d = self.create_distribution([filesystem_helper.TESTFN])
         self.assertEqual(d.get_command_packages(), ["distutils.command"])
 
     def test_empty_options(self):

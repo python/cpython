@@ -7,7 +7,7 @@ Tools directory of a Python checkout or tarball, such as reindent.py.
 import os
 import unittest
 from test.support.script_helper import assert_python_ok
-from test.support import findfile
+from test.support import filesystem_helper 
 
 from test.test_tools import scriptsdir, skip_if_missing
 
@@ -25,7 +25,7 @@ class ReindentTests(unittest.TestCase):
         self.assertGreater(err, b'')
 
     def test_reindent_file_with_bad_encoding(self):
-        bad_coding_path = findfile('bad_coding.py')
+        bad_coding_path = filesystem_helper.findfile('bad_coding.py')
         rc, out, err = assert_python_ok(self.script, '-r', bad_coding_path)
         self.assertEqual(out, b'')
         self.assertNotEqual(err, b'')

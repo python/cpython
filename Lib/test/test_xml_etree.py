@@ -24,7 +24,9 @@ import weakref
 from functools import partial
 from itertools import product, islice
 from test import support
-from test.support import TESTFN, findfile, import_fresh_module, gc_collect, swap_attr
+from test.support import import_fresh_module, gc_collect, swap_attr
+from test.support import filesystem_helper
+
 
 # pyET is the pure-Python implementation.
 #
@@ -33,13 +35,15 @@ from test.support import TESTFN, findfile, import_fresh_module, gc_collect, swap
 pyET = None
 ET = None
 
-SIMPLE_XMLFILE = findfile("simple.xml", subdir="xmltestdata")
+SIMPLE_XMLFILE = filesystem_helper.findfile("simple.xml", subdir="xmltestdata")
 try:
     SIMPLE_XMLFILE.encode("utf-8")
 except UnicodeEncodeError:
     raise unittest.SkipTest("filename is not encodable to utf8")
-SIMPLE_NS_XMLFILE = findfile("simple-ns.xml", subdir="xmltestdata")
-UTF8_BUG_XMLFILE = findfile("expat224_utf8_bug.xml", subdir="xmltestdata")
+SIMPLE_NS_XMLFILE = filesystem_helper.findfile("simple-ns.xml",
+                                               subdir="xmltestdata")
+UTF8_BUG_XMLFILE = filesystem_helper.findfile("expat224_utf8_bug.xml",
+                                              subdir="xmltestdata")
 
 SAMPLE_XML = """\
 <body>
@@ -627,10 +631,10 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                 'junk after document element: line 1, column 12')
 
-        self.addCleanup(support.unlink, TESTFN)
-        with open(TESTFN, "wb") as f:
+        self.addCleanup(support.unlink, filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, "wb") as f:
             f.write(b"<document />junk")
-        it = iterparse(TESTFN)
+        it = iterparse(filesystem_helper.TESTFN)
         action, elem = next(it)
         self.assertEqual((action, elem.tag), ('end', 'document'))
         with support.check_no_resource_warning(self):
@@ -3641,46 +3645,46 @@ class IOTest(unittest.TestCase):
                      "<tag key=\"åöö&lt;&gt;\" />" % enc).encode(enc))
 
     def test_write_to_filename(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(support.unlink, filesystem_helper.TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
-        tree.write(TESTFN)
-        with open(TESTFN, 'rb') as f:
+        tree.write(filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_text_file(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(support.unlink, filesystem_helper.TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
-        with open(TESTFN, 'w', encoding='utf-8') as f:
+        with open(filesystem_helper.TESTFN, 'w', encoding='utf-8') as f:
             tree.write(f, encoding='unicode')
             self.assertFalse(f.closed)
-        with open(TESTFN, 'rb') as f:
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_binary_file(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(support.unlink, filesystem_helper.TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
-        with open(TESTFN, 'wb') as f:
+        with open(filesystem_helper.TESTFN, 'wb') as f:
             tree.write(f)
             self.assertFalse(f.closed)
-        with open(TESTFN, 'rb') as f:
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_binary_file_with_bom(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(support.unlink, filesystem_helper.TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         # test BOM writing to buffered file
-        with open(TESTFN, 'wb') as f:
+        with open(filesystem_helper.TESTFN, 'wb') as f:
             tree.write(f, encoding='utf-16')
             self.assertFalse(f.closed)
-        with open(TESTFN, 'rb') as f:
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             self.assertEqual(f.read(),
                     '''<?xml version='1.0' encoding='utf-16'?>\n'''
                     '''<site />'''.encode("utf-16"))
         # test BOM writing to non-buffered file
-        with open(TESTFN, 'wb', buffering=0) as f:
+        with open(filesystem_helper.TESTFN, 'wb', buffering=0) as f:
             tree.write(f, encoding='utf-16')
             self.assertFalse(f.closed)
-        with open(TESTFN, 'rb') as f:
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             self.assertEqual(f.read(),
                     '''<?xml version='1.0' encoding='utf-16'?>\n'''
                     '''<site />'''.encode("utf-16"))
@@ -3975,7 +3979,7 @@ class C14NTest(unittest.TestCase):
     # output, not roundtripped C14N (see above).
 
     def test_xml_c14n2(self):
-        datadir = findfile("c14n-20", subdir="xmltestdata")
+        datadir = filesystem_helper.findfile("c14n-20", subdir="xmltestdata")
         full_path = partial(os.path.join, datadir)
 
         files = [filename[:-4] for filename in sorted(os.listdir(datadir))

@@ -192,7 +192,7 @@ class TclTest(unittest.TestCase):
     def testEvalFile(self):
         tcl = self.interp
         with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+            self.addCleanup(filesystem_helper.unlink, support.TESTFN)
             f.write("""set a 1
             set b 2
             set c [ expr $a + $b ]
@@ -205,7 +205,7 @@ class TclTest(unittest.TestCase):
     def test_evalfile_null_in_result(self):
         tcl = self.interp
         with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+            self.addCleanup(filesystem_helper.unlink, support.TESTFN)
             f.write("""
             set a "a\0b"
             set b "a\\0b"

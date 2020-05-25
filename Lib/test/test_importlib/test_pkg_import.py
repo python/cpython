@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from importlib.util import cache_from_source
-from test.support import create_empty_file
+from test.support import filesystem_helper 
 
 class TestImport(unittest.TestCase):
 
@@ -29,7 +29,8 @@ class TestImport(unittest.TestCase):
         self.package_dir = os.path.join(self.test_dir,
                                         self.package_name)
         os.mkdir(self.package_dir)
-        create_empty_file(os.path.join(self.package_dir, '__init__.py'))
+        filesystem_helper.create_empty_file(os.path.join(
+                                            self.package_dir, '__init__.py'))
         self.module_path = os.path.join(self.package_dir, 'foo.py')
 
     def tearDown(self):

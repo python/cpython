@@ -37,8 +37,8 @@ from email import iterators
 from email import base64mime
 from email import quoprimime
 
+from test.support import filesystem_helper
 from test.support import threading_helper
-from test.support import unlink
 from test.test_email import openfile, TestEmailBase
 
 # These imports are documented to work, but we are testing them using a
@@ -4041,7 +4041,7 @@ class Test8BitBytesHandling(TestEmailBase):
 
     def test_message_from_binary_file(self):
         fn = 'test.msg'
-        self.addCleanup(unlink, fn)
+        self.addCleanup(filesystem_helper.unlink, fn)
         with open(fn, 'wb') as testfile:
             testfile.write(self.non_latin_bin_msg)
         with open(fn, 'rb') as testfile:

@@ -8,10 +8,11 @@ import pickle
 import weakref
 import errno
 
-from test.support import (TESTFN, captured_stderr, check_impl_detail,
+from test.support import (captured_stderr, check_impl_detail,
                           check_warnings, cpython_only, gc_collect,
-                          no_tracing, unlink, import_module, script_helper,
+                          no_tracing, import_module, script_helper,
                           SuppressCrashReport)
+from test.support import filesystem_helper
 from test import support
 
 
@@ -50,9 +51,9 @@ class ExceptionTests(unittest.TestCase):
         self.assertRaises(AttributeError, getattr, sys, "undefined_attribute")
 
         self.raise_catch(EOFError, "EOFError")
-        fp = open(TESTFN, 'w')
+        fp = open(filesystem_helper.TESTFN, 'w')
         fp.close()
-        fp = open(TESTFN, 'r')
+        fp = open(filesystem_helper.TESTFN, 'r')
         savestdin = sys.stdin
         try:
             try:
@@ -63,7 +64,7 @@ class ExceptionTests(unittest.TestCase):
         finally:
             sys.stdin = savestdin
             fp.close()
-            unlink(TESTFN)
+            filesystem_helper.unlink(filesystem_helper.TESTFN)
 
         self.raise_catch(OSError, "OSError")
         self.assertRaises(OSError, open, 'this file does not exist', 'r')

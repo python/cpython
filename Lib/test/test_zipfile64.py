@@ -17,9 +17,11 @@ import sys
 
 from tempfile import TemporaryFile
 
-from test.support import TESTFN, requires_zlib
+from test.support import requires_zlib
+from test.support import filesystem_helper
 
-TESTFN2 = TESTFN + "2"
+
+TESTFN2 = filesystem_helper.TESTFN + "2"
 
 # How much time in seconds can pass before we print a 'Still working' message.
 _PRINT_WORKING_MSG_INTERVAL = 60
@@ -31,7 +33,7 @@ class TestsWithSourceFile(unittest.TestCase):
         self.data = '\n'.join(line_gen).encode('ascii')
 
         # And write it to a file.
-        with open(TESTFN, "wb") as fp:
+        with open(filesystem_helper.TESTFN, "wb") as fp:
             fp.write(self.data)
 
     def zipTest(self, f, compression):
@@ -83,7 +85,7 @@ class TestsWithSourceFile(unittest.TestCase):
         self.zipTest(TESTFN2, zipfile.ZIP_DEFLATED)
 
     def tearDown(self):
-        for fname in TESTFN, TESTFN2:
+        for fname in filesystem_helper.TESTFN, TESTFN2:
             if os.path.exists(fname):
                 os.remove(fname)
 
@@ -92,21 +94,23 @@ class OtherTests(unittest.TestCase):
     def testMoreThan64kFiles(self):
         # This test checks that more than 64k files can be added to an archive,
         # and that the resulting archive can be read properly by ZipFile
-        with zipfile.ZipFile(TESTFN, mode="w", allowZip64=True) as zipf:
+        with zipfile.ZipFile(filesystem_helper.TESTFN,
+                             mode="w", allowZip64=True) as zipf:
             zipf.debug = 100
             numfiles = (1 << 16) * 3//2
             for i in range(numfiles):
                 zipf.writestr("foo%08d" % i, "%d" % (i**3 % 57))
             self.assertEqual(len(zipf.namelist()), numfiles)
 
-        with zipfile.ZipFile(TESTFN, mode="r") as zipf2:
+        with zipfile.ZipFile(filesystem_helper.TESTFN, mode="r") as zipf2:
             self.assertEqual(len(zipf2.namelist()), numfiles)
             for i in range(numfiles):
                 content = zipf2.read("foo%08d" % i).decode('ascii')
                 self.assertEqual(content, "%d" % (i**3 % 57))
 
     def testMoreThan64kFilesAppend(self):
-        with zipfile.ZipFile(TESTFN, mode="w", allowZip64=False) as zipf:
+        with zipfile.ZipFile(filesystem_helper.TESTFN,
+                             mode="w", allowZip64=False) as zipf:
             zipf.debug = 100
             numfiles = (1 << 16) - 1
             for i in range(numfiles):
@@ -116,14 +120,16 @@ class OtherTests(unittest.TestCase):
                 zipf.writestr("foo%08d" % numfiles, b'')
             self.assertEqual(len(zipf.namelist()), numfiles)
 
-        with zipfile.ZipFile(TESTFN, mode="a", allowZip64=False) as zipf:
+        with zipfile.ZipFile(filesystem_helper.TESTFN,
+                             mode="a", allowZip64=False) as zipf:
             zipf.debug = 100
             self.assertEqual(len(zipf.namelist()), numfiles)
             with self.assertRaises(zipfile.LargeZipFile):
                 zipf.writestr("foo%08d" % numfiles, b'')
             self.assertEqual(len(zipf.namelist()), numfiles)
 
-        with zipfile.ZipFile(TESTFN, mode="a", allowZip64=True) as zipf:
+        with zipfile.ZipFile(filesystem_helper.TESTFN,
+                             mode="a", allowZip64=True) as zipf:
             zipf.debug = 100
             self.assertEqual(len(zipf.namelist()), numfiles)
             numfiles2 = (1 << 16) * 3//2
@@ -131,15 +137,15 @@ class OtherTests(unittest.TestCase):
                 zipf.writestr("foo%08d" % i, "%d" % (i**3 % 57))
             self.assertEqual(len(zipf.namelist()), numfiles2)
 
-        with zipfile.ZipFile(TESTFN, mode="r") as zipf2:
+        with zipfile.ZipFile(filesystem_helper.TESTFN, mode="r") as zipf2:
             self.assertEqual(len(zipf2.namelist()), numfiles2)
             for i in range(numfiles2):
                 content = zipf2.read("foo%08d" % i).decode('ascii')
                 self.assertEqual(content, "%d" % (i**3 % 57))
 
     def tearDown(self):
-        support.unlink(TESTFN)
-        support.unlink(TESTFN2)
+        filesystem_helper.unlink(filesystem_helper.TESTFN)
+        filesystem_helper.unlink(TESTFN2)
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,8 @@ import types
 import unittest
 import warnings
 
+from test.support import filesystem_helper
+
 
 class ImportModuleTests:
 
@@ -244,7 +246,7 @@ class ReloadTests:
 
     def test_reload_location_changed(self):
         name = 'spam'
-        with support.temp_cwd(None) as cwd:
+        with filesystem_helper.temp_cwd(None) as cwd:
             with test_util.uncache('spam'):
                 with support.DirsOnSysPath(cwd):
                     # Start as a plain module.
@@ -257,7 +259,7 @@ class ReloadTests:
                                 '__cached__': cached,
                                 '__doc__': None,
                                 }
-                    support.create_empty_file(path)
+                    filesystem_helper.create_empty_file(path)
                     module = self.init.import_module(name)
                     ns = vars(module).copy()
                     loader = ns.pop('__loader__')
@@ -295,7 +297,7 @@ class ReloadTests:
 
     def test_reload_namespace_changed(self):
         name = 'spam'
-        with support.temp_cwd(None) as cwd:
+        with filesystem_helper.temp_cwd(None) as cwd:
             with test_util.uncache('spam'):
                 with support.DirsOnSysPath(cwd):
                     # Start as a namespace package.

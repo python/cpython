@@ -20,10 +20,10 @@ from unittest import mock
 
 import test.support
 from test.support import (
-    TESTFN, forget, is_jython,
-    make_legacy_pyc, rmtree, swap_attr, swap_item, temp_umask,
-    unlink, unload, cpython_only, TESTFN_UNENCODABLE,
-    temp_dir, DirsOnSysPath)
+    forget, is_jython,
+    make_legacy_pyc, swap_attr, swap_item, temp_umask,
+    unload, cpython_only, DirsOnSysPath)
+from test.support import filesystem_helper
 from test.support import script_helper
 from test.support import threading_helper
 from test.test_importlib.util import uncache
@@ -39,8 +39,8 @@ def remove_files(name):
               name + ".pyc",
               name + ".pyw",
               name + "$py.class"):
-        unlink(f)
-    rmtree('__pycache__')
+              filesystem_helper.unlink(f)
+    filesystem_helper.rmtree('__pycache__')
 
 
 @contextlib.contextmanager
@@ -50,7 +50,7 @@ def _ready_to_import(name=None, source=""):
     # temporarily clears the module from sys.modules (if any)
     # reverts or removes the module when cleaning up
     name = name or "spam"
-    with temp_dir() as tempdir:
+    with filesystem_helper.temp_dir() as tempdir:
         path = script_helper.make_script(tempdir, name, source)
         old_module = sys.modules.pop(name, None)
         try:
@@ -67,11 +67,11 @@ def _ready_to_import(name=None, source=""):
 class ImportTests(unittest.TestCase):
 
     def setUp(self):
-        remove_files(TESTFN)
+        remove_files(filesystem_helper.TESTFN)
         importlib.invalidate_caches()
 
     def tearDown(self):
-        unload(TESTFN)
+        unload(filesystem_helper.TESTFN)
 
     def test_import_raises_ModuleNotFoundError(self):
         with self.assertRaises(ModuleNotFoundError):
@@ -149,11 +149,11 @@ class ImportTests(unittest.TestCase):
     def test_import(self):
         def test_with_extension(ext):
             # The extension is normally ".py", perhaps ".pyw".
-            source = TESTFN + ext
+            source = filesystem_helper.TESTFN + ext
             if is_jython:
-                pyc = TESTFN + "$py.class"
+                pyc = filesystem_helper.TESTFN + "$py.class"
             else:
-                pyc = TESTFN + ".pyc"
+                pyc = filesystem_helper.TESTFN + ".pyc"
 
             with open(source, "w") as f:
                 print("# This tests Python's ability to import a",
@@ -163,12 +163,12 @@ class ImportTests(unittest.TestCase):
                 print("a =", a, file=f)
                 print("b =", b, file=f)
 
-            if TESTFN in sys.modules:
-                del sys.modules[TESTFN]
+            if filesystem_helper.TESTFN in sys.modules:
+                del sys.modules[filesystem_helper.TESTFN]
             importlib.invalidate_caches()
             try:
                 try:
-                    mod = __import__(TESTFN)
+                    mod = __import__(filesystem_helper.TESTFN)
                 except ImportError as err:
                     self.fail("import from %s failed: %s" % (ext, err))
 
@@ -177,9 +177,9 @@ class ImportTests(unittest.TestCase):
                 self.assertEqual(mod.b, b,
                     "module loaded (%s) but contents invalid" % mod)
             finally:
-                forget(TESTFN)
-                unlink(source)
-                unlink(pyc)
+                forget(filesystem_helper.TESTFN)
+                filesystem_helper.unlink(source)
+                filesystem_helper.unlink(pyc)
 
         sys.path.insert(0, os.curdir)
         try:
@@ -206,7 +206,7 @@ class ImportTests(unittest.TestCase):
             # Bytecode must be relocated from the PEP 3147 bytecode-only location.
             py_compile.compile(filename)
         finally:
-            unlink(filename)
+            filesystem_helper.unlink(filename)
 
         # Need to be able to load from current dir.
         sys.path.append('')
@@ -220,8 +220,8 @@ class ImportTests(unittest.TestCase):
         finally:
             # Cleanup.
             del sys.path[-1]
-            unlink(filename + 'c')
-            unlink(filename + 'o')
+            filesystem_helper.unlink(filename + 'c')
+            filesystem_helper.unlink(filename + 'o')
 
             # Remove references to the module (unload the module)
             namespace.clear()
@@ -231,7 +231,7 @@ class ImportTests(unittest.TestCase):
                 pass
 
     def test_failing_import_sticks(self):
-        source = TESTFN + ".py"
+        source = filesystem_helper.TESTFN + ".py"
         with open(source, "w") as f:
             print("a = 1/0", file=f)
 
@@ -239,16 +239,17 @@ class ImportTests(unittest.TestCase):
         # we try.
         sys.path.insert(0, os.curdir)
         importlib.invalidate_caches()
-        if TESTFN in sys.modules:
-            del sys.modules[TESTFN]
+        if filesystem_helper.TESTFN in sys.modules:
+            del sys.modules[filesystem_helper.TESTFN]
         try:
             for i in [1, 2, 3]:
-                self.assertRaises(ZeroDivisionError, __import__, TESTFN)
-                self.assertNotIn(TESTFN, sys.modules,
+                self.assertRaises(ZeroDivisionError, __import__,
+                                  filesystem_helper.TESTFN)
+                self.assertNotIn(filesystem_helper.TESTFN, sys.modules,
                                  "damaged module in sys.modules on %i try" % i)
         finally:
             del sys.path[0]
-            remove_files(TESTFN)
+            remove_files(filesystem_helper.TESTFN)
 
     def test_import_name_binding(self):
         # import x.y.z binds x in the current namespace
@@ -280,14 +281,14 @@ class ImportTests(unittest.TestCase):
 
     def test_failing_reload(self):
         # A failing reload should leave the module object in sys.modules.
-        source = TESTFN + os.extsep + "py"
+        source = filesystem_helper.TESTFN + os.extsep + "py"
         with open(source, "w") as f:
             f.write("a = 1\nb=2\n")
 
         sys.path.insert(0, os.curdir)
         try:
-            mod = __import__(TESTFN)
-            self.assertIn(TESTFN, sys.modules)
+            mod = __import__(filesystem_helper.TESTFN)
+            self.assertIn(filesystem_helper.TESTFN, sys.modules)
             self.assertEqual(mod.a, 1, "module has wrong attribute values")
             self.assertEqual(mod.b, 2, "module has wrong attribute values")
 
@@ -295,7 +296,7 @@ class ImportTests(unittest.TestCase):
             # convince reload() to reparse it.  Maybe the timestamp didn't
             # move enough.  We force it to get reparsed by removing the
             # compiled file too.
-            remove_files(TESTFN)
+            remove_files(filesystem_helper.TESTFN)
 
             # Now damage the module.
             with open(source, "w") as f:
@@ -303,7 +304,7 @@ class ImportTests(unittest.TestCase):
 
             self.assertRaises(ZeroDivisionError, importlib.reload, mod)
             # But we still expect the module to be in sys.modules.
-            mod = sys.modules.get(TESTFN)
+            mod = sys.modules.get(filesystem_helper.TESTFN)
             self.assertIsNotNone(mod, "expected module to be in sys.modules")
 
             # We should have replaced a w/ 10, but the old b value should
@@ -313,35 +314,35 @@ class ImportTests(unittest.TestCase):
 
         finally:
             del sys.path[0]
-            remove_files(TESTFN)
-            unload(TESTFN)
+            remove_files(filesystem_helper.TESTFN)
+            unload(filesystem_helper.TESTFN)
 
     @skip_if_dont_write_bytecode
     def test_file_to_source(self):
         # check if __file__ points to the source file where available
-        source = TESTFN + ".py"
+        source = filesystem_helper.TESTFN + ".py"
         with open(source, "w") as f:
             f.write("test = None\n")
 
         sys.path.insert(0, os.curdir)
         try:
-            mod = __import__(TESTFN)
+            mod = __import__(filesystem_helper.TESTFN)
             self.assertTrue(mod.__file__.endswith('.py'))
             os.remove(source)
-            del sys.modules[TESTFN]
+            del sys.modules[filesystem_helper.TESTFN]
             make_legacy_pyc(source)
             importlib.invalidate_caches()
-            mod = __import__(TESTFN)
+            mod = __import__(filesystem_helper.TESTFN)
             base, ext = os.path.splitext(mod.__file__)
             self.assertEqual(ext, '.pyc')
         finally:
             del sys.path[0]
-            remove_files(TESTFN)
-            if TESTFN in sys.modules:
-                del sys.modules[TESTFN]
+            remove_files(filesystem_helper.TESTFN)
+            if filesystem_helper.TESTFN in sys.modules:
+                del sys.modules[filesystem_helper.TESTFN]
 
     def test_import_by_filename(self):
-        path = os.path.abspath(TESTFN)
+        path = os.path.abspath(filesystem_helper.TESTFN)
         encoding = sys.getfilesystemencoding()
         try:
             path.encode(encoding)
@@ -352,7 +353,8 @@ class ImportTests(unittest.TestCase):
 
     def test_import_in_del_does_not_crash(self):
         # Issue 4236
-        testfn = script_helper.make_script('', TESTFN, textwrap.dedent("""\
+        testfn = script_helper.make_script('', filesystem_helper.TESTFN,
+                                           textwrap.dedent("""\
             import sys
             class C:
                def __del__(self):
@@ -367,7 +369,7 @@ class ImportTests(unittest.TestCase):
         # when importing a module (issue #11235).
         sys.path.insert(0, os.curdir)
         try:
-            source = TESTFN + ".py"
+            source = filesystem_helper.TESTFN + ".py"
             compiled = importlib.util.cache_from_source(source)
             with open(source, 'w') as f:
                 pass
@@ -380,12 +382,12 @@ class ImportTests(unittest.TestCase):
                                    getattr(errno, 'EINVAL', None)):
                     raise
                 self.skipTest("cannot set modification time to large integer ({})".format(e))
-            __import__(TESTFN)
+            __import__(filesystem_helper.TESTFN)
             # The pyc file was created.
             os.stat(compiled)
         finally:
             del sys.path[0]
-            remove_files(TESTFN)
+            remove_files(filesystem_helper.TESTFN)
 
     def test_bogus_fromlist(self):
         try:
@@ -479,7 +481,7 @@ class ImportTests(unittest.TestCase):
             os.path.dirname(pydname),
             "sqlite3{}.dll".format("_d" if "_d" in pydname else ""))
 
-        with test.support.temp_dir() as tmp:
+        with filesystem_helper.temp_dir() as tmp:
             tmp2 = os.path.join(tmp, "DLLs")
             os.mkdir(tmp2)
 
@@ -591,7 +593,7 @@ class FilePermissionTests(unittest.TestCase):
             m = __import__(name)
             self.assertEqual(m.x, 'rewritten')
             # Now delete the source file and check the pyc was rewritten
-            unlink(path)
+            filesystem_helper.unlink(path)
             unload(name)
             importlib.invalidate_caches()
             bytecode_only = path + "c"
@@ -615,7 +617,7 @@ def func():
     pass
 func_filename = func.__code__.co_filename
 """
-    dir_name = os.path.abspath(TESTFN)
+    dir_name = os.path.abspath(filesystem_helper.TESTFN)
     file_name = os.path.join(dir_name, module_name) + os.extsep + "py"
     compiled_name = importlib.util.cache_from_source(file_name)
 
@@ -634,9 +636,9 @@ func_filename = func.__code__.co_filename
             sys.modules[self.module_name] = self.orig_module
         else:
             unload(self.module_name)
-        unlink(self.file_name)
-        unlink(self.compiled_name)
-        rmtree(self.dir_name)
+        filesystem_helper.unlink(self.file_name)
+        filesystem_helper.unlink(self.compiled_name)
+        filesystem_helper.rmtree(self.dir_name)
 
     def import_module(self):
         ns = globals()
@@ -692,14 +694,14 @@ func_filename = func.__code__.co_filename
 class PathsTests(unittest.TestCase):
     SAMPLES = ('test', 'test\u00e4\u00f6\u00fc\u00df', 'test\u00e9\u00e8',
                'test\u00b0\u00b3\u00b2')
-    path = TESTFN
+    path = filesystem_helper.TESTFN
 
     def setUp(self):
         os.mkdir(self.path)
         self.syspath = sys.path[:]
 
     def tearDown(self):
-        rmtree(self.path)
+        filesystem_helper.rmtree(self.path)
         sys.path[:] = self.syspath
 
     # Regression test for http://bugs.python.org/issue1293.
@@ -835,12 +837,12 @@ class PycacheTests(unittest.TestCase):
     # Test the various PEP 3147/488-related behaviors.
 
     def _clean(self):
-        forget(TESTFN)
-        rmtree('__pycache__')
-        unlink(self.source)
+        forget(filesystem_helper.TESTFN)
+        filesystem_helper.rmtree('__pycache__')
+        filesystem_helper.unlink(self.source)
 
     def setUp(self):
-        self.source = TESTFN + '.py'
+        self.source = filesystem_helper.TESTFN + '.py'
         self._clean()
         with open(self.source, 'w') as fp:
             print('# This is a test file written by test_import.py', file=fp)
@@ -855,12 +857,12 @@ class PycacheTests(unittest.TestCase):
     @skip_if_dont_write_bytecode
     def test_import_pyc_path(self):
         self.assertFalse(os.path.exists('__pycache__'))
-        __import__(TESTFN)
+        __import__(filesystem_helper.TESTFN)
         self.assertTrue(os.path.exists('__pycache__'))
         pyc_path = importlib.util.cache_from_source(self.source)
         self.assertTrue(os.path.exists(pyc_path),
                         'bytecode file {!r} for {!r} does not '
-                        'exist'.format(pyc_path, TESTFN))
+                        'exist'.format(pyc_path, filesystem_helper.TESTFN))
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
@@ -871,24 +873,24 @@ class PycacheTests(unittest.TestCase):
         # When the umask causes the new __pycache__ directory to be
         # unwritable, the import still succeeds but no .pyc file is written.
         with temp_umask(0o222):
-            __import__(TESTFN)
+            __import__(filesystem_helper.TESTFN)
         self.assertTrue(os.path.exists('__pycache__'))
         pyc_path = importlib.util.cache_from_source(self.source)
         self.assertFalse(os.path.exists(pyc_path),
                         'bytecode file {!r} for {!r} '
-                        'exists'.format(pyc_path, TESTFN))
+                        'exists'.format(pyc_path, filesystem_helper.TESTFN))
 
     @skip_if_dont_write_bytecode
     def test_missing_source(self):
         # With PEP 3147 cache layout, removing the source but leaving the pyc
         # file does not satisfy the import.
-        __import__(TESTFN)
+        __import__(filesystem_helper.TESTFN)
         pyc_file = importlib.util.cache_from_source(self.source)
         self.assertTrue(os.path.exists(pyc_file))
         os.remove(self.source)
-        forget(TESTFN)
+        forget(filesystem_helper.TESTFN)
         importlib.invalidate_caches()
-        self.assertRaises(ImportError, __import__, TESTFN)
+        self.assertRaises(ImportError, __import__, filesystem_helper.TESTFN)
 
     @skip_if_dont_write_bytecode
     def test_missing_source_legacy(self):
@@ -896,13 +898,13 @@ class PycacheTests(unittest.TestCase):
         # when the pyc file lives where the py file would have been (and named
         # without the tag), it is importable.  The __file__ of the imported
         # module is the pyc location.
-        __import__(TESTFN)
+        __import__(filesystem_helper.TESTFN)
         # pyc_file gets removed in _clean() via tearDown().
         pyc_file = make_legacy_pyc(self.source)
         os.remove(self.source)
-        unload(TESTFN)
+        unload(filesystem_helper.TESTFN)
         importlib.invalidate_caches()
-        m = __import__(TESTFN)
+        m = __import__(filesystem_helper.TESTFN)
         try:
             self.assertEqual(m.__file__,
                              os.path.join(os.curdir, os.path.relpath(pyc_file)))
@@ -911,8 +913,8 @@ class PycacheTests(unittest.TestCase):
 
     def test___cached__(self):
         # Modules now also have an __cached__ that points to the pyc file.
-        m = __import__(TESTFN)
-        pyc_file = importlib.util.cache_from_source(TESTFN + '.py')
+        m = __import__(filesystem_helper.TESTFN)
+        pyc_file = importlib.util.cache_from_source(filesystem_helper.TESTFN + '.py')
         self.assertEqual(m.__cached__, os.path.join(os.curdir, pyc_file))
 
     @skip_if_dont_write_bytecode
@@ -921,13 +923,13 @@ class PycacheTests(unittest.TestCase):
         # when the pyc file lives where the py file would have been (and named
         # without the tag), it is importable.  The __cached__ of the imported
         # module is the pyc location.
-        __import__(TESTFN)
+        __import__(filesystem_helper.TESTFN)
         # pyc_file gets removed in _clean() via tearDown().
         pyc_file = make_legacy_pyc(self.source)
         os.remove(self.source)
-        unload(TESTFN)
+        unload(filesystem_helper.TESTFN)
         importlib.invalidate_caches()
-        m = __import__(TESTFN)
+        m = __import__(filesystem_helper.TESTFN)
         self.assertEqual(m.__cached__,
                          os.path.join(os.curdir, os.path.relpath(pyc_file)))
 
@@ -935,7 +937,7 @@ class PycacheTests(unittest.TestCase):
     def test_package___cached__(self):
         # Like test___cached__ but for packages.
         def cleanup():
-            rmtree('pep3147')
+            filesystem_helper.rmtree('pep3147')
             unload('pep3147.foo')
             unload('pep3147')
         os.mkdir('pep3147')
@@ -958,7 +960,7 @@ class PycacheTests(unittest.TestCase):
         # Like test___cached__ but ensuring __cached__ when imported from a
         # PEP 3147 pyc file.
         def cleanup():
-            rmtree('pep3147')
+            filesystem_helper.rmtree('pep3147')
             unload('pep3147.foo')
             unload('pep3147')
         os.mkdir('pep3147')
@@ -984,11 +986,11 @@ class PycacheTests(unittest.TestCase):
     def test_recompute_pyc_same_second(self):
         # Even when the source file doesn't change timestamp, a change in
         # source size is enough to trigger recomputation of the pyc file.
-        __import__(TESTFN)
-        unload(TESTFN)
+        __import__(filesystem_helper.TESTFN)
+        unload(filesystem_helper.TESTFN)
         with open(self.source, 'a') as fp:
             print("x = 5", file=fp)
-        m = __import__(TESTFN)
+        m = __import__(filesystem_helper.TESTFN)
         self.assertEqual(m.x, 5)
 
 
@@ -997,22 +999,22 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
     tagged = package_name + '-tagged'
 
     def setUp(self):
-        test.support.rmtree(self.tagged)
-        test.support.rmtree(self.package_name)
+        filesystem_helper.rmtree(self.tagged)
+        filesystem_helper.rmtree(self.package_name)
         self.orig_sys_path = sys.path[:]
 
         # create a sample package; imagine you have a package with a tag and
         #  you want to symbolically link it from its untagged name.
         os.mkdir(self.tagged)
-        self.addCleanup(test.support.rmtree, self.tagged)
+        self.addCleanup(filesystem_helper.rmtree, self.tagged)
         init_file = os.path.join(self.tagged, '__init__.py')
-        test.support.create_empty_file(init_file)
+        filesystem_helper.create_empty_file(init_file)
         assert os.path.exists(init_file)
 
         # now create a symlink to the tagged package
         # sample -> sample-tagged
         os.symlink(self.tagged, self.package_name, target_is_directory=True)
-        self.addCleanup(test.support.unlink, self.package_name)
+        self.addCleanup(test.support.filesystem_helper.unlink, self.package_name)
         importlib.invalidate_caches()
 
         self.assertEqual(os.path.isdir(self.package_name), True)
@@ -1027,7 +1029,7 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
         not hasattr(sys, 'getwindowsversion')
         or sys.getwindowsversion() >= (6, 0),
         "Windows Vista or later required")
-    @test.support.skip_unless_symlink
+    @filesystem_helper.skip_unless_symlink
     def test_symlinked_dir_importable(self):
         # make sure sample can only be imported from the current directory.
         sys.path[:] = ['.']
@@ -1086,8 +1088,8 @@ class GetSourcefileTests(unittest.TestCase):
         # source file if it exists.
         with mock.patch('importlib._bootstrap_external._path_isfile') as _path_isfile:
             _path_isfile.return_value = True;
-            path = TESTFN + '.pyc'
-            expect = TESTFN + '.py'
+            path = filesystem_helper.TESTFN + '.pyc'
+            expect = filesystem_helper.TESTFN + '.py'
             self.assertEqual(_get_sourcefile(path), expect)
 
     def test_get_sourcefile_no_source(self):
@@ -1095,29 +1097,29 @@ class GetSourcefileTests(unittest.TestCase):
         # return the original bytecode path.
         with mock.patch('importlib._bootstrap_external._path_isfile') as _path_isfile:
             _path_isfile.return_value = False;
-            path = TESTFN + '.pyc'
+            path = filesystem_helper.TESTFN + '.pyc'
             self.assertEqual(_get_sourcefile(path), path)
 
     def test_get_sourcefile_bad_ext(self):
         # Given a path with an invalid bytecode extension, return the
         # bytecode path passed as the argument.
-        path = TESTFN + '.bad_ext'
+        path = filesystem_helper.TESTFN + '.bad_ext'
         self.assertEqual(_get_sourcefile(path), path)
 
 
 class ImportTracebackTests(unittest.TestCase):
 
     def setUp(self):
-        os.mkdir(TESTFN)
+        os.mkdir(filesystem_helper.TESTFN)
         self.old_path = sys.path[:]
-        sys.path.insert(0, TESTFN)
+        sys.path.insert(0, filesystem_helper.TESTFN)
 
     def tearDown(self):
         sys.path[:] = self.old_path
-        rmtree(TESTFN)
+        filesystem_helper.rmtree(filesystem_helper.TESTFN)
 
     def create_module(self, mod, contents, ext=".py"):
-        fname = os.path.join(TESTFN, mod + ext)
+        fname = os.path.join(filesystem_helper.TESTFN, mod + ext)
         with open(fname, "w") as f:
             f.write(contents)
         self.addCleanup(unload, mod)
@@ -1191,7 +1193,7 @@ class ImportTracebackTests(unittest.TestCase):
     def _setup_broken_package(self, parent, child):
         pkg_name = "_parent_foo"
         self.addCleanup(unload, pkg_name)
-        pkg_path = os.path.join(TESTFN, pkg_name)
+        pkg_path = os.path.join(filesystem_helper.TESTFN, pkg_name)
         os.mkdir(pkg_path)
         # Touch the __init__.py
         init_path = os.path.join(pkg_path, '__init__.py')
@@ -1270,12 +1272,15 @@ class ImportTracebackTests(unittest.TestCase):
             else:
                 importlib.SourceLoader.exec_module = old_exec_module
 
-    @unittest.skipUnless(TESTFN_UNENCODABLE, 'need TESTFN_UNENCODABLE')
+    @unittest.skipUnless(filesystem_helper.TESTFN_UNENCODABLE,
+                         'need filesystem_helper.TESTFN_UNENCODABLE')
     def test_unencodable_filename(self):
         # Issue #11619: The Python parser and the import machinery must not
         # encode filenames, especially on Windows
-        pyname = script_helper.make_script('', TESTFN_UNENCODABLE, 'pass')
-        self.addCleanup(unlink, pyname)
+        pyname = script_helper.make_script('',
+                                           filesystem_helper.TESTFN_UNENCODABLE,
+                                           'pass')
+        self.addCleanup(filesystem_helper.unlink, pyname)
         name = pyname[:-3]
         script_helper.assert_python_ok("-c", "mod = __import__(%a)" % name,
                                        __isolated=False)

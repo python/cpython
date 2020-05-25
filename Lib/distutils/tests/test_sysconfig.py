@@ -10,7 +10,9 @@ import unittest
 from distutils import sysconfig
 from distutils.ccompiler import get_default_compiler
 from distutils.tests import support
-from test.support import TESTFN, run_unittest, check_warnings, swap_item
+from test.support import run_unittest, check_warnings, swap_item
+from test.support import filesystem_helper
+
 
 class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
     def setUp(self):
@@ -24,10 +26,10 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         super(SysconfigTestCase, self).tearDown()
 
     def cleanup_testfn(self):
-        if os.path.isfile(TESTFN):
-            os.remove(TESTFN)
-        elif os.path.isdir(TESTFN):
-            shutil.rmtree(TESTFN)
+        if os.path.isfile(filesystem_helper.TESTFN):
+            os.remove(filesystem_helper.TESTFN)
+        elif os.path.isdir(filesystem_helper.TESTFN):
+            shutil.rmtree(filesystem_helper.TESTFN)
 
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
@@ -38,7 +40,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         #self.assertTrue(os.path.isdir(lib_dir), lib_dir)
         # test for pythonxx.lib?
         self.assertNotEqual(sysconfig.get_python_lib(),
-                            sysconfig.get_python_lib(prefix=TESTFN))
+                            sysconfig.get_python_lib(prefix=filesystem_helper.TESTFN))
 
     def test_get_config_vars(self):
         cvars = sysconfig.get_config_vars()
@@ -168,7 +170,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertEqual(comp.shared_lib_extension, 'sc_shutil_suffix')
 
     def test_parse_makefile_base(self):
-        self.makefile = TESTFN
+        self.makefile = filesystem_helper.TESTFN
         fd = open(self.makefile, 'w')
         try:
             fd.write(r"CONFIG_ARGS=  '--arg1=optarg1' 'ENV=LIB'" '\n')
@@ -180,7 +182,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
                              'OTHER': 'foo'})
 
     def test_parse_makefile_literal_dollar(self):
-        self.makefile = TESTFN
+        self.makefile = filesystem_helper.TESTFN
         fd = open(self.makefile, 'w')
         try:
             fd.write(r"CONFIG_ARGS=  '--arg1=optarg1' 'ENV=\$$LIB'" '\n')
@@ -248,7 +250,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         # Issue #21923: test that a Distribution compiler
         # instance can be called without an explicit call to
         # get_config_vars().
-        with open(TESTFN, 'w') as f:
+        with open(filesystem_helper.TESTFN, 'w') as f:
             f.writelines(textwrap.dedent('''\
                 from distutils.core import Distribution
                 config = Distribution().get_command_obj('config')
@@ -256,7 +258,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
                 # is found but it should not raise an exception.
                 rc = config.try_compile('int x;')
                 '''))
-        p = subprocess.Popen([str(sys.executable), TESTFN],
+        p = subprocess.Popen([str(sys.executable), filesystem_helper.TESTFN],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True)

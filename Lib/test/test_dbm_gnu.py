@@ -2,7 +2,7 @@ from test import support
 gdbm = support.import_module("dbm.gnu") #skip if not supported
 import unittest
 import os
-from test.support import TESTFN, TESTFN_NONASCII, unlink
+from test.support import filesystem_helper
 
 
 filename = TESTFN
@@ -24,7 +24,7 @@ class TestGdbm(unittest.TestCase):
     def tearDown(self):
         if self.g is not None:
             self.g.close()
-        unlink(filename)
+        filesystem_helper.unlink(filename)
 
     def test_key_methods(self):
         self.g = gdbm.open(filename, 'c')
@@ -53,7 +53,7 @@ class TestGdbm(unittest.TestCase):
 
     def test_error_conditions(self):
         # Try to open a non-existent database.
-        unlink(filename)
+        filesystem_helper.unlink(filename)
         self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
         # Try to access a closed database.
         self.g = gdbm.open(filename, 'c')
@@ -142,11 +142,11 @@ class TestGdbm(unittest.TestCase):
             with self.assertRaises(gdbm.error):
                 db[b'not exist key'] = b'not exist value'
 
-    @unittest.skipUnless(TESTFN_NONASCII,
+    @unittest.skipUnless(filesystem_helper.TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
-        filename = TESTFN_NONASCII
-        self.addCleanup(unlink, filename)
+        filename = filesystem_helper.TESTFN_NONASCII
+        self.addCleanup(filesystem_helper.unlink, filename)
         with gdbm.open(filename, 'c') as db:
             db[b'key'] = b'value'
         self.assertTrue(os.path.exists(filename))

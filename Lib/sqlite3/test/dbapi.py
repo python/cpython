@@ -25,7 +25,7 @@ import threading
 import unittest
 import sqlite3 as sqlite
 
-from test.support import TESTFN, unlink
+from test.support import filesystem_helper
 
 
 class ModuleTests(unittest.TestCase):
@@ -163,10 +163,10 @@ class ConnectionTests(unittest.TestCase):
     def CheckOpenWithPathLikeObject(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
-        self.addCleanup(unlink, TESTFN)
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
         class Path:
             def __fspath__(self):
-                return TESTFN
+                return filesystem_helper.TESTFN
         path = Path()
         with sqlite.connect(path) as cx:
             cx.execute('create table test(id integer)')
@@ -176,12 +176,12 @@ class ConnectionTests(unittest.TestCase):
             with self.assertRaises(sqlite.NotSupportedError):
                 sqlite.connect(':memory:', uri=True)
             return
-        self.addCleanup(unlink, TESTFN)
-        with sqlite.connect(TESTFN) as cx:
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
+        with sqlite.connect(filesystem_helper.TESTFN) as cx:
             cx.execute('create table test(id integer)')
-        with sqlite.connect('file:' + TESTFN, uri=True) as cx:
+        with sqlite.connect('file:' + filesystem_helper.TESTFN, uri=True) as cx:
             cx.execute('insert into test(id) values(0)')
-        with sqlite.connect('file:' + TESTFN + '?mode=ro', uri=True) as cx:
+        with sqlite.connect('file:' + filesystem_helper.TESTFN + '?mode=ro', uri=True) as cx:
             with self.assertRaises(sqlite.OperationalError):
                 cx.execute('insert into test(id) values(1)')
 

@@ -2757,7 +2757,7 @@ whitespace if doctest does not correctly do the newline conversion.
     >>> dn = tempfile.mkdtemp()
     >>> pkg = os.path.join(dn, "doctest_testpkg")
     >>> os.mkdir(pkg)
-    >>> support.create_empty_file(os.path.join(pkg, "__init__.py"))
+    >>> filesystem_helper.create_empty_file(os.path.join(pkg, "__init__.py"))
     >>> fn = os.path.join(pkg, "doctest_testfile.txt")
     >>> with open(fn, 'wb') as f:
     ...     f.write(

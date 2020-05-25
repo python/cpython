@@ -7,9 +7,9 @@ executing have not been removed.
 import unittest
 import test.support
 from test import support
+from test.support import filesystem_helper
 from test.support import socket_helper
-from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
-                          change_cwd)
+from test.support import (captured_stderr, EnvironmentVarGuard)
 import builtins
 import encodings
 import glob
@@ -122,7 +122,8 @@ class HelperFunctionsTests(unittest.TestCase):
         finally:
             pth_file.cleanup()
 
-    def make_pth(self, contents, pth_dir='.', pth_name=TESTFN):
+    def make_pth(self, contents, pth_dir='.',
+                 pth_name=filesystem_helper.TESTFN):
         # Create a .pth file and return its (abspath, basename).
         pth_dir = os.path.abspath(pth_dir)
         pth_basename = pth_name + '.pth'
@@ -324,8 +325,8 @@ class HelperFunctionsTests(unittest.TestCase):
 class PthFile(object):
     """Helper class for handling testing of .pth files"""
 
-    def __init__(self, filename_base=TESTFN, imported="time",
-                    good_dirname="__testdir__", bad_dirname="__bad"):
+    def __init__(self, filename_base=filesystem_helper.TESTFN, imported="time",
+                 good_dirname="__testdir__", bad_dirname="__bad"):
         """Initialize instance variables"""
         self.filename = filename_base + ".pth"
         self.base_dir = os.path.abspath('')
@@ -401,7 +402,7 @@ class ImportSideEffectTests(unittest.TestCase):
             # Failure to get relpath probably means we need to chdir
             # to the same drive.
             cwd, parent = os.path.split(os.path.dirname(os.__file__))
-        with change_cwd(cwd):
+        with filesystem_helper.change_cwd(cwd):
             env = os.environ.copy()
             env['PYTHONPATH'] = parent
             code = ('import os, sys',
@@ -591,7 +592,7 @@ class _pthFileTests(unittest.TestCase):
 
     def _create_underpth_exe(self, lines):
         temp_dir = tempfile.mkdtemp()
-        self.addCleanup(test.support.rmtree, temp_dir)
+        self.addCleanup(filesystem_helper.rmtree, temp_dir)
         exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
         shutil.copy(sys.executable, exe_file)
         _pth_file = os.path.splitext(exe_file)[0] + '._pth'

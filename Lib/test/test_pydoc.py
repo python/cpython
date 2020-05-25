@@ -24,11 +24,11 @@ import textwrap
 from io import StringIO
 from collections import namedtuple
 from test.support.script_helper import assert_python_ok
+from test.support import filesystem_helper
 from test.support import threading_helper
 from test.support import (
-    TESTFN, rmtree,
     reap_children, captured_output, captured_stdout,
-    captured_stderr, unlink, requires_docstrings
+    captured_stderr, requires_docstrings
 )
 from test import pydoc_mod
 
@@ -708,14 +708,14 @@ class PydocDocTest(unittest.TestCase):
         self.assertIn('_asdict', helptext)
 
     def test_synopsis(self):
-        self.addCleanup(unlink, TESTFN)
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
         for encoding in ('ISO-8859-1', 'UTF-8'):
-            with open(TESTFN, 'w', encoding=encoding) as script:
+            with open(filesystem_helper.TESTFN, 'w', encoding=encoding) as script:
                 if encoding != 'UTF-8':
                     print('#coding: {}'.format(encoding), file=script)
                 print('"""line 1: h\xe9', file=script)
                 print('line 2: hi"""', file=script)
-            synopsis = pydoc.synopsis(TESTFN, {})
+            synopsis = pydoc.synopsis(filesystem_helper.TESTFN, {})
             self.assertEqual(synopsis, 'line 1: h\xe9')
 
     @unittest.skipIf(sys.flags.optimize >= 2,
@@ -728,7 +728,7 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(synopsis, expected)
 
     def test_synopsis_sourceless_empty_doc(self):
-        with test.support.temp_cwd() as test_dir:
+        with filesystem_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, 'foomod42.py')
             cached_path = importlib.util.cache_from_source(init_path)
             with open(init_path, 'w') as fobj:
@@ -745,11 +745,11 @@ class PydocDocTest(unittest.TestCase):
                          ('I Am A Doc', '\nHere is my description'))
 
     def test_is_package_when_not_package(self):
-        with test.support.temp_cwd() as test_dir:
+        with filesystem_helper.temp_cwd() as test_dir:
             self.assertFalse(pydoc.ispackage(test_dir))
 
     def test_is_package_when_is_package(self):
-        with test.support.temp_cwd() as test_dir:
+        with filesystem_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, '__init__.py')
             open(init_path, 'w').close()
             self.assertTrue(pydoc.ispackage(test_dir))
@@ -882,8 +882,8 @@ Data descriptors inherited from A:<br>
 class PydocImportTest(PydocBaseTest):
 
     def setUp(self):
-        self.test_dir = os.mkdir(TESTFN)
-        self.addCleanup(rmtree, TESTFN)
+        self.test_dir = os.mkdir(filesystem_helper.TESTFN)
+        self.addCleanup(filesystem_helper.rmtree, filesystem_helper.TESTFN)
         importlib.invalidate_caches()
 
     def test_badimport(self):
@@ -899,22 +899,24 @@ class PydocImportTest(PydocBaseTest):
             ('test.{}'.format(modname), 'test.{}'.format(modname)),
             )
 
-        sourcefn = os.path.join(TESTFN, modname) + os.extsep + "py"
+        sourcefn = os.path.join(filesystem_helper.TESTFN, modname) + os.extsep + "py"
         for importstring, expectedinmsg in testpairs:
             with open(sourcefn, 'w') as f:
                 f.write("import {}\n".format(importstring))
-            result = run_pydoc(modname, PYTHONPATH=TESTFN).decode("ascii")
+            result = run_pydoc(modname,
+                               PYTHONPATH=filesystem_helper.TESTFN).decode(
+                               "ascii")
             expected = badimport_pattern % (modname, expectedinmsg)
             self.assertEqual(expected, result)
 
     def test_apropos_with_bad_package(self):
         # Issue 7425 - pydoc -k failed when bad package on path
-        pkgdir = os.path.join(TESTFN, "syntaxerr")
+        pkgdir = os.path.join(filesystem_helper.TESTFN, "syntaxerr")
         os.mkdir(pkgdir)
         badsyntax = os.path.join(pkgdir, "__init__") + os.extsep + "py"
         with open(badsyntax, 'w') as f:
             f.write("invalid python syntax = $1\n")
-        with self.restrict_walk_packages(path=[TESTFN]):
+        with self.restrict_walk_packages(path=[filesystem_helper.TESTFN]):
             with captured_stdout() as out:
                 with captured_stderr() as err:
                     pydoc.apropos('xyzzy')
@@ -930,12 +932,13 @@ class PydocImportTest(PydocBaseTest):
 
     def test_apropos_with_unreadable_dir(self):
         # Issue 7367 - pydoc -k failed when unreadable dir on path
-        self.unreadable_dir = os.path.join(TESTFN, "unreadable")
+        self.unreadable_dir = os.path.join(filesystem_helper.TESTFN,
+                                           "unreadable")
         os.mkdir(self.unreadable_dir, 0)
         self.addCleanup(os.rmdir, self.unreadable_dir)
         # Note, on Windows the directory appears to be still
         #   readable so this is not really testing the issue there
-        with self.restrict_walk_packages(path=[TESTFN]):
+        with self.restrict_walk_packages(path=[filesystem_helper.TESTFN]):
             with captured_stdout() as out:
                 with captured_stderr() as err:
                     pydoc.apropos('SOMEKEY')
@@ -944,16 +947,16 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(err.getvalue(), '')
 
     def test_apropos_empty_doc(self):
-        pkgdir = os.path.join(TESTFN, 'walkpkg')
+        pkgdir = os.path.join(filesystem_helper.TESTFN, 'walkpkg')
         os.mkdir(pkgdir)
-        self.addCleanup(rmtree, pkgdir)
+        self.addCleanup(filesystem_helper.rmtree, pkgdir)
         init_path = os.path.join(pkgdir, '__init__.py')
         with open(init_path, 'w') as fobj:
             fobj.write("foo = 1")
         current_mode = stat.S_IMODE(os.stat(pkgdir).st_mode)
         try:
             os.chmod(pkgdir, current_mode & ~stat.S_IEXEC)
-            with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
+            with self.restrict_walk_packages(path=[filesystem_helper.TESTFN]), captured_stdout() as stdout:
                 pydoc.apropos('')
             self.assertIn('walkpkg', stdout.getvalue())
         finally:
@@ -961,15 +964,15 @@ class PydocImportTest(PydocBaseTest):
 
     def test_url_search_package_error(self):
         # URL handler search should cope with packages that raise exceptions
-        pkgdir = os.path.join(TESTFN, "test_error_package")
+        pkgdir = os.path.join(filesystem_helper.TESTFN, "test_error_package")
         os.mkdir(pkgdir)
         init = os.path.join(pkgdir, "__init__.py")
         with open(init, "wt", encoding="ascii") as f:
             f.write("""raise ValueError("ouch")\n""")
-        with self.restrict_walk_packages(path=[TESTFN]):
+        with self.restrict_walk_packages(path=[filesystem_helper.TESTFN]):
             # Package has to be importable for the error to have any effect
             saved_paths = tuple(sys.path)
-            sys.path.insert(0, TESTFN)
+            sys.path.insert(0, filesystem_helper.TESTFN)
             try:
                 with self.assertRaisesRegex(ValueError, "ouch"):
                     import test_error_package  # Sanity check

@@ -22,10 +22,12 @@ import shutil
 from urllib.error import URLError
 import urllib.request
 from test import support
-from test.support import findfile, run_unittest, FakePath, TESTFN
+from test.support import filesystem_helper
 
-TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
-TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
+TEST_XMLFILE = filesystem_helper.findfile("test.xml",
+                                          subdir="xmltestdata")
+TEST_XMLFILE_OUT = filesystem_helper.findfile("test.xml.out",
+                                              subdir="xmltestdata")
 try:
     TEST_XMLFILE.encode("utf-8")
     TEST_XMLFILE_OUT.encode("utf-8")
@@ -112,7 +114,8 @@ def xml_bytes(doc, encoding, decl_encoding=...):
 def make_xml_file(doc, encoding, decl_encoding=...):
     if decl_encoding is ...:
         decl_encoding = encoding
-    with open(TESTFN, 'w', encoding=encoding, errors='xmlcharrefreplace') as f:
+    with open(filesystem_helper.TESTFN, 'w',
+              encoding=encoding, errors='xmlcharrefreplace') as f:
         f.write(xml_str(doc, decl_encoding))
 
 
@@ -120,7 +123,7 @@ class ParseTest(unittest.TestCase):
     data = '<money value="$\xa3\u20ac\U0001017b">$\xa3\u20ac\U0001017b</money>'
 
     def tearDown(self):
-        support.unlink(TESTFN)
+        filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def check_parse(self, f):
         from xml.sax import parse
@@ -134,11 +137,11 @@ class ParseTest(unittest.TestCase):
         for encoding in encodings:
             self.check_parse(StringIO(xml_str(self.data, encoding)))
             make_xml_file(self.data, encoding)
-            with open(TESTFN, 'r', encoding=encoding) as f:
+            with open(filesystem_helper.TESTFN, 'r', encoding=encoding) as f:
                 self.check_parse(f)
             self.check_parse(StringIO(self.data))
             make_xml_file(self.data, encoding, None)
-            with open(TESTFN, 'r', encoding=encoding) as f:
+            with open(filesystem_helper.TESTFN, 'r', encoding=encoding) as f:
                 self.check_parse(f)
 
     def test_parse_bytes(self):
@@ -148,49 +151,49 @@ class ParseTest(unittest.TestCase):
         for encoding in encodings:
             self.check_parse(BytesIO(xml_bytes(self.data, encoding)))
             make_xml_file(self.data, encoding)
-            self.check_parse(TESTFN)
-            with open(TESTFN, 'rb') as f:
+            self.check_parse(filesystem_helper.TESTFN)
+            with open(filesystem_helper.TESTFN, 'rb') as f:
                 self.check_parse(f)
             self.check_parse(BytesIO(xml_bytes(self.data, encoding, None)))
             make_xml_file(self.data, encoding, None)
-            self.check_parse(TESTFN)
-            with open(TESTFN, 'rb') as f:
+            self.check_parse(filesystem_helper.TESTFN)
+            with open(filesystem_helper.TESTFN, 'rb') as f:
                 self.check_parse(f)
         # accept UTF-8 with BOM
         self.check_parse(BytesIO(xml_bytes(self.data, 'utf-8-sig', 'utf-8')))
         make_xml_file(self.data, 'utf-8-sig', 'utf-8')
-        self.check_parse(TESTFN)
-        with open(TESTFN, 'rb') as f:
+        self.check_parse(filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             self.check_parse(f)
         self.check_parse(BytesIO(xml_bytes(self.data, 'utf-8-sig', None)))
         make_xml_file(self.data, 'utf-8-sig', None)
-        self.check_parse(TESTFN)
-        with open(TESTFN, 'rb') as f:
+        self.check_parse(filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             self.check_parse(f)
         # accept data with declared encoding
         self.check_parse(BytesIO(xml_bytes(self.data, 'iso-8859-1')))
         make_xml_file(self.data, 'iso-8859-1')
-        self.check_parse(TESTFN)
-        with open(TESTFN, 'rb') as f:
+        self.check_parse(filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             self.check_parse(f)
         # fail on non-UTF-8 incompatible data without declared encoding
         with self.assertRaises(SAXException):
             self.check_parse(BytesIO(xml_bytes(self.data, 'iso-8859-1', None)))
         make_xml_file(self.data, 'iso-8859-1', None)
         with self.assertRaises(SAXException):
-            self.check_parse(TESTFN)
-        with open(TESTFN, 'rb') as f:
+            self.check_parse(filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             with self.assertRaises(SAXException):
                 self.check_parse(f)
 
     def test_parse_path_object(self):
         make_xml_file(self.data, 'utf-8', None)
-        self.check_parse(FakePath(TESTFN))
+        self.check_parse(filesystem_helper.FakePath(filesystem_helper.TESTFN))
 
     def test_parse_InputSource(self):
         # accept data without declared but with explicitly specified encoding
         make_xml_file(self.data, 'iso-8859-1', None)
-        with open(TESTFN, 'rb') as f:
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             input = InputSource()
             input.setByteStream(f)
             input.setEncoding('iso-8859-1')
@@ -208,7 +211,7 @@ class ParseTest(unittest.TestCase):
         with mock.patch('xml.sax.saxutils.open', side_effect=mock_open):
             make_xml_file(self.data, 'iso-8859-1', None)
             with self.assertRaises(SAXException):
-                self.check_parse(TESTFN)
+                self.check_parse(filesystem_helper.TESTFN)
             self.assertTrue(fileobj.closed)
 
     def check_parseString(self, s):
@@ -348,12 +351,12 @@ class SaxutilsTest(unittest.TestCase):
 class PrepareInputSourceTest(unittest.TestCase):
 
     def setUp(self):
-        self.file = support.TESTFN
+        self.file = filesystem_helper.TESTFN
         with open(self.file, "w") as tmp:
             tmp.write("This was read from a file.")
 
     def tearDown(self):
-        support.unlink(self.file)
+        filesystem_helper.unlink(self.file)
 
     def make_byte_stream(self):
         return BytesIO(b"This is a byte stream.")
@@ -404,7 +407,7 @@ class PrepareInputSourceTest(unittest.TestCase):
 
     def test_path_objects(self):
         # If the source is a Path object, use it as a system ID and open it.
-        prep = prepare_input_source(FakePath(self.file))
+        prep = prepare_input_source(filesystem_helper.FakePath(self.file))
         self.assertIsNone(prep.getCharacterStream())
         self.checkContent(prep.getByteStream(),
                           b"This was read from a file.")
@@ -823,14 +826,14 @@ class StreamWriterXmlgenTest(XmlgenTest, unittest.TestCase):
                 (encoding, doc)).encode('ascii', 'xmlcharrefreplace')
 
 class StreamReaderWriterXmlgenTest(XmlgenTest, unittest.TestCase):
-    fname = support.TESTFN + '-codecs'
+    fname = filesystem_helper.TESTFN + '-codecs'
 
     def ioclass(self):
         writer = codecs.open(self.fname, 'w', encoding='ascii',
                              errors='xmlcharrefreplace', buffering=0)
         def cleanup():
             writer.close()
-            support.unlink(self.fname)
+            filesystem_helper.unlink(self.fname)
         self.addCleanup(cleanup)
         def getvalue():
             # Windows will not let use reopen without first closing
@@ -902,7 +905,7 @@ class ExpatReaderTest(XmlTestBase):
     def test_expat_binary_file_nonascii(self):
         fname = support.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
-        self.addCleanup(support.unlink, fname)
+        self.addCleanup(filesystem_helper.unlink, fname)
 
         parser = create_parser()
         result = BytesIO()
@@ -1138,7 +1141,7 @@ class ExpatReaderTest(XmlTestBase):
     def test_expat_inpsource_sysid_nonascii(self):
         fname = support.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
-        self.addCleanup(support.unlink, fname)
+        self.addCleanup(filesystem_helper.unlink, fname)
 
         parser = create_parser()
         result = BytesIO()
@@ -1240,7 +1243,7 @@ class ExpatReaderTest(XmlTestBase):
     def test_expat_locator_withinfo_nonascii(self):
         fname = support.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
-        self.addCleanup(support.unlink, fname)
+        self.addCleanup(filesystem_helper.unlink, fname)
 
         result = BytesIO()
         xmlgen = XMLGenerator(result)

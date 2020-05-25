@@ -5,7 +5,8 @@ help_about.build_bits branches on sys.platform='darwin'.
 
 from idlelib import help_about
 import unittest
-from test.support import requires, findfile
+from test.support import requires
+from test.support import filesystem_helper
 from tkinter import Tk, TclError
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
@@ -77,7 +78,7 @@ class LiveDialogTest(unittest.TestCase):
         for button, filename, name in button_sources:
             with  self.subTest(name=name):
                 button.invoke()
-                fn = findfile(filename, subdir='idlelib')
+                fn = filesystem_helper.findfile(filename, subdir='idlelib')
                 get = dialog._current_textview.viewframe.textframe.text.get
                 with open(fn, encoding='utf-8') as f:
                     self.assertEqual(f.readline().strip(), get('1.0', '1.end'))

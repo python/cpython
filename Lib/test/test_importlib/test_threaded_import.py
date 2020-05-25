@@ -15,8 +15,8 @@ import threading
 import unittest
 from unittest import mock
 from test.support import (
-    verbose, run_unittest, TESTFN,
-    forget, unlink, rmtree)
+    verbose, run_unittest, forget)
+from test.support import filesystem_helper
 from test.support import threading_helper
 
 def task(N, done, done_tasks, errors):
@@ -197,13 +197,14 @@ class ThreadedImportTests(unittest.TestCase):
         # NOTE: our test constructs a slightly less trivial import cycle,
         # in order to better stress the deadlock avoidance mechanism.
         delay = 0.5
-        os.mkdir(TESTFN)
-        self.addCleanup(shutil.rmtree, TESTFN)
-        sys.path.insert(0, TESTFN)
-        self.addCleanup(sys.path.remove, TESTFN)
+        os.mkdir(filesystem_helper.TESTFN)
+        self.addCleanup(shutil.filesystem_helper.rmtree, filesystem_helper.TESTFN)
+        sys.path.insert(0, filesystem_helper.TESTFN)
+        self.addCleanup(sys.path.remove, filesystem_helper.TESTFN)
         for name, contents in circular_imports_modules.items():
             contents = contents % {'delay': delay}
-            with open(os.path.join(TESTFN, name + ".py"), "wb") as f:
+            with open(os.path.join(filesystem_helper.TESTFN, name + ".py"),
+                      "wb") as f:
                 f.write(contents.encode('utf-8'))
             self.addCleanup(forget, name)
 
@@ -235,15 +236,15 @@ class ThreadedImportTests(unittest.TestCase):
             t = None"""
         sys.path.insert(0, os.curdir)
         self.addCleanup(sys.path.remove, os.curdir)
-        filename = TESTFN + ".py"
+        filename = filesystem_helper.TESTFN + ".py"
         with open(filename, "wb") as f:
             f.write(code.encode('utf-8'))
-        self.addCleanup(unlink, filename)
-        self.addCleanup(forget, TESTFN)
-        self.addCleanup(rmtree, '__pycache__')
+        self.addCleanup(filesystem_helper.unlink, filename)
+        self.addCleanup(forget, filesystem_helper.TESTFN)
+        self.addCleanup(filesystem_helper.rmtree, '__pycache__')
         importlib.invalidate_caches()
-        __import__(TESTFN)
-        del sys.modules[TESTFN]
+        __import__(filesystem_helper.TESTFN)
+        del sys.modules[filesystem_helper.TESTFN]
 
 
 @threading_helper.reap_threads

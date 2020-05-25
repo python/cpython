@@ -1,9 +1,9 @@
 import unittest
 import unittest.mock
 from test.support import (verbose, refcount_test, run_unittest,
-                          cpython_only, temp_dir, TESTFN, unlink,
-                          import_module)
+                          cpython_only, import_module)
 from test.support.script_helper import assert_python_ok, make_script
+from test.support import filesystem_helper
 from test.support import threading_helper
 
 import gc
@@ -723,7 +723,7 @@ class GCTests(unittest.TestCase):
 
     def test_gc_ordinary_module_at_shutdown(self):
         # Same as above, but with a non-__main__ module.
-        with temp_dir() as script_dir:
+        with filesystem_helper.temp_dir() as script_dir:
             module = """if 1:
                 class C:
                     def __del__(self):
@@ -748,10 +748,10 @@ class GCTests(unittest.TestCase):
             a = ClassWithDel()
             a.link = a
             raise SystemExit(0)"""
-        self.addCleanup(unlink, TESTFN)
-        with open(TESTFN, 'w') as script:
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, 'w') as script:
             script.write(code)
-        rc, out, err = assert_python_ok(TESTFN)
+        rc, out, err = assert_python_ok(filesystem_helper.TESTFN)
         self.assertEqual(out.strip(), b'__del__ called')
 
     def test_get_stats(self):

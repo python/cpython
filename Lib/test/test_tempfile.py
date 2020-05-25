@@ -15,6 +15,7 @@ from unittest import mock
 
 import unittest
 from test import support
+from test.support import filesystem_helper
 from test.support import script_helper
 
 
@@ -310,7 +311,7 @@ def _inside_empty_temp_dir():
         with support.swap_attr(tempfile, 'tempdir', dir):
             yield
     finally:
-        support.rmtree(dir)
+        filesystem_helper.rmtree(dir)
 
 
 def _mock_candidate_names(*names):
@@ -950,7 +951,7 @@ class TestNamedTemporaryFile(BaseTestCase):
 
     def test_bad_mode(self):
         dir = tempfile.mkdtemp()
-        self.addCleanup(support.rmtree, dir)
+        self.addCleanup(filesystem_helper.rmtree, dir)
         with self.assertRaises(ValueError):
             tempfile.NamedTemporaryFile(mode='wr', dir=dir)
         with self.assertRaises(TypeError):
@@ -1351,7 +1352,7 @@ class TestTemporaryDirectory(BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    @support.skip_unless_symlink
+    @filesystem_helper.skip_unless_symlink
     def test_cleanup_with_symlink_to_a_directory(self):
         # cleanup() should not follow symlinks to directories (issue #12464)
         d1 = self.do_create()

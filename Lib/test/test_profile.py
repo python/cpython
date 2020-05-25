@@ -6,7 +6,8 @@ import unittest
 import os
 from difflib import unified_diff
 from io import StringIO
-from test.support import TESTFN, run_unittest, unlink
+from test.support import run_unittest
+from test.support import filesystem_helper
 from contextlib import contextmanager
 
 import profile
@@ -22,7 +23,7 @@ class ProfileTest(unittest.TestCase):
     expected_max_output = ':0(max)'
 
     def tearDown(self):
-        unlink(TESTFN)
+        filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def get_expected_output(self):
         return _ProfileOutput
@@ -89,15 +90,15 @@ class ProfileTest(unittest.TestCase):
     def test_run(self):
         with silent():
             self.profilermodule.run("int('1')")
-        self.profilermodule.run("int('1')", filename=TESTFN)
-        self.assertTrue(os.path.exists(TESTFN))
+        self.profilermodule.run("int('1')", filename=filesystem_helper.TESTFN)
+        self.assertTrue(os.path.exists(filesystem_helper.TESTFN))
 
     def test_runctx(self):
         with silent():
             self.profilermodule.runctx("testfunc()", globals(), locals())
         self.profilermodule.runctx("testfunc()", globals(), locals(),
-                                  filename=TESTFN)
-        self.assertTrue(os.path.exists(TESTFN))
+                                  filename=filesystem_helper.TESTFN)
+        self.assertTrue(os.path.exists(filesystem_helper.TESTFN))
 
     def test_run_profile_as_module(self):
         # Test that -m switch needs an argument

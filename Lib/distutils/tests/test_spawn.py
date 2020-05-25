@@ -5,6 +5,7 @@ import sys
 import unittest.mock
 from test.support import run_unittest, unix_shell
 from test import support as test_support
+from test.support import filesystem_helper
 
 from distutils.spawn import find_executable
 from distutils.spawn import spawn
@@ -44,9 +45,9 @@ class SpawnTestCase(support.TempdirManager,
         spawn([exe])  # should work without any error
 
     def test_find_executable(self):
-        with test_support.temp_dir() as tmp_dir:
+        with filesystem_helper.temp_dir() as tmp_dir:
             # use TESTFN to get a pseudo-unique filename
-            program_noeext = test_support.TESTFN
+            program_noeext = filesystem_helper.TESTFN
             # Give the temporary program an ".exe" suffix for all.
             # It's needed on Windows and not harmful on other platforms.
             program = program_noeext + ".exe"
@@ -66,7 +67,7 @@ class SpawnTestCase(support.TempdirManager,
                 self.assertEqual(rv, filename)
 
             # test find in the current directory
-            with test_support.change_cwd(tmp_dir):
+            with filesystem_helper.change_cwd(tmp_dir):
                 rv = find_executable(program)
                 self.assertEqual(rv, program)
 
@@ -86,7 +87,7 @@ class SpawnTestCase(support.TempdirManager,
                     self.assertIsNone(rv)
 
                     # look in current directory
-                    with test_support.change_cwd(tmp_dir):
+                    with filesystem_helper.change_cwd(tmp_dir):
                         rv = find_executable(program)
                         self.assertEqual(rv, program)
 
@@ -100,7 +101,7 @@ class SpawnTestCase(support.TempdirManager,
                     self.assertIsNone(rv)
 
                     # look in current directory
-                    with test_support.change_cwd(tmp_dir):
+                    with filesystem_helper.change_cwd(tmp_dir):
                         rv = find_executable(program)
                         self.assertEqual(rv, program)
 

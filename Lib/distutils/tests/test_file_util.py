@@ -8,7 +8,9 @@ from distutils.file_util import move_file, copy_file
 from distutils import log
 from distutils.tests import support
 from distutils.errors import DistutilsFileError
-from test.support import run_unittest, unlink
+from test.support import run_unittest
+from test.support import filesystem_helper
+
 
 class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
 
@@ -87,7 +89,7 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
         except OSError as e:
             self.skipTest('os.link: %s' % e)
         else:
-            unlink(self.target)
+            filesystem_helper.unlink(self.target)
         st = os.stat(self.source)
         copy_file(self.source, self.target, link='hard')
         st2 = os.stat(self.source)

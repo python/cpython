@@ -6,6 +6,7 @@ import sys
 import unittest
 
 from test import support
+from test.support import filesystem_helper
 from platform import win32_edition
 
 
@@ -116,7 +117,7 @@ class MimeTypesTestCase(unittest.TestCase):
                                  getpreferredencoding)
         locale.getpreferredencoding = lambda: 'ascii'
 
-        filename = support.findfile("mime.types")
+        filename = filesystem_helper.findfile("mime.types")
         mimes = mimetypes.MimeTypes([filename])
         exts = mimes.guess_all_extensions('application/vnd.geocube+xml',
                                           strict=True)

@@ -26,6 +26,7 @@ import warnings
 import test.support
 import test.support.script_helper
 from test import support
+from test.support import filesystem_helper
 from test.support import socket_helper
 from test.support import threading_helper
 
@@ -817,8 +818,8 @@ class _TestSubclassingProcess(BaseTestCase):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-        testfn = test.support.TESTFN
-        self.addCleanup(test.support.unlink, testfn)
+        testfn = filesystem_helper.TESTFN
+        self.addCleanup(filesystem_helper.unlink, testfn)
         proc = self.Process(target=self._test_stderr_flush, args=(testfn,))
         proc.start()
         proc.join()
@@ -847,8 +848,8 @@ class _TestSubclassingProcess(BaseTestCase):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-        testfn = test.support.TESTFN
-        self.addCleanup(test.support.unlink, testfn)
+        testfn = filesystem_helper.TESTFN
+        self.addCleanup(filesystem_helper.unlink, testfn)
 
         for reason in (
             [1, 2, 3],
@@ -1112,7 +1113,7 @@ class _TestQueue(BaseTestCase):
         close_queue(queue)
 
     def test_no_import_lock_contention(self):
-        with test.support.temp_cwd():
+        with filesystem_helper.temp_cwd():
             module_name = 'imported_by_an_imported_module'
             with open(module_name + '.py', 'w') as f:
                 f.write("""if 1:
@@ -3195,14 +3196,14 @@ class _TestConnection(BaseTestCase):
         p = self.Process(target=self._writefd, args=(child_conn, b"foo"))
         p.daemon = True
         p.start()
-        self.addCleanup(test.support.unlink, test.support.TESTFN)
-        with open(test.support.TESTFN, "wb") as f:
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, "wb") as f:
             fd = f.fileno()
             if msvcrt:
                 fd = msvcrt.get_osfhandle(fd)
             reduction.send_handle(conn, fd, p.pid)
         p.join()
-        with open(test.support.TESTFN, "rb") as f:
+        with open(filesystem_helper.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"foo")
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
@@ -3221,8 +3222,8 @@ class _TestConnection(BaseTestCase):
         p = self.Process(target=self._writefd, args=(child_conn, b"bar", True))
         p.daemon = True
         p.start()
-        self.addCleanup(test.support.unlink, test.support.TESTFN)
-        with open(test.support.TESTFN, "wb") as f:
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, "wb") as f:
             fd = f.fileno()
             for newfd in range(256, MAXFD):
                 if not self._is_fd_assigned(newfd):
@@ -3235,7 +3236,7 @@ class _TestConnection(BaseTestCase):
             finally:
                 os.close(newfd)
         p.join()
-        with open(test.support.TESTFN, "rb") as f:
+        with open(filesystem_helper.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"bar")
 
     @classmethod

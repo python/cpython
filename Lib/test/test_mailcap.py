@@ -2,10 +2,11 @@ import mailcap
 import os
 import copy
 import test.support
+from test.support import filesystem_helper
 import unittest
 
 # Location of mailcap file
-MAILCAPFILE = test.support.findfile("mailcap.txt")
+MAILCAPFILE = filesystem_helper.findfile("mailcap.txt")
 
 # Dict to act as mock mailcap entry for this test
 # The keys and values should match the contents of MAILCAPFILE

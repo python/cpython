@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 import unittest
-from test import support
+from test.support import filesystem_helper
 from test.test_tools import scriptsdir, skip_if_missing
 
 
@@ -14,7 +14,7 @@ class TestPathfixFunctional(unittest.TestCase):
     script = os.path.join(scriptsdir, 'pathfix.py')
 
     def setUp(self):
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
 
     def pathfix(self, shebang, pathfix_flags, exitcode=0, stdout='', stderr='',
                 directory=''):
@@ -24,7 +24,7 @@ class TestPathfixFunctional(unittest.TestCase):
             filename = os.path.join(directory, 'script-A_1.py')
             pathfix_arg = directory
         else:
-            filename = support.TESTFN
+            filename = filesystem_helper.TESTFN
             pathfix_arg = filename
 
         with open(filename, 'w', encoding='utf8') as f:
@@ -54,8 +54,8 @@ class TestPathfixFunctional(unittest.TestCase):
         return new_shebang
 
     def test_recursive(self):
-        tmpdir = support.TESTFN + '.d'
-        self.addCleanup(support.rmtree, tmpdir)
+        tmpdir = filesystem_helper.TESTFN + '.d'
+        self.addCleanup(filesystem_helper.rmtree, tmpdir)
         os.mkdir(tmpdir)
         expected_stderr = f"recursedown('{os.path.basename(tmpdir)}')\n"
         self.assertEqual(

@@ -13,7 +13,9 @@ import textwrap
 import unittest
 
 from test import support
-from test.support import findfile, python_is_optimized
+from test.support import filesystem_helper
+from test.support import python_is_optimized
+
 
 def get_gdb_version():
     try:
@@ -294,7 +296,7 @@ class DebuggerTests(unittest.TestCase):
             self.fail(msg='%r did not match %r' % (actual, pattern))
 
     def get_sample_script(self):
-        return findfile('gdb_sample.py')
+        return filesystem_helper.findfile('gdb_sample.py')
 
 class PrettyPrintTests(DebuggerTests):
     def test_getting_backtrace(self):

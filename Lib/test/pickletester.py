@@ -28,9 +28,10 @@ except ImportError:
 
 from test import support
 from test.support import (
-    TestFailed, TESTFN, run_with_locale, no_tracing,
+    TestFailed, run_with_locale, no_tracing,
     _2G, _4G, bigmemtest, forget,
     )
+from test.support import filesystem_helper
 from test.support import threading_helper
 
 from pickle import bytes_types
@@ -1365,13 +1366,13 @@ class AbstractUnpickleTests(unittest.TestCase):
             pass
         """)
 
-        os.mkdir(TESTFN)
-        self.addCleanup(shutil.rmtree, TESTFN)
-        sys.path.insert(0, TESTFN)
-        self.addCleanup(sys.path.remove, TESTFN)
-        with open(os.path.join(TESTFN, "locker.py"), "wb") as f:
+        os.mkdir(filesystem_helper.TESTFN)
+        self.addCleanup(shutil.rmtree, filesystem_helper.TESTFN)
+        sys.path.insert(0, filesystem_helper.TESTFN)
+        self.addCleanup(sys.path.remove, filesystem_helper.TESTFN)
+        with open(os.path.join(filesystem_helper.TESTFN, "locker.py"), "wb") as f:
             f.write(locker_module.encode('utf-8'))
-        with open(os.path.join(TESTFN, "locking_import.py"), "wb") as f:
+        with open(os.path.join(filesystem_helper.TESTFN, "locking_import.py"), "wb") as f:
             f.write(locking_import_module.encode('utf-8'))
         self.addCleanup(forget, "locker")
         self.addCleanup(forget, "locking_import")
@@ -3089,20 +3090,20 @@ class BadGetattr:
 class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
-        f = open(TESTFN, "wb")
+        f = open(filesystem_helper.TESTFN, "wb")
         try:
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            support.unlink(TESTFN)
+            filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def test_load_closed_file(self):
-        f = open(TESTFN, "wb")
+        f = open(filesystem_helper.TESTFN, "wb")
         try:
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            support.unlink(TESTFN)
+            filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def test_load_from_and_dump_to_file(self):
         stream = io.BytesIO()
@@ -3127,13 +3128,13 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.Pickler(f, protocol=-1)
 
     def test_dump_text_file(self):
-        f = open(TESTFN, "w")
+        f = open(filesystem_helper.TESTFN, "w")
         try:
             for proto in protocols:
                 self.assertRaises(TypeError, self.dump, 123, f, proto)
         finally:
             f.close()
-            support.unlink(TESTFN)
+            filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def test_incomplete_input(self):
         s = io.BytesIO(b"X''.")

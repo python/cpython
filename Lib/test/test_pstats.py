@@ -27,7 +27,7 @@ class AddCallersTestCase(unittest.TestCase):
 
 class StatsTestCase(unittest.TestCase):
     def setUp(self):
-        stats_file = support.findfile('pstats.pck')
+        stats_file = filesystem_helper.findfile('pstats.pck')
         self.stats = pstats.Stats(stats_file)
 
     def test_add(self):

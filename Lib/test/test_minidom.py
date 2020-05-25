@@ -4,6 +4,7 @@ import copy
 import pickle
 import io
 from test import support
+from test.support import filesystem_helper
 import unittest
 
 import xml.dom.minidom
@@ -12,7 +13,7 @@ from xml.dom.minidom import parse, Node, Document, parseString
 from xml.dom.minidom import getDOMImplementation
 
 
-tstfile = support.findfile("test.xml", subdir="xmltestdata")
+tstfile = filesystem_helper.findfile("test.xml", subdir="xmltestdata")
 sample = ("<?xml version='1.0' encoding='us-ascii'?>\n"
           "<!DOCTYPE doc PUBLIC 'http://xml.python.org/public'"
           " 'http://xml.python.org/system' [\n"

@@ -20,7 +20,7 @@ import threading
 import gc
 import textwrap
 import json
-from test.support import FakePath
+from test.support import filesystem_helper 
 
 try:
     import _testcapi
@@ -324,7 +324,7 @@ class ProcessTestCase(BaseTestCase):
         doesnotexist = os.path.join(os.path.dirname(sys.executable),
                                     "doesnotexist")
         self._assert_python([doesnotexist, "-c"],
-                            executable=FakePath(sys.executable))
+                            executable=filesystem_helper.FakePath(sys.executable))
 
     def test_executable_takes_precedence(self):
         # Check that the executable argument takes precedence over args[0].
@@ -349,7 +349,7 @@ class ProcessTestCase(BaseTestCase):
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
     def test_pathlike_executable_replaces_shell(self):
-        self._assert_python([], executable=FakePath(sys.executable),
+        self._assert_python([], executable=filesystem_helper.FakePath(sys.executable),
                             shell=True)
 
     # For use in the test_cwd* tests below.
@@ -357,7 +357,7 @@ class ProcessTestCase(BaseTestCase):
         # Normalize an expected cwd (for Tru64 support).
         # We can't use os.path.realpath since it doesn't expand Tru64 {memb}
         # strings.  See bug #1063571.
-        with support.change_cwd(cwd):
+        with filesystem_helper.change_cwd(cwd):
             return os.getcwd()
 
     # For use in the test_cwd* tests below.
@@ -398,7 +398,8 @@ class ProcessTestCase(BaseTestCase):
     def test_cwd_with_pathlike(self):
         temp_dir = tempfile.gettempdir()
         temp_dir = self._normalize_cwd(temp_dir)
-        self._assert_cwd(temp_dir, sys.executable, cwd=FakePath(temp_dir))
+        self._assert_cwd(temp_dir, sys.executable,
+                         cwd=filesystem_helper.FakePath(temp_dir))
 
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
@@ -406,7 +407,7 @@ class ProcessTestCase(BaseTestCase):
         # is relative.
         python_dir, python_base = self._split_python_path()
         rel_python = os.path.join(os.curdir, python_base)
-        with support.temp_cwd() as wrong_dir:
+        with filesystem_helper.temp_cwd() as wrong_dir:
             # Before calling with the correct cwd, confirm that the call fails
             # without cwd and with the wrong cwd.
             self.assertRaises(FileNotFoundError, subprocess.Popen,
@@ -423,7 +424,7 @@ class ProcessTestCase(BaseTestCase):
         python_dir, python_base = self._split_python_path()
         rel_python = os.path.join(os.curdir, python_base)
         doesntexist = "somethingyoudonthave"
-        with support.temp_cwd() as wrong_dir:
+        with filesystem_helper.temp_cwd() as wrong_dir:
             # Before calling with the correct cwd, confirm that the call fails
             # without cwd and with the wrong cwd.
             self.assertRaises(FileNotFoundError, subprocess.Popen,
@@ -1541,7 +1542,7 @@ class RunFuncTestCase(BaseTestCase):
         path = shutil.which(prog)
         if path is None:
             self.skipTest(f'{prog} required for this test')
-        path = FakePath(path)
+        path = filesystem_helper.FakePath(path)
         res = subprocess.run(path, stdout=subprocess.DEVNULL)
         self.assertEqual(res.returncode, 0)
         with self.assertRaises(TypeError):
@@ -1556,7 +1557,7 @@ class RunFuncTestCase(BaseTestCase):
 
     def test_run_with_pathlike_path_and_arguments(self):
         # bpo-31961: test run([pathlike_object, 'additional arguments'])
-        path = FakePath(sys.executable)
+        path = filesystem_helper.FakePath(sys.executable)
         args = [path, '-c', 'import sys; sys.exit(57)']
         res = subprocess.run(args)
         self.assertEqual(res.returncode, 57)
@@ -2565,8 +2566,10 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertEqual(exitcode, 0)
 
     def test_pipe_cloexec(self):
-        sleeper = support.findfile("input_reader.py", subdir="subprocessdata")
-        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+        sleeper = filesystem_helper.findfile("input_reader.py",
+                                             subdir="subprocessdata")
+        fd_status = filesystem_helper.findfile("fd_status.py",
+                                               subdir="subprocessdata")
 
         p1 = subprocess.Popen([sys.executable, sleeper],
                               stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -2588,8 +2591,10 @@ class POSIXProcessTestCase(BaseTestCase):
                               (unwanted_fds, result_fds & unwanted_fds))
 
     def test_pipe_cloexec_real_tools(self):
-        qcat = support.findfile("qcat.py", subdir="subprocessdata")
-        qgrep = support.findfile("qgrep.py", subdir="subprocessdata")
+        qcat = filesystem_helper.findfile("qcat.py",
+                                          subdir="subprocessdata")
+        qgrep = filesystem_helper.findfile("qgrep.py",
+                                           subdir="subprocessdata")
 
         subdata = b'zxcvbn'
         data = subdata * 4 + b'\n'
@@ -2629,7 +2634,8 @@ class POSIXProcessTestCase(BaseTestCase):
         p2.stdout.close()
 
     def test_close_fds(self):
-        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+        fd_status = filesystem_helper.findfile("fd_status.py",
+                                               subdir="subprocessdata")
 
         fds = os.pipe()
         self.addCleanup(os.close, fds[0])
@@ -2681,7 +2687,8 @@ class POSIXProcessTestCase(BaseTestCase):
                      "Requires fdescfs mounted on /dev/fd on FreeBSD.")
     def test_close_fds_when_max_fd_is_lowered(self):
         """Confirm that issue21618 is fixed (may fail under valgrind)."""
-        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+        fd_status = filesystem_helper.findfile("fd_status.py",
+                                               subdir="subprocessdata")
 
         # This launches the meat of the test in a child process to
         # avoid messing with the larger unittest processes maximum
@@ -2761,7 +2768,8 @@ class POSIXProcessTestCase(BaseTestCase):
     # descriptor is invalid, and read or write raise an error.
     @support.requires_mac_ver(10, 5)
     def test_pass_fds(self):
-        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+        fd_status = filesystem_helper.findfile("fd_status.py",
+                                               subdir="subprocessdata")
 
         open_fds = set()
 
@@ -2794,7 +2802,8 @@ class POSIXProcessTestCase(BaseTestCase):
             self.assertIn('overriding close_fds', str(context.warning))
 
     def test_pass_fds_inheritable(self):
-        script = support.findfile("fd_status.py", subdir="subprocessdata")
+        script = filesystem_helper.findfile("fd_status.py",
+                                            subdir="subprocessdata")
 
         inheritable, non_inheritable = os.pipe()
         self.addCleanup(os.close, inheritable)
@@ -2825,7 +2834,8 @@ class POSIXProcessTestCase(BaseTestCase):
     # Contributed by @izbyshev.
     def test_pass_fds_redirected(self):
         """Regression test for https://bugs.python.org/issue32270."""
-        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+        fd_status = filesystem_helper.findfile("fd_status.py",
+                                               subdir="subprocessdata")
         pass_fds = []
         for _ in range(2):
             fd = os.open(os.devnull, os.O_RDWR)
@@ -2869,8 +2879,8 @@ class POSIXProcessTestCase(BaseTestCase):
 
     def test_wait_when_sigchild_ignored(self):
         # NOTE: sigchild_ignore.py may not be an effective test on all OSes.
-        sigchild_ignore = support.findfile("sigchild_ignore.py",
-                                           subdir="subprocessdata")
+        sigchild_ignore = filesystem_helper.findfile("sigchild_ignore.py",
+                                                     subdir="subprocessdata")
         p = subprocess.Popen([sys.executable, sigchild_ignore],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
@@ -2962,7 +2972,8 @@ class POSIXProcessTestCase(BaseTestCase):
             self.assertNotIn(ident, [id(o) for o in subprocess._active])
 
     def test_close_fds_after_preexec(self):
-        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+        fd_status = filesystem_helper.findfile("fd_status.py",
+                                               subdir="subprocessdata")
 
         # this FD is used as dup2() target by preexec_fn, and should be closed
         # in the child process

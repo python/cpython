@@ -263,11 +263,11 @@ class TestTracemallocEnabled(unittest.TestCase):
         self.assertGreater(snapshot.traces[1].traceback.total_nframe, 10)
 
         # write on disk
-        snapshot.dump(support.TESTFN)
-        self.addCleanup(support.unlink, support.TESTFN)
+        snapshot.dump(filesystem_helper.TESTFN)
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
 
         # load from disk
-        snapshot2 = tracemalloc.Snapshot.load(support.TESTFN)
+        snapshot2 = tracemalloc.Snapshot.load(filesystem_helper.TESTFN)
         self.assertEqual(snapshot2.traces, snapshot.traces)
 
         # tracemalloc must be tracing memory allocations to take a snapshot
@@ -282,11 +282,11 @@ class TestTracemallocEnabled(unittest.TestCase):
         # take a snapshot with a new attribute
         snapshot = tracemalloc.take_snapshot()
         snapshot.test_attr = "new"
-        snapshot.dump(support.TESTFN)
-        self.addCleanup(support.unlink, support.TESTFN)
+        snapshot.dump(filesystem_helper.TESTFN)
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
 
         # load() should recreate the attribute
-        snapshot2 = tracemalloc.Snapshot.load(support.TESTFN)
+        snapshot2 = tracemalloc.Snapshot.load(filesystem_helper.TESTFN)
         self.assertEqual(snapshot2.test_attr, "new")
 
     def fork_child(self):

@@ -7,20 +7,20 @@ from weakref import proxy
 import io
 import _pyio as pyio
 
-from test.support import TESTFN
 from test import support
+from test.support import filesystem_helper
 from collections import UserList
 
 class AutoFileTests:
     # file tests for which a test file is automatically set up
 
     def setUp(self):
-        self.f = self.open(TESTFN, 'wb')
+        self.f = self.open(filesystem_helper.TESTFN, 'wb')
 
     def tearDown(self):
         if self.f:
             self.f.close()
-        support.unlink(TESTFN)
+        filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def testWeakRefs(self):
         # verify weak references
@@ -43,7 +43,7 @@ class AutoFileTests:
         self.f.write(b'12')
         self.f.close()
         a = array('b', b'x'*10)
-        self.f = self.open(TESTFN, 'rb')
+        self.f = self.open(filesystem_helper.TESTFN, 'rb')
         n = self.f.readinto(a)
         self.assertEqual(b'12', a.tobytes()[:n])
 
@@ -51,7 +51,7 @@ class AutoFileTests:
         # verify readinto refuses text files
         a = array('b', b'x'*10)
         self.f.close()
-        self.f = self.open(TESTFN, 'r')
+        self.f = self.open(filesystem_helper.TESTFN, 'r')
         if hasattr(self.f, "readinto"):
             self.assertRaises(TypeError, self.f.readinto, a)
 
@@ -60,7 +60,7 @@ class AutoFileTests:
         l = UserList([b'1', b'2'])
         self.f.writelines(l)
         self.f.close()
-        self.f = self.open(TESTFN, 'rb')
+        self.f = self.open(filesystem_helper.TESTFN, 'rb')
         buf = self.f.read()
         self.assertEqual(buf, b'12')
 
@@ -83,7 +83,7 @@ class AutoFileTests:
 
     def testErrors(self):
         f = self.f
-        self.assertEqual(f.name, TESTFN)
+        self.assertEqual(f.name, filesystem_helper.TESTFN)
         self.assertFalse(f.isatty())
         self.assertFalse(f.closed)
 
@@ -139,14 +139,14 @@ class PyAutoFileTests(AutoFileTests, unittest.TestCase):
 class OtherFileTests:
 
     def tearDown(self):
-        support.unlink(TESTFN)
+        filesystem_helper.unlink(filesystem_helper.TESTFN)
 
     def testModeStrings(self):
         # check invalid mode strings
-        self.open(TESTFN, 'wb').close()
+        self.open(filesystem_helper.TESTFN, 'wb').close()
         for mode in ("", "aU", "wU+", "U+", "+U", "rU+"):
             try:
-                f = self.open(TESTFN, mode)
+                f = self.open(filesystem_helper.TESTFN, mode)
             except ValueError:
                 pass
             else:
@@ -157,11 +157,11 @@ class OtherFileTests:
         # verify that we get a sensible error message for bad mode argument
         bad_mode = "qwerty"
         try:
-            f = self.open(TESTFN, bad_mode)
+            f = self.open(filesystem_helper.TESTFN, bad_mode)
         except ValueError as msg:
             if msg.args[0] != 0:
                 s = str(msg)
-                if TESTFN in s or bad_mode not in s:
+                if filesystem_helper.TESTFN in s or bad_mode not in s:
                     self.fail("bad error message for invalid mode: %s" % s)
             # if msg.args[0] == 0, we're probably on Windows where there may be
             # no obvious way to discover why open() failed.
@@ -171,11 +171,11 @@ class OtherFileTests:
 
     def _checkBufferSize(self, s):
         try:
-            f = self.open(TESTFN, 'wb', s)
+            f = self.open(filesystem_helper.TESTFN, 'wb', s)
             f.write(str(s).encode("ascii"))
             f.close()
             f.close()
-            f = self.open(TESTFN, 'rb', s)
+            f = self.open(filesystem_helper.TESTFN, 'rb', s)
             d = int(f.read().decode("ascii"))
             f.close()
             f.close()
@@ -201,13 +201,13 @@ class OtherFileTests:
         # SF bug <http://www.python.org/sf/801631>
         # "file.truncate fault on windows"
 
-        f = self.open(TESTFN, 'wb')
+        f = self.open(filesystem_helper.TESTFN, 'wb')
 
         try:
             f.write(b'12345678901')   # 11 bytes
             f.close()
 
-            f = self.open(TESTFN,'rb+')
+            f = self.open(filesystem_helper.TESTFN,'rb+')
             data = f.read(5)
             if data != b'12345':
                 self.fail("Read on file opened for update failed %r" % data)
@@ -219,7 +219,7 @@ class OtherFileTests:
                 self.fail("File pos after ftruncate wrong %d" % f.tell())
 
             f.close()
-            size = os.path.getsize(TESTFN)
+            size = os.path.getsize(filesystem_helper.TESTFN)
             if size != 5:
                 self.fail("File size after ftruncate wrong %d" % size)
         finally:
@@ -245,13 +245,13 @@ class OtherFileTests:
                    ("readinto", (array("b", b" "*100),))]
 
         # Prepare the testfile
-        bag = self.open(TESTFN, "wb")
+        bag = self.open(filesystem_helper.TESTFN, "wb")
         bag.write(filler * nchunks)
         bag.writelines(testlines)
         bag.close()
         # Test for appropriate errors mixing read* and iteration
         for methodname, args in methods:
-            f = self.open(TESTFN, 'rb')
+            f = self.open(filesystem_helper.TESTFN, 'rb')
             self.assertEqual(next(f), filler)
             meth = getattr(f, methodname)
             meth(*args)  # This simply shouldn't fail
@@ -264,7 +264,7 @@ class OtherFileTests:
         # ("h", "a", "m", "\n"), so 4096 lines of that should get us
         # exactly on the buffer boundary for any power-of-2 buffersize
         # between 4 and 16384 (inclusive).
-        f = self.open(TESTFN, 'rb')
+        f = self.open(filesystem_helper.TESTFN, 'rb')
         for i in range(nchunks):
             next(f)
         testline = testlines.pop(0)
@@ -308,7 +308,7 @@ class OtherFileTests:
         f.close()
 
         # Reading after iteration hit EOF shouldn't hurt either
-        f = self.open(TESTFN, 'rb')
+        f = self.open(filesystem_helper.TESTFN, 'rb')
         try:
             for line in f:
                 pass

@@ -27,8 +27,9 @@ from types import AsyncGeneratorType, FunctionType
 from operator import neg
 from test import support
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
+    EnvironmentVarGuard, check_warnings, swap_attr, unlink,
     maybe_get_event_loop_policy)
+from test.support import filesystem_helper
 from test.support.script_helper import assert_python_ok
 from unittest.mock import MagicMock, patch
 try:
@@ -1137,8 +1138,8 @@ class BuiltinTest(unittest.TestCase):
 
     def write_testfile(self):
         # NB the first 4 lines are also used to test input, below
-        fp = open(TESTFN, 'w')
-        self.addCleanup(unlink, TESTFN)
+        fp = open(filesystem_helper.TESTFN, 'w')
+        self.addCleanup(unlink, filesystem_helper.TESTFN)
         with fp:
             fp.write('1+1\n')
             fp.write('The quick brown fox jumps over the lazy dog')
@@ -1149,7 +1150,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_open(self):
         self.write_testfile()
-        fp = open(TESTFN, 'r')
+        fp = open(filesystem_helper.TESTFN, 'r')
         with fp:
             self.assertEqual(fp.readline(4), '1+1\n')
             self.assertEqual(fp.readline(), 'The quick brown fox jumps over the lazy dog.\n')
@@ -1175,7 +1176,7 @@ class BuiltinTest(unittest.TestCase):
 
             self.write_testfile()
             current_locale_encoding = locale.getpreferredencoding(False)
-            fp = open(TESTFN, 'w')
+            fp = open(filesystem_helper.TESTFN, 'w')
             with fp:
                 self.assertEqual(fp.encoding, current_locale_encoding)
         finally:
@@ -1278,7 +1279,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_input(self):
         self.write_testfile()
-        fp = open(TESTFN, 'r')
+        fp = open(filesystem_helper.TESTFN, 'r')
         savestdin = sys.stdin
         savestdout = sys.stdout # Eats the echo
         try:

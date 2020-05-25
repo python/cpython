@@ -3,7 +3,8 @@ import os
 import sys
 import unittest
 import warnings
-from test.support import TestFailed, FakePath
+from test.support import TestFailed
+from test.support import filesystem_helper
 from test import support, test_genericpath
 from tempfile import TemporaryFile
 
@@ -254,38 +255,38 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.realpath('\\'.join(['..'] * 50))",
                ntpath.splitdrive(expected)[0] + '\\')
 
-    @support.skip_unless_symlink
+    @filesystem_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_basic(self):
-        ABSTFN = ntpath.abspath(support.TESTFN)
+        ABSTFN = ntpath.abspath(filesystem_helper.TESTFN)
         open(ABSTFN, "wb").close()
-        self.addCleanup(support.unlink, ABSTFN)
-        self.addCleanup(support.unlink, ABSTFN + "1")
+        self.addCleanup(filesystem_helper.unlink, ABSTFN)
+        self.addCleanup(filesystem_helper.unlink, ABSTFN + "1")
 
         os.symlink(ABSTFN, ABSTFN + "1")
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1"), ABSTFN)
         self.assertPathEqual(ntpath.realpath(os.fsencode(ABSTFN + "1")),
                          os.fsencode(ABSTFN))
 
-    @support.skip_unless_symlink
+    @filesystem_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_relative(self):
-        ABSTFN = ntpath.abspath(support.TESTFN)
+        ABSTFN = ntpath.abspath(filesystem_helper.TESTFN)
         open(ABSTFN, "wb").close()
-        self.addCleanup(support.unlink, ABSTFN)
-        self.addCleanup(support.unlink, ABSTFN + "1")
+        self.addCleanup(filesystem_helper.unlink, ABSTFN)
+        self.addCleanup(filesystem_helper.unlink, ABSTFN + "1")
 
         os.symlink(ABSTFN, ntpath.relpath(ABSTFN + "1"))
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1"), ABSTFN)
 
-    @support.skip_unless_symlink
+    @filesystem_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_broken_symlinks(self):
-        ABSTFN = ntpath.abspath(support.TESTFN)
+        ABSTFN = ntpath.abspath(filesystem_helper.TESTFN)
         os.mkdir(ABSTFN)
-        self.addCleanup(support.rmtree, ABSTFN)
+        self.addCleanup(filesystem_helper.rmtree, ABSTFN)
 
-        with support.change_cwd(ABSTFN):
+        with filesystem_helper.change_cwd(ABSTFN):
             os.mkdir("subdir")
             os.chdir("subdir")
             os.symlink(".", "recursive")
@@ -335,18 +336,18 @@ class TestNtpath(NtpathTestCase):
             self.assertPathEqual(ntpath.realpath(b"broken5"),
                                  os.fsencode(ABSTFN + r"\missing"))
 
-    @support.skip_unless_symlink
+    @filesystem_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_symlink_loops(self):
         # Symlink loops are non-deterministic as to which path is returned, but
         # it will always be the fully resolved path of one member of the cycle
-        ABSTFN = ntpath.abspath(support.TESTFN)
-        self.addCleanup(support.unlink, ABSTFN)
-        self.addCleanup(support.unlink, ABSTFN + "1")
-        self.addCleanup(support.unlink, ABSTFN + "2")
-        self.addCleanup(support.unlink, ABSTFN + "y")
-        self.addCleanup(support.unlink, ABSTFN + "c")
-        self.addCleanup(support.unlink, ABSTFN + "a")
+        ABSTFN = ntpath.abspath(filesystem_helper.TESTFN)
+        self.addCleanup(filesystem_helper.unlink, ABSTFN)
+        self.addCleanup(filesystem_helper.unlink, ABSTFN + "1")
+        self.addCleanup(filesystem_helper.unlink, ABSTFN + "2")
+        self.addCleanup(filesystem_helper.unlink, ABSTFN + "y")
+        self.addCleanup(filesystem_helper.unlink, ABSTFN + "c")
+        self.addCleanup(filesystem_helper.unlink, ABSTFN + "a")
 
         os.symlink(ABSTFN, ABSTFN)
         self.assertPathEqual(ntpath.realpath(ABSTFN), ABSTFN)
@@ -381,14 +382,14 @@ class TestNtpath(NtpathTestCase):
         # Test using relative path as well.
         self.assertPathEqual(ntpath.realpath(ntpath.basename(ABSTFN)), ABSTFN)
 
-    @support.skip_unless_symlink
+    @filesystem_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_symlink_prefix(self):
-        ABSTFN = ntpath.abspath(support.TESTFN)
-        self.addCleanup(support.unlink, ABSTFN + "3")
-        self.addCleanup(support.unlink, "\\\\?\\" + ABSTFN + "3.")
-        self.addCleanup(support.unlink, ABSTFN + "3link")
-        self.addCleanup(support.unlink, ABSTFN + "3.link")
+        ABSTFN = ntpath.abspath(filesystem_helper.TESTFN)
+        self.addCleanup(filesystem_helper.unlink, ABSTFN + "3")
+        self.addCleanup(filesystem_helper.unlink, "\\\\?\\" + ABSTFN + "3.")
+        self.addCleanup(filesystem_helper.unlink, ABSTFN + "3link")
+        self.addCleanup(filesystem_helper.unlink, ABSTFN + "3.link")
 
         with open(ABSTFN + "3", "wb") as f:
             f.write(b'0')
@@ -422,12 +423,12 @@ class TestNtpath(NtpathTestCase):
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     @unittest.skipUnless(HAVE_GETSHORTPATHNAME, 'need _getshortpathname')
     def test_realpath_cwd(self):
-        ABSTFN = ntpath.abspath(support.TESTFN)
+        ABSTFN = ntpath.abspath(filesystem_helper.TESTFN)
 
-        support.unlink(ABSTFN)
-        support.rmtree(ABSTFN)
+        filesystem_helper.unlink(ABSTFN)
+        filesystem_helper.rmtree(ABSTFN)
         os.mkdir(ABSTFN)
-        self.addCleanup(support.rmtree, ABSTFN)
+        self.addCleanup(filesystem_helper.rmtree, ABSTFN)
 
         test_dir_long = ntpath.join(ABSTFN, "MyVeryLongDirectoryName")
         os.mkdir(test_dir_long)
@@ -441,11 +442,11 @@ class TestNtpath(NtpathTestCase):
 
         self.assertPathEqual(test_file_long, ntpath.realpath(test_file_short))
 
-        with support.change_cwd(test_dir_long):
+        with filesystem_helper.change_cwd(test_dir_long):
             self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
-        with support.change_cwd(test_dir_long.lower()):
+        with filesystem_helper.change_cwd(test_dir_long.lower()):
             self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
-        with support.change_cwd(test_dir_short):
+        with filesystem_helper.change_cwd(test_dir_short):
             self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
 
     def test_expandvars(self):
@@ -533,7 +534,7 @@ class TestNtpath(NtpathTestCase):
     @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):
         tester('ntpath.abspath("C:\\")', "C:\\")
-        with support.temp_cwd(support.TESTFN) as cwd_dir: # bpo-31047
+        with filesystem_helper.temp_cwd(filesystem_helper.TESTFN) as cwd_dir: # bpo-31047
             tester('ntpath.abspath("")', cwd_dir)
             tester('ntpath.abspath(" ")', cwd_dir + "\\ ")
             tester('ntpath.abspath("?")', cwd_dir + "\\?")
@@ -545,7 +546,7 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.relpath(ntpath.abspath("a"))', 'a')
         tester('ntpath.relpath("a/b")', 'a\\b')
         tester('ntpath.relpath("../a/b")', '..\\a\\b')
-        with support.temp_cwd(support.TESTFN) as cwd_dir:
+        with filesystem_helper.temp_cwd(filesystem_helper.TESTFN) as cwd_dir:
             currentdir = ntpath.basename(cwd_dir)
             tester('ntpath.relpath("a", "../b")', '..\\'+currentdir+'\\a')
             tester('ntpath.relpath("a/b", "../c")', '..\\'+currentdir+'\\a\\b')
@@ -671,7 +672,7 @@ class TestNtpath(NtpathTestCase):
             # locations below cannot then refer to mount points
             #
             drive, path = ntpath.splitdrive(sys.executable)
-            with support.change_cwd(ntpath.dirname(sys.executable)):
+            with filesystem_helper.change_cwd(ntpath.dirname(sys.executable)):
                 self.assertFalse(ntpath.ismount(drive.lower()))
                 self.assertFalse(ntpath.ismount(drive.upper()))
 
@@ -725,9 +726,9 @@ class PathLikeTests(NtpathTestCase):
     path = ntpath
 
     def setUp(self):
-        self.file_name = support.TESTFN.lower()
-        self.file_path = FakePath(support.TESTFN)
-        self.addCleanup(support.unlink, self.file_name)
+        self.file_name = filesystem_helper.TESTFN.lower()
+        self.file_path = filesystem_helper.FakePath(filesystem_helper.TESTFN)
+        self.addCleanup(filesystem_helper.unlink, self.file_name)
         with open(self.file_name, 'xb', 0) as file:
             file.write(b"test_ntpath.PathLikeTests")
 
@@ -741,7 +742,7 @@ class PathLikeTests(NtpathTestCase):
         self._check_function(self.path.isabs)
 
     def test_path_join(self):
-        self.assertEqual(self.path.join('a', FakePath('b'), 'c'),
+        self.assertEqual(self.path.join('a', filesystem_helper.FakePath('b'), 'c'),
                          self.path.join('a', 'b', 'c'))
 
     def test_path_split(self):

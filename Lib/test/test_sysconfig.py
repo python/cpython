@@ -5,9 +5,8 @@ import subprocess
 import shutil
 from copy import copy
 
-from test.support import (import_module, TESTFN, unlink, check_warnings,
-                          captured_stdout, skip_unless_symlink, change_cwd,
-                          PythonSymlink)
+from test.support import (import_module, check_warnings,
+                          captured_stdout, PythonSymlink)
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -77,7 +76,7 @@ class TestSysConfig(unittest.TestCase):
         return self._uname
 
     def _cleanup_testfn(self):
-        path = TESTFN
+        path = filesystem_helper.TESTFN
         if os.path.isfile(path):
             os.remove(path)
         elif os.path.isdir(path):
@@ -232,7 +231,7 @@ class TestSysConfig(unittest.TestCase):
                   'posix_home', 'posix_prefix', 'posix_user')
         self.assertEqual(get_scheme_names(), wanted)
 
-    @skip_unless_symlink
+    @filesystem_helper.skip_unless_symlink
     def test_symlink(self): # Issue 7880
         with PythonSymlink() as py:
             cmd = "-c", "import sysconfig; print(sysconfig.get_platform())"
@@ -339,7 +338,7 @@ class TestSysConfig(unittest.TestCase):
         # srcdir should be independent of the current working directory
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')
-        with change_cwd(os.pardir):
+        with filesystem_helper.change_cwd(os.pardir):
             srcdir2 = sysconfig.get_config_var('srcdir')
         self.assertEqual(srcdir, srcdir2)
 
@@ -395,8 +394,8 @@ class MakefileTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(makefile), makefile)
 
     def test_parse_makefile(self):
-        self.addCleanup(unlink, TESTFN)
-        with open(TESTFN, "w") as makefile:
+        self.addCleanup(filesystem_helper.unlink, filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, "w") as makefile:
             print("var1=a$(VAR2)", file=makefile)
             print("VAR2=b$(var3)", file=makefile)
             print("var3=42", file=makefile)
@@ -404,7 +403,7 @@ class MakefileTests(unittest.TestCase):
             print("var5=dollar$$5", file=makefile)
             print("var6=${var3}/lib/python3.5/config-$(VAR2)$(var5)"
                   "-x86_64-linux-gnu", file=makefile)
-        vars = sysconfig._parse_makefile(TESTFN)
+        vars = sysconfig._parse_makefile(filesystem_helper.TESTFN)
         self.assertEqual(vars, {
             'var1': 'ab42',
             'VAR2': 'b42',
