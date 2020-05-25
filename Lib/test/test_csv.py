@@ -230,6 +230,13 @@ class Test_Csv(unittest.TestCase):
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), 'a\r\n""\r\n')
 
+    def test_writerows_with_bytes(self):
+        with TemporaryFile("w+", newline='', encoding='iso-8859-1') as fileobj:
+            writer = csv.writer(fileobj)
+            writer.writerows([['a', b'\xc2'], [b'\xc2', 'c']])
+            fileobj.seek(0);
+            self.assertEqual(fileobj.read(), 'a,\xc2\r\n\xc2,c\r\n')
+
     @support.cpython_only
     def test_writerows_legacy_strings(self):
         import _testcapi

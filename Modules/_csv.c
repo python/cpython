@@ -121,6 +121,8 @@ typedef struct {
 
     DialectObj *dialect;    /* parsing dialect */
 
+    PyObject *encoding;     /* use this encoding when writing bytes */
+
     Py_UCS4 *rec;            /* buffer for parser.join */
     Py_ssize_t rec_size;        /* size of allocated record */
     Py_ssize_t rec_len;         /* length of record */
@@ -1206,7 +1208,12 @@ csv_writerow(WriterObj *self, PyObject *seq)
         else {
             PyObject *str;
 
-            str = PyObject_Str(field);
+            if (PyBytes_Check(field)) { 
+              const char * encoding = PyUnicode_AsUTF8(self->encoding);
+              str = PyUnicode_FromEncodedObject(field, encoding, NULL);
+            } else {
+              str = PyObject_Str(field);
+            }
             Py_DECREF(field);
             if (str == NULL) {
                 Py_DECREF(iter);
@@ -1305,6 +1312,7 @@ Writer_dealloc(WriterObj *self)
     Py_XDECREF(self->write);
     if (self->rec != NULL)
         PyMem_Free(self->rec);
+    Py_XDECREF(self->encoding);
     PyObject_GC_Del(self);
 }
 
@@ -1313,6 +1321,7 @@ Writer_traverse(WriterObj *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dialect);
     Py_VISIT(self->write);
+    Py_VISIT(self->encoding);
     return 0;
 }
 
@@ -1321,6 +1330,7 @@ Writer_clear(WriterObj *self)
 {
     Py_CLEAR(self->dialect);
     Py_CLEAR(self->write);
+    Py_CLEAR(self->encoding);
     return 0;
 }
 
@@ -1372,12 +1382,15 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
     PyObject * output_file, * dialect = NULL;
     WriterObj * self = PyObject_GC_New(WriterObj, &Writer_Type);
     _Py_IDENTIFIER(write);
+    _Py_IDENTIFIER(encoding);
+    _Py_IDENTIFIER(getpreferredencoding);
 
     if (!self)
         return NULL;
 
     self->dialect = NULL;
     self->write = NULL;
+    self->encoding = NULL;
 
     self->rec = NULL;
     self->rec_size = 0;
@@ -1398,6 +1411,27 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
+
+    int r = _PyObject_LookupAttrId(output_file, &PyId_encoding, &self->encoding);
+    if (r < 0) {
+      Py_DECREF(self);
+      return NULL;
+    }
+    else if (r == 0) {
+      PyObject* locale_module = PyImport_ImportModule("locale");
+      if (locale_module == NULL) {
+        Py_DECREF(self);
+        return NULL;
+      }
+      self->encoding = _PyObject_CallMethodIdOneArg(
+          locale_module, &PyId_getpreferredencoding, Py_False);
+      Py_DECREF(locale_module);
+    }
+    if (self->encoding == NULL) {
+      Py_DECREF(self);
+      return NULL;
+    }
+
     self->dialect = (DialectObj *)_call_dialect(dialect, keyword_args);
     if (self->dialect == NULL) {
         Py_DECREF(self);
