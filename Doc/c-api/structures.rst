@@ -62,7 +62,7 @@ the definition of all other Python objects.
    See documentation of :c:type:`PyVarObject` above.
 
 
-.. c:function:: PyTypeObject* Py_TYPE(PyObject *o)
+.. c:function:: PyTypeObject* Py_TYPE(const PyObject *o)
 
    Get the type of the Python object *o*.
 
