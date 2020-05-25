@@ -331,7 +331,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""
         self._ensure_fd_no_transport(fd)
-        return self._add_reader(fd, callback, *args)
+        self._add_reader(fd, callback, *args)
 
     def remove_reader(self, fd):
         """Remove a reader callback."""
@@ -341,7 +341,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def add_writer(self, fd, callback, *args):
         """Add a writer callback.."""
         self._ensure_fd_no_transport(fd)
-        return self._add_writer(fd, callback, *args)
+        self._add_writer(fd, callback, *args)
 
     def remove_writer(self, fd):
         """Remove a writer callback."""
@@ -364,7 +364,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pass
         fut = self.create_future()
         fd = sock.fileno()
-        handle = self.add_reader(fd, self._sock_recv, fut, sock, n)
+        self._ensure_fd_no_transport(fd)
+        handle = self._add_reader(fd, self._sock_recv, fut, sock, n)
         fut.add_done_callback(
             functools.partial(self._sock_read_done, fd, handle=handle))
         return await fut
@@ -404,7 +405,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pass
         fut = self.create_future()
         fd = sock.fileno()
-        handle = self.add_reader(fd, self._sock_recv_into, fut, sock, buf)
+        self._ensure_fd_no_transport(fd)
+        handle = self._add_reader(fd, self._sock_recv_into, fut, sock, buf)
         fut.add_done_callback(
             functools.partial(self._sock_read_done, fd, handle=handle))
         return await fut
@@ -449,9 +451,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         fut = self.create_future()
         fd = sock.fileno()
+        self._ensure_fd_no_transport(fd)
         # use a trick with a list in closure to store a mutable state
-        handle = self.add_writer(fd, self._sock_sendall, fut, sock,
-                                 memoryview(data), [n])
+        handle = self._add_writer(fd, self._sock_sendall, fut, sock,
+                                  memoryview(data), [n])
         fut.add_done_callback(
             functools.partial(self._sock_write_done, fd, handle=handle))
         return await fut
@@ -505,7 +508,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             # connection runs in background. We have to wait until the socket
             # becomes writable to be notified when the connection succeed or
             # fails.
-            handle = self.add_writer(
+            self._ensure_fd_no_transport(fd)
+            handle = self._add_writer(
                 fd, self._sock_connect_cb, fut, sock, address)
             fut.add_done_callback(
                 functools.partial(self._sock_write_done, fd, handle=handle))
