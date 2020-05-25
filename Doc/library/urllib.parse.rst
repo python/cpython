@@ -252,9 +252,16 @@ or on combining URL components into a URL string.
 
 .. function:: urlsplit(url, scheme='', allow_fragments=True)
 
-   This is similar to :func:`urlparse`, the returned SplitResult/SplitResultBytes object
-   will split the parameters from the URL, for example, the components of the network location
-   variable - username, password, hostname, and port - are available as extra attributes.
+   Parse a URL into six components, returning a 6-item :term:`named tuple`.  This
+   corresponds to the general structure of a URL:
+   ``scheme://netloc/path;parameters?query#fragment``.
+
+   The delimiters as shown above are not part of the result, except for a leading slash in the path
+   component, which is retained if present.
+
+   Additionally, the netloc property is broken down into these additional attributes added to
+   the returned object: username, password, hostname, and port.
+
    This should generally be used instead of :func:`urlparse` if the more recent URL
    syntax allowing parameters to be applied to each segment of the *path* portion
    of the URL (see :rfc:`2396`) is wanted.  A separate function is needed to
