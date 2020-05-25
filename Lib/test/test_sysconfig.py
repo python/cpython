@@ -387,10 +387,11 @@ class TestSysConfig(unittest.TestCase):
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
     def test_SOABI_consistency(self):
-        SOABI = sysconfig.get_config_var('SOABI')
+        soabi = sysconfig.get_config_var('SOABI')
         pynodot = sysconfig.get_config_var('py_version_nodot')
-        if SOABI is not None:
-            self.assertEqual(SOABI.split('-')[1], pynodot)
+        if soabi is not None:
+            soabi_pyver = soabi.split('-')[1]
+            self.assertTrue(soabi_pyver.startswith(pynodot))
 
 class MakefileTests(unittest.TestCase):
 
