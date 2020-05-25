@@ -117,6 +117,16 @@ class CCallMakerVisitor(GrammarVisitor):
             comment=f"token='{keyword}'",
         )
 
+    def soft_keyword_helper(self, value: str) -> FunctionCall:
+        return FunctionCall(
+            assigned_variable="_keyword",
+            function="_PyPegen_expect_soft_keyword",
+            arguments=["p", value],
+            return_type="expr_ty",
+            nodetype=NodeTypes.NAME_TOKEN,
+            comment=f"soft_keyword='{value}'",
+        )
+
     def visit_NameLeaf(self, node: NameLeaf) -> FunctionCall:
         name = node.value
         if name in self.non_exact_tokens:
@@ -154,7 +164,10 @@ class CCallMakerVisitor(GrammarVisitor):
     def visit_StringLeaf(self, node: StringLeaf) -> FunctionCall:
         val = ast.literal_eval(node.value)
         if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
-            return self.keyword_helper(val)
+            if node.value.endswith("'"):
+                return self.keyword_helper(val)
+            else:
+                return self.soft_keyword_helper(node.value)
         else:
             assert val in self.exact_tokens, f"{node.value} is not a known literal"
             type = self.exact_tokens[val]
