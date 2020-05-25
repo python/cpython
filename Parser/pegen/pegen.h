@@ -121,6 +121,7 @@ int _PyPegen_lookahead_with_int(int, Token *(func)(Parser *, int), Parser *, int
 int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
 
 Token *_PyPegen_expect_token(Parser *p, int type);
+expr_ty _PyPegen_expect_soft_keyword(Parser *p, const char *keyword);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
 expr_ty _PyPegen_name_token(Parser *p);
