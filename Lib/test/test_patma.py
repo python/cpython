@@ -143,15 +143,43 @@ class PatMaTests(unittest.TestCase):
         self.assertNotIn("y", namespace)
 
     def test_walrus_0(self) -> None:
-        match_cases = [MatchCase("0", "y = 0", "not (x := 1)"), MatchCase("(z := 0)", "y = 1")]
+        match_cases = [
+            MatchCase("0", "y = 0", "not (x := 1)"),
+            MatchCase("(z := 0)", "y = 1"),
+        ]
         namespace = self.execute_match("x = 0", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), 1)
         self.assertEqual(namespace.get("y"), 1)
         self.assertEqual(namespace.get("z"), 0)
 
     def test_walrus_1(self) -> None:
-        match_cases = [MatchCase("(z := 1)", "y = 0", "not (x := 1)"), MatchCase("0", "y = 1")]
+        match_cases = [
+            MatchCase("(z := 1)", "y = 0", "not (x := 1)"),
+            MatchCase("0", "y = 1"),
+        ]
         namespace = self.execute_match("x = 0", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), 0)
         self.assertEqual(namespace.get("y"), 1)
         self.assertNotIn("z", namespace)
+
+    def test_walrus_2(self) -> None:
+        match_cases = [MatchCase("(z := 0)", "y = 0")]
+        namespace = self.execute_match("x = 0", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), 0)
+        self.assertEqual(namespace.get("y"), 0)
+        self.assertEqual(namespace.get("z"), 0)
+
+    def test_walrus_3(self) -> None:
+        match_cases = [MatchCase("(z := 1)", "y = 0")]
+        namespace = self.execute_match("x = 0", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), 0)
+        self.assertNotIn("y", namespace)
+        self.assertNotIn("z", namespace)
+
+    def test_walrus_4(self) -> None:
+        match_cases = [MatchCase("(z := 0)", "y = 0", "(w := 0)")]
+        namespace = self.execute_match("x = 0", "x", match_cases, "")
+        self.assertEqual(namespace.get("w"), 0)
+        self.assertEqual(namespace.get("x"), 0)
+        self.assertNotIn("y", namespace)
+        self.assertEqual(namespace.get("z"), 0)
