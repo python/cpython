@@ -80,6 +80,7 @@ compound_stmt[stmt_ty]:
     | &('for' | ASYNC) for_stmt
     | &'try' try_stmt
     | &'while' while_stmt
+    | match_stmt
 
 # NOTE: annotated_rhs may start with 'yield'; yield_expr must start with 'yield'
 assignment[stmt_ty]:
@@ -190,6 +191,56 @@ except_block[excepthandler_ty]:
         _Py_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
     | 'except' ':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
 finally_block[asdl_seq*]: 'finally' ':' a=block { a }
+
+match_stmt[stmt_ty]:
+    | "match" target=expression ':' NEWLINE INDENT cases=case_block+ DEDENT {_Py_Match(target, cases, EXTRA) }
+case_block:
+    | "case" pattern=pattern guard=['if' a=named_expression { a }] ':' body=block {
+      _Py_match_case(pattern, guard, body, p->arena) }
+
+pattern:
+    | a=NAME ':=' b=or_pattern { _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
+    | or_pattern
+
+or_pattern:
+    | '|'.closed_pattern+
+
+closed_pattern:
+    | name_pattern
+    | literal_pattern
+    | constant_pattern
+    | group_pattern
+    | sequence_pattern
+    | mapping_pattern
+    | class_pattern
+
+name_pattern:
+    | a=NAME !('.' | '(') { a }
+literal_pattern:
+    | NUMBER
+    | strings
+    | 'None'
+    | 'True'
+    | 'False'
+constant_pattern:
+    | '.' NAME
+    | a='.'.NAME+ !'(' { a }
+group_pattern:
+    | '(' a=pattern ')' { a }
+sequence_pattern:
+    | '[' a=[','.pattern+] ']' { _Py_List(a, Load, EXTRA) }
+    | '(' a=[','.pattern+] ')' { _Py_Tuple(a, Load, EXTRA) }
+mapping_pattern:
+    | '{' ','.(key_pattern ':' closed_pattern)+ '}' { NULL }
+key_pattern:
+    | a=literal_pattern &':' { a }
+    | a='|'.literal_pattern+ { NULL }
+class_pattern:
+    | '.'.NAME+ '(' pattern_args ')'
+pattern_args:
+    | ','.pattern+ ',' ','.(NAME '=' or_pattern)+ { NULL }
+    | ','.(NAME '=' or_pattern)+ { NULL }
+    | a=','.pattern+ { a }
 
 return_stmt[stmt_ty]:
     | 'return' a=[star_expressions] { _Py_Return(a, EXTRA) }

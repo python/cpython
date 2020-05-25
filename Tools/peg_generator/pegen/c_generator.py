@@ -669,8 +669,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("{")
         # We have parsed successfully all the conditions for the option.
         with self.indent():
+            node_str = str(node).replace('"', '\\"')
             self.print(
-                f'D(fprintf(stderr, "%*c+ {rulename}[%d-%d]: %s succeeded!\\n", p->level, \' \', _mark, p->mark, "{node}"));'
+                f'D(fprintf(stderr, "%*c+ {rulename}[%d-%d]: %s succeeded!\\n", p->level, \' \', _mark, p->mark, "{node_str}"));'
             )
             # Prepare to emmit the rule action and do so
             if node.action and "EXTRA" in node.action:
@@ -723,8 +724,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"{{ // {node}")
         with self.indent():
             self._check_for_errors()
+            node_str = str(node).replace('"', '\\"')
             self.print(
-                f'D(fprintf(stderr, "%*c> {rulename}[%d-%d]: %s\\n", p->level, \' \', _mark, p->mark, "{node}"));'
+                f'D(fprintf(stderr, "%*c> {rulename}[%d-%d]: %s\\n", p->level, \' \', _mark, p->mark, "{node_str}"));'
             )
             # Prepare variable declarations for the alternative
             vars = self.collect_vars(node)
@@ -746,9 +748,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     self.handle_alt_normal(node, is_gather, rulename)
 
             self.print("p->mark = _mark;")
+            node_str = str(node).replace('"', '\\"')
             self.print(
                 f"D(fprintf(stderr, \"%*c%s {rulename}[%d-%d]: %s failed!\\n\", p->level, ' ',\n"
-                f'                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "{node}"));'
+                f'                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "{node_str}"));'
             )
             if "_cut_var" in vars:
                 self.print("if (_cut_var) {")
