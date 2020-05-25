@@ -1,0 +1,4 @@
+:meth:`unittest.findTestCases`, :meth:`unittest.makeSuite`, and
+:meth:`unittest.getTestCaseNames` are now deprecated, scheduled for removal in
+Python 3.12.
+Patch by Erlend E. Aasland.
