@@ -90,11 +90,8 @@ def run_benchmark_stdlib(subcommand, parser):
     for _ in range(3):
         parse_directory(
             "../../Lib",
-            "../../Grammar/python.gram",
-            "../../Grammar/Tokens",
             verbose=False,
             excluded_files=["*/bad*", "*/lib2to3/tests/data/*",],
-            skip_actions=False,
             tree_arg=0,
             short=True,
             mode=2 if subcommand == "compile" else 1,

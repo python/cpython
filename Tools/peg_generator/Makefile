@@ -85,8 +85,6 @@ time_old_parse: venv data/xxl.py
 
 time_peg_dir: venv
 	$(VENVPYTHON) scripts/test_parse_directory.py \
-		--grammar-file $(GRAMMAR) \
-		--tokens-file $(TOKENS) \
 		-d $(TESTDIR) \
 		$(TESTFLAGS) \
 		--exclude "*/failset/*" \
@@ -95,12 +93,8 @@ time_peg_dir: venv
 
 time_stdlib: $(CPYTHON) venv
 	$(VENVPYTHON) scripts/test_parse_directory.py \
-		--grammar-file $(GRAMMAR) \
-		--tokens-file $(TOKENS) \
 		-d $(CPYTHON) \
 		$(TESTFLAGS) \
-		--exclude "*/test2to3/*" \
-		--exclude "*/test2to3/**/*" \
 		--exclude "*/bad*" \
 		--exclude "*/lib2to3/tests/data/*"
 
