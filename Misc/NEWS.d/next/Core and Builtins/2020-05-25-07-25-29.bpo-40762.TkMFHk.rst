@@ -1,0 +1,1 @@
+csv.Writer.writerow() now supports writing bytes as it is instead of writing them as b-prefixed strings. Uses encoding provided by the file object to write the bytes in the text mode. Incase the file object has no encoding attribute it falls back on using ``locale.getpreferredencoding`` to decide.
