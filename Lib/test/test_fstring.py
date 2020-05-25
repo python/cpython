@@ -12,7 +12,7 @@ import os
 import types
 import decimal
 import unittest
-from test.support import temp_cwd
+from test.support import temp_cwd, use_old_parser
 from test.support.script_helper import assert_python_failure
 
 a_global = 'global variable'
@@ -1047,6 +1047,7 @@ non-important content
                              r"f'{1000:j}'",
                             ])
 
+    @unittest.skipIf(use_old_parser(), "This is not supported by the old parser")
     def test_filename_in_syntaxerror(self):
         # see issue 38964
         with temp_cwd() as cwd:
