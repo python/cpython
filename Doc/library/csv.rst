@@ -434,9 +434,10 @@ Writer Objects
 
 :class:`Writer` objects (:class:`DictWriter` instances and objects returned by
 the :func:`writer` function) have the following public methods.  A *row* must be
-an iterable of strings or numbers for :class:`Writer` objects and a dictionary
-mapping fieldnames to strings or numbers (by passing them through :func:`str`
-first) for :class:`DictWriter` objects.  Note that complex numbers are written
+an iterable of strings, numbers or bytes for :class:`Writer` objects and a dictionary
+mapping fieldnames to strings, numbers or bytes (by passing them through :func:`str`
+first) for :class:`DictWriter` objects. Note that bytes will be written according to
+the encoding scheme of the output file. Also note that complex numbers are written
 out surrounded by parens. This may cause some problems for other programs which
 read CSV files (assuming they support complex numbers at all).
 
