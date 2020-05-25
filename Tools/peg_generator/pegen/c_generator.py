@@ -29,7 +29,7 @@ from pegen.parser_generator import ParserGenerator
 EXTENSION_PREFIX = """\
 #include "pegen.h"
 
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
 extern int Py_DebugFlag;
 #define D(x) if (Py_DebugFlag) x;
 #else
