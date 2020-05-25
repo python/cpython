@@ -390,7 +390,7 @@ class TestSysConfig(unittest.TestCase):
         SOABI = sysconfig.get_config_var('SOABI')
         pynodot = sysconfig.get_config_var('py_version_nodot')
         if SOABI is not None:
-            self.assertTrue(SOABI.split('-')[1] == pynodot)
+            self.assertEqual(SOABI.split('-')[1], pynodot)
 
 class MakefileTests(unittest.TestCase):
 
