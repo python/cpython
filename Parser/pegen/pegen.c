@@ -753,6 +753,30 @@ _PyPegen_expect_token(Parser *p, int type)
     return t;
 }
 
+expr_ty
+_PyPegen_expect_soft_keyword(Parser *p, const char *keyword)
+{
+    if (p->mark == p->fill) {
+        if (_PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
+            return NULL;
+        }
+    }
+    Token *t = p->tokens[p->mark];
+    if (t->type != NAME) {
+        return NULL;
+    }
+    char* s = PyBytes_AsString(t->bytes);
+    if (!s) {
+        return NULL;
+    }
+    if (strcmp(s, keyword) != 0) {
+        return NULL;
+    }
+    expr_ty res = _PyPegen_name_token(p);
+    return res;
+}
+
 Token *
 _PyPegen_get_last_nonnwhitespace_token(Parser *p)
 {
