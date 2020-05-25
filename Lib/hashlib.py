@@ -127,8 +127,9 @@ def __get_openssl_constructor(name):
         # SHA3/shake are available in OpenSSL 1.1.1+
         f = getattr(_hashlib, 'openssl_' + name)
         # Allow the C module to raise ValueError.  The function will be
-        # defined but the hash not actually available thanks to OpenSSL.
-        f()
+        # defined but the hash not actually available.  Don't fall back to
+        # builtin if the current security policy blocks a digest, bpo#40695.
+        f(usedforsecurity=False)
         # Use the C function directly (very fast)
         return f
     except (AttributeError, ValueError):
