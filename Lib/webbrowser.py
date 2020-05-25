@@ -545,7 +545,7 @@ def register_standard_browsers():
                 register(browser, None, BackgroundBrowser(browser))
     else:
         # Prefer X browsers if present
-        if os.environ.get("DISPLAY"):
+        if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
             try:
                 cmd = "xdg-settings get default-web-browser".split()
                 raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
