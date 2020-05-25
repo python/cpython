@@ -31,7 +31,7 @@ class PatMaTests(unittest.TestCase):
     @classmethod
     def execute_match(
         cls, pre: str, target: str, match_cases: typing.Iterable[MatchCase], post: str
-    ) -> typing.Tuple[typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]:
+    ) -> typing.Dict[str, typing.Any]:
         cases = [cls.parse_match_case(case) for case in match_cases]
         match = ast.Match(target=cls.parse_expr(target), cases=cases)
         body = [*cls.parse_stmts(pre), match, *cls.parse_stmts(post)]
