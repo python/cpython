@@ -1047,7 +1047,7 @@ non-important content
                              r"f'{1000:j}'",
                             ])
 
-    @unittest.skipIf(use_old_parser(), "This is not supported by the old parser")
+    @unittest.skipIf(use_old_parser(), "The old parser only supports <fstring> as the filename")
     def test_filename_in_syntaxerror(self):
         # see issue 38964
         with temp_cwd() as cwd:
