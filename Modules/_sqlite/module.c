@@ -364,17 +364,20 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         return NULL;
     }
 
-    pysqlite_row_setup_types();
-    pysqlite_cursor_setup_types();
-    pysqlite_connection_setup_types();
     pysqlite_cache_setup_types();
-    pysqlite_statement_setup_types();
+    pysqlite_connection_setup_types();
+    pysqlite_cursor_setup_types();
     pysqlite_prepare_protocol_setup_types();
+    pysqlite_row_setup_types();
+    pysqlite_statement_setup_types();
 
+    ADD_TYPE(module, pysqlite_CacheType);
     ADD_TYPE(module, pysqlite_ConnectionType);
     ADD_TYPE(module, pysqlite_CursorType);
+    ADD_TYPE(module, pysqlite_NodeType);
     ADD_TYPE(module, pysqlite_PrepareProtocolType);
     ADD_TYPE(module, pysqlite_RowType);
+    ADD_TYPE(module, pysqlite_StatementType);
 
     if (!(dict = PyModule_GetDict(module))) {
         goto error;
