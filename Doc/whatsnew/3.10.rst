@@ -91,22 +91,32 @@ Optimizations
 =============
 
 
-Build Changes
-=============
-
-
-
 Deprecated
 ==========
-
 
 
 Removed
 =======
 
 
+Porting to Python 3.10
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+
+
+Build Changes
+=============
+
+
 C API Changes
 =============
+
+New Features
+------------
+
 
 Porting to Python 3.10
 ----------------------
@@ -114,3 +124,7 @@ Porting to Python 3.10
 * Since :c:func:`Py_TYPE()` is changed to the inline static function,
   ``Py_TYPE(obj) = new_type`` should be ported to use :c:func:`Py_SET_TYPE()`.
   (Contributed by Dong-hee Na in :issue:`39573`.)
+
+
+Removed
+-------
