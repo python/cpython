@@ -263,7 +263,7 @@ static PyMethodDef cache_methods[] = {
 
 PyTypeObject pysqlite_NodeType = {
         PyVarObject_HEAD_INIT(NULL, 0)
-        MODULE_NAME "Node",                             /* tp_name */
+        MODULE_NAME ".Node",                             /* tp_name */
         sizeof(pysqlite_Node),                          /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)pysqlite_node_dealloc,              /* tp_dealloc */
