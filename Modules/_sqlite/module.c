@@ -379,7 +379,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_TYPE(module,  pysqlite_ConnectionType);
     ADD_TYPE(module, pysqlite_CursorType);
     ADD_TYPE(module, pysqlite_PrepareProtocolType);
-    ADD_OBJECT(module, "Row", pysqlite_RowType);
+    ADD_TYPE(module, pysqlite_RowType);
 
     if (!(dict = PyModule_GetDict(module))) {
         goto error;
