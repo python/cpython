@@ -94,7 +94,10 @@ the definition of all other Python objects.
    object.
    It expands to::
 
-      (((PyObject*)(o))->ob_refcnt)
+      (((const PyObject*)(o))->ob_refcnt)
+
+   .. versionchanged:: 3.10
+      :c:macro:`Py_SIZE` is expanded to use ``const PyVarObject*``.
 
 
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
@@ -109,8 +112,10 @@ the definition of all other Python objects.
    This macro is used to access the :attr:`ob_size` member of a Python object.
    It expands to::
 
-      (((PyVarObject*)(o))->ob_size)
+      (((const PyVarObject*)(o))->ob_size)
 
+   .. versionchanged:: 3.10
+      :c:macro:`Py_SIZE` is expanded to use ``const PyVarObject*``.
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
 

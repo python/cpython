@@ -119,9 +119,10 @@ typedef struct {
 
 /* Cast argument to PyVarObject* type. */
 #define _PyVarObject_CAST(op) ((PyVarObject*)(op))
+#define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
-#define Py_REFCNT(ob)           (_PyObject_CAST(ob)->ob_refcnt)
-#define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
+#define Py_REFCNT(ob)           (_PyObject_CAST_CONST(ob)->ob_refcnt)
+#define Py_SIZE(ob)             (_PyVarObject_CAST_CONST(ob)->ob_size)
 
 static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
     return ob->ob_type;

@@ -1,0 +1,2 @@
+Update :c:macro:`Py_SIZE` and :c:macro:`Py_SIZE` to use const object
+casting. Patch by Dong-hee Na.
