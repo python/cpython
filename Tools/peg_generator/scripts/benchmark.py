@@ -95,7 +95,7 @@ def run_benchmark_stdlib(subcommand, parser):
             tree_arg=0,
             short=True,
             mode=2 if subcommand == "compile" else 1,
-            oldparser=parser == "old",
+            oldparser=(parser == "old"),
         )
 
 
