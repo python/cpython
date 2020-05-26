@@ -348,6 +348,7 @@ static struct PyModuleDef _sqlite3module = {
 
 #define ADD_TYPE(module, type)                 \
 do {                                           \
+    Py_INCREF(&type);                          \
     if (PyModule_AddType(module, &type) < 0) { \
         Py_DECREF(module);                     \
         return NULL;                           \
@@ -360,16 +361,19 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     PyObject *tmp_obj;
     int i;
 
-    if (!(module = PyModule_Create(&_sqlite3module))) {
+    module = PyModule_Create(&_sqlite3module);
+
+    if (!module ||
+        (pysqlite_row_setup_types() < 0) ||
+        (pysqlite_cursor_setup_types() < 0) ||
+        (pysqlite_connection_setup_types() < 0) ||
+        (pysqlite_cache_setup_types() < 0) ||
+        (pysqlite_statement_setup_types() < 0) ||
+        (pysqlite_prepare_protocol_setup_types() < 0)
+       ) {
+        Py_XDECREF(module);
         return NULL;
     }
-
-    pysqlite_cache_setup_types();
-    pysqlite_connection_setup_types();
-    pysqlite_cursor_setup_types();
-    pysqlite_prepare_protocol_setup_types();
-    pysqlite_row_setup_types();
-    pysqlite_statement_setup_types();
 
     ADD_TYPE(module, pysqlite_CacheType);
     ADD_TYPE(module, pysqlite_ConnectionType);

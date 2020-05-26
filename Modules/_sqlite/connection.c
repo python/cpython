@@ -1872,7 +1872,8 @@ PyTypeObject pysqlite_ConnectionType = {
         0                                               /* tp_free */
 };
 
-extern void pysqlite_connection_setup_types(void)
+extern int pysqlite_connection_setup_types(void)
 {
     pysqlite_ConnectionType.tp_new = PyType_GenericNew;
+    return PyType_Ready(&pysqlite_ConnectionType);
 }

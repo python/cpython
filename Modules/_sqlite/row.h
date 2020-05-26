@@ -35,6 +35,6 @@ typedef struct _Row
 
 extern PyTypeObject pysqlite_RowType;
 
-void pysqlite_row_setup_types(void);
+int pysqlite_row_setup_types(void);
 
 #endif

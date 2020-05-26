@@ -497,7 +497,8 @@ PyTypeObject pysqlite_StatementType = {
         0                                               /* tp_free */
 };
 
-extern void pysqlite_statement_setup_types(void)
+extern int pysqlite_statement_setup_types(void)
 {
     pysqlite_StatementType.tp_new = PyType_GenericNew;
+    return PyType_Ready(&pysqlite_StatementType);
 }

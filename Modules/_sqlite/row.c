@@ -269,9 +269,10 @@ PyTypeObject pysqlite_RowType = {
         0                                               /* tp_free */
 };
 
-extern void pysqlite_row_setup_types(void)
+extern int pysqlite_row_setup_types(void)
 {
     pysqlite_RowType.tp_new = pysqlite_row_new;
     pysqlite_RowType.tp_as_mapping = &pysqlite_row_as_mapping;
     pysqlite_RowType.tp_as_sequence = &pysqlite_row_as_sequence;
+    return PyType_Ready(&pysqlite_RowType);
 }
