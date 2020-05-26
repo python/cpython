@@ -11,6 +11,7 @@ import ast
 import types
 import decimal
 import unittest
+from test.support import use_old_parser
 
 a_global = 'global variable'
 
@@ -864,7 +865,12 @@ non-important content
                              "Bf''",
                              "BF''",]
         double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
+        error_msg = (
+            'invalid syntax'
+            if use_old_parser()
+            else 'unexpected EOF while parsing'
+        )
+        self.assertAllRaise(SyntaxError, error_msg,
                             single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):
