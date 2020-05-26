@@ -91,11 +91,11 @@ def main() -> None:
         references[name] = set(references_for_item(rule))
 
     # Flatten the start node if has only a single reference
-    root_node = "start"
-    if start := references["start"]:
+    root_node = "file" # The start rule is called 'file' now
+    if start := references["file"]:
         if len(start) == 1:
             root_node = list(start)[0]
-            del references["start"]
+            del references["file"]
 
     print("digraph g1 {")
     print('\toverlap="scale";')  # Force twopi to scale the graph to avoid overlaps

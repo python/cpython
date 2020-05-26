@@ -24,7 +24,7 @@ argparser = argparse.ArgumentParser(
 argparser.add_argument(
     "--parser",
     action="store",
-    choices=["pegen", "cpython"],
+    choices=["new", "old"],
     default="pegen",
     help="Which parser to benchmark (default is pegen)",
 )
@@ -62,7 +62,7 @@ def benchmark(func):
 
 @benchmark
 def time_compile(source, parser):
-    if parser == "cpython":
+    if parser == "old":
         return _peg_parser.compile_string(
             source,
             oldparser=True,
@@ -73,7 +73,7 @@ def time_compile(source, parser):
 
 @benchmark
 def time_parse(source, parser):
-    if parser == "cpython":
+    if parser == "old":
         return _peg_parser.parse_string(source, oldparser=True)
     else:
         return _peg_parser.parse_string(source)
@@ -95,7 +95,7 @@ def run_benchmark_stdlib(subcommand, parser):
             tree_arg=0,
             short=True,
             mode=2 if subcommand == "compile" else 1,
-            parser=parser,
+            oldparser=parser == "old",
         )
 
 

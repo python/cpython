@@ -108,19 +108,19 @@ def compare_trees(
     return 1
 
 
-def parse_file(source: str, file: str, mode: int, parser: str) -> Tuple[Any, float]:
+def parse_file(source: str, file: str, mode: int, oldparser: bool) -> Tuple[Any, float]:
     t0 = time.time()
     if mode == 2:
         result = _peg_parser.compile_string(
             source,
             filename=file,
-            oldparser=parser == "cpython",
+            oldparser=oldparser,
         )
     else:
         result = _peg_parser.parse_string(
             source,
             filename=file,
-            oldparser=parser == "cpython"
+            oldparser=oldparser,
         )
     t1 = time.time()
     return result, t1 - t0
@@ -163,12 +163,12 @@ def parse_directory(
     tree_arg: int,
     short: bool,
     mode: int,
-    parser: str,
+    oldparser: bool,
 ) -> int:
     if tree_arg:
         assert mode == 1, "Mode should be 1 (parse), when comparing the generated trees"
 
-    if parser == "cpython" and tree_arg:
+    if oldparser and tree_arg:
         print("Cannot specify tree argument with the cpython parser.", file=sys.stderr)
         return 1
 
@@ -188,7 +188,7 @@ def parse_directory(
             source = f.read()
 
         try:
-            result, dt = parse_file(source, file, mode, parser)
+            result, dt = parse_file(source, file, mode, oldparser)
             total_seconds += dt
             if tree_arg:
                 trees[file] = result
@@ -242,7 +242,7 @@ def main() -> None:
             tree,
             short,
             mode,
-            "pegen",
+            False,
         )
     )
 
