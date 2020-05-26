@@ -131,8 +131,7 @@ def is_parsing_failure(source: str) -> bool:
         _peg_parser.parse_string(source, mode="exec", oldparser=True)
     except SyntaxError:
         return False
-    else:
-        return True
+    return True
 
 
 def generate_time_stats(files, total_seconds) -> None:
