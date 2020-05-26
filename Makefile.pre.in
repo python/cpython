@@ -298,6 +298,7 @@ LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
 
 PEGEN_OBJS=		\
 		Parser/pegen/pegen.o \
+		Parser/pegen/vm.o \
 		Parser/pegen/parse.o \
 		Parser/pegen/parse_string.o \
 		Parser/pegen/peg_api.o
@@ -306,6 +307,7 @@ PEGEN_OBJS=		\
 PEGEN_HEADERS= \
 		$(srcdir)/Include/internal/pegen_interface.h \
 		$(srcdir)/Parser/pegen/pegen.h \
+		$(srcdir)/Parser/pegen/vm.h \
 		$(srcdir)/Parser/pegen/parse_string.h
 
 POBJS=		\
