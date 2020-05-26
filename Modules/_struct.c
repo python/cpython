@@ -1286,8 +1286,7 @@ prepare_s(PyStructObject *self)
 
     fmt = PyBytes_AS_STRING(self->s_format);
     if (strlen(fmt) != (size_t)PyBytes_GET_SIZE(self->s_format)) {
-        PyErr_SetString(_structmodulestate_global->StructError,
-                        "embedded null character");
+        PyErr_SetString(StructError, "embedded null character");
         return -1;
     }
 
