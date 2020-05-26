@@ -2751,6 +2751,15 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
 {
     basicblock *block;
     switch (p->kind) {
+        // Atomic patterns:
+        case Name_kind:
+            if (p->v.Name.ctx == Store) {
+                ADDOP(c, DUP_TOP);
+                VISIT(c, expr, p);
+                ADDOP_JREL(c, JUMP_FORWARD, yes);
+                return 1;
+            }  // Down we go...
+        case Attribute_kind:
         case Constant_kind:
             ADDOP(c, DUP_TOP);
             VISIT(c, expr, p);
@@ -2758,6 +2767,7 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
             ADDOP_JABS(c, POP_JUMP_IF_FALSE, no);
             ADDOP_JREL(c, JUMP_FORWARD, yes);
             return 1;
+        // Nested patterns:
         case NamedExpr_kind:
             block = compiler_new_block(c);
             if (!compiler_pattern(c, p->v.NamedExpr.value, block, no)) {

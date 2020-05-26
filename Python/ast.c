@@ -306,16 +306,20 @@ static int
 validate_pattern(expr_ty p)
 {
     switch (p->kind) {
-        case Constant_kind:
-            return validate_constant(p->v.Constant.value);
-        case NamedExpr_kind:
-            return validate_pattern(p->v.NamedExpr.value);
+        case Attribute_kind:
+            return validate_expr(p, Load);
         case BinOp_kind:
             if (p->v.BinOp.op != BitOr) {
                 break;
             }
             return (validate_pattern(p->v.BinOp.left)
                     && validate_pattern(p->v.BinOp.right));
+        case Constant_kind:
+            return validate_constant(p->v.Constant.value);
+        case Name_kind:
+            return validate_expr(p, p->v.Name.ctx);
+        case NamedExpr_kind:
+            return validate_pattern(p->v.NamedExpr.value);
         default:
             break;
     }
