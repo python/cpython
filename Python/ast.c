@@ -305,6 +305,8 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 static int
 validate_pattern(expr_ty p)
 {
+    asdl_seq *elts;
+    Py_ssize_t i, size;
     switch (p->kind) {
         case Attribute_kind:
             return validate_expr(p, Load);
@@ -316,6 +318,16 @@ validate_pattern(expr_ty p)
                     && validate_pattern(p->v.BinOp.right));
         case Constant_kind:
             return validate_constant(p->v.Constant.value);
+        case List_kind:
+        case Tuple_kind:
+            elts = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
+            size = asdl_seq_LEN(elts);
+            for (i = 0; i < size; i++) {
+                if (!validate_pattern(asdl_seq_GET(elts, i))) {
+                    return 0;
+                }
+            }
+            return 1;
         case Name_kind:
             if (p->v.Name.ctx != Load && p->v.Name.ctx != Store) {
                 break;

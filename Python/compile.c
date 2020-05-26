@@ -2749,13 +2749,17 @@ compiler_if(struct compiler *c, stmt_ty s)
 static int
 compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
 {
-    basicblock *block;
+    // TODO: This inital implementation keeps things simple(-ish), but creates a
+    // TON of blocks and zero-length jumps, especially for sequences. Simplify?
+    // The zero-length jumps can probably be peep-holed.
+    basicblock *sub_no, *sub_yes;
+    asdl_seq *elts;
+    Py_ssize_t i, size;
     switch (p->kind) {
         // Atomic patterns:
         case Name_kind:
             if (p->v.Name.ctx == Store) {
                 if (!_PyUnicode_EqualToASCIIString(p->v.Name.id, "_")) {
-                    ADDOP(c, DUP_TOP);
                     VISIT(c, expr, p);
                 }
                 ADDOP_JREL(c, JUMP_FORWARD, yes);
@@ -2763,7 +2767,6 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
             }  // Loads fall through.
         case Attribute_kind:
         case Constant_kind:
-            ADDOP(c, DUP_TOP);
             VISIT(c, expr, p);
             ADDOP_COMPARE(c, Eq);
             ADDOP_JABS(c, POP_JUMP_IF_FALSE, no);
@@ -2771,24 +2774,58 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
             return 1;
         // Nested patterns:
         case BinOp_kind:
-            block = compiler_new_block(c);
-            if (!compiler_pattern(c, p->v.BinOp.left, yes, block)) {
+            ADDOP(c, DUP_TOP);
+            sub_yes = compiler_new_block(c);
+            sub_no = compiler_new_block(c);
+            if (!compiler_pattern(c, p->v.BinOp.left, sub_yes, sub_no)) {
                 return 0;
             }
-            compiler_use_next_block(c, block);
+            compiler_use_next_block(c, sub_no);
             if (!compiler_pattern(c, p->v.BinOp.right, yes, no)) {
                 return 0;
             }
+            compiler_use_next_block(c, sub_yes);
+            ADDOP(c, POP_TOP);
+            ADDOP_JREL(c, JUMP_FORWARD, yes);
+            return 1;
+        case List_kind:
+        case Tuple_kind:
+            // TODO: Need to add a MATCH_SEQ that handles checking for
+            // Sequence (but not str, bytes, bytearray), and popping/jumping to
+            // "no" on failure:
+            ADDOP(c, GET_ITER);
+            sub_no = compiler_new_block(c);
+            elts = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
+            size = asdl_seq_LEN(elts);
+            for (i = 0; i < size; i++) {
+                sub_yes = compiler_new_block(c);
+                ADDOP_JREL(c, FOR_ITER, no);
+                if (!compiler_pattern(c, asdl_seq_GET(elts, i), sub_yes, sub_no)) {
+                    return 0;
+                }
+                compiler_use_next_block(c, sub_yes);
+            }
+            ADDOP_JREL(c, FOR_ITER, yes);
+            ADDOP(c, POP_TOP);
+            ADDOP(c, POP_TOP);
+            ADDOP_JREL(c, JUMP_FORWARD, no);
+            compiler_use_next_block(c, sub_no);
+            ADDOP(c, POP_TOP);
+            ADDOP_JREL(c, JUMP_FORWARD, no);
             return 1;
         case NamedExpr_kind:
-            block = compiler_new_block(c);
-            if (!compiler_pattern(c, p->v.NamedExpr.value, block, no)) {
+            ADDOP(c, DUP_TOP);
+            sub_yes = compiler_new_block(c);
+            sub_no = compiler_new_block(c);
+            if (!compiler_pattern(c, p->v.NamedExpr.value, sub_yes, sub_no)) {
                 return 0;
             }
-            compiler_use_next_block(c, block);
-            ADDOP(c, DUP_TOP);
+            compiler_use_next_block(c, sub_yes);
             VISIT(c, expr, p->v.NamedExpr.target);
             ADDOP_JREL(c, JUMP_FORWARD, yes);
+            compiler_use_next_block(c, sub_no);
+            ADDOP(c, POP_TOP);
+            ADDOP_JREL(c, JUMP_FORWARD, no);
             return 1;
         default:
             Py_UNREACHABLE();
@@ -2806,6 +2843,7 @@ compiler_match(struct compiler *c, stmt_ty s)
         m = asdl_seq_GET(s->v.Match.cases, i);
         body = compiler_new_block(c);
         next = compiler_new_block(c);
+        ADDOP(c, DUP_TOP);
         compiler_pattern(c, m->pattern, body, next);
         compiler_use_next_block(c, body);
         if (m->guard && !compiler_jump_if(c, m->guard, next, 0)) {
