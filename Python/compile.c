@@ -2752,32 +2752,18 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
     basicblock *block;
     switch (p->kind) {
         // Atomic patterns:
-        case Name_kind:
-            if (p->v.Name.ctx == Store) {
-                ADDOP(c, DUP_TOP);
-                VISIT(c, expr, p);
-                ADDOP_JREL(c, JUMP_FORWARD, yes);
-                return 1;
-            }  // Down we go...
         case Attribute_kind:
         case Constant_kind:
+        case Name_kind:
             ADDOP(c, DUP_TOP);
             VISIT(c, expr, p);
-            ADDOP_COMPARE(c, Eq);
-            ADDOP_JABS(c, POP_JUMP_IF_FALSE, no);
+            if (p->kind != Name_kind || p->v.Name.ctx == Load) {
+                ADDOP_COMPARE(c, Eq);
+                ADDOP_JABS(c, POP_JUMP_IF_FALSE, no);
+            }
             ADDOP_JREL(c, JUMP_FORWARD, yes);
             return 1;
         // Nested patterns:
-        case NamedExpr_kind:
-            block = compiler_new_block(c);
-            if (!compiler_pattern(c, p->v.NamedExpr.value, block, no)) {
-                return 0;
-            }
-            compiler_use_next_block(c, block);
-            ADDOP(c, DUP_TOP);
-            VISIT(c, expr, p->v.NamedExpr.target);
-            ADDOP_JREL(c, JUMP_FORWARD, yes);
-            return 1;
         case BinOp_kind:
             block = compiler_new_block(c);
             if (!compiler_pattern(c, p->v.BinOp.left, yes, block)) {
@@ -2788,11 +2774,19 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
                 return 0;
             }
             return 1;
+        case NamedExpr_kind:
+            block = compiler_new_block(c);
+            if (!compiler_pattern(c, p->v.NamedExpr.value, block, no)) {
+                return 0;
+            }
+            compiler_use_next_block(c, block);
+            ADDOP(c, DUP_TOP);
+            VISIT(c, expr, p->v.NamedExpr.target);
+            ADDOP_JREL(c, JUMP_FORWARD, yes);
+            return 1;
         default:
-            break;
+            Py_UNREACHABLE();
     }
-    PyErr_SetString(PyExc_SystemError, "invalid match pattern");
-    return 0;
 }
 
 static int
