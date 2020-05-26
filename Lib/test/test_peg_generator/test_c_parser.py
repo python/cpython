@@ -432,3 +432,15 @@ class TestCParser(TempdirManager, unittest.TestCase):
         self.check_input_strings_for_grammar(valid_cases, invalid_cases)
         """
         self.run_test(grammar_source, test_source)
+
+    def test_soft_keywords_lookahead(self) -> None:
+        grammar_source = """
+        start: &"if" "if" expr '+' expr NEWLINE
+        expr: NAME
+        """
+        test_source = """
+        valid_cases = ["if if + if"]
+        invalid_cases = ["if if"]
+        self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)
