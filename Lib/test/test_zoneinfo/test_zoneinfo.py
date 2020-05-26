@@ -360,7 +360,6 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                     self.assertEqual(dt.dst(), offset.dst, dt)
 
     def test_folds_from_utc(self):
-        tests = []
         for key in self.zones():
             zi = self.zone_from_key(key)
             with self.subTest(key=key):
@@ -922,7 +921,7 @@ class TZStrTest(ZoneInfoTestBase):
         # the Version 2+ file. In this case, we have no transitions, just
         # the tzstr in the footer, so up to the footer, the files are
         # identical and we can just write the same file twice in a row.
-        for i in range(2):
+        for _ in range(2):
             out += b"TZif"  # Magic value
             out += b"3"  # Version
             out += b" " * 15  # Reserved
@@ -947,7 +946,6 @@ class TZStrTest(ZoneInfoTestBase):
         return self.klass.from_file(zonefile, key=tzstr)
 
     def test_tzstr_localized(self):
-        i = 0
         for tzstr, cases in self.test_cases.items():
             with self.subTest(tzstr=tzstr):
                 zi = self.zone_from_tzstr(tzstr)
