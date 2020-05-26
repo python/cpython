@@ -46,10 +46,7 @@ typedef struct {
 static int
 abc_data_traverse(_abc_data *self, visitproc visit, void *arg)
 {
-    PyTypeObject *parent = Py_TYPE(self);
-    if (parent->tp_traverse == (traverseproc)abc_data_traverse) {
-        Py_VISIT(parent);
-    }
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->_abc_registry);
     Py_VISIT(self->_abc_cache);
     Py_VISIT(self->_abc_negative_cache);

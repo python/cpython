@@ -2079,25 +2079,6 @@ Changes in the C API
         #endif
         }
 
-  * Ensure that all custom ``tp_traverse`` functions of heap-allocated types
-    visit the object parent **but not for subclasses**.
-
-    Example:
-
-    .. code-block:: c
-
-        int
-        foo_traverse(foo_struct *self, visitproc visit, void *arg) {
-        // Rest of the traverse function
-        #if PY_VERSION_HEX >= 0x03080000
-            // This was not needed before Python 3.8 (Python issue 35810)
-            PyObject *type = Py_TYPE(instance);
-            if (type->tp_traverse == (traverseproc)foo_traverse) {
-                Py_VISIT(type);
-            }
-        #endif
-        }
-
   (Contributed by Eddie Elizondo in :issue:`35810`.)
 
 * The :c:macro:`Py_DEPRECATED()` macro has been implemented for MSVC.
