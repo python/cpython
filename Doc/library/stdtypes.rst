@@ -480,8 +480,8 @@ class`. In addition, it provides a few more methods:
 
 .. method:: int.bit_count()
 
-    Return the number of ones in the binary representation of the integer,
-    excluding the sign bit::
+    Return the number of ones in the binary representation of the absolute
+    value of the integer::
 
         >>> n = -19
         >>> bin(n)
@@ -494,7 +494,7 @@ class`. In addition, it provides a few more methods:
         def bit_count(self):
             return bin(self).count("1")
 
-    .. versionadded:: 3.8
+    .. versionadded:: 3.10
 
 .. method:: int.to_bytes(length, byteorder, \*, signed=False)
 
