@@ -2108,9 +2108,7 @@ _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
                 if (cmpop == In) {
                     return _PyPegen_get_invalid_target(e->v.Compare.left, targets_type);
                 }
-                else {
-                    return NULL;
-                }
+                return NULL;
             }
             return e;
         case Name_kind:
