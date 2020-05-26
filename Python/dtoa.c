@@ -2563,6 +2563,13 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
                         }
                     ++*s++;
                 }
+                /* This branch was missing from the original dtoa.c, leading
+                   to surplus trailing zeros in some cases.
+                   See bugs.python.org/issue40780. */
+                else {
+                    while(*--s == '0');
+                    s++;
+                }
                 break;
             }
         }
