@@ -1,0 +1,2 @@
+Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
+Base32 Encoding with Extended Hex Alphabet.
