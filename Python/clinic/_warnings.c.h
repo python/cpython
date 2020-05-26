@@ -43,11 +43,6 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         }
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = PyNumber_Index(args[2]);
@@ -71,4 +66,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7bb54c73b5433ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=484e5ffe94edf0f0 input=a9049054013a1b77]*/

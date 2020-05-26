@@ -75,6 +75,12 @@ New Features
 Other Language Changes
 ======================
 
+* Builtin and extension functions that take integer arguments no longer accept
+  :class:`~decimal.Decimal`\ s, :class:`~fractions.Fraction`\ s and other
+  objects that can be converted to integers only with a loss (e.g. that have
+  the :meth:`~object.__int__` method but do not have the
+  :meth:`~object.__index__` method).
+  (Contributed by Serhiy Storchaka in :issue:`37999`.)
 
 
 New Modules
