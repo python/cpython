@@ -25,8 +25,8 @@ import weakref
 import warnings
 import test.support
 import test.support.script_helper
-from test.support import hashlib_helper
 from test import support
+from test.support import hashlib_helper
 from test.support import socket_helper
 
 
