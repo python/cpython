@@ -1285,6 +1285,10 @@ prepare_s(PyStructObject *self)
     size_t ncodes;
 
     fmt = PyBytes_AS_STRING(self->s_format);
+    if (strlen(fmt) != (size_t)PyBytes_GET_SIZE(self->s_format)) {
+        PyErr_SetString(StructError, "embedded null character");
+        return -1;
+    }
 
     f = whichtable(&fmt);
 
