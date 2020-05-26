@@ -2543,7 +2543,7 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
     view->suboffsets = NULL;
     view->shape = NULL;
     if ((flags & PyBUF_ND)==PyBUF_ND) {
-        view->shape = (Py_ssize_t *)&((Py_SIZE(self)));
+        view->shape = &((PyVarObject *)self)->ob_size;
     }
     view->strides = NULL;
     if ((flags & PyBUF_STRIDES)==PyBUF_STRIDES)
