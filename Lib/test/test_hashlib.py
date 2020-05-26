@@ -1004,17 +1004,31 @@ class KDFTests(unittest.TestCase):
                     self.assertEqual(out, expected,
                                      (digest_name, password, salt, rounds))
 
-        self.assertRaises(TypeError, pbkdf2, b'sha1', b'pass', b'salt', 1)
-        self.assertRaises(TypeError, pbkdf2, 'sha1', 'pass', 'salt', 1)
-        self.assertRaises(ValueError, pbkdf2, 'sha1', b'pass', b'salt', 0)
-        self.assertRaises(ValueError, pbkdf2, 'sha1', b'pass', b'salt', -1)
-        self.assertRaises(ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, 0)
-        self.assertRaises(ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, -1)
         with self.assertRaisesRegex(ValueError, 'unsupported hash type'):
             pbkdf2('unknown', b'pass', b'salt', 1)
-        out = pbkdf2(hash_name='sha1', password=b'password', salt=b'salt',
-            iterations=1, dklen=None)
-        self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
+
+        if 'sha1' in supported:
+            self.assertRaises(
+                TypeError, pbkdf2, b'sha1', b'pass', b'salt', 1
+            )
+            self.assertRaises(
+                TypeError, pbkdf2, 'sha1', 'pass', 'salt', 1
+            )
+            self.assertRaises(
+                ValueError, pbkdf2, 'sha1', b'pass', b'salt', 0
+            )
+            self.assertRaises(
+                ValueError, pbkdf2, 'sha1', b'pass', b'salt', -1
+            )
+            self.assertRaises(
+                ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, 0
+            )
+            self.assertRaises(
+                ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, -1
+            )
+            out = pbkdf2(hash_name='sha1', password=b'password', salt=b'salt',
+                iterations=1, dklen=None)
+            self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
 
     def test_pbkdf2_hmac_py(self):
         self._test_pbkdf2_hmac(py_hashlib.pbkdf2_hmac, builtin_hashes)
