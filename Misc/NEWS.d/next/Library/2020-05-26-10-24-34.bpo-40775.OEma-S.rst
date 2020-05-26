@@ -1,0 +1,1 @@
+Fix missing punctuation mark in :mod:`sqlite3` Node type name.
