@@ -502,14 +502,10 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.factorial, -10**100)
 
     def testFactorialNonIntegers(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(math.factorial(5.0), 120)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, math.factorial, 5.2)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, math.factorial, -1.0)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, math.factorial, -1e100)
+        self.assertRaises(TypeError, math.factorial, 5.0)
+        self.assertRaises(TypeError, math.factorial, 5.2)
+        self.assertRaises(TypeError, math.factorial, -1.0)
+        self.assertRaises(TypeError, math.factorial, -1e100)
         self.assertRaises(TypeError, math.factorial, decimal.Decimal('5'))
         self.assertRaises(TypeError, math.factorial, decimal.Decimal('5.2'))
         self.assertRaises(TypeError, math.factorial, "5")
@@ -520,8 +516,7 @@ class MathTests(unittest.TestCase):
         # Currently raises OverflowError for inputs that are too large
         # to fit into a C long.
         self.assertRaises(OverflowError, math.factorial, 10**100)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(OverflowError, math.factorial, 1e100)
+        self.assertRaises(TypeError, math.factorial, 1e100)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)

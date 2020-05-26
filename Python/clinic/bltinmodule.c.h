@@ -134,11 +134,6 @@ builtin_chr(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int i;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     i = _PyLong_AsInt(arg);
     if (i == -1 && PyErr_Occurred()) {
         goto exit;
@@ -216,11 +211,6 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[3]) {
-        if (PyFloat_Check(args[3])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         flags = _PyLong_AsInt(args[3]);
         if (flags == -1 && PyErr_Occurred()) {
             goto exit;
@@ -230,11 +220,6 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[4]) {
-        if (PyFloat_Check(args[4])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         dont_inherit = _PyLong_AsInt(args[4]);
         if (dont_inherit == -1 && PyErr_Occurred()) {
             goto exit;
@@ -244,11 +229,6 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[5]) {
-        if (PyFloat_Check(args[5])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         optimize = _PyLong_AsInt(args[5]);
         if (optimize == -1 && PyErr_Occurred()) {
             goto exit;
@@ -260,11 +240,6 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
-    }
-    if (PyFloat_Check(args[6])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     feature_version = _PyLong_AsInt(args[6]);
     if (feature_version == -1 && PyErr_Occurred()) {
@@ -855,4 +830,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=29686a89b739d600 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=780fd9712ec6a6db input=a9049054013a1b77]*/
