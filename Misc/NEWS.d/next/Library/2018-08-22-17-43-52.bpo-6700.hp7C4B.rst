@@ -1,2 +1,0 @@
-Fix inspect.getsourcelines for module level frames/tracebacks.
-Patch by Vladimir Matveev.

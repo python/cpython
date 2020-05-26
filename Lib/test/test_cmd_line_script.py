@@ -169,10 +169,10 @@ class CmdLineTest(unittest.TestCase):
     @contextlib.contextmanager
     def interactive_python(self, separate_stderr=False):
         if separate_stderr:
-            p = spawn_python('-i', bufsize=1, stderr=subprocess.PIPE)
+            p = spawn_python('-i', stderr=subprocess.PIPE)
             stderr = p.stderr
         else:
-            p = spawn_python('-i', bufsize=1, stderr=subprocess.STDOUT)
+            p = spawn_python('-i', stderr=subprocess.STDOUT)
             stderr = p.stdout
         try:
             # Drain stderr until prompt
@@ -218,6 +218,19 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script')
             self._check_script(script_name, script_name, script_name,
                                script_dir, None,
+                               importlib.machinery.SourceFileLoader,
+                               expected_cwd=script_dir)
+
+    def test_script_abspath(self):
+        # pass the script using the relative path, expect the absolute path
+        # in __file__
+        with support.temp_cwd() as script_dir:
+            self.assertTrue(os.path.isabs(script_dir), script_dir)
+
+            script_name = _make_test_script(script_dir, 'script')
+            relative_name = os.path.basename(script_name)
+            self._check_script(relative_name, script_name, relative_name,
+                               script_dir, None,
                                importlib.machinery.SourceFileLoader)
 
     def test_script_compiled(self):
@@ -259,10 +272,32 @@ class CmdLineTest(unittest.TestCase):
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
                                zipimport.zipimporter)
 
-    def test_zipfile_compiled(self):
+    def test_zipfile_compiled_timestamp(self):
         with support.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            compiled_name = py_compile.compile(
+                script_name, doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
+            zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
+            self._check_script(zip_name, run_name, zip_name, zip_name, '',
+                               zipimport.zipimporter)
+
+    def test_zipfile_compiled_checked_hash(self):
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, '__main__')
+            compiled_name = py_compile.compile(
+                script_name, doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH)
+            zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
+            self._check_script(zip_name, run_name, zip_name, zip_name, '',
+                               zipimport.zipimporter)
+
+    def test_zipfile_compiled_unchecked_hash(self):
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, '__main__')
+            compiled_name = py_compile.compile(
+                script_name, doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
                                zipimport.zipimporter)
@@ -387,6 +422,23 @@ class CmdLineTest(unittest.TestCase):
                                       script_name, script_name, script_dir, '',
                                       importlib.machinery.SourceFileLoader)
 
+    def test_issue20884(self):
+        # On Windows, script with encoding cookie and LF line ending
+        # will be failed.
+        with support.temp_dir() as script_dir:
+            script_name = os.path.join(script_dir, "issue20884.py")
+            with open(script_name, "w", newline='\n') as f:
+                f.write("#coding: iso-8859-1\n")
+                f.write('"""\n')
+                for _ in range(30):
+                    f.write('x'*80 + '\n')
+                f.write('"""\n')
+
+            with support.change_cwd(path=script_dir):
+                rc, out, err = assert_python_ok(script_name)
+            self.assertEqual(b"", out)
+            self.assertEqual(b"", err)
+
     @contextlib.contextmanager
     def setup_test_pkg(self, *args):
         with support.temp_dir() as script_dir, \
@@ -423,7 +475,7 @@ class CmdLineTest(unittest.TestCase):
             ('os.path', br'loader.*cannot handle'),
             ('importlib', br'No module named.*'
                 br'is a package and cannot be directly executed'),
-            ('importlib.nonexistant', br'No module named'),
+            ('importlib.nonexistent', br'No module named'),
             ('.unittest', br'Relative module names not supported'),
         )
         for name, regex in tests:
@@ -446,6 +498,16 @@ class CmdLineTest(unittest.TestCase):
                 br'ImportError.*bad magic number')
             self.assertNotIn(b'is a package', err)
             self.assertNotIn(b'Traceback', err)
+
+    def test_hint_when_triying_to_import_a_py_file(self):
+        with support.temp_dir() as script_dir, \
+                support.change_cwd(path=script_dir):
+            # Create invalid *.pyc as empty file
+            with open('asyncio.py', 'wb'):
+                pass
+            err = self.check_dash_m_failure('asyncio.py')
+            self.assertIn(b"Try using 'asyncio' instead "
+                          b"of 'asyncio.py' as the module name", err)
 
     def test_dash_m_init_traceback(self):
         # These were wrapped in an ImportError and tracebacks were
@@ -484,7 +546,7 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
-            self.assertEqual(len(text), 4)
+            self.assertEqual(len(text), 5)
             self.assertTrue(text[0].startswith('Traceback'))
             self.assertTrue(text[1].startswith('  File '))
             self.assertTrue(text[3].startswith('NameError'))
@@ -503,7 +565,7 @@ class CmdLineTest(unittest.TestCase):
 
         # Issue #16218
         source = 'print(ascii(__file__))\n'
-        script_name = _make_test_script(os.curdir, name, source)
+        script_name = _make_test_script(os.getcwd(), name, source)
         self.addCleanup(support.unlink, script_name)
         rc, stdout, stderr = assert_python_ok(script_name)
         self.assertEqual(
@@ -528,7 +590,7 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii')
-            self.assertEqual(text, "some text")
+            self.assertEqual(text.rstrip(), "some text")
 
     def test_syntaxerror_unindented_caret_position(self):
         script = "1 + 1 = 2\n"
@@ -561,6 +623,35 @@ class CmdLineTest(unittest.TestCase):
             text = io.TextIOWrapper(io.BytesIO(stderr), "ascii").read()
             self.assertNotIn("\f", text)
             self.assertIn("\n    1 + 1 = 2\n    ^", text)
+
+    def test_syntaxerror_multi_line_fstring(self):
+        script = 'foo = f"""{}\nfoo"""\n'
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            self.assertEqual(
+                stderr.splitlines()[-3:],
+                [
+                    b'    foo"""',
+                    b'          ^',
+                    b'SyntaxError: f-string: empty expression not allowed',
+                ],
+            )
+
+    def test_syntaxerror_invalid_escape_sequence_multi_line(self):
+        script = 'foo = """\\q"""\n'
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(
+                '-Werror', script_name,
+            )
+            self.assertEqual(
+                stderr.splitlines()[-3:],
+                [   b'    foo = """\\q"""',
+                    b'          ^',
+                    b'SyntaxError: invalid escape sequence \\q'
+                ],
+            )
 
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
@@ -629,6 +720,22 @@ class CmdLineTest(unittest.TestCase):
             )
             traceback_lines = stderr.decode().splitlines()
             self.assertIn("No module named script_pkg", traceback_lines[-1])
+
+    def test_nonexisting_script(self):
+        # bpo-34783: "./python script.py" must not crash
+        # if the script file doesn't exist.
+        # (Skip test for macOS framework builds because sys.executable name
+        #  is not the actual Python executable file name.
+        script = 'nonexistingscript.py'
+        self.assertFalse(os.path.exists(script))
+
+        proc = spawn_python(script, text=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        self.assertIn(": can't open file ", err)
+        self.assertNotEqual(proc.returncode, 0)
+
 
 def test_main():
     support.run_unittest(CmdLineTest)

@@ -1,3 +1,4 @@
+import dis
 import math
 import os
 import unittest
@@ -285,7 +286,7 @@ if 1:
             'from sys import stdin)',
             'from sys import stdin, stdout,\nstderr',
             'from sys import stdin si',
-            'from sys import stdin,'
+            'from sys import stdin,',
             'from sys import (*)',
             'from sys import (stdin,, stdout, stderr)',
             'from sys import (stdin, stdout),',
@@ -614,12 +615,38 @@ if 1:
         self.check_constant(f1, Ellipsis)
         self.assertEqual(repr(f1()), repr(Ellipsis))
 
+        # Merge constants in tuple or frozenset
+        f1, f2 = lambda: "not a name", lambda: ("not a name",)
+        f3 = lambda x: x in {("not a name",)}
+        self.assertIs(f1.__code__.co_consts[1],
+                      f2.__code__.co_consts[1][0])
+        self.assertIs(next(iter(f3.__code__.co_consts[1])),
+                      f2.__code__.co_consts[1])
+
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
         f1, f2 = lambda x: x in {0}, lambda x: x in {0}
         self.assertIs(f1.__code__, f2.__code__)
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
+
+    # This is a regression test for a CPython specific peephole optimizer
+    # implementation bug present in a few releases.  It's assertion verifies
+    # that peephole optimization was actually done though that isn't an
+    # indication of the bugs presence or not (crashing is).
+    @support.cpython_only
+    def test_peephole_opt_unreachable_code_array_access_in_bounds(self):
+        """Regression test for issue35193 when run under clang msan."""
+        def unused_code_at_end():
+            return 3
+            raise RuntimeError("unreachable")
+        # The above function definition will trigger the out of bounds
+        # bug in the peephole optimizer as it scans opcodes past the
+        # RETURN_VALUE opcode.  This does not always crash an interpreter.
+        # When you build with the clang memory sanitizer it reliably aborts.
+        self.assertEqual(
+            'RETURN_VALUE',
+            list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
@@ -670,6 +697,58 @@ if 1:
         # complex statements.
         compile("if a: b\n" * 200000, "<dummy>", "exec")
 
+    # Multiple users rely on the fact that CPython does not generate
+    # bytecode for dead code blocks. See bpo-37500 for more context.
+    @support.cpython_only
+    def test_dead_blocks_do_not_generate_bytecode(self):
+        def unused_block_if():
+            if 0:
+                return 42
+
+        def unused_block_while():
+            while 0:
+                return 42
+
+        def unused_block_if_else():
+            if 1:
+                return None
+            else:
+                return 42
+
+        def unused_block_while_else():
+            while 1:
+                return None
+            else:
+                return 42
+
+        funcs = [unused_block_if, unused_block_while,
+                 unused_block_if_else, unused_block_while_else]
+
+        for func in funcs:
+            opcodes = list(dis.get_instructions(func))
+            self.assertEqual(2, len(opcodes))
+            self.assertEqual('LOAD_CONST', opcodes[0].opname)
+            self.assertEqual(None, opcodes[0].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+    def test_false_while_loop(self):
+        def break_in_while():
+            while False:
+                break
+
+        def continue_in_while():
+            while False:
+                continue
+
+        funcs = [break_in_while, continue_in_while]
+
+        # Check that we did not raise but we also don't generate bytecode
+        for func in funcs:
+            opcodes = list(dis.get_instructions(func))
+            self.assertEqual(2, len(opcodes))
+            self.assertEqual('LOAD_CONST', opcodes[0].opname)
+            self.assertEqual(None, opcodes[0].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object

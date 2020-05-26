@@ -1,4 +1,5 @@
 # xml.etree test for cElementTree
+import io
 import struct
 from test import support
 from test.support import import_fresh_module
@@ -7,9 +8,6 @@ import unittest
 
 cET = import_fresh_module('xml.etree.ElementTree',
                           fresh=['_elementtree'])
-cET_alias = import_fresh_module('xml.etree.cElementTree',
-                                fresh=['_elementtree', 'xml.etree'],
-                                deprecated=True)
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')
@@ -117,13 +115,56 @@ class MiscTests(unittest.TestCase):
         elem.tail = X()
         elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
 
+    @support.cpython_only
+    def test_uninitialized_parser(self):
+        # The interpreter shouldn't crash in case of calling methods or
+        # accessing attributes of uninitialized XMLParser objects.
+        parser = cET.XMLParser.__new__(cET.XMLParser)
+        self.assertRaises(ValueError, parser.close)
+        self.assertRaises(ValueError, parser.feed, 'foo')
+        class MockFile:
+            def read(*args):
+                return ''
+        self.assertRaises(ValueError, parser._parse_whole, MockFile())
+        self.assertRaises(ValueError, parser._setevents, None)
+        self.assertIsNone(parser.entity)
+        self.assertIsNone(parser.target)
 
-@unittest.skipUnless(cET, 'requires _elementtree')
-class TestAliasWorking(unittest.TestCase):
-    # Test that the cET alias module is alive
-    def test_alias_working(self):
-        e = cET_alias.Element('foo')
-        self.assertEqual(e.tag, 'foo')
+    def test_setstate_leaks(self):
+        # Test reference leaks
+        elem = cET.Element.__new__(cET.Element)
+        for i in range(100):
+            elem.__setstate__({'tag': 'foo', 'attrib': {'bar': 42},
+                               '_children': [cET.Element('child')],
+                               'text': 'text goes here',
+                               'tail': 'opposite of head'})
+
+        self.assertEqual(elem.tag, 'foo')
+        self.assertEqual(elem.text, 'text goes here')
+        self.assertEqual(elem.tail, 'opposite of head')
+        self.assertEqual(list(elem.attrib.items()), [('bar', 42)])
+        self.assertEqual(len(elem), 1)
+        self.assertEqual(elem[0].tag, 'child')
+
+    def test_iterparse_leaks(self):
+        # Test reference leaks in TreeBuilder (issue #35502).
+        # The test is written to be executed in the hunting reference leaks
+        # mode.
+        XML = '<a></a></b>'
+        parser = cET.iterparse(io.StringIO(XML))
+        next(parser)
+        del parser
+        support.gc_collect()
+
+    def test_xmlpullparser_leaks(self):
+        # Test reference leaks in TreeBuilder (issue #35502).
+        # The test is written to be executed in the hunting reference leaks
+        # mode.
+        XML = '<a></a></b>'
+        parser = cET.XMLPullParser()
+        parser.feed(XML)
+        del parser
+        support.gc_collect()
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')
@@ -133,9 +174,6 @@ class TestAcceleratorImported(unittest.TestCase):
     def test_correct_import_cET(self):
         # SubElement is a function so it retains _elementtree as its module.
         self.assertEqual(cET.SubElement.__module__, '_elementtree')
-
-    def test_correct_import_cET_alias(self):
-        self.assertEqual(cET_alias.SubElement.__module__, '_elementtree')
 
     def test_parser_comes_from_C(self):
         # The type of methods defined in Python code is types.FunctionType,
@@ -176,7 +214,6 @@ def test_main():
     # Run the tests specific to the C implementation
     support.run_unittest(
         MiscTests,
-        TestAliasWorking,
         TestAcceleratorImported,
         SizeofTest,
         )

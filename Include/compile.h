@@ -2,7 +2,6 @@
 #define Py_COMPILE_H
 
 #ifndef Py_LIMITED_API
-#include "code.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,15 +17,27 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
                    CO_FUTURE_UNICODE_LITERALS | CO_FUTURE_BARRY_AS_BDFL | \
                    CO_FUTURE_GENERATOR_STOP | CO_FUTURE_ANNOTATIONS)
 #define PyCF_MASK_OBSOLETE (CO_NESTED)
+
+/* bpo-39562: CO_FUTURE_ and PyCF_ constants must be kept unique.
+   PyCF_ constants can use bits from 0x0100 to 0x10000.
+   CO_FUTURE_ constants use bits starting at 0x20000. */
 #define PyCF_SOURCE_IS_UTF8  0x0100
 #define PyCF_DONT_IMPLY_DEDENT 0x0200
 #define PyCF_ONLY_AST 0x0400
 #define PyCF_IGNORE_COOKIE 0x0800
+#define PyCF_TYPE_COMMENTS 0x1000
+#define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
+#define PyCF_COMPILE_MASK (PyCF_ONLY_AST | PyCF_ALLOW_TOP_LEVEL_AWAIT | \
+                           PyCF_TYPE_COMMENTS | PyCF_DONT_IMPLY_DEDENT)
 
 #ifndef Py_LIMITED_API
 typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
+    int cf_feature_version;  /* minor Python version (PyCF_ONLY_AST) */
 } PyCompilerFlags;
+
+#define _PyCompilerFlags_INIT \
+    (PyCompilerFlags){.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION}
 #endif
 
 /* Future feature support */
@@ -75,8 +86,14 @@ PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 
 #define PY_INVALID_STACK_EFFECT INT_MAX
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
+PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);
 
-PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, int optimize);
+typedef struct {
+    int optimize;
+    int ff_features;
+} _PyASTOptimizeState;
+
+PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, _PyASTOptimizeState *state);
 
 #ifdef __cplusplus
 }
@@ -84,10 +101,13 @@ PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, int optimize);
 
 #endif /* !Py_LIMITED_API */
 
-/* These definitions must match corresponding definitions in graminit.h.
-   There's code in compile.c that checks that they are the same. */
+/* These definitions must match corresponding definitions in graminit.h. */
 #define Py_single_input 256
 #define Py_file_input 257
 #define Py_eval_input 258
+#define Py_func_type_input 345
+
+/* This doesn't need to match anything */
+#define Py_fstring_input 800
 
 #endif /* !Py_COMPILE_H */

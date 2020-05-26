@@ -407,9 +407,9 @@ class OrderedDictTests:
         self.assertEqual(list(od), list('abcde'))
         od.move_to_end('c')
         self.assertEqual(list(od), list('abdec'))
-        od.move_to_end('c', 0)
+        od.move_to_end('c', False)
         self.assertEqual(list(od), list('cabde'))
-        od.move_to_end('c', 0)
+        od.move_to_end('c', False)
         self.assertEqual(list(od), list('cabde'))
         od.move_to_end('e')
         self.assertEqual(list(od), list('cabde'))
@@ -418,7 +418,7 @@ class OrderedDictTests:
         with self.assertRaises(KeyError):
             od.move_to_end('x')
         with self.assertRaises(KeyError):
-            od.move_to_end('x', 0)
+            od.move_to_end('x', False)
 
     def test_move_to_end_issue25406(self):
         OrderedDict = self.OrderedDict
@@ -459,7 +459,9 @@ class OrderedDictTests:
         self.assertEqual(list(MyOD(items).items()), items)
 
     def test_highly_nested(self):
-        # Issue 25395: crashes during garbage collection
+        # Issues 25395 and 35983: test that the trashcan mechanism works
+        # correctly for OrderedDict: deleting a highly nested OrderDict
+        # should not crash Python.
         OrderedDict = self.OrderedDict
         obj = None
         for _ in range(1000):
@@ -468,7 +470,9 @@ class OrderedDictTests:
         support.gc_collect()
 
     def test_highly_nested_subclass(self):
-        # Issue 25395: crashes during garbage collection
+        # Issues 25395 and 35983: test that the trashcan mechanism works
+        # correctly for OrderedDict: deleting a highly nested OrderDict
+        # should not crash Python.
         OrderedDict = self.OrderedDict
         deleted = []
         class MyOD(OrderedDict):
@@ -650,6 +654,49 @@ class OrderedDictTests:
         support.check_free_after_iterating(self, lambda d: iter(d.values()), self.OrderedDict)
         support.check_free_after_iterating(self, lambda d: iter(d.items()), self.OrderedDict)
 
+    def test_merge_operator(self):
+        OrderedDict = self.OrderedDict
+
+        a = OrderedDict({0: 0, 1: 1, 2: 1})
+        b = OrderedDict({1: 1, 2: 2, 3: 3})
+
+        c = a.copy()
+        d = a.copy()
+        c |= b
+        d |= list(b.items())
+        expected = OrderedDict({0: 0, 1: 1, 2: 2, 3: 3})
+        self.assertEqual(a | dict(b), expected)
+        self.assertEqual(a | b, expected)
+        self.assertEqual(c, expected)
+        self.assertEqual(d, expected)
+
+        c = b.copy()
+        c |= a
+        expected = OrderedDict({1: 1, 2: 1, 3: 3, 0: 0})
+        self.assertEqual(dict(b) | a, expected)
+        self.assertEqual(b | a, expected)
+        self.assertEqual(c, expected)
+
+        self.assertIs(type(a | b), OrderedDict)
+        self.assertIs(type(dict(a) | b), OrderedDict)
+        self.assertIs(type(a | dict(b)), OrderedDict)
+
+        expected = a.copy()
+        a |= ()
+        a |= ""
+        self.assertEqual(a, expected)
+
+        with self.assertRaises(TypeError):
+            a | None
+        with self.assertRaises(TypeError):
+            a | ()
+        with self.assertRaises(TypeError):
+            a | "BAD"
+        with self.assertRaises(TypeError):
+            a | ""
+        with self.assertRaises(ValueError):
+            a |= "BAD"
+
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
@@ -697,9 +744,9 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         nodesize = calcsize('Pn2P')
 
         od = OrderedDict()
-        check(od, basicsize + 8*p + 8 + 5*entrysize)  # 8byte indices + 8*2//3 * entry table
+        check(od, basicsize + 8 + 5*entrysize)  # 8byte indices + 8*2//3 * entry table
         od.x = 1
-        check(od, basicsize + 8*p + 8 + 5*entrysize)
+        check(od, basicsize + 8 + 5*entrysize)
         od.update([(i, i) for i in range(3)])
         check(od, basicsize + 8*p + 8 + 5*entrysize + 3*nodesize)
         od.update([(i, i) for i in range(3, 10)])
@@ -731,6 +778,43 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
             for k in od:
                 del od['c']
         self.assertEqual(list(od), list('bdeaf'))
+
+    def test_iterators_pickling(self):
+        OrderedDict = self.OrderedDict
+        pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
+        od = OrderedDict(pairs)
+
+        for method_name in ('keys', 'values', 'items'):
+            meth = getattr(od, method_name)
+            expected = list(meth())[1:]
+            for i in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(method_name=method_name, protocol=i):
+                    it = iter(meth())
+                    next(it)
+                    p = pickle.dumps(it, i)
+                    unpickled = pickle.loads(p)
+                    self.assertEqual(list(unpickled), expected)
+                    self.assertEqual(list(it), expected)
+
+    @support.cpython_only
+    def test_weakref_list_is_not_traversed(self):
+        # Check that the weakref list is not traversed when collecting
+        # OrderedDict objects. See bpo-39778 for more information.
+
+        gc.collect()
+
+        x = self.OrderedDict()
+        x.cycle = x
+
+        cycle = []
+        cycle.append(cycle)
+
+        x_ref = weakref.ref(x)
+        cycle.append(x_ref)
+
+        del x, cycle, x_ref
+
+        gc.collect()
 
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):

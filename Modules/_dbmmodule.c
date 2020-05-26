@@ -36,6 +36,7 @@ class _dbm.dbm "dbmobject *" "&Dbmtype"
 
 typedef struct {
     PyObject_HEAD
+    int flags;
     int di_size;        /* -1 means recompute */
     DBM *di_dbm;
 } dbmobject;
@@ -44,7 +45,7 @@ typedef struct {
 
 static PyTypeObject Dbmtype;
 
-#define is_dbmobject(v) (Py_TYPE(v) == &Dbmtype)
+#define is_dbmobject(v) Py_IS_TYPE(v, &Dbmtype)
 #define check_dbmobject_open(v) if ((v)->di_dbm == NULL) \
                { PyErr_SetString(DbmError, "DBM object has already been closed"); \
                  return NULL; }
@@ -60,9 +61,10 @@ newdbmobject(const char *file, int flags, int mode)
     if (dp == NULL)
         return NULL;
     dp->di_size = -1;
+    dp->flags = flags;
     /* See issue #19296 */
     if ( (dp->di_dbm = dbm_open((char *)file, flags, mode)) == 0 ) {
-        PyErr_SetFromErrno(DbmError);
+        PyErr_SetFromErrnoWithFilename(DbmError, file);
         Py_DECREF(dp);
         return NULL;
     }
@@ -143,13 +145,20 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     if (w == NULL) {
         if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
             dbm_clearerr(dp->di_dbm);
-            PyErr_SetObject(PyExc_KeyError, v);
+            /* we might get a failure for reasons like file corrupted,
+               but we are not able to distinguish it */
+            if (dp->flags & O_RDWR) {
+                PyErr_SetObject(PyExc_KeyError, v);
+            }
+            else {
+                PyErr_SetString(DbmError, "cannot delete item from database");
+            }
             return -1;
         }
     } else {
         if ( !PyArg_Parse(w, "s#", &drec.dptr, &tmp_size) ) {
             PyErr_SetString(PyExc_TypeError,
-                 "dbm mappings have byte or string elements only");
+                 "dbm mappings have bytes or string elements only");
             return -1;
         }
         drec.dsize = tmp_size;
@@ -246,7 +255,7 @@ dbm_contains(PyObject *self, PyObject *arg)
     else if (!PyBytes_Check(arg)) {
         PyErr_Format(PyExc_TypeError,
                      "dbm key must be bytes or string, not %.100s",
-                     arg->ob_type->tp_name);
+                     Py_TYPE(arg)->tp_name);
         return -1;
     }
     else {
@@ -335,7 +344,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, const char *key,
     else {
         if ( !PyArg_Parse(default_value, "s#", &val.dptr, &tmp_size) ) {
             PyErr_SetString(PyExc_TypeError,
-                "dbm mappings have byte string elements only");
+                "dbm mappings have bytes or string elements only");
             return NULL;
         }
         val.dsize = tmp_size;
@@ -361,7 +370,7 @@ static PyObject *
 dbm__exit__(PyObject *self, PyObject *args)
 {
     _Py_IDENTIFIER(close);
-    return _PyObject_CallMethodId(self, &PyId_close, NULL);
+    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
 }
 
 
@@ -381,10 +390,10 @@ static PyTypeObject Dbmtype = {
     sizeof(dbmobject),
     0,
     (destructor)dbm_dealloc,  /*tp_dealloc*/
-    0,                            /*tp_print*/
+    0,                            /*tp_vectorcall_offset*/
     0,                        /*tp_getattr*/
     0,                            /*tp_setattr*/
-    0,                            /*tp_reserved*/
+    0,                            /*tp_as_async*/
     0,                            /*tp_repr*/
     0,                            /*tp_as_number*/
     &dbm_as_sequence,             /*tp_as_sequence*/

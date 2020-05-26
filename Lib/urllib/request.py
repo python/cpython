@@ -101,7 +101,7 @@ import warnings
 
 from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
-    urlparse, urlsplit, urljoin, _unwrap, quote, unquote,
+    urlparse, urlsplit, urljoin, unwrap, quote, unquote,
     _splittype, _splithost, _splitport, _splituser, _splitpasswd,
     _splitattr, _splitquery, _splitvalue, _splittag, _to_bytes,
     unquote_to_bytes, urlunparse)
@@ -163,18 +163,10 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
 
     The *cadefault* parameter is ignored.
 
-    This function always returns an object which can work as a context
-    manager and has methods such as
 
-    * geturl() - return the URL of the resource retrieved, commonly used to
-      determine if a redirect was followed
-
-    * info() - return the meta-information of the page, such as headers, in the
-      form of an email.message_from_string() instance (see Quick Reference to
-      HTTP Headers)
-
-    * getcode() - return the HTTP status code of the response.  Raises URLError
-      on errors.
+    This function always returns an object which can work as a
+    context manager and has the properties url, headers, and status.
+    See urllib.response.addinfourl for more detail on these properties.
 
     For HTTP and HTTPS URLs, this function returns a http.client.HTTPResponse
     object slightly modified. In addition to the three new methods above, the
@@ -198,7 +190,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     global _opener
     if cafile or capath or cadefault:
         import warnings
-        warnings.warn("cafile, cpath and cadefault are deprecated, use a "
+        warnings.warn("cafile, capath and cadefault are deprecated, use a "
                       "custom context instead.", DeprecationWarning, 2)
         if context is not None:
             raise ValueError(
@@ -349,7 +341,7 @@ class Request:
     @full_url.setter
     def full_url(self, url):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
-        self._full_url = _unwrap(url)
+        self._full_url = unwrap(url)
         self._full_url, self.fragment = _splittag(self._full_url)
         self._parse()
 
@@ -426,8 +418,7 @@ class Request:
         self.unredirected_hdrs.pop(header_name, None)
 
     def header_items(self):
-        hdrs = self.unredirected_hdrs.copy()
-        hdrs.update(self.headers)
+        hdrs = {**self.unredirected_hdrs, **self.headers}
         return list(hdrs.items())
 
 class OpenerDirector:
@@ -522,6 +513,7 @@ class OpenerDirector:
             meth = getattr(processor, meth_name)
             req = meth(req)
 
+        sys.audit('urllib.Request', req.full_url, req.data, req.headers, req.get_method())
         response = self._open(req, data)
 
         # post-process response
@@ -800,6 +792,7 @@ class ProxyHandler(BaseHandler):
         assert hasattr(proxies, 'keys'), "proxies must be a mapping"
         self.proxies = proxies
         for type, url in proxies.items():
+            type = type.lower()
             setattr(self, '%s_open' % type,
                     lambda r, proxy=url, type=type, meth=self.proxy_open:
                         meth(r, proxy, type))
@@ -944,8 +937,15 @@ class AbstractBasicAuthHandler:
 
     # allow for double- and single-quoted realm values
     # (single quotes are a violation of the RFC, but appear in the wild)
-    rx = re.compile('(?:.*,)*[ \t]*([^ \t]+)[ \t]+'
-                    'realm=(["\']?)([^"\']*)\\2', re.I)
+    rx = re.compile('(?:^|,)'   # start of the string or ','
+                    '[ \t]*'    # optional whitespaces
+                    '([^ \t]+)' # scheme like "Basic"
+                    '[ \t]+'    # mandatory whitespaces
+                    # realm=xxx
+                    # realm='xxx'
+                    # realm="xxx"
+                    'realm=(["\']?)([^"\']*)\\2',
+                    re.I)
 
     # XXX could pre-emptively send auth info already accepted (RFC 2617,
     # end of section 2, and section 1.2 immediately after "credentials"
@@ -957,27 +957,51 @@ class AbstractBasicAuthHandler:
         self.passwd = password_mgr
         self.add_password = self.passwd.add_password
 
+    def _parse_realm(self, header):
+        # parse WWW-Authenticate header: accept multiple challenges per header
+        found_challenge = False
+        for mo in AbstractBasicAuthHandler.rx.finditer(header):
+            scheme, quote, realm = mo.groups()
+            if quote not in ['"', "'"]:
+                warnings.warn("Basic Auth Realm was unquoted",
+                              UserWarning, 3)
+
+            yield (scheme, realm)
+
+            found_challenge = True
+
+        if not found_challenge:
+            if header:
+                scheme = header.split()[0]
+            else:
+                scheme = ''
+            yield (scheme, None)
+
     def http_error_auth_reqed(self, authreq, host, req, headers):
         # host may be an authority (without userinfo) or a URL with an
         # authority
-        # XXX could be multiple headers
-        authreq = headers.get(authreq, None)
+        headers = headers.get_all(authreq)
+        if not headers:
+            # no header found
+            return
 
-        if authreq:
-            scheme = authreq.split()[0]
-            if scheme.lower() != 'basic':
-                raise ValueError("AbstractBasicAuthHandler does not"
-                                 " support the following scheme: '%s'" %
-                                 scheme)
-            else:
-                mo = AbstractBasicAuthHandler.rx.search(authreq)
-                if mo:
-                    scheme, quote, realm = mo.groups()
-                    if quote not in ['"',"'"]:
-                        warnings.warn("Basic Auth Realm was unquoted",
-                                      UserWarning, 2)
-                    if scheme.lower() == 'basic':
-                        return self.retry_http_basic_auth(host, req, realm)
+        unsupported = None
+        for header in headers:
+            for scheme, realm in self._parse_realm(header):
+                if scheme.lower() != 'basic':
+                    unsupported = scheme
+                    continue
+
+                if realm is not None:
+                    # Use the first matching Basic challenge.
+                    # Ignore following challenges even if they use the Basic
+                    # scheme.
+                    return self.retry_http_basic_auth(host, req, realm)
+
+        if unsupported is not None:
+            raise ValueError("AbstractBasicAuthHandler does not "
+                             "support the following scheme: %r"
+                             % (scheme,))
 
     def retry_http_basic_auth(self, host, req, realm):
         user, pw = self.passwd.find_user_password(realm, host)
@@ -1143,7 +1167,11 @@ class AbstractDigestAuthHandler:
         A2 = "%s:%s" % (req.get_method(),
                         # XXX selector: what about proxies and full urls
                         req.selector)
-        if qop == 'auth':
+        # NOTE: As per  RFC 2617, when server sends "auth,auth-int", the client could use either `auth`
+        #     or `auth-int` to the response back. we use `auth` to send the response back.
+        if qop is None:
+            respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
+        elif 'auth' in qop.split(','):
             if nonce == self.last_nonce:
                 self.nonce_count += 1
             else:
@@ -1151,10 +1179,8 @@ class AbstractDigestAuthHandler:
                 self.last_nonce = nonce
             ncvalue = '%08x' % self.nonce_count
             cnonce = self.get_cnonce(nonce)
-            noncebit = "%s:%s:%s:%s:%s" % (nonce, ncvalue, cnonce, qop, H(A2))
+            noncebit = "%s:%s:%s:%s:%s" % (nonce, ncvalue, cnonce, 'auth', H(A2))
             respdig = KD(H(A1), noncebit)
-        elif qop is None:
-            respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
         else:
             # XXX handle auth-int.
             raise URLError("qop '%s' is not supported." % qop)
@@ -1727,7 +1753,7 @@ class URLopener:
     # External interface
     def open(self, fullurl, data=None):
         """Use URLopener().open(file) instead of open(file, 'r')."""
-        fullurl = _unwrap(_to_bytes(fullurl))
+        fullurl = unwrap(_to_bytes(fullurl))
         fullurl = quote(fullurl, safe="%/:=&?~#+!$,;'@()*[]|")
         if self.tempcache and fullurl in self.tempcache:
             filename, headers = self.tempcache[fullurl]
@@ -1746,7 +1772,7 @@ class URLopener:
         name = 'open_' + urltype
         self.type = urltype
         name = name.replace('-', '_')
-        if not hasattr(self, name):
+        if not hasattr(self, name) or name == 'open_local_file':
             if proxy:
                 return self.open_unknown_proxy(proxy, fullurl, data)
             else:
@@ -1775,7 +1801,7 @@ class URLopener:
     def retrieve(self, url, filename=None, reporthook=None, data=None):
         """retrieve(url) returns (filename, headers) for a local object
         or (tempfilename, headers) for a remote object."""
-        url = _unwrap(_to_bytes(url))
+        url = unwrap(_to_bytes(url))
         if self.tempcache and url in self.tempcache:
             return self.tempcache[url]
         type, url1 = _splittype(url)
@@ -1784,8 +1810,8 @@ class URLopener:
                 fp = self.open_local_file(url1)
                 hdrs = fp.info()
                 fp.close()
-                return url2pathname(splithost(url1)[1]), hdrs
-            except OSError as msg:
+                return url2pathname(_splithost(url1)[1]), hdrs
+            except OSError:
                 pass
         fp = self.open(url, data)
         try:
@@ -1793,10 +1819,10 @@ class URLopener:
             if filename:
                 tfp = open(filename, 'wb')
             else:
-                garbage, path = splittype(url)
-                garbage, path = splithost(path or "")
-                path, garbage = splitquery(path or "")
-                path, garbage = splitattr(path or "")
+                garbage, path = _splittype(url)
+                garbage, path = _splithost(path or "")
+                path, garbage = _splitquery(path or "")
+                path, garbage = _splitattr(path or "")
                 suffix = os.path.splitext(path)[1]
                 (fd, filename) = tempfile.mkstemp(suffix)
                 self.__tempfiles.append(filename)
@@ -2497,24 +2523,26 @@ def proxy_bypass_environment(host, proxies=None):
     try:
         no_proxy = proxies['no']
     except KeyError:
-        return 0
+        return False
     # '*' is special case for always bypass
     if no_proxy == '*':
-        return 1
+        return True
+    host = host.lower()
     # strip port off host
     hostonly, port = _splitport(host)
     # check if the host ends with any of the DNS suffixes
-    no_proxy_list = [proxy.strip() for proxy in no_proxy.split(',')]
-    for name in no_proxy_list:
+    for name in no_proxy.split(','):
+        name = name.strip()
         if name:
             name = name.lstrip('.')  # ignore leading dots
-            name = re.escape(name)
-            pattern = r'(.+\.)?%s$' % name
-            if (re.match(pattern, hostonly, re.I)
-                    or re.match(pattern, host, re.I)):
-                return 1
+            name = name.lower()
+            if hostonly == name or host == name:
+                return True
+            name = '.' + name
+            if hostonly.endswith(name) or host.endswith(name):
+                return True
     # otherwise, don't bypass
-    return 0
+    return False
 
 
 # This code tests an OSX specific data structure but is testable on all
@@ -2640,7 +2668,7 @@ elif os.name == 'nt':
                     for p in proxyServer.split(';'):
                         protocol, address = p.split('=', 1)
                         # See if address has a type:// prefix
-                        if not re.match('^([^/:]+)://', address):
+                        if not re.match('(?:[^/:]+)://', address):
                             address = '%s://%s' % (protocol, address)
                         proxies[protocol] = address
                 else:

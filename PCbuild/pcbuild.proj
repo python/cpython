@@ -7,8 +7,10 @@
     <IncludeExtensions Condition="'$(IncludeExtensions)' == ''">true</IncludeExtensions>
     <IncludeExternals Condition="'$(IncludeExternals)' == ''">true</IncludeExternals>
     <IncludeTests Condition="'$(IncludeTest)' == ''">true</IncludeTests>
+    <IncludeCTypes Condition="'$(IncludeCTypes)' == ''">true</IncludeCTypes>
     <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
     <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
+    <IncludeUwp Condition="'$(IncludeUwp)' == ''">false</IncludeUwp>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -49,27 +51,33 @@
     <!-- pyshellext.dll -->
     <Projects Include="pyshellext.vcxproj" />
     <!-- Extension modules -->
-    <ExtensionModules Include="_asyncio;_contextvars;_ctypes;_decimal;_distutils_findvs;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound" />
+    <ExtensionModules Include="_asyncio;_zoneinfo;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound;_uuid" />
+    <ExtensionModules Include="_ctypes" Condition="$(IncludeCTypes)" />
     <!-- Extension modules that require external sources -->
     <ExternalModules Include="_bz2;_lzma;_sqlite3" />
+    <!-- venv launchers -->
+    <Projects Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
     <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
     <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
     <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
-    <ExternalModules Include="_tkinter" Condition="$(IncludeTkinter)" />
+    <ExternalModules Include="_tkinter" Condition="$(IncludeTkinter) and $(Platform) != 'ARM' and $(Platform) != 'ARM64'" />
     <ExtensionModules Include="@(ExternalModules->'%(Identity)')" Condition="$(IncludeExternals)" />
     <Projects Include="@(ExtensionModules->'%(Identity).vcxproj')" Condition="$(IncludeExtensions)" />
     <!-- Test modules -->
-    <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testembed;_testimportmultiple;_testmultiphase;_testconsole" />
+    <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testinternalcapi;_testembed;_testimportmultiple;_testmultiphase;_testconsole" />
     <TestModules Include="xxlimited" Condition="'$(Configuration)' == 'Release'" />
     <Projects Include="@(TestModules->'%(Identity).vcxproj')" Condition="$(IncludeTests)">
       <!-- Disable parallel build for test modules -->
       <BuildInParallel>false</BuildInParallel>
     </Projects>
-    
+
     <!-- _freeze_importlib -->
-    <Projects2 Include="_freeze_importlib.vcxproj" />
+    <Projects2 Condition="$(Platform) != 'ARM' and $(Platform) != 'ARM64'" Include="_freeze_importlib.vcxproj" />
     <!-- python[w].exe -->
     <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
+    <Projects2 Include="python_uwp.vcxproj;pythonw_uwp.vcxproj" Condition="$(IncludeUwp)" />
+    <!-- venv[w]launcher.exe -->
+    <Projects2 Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
   </ItemGroup>
 
   <Target Name="Build">

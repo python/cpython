@@ -67,10 +67,6 @@ Examining Symbol Tables
       Return ``True`` if the block has nested namespaces within it.  These can
       be obtained with :meth:`get_children`.
 
-   .. method:: has_exec()
-
-      Return ``True`` if the block uses ``exec``.
-
    .. method:: get_identifiers()
 
       Return a list of names of symbols in this table.
@@ -104,6 +100,10 @@ Examining Symbol Tables
    .. method:: get_globals()
 
       Return a tuple containing names of globals in this function.
+
+   .. method:: get_nonlocals()
+
+      Return a tuple containing names of nonlocals in this function.
 
    .. method:: get_frees()
 
@@ -143,6 +143,10 @@ Examining Symbol Tables
    .. method:: is_global()
 
       Return ``True`` if the symbol is global.
+
+   .. method:: is_nonlocal()
+
+      Return ``True`` if the symbol is nonlocal.
 
    .. method:: is_declared_global()
 

@@ -18,7 +18,7 @@
 #include <sys/ioctl.h>
 
 /* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
- * MDTR, MRI, and MRTS (appearantly used internally by some things
+ * MDTR, MRI, and MRTS (apparently used internally by some things
  * defined as macros; these are not used here directly).
  */
 #ifdef HAVE_SYS_MODEM_H
@@ -39,7 +39,19 @@ All functions in this module take a file descriptor fd as their first\n\
 argument. This can be an integer file descriptor, such as returned by\n\
 sys.stdin.fileno(), or a file object, such as sys.stdin itself.");
 
-static PyObject *TermiosError;
+typedef struct {
+  PyObject *TermiosError;
+} termiosmodulestate;
+
+static inline termiosmodulestate*
+get_termios_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (termiosmodulestate *)state;
+}
+
+#define modulestate_global get_termios_state(PyState_FindModule(&termiosmodule))
 
 static int fdconv(PyObject* obj, void* p)
 {
@@ -52,6 +64,8 @@ static int fdconv(PyObject* obj, void* p)
     }
     return 0;
 }
+
+static struct PyModuleDef termiosmodule;
 
 PyDoc_STRVAR(termios_tcgetattr__doc__,
 "tcgetattr(fd) -> list_of_attrs\n\
@@ -80,7 +94,7 @@ termios_tcgetattr(PyObject *self, PyObject *args)
         return NULL;
 
     if (tcgetattr(fd, &mode) == -1)
-        return PyErr_SetFromErrno(TermiosError);
+        return PyErr_SetFromErrno(modulestate_global->TermiosError);
 
     ispeed = cfgetispeed(&mode);
     ospeed = cfgetospeed(&mode);
@@ -119,11 +133,11 @@ termios_tcgetattr(PyObject *self, PyObject *args)
     PyList_SetItem(v, 3, PyLong_FromLong((long)mode.c_lflag));
     PyList_SetItem(v, 4, PyLong_FromLong((long)ispeed));
     PyList_SetItem(v, 5, PyLong_FromLong((long)ospeed));
-    PyList_SetItem(v, 6, cc);
-    if (PyErr_Occurred()){
+    if (PyErr_Occurred()) {
         Py_DECREF(v);
         goto err;
     }
+    PyList_SetItem(v, 6, cc);
     return v;
   err:
     Py_DECREF(cc);
@@ -160,8 +174,9 @@ termios_tcsetattr(PyObject *self, PyObject *args)
     }
 
     /* Get the old mode, in case there are any hidden fields... */
+    termiosmodulestate *state = modulestate_global;
     if (tcgetattr(fd, &mode) == -1)
-        return PyErr_SetFromErrno(TermiosError);
+        return PyErr_SetFromErrno(state->TermiosError);
     mode.c_iflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 0));
     mode.c_oflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 1));
     mode.c_cflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 2));
@@ -194,11 +209,11 @@ termios_tcsetattr(PyObject *self, PyObject *args)
     }
 
     if (cfsetispeed(&mode, (speed_t) ispeed) == -1)
-        return PyErr_SetFromErrno(TermiosError);
+        return PyErr_SetFromErrno(state->TermiosError);
     if (cfsetospeed(&mode, (speed_t) ospeed) == -1)
-        return PyErr_SetFromErrno(TermiosError);
+        return PyErr_SetFromErrno(state->TermiosError);
     if (tcsetattr(fd, when, &mode) == -1)
-        return PyErr_SetFromErrno(TermiosError);
+        return PyErr_SetFromErrno(state->TermiosError);
 
     Py_RETURN_NONE;
 }
@@ -219,7 +234,7 @@ termios_tcsendbreak(PyObject *self, PyObject *args)
                           fdconv, &fd, &duration))
         return NULL;
     if (tcsendbreak(fd, duration) == -1)
-        return PyErr_SetFromErrno(TermiosError);
+        return PyErr_SetFromErrno(modulestate_global->TermiosError);
 
     Py_RETURN_NONE;
 }
@@ -238,7 +253,7 @@ termios_tcdrain(PyObject *self, PyObject *args)
                           fdconv, &fd))
         return NULL;
     if (tcdrain(fd) == -1)
-        return PyErr_SetFromErrno(TermiosError);
+        return PyErr_SetFromErrno(modulestate_global->TermiosError);
 
     Py_RETURN_NONE;
 }
@@ -260,7 +275,7 @@ termios_tcflush(PyObject *self, PyObject *args)
                           fdconv, &fd, &queue))
         return NULL;
     if (tcflush(fd, queue) == -1)
-        return PyErr_SetFromErrno(TermiosError);
+        return PyErr_SetFromErrno(modulestate_global->TermiosError);
 
     Py_RETURN_NONE;
 }
@@ -282,7 +297,7 @@ termios_tcflow(PyObject *self, PyObject *args)
                           fdconv, &fd, &action))
         return NULL;
     if (tcflow(fd, action) == -1)
-        return PyErr_SetFromErrno(TermiosError);
+        return PyErr_SetFromErrno(modulestate_global->TermiosError);
 
     Py_RETURN_NONE;
 }
@@ -605,6 +620,39 @@ static struct constant {
 
 #ifdef B460800
     {"B460800", B460800},
+#endif
+#ifdef B500000
+    {"B500000", B500000},
+#endif
+#ifdef B576000
+    { "B576000", B576000},
+#endif
+#ifdef B921600
+    { "B921600", B921600},
+#endif
+#ifdef B1000000
+    { "B1000000", B1000000},
+#endif
+#ifdef B1152000
+    { "B1152000", B1152000},
+#endif
+#ifdef B1500000
+    { "B1500000", B1500000},
+#endif
+#ifdef B2000000
+    { "B2000000", B2000000},
+#endif
+#ifdef B2500000
+    { "B2500000", B2500000},
+#endif
+#ifdef B3000000
+    { "B3000000", B3000000},
+#endif
+#ifdef B3500000
+    { "B3500000", B3500000},
+#endif
+#ifdef B4000000
+    { "B4000000", B4000000},
 #endif
 #ifdef CBAUD
     {"CBAUD", CBAUD},
@@ -935,17 +983,30 @@ static struct constant {
     {NULL, 0}
 };
 
+static int termiosmodule_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(get_termios_state(m)->TermiosError);
+    return 0;
+}
+
+static int termiosmodule_clear(PyObject *m) {
+    Py_CLEAR(get_termios_state(m)->TermiosError);
+    return 0;
+}
+
+static void termiosmodule_free(void *m) {
+    termiosmodule_clear((PyObject *)m);
+}
 
 static struct PyModuleDef termiosmodule = {
     PyModuleDef_HEAD_INIT,
     "termios",
     termios__doc__,
-    -1,
+    sizeof(termiosmodulestate),
     termios_methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    termiosmodule_traverse,
+    termiosmodule_clear,
+    termiosmodule_free,
 };
 
 PyMODINIT_FUNC
@@ -954,15 +1015,22 @@ PyInit_termios(void)
     PyObject *m;
     struct constant *constant = termios_constants;
 
-    m = PyModule_Create(&termiosmodule);
-    if (m == NULL)
-        return NULL;
-
-    if (TermiosError == NULL) {
-        TermiosError = PyErr_NewException("termios.error", NULL, NULL);
+    if ((m = PyState_FindModule(&termiosmodule)) != NULL) {
+        Py_INCREF(m);
+        return m;
     }
-    Py_INCREF(TermiosError);
-    PyModule_AddObject(m, "error", TermiosError);
+
+    if ((m = PyModule_Create(&termiosmodule)) == NULL) {
+        return NULL;
+    }
+
+    termiosmodulestate *state = get_termios_state(m);
+    state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);
+    if (state->TermiosError == NULL) {
+        return NULL;
+    }
+    Py_INCREF(state->TermiosError);
+    PyModule_AddObject(m, "error", state->TermiosError);
 
     while (constant->name != NULL) {
         PyModule_AddIntConstant(m, constant->name, constant->value);

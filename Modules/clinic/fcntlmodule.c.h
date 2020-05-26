@@ -19,7 +19,7 @@ PyDoc_STRVAR(fcntl_fcntl__doc__,
 "corresponding to the return value of the fcntl call in the C code.");
 
 #define FCNTL_FCNTL_METHODDEF    \
-    {"fcntl", (PyCFunction)fcntl_fcntl, METH_FASTCALL, fcntl_fcntl__doc__},
+    {"fcntl", (PyCFunction)(void(*)(void))fcntl_fcntl, METH_FASTCALL, fcntl_fcntl__doc__},
 
 static PyObject *
 fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg);
@@ -32,10 +32,21 @@ fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int code;
     PyObject *arg = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i|O:fcntl",
-        conv_descriptor, &fd, &code, &arg)) {
+    if (!_PyArg_CheckPositional("fcntl", nargs, 2, 3)) {
         goto exit;
     }
+    if (!conv_descriptor(args[0], &fd)) {
+        goto exit;
+    }
+    code = _PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    arg = args[2];
+skip_optional:
     return_value = fcntl_fcntl_impl(module, fd, code, arg);
 
 exit:
@@ -76,7 +87,7 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
 "code.");
 
 #define FCNTL_IOCTL_METHODDEF    \
-    {"ioctl", (PyCFunction)fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
+    {"ioctl", (PyCFunction)(void(*)(void))fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
 
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
@@ -91,10 +102,28 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *ob_arg = NULL;
     int mutate_arg = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&I|Op:ioctl",
-        conv_descriptor, &fd, &code, &ob_arg, &mutate_arg)) {
+    if (!_PyArg_CheckPositional("ioctl", nargs, 2, 4)) {
         goto exit;
     }
+    if (!conv_descriptor(args[0], &fd)) {
+        goto exit;
+    }
+    code = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (code == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    ob_arg = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    mutate_arg = PyObject_IsTrue(args[3]);
+    if (mutate_arg < 0) {
+        goto exit;
+    }
+skip_optional:
     return_value = fcntl_ioctl_impl(module, fd, code, ob_arg, mutate_arg);
 
 exit:
@@ -111,7 +140,7 @@ PyDoc_STRVAR(fcntl_flock__doc__,
 "function is emulated using fcntl()).");
 
 #define FCNTL_FLOCK_METHODDEF    \
-    {"flock", (PyCFunction)fcntl_flock, METH_FASTCALL, fcntl_flock__doc__},
+    {"flock", (PyCFunction)(void(*)(void))fcntl_flock, METH_FASTCALL, fcntl_flock__doc__},
 
 static PyObject *
 fcntl_flock_impl(PyObject *module, int fd, int code);
@@ -123,8 +152,14 @@ fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int code;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:flock",
-        conv_descriptor, &fd, &code)) {
+    if (!_PyArg_CheckPositional("flock", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!conv_descriptor(args[0], &fd)) {
+        goto exit;
+    }
+    code = _PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = fcntl_flock_impl(module, fd, code);
@@ -161,7 +196,7 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
 "    2 - relative to the end of the file (SEEK_END)");
 
 #define FCNTL_LOCKF_METHODDEF    \
-    {"lockf", (PyCFunction)fcntl_lockf, METH_FASTCALL, fcntl_lockf__doc__},
+    {"lockf", (PyCFunction)(void(*)(void))fcntl_lockf, METH_FASTCALL, fcntl_lockf__doc__},
 
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
@@ -177,13 +212,35 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *startobj = NULL;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i|OOi:lockf",
-        conv_descriptor, &fd, &code, &lenobj, &startobj, &whence)) {
+    if (!_PyArg_CheckPositional("lockf", nargs, 2, 5)) {
         goto exit;
     }
+    if (!conv_descriptor(args[0], &fd)) {
+        goto exit;
+    }
+    code = _PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    lenobj = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    startobj = args[3];
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    whence = _PyLong_AsInt(args[4]);
+    if (whence == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = fcntl_lockf_impl(module, fd, code, lenobj, startobj, whence);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2f6e70ae67ec8ac9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=91c2295402509595 input=a9049054013a1b77]*/

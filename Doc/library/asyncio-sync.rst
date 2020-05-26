@@ -6,18 +6,22 @@
 Synchronization Primitives
 ==========================
 
+**Source code:** :source:`Lib/asyncio/locks.py`
+
+-----------------------------------------------
+
 asyncio synchronization primitives are designed to be similar to
 those of the :mod:`threading` module with two important caveats:
 
 * asyncio primitives are not thread-safe, therefore they should not
-  be used for OS threads synchronization (use :mod:`threading` for
+  be used for OS thread synchronization (use :mod:`threading` for
   that);
 
-* methods of synchronization primitives do not accept the *timeout*
+* methods of these synchronization primitives do not accept the *timeout*
   argument; use the :func:`asyncio.wait_for` function to perform
   operations with timeouts.
 
-asyncio has the following basic sychronization primitives:
+asyncio has the following basic synchronization primitives:
 
 * :class:`Lock`
 * :class:`Event`
@@ -59,12 +63,22 @@ Lock
        finally:
            lock.release()
 
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
    .. coroutinemethod:: acquire()
 
       Acquire the lock.
 
       This method waits until the lock is *unlocked*, sets it to
       *locked* and returns ``True``.
+
+      When more than one coroutine is blocked in :meth:`acquire`
+      waiting for the lock to be unlocked, only one coroutine
+      eventually proceeds.
+
+      Acquiring a lock is *fair*: the coroutine that proceeds will be
+      the first coroutine that started waiting on the lock.
 
    .. method:: release()
 
@@ -93,6 +107,10 @@ Event
    with the :meth:`set` method and reset to *false* with the
    :meth:`clear` method.  The :meth:`wait` method blocks until the
    flag is set to *true*.  The flag is set to *false* initially.
+
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
    .. _asyncio_example_sync_event:
 
@@ -153,18 +171,22 @@ Condition
    A Condition object.  Not thread-safe.
 
    An asyncio condition primitive can be used by a task to wait for
-   some event to happen and then get an exclusive access to a shared
+   some event to happen and then get exclusive access to a shared
    resource.
 
    In essence, a Condition object combines the functionality
-   of :class:`Event` and :class:`Lock`.  It is possible to have many
-   Condition objects sharing one Lock, which allows to coordinate
+   of an :class:`Event` and a :class:`Lock`.  It is possible to have
+   multiple Condition objects share one Lock, which allows coordinating
    exclusive access to a shared resource between different tasks
    interested in particular states of that shared resource.
 
    The optional *lock* argument must be a :class:`Lock` object or
    ``None``.  In the latter case a new Lock object is created
    automatically.
+
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
    The preferred way to use a Condition is an :keyword:`async with`
    statement::
@@ -180,11 +202,11 @@ Condition
        cond = asyncio.Condition()
 
        # ... later
-       await lock.acquire()
+       await cond.acquire()
        try:
            await cond.wait()
        finally:
-           lock.release()
+           cond.release()
 
    .. coroutinemethod:: acquire()
 
@@ -262,6 +284,10 @@ Semaphore
    internal counter (``1`` by default). If the given value is
    less than ``0`` a :exc:`ValueError` is raised.
 
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
    The preferred way to use a Semaphore is an :keyword:`async with`
    statement::
 
@@ -287,7 +313,7 @@ Semaphore
       Acquire a semaphore.
 
       If the internal counter is greater than zero, decrement
-      it by one and return ``True`` immediately.  If it is zero wait
+      it by one and return ``True`` immediately.  If it is zero, wait
       until a :meth:`release` is called and return ``True``.
 
    .. method:: locked()
@@ -300,7 +326,7 @@ Semaphore
       Can wake up a task waiting to acquire the semaphore.
 
       Unlike :class:`BoundedSemaphore`, :class:`Semaphore` allows
-      to make more ``release()`` calls than ``acquire()`` calls.
+      making more ``release()`` calls than ``acquire()`` calls.
 
 
 BoundedSemaphore
@@ -315,11 +341,14 @@ BoundedSemaphore
    increases the internal counter above the initial *value*.
 
 
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
 ---------
 
 
-.. deprecated:: 3.7
+.. versionchanged:: 3.9
 
    Acquiring a lock using ``await lock`` or ``yield from lock`` and/or
    :keyword:`with` statement (``with await lock``, ``with (yield from
-   lock)``) is deprecated.  Use ``async with lock`` instead.
+   lock)``) was removed.  Use ``async with lock`` instead.

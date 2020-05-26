@@ -9,7 +9,7 @@ PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "Get the value for key, or default if not present.");
 
 #define _GDBM_GDBM_GET_METHODDEF    \
-    {"get", (PyCFunction)_gdbm_gdbm_get, METH_FASTCALL, _gdbm_gdbm_get__doc__},
+    {"get", (PyCFunction)(void(*)(void))_gdbm_gdbm_get, METH_FASTCALL, _gdbm_gdbm_get__doc__},
 
 static PyObject *
 _gdbm_gdbm_get_impl(dbmobject *self, PyObject *key, PyObject *default_value);
@@ -21,11 +21,15 @@ _gdbm_gdbm_get(dbmobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "get",
-        1, 2,
-        &key, &default_value)) {
+    if (!_PyArg_CheckPositional("get", nargs, 1, 2)) {
         goto exit;
     }
+    key = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
     return_value = _gdbm_gdbm_get_impl(self, key, default_value);
 
 exit:
@@ -39,7 +43,7 @@ PyDoc_STRVAR(_gdbm_gdbm_setdefault__doc__,
 "Get value for key, or set it to default and return default if not present.");
 
 #define _GDBM_GDBM_SETDEFAULT_METHODDEF    \
-    {"setdefault", (PyCFunction)_gdbm_gdbm_setdefault, METH_FASTCALL, _gdbm_gdbm_setdefault__doc__},
+    {"setdefault", (PyCFunction)(void(*)(void))_gdbm_gdbm_setdefault, METH_FASTCALL, _gdbm_gdbm_setdefault__doc__},
 
 static PyObject *
 _gdbm_gdbm_setdefault_impl(dbmobject *self, PyObject *key,
@@ -52,11 +56,15 @@ _gdbm_gdbm_setdefault(dbmobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setdefault",
-        1, 2,
-        &key, &default_value)) {
+    if (!_PyArg_CheckPositional("setdefault", nargs, 1, 2)) {
         goto exit;
     }
+    key = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
     return_value = _gdbm_gdbm_setdefault_impl(self, key, default_value);
 
 exit:
@@ -231,7 +239,7 @@ PyDoc_STRVAR(dbmopen__doc__,
 "when the database has to be created.  It defaults to octal 0o666.");
 
 #define DBMOPEN_METHODDEF    \
-    {"open", (PyCFunction)dbmopen, METH_FASTCALL, dbmopen__doc__},
+    {"open", (PyCFunction)(void(*)(void))dbmopen, METH_FASTCALL, dbmopen__doc__},
 
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
@@ -245,13 +253,44 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *flags = "r";
     int mode = 438;
 
-    if (!_PyArg_ParseStack(args, nargs, "U|si:open",
-        &filename, &flags, &mode)) {
+    if (!_PyArg_CheckPositional("open", nargs, 1, 3)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("open", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    filename = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("open", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t flags_length;
+    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    if (flags == NULL) {
+        goto exit;
+    }
+    if (strlen(flags) != (size_t)flags_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    mode = _PyLong_AsInt(args[2]);
+    if (mode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = dbmopen_impl(module, filename, flags, mode);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dec05ff9c5aeaeae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9d43f42677f4efb input=a9049054013a1b77]*/

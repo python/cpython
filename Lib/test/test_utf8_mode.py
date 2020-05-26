@@ -3,7 +3,6 @@ Test the implementation of the PEP 540: the UTF-8 Mode.
 """
 
 import locale
-import os
 import sys
 import textwrap
 import unittest
@@ -13,7 +12,7 @@ from test.support.script_helper import assert_python_ok, assert_python_failure
 
 MS_WINDOWS = (sys.platform == 'win32')
 POSIX_LOCALES = ('C', 'POSIX')
-
+VXWORKS = (sys.platform == "vxworks")
 
 class UTF8ModeTests(unittest.TestCase):
     DEFAULT_ENV = {
@@ -196,7 +195,7 @@ class UTF8ModeTests(unittest.TestCase):
     def test_io_encoding(self):
         self.check_io_encoding('io')
 
-    def test_io_encoding(self):
+    def test_pyio_encoding(self):
         self.check_io_encoding('_pyio')
 
     def test_locale_getpreferredencoding(self):
@@ -226,7 +225,7 @@ class UTF8ModeTests(unittest.TestCase):
             with self.subTest(LC_ALL=loc):
                 check('utf8', [arg_utf8], LC_ALL=loc)
 
-        if sys.platform == 'darwin' or support.is_android:
+        if sys.platform == 'darwin' or support.is_android or VXWORKS:
             c_arg = arg_utf8
         elif sys.platform.startswith("aix"):
             c_arg = arg.decode('iso-8859-1')

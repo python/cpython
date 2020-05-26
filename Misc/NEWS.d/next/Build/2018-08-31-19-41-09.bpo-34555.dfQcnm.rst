@@ -1,2 +1,0 @@
-Fix for case where it was not possible to have both
-``HAVE_LINUX_VM_SOCKETS_H`` and ``HAVE_SOCKADDR_ALG`` be undefined.

@@ -11,6 +11,7 @@ import pickle
 from functools import reduce
 import sys
 import struct
+import threading
 maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -147,6 +148,12 @@ class TestBasicOps(unittest.TestCase):
             list(accumulate(s, chr))                                # unary-operation
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, accumulate(range(10)))           # test pickling
+            self.pickletest(proto, accumulate(range(10), initial=7))
+        self.assertEqual(list(accumulate([10, 5, 1], initial=None)), [10, 15, 16])
+        self.assertEqual(list(accumulate([10, 5, 1], initial=100)), [100, 110, 115, 116])
+        self.assertEqual(list(accumulate([], initial=100)), [100])
+        with self.assertRaises(TypeError):
+            list(accumulate([10, 20], 100))
 
     def test_chain(self):
 
@@ -965,6 +972,18 @@ class TestBasicOps(unittest.TestCase):
             self.pickletest(proto, zip_longest("abc", "defgh", fillvalue=1))
             self.pickletest(proto, zip_longest("", "defgh"))
 
+    def test_zip_longest_bad_iterable(self):
+        exception = TypeError()
+
+        class BadIterable:
+            def __iter__(self):
+                raise exception
+
+        with self.assertRaises(TypeError) as cm:
+            zip_longest(BadIterable())
+
+        self.assertIs(cm.exception, exception)
+
     def test_bug_7244(self):
 
         class Repeater:
@@ -1475,6 +1494,42 @@ class TestBasicOps(unittest.TestCase):
         except:
             del forward, backward
             raise
+
+    def test_tee_reenter(self):
+        class I:
+            first = True
+            def __iter__(self):
+                return self
+            def __next__(self):
+                first = self.first
+                self.first = False
+                if first:
+                    return next(b)
+
+        a, b = tee(I())
+        with self.assertRaisesRegex(RuntimeError, "tee"):
+            next(a)
+
+    def test_tee_concurrent(self):
+        start = threading.Event()
+        finish = threading.Event()
+        class I:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                start.set()
+                finish.wait()
+
+        a, b = tee(I())
+        thread = threading.Thread(target=next, args=[a])
+        thread.start()
+        try:
+            start.wait()
+            with self.assertRaisesRegex(RuntimeError, "tee"):
+                next(b)
+        finally:
+            finish.set()
+            thread.join()
 
     def test_StopIteration(self):
         self.assertRaises(StopIteration, next, zip())
@@ -2056,6 +2111,7 @@ class RegressionTests(unittest.TestCase):
         self.assertRaises(AssertionError, list, cycle(gen1()))
         self.assertEqual(hist, [0,1])
 
+    @support.skip_if_pgo_task
     def test_long_chain_of_empty_iterables(self):
         # Make sure itertools.chain doesn't run into recursion limits when
         # dealing with long chains of empty iterables. Even with a high

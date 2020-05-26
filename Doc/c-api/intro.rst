@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _api-intro:
@@ -48,7 +48,8 @@ Include Files
 All function, type and macro definitions needed to use the Python/C API are
 included in your code by the following line::
 
-   #include "Python.h"
+   #define PY_SSIZE_T_CLEAN
+   #include <Python.h>
 
 This implies inclusion of the following standard headers: ``<stdio.h>``,
 ``<string.h>``, ``<errno.h>``, ``<limits.h>``, ``<assert.h>`` and ``<stdlib.h>``
@@ -60,15 +61,20 @@ This implies inclusion of the following standard headers: ``<stdio.h>``,
    headers on some systems, you *must* include :file:`Python.h` before any standard
    headers are included.
 
+   It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
+   ``Python.h``.  See :ref:`arg-parsing` for a description of this macro.
+
 All user visible names defined by Python.h (except those defined by the included
 standard headers) have one of the prefixes ``Py`` or ``_Py``.  Names beginning
 with ``_Py`` are for internal use by the Python implementation and should not be
 used by extension writers. Structure member names do not have a reserved prefix.
 
-**Important:** user code should never define names that begin with ``Py`` or
-``_Py``.  This confuses the reader, and jeopardizes the portability of the user
-code to future Python versions, which may define additional names beginning with
-one of these prefixes.
+.. note::
+
+   User code should never define names that begin with ``Py`` or ``_Py``. This
+   confuses the reader, and jeopardizes the portability of the user code to
+   future Python versions, which may define additional names beginning with one
+   of these prefixes.
 
 The header files are typically installed with Python.  On Unix, these  are
 located in the directories :file:`{prefix}/include/pythonversion/` and
@@ -86,9 +92,9 @@ multi-platform builds since the platform independent headers under
 :envvar:`prefix` include the platform specific headers from
 :envvar:`exec_prefix`.
 
-C++ users should note that though the API is defined entirely using C, the
-header files do properly declare the entry points to be ``extern "C"``, so there
-is no need to do anything special to use the API from C++.
+C++ users should note that although the API is defined entirely using C, the
+header files properly declare the entry points to be ``extern "C"``. As a result,
+there is no need to do anything special to use the API from C++.
 
 
 Useful macros
@@ -101,10 +107,23 @@ complete listing.
 
 .. c:macro:: Py_UNREACHABLE()
 
-   Use this when you have a code path that you do not expect to be reached.
+   Use this when you have a code path that cannot be reached by design.
    For example, in the ``default:`` clause in a ``switch`` statement for which
    all possible values are covered in ``case`` statements.  Use this in places
    where you might be tempted to put an ``assert(0)`` or ``abort()`` call.
+
+   In release mode, the macro helps the compiler to optimize the code, and
+   avoids a warning about unreachable code.  For example, the macro is
+   implemented with ``__builtin_unreachable()`` on GCC in release mode.
+
+   A use for ``Py_UNREACHABLE()`` is following a call a function that
+   never returns but that is not declared :c:macro:`_Py_NO_RETURN`.
+
+   If a code path is very unlikely code but can be reached under exceptional
+   case, this macro must not be used.  For example, under low memory condition
+   or if a system call returns a value out of the expected range.  In this
+   case, it's better to report the error to the caller.  If the error cannot
+   be reported to caller, :c:func:`Py_FatalError` can be used.
 
    .. versionadded:: 3.7
 
@@ -146,16 +165,61 @@ complete listing.
 
 .. c:macro:: Py_GETENV(s)
 
-   Like ``getenv(s)``, but returns *NULL* if :option:`-E` was passed on the
+   Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
    command line (i.e. if ``Py_IgnoreEnvironmentFlag`` is set).
 
 .. c:macro:: Py_UNUSED(arg)
 
    Use this for unused arguments in a function definition to silence compiler
-   warnings, e.g. ``PyObject* func(PyObject *Py_UNUSED(ignored))``.
+   warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
 
    .. versionadded:: 3.4
 
+.. c:macro:: Py_DEPRECATED(version)
+
+   Use this for deprecated declarations.  The macro must be placed before the
+   symbol name.
+
+   Example::
+
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
+
+   .. versionchanged:: 3.8
+      MSVC support was added.
+
+.. c:macro:: PyDoc_STRVAR(name, str)
+
+   Creates a variable with name ``name`` that can be used in docstrings.
+   If Python is built without docstrings, the value will be empty.
+
+   Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
+   Python without docstrings, as specified in :pep:`7`.
+
+   Example::
+
+      PyDoc_STRVAR(pop_doc, "Remove and return the rightmost element.");
+
+      static PyMethodDef deque_methods[] = {
+          // ...
+          {"pop", (PyCFunction)deque_pop, METH_NOARGS, pop_doc},
+          // ...
+      }
+
+.. c:macro:: PyDoc_STR(str)
+
+   Creates a docstring for the given input string or an empty string
+   if docstrings are disabled.
+
+   Use :c:macro:`PyDoc_STR` in specifying docstrings to support
+   building Python without docstrings, as specified in :pep:`7`.
+
+   Example::
+
+      static PyMethodDef pysqlite_row_methods[] = {
+          {"keys", (PyCFunction)pysqlite_row_keys, METH_NOARGS,
+              PyDoc_STR("Returns the keys of the row.")},
+          {NULL, NULL}
+      };
 
 .. _api-objects:
 
@@ -234,7 +298,7 @@ duration of the call.
 However, a common pitfall is to extract an object from a list and hold on to it
 for a while without incrementing its reference count. Some other operation might
 conceivably remove the object from the list, decrementing its reference count
-and possible deallocating it. The real danger is that innocent-looking
+and possibly deallocating it. The real danger is that innocent-looking
 operations may invoke arbitrary Python code which could do this; there is a code
 path which allows control to flow back to the user from a :c:func:`Py_DECREF`, so
 almost any operation is potentially dangerous.
@@ -457,7 +521,7 @@ functions in the Python/C API can raise exceptions, unless an explicit claim is
 made otherwise in a function's documentation.  In general, when a function
 encounters an error, it sets an exception, discards any object references that
 it owns, and returns an error indicator.  If not documented otherwise, this
-indicator is either *NULL* or ``-1``, depending on the function's return type.
+indicator is either ``NULL`` or ``-1``, depending on the function's return type.
 A few functions return a Boolean true/false result, with false indicating an
 error.  Very few functions return no explicit error indicator or have an
 ambiguous return value, and require explicit testing for errors with
@@ -472,13 +536,13 @@ using global storage in an unthreaded application).  A  thread can be in one of
 two states: an exception has occurred, or not. The function
 :c:func:`PyErr_Occurred` can be used to check for this: it returns a borrowed
 reference to the exception type object when an exception has occurred, and
-*NULL* otherwise.  There are a number of functions to set the exception state:
+``NULL`` otherwise.  There are a number of functions to set the exception state:
 :c:func:`PyErr_SetString` is the most common (though not the most general)
 function to set the exception state, and :c:func:`PyErr_Clear` clears the
 exception state.
 
 The full exception state consists of three objects (all of which can  be
-*NULL*): the exception type, the corresponding exception  value, and the
+``NULL``): the exception type, the corresponding exception  value, and the
 traceback.  These have the same meanings as the Python result of
 ``sys.exc_info()``; however, they are not the same: the Python objects represent
 the last exception being handled by a Python  :keyword:`try` ...
@@ -579,10 +643,10 @@ Here is the corresponding C code, in all its glory::
 This example represents an endorsed use of the ``goto`` statement  in C!
 It illustrates the use of :c:func:`PyErr_ExceptionMatches` and
 :c:func:`PyErr_Clear` to handle specific exceptions, and the use of
-:c:func:`Py_XDECREF` to dispose of owned references that may be *NULL* (note the
+:c:func:`Py_XDECREF` to dispose of owned references that may be ``NULL`` (note the
 ``'X'`` in the name; :c:func:`Py_DECREF` would crash when confronted with a
-*NULL* reference).  It is important that the variables used to hold owned
-references are initialized to *NULL* for this to work; likewise, the proposed
+``NULL`` reference).  It is important that the variables used to hold owned
+references are initialized to ``NULL`` for this to work; likewise, the proposed
 return value is initialized to ``-1`` (failure) and only set to success after
 the final call made is successful.
 

@@ -17,7 +17,9 @@ double _Py_force_double(double x)
 
 /* inline assembly for getting and setting the 387 FPU control word on
    gcc/x86 */
-
+#ifdef _Py_MEMORY_SANITIZER
+__attribute__((no_sanitize_memory))
+#endif
 unsigned short _Py_get_387controlword(void) {
     unsigned short cw;
     __asm__ __volatile__ ("fnstcw %0" : "=m" (cw));
@@ -77,3 +79,18 @@ round(double x)
     return copysign(y, x);
 }
 #endif /* HAVE_ROUND */
+
+static const unsigned int BitLengthTable[32] = {
+    0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+};
+
+unsigned int _Py_bit_length(unsigned long d) {
+   unsigned int d_bits = 0;
+   while (d >= 32) {
+       d_bits += 6;
+       d >>= 6;
+   }
+   d_bits += BitLengthTable[d];
+   return d_bits;
+}

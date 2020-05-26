@@ -1,2 +1,0 @@
-Do not assume signed integer overflow behavior (C undefined behavior) when
-performing set hash table resizing.

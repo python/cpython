@@ -38,7 +38,7 @@ Debug
     Used to build Python with extra debugging capabilities, equivalent
     to using ./configure --with-pydebug on UNIX.  All binaries built
     using this configuration have "_d" added to their name:
-    python38_d.dll, python_d.exe, parser_d.pyd, and so on.  Both the
+    python310_d.dll, python_d.exe, parser_d.pyd, and so on.  Both the
     build and rt (run test) batch files in this directory accept a -d
     option for debug builds.  If you are building Python to help with
     development of CPython, you will most likely use this configuration.
@@ -132,6 +132,7 @@ library which are implemented in C; each one builds a DLL (renamed to
 _asyncio
 _ctypes
 _ctypes_test
+_zoneinfo
 _decimal
 _elementtree
 _hashlib
@@ -165,7 +166,7 @@ _lzma
     Homepage:
         http://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.0h of the OpenSSL secure sockets
+    Python wrapper for version 1.1.1c of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
@@ -184,7 +185,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.21.0.0, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.31.1.0, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter
@@ -285,4 +286,4 @@ The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI
 doesn't always reflect the correct settings and may confuse the user
 with false information, especially for settings that automatically adapt
-for diffirent configurations.
+for different configurations.
