@@ -243,7 +243,7 @@ select_select(PyObject *self, PyObject *args)
     }
 #endif /* SELECT_USES_HEAP */
 
-    /* Convert sequences to fd_sets, and get maximum fd number
+    /* Convert iterables to fd_sets, and get maximum fd number
      * propagates the Python exception set in seq2set()
      */
     rfd2obj[0].sentinel = -1;
@@ -2360,7 +2360,7 @@ PyDoc_STRVAR(select_doc,
 "select(rlist, wlist, xlist[, timeout]) -> (rlist, wlist, xlist)\n\
 \n\
 Wait until one or more file descriptors are ready for some kind of I/O.\n\
-The first three arguments are sequences of file descriptors to be waited for:\n\
+The first three arguments are iterables of file descriptors to be waited for:\n\
 rlist -- wait until ready for reading\n\
 wlist -- wait until ready for writing\n\
 xlist -- wait for an ``exceptional condition''\n\
