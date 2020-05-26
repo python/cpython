@@ -55,25 +55,6 @@ PyDoc_STRVAR(math_factorial__doc__,
 #define MATH_FACTORIAL_METHODDEF    \
     {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
 
-static PyObject *
-math_factorial_impl(PyObject *module, long x);
-
-static PyObject *
-math_factorial(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    long x;
-
-    x = PyLong_AsLong(arg);
-    if (x == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = math_factorial_impl(module, x);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(math_trunc__doc__,
 "trunc($module, x, /)\n"
 "--\n"
@@ -884,4 +865,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d8934df8ad51d110 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1eae2b3ef19568fa input=a9049054013a1b77]*/

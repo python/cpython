@@ -499,7 +499,7 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.factorial(i), total)
             self.assertEqual(math.factorial(i), py_factorial(i))
         self.assertRaises(ValueError, math.factorial, -1)
-        self.assertRaises((ValueError, OverflowError), math.factorial, -10**100)
+        self.assertRaises(ValueError, math.factorial, -10**100)
 
     def testFactorialNonIntegers(self):
         self.assertRaises(TypeError, math.factorial, 5.0)
