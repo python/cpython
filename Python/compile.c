@@ -2747,35 +2747,34 @@ compiler_if(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_pattern(struct compiler *c, expr_ty p, basicblock *body, basicblock *next)
+compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
 {
     basicblock *block;
-    // TODO: We can probably simplify some of the jumping-around.
     switch (p->kind) {
         case Constant_kind:
+            ADDOP(c, DUP_TOP);
             VISIT(c, expr, p);
             ADDOP_COMPARE(c, Eq);
-            ADDOP_JABS(c, POP_JUMP_IF_FALSE, next);
-            ADDOP_JREL(c, JUMP_FORWARD, body);
+            ADDOP_JABS(c, POP_JUMP_IF_FALSE, no);
+            ADDOP_JREL(c, JUMP_FORWARD, yes);
             return 1;
         case NamedExpr_kind:
             block = compiler_new_block(c);
-            if (!compiler_pattern(c, p->v.NamedExpr.value, block, next)) {
+            if (!compiler_pattern(c, p->v.NamedExpr.value, block, no)) {
                 return 0;
             }
             compiler_use_next_block(c, block);
             ADDOP(c, DUP_TOP);
             VISIT(c, expr, p->v.NamedExpr.target);
-            ADDOP_JREL(c, JUMP_FORWARD, body);
+            ADDOP_JREL(c, JUMP_FORWARD, yes);
             return 1;
         case BinOp_kind:
             block = compiler_new_block(c);
-            if (!compiler_pattern(c, p->v.BinOp.left, body, block)) {
+            if (!compiler_pattern(c, p->v.BinOp.left, yes, block)) {
                 return 0;
             }
             compiler_use_next_block(c, block);
-            ADDOP(c, DUP_TOP);
-            if (!compiler_pattern(c, p->v.BinOp.right, body, next)) {
+            if (!compiler_pattern(c, p->v.BinOp.right, yes, no)) {
                 return 0;
             }
             return 1;
@@ -2789,17 +2788,14 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *body, basicblock *ne
 static int
 compiler_match(struct compiler *c, stmt_ty s)
 {
-    basicblock *end = compiler_new_block(c);
     VISIT(c, expr, s->v.Match.target);
     match_case_ty m;
-    basicblock *body, *next;
+    basicblock *body, *next, *end = compiler_new_block(c);
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     for (Py_ssize_t i = 0; i < cases; i++) {
-        // TODO: We can probably simplify some of the jumping-around.
         m = asdl_seq_GET(s->v.Match.cases, i);
         body = compiler_new_block(c);
         next = compiler_new_block(c);
-        ADDOP(c, DUP_TOP);
         compiler_pattern(c, m->pattern, body, next);
         compiler_use_next_block(c, body);
         if (m->guard && !compiler_jump_if(c, m->guard, next, 0)) {
