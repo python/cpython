@@ -29,8 +29,6 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 /* Macro, *only* to be used to fill in brand new tuples */
 #define PyTuple_SET_ITEM(op, i, v) (_PyTuple_CAST(op)->ob_item[i] = v)
 
-PyAPI_FUNC(void) _PyTuple_DebugMallocStats(FILE *out);
-
 #ifdef __cplusplus
 }
 #endif

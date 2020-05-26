@@ -1,0 +1,2 @@
+The ``sys._debugmallocstats()`` function and the ``PYTHONMALLOCSTATS``
+environment variable have been removed.

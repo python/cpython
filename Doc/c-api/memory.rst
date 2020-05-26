@@ -88,10 +88,6 @@ for the I/O buffer escapes completely the Python memory manager.
    The :envvar:`PYTHONMALLOC` environment variable can be used to configure
    the memory allocators used by Python.
 
-   The :envvar:`PYTHONMALLOCSTATS` environment variable can be used to print
-   statistics of the :ref:`pymalloc memory allocator <pymalloc>` every time a
-   new pymalloc object arena is created, and on shutdown.
-
 
 Raw Memory Interface
 ====================

@@ -804,7 +804,6 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(import_time);
     COPY_ATTR(show_ref_count);
     COPY_ATTR(dump_refs);
-    COPY_ATTR(malloc_stats);
 
     COPY_WSTR_ATTR(pycache_prefix);
     COPY_WSTR_ATTR(pythonpath_env);
@@ -908,7 +907,6 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(import_time);
     SET_ITEM_INT(show_ref_count);
     SET_ITEM_INT(dump_refs);
-    SET_ITEM_INT(malloc_stats);
     SET_ITEM_WSTR(filesystem_encoding);
     SET_ITEM_WSTR(filesystem_errors);
     SET_ITEM_WSTR(pycache_prefix);
@@ -1323,9 +1321,6 @@ config_read_env_vars(PyConfig *config)
 
     if (config_get_env(config, "PYTHONDUMPREFS")) {
         config->dump_refs = 1;
-    }
-    if (config_get_env(config, "PYTHONMALLOCSTATS")) {
-        config->malloc_stats = 1;
     }
 
     if (config->pythonpath_env == NULL) {

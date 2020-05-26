@@ -72,7 +72,6 @@ PyAPI_FUNC(PyObject *) _PyDict_GetItemId(PyObject *dp, struct _Py_Identifier *ke
 PyAPI_FUNC(int) _PyDict_SetItemId(PyObject *dp, struct _Py_Identifier *key, PyObject *item);
 
 PyAPI_FUNC(int) _PyDict_DelItemId(PyObject *mp, struct _Py_Identifier *key);
-PyAPI_FUNC(void) _PyDict_DebugMallocStats(FILE *out);
 
 int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
 PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);

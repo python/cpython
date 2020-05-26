@@ -770,17 +770,6 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.implementation.name,
                          sys.implementation.name.lower())
 
-    @test.support.cpython_only
-    def test_debugmallocstats(self):
-        # Test sys._debugmallocstats()
-        from test.support.script_helper import assert_python_ok
-        args = ['-c', 'import sys; sys._debugmallocstats()']
-        ret, out, err = assert_python_ok(*args)
-        self.assertIn(b"free PyDictObjects", err)
-
-        # The function has no parameter
-        self.assertRaises(TypeError, sys._debugmallocstats, True)
-
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):

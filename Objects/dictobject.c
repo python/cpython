@@ -281,17 +281,6 @@ _PyDict_ClearFreeList(void)
 #endif
 }
 
-/* Print summary info about the state of the optimized allocator */
-void
-_PyDict_DebugMallocStats(FILE *out)
-{
-#if PyDict_MAXFREELIST > 0
-    _PyDebugAllocatorStats(out,
-                           "free PyDictObject", numfree, sizeof(PyDictObject));
-#endif
-}
-
-
 void
 _PyDict_Fini(void)
 {

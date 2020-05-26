@@ -508,9 +508,6 @@ static int test_init_from_config(void)
     config.show_ref_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */
 
-    putenv("PYTHONMALLOCSTATS=0");
-    config.malloc_stats = 1;
-
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config_set_string(&config, &config.pycache_prefix, L"conf_pycache_prefix");
 
@@ -656,7 +653,6 @@ static void set_most_env_vars(void)
     putenv("PYTHONMALLOC=malloc");
     putenv("PYTHONTRACEMALLOC=2");
     putenv("PYTHONPROFILEIMPORTTIME=1");
-    putenv("PYTHONMALLOCSTATS=1");
     putenv("PYTHONUTF8=1");
     putenv("PYTHONVERBOSE=1");
     putenv("PYTHONINSPECT=1");

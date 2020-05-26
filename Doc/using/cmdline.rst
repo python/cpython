@@ -791,21 +791,6 @@ conflict.
    .. versionadded:: 3.6
 
 
-.. envvar:: PYTHONMALLOCSTATS
-
-   If set to a non-empty string, Python will print statistics of the
-   :ref:`pymalloc memory allocator <pymalloc>` every time a new pymalloc object
-   arena is created, and on shutdown.
-
-   This variable is ignored if the :envvar:`PYTHONMALLOC` environment variable
-   is used to force the :c:func:`malloc` allocator of the C library, or if
-   Python is configured without ``pymalloc`` support.
-
-   .. versionchanged:: 3.6
-      This variable can now also be used on Python compiled in release mode.
-      It now has no effect if set to an empty string.
-
-
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
 
    If set to a non-empty string, the default filesystem encoding and errors mode

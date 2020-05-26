@@ -1849,29 +1849,6 @@ sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs)
 extern "C" {
 #endif
 
-/*[clinic input]
-sys._debugmallocstats
-
-Print summary info to stderr about the state of pymalloc's structures.
-
-In Py_DEBUG mode, also perform some expensive internal consistency
-checks.
-[clinic start generated code]*/
-
-static PyObject *
-sys__debugmallocstats_impl(PyObject *module)
-/*[clinic end generated code: output=ec3565f8c7cee46a input=33c0c9c416f98424]*/
-{
-#ifdef WITH_PYMALLOC
-    if (_PyObject_DebugMallocStats(stderr)) {
-        fputc('\n', stderr);
-    }
-#endif
-    _PyObject_DebugTypeStats(stderr);
-
-    Py_RETURN_NONE;
-}
-
 #ifdef Py_TRACE_REFS
 /* Defined in objects.c because it uses static globals if that file */
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
@@ -1974,7 +1951,6 @@ static PyMethodDef sys_methods[] = {
     {"settrace",        sys_settrace, METH_O, settrace_doc},
     SYS_GETTRACE_METHODDEF
     SYS_CALL_TRACING_METHODDEF
-    SYS__DEBUGMALLOCSTATS_METHODDEF
     SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks,

@@ -1373,9 +1373,6 @@ Py_FinalizeEx(void)
 #ifdef Py_TRACE_REFS
     int dump_refs = interp->config.dump_refs;
 #endif
-#ifdef WITH_PYMALLOC
-    int malloc_stats = interp->config.malloc_stats;
-#endif
 
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
@@ -1493,11 +1490,6 @@ Py_FinalizeEx(void)
         _Py_PrintReferenceAddresses(stderr);
     }
 #endif /* Py_TRACE_REFS */
-#ifdef WITH_PYMALLOC
-    if (malloc_stats) {
-        _PyObject_DebugMallocStats(stderr);
-    }
-#endif
 
     call_ll_exitfuncs(runtime);
 

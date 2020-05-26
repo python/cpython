@@ -864,27 +864,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(sys__debugmallocstats__doc__,
-"_debugmallocstats($module, /)\n"
-"--\n"
-"\n"
-"Print summary info to stderr about the state of pymalloc\'s structures.\n"
-"\n"
-"In Py_DEBUG mode, also perform some expensive internal consistency\n"
-"checks.");
-
-#define SYS__DEBUGMALLOCSTATS_METHODDEF    \
-    {"_debugmallocstats", (PyCFunction)sys__debugmallocstats, METH_NOARGS, sys__debugmallocstats__doc__},
-
-static PyObject *
-sys__debugmallocstats_impl(PyObject *module);
-
-static PyObject *
-sys__debugmallocstats(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys__debugmallocstats_impl(module);
-}
-
 PyDoc_STRVAR(sys__clear_type_cache__doc__,
 "_clear_type_cache($module, /)\n"
 "--\n"
@@ -970,4 +949,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=39eb34a01fb9a919 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc90c091c0f4b619 input=a9049054013a1b77]*/

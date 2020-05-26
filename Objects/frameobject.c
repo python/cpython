@@ -1200,18 +1200,6 @@ _PyFrame_Fini(void)
     _PyFrame_ClearFreeList();
 }
 
-/* Print summary info about the state of the optimized allocator */
-void
-_PyFrame_DebugMallocStats(FILE *out)
-{
-#if PyFrame_MAXFREELIST > 0
-    _PyDebugAllocatorStats(out,
-                           "free PyFrameObject",
-                           numfree, sizeof(PyFrameObject));
-#endif
-}
-
-
 PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)
 {

@@ -126,14 +126,6 @@ _PyList_Fini(void)
     _PyList_ClearFreeList();
 }
 
-/* Print summary info about the state of the optimized allocator */
-void
-_PyList_DebugMallocStats(FILE *out)
-{
-    _PyDebugAllocatorStats(out,
-                           "free PyListObject",
-                           numfree, sizeof(PyListObject));
-}
 
 PyObject *
 PyList_New(Py_ssize_t size)

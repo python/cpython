@@ -158,7 +158,6 @@ typedef struct {
     int import_time;        /* PYTHONPROFILEIMPORTTIME, -X importtime */
     int show_ref_count;     /* -X showrefcount */
     int dump_refs;          /* PYTHONDUMPREFS */
-    int malloc_stats;       /* PYTHONMALLOCSTATS */
 
     /* Python filesystem encoding and error handler:
        sys.getfilesystemencoding() and sys.getfilesystemencodeerrors().

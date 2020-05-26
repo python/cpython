@@ -386,12 +386,6 @@ PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
  */
 PyAPI_DATA(int) _Py_SwappedOp[];
 
-PyAPI_FUNC(void)
-_PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
-                       size_t sizeof_block);
-PyAPI_FUNC(void)
-_PyObject_DebugTypeStats(FILE *out);
-
 /* Define a pair of assertion macros:
    _PyObject_ASSERT_FROM(), _PyObject_ASSERT_WITH_MSG() and _PyObject_ASSERT().
 

@@ -491,16 +491,6 @@ When Python is compiled in debug mode, the default is
 .IR pymalloc_debug
 and the debug hooks are automatically used. Otherwise, the default is
 .IR pymalloc .
-.IP PYTHONMALLOCSTATS
-If set to a non-empty string, Python will print statistics of the pymalloc
-memory allocator every time a new pymalloc object arena is created, and on
-shutdown.
-.IP
-This variable is ignored if the
-.RB $ PYTHONMALLOC
-environment variable is used to force the
-.BR malloc (3)
-allocator of the C library, or if Python is configured without pymalloc support.
 .IP PYTHONASYNCIODEBUG
 If this environment variable is set to a non-empty string, enable the debug
 mode of the asyncio module.

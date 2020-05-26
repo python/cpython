@@ -1931,17 +1931,6 @@ _Py_GetObjects(PyObject *self, PyObject *args)
 /* Hack to force loading of abstract.o */
 Py_ssize_t (*_Py_abstract_hack)(PyObject *) = PyObject_Size;
 
-
-void
-_PyObject_DebugTypeStats(FILE *out)
-{
-    _PyDict_DebugMallocStats(out);
-    _PyFloat_DebugMallocStats(out);
-    _PyFrame_DebugMallocStats(out);
-    _PyList_DebugMallocStats(out);
-    _PyTuple_DebugMallocStats(out);
-}
-
 /* These methods are used to control infinite recursion in repr, str, print,
    etc.  Container objects that may recursively contain themselves,
    e.g. builtin dictionaries and lists, should use Py_ReprEnter() and

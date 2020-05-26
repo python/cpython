@@ -546,13 +546,6 @@ PyConfig
       Only available on Windows. ``#ifdef MS_WINDOWS`` macro can be used for
       Windows specific code.
 
-   .. c:member:: int malloc_stats
-
-      If non-zero, dump statistics on :ref:`Python pymalloc memory allocator
-      <pymalloc>` at exit.
-
-      The option is ignored if Python is built using ``--without-pymalloc``.
-
    .. c:member:: wchar_t* pythonpath_env
 
       Module search paths as a string separated by ``DELIM``

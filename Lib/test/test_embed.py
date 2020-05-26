@@ -357,7 +357,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'import_time': 0,
         'show_ref_count': 0,
         'dump_refs': 0,
-        'malloc_stats': 0,
 
         'filesystem_encoding': GET_DEFAULT_CONFIG,
         'filesystem_errors': GET_DEFAULT_CONFIG,
@@ -729,7 +728,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'tracemalloc': 2,
             'import_time': 1,
             'show_ref_count': 1,
-            'malloc_stats': 1,
             '_use_peg_parser': 0,
 
             'stdio_encoding': 'iso8859-1',
@@ -782,7 +780,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 42,
             'tracemalloc': 2,
             'import_time': 1,
-            'malloc_stats': 1,
             'inspect': 1,
             'optimization_level': 2,
             'pythonpath_env': '/my/path',
@@ -810,7 +807,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 42,
             'tracemalloc': 2,
             'import_time': 1,
-            'malloc_stats': 1,
             'inspect': 1,
             'optimization_level': 2,
             'pythonpath_env': '/my/path',

@@ -1998,15 +1998,6 @@ _PyFloat_Fini(void)
     _PyFloat_ClearFreeList();
 }
 
-/* Print summary info about the state of the optimized allocator */
-void
-_PyFloat_DebugMallocStats(FILE *out)
-{
-    _PyDebugAllocatorStats(out,
-                           "free PyFloatObject",
-                           numfree, sizeof(PyFloatObject));
-}
-
 
 /*----------------------------------------------------------------------------
  * _PyFloat_{Pack,Unpack}{2,4,8}.  See floatobject.h.
