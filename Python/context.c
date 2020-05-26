@@ -1,10 +1,12 @@
 #include "Python.h"
 
 #include "pycore_context.h"
+#include "pycore_gc.h"            // _PyObject_GC_MAY_BE_TRACKED()
 #include "pycore_hamt.h"
 #include "pycore_object.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_pyerrors.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "structmember.h"         // PyMemberDef
 
 
 #define CONTEXT_FREELIST_MAXLEN 255
@@ -101,20 +103,17 @@ PyContext_CopyCurrent(void)
 }
 
 
-int
-PyContext_Enter(PyObject *octx)
+static int
+_PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
 
     if (ctx->ctx_entered) {
-        PyErr_Format(PyExc_RuntimeError,
-                     "cannot enter context: %R is already entered", ctx);
+        _PyErr_Format(ts, PyExc_RuntimeError,
+                      "cannot enter context: %R is already entered", ctx);
         return -1;
     }
-
-    PyThreadState *ts = _PyThreadState_GET();
-    assert(ts != NULL);
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
     ctx->ctx_entered = 1;
@@ -128,7 +127,16 @@ PyContext_Enter(PyObject *octx)
 
 
 int
-PyContext_Exit(PyObject *octx)
+PyContext_Enter(PyObject *octx)
+{
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts != NULL);
+    return _PyContext_Enter(ts, octx);
+}
+
+
+static int
+_PyContext_Exit(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
@@ -138,9 +146,6 @@ PyContext_Exit(PyObject *octx)
                      "cannot exit context: %R has not been entered", ctx);
         return -1;
     }
-
-    PyThreadState *ts = _PyThreadState_GET();
-    assert(ts != NULL);
 
     if (ts->context != (PyObject *)ctx) {
         /* Can only happen if someone misuses the C API */
@@ -157,6 +162,14 @@ PyContext_Exit(PyObject *octx)
     ctx->ctx_entered = 0;
 
     return 0;
+}
+
+int
+PyContext_Exit(PyObject *octx)
+{
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts != NULL);
+    return _PyContext_Exit(ts, octx);
 }
 
 
@@ -621,20 +634,22 @@ static PyObject *
 context_run(PyContext *self, PyObject *const *args,
             Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyThreadState *ts = _PyThreadState_GET();
+
     if (nargs < 1) {
-        PyErr_SetString(PyExc_TypeError,
-                        "run() missing 1 required positional argument");
+        _PyErr_SetString(ts, PyExc_TypeError,
+                         "run() missing 1 required positional argument");
         return NULL;
     }
 
-    if (PyContext_Enter((PyObject *)self)) {
+    if (_PyContext_Enter(ts, (PyObject *)self)) {
         return NULL;
     }
 
-    PyObject *call_result = _PyObject_Vectorcall(
-        args[0], args + 1, nargs - 1, kwnames);
+    PyObject *call_result = _PyObject_VectorcallTstate(
+        ts, args[0], args + 1, nargs - 1, kwnames);
 
-    if (PyContext_Exit((PyObject *)self)) {
+    if (_PyContext_Exit(ts, (PyObject *)self)) {
         return NULL;
     }
 
@@ -1009,12 +1024,6 @@ _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
 }
 
 
-static PyObject *
-contextvar_cls_getitem(PyObject *self, PyObject *args)
-{
-    Py_RETURN_NONE;
-}
-
 static PyMemberDef PyContextVar_members[] = {
     {"name", T_OBJECT, offsetof(PyContextVar, var_name), READONLY},
     {NULL}
@@ -1024,8 +1033,8 @@ static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_GET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF
-    {"__class_getitem__", contextvar_cls_getitem,
-        METH_VARARGS | METH_STATIC, NULL},
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}
 };
 
@@ -1164,10 +1173,17 @@ static PyGetSetDef PyContextTokenType_getsetlist[] = {
     {NULL}
 };
 
+static PyMethodDef PyContextTokenType_methods[] = {
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    {NULL}
+};
+
 PyTypeObject PyContextToken_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "Token",
     sizeof(PyContextToken),
+    .tp_methods = PyContextTokenType_methods,
     .tp_getset = PyContextTokenType_getsetlist,
     .tp_dealloc = (destructor)token_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
@@ -1254,18 +1270,15 @@ get_token_missing(void)
 ///////////////////////////
 
 
-int
-PyContext_ClearFreeList(void)
+void
+_PyContext_ClearFreeList(void)
 {
-    int size = ctx_freelist_len;
-    while (ctx_freelist_len) {
+    for (; ctx_freelist_len; ctx_freelist_len--) {
         PyContext *ctx = ctx_freelist;
         ctx_freelist = (PyContext *)ctx->ctx_weakreflist;
         ctx->ctx_weakreflist = NULL;
         PyObject_GC_Del(ctx);
-        ctx_freelist_len--;
     }
-    return size;
 }
 
 
@@ -1273,8 +1286,8 @@ void
 _PyContext_Fini(void)
 {
     Py_CLEAR(_token_missing);
-    (void)PyContext_ClearFreeList();
-    (void)_PyHamt_Fini();
+    _PyContext_ClearFreeList();
+    _PyHamt_Fini();
 }
 
 

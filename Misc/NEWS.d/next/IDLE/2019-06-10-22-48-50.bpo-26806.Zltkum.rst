@@ -1,4 +1,0 @@
-To compensate for stack frames added by IDLE and avoid possible problems
-with low recursion limits, add 30 to limits in the user code execution
-process.  Subtract 30 when reporting recursion limits to make this addition
-mostly transparent.

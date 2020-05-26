@@ -1,6 +1,6 @@
 <#
 .Synopsis
-Activate a Python virtual environment for the current Powershell session.
+Activate a Python virtual environment for the current PowerShell session.
 
 .Description
 Pushes the python executable for a virtual environment to the front of the
@@ -37,6 +37,15 @@ Activates the Python virtual environment that contains the Activate.ps1 script,
 and prefixes the current prompt with the specified string (surrounded in
 parentheses) while the virtual environment is active.
 
+.Notes
+On Windows, it may be required to enable this Activate.ps1 script by setting the
+execution policy for the user. You can do this by issuing the following PowerShell
+command:
+
+PS C:\> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+For more information on Execution Policies: 
+https://go.microsoft.com/fwlink/?LinkID=135170
 
 #>
 Param(
@@ -137,7 +146,7 @@ function Get-PyVenvConfig(
                 $val = $keyval[1]
 
                 # Remove extraneous quotations around a string value.
-                if ("'""".Contains($val.Substring(0,1))) {
+                if ("'""".Contains($val.Substring(0, 1))) {
                     $val = $val.Substring(1, $val.Length - 2)
                 }
 
@@ -165,10 +174,10 @@ Write-Verbose "VenvExecDir Name: '$($VenvExecDir.Name)"
 # VenvExecDir if specified on the command line.
 if ($VenvDir) {
     Write-Verbose "VenvDir given as parameter, using '$VenvDir' to determine values"
-} else {
+}
+else {
     Write-Verbose "VenvDir not given as a parameter, using parent directory name as VenvDir."
     $VenvDir = $VenvExecDir.Parent.FullName.TrimEnd("\\/")
-    $VenvDir = $VenvDir.Insert($VenvDir.Length, "/")
     Write-Verbose "VenvDir=$VenvDir"
 }
 
@@ -180,7 +189,8 @@ $pyvenvCfg = Get-PyVenvConfig -ConfigDir $VenvDir
 # just use the name of the virtual environment folder.
 if ($Prompt) {
     Write-Verbose "Prompt specified as argument, using '$Prompt'"
-} else {
+}
+else {
     Write-Verbose "Prompt not specified as argument to script, checking pyvenv.cfg value"
     if ($pyvenvCfg -and $pyvenvCfg['prompt']) {
         Write-Verbose "  Setting based on value in pyvenv.cfg='$($pyvenvCfg['prompt'])'"

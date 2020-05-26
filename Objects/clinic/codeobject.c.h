@@ -11,7 +11,7 @@ PyDoc_STRVAR(code_replace__doc__,
 "        co_lnotab=None)\n"
 "--\n"
 "\n"
-"Return a new code object with new specified fields.");
+"Return a copy of the code object with new values for the specified fields.");
 
 #define CODE_REPLACE_METHODDEF    \
     {"replace", (PyCFunction)(void(*)(void))code_replace, METH_FASTCALL|METH_KEYWORDS, code_replace__doc__},
@@ -218,4 +218,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a5bf162f987cb7f3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f9f23e912a3955b9 input=a9049054013a1b77]*/

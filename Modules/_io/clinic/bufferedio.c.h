@@ -553,7 +553,7 @@ _io_BufferedRWPair___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *writer;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
-    if ((Py_TYPE(self) == &PyBufferedRWPair_Type) &&
+    if (Py_IS_TYPE(self, &PyBufferedRWPair_Type) &&
         !_PyArg_NoKeywords("BufferedRWPair", kwargs)) {
         goto exit;
     }
@@ -637,4 +637,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=056db07ecd9fdec4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1882bb497ddc9375 input=a9049054013a1b77]*/

@@ -8,7 +8,7 @@
    Check itemsize */
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #define WINDOWS_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -500,7 +500,8 @@ overlapped_FormatMessage(PyObject *ignore, PyObject *args)
         return NULL;
 
     n = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                       FORMAT_MESSAGE_FROM_SYSTEM,
+                       FORMAT_MESSAGE_FROM_SYSTEM |
+                       FORMAT_MESSAGE_IGNORE_INSERTS,
                        NULL,
                        code,
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -669,7 +670,6 @@ make_ipv4_addr(const struct sockaddr_in *addr)
         return PyUnicode_FromString(buf);
 }
 
-#ifdef ENABLE_IPV6
 /* Convert IPv6 sockaddr to a Python str. */
 
 static PyObject *
@@ -682,7 +682,6 @@ make_ipv6_addr(const struct sockaddr_in6 *addr)
         }
         return PyUnicode_FromString(buf);
 }
-#endif
 
 static PyObject*
 unparse_address(LPSOCKADDR Address, DWORD Length)
@@ -700,7 +699,6 @@ unparse_address(LPSOCKADDR Address, DWORD Length)
             }
             return ret;
         }
-#ifdef ENABLE_IPV6
         case AF_INET6: {
             const struct sockaddr_in6 *a = (const struct sockaddr_in6 *)Address;
             PyObject *addrobj = make_ipv6_addr(a);
@@ -715,9 +713,9 @@ unparse_address(LPSOCKADDR Address, DWORD Length)
             }
             return ret;
         }
-#endif /* ENABLE_IPV6 */
         default: {
-            return SetFromWindowsErr(ERROR_INVALID_PARAMETER);
+            PyErr_SetString(PyExc_ValueError, "recvfrom returned unsupported address family");
+            return NULL;
         }
     }
 }
@@ -1859,12 +1857,10 @@ PyInit__overlapped(void)
     if (initialize_function_pointers() < 0)
         return NULL;
 
-    if (PyType_Ready(&OverlappedType) < 0)
-        return NULL;
-
     m = PyModule_Create(&overlapped_module);
-    if (PyModule_AddObject(m, "Overlapped", (PyObject *)&OverlappedType) < 0)
+    if (PyModule_AddType(m, &OverlappedType) < 0) {
         return NULL;
+    }
 
     d = PyModule_GetDict(m);
 

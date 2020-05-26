@@ -1,1 +1,0 @@
-IDLE Settings dialog now closes properly when there is no shell window.

@@ -48,6 +48,26 @@ class NFA:
                 else:
                     writer("    %s -> %d" % (label, j))
 
+    def dump_graph(self, writer):
+        """Dump a DOT representation of the NFA"""
+        writer('digraph %s_nfa {\n' % self.name)
+        todo = [self.start]
+        for i, state in enumerate(todo):
+            writer(' %d [label="State %d %s"];\n' % (i, i, state is self.end and "(final)" or ""))
+            for arc in state.arcs:
+                label = arc.label
+                next = arc.target
+                if next in todo:
+                    j = todo.index(next)
+                else:
+                    j = len(todo)
+                    todo.append(next)
+                if label is None:
+                    writer(" %d -> %d [style=dotted label=ε];\n" % (i, j))
+                else:
+                    writer(" %d -> %d [label=%s];\n" % (i, j, label.replace("'", '"')))
+        writer('}\n')
+
 
 class NFAArc:
     """An arc representing a transition between two NFA states.
@@ -216,7 +236,7 @@ class DFA:
                 if nfa_arc.label is None:
                     add_closure(nfa_arc.target, base_nfa_set)
 
-        # Calculte the epsilon-closure of the starting state
+        # Calculate the epsilon-closure of the starting state
         base_nfa_set = set()
         add_closure(nfa.start, base_nfa_set)
 
@@ -242,7 +262,7 @@ class DFA:
             # Now create new DFAs by visiting all posible transitions between
             # the current DFA state and the new power-set states (each nfa_set)
             # via the different labels. As the nodes are appended to *states* this
-            # is performing a deep-first search traversal over the power-set of
+            # is performing a breadth-first search traversal over the power-set of
             # the states of the original NFA.
             for label, nfa_set in sorted(arcs.items()):
                 for exisisting_state in states:
@@ -300,6 +320,15 @@ class DFA:
             writer("  State", i, state.is_final and "(final)" or "")
             for label, next in sorted(state.arcs.items()):
                 writer("    %s -> %d" % (label, self.states.index(next)))
+
+    def dump_graph(self, writer):
+        """Dump a DOT representation of the DFA"""
+        writer('digraph %s_dfa {\n' % self.name)
+        for i, state in enumerate(self.states):
+            writer(' %d [label="State %d %s"];\n' % (i, i, state.is_final and "(final)" or ""))
+            for label, next in sorted(state.arcs.items()):
+                writer(" %d -> %d [label=%s];\n" % (i, self.states.index(next), label.replace("'", '"')))
+        writer('}\n')
 
 
 class DFAState(object):

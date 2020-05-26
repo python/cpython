@@ -294,6 +294,15 @@ PyDoc_STRVAR(gc_is_tracked__doc__,
 #define GC_IS_TRACKED_METHODDEF    \
     {"is_tracked", (PyCFunction)gc_is_tracked, METH_O, gc_is_tracked__doc__},
 
+PyDoc_STRVAR(gc_is_finalized__doc__,
+"is_finalized($module, obj, /)\n"
+"--\n"
+"\n"
+"Returns true if the object has been already finalized by the GC.");
+
+#define GC_IS_FINALIZED_METHODDEF    \
+    {"is_finalized", (PyCFunction)gc_is_finalized, METH_O, gc_is_finalized__doc__},
+
 PyDoc_STRVAR(gc_freeze__doc__,
 "freeze($module, /)\n"
 "--\n"
@@ -363,4 +372,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=529edb510745486e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=61e15f3a549f3ab5 input=a9049054013a1b77]*/

@@ -566,8 +566,8 @@ _ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject *const *args, Py_s
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *certfile;
-    PyObject *keyfile = NULL;
-    PyObject *password = NULL;
+    PyObject *keyfile = Py_None;
+    PyObject *password = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
     if (!args) {
@@ -613,9 +613,9 @@ _ssl__SSLContext_load_verify_locations(PySSLContext *self, PyObject *const *args
     static _PyArg_Parser _parser = {NULL, _keywords, "load_verify_locations", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *cafile = NULL;
-    PyObject *capath = NULL;
-    PyObject *cadata = NULL;
+    PyObject *cafile = Py_None;
+    PyObject *capath = Py_None;
+    PyObject *cadata = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
@@ -1447,4 +1447,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=54e46546eda286a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4e4f9cdd08819f4 input=a9049054013a1b77]*/

@@ -23,6 +23,12 @@ All Platforms
 Windows
 =======
 
+**Source code:** :source:`Lib/asyncio/proactor_events.py`,
+:source:`Lib/asyncio/windows_events.py`,
+:source:`Lib/asyncio/windows_utils.py`
+
+--------------------------------------
+
 .. versionchanged:: 3.8
 
    On Windows, :class:`ProactorEventLoop` is now the default event loop.

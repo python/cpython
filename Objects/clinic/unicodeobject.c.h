@@ -567,7 +567,7 @@ PyDoc_STRVAR(unicode_strip__doc__,
 "strip($self, chars=None, /)\n"
 "--\n"
 "\n"
-"Return a copy of the string with leading and trailing whitespace remove.\n"
+"Return a copy of the string with leading and trailing whitespace removed.\n"
 "\n"
 "If chars is given and not None, remove characters in chars instead.");
 
@@ -615,7 +615,7 @@ static PyObject *
 unicode_lstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *chars = NULL;
+    PyObject *chars = Py_None;
 
     if (!_PyArg_CheckPositional("lstrip", nargs, 0, 1)) {
         goto exit;
@@ -649,7 +649,7 @@ static PyObject *
 unicode_rstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *chars = NULL;
+    PyObject *chars = Py_None;
 
     if (!_PyArg_CheckPositional("rstrip", nargs, 0, 1)) {
         goto exit;
@@ -729,6 +729,77 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
 skip_optional:
     return_value = unicode_replace_impl(self, old, new, count);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_removeprefix__doc__,
+"removeprefix($self, prefix, /)\n"
+"--\n"
+"\n"
+"Return a str with the given prefix string removed if present.\n"
+"\n"
+"If the string starts with the prefix string, return string[len(prefix):].\n"
+"Otherwise, return a copy of the original string.");
+
+#define UNICODE_REMOVEPREFIX_METHODDEF    \
+    {"removeprefix", (PyCFunction)unicode_removeprefix, METH_O, unicode_removeprefix__doc__},
+
+static PyObject *
+unicode_removeprefix_impl(PyObject *self, PyObject *prefix);
+
+static PyObject *
+unicode_removeprefix(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *prefix;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("removeprefix", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    prefix = arg;
+    return_value = unicode_removeprefix_impl(self, prefix);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_removesuffix__doc__,
+"removesuffix($self, suffix, /)\n"
+"--\n"
+"\n"
+"Return a str with the given suffix string removed if present.\n"
+"\n"
+"If the string ends with the suffix string and that suffix is not empty,\n"
+"return string[:-len(suffix)]. Otherwise, return a copy of the original\n"
+"string.");
+
+#define UNICODE_REMOVESUFFIX_METHODDEF    \
+    {"removesuffix", (PyCFunction)unicode_removesuffix, METH_O, unicode_removesuffix__doc__},
+
+static PyObject *
+unicode_removesuffix_impl(PyObject *self, PyObject *suffix);
+
+static PyObject *
+unicode_removesuffix(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *suffix;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("removesuffix", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    suffix = arg;
+    return_value = unicode_removesuffix_impl(self, suffix);
 
 exit:
     return return_value;
@@ -1005,7 +1076,7 @@ unicode_swapcase(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(unicode_maketrans__doc__,
-"maketrans(x, y=None, z=None, /)\n"
+"maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return a translation table usable for str.translate().\n"
@@ -1187,4 +1258,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=b8b299486f76cdf0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea1aff10c743be14 input=a9049054013a1b77]*/

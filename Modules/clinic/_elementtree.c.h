@@ -510,6 +510,10 @@ _elementtree_Element_makeelement(ElementObject *self, PyObject *const *args, Py_
         goto exit;
     }
     tag = args[0];
+    if (!PyDict_Check(args[1])) {
+        _PyArg_BadArgument("makeelement", "argument 2", "dict", args[1]);
+        goto exit;
+    }
     attrib = args[1];
     return_value = _elementtree_Element_makeelement_impl(self, tag, attrib);
 
@@ -592,9 +596,9 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *element_factory = NULL;
-    PyObject *comment_factory = NULL;
-    PyObject *pi_factory = NULL;
+    PyObject *element_factory = Py_None;
+    PyObject *comment_factory = Py_None;
+    PyObject *pi_factory = Py_None;
     int insert_comments = 0;
     int insert_pis = 0;
 
@@ -756,7 +760,7 @@ _elementtree_TreeBuilder_close(TreeBuilderObject *self, PyObject *Py_UNUSED(igno
 }
 
 PyDoc_STRVAR(_elementtree_TreeBuilder_start__doc__,
-"start($self, tag, attrs=None, /)\n"
+"start($self, tag, attrs, /)\n"
 "--\n"
 "\n");
 
@@ -772,17 +776,17 @@ _elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *const *args, P
 {
     PyObject *return_value = NULL;
     PyObject *tag;
-    PyObject *attrs = Py_None;
+    PyObject *attrs;
 
-    if (!_PyArg_CheckPositional("start", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional("start", nargs, 2, 2)) {
         goto exit;
     }
     tag = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
+    if (!PyDict_Check(args[1])) {
+        _PyArg_BadArgument("start", "argument 2", "dict", args[1]);
+        goto exit;
     }
     attrs = args[1];
-skip_optional:
     return_value = _elementtree_TreeBuilder_start_impl(self, tag, attrs);
 
 exit:
@@ -911,4 +915,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1f62c5727383a9bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c98b210c525a9338 input=a9049054013a1b77]*/

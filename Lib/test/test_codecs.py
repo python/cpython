@@ -11,7 +11,7 @@ from test import support
 
 try:
     import _testcapi
-except ImportError as exc:
+except ImportError:
     _testcapi = None
 
 try:
@@ -1142,6 +1142,7 @@ class UTF8SigTest(UTF8Test, unittest.TestCase):
             got = ostream.getvalue()
             self.assertEqual(got, unistring)
 
+
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(codecs.escape_decode(b""), (b"", 0))
@@ -1330,6 +1331,18 @@ class PunycodeTest(unittest.TestCase):
             self.assertEqual(uni, puny.decode("punycode"))
             puny = puny.decode("ascii").encode("ascii")
             self.assertEqual(uni, puny.decode("punycode"))
+
+    def test_decode_invalid(self):
+        testcases = [
+            (b"xn--w&", "strict", UnicodeError()),
+            (b"xn--w&", "ignore", "xn-"),
+        ]
+        for puny, errors, expected in testcases:
+            with self.subTest(puny=puny, errors=errors):
+                if isinstance(expected, Exception):
+                    self.assertRaises(UnicodeError, puny.decode, "punycode", errors)
+                else:
+                    self.assertEqual(puny.decode("punycode", errors), expected)
 
 
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
@@ -1700,6 +1713,14 @@ class CodecsModuleTest(unittest.TestCase):
                 codecs.encode, 'abc', 'undefined', errors)
             self.assertRaises(UnicodeError,
                 codecs.decode, b'abc', 'undefined', errors)
+
+    def test_file_closes_if_lookup_error_raised(self):
+        mock_open = mock.mock_open()
+        with mock.patch('builtins.open', mock_open) as file:
+            with self.assertRaises(LookupError):
+                codecs.open(support.TESTFN, 'wt', 'invalid-encoding')
+
+            file().close.assert_called()
 
 
 class StreamReaderTest(unittest.TestCase):
@@ -3341,6 +3362,43 @@ class LocaleCodecTest(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             self.decode(b'', 'backslashreplace')
         self.assertEqual(str(cm.exception), 'unsupported error handler')
+
+
+class Rot13Test(unittest.TestCase):
+    """Test the educational ROT-13 codec."""
+    def test_encode(self):
+        ciphertext = codecs.encode("Caesar liked ciphers", 'rot-13')
+        self.assertEqual(ciphertext, 'Pnrfne yvxrq pvcuref')
+
+    def test_decode(self):
+        plaintext = codecs.decode('Rg gh, Oehgr?', 'rot-13')
+        self.assertEqual(plaintext, 'Et tu, Brute?')
+
+    def test_incremental_encode(self):
+        encoder = codecs.getincrementalencoder('rot-13')()
+        ciphertext = encoder.encode('ABBA nag Cheryl Baker')
+        self.assertEqual(ciphertext, 'NOON ant Purely Onxre')
+
+    def test_incremental_decode(self):
+        decoder = codecs.getincrementaldecoder('rot-13')()
+        plaintext = decoder.decode('terra Ares envy tha')
+        self.assertEqual(plaintext, 'green Nerf rail gun')
+
+
+class Rot13UtilTest(unittest.TestCase):
+    """Test the ROT-13 codec via rot13 function,
+    i.e. the user has done something like:
+    $ echo "Hello World" | python -m encodings.rot_13
+    """
+    def test_rot13_func(self):
+        infile = io.StringIO('Gb or, be abg gb or, gung vf gur dhrfgvba')
+        outfile = io.StringIO()
+        encodings.rot_13.rot13(infile, outfile)
+        outfile.seek(0)
+        plain_text = outfile.read()
+        self.assertEqual(
+            plain_text,
+            'To be, or not to be, that is the question')
 
 
 if __name__ == "__main__":

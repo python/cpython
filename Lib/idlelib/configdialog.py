@@ -11,7 +11,7 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 import re
 
-from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
+from tkinter import (Toplevel, Listbox, Scale, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
@@ -149,17 +149,19 @@ class ConfigDialog(Toplevel):
         else:
             padding_args = {'padding': (6, 3)}
         outer = Frame(self, padding=2)
-        buttons = Frame(outer, padding=2)
+        buttons_frame = Frame(outer, padding=2)
+        self.buttons = {}
         for txt, cmd in (
             ('Ok', self.ok),
             ('Apply', self.apply),
             ('Cancel', self.cancel),
             ('Help', self.help)):
-            Button(buttons, text=txt, command=cmd, takefocus=FALSE,
-                   **padding_args).pack(side=LEFT, padx=5)
+            self.buttons[txt] = Button(buttons_frame, text=txt, command=cmd,
+                       takefocus=FALSE, **padding_args)
+            self.buttons[txt].pack(side=LEFT, padx=5)
         # Add space above buttons.
         Frame(outer, height=2, borderwidth=0).pack(side=TOP)
-        buttons.pack(side=BOTTOM)
+        buttons_frame.pack(side=BOTTOM)
         return outer
 
     def ok(self):
@@ -191,6 +193,7 @@ class ConfigDialog(Toplevel):
         Methods:
             destroy: inherited
         """
+        changes.clear()
         self.destroy()
 
     def destroy(self):
@@ -204,13 +207,12 @@ class ConfigDialog(Toplevel):
 
         Attributes accessed:
             note
-
         Methods:
             view_text: Method from textview module.
         """
         page = self.note.tab(self.note.select(), option='text').strip()
         view_text(self, title='Help for IDLE preferences',
-                 text=help_common+help_pages.get(page, ''))
+                  contents=help_common+help_pages.get(page, ''))
 
     def deactivate_current_config(self):
         """Remove current key bindings.
@@ -236,6 +238,7 @@ class ConfigDialog(Toplevel):
             instance.set_notabs_indentwidth()
             instance.ApplyKeybindings()
             instance.reset_help_menu_entries()
+            instance.update_cursor_blink()
         for klass in reloadables:
             klass.reload()
 
@@ -603,9 +606,8 @@ class FontPage(Frame):
         font_size = configured_font[1]
         font_bold  = configured_font[2]=='bold'
 
-        # Set editor font selection list and font_name.
-        fonts = list(tkFont.families(self))
-        fonts.sort()
+        # Set sorted no-duplicate editor font selection list and font_name.
+        fonts = sorted(set(tkFont.families(self)))
         for font in fonts:
             self.fontlist.insert(END, font)
         self.font_name.set(font_name)
@@ -850,6 +852,7 @@ class HighPage(Frame):
         text.configure(
                 font=('courier', 12, ''), cursor='hand2', width=1, height=1,
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
+        # Prevent perhaps invisible selection of word or slice.
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
         string_tags=(
@@ -1282,8 +1285,7 @@ class HighPage(Frame):
         theme_name - string, the name of the new theme
         theme - dictionary containing the new theme
         """
-        if not idleConf.userCfg['highlight'].has_section(theme_name):
-            idleConf.userCfg['highlight'].add_section(theme_name)
+        idleConf.userCfg['highlight'].AddSection(theme_name)
         for element in theme:
             value = theme[element]
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
@@ -1728,8 +1730,7 @@ class KeysPage(Frame):
         keyset_name - string, the name of the new key set
         keyset - dictionary containing the new keybindings
         """
-        if not idleConf.userCfg['keys'].has_section(keyset_name):
-            idleConf.userCfg['keys'].add_section(keyset_name)
+        idleConf.userCfg['keys'].AddSection(keyset_name)
         for event in keyset:
             value = keyset[event]
             idleConf.userCfg['keys'].SetOption(keyset_name, event, value)
@@ -1820,6 +1821,9 @@ class GenPage(Frame):
                     (*)win_width_int: Entry - win_width
                     win_height_title: Label
                     (*)win_height_int: Entry - win_height
+                frame_cursor_blink: Frame
+                    cursor_blink_title: Label
+                    (*)cursor_blink_bool: Checkbutton - cursor_blink
                 frame_autocomplete: Frame
                     auto_wait_title: Label
                     (*)auto_wait_int: Entry - autocomplete_wait
@@ -1864,6 +1868,8 @@ class GenPage(Frame):
                 StringVar(self), ('main', 'EditorWindow', 'width'))
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
+        self.cursor_blink = tracers.add(
+                BooleanVar(self), ('main', 'EditorWindow', 'cursor-blink'))
         self.autocomplete_wait = tracers.add(
                 StringVar(self), ('extensions', 'AutoComplete', 'popupwait'))
         self.paren_style = tracers.add(
@@ -1919,6 +1925,11 @@ class GenPage(Frame):
                 frame_win_size, textvariable=self.win_height, width=3,
                 validatecommand=self.digits_only, validate='key',
         )
+
+        frame_cursor_blink = Frame(frame_window, borderwidth=0)
+        cursor_blink_title = Label(frame_cursor_blink, text='Cursor Blink')
+        self.cursor_blink_bool = Checkbutton(frame_cursor_blink,
+                variable=self.cursor_blink, width=1)
 
         frame_autocomplete = Frame(frame_window, borderwidth=0,)
         auto_wait_title = Label(frame_autocomplete,
@@ -2024,6 +2035,10 @@ class GenPage(Frame):
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
         self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        # frame_cursor_blink.
+        frame_cursor_blink.pack(side=TOP, padx=5, pady=0, fill=X)
+        cursor_blink_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.cursor_blink_bool.pack(side=LEFT, padx=5, pady=5)
         # frame_autocomplete.
         frame_autocomplete.pack(side=TOP, padx=5, pady=0, fill=X)
         auto_wait_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -2078,6 +2093,8 @@ class GenPage(Frame):
                 'main', 'EditorWindow', 'width', type='int'))
         self.win_height.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'height', type='int'))
+        self.cursor_blink.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'cursor-blink', type='bool'))
         self.autocomplete_wait.set(idleConf.GetOption(
                 'extensions', 'AutoComplete', 'popupwait', type='int'))
         self.paren_style.set(idleConf.GetOption(

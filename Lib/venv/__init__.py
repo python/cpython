@@ -51,6 +51,8 @@ class EnvBuilder:
         self.symlinks = symlinks
         self.upgrade = upgrade
         self.with_pip = with_pip
+        if prompt == '.':  # see bpo-38901
+            prompt = os.path.basename(os.getcwd())
         self.prompt = prompt
         self.upgrade_deps = upgrade_deps
 
@@ -241,7 +243,7 @@ class EnvBuilder:
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
-            for suffix in ('python', 'python3'):
+            for suffix in ('python', 'python3', f'python3.{sys.version_info[1]}'):
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
                     # Issue 18807: make copies if
@@ -393,10 +395,10 @@ class EnvBuilder:
             f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
         )
         if sys.platform == 'win32':
-            pip_exe = os.path.join(context.bin_path, 'pip.exe')
+            python_exe = os.path.join(context.bin_path, 'python.exe')
         else:
-            pip_exe = os.path.join(context.bin_path, 'pip')
-        cmd = [pip_exe, 'install', '-U']
+            python_exe = os.path.join(context.bin_path, 'python')
+        cmd = [python_exe, '-m', 'pip', 'install', '--upgrade']
         cmd.extend(CORE_VENV_DEPS)
         subprocess.check_call(cmd)
 

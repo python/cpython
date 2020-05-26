@@ -8,8 +8,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"
-#include "pythread.h"
+#include "structmember.h"         // PyMemberDef
 
 #include <stdarg.h>
 #include <string.h>
@@ -212,10 +211,9 @@ parse_filter_spec_lzma(PyObject *spec)
             return NULL;
     }
 
-    options = (lzma_options_lzma *)PyMem_Malloc(sizeof *options);
+    options = (lzma_options_lzma *)PyMem_Calloc(1, sizeof *options);
     if (options == NULL)
         return PyErr_NoMemory();
-    memset(options, 0, sizeof *options);
 
     if (lzma_lzma_preset(options, preset)) {
         PyMem_Free(options);
@@ -257,10 +255,9 @@ parse_filter_spec_delta(PyObject *spec)
         return NULL;
     }
 
-    options = (lzma_options_delta *)PyMem_Malloc(sizeof *options);
+    options = (lzma_options_delta *)PyMem_Calloc(1, sizeof *options);
     if (options == NULL)
         return PyErr_NoMemory();
-    memset(options, 0, sizeof *options);
     options->type = LZMA_DELTA_TYPE_BYTE;
     options->dist = dist;
     return options;
@@ -281,10 +278,9 @@ parse_filter_spec_bcj(PyObject *spec)
         return NULL;
     }
 
-    options = (lzma_options_bcj *)PyMem_Malloc(sizeof *options);
+    options = (lzma_options_bcj *)PyMem_Calloc(1, sizeof *options);
     if (options == NULL)
         return PyErr_NoMemory();
-    memset(options, 0, sizeof *options);
     options->start_offset = start_offset;
     return options;
 }
@@ -872,9 +868,6 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
     PyObject *result;
     lzma_stream *lzs = &d->lzs;
 
-    if (lzs->avail_in == 0)
-        return PyBytes_FromStringAndSize(NULL, 0);
-
     if (max_length < 0 || max_length >= INITIAL_BUFFER_SIZE)
         result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
     else
@@ -891,7 +884,10 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
         Py_BEGIN_ALLOW_THREADS
         lzret = lzma_code(lzs, LZMA_RUN);
         data_size = (char *)lzs->next_out - PyBytes_AS_STRING(result);
+        if (lzret == LZMA_BUF_ERROR && lzs->avail_in == 0 && lzs->avail_out > 0)
+            lzret = LZMA_OK; /* That wasn't a real error */
         Py_END_ALLOW_THREADS
+
         if (catch_lzma_error(lzret))
             goto error;
         if (lzret == LZMA_GET_CHECK || lzret == LZMA_NO_CHECK)
@@ -899,15 +895,19 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
         if (lzret == LZMA_STREAM_END) {
             d->eof = 1;
             break;
-        } else if (lzs->avail_in == 0) {
-            break;
         } else if (lzs->avail_out == 0) {
+            /* Need to check lzs->avail_out before lzs->avail_in.
+               Maybe lzs's internal state still have a few bytes
+               can be output, grow the output buffer and continue
+               if max_lengh < 0. */
             if (data_size == max_length)
                 break;
             if (grow_buffer(&result, max_length) == -1)
                 goto error;
             lzs->next_out = (uint8_t *)PyBytes_AS_STRING(result) + data_size;
             lzs->avail_out = PyBytes_GET_SIZE(result) - data_size;
+        } else if (lzs->avail_in == 0) {
+            break;
         }
     }
     if (data_size != PyBytes_GET_SIZE(result))
@@ -990,7 +990,19 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     }
     else if (lzs->avail_in == 0) {
         lzs->next_in = NULL;
-        d->needs_input = 1;
+
+        if (lzs->avail_out == 0) {
+            /* (avail_in==0 && avail_out==0)
+               Maybe lzs's internal state still have a few bytes can
+               be output, try to output them next time. */
+            d->needs_input = 0;
+
+            /* if max_length < 0, lzs->avail_out always > 0 */
+            assert(max_length >= 0);
+        } else {
+            /* Input buffer exhausted, output buffer has space. */
+            d->needs_input = 1;
+        }
     }
     else {
         d->needs_input = 0;
@@ -1470,19 +1482,13 @@ PyInit__lzma(void)
     if (PyModule_AddObject(m, "LZMAError", Error) == -1)
         return NULL;
 
-    if (PyType_Ready(&Compressor_type) == -1)
+    if (PyModule_AddType(m, &Compressor_type) < 0) {
         return NULL;
-    Py_INCREF(&Compressor_type);
-    if (PyModule_AddObject(m, "LZMACompressor",
-                           (PyObject *)&Compressor_type) == -1)
-        return NULL;
+    }
 
-    if (PyType_Ready(&Decompressor_type) == -1)
+    if (PyModule_AddType(m, &Decompressor_type) < 0) {
         return NULL;
-    Py_INCREF(&Decompressor_type);
-    if (PyModule_AddObject(m, "LZMADecompressor",
-                           (PyObject *)&Decompressor_type) == -1)
-        return NULL;
+    }
 
     return m;
 }

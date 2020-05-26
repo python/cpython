@@ -804,6 +804,9 @@ class _BufferedIOMixin(BufferedIOBase):
         return pos
 
     def truncate(self, pos=None):
+        self._checkClosed()
+        self._checkWritable()
+
         # Flush the stream.  We're mixing buffered I/O with lower-level I/O,
         # and a flush may be necessary to synch both views of the current
         # file state.
@@ -1589,7 +1592,11 @@ class FileIO(RawIOBase):
                 # For consistent behaviour, we explicitly seek to the
                 # end of file (otherwise, it might be done only on the
                 # first write()).
-                os.lseek(fd, 0, SEEK_END)
+                try:
+                    os.lseek(fd, 0, SEEK_END)
+                except OSError as e:
+                    if e.errno != errno.ESPIPE:
+                        raise
         except:
             if owned_fd is not None:
                 os.close(owned_fd)
@@ -2295,7 +2302,7 @@ class TextIOWrapper(TextIOBase):
         return not eof
 
     def _pack_cookie(self, position, dec_flags=0,
-                           bytes_to_feed=0, need_eof=0, chars_to_skip=0):
+                           bytes_to_feed=0, need_eof=False, chars_to_skip=0):
         # The meaning of a tell() cookie is: seek to position, set the
         # decoder flags to dec_flags, read bytes_to_feed bytes, feed them
         # into the decoder with need_eof as the EOF flag, then skip
@@ -2309,7 +2316,7 @@ class TextIOWrapper(TextIOBase):
         rest, dec_flags = divmod(rest, 1<<64)
         rest, bytes_to_feed = divmod(rest, 1<<64)
         need_eof, chars_to_skip = divmod(rest, 1<<64)
-        return position, dec_flags, bytes_to_feed, need_eof, chars_to_skip
+        return position, dec_flags, bytes_to_feed, bool(need_eof), chars_to_skip
 
     def tell(self):
         if not self._seekable:
@@ -2383,7 +2390,7 @@ class TextIOWrapper(TextIOBase):
             # (a point where the decoder has nothing buffered, so seek()
             # can safely start from there and advance to this location).
             bytes_fed = 0
-            need_eof = 0
+            need_eof = False
             # Chars decoded since `start_pos`
             chars_decoded = 0
             for i in range(skip_bytes, len(next_input)):
@@ -2400,7 +2407,7 @@ class TextIOWrapper(TextIOBase):
             else:
                 # We didn't get enough decoded data; signal EOF to get more.
                 chars_decoded += len(decoder.decode(b'', final=True))
-                need_eof = 1
+                need_eof = True
                 if chars_decoded < chars_to_skip:
                     raise OSError("can't reconstruct logical file position")
 

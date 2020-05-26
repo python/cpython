@@ -654,7 +654,7 @@ PyDoc_STRVAR(_tkinter__flatten__doc__,
     {"_flatten", (PyCFunction)_tkinter__flatten, METH_O, _tkinter__flatten__doc__},
 
 PyDoc_STRVAR(_tkinter_create__doc__,
-"create($module, screenName=None, baseName=None, className=\'Tk\',\n"
+"create($module, screenName=None, baseName=\'\', className=\'Tk\',\n"
 "       interactive=False, wantobjects=False, wantTk=True, sync=False,\n"
 "       use=None, /)\n"
 "--\n"
@@ -682,7 +682,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *screenName = NULL;
-    const char *baseName = NULL;
+    const char *baseName = "";
     const char *className = "Tk";
     int interactive = 0;
     int wantobjects = 0;
@@ -867,4 +867,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=5232e7b73e56bee5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab311480dd044fe4 input=a9049054013a1b77]*/

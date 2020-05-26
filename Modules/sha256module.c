@@ -17,7 +17,8 @@
 /* SHA objects */
 
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_byteswap.h"      // _Py_bswap32()
+#include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
 #include "pystrhex.h"
 
@@ -30,12 +31,7 @@ class SHA256Type "SHAobject *" "&PyType_Type"
 /* Some useful types */
 
 typedef unsigned char SHA_BYTE;
-
-#if SIZEOF_INT == 4
-typedef unsigned int SHA_INT32; /* 32-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
+typedef uint32_t SHA_INT32;  /* 32-bit integer */
 
 /* The SHA block size and message digest sizes, in bytes */
 
@@ -61,14 +57,9 @@ typedef struct {
 #if PY_LITTLE_ENDIAN
 static void longReverse(SHA_INT32 *buffer, int byteCount)
 {
-    SHA_INT32 value;
-
     byteCount /= sizeof(*buffer);
-    while (byteCount--) {
-        value = *buffer;
-        value = ( ( value & 0xFF00FF00L ) >> 8  ) | \
-                ( ( value & 0x00FF00FFL ) << 8 );
-        *buffer++ = ( value << 16 ) | ( value >> 16 );
+    for (; byteCount--; buffer++) {
+        *buffer = _Py_bswap32(*buffer);
     }
 }
 #endif
@@ -413,7 +404,7 @@ SHA256Type_copy_impl(SHAobject *self)
 {
     SHAobject *newobj;
 
-    if (Py_TYPE(self) == &SHA256type) {
+    if (Py_IS_TYPE(self, &SHA256type)) {
         if ( (newobj = newSHA256object())==NULL)
             return NULL;
     } else {
@@ -601,13 +592,15 @@ static PyTypeObject SHA256type = {
 _sha256.sha256
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-256 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha256_sha256_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=fa644436dcea5c31 input=09cce3fb855056b2]*/
+_sha256_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=a1de327e8e1185cf input=9be86301aeb14ea5]*/
 {
     SHAobject *new;
     Py_buffer buf;
@@ -641,13 +634,15 @@ _sha256_sha256_impl(PyObject *module, PyObject *string)
 _sha256.sha224
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-224 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha256_sha224_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=21e3ba22c3404f93 input=27a04ba24c353a73]*/
+_sha256_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=08be6b36569bc69c input=9fcfb46e460860ac]*/
 {
     SHAobject *new;
     Py_buffer buf;
@@ -709,12 +704,14 @@ PyInit__sha256(void)
 {
     PyObject *m;
 
-    Py_TYPE(&SHA224type) = &PyType_Type;
-    if (PyType_Ready(&SHA224type) < 0)
+    Py_SET_TYPE(&SHA224type, &PyType_Type);
+    if (PyType_Ready(&SHA224type) < 0) {
         return NULL;
-    Py_TYPE(&SHA256type) = &PyType_Type;
-    if (PyType_Ready(&SHA256type) < 0)
+    }
+    Py_SET_TYPE(&SHA256type, &PyType_Type);
+    if (PyType_Ready(&SHA256type) < 0) {
         return NULL;
+    }
 
     m = PyModule_Create(&_sha256module);
     if (m == NULL)

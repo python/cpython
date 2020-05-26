@@ -85,7 +85,7 @@ _bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     int compresslevel = 9;
 
-    if ((Py_TYPE(self) == &BZ2Compressor_Type) &&
+    if (Py_IS_TYPE(self, &BZ2Compressor_Type) &&
         !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
         goto exit;
     }
@@ -197,11 +197,11 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
 
-    if ((Py_TYPE(self) == &BZ2Decompressor_Type) &&
+    if (Py_IS_TYPE(self, &BZ2Decompressor_Type) &&
         !_PyArg_NoPositional("BZ2Decompressor", args)) {
         goto exit;
     }
-    if ((Py_TYPE(self) == &BZ2Decompressor_Type) &&
+    if (Py_IS_TYPE(self, &BZ2Decompressor_Type) &&
         !_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
         goto exit;
     }
@@ -210,4 +210,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f0f626bde653d7c4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c69a7de8e26c2ad1 input=a9049054013a1b77]*/

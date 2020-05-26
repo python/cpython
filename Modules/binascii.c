@@ -66,6 +66,12 @@ typedef struct binascii_state {
     PyObject *Incomplete;
 } binascii_state;
 
+static binascii_state *
+get_binascii_state(PyObject *module)
+{
+    return (binascii_state *)PyModule_GetState(module);
+}
+
 /*
 ** hqx lookup table, ascii->binary.
 */
@@ -613,6 +619,11 @@ static PyObject *
 binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=4d6d8c54d54ea1c1 input=0d914c680e0eed55]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.a2b_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     const unsigned char *ascii_data;
     unsigned char *bin_data;
     int leftbits = 0;
@@ -701,6 +712,11 @@ static PyObject *
 binascii_rlecode_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=393d79338f5f5629 input=e1f1712447a82b09]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.rlecode_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     const unsigned char *in_data;
     unsigned char *out_data;
     unsigned char ch;
@@ -763,6 +779,11 @@ static PyObject *
 binascii_b2a_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=d0aa5a704bc9f7de input=9596ebe019fe12ba]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.b2a_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     unsigned char *ascii_data;
     const unsigned char *bin_data;
     int leftbits = 0;
@@ -818,6 +839,11 @@ static PyObject *
 binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=9826619565de1c6c input=54cdd49fc014402c]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.rledecode_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     const unsigned char *in_data;
     unsigned char *out_data;
     unsigned char in_byte, in_repeat;
@@ -932,7 +958,7 @@ error:
 
 
 /*[clinic input]
-binascii.crc_hqx -> unsigned_int
+binascii.crc_hqx
 
     data: Py_buffer
     crc: unsigned_int(bitwise=True)
@@ -941,9 +967,9 @@ binascii.crc_hqx -> unsigned_int
 Compute CRC-CCITT incrementally.
 [clinic start generated code]*/
 
-static unsigned int
+static PyObject *
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc)
-/*[clinic end generated code: output=8ec2a78590d19170 input=f18240ff8c705b79]*/
+/*[clinic end generated code: output=2fde213d0f547a98 input=56237755370a951c]*/
 {
     const unsigned char *bin_data;
     Py_ssize_t len;
@@ -956,7 +982,7 @@ binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc)
         crc = ((crc<<8)&0xff00) ^ crctab_hqx[(crc>>8)^*bin_data++];
     }
 
-    return crc;
+    return PyLong_FromUnsignedLong(crc);
 }
 
 #ifndef USE_ZLIB_CRC32
@@ -1285,15 +1311,12 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
     datalen = data->len;
 
     /* We allocate the output same size as input, this is overkill.
-     * The previous implementation used calloc() so we'll zero out the
-     * memory here too, since PyMem_Malloc() does not guarantee that.
      */
-    odata = (unsigned char *) PyMem_Malloc(datalen);
+    odata = (unsigned char *) PyMem_Calloc(1, datalen);
     if (odata == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memset(odata, 0, datalen);
 
     in = out = 0;
     while (in < datalen) {
@@ -1473,15 +1496,12 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
     }
 
     /* We allocate the output same size as input, this is overkill.
-     * The previous implementation used calloc() so we'll zero out the
-     * memory here too, since PyMem_Malloc() does not guarantee that.
      */
-    odata = (unsigned char *) PyMem_Malloc(odatalen);
+    odata = (unsigned char *) PyMem_Calloc(1, odatalen);
     if (odata == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memset(odata, 0, odatalen);
 
     in = out = linelen = 0;
     while (in < datalen) {
@@ -1586,9 +1606,9 @@ static struct PyMethodDef binascii_module_methods[] = {
 PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 
 static int
-binascii_exec(PyObject *m) {
+binascii_exec(PyObject *module) {
     int result;
-    binascii_state *state = PyModule_GetState(m);
+    binascii_state *state = PyModule_GetState(module);
     if (state == NULL) {
         return -1;
     }
@@ -1597,8 +1617,10 @@ binascii_exec(PyObject *m) {
     if (state->Error == NULL) {
         return -1;
     }
-    result = PyModule_AddObject(m, "Error", state->Error);
+    Py_INCREF(state->Error);
+    result = PyModule_AddObject(module, "Error", state->Error);
     if (result == -1) {
+        Py_DECREF(state->Error);
         return -1;
     }
 
@@ -1606,8 +1628,10 @@ binascii_exec(PyObject *m) {
     if (state->Incomplete == NULL) {
         return -1;
     }
-    result = PyModule_AddObject(m, "Incomplete", state->Incomplete);
+    Py_INCREF(state->Incomplete);
+    result = PyModule_AddObject(module, "Incomplete", state->Incomplete);
     if (result == -1) {
+        Py_DECREF(state->Incomplete);
         return -1;
     }
 
@@ -1619,6 +1643,30 @@ static PyModuleDef_Slot binascii_slots[] = {
     {0, NULL}
 };
 
+static int
+binascii_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    binascii_state *state = get_binascii_state(module);
+    Py_VISIT(state->Error);
+    Py_VISIT(state->Incomplete);
+    return 0;
+}
+
+static int
+binascii_clear(PyObject *module)
+{
+    binascii_state *state = get_binascii_state(module);
+    Py_CLEAR(state->Error);
+    Py_CLEAR(state->Incomplete);
+    return 0;
+}
+
+static void
+binascii_free(void *module)
+{
+    binascii_clear((PyObject *)module);
+}
+
 static struct PyModuleDef binasciimodule = {
     PyModuleDef_HEAD_INIT,
     "binascii",
@@ -1626,9 +1674,9 @@ static struct PyModuleDef binasciimodule = {
     sizeof(binascii_state),
     binascii_module_methods,
     binascii_slots,
-    NULL,
-    NULL,
-    NULL
+    binascii_traverse,
+    binascii_clear,
+    binascii_free
 };
 
 PyMODINIT_FUNC
