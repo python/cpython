@@ -720,7 +720,7 @@ class Counter(dict):
     #         cq = Counter(c=1, d=0, e=1)
     #     The corresponding regular sets would be:
     #         sp = {'a', 'c'}
-    #         cq = {'c', 'e'}
+    #         sq = {'c', 'e'}
     #     All of the following relations would hold:
     #         set(cp + cq) == sp | sq
     #         set(cp - cq) == sp - sq
