@@ -147,6 +147,10 @@ typedef struct {
        Set to 1 by -X faulthandler and PYTHONFAULTHANDLER. -1 means unset. */
     int faulthandler;
 
+    /* Enable PEG parser?
+       1 by default, set to 0 by -X oldparser and PYTHONOLDPARSER */
+    int _use_peg_parser;
+
     /* Enable tracemalloc?
        Set by -X tracemalloc=N and PYTHONTRACEMALLOC. -1 means unset */
     int tracemalloc;
@@ -405,6 +409,10 @@ typedef struct {
 
     /* If equal to 0, stop Python initialization before the "main" phase */
     int _init_main;
+
+    /* If non-zero, disallow threads, subprocesses, and fork.
+       Default: 0. */
+    int _isolated_interpreter;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);

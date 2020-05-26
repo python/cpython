@@ -327,7 +327,7 @@ def cleanup_test_droppings(test_name, verbose):
                                f"directory nor file")
 
         if verbose:
-            print_warning("%r left behind %s %r" % (test_name, kind, name))
+            print_warning(f"{test_name} left behind {kind} {name!r}")
             support.environment_altered = True
 
         try:

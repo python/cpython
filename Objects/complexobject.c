@@ -6,7 +6,7 @@
 /* Submitted by Jim Hugunin */
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 /*[clinic input]
 class complex "PyComplexObject *" "&PyComplex_Type"

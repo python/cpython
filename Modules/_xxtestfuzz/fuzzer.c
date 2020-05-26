@@ -79,6 +79,69 @@ static int fuzz_builtin_unicode(const char* data, size_t size) {
     return 0;
 }
 
+
+PyObject* struct_unpack_method = NULL;
+PyObject* struct_error = NULL;
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_struct_unpack() {
+    /* Import struct.unpack */
+    PyObject* struct_module = PyImport_ImportModule("struct");
+    if (struct_module == NULL) {
+        return 0;
+    }
+    struct_error = PyObject_GetAttrString(struct_module, "error");
+    if (struct_error == NULL) {
+        return 0;
+    }
+    struct_unpack_method = PyObject_GetAttrString(struct_module, "unpack");
+    return struct_unpack_method != NULL;
+}
+/* Fuzz struct.unpack(x, y) */
+static int fuzz_struct_unpack(const char* data, size_t size) {
+    /* Everything up to the first null byte is considered the
+       format. Everything after is the buffer */
+    const char* first_null = memchr(data, '\0', size);
+    if (first_null == NULL) {
+        return 0;
+    }
+
+    size_t format_length = first_null - data;
+    size_t buffer_length = size - format_length - 1;
+
+    PyObject* pattern = PyBytes_FromStringAndSize(data, format_length);
+    if (pattern == NULL) {
+        return 0;
+    }
+    PyObject* buffer = PyBytes_FromStringAndSize(first_null + 1, buffer_length);
+    if (buffer == NULL) {
+        Py_DECREF(pattern);
+        return 0;
+    }
+
+    PyObject* unpacked = PyObject_CallFunctionObjArgs(
+        struct_unpack_method, pattern, buffer, NULL);
+    /* Ignore any overflow errors, these are easily triggered accidentally */
+    if (unpacked == NULL && PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        PyErr_Clear();
+    }
+    /* The pascal format string will throw a negative size when passing 0
+       like: struct.unpack('0p', b'') */
+    if (unpacked == NULL && PyErr_ExceptionMatches(PyExc_SystemError)) {
+        PyErr_Clear();
+    }
+    /* Ignore any struct.error exceptions, these can be caused by invalid
+       formats or incomplete buffers both of which are common. */
+    if (unpacked == NULL && PyErr_ExceptionMatches(struct_error)) {
+        PyErr_Clear();
+    }
+
+    Py_XDECREF(unpacked);
+    Py_DECREF(pattern);
+    Py_DECREF(buffer);
+    return 0;
+}
+
+
 #define MAX_JSON_TEST_SIZE 0x10000
 
 PyObject* json_loads_method = NULL;
@@ -190,9 +253,10 @@ static int fuzz_sre_compile(const char* data, size_t size) {
         PyErr_Clear();
     }
     /* Ignore some common errors thrown by sre_parse:
-       Overflow, Assertion and Index */
+       Overflow, Assertion, Recursion and Index */
     if (compiled == NULL && (PyErr_ExceptionMatches(PyExc_OverflowError) ||
                              PyErr_ExceptionMatches(PyExc_AssertionError) ||
+                             PyErr_ExceptionMatches(PyExc_RecursionError) ||
                              PyErr_ExceptionMatches(PyExc_IndexError))
     ) {
         PyErr_Clear();
@@ -377,6 +441,16 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_builtin_unicode)
     rv |= _run_fuzz(data, size, fuzz_builtin_unicode);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_struct_unpack)
+    static int STRUCT_UNPACK_INITIALIZED = 0;
+    if (!STRUCT_UNPACK_INITIALIZED && !init_struct_unpack()) {
+        PyErr_Print();
+        abort();
+    } else {
+        STRUCT_UNPACK_INITIALIZED = 1;
+    }
+    rv |= _run_fuzz(data, size, fuzz_struct_unpack);
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_json_loads)
     static int JSON_LOADS_INITIALIZED = 0;

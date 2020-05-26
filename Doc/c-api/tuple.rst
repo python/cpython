@@ -111,11 +111,6 @@ Tuple Objects
    raises :exc:`MemoryError` or :exc:`SystemError`.
 
 
-.. c:function:: int PyTuple_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
-
 Struct Sequence Objects
 -----------------------
 

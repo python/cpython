@@ -236,7 +236,7 @@ class DFA:
                 if nfa_arc.label is None:
                     add_closure(nfa_arc.target, base_nfa_set)
 
-        # Calculte the epsilon-closure of the starting state
+        # Calculate the epsilon-closure of the starting state
         base_nfa_set = set()
         add_closure(nfa.start, base_nfa_set)
 

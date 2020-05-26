@@ -201,6 +201,27 @@ class BaseFutureTests:
         self.assertFalse(fut.cancelled())
         self.assertFalse(fut.done())
 
+    def test_future_cancel_message_getter(self):
+        f = self._new_future(loop=self.loop)
+        self.assertTrue(hasattr(f, '_cancel_message'))
+        self.assertEqual(f._cancel_message, None)
+
+        f.cancel('my message')
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(f)
+        self.assertEqual(f._cancel_message, 'my message')
+
+    def test_future_cancel_message_setter(self):
+        f = self._new_future(loop=self.loop)
+        f.cancel('my message')
+        f._cancel_message = 'my new message'
+        self.assertEqual(f._cancel_message, 'my new message')
+
+        # Also check that the value is used for cancel().
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(f)
+        self.assertEqual(f._cancel_message, 'my new message')
+
     def test_cancel(self):
         f = self._new_future(loop=self.loop)
         self.assertTrue(f.cancel())

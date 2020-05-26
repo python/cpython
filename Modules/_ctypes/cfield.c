@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_byteswap.h"      // _Py_bswap32()
 
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -448,46 +449,32 @@ get_ulonglong(PyObject *v, unsigned long long *p)
      ( ( (type)x & ~(BIT_MASK(type, size) << LOW_BIT(size)) ) | ( ((type)v & BIT_MASK(type, size)) << LOW_BIT(size) ) ) \
      : (type)v)
 
-/* byte swapping macros */
-#define SWAP_2(v)                               \
-    ( ( (v >> 8) & 0x00FF) |                    \
-      ( (v << 8) & 0xFF00) )
-
-#define SWAP_4(v)                       \
-    ( ( (v & 0x000000FF) << 24 ) |  \
-      ( (v & 0x0000FF00) <<  8 ) |  \
-      ( (v & 0x00FF0000) >>  8 ) |  \
-      ( ((v >> 24) & 0xFF)) )
-
-#ifdef _MSC_VER
-#define SWAP_8(v)                               \
-    ( ( (v & 0x00000000000000FFL) << 56 ) |  \
-      ( (v & 0x000000000000FF00L) << 40 ) |  \
-      ( (v & 0x0000000000FF0000L) << 24 ) |  \
-      ( (v & 0x00000000FF000000L) <<  8 ) |  \
-      ( (v & 0x000000FF00000000L) >>  8 ) |  \
-      ( (v & 0x0000FF0000000000L) >> 24 ) |  \
-      ( (v & 0x00FF000000000000L) >> 40 ) |  \
-      ( ((v >> 56) & 0xFF)) )
+#if SIZEOF_SHORT == 2
+#  define SWAP_SHORT _Py_bswap16
 #else
-#define SWAP_8(v)                               \
-    ( ( (v & 0x00000000000000FFLL) << 56 ) |  \
-      ( (v & 0x000000000000FF00LL) << 40 ) |  \
-      ( (v & 0x0000000000FF0000LL) << 24 ) |  \
-      ( (v & 0x00000000FF000000LL) <<  8 ) |  \
-      ( (v & 0x000000FF00000000LL) >>  8 ) |  \
-      ( (v & 0x0000FF0000000000LL) >> 24 ) |  \
-      ( (v & 0x00FF000000000000LL) >> 40 ) |  \
-      ( ((v >> 56) & 0xFF)) )
+#  error "unsupported short size"
 #endif
 
-#define SWAP_INT SWAP_4
+#if SIZEOF_INT == 4
+#  define SWAP_INT _Py_bswap32
+#else
+#  error "unsupported int size"
+#endif
 
 #if SIZEOF_LONG == 4
-# define SWAP_LONG SWAP_4
+#  define SWAP_LONG _Py_bswap32
 #elif SIZEOF_LONG == 8
-# define SWAP_LONG SWAP_8
+#  define SWAP_LONG _Py_bswap64
+#else
+#  error "unsupported long size"
 #endif
+
+#if SIZEOF_LONG_LONG == 8
+#  define SWAP_LONG_LONG _Py_bswap64
+#else
+#  error "unsupported long long size"
+#endif
+
 /*****************************************************************
  * The setter methods return an object which must be kept alive, to keep the
  * data valid which has been stored in the memory block.  The ctypes object
@@ -569,12 +556,13 @@ h_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     long val;
     short field;
-    if (get_long(value, &val) < 0)
+    if (get_long(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
-    field = SWAP_2(field);
+    field = SWAP_SHORT(field);
     field = SET(short, field, val, size);
-    field = SWAP_2(field);
+    field = SWAP_SHORT(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
 }
@@ -593,7 +581,7 @@ h_get_sw(void *ptr, Py_ssize_t size)
 {
     short val;
     memcpy(&val, ptr, sizeof(val));
-    val = SWAP_2(val);
+    val = SWAP_SHORT(val);
     GET_BITFIELD(val, size);
     return PyLong_FromLong(val);
 }
@@ -616,12 +604,13 @@ H_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     unsigned long val;
     unsigned short field;
-    if (get_ulong(value, &val) < 0)
+    if (get_ulong(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
-    field = SWAP_2(field);
+    field = SWAP_SHORT(field);
     field = SET(unsigned short, field, val, size);
-    field = SWAP_2(field);
+    field = SWAP_SHORT(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
 }
@@ -641,7 +630,7 @@ H_get_sw(void *ptr, Py_ssize_t size)
 {
     unsigned short val;
     memcpy(&val, ptr, sizeof(val));
-    val = SWAP_2(val);
+    val = SWAP_SHORT(val);
     GET_BITFIELD(val, size);
     return PyLong_FromLong(val);
 }
@@ -664,8 +653,9 @@ i_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     long val;
     int field;
-    if (get_long(value, &val) < 0)
+    if (get_long(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_INT(field);
     field = SET(int, field, val, size);
@@ -757,8 +747,9 @@ I_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     unsigned long val;
     unsigned int field;
-    if (get_ulong(value, &val) < 0)
+    if (get_ulong(value, &val) < 0) {
         return  NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_INT(field);
     field = SET(unsigned int, field, (unsigned int)val, size);
@@ -805,8 +796,9 @@ l_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     long val;
     long field;
-    if (get_long(value, &val) < 0)
+    if (get_long(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_LONG(field);
     field = SET(long, field, val, size);
@@ -853,8 +845,9 @@ L_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     unsigned long val;
     unsigned long field;
-    if (get_ulong(value, &val) < 0)
+    if (get_ulong(value, &val) < 0) {
         return  NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_LONG(field);
     field = SET(unsigned long, field, val, size);
@@ -901,12 +894,13 @@ q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     long long val;
     long long field;
-    if (get_longlong(value, &val) < 0)
+    if (get_longlong(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
-    field = SWAP_8(field);
+    field = SWAP_LONG_LONG(field);
     field = SET(long long, field, val, size);
-    field = SWAP_8(field);
+    field = SWAP_LONG_LONG(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
 }
@@ -925,7 +919,7 @@ q_get_sw(void *ptr, Py_ssize_t size)
 {
     long long val;
     memcpy(&val, ptr, sizeof(val));
-    val = SWAP_8(val);
+    val = SWAP_LONG_LONG(val);
     GET_BITFIELD(val, size);
     return PyLong_FromLongLong(val);
 }
@@ -948,12 +942,13 @@ Q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     unsigned long long val;
     unsigned long long field;
-    if (get_ulonglong(value, &val) < 0)
+    if (get_ulonglong(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
-    field = SWAP_8(field);
+    field = SWAP_LONG_LONG(field);
     field = SET(unsigned long long, field, val, size);
-    field = SWAP_8(field);
+    field = SWAP_LONG_LONG(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
 }
@@ -972,7 +967,7 @@ Q_get_sw(void *ptr, Py_ssize_t size)
 {
     unsigned long long val;
     memcpy(&val, ptr, sizeof(val));
-    val = SWAP_8(val);
+    val = SWAP_LONG_LONG(val);
     GET_BITFIELD(val, size);
     return PyLong_FromUnsignedLongLong(val);
 }
@@ -1283,7 +1278,7 @@ s_get(void *ptr, Py_ssize_t size)
 static PyObject *
 s_set(void *ptr, PyObject *value, Py_ssize_t length)
 {
-    char *data;
+    const char *data;
     Py_ssize_t size;
 
     if(!PyBytes_Check(value)) {
@@ -1321,7 +1316,7 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
         return value;
     }
     if (PyBytes_Check(value)) {
-        *(char **)ptr = PyBytes_AsString(value);
+        *(const char **)ptr = PyBytes_AsString(value);
         Py_INCREF(value);
         return value;
     } else if (PyLong_Check(value)) {
