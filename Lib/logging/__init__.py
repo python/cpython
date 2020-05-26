@@ -1751,7 +1751,7 @@ class LoggerAdapter(object):
     information in logging output.
     """
 
-    def __init__(self, logger, extra):
+    def __init__(self, logger, extra=None):
         """
         Initialize the adapter with a logger and a dict-like object which
         provides contextual information. This constructor signature allows

@@ -95,9 +95,6 @@ get_hashlib_state(PyObject *module)
     return (_hashlibstate *)state;
 }
 
-#define _hashlibstate_global ((_hashlibstate *)PyModule_GetState(PyState_FindModule(&_hashlibmodule)))
-
-
 typedef struct {
     PyObject_HEAD
     EVP_MD_CTX          *ctx;   /* OpenSSL message digest context */
@@ -1763,22 +1760,30 @@ _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
 
 
 /* Ask OpenSSL for a list of supported ciphers, filling in a Python set. */
-static PyObject*
-generate_hash_name_list(void)
+static int
+hashlib_md_meth_names(PyObject *module)
 {
-    _InternalNameMapperState state;
-    state.set = PyFrozenSet_New(NULL);
-    if (state.set == NULL)
-        return NULL;
-    state.error = 0;
+    _InternalNameMapperState state = {
+        .set = PyFrozenSet_New(NULL),
+        .error = 0
+    };
+    if (state.set == NULL) {
+        return -1;
+    }
 
     EVP_MD_do_all(&_openssl_hash_name_mapper, &state);
 
     if (state.error) {
         Py_DECREF(state.set);
-        return NULL;
+        return -1;
     }
-    return state.set;
+
+    if (PyModule_AddObject(module, "openssl_md_meth_names", state.set) < 0) {
+        Py_DECREF(state.set);
+        return -1;
+    }
+
+    return 0;
 }
 
 /* LibreSSL doesn't support FIPS:
@@ -1885,94 +1890,136 @@ hashlib_free(void *m)
     hashlib_clear((PyObject *)m);
 }
 
-
-static struct PyModuleDef _hashlibmodule = {
-    PyModuleDef_HEAD_INIT,
-    "_hashlib",
-    NULL,
-    sizeof(_hashlibstate),
-    EVP_functions,
-    NULL,
-    hashlib_traverse,
-    hashlib_clear,
-    hashlib_free
-};
-
-PyMODINIT_FUNC
-PyInit__hashlib(void)
+/* Py_mod_exec functions */
+static int
+hashlib_openssl_legacy_init(PyObject *module)
 {
-    PyObject *m, *openssl_md_meth_names;
-    _hashlibstate *state = NULL;
-#ifdef PY_OPENSSL_HAS_SHAKE
-    PyObject *bases;
-#endif
-
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
     /* Load all digest algorithms and initialize cpuid */
     OPENSSL_add_all_algorithms_noconf();
     ERR_load_crypto_strings();
 #endif
+    return 0;
+}
 
-    m = PyState_FindModule(&_hashlibmodule);
+static int
+hashlib_init_evptype(PyObject *module)
+{
+    _hashlibstate *state = get_hashlib_state(module);
+
+    state->EVPtype = (PyTypeObject *)PyType_FromSpec(&EVPtype_spec);
+    if (state->EVPtype == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->EVPtype) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+hashlib_init_evpxoftype(PyObject *module)
+{
+#ifdef PY_OPENSSL_HAS_SHAKE
+    _hashlibstate *state = get_hashlib_state(module);
+    PyObject *bases;
+
+    if (state->EVPtype == NULL) {
+        return -1;
+    }
+
+    bases = PyTuple_Pack(1, state->EVPtype);
+    if (bases == NULL) {
+        return -1;
+    }
+
+    state->EVPXOFtype = (PyTypeObject *)PyType_FromSpecWithBases(
+        &EVPXOFtype_spec, bases
+    );
+    Py_DECREF(bases);
+    if (state->EVPXOFtype == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->EVPXOFtype) < 0) {
+        return -1;
+    }
+#endif
+    return 0;
+}
+
+static int
+hashlib_init_hmactype(PyObject *module)
+{
+    _hashlibstate *state = get_hashlib_state(module);
+
+    state->HMACtype = (PyTypeObject *)PyType_FromSpec(&HMACtype_spec);
+    if (state->HMACtype == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->HMACtype) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+#if 0
+static PyModuleDef_Slot hashlib_slots[] = {
+    /* OpenSSL 1.0.2 and LibreSSL */
+    {Py_mod_exec, hashlib_openssl_legacy_init},
+    {Py_mod_exec, hashlib_init_evptype},
+    {Py_mod_exec, hashlib_init_evpxoftype},
+    {Py_mod_exec, hashlib_init_hmactype},
+    {Py_mod_exec, hashlib_md_meth_names},
+    {0, NULL}
+};
+#endif
+
+static struct PyModuleDef _hashlibmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_hashlib",
+    .m_doc = "OpenSSL interface for hashlib module",
+    .m_size = sizeof(_hashlibstate),
+    .m_methods = EVP_functions,
+    .m_slots = NULL,
+    .m_traverse = hashlib_traverse,
+    .m_clear = hashlib_clear,
+    .m_free = hashlib_free
+};
+
+PyMODINIT_FUNC
+PyInit__hashlib(void)
+{
+    PyObject *m = PyState_FindModule(&_hashlibmodule);
     if (m != NULL) {
         Py_INCREF(m);
         return m;
     }
 
     m = PyModule_Create(&_hashlibmodule);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
 
-    state = get_hashlib_state(m);
-
-    PyTypeObject *EVPtype = (PyTypeObject *)PyType_FromSpec(&EVPtype_spec);
-    if (EVPtype == NULL) {
+    if (hashlib_openssl_legacy_init(m) < 0) {
         Py_DECREF(m);
         return NULL;
     }
-    state->EVPtype = EVPtype;
-    Py_INCREF((PyObject *)state->EVPtype);
-    PyModule_AddObject(m, "HASH", (PyObject *)state->EVPtype);
-
-    PyTypeObject *HMACtype = (PyTypeObject *)PyType_FromSpec(&HMACtype_spec);
-    if (HMACtype == NULL) {
+    if (hashlib_init_evptype(m) < 0) {
         Py_DECREF(m);
         return NULL;
     }
-    state->HMACtype = HMACtype;
-    Py_INCREF((PyObject *)state->HMACtype);
-    PyModule_AddObject(m, "HMAC", (PyObject *)state->HMACtype);
-
-#ifdef PY_OPENSSL_HAS_SHAKE
-    bases = PyTuple_Pack(1, (PyObject *)EVPtype);
-    if (bases == NULL) {
+    if (hashlib_init_evpxoftype(m) < 0) {
         Py_DECREF(m);
         return NULL;
     }
-    PyTypeObject *EVPXOFtype = (PyTypeObject *)PyType_FromSpecWithBases(
-        &EVPXOFtype_spec, bases
-    );
-    Py_DECREF(bases);
-    if (EVPXOFtype == NULL) {
+    if (hashlib_init_hmactype(m) < 0) {
         Py_DECREF(m);
         return NULL;
     }
-    state->EVPXOFtype = EVPXOFtype;
-
-    Py_INCREF((PyObject *)state->EVPXOFtype);
-    PyModule_AddObject(m, "HASHXOF", (PyObject *)state->EVPXOFtype);
-#endif
-
-    openssl_md_meth_names = generate_hash_name_list();
-    if (openssl_md_meth_names == NULL) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    if (PyModule_AddObject(m, "openssl_md_meth_names", openssl_md_meth_names)) {
+    if (hashlib_md_meth_names(m) == -1) {
         Py_DECREF(m);
         return NULL;
     }
 
-    PyState_AddModule(m, &_hashlibmodule);
     return m;
 }

@@ -5107,43 +5107,21 @@ class Oddballs(unittest.TestCase):
             def __int__(self):
                 return self.value
 
-        for xx in [decimal.Decimal(10),
-                   decimal.Decimal('10.9'),
-                   Number(10)]:
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(datetime(10, 10, 10, 10, 10, 10, 10),
-                                 datetime(xx, xx, xx, xx, xx, xx, xx))
-
-        with self.assertRaisesRegex(TypeError, '^an integer is required '
-                                              r'\(got type str\)$'):
-            datetime(10, 10, '10')
-
-        f10 = Number(10.9)
-        with self.assertRaisesRegex(TypeError, '^__int__ returned non-int '
-                                               r'\(type float\)$'):
-            datetime(10, 10, f10)
-
         class Float(float):
             pass
-        s10 = Float(10.9)
-        with self.assertRaisesRegex(TypeError, '^integer argument expected, '
-                                               'got float$'):
-            datetime(10, 10, s10)
 
-        with self.assertRaises(TypeError):
-            datetime(10., 10, 10)
-        with self.assertRaises(TypeError):
-            datetime(10, 10., 10)
-        with self.assertRaises(TypeError):
-            datetime(10, 10, 10.)
-        with self.assertRaises(TypeError):
-            datetime(10, 10, 10, 10.)
-        with self.assertRaises(TypeError):
-            datetime(10, 10, 10, 10, 10.)
-        with self.assertRaises(TypeError):
-            datetime(10, 10, 10, 10, 10, 10.)
-        with self.assertRaises(TypeError):
-            datetime(10, 10, 10, 10, 10, 10, 10.)
+        for xx in [10.0, Float(10.9),
+                   decimal.Decimal(10), decimal.Decimal('10.9'),
+                   Number(10), Number(10.9),
+                   '10']:
+            self.assertRaises(TypeError, datetime, xx, 10, 10, 10, 10, 10, 10)
+            self.assertRaises(TypeError, datetime, 10, xx, 10, 10, 10, 10, 10)
+            self.assertRaises(TypeError, datetime, 10, 10, xx, 10, 10, 10, 10)
+            self.assertRaises(TypeError, datetime, 10, 10, 10, xx, 10, 10, 10)
+            self.assertRaises(TypeError, datetime, 10, 10, 10, 10, xx, 10, 10)
+            self.assertRaises(TypeError, datetime, 10, 10, 10, 10, 10, xx, 10)
+            self.assertRaises(TypeError, datetime, 10, 10, 10, 10, 10, 10, xx)
+
 
 #############################################################################
 # Local Time Disambiguation

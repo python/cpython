@@ -46,11 +46,6 @@ _bisect_bisect_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto skip_optional_pos;
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = PyNumber_Index(args[2]);
@@ -122,11 +117,6 @@ _bisect_insort_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto skip_optional_pos;
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = PyNumber_Index(args[2]);
@@ -197,11 +187,6 @@ _bisect_bisect_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         goto skip_optional_pos;
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = PyNumber_Index(args[2]);
@@ -273,11 +258,6 @@ _bisect_insort_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         goto skip_optional_pos;
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         {
             Py_ssize_t ival = -1;
             PyObject *iobj = PyNumber_Index(args[2]);
@@ -303,4 +283,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bcbd6c77331a08f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e9097a9acd10b13f input=a9049054013a1b77]*/
