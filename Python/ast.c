@@ -317,6 +317,9 @@ validate_pattern(expr_ty p)
         case Constant_kind:
             return validate_constant(p->v.Constant.value);
         case Name_kind:
+            if (p->v.Name.ctx != Load && p->v.Name.ctx != Store) {
+                break;
+            }
             return validate_expr(p, p->v.Name.ctx);
         case NamedExpr_kind:
             return validate_pattern(p->v.NamedExpr.value);
