@@ -423,7 +423,6 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_soft_keywords_parse(self) -> None:
         grammar_source = """
-        @subheader "#undef D\\n#define D(x) x\\n"
         start: "if" expr '+' expr NEWLINE
         expr: NAME
         """
