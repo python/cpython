@@ -1,4 +1,5 @@
 import ast
+import types
 import typing
 import unittest
 
@@ -35,15 +36,21 @@ class TestAST(unittest.TestCase):
         return ast.match_case(pattern=pattern, guard=guard, body=body)
 
     @classmethod
-    def execute_match(
+    def compile_match(
         cls, pre: str, target: str, match_cases: typing.Iterable[MatchCase], post: str
-    ) -> typing.Dict[str, typing.Any]:
+    ) -> types.CodeType:
         cases = [cls.parse_match_case(case) for case in match_cases]
         match = ast.Match(target=cls.parse_expr(target), cases=cases)
         body = [*cls.parse_stmts(pre), match, *cls.parse_stmts(post)]
         tree = ast.fix_missing_locations(ast.Module(body=body, type_ignores=[]))
+        return compile(tree, FILENAME, "exec")
+
+    @classmethod
+    def execute_match(
+        cls, pre: str, target: str, match_cases: typing.Iterable[MatchCase], post: str
+    ) -> typing.Dict[str, typing.Any]:
         namespace = {}
-        exec(compile(tree, FILENAME, "exec"), None, namespace)
+        exec(cls.compile_match(pre, target, match_cases, post), None, namespace)
         return namespace
 
     def test_steroid_switch_0(self) -> None:
@@ -257,3 +264,70 @@ class TestAST(unittest.TestCase):
         self.assertEqual(namespace.get("x"), 3)
         self.assertNotIn("y", namespace)
         self.assertNotIn("z", namespace)
+
+    def test_iter_0(self) -> None:
+        match_cases = [MatchCase("()", "y = 0")]
+        namespace = self.execute_match("x = ()", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), ())
+        self.assertEqual(namespace.get("y"), 0)
+
+    def test_iter_1(self) -> None:
+        match_cases = [MatchCase("[]", "y = 0")]
+        namespace = self.execute_match("x = ()", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), ())
+        self.assertEqual(namespace.get("y"), 0)
+
+    def test_iter_2(self) -> None:
+        match_cases = [MatchCase("[0]", "y = 0")]
+        namespace = self.execute_match("x = (0,)", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), (0,))
+        self.assertEqual(namespace.get("y"), 0)
+
+    def test_iter_3(self) -> None:
+        match_cases = [MatchCase("[[]]", "y = 0")]
+        namespace = self.execute_match("x = ((),)", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), ((),))
+        self.assertEqual(namespace.get("y"), 0)
+
+    def test_iter_4(self) -> None:
+        match_cases = [MatchCase("(0, 1) | (1, 0)", "y = 0")]
+        namespace = self.execute_match("x = [0, 1]", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), [0, 1])
+        self.assertEqual(namespace.get("y"), 0)
+
+    def test_iter_5(self) -> None:
+        match_cases = [MatchCase("(0, 1) | (1, 0)", "y = 0")]
+        namespace = self.execute_match("x = [1, 0]", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), [1, 0])
+        self.assertEqual(namespace.get("y"), 0)
+
+    def test_iter_6(self) -> None:
+        match_cases = [MatchCase("(0, 1) | (1, 0)", "y = 0")]
+        namespace = self.execute_match("x = [0, 0]", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), [0, 0])
+        self.assertNotIn("y", namespace)
+
+    def test_iter_7(self) -> None:
+        match_cases = [MatchCase("(w := 0,)", "y = 0"), MatchCase("[] | (1, z := (0 | 1)) | []", "y = 1")]
+        namespace = self.execute_match("x = [1, 0]", "x", match_cases, "")
+        self.assertNotIn("w", namespace)
+        self.assertEqual(namespace.get("x"), [1, 0])
+        self.assertEqual(namespace.get("y"), 1)
+        self.assertEqual(namespace.get("z"), 0)
+
+    def test_iter_8(self) -> None:
+        match_cases = [
+            MatchCase("(0,)", "y = 0"),
+            MatchCase("(1, 0)", "y = 1", "(x := x[:0])"),
+            MatchCase("(1, 0)", "y = 2"),
+        ]
+        namespace = self.execute_match("x = [1, 0]", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), [])
+        self.assertEqual(namespace.get("y"), 2)
+
+
+if __name__ == "__main__":  # XXX: For quick test debugging...
+    import dis
+
+    match_cases = [MatchCase("(0, 1) | (1, 0)", "y = 0")]
+    dis.dis(TestAST.compile_match("x = [0, 0]", "x", match_cases, ""))
