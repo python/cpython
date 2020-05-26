@@ -242,7 +242,7 @@ def main() -> None:
             tree,
             short,
             mode,
-            False,
+            oldparser=False,
         )
     )
 
