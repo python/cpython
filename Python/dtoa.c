@@ -2567,6 +2567,11 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
                    to surplus trailing zeros in some cases.
                    See bugs.python.org/issue40780. */
                 else {
+                    /* At the beginning of the for loop we have 10**k <= d; it
+                       follows that on the first iteration, ds <= dval(&u), and
+                       so the first digit written to s is nonzero and it's safe
+                       to strip trailing zeros. */
+                    assert(k_check == 0);
                     while(*--s == '0');
                     s++;
                 }
