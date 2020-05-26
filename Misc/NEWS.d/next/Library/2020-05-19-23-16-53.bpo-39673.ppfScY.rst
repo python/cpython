@@ -1,1 +1,1 @@
-Map ``errno==ETIME`` to :exc:`TimeoutError`.
+Map :exc:`OSError` with ``errno==ETIME`` to :exc:`TimeoutError`.
