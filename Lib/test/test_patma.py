@@ -13,7 +13,11 @@ class MatchCase(typing.NamedTuple):
 
 
 class TestAST(unittest.TestCase):
-    """Tests that predate parser support, and just execute ASTs instead."""
+    """Tests that predate parser support, and just execute ASTs instead.
+
+    No tests for name loads/stores, since these need a patma parser to
+    disambiguate.
+    """
 
     @staticmethod
     def parse_stmts(stmts: str) -> typing.List[ast.stmt]:

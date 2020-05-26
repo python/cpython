@@ -2752,15 +2752,21 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
     basicblock *block;
     switch (p->kind) {
         // Atomic patterns:
+        case Name_kind:
+            if (p->v.Name.ctx == Store) {
+                if (!_PyUnicode_EqualToASCIIString(p->v.Name.id, "_")) {
+                    ADDOP(c, DUP_TOP);
+                    VISIT(c, expr, p);
+                }
+                ADDOP_JREL(c, JUMP_FORWARD, yes);
+                return 1;
+            }  // Loads fall through.
         case Attribute_kind:
         case Constant_kind:
-        case Name_kind:
             ADDOP(c, DUP_TOP);
             VISIT(c, expr, p);
-            if (p->kind != Name_kind || p->v.Name.ctx == Load) {
-                ADDOP_COMPARE(c, Eq);
-                ADDOP_JABS(c, POP_JUMP_IF_FALSE, no);
-            }
+            ADDOP_COMPARE(c, Eq);
+            ADDOP_JABS(c, POP_JUMP_IF_FALSE, no);
             ADDOP_JREL(c, JUMP_FORWARD, yes);
             return 1;
         // Nested patterns:
