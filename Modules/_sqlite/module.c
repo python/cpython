@@ -348,7 +348,6 @@ static struct PyModuleDef _sqlite3module = {
 
 #define ADD_TYPE(module, type)                 \
 do {                                           \
-    Py_INCREF(&type);                          \
     if (PyModule_AddType(module, &type) < 0) { \
         Py_DECREF(module);                     \
         return NULL;                           \
