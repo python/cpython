@@ -92,12 +92,12 @@ _imp__fix_co_filename(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyObject_TypeCheck(args[0], &PyCode_Type)) {
-        _PyArg_BadArgument("_fix_co_filename", 1, (&PyCode_Type)->tp_name, args[0]);
+        _PyArg_BadArgument("_fix_co_filename", "argument 1", (&PyCode_Type)->tp_name, args[0]);
         goto exit;
     }
     code = (PyCodeObject *)args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("_fix_co_filename", 2, "str", args[1]);
+        _PyArg_BadArgument("_fix_co_filename", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -156,7 +156,7 @@ _imp_init_frozen(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("init_frozen", 0, "str", arg);
+        _PyArg_BadArgument("init_frozen", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -188,7 +188,7 @@ _imp_get_frozen_object(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("get_frozen_object", 0, "str", arg);
+        _PyArg_BadArgument("get_frozen_object", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -220,7 +220,7 @@ _imp_is_frozen_package(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("is_frozen_package", 0, "str", arg);
+        _PyArg_BadArgument("is_frozen_package", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -252,7 +252,7 @@ _imp_is_builtin(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("is_builtin", 0, "str", arg);
+        _PyArg_BadArgument("is_builtin", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -284,7 +284,7 @@ _imp_is_frozen(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("is_frozen", 0, "str", arg);
+        _PyArg_BadArgument("is_frozen", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -300,7 +300,7 @@ exit:
 #if defined(HAVE_DYNAMIC_LOADING)
 
 PyDoc_STRVAR(_imp_create_dynamic__doc__,
-"create_dynamic($module, spec, file=None, /)\n"
+"create_dynamic($module, spec, file=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Create an extension module.");
@@ -433,7 +433,7 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&source, 'C')) {
-        _PyArg_BadArgument("source_hash", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("source_hash", "argument 'source'", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = _imp_source_hash_impl(module, key, &source);
@@ -454,4 +454,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=b51244770fdcf4b8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3dc495e9c64d944e input=a9049054013a1b77]*/

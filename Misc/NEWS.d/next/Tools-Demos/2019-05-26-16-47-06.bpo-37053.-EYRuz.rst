@@ -1,1 +1,0 @@
-Handle strings like u"bar" correctly in Tools/parser/unparse.py. Patch by Chih-Hsuan Yen.

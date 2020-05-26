@@ -16,7 +16,7 @@ PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
 /* State unique per thread */
 
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
-typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
+typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 
 /* The following values are used for 'what' for tracefunc functions
  *
@@ -55,7 +55,8 @@ struct _ts {
     struct _ts *next;
     PyInterpreterState *interp;
 
-    struct _frame *frame;
+    /* Borrowed reference to the current frame (it can be NULL) */
+    PyFrameObject *frame;
     int recursion_depth;
     char overflowed; /* The stack has overflowed. Allow 50 more calls
                         to handle the runtime error. */
@@ -110,9 +111,9 @@ struct _ts {
      * if the thread holds the last reference to the lock, decref'ing the
      * lock will delete the lock, and that may trigger arbitrary Python code
      * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyRuntimeState.gilstate.tstate_current is already NULL, so only the
-     * simplest of C code can be allowed to run (in particular it must not be
-     * possible to release the GIL).
+     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
+     * of C code can be allowed to run (in particular it must not be possible to
+     * release the GIL).
      * So instead of holding the lock directly, the tstate holds a weakref to
      * the lock:  that's the value of on_delete_data below.  Decref'ing a
      * weakref is harmless.
@@ -139,21 +140,16 @@ struct _ts {
 
 };
 
-/* Get the current interpreter state.
+// Alias for backward compatibility with Python 3.8
+#define _PyInterpreterState_Get PyInterpreterState_Get
 
-   Issue a fatal error if there no current Python thread state or no current
-   interpreter. It cannot return NULL.
-
-   The caller must hold the GIL.*/
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
-
-PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
-PyAPI_FUNC(void) _PyState_ClearModules(void);
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
+
+PyAPI_FUNC(PyObject *) _PyThreadState_GetDict(PyThreadState *tstate);
 
 /* PyGILState */
 
@@ -169,7 +165,7 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    This function doesn't check for error. Return NULL before _PyGILState_Init()
    is called and after _PyGILState_Fini() is called.
 
-   See also _PyInterpreterState_Get() and _PyInterpreterState_GET_UNSAFE(). */
+   See also _PyInterpreterState_Get() and _PyInterpreterState_GET(). */
 PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
@@ -184,8 +180,24 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
+PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
-typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
+/* Frame evaluation API */
+
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *, int);
+
+PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
+    PyInterpreterState *interp);
+PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
+    PyInterpreterState *interp,
+    _PyFrameEvalFunction eval_frame);
+
+PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *interp);
+
+// Get the configuration of the currrent interpreter.
+// The caller must hold the GIL.
+PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
+
 
 /* cross-interpreter data */
 

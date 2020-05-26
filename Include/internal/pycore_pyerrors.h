@@ -10,7 +10,22 @@ extern "C" {
 
 static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)
 {
-    return tstate == NULL ? NULL : tstate->curexc_type;
+    assert(tstate != NULL);
+    return tstate->curexc_type;
+}
+
+static inline void _PyErr_ClearExcState(_PyErr_StackItem *exc_state)
+{
+    PyObject *t, *v, *tb;
+    t = exc_state->exc_type;
+    v = exc_state->exc_value;
+    tb = exc_state->exc_traceback;
+    exc_state->exc_type = NULL;
+    exc_state->exc_value = NULL;
+    exc_state->exc_traceback = NULL;
+    Py_XDECREF(t);
+    Py_XDECREF(v);
+    Py_XDECREF(tb);
 }
 
 
@@ -35,9 +50,14 @@ PyAPI_FUNC(void) _PyErr_SetObject(
     PyObject *type,
     PyObject *value);
 
+PyAPI_FUNC(void) _PyErr_ChainStackItem(
+    _PyErr_StackItem *exc_info);
+
 PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
+
+PyAPI_FUNC(PyObject *) _PyErr_NoMemory(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _PyErr_SetString(
     PyThreadState *tstate,
@@ -55,6 +75,14 @@ PyAPI_FUNC(void) _PyErr_NormalizeException(
     PyObject **exc,
     PyObject **val,
     PyObject **tb);
+
+PyAPI_FUNC(PyObject *) _PyErr_FormatFromCauseTstate(
+    PyThreadState *tstate,
+    PyObject *exception,
+    const char *format,
+    ...);
+
+PyAPI_FUNC(int) _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

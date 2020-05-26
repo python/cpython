@@ -1,2 +1,0 @@
-Only accept text after `# type: ignore` if the first character is ASCII.
-This is to disallow things like `# type: ignoreé`.

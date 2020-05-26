@@ -14,11 +14,18 @@ from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
-    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
+    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN, TIMEOUT,
     PROGRESS_MIN_TIME, format_test_result, is_failed)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
+
+
+# bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
+# Used to protect against threading._shutdown() hang.
+# Must be smaller than buildbot "1200 seconds without output" limit.
+EXIT_TIMEOUT = 120.0
 
 
 class Regrtest:
@@ -114,6 +121,8 @@ class Regrtest:
             self.run_no_tests.append(test_name)
         elif ok == INTERRUPTED:
             self.interrupted = True
+        elif ok == TIMEOUT:
+            self.bad.append(test_name)
         else:
             raise ValueError("invalid test result: %r" % ok)
 
@@ -130,16 +139,8 @@ class Regrtest:
                     print(xml_data, file=sys.__stderr__)
                     raise
 
-    def display_progress(self, test_index, text):
-        if self.ns.quiet:
-            return
-
-        # "[ 51/405/1] test_tcl passed"
-        line = f"{test_index:{self.test_count_width}}{self.test_count}"
-        fails = len(self.bad) + len(self.environment_changed)
-        if fails and not self.ns.pgo:
-            line = f"{line}/{fails}"
-        line = f"[{line}] {text}"
+    def log(self, line=''):
+        empty = not line
 
         # add the system load prefix: "load avg: 1.80 "
         load_avg = self.getloadavg()
@@ -150,15 +151,25 @@ class Regrtest:
         test_time = time.monotonic() - self.start_time
         test_time = datetime.timedelta(seconds=int(test_time))
         line = f"{test_time} {line}"
+
+        if empty:
+            line = line[:-1]
+
         print(line, flush=True)
+
+    def display_progress(self, test_index, text):
+        if self.ns.quiet:
+            return
+
+        # "[ 51/405/1] test_tcl passed"
+        line = f"{test_index:{self.test_count_width}}{self.test_count}"
+        fails = len(self.bad) + len(self.environment_changed)
+        if fails and not self.ns.pgo:
+            line = f"{line}/{fails}"
+        self.log(f"[{line}] {text}")
 
     def parse_args(self, kwargs):
         ns = _parse_args(sys.argv[1:], **kwargs)
-
-        if ns.timeout and not hasattr(faulthandler, 'dump_traceback_later'):
-            print("Warning: The timeout option requires "
-                  "faulthandler.dump_traceback_later", file=sys.stderr)
-            ns.timeout = None
 
         if ns.xmlpath:
             support.junit_xml_list = self.testsuite_xml = []
@@ -173,7 +184,19 @@ class Regrtest:
         # Strip .py extensions.
         removepy(ns.args)
 
-        return ns
+        if ns.huntrleaks:
+            warmup, repetitions, _ = ns.huntrleaks
+            if warmup < 1 or repetitions < 1:
+                msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                       "number of warmups and repetitions must be at least 1 "
+                       "each (1:1).")
+                print(msg, file=sys.stderr, flush=True)
+                sys.exit(2)
+
+        if ns.tempdir:
+            ns.tempdir = os.path.expanduser(ns.tempdir)
+
+        self.ns = ns
 
     def find_tests(self, tests):
         self.tests = tests
@@ -201,6 +224,10 @@ class Regrtest:
                         self.tests.append(match.group())
 
         removepy(self.tests)
+
+        if self.ns.pgo:
+            # add default PGO tests if no tests are specified
+            setup_pgo_tests(self.ns)
 
         stdtests = STDTESTS[:]
         nottests = NOTTESTS.copy()
@@ -260,7 +287,7 @@ class Regrtest:
 
     def list_cases(self):
         support.verbose = False
-        support.set_match_tests(self.ns.match_tests)
+        support.set_match_tests(self.ns.match_tests, self.ns.ignore_tests)
 
         for test_name in self.selected:
             abstest = get_abs_module(self.ns, test_name)
@@ -282,11 +309,11 @@ class Regrtest:
 
         self.first_result = self.get_tests_result()
 
-        print()
-        print("Re-running failed tests in verbose mode")
+        self.log()
+        self.log("Re-running failed tests in verbose mode")
         self.rerun = self.bad[:]
         for test_name in self.rerun:
-            print(f"Re-running {test_name} in verbose mode", flush=True)
+            self.log(f"Re-running {test_name} in verbose mode")
             self.ns.verbose = True
             result = runtest(self.ns, test_name)
 
@@ -367,7 +394,10 @@ class Regrtest:
 
         save_modules = sys.modules.keys()
 
-        print("Run tests sequentially")
+        msg = "Run tests sequentially"
+        if self.ns.timeout:
+            msg += " (timeout: %s)" % format_duration(self.ns.timeout)
+        self.log(msg)
 
         previous_test = None
         for test_index, test_name in enumerate(self.tests, 1):
@@ -488,10 +518,6 @@ class Regrtest:
             self.run_tests_sequential()
 
     def finalize(self):
-        if self.win_load_tracker is not None:
-            self.win_load_tracker.close()
-            self.win_load_tracker = None
-
         if self.next_single_filename:
             if self.next_single_test:
                 with open(self.next_single_filename, 'w') as fp:
@@ -537,7 +563,7 @@ class Regrtest:
             for s in ET.tostringlist(root):
                 f.write(s)
 
-    def create_temp_dir(self):
+    def set_temp_dir(self):
         if self.ns.tempdir:
             self.tmp_dir = self.ns.tempdir
 
@@ -558,6 +584,8 @@ class Regrtest:
                 self.tmp_dir = tempfile.gettempdir()
 
         self.tmp_dir = os.path.abspath(self.tmp_dir)
+
+    def create_temp_dir(self):
         os.makedirs(self.tmp_dir, exist_ok=True)
 
         # Define a writable temp dir that will be used as cwd while running
@@ -565,27 +593,54 @@ class Regrtest:
         # testing (see the -j option).
         pid = os.getpid()
         if self.worker_test_name is not None:
-            test_cwd = 'worker_{}'.format(pid)
+            test_cwd = 'test_python_worker_{}'.format(pid)
         else:
             test_cwd = 'test_python_{}'.format(pid)
         test_cwd = os.path.join(self.tmp_dir, test_cwd)
         return test_cwd
 
+    def cleanup(self):
+        import glob
+
+        path = os.path.join(self.tmp_dir, 'test_python_*')
+        print("Cleanup %s directory" % self.tmp_dir)
+        for name in glob.glob(path):
+            if os.path.isdir(name):
+                print("Remove directory: %s" % name)
+                support.rmtree(name)
+            else:
+                print("Remove file: %s" % name)
+                support.unlink(name)
+
     def main(self, tests=None, **kwargs):
-        self.ns = self.parse_args(kwargs)
+        self.parse_args(kwargs)
+
+        self.set_temp_dir()
+
+        if self.ns.cleanup:
+            self.cleanup()
+            sys.exit(0)
 
         test_cwd = self.create_temp_dir()
 
-        # Run the tests in a context manager that temporarily changes the CWD
-        # to a temporary and writable directory. If it's not possible to
-        # create or change the CWD, the original CWD will be used.
-        # The original CWD is available from support.SAVEDCWD.
-        with support.temp_cwd(test_cwd, quiet=True):
-            # When using multiprocessing, worker processes will use test_cwd
-            # as their parent temporary directory. So when the main process
-            # exit, it removes also subdirectories of worker processes.
-            self.ns.tempdir = test_cwd
-            self._main(tests, kwargs)
+        try:
+            # Run the tests in a context manager that temporarily changes the CWD
+            # to a temporary and writable directory. If it's not possible to
+            # create or change the CWD, the original CWD will be used.
+            # The original CWD is available from support.SAVEDCWD.
+            with support.temp_cwd(test_cwd, quiet=True):
+                # When using multiprocessing, worker processes will use test_cwd
+                # as their parent temporary directory. So when the main process
+                # exit, it removes also subdirectories of worker processes.
+                self.ns.tempdir = test_cwd
+
+                self._main(tests, kwargs)
+        except SystemExit as exc:
+            # bpo-38203: Python can hang at exit in Py_Finalize(), especially
+            # on threading._shutdown() call: put a timeout
+            faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
+
+            sys.exit(exc.code)
 
     def getloadavg(self):
         if self.win_load_tracker is not None:
@@ -597,15 +652,6 @@ class Regrtest:
         return None
 
     def _main(self, tests, kwargs):
-        if self.ns.huntrleaks:
-            warmup, repetitions, _ = self.ns.huntrleaks
-            if warmup < 1 or repetitions < 1:
-                msg = ("Invalid values for the --huntrleaks/-R parameters. The "
-                       "number of warmups and repetitions must be at least 1 "
-                       "each (1:1).")
-                print(msg, file=sys.stderr, flush=True)
-                sys.exit(2)
-
         if self.worker_test_name is not None:
             from test.libregrtest.runtest_mp import run_tests_worker
             run_tests_worker(self.ns, self.worker_test_name)
@@ -614,6 +660,7 @@ class Regrtest:
             input("Press any key to continue...")
 
         support.PGO = self.ns.pgo
+        support.PGO_EXTENDED = self.ns.pgo_extended
 
         setup_tests(self.ns)
 
@@ -639,11 +686,16 @@ class Regrtest:
                 # typeperf.exe for x64, x86 or ARM
                 print(f'Failed to create WindowsLoadTracker: {error}')
 
-        self.run_tests()
-        self.display_result()
+        try:
+            self.run_tests()
+            self.display_result()
 
-        if self.ns.verbose2 and self.bad:
-            self.rerun_failed_tests()
+            if self.ns.verbose2 and self.bad:
+                self.rerun_failed_tests()
+        finally:
+            if self.win_load_tracker is not None:
+                self.win_load_tracker.close()
+                self.win_load_tracker = None
 
         self.finalize()
 

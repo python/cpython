@@ -3,15 +3,13 @@
    Nick Mathewson
 '''
 
-import os
 import sys
 from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
-from test import support
 from test.test_importlib import util as test_importlib_util
-from functools import partial
+
 
 StaticMethodType = type(staticmethod(lambda: None))
 ClassMethodType = type(classmethod(lambda c: None))
@@ -225,9 +223,7 @@ class PyclbrTest(TestCase):
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('cgi', ignore=('log',))      # set with = in module
         cm('pickle', ignore=('partial', 'PickleBuffer'))
-        # TODO(briancurtin): openfp is deprecated as of 3.7.
-        # Update this once it has been removed.
-        cm('aifc', ignore=('openfp', '_aifc_params'))  # set with = in module
+        cm('aifc', ignore=('_aifc_params',))  # set with = in module
         cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         cm('pdb')
         cm('pydoc', ignore=('input', 'output',)) # properties
@@ -251,7 +247,7 @@ class ReadmoduleTests(TestCase):
         # not a package.
         #
         # Issue #14798.
-        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncore.foo')
+        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncio.foo')
 
     def test_module_has_no_spec(self):
         module_name = "doesnotexist"

@@ -28,7 +28,7 @@ Executor Objects
    An abstract class that provides methods to execute calls asynchronously.  It
    should not be used directly, but through its concrete subclasses.
 
-    .. method:: submit(fn, *args, **kwargs)
+    .. method:: submit(fn, /, *args, **kwargs)
 
        Schedules the callable, *fn*, to be executed as ``fn(*args **kwargs)``
        and returns a :class:`Future` object representing the execution of the
@@ -67,7 +67,7 @@ Executor Objects
        .. versionchanged:: 3.5
           Added the *chunksize* argument.
 
-    .. method:: shutdown(wait=True)
+    .. method:: shutdown(wait=True, \*, cancel_futures=False)
 
        Signal the executor that it should free any resources that it is using
        when the currently pending futures are done executing.  Calls to
@@ -82,6 +82,15 @@ Executor Objects
        value of *wait*, the entire Python program will not exit until all
        pending futures are done executing.
 
+       If *cancel_futures* is ``True``, this method will cancel all pending
+       futures that the executor has not started running. Any futures that
+       are completed or running won't be cancelled, regardless of the value
+       of *cancel_futures*.
+
+       If both *cancel_futures* and *wait* are ``True``, all futures that the
+       executor has started running will be completed prior to this method
+       returning. The remaining futures are cancelled.
+
        You can avoid having to call this method explicitly if you use the
        :keyword:`with` statement, which will shutdown the :class:`Executor`
        (waiting as if :meth:`Executor.shutdown` were called with *wait* set to
@@ -93,6 +102,9 @@ Executor Objects
               e.submit(shutil.copy, 'src2.txt', 'dest2.txt')
               e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
               e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
+
+       .. versionchanged:: 3.9
+          Added *cancel_futures*.
 
 
 ThreadPoolExecutor
@@ -306,9 +318,10 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
 
     .. method:: cancel()
 
-       Attempt to cancel the call.  If the call is currently being executed and
-       cannot be cancelled then the method will return ``False``, otherwise the
-       call will be cancelled and the method will return ``True``.
+       Attempt to cancel the call.  If the call is currently being executed or
+       finished running and cannot be cancelled then the method will return
+       ``False``, otherwise the call will be cancelled and the method will
+       return ``True``.
 
     .. method:: cancelled()
 
@@ -423,8 +436,9 @@ Module Functions
    Wait for the :class:`Future` instances (possibly created by different
    :class:`Executor` instances) given by *fs* to complete.  Returns a named
    2-tuple of sets.  The first set, named ``done``, contains the futures that
-   completed (finished or were cancelled) before the wait completed.  The second
-   set, named ``not_done``, contains uncompleted futures.
+   completed (finished or cancelled futures) before the wait completed.  The
+   second set, named ``not_done``, contains the futures that did not complete
+   (pending or running futures).
 
    *timeout* can be used to control the maximum number of seconds to wait before
    returning.  *timeout* can be an int or float.  If *timeout* is not specified
@@ -455,7 +469,7 @@ Module Functions
 
    Returns an iterator over the :class:`Future` instances (possibly created by
    different :class:`Executor` instances) given by *fs* that yields futures as
-   they complete (finished or were cancelled). Any futures given by *fs* that
+   they complete (finished or cancelled futures). Any futures given by *fs* that
    are duplicated will be returned once. Any futures that completed before
    :func:`as_completed` is called will be yielded first.  The returned iterator
    raises a :exc:`concurrent.futures.TimeoutError` if :meth:`~iterator.__next__`

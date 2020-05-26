@@ -43,6 +43,8 @@ import os as _os
 import shutil as _shutil
 import errno as _errno
 from random import Random as _Random
+import sys as _sys
+import types as _types
 import weakref as _weakref
 import _thread
 _allocate_lock = _thread.allocate_lock
@@ -244,6 +246,7 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, pre + name + suf)
+        _sys.audit("tempfile.mkstemp", file)
         try:
             fd = _os.open(file, flags, 0o600)
         except FileExistsError:
@@ -352,6 +355,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, prefix + name + suffix)
+        _sys.audit("tempfile.mkdtemp", file)
         try:
             _os.mkdir(file, 0o700)
         except FileExistsError:
@@ -546,7 +550,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
         _os.close(fd)
         raise
 
-if _os.name != 'posix' or _os.sys.platform == 'cygwin':
+if _os.name != 'posix' or _sys.platform == 'cygwin':
     # On non-POSIX and Cygwin systems, assume that we cannot unlink a file
     # while it is open.
     TemporaryFile = NamedTemporaryFile
@@ -630,16 +634,17 @@ class SpooledTemporaryFile:
         if 'b' in mode:
             self._file = _io.BytesIO()
         else:
-            # Setting newline="\n" avoids newline translation;
-            # this is important because otherwise on Windows we'd
-            # get double newline translation upon rollover().
-            self._file = _io.StringIO(newline="\n")
+            self._file = _io.TextIOWrapper(_io.BytesIO(),
+                            encoding=encoding, errors=errors,
+                            newline=newline)
         self._max_size = max_size
         self._rolled = False
         self._TemporaryFileArgs = {'mode': mode, 'buffering': buffering,
                                    'suffix': suffix, 'prefix': prefix,
                                    'encoding': encoding, 'newline': newline,
                                    'dir': dir, 'errors': errors}
+
+    __class_getitem__ = classmethod(_types.GenericAlias)
 
     def _check(self, file):
         if self._rolled: return
@@ -653,8 +658,12 @@ class SpooledTemporaryFile:
         newfile = self._file = TemporaryFile(**self._TemporaryFileArgs)
         del self._TemporaryFileArgs
 
-        newfile.write(file.getvalue())
-        newfile.seek(file.tell(), 0)
+        pos = file.tell()
+        if hasattr(newfile, 'buffer'):
+            newfile.buffer.write(file.detach().getvalue())
+        else:
+            newfile.write(file.getvalue())
+        newfile.seek(pos, 0)
 
         self._rolled = True
 
@@ -729,11 +738,7 @@ class SpooledTemporaryFile:
         return self._file.readlines(*args)
 
     def seek(self, *args):
-        self._file.seek(*args)
-
-    @property
-    def softspace(self):
-        return self._file.softspace
+        return self._file.seek(*args)
 
     def tell(self):
         return self._file.tell()
@@ -824,3 +829,5 @@ class TemporaryDirectory(object):
     def cleanup(self):
         if self._finalizer.detach():
             self._rmtree(self.name)
+
+    __class_getitem__ = classmethod(_types.GenericAlias)

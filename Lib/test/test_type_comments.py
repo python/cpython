@@ -1,6 +1,7 @@
 import ast
 import sys
 import unittest
+from test import support
 
 
 funcdef = """\
@@ -228,8 +229,9 @@ class TypeCommentTests(unittest.TestCase):
                          feature_version=feature_version)
 
     def parse_all(self, source, minver=lowest, maxver=highest, expected_regex=""):
-        for feature_version in range(self.lowest, self.highest + 1):
-            if minver <= feature_version <= maxver:
+        for version in range(self.lowest, self.highest + 1):
+            feature_version = (3, version)
+            if minver <= version <= maxver:
                 try:
                     yield self.parse(source, feature_version)
                 except SyntaxError as err:
@@ -389,13 +391,21 @@ class TypeCommentTests(unittest.TestCase):
         arg = tree.argtypes[0]
         self.assertEqual(arg.id, "int")
         self.assertEqual(tree.returns.value.id, "List")
-        self.assertEqual(tree.returns.slice.value.id, "str")
+        self.assertEqual(tree.returns.slice.id, "str")
 
         tree = parse_func_type_input("(int, *str, **Any) -> float")
         self.assertEqual(tree.argtypes[0].id, "int")
         self.assertEqual(tree.argtypes[1].id, "str")
         self.assertEqual(tree.argtypes[2].id, "Any")
         self.assertEqual(tree.returns.id, "float")
+
+        tree = parse_func_type_input("(*int) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        tree = parse_func_type_input("(**int) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        tree = parse_func_type_input("(*int, **str) -> None")
+        self.assertEqual(tree.argtypes[0].id, "int")
+        self.assertEqual(tree.argtypes[1].id, "str")
 
         with self.assertRaises(SyntaxError):
             tree = parse_func_type_input("(int, *str, *Any) -> float")

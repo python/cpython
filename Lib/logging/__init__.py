@@ -1,4 +1,4 @@
-# Copyright 2001-2017 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python.
 
-Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -234,11 +234,9 @@ if not hasattr(os, 'register_at_fork'):  # Windows and friends.
     def _register_at_fork_reinit_lock(instance):
         pass  # no-op when os.register_at_fork does not exist.
 else:
-    # A collection of instances with a createLock method (logging.Handler)
+    # A collection of instances with a _at_fork_reinit method (logging.Handler)
     # to be called in the child after forking.  The weakref avoids us keeping
-    # discarded Handler instances alive.  A set is used to avoid accumulating
-    # duplicate registrations as createLock() is responsible for registering
-    # a new Handler instance with this set in the first place.
+    # discarded Handler instances alive.
     _at_fork_reinit_lock_weakset = weakref.WeakSet()
 
     def _register_at_fork_reinit_lock(instance):
@@ -249,16 +247,12 @@ else:
             _releaseLock()
 
     def _after_at_fork_child_reinit_locks():
-        # _acquireLock() was called in the parent before forking.
         for handler in _at_fork_reinit_lock_weakset:
-            try:
-                handler.createLock()
-            except Exception as err:
-                # Similar to what PyErr_WriteUnraisable does.
-                print("Ignoring exception from logging atfork", instance,
-                      "._reinit_lock() method:", err, file=sys.stderr)
-        _releaseLock()  # Acquired by os.register_at_fork(before=.
+            handler._at_fork_reinit()
 
+        # _acquireLock() was called in the parent before forking.
+        # The lock is reinitialized to unlocked state.
+        _lock._at_fork_reinit()
 
     os.register_at_fork(before=_acquireLock,
                         after_in_child=_after_at_fork_child_reinit_locks,
@@ -603,8 +597,9 @@ class Formatter(object):
         if datefmt:
             s = time.strftime(datefmt, ct)
         else:
-            t = time.strftime(self.default_time_format, ct)
-            s = self.default_msec_format % (t, record.msecs)
+            s = time.strftime(self.default_time_format, ct)
+            if self.default_msec_format:
+                s = self.default_msec_format % (s, record.msecs)
         return s
 
     def formatException(self, ei):
@@ -891,6 +886,9 @@ class Handler(Filterer):
         self.lock = threading.RLock()
         _register_at_fork_reinit_lock(self)
 
+    def _at_fork_reinit(self):
+        self.lock._at_fork_reinit()
+
     def acquire(self):
         """
         Acquire the I/O thread lock.
@@ -1122,7 +1120,7 @@ class FileHandler(StreamHandler):
     """
     A handler class which writes formatted logging records to disk files.
     """
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
+    def __init__(self, filename, mode='a', encoding=None, delay=False, errors=None):
         """
         Open the specified file and use it as the stream for logging.
         """
@@ -1133,6 +1131,7 @@ class FileHandler(StreamHandler):
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
         self.encoding = encoding
+        self.errors = errors
         self.delay = delay
         if delay:
             #We don't open the stream, but we still need to call the
@@ -1169,7 +1168,8 @@ class FileHandler(StreamHandler):
         Open the current base file with the (original) mode and encoding.
         Return the resulting stream.
         """
-        return open(self.baseFilename, self.mode, encoding=self.encoding)
+        return open(self.baseFilename, self.mode, encoding=self.encoding,
+                    errors=self.errors)
 
     def emit(self, record):
         """
@@ -1685,12 +1685,15 @@ class Logger(Filterer):
             return self._cache[level]
         except KeyError:
             _acquireLock()
-            if self.manager.disable >= level:
-                is_enabled = self._cache[level] = False
-            else:
-                is_enabled = self._cache[level] = level >= self.getEffectiveLevel()
-            _releaseLock()
-
+            try:
+                if self.manager.disable >= level:
+                    is_enabled = self._cache[level] = False
+                else:
+                    is_enabled = self._cache[level] = (
+                        level >= self.getEffectiveLevel()
+                    )
+            finally:
+                _releaseLock()
             return is_enabled
 
     def getChild(self, suffix):
@@ -1928,14 +1931,19 @@ def basicConfig(**kwargs):
               attached to the root logger are removed and closed, before
               carrying out the configuration as specified by the other
               arguments.
+    encoding  If specified together with a filename, this encoding is passed to
+              the created FileHandler, causing it to be used when the file is
+              opened.
+    errors    If specified together with a filename, this value is passed to the
+              created FileHandler, causing it to be used when the file is
+              opened in text mode. If not specified, the default value is
+              `backslashreplace`.
+
     Note that you could specify a stream created using open(filename, mode)
     rather than passing the filename and mode in. However, it should be
     remembered that StreamHandler does not close its stream (since it may be
     using sys.stdout or sys.stderr), whereas FileHandler closes its stream
     when the handler is closed.
-
-    .. versionchanged:: 3.8
-       Added the ``force`` parameter.
 
     .. versionchanged:: 3.2
        Added the ``style`` parameter.
@@ -1946,12 +1954,20 @@ def basicConfig(**kwargs):
        ``filename``/``filemode``, or ``filename``/``filemode`` specified
        together with ``stream``, or ``handlers`` specified together with
        ``stream``.
+
+    .. versionchanged:: 3.8
+       Added the ``force`` parameter.
+
+    .. versionchanged:: 3.9
+       Added the ``encoding`` and ``errors`` parameters.
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
     _acquireLock()
     try:
         force = kwargs.pop('force', False)
+        encoding = kwargs.pop('encoding', None)
+        errors = kwargs.pop('errors', 'backslashreplace')
         if force:
             for h in root.handlers[:]:
                 root.removeHandler(h)
@@ -1970,7 +1986,10 @@ def basicConfig(**kwargs):
                 filename = kwargs.pop("filename", None)
                 mode = kwargs.pop("filemode", 'a')
                 if filename:
-                    h = FileHandler(filename, mode)
+                    if 'b'in mode:
+                        errors = None
+                    h = FileHandler(filename, mode,
+                                    encoding=encoding, errors=errors)
                 else:
                     stream = kwargs.pop("stream", None)
                     h = StreamHandler(stream)
@@ -2006,10 +2025,9 @@ def getLogger(name=None):
 
     If no name is specified, return the root logger.
     """
-    if name:
-        return Logger.manager.getLogger(name)
-    else:
+    if not name or isinstance(name, str) and name == root.name:
         return root
+    return Logger.manager.getLogger(name)
 
 def critical(msg, *args, **kwargs):
     """
@@ -2147,6 +2165,9 @@ class NullHandler(Handler):
 
     def createLock(self):
         self.lock = None
+
+    def _at_fork_reinit(self):
+        pass
 
 # Warnings integration
 

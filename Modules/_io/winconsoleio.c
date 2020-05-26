@@ -12,7 +12,7 @@
 
 #ifdef MS_WINDOWS
 
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -204,8 +204,8 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
     PyObject *exc, *val, *tb;
     int rc;
     _Py_IDENTIFIER(close);
-    res = _PyObject_CallMethodIdObjArgs((PyObject*)&PyRawIOBase_Type,
-                                        &PyId_close, self, NULL);
+    res = _PyObject_CallMethodIdOneArg((PyObject*)&PyRawIOBase_Type,
+                                       &PyId_close, (PyObject*)self);
     if (!self->closehandle) {
         self->handle = INVALID_HANDLE_VALUE;
         return res;

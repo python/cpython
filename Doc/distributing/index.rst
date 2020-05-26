@@ -40,7 +40,7 @@ Key terms
   evolution of the standard packaging tools and the associated metadata and
   file format standards. They maintain a variety of tools, documentation
   and issue trackers on both `GitHub <https://github.com/pypa>`__ and
-  `BitBucket <https://bitbucket.org/pypa/>`__.
+  `Bitbucket <https://bitbucket.org/pypa/>`__.
 * :mod:`distutils` is the original build and distribution system first added
   to the Python standard library in 1998. While direct use of :mod:`distutils`
   is being phased out, it still laid the foundation for the current packaging
@@ -148,7 +148,7 @@ These are quick answers or links for some common tasks.
 This isn't an easy topic, but here are a few tips:
 
 * check the Python Packaging Index to see if the name is already in use
-* check popular hosting sites like GitHub, BitBucket, etc to see if there
+* check popular hosting sites like GitHub, Bitbucket, etc to see if there
   is already a project with that name
 * check what comes up in a web search for the name you're considering
 * avoid particularly common words, especially ones with multiple meanings,

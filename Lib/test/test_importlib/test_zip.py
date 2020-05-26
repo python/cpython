@@ -2,10 +2,15 @@ import sys
 import unittest
 
 from contextlib import ExitStack
-from importlib.metadata import distribution, entry_points, files, version
+from importlib.metadata import (
+    distribution, entry_points, files, PackageNotFoundError, version,
+)
 from importlib.resources import path
 
+from test.support import requires_zlib
 
+
+@requires_zlib()
 class TestZip(unittest.TestCase):
     root = 'test.test_importlib.data'
 
@@ -22,9 +27,15 @@ class TestZip(unittest.TestCase):
     def test_zip_version(self):
         self.assertEqual(version('example'), '21.12')
 
+    def test_zip_version_does_not_match(self):
+        with self.assertRaises(PackageNotFoundError):
+            version('definitely-not-installed')
+
     def test_zip_entry_points(self):
         scripts = dict(entry_points()['console_scripts'])
         entry_point = scripts['example']
+        self.assertEqual(entry_point.value, 'example:main')
+        entry_point = scripts['Example']
         self.assertEqual(entry_point.value, 'example:main')
 
     def test_missing_metadata(self):
@@ -39,6 +50,7 @@ class TestZip(unittest.TestCase):
             assert '.whl/' in path, path
 
 
+@requires_zlib()
 class TestEgg(TestZip):
     def setUp(self):
         # Find the path to the example-*.egg so we can add it to the front of

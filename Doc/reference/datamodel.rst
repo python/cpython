@@ -17,7 +17,7 @@ Objects, values and types
 
 :dfn:`Objects` are Python's abstraction for data.  All data in a Python program
 is represented by objects or by relations between objects. (In a sense, and in
-conformance to Von Neumann's model of a "stored program computer," code is also
+conformance to Von Neumann's model of a "stored program computer", code is also
 represented by objects.)
 
 .. index::
@@ -156,12 +156,17 @@ NotImplemented
    object is accessed through the built-in name ``NotImplemented``. Numeric methods
    and rich comparison methods should return this value if they do not implement the
    operation for the operands provided.  (The interpreter will then try the
-   reflected operation, or some other fallback, depending on the operator.)  Its
-   truth value is true.
+   reflected operation, or some other fallback, depending on the operator.)  It
+   should not be evaluated in a boolean context.
 
    See
    :ref:`implementing-the-arithmetic-operations`
    for more details.
+
+   .. versionchanged:: 3.9
+      Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+      it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
+      It will raise a :exc:`TypeError` in a future version of Python.
 
 
 Ellipsis
@@ -420,6 +425,11 @@ Mappings
       equal (e.g., ``1`` and ``1.0``) then they can be used interchangeably to index
       the same dictionary entry.
 
+      Dictionaries preserve insertion order, meaning that keys will be produced
+      in the same order they were added sequentially over the dictionary.
+      Replacing an existing key does not change the order, however removing a key
+      and re-inserting it will add it to the end instead of keeping its old place.
+
       Dictionaries are mutable; they can be created by the ``{...}`` notation (see
       section :ref:`dict`).
 
@@ -430,6 +440,11 @@ Mappings
       The extension modules :mod:`dbm.ndbm` and :mod:`dbm.gnu` provide
       additional examples of mapping types, as does the :mod:`collections`
       module.
+
+      .. versionchanged:: 3.7
+         Dictionaries did not preserve insertion order in versions of Python before 3.6.
+         In CPython 3.6, insertion order was preserved, but it was considered
+         an implementation detail at that time rather than a language guarantee.
 
 Callable types
    .. index::
@@ -925,8 +940,8 @@ Internal types
       the first line number of the function; :attr:`co_lnotab` is a string
       encoding the mapping from bytecode offsets to line numbers (for details
       see the source code of the interpreter); :attr:`co_stacksize` is the
-      required stack size (including local variables); :attr:`co_flags` is an
-      integer encoding a number of flags for the interpreter.
+      required stack size; :attr:`co_flags` is an integer encoding a number
+      of flags for the interpreter.
 
       .. index:: object: generator
 
@@ -1166,10 +1181,10 @@ Basic customization
    with appropriate arguments and then modifying the newly-created instance
    as necessary before returning it.
 
-   If :meth:`__new__` returns an instance of *cls*, then the new instance's
-   :meth:`__init__` method will be invoked like ``__init__(self[, ...])``, where
-   *self* is the new instance and the remaining arguments are the same as were
-   passed to :meth:`__new__`.
+   If :meth:`__new__` is invoked during object construction and it returns an
+   instance or subclass of *cls*, then the new instance’s :meth:`__init__` method
+   will be invoked like ``__init__(self[, ...])``, where *self* is the new instance
+   and the remaining arguments are the same as were passed to the object constructor.
 
    If :meth:`__new__` does not return an instance of *cls*, then the new instance's
    :meth:`__init__` method will not be invoked.
@@ -1335,7 +1350,7 @@ Basic customization
 
    .. versionchanged:: 3.7
       ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather
-      than ``format(str(self), '')``.
+      than ``format(str(x), '')``.
 
 
 .. _richcmpfuncs:
@@ -1445,8 +1460,8 @@ Basic customization
 
    .. note::
 
-      By default, the :meth:`__hash__` values of str, bytes and datetime
-      objects are "salted" with an unpredictable random value.  Although they
+      By default, the :meth:`__hash__` values of str and bytes objects are
+      "salted" with an unpredictable random value.  Although they
       remain constant within an individual Python process, they are not
       predictable between repeated invocations of Python.
 
@@ -1566,7 +1581,7 @@ not found on a module object through the normal lookup, i.e.
 the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
 it is called with the attribute name and the result is returned.
 
-The ``__dir__`` function should accept no arguments, and return a list of
+The ``__dir__`` function should accept no arguments, and return a sequence of
 strings that represents the names accessible on module. If present, this
 function overrides the standard :func:`dir` search on a module.
 
@@ -1618,21 +1633,32 @@ refers to the attribute whose name is the key of the property in the owner
 class' :attr:`~object.__dict__`.
 
 
-.. method:: object.__get__(self, instance, owner)
+.. method:: object.__get__(self, instance, owner=None)
 
-   Called to get the attribute of the owner class (class attribute access) or of an
-   instance of that class (instance attribute access). *owner* is always the owner
-   class, while *instance* is the instance that the attribute was accessed through,
-   or ``None`` when the attribute is accessed through the *owner*.  This method
-   should return the (computed) attribute value or raise an :exc:`AttributeError`
-   exception.
+   Called to get the attribute of the owner class (class attribute access) or
+   of an instance of that class (instance attribute access). The optional
+   *owner* argument is the owner class, while *instance* is the instance that
+   the attribute was accessed through, or ``None`` when the attribute is
+   accessed through the *owner*.
 
+   This method should return the computed attribute value or raise an
+   :exc:`AttributeError` exception.
+
+   :PEP:`252` specifies that :meth:`__get__` is callable with one or two
+   arguments.  Python's own built-in descriptors support this specification;
+   however, it is likely that some third-party tools have descriptors
+   that require both arguments.  Python's own :meth:`__getattribute__`
+   implementation always passes in both arguments whether they are required
+   or not.
 
 .. method:: object.__set__(self, instance, value)
 
    Called to set the attribute on an instance *instance* of the owner class to a
    new value, *value*.
 
+   Note, adding :meth:`__set__` or :meth:`__delete__` changes the kind of
+   descriptor to a "data descriptor".  See :ref:`descriptor-invocation` for
+   more details.
 
 .. method:: object.__delete__(self, instance)
 
@@ -1644,8 +1670,22 @@ class' :attr:`~object.__dict__`.
    Called at the time the owning class *owner* is created. The
    descriptor has been assigned to *name*.
 
-   .. versionadded:: 3.6
+   .. note::
 
+      :meth:`__set_name__` is only called implicitly as part of the
+      :class:`type` constructor, so it will need to be called explicitly with
+      the appropriate parameters when a descriptor is added to a class after
+      initial creation::
+
+         class A:
+            pass
+         descr = custom_descriptor()
+         A.attr = descr
+         descr.__set_name__(A, 'attr')
+
+      See :ref:`class-object-creation` for more details.
+
+   .. versionadded:: 3.6
 
 The attribute :attr:`__objclass__` is interpreted by the :mod:`inspect` module
 as specifying the class where this object was defined (setting this
@@ -1705,7 +1745,7 @@ the descriptor defines :meth:`__set__` and/or :meth:`__delete__`, it is a data
 descriptor; if it defines neither, it is a non-data descriptor.  Normally, data
 descriptors define both :meth:`__get__` and :meth:`__set__`, while non-data
 descriptors have just the :meth:`__get__` method.  Data descriptors with
-:meth:`__set__` and :meth:`__get__` defined always override a redefinition in an
+:meth:`__get__` and :meth:`__set__` (and/or :meth:`__delete__`) defined always override a redefinition in an
 instance dictionary.  In contrast, non-data descriptors can be overridden by
 instances.
 
@@ -1785,6 +1825,10 @@ Notes on using *__slots__*
   but only one parent is allowed to have attributes created by slots
   (the other bases must have empty slot layouts) - violations raise
   :exc:`TypeError`.
+
+* If an iterator is used for *__slots__* then a descriptor is created for each
+  of the iterator's values. However, the *__slots__* attribute will be an empty
+  iterator.
 
 .. _class-customization:
 
@@ -1916,7 +1960,10 @@ Preparing the class namespace
 Once the appropriate metaclass has been identified, then the class namespace
 is prepared. If the metaclass has a ``__prepare__`` attribute, it is called
 as ``namespace = metaclass.__prepare__(name, bases, **kwds)`` (where the
-additional keyword arguments, if any, come from the class definition).
+additional keyword arguments, if any, come from the class definition). The
+``__prepare__`` method should be implemented as a :func:`classmethod`. The
+namespace returned by ``__prepare__`` is passed in to ``__new__``, but when
+the final class object is created the namespace is copied into a new ``dict``.
 
 If the metaclass has no ``__prepare__`` attribute, then the class namespace
 is initialised as an empty ordered mapping.
@@ -2117,8 +2164,8 @@ operators.  It is recommended that both mappings and sequences implement the
 mappings, ``in`` should search the mapping's keys; for sequences, it should
 search through the values.  It is further recommended that both mappings and
 sequences implement the :meth:`__iter__` method to allow efficient iteration
-through the container; for mappings, :meth:`__iter__` should be the same as
-:meth:`keys`; for sequences, it should iterate through the values.
+through the container; for mappings, :meth:`__iter__` should iterate
+through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__len__(self)
 
@@ -2144,7 +2191,9 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
    Called to implement :func:`operator.length_hint`. Should return an estimated
    length for the object (which may be greater or less than the actual length).
-   The length must be an integer ``>=`` 0. This method is purely an
+   The length must be an integer ``>=`` 0. The return value may also be
+   :const:`NotImplemented`, which is treated the same as if the
+   ``__length_hint__`` method didn't exist at all. This method is purely an
    optimization and is never required for correctness.
 
    .. versionadded:: 3.4
@@ -2230,9 +2279,9 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
 
 The membership test operators (:keyword:`in` and :keyword:`not in`) are normally
-implemented as an iteration through a sequence.  However, container objects can
+implemented as an iteration through a container. However, container objects can
 supply the following special method with a more efficient implementation, which
-also does not require the object be a sequence.
+also does not require the object be iterable.
 
 .. method:: object.__contains__(self, item)
 
@@ -2300,7 +2349,7 @@ left undefined.
             object.__rfloordiv__(self, other)
             object.__rmod__(self, other)
             object.__rdivmod__(self, other)
-            object.__rpow__(self, other)
+            object.__rpow__(self, other[, modulo])
             object.__rlshift__(self, other)
             object.__rrshift__(self, other)
             object.__rand__(self, other)

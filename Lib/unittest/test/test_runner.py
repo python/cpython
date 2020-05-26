@@ -592,7 +592,7 @@ class TestModuleCleanUp(unittest.TestCase):
         class TestableTest(unittest.TestCase):
             def setUp(self2):
                 self2.addCleanup(cleanup, 1, 2, function=3, self=4)
-                with self.assertWarns(DeprecationWarning):
+                with self.assertRaises(TypeError):
                     self2.addCleanup(function=cleanup, arg='hello')
             def testNothing(self):
                 pass
@@ -603,8 +603,7 @@ class TestModuleCleanUp(unittest.TestCase):
             unittest.TestCase.addCleanup(self=TestableTest(), function=cleanup)
         runTests(TestableTest)
         self.assertEqual(cleanups,
-                         [((), {'arg': 'hello'}),
-                          ((1, 2), {'function': 3, 'self': 4})])
+                         [((1, 2), {'function': 3, 'self': 4})])
 
     def test_with_errors_in_addClassCleanup(self):
         ordering = []

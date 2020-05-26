@@ -58,6 +58,14 @@ This module defines the following functions:
    :func:`threading.excepthook` can be overridden to control how uncaught
    exceptions raised by :func:`Thread.run` are handled.
 
+   Storing *exc_value* using a custom hook can create a reference cycle. It
+   should be cleared explicitly to break the reference cycle when the
+   exception is no longer needed.
+
+   Storing *thread* using a custom hook can resurrect it if it is set to an
+   object which is being finalized. Avoid storing *thread* after the custom
+   hook completes to avoid resurrecting objects.
+
    .. seealso::
       :func:`sys.excepthook` handles uncaught exceptions.
 
@@ -82,7 +90,7 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX.
 
    .. versionadded:: 3.8
 
@@ -355,7 +363,7 @@ since it is impossible to detect the termination of alien threads.
          system-wide) from the time the thread is created until the thread
          has been terminated.
 
-      .. availability:: Windows, FreeBSD, Linux, macOS.
+      .. availability:: Requires :func:`get_native_id` function.
 
       .. versionadded:: 3.8
 
@@ -480,6 +488,11 @@ All methods are executed atomically.
 
       There is no return value.
 
+   .. method:: locked()
+
+      Return true if the lock is acquired.
+
+
 
 .. _rlock-objects:
 
@@ -527,15 +540,15 @@ Reentrant locks also support the :ref:`context management protocol <with-locks>`
       There is no return value in this case.
 
       When invoked with the *blocking* argument set to true, do the same thing as when
-      called without arguments, and return true.
+      called without arguments, and return ``True``.
 
       When invoked with the *blocking* argument set to false, do not block.  If a call
-      without an argument would block, return false immediately; otherwise, do the
-      same thing as when called without arguments, and return true.
+      without an argument would block, return ``False`` immediately; otherwise, do the
+      same thing as when called without arguments, and return ``True``.
 
       When invoked with the floating-point *timeout* argument set to a positive
       value, block for at most the number of seconds specified by *timeout*
-      and as long as the lock cannot be acquired.  Return true if the lock has
+      and as long as the lock cannot be acquired.  Return ``True`` if the lock has
       been acquired, false if the timeout has elapsed.
 
       .. versionchanged:: 3.2
@@ -768,29 +781,32 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       When invoked without arguments:
 
       * If the internal counter is larger than zero on entry, decrement it by
-        one and return true immediately.
+        one and return ``True`` immediately.
       * If the internal counter is zero on entry, block until awoken by a call to
         :meth:`~Semaphore.release`.  Once awoken (and the counter is greater
-        than 0), decrement the counter by 1 and return true.  Exactly one
+        than 0), decrement the counter by 1 and return ``True``.  Exactly one
         thread will be awoken by each call to :meth:`~Semaphore.release`.  The
         order in which threads are awoken should not be relied on.
 
       When invoked with *blocking* set to false, do not block.  If a call
-      without an argument would block, return false immediately; otherwise, do
-      the same thing as when called without arguments, and return true.
+      without an argument would block, return ``False`` immediately; otherwise, do
+      the same thing as when called without arguments, and return ``True``.
 
       When invoked with a *timeout* other than ``None``, it will block for at
       most *timeout* seconds.  If acquire does not complete successfully in
-      that interval, return false.  Return true otherwise.
+      that interval, return ``False``.  Return ``True`` otherwise.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
 
-   .. method:: release()
+   .. method:: release(n=1)
 
-      Release a semaphore, incrementing the internal counter by one.  When it
-      was zero on entry and another thread is waiting for it to become larger
-      than zero again, wake up that thread.
+      Release a semaphore, incrementing the internal counter by *n*.  When it
+      was zero on entry and other threads are waiting for it to become larger
+      than zero again, wake up *n* of those threads.
+
+      .. versionchanged:: 3.9
+         Added the *n* parameter to release multiple waiting threads at once.
 
 
 .. class:: BoundedSemaphore(value=1)
@@ -858,7 +874,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
    .. method:: is_set()
 
-      Return true if and only if the internal flag is true.
+      Return ``True`` if and only if the internal flag is true.
 
    .. method:: set()
 
@@ -882,7 +898,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
       floating point number specifying a timeout for the operation in seconds
       (or fractions thereof).
 
-      This method returns true if and only if the internal flag has been set to
+      This method returns ``True`` if and only if the internal flag has been set to
       true, either before the wait call or after the wait starts, so it will
       always return ``True`` except if a timeout is given and the operation
       times out.

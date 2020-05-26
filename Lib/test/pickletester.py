@@ -73,6 +73,18 @@ class UnseekableIO(io.BytesIO):
         raise io.UnsupportedOperation
 
 
+class MinimalIO(object):
+    """
+    A file-like object that doesn't support readinto().
+    """
+    def __init__(self, *args):
+        self._bio = io.BytesIO(*args)
+        self.getvalue = self._bio.getvalue
+        self.read = self._bio.read
+        self.readline = self._bio.readline
+        self.write = self._bio.write
+
+
 # We can't very well test the extension registry without putting known stuff
 # in it, but we have to be careful to restore its original state.  Code
 # should do this:
@@ -1019,7 +1031,9 @@ class AbstractUnpickleTests(unittest.TestCase):
         self.assertEqual(self.loads(dumped), '\u20ac\x00')
 
     def test_misc_get(self):
-        self.check_unpickling_error(KeyError, b'g0\np0')
+        self.check_unpickling_error(pickle.UnpicklingError, b'g0\np0')
+        self.check_unpickling_error(pickle.UnpicklingError, b'jens:')
+        self.check_unpickling_error(pickle.UnpicklingError, b'hens:')
         self.assert_is_copy([(100,), (100,)],
                             self.loads(b'((Kdtp0\nh\x00l.))'))
 
@@ -2328,6 +2342,7 @@ class AbstractPickleTests(unittest.TestCase):
         elif frameless_start is not None:
             self.assertLess(pos - frameless_start, self.FRAME_SIZE_MIN)
 
+    @support.skip_if_pgo_task
     def test_framing_many_objects(self):
         obj = list(range(10**5))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
@@ -2417,6 +2432,7 @@ class AbstractPickleTests(unittest.TestCase):
                                 count_opcode(pickle.FRAME, pickled))
                 self.assertEqual(obj, self.loads(some_frames_pickle))
 
+    @support.skip_if_pgo_task
     def test_framed_write_sizes_with_delayed_writer(self):
         class ChunkAccumulator:
             """Accumulate pickler output in a list of raw chunks."""
@@ -2764,6 +2780,11 @@ class AbstractPickleTests(unittest.TestCase):
             # Buffer iterable exhausts too early
             with self.assertRaises(pickle.UnpicklingError):
                 self.loads(data, buffers=[])
+
+    def test_inband_accept_default_buffers_argument(self):
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
+            data_pickled = self.dumps(1, proto, buffer_callback=None)
+            data = self.loads(data_pickled, buffers=None)
 
     @unittest.skipIf(np is None, "Test needs Numpy")
     def test_buffers_numpy(self):
@@ -3354,7 +3375,7 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         f.seek(0)
         self.assertEqual(unpickler.load(), data2)
 
-    def _check_multiple_unpicklings(self, ioclass):
+    def _check_multiple_unpicklings(self, ioclass, *, seekable=True):
         for proto in protocols:
             with self.subTest(proto=proto):
                 data1 = [(x, str(x)) for x in range(2000)] + [b"abcde", len]
@@ -3367,10 +3388,10 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
                 f = ioclass(pickled * N)
                 unpickler = self.unpickler_class(f)
                 for i in range(N):
-                    if f.seekable():
+                    if seekable:
                         pos = f.tell()
                     self.assertEqual(unpickler.load(), data1)
-                    if f.seekable():
+                    if seekable:
                         self.assertEqual(f.tell(), pos + len(pickled))
                 self.assertRaises(EOFError, unpickler.load)
 
@@ -3378,7 +3399,12 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         self._check_multiple_unpicklings(io.BytesIO)
 
     def test_multiple_unpicklings_unseekable(self):
-        self._check_multiple_unpicklings(UnseekableIO)
+        self._check_multiple_unpicklings(UnseekableIO, seekable=False)
+
+    def test_multiple_unpicklings_minimal(self):
+        # File-like object that doesn't support peek() and readinto()
+        # (bpo-39681)
+        self._check_multiple_unpicklings(MinimalIO, seekable=False)
 
     def test_unpickling_buffering_readline(self):
         # Issue #12687: the unpickler's buffering logic could fail with
@@ -3489,6 +3515,30 @@ class AbstractHookTests(unittest.TestCase):
                 with self.assertRaisesRegex(
                         ValueError, 'The reducer just failed'):
                     p.dump(h)
+
+    @support.cpython_only
+    def test_reducer_override_no_reference_cycle(self):
+        # bpo-39492: reducer_override used to induce a spurious reference cycle
+        # inside the Pickler object, that could prevent all serialized objects
+        # from being garbage-collected without explicity invoking gc.collect.
+
+        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                def f():
+                    pass
+
+                wr = weakref.ref(f)
+
+                bio = io.BytesIO()
+                p = self.pickler_class(bio, proto)
+                p.dump(f)
+                new_f = pickle.loads(bio.getvalue())
+                assert new_f == 5
+
+                del p
+                del f
+
+                self.assertIsNone(wr())
 
 
 class AbstractDispatchTableTests(unittest.TestCase):

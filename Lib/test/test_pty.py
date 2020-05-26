@@ -66,15 +66,26 @@ def _readline(fd):
 # XXX(nnorwitz):  these tests leak fds when there is an error.
 class PtyTest(unittest.TestCase):
     def setUp(self):
-        # isatty() and close() can hang on some platforms.  Set an alarm
-        # before running the test to make sure we don't hang forever.
         old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
         self.addCleanup(signal.signal, signal.SIGALRM, old_alarm)
+
+        old_sighup = signal.signal(signal.SIGHUP, self.handle_sighup)
+        self.addCleanup(signal.signal, signal.SIGHUP, old_sighup)
+
+        # isatty() and close() can hang on some platforms. Set an alarm
+        # before running the test to make sure we don't hang forever.
         self.addCleanup(signal.alarm, 0)
         signal.alarm(10)
 
     def handle_sig(self, sig, frame):
         self.fail("isatty hung")
+
+    @staticmethod
+    def handle_sighup(signum, frame):
+        # bpo-38547: if the process is the session leader, os.close(master_fd)
+        # of "master_fd, slave_name = pty.master_open()" raises SIGHUP
+        # signal: just ignore the signal.
+        pass
 
     def test_basic(self):
         try:
@@ -122,8 +133,10 @@ class PtyTest(unittest.TestCase):
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
         os.close(slave_fd)
+        # closing master_fd can raise a SIGHUP if the process is
+        # the session leader: we installed a SIGHUP signal handler
+        # to ignore this signal.
         os.close(master_fd)
-
 
     def test_fork(self):
         debug("calling pty.fork()")
@@ -187,8 +200,8 @@ class PtyTest(unittest.TestCase):
             ##    raise TestFailed("Unexpected output from child: %r" % line)
 
             (pid, status) = os.waitpid(pid, 0)
-            res = status >> 8
-            debug("Child (%d) exited with status %d (%d)." % (pid, res, status))
+            res = os.waitstatus_to_exitcode(status)
+            debug("Child (%d) exited with code %d (status %d)." % (pid, res, status))
             if res == 1:
                 self.fail("Child raised an unexpected exception in os.setsid()")
             elif res == 2:

@@ -1,8 +1,8 @@
 .. _using:
 
-==========================
- Using importlib.metadata
-==========================
+=================================
+ Using :mod:`!importlib.metadata`
+=================================
 
 .. note::
    This functionality is provisional and may deviate from the usual
@@ -12,8 +12,8 @@
 package metadata.  Built in part on Python's import system, this library
 intends to replace similar functionality in the `entry point
 API`_ and `metadata API`_ of ``pkg_resources``.  Along with
-``importlib.resources`` in `Python 3.7
-and newer`_ (backported as `importlib_resources`_ for older versions of
+:mod:`importlib.resources` in Python 3.7
+and newer (backported as `importlib_resources`_ for older versions of
 Python), this can eliminate the need to use the older and less efficient
 ``pkg_resources`` package.
 
@@ -21,9 +21,9 @@ By "installed package" we generally mean a third-party package installed into
 Python's ``site-packages`` directory via tools such as `pip
 <https://pypi.org/project/pip/>`_.  Specifically,
 it means a package with either a discoverable ``dist-info`` or ``egg-info``
-directory, and metadata defined by `PEP 566`_ or its older specifications.
+directory, and metadata defined by :pep:`566` or its older specifications.
 By default, package metadata can live on the file system or in zip archives on
-``sys.path``.  Through an extension mechanism, the metadata can live almost
+:data:`sys.path`.  Through an extension mechanism, the metadata can live almost
 anywhere.
 
 
@@ -134,7 +134,7 @@ Distribution files
 You can also get the full set of files contained within a distribution.  The
 ``files()`` function takes a distribution package name and returns all of the
 files installed by this distribution.  Each file object returned is a
-``PackagePath``, a `pathlib.Path`_ derived object with additional ``dist``,
+``PackagePath``, a :class:`pathlib.Path` derived object with additional ``dist``,
 ``size``, and ``hash`` properties as indicated by the metadata.  For example::
 
     >>> util = [p for p in files('wheel') if 'util.py' in str(p)][0]  # doctest: +SKIP
@@ -158,6 +158,13 @@ Once you have the file, you can also read its contents::
             return s.encode('utf-8')
         return s
 
+In the case where the metadata file listing files
+(RECORD or SOURCES.txt) is missing, ``files()`` will
+return ``None``. The caller may wish to wrap calls to
+``files()`` in `always_iterable
+<https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.always_iterable>`_
+or otherwise guard against this condition if the target
+distribution is not known to have the metadata present.
 
 .. _requirements:
 
@@ -165,10 +172,10 @@ Distribution requirements
 -------------------------
 
 To get the full set of requirements for a distribution, use the ``requires()``
-function.  Note that this returns an iterator::
+function::
 
-    >>> list(requires('wheel'))  # doctest: +SKIP
-    ["pytest (>=3.0.0) ; extra == 'test'"]
+    >>> requires('wheel')  # doctest: +SKIP
+    ["pytest (>=3.0.0) ; extra == 'test'", "pytest-cov ; extra == 'test'"]
 
 
 Distributions
@@ -196,62 +203,57 @@ instance::
     >>> d.metadata['License']  # doctest: +SKIP
     'MIT'
 
-The full set of available metadata is not described here.  See `PEP 566
-<https://www.python.org/dev/peps/pep-0566/>`_ for additional details.
+The full set of available metadata is not described here.  See :pep:`566`
+for additional details.
 
 
 Extending the search algorithm
 ==============================
 
-Because package metadata is not available through ``sys.path`` searches, or
+Because package metadata is not available through :data:`sys.path` searches, or
 package loaders directly, the metadata for a package is found through import
-system `finders`_.  To find a distribution package's metadata,
-``importlib.metadata`` queries the list of `meta path finders`_ on
-`sys.meta_path`_.
+system :ref:`finders <finders-and-loaders>`.  To find a distribution package's metadata,
+``importlib.metadata`` queries the list of :term:`meta path finders <meta path finder>` on
+:data:`sys.meta_path`.
 
-By default ``importlib.metadata`` installs a finder for distribution packages
-found on the file system.  This finder doesn't actually find any *packages*,
-but it can find the packages' metadata.
+The default ``PathFinder`` for Python includes a hook that calls into
+``importlib.metadata.MetadataPathFinder`` for finding distributions
+loaded from typical file-system-based paths.
 
 The abstract class :py:class:`importlib.abc.MetaPathFinder` defines the
 interface expected of finders by Python's import system.
 ``importlib.metadata`` extends this protocol by looking for an optional
 ``find_distributions`` callable on the finders from
-``sys.meta_path``.  If the finder has this method, it must return
-an iterator over instances of the ``Distribution`` abstract class. This
-method must have the signature::
+:data:`sys.meta_path` and presents this extended interface as the
+``DistributionFinder`` abstract base class, which defines this abstract
+method::
 
-    def find_distributions(name=None, path=None):
+    @abc.abstractmethod
+    def find_distributions(context=DistributionFinder.Context()):
         """Return an iterable of all Distribution instances capable of
-        loading the metadata for packages matching the name
-        (or all names if not supplied) along the paths in the list
-        of directories ``path`` (defaults to sys.path).
+        loading the metadata for packages for the indicated ``context``.
         """
 
+The ``DistributionFinder.Context`` object provides ``.path`` and ``.name``
+properties indicating the path to search and names to match and may
+supply other relevant context.
+
 What this means in practice is that to support finding distribution package
-metadata in locations other than the file system, you should derive from
-``Distribution`` and implement the ``load_metadata()`` method.  This takes a
-single argument which is the name of the package whose metadata is being
-found.  This instance of the ``Distribution`` base abstract class is what your
-finder's ``find_distributions()`` method should return.
+metadata in locations other than the file system, subclass
+``Distribution`` and implement the abstract methods. Then from
+a custom finder, return instances of this derived ``Distribution`` in the
+``find_distributions()`` method.
 
 
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points
 .. _`metadata API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api
-.. _`Python 3.7 and newer`: https://docs.python.org/3/library/importlib.html#module-importlib.resources
 .. _`importlib_resources`: https://importlib-resources.readthedocs.io/en/latest/index.html
-.. _`PEP 566`: https://www.python.org/dev/peps/pep-0566/
-.. _`finders`: https://docs.python.org/3/reference/import.html#finders-and-loaders
-.. _`meta path finders`: https://docs.python.org/3/glossary.html#term-meta-path-finder
-.. _`sys.meta_path`: https://docs.python.org/3/library/sys.html#sys.meta_path
-.. _`pathlib.Path`: https://docs.python.org/3/library/pathlib.html#pathlib.Path
 
 
 .. rubric:: Footnotes
 
 .. [#f1] Technically, the returned distribution metadata object is an
-         `email.message.Message
-         <https://docs.python.org/3/library/email.message.html#email.message.EmailMessage>`_
+         :class:`email.message.EmailMessage`
          instance, but this is an implementation detail, and not part of the
          stable API.  You should only use dictionary-like methods and syntax
          to access the metadata contents.

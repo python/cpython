@@ -133,27 +133,6 @@ class ThreadRunningTests(BasicThreadTest):
                 time.sleep(POLL_SLEEP)
             self.assertEqual(thread._count(), orig)
 
-    def test_save_exception_state_on_error(self):
-        # See issue #14474
-        def task():
-            started.release()
-            raise SyntaxError
-        def mywrite(self, *args):
-            try:
-                raise ValueError
-            except ValueError:
-                pass
-            real_write(self, *args)
-        started = thread.allocate_lock()
-        with support.captured_output("stderr") as stderr:
-            real_write = stderr.write
-            stderr.write = mywrite
-            started.acquire()
-            with support.wait_threads_exit():
-                thread.start_new_thread(task, ())
-                started.acquire()
-        self.assertIn("Traceback", stderr.getvalue())
-
     def test_unraisable_exception(self):
         def task():
             started.release()
@@ -246,30 +225,31 @@ class TestForkInThread(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
     @support.reap_threads
     def test_forkinthread(self):
-        status = "not set"
+        pid = None
 
-        def thread1():
-            nonlocal status
+        def fork_thread(read_fd, write_fd):
+            nonlocal pid
 
             # fork in a thread
             pid = os.fork()
-            if pid == 0:
-                # child
-                try:
-                    os.close(self.read_fd)
-                    os.write(self.write_fd, b"OK")
-                finally:
-                    os._exit(0)
-            else:
-                # parent
-                os.close(self.write_fd)
-                pid, status = os.waitpid(pid, 0)
+            if pid:
+                # parent process
+                return
+
+            # child process
+            try:
+                os.close(read_fd)
+                os.write(write_fd, b"OK")
+            finally:
+                os._exit(0)
 
         with support.wait_threads_exit():
-            thread.start_new_thread(thread1, ())
-            self.assertEqual(os.read(self.read_fd, 2), b"OK",
-                             "Unable to fork() in thread")
-        self.assertEqual(status, 0)
+            thread.start_new_thread(fork_thread, (self.read_fd, self.write_fd))
+            self.assertEqual(os.read(self.read_fd, 2), b"OK")
+            os.close(self.write_fd)
+
+        self.assertIsNotNone(pid)
+        support.wait_process(pid, exitcode=0)
 
     def tearDown(self):
         try:

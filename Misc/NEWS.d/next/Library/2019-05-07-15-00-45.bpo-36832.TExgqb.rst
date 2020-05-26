@@ -1,1 +1,0 @@
-Introducing ``zipfile.Path``, a pathlib-compatible wrapper for traversing zip files.

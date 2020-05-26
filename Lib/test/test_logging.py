@@ -1,4 +1,4 @@
-# Copyright 2001-2017 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -36,13 +36,14 @@ import os
 import queue
 import random
 import re
-import signal
 import socket
 import struct
 import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import socket_helper
+from test.support.logging_helper import TestHandler
 import textwrap
 import threading
 import time
@@ -727,30 +728,19 @@ class HandlerTest(BaseTest):
 
         locks_held__ready_to_fork.wait()
         pid = os.fork()
-        if pid == 0:  # Child.
+        if pid == 0:
+            # Child process
             try:
                 test_logger.info(r'Child process did not deadlock. \o/')
             finally:
                 os._exit(0)
-        else:  # Parent.
+        else:
+            # Parent process
             test_logger.info(r'Parent process returned from fork. \o/')
             fork_happened__release_locks_and_end_thread.set()
             lock_holder_thread.join()
-            start_time = time.monotonic()
-            while True:
-                test_logger.debug('Waiting for child process.')
-                waited_pid, status = os.waitpid(pid, os.WNOHANG)
-                if waited_pid == pid:
-                    break  # child process exited.
-                if time.monotonic() - start_time > 7:
-                    break  # so long? implies child deadlock.
-                time.sleep(0.05)
-            test_logger.debug('Done waiting.')
-            if waited_pid != pid:
-                os.kill(pid, signal.SIGKILL)
-                waited_pid, status = os.waitpid(pid, 0)
-                self.fail("child process deadlocked.")
-            self.assertEqual(status, 0, msg="child process error")
+
+            support.wait_process(pid, exitcode=0)
 
 
 class BadStream(object):
@@ -869,16 +859,13 @@ class TestSMTPServer(smtpd.SMTPServer):
         """
         asyncore.loop(poll_interval, map=self._map)
 
-    def stop(self, timeout=None):
+    def stop(self):
         """
         Stop the thread by closing the server instance.
         Wait for the server thread to terminate.
-
-        :param timeout: How long to wait for the server thread
-                        to terminate.
         """
         self.close()
-        support.join_thread(self._thread, timeout)
+        support.join_thread(self._thread)
         self._thread = None
         asyncore.close_all(map=self._map, ignore_all=True)
 
@@ -922,16 +909,13 @@ class ControlMixin(object):
         self.ready.set()
         super(ControlMixin, self).serve_forever(poll_interval)
 
-    def stop(self, timeout=None):
+    def stop(self):
         """
         Tell the server thread to stop, and wait for it to do so.
-
-        :param timeout: How long to wait for the server thread
-                        to terminate.
         """
         self.shutdown()
         if self._thread is not None:
-            support.join_thread(self._thread, timeout)
+            support.join_thread(self._thread)
             self._thread = None
         self.server_close()
         self.ready.clear()
@@ -1065,15 +1049,15 @@ if hasattr(socket, "AF_UNIX"):
 # - end of server_helper section
 
 class SMTPHandlerTest(BaseTest):
-    # bpo-14314, bpo-19665, bpo-34092: don't wait forever, timeout of 1 minute
-    TIMEOUT = 60.0
+    # bpo-14314, bpo-19665, bpo-34092: don't wait forever
+    TIMEOUT = support.LONG_TIMEOUT
 
     def test_basic(self):
         sockmap = {}
-        server = TestSMTPServer((support.HOST, 0), self.process_message, 0.001,
+        server = TestSMTPServer((socket_helper.HOST, 0), self.process_message, 0.001,
                                 sockmap)
         server.start()
-        addr = (support.HOST, server.port)
+        addr = (socket_helper.HOST, server.port)
         h = logging.handlers.SMTPHandler(addr, 'me', 'you', 'Log',
                                          timeout=self.TIMEOUT)
         self.assertEqual(h.toaddrs, ['you'])
@@ -1591,6 +1575,30 @@ class ConfigFileTest(BaseTest):
         self.apply_config(self.disable_test, disable_existing_loggers=False)
         self.assertFalse(logger.disabled)
 
+    def test_config_set_handler_names(self):
+        test_config = """
+            [loggers]
+            keys=root
+
+            [handlers]
+            keys=hand1
+
+            [formatters]
+            keys=form1
+
+            [logger_root]
+            handlers=hand1
+
+            [handler_hand1]
+            class=StreamHandler
+            formatter=form1
+
+            [formatter_form1]
+            format=%(levelname)s ++ %(message)s
+            """
+        self.apply_config(test_config)
+        self.assertEqual(logging.getLogger().handlers[0].name, 'hand1')
+
     def test_defaults_do_no_interpolation(self):
         """bpo-33802 defaults should not get interpolated"""
         ini = textwrap.dedent("""
@@ -1675,7 +1683,7 @@ class SocketHandlerTest(BaseTest):
                 self.root_logger.removeHandler(self.sock_hdlr)
                 self.sock_hdlr.close()
             if self.server:
-                self.server.stop(2.0)
+                self.server.stop()
         finally:
             BaseTest.tearDown(self)
 
@@ -1712,7 +1720,7 @@ class SocketHandlerTest(BaseTest):
         # one-second timeout on socket.create_connection() (issue #16264).
         self.sock_hdlr.retryStart = 2.5
         # Kill the server
-        self.server.stop(2.0)
+        self.server.stop()
         # The logging call should try to connect, which should fail
         try:
             raise RuntimeError('Deliberate mistake')
@@ -1786,7 +1794,7 @@ class DatagramHandlerTest(BaseTest):
         """Shutdown the UDP server."""
         try:
             if self.server:
-                self.server.stop(2.0)
+                self.server.stop()
             if self.sock_hdlr:
                 self.root_logger.removeHandler(self.sock_hdlr)
                 self.sock_hdlr.close()
@@ -1867,7 +1875,7 @@ class SysLogHandlerTest(BaseTest):
         """Shutdown the server."""
         try:
             if self.server:
-                self.server.stop(2.0)
+                self.server.stop()
             if self.sl_hdlr:
                 self.root_logger.removeHandler(self.sl_hdlr)
                 self.sl_hdlr.close()
@@ -1914,7 +1922,7 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
         SysLogHandlerTest.tearDown(self)
         support.unlink(self.address)
 
-@unittest.skipUnless(support.IPV6_ENABLED,
+@unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 class IPv6SysLogHandlerTest(SysLogHandlerTest):
 
@@ -2004,7 +2012,7 @@ class HTTPHandlerTest(BaseTest):
                 self.assertEqual(d['funcName'], ['test_output'])
                 self.assertEqual(d['msg'], [msg])
 
-            self.server.stop(2.0)
+            self.server.stop()
             self.root_logger.removeHandler(self.h_hdlr)
             self.h_hdlr.close()
 
@@ -3204,7 +3212,7 @@ class ConfigDictTest(BaseTest):
         finally:
             t.ready.wait(2.0)
             logging.config.stopListening()
-            support.join_thread(t, 2.0)
+            support.join_thread(t)
 
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
@@ -3361,6 +3369,37 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(ValueError, bc.convert, 'cfg://!')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[2]')
 
+    def test_namedtuple(self):
+        # see bpo-39142
+        from collections import namedtuple
+
+        class MyHandler(logging.StreamHandler):
+            def __init__(self, resource, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.resource: namedtuple = resource
+
+            def emit(self, record):
+                record.msg += f' {self.resource.type}'
+                return super().emit(record)
+
+        Resource = namedtuple('Resource', ['type', 'labels'])
+        resource = Resource(type='my_type', labels=['a'])
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'myhandler': {
+                    '()': MyHandler,
+                    'resource': resource
+                }
+            },
+            'root':  {'level': 'INFO', 'handlers': ['myhandler']},
+        }
+        with support.captured_stderr() as stderr:
+            self.apply_config(config)
+            logging.info('some log')
+        self.assertEqual(stderr.getvalue(), 'some log my_type\n')
+
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
         logged = []
@@ -3485,7 +3524,7 @@ class QueueHandlerTest(BaseTest):
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
     def test_queue_listener(self):
-        handler = support.TestHandler(support.Matcher())
+        handler = TestHandler(support.Matcher())
         listener = logging.handlers.QueueListener(self.queue, handler)
         listener.start()
         try:
@@ -3501,7 +3540,7 @@ class QueueHandlerTest(BaseTest):
 
         # Now test with respect_handler_level set
 
-        handler = support.TestHandler(support.Matcher())
+        handler = TestHandler(support.Matcher())
         handler.setLevel(logging.CRITICAL)
         listener = logging.handlers.QueueListener(self.queue, handler,
                                                   respect_handler_level=True)
@@ -3903,6 +3942,19 @@ class FormatterTest(unittest.TestCase):
         f.format(r)
         self.assertEqual(r.asctime, '1993-04-21 08:03:00,123')
 
+    def test_default_msec_format_none(self):
+        class NoMsecFormatter(logging.Formatter):
+            default_msec_format = None
+            default_time_format = '%d/%m/%Y %H:%M:%S'
+
+        r = self.get_record()
+        dt = datetime.datetime(1993, 4, 21, 8, 3, 0, 123, utc)
+        r.created = time.mktime(dt.astimezone(None).timetuple())
+        f = NoMsecFormatter()
+        f.converter = time.gmtime
+        self.assertEqual(f.formatTime(r), '21/04/1993 08:03:00')
+
+
 class TestBufferingFormatter(logging.BufferingFormatter):
     def formatHeader(self, records):
         return '[(%d)' % len(records)
@@ -4172,7 +4224,37 @@ class ModuleLevelMiscTest(BaseTest):
         logging.setLoggerClass(logging.Logger)
         self.assertEqual(logging.getLoggerClass(), logging.Logger)
 
-    @support.requires_type_collecting
+    def test_subclass_logger_cache(self):
+        # bpo-37258
+        message = []
+
+        class MyLogger(logging.getLoggerClass()):
+            def __init__(self, name='MyLogger', level=logging.NOTSET):
+                super().__init__(name, level)
+                message.append('initialized')
+
+        logging.setLoggerClass(MyLogger)
+        logger = logging.getLogger('just_some_logger')
+        self.assertEqual(message, ['initialized'])
+        stream = io.StringIO()
+        h = logging.StreamHandler(stream)
+        logger.addHandler(h)
+        try:
+            logger.setLevel(logging.DEBUG)
+            logger.debug("hello")
+            self.assertEqual(stream.getvalue().strip(), "hello")
+
+            stream.truncate(0)
+            stream.seek(0)
+
+            logger.setLevel(logging.INFO)
+            logger.debug("hello")
+            self.assertEqual(stream.getvalue(), "")
+        finally:
+            logger.removeHandler(h)
+            h.close()
+            logging.setLoggerClass(logging.Logger)
+
     def test_logging_at_shutdown(self):
         # Issue #20037
         code = """if 1:
@@ -4284,7 +4366,7 @@ class BasicConfigTest(unittest.TestCase):
         logging._handlers.clear()
         logging._handlers.update(self.saved_handlers)
         logging._handlerList[:] = self.saved_handler_list
-        logging.root.level = self.original_logging_level
+        logging.root.setLevel(self.original_logging_level)
 
     def test_no_kwargs(self):
         logging.basicConfig()
@@ -4444,6 +4526,99 @@ class BasicConfigTest(unittest.TestCase):
                          'WARNING:root:warn')
         self.assertEqual(new_string_io.getvalue().strip(),
                          'WARNING:root:warn\nINFO:root:info')
+
+    def test_encoding(self):
+        try:
+            encoding = 'utf-8'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors='strict',
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual(data,
+                             'The Øresund Bridge joins Copenhagen to Malmö')
+
+    def test_encoding_errors(self):
+        try:
+            encoding = 'ascii'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors='ignore',
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual(data, 'The resund Bridge joins Copenhagen to Malm')
+
+    def test_encoding_errors_default(self):
+        try:
+            encoding = 'ascii'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            self.assertEqual(handler.errors, 'backslashreplace')
+            logging.debug('😂: ☃️: The Øresund Bridge joins Copenhagen to Malmö')
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            self.assertEqual(data, r'\U0001f602: \u2603\ufe0f: The \xd8resund '
+                                   r'Bridge joins Copenhagen to Malm\xf6')
+
+    def test_encoding_errors_none(self):
+        # Specifying None should behave as 'strict'
+        try:
+            encoding = 'ascii'
+            logging.basicConfig(filename='test.log', encoding=encoding,
+                                errors=None,
+                                format='%(message)s', level=logging.DEBUG)
+
+            self.assertEqual(len(logging.root.handlers), 1)
+            handler = logging.root.handlers[0]
+            self.assertIsInstance(handler, logging.FileHandler)
+            self.assertEqual(handler.encoding, encoding)
+            self.assertIsNone(handler.errors)
+
+            message = []
+
+            def dummy_handle_error(record):
+                _, v, _ = sys.exc_info()
+                message.append(str(v))
+
+            handler.handleError = dummy_handle_error
+            logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
+            self.assertTrue(message)
+            self.assertIn("'ascii' codec can't encode "
+                          "character '\\xd8' in position 4:", message[0])
+        finally:
+            handler.close()
+            with open('test.log', encoding='utf-8') as f:
+                data = f.read().strip()
+            os.remove('test.log')
+            # didn't write anything due to the encoding error
+            self.assertEqual(data, r'')
+
 
     def _test_log(self, method, level=None):
         # logging.root has no handlers so basicConfig should be called
@@ -4732,6 +4907,7 @@ class LoggerTest(BaseTest):
         self.assertIs(root, logging.root)
         self.assertIs(root, logging.getLogger(None))
         self.assertIs(root, logging.getLogger(''))
+        self.assertIs(root, logging.getLogger('root'))
         self.assertIs(root, logging.getLogger('foo').root)
         self.assertIs(root, logging.getLogger('foo.bar').root)
         self.assertIs(root, logging.getLogger('foo').parent)
@@ -4881,7 +5057,26 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(os.path.exists(namer(self.fn + ".3")))
         rh.close()
 
-    @support.requires_zlib
+    def test_namer_rotator_inheritance(self):
+        class HandlerWithNamerAndRotator(logging.handlers.RotatingFileHandler):
+            def namer(self, name):
+                return name + ".test"
+
+            def rotator(self, source, dest):
+                if os.path.exists(source):
+                    os.rename(source, dest + ".rotated")
+
+        rh = HandlerWithNamerAndRotator(
+            self.fn, backupCount=2, maxBytes=1)
+        self.assertEqual(rh.namer(self.fn), self.fn + ".test")
+        rh.emit(self.next_rec())
+        self.assertLogFile(self.fn)
+        rh.emit(self.next_rec())
+        self.assertLogFile(rh.namer(self.fn + ".1") + ".rotated")
+        self.assertFalse(os.path.exists(rh.namer(self.fn + ".1")))
+        rh.close()
+
+    @support.requires_zlib()
     def test_rotator(self):
         def namer(name):
             return name + ".gz"

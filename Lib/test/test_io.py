@@ -29,6 +29,7 @@ import random
 import signal
 import sys
 import sysconfig
+import textwrap
 import threading
 import time
 import unittest
@@ -37,7 +38,8 @@ import weakref
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
-from test.support.script_helper import assert_python_ok, run_python_until_end
+from test.support.script_helper import (
+    assert_python_ok, assert_python_failure, run_python_until_end)
 from test.support import FakePath
 
 import codecs
@@ -276,6 +278,10 @@ class MockNonBlockWriterIO:
 
     def seekable(self):
         return True
+
+    def seek(self, pos, whence=0):
+        # naive implementation, enough for tests
+        return 0
 
     def writable(self):
         return True
@@ -731,6 +737,11 @@ class IOTest(unittest.TestCase):
             file.seek(0)
             file.close()
             self.assertRaises(ValueError, file.read)
+        with self.open(support.TESTFN, "rb") as f:
+            file = self.open(f.fileno(), "rb", closefd=False)
+            self.assertEqual(file.read()[:3], b"egg")
+            file.close()
+            self.assertRaises(ValueError, file.readinto, bytearray(1))
 
     def test_no_closefd_with_filename(self):
         # can't use closefd in combination with a file name
@@ -1486,6 +1497,9 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(OSError, bufio.seek, 0)
         self.assertRaises(OSError, bufio.tell)
 
+        # Silence destructor error
+        bufio.close = lambda: None
+
     def test_no_extraneous_read(self):
         # Issue #9550; when the raw IO object has satisfied the read request,
         # we should not issue any additional reads, otherwise it may block
@@ -1513,6 +1527,13 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         b.close()
         self.assertRaises(ValueError, b.peek)
         self.assertRaises(ValueError, b.read1, 1)
+
+    def test_truncate_on_read_only(self):
+        rawio = self.MockFileIO(b"abc")
+        bufio = self.tp(rawio)
+        self.assertFalse(bufio.writable())
+        self.assertRaises(self.UnsupportedOperation, bufio.truncate)
+        self.assertRaises(self.UnsupportedOperation, bufio.truncate, 0)
 
 
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
@@ -1834,6 +1855,9 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(OSError, bufio.tell)
         self.assertRaises(OSError, bufio.write, b"abcdef")
 
+        # Silence destructor error
+        bufio.close = lambda: None
+
     def test_max_buffer_size_removal(self):
         with self.assertRaises(TypeError):
             self.tp(self.MockRawIO(), 8, 12)
@@ -2060,6 +2084,15 @@ class BufferedRWPairTest(unittest.TestCase):
 
         # Silence destructor error
         writer.close = lambda: None
+        writer = None
+
+        # Ignore BufferedWriter (of the BufferedRWPair) unraisable exception
+        with support.catch_unraisable_exception():
+            # Ignore BufferedRWPair unraisable exception
+            with support.catch_unraisable_exception():
+                pair = None
+                support.gc_collect()
+            support.gc_collect()
 
     def test_reader_writer_close_error_on_close(self):
         def reader_close():
@@ -2345,6 +2378,10 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 
     # You can't construct a BufferedRandom over a non-seekable stream.
     test_unseekable = None
+
+    # writable() returns True, so there's no point to test it over
+    # a writable stream.
+    test_truncate_on_read_only = None
 
 
 class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
@@ -3471,7 +3508,6 @@ class TextIOWrapperTest(unittest.TestCase):
             """.format(iomod=iomod, kwargs=kwargs)
         return assert_python_ok("-c", code)
 
-    @support.requires_type_collecting
     def test_create_at_shutdown_without_encoding(self):
         rc, out, err = self._check_create_at_shutdown()
         if err:
@@ -3481,7 +3517,6 @@ class TextIOWrapperTest(unittest.TestCase):
         else:
             self.assertEqual("ok", out.decode().strip())
 
-    @support.requires_type_collecting
     def test_create_at_shutdown_with_encoding(self):
         rc, out, err = self._check_create_at_shutdown(encoding='utf-8',
                                                       errors='strict')
@@ -3664,7 +3699,7 @@ def _to_memoryview(buf):
 
 class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
-    shutdown_error = "RuntimeError: could not find io module state"
+    shutdown_error = "LookupError: unknown encoding: ascii"
 
     def test_initialization(self):
         r = self.BytesIO(b"\xc3\xa9\n\n")
@@ -3887,6 +3922,17 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(g.raw.name, f.fileno())
         f.close()
         g.close()
+
+    def test_open_pipe_with_append(self):
+        # bpo-27805: Ignore ESPIPE from lseek() in open().
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        f = self.open(w, 'a')
+        self.addCleanup(f.close)
+        # Check that the file is marked non-seekable. On Windows, however, lseek
+        # somehow succeeds on pipes.
+        if sys.platform != 'win32':
+            self.assertFalse(f.seekable())
 
     def test_io_after_close(self):
         for kwargs in [
@@ -4111,6 +4157,51 @@ class MiscIOTest(unittest.TestCase):
         # there used to be a buffer overflow in the parser for rawmode
         self.assertRaises(ValueError, self.open, support.TESTFN, 'rwax+')
 
+    def test_check_encoding_errors(self):
+        # bpo-37388: open() and TextIOWrapper must check encoding and errors
+        # arguments in dev mode
+        mod = self.io.__name__
+        filename = __file__
+        invalid = 'Boom, Shaka Laka, Boom!'
+        code = textwrap.dedent(f'''
+            import sys
+            from {mod} import open, TextIOWrapper
+
+            try:
+                open({filename!r}, encoding={invalid!r})
+            except LookupError:
+                pass
+            else:
+                sys.exit(21)
+
+            try:
+                open({filename!r}, errors={invalid!r})
+            except LookupError:
+                pass
+            else:
+                sys.exit(22)
+
+            fp = open({filename!r}, "rb")
+            with fp:
+                try:
+                    TextIOWrapper(fp, encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(23)
+
+                try:
+                    TextIOWrapper(fp, errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(24)
+
+            sys.exit(10)
+        ''')
+        proc = assert_python_failure('-X', 'dev', '-c', code)
+        self.assertEqual(proc.rc, 10, proc)
+
 
 class CMiscIOTest(MiscIOTest):
     io = io
@@ -4156,7 +4247,8 @@ class CMiscIOTest(MiscIOTest):
         err = res.err.decode()
         if res.rc != 0:
             # Failure: should be a fatal error
-            pattern = (r"Fatal Python error: could not acquire lock "
+            pattern = (r"Fatal Python error: _enter_buffered_busy: "
+                       r"could not acquire lock "
                        r"for <(_io\.)?BufferedWriter name='<{stream_name}>'> "
                        r"at interpreter shutdown, possibly due to "
                        r"daemon threads".format_map(locals()))

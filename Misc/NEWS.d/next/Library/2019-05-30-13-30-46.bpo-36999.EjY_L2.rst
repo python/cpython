@@ -1,2 +1,0 @@
-Add the ``asyncio.Task.get_coro()`` method to publicly expose the tasks's
-coroutine object.

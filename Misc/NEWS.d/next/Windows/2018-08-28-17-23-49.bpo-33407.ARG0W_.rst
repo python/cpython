@@ -1,1 +1,0 @@
-The :c:macro:`Py_DEPRECATED()` macro has been implemented for MSVC.

@@ -2,7 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_runtime.h"  // _PyRuntime
 
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
 /* clang MemorySanitizer doesn't yet understand getc_unlocked. */
@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(open);
+
 /* External C interface */
 
 PyObject *
@@ -32,15 +34,14 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
               const char *errors, const char *newline, int closefd)
 {
     PyObject *io, *stream;
-    _Py_IDENTIFIER(open);
 
     /* import _io in case we are being used to open io.py */
     io = PyImport_ImportModule("_io");
     if (io == NULL)
         return NULL;
-    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssi", fd, mode,
+    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssO", fd, mode,
                                  buffering, encoding, errors,
-                                 newline, closefd);
+                                 newline, closefd ? Py_True : Py_False);
     Py_DECREF(io);
     if (stream == NULL)
         return NULL;
@@ -61,7 +62,7 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n <= 0) {
-        result = _PyObject_CallMethodIdObjArgs(f, &PyId_readline, NULL);
+        result = _PyObject_CallMethodIdNoArgs(f, &PyId_readline);
     }
     else {
         result = _PyObject_CallMethodId(f, &PyId_readline, "i", n);
@@ -75,7 +76,7 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n < 0 && result != NULL && PyBytes_Check(result)) {
-        char *s = PyBytes_AS_STRING(result);
+        const char *s = PyBytes_AS_STRING(result);
         Py_ssize_t len = PyBytes_GET_SIZE(result);
         if (len == 0) {
             Py_DECREF(result);
@@ -84,7 +85,7 @@ PyFile_GetLine(PyObject *f, int n)
                             "EOF when reading a line");
         }
         else if (s[len-1] == '\n') {
-            if (result->ob_refcnt == 1)
+            if (Py_REFCNT(result) == 1)
                 _PyBytes_Resize(&result, len-1);
             else {
                 PyObject *v;
@@ -136,7 +137,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    result = PyObject_CallFunctionObjArgs(writer, value, NULL);
+    result = PyObject_CallOneArg(writer, value);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)
@@ -185,8 +186,10 @@ PyObject_AsFileDescriptor(PyObject *o)
     if (PyLong_Check(o)) {
         fd = _PyLong_AsInt(o);
     }
-    else if ((meth = _PyObject_GetAttrId(o, &PyId_fileno)) != NULL)
-    {
+    else if (_PyObject_LookupAttrId(o, &PyId_fileno, &meth) < 0) {
+        return -1;
+    }
+    else if (meth != NULL) {
         PyObject *fno = _PyObject_CallNoArg(meth);
         Py_DECREF(meth);
         if (fno == NULL)
@@ -545,7 +548,6 @@ PyObject *
 PyFile_OpenCodeObject(PyObject *path)
 {
     PyObject *iomod, *f = NULL;
-    _Py_IDENTIFIER(open);
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError, "'path' must be 'str', not '%.200s'",

@@ -1,2 +1,0 @@
-Performance of :func:`functools.reduce` is slightly improved. Patch by
-Sergey Fedoseev.

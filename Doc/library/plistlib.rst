@@ -1,8 +1,8 @@
-:mod:`plistlib` --- Generate and parse Mac OS X ``.plist`` files
-================================================================
+:mod:`plistlib` --- Generate and parse Apple ``.plist`` files
+=============================================================
 
 .. module:: plistlib
-   :synopsis: Generate and parse Mac OS X plist files.
+   :synopsis: Generate and parse Apple plist files.
 
 .. moduleauthor:: Jack Jansen
 .. sectionauthor:: Georg Brandl <georg@python.org>
@@ -17,7 +17,8 @@
 --------------
 
 This module provides an interface for reading and writing the "property list"
-files used mainly by Mac OS X and supports both binary and XML plist files.
+files used by Apple, primarily on macOS and iOS. This module supports both binary
+and XML plist files.
 
 The property list (``.plist``) file format is a simple serialization supporting
 basic object types, like dictionaries, lists, numbers and strings.  Usually the
@@ -30,7 +31,7 @@ To work with plist data in bytes objects, use :func:`dumps`
 and :func:`loads`.
 
 Values can be strings, integers, floats, booleans, tuples, lists, dictionaries
-(but only with string keys), :class:`Data`, :class:`bytes`, :class:`bytesarray`
+(but only with string keys), :class:`bytes`, :class:`bytearray`
 or :class:`datetime.datetime` objects.
 
 .. versionchanged:: 3.4
@@ -40,6 +41,9 @@ or :class:`datetime.datetime` objects.
    Support added for reading and writing :class:`UID` tokens in binary plists as used
    by NSKeyedArchiver and NSKeyedUnarchiver.
 
+.. versionchanged:: 3.9
+   Old API removed.
+
 .. seealso::
 
    `PList manual page <https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/PropertyLists/>`_
@@ -48,7 +52,7 @@ or :class:`datetime.datetime` objects.
 
 This module defines the following functions:
 
-.. function:: load(fp, \*, fmt=None, use_builtin_types=True, dict_type=dict)
+.. function:: load(fp, \*, fmt=None, dict_type=dict)
 
    Read a plist file. *fp* should be a readable and binary file object.
    Return the unpacked root object (which usually is a
@@ -61,10 +65,6 @@ This module defines the following functions:
    * :data:`FMT_XML`: XML file format
 
    * :data:`FMT_BINARY`: Binary plist format
-
-   If *use_builtin_types* is true (the default) binary data will be returned
-   as instances of :class:`bytes`, otherwise it is returned as instances of
-   :class:`Data`.
 
    The *dict_type* is the type used for dictionaries that are read from the
    plist file.
@@ -80,7 +80,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: loads(data, \*, fmt=None, use_builtin_types=True, dict_type=dict)
+.. function:: loads(data, \*, fmt=None, dict_type=dict)
 
    Load a plist from a bytes object. See :func:`load` for an explanation of
    the keyword arguments.
@@ -124,72 +124,16 @@ This module defines the following functions:
 
    .. versionadded:: 3.4
 
-The following functions are deprecated:
-
-.. function:: readPlist(pathOrFile)
-
-   Read a plist file. *pathOrFile* may be either a file name or a (readable
-   and binary) file object. Returns the unpacked root object (which usually
-   is a dictionary).
-
-   This function calls :func:`load` to do the actual work, see the documentation
-   of :func:`that function <load>` for an explanation of the keyword arguments.
-
-   .. deprecated:: 3.4 Use :func:`load` instead.
-
-   .. versionchanged:: 3.7
-      Dict values in the result are now normal dicts.  You no longer can use
-      attribute access to access items of these dictionaries.
-
-
-.. function:: writePlist(rootObject, pathOrFile)
-
-   Write *rootObject* to an XML plist file. *pathOrFile* may be either a file name
-   or a (writable and binary) file object
-
-   .. deprecated:: 3.4 Use :func:`dump` instead.
-
-
-.. function:: readPlistFromBytes(data)
-
-   Read a plist data from a bytes object.  Return the root object.
-
-   See :func:`load` for a description of the keyword arguments.
-
-   .. deprecated:: 3.4 Use :func:`loads` instead.
-
-   .. versionchanged:: 3.7
-      Dict values in the result are now normal dicts.  You no longer can use
-      attribute access to access items of these dictionaries.
-
-
-.. function:: writePlistToBytes(rootObject)
-
-   Return *rootObject* as an XML plist-formatted bytes object.
-
-   .. deprecated:: 3.4 Use :func:`dumps` instead.
-
 
 The following classes are available:
-
-.. class:: Data(data)
-
-   Return a "data" wrapper object around the bytes object *data*.  This is used
-   in functions converting from/to plists to represent the ``<data>`` type
-   available in plists.
-
-   It has one attribute, :attr:`data`, that can be used to retrieve the Python
-   bytes object stored in it.
-
-   .. deprecated:: 3.4 Use a :class:`bytes` object instead.
 
 .. class:: UID(data)
 
    Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
    encoded data, which contains UID (see PList manual).
 
-   It has one attribute, :attr:`data` which can be used to retrieve the int value
-   of the UID.  :attr:`data` must be in the range `0 <= data <= 2**64`.
+   It has one attribute, :attr:`data`, which can be used to retrieve the int value
+   of the UID.  :attr:`data` must be in the range `0 <= data < 2**64`.
 
    .. versionadded:: 3.8
 

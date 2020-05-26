@@ -39,7 +39,7 @@ Size of indices is dk_size.  Type of each index in indices is vary on dk_size:
 * int32 for 2**16 <= dk_size <= 2**31
 * int64 for 2**32 <= dk_size
 
-dk_entries is array of PyDictKeyEntry.  It's size is USABLE_FRACTION(dk_size).
+dk_entries is array of PyDictKeyEntry.  Its size is USABLE_FRACTION(dk_size).
 DK_ENTRIES(dk) can be used to get pointer to entries.
 
 NOTE: Since negative value is used for DKIX_EMPTY and DKIX_DUMMY, type of
@@ -111,10 +111,11 @@ converting the dict to the combined table.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
+#include "pycore_gc.h"       // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"  // _PyThreadState_GET()
 #include "dict-common.h"
-#include "stringlib/eq.h"    /* to get unicode_eq() */
+#include "stringlib/eq.h"    // unicode_eq()
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
@@ -249,42 +250,52 @@ static uint64_t pydict_global_version = 0;
 #ifndef PyDict_MAXFREELIST
 #define PyDict_MAXFREELIST 80
 #endif
+
+/* bpo-40521: dict free lists are shared by all interpreters. */
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  undef PyDict_MAXFREELIST
+#  define PyDict_MAXFREELIST 0
+#endif
+
+#if PyDict_MAXFREELIST > 0
 static PyDictObject *free_list[PyDict_MAXFREELIST];
 static int numfree = 0;
 static PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
 static int numfreekeys = 0;
+#endif
 
 #include "clinic/dictobject.c.h"
 
-int
-PyDict_ClearFreeList(void)
+void
+_PyDict_ClearFreeList(void)
 {
-    PyDictObject *op;
-    int ret = numfree + numfreekeys;
+#if PyDict_MAXFREELIST > 0
     while (numfree) {
-        op = free_list[--numfree];
+        PyDictObject *op = free_list[--numfree];
         assert(PyDict_CheckExact(op));
         PyObject_GC_Del(op);
     }
     while (numfreekeys) {
         PyObject_FREE(keys_free_list[--numfreekeys]);
     }
-    return ret;
+#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyDict_DebugMallocStats(FILE *out)
 {
+#if PyDict_MAXFREELIST > 0
     _PyDebugAllocatorStats(out,
                            "free PyDictObject", numfree, sizeof(PyDictObject));
+#endif
 }
 
 
 void
-PyDict_Fini(void)
+_PyDict_Fini(void)
 {
-    PyDict_ClearFreeList();
+    _PyDict_ClearFreeList();
 }
 
 #define DK_SIZE(dk) ((dk)->dk_size)
@@ -311,7 +322,9 @@ static void free_keys_object(PyDictKeysObject *keys);
 static inline void
 dictkeys_incref(PyDictKeysObject *dk)
 {
-    _Py_INC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
     dk->dk_refcnt++;
 }
 
@@ -319,7 +332,9 @@ static inline void
 dictkeys_decref(PyDictKeysObject *dk)
 {
     assert(dk->dk_refcnt > 0);
-    _Py_DEC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
     if (--dk->dk_refcnt == 0) {
         free_keys_object(dk);
     }
@@ -327,27 +342,27 @@ dictkeys_decref(PyDictKeysObject *dk)
 
 /* lookup indices.  returns DKIX_EMPTY, DKIX_DUMMY, or ix >=0 */
 static inline Py_ssize_t
-dictkeys_get_index(PyDictKeysObject *keys, Py_ssize_t i)
+dictkeys_get_index(const PyDictKeysObject *keys, Py_ssize_t i)
 {
     Py_ssize_t s = DK_SIZE(keys);
     Py_ssize_t ix;
 
     if (s <= 0xff) {
-        int8_t *indices = (int8_t*)(keys->dk_indices);
+        const int8_t *indices = (const int8_t*)(keys->dk_indices);
         ix = indices[i];
     }
     else if (s <= 0xffff) {
-        int16_t *indices = (int16_t*)(keys->dk_indices);
+        const int16_t *indices = (const int16_t*)(keys->dk_indices);
         ix = indices[i];
     }
 #if SIZEOF_VOID_P > 4
     else if (s > 0xffffffff) {
-        int64_t *indices = (int64_t*)(keys->dk_indices);
+        const int64_t *indices = (const int64_t*)(keys->dk_indices);
         ix = indices[i];
     }
 #endif
     else {
-        int32_t *indices = (int32_t*)(keys->dk_indices);
+        const int32_t *indices = (const int32_t*)(keys->dk_indices);
         ix = indices[i];
     }
     assert(ix >= DKIX_DUMMY);
@@ -459,23 +474,26 @@ static PyObject *empty_values[1] = { NULL };
 int
 _PyDict_CheckConsistency(PyObject *op, int check_content)
 {
-#ifndef NDEBUG
-    _PyObject_ASSERT(op, PyDict_Check(op));
+#define CHECK(expr) \
+    do { if (!(expr)) { _PyObject_ASSERT_FAILED_MSG(op, Py_STRINGIFY(expr)); } } while (0)
+
+    assert(op != NULL);
+    CHECK(PyDict_Check(op));
     PyDictObject *mp = (PyDictObject *)op;
 
     PyDictKeysObject *keys = mp->ma_keys;
     int splitted = _PyDict_HasSplitTable(mp);
     Py_ssize_t usable = USABLE_FRACTION(keys->dk_size);
 
-    _PyObject_ASSERT(op, 0 <= mp->ma_used && mp->ma_used <= usable);
-    _PyObject_ASSERT(op, IS_POWER_OF_2(keys->dk_size));
-    _PyObject_ASSERT(op, 0 <= keys->dk_usable && keys->dk_usable <= usable);
-    _PyObject_ASSERT(op, 0 <= keys->dk_nentries && keys->dk_nentries <= usable);
-    _PyObject_ASSERT(op, keys->dk_usable + keys->dk_nentries <= usable);
+    CHECK(0 <= mp->ma_used && mp->ma_used <= usable);
+    CHECK(IS_POWER_OF_2(keys->dk_size));
+    CHECK(0 <= keys->dk_usable && keys->dk_usable <= usable);
+    CHECK(0 <= keys->dk_nentries && keys->dk_nentries <= usable);
+    CHECK(keys->dk_usable + keys->dk_nentries <= usable);
 
     if (!splitted) {
         /* combined table */
-        _PyObject_ASSERT(op, keys->dk_refcnt == 1);
+        CHECK(keys->dk_refcnt == 1);
     }
 
     if (check_content) {
@@ -484,7 +502,7 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
 
         for (i=0; i < keys->dk_size; i++) {
             Py_ssize_t ix = dictkeys_get_index(keys, i);
-            _PyObject_ASSERT(op, DKIX_DUMMY <= ix && ix <= usable);
+            CHECK(DKIX_DUMMY <= ix && ix <= usable);
         }
 
         for (i=0; i < usable; i++) {
@@ -494,32 +512,33 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
             if (key != NULL) {
                 if (PyUnicode_CheckExact(key)) {
                     Py_hash_t hash = ((PyASCIIObject *)key)->hash;
-                    _PyObject_ASSERT(op, hash != -1);
-                    _PyObject_ASSERT(op, entry->me_hash == hash);
+                    CHECK(hash != -1);
+                    CHECK(entry->me_hash == hash);
                 }
                 else {
                     /* test_dict fails if PyObject_Hash() is called again */
-                    _PyObject_ASSERT(op, entry->me_hash != -1);
+                    CHECK(entry->me_hash != -1);
                 }
                 if (!splitted) {
-                    _PyObject_ASSERT(op, entry->me_value != NULL);
+                    CHECK(entry->me_value != NULL);
                 }
             }
 
             if (splitted) {
-                _PyObject_ASSERT(op, entry->me_value == NULL);
+                CHECK(entry->me_value == NULL);
             }
         }
 
         if (splitted) {
             /* splitted table */
             for (i=0; i < mp->ma_used; i++) {
-                _PyObject_ASSERT(op, mp->ma_values[i] != NULL);
+                CHECK(mp->ma_values[i] != NULL);
             }
         }
     }
-#endif
     return 1;
+
+#undef CHECK
 }
 
 
@@ -547,10 +566,13 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
         es = sizeof(Py_ssize_t);
     }
 
+#if PyDict_MAXFREELIST > 0
     if (size == PyDict_MINSIZE && numfreekeys > 0) {
         dk = keys_free_list[--numfreekeys];
     }
-    else {
+    else
+#endif
+    {
         dk = PyObject_MALLOC(sizeof(PyDictKeysObject)
                              + es * size
                              + sizeof(PyDictKeyEntry) * usable);
@@ -559,7 +581,9 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
             return NULL;
         }
     }
-    _Py_INC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
     dk->dk_refcnt = 1;
     dk->dk_size = size;
     dk->dk_usable = usable;
@@ -579,10 +603,12 @@ free_keys_object(PyDictKeysObject *keys)
         Py_XDECREF(entries[i].me_key);
         Py_XDECREF(entries[i].me_value);
     }
+#if PyDict_MAXFREELIST > 0
     if (keys->dk_size == PyDict_MINSIZE && numfreekeys < PyDict_MAXFREELIST) {
         keys_free_list[numfreekeys++] = keys;
         return;
     }
+#endif
     PyObject_FREE(keys);
 }
 
@@ -595,13 +621,16 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
 {
     PyDictObject *mp;
     assert(keys != NULL);
+#if PyDict_MAXFREELIST > 0
     if (numfree) {
         mp = free_list[--numfree];
         assert (mp != NULL);
-        assert (Py_TYPE(mp) == &PyDict_Type);
+        assert (Py_IS_TYPE(mp, &PyDict_Type));
         _Py_NewReference((PyObject *)mp);
     }
-    else {
+    else
+#endif
+    {
         mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
         if (mp == NULL) {
             dictkeys_decref(keys);
@@ -683,10 +712,12 @@ clone_combined_dict(PyDictObject *orig)
     }
 
     /* Since we copied the keys table we now have an extra reference
-       in the system.  Manually call _Py_INC_REFTOTAL to signal that
+       in the system.  Manually call increment _Py_RefTotal to signal that
        we have it now; calling dictkeys_incref would be an error as
        keys->dk_refcnt is already set to 1 (after memcpy). */
-    _Py_INC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
 
     return (PyObject *)new;
 }
@@ -1080,20 +1111,21 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         return 0;
     }
 
-    if (_PyDict_HasSplitTable(mp)) {
-        mp->ma_values[ix] = value;
-        if (old_value == NULL) {
-            /* pending state */
-            assert(ix == mp->ma_used);
-            mp->ma_used++;
+    if (old_value != value) {
+        if (_PyDict_HasSplitTable(mp)) {
+            mp->ma_values[ix] = value;
+            if (old_value == NULL) {
+                /* pending state */
+                assert(ix == mp->ma_used);
+                mp->ma_used++;
+            }
         }
+        else {
+            assert(old_value != NULL);
+            DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
+        }
+        mp->ma_version_tag = DICT_NEXT_VERSION();
     }
-    else {
-        assert(old_value != NULL);
-        DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
-    }
-
-    mp->ma_version_tag = DICT_NEXT_VERSION();
     Py_XDECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
     ASSERT_CONSISTENT(mp);
     Py_DECREF(key);
@@ -1128,7 +1160,7 @@ insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     MAINTAIN_TRACKING(mp, key, value);
 
     size_t hashpos = (size_t)hash & (PyDict_MINSIZE-1);
-    PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[0];
+    PyDictKeyEntry *ep = DK_ENTRIES(mp->ma_keys);
     dictkeys_set_index(mp->ma_keys, hashpos, 0);
     ep->me_key = key;
     ep->me_hash = hash;
@@ -1244,13 +1276,18 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
 
         assert(oldkeys->dk_lookup != lookdict_split);
         assert(oldkeys->dk_refcnt == 1);
+#ifdef Py_REF_DEBUG
+        _Py_RefTotal--;
+#endif
+#if PyDict_MAXFREELIST > 0
         if (oldkeys->dk_size == PyDict_MINSIZE &&
-            numfreekeys < PyDict_MAXFREELIST) {
-            _Py_DEC_REFTOTAL;
+            numfreekeys < PyDict_MAXFREELIST)
+        {
             keys_free_list[numfreekeys++] = oldkeys;
         }
-        else {
-            _Py_DEC_REFTOTAL;
+        else
+#endif
+        {
             PyObject_FREE(oldkeys);
         }
     }
@@ -1455,7 +1492,9 @@ _PyDict_GetItemIdWithError(PyObject *dp, struct _Py_Identifier *key)
     kv = _PyUnicode_FromId(key); /* borrowed */
     if (kv == NULL)
         return NULL;
-    return PyDict_GetItemWithError(dp, kv);
+    Py_hash_t hash = ((PyASCIIObject *) kv)->hash;
+    assert (hash != -1);  /* interned strings have their hash value initialised */
+    return _PyDict_GetItem_KnownHash(dp, kv, hash);
 }
 
 PyObject *
@@ -1992,10 +2031,15 @@ dict_dealloc(PyDictObject *mp)
         assert(keys->dk_refcnt == 1);
         dictkeys_decref(keys);
     }
-    if (numfree < PyDict_MAXFREELIST && Py_TYPE(mp) == &PyDict_Type)
+#if PyDict_MAXFREELIST > 0
+    if (numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type)) {
         free_list[numfree++] = mp;
+    }
     else
+#endif
+    {
         Py_TYPE(mp)->tp_free((PyObject *)mp);
+    }
     Py_TRASHCAN_END
 }
 
@@ -2112,8 +2156,7 @@ dict_subscript(PyDictObject *mp, PyObject *key)
             _Py_IDENTIFIER(__missing__);
             missing = _PyObject_LookupSpecial((PyObject *)mp, &PyId___missing__);
             if (missing != NULL) {
-                res = PyObject_CallFunctionObjArgs(missing,
-                                                   key, NULL);
+                res = PyObject_CallOneArg(missing, key);
                 Py_DECREF(missing);
                 return res;
             }
@@ -2306,6 +2349,25 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
 
+/* Single-arg dict update; used by dict_update_common and operators. */
+static int
+dict_update_arg(PyObject *self, PyObject *arg)
+{
+    if (PyDict_CheckExact(arg)) {
+        return PyDict_Merge(self, arg, 1);
+    }
+    _Py_IDENTIFIER(keys);
+    PyObject *func;
+    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+        return -1;
+    }
+    if (func != NULL) {
+        Py_DECREF(func);
+        return PyDict_Merge(self, arg, 1);
+    }
+    return PyDict_MergeFromSeq2(self, arg, 1);
+}
+
 static int
 dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
                    const char *methname)
@@ -2317,18 +2379,7 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
         result = -1;
     }
     else if (arg != NULL) {
-        _Py_IDENTIFIER(keys);
-        PyObject *func;
-        if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
-            result = -1;
-        }
-        else if (func != NULL) {
-            Py_DECREF(func);
-            result = PyDict_Merge(self, arg, 1);
-        }
-        else {
-            result = PyDict_MergeFromSeq2(self, arg, 1);
-        }
+        result = dict_update_arg(self, arg);
     }
 
     if (result == 0 && kwds != NULL) {
@@ -2768,9 +2819,11 @@ dict_equal(PyDictObject *a, PyDictObject *b)
                     return -1;
                 return 0;
             }
+            Py_INCREF(bval);
             cmp = PyObject_RichCompareBool(aval, bval, Py_EQ);
             Py_DECREF(key);
             Py_DECREF(aval);
+            Py_DECREF(bval);
             if (cmp <= 0)  /* error or not equal */
                 return cmp;
         }
@@ -2993,14 +3046,14 @@ dict.pop
     default: object = NULL
     /
 
-Remove specified key and return the corresponding value.
+D.pop(k[,d]) -> v, remove specified key and return the corresponding value.
 
 If key is not found, default is returned if given, otherwise KeyError is raised
 [clinic start generated code]*/
 
 static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=3abb47b89f24c21c input=016f6a000e4e633b]*/
+/*[clinic end generated code: output=3abb47b89f24c21c input=eeebec7812190348]*/
 {
     return _PyDict_Pop((PyObject*)self, key, default_value);
 }
@@ -3148,6 +3201,33 @@ dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
     return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
 }
 
+static PyObject *
+dict_or(PyObject *self, PyObject *other)
+{
+    if (!PyDict_Check(self) || !PyDict_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    PyObject *new = PyDict_Copy(self);
+    if (new == NULL) {
+        return NULL;
+    }
+    if (dict_update_arg(new, other)) {
+        Py_DECREF(new);
+        return NULL;
+    }
+    return new;
+}
+
+static PyObject *
+dict_ior(PyObject *self, PyObject *other)
+{
+    if (dict_update_arg(self, other)) {
+        return NULL;
+    }
+    Py_INCREF(self);
+    return self;
+}
+
 PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
 
 PyDoc_STRVAR(sizeof__doc__,
@@ -3201,6 +3281,7 @@ static PyMethodDef mapp_methods[] = {
     {"copy",            (PyCFunction)dict_copy,         METH_NOARGS,
      copy__doc__},
     DICT___REVERSED___METHODDEF
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -3253,6 +3334,11 @@ static PySequenceMethods dict_as_sequence = {
     0,                          /* sq_inplace_repeat */
 };
 
+static PyNumberMethods dict_as_number = {
+    .nb_or = dict_or,
+    .nb_inplace_or = dict_ior,
+};
+
 static PyObject *
 dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -3287,6 +3373,38 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+dict_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(type));
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("dict", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    PyObject *self = dict_new((PyTypeObject *)type, NULL, NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (nargs == 1) {
+        if (dict_update_arg(self, args[0]) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        args++;
+    }
+    if (kwnames != NULL) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
+            if (PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+        }
+    }
+    return self;
+}
+
+static PyObject *
 dict_iter(PyDictObject *dict)
 {
     return dictiter_new(dict, &PyDictIterKey_Type);
@@ -3314,7 +3432,7 @@ PyTypeObject PyDict_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)dict_repr,                        /* tp_repr */
-    0,                                          /* tp_as_number */
+    &dict_as_number,                            /* tp_as_number */
     &dict_as_sequence,                          /* tp_as_sequence */
     &dict_as_mapping,                           /* tp_as_mapping */
     PyObject_HashNotImplemented,                /* tp_hash */
@@ -3344,6 +3462,7 @@ PyTypeObject PyDict_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     dict_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = dict_vectorcall,
 };
 
 PyObject *
@@ -3443,10 +3562,15 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     di->di_dict = dict;
     di->di_used = dict->ma_used;
     di->len = dict->ma_used;
-    if ((itertype == &PyDictRevIterKey_Type ||
+    if (itertype == &PyDictRevIterKey_Type ||
          itertype == &PyDictRevIterItem_Type ||
-         itertype == &PyDictRevIterValue_Type) && dict->ma_used) {
+         itertype == &PyDictRevIterValue_Type) {
+        if (dict->ma_values) {
+            di->di_pos = dict->ma_used - 1;
+        }
+        else {
             di->di_pos = dict->ma_keys->dk_nentries - 1;
+        }
     }
     else {
         di->di_pos = 0;
@@ -3816,22 +3940,21 @@ dictreviter_iternext(dictiterobject *di)
     PyDictKeysObject *k = d->ma_keys;
     PyObject *key, *value, *result;
 
+    if (i < 0) {
+        goto fail;
+    }
     if (d->ma_values) {
-        if (i < 0) {
-            goto fail;
-        }
         key = DK_ENTRIES(k)[i].me_key;
         value = d->ma_values[i];
         assert (value != NULL);
     }
     else {
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
-        while (i >= 0 && entry_ptr->me_value == NULL) {
+        while (entry_ptr->me_value == NULL) {
+            if (--i < 0) {
+                goto fail;
+            }
             entry_ptr--;
-            i--;
-        }
-        if (i < 0) {
-            goto fail;
         }
         key = entry_ptr->me_key;
         value = entry_ptr->me_value;
@@ -3839,15 +3962,15 @@ dictreviter_iternext(dictiterobject *di)
     di->di_pos = i-1;
     di->len--;
 
-    if (Py_TYPE(di) == &PyDictRevIterKey_Type) {
+    if (Py_IS_TYPE(di, &PyDictRevIterKey_Type)) {
         Py_INCREF(key);
         return key;
     }
-    else if (Py_TYPE(di) == &PyDictRevIterValue_Type) {
+    else if (Py_IS_TYPE(di, &PyDictRevIterValue_Type)) {
         Py_INCREF(value);
         return value;
     }
-    else if (Py_TYPE(di) == &PyDictRevIterItem_Type) {
+    else if (Py_IS_TYPE(di, &PyDictRevIterItem_Type)) {
         Py_INCREF(key);
         Py_INCREF(value);
         result = di->di_result;
@@ -3990,7 +4113,7 @@ _PyDictView_New(PyObject *dict, PyTypeObject *type)
         /* XXX Get rid of this restriction later */
         PyErr_Format(PyExc_TypeError,
                      "%s() requires a dict argument, not '%s'",
-                     type->tp_name, dict->ob_type->tp_name);
+                     type->tp_name, Py_TYPE(dict)->tp_name);
         return NULL;
     }
     dv = PyObject_GC_New(_PyDictViewObject, type);
@@ -4149,17 +4272,34 @@ static PySequenceMethods dictkeys_as_sequence = {
     (objobjproc)dictkeys_contains,      /* sq_contains */
 };
 
+// Create an set object from dictviews object.
+// Returns a new reference.
+// This utility function is used by set operations.
 static PyObject*
-dictviews_sub(PyObject* self, PyObject *other)
+dictviews_to_set(PyObject *self)
 {
-    PyObject *result = PySet_New(self);
-    PyObject *tmp;
-    _Py_IDENTIFIER(difference_update);
+    PyObject *left = self;
+    if (PyDictKeys_Check(self)) {
+        // PySet_New() has fast path for the dict object.
+        PyObject *dict = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        if (PyDict_CheckExact(dict)) {
+            left = dict;
+        }
+    }
+    return PySet_New(left);
+}
 
-    if (result == NULL)
+static PyObject*
+dictviews_sub(PyObject *self, PyObject *other)
+{
+    PyObject *result = dictviews_to_set(self);
+    if (result == NULL) {
         return NULL;
+    }
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_difference_update, other, NULL);
+    _Py_IDENTIFIER(difference_update);
+    PyObject *tmp = _PyObject_CallMethodIdOneArg(
+            result, &PyId_difference_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4169,57 +4309,120 @@ dictviews_sub(PyObject* self, PyObject *other)
     return result;
 }
 
-PyObject*
+static int
+dictitems_contains(_PyDictViewObject *dv, PyObject *obj);
+
+PyObject *
 _PyDictView_Intersect(PyObject* self, PyObject *other)
 {
-    PyObject *result = PySet_New(self);
-    PyObject *tmp;
-    _Py_IDENTIFIER(intersection_update);
+    PyObject *result;
+    PyObject *it;
+    PyObject *key;
+    Py_ssize_t len_self;
+    int rv;
+    int (*dict_contains)(_PyDictViewObject *, PyObject *);
 
+    /* Python interpreter swaps parameters when dict view
+       is on right side of & */
+    if (!PyDictViewSet_Check(self)) {
+        PyObject *tmp = other;
+        other = self;
+        self = tmp;
+    }
+
+    len_self = dictview_len((_PyDictViewObject *)self);
+
+    /* if other is a set and self is smaller than other,
+       reuse set intersection logic */
+    if (Py_IS_TYPE(other, &PySet_Type) && len_self <= PyObject_Size(other)) {
+        _Py_IDENTIFIER(intersection);
+        return _PyObject_CallMethodIdObjArgs(other, &PyId_intersection, self, NULL);
+    }
+
+    /* if other is another dict view, and it is bigger than self,
+       swap them */
+    if (PyDictViewSet_Check(other)) {
+        Py_ssize_t len_other = dictview_len((_PyDictViewObject *)other);
+        if (len_other > len_self) {
+            PyObject *tmp = other;
+            other = self;
+            self = tmp;
+        }
+    }
+
+    /* at this point, two things should be true
+       1. self is a dictview
+       2. if other is a dictview then it is smaller than self */
+    result = PySet_New(NULL);
     if (result == NULL)
         return NULL;
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_intersection_update, other, NULL);
-    if (tmp == NULL) {
+    it = PyObject_GetIter(other);
+    if (it == NULL) {
         Py_DECREF(result);
         return NULL;
     }
 
-    Py_DECREF(tmp);
+    if (PyDictKeys_Check(self)) {
+        dict_contains = dictkeys_contains;
+    }
+    /* else PyDictItems_Check(self) */
+    else {
+        dict_contains = dictitems_contains;
+    }
+
+    while ((key = PyIter_Next(it)) != NULL) {
+        rv = dict_contains((_PyDictViewObject *)self, key);
+        if (rv < 0) {
+            goto error;
+        }
+        if (rv) {
+            if (PySet_Add(result, key)) {
+                goto error;
+            }
+        }
+        Py_DECREF(key);
+    }
+    Py_DECREF(it);
+    if (PyErr_Occurred()) {
+        Py_DECREF(result);
+        return NULL;
+    }
     return result;
+
+error:
+    Py_DECREF(it);
+    Py_DECREF(result);
+    Py_DECREF(key);
+    return NULL;
 }
 
 static PyObject*
 dictviews_or(PyObject* self, PyObject *other)
 {
-    PyObject *result = PySet_New(self);
-    PyObject *tmp;
-    _Py_IDENTIFIER(update);
-
-    if (result == NULL)
-        return NULL;
-
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_update, other, NULL);
-    if (tmp == NULL) {
-        Py_DECREF(result);
+    PyObject *result = dictviews_to_set(self);
+    if (result == NULL) {
         return NULL;
     }
 
-    Py_DECREF(tmp);
+    if (_PySet_Update(result, other) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
     return result;
 }
 
 static PyObject*
 dictviews_xor(PyObject* self, PyObject *other)
 {
-    PyObject *result = PySet_New(self);
-    PyObject *tmp;
-    _Py_IDENTIFIER(symmetric_difference_update);
-
-    if (result == NULL)
+    PyObject *result = dictviews_to_set(self);
+    if (result == NULL) {
         return NULL;
+    }
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_symmetric_difference_update, other, NULL);
+    _Py_IDENTIFIER(symmetric_difference_update);
+    PyObject *tmp = _PyObject_CallMethodIdOneArg(
+            result, &PyId_symmetric_difference_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4392,7 +4595,7 @@ dictitems_contains(_PyDictViewObject *dv, PyObject *obj)
         return 0;
     }
     Py_INCREF(found);
-    result = PyObject_RichCompareBool(value, found, Py_EQ);
+    result = PyObject_RichCompareBool(found, value, Py_EQ);
     Py_DECREF(found);
     return result;
 }

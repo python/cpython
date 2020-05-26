@@ -6,6 +6,10 @@
 Streams
 =======
 
+**Source code:** :source:`Lib/asyncio/streams.py`
+
+-------------------------------------------------
+
 Streams are high-level async/await-ready primitives to work with
 network connections.  Streams allow sending and receiving data without
 using callbacks or low-level protocols and transports.
@@ -22,13 +26,15 @@ streams::
             '127.0.0.1', 8888)
 
         print(f'Send: {message!r}')
-        await writer.write(message.encode())
+        writer.write(message.encode())
+        await writer.drain()
 
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
 
         print('Close the connection')
-        await writer.close()
+        writer.close()
+        await writer.wait_closed()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -67,10 +73,6 @@ and work with streams:
 
       The *ssl_handshake_timeout* parameter.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      `open_connection()` is deprecated in favor of `connect()`.
-
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
                           port=None, \*, loop=None, limit=None, \
                           family=socket.AF_UNSPEC, \
@@ -104,10 +106,6 @@ and work with streams:
 
       The *ssl_handshake_timeout* and *start_serving* parameters.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      `start_server()` is deprecated if favor of `StreamServer()`
-
 
 .. rubric:: Unix Sockets
 
@@ -132,10 +130,6 @@ and work with streams:
 
       The *path* parameter can now be a :term:`path-like object`
 
-   .. deprecated-removed:: 3.8 3.10
-
-      `open_unix_connection()` is deprecated if favor of `connect_unix()`.
-
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
                           \*, loop=None, limit=None, sock=None, \
@@ -157,13 +151,6 @@ and work with streams:
    .. versionchanged:: 3.7
 
       The *path* parameter can now be a :term:`path-like object`.
-
-   .. deprecated-removed:: 3.8 3.10
-
-      `start_unix_server()` is deprecated in favor of `UnixStreamServer()`.
-
-
----------
 
 
 StreamReader
@@ -248,21 +235,10 @@ StreamWriter
       If that fails, the data is queued in an internal write buffer until it can be
       sent.
 
-      Starting with Python 3.8, it is possible to directly await on the `write()`
-      method::
-
-         await stream.write(data)
-
-      The ``await`` pauses the current coroutine until the data is written to the
-      socket.
-
-      Below is an equivalent code that works with Python <= 3.7::
+      The method should be used along with the ``drain()`` method::
 
          stream.write(data)
          await stream.drain()
-
-      .. versionchanged:: 3.8
-         Support ``await stream.write(...)`` syntax.
 
    .. method:: writelines(data)
 
@@ -271,46 +247,24 @@ StreamWriter
       If that fails, the data is queued in an internal write buffer until it can be
       sent.
 
-      Starting with Python 3.8, it is possible to directly await on the `write()`
-      method::
-
-         await stream.writelines(lines)
-
-      The ``await`` pauses the current coroutine until the data is written to the
-      socket.
-
-      Below is an equivalent code that works with Python <= 3.7::
+      The method should be used along with the ``drain()`` method::
 
          stream.writelines(lines)
          await stream.drain()
-
-      .. versionchanged:: 3.8
-         Support ``await stream.writelines()`` syntax.
 
    .. method:: close()
 
       The method closes the stream and the underlying socket.
 
-      Starting with Python 3.8, it is possible to directly await on the `close()`
-      method::
-
-         await stream.close()
-
-      The ``await`` pauses the current coroutine until the stream and the underlying
-      socket are closed (and SSL shutdown is performed for a secure connection).
-
-      Below is an equivalent code that works with Python <= 3.7::
+      The method should be used along with the ``wait_closed()`` method::
 
          stream.close()
          await stream.wait_closed()
 
-      .. versionchanged:: 3.8
-         Support ``await stream.close()`` syntax.
-
    .. method:: can_write_eof()
 
-      Return *True* if the underlying transport supports
-      the :meth:`write_eof` method, *False* otherwise.
+      Return ``True`` if the underlying transport supports
+      the :meth:`write_eof` method, ``False`` otherwise.
 
    .. method:: write_eof()
 

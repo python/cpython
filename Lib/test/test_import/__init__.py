@@ -1,34 +1,32 @@
-# We import importlib *ASAP* in order to test #15386
-import importlib
+import builtins
+import contextlib
+import errno
+import glob
 import importlib.util
 from importlib._bootstrap_external import _get_sourcefile
-import builtins
 import marshal
 import os
-import platform
 import py_compile
 import random
 import shutil
-import subprocess
 import stat
+import subprocess
 import sys
+import textwrap
 import threading
 import time
 import unittest
-import unittest.mock as mock
-import textwrap
-import errno
-import contextlib
-import glob
+from unittest import mock
 
 import test.support
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
-    make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
-    unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
+    TESTFN, forget, is_jython,
+    make_legacy_pyc, rmtree, swap_attr, swap_item, temp_umask,
+    unlink, unload, cpython_only, TESTFN_UNENCODABLE,
     temp_dir, DirsOnSysPath)
 from test.support import script_helper
 from test.test_importlib.util import uncache
+from types import ModuleType
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
@@ -438,16 +436,24 @@ class ImportTests(unittest.TestCase):
                 os.does_not_exist
 
     def test_concurrency(self):
+        # bpo 38091: this is a hack to slow down the code that calls
+        # has_deadlock(); the logic was itself sometimes deadlocking.
+        def delay_has_deadlock(frame, event, arg):
+            if event == 'call' and frame.f_code.co_name == 'has_deadlock':
+                time.sleep(0.1)
+
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
         try:
             exc = None
             def run():
+                sys.settrace(delay_has_deadlock)
                 event.wait()
                 try:
                     import package
                 except BaseException as e:
                     nonlocal exc
                     exc = e
+                sys.settrace(None)
 
             for i in range(10):
                 event = threading.Event()
@@ -774,6 +780,11 @@ class RelativeImportTests(unittest.TestCase):
         # Check relative import fails with package set to a non-string
         ns = dict(__package__=object())
         self.assertRaises(TypeError, check_relative)
+
+    def test_parentless_import_shadowed_by_global(self):
+        # Test as if this were done from the REPL where this error most commonly occurs (bpo-37409).
+        script_helper.assert_python_failure('-W', 'ignore', '-c',
+            "foo = 1; from . import foo")
 
     def test_absolute_import_without_future(self):
         # If explicit relative import syntax is used, then do not try
@@ -1326,6 +1337,29 @@ class CircularImportTests(unittest.TestCase):
         self.assertIn('spam', errmsg)
         self.assertIn('partially initialized module', errmsg)
         self.assertIn('circular import', errmsg)
+
+    def test_circular_from_import(self):
+        with self.assertRaises(ImportError) as cm:
+            import test.test_import.data.circular_imports.from_cycle1
+        self.assertIn(
+            "cannot import name 'b' from partially initialized module "
+            "'test.test_import.data.circular_imports.from_cycle1' "
+            "(most likely due to a circular import)",
+            str(cm.exception),
+        )
+
+    def test_unwritable_module(self):
+        self.addCleanup(unload, "test.test_import.data.unwritable")
+        self.addCleanup(unload, "test.test_import.data.unwritable.x")
+
+        import test.test_import.data.unwritable as unwritable
+        with self.assertWarns(ImportWarning):
+            from test.test_import.data.unwritable import x
+
+        self.assertNotEqual(type(unwritable), ModuleType)
+        self.assertEqual(type(x), ModuleType)
+        with self.assertRaises(AttributeError):
+            unwritable.x = 42
 
 
 if __name__ == '__main__':

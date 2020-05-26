@@ -1,11 +1,16 @@
 import copy
-import parser
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', 'The parser module is deprecated',
+                            DeprecationWarning)
+    import parser
 import pickle
 import unittest
 import operator
 import struct
 from test import support
 from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_ok
 
 #
 #  First, we test that we can generate trees from valid source fragments,
@@ -221,6 +226,27 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("@funcattrs()\n"
                          "def f(): pass")
 
+        self.check_suite("@False or x\n"
+                         "def f(): pass")
+        self.check_suite("@d := x\n"
+                         "def f(): pass")
+        self.check_suite("@lambda f: x(f)\n"
+                         "def f(): pass")
+        self.check_suite("@[..., x, ...][1]\n"
+                         "def f(): pass")
+        self.check_suite("@x(x)(x)\n"
+                         "def f(): pass")
+        self.check_suite("@(x, x)\n"
+                         "def f(): pass")
+        self.check_suite("@...\n"
+                         "def f(): pass")
+        self.check_suite("@None\n"
+                         "def f(): pass")
+        self.check_suite("@w @(x @y) @(z)\n"
+                         "def f(): pass")
+        self.check_suite("@w[x].y.z\n"
+                         "def f(): pass")
+
         # keyword-only arguments
         self.check_suite("def f(*, a): pass")
         self.check_suite("def f(*, a = 5): pass")
@@ -264,6 +290,27 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("@decorator1\n"
                          "@decorator2\n"
                          "class foo():pass")
+
+        self.check_suite("@False or x\n"
+                         "class C: pass")
+        self.check_suite("@d := x\n"
+                         "class C: pass")
+        self.check_suite("@lambda f: x(f)\n"
+                         "class C: pass")
+        self.check_suite("@[..., x, ...][1]\n"
+                         "class C: pass")
+        self.check_suite("@x(x)(x)\n"
+                         "class C: pass")
+        self.check_suite("@(x, x)\n"
+                         "class C: pass")
+        self.check_suite("@...\n"
+                         "class C: pass")
+        self.check_suite("@None\n"
+                         "class C: pass")
+        self.check_suite("@w @(x @y) @(z)\n"
+                         "class C: pass")
+        self.check_suite("@w[x].y.z\n"
+                         "class C: pass")
 
     def test_import_from_statement(self):
         self.check_suite("from sys.path import *")
@@ -473,6 +520,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("foo(b := 2, a=1)")
         self.check_suite("foo((b := 2), a=1)")
         self.check_suite("foo(c=(b := 2), a=1)")
+        self.check_suite("{(x := C(i)).q: x for i in y}")
+
 
 #
 #  Second, we take *invalid* trees and make sure we get ParserError
@@ -852,7 +901,7 @@ class ParserStackLimitTestCase(unittest.TestCase):
 
     def test_trigger_memory_error(self):
         e = self._nested_expression(100)
-        rc, out, err = assert_python_failure('-c', e)
+        rc, out, err = assert_python_failure('-Xoldparser', '-c', e)
         # parsing the expression will result in an error message
         # followed by a MemoryError (see #11963)
         self.assertIn(b's_push: parser stack overflow', err)
@@ -984,6 +1033,14 @@ class OtherParserCase(unittest.TestCase):
         # See bug #12264
         with self.assertRaises(TypeError):
             parser.expr("a", "b")
+
+
+class TestDeprecation(unittest.TestCase):
+    def test_deprecation_message(self):
+        code = "def f():\n  import parser\n\nf()"
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'<string>:2: DeprecationWarning', err)
+
 
 if __name__ == "__main__":
     unittest.main()
