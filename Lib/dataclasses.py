@@ -398,8 +398,10 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
 
     ns = {}
     exec(txt, globals, ns)
-    return ns['__create_fn__'](**locals)
-
+    func = ns['__create_fn__'](**locals)
+    for arg, annotation in func.__annotations__.copy().items():
+        func.__annotations__[arg] = locals[annotation]
+    return func
 
 def _field_assign(frozen, name, value, self_name):
     # If we're a frozen class, then assign to our fields in __init__
