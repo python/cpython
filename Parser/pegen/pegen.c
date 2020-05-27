@@ -761,8 +761,11 @@ _PyPegen_expect_soft_keyword(Parser *p, const char *keyword)
         return NULL;
     }
     const char *s = PyUnicode_AsUTF8(res->v.Name.id);
-    if (!s || strcmp(s, keyword) != 0) {
+    if (!s) {
         p->error_indicator = 1;
+        return NULL;
+    }
+    if (strcmp(s, keyword) != 0) {
         return NULL;
     }
     return res;
