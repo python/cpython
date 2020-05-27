@@ -36,6 +36,8 @@ typedef struct _frame {
     int iop;
     int cut;
     int mark;
+    int ival;
+    void *vals[10];
 } Frame;
 
 typedef struct _stack {
@@ -69,17 +71,42 @@ static Rule all_rules[] = {
     {"expr",
      {0, 8, -1},
      {
-      OP_RULE, 2, OP_TOKEN, PLUS, OP_RULE, 1, OP_RETURN, 0,
-      OP_RULE, 2, OP_RETURN, 0,
+      OP_RULE, 2, OP_TOKEN, PLUS, OP_RULE, 1, OP_RETURN, 1,
+      OP_RULE, 2, OP_RETURN, 2,
      },
     },
 
     {"term",
      {0, 3, -1},
      {
-      OP_NAME, OP_RETURN, 0,
-      OP_NUMBER, OP_RETURN, 0,
+      OP_NAME, OP_RETURN, 3,
+      OP_NUMBER, OP_RETURN, 4,
      },
     },
 
 };
+
+static void *
+call_action(Parser *p, Frame *f, int iaction)
+{
+    // TODO: compute lineno and col offset (put in frame?)
+    int _start_lineno = 1;
+    int _start_col_offset = 1;
+    int _end_lineno = 99;
+    int _end_col_offset = 99;
+
+    switch (iaction) {
+    case 0:
+        return  _PyPegen_make_module(p, _PyPegen_singleton_seq(p, _Py_Expr(f->vals[0], EXTRA)));
+    case 1:
+        return _Py_BinOp(f->vals[0], Add, f->vals[2], EXTRA);
+    case 2:
+        return f->vals[0];
+    case 3:
+        return f->vals[0];
+    case 4:
+        return f->vals[0];
+    default:
+        assert(0);
+    }
+}

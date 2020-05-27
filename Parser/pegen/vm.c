@@ -18,6 +18,7 @@ push_frame(Stack *stack, Rule *rule)
     f->iop = 0;
     f->cut = 0;
     f->mark = stack->p->mark;
+    f->ival = 0;
     return f;
 }
 
@@ -39,13 +40,12 @@ run_vm(Parser *p, Rule rules[], int start)
     int oparg;
 
  top:
-    if (p->mark == p->fill)
-        _PyPegen_fill_token(p);
-    Token *t = p->tokens[p->mark];
+    // if (p->mark == p->fill)
+    //     _PyPegen_fill_token(p);
     for (int i = 0; i < stack.top; i++) printf(" ");
     printf("Rule: %s; ialt=%d; iop=%d; op=%s; p^=%s\n",
            f->rule->name, f->ialt, f->iop, opcode_names[f->rule->opcodes[f->iop]],
-           p->fill > p-> mark ? PyBytes_AsString(p->tokens[p->mark]->bytes) : "<BOF>");
+           p->fill > p-> mark ? PyBytes_AsString(p->tokens[p->mark]->bytes) : "<START>");
     switch (f->rule->opcodes[f->iop++]) {
     case OP_NAME:
         v = _PyPegen_name_token(p);
@@ -66,7 +66,7 @@ run_vm(Parser *p, Rule rules[], int start)
         goto top;
     case OP_RETURN:
         oparg = f->rule->opcodes[f->iop++];
-        v = (void*) 1;  // dummy action result
+        v = call_action(p, f, oparg);
         if (!v) {
             p->mark = f->mark;
         }
@@ -74,7 +74,7 @@ run_vm(Parser *p, Rule rules[], int start)
         break;
     case OP_SUCCESS:
         oparg = f->rule->opcodes[f->iop++];
-        v = (void*) 1;  // dummy action result
+        v = call_action(p, f, oparg);
         if (v) {
             return v;
         }
@@ -87,7 +87,7 @@ run_vm(Parser *p, Rule rules[], int start)
 
     if (v) {
         printf("            OK\n");
-        // f->values.append(v)
+        f->vals[f->ival++] = v;
         goto top;
     }
     if (PyErr_Occurred()) {
