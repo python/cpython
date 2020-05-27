@@ -1740,7 +1740,7 @@ def check_impl_detail(**guards):
           if check_impl_detail(cpython=False):  # everywhere except on CPython
     """
     guards, default = _parse_guards(guards)
-    return guards.get(platform.python_implementation().lower(), default)
+    return guards.get(sys.implementation.name, default)
 
 
 def no_tracing(func):
