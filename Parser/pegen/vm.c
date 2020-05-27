@@ -60,10 +60,26 @@ run_vm(Parser *p, Rule rules[], int start)
         oparg = f->rule->opcodes[f->iop++];
         v = _PyPegen_expect_token(p, oparg);
         break;
+    case OP_TOKEN_OPTIONAL:
+        oparg = f->rule->opcodes[f->iop++];
+        v = _PyPegen_expect_token(p, oparg);
+        if (!v) {
+            if (PyErr_Occurred()) {
+                printf("            PyErr\n");
+                p->error_indicator = 1;
+                return NULL;
+            }
+            f->vals[f->ival++] = NULL;
+            goto top;
+        }
+        break;
     case OP_RULE:
         oparg = f->rule->opcodes[f->iop++];
         f = push_frame(&stack, &rules[oparg]);
         goto top;
+    case OP_RULE_OPTIONAL:
+        printf("OP_RULE_OPTIONAL not yet supported\n");
+        abort();
     case OP_RETURN:
         oparg = f->rule->opcodes[f->iop++];
         v = call_action(p, f, oparg);
