@@ -630,6 +630,12 @@ class AST_Tests(unittest.TestCase):
         attr_b = tree.body[0].decorator_list[0].value
         self.assertEqual(attr_b.end_col_offset, 4)
 
+    def test_issue40614_feature_version(self):
+        ast.parse('f"{x=}"', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('f"{x=}"', feature_version=(3, 7))
+
+
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
 
