@@ -158,6 +158,7 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("isblob", 1, func_isblob)
         self.con.create_function("islonglong", 1, func_islonglong)
         self.con.create_function("spam", -1, func)
+        self.con.execute("create table test(t text)")
 
     def tearDown(self):
         self.con.close()
@@ -276,18 +277,24 @@ class FunctionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 2)
 
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def CheckFuncNonDeterministic(self):
+        """Non-deterministic functions cannot be used with partial indices"""
         mock = unittest.mock.Mock(return_value=None)
-        self.con.create_function("deterministic", 0, mock, deterministic=False)
-        self.con.execute("select deterministic() = deterministic()")
-        self.assertEqual(mock.call_count, 2)
+        self.con.create_function("nondeterministic", 0, mock, deterministic=False)
+        with self.assertRaises(sqlite.OperationalError) as cm:
+            self.con.execute("create index t on test(t) where nondeterministic() is not null")
+        self.assertEqual(str(cm.exception), "non-deterministic functions prohibited in partial index WHERE clauses")
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "deterministic parameter not supported")
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def CheckFuncDeterministic(self):
+        """Deterministic functions can be used with partial indices"""
         mock = unittest.mock.Mock(return_value=None)
         self.con.create_function("deterministic", 0, mock, deterministic=True)
-        self.con.execute("select deterministic() = deterministic()")
-        self.assertEqual(mock.call_count, 1)
+        try:
+            self.con.execute("create index t on test(t) where deterministic() is not null")
+        except sqlite.OperationalError:
+            self.fail("Unexpected failure while creating partial index")
 
     @unittest.skipIf(sqlite.sqlite_version_info >= (3, 8, 3), "SQLite < 3.8.3 needed")
     def CheckFuncDeterministicNotSupported(self):

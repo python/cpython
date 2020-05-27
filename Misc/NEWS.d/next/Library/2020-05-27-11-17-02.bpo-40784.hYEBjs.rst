@@ -1,0 +1,1 @@
+Fix :mod:`sqlite3` unit test for deterministic functions.
