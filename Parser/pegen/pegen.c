@@ -775,15 +775,15 @@ _PyPegen_expect_soft_keyword(Parser *p, const char *keyword)
     if (t->type != NAME) {
         return NULL;
     }
-    char* s = PyBytes_AsString(t->bytes);
+    char *s = PyBytes_AsString(t->bytes);
     if (!s) {
+        p->error_indicator = 1;
         return NULL;
     }
     if (strcmp(s, keyword) != 0) {
         return NULL;
     }
-    expr_ty res = _PyPegen_name_token(p);
-    return res;
+    return _PyPegen_name_token(p);
 }
 
 Token *
@@ -809,10 +809,12 @@ _PyPegen_name_token(Parser *p)
     }
     char* s = PyBytes_AsString(t->bytes);
     if (!s) {
+        p->error_indicator = 1;
         return NULL;
     }
     PyObject *id = _PyPegen_new_identifier(p, s);
     if (id == NULL) {
+        p->error_indicator = 1;
         return NULL;
     }
     return Name(id, Load, t->lineno, t->col_offset, t->end_lineno, t->end_col_offset,
@@ -905,6 +907,7 @@ _PyPegen_number_token(Parser *p)
 
     char *num_raw = PyBytes_AsString(t->bytes);
     if (num_raw == NULL) {
+        p->error_indicator = 1;
         return NULL;
     }
 
@@ -917,11 +920,13 @@ _PyPegen_number_token(Parser *p)
     PyObject *c = parsenumber(num_raw);
 
     if (c == NULL) {
+        p->error_indicator = 1;
         return NULL;
     }
 
     if (PyArena_AddPyObject(p->arena, c) < 0) {
         Py_DECREF(c);
+        p->error_indicator = 1;
         return NULL;
     }
 
