@@ -785,6 +785,8 @@ _operator_length_hint_impl(PyObject *module, PyObject *obj,
     return PyObject_LengthHint(obj, default_value);
 }
 
+/* NOTE: Keep in sync with _hashopenssl.c implementation. */
+
 /*[clinic input]
 _operator._compare_digest = _operator.eq
 
