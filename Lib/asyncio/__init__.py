@@ -17,6 +17,7 @@ from .queues import *
 from .streams import *
 from .subprocess import *
 from .tasks import *
+from .threads import *
 from .transports import *
 
 # Exposed for _asynciomodule.c to implement now deprecated
@@ -35,6 +36,7 @@ __all__ = (base_events.__all__ +
            streams.__all__ +
            subprocess.__all__ +
            tasks.__all__ +
+           threads.__all__ +
            transports.__all__)
 
 if sys.platform == 'win32':  # pragma: no cover

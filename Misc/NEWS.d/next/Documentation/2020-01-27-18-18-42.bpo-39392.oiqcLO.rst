@@ -1,1 +1,0 @@
-Explain that when filling with turtle, overlap regions may be left unfilled.

@@ -24,7 +24,6 @@
  */
 
 #include <Python.h>
-#include <structmember.h>
 
 #include "cursor.h"
 #include "microprotocols.h"
@@ -92,7 +91,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
     Py_DECREF(key);
     if (adapter) {
         Py_INCREF(adapter);
-        adapted = _PyObject_CallOneArg(adapter, obj);
+        adapted = PyObject_CallOneArg(adapter, obj);
         Py_DECREF(adapter);
         return adapted;
     }
@@ -105,7 +104,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
         return NULL;
     }
     if (adapter) {
-        adapted = _PyObject_CallOneArg(adapter, obj);
+        adapted = PyObject_CallOneArg(adapter, obj);
         Py_DECREF(adapter);
 
         if (adapted == Py_None) {
@@ -124,7 +123,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
         return NULL;
     }
     if (adapter) {
-        adapted = _PyObject_CallOneArg(adapter, proto);
+        adapted = PyObject_CallOneArg(adapter, proto);
         Py_DECREF(adapter);
 
         if (adapted == Py_None) {

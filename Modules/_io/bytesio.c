@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_object.h"
-#include "structmember.h"       /* for offsetof() */
+#include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -393,7 +393,7 @@ _io_BytesIO_tell_impl(bytesio *self)
 static PyObject *
 read_bytes(bytesio *self, Py_ssize_t size)
 {
-    char *output;
+    const char *output;
 
     assert(self->buf != NULL);
     assert(size <= self->string_size);
@@ -502,7 +502,7 @@ _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg)
 {
     Py_ssize_t maxsize, size, n;
     PyObject *result, *line;
-    char *output;
+    const char *output;
 
     CHECK_CLOSED(self);
 

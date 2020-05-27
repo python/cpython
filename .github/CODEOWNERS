@@ -74,6 +74,8 @@ Include/pytime.h              @pganssle @abalkin
 
 # Parser/Pgen
 /Parser/pgen/                 @pablogsal
+/Parser/pegen/                @pablogsal
+/Tools/peg_generator/         @pablogsal
 
 # SQLite 3
 **/*sqlite*                   @berkerpeksag

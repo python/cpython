@@ -7,6 +7,11 @@ import textwrap
 import unittest
 import importlib.metadata
 
+try:
+    import pyfakefs.fake_filesystem_unittest as ffs
+except ImportError:
+    from .stubs import fake_filesystem_unittest as ffs
+
 from . import fixtures
 from importlib.metadata import (
     Distribution, EntryPoint,
@@ -183,6 +188,33 @@ class DirectoryTest(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
         with self.add_sys_path(egg):
             with self.assertRaises(PackageNotFoundError):
                 version('foo')
+
+
+class MissingSysPath(fixtures.OnSysPath, unittest.TestCase):
+    site_dir = '/does-not-exist'
+
+    def test_discovery(self):
+        """
+        Discovering distributions should succeed even if
+        there is an invalid path on sys.path.
+        """
+        importlib.metadata.distributions()
+
+
+class InaccessibleSysPath(fixtures.OnSysPath, ffs.TestCase):
+    site_dir = '/access-denied'
+
+    def setUp(self):
+        super(InaccessibleSysPath, self).setUp()
+        self.setUpPyfakefs()
+        self.fs.create_dir(self.site_dir, perm_bits=000)
+
+    def test_discovery(self):
+        """
+        Discovering distributions should succeed even if
+        there is an invalid path on sys.path.
+        """
+        list(importlib.metadata.distributions())
 
 
 class TestEntryPoints(unittest.TestCase):

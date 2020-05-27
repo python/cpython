@@ -23,6 +23,8 @@ msi             Support for packaging Python as an MSI package on Windows.
 
 parser          Un-parsing tool to generate code from an AST.
 
+peg_generator   PEG-based parser generator (pegen) used for new parser.
+
 pynche          A Tkinter-based color editor.
 
 scripts         A number of useful single-file programs, e.g. tabnanny.py

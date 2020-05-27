@@ -68,7 +68,7 @@ typedef struct {
     ffi_type *atypes[1];
 } CThunkObject;
 extern PyTypeObject PyCThunk_Type;
-#define CThunk_CheckExact(v)        (Py_TYPE(v) == &PyCThunk_Type)
+#define CThunk_CheckExact(v)        Py_IS_TYPE(v, &PyCThunk_Type)
 
 typedef struct {
     /* First part identical to tagCDataObject */
@@ -102,7 +102,7 @@ typedef struct {
 } PyCFuncPtrObject;
 
 extern PyTypeObject PyCStgDict_Type;
-#define PyCStgDict_CheckExact(v)            (Py_TYPE(v) == &PyCStgDict_Type)
+#define PyCStgDict_CheckExact(v)            Py_IS_TYPE(v, &PyCStgDict_Type)
 #define PyCStgDict_Check(v)         PyObject_TypeCheck(v, &PyCStgDict_Type)
 
 extern int PyCStructUnionType_update_stgdict(PyObject *fields, PyObject *type, int isStruct);
@@ -112,12 +112,12 @@ extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palig
 
 
 extern PyTypeObject PyCData_Type;
-#define CDataObject_CheckExact(v)       (Py_TYPE(v) == &PyCData_Type)
+#define CDataObject_CheckExact(v)       Py_IS_TYPE(v, &PyCData_Type)
 #define CDataObject_Check(v)            PyObject_TypeCheck(v, &PyCData_Type)
 #define _CDataObject_HasExternalBuffer(v)  ((v)->b_ptr != (char *)&(v)->b_value)
 
 extern PyTypeObject PyCSimpleType_Type;
-#define PyCSimpleTypeObject_CheckExact(v)       (Py_TYPE(v) == &PyCSimpleType_Type)
+#define PyCSimpleTypeObject_CheckExact(v)       Py_IS_TYPE(v, &PyCSimpleType_Type)
 #define PyCSimpleTypeObject_Check(v)    PyObject_TypeCheck(v, &PyCSimpleType_Type)
 
 extern PyTypeObject PyCField_Type;
@@ -314,7 +314,7 @@ struct tagPyCArgObject {
 };
 
 extern PyTypeObject PyCArg_Type;
-#define PyCArg_CheckExact(v)        (Py_TYPE(v) == &PyCArg_Type)
+#define PyCArg_CheckExact(v)        Py_IS_TYPE(v, &PyCArg_Type)
 extern PyCArgObject *PyCArgObject_new(void);
 
 extern PyObject *

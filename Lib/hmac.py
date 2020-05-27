@@ -30,6 +30,10 @@ class HMAC:
     """
     blocksize = 64  # 512-bit HMAC; can be changed in subclasses.
 
+    __slots__ = (
+        "_digest_cons", "_inner", "_outer", "block_size", "digest_size"
+    )
+
     def __init__(self, key, msg=None, digestmod=''):
         """Create a new HMAC object.
 
@@ -51,18 +55,18 @@ class HMAC:
             raise TypeError("Missing required parameter 'digestmod'.")
 
         if callable(digestmod):
-            self.digest_cons = digestmod
+            self._digest_cons = digestmod
         elif isinstance(digestmod, str):
-            self.digest_cons = lambda d=b'': _hashlib.new(digestmod, d)
+            self._digest_cons = lambda d=b'': _hashlib.new(digestmod, d)
         else:
-            self.digest_cons = lambda d=b'': digestmod.new(d)
+            self._digest_cons = lambda d=b'': digestmod.new(d)
 
-        self.outer = self.digest_cons()
-        self.inner = self.digest_cons()
-        self.digest_size = self.inner.digest_size
+        self._outer = self._digest_cons()
+        self._inner = self._digest_cons()
+        self.digest_size = self._inner.digest_size
 
-        if hasattr(self.inner, 'block_size'):
-            blocksize = self.inner.block_size
+        if hasattr(self._inner, 'block_size'):
+            blocksize = self._inner.block_size
             if blocksize < 16:
                 _warnings.warn('block_size of %d seems too small; using our '
                                'default of %d.' % (blocksize, self.blocksize),
@@ -79,21 +83,33 @@ class HMAC:
         self.block_size = blocksize
 
         if len(key) > blocksize:
-            key = self.digest_cons(key).digest()
+            key = self._digest_cons(key).digest()
 
         key = key.ljust(blocksize, b'\0')
-        self.outer.update(key.translate(trans_5C))
-        self.inner.update(key.translate(trans_36))
+        self._outer.update(key.translate(trans_5C))
+        self._inner.update(key.translate(trans_36))
         if msg is not None:
             self.update(msg)
 
     @property
     def name(self):
-        return "hmac-" + self.inner.name
+        return "hmac-" + self._inner.name
+
+    @property
+    def digest_cons(self):
+        return self._digest_cons
+
+    @property
+    def inner(self):
+        return self._inner
+
+    @property
+    def outer(self):
+        return self._outer
 
     def update(self, msg):
         """Feed data from msg into this hashing object."""
-        self.inner.update(msg)
+        self._inner.update(msg)
 
     def copy(self):
         """Return a separate copy of this hashing object.
@@ -102,10 +118,10 @@ class HMAC:
         """
         # Call __new__ directly to avoid the expensive __init__.
         other = self.__class__.__new__(self.__class__)
-        other.digest_cons = self.digest_cons
+        other._digest_cons = self._digest_cons
         other.digest_size = self.digest_size
-        other.inner = self.inner.copy()
-        other.outer = self.outer.copy()
+        other._inner = self._inner.copy()
+        other._outer = self._outer.copy()
         return other
 
     def _current(self):
@@ -113,8 +129,8 @@ class HMAC:
 
         To be used only internally with digest() and hexdigest().
         """
-        h = self.outer.copy()
-        h.update(self.inner.digest())
+        h = self._outer.copy()
+        h.update(self._inner.digest())
         return h
 
     def digest(self):

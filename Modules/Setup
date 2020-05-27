@@ -132,7 +132,10 @@ faulthandler faulthandler.c
 #
 # bpo-35053: The module must be builtin since _Py_NewReference()
 # can call _PyTraceMalloc_NewReference().
-_tracemalloc _tracemalloc.c hashtable.c
+_tracemalloc _tracemalloc.c
+
+# PEG-based parser module -- slated to be *the* parser
+_peg_parser _peg_parser.c
 
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically
@@ -167,17 +170,18 @@ _symtable symtablemodule.c
 # Modules that should always be present (non UNIX dependent):
 
 #array arraymodule.c	# array objects
-#cmath cmathmodule.c _math.c # -lm # complex math library functions
-#math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
+#cmath cmathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # complex math library functions
+#math mathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # math library functions, e.g. sin()
 #_contextvars _contextvarsmodule.c  # Context Variables
 #_struct _struct.c	# binary structure packing/unpacking
 #_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module
 #_testinternalcapi _testinternalcapi.c -I$(srcdir)/Include/internal -DPy_BUILD_CORE_MODULE  # Python internal C API test module
-#_random _randommodule.c	# Random number generator
+#_random _randommodule.c -DPy_BUILD_CORE_MODULE	# Random number generator
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator
 #_datetime _datetimemodule.c	# datetime accelerator
+#_zoneinfo _zoneinfo.c	# zoneinfo accelerator
 #_bisect _bisectmodule.c	# Bisection algorithms
 #_heapq _heapqmodule.c	# Heap queue algorithm
 #_asyncio _asynciomodule.c  # Fast asyncio Future
@@ -247,8 +251,8 @@ _symtable symtablemodule.c
 # The _sha module implements the SHA checksum algorithms.
 # (NIST's Secure Hash Algorithms.)
 #_sha1 sha1module.c
-#_sha256 sha256module.c
-#_sha512 sha512module.c
+#_sha256 sha256module.c -DPy_BUILD_CORE_BUILTIN
+#_sha512 sha512module.c -DPy_BUILD_CORE_BUILTIN
 #_sha3 _sha3/sha3module.c
 
 # _blake module
