@@ -1215,3 +1215,5 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
+
+PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);
