@@ -776,10 +776,12 @@ _PyPegen_name_token(Parser *p)
     }
     char* s = PyBytes_AsString(t->bytes);
     if (!s) {
+        p->error_indicator = 1;
         return NULL;
     }
     PyObject *id = _PyPegen_new_identifier(p, s);
     if (id == NULL) {
+        p->error_indicator = 1;
         return NULL;
     }
     return Name(id, Load, t->lineno, t->col_offset, t->end_lineno, t->end_col_offset,
@@ -872,6 +874,7 @@ _PyPegen_number_token(Parser *p)
 
     char *num_raw = PyBytes_AsString(t->bytes);
     if (num_raw == NULL) {
+        p->error_indicator = 1;
         return NULL;
     }
 
@@ -884,11 +887,13 @@ _PyPegen_number_token(Parser *p)
     PyObject *c = parsenumber(num_raw);
 
     if (c == NULL) {
+        p->error_indicator = 1;
         return NULL;
     }
 
     if (PyArena_AddPyObject(p->arena, c) < 0) {
         Py_DECREF(c);
+        p->error_indicator = 1;
         return NULL;
     }
 
