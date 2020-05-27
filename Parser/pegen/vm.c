@@ -13,6 +13,9 @@ push_frame(Stack *stack, Rule *rule)
     assert(stack->top < 100);
     Frame *f = &stack->frames[stack->top++];
     f->rule = rule;
+    f->ialt = 0;
+    f->iop = 0;
+    f->cut = 0;
     return f;
 }
 
@@ -33,6 +36,8 @@ run_vm(Parser *p, Rule rules[], int start)
     int oparg;
 
  top:
+    for (int i = 0; i < stack.top; i++) printf(" ");
+    printf("Rule: %s; ialt=%d; iop=%d; op=%s\n", f->rule->name, f->ialt, f->iop, opcode_names[f->rule->opcodes[f->iop]]);
     switch (f->rule->opcodes[f->iop++]) {
     case OP_NAME:
         v = _PyPegen_name_token(p);
@@ -56,23 +61,35 @@ run_vm(Parser *p, Rule rules[], int start)
         v = (void*) 1;  // dummy action result
         f = pop_frame(&stack);
         break;
+    case OP_SUCCESS:
+        oparg = f->rule->opcodes[f->iop++];
+        v = (void*) 1;  // dummy action result
+        if (v) {
+            return v;
+        }
+        // fallthrough
+    case OP_FAILURE:
+        return RAISE_SYNTAX_ERROR("A syntax error");
     default:
         abort();
     }
 
     if (v) {
+        printf("            OK\n");
         // f->values.append(v)
         goto top;
     }
     if (PyErr_Occurred()) {
+        printf("            PyErr\n");
         p->error_indicator = 1;
         return NULL;
     }
 
  fail:
+    printf("            fail\n");
     if (f->cut)
         goto pop;
-    f->iop = f->rule->alts[++f->arg];
+    f->iop = f->rule->alts[++f->ialt];
     if (f->iop == -1)
         goto pop;
     goto top;
@@ -83,7 +100,7 @@ run_vm(Parser *p, Rule rules[], int start)
 }
 
 void *
-_PyPegen_vmparse(Parser *p)
+_PyPegen_vmparser(Parser *p)
 {
     p->keywords = reserved_keywords;
     p->n_keyword_lists = n_keyword_lists;

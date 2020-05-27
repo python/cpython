@@ -307,7 +307,6 @@ PEGEN_OBJS=		\
 PEGEN_HEADERS= \
 		$(srcdir)/Include/internal/pegen_interface.h \
 		$(srcdir)/Parser/pegen/pegen.h \
-		$(srcdir)/Parser/pegen/vm.h \
 		$(srcdir)/Parser/pegen/parse_string.h
 
 POBJS=		\
@@ -1151,6 +1150,8 @@ PYTHON_HEADERS= \
 		$(DTRACE_HEADERS)
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
+
+$(srcdir)/Parser/pegen/vm.o: $(srcdir)/Parser/pegen/vm.h
 
 
 ######################################################################

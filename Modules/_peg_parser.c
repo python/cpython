@@ -45,13 +45,14 @@ error:
 PyObject *
 _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *keywords[] = {"string", "mode", "oldparser", NULL};
+    static char *keywords[] = {"string", "mode", "oldparser", "vmparser", NULL};
     char *the_string;
     char *mode_str = "exec";
     int oldparser = 0;
+    int vmparser = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sp", keywords,
-            &the_string, &mode_str, &oldparser)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|spp", keywords,
+                                     &the_string, &mode_str, &oldparser, &vmparser)) {
         return NULL;
     }
 
@@ -78,6 +79,10 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
     flags.cf_flags = PyCF_IGNORE_COOKIE;
+    if (vmparser) {
+        printf("VMPARSER\n");
+        flags.cf_flags |= 0x4000;
+    }
 
     mod_ty res;
     if (oldparser) {

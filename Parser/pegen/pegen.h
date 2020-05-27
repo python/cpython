@@ -23,6 +23,7 @@
 #define PyPARSE_BARRY_AS_BDFL 0x0020
 #define PyPARSE_TYPE_COMMENTS 0x0040
 #define PyPARSE_ASYNC_HACKS   0x0080
+#define PyPARSE_VMPARSER      0x0100
 
 typedef struct _memo {
     int type;
@@ -207,6 +208,7 @@ void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
                                     const char *, const char *, PyCompilerFlags *, int *, PyArena *);
 void *_PyPegen_run_parser(Parser *);
+void *_PyPegen_vmparser(Parser *);
 mod_ty _PyPegen_run_parser_from_file(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 void *_PyPegen_interactive_exit(Parser *);

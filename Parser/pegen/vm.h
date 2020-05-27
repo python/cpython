@@ -3,11 +3,26 @@ typedef enum _opcodes {
     OP_NUMBER,
     OP_STRING,
     OP_CUT,
+    OP_SUCCESS,
+    OP_FAILURE,
     // The rest have an argument
     OP_TOKEN,
     OP_RULE,
     OP_RETURN,
 } Opcode;
+
+char *opcode_names[] = {
+    "OP_NAME",
+    "OP_NUMBER",
+    "OP_STRING",
+    "OP_CUT",
+    "OP_SUCCESS",
+    "OP_FAILURE",
+    // The rest have an argument
+    "OP_TOKEN",
+    "OP_RULE",
+    "OP_RETURN",
+};
 
 typedef struct _rule {
     char *name;
@@ -31,7 +46,7 @@ typedef struct _stack {
 /* Toy grammar:
 
 start: expr ENDMARKER
-expr: term + expr | term
+expr: term '+' expr | term
 term: NAME | NUMBER
 
 */
@@ -43,9 +58,10 @@ static KeywordToken *reserved_keywords[] = {
 static Rule all_rules[] = {
 
     {"start",
-     {0, -1},
+     {0, 6, -1},
      {
-      OP_RULE, 1, OP_TOKEN, ENDMARKER, OP_RETURN, 0,
+      OP_RULE, 1, OP_TOKEN, ENDMARKER, OP_SUCCESS, 0,
+      OP_FAILURE,
      },
     },
 

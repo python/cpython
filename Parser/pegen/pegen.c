@@ -1006,6 +1006,9 @@ compute_parser_flags(PyCompilerFlags *flags)
     if (flags->cf_flags & PyCF_TYPE_COMMENTS) {
         parser_flags |= PyPARSE_TYPE_COMMENTS;
     }
+    if (flags->cf_flags &PyCF_VMPARSER) {
+        parser_flags |= PyPARSE_VMPARSER;
+    }
     if (flags->cf_feature_version < 7) {
         parser_flags |= PyPARSE_ASYNC_HACKS;
     }
@@ -1185,7 +1188,13 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
         goto error;
     }
 
-    result = _PyPegen_run_parser(p);
+    if (parser_flags & PyPARSE_VMPARSER) {
+        printf("vmparse\n");
+        result = _PyPegen_vmparser(p);
+    }
+    else {
+        result = _PyPegen_run_parser(p);
+    }
     _PyPegen_Parser_Free(p);
 
 error:
