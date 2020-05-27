@@ -648,11 +648,17 @@ class RangeTest(unittest.TestCase):
         self.assert_attrs(range(0, 10, 3), 0, 10, 3)
         self.assert_attrs(range(10, 0, -1), 10, 0, -1)
         self.assert_attrs(range(10, 0, -3), 10, 0, -3)
+        self.assert_attrs(range(True), 0, 1, 1)
+        self.assert_attrs(range(False, True), 0, 1, 1)
+        self.assert_attrs(range(False, True, True), 0, 1, 1)
 
     def assert_attrs(self, rangeobj, start, stop, step):
         self.assertEqual(rangeobj.start, start)
         self.assertEqual(rangeobj.stop, stop)
         self.assertEqual(rangeobj.step, step)
+        self.assertIs(type(rangeobj.start), int)
+        self.assertIs(type(rangeobj.stop), int)
+        self.assertIs(type(rangeobj.step), int)
 
         with self.assertRaises(AttributeError):
             rangeobj.start = 0
