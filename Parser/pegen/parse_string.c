@@ -928,6 +928,11 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     /* Check for =, which puts the text value of the expression in
        expr_text. */
     if (**str == '=') {
+        if (p->feature_version < 8) {
+            RAISE_SYNTAX_ERROR("f-string: self documenting expressions are "
+                               "only supported in Python 3.8 and greater");
+            goto error;
+        }
         *str += 1;
 
         /* Skip over ASCII whitespace.  No need to test for end of string
