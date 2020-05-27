@@ -531,7 +531,7 @@ _Py_Uid_Converter(PyObject *obj, void *p)
     long result;
     unsigned long uresult;
 
-    index = PyNumber_Index(obj);
+    index = _PyNumber_Index(obj);
     if (index == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "uid should be integer, not %.200s",
@@ -637,7 +637,7 @@ _Py_Gid_Converter(PyObject *obj, void *p)
     long result;
     unsigned long uresult;
 
-    index = PyNumber_Index(obj);
+    index = _PyNumber_Index(obj);
     if (index == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "gid should be integer, not %.200s",
@@ -771,7 +771,7 @@ _fd_converter(PyObject *o, int *p)
     int overflow;
     long long_value;
 
-    PyObject *index = PyNumber_Index(o);
+    PyObject *index = _PyNumber_Index(o);
     if (index == NULL) {
         return 0;
     }

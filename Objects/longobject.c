@@ -394,7 +394,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         v = (PyLongObject *)vv;
     }
     else {
-        v = (PyLongObject *)PyNumber_Index(vv);
+        v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -674,7 +674,7 @@ PyLong_AsUnsignedLongMask(PyObject *op)
         return _PyLong_AsUnsignedLongMask(op);
     }
 
-    lo = (PyLongObject *)PyNumber_Index(op);
+    lo = (PyLongObject *)_PyNumber_Index(op);
     if (lo == NULL)
         return (unsigned long)-1;
 
@@ -1132,7 +1132,7 @@ PyLong_AsLongLong(PyObject *vv)
         v = (PyLongObject *)vv;
     }
     else {
-        v = (PyLongObject *)PyNumber_Index(vv);
+        v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -1247,7 +1247,7 @@ PyLong_AsUnsignedLongLongMask(PyObject *op)
         return _PyLong_AsUnsignedLongLongMask(op);
     }
 
-    lo = (PyLongObject *)PyNumber_Index(op);
+    lo = (PyLongObject *)_PyNumber_Index(op);
     if (lo == NULL)
         return (unsigned long long)-1;
 
@@ -1287,7 +1287,7 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         v = (PyLongObject *)vv;
     }
     else {
-        v = (PyLongObject *)PyNumber_Index(vv);
+        v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -5180,7 +5180,7 @@ long_round(PyObject *self, PyObject *args)
     if (o_ndigits == NULL)
         return long_long(self);
 
-    ndigits = PyNumber_Index(o_ndigits);
+    ndigits = _PyNumber_Index(o_ndigits);
     if (ndigits == NULL)
         return NULL;
 

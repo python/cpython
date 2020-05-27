@@ -121,7 +121,7 @@ get_pylong(PyObject *v)
     if (!PyLong_Check(v)) {
         /* Not an integer;  try to use __index__ to convert. */
         if (PyIndex_Check(v)) {
-            v = PyNumber_Index(v);
+            v = _PyNumber_Index(v);
             if (v == NULL)
                 return NULL;
         }

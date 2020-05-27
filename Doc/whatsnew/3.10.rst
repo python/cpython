@@ -129,6 +129,10 @@ C API Changes
 New Features
 ------------
 
+* :c:func:`PyNumber_Index` now always returns an exact :class:`int`, not
+  an instance of a subclass of ``int``.
+  (Contributed by Serhiy Storchaka in :issue:`40792`.)
+
 
 Porting to Python 3.10
 ----------------------

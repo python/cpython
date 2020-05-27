@@ -1,0 +1,2 @@
+:c:func:`PyNumber_Index` now always returns an exact :class:`int`, not an
+instance of a subclass of ``int``.
