@@ -70,14 +70,20 @@ Summary -- Release highlights
 New Features
 ============
 
+* The :class:`int` type has a new method :meth:`int.bit_count`, returning the
+  number of ones in the binary expansion of a given integer, also known
+  as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
 
 
 Other Language Changes
 ======================
 
-* The :class:`int` type has a new method :meth:`int.bit_count`, returning the
-  number of ones in the binary expansion of a given integer, also known
-  as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
+* Builtin and extension functions that take integer arguments no longer accept
+  :class:`~decimal.Decimal`\ s, :class:`~fractions.Fraction`\ s and other
+  objects that can be converted to integers only with a loss (e.g. that have
+  the :meth:`~object.__int__` method but do not have the
+  :meth:`~object.__index__` method).
+  (Contributed by Serhiy Storchaka in :issue:`37999`.)
 
 
 New Modules

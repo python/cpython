@@ -58,7 +58,8 @@ class NodeTypes(Enum):
     STRING_TOKEN = 2
     GENERIC_TOKEN = 3
     KEYWORD = 4
-    CUT_OPERATOR = 5
+    SOFT_KEYWORD = 5
+    CUT_OPERATOR = 6
 
 
 BASE_NODETYPES = {
@@ -117,6 +118,16 @@ class CCallMakerVisitor(GrammarVisitor):
             comment=f"token='{keyword}'",
         )
 
+    def soft_keyword_helper(self, value: str) -> FunctionCall:
+        return FunctionCall(
+            assigned_variable="_keyword",
+            function="_PyPegen_expect_soft_keyword",
+            arguments=["p", value],
+            return_type="expr_ty",
+            nodetype=NodeTypes.SOFT_KEYWORD,
+            comment=f"soft_keyword='{value}'",
+        )
+
     def visit_NameLeaf(self, node: NameLeaf) -> FunctionCall:
         name = node.value
         if name in self.non_exact_tokens:
@@ -154,7 +165,10 @@ class CCallMakerVisitor(GrammarVisitor):
     def visit_StringLeaf(self, node: StringLeaf) -> FunctionCall:
         val = ast.literal_eval(node.value)
         if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
-            return self.keyword_helper(val)
+            if node.value.endswith("'"):
+                return self.keyword_helper(val)
+            else:
+                return self.soft_keyword_helper(node.value)
         else:
             assert val in self.exact_tokens, f"{node.value} is not a known literal"
             type = self.exact_tokens[val]
@@ -201,6 +215,12 @@ class CCallMakerVisitor(GrammarVisitor):
         if call.nodetype == NodeTypes.NAME_TOKEN:
             return FunctionCall(
                 function=f"_PyPegen_lookahead_with_name",
+                arguments=[positive, call.function, *call.arguments],
+                return_type="int",
+            )
+        elif call.nodetype == NodeTypes.SOFT_KEYWORD:
+            return FunctionCall(
+                function=f"_PyPegen_lookahead_with_string",
                 arguments=[positive, call.function, *call.arguments],
                 return_type="int",
             )
@@ -656,8 +676,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("{")
         # We have parsed successfully all the conditions for the option.
         with self.indent():
+            node_str = str(node).replace('"', '\\"')
             self.print(
-                f'D(fprintf(stderr, "%*c+ {rulename}[%d-%d]: %s succeeded!\\n", p->level, \' \', _mark, p->mark, "{node}"));'
+                f'D(fprintf(stderr, "%*c+ {rulename}[%d-%d]: %s succeeded!\\n", p->level, \' \', _mark, p->mark, "{node_str}"));'
             )
             # Prepare to emmit the rule action and do so
             if node.action and "EXTRA" in node.action:
@@ -710,8 +731,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"{{ // {node}")
         with self.indent():
             self._check_for_errors()
+            node_str = str(node).replace('"', '\\"')
             self.print(
-                f'D(fprintf(stderr, "%*c> {rulename}[%d-%d]: %s\\n", p->level, \' \', _mark, p->mark, "{node}"));'
+                f'D(fprintf(stderr, "%*c> {rulename}[%d-%d]: %s\\n", p->level, \' \', _mark, p->mark, "{node_str}"));'
             )
             # Prepare variable declarations for the alternative
             vars = self.collect_vars(node)
@@ -733,9 +755,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     self.handle_alt_normal(node, is_gather, rulename)
 
             self.print("p->mark = _mark;")
+            node_str = str(node).replace('"', '\\"')
             self.print(
                 f"D(fprintf(stderr, \"%*c%s {rulename}[%d-%d]: %s failed!\\n\", p->level, ' ',\n"
-                f'                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "{node}"));'
+                f'                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "{node_str}"));'
             )
             if "_cut_var" in vars:
                 self.print("if (_cut_var) {")
