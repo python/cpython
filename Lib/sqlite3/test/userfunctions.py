@@ -2,7 +2,7 @@
 # pysqlite2/test/userfunctions.py: tests for user-defined functions and
 #                                  aggregates.
 #
-# Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2005-2007 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -284,7 +284,8 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("nondeterministic", 0, mock, deterministic=False)
         with self.assertRaises(sqlite.OperationalError) as cm:
             self.con.execute("create index t on test(t) where nondeterministic() is not null")
-        self.assertEqual(str(cm.exception), "non-deterministic functions prohibited in partial index WHERE clauses")
+        # non-deterministic functions prohibited in partial index WHERE clauses
+        self.assertIn("non-deterministic functions prohibited", str(cm.exception))
 
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def CheckFuncDeterministic(self):
