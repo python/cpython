@@ -1670,7 +1670,7 @@ test case
                 log_foobar.debug("2")
         self.assertEqual(
             str(cm.exception),
-            "Logs unexpected found: ['INFO:foo:1']",
+            "Unexpected logs found: ['INFO:foo:1']",
         )
 
     def testAssertNoLogsFailureFoundLogs(self):
@@ -1681,7 +1681,7 @@ test case
 
         self.assertEqual(
             str(cm.exception),
-            "Logs unexpected found: ['ERROR:quux:1', 'ERROR:foo:foo']",
+            "Unexpected logs found: ['ERROR:quux:1', 'ERROR:foo:foo']",
         )
 
     def testAssertNoLogsPerLogger(self):
@@ -1700,7 +1700,7 @@ test case
                     log_foobar.info("2")
         self.assertEqual(
             str(cm.exception),
-            "Logs unexpected found: ['INFO:foo.bar:2']",
+            "Unexpected logs found: ['INFO:foo.bar:2']",
         )
 
     def testAssertNoLogsPerLevel(self):
@@ -1718,7 +1718,7 @@ test case
                 log_quux.debug("1")
         self.assertEqual(
             str(cm.exception),
-            "Logs unexpected found: ['DEBUG:foo:foo', 'DEBUG:quux:1']",
+            "Unexpected logs found: ['DEBUG:foo:foo', 'DEBUG:quux:1']",
         )
 
     def testAssertNoLogsUnexpectedException(self):

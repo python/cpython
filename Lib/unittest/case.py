@@ -377,7 +377,7 @@ class _AssertNoLogsContext(_AssertLogsBaseContext):
     def check_records(self):
         if len(self.watcher.records) > 0:
             self._raiseFailure(
-                "Logs unexpected found: {!r}".format(
+                "Unexpected logs found: {!r}".format(
                     self.watcher.output
                 )
             )
