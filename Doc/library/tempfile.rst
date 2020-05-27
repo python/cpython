@@ -276,7 +276,7 @@ to specify the directory and this is the recommended approach.
 
    When set to a value other than ``None``, this variable defines the
    default value for the *dir* argument to the functions defined in this
-   module.
+   module, including its type, bytes or str.
 
    If ``tempdir`` is ``None`` (the default) at any call to any of the above
    functions except :func:`gettempprefix` it is initialized following the
