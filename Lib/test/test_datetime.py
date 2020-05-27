@@ -8,10 +8,11 @@ from test.support.import_helper import import_fresh_module
 TESTS = 'test.datetimetester'
 
 try:
-    pure_tests = import_fresh_module(TESTS, fresh=['datetime', '_strptime'],
+    pure_tests = import_fresh_module(TESTS,
+                                     fresh=['datetime', '_pydatetime', '_strptime'],
                                      blocked=['_datetime'])
-    fast_tests = import_fresh_module(TESTS, fresh=['datetime',
-                                                   '_datetime', '_strptime'])
+    fast_tests = import_fresh_module(TESTS,
+                                     fresh=['datetime', '_datetime', '_strptime'])
 finally:
     # XXX: import_fresh_module() is supposed to leave sys.module cache untouched,
     # XXX: but it does not, so we have to cleanup ourselves.

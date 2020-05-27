@@ -1,0 +1,2 @@
+Move the Python implementation of the :mod:`datetime` module into a new
+``Lib/_pydatetime.py`` file to optimize ``import datetime``.
