@@ -173,3 +173,14 @@ PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
 PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
     const char *err_msg,
     PyObject *obj);
+
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFunc(
+    const char *func,
+    const char *message);
+
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFormat(
+    const char *func,
+    const char *format,
+    ...);
+
+#define Py_FatalError(message) _Py_FatalErrorFunc(__func__, message)
