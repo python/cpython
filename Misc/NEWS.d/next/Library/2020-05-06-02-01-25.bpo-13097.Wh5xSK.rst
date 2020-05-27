@@ -1,0 +1,1 @@
+``ctypes`` now raises an ``ArgumentError`` when a callback is invoked with more than 1024 arguments.
