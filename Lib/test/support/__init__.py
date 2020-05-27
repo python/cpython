@@ -12,11 +12,9 @@ import glob
 import importlib
 import importlib.util
 import os
-import platform
 import re
 import stat
 import struct
-import subprocess
 import sys
 import sysconfig
 import time
@@ -81,7 +79,7 @@ __all__ = [
 # The timeout should be long enough for connect(), recv() and send() methods
 # of socket.socket.
 LOOPBACK_TIMEOUT = 5.0
-if sys.platform == 'win32' and platform.machine() == 'ARM':
+if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
     # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
     # seconds on Windows ARM32 buildbot
     LOOPBACK_TIMEOUT = 10
@@ -481,6 +479,7 @@ def forget(modname):
 def _is_gui_available():
     if hasattr(_is_gui_available, 'result'):
         return _is_gui_available.result
+    import platform
     reason = None
     if sys.platform.startswith('win') and platform.win32_is_iot():
         reason = "gui is not available on Windows IoT Core"
@@ -581,6 +580,7 @@ def _requires_unix_version(sysname, min_version):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
+            import platform
             if platform.system() == sysname:
                 version_txt = platform.release().split('-', 1)[0]
                 try:
@@ -627,6 +627,7 @@ def requires_mac_ver(*min_version):
         @functools.wraps(func)
         def wrapper(*args, **kw):
             if sys.platform == 'darwin':
+                import platform
                 version_txt = platform.mac_ver()[0]
                 try:
                     version = tuple(map(int, version_txt.split('.')))
@@ -1607,6 +1608,7 @@ class _MemoryWatchdog:
             sys.stderr.flush()
             return
 
+        import subprocess
         with f:
             watchdog_script = findfile("memory_watchdog.py")
             self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
@@ -2088,11 +2090,13 @@ def swap_item(obj, item, new_val):
 def args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
     settings in sys.flags and sys.warnoptions."""
+    import subprocess
     return subprocess._args_from_interpreter_flags()
 
 def optim_args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
     optimization settings in sys.flags."""
+    import subprocess
     return subprocess._optim_args_from_interpreter_flags()
 
 
@@ -2233,6 +2237,7 @@ class PythonSymlink:
                     print("failed to clean up {}: {}".format(link, ex))
 
     def _call(self, python, args, env, returncode):
+        import subprocess
         cmd = [python, *args]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, env=env)
@@ -2261,6 +2266,7 @@ def can_xattr():
     if not hasattr(os, "setxattr"):
         can = False
     else:
+        import platform
         tmp_dir = tempfile.mkdtemp()
         tmp_fp, tmp_name = tempfile.mkstemp(dir=tmp_dir)
         try:
@@ -2445,6 +2451,7 @@ class SuppressCrashReport:
                     pass
 
             if sys.platform == 'darwin':
+                import subprocess
                 # Check if the 'Crash Reporter' on OSX was configured
                 # in 'Developer' mode and warn that it will get triggered
                 # when it is.
@@ -2591,6 +2598,7 @@ def setswitchinterval(interval):
     if is_android and interval < minimum_interval:
         global _is_android_emulator
         if _is_android_emulator is None:
+            import subprocess
             _is_android_emulator = (subprocess.check_output(
                                ['getprop', 'ro.kernel.qemu']).strip() == b'1')
         if _is_android_emulator:
