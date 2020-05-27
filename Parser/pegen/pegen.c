@@ -756,11 +756,17 @@ _PyPegen_expect_token(Parser *p, int type)
 expr_ty
 _PyPegen_expect_soft_keyword(Parser *p, const char *keyword)
 {
-    expr_ty res = _PyPegen_name_token(p);
-    if (!res) {
+    if (p->mark == p->fill) {
+        if (_PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
+            return NULL;
+        }
+    }
+    Token *t = p->tokens[p->mark];
+    if (t->type != NAME) {
         return NULL;
     }
-    const char *s = PyUnicode_AsUTF8(res->v.Name.id);
+    char *s = PyBytes_AsString(t->bytes);
     if (!s) {
         p->error_indicator = 1;
         return NULL;
@@ -768,7 +774,7 @@ _PyPegen_expect_soft_keyword(Parser *p, const char *keyword)
     if (strcmp(s, keyword) != 0) {
         return NULL;
     }
-    return res;
+    return _PyPegen_name_token(p);
 }
 
 Token *
