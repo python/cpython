@@ -990,6 +990,15 @@ All of the following opcodes use their arguments.
    code counter is incremented by *delta*.
 
 
+.. opcode:: GET_MATCH_ITER (delta)
+
+   Used for pattern matching.  Much like :opcode:`GET_ITER`, but pops TOS and
+   increments the byte code counter by *delta* if TOS is not a :term:`sequence`
+   or is an instance of :class:`str`, :class:`bytes`, or :class:`bytearray`.
+
+   .. versionadded:: 3.10
+
+
 .. opcode:: LOAD_GLOBAL (namei)
 
    Loads the global named ``co_names[namei]`` onto the stack.

@@ -3284,6 +3284,19 @@ main_loop:
 #endif
         }
 
+        case TARGET(GET_MATCH_ITER): {
+            PyObject *target = TOP();
+            if (!PySequence_Check(target)
+                || PyObject_TypeCheck(target, &PyUnicode_Type)
+                || PyObject_TypeCheck(target, &PyBytes_Type)
+                || PyObject_TypeCheck(target, &PyByteArray_Type)
+            ) {
+                STACK_SHRINK(1);
+                Py_DECREF(target);
+                JUMPBY(oparg);
+                DISPATCH();
+            }
+        }  // Fall...
         case TARGET(GET_ITER): {
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
