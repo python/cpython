@@ -708,12 +708,20 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
     return 0;
 }
 
-
 int
 _PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
 {
     int mark = p->mark;
     void *res = func(p);
+    p->mark = mark;
+    return (res != NULL) == positive;
+}
+
+int
+_PyPegen_lookahead_with_string(int positive, expr_ty (func)(Parser *, const char*), Parser *p, const char* arg)
+{
+    int mark = p->mark;
+    void *res = func(p, arg);
     p->mark = mark;
     return (res != NULL) == positive;
 }
@@ -751,6 +759,30 @@ _PyPegen_expect_token(Parser *p, int type)
     }
     p->mark += 1;
     return t;
+}
+
+expr_ty
+_PyPegen_expect_soft_keyword(Parser *p, const char *keyword)
+{
+    if (p->mark == p->fill) {
+        if (_PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
+            return NULL;
+        }
+    }
+    Token *t = p->tokens[p->mark];
+    if (t->type != NAME) {
+        return NULL;
+    }
+    char* s = PyBytes_AsString(t->bytes);
+    if (!s) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    if (strcmp(s, keyword) != 0) {
+        return NULL;
+    }
+    return _PyPegen_name_token(p);
 }
 
 Token *
