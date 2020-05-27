@@ -328,9 +328,63 @@ class TestAST(unittest.TestCase):
         self.assertEqual(namespace.get("x"), [])
         self.assertEqual(namespace.get("y"), 2)
 
+    def test_string_0(self) -> None:
+        match_cases = [MatchCase("['x']", "y = 0"), MatchCase("'x'", "y = 1")]
+        namespace = self.execute_match("x = 'x'", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), "x")
+        self.assertEqual(namespace.get("y"), 1)
+
+    def test_string_1(self) -> None:
+        match_cases = [
+            MatchCase("[b'x']", "y = 0"),
+            MatchCase("['x']", "y = 1"),
+            MatchCase("[120]", "y = 2"),
+            MatchCase("120", "y = 3"),
+            MatchCase("b'x'", "y = 4"),
+        ]
+        namespace = self.execute_match("x = b'x'", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), b"x")
+        self.assertEqual(namespace.get("y"), 4)
+
+    def test_string_2(self) -> None:
+        match_cases = [MatchCase("[120]", "y = 0"), MatchCase("120", "y = 1")]
+        namespace = self.execute_match("x = bytearray(b'x')", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), b"x")
+        self.assertNotIn("y", namespace)
+
+    def test_string_3(self) -> None:
+        match_cases = [
+            MatchCase("[]", "y = 0"),
+            MatchCase("['']", "y = 1"),
+            MatchCase("''", "y = 2"),
+        ]
+        namespace = self.execute_match("x = ''", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), "")
+        self.assertEqual(namespace.get("y"), 2)
+
+    def test_string_4(self) -> None:
+        match_cases = [
+            MatchCase("['x', 'x', 'x']", "y = 0"),
+            MatchCase("['xxx']", "y = 1"),
+            MatchCase("'xxx'", "y = 2"),
+        ]
+        namespace = self.execute_match("x = 'xxx'", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), "xxx")
+        self.assertEqual(namespace.get("y"), 2)
+
+    def test_string_5(self) -> None:
+        match_cases = [
+            MatchCase("[120, 120, 120]", "y = 0"),
+            MatchCase("[b'xxx']", "y = 1"),
+            MatchCase("b'xxx'", "y = 2"),
+        ]
+        namespace = self.execute_match("x = b'xxx'", "x", match_cases, "")
+        self.assertEqual(namespace.get("x"), b"xxx")
+        self.assertEqual(namespace.get("y"), 2)
+
 
 if __name__ == "__main__":  # XXX: For quick test debugging...
     import dis
 
-    match_cases = [MatchCase("(0, 1) | (1, 0)", "y = 0")]
-    dis.dis(TestAST.compile_match("x = [0, 0]", "x", match_cases, ""))
+    match_cases = [MatchCase("([0, 1]) | (1 | (z := 2), 0, q, [[[]]])", "pass")]
+    dis.dis(TestAST.compile_match("", "x", match_cases, ""))
