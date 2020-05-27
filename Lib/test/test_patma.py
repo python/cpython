@@ -308,7 +308,10 @@ class TestAST(unittest.TestCase):
         self.assertNotIn("y", namespace)
 
     def test_iter_7(self) -> None:
-        match_cases = [MatchCase("(w := 0,)", "y = 0"), MatchCase("[] | (1, z := (0 | 1)) | []", "y = 1")]
+        match_cases = [
+            MatchCase("(w := 0,)", "y = 0"),
+            MatchCase("[] | (1, z := (0 | 1)) | []", "y = 1"),
+        ]
         namespace = self.execute_match("x = [1, 0]", "x", match_cases, "")
         self.assertNotIn("w", namespace)
         self.assertEqual(namespace.get("x"), [1, 0])
