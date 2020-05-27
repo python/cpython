@@ -1363,6 +1363,46 @@ exit:
 
 #endif /* !defined(LIBRESSL_VERSION_NUMBER) */
 
+PyDoc_STRVAR(_hashlib_compare_digest__doc__,
+"compare_digest($module, a, b, /)\n"
+"--\n"
+"\n"
+"Return \'a == b\'.\n"
+"\n"
+"This function uses an approach designed to prevent\n"
+"timing analysis, making it appropriate for cryptography.\n"
+"\n"
+"a and b must both be of the same type: either str (ASCII only),\n"
+"or any bytes-like object.\n"
+"\n"
+"Note: If a and b are of different lengths, or if an error occurs,\n"
+"a timing attack could theoretically reveal information about the\n"
+"types and lengths of a and b--but not their values.");
+
+#define _HASHLIB_COMPARE_DIGEST_METHODDEF    \
+    {"compare_digest", (PyCFunction)(void(*)(void))_hashlib_compare_digest, METH_FASTCALL, _hashlib_compare_digest__doc__},
+
+static PyObject *
+_hashlib_compare_digest_impl(PyObject *module, PyObject *a, PyObject *b);
+
+static PyObject *
+_hashlib_compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+
+    if (!_PyArg_CheckPositional("compare_digest", nargs, 2, 2)) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    return_value = _hashlib_compare_digest_impl(module, a, b);
+
+exit:
+    return return_value;
+}
+
 #ifndef EVPXOF_DIGEST_METHODDEF
     #define EVPXOF_DIGEST_METHODDEF
 #endif /* !defined(EVPXOF_DIGEST_METHODDEF) */
@@ -1402,4 +1442,4 @@ exit:
 #ifndef _HASHLIB_GET_FIPS_MODE_METHODDEF
     #define _HASHLIB_GET_FIPS_MODE_METHODDEF
 #endif /* !defined(_HASHLIB_GET_FIPS_MODE_METHODDEF) */
-/*[clinic end generated code: output=a0bff5dcef88de6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b6b280e46bf0b139 input=a9049054013a1b77]*/
