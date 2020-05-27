@@ -1646,6 +1646,7 @@ unpackiter_dealloc(unpackiterobject *self)
 static int
 unpackiter_traverse(unpackiterobject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->so);
     Py_VISIT(self->buf.obj);
     return 0;

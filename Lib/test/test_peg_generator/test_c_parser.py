@@ -402,3 +402,45 @@ class TestCParser(TempdirManager, unittest.TestCase):
             parse.parse_string("a", mode=0)
         """
         self.run_test(grammar_source, test_source)
+
+    def test_no_soft_keywords(self) -> None:
+        grammar_source = """
+        start: expr+ NEWLINE? ENDMARKER
+        expr: 'foo'
+        """
+        grammar = parse_string(grammar_source, GrammarParser)
+        parser_source = generate_c_parser_source(grammar)
+        assert "expect_soft_keyword" not in parser_source
+
+    def test_soft_keywords(self) -> None:
+        grammar_source = """
+        start: expr+ NEWLINE? ENDMARKER
+        expr: "foo"
+        """
+        grammar = parse_string(grammar_source, GrammarParser)
+        parser_source = generate_c_parser_source(grammar)
+        assert "expect_soft_keyword" in parser_source
+
+    def test_soft_keywords_parse(self) -> None:
+        grammar_source = """
+        start: "if" expr '+' expr NEWLINE
+        expr: NAME
+        """
+        test_source = """
+        valid_cases = ["if if + if"]
+        invalid_cases = ["if if"]
+        self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_soft_keywords_lookahead(self) -> None:
+        grammar_source = """
+        start: &"if" "if" expr '+' expr NEWLINE
+        expr: NAME
+        """
+        test_source = """
+        valid_cases = ["if if + if"]
+        invalid_cases = ["if if"]
+        self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)

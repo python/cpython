@@ -21,6 +21,7 @@
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include <openssl/crypto.h>
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include "openssl/err.h"
@@ -1833,6 +1834,120 @@ _hashlib_get_fips_mode_impl(PyObject *module)
 #endif  // !LIBRESSL_VERSION_NUMBER
 
 
+static int
+_tscmp(const unsigned char *a, const unsigned char *b,
+        Py_ssize_t len_a, Py_ssize_t len_b)
+{
+    /* loop count depends on length of b. Might leak very little timing
+     * information if sizes are different.
+     */
+    Py_ssize_t length = len_b;
+    const void *left = a;
+    const void *right = b;
+    int result = 0;
+
+    if (len_a != length) {
+        left = b;
+        result = 1;
+    }
+
+    result |= CRYPTO_memcmp(left, right, length);
+
+    return (result == 0);
+}
+
+/* NOTE: Keep in sync with _operator.c implementation. */
+
+/*[clinic input]
+_hashlib.compare_digest
+
+    a: object
+    b: object
+    /
+
+Return 'a == b'.
+
+This function uses an approach designed to prevent
+timing analysis, making it appropriate for cryptography.
+
+a and b must both be of the same type: either str (ASCII only),
+or any bytes-like object.
+
+Note: If a and b are of different lengths, or if an error occurs,
+a timing attack could theoretically reveal information about the
+types and lengths of a and b--but not their values.
+[clinic start generated code]*/
+
+static PyObject *
+_hashlib_compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=6f1c13927480aed9 input=9c40c6e566ca12f5]*/
+{
+    int rc;
+
+    /* ASCII unicode string */
+    if(PyUnicode_Check(a) && PyUnicode_Check(b)) {
+        if (PyUnicode_READY(a) == -1 || PyUnicode_READY(b) == -1) {
+            return NULL;
+        }
+        if (!PyUnicode_IS_ASCII(a) || !PyUnicode_IS_ASCII(b)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "comparing strings with non-ASCII characters is "
+                            "not supported");
+            return NULL;
+        }
+
+        rc = _tscmp(PyUnicode_DATA(a),
+                    PyUnicode_DATA(b),
+                    PyUnicode_GET_LENGTH(a),
+                    PyUnicode_GET_LENGTH(b));
+    }
+    /* fallback to buffer interface for bytes, bytesarray and other */
+    else {
+        Py_buffer view_a;
+        Py_buffer view_b;
+
+        if (PyObject_CheckBuffer(a) == 0 && PyObject_CheckBuffer(b) == 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "unsupported operand types(s) or combination of types: "
+                         "'%.100s' and '%.100s'",
+                         Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
+            return NULL;
+        }
+
+        if (PyObject_GetBuffer(a, &view_a, PyBUF_SIMPLE) == -1) {
+            return NULL;
+        }
+        if (view_a.ndim > 1) {
+            PyErr_SetString(PyExc_BufferError,
+                            "Buffer must be single dimension");
+            PyBuffer_Release(&view_a);
+            return NULL;
+        }
+
+        if (PyObject_GetBuffer(b, &view_b, PyBUF_SIMPLE) == -1) {
+            PyBuffer_Release(&view_a);
+            return NULL;
+        }
+        if (view_b.ndim > 1) {
+            PyErr_SetString(PyExc_BufferError,
+                            "Buffer must be single dimension");
+            PyBuffer_Release(&view_a);
+            PyBuffer_Release(&view_b);
+            return NULL;
+        }
+
+        rc = _tscmp((const unsigned char*)view_a.buf,
+                    (const unsigned char*)view_b.buf,
+                    view_a.len,
+                    view_b.len);
+
+        PyBuffer_Release(&view_a);
+        PyBuffer_Release(&view_b);
+    }
+
+    return PyBool_FromLong(rc);
+}
+
 /* List of functions exported by this module */
 
 static struct PyMethodDef EVP_functions[] = {
@@ -1840,6 +1955,7 @@ static struct PyMethodDef EVP_functions[] = {
     PBKDF2_HMAC_METHODDEF
     _HASHLIB_SCRYPT_METHODDEF
     _HASHLIB_GET_FIPS_MODE_METHODDEF
+    _HASHLIB_COMPARE_DIGEST_METHODDEF
     _HASHLIB_HMAC_SINGLESHOT_METHODDEF
     _HASHLIB_HMAC_NEW_METHODDEF
     _HASHLIB_OPENSSL_MD5_METHODDEF

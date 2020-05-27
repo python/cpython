@@ -70,6 +70,9 @@ PyStructSequence_GetItem(PyObject* op, Py_ssize_t i)
 static int
 structseq_traverse(PyStructSequence *obj, visitproc visit, void *arg)
 {
+    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        Py_VISIT(Py_TYPE(obj));
+    }
     Py_ssize_t i, size;
     size = REAL_SIZE(obj);
     for (i = 0; i < size; ++i) {
