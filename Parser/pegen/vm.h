@@ -35,6 +35,7 @@ typedef struct _frame {
     int ialt;
     int iop;
     int cut;
+    int mark;
 } Frame;
 
 typedef struct _stack {
@@ -60,7 +61,7 @@ static Rule all_rules[] = {
     {"start",
      {0, 6, -1},
      {
-      OP_RULE, 1, OP_TOKEN, ENDMARKER, OP_SUCCESS, 0,
+      OP_RULE, 1, OP_TOKEN, NEWLINE, OP_SUCCESS, 0,
       OP_FAILURE,
      },
     },
