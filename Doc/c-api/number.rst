@@ -257,7 +257,8 @@ Number Protocol
    :exc:`TypeError` exception raised on failure.
 
    .. versionchanged:: 3.10
-      The type of the result is always :class:`int`.
+      The result always has exact type :class:`int`.  Previously, the result
+      could have been an instance of a subclass of ``int``.
 
 
 .. c:function:: PyObject* PyNumber_ToBase(PyObject *n, int base)
