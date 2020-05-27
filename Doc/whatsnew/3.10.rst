@@ -138,6 +138,15 @@ Porting to Python 3.10
   see :c:func:`Py_SET_TYPE()` (available since Python 3.9).
   (Contributed by Dong-hee Na in :issue:`39573`.)
 
+* Since :c:func:`Py_REFCNT()` is changed to the inline static function,
+  ``Py_REFCNT(obj) = new_refcnt`` must be replaced with ``Py_SET_REFCNT(obj, new_refcnt)``:
+  see :c:func:`Py_SET_REFCNT()` (available since Python 3.9).
+  (Contributed by Victor Stinner in :issue:`39573`.)
+
+* Since :c:func:`Py_SIZE()` is changed to the inline static function,
+  ``Py_SIZE(obj) = new_size`` must be replaced with ``Py_SET_SIZE(obj, new_size)``:
+  see :c:func:`Py_SET_SIZE()` (available since Python 3.9).
+  (Contributed by Victor Stinner in :issue:`39573`.)
 
 Removed
 -------
