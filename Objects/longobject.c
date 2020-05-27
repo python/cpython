@@ -5318,7 +5318,8 @@ popcount_digit(digit d)
 /*[clinic input]
 int.bit_count
 
-Number of ones in the binary representation of self.
+Number of ones in the binary representation of the absolute value of self.
+Also known as the population count.
 
 >>> bin(13)
 '0b1101'
