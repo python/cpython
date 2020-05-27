@@ -26,7 +26,6 @@ class TestModules(TestCase):
         for fname in func_names:
             self.assertEqual(getattr(c_heapq, fname).__module__, '_heapq')
 
-
 def load_tests(loader, tests, ignore):
     # The 'merge' function has examples in its docstring which we should test
     # with 'doctest'.
@@ -463,6 +462,42 @@ class TestErrorHandling:
 
         self.assertRaises((IndexError, RuntimeError), self.module.heappush, list1, g(1))
         self.assertRaises((IndexError, RuntimeError), self.module.heappush, list2, h(1))
+
+    def test_merge_err(self):
+        nexterr_immediate = E
+        def nexterr_delayed():
+            yield from range(10)
+            raise ZeroDivisionError
+        merge = self.module.merge
+        for key in [None, lambda x:x]:
+            for reverse in [False, True]:
+                # test comparison failure during heapification
+                args = [[CmpErr()]] + [range(100)]*10
+                mo = merge(*args, key=key, reverse=reverse)
+                self.assertRaises(ZeroDivisionError, list, mo)
+
+                for n in range(2,10):
+                    # test comparison failure during intermediate steps
+                    args = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, CmpErr()]]*n
+                    mo = merge(*args, key=key, reverse=reverse)
+                    self.assertRaises(ZeroDivisionError, list, mo)
+                for n in range(1, 10):
+                    # test __next__ error during heapification
+                    args = [nexterr_immediate(range(10)) for _ in range(n)]
+                    mo = merge(*args, key=key, reverse=reverse)
+                    self.assertRaises(ZeroDivisionError, list, mo)
+                for n in range(1, 10):
+                    # test __next__ error during intermediate steps
+                    args = [nexterr_delayed() for _ in range(n)]
+                    mo = merge(*args, key=key, reverse=reverse)
+                    self.assertRaises(ZeroDivisionError, list, mo)
+
+        for reverse in [False, True]:
+            # test error during key computation
+            mo = merge(range(10), range(10), key=lambda x: x // 0, reverse=reverse)
+            self.assertRaises(ZeroDivisionError, list, mo)
+            mo = merge(range(10), key=object(), reverse=reverse)
+            self.assertRaises(TypeError, list, merge)
 
 class TestErrorHandlingPython(TestErrorHandling, TestCase):
     module = py_heapq

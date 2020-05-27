@@ -329,67 +329,126 @@ def merge(*iterables, key=None, reverse=False):
 
     '''
 
-    h = []
-    h_append = h.append
+    # Invariants for the binary tree structure used here:
+    #   - All leaf nodes have leaf[LEFT] = None and leaf[RIGHT] = the
+    #     __next__ method of an iterator.
+    #   - For non-leaf nodes, node[LEFT][PARENT] is node and
+    #     node[RIGHT][PARENT] is node.
+    #   - The root's PARENT is None, and all other PARENTs are nodes.
+    #   - Each node's KEY and VALUE are identical to the KEY and VALUE
+    #     of one of its descendent leaves. A node's LEAF points to
+    #     which descendent leaf the key and value come from.
+    #   - A parent's key/value will be the same as the higher-priority
+    #     key/value among that of its two children
 
-    if reverse:
-        _heapify = _heapify_max
-        _heappop = _heappop_max
-        _heapreplace = _heapreplace_max
-        direction = -1
-    else:
-        _heapify = heapify
-        _heappop = heappop
-        _heapreplace = heapreplace
-        direction = 1
+    # A node will just be a list with these semantic aliases for
+    # indices into it.
+    PARENT, LEFT, RIGHT, LEAF, VALUE = range(5)
+    KEY = VALUE if key is None else 5
+    sentinel = object()
 
-    if key is None:
-        for order, it in enumerate(map(iter, iterables)):
-            try:
-                next = it.__next__
-                h_append([next(), order * direction, next])
-            except StopIteration:
-                pass
-        _heapify(h)
-        while len(h) > 1:
-            try:
-                while True:
-                    value, order, next = s = h[0]
-                    yield value
-                    s[0] = next()           # raises StopIteration when exhausted
-                    _heapreplace(h, s)      # restore heap condition
-            except StopIteration:
-                _heappop(h)                 # remove empty iterator
-        if h:
-            # fast case when only a single iterator remains
-            value, order, next = h[0]
-            yield value
-            yield from next.__self__
+    # Produce leaf nodes, storing a value/key its source.
+    # This eliminates empty iterators.
+    nodes = []
+    for it in map(iter, iterables):
+        value = next(it, sentinel)
+        if value is not sentinel:
+            leaf = [None, None, it.__next__, None, value]
+            if key is not None:
+                leaf.append(key(value))
+            leaf[LEAF] = leaf
+            nodes.append(leaf)
+    
+    # fast early-outs
+    if not nodes:
+        return
+    if len(nodes) == 1:
+        node = nodes[0]
+        yield node[VALUE]
+        yield from node[RIGHT].__self__
         return
 
-    for order, it in enumerate(map(iter, iterables)):
+    # Add a shared parent for adjacent nodes, then add a shared parent
+    # for adjacent parents, etc., until there is one common root.
+    while (n := len(nodes)) > 1:
+        # split odd numbers in favor of the right (leaving the
+        # unpaired nodes to the left). This is better because, e.g.:
+        #   - merge([1], merge([2], [1])) requires 2 comparisons, but
+        #   - merge(merge([1], [2]), [1]) requires 3 comparisons due
+        #     to stability considerations.
+        new_nodes = nodes[:n & 1]
+        for i in range(n & 1, n - 1, 2):
+            left, right = nodes[i:i + 2]
+            if reverse:
+                winner = right if left[KEY] < right[KEY] else left
+            else:
+                winner = right if right[KEY] < left[KEY] else left
+            node = [None, left, right]
+            # the winner's LEAF, VALUE, and KEY are copied into the
+            # parent node
+            node[LEAF:] = winner[LEAF:]
+            left[PARENT] = right[PARENT] = node
+            new_nodes.append(node)
+        nodes = new_nodes
+    (root,) = nodes
+    del nodes
+
+    # main loop
+    while True:
+        yield root[VALUE]
+
+        # jump to the leaf that produced the value we just yielded.
+        node = root[LEAF]
+
+        # replace the leaf's value using the iterator
         try:
-            next = it.__next__
-            value = next()
-            h_append([key(value), order * direction, value, next])
+            node[VALUE] = node[RIGHT]()
         except StopIteration:
-            pass
-    _heapify(h)
-    while len(h) > 1:
-        try:
-            while True:
-                key_value, order, value, next = s = h[0]
-                yield value
-                value = next()
-                s[0] = key(value)
-                s[2] = value
-                _heapreplace(h, s)
-        except StopIteration:
-            _heappop(h)
-    if h:
-        key_value, order, value, next = h[0]
-        yield value
-        yield from next.__self__
+            # Upon exhuastion, Promote the exhausted leaf's sibling.
+            # The sibling must exist because of the early-outs.
+            parent = node[PARENT]
+            left, right = parent[LEFT], parent[RIGHT]
+            sibling = left if right is node else right
+            # copy everything but the PARENT
+            parent[LEFT:] = sibling[LEFT:]
+            if sibling[LEFT] is not None:
+                # If sibling has children, give custody to parent.
+                sibling[LEFT][PARENT] = sibling[RIGHT][PARENT] = parent
+                parent[LEAF] = sibling[LEAF]
+            else:
+                # If sibling is a leaf, then parent is now a leaf. 
+                parent[LEAF] = parent
+                if parent is root:
+                    # a leaf has been promoted to root.
+                    # There's only one node, so do a fast out.
+                    yield parent[VALUE]
+                    yield from parent[RIGHT].__self__
+                    return
+            # break some GC cycles
+            del sibling[:], node[:], sibling, node
+            node = parent
+        else:
+            # If a new value was successfully supplied, compute its key.
+            if key is not None:
+                node[KEY] = key(node[VALUE])
+
+        # "replay the games" leading from the leaf to the root, i.e.,
+        # restore the invariant that each parent's value coicides with
+        # its higher-priority child's value.
+        if reverse:
+            while node is not root:
+                node = node[PARENT]
+                left, right = node[LEFT], node[RIGHT]
+                winner = right if left[KEY] < right[KEY] else left
+                # advance the winner's LEAF, VALUE, and KEY
+                node[LEAF:] = winner[LEAF:]
+        else:
+            while node is not root:
+                node = node[PARENT]
+                left, right = node[LEFT], node[RIGHT]
+                winner = right if right[KEY] < left[KEY] else left
+                # advance the winner's LEAF, VALUE, and KEY
+                node[LEAF:] = winner[LEAF:]
 
 
 # Algorithm notes for nlargest() and nsmallest()
