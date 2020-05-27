@@ -1005,7 +1005,7 @@ Classes and functions
    ...     pass
    ...
    >>> formatargspec(*getfullargspec(f))
-   '(a: int, b: float)'
+   "(a: 'int', b: 'float')"
 
    .. deprecated:: 3.5
       Use :func:`signature` and
