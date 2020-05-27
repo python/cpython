@@ -127,7 +127,7 @@ This module also defines the following exceptions.
 .. exception:: ChannelNotFoundError
 
    This exception is a subclass of :exc:`ChannelError`, and is raised
-   when the the identified channel is not found.
+   when the identified channel is not found.
 
 .. exception:: ChannelEmptyError
 

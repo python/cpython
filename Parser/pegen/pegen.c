@@ -719,6 +719,15 @@ _PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
 }
 
 int
+_PyPegen_lookahead_with_string(int positive, expr_ty (func)(Parser *, const char*), Parser *p, const char* arg)
+{
+    int mark = p->mark;
+    void *res = func(p, arg);
+    p->mark = mark;
+    return (res != NULL) == positive;
+}
+
+int
 _PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int arg)
 {
     int mark = p->mark;

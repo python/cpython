@@ -1426,14 +1426,32 @@ PyNumber_Long(PyObject *o)
     }
     m = Py_TYPE(o)->tp_as_number;
     if (m && m->nb_int) { /* This should include subclasses of int */
-        result = _PyLong_FromNbInt(o);
-        if (result != NULL && !PyLong_CheckExact(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
+        /* Convert using the nb_int slot, which should return something
+           of exact type int. */
+        result = m->nb_int(o);
+        if (!result || PyLong_CheckExact(result))
+            return result;
+        if (!PyLong_Check(result)) {
+            PyErr_Format(PyExc_TypeError,
+                        "__int__ returned non-int (type %.200s)",
+                        result->ob_type->tp_name);
+            Py_DECREF(result);
+            return NULL;
         }
+        /* Issue #17576: warn if 'result' not of exact type int. */
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "__int__ returned non-int (type %.200s).  "
+                "The ability to return an instance of a strict subclass of int "
+                "is deprecated, and may be removed in a future version of Python.",
+                result->ob_type->tp_name)) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
         return result;
     }
     if (m && m->nb_index) {
-        result = _PyLong_FromNbIndexOrNbInt(o);
+        result = PyNumber_Index(o);
         if (result != NULL && !PyLong_CheckExact(result)) {
             Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
         }
@@ -1452,8 +1470,7 @@ PyNumber_Long(PyObject *o)
         }
         /* __trunc__ is specified to return an Integral type,
            but int() needs to return an int. */
-        m = Py_TYPE(result)->tp_as_number;
-        if (m == NULL || (m->nb_index == NULL && m->nb_int == NULL)) {
+        if (!PyIndex_Check(result)) {
             PyErr_Format(
                 PyExc_TypeError,
                 "__trunc__ returned non-Integral (type %.200s)",
@@ -1461,7 +1478,7 @@ PyNumber_Long(PyObject *o)
             Py_DECREF(result);
             return NULL;
         }
-        Py_SETREF(result, _PyLong_FromNbIndexOrNbInt(result));
+        Py_SETREF(result, PyNumber_Index(result));
         if (result != NULL && !PyLong_CheckExact(result)) {
             Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
         }

@@ -5196,13 +5196,6 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
         else
 #endif
         {
-
-            if (PyFloat_Check(fdobj)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "integer argument expected, got float");
-                return -1;
-            }
-
             fd = PyLong_AsSocket_t(fdobj);
             if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
                 return -1;

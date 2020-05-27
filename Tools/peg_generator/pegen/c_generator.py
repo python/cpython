@@ -58,7 +58,8 @@ class NodeTypes(Enum):
     STRING_TOKEN = 2
     GENERIC_TOKEN = 3
     KEYWORD = 4
-    CUT_OPERATOR = 5
+    SOFT_KEYWORD = 5
+    CUT_OPERATOR = 6
 
 
 BASE_NODETYPES = {
@@ -123,7 +124,7 @@ class CCallMakerVisitor(GrammarVisitor):
             function="_PyPegen_expect_soft_keyword",
             arguments=["p", value],
             return_type="expr_ty",
-            nodetype=NodeTypes.NAME_TOKEN,
+            nodetype=NodeTypes.SOFT_KEYWORD,
             comment=f"soft_keyword='{value}'",
         )
 
@@ -214,6 +215,12 @@ class CCallMakerVisitor(GrammarVisitor):
         if call.nodetype == NodeTypes.NAME_TOKEN:
             return FunctionCall(
                 function=f"_PyPegen_lookahead_with_name",
+                arguments=[positive, call.function, *call.arguments],
+                return_type="int",
+            )
+        elif call.nodetype == NodeTypes.SOFT_KEYWORD:
+            return FunctionCall(
+                function=f"_PyPegen_lookahead_with_string",
                 arguments=[positive, call.function, *call.arguments],
                 return_type="int",
             )
