@@ -1,0 +1,1 @@
+:func:`ast.parse` will not parse self documenting expressions in f-strings when passed ``feature_version`` is less than ``(3, 8)``.
