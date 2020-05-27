@@ -17,6 +17,7 @@ import importlib.machinery
 import importlib.util
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
+from test.support import threading_helper
 from test.support.script_helper import assert_python_failure, assert_python_ok
 try:
     import _posixsubprocess
@@ -575,7 +576,7 @@ class TestPendingCalls(unittest.TestCase):
         threads = [threading.Thread(target=self.pendingcalls_thread,
                                     args=(context,))
                    for i in range(context.nThreads)]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             self.pendingcalls_wait(context.l, n, context)
 
     def pendingcalls_thread(self, context):
@@ -634,7 +635,7 @@ class SubinterpreterTest(unittest.TestCase):
 
 class TestThreadState(unittest.TestCase):
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def test_thread_state(self):
         # some extra thread-state tests driven via _testcapi
         def target():
