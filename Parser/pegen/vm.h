@@ -50,10 +50,12 @@ typedef struct _stack {
     Frame frames[100];
 } Stack;
 
-/* Toy grammar:
+/* Toy grammar
+
+NOTE: [expr] is optional to test OP_RULE_OPTIONAL.
 
 start: expr ENDMARKER
-expr: term '+' expr | term
+expr: term '+' [expr] | term
 term: NAME | NUMBER
 
 */
@@ -75,7 +77,7 @@ static Rule all_rules[] = {
     {"expr",
      {0, 8, -1},
      {
-      OP_RULE, 2, OP_TOKEN_OPTIONAL, PLUS, OP_RULE, 1, OP_RETURN, 1,
+      OP_RULE, 2, OP_TOKEN, PLUS, OP_RULE_OPTIONAL, 1, OP_RETURN, 1,
       OP_RULE, 2, OP_RETURN, 2,
      },
     },
@@ -103,7 +105,10 @@ call_action(Parser *p, Frame *f, int iaction)
     case 0:
         return  _PyPegen_make_module(p, _PyPegen_singleton_seq(p, _Py_Expr(f->vals[0], EXTRA)));
     case 1:
-        return _Py_BinOp(f->vals[0], Add, f->vals[2], EXTRA);
+        if (f->vals[2])
+            return _Py_BinOp(f->vals[0], Add, f->vals[2], EXTRA);
+        else
+            return f->vals[0];
     case 2:
         return f->vals[0];
     case 3:

@@ -10,7 +10,7 @@
 static Frame *
 push_frame(Stack *stack, Rule *rule)
 {
-    printf("push %s\n", rule->name);
+    printf("               push %s\n", rule->name);
     assert(stack->top < 100);
     Frame *f = &stack->frames[stack->top++];
     f->rule = rule;
@@ -27,7 +27,7 @@ pop_frame(Stack *stack)
 {
     assert(stack->top > 1);
     Frame *f = &stack->frames[--stack->top - 1];
-    printf("pop %s\n", f->rule->name);
+    printf("               pop %s\n", f->rule->name);
     return f;
 }
 
@@ -40,12 +40,12 @@ run_vm(Parser *p, Rule rules[], int start)
     int oparg;
 
  top:
-    // if (p->mark == p->fill)
-    //     _PyPegen_fill_token(p);
+    if (p->mark == p->fill)
+        _PyPegen_fill_token(p);
     for (int i = 0; i < stack.top; i++) printf(" ");
-    printf("Rule: %s; ialt=%d; iop=%d; op=%s; p^=%s\n",
+    printf("Rule: %s; ialt=%d; iop=%d; op=%s; p^='%s'\n",
            f->rule->name, f->ialt, f->iop, opcode_names[f->rule->opcodes[f->iop]],
-           p->fill > p-> mark ? PyBytes_AsString(p->tokens[p->mark]->bytes) : "<START>");
+           p->fill > p-> mark ? PyBytes_AsString(p->tokens[p->mark]->bytes) : "<UNSEEN>");
     switch (f->rule->opcodes[f->iop++]) {
     case OP_NAME:
         v = _PyPegen_name_token(p);
@@ -63,29 +63,19 @@ run_vm(Parser *p, Rule rules[], int start)
     case OP_TOKEN_OPTIONAL:
         oparg = f->rule->opcodes[f->iop++];
         v = _PyPegen_expect_token(p, oparg);
-        if (!v) {
-            if (PyErr_Occurred()) {
-                printf("            PyErr\n");
-                p->error_indicator = 1;
-                return NULL;
-            }
+        if (!v && !PyErr_Occurred()) {
             f->vals[f->ival++] = NULL;
             goto top;
         }
         break;
     case OP_RULE:
+    case OP_RULE_OPTIONAL:  // The magic is at label 'pop' below
         oparg = f->rule->opcodes[f->iop++];
         f = push_frame(&stack, &rules[oparg]);
         goto top;
-    case OP_RULE_OPTIONAL:
-        printf("OP_RULE_OPTIONAL not yet supported\n");
-        abort();
     case OP_RETURN:
         oparg = f->rule->opcodes[f->iop++];
         v = call_action(p, f, oparg);
-        if (!v) {
-            p->mark = f->mark;
-        }
         f = pop_frame(&stack);
         break;
     case OP_SUCCESS:
@@ -124,6 +114,11 @@ run_vm(Parser *p, Rule rules[], int start)
 
  pop:
     f = pop_frame(&stack);
+    assert(f->rule->opcodes[f->iop - 2] == OP_RULE_OPTIONAL || f->rule->opcodes[f->iop - 2] == OP_RULE);
+    if (f->rule->opcodes[f->iop - 2] == OP_RULE_OPTIONAL) {
+        f->vals[f->ival++] = NULL;
+        goto top;
+    }
     goto fail;
 }
 
