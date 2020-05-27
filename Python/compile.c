@@ -2763,7 +2763,7 @@ compiler_pattern_name_store(struct compiler *c, expr_ty p)
 static int
 compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
 {
-    basicblock *sub_yes, *sub_no;
+    basicblock *end, *block;
     Py_ssize_t i, size, star;
     asdl_seq *elts;
     expr_ty elt;
@@ -2786,19 +2786,19 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
         // Nested patterns:
         case BinOp_kind:
             assert(p->v.BinOp.op == BitOr);
-            sub_yes = compiler_new_block(c);
-            sub_no = compiler_new_block(c);
+            end = compiler_new_block(c);
+            block = compiler_new_block(c);
             ADDOP(c, DUP_TOP);
-            if (!compiler_pattern(c, p->v.BinOp.left, sub_no)) {
+            if (!compiler_pattern(c, p->v.BinOp.left, block)) {
                 return 0;
             }
             ADDOP(c, POP_TOP);
-            ADDOP_JREL(c, JUMP_FORWARD, sub_yes);
-            compiler_use_next_block(c, sub_no);
+            ADDOP_JREL(c, JUMP_FORWARD, end);
+            compiler_use_next_block(c, block);
             if (!compiler_pattern(c, p->v.BinOp.right, fail)) {
                 return 0;
             }
-            compiler_use_next_block(c, sub_yes);
+            compiler_use_next_block(c, end);
             return 1;
         case List_kind:
         case Tuple_kind:
@@ -2824,8 +2824,8 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
                 }
                 star = i;
             }
-            sub_yes = compiler_new_block(c);
-            sub_no = compiler_new_block(c);
+            end = compiler_new_block(c);
+            block = compiler_new_block(c);
             // TODO: Need to add a GET_MATCH_ITER that handles checking for
             // Sequence (but not str, bytes, bytearray), and popping/jumping to
             // "fail" on failure:
@@ -2843,38 +2843,38 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
                         ADDOP(c, GET_ITER);  // TODO: GET_MATCH_ITER
                     }
                     else {
-                        ADDOP_JREL(c, JUMP_FORWARD, sub_yes);
+                        ADDOP_JREL(c, JUMP_FORWARD, end);
                     }
                 }
                 else {
                     ADDOP_JREL(c, FOR_ITER, fail);
-                    if (!compiler_pattern(c, elt, sub_no)) {
+                    if (!compiler_pattern(c, elt, block)) {
                         return 0;
                     }
                 }
             }
-            // TODO: This could be simplified with VM support too. Pop top, and
-            // jump to "fail" if items remain. JUMP_IF_NOT_EMPTY?
-            ADDOP_JREL(c, FOR_ITER, sub_yes);
+            // TODO: This could be simplified with VM support. Pop top, and jump
+            // to "fail" if items remain. JUMP_IF_NOT_EMPTY?
+            ADDOP_JREL(c, FOR_ITER, end);
             ADDOP(c, POP_TOP);
-            compiler_use_next_block(c, sub_no);
+            compiler_use_next_block(c, block);
             ADDOP(c, POP_TOP);
             ADDOP_JREL(c, JUMP_FORWARD, fail);
-            compiler_use_next_block(c, sub_yes);
+            compiler_use_next_block(c, end);
             return 1;
         case NamedExpr_kind:
-            sub_yes = compiler_new_block(c);
-            sub_no = compiler_new_block(c);
+            end = compiler_new_block(c);
+            block = compiler_new_block(c);
             ADDOP(c, DUP_TOP);
-            if (!compiler_pattern(c, p->v.NamedExpr.value, sub_no)) {
+            if (!compiler_pattern(c, p->v.NamedExpr.value, block)) {
                 return 0;
             }
             VISIT(c, expr, p->v.NamedExpr.target);
-            ADDOP_JREL(c, JUMP_FORWARD, sub_yes);
-            compiler_use_next_block(c, sub_no);
+            ADDOP_JREL(c, JUMP_FORWARD, end);
+            compiler_use_next_block(c, block);
             ADDOP(c, POP_TOP);
             ADDOP_JREL(c, JUMP_FORWARD, fail);
-            compiler_use_next_block(c, sub_yes);
+            compiler_use_next_block(c, end);
             return 1;
         default:
             Py_UNREACHABLE();
