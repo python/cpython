@@ -92,11 +92,6 @@ EVPXOF_digest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!args) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = PyNumber_Index(args[0]);
@@ -142,11 +137,6 @@ EVPXOF_hexdigest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     {
@@ -766,25 +756,25 @@ exit:
 
 #if defined(PY_OPENSSL_HAS_SHAKE)
 
-PyDoc_STRVAR(_hashlib_openssl_shake128__doc__,
-"openssl_shake128($module, /, string=b\'\', *, usedforsecurity=True)\n"
+PyDoc_STRVAR(_hashlib_openssl_shake_128__doc__,
+"openssl_shake_128($module, /, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
 "\n"
-"Returns a shake128 variable hash object; optionally initialized with a string");
+"Returns a shake-128 variable hash object; optionally initialized with a string");
 
-#define _HASHLIB_OPENSSL_SHAKE128_METHODDEF    \
-    {"openssl_shake128", (PyCFunction)(void(*)(void))_hashlib_openssl_shake128, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_shake128__doc__},
-
-static PyObject *
-_hashlib_openssl_shake128_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity);
+#define _HASHLIB_OPENSSL_SHAKE_128_METHODDEF    \
+    {"openssl_shake_128", (PyCFunction)(void(*)(void))_hashlib_openssl_shake_128, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_shake_128__doc__},
 
 static PyObject *
-_hashlib_openssl_shake128(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_hashlib_openssl_shake_128_impl(PyObject *module, PyObject *data_obj,
+                                int usedforsecurity);
+
+static PyObject *
+_hashlib_openssl_shake_128(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_shake128", 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_shake_128", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -812,7 +802,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_shake128_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_shake_128_impl(module, data_obj, usedforsecurity);
 
 exit:
     return return_value;
@@ -822,25 +812,25 @@ exit:
 
 #if defined(PY_OPENSSL_HAS_SHAKE)
 
-PyDoc_STRVAR(_hashlib_openssl_shake256__doc__,
-"openssl_shake256($module, /, string=b\'\', *, usedforsecurity=True)\n"
+PyDoc_STRVAR(_hashlib_openssl_shake_256__doc__,
+"openssl_shake_256($module, /, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
 "\n"
-"Returns a shake256 variable hash object; optionally initialized with a string");
+"Returns a shake-256 variable hash object; optionally initialized with a string");
 
-#define _HASHLIB_OPENSSL_SHAKE256_METHODDEF    \
-    {"openssl_shake256", (PyCFunction)(void(*)(void))_hashlib_openssl_shake256, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_shake256__doc__},
-
-static PyObject *
-_hashlib_openssl_shake256_impl(PyObject *module, PyObject *data_obj,
-                               int usedforsecurity);
+#define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF    \
+    {"openssl_shake_256", (PyCFunction)(void(*)(void))_hashlib_openssl_shake_256, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_shake_256__doc__},
 
 static PyObject *
-_hashlib_openssl_shake256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data_obj,
+                                int usedforsecurity);
+
+static PyObject *
+_hashlib_openssl_shake_256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_shake256", 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_shake_256", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *data_obj = NULL;
@@ -868,7 +858,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _hashlib_openssl_shake256_impl(module, data_obj, usedforsecurity);
+    return_value = _hashlib_openssl_shake_256_impl(module, data_obj, usedforsecurity);
 
 exit:
     return return_value;
@@ -934,11 +924,6 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     }
     if (!PyBuffer_IsContiguous(&salt, 'C')) {
         _PyArg_BadArgument("pbkdf2_hmac", "argument 'salt'", "contiguous buffer", args[2]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     iterations = PyLong_AsLong(args[3]);
@@ -1055,11 +1040,6 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[5]) {
-        if (PyFloat_Check(args[5])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         maxmem = PyLong_AsLong(args[5]);
         if (maxmem == -1 && PyErr_Occurred()) {
             goto exit;
@@ -1067,11 +1047,6 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
-    }
-    if (PyFloat_Check(args[6])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     dklen = PyLong_AsLong(args[6]);
     if (dklen == -1 && PyErr_Occurred()) {
@@ -1095,21 +1070,21 @@ exit:
 
 #endif /* (OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER)) */
 
-PyDoc_STRVAR(_hashlib_hmac_digest__doc__,
+PyDoc_STRVAR(_hashlib_hmac_singleshot__doc__,
 "hmac_digest($module, /, key, msg, digest)\n"
 "--\n"
 "\n"
 "Single-shot HMAC.");
 
-#define _HASHLIB_HMAC_DIGEST_METHODDEF    \
-    {"hmac_digest", (PyCFunction)(void(*)(void))_hashlib_hmac_digest, METH_FASTCALL|METH_KEYWORDS, _hashlib_hmac_digest__doc__},
+#define _HASHLIB_HMAC_SINGLESHOT_METHODDEF    \
+    {"hmac_digest", (PyCFunction)(void(*)(void))_hashlib_hmac_singleshot, METH_FASTCALL|METH_KEYWORDS, _hashlib_hmac_singleshot__doc__},
 
 static PyObject *
-_hashlib_hmac_digest_impl(PyObject *module, Py_buffer *key, Py_buffer *msg,
-                          const char *digest);
+_hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
+                              Py_buffer *msg, const char *digest);
 
 static PyObject *
-_hashlib_hmac_digest(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_hashlib_hmac_singleshot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "msg", "digest", NULL};
@@ -1150,7 +1125,7 @@ _hashlib_hmac_digest(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    return_value = _hashlib_hmac_digest_impl(module, &key, &msg, digest);
+    return_value = _hashlib_hmac_singleshot_impl(module, &key, &msg, digest);
 
 exit:
     /* Cleanup for key */
@@ -1163,6 +1138,165 @@ exit:
     }
 
     return return_value;
+}
+
+PyDoc_STRVAR(_hashlib_hmac_new__doc__,
+"hmac_new($module, /, key, msg=b\'\', digestmod=None)\n"
+"--\n"
+"\n"
+"Return a new hmac object.");
+
+#define _HASHLIB_HMAC_NEW_METHODDEF    \
+    {"hmac_new", (PyCFunction)(void(*)(void))_hashlib_hmac_new, METH_FASTCALL|METH_KEYWORDS, _hashlib_hmac_new__doc__},
+
+static PyObject *
+_hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
+                       const char *digestmod);
+
+static PyObject *
+_hashlib_hmac_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"key", "msg", "digestmod", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "hmac_new", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    Py_buffer key = {NULL, NULL};
+    PyObject *msg_obj = NULL;
+    const char *digestmod = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &key, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&key, 'C')) {
+        _PyArg_BadArgument("hmac_new", "argument 'key'", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        msg_obj = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("hmac_new", "argument 'digestmod'", "str", args[2]);
+        goto exit;
+    }
+    Py_ssize_t digestmod_length;
+    digestmod = PyUnicode_AsUTF8AndSize(args[2], &digestmod_length);
+    if (digestmod == NULL) {
+        goto exit;
+    }
+    if (strlen(digestmod) != (size_t)digestmod_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = _hashlib_hmac_new_impl(module, &key, msg_obj, digestmod);
+
+exit:
+    /* Cleanup for key */
+    if (key.obj) {
+       PyBuffer_Release(&key);
+    }
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_hashlib_HMAC_copy__doc__,
+"copy($self, /)\n"
+"--\n"
+"\n"
+"Return a copy (\"clone\") of the HMAC object.");
+
+#define _HASHLIB_HMAC_COPY_METHODDEF    \
+    {"copy", (PyCFunction)_hashlib_HMAC_copy, METH_NOARGS, _hashlib_HMAC_copy__doc__},
+
+static PyObject *
+_hashlib_HMAC_copy_impl(HMACobject *self);
+
+static PyObject *
+_hashlib_HMAC_copy(HMACobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _hashlib_HMAC_copy_impl(self);
+}
+
+PyDoc_STRVAR(_hashlib_HMAC_update__doc__,
+"update($self, /, msg)\n"
+"--\n"
+"\n"
+"Update the HMAC object with msg.");
+
+#define _HASHLIB_HMAC_UPDATE_METHODDEF    \
+    {"update", (PyCFunction)(void(*)(void))_hashlib_HMAC_update, METH_FASTCALL|METH_KEYWORDS, _hashlib_HMAC_update__doc__},
+
+static PyObject *
+_hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg);
+
+static PyObject *
+_hashlib_HMAC_update(HMACobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"msg", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "update", 0};
+    PyObject *argsbuf[1];
+    PyObject *msg;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    msg = args[0];
+    return_value = _hashlib_HMAC_update_impl(self, msg);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_hashlib_HMAC_digest__doc__,
+"digest($self, /)\n"
+"--\n"
+"\n"
+"Return the digest of the bytes passed to the update() method so far.");
+
+#define _HASHLIB_HMAC_DIGEST_METHODDEF    \
+    {"digest", (PyCFunction)_hashlib_HMAC_digest, METH_NOARGS, _hashlib_HMAC_digest__doc__},
+
+static PyObject *
+_hashlib_HMAC_digest_impl(HMACobject *self);
+
+static PyObject *
+_hashlib_HMAC_digest(HMACobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _hashlib_HMAC_digest_impl(self);
+}
+
+PyDoc_STRVAR(_hashlib_HMAC_hexdigest__doc__,
+"hexdigest($self, /)\n"
+"--\n"
+"\n"
+"Return hexadecimal digest of the bytes passed to the update() method so far.\n"
+"\n"
+"This may be used to exchange the value safely in email or other non-binary\n"
+"environments.");
+
+#define _HASHLIB_HMAC_HEXDIGEST_METHODDEF    \
+    {"hexdigest", (PyCFunction)_hashlib_HMAC_hexdigest, METH_NOARGS, _hashlib_HMAC_hexdigest__doc__},
+
+static PyObject *
+_hashlib_HMAC_hexdigest_impl(HMACobject *self);
+
+static PyObject *
+_hashlib_HMAC_hexdigest(HMACobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _hashlib_HMAC_hexdigest_impl(self);
 }
 
 #if !defined(LIBRESSL_VERSION_NUMBER)
@@ -1228,13 +1362,13 @@ exit:
     #define _HASHLIB_OPENSSL_SHA3_512_METHODDEF
 #endif /* !defined(_HASHLIB_OPENSSL_SHA3_512_METHODDEF) */
 
-#ifndef _HASHLIB_OPENSSL_SHAKE128_METHODDEF
-    #define _HASHLIB_OPENSSL_SHAKE128_METHODDEF
-#endif /* !defined(_HASHLIB_OPENSSL_SHAKE128_METHODDEF) */
+#ifndef _HASHLIB_OPENSSL_SHAKE_128_METHODDEF
+    #define _HASHLIB_OPENSSL_SHAKE_128_METHODDEF
+#endif /* !defined(_HASHLIB_OPENSSL_SHAKE_128_METHODDEF) */
 
-#ifndef _HASHLIB_OPENSSL_SHAKE256_METHODDEF
-    #define _HASHLIB_OPENSSL_SHAKE256_METHODDEF
-#endif /* !defined(_HASHLIB_OPENSSL_SHAKE256_METHODDEF) */
+#ifndef _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
+    #define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
+#endif /* !defined(_HASHLIB_OPENSSL_SHAKE_256_METHODDEF) */
 
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
@@ -1243,4 +1377,4 @@ exit:
 #ifndef _HASHLIB_GET_FIPS_MODE_METHODDEF
     #define _HASHLIB_GET_FIPS_MODE_METHODDEF
 #endif /* !defined(_HASHLIB_GET_FIPS_MODE_METHODDEF) */
-/*[clinic end generated code: output=a39bf0a766d7cdf7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d8dddcd85fb11dde input=a9049054013a1b77]*/

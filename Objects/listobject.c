@@ -261,12 +261,8 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (n == PY_SSIZE_T_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-            "cannot add more objects to list");
-        return -1;
-    }
 
+    assert((size_t)n + 1 < PY_SSIZE_T_MAX);
     if (list_resize(self, n+1) < 0)
         return -1;
 
@@ -301,12 +297,7 @@ app1(PyListObject *self, PyObject *v)
     Py_ssize_t n = PyList_GET_SIZE(self);
 
     assert (v != NULL);
-    if (n == PY_SSIZE_T_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-            "cannot add more objects to list");
-        return -1;
-    }
-
+    assert((size_t)n + 1 < PY_SSIZE_T_MAX);
     if (list_resize(self, n+1) < 0)
         return -1;
 
@@ -503,8 +494,7 @@ list_concat(PyListObject *a, PyObject *bb)
         return NULL;
     }
 #define b ((PyListObject *)bb)
-    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
-        return PyErr_NoMemory();
+    assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) < PY_SSIZE_T_MAX);
     size = Py_SIZE(a) + Py_SIZE(b);
     np = (PyListObject *) list_new_prealloc(size);
     if (np == NULL) {

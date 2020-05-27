@@ -62,12 +62,15 @@ the definition of all other Python objects.
    See documentation of :c:type:`PyVarObject` above.
 
 
-.. c:macro:: Py_TYPE(o)
+.. c:function:: PyTypeObject* Py_TYPE(const PyObject *o)
 
-   This macro is used to access the :attr:`ob_type` member of a Python object.
-   It expands to::
+   Get the type of the Python object *o*.
 
-      (((PyObject*)(o))->ob_type)
+   Return a borrowed reference.
+
+   .. versionchanged:: 3.10
+      :c:func:`Py_TYPE()` is changed to the inline static function.
+      Use :c:func:`Py_SET_TYPE()` to set an object type.
 
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
@@ -85,13 +88,13 @@ the definition of all other Python objects.
    .. versionadded:: 3.9
 
 
-.. c:macro:: Py_REFCNT(o)
+.. c:function:: Py_ssize_t Py_REFCNT(const PyObject *o)
 
-   This macro is used to access the :attr:`ob_refcnt` member of a Python
-   object.
-   It expands to::
+   Get the reference count of the Python object *o*.
 
-      (((PyObject*)(o))->ob_refcnt)
+   .. versionchanged:: 3.10
+      :c:func:`Py_REFCNT()` is changed to the inline static function.
+      Use :c:func:`Py_SET_REFCNT()` to set an object reference count.
 
 
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
@@ -101,12 +104,13 @@ the definition of all other Python objects.
    .. versionadded:: 3.9
 
 
-.. c:macro:: Py_SIZE(o)
+.. c:function:: Py_ssize_t Py_SIZE(const PyVarObject *o)
 
-   This macro is used to access the :attr:`ob_size` member of a Python object.
-   It expands to::
+   Get the size of the Python object *o*.
 
-      (((PyVarObject*)(o))->ob_size)
+   .. versionchanged:: 3.10
+      :c:func:`Py_SIZE()` is changed to the inline static function.
+      Use :c:func:`Py_SET_SIZE()` to set an object size.
 
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)

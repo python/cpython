@@ -178,6 +178,16 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+>>> import ast; ast.parse('''
+... def f(
+...     *, # type: int
+...     a, # type: int
+... ):
+...     pass
+... ''', type_comments=True)
+Traceback (most recent call last):
+SyntaxError: bare * has associated type comment
+
 
 From ast_for_funcdef():
 
@@ -206,11 +216,9 @@ SyntaxError: Generator expression must be parenthesized
 >>> f(x for x in L, **{})
 Traceback (most recent call last):
 SyntaxError: Generator expression must be parenthesized
-
-# >>> f(L, x for x in L)
-# Traceback (most recent call last):
-# SyntaxError: Generator expression must be parenthesized
-
+>>> f(L, x for x in L)
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
 >>> f(x for x in L, y for y in L)
 Traceback (most recent call last):
 SyntaxError: Generator expression must be parenthesized
@@ -631,6 +639,14 @@ SyntaxError: cannot assign to f-string expression
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression
 
+>>> from t import x,
+Traceback (most recent call last):
+SyntaxError: trailing comma not allowed without surrounding parentheses
+
+>>> from t import x,y,
+Traceback (most recent call last):
+SyntaxError: trailing comma not allowed without surrounding parentheses
+
 Corner-cases that used to fail to raise the correct error:
 
     >>> def f(*, x=lambda __debug__:0): pass
@@ -659,6 +675,9 @@ Corner-cases that used to crash:
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
+    >>> import ä £
+    Traceback (most recent call last):
+    SyntaxError: invalid character '£' (U+00A3)
 """
 
 import re

@@ -1109,6 +1109,7 @@ ast_dealloc(AST_object *self)
 static int
 ast_traverse(AST_object *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
@@ -1131,8 +1132,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     }
     if (fields) {
         numfields = PySequence_Size(fields);
-        if (numfields == -1)
+        if (numfields == -1) {
             goto cleanup;
+        }
     }
 
     res = 0; /* if no error occurs, this stays 0 to the end */
@@ -1153,15 +1155,35 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
         res = PyObject_SetAttr(self, name, PyTuple_GET_ITEM(args, i));
         Py_DECREF(name);
-        if (res < 0)
+        if (res < 0) {
             goto cleanup;
+        }
     }
     if (kw) {
         i = 0;  /* needed by PyDict_Next */
         while (PyDict_Next(kw, &i, &key, &value)) {
-            res = PyObject_SetAttr(self, key, value);
-            if (res < 0)
+            int contains = PySequence_Contains(fields, key);
+            if (contains == -1) {
+                res = -1;
                 goto cleanup;
+            } else if (contains == 1) {
+                Py_ssize_t p = PySequence_Index(fields, key);
+                if (p == -1) {
+                    res = -1;
+                    goto cleanup;
+                }
+                if (p < PyTuple_GET_SIZE(args)) {
+                    PyErr_Format(PyExc_TypeError,
+                        "%.400s got multiple values for argument '%U'",
+                        Py_TYPE(self)->tp_name, key);
+                    res = -1;
+                    goto cleanup;
+                }
+            }
+            res = PyObject_SetAttr(self, key, value);
+            if (res < 0) {
+                goto cleanup;
+            }
         }
     }
   cleanup:

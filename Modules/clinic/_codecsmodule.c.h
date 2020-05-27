@@ -424,11 +424,6 @@ _codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     final = _PyLong_AsInt(args[2]);
     if (final == -1 && PyErr_Occurred()) {
         goto exit;
@@ -498,11 +493,6 @@ _codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (nargs < 3) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     final = _PyLong_AsInt(args[2]);
     if (final == -1 && PyErr_Occurred()) {
@@ -574,11 +564,6 @@ _codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     final = _PyLong_AsInt(args[2]);
     if (final == -1 && PyErr_Occurred()) {
         goto exit;
@@ -649,11 +634,6 @@ _codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     final = _PyLong_AsInt(args[2]);
     if (final == -1 && PyErr_Occurred()) {
         goto exit;
@@ -723,11 +703,6 @@ _codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
     if (nargs < 3) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     final = _PyLong_AsInt(args[2]);
     if (final == -1 && PyErr_Occurred()) {
@@ -801,22 +776,12 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     byteorder = _PyLong_AsInt(args[2]);
     if (byteorder == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 4) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     final = _PyLong_AsInt(args[3]);
     if (final == -1 && PyErr_Occurred()) {
@@ -888,11 +853,6 @@ _codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     final = _PyLong_AsInt(args[2]);
     if (final == -1 && PyErr_Occurred()) {
         goto exit;
@@ -963,11 +923,6 @@ _codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     final = _PyLong_AsInt(args[2]);
     if (final == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1037,11 +992,6 @@ _codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
     if (nargs < 3) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     final = _PyLong_AsInt(args[2]);
     if (final == -1 && PyErr_Occurred()) {
@@ -1115,22 +1065,12 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     byteorder = _PyLong_AsInt(args[2]);
     if (byteorder == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 4) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     final = _PyLong_AsInt(args[3]);
     if (final == -1 && PyErr_Occurred()) {
@@ -1539,11 +1479,6 @@ _codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     final = _PyLong_AsInt(args[2]);
     if (final == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1618,11 +1553,6 @@ _codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     final = _PyLong_AsInt(args[2]);
     if (final == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1667,11 +1597,6 @@ _codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (!_PyArg_CheckPositional("code_page_decode", nargs, 2, 4)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     codepage = _PyLong_AsInt(args[0]);
     if (codepage == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1706,11 +1631,6 @@ _codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
     if (nargs < 4) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     final = _PyLong_AsInt(args[3]);
     if (final == -1 && PyErr_Occurred()) {
@@ -1973,11 +1893,6 @@ _codecs_utf_16_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     byteorder = _PyLong_AsInt(args[2]);
     if (byteorder == -1 && PyErr_Occurred()) {
         goto exit;
@@ -2159,11 +2074,6 @@ _codecs_utf_32_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (nargs < 3) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     byteorder = _PyLong_AsInt(args[2]);
     if (byteorder == -1 && PyErr_Occurred()) {
@@ -2765,11 +2675,6 @@ _codecs_code_page_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (!_PyArg_CheckPositional("code_page_encode", nargs, 2, 3)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     code_page = _PyLong_AsInt(args[0]);
     if (code_page == -1 && PyErr_Occurred()) {
         goto exit;
@@ -2922,4 +2827,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=51b42d170889524c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eeead01414be6e42 input=a9049054013a1b77]*/

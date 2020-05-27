@@ -8,9 +8,12 @@
 # Unicode identifiers in tests is allowed by PEP 3131.
 
 import ast
+import os
 import types
 import decimal
 import unittest
+from test.support import temp_cwd, use_old_parser
+from test.support.script_helper import assert_python_failure
 
 a_global = 'global variable'
 
@@ -1043,6 +1046,16 @@ non-important content
                             [r"f'{1000:j}'",
                              r"f'{1000:j}'",
                             ])
+
+    @unittest.skipIf(use_old_parser(), "The old parser only supports <fstring> as the filename")
+    def test_filename_in_syntaxerror(self):
+        # see issue 38964
+        with temp_cwd() as cwd:
+            file_path = os.path.join(cwd, 't.py')
+            with open(file_path, 'w') as f:
+                f.write('f"{a b}"') # This generates a SyntaxError
+            _, _, stderr = assert_python_failure(file_path)
+        self.assertIn(file_path, stderr.decode('utf-8'))
 
     def test_loop(self):
         for i in range(1000):
