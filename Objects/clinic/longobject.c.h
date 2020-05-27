@@ -142,7 +142,9 @@ PyDoc_STRVAR(int_bit_count__doc__,
 "bit_count($self, /)\n"
 "--\n"
 "\n"
-"Number of ones in the binary representation of self.\n"
+"Number of ones in the binary representation of the absolute value of self.\n"
+"\n"
+"Also known as the population count.\n"
 "\n"
 ">>> bin(13)\n"
 "\'0b1101\'\n"
@@ -331,4 +333,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=37049157360926ab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=59dfa71aad39d5e6 input=a9049054013a1b77]*/
