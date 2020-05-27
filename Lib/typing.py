@@ -469,6 +469,11 @@ class ForwardRef(_Final, _root=True):
     def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
+        # since annotations feature is now default, stringified annotations
+        # should be escaped from quotes, or this will result with double
+        # forward refs.
+        if arg[0] in "'\"" and arg[-1] in "'\"":
+            arg = arg[1:-1]
         try:
             code = compile(arg, '<string>', 'eval')
         except SyntaxError:
