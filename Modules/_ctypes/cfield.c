@@ -74,9 +74,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 
 #ifndef MS_WIN32
     if (pack && bitsize) { /* packed bitfield */
-        size = 1;
-        while(size * 8 < bitsize)
-            size += 1;
+        size = (bitsize - 1) / 8 + 1;
     } else
 #endif
         size = dict->size;
@@ -180,8 +178,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 
     case EXPAND_BITFIELD:
         if (pack)
-            while(size * 8 < (*pbitofs + bitsize))
-                size += 1;
+            size = (*pbitofs + bitsize - 1) / 8 + 1;
 
         *poffset += size - *pfield_size/8;
         *psize += size - *pfield_size/8;
