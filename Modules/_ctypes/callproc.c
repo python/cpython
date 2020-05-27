@@ -55,7 +55,6 @@
  */
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 #ifdef MS_WIN32
 #include <windows.h>
@@ -563,7 +562,7 @@ PyCArg_repr(PyCArgObject *self)
 
 static PyMemberDef PyCArgType_members[] = {
     { "_obj", T_OBJECT,
-      offsetof(PyCArgObject, obj), READONLY,
+      offsetof(PyCArgObject, obj), PY_READONLY,
       "the wrapped object" },
     { NULL },
 };

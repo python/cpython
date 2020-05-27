@@ -20,7 +20,6 @@
 #include "Python.h"
 #include "datetime.h"
 #include "marshal.h"
-#include "structmember.h"         // PyMemberDef
 #include <float.h>
 #include <signal.h>
 
@@ -6397,7 +6396,7 @@ static PyGetSetDef heapctypewithdict_getsetlist[] = {
 
 static struct PyMemberDef heapctypewithdict_members[] = {
     {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
-    {"__dictoffset__", T_PYSSIZET, offsetof(HeapCTypeWithDictObject, dict), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(HeapCTypeWithDictObject, dict), PY_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -6418,7 +6417,7 @@ static PyType_Spec HeapCTypeWithDict_spec = {
 
 static struct PyMemberDef heapctypewithnegativedict_members[] = {
     {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
-    {"__dictoffset__", T_PYSSIZET, -(Py_ssize_t)sizeof(void*), READONLY},
+    {"__dictoffset__", T_PYSSIZET, -(Py_ssize_t)sizeof(void*), PY_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -6445,7 +6444,7 @@ typedef struct {
 static struct PyMemberDef heapctypewithweakref_members[] = {
     {"weakreflist", T_OBJECT, offsetof(HeapCTypeWithWeakrefObject, weakreflist)},
     {"__weaklistoffset__", T_PYSSIZET,
-      offsetof(HeapCTypeWithWeakrefObject, weakreflist), READONLY},
+      offsetof(HeapCTypeWithWeakrefObject, weakreflist), PY_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -6573,7 +6572,7 @@ ContainerNoGC_dealloc(ContainerNoGCobject *self)
 }
 
 static PyMemberDef ContainerNoGC_members[] = {
-    {"value", T_OBJECT, offsetof(ContainerNoGCobject, value), READONLY,
+    {"value", T_OBJECT, offsetof(ContainerNoGCobject, value), PY_READONLY,
      PyDoc_STR("a container value for test purposes")},
     {0}
 };

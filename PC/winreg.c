@@ -14,7 +14,6 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 #include <windows.h>
 
 static BOOL PyHKEY_AsHKEY(PyObject *ob, HKEY *pRes, BOOL bNoneOK);
@@ -346,7 +345,7 @@ static struct PyMethodDef PyHKEY_methods[] = {
 
 #define OFF(e) offsetof(PyHKEYObject, e)
 static PyMemberDef PyHKEY_memberlist[] = {
-    {"handle",      T_INT,      OFF(hkey), READONLY},
+    {"handle",      T_INT,      OFF(hkey), PY_READONLY},
     {NULL}    /* Sentinel */
 };
 

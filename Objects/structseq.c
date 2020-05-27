@@ -10,7 +10,6 @@
 #include "Python.h"
 #include "pycore_tupleobject.h"
 #include "pycore_object.h"
-#include "structmember.h"         // PyMemberDef
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
@@ -375,7 +374,7 @@ initialize_members(PyStructSequence_Desc *desc, PyMemberDef* members,
         members[k].type = T_OBJECT;
         members[k].offset = offsetof(PyStructSequence, ob_item)
           + i * sizeof(PyObject*);
-        members[k].flags = READONLY;
+        members[k].flags = PY_READONLY;
         members[k].doc = desc->fields[i].doc;
         k++;
     }

@@ -35,7 +35,6 @@
 /* See http://www.python.org/2.4/license for licensing details. */
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 #define WINDOWS_LEAN_AND_MEAN
 #include "windows.h"
@@ -300,7 +299,7 @@ static PyMethodDef overlapped_methods[] = {
 static PyMemberDef overlapped_members[] = {
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     READONLY, "overlapped event handle"},
+     PY_READONLY, "overlapped event handle"},
     {NULL}
 };
 

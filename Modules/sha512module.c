@@ -18,7 +18,6 @@
 
 #include "Python.h"
 #include "pycore_byteswap.h"      // _Py_bswap32()
-#include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
 #include "pystrhex.h"
 
@@ -570,7 +569,7 @@ static PyGetSetDef SHA_getseters[] = {
 };
 
 static PyMemberDef SHA_members[] = {
-    {"digest_size", T_INT, offsetof(SHAobject, digestsize), READONLY, NULL},
+    {"digest_size", T_INT, offsetof(SHAobject, digestsize), PY_READONLY, NULL},
     {NULL}  /* Sentinel */
 };
 

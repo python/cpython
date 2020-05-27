@@ -770,7 +770,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 }
 
 static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), PY_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1429,7 +1429,6 @@ def write_source(f, mod):
     f.write('\n')
     f.write('#include "Python.h"\n')
     f.write('#include "%s-ast.h"\n' % mod.name)
-    f.write('#include "structmember.h"         // PyMemberDef\n')
     f.write('\n')
 
     generate_module_def(f, mod)

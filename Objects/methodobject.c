@@ -6,7 +6,6 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "structmember.h"         // PyMemberDef
 
 /* undefine macro trampoline to PyCFunction_NewEx */
 #undef PyCFunction_New

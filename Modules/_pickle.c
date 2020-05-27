@@ -9,7 +9,6 @@
 #endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");

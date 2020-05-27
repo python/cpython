@@ -4,7 +4,6 @@
 
 #include "Python.h"
 #include "Python-ast.h"
-#include "structmember.h"         // PyMemberDef
 
 typedef struct {
     int initialized;
@@ -1206,7 +1205,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 }
 
 static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), PY_READONLY},
     {NULL}  /* Sentinel */
 };
 

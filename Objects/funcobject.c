@@ -5,7 +5,6 @@
 #include "pycore_object.h"
 #include "pycore_tupleobject.h"
 #include "code.h"
-#include "structmember.h"         // PyMemberDef
 
 PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
@@ -237,9 +236,9 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static PyMemberDef func_memberlist[] = {
-    {"__closure__",   T_OBJECT,     OFF(func_closure), READONLY},
+    {"__closure__",   T_OBJECT,     OFF(func_closure), PY_READONLY},
     {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
-    {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
+    {"__globals__",   T_OBJECT,     OFF(func_globals), PY_READONLY},
     {"__module__",    T_OBJECT,     OFF(func_module), 0},
     {NULL}  /* Sentinel */
 };
@@ -760,7 +759,7 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef cm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
+    {"__func__", T_OBJECT, offsetof(classmethod, cm_callable), PY_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -942,7 +941,7 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef sm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
+    {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), PY_READONLY},
     {NULL}  /* Sentinel */
 };
 

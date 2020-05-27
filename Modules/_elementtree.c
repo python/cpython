@@ -14,7 +14,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 /* -------------------------------------------------------------------- */
 /* configuration */
@@ -4136,8 +4135,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
 }
 
 static PyMemberDef xmlparser_members[] = {
-    {"entity", T_OBJECT, offsetof(XMLParserObject, entity), READONLY, NULL},
-    {"target", T_OBJECT, offsetof(XMLParserObject, target), READONLY, NULL},
+    {"entity", T_OBJECT, offsetof(XMLParserObject, entity), PY_READONLY, NULL},
+    {"target", T_OBJECT, offsetof(XMLParserObject, target), PY_READONLY, NULL},
     {NULL}
 };
 

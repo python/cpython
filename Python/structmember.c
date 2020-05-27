@@ -2,7 +2,6 @@
 /* Map C struct members to Python object attributes */
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 PyObject *
 PyMember_GetOne(const char *addr, PyMemberDef *l)
@@ -103,7 +102,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 
     addr += l->offset;
 
-    if ((l->flags & READONLY))
+    if ((l->flags & PY_READONLY))
     {
         PyErr_SetString(PyExc_AttributeError, "readonly attribute");
         return -1;

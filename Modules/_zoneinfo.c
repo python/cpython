@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "structmember.h"
 
 #include <ctype.h>
 #include <stddef.h>
@@ -2566,7 +2565,7 @@ static PyMemberDef zoneinfo_members[] = {
     {.name = "key",
      .offset = offsetof(PyZoneInfo_ZoneInfo, key),
      .type = T_OBJECT_EX,
-     .flags = READONLY,
+     .flags = PY_READONLY,
      .doc = NULL},
     {NULL}, /* Sentinel */
 };

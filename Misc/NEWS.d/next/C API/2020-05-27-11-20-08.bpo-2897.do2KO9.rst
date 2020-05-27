@@ -1,0 +1,3 @@
+PyMemberDef is available in Python.h and part of the stable ABI now.
+READONLY was renamed to PY_READONLY and READ_RESTRICTED to
+PY_READ_RESTRICTED. The structmember.h header was deprecated.

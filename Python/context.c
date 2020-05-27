@@ -6,7 +6,6 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "structmember.h"         // PyMemberDef
 
 
 #define CONTEXT_FREELIST_MAXLEN 255
@@ -1025,7 +1024,7 @@ _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
 
 
 static PyMemberDef PyContextVar_members[] = {
-    {"name", T_OBJECT, offsetof(PyContextVar, var_name), READONLY},
+    {"name", T_OBJECT, offsetof(PyContextVar, var_name), PY_READONLY},
     {NULL}
 };
 

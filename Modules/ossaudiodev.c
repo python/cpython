@@ -19,7 +19,6 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -920,7 +919,7 @@ static PyMethodDef oss_mixer_methods[] = {
 };
 
 static PyMemberDef oss_members[] = {
-    {"name", T_STRING, offsetof(oss_audio_t, devicename), READONLY, NULL},
+    {"name", T_STRING, offsetof(oss_audio_t, devicename), PY_READONLY, NULL},
     {NULL}
 };
 

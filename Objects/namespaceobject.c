@@ -1,7 +1,6 @@
 // namespace object implementation
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 
 typedef struct {
@@ -11,7 +10,7 @@ typedef struct {
 
 
 static PyMemberDef namespace_members[] = {
-    {"__dict__", T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), READONLY},
+    {"__dict__", T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), PY_READONLY},
     {NULL}
 };
 

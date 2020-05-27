@@ -49,7 +49,7 @@
 #endif
 #endif
 
-/* For size_t? */
+/* For size_t, offsetof */
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
 #endif

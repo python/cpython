@@ -6,7 +6,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 #include <ctype.h>
 
 /*[clinic input]
@@ -2036,7 +2035,7 @@ static struct PyMethodDef s_methods[] = {
 };
 
 static PyMemberDef s_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(PyStructObject, weakreflist), READONLY},
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(PyStructObject, weakreflist), PY_READONLY},
     {NULL}  /* sentinel */
 };
 

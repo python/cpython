@@ -7,7 +7,6 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
-#include "structmember.h"         // PyMemberDef
 
 #include <ctype.h>
 
@@ -412,15 +411,17 @@ assign_version_tag(PyTypeObject *type)
 
 
 static PyMemberDef type_members[] = {
-    {"__basicsize__", T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),READONLY},
-    {"__itemsize__", T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize), READONLY},
-    {"__flags__", T_ULONG, offsetof(PyTypeObject, tp_flags), READONLY},
+    {"__basicsize__", T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),
+     PY_READONLY},
+    {"__itemsize__", T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize),
+     PY_READONLY},
+    {"__flags__", T_ULONG, offsetof(PyTypeObject, tp_flags), PY_READONLY},
     {"__weakrefoffset__", T_PYSSIZET,
-     offsetof(PyTypeObject, tp_weaklistoffset), READONLY},
-    {"__base__", T_OBJECT, offsetof(PyTypeObject, tp_base), READONLY},
+     offsetof(PyTypeObject, tp_weaklistoffset), PY_READONLY},
+    {"__base__", T_OBJECT, offsetof(PyTypeObject, tp_base), PY_READONLY},
     {"__dictoffset__", T_PYSSIZET,
-     offsetof(PyTypeObject, tp_dictoffset), READONLY},
-    {"__mro__", T_OBJECT, offsetof(PyTypeObject, tp_mro), READONLY},
+     offsetof(PyTypeObject, tp_dictoffset), PY_READONLY},
+    {"__mro__", T_OBJECT, offsetof(PyTypeObject, tp_mro), PY_READONLY},
     {0}
 };
 
@@ -1153,7 +1154,7 @@ clear_slots(PyTypeObject *type, PyObject *self)
     n = Py_SIZE(type);
     mp = PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
     for (i = 0; i < n; i++, mp++) {
-        if (mp->type == T_OBJECT_EX && !(mp->flags & READONLY)) {
+        if (mp->type == T_OBJECT_EX && !(mp->flags & PY_READONLY)) {
             char *addr = (char *)self + mp->offset;
             PyObject *obj = *(PyObject **)addr;
             if (obj != NULL) {
@@ -2905,19 +2906,19 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
                 if (strcmp(memb->name, "__weaklistoffset__") == 0) {
                     // The PyMemberDef must be a Py_ssize_t and readonly
                     assert(memb->type == T_PYSSIZET);
-                    assert(memb->flags == READONLY);
+                    assert(memb->flags == PY_READONLY);
                     weaklistoffset = memb->offset;
                 }
                 if (strcmp(memb->name, "__dictoffset__") == 0) {
                     // The PyMemberDef must be a Py_ssize_t and readonly
                     assert(memb->type == T_PYSSIZET);
-                    assert(memb->flags == READONLY);
+                    assert(memb->flags == PY_READONLY);
                     dictoffset = memb->offset;
                 }
                 if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
                     // The PyMemberDef must be a Py_ssize_t and readonly
                     assert(memb->type == T_PYSSIZET);
-                    assert(memb->flags == READONLY);
+                    assert(memb->flags == PY_READONLY);
                     vectorcalloffset = memb->offset;
                 }
             }
@@ -7831,11 +7832,11 @@ typedef struct {
 } superobject;
 
 static PyMemberDef super_members[] = {
-    {"__thisclass__", T_OBJECT, offsetof(superobject, type), READONLY,
+    {"__thisclass__", T_OBJECT, offsetof(superobject, type), PY_READONLY,
      "the class invoking super()"},
-    {"__self__",  T_OBJECT, offsetof(superobject, obj), READONLY,
+    {"__self__",  T_OBJECT, offsetof(superobject, obj), PY_READONLY,
      "the instance invoking super(); may be None"},
-    {"__self_class__", T_OBJECT, offsetof(superobject, obj_type), READONLY,
+    {"__self_class__", T_OBJECT, offsetof(superobject, obj_type), PY_READONLY,
      "the type of the instance invoking super(); may be None"},
     {0}
 };

@@ -6,7 +6,6 @@
 /* Submitted by Jim Hugunin */
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 /*[clinic input]
 class complex "PyComplexObject *" "&PyComplex_Type"
@@ -741,9 +740,9 @@ static PyMethodDef complex_methods[] = {
 };
 
 static PyMemberDef complex_members[] = {
-    {"real", T_DOUBLE, offsetof(PyComplexObject, cval.real), READONLY,
+    {"real", T_DOUBLE, offsetof(PyComplexObject, cval.real), PY_READONLY,
      "the real part of a complex number"},
-    {"imag", T_DOUBLE, offsetof(PyComplexObject, cval.imag), READONLY,
+    {"imag", T_DOUBLE, offsetof(PyComplexObject, cval.imag), PY_READONLY,
      "the imaginary part of a complex number"},
     {0},
 };

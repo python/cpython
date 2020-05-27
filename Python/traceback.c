@@ -5,7 +5,6 @@
 
 #include "code.h"
 #include "frameobject.h"          // PyFrame_GetBack()
-#include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -147,9 +146,9 @@ static PyMethodDef tb_methods[] = {
 };
 
 static PyMemberDef tb_memberlist[] = {
-    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY},
-    {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
-    {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
+    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  PY_READONLY},
+    {"tb_lasti",        T_INT,          OFF(tb_lasti),  PY_READONLY},
+    {"tb_lineno",       T_INT,          OFF(tb_lineno), PY_READONLY},
     {NULL}      /* Sentinel */
 };
 

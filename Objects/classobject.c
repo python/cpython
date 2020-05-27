@@ -4,7 +4,6 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "structmember.h"         // PyMemberDef
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
 
@@ -144,9 +143,9 @@ static PyMethodDef method_methods[] = {
 #define MO_OFF(x) offsetof(PyMethodObject, x)
 
 static PyMemberDef method_memberlist[] = {
-    {"__func__", T_OBJECT, MO_OFF(im_func), READONLY,
+    {"__func__", T_OBJECT, MO_OFF(im_func), PY_READONLY,
      "the function (or other callable) implementing a method"},
-    {"__self__", T_OBJECT, MO_OFF(im_self), READONLY,
+    {"__self__", T_OBJECT, MO_OFF(im_self), PY_READONLY,
      "the instance to which a method is bound"},
     {NULL}      /* Sentinel */
 };
@@ -399,7 +398,7 @@ PyInstanceMethod_Function(PyObject *im)
 #define IMO_OFF(x) offsetof(PyInstanceMethodObject, x)
 
 static PyMemberDef instancemethod_memberlist[] = {
-    {"__func__", T_OBJECT, IMO_OFF(func), READONLY,
+    {"__func__", T_OBJECT, IMO_OFF(func), PY_READONLY,
      "the function (or other callable) implementing a method"},
     {NULL}      /* Sentinel */
 };

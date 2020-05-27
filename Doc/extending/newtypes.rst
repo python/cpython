@@ -275,28 +275,30 @@ be read-only or read-write.  The structures in the table are defined as::
 For each entry in the table, a :term:`descriptor` will be constructed and added to the
 type which will be able to extract a value from the instance structure.  The
 :attr:`type` field should contain one of the type codes defined in the
-:file:`structmember.h` header; the value will be used to determine how to
+:file:`descrobject.h` header; the value will be used to determine how to
 convert Python values to and from C values.  The :attr:`flags` field is used to
 store flags which control how the attribute can be accessed.
 
-The following flag constants are defined in :file:`structmember.h`; they may be
-combined using bitwise-OR.
+The following flag constants are provided; they may be combined using
+bitwise-OR.
 
-+---------------------------+----------------------------------------------+
-| Constant                  | Meaning                                      |
-+===========================+==============================================+
-| :const:`READONLY`         | Never writable.                              |
-+---------------------------+----------------------------------------------+
-| :const:`READ_RESTRICTED`  | Not readable in restricted mode.             |
-+---------------------------+----------------------------------------------+
-| :const:`WRITE_RESTRICTED` | Not writable in restricted mode.             |
-+---------------------------+----------------------------------------------+
-| :const:`RESTRICTED`       | Not readable or writable in restricted mode. |
-+---------------------------+----------------------------------------------+
++-----------------------------+--------------------------------------------+
+| Constant                    | Meaning                                    |
++=============================+============================================+
+| :const:`PY_READONLY`        | Never writable.                            |
++-----------------------------+--------------------------------------------+
+| :const:`PY_READ_RESTRICTED` | Reading raises an audit event.             |
++-----------------------------+--------------------------------------------+
 
 .. index::
-   single: READONLY
-   single: READ_RESTRICTED
+   single: PY_READONLY
+   single: PY_READ_RESTRICTED
+
+The :const:`WRITE_RESTRICTED` and :const:`RESTRICTED` flags are deprecated. They
+are provided in the deprecated header :file:`structmember.h` for backward
+compatibility and ignored in Python 3.x.
+
+.. index::
    single: WRITE_RESTRICTED
    single: RESTRICTED
 

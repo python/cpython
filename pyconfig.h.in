@@ -1025,6 +1025,9 @@
    void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #undef HAVE_STDARG_PROTOTYPES
 
+/* Define to 1 if you have the <stddef.h> header file. */
+#undef HAVE_STDDEF_H
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 

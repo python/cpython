@@ -1,7 +1,6 @@
 #include "Python.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
-#include "structmember.h"         // PyMemberDef
 
 /* _functools module written and maintained
    by Hye-Shik Chang <perky@FreeBSD.org>
@@ -286,11 +285,11 @@ PyDoc_STRVAR(partial_doc,
 
 #define OFF(x) offsetof(partialobject, x)
 static PyMemberDef partial_memberlist[] = {
-    {"func",            T_OBJECT,       OFF(fn),        READONLY,
+    {"func",            T_OBJECT,       OFF(fn),        PY_READONLY,
      "function object to use in future partial calls"},
-    {"args",            T_OBJECT,       OFF(args),      READONLY,
+    {"args",            T_OBJECT,       OFF(args),      PY_READONLY,
      "tuple of arguments to future partial calls"},
-    {"keywords",        T_OBJECT,       OFF(kw),        READONLY,
+    {"keywords",        T_OBJECT,       OFF(kw),        PY_READONLY,
      "dictionary of keyword arguments to future partial calls"},
     {NULL}  /* Sentinel */
 };

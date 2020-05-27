@@ -238,13 +238,6 @@ adds these capabilities:
 
 This version of the module has a number of changes.
 
-We've added an extra include::
-
-   #include <structmember.h>
-
-This include provides declarations that we use to handle attributes, as
-described a bit later.
-
 The  :class:`Custom` type now has three data attributes in its C struct,
 *first*, *last*, and *number*.  The *first* and *last* variables are Python
 strings containing first and last names.  The *number* attribute is a C integer.

@@ -8,7 +8,6 @@
    Check itemsize */
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 #define WINDOWS_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -1742,10 +1741,10 @@ static PyMethodDef Overlapped_methods[] = {
 static PyMemberDef Overlapped_members[] = {
     {"error", T_ULONG,
      offsetof(OverlappedObject, error),
-     READONLY, "Error from last operation"},
+     PY_READONLY, "Error from last operation"},
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     READONLY, "Overlapped event handle"},
+     PY_READONLY, "Overlapped event handle"},
     {NULL}
 };
 

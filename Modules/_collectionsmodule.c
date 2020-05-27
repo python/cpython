@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 #ifdef STDC_HEADERS
 #include <stddef.h>

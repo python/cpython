@@ -101,7 +101,6 @@ Local naming conventions:
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 #ifdef _Py_MEMORY_SANITIZER
 # include <sanitizer/msan_interface.h>
@@ -5017,9 +5016,9 @@ static PyMethodDef sock_methods[] = {
 
 /* SockObject members */
 static PyMemberDef sock_memberlist[] = {
-       {"family", T_INT, offsetof(PySocketSockObject, sock_family), READONLY, "the socket family"},
-       {"type", T_INT, offsetof(PySocketSockObject, sock_type), READONLY, "the socket type"},
-       {"proto", T_INT, offsetof(PySocketSockObject, sock_proto), READONLY, "the socket protocol"},
+       {"family", T_INT, offsetof(PySocketSockObject, sock_family), PY_READONLY, "the socket family"},
+       {"type", T_INT, offsetof(PySocketSockObject, sock_type), PY_READONLY, "the socket type"},
+       {"proto", T_INT, offsetof(PySocketSockObject, sock_proto), PY_READONLY, "the socket protocol"},
        {0},
 };
 

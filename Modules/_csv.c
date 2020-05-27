@@ -11,7 +11,6 @@ module instead.
 #define MODULE_VERSION "1.0"
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 #include <stdbool.h>
 
 
@@ -299,9 +298,9 @@ dialect_check_quoting(int quoting)
 #define D_OFF(x) offsetof(DialectObj, x)
 
 static struct PyMemberDef Dialect_memberlist[] = {
-    { "skipinitialspace",   T_BOOL, D_OFF(skipinitialspace), READONLY },
-    { "doublequote",        T_BOOL, D_OFF(doublequote), READONLY },
-    { "strict",             T_BOOL, D_OFF(strict), READONLY },
+    { "skipinitialspace",   T_BOOL, D_OFF(skipinitialspace), PY_READONLY },
+    { "doublequote",        T_BOOL, D_OFF(doublequote), PY_READONLY },
+    { "strict",             T_BOOL, D_OFF(strict), PY_READONLY },
     { NULL }
 };
 
@@ -895,8 +894,8 @@ static struct PyMethodDef Reader_methods[] = {
 #define R_OFF(x) offsetof(ReaderObj, x)
 
 static struct PyMemberDef Reader_memberlist[] = {
-    { "dialect", T_OBJECT, R_OFF(dialect), READONLY },
-    { "line_num", T_ULONG, R_OFF(line_num), READONLY },
+    { "dialect", T_OBJECT, R_OFF(dialect), PY_READONLY },
+    { "line_num", T_ULONG, R_OFF(line_num), PY_READONLY },
     { NULL }
 };
 
@@ -1293,7 +1292,7 @@ static struct PyMethodDef Writer_methods[] = {
 #define W_OFF(x) offsetof(WriterObj, x)
 
 static struct PyMemberDef Writer_memberlist[] = {
-    { "dialect", T_OBJECT, W_OFF(dialect), READONLY },
+    { "dialect", T_OBJECT, W_OFF(dialect), PY_READONLY },
     { NULL }
 };
 

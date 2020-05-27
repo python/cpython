@@ -2,7 +2,6 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "structmember.h"         // PyMemberDef
 
 typedef struct {
     PyObject_HEAD
@@ -496,8 +495,8 @@ static PyMethodDef ga_methods[] = {
 };
 
 static PyMemberDef ga_members[] = {
-    {"__origin__", T_OBJECT, offsetof(gaobject, origin), READONLY},
-    {"__args__", T_OBJECT, offsetof(gaobject, args), READONLY},
+    {"__origin__", T_OBJECT, offsetof(gaobject, origin), PY_READONLY},
+    {"__args__", T_OBJECT, offsetof(gaobject, args), PY_READONLY},
     {0}
 };
 

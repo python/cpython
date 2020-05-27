@@ -16,7 +16,6 @@ this type and there is exactly one in existence.
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_object.h"
-#include "structmember.h"         // PyMemberDef
 
 static PyObject *
 ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -341,9 +340,9 @@ slice_repr(PySliceObject *r)
 }
 
 static PyMemberDef slice_members[] = {
-    {"start", T_OBJECT, offsetof(PySliceObject, start), READONLY},
-    {"stop", T_OBJECT, offsetof(PySliceObject, stop), READONLY},
-    {"step", T_OBJECT, offsetof(PySliceObject, step), READONLY},
+    {"start", T_OBJECT, offsetof(PySliceObject, start), PY_READONLY},
+    {"stop", T_OBJECT, offsetof(PySliceObject, stop), PY_READONLY},
+    {"step", T_OBJECT, offsetof(PySliceObject, step), PY_READONLY},
     {0}
 };
 
