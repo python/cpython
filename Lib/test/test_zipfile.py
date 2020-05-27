@@ -5,6 +5,7 @@ import itertools
 import os
 import pathlib
 import posixpath
+import string
 import struct
 import subprocess
 import sys
@@ -15,7 +16,7 @@ import zipfile
 
 
 from tempfile import TemporaryFile
-from random import randint, random, getrandbits
+from random import randint, random, randbytes
 
 from test.support import script_helper
 from test.support import (TESTFN, findfile, unlink, rmtree, temp_dir, temp_cwd,
@@ -31,9 +32,6 @@ SMALL_TEST_DATA = [('_ziptest1', '1q2w3e4r5t'),
                    ('ziptest2dir/_ziptest2', 'qawsedrftg'),
                    ('ziptest2dir/ziptest3dir/_ziptest3', 'azsxdcfvgb'),
                    ('ziptest2dir/ziptest3dir/ziptest4dir/_ziptest3', '6y7u8i9o0p')]
-
-def getrandbytes(size):
-    return getrandbits(8 * size).to_bytes(size, 'little')
 
 def get_files(test):
     yield TESTFN2
@@ -323,7 +321,7 @@ class AbstractTestsWithSourceFile:
         # than requested.
         for test_size in (1, 4095, 4096, 4097, 16384):
             file_size = test_size + 1
-            junk = getrandbytes(file_size)
+            junk = randbytes(file_size)
             with zipfile.ZipFile(io.BytesIO(), "w", self.compression) as zipf:
                 zipf.writestr('foo', junk)
                 with zipf.open('foo', 'r') as fp:
@@ -2422,8 +2420,8 @@ class UnseekableTests(unittest.TestCase):
 class TestsWithMultipleOpens(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.data1 = b'111' + getrandbytes(10000)
-        cls.data2 = b'222' + getrandbytes(10000)
+        cls.data1 = b'111' + randbytes(10000)
+        cls.data2 = b'222' + randbytes(10000)
 
     def make_test_archive(self, f):
         # Create the ZIP archive
@@ -2880,7 +2878,7 @@ class TestPath(unittest.TestCase):
             a, b, g = root.iterdir()
             with a.open() as strm:
                 data = strm.read()
-            assert data == b"content of a"
+            assert data == "content of a"
 
     def test_read(self):
         for alpharep in self.zipfile_alpharep():
@@ -2973,6 +2971,11 @@ class TestPath(unittest.TestCase):
             entry.joinpath('suffix')
         # Check the file iterated all items
         assert entries.count == self.HUGE_ZIPFILE_NUM_ENTRIES
+
+    # @func_timeout.func_set_timeout(3)
+    def test_implied_dirs_performance(self):
+        data = ['/'.join(string.ascii_lowercase + str(n)) for n in range(10000)]
+        zipfile.CompleteDirs._implied_dirs(data)
 
 
 if __name__ == "__main__":

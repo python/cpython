@@ -358,7 +358,7 @@ an error value).
 .. c:function:: int PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level, const char *format, ...)
 
    Function similar to :c:func:`PyErr_WarnFormat`, but *category* is
-   :exc:`ResourceWarning` and pass *source* to :func:`warnings.WarningMessage`.
+   :exc:`ResourceWarning` and it passes *source* to :func:`warnings.WarningMessage`.
 
    .. versionadded:: 3.6
 

@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "frameobject.h"
 #include "rotatingtree.h"
 
 /************************************************************/
@@ -388,15 +387,22 @@ profiler_callback(PyObject *self, PyFrameObject *frame, int what,
 
     /* the 'frame' of a called function is about to start its execution */
     case PyTrace_CALL:
-        ptrace_enter_call(self, (void *)frame->f_code,
-                                (PyObject *)frame->f_code);
+    {
+        PyCodeObject *code = PyFrame_GetCode(frame);
+        ptrace_enter_call(self, (void *)code, (PyObject *)code);
+        Py_DECREF(code);
         break;
+    }
 
     /* the 'frame' of a called function is about to finish
        (either normally or with an exception) */
     case PyTrace_RETURN:
-        ptrace_leave_call(self, (void *)frame->f_code);
+    {
+        PyCodeObject *code = PyFrame_GetCode(frame);
+        ptrace_leave_call(self, (void *)code);
+        Py_DECREF(code);
         break;
+    }
 
     /* case PyTrace_EXCEPTION:
         If the exception results in the function exiting, a
@@ -578,8 +584,9 @@ static PyObject*
 profiler_getstats(ProfilerObject *pObj, PyObject* noarg)
 {
     statscollector_t collect;
-    if (pending_exception(pObj))
+    if (pending_exception(pObj)) {
         return NULL;
+    }
     if (!pObj->externalTimer || pObj->externalTimerUnit == 0.0) {
         _PyTime_t onesec = _PyTime_FromSeconds(1);
         collect.factor = (double)1 / onesec;
@@ -639,9 +646,15 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii:enable",
                                      kwlist, &subcalls, &builtins))
         return NULL;
-    if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0)
+    if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
         return NULL;
-    PyEval_SetProfile(profiler_callback, (PyObject*)self);
+    }
+
+    PyThreadState *tstate = PyThreadState_GET();
+    if (_PyEval_SetProfile(tstate, profiler_callback, (PyObject*)self) < 0) {
+        return NULL;
+    }
+
     self->flags |= POF_ENABLED;
     Py_RETURN_NONE;
 }
@@ -671,11 +684,16 @@ Stop collecting profiling information.\n\
 static PyObject*
 profiler_disable(ProfilerObject *self, PyObject* noarg)
 {
-    self->flags &= ~POF_ENABLED;
-    PyEval_SetProfile(NULL, NULL);
-    flush_unmatched(self);
-    if (pending_exception(self))
+    PyThreadState *tstate = PyThreadState_GET();
+    if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
         return NULL;
+    }
+    self->flags &= ~POF_ENABLED;
+
+    flush_unmatched(self);
+    if (pending_exception(self)) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -695,8 +713,13 @@ profiler_clear(ProfilerObject *pObj, PyObject* noarg)
 static void
 profiler_dealloc(ProfilerObject *op)
 {
-    if (op->flags & POF_ENABLED)
-        PyEval_SetProfile(NULL, NULL);
+    if (op->flags & POF_ENABLED) {
+        PyThreadState *tstate = PyThreadState_GET();
+        if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
+            PyErr_WriteUnraisable((PyObject *)op);
+        }
+    }
+
     flush_unmatched(op);
     clearEntries(op);
     Py_XDECREF(op->externalTimer);

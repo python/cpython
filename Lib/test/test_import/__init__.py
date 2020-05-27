@@ -436,16 +436,24 @@ class ImportTests(unittest.TestCase):
                 os.does_not_exist
 
     def test_concurrency(self):
+        # bpo 38091: this is a hack to slow down the code that calls
+        # has_deadlock(); the logic was itself sometimes deadlocking.
+        def delay_has_deadlock(frame, event, arg):
+            if event == 'call' and frame.f_code.co_name == 'has_deadlock':
+                time.sleep(0.1)
+
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
         try:
             exc = None
             def run():
+                sys.settrace(delay_has_deadlock)
                 event.wait()
                 try:
                     import package
                 except BaseException as e:
                     nonlocal exc
                     exc = e
+                sys.settrace(None)
 
             for i in range(10):
                 event = threading.Event()

@@ -32,6 +32,7 @@ from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import socket_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
 
 
@@ -365,6 +366,8 @@ class EventLoopTestsMixin:
 
         f2 = self.loop.run_in_executor(None, run)
         f2.cancel()
+        self.loop.run_until_complete(
+                self.loop.shutdown_default_executor())
         self.loop.close()
         self.loop.call_soon = patched_call_soon
         self.loop.call_soon_threadsafe = patched_call_soon
@@ -515,7 +518,7 @@ class EventLoopTestsMixin:
                 lambda: MyProto(loop=self.loop), *httpd.address)
             self._basetest_create_connection(conn_fut)
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_create_unix_connection(self):
         # Issue #20682: On Mac OS X Tiger, getsockname() returns a
         # zero-length address for UNIX socket.
@@ -617,7 +620,7 @@ class EventLoopTestsMixin:
             self._test_create_ssl_connection(httpd, create_connection,
                                              peername=httpd.address)
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_ssl_unix_connection(self):
         # Issue #20682: On Mac OS X Tiger, getsockname() returns a
@@ -636,7 +639,7 @@ class EventLoopTestsMixin:
 
     def test_create_connection_local_addr(self):
         with test_utils.run_test_server() as httpd:
-            port = support.find_unused_port()
+            port = socket_helper.find_unused_port()
             f = self.loop.create_connection(
                 lambda: MyProto(loop=self.loop),
                 *httpd.address, local_addr=(httpd.address[0], port))
@@ -841,7 +844,7 @@ class EventLoopTestsMixin:
 
         return server, path
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_create_unix_server(self):
         proto = MyProto(loop=self.loop)
         server, path = self._make_unix_server(lambda: proto)
@@ -933,7 +936,7 @@ class EventLoopTestsMixin:
         # stop serving
         server.close()
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_unix_server_ssl(self):
         proto = MyProto(loop=self.loop)
@@ -993,7 +996,7 @@ class EventLoopTestsMixin:
         self.assertIsNone(proto.transport)
         server.close()
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_unix_server_ssl_verify_failed(self):
         proto = MyProto(loop=self.loop)
@@ -1053,7 +1056,7 @@ class EventLoopTestsMixin:
         self.assertIsNone(proto.transport)
         server.close()
 
-    @support.skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_unix_server_ssl_verified(self):
         proto = MyProto(loop=self.loop)
@@ -1146,7 +1149,7 @@ class EventLoopTestsMixin:
 
         server.close()
 
-    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 not supported or enabled')
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 not supported or enabled')
     def test_create_server_dual_stack(self):
         f_proto = self.loop.create_future()
 
@@ -1158,7 +1161,7 @@ class EventLoopTestsMixin:
         try_count = 0
         while True:
             try:
-                port = support.find_unused_port()
+                port = socket_helper.find_unused_port()
                 f = self.loop.create_server(TestMyProto, host=None, port=port)
                 server = self.loop.run_until_complete(f)
             except OSError as ex:

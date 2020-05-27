@@ -27,7 +27,7 @@ of data it contains.  An object's type is fixed when it is created.
 Types themselves are represented as objects; an object contains a
 pointer to the corresponding type object.  The type itself has a type
 pointer pointing to the object representing the type 'type', which
-contains a pointer to itself!).
+contains a pointer to itself!.
 
 Objects do not float around in memory; once allocated an object keeps
 the same size and address.  Objects that must hold variable-size data
@@ -110,6 +110,7 @@ typedef struct _object {
 
 /* Cast argument to PyObject* type. */
 #define _PyObject_CAST(op) ((PyObject*)(op))
+#define _PyObject_CAST_CONST(op) ((const PyObject*)(op))
 
 typedef struct {
     PyObject ob_base;
@@ -123,10 +124,10 @@ typedef struct {
 #define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
 #define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
 
-static inline int _Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
+static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
     return ob->ob_type == type;
 }
-#define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST(ob), type)
+#define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     ob->ob_refcnt = refcnt;
@@ -211,6 +212,11 @@ PyAPI_FUNC(PyObject*) PyType_FromSpecWithBases(PyType_Spec*, PyObject*);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
 PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObject *);
+PyAPI_FUNC(PyObject *) PyType_GetModule(struct _typeobject *);
+PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 #endif
 
 /* Generic type check */
@@ -613,11 +619,7 @@ times.
 
 static inline int
 PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-#ifdef Py_LIMITED_API
     return ((PyType_GetFlags(type) & feature) != 0);
-#else
-    return ((type->tp_flags & feature) != 0);
-#endif
 }
 
 #define PyType_FastSubclass(type, flag) PyType_HasFeature(type, flag)

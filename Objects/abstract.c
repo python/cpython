@@ -1,10 +1,12 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <ctype.h>
-#include "structmember.h" /* we need the offsetof() macro from there */
+#include <stddef.h>               // offsetof()
 #include "longintrepr.h"
 
 
@@ -159,7 +161,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 
     ms = Py_TYPE(o)->tp_as_sequence;
     if (ms && ms->sq_item) {
-        if (PyIndex_Check(key)) {
+        if (_PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
             if (key_value == -1 && PyErr_Occurred())
@@ -175,6 +177,12 @@ PyObject_GetItem(PyObject *o, PyObject *key)
     if (PyType_Check(o)) {
         PyObject *meth, *result;
         _Py_IDENTIFIER(__class_getitem__);
+
+        // Special case type[int], but disallow other types so str[int] fails
+        if ((PyTypeObject*)o == &PyType_Type) {
+            return Py_GenericAlias(o, key);
+        }
+
         if (_PyObject_LookupAttrId(o, &PyId___class_getitem__, &meth) < 0) {
             return NULL;
         }
@@ -202,7 +210,7 @@ PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
         return m->mp_ass_subscript(o, key, value);
 
     if (Py_TYPE(o)->tp_as_sequence) {
-        if (PyIndex_Check(key)) {
+        if (_PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
             if (key_value == -1 && PyErr_Occurred())
@@ -234,7 +242,7 @@ PyObject_DelItem(PyObject *o, PyObject *key)
         return m->mp_ass_subscript(o, key, (PyObject*)NULL);
 
     if (Py_TYPE(o)->tp_as_sequence) {
-        if (PyIndex_Check(key)) {
+        if (_PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
             if (key_value == -1 && PyErr_Occurred())
@@ -269,6 +277,16 @@ PyObject_DelItemString(PyObject *o, const char *key)
     Py_DECREF(okey);
     return ret;
 }
+
+
+/* Return 1 if the getbuffer function is available, otherwise return 0. */
+int
+PyObject_CheckBuffer(PyObject *obj)
+{
+    PyBufferProcs *tp_as_buffer = Py_TYPE(obj)->tp_as_buffer;
+    return (tp_as_buffer != NULL && tp_as_buffer->bf_getbuffer != NULL);
+}
+
 
 /* We release the buffer right after use of this function which could
    cause issues later on.  Don't use these functions in new code.
@@ -834,7 +852,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 
     if (Py_TYPE(v)->tp_as_number != NULL)
         slotv = NB_BINOP(Py_TYPE(v)->tp_as_number, op_slot);
-    if (Py_TYPE(w) != Py_TYPE(v) &&
+    if (!Py_IS_TYPE(w, Py_TYPE(v)) &&
         Py_TYPE(w)->tp_as_number != NULL) {
         slotw = NB_BINOP(Py_TYPE(w)->tp_as_number, op_slot);
         if (slotw == slotv)
@@ -882,7 +900,7 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
         Py_DECREF(result);
 
         if (op_slot == NB_SLOT(nb_rshift) &&
-            PyCFunction_Check(v) &&
+            PyCFunction_CheckExact(v) &&
             strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
         {
             PyErr_Format(PyExc_TypeError,
@@ -925,8 +943,7 @@ ternary_op(PyObject *v,
     mw = Py_TYPE(w)->tp_as_number;
     if (mv != NULL)
         slotv = NB_TERNOP(mv, op_slot);
-    if (Py_TYPE(w) != Py_TYPE(v) &&
-        mw != NULL) {
+    if (!Py_IS_TYPE(w, Py_TYPE(v)) && mw != NULL) {
         slotw = NB_TERNOP(mw, op_slot);
         if (slotw == slotv)
             slotw = NULL;
@@ -1014,7 +1031,7 @@ static PyObject *
 sequence_repeat(ssizeargfunc repeatfunc, PyObject *seq, PyObject *n)
 {
     Py_ssize_t count;
-    if (PyIndex_Check(n)) {
+    if (_PyIndex_Check(n)) {
         count = PyNumber_AsSsize_t(n, PyExc_OverflowError);
         if (count == -1 && PyErr_Occurred())
             return NULL;
@@ -1291,14 +1308,13 @@ PyNumber_Absolute(PyObject *o)
     return type_error("bad operand type for abs(): '%.200s'", o);
 }
 
-#undef PyIndex_Check
 
 int
 PyIndex_Check(PyObject *obj)
 {
-    return Py_TYPE(obj)->tp_as_number != NULL &&
-           Py_TYPE(obj)->tp_as_number->nb_index != NULL;
+    return _PyIndex_Check(obj);
 }
+
 
 /* Return a Python int from the object item.
    Raise TypeError if the result is not an int
@@ -1316,7 +1332,7 @@ PyNumber_Index(PyObject *item)
         Py_INCREF(item);
         return item;
     }
-    if (!PyIndex_Check(item)) {
+    if (!_PyIndex_Check(item)) {
         PyErr_Format(PyExc_TypeError,
                      "'%.200s' object cannot be interpreted "
                      "as an integer", Py_TYPE(item)->tp_name);
@@ -1552,18 +1568,15 @@ PyNumber_Float(PyObject *o)
 PyObject *
 PyNumber_ToBase(PyObject *n, int base)
 {
-    PyObject *res = NULL;
+    if (!(base == 2 || base == 8 || base == 10 || base == 16)) {
+        PyErr_SetString(PyExc_SystemError,
+                        "PyNumber_ToBase: base must be 2, 8, 10 or 16");
+        return NULL;
+    }
     PyObject *index = PyNumber_Index(n);
-
     if (!index)
         return NULL;
-    if (PyLong_Check(index))
-        res = _PyLong_Format(index, base);
-    else
-        /* It should not be possible to get here, as
-           PyNumber_Index already has a check for the same
-           condition */
-        PyErr_SetString(PyExc_ValueError, "PyNumber_ToBase: index not int");
+    PyObject *res = _PyLong_Format(index, base);
     Py_DECREF(index);
     return res;
 }
@@ -2274,7 +2287,7 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
             PyErr_Format(PyExc_TypeError,
                          "%.200s.%U() returned a non-iterable (type %.200s)",
                          Py_TYPE(o)->tp_name,
-                         meth_id->object,
+                         _PyUnicode_FromId(meth_id),
                          Py_TYPE(meth_output)->tp_name);
         }
         Py_DECREF(meth_output);
@@ -2472,7 +2485,7 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
     _Py_IDENTIFIER(__instancecheck__);
 
     /* Quick test for an exact match */
-    if (Py_TYPE(inst) == (PyTypeObject *)cls) {
+    if (Py_IS_TYPE(inst, (PyTypeObject *)cls)) {
         return 1;
     }
 

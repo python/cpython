@@ -118,6 +118,18 @@ class AuditTest(unittest.TestCase):
         self.assertSequenceEqual(["winreg.EnumKey", " ", f"{expected} 10000"], events[3])
         self.assertSequenceEqual(["winreg.PyHKEY.Detach", " ", expected], events[4])
 
+    def test_socket(self):
+        support.import_module("socket")
+        returncode, events, stderr = self.run_python("test_socket")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(events[0][0], "socket.gethostname")
+        self.assertEqual(events[1][0], "socket.__new__")
+        self.assertEqual(events[2][0], "socket.bind")
+        self.assertTrue(events[2][2].endswith("('127.0.0.1', 8080)"))
 
 if __name__ == "__main__":
     unittest.main()
