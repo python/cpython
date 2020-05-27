@@ -1692,7 +1692,7 @@ Deprecated
   :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
   parameter of functions :func:`~gettext.translation` and
   :func:`~gettext.install` are also deprecated, since they are only used for
-  for the ``l*gettext()`` functions.
+  the ``l*gettext()`` functions.
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`

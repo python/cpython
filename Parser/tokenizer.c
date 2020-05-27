@@ -32,10 +32,6 @@
                || c == '_'\
                || (c >= 128))
 
-extern char *PyOS_Readline(FILE *, FILE *, const char *);
-/* Return malloc'ed string including trailing \n;
-   empty malloc'ed string for EOF;
-   NULL if interrupted */
 
 /* Don't ever change this -- it would break the portability of Python code */
 #define TABSIZE 8

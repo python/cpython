@@ -82,11 +82,6 @@ array_array_pop(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = PyNumber_Index(args[0]);
@@ -135,11 +130,6 @@ array_array_insert(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *v;
 
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     {
@@ -253,11 +243,6 @@ array_array_fromfile(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     f = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = PyNumber_Index(args[1]);
@@ -483,11 +468,6 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
     typecode = PyUnicode_READ_CHAR(args[1], 0);
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     mformat_code = _PyLong_AsInt(args[2]);
     if (mformat_code == -1 && PyErr_Occurred()) {
         goto exit;
@@ -534,4 +514,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=9f70748dd3bc532f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c953eb8486c7c8da input=a9049054013a1b77]*/

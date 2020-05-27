@@ -1,2 +1,0 @@
-Update multissltest helper to test with latest OpenSSL 1.0.2, 1.1.0, 1.1.1,
-and 3.0.0-alpha.

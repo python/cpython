@@ -16,6 +16,7 @@ import struct
 import tempfile
 import unittest
 from datetime import date, datetime, time, timedelta, timezone
+from functools import cached_property
 
 from . import _support as test_support
 from ._support import (
@@ -72,10 +73,18 @@ class TzPathUserMixin:
     def tzpath(self):  # pragma: nocover
         return None
 
+    @property
+    def block_tzdata(self):
+        return True
+
     def setUp(self):
         with contextlib.ExitStack() as stack:
             stack.enter_context(
-                self.tzpath_context(self.tzpath, lock=TZPATH_TEST_LOCK)
+                self.tzpath_context(
+                    self.tzpath,
+                    block_tzdata=self.block_tzdata,
+                    lock=TZPATH_TEST_LOCK,
+                )
             )
             self.addCleanup(stack.pop_all().close)
 
@@ -521,6 +530,10 @@ class TZDataTests(ZoneInfoTest):
     @property
     def tzpath(self):
         return []
+
+    @property
+    def block_tzdata(self):
+        return False
 
     def zone_from_key(self, key):
         return self.klass(key=key)
@@ -1628,6 +1641,32 @@ class CTzPathTest(TzPathTest):
 class TestModule(ZoneInfoTestBase):
     module = py_zoneinfo
 
+    @property
+    def zoneinfo_data(self):
+        return ZONEINFO_DATA
+
+    @cached_property
+    def _UTC_bytes(self):
+        zone_file = self.zoneinfo_data.path_from_key("UTC")
+        with open(zone_file, "rb") as f:
+            return f.read()
+
+    def touch_zone(self, key, tz_root):
+        """Creates a valid TZif file at key under the zoneinfo root tz_root.
+
+        tz_root must exist, but all folders below that will be created.
+        """
+        if not os.path.exists(tz_root):
+            raise FileNotFoundError(f"{tz_root} does not exist.")
+
+        root_dir, *tail = key.rsplit("/", 1)
+        if tail:  # If there's no tail, then the first component isn't a dir
+            os.makedirs(os.path.join(tz_root, root_dir), exist_ok=True)
+
+        zonefile_path = os.path.join(tz_root, key)
+        with open(zonefile_path, "wb") as f:
+            f.write(self._UTC_bytes)
+
     def test_getattr_error(self):
         with self.assertRaises(AttributeError):
             self.module.NOATTRIBUTE
@@ -1647,6 +1686,79 @@ class TestModule(ZoneInfoTestBase):
         module_unique = set(module_dir)
 
         self.assertCountEqual(module_dir, module_unique)
+
+    def test_available_timezones(self):
+        with self.tzpath_context([self.zoneinfo_data.tzpath]):
+            self.assertTrue(self.zoneinfo_data.keys)  # Sanity check
+
+            available_keys = self.module.available_timezones()
+            zoneinfo_keys = set(self.zoneinfo_data.keys)
+
+            # If tzdata is not present, zoneinfo_keys == available_keys,
+            # otherwise it should be a subset.
+            union = zoneinfo_keys & available_keys
+            self.assertEqual(zoneinfo_keys, union)
+
+    def test_available_timezones_weirdzone(self):
+        with tempfile.TemporaryDirectory() as td:
+            # Make a fictional zone at "Mars/Olympus_Mons"
+            self.touch_zone("Mars/Olympus_Mons", td)
+
+            with self.tzpath_context([td]):
+                available_keys = self.module.available_timezones()
+                self.assertIn("Mars/Olympus_Mons", available_keys)
+
+    def test_folder_exclusions(self):
+        expected = {
+            "America/Los_Angeles",
+            "America/Santiago",
+            "America/Indiana/Indianapolis",
+            "UTC",
+            "Europe/Paris",
+            "Europe/London",
+            "Asia/Tokyo",
+            "Australia/Sydney",
+        }
+
+        base_tree = list(expected)
+        posix_tree = [f"posix/{x}" for x in base_tree]
+        right_tree = [f"right/{x}" for x in base_tree]
+
+        cases = [
+            ("base_tree", base_tree),
+            ("base_and_posix", base_tree + posix_tree),
+            ("base_and_right", base_tree + right_tree),
+            ("all_trees", base_tree + right_tree + posix_tree),
+        ]
+
+        with tempfile.TemporaryDirectory() as td:
+            for case_name, tree in cases:
+                tz_root = os.path.join(td, case_name)
+                os.mkdir(tz_root)
+
+                for key in tree:
+                    self.touch_zone(key, tz_root)
+
+                with self.tzpath_context([tz_root]):
+                    with self.subTest(case_name):
+                        actual = self.module.available_timezones()
+                        self.assertEqual(actual, expected)
+
+    def test_exclude_posixrules(self):
+        expected = {
+            "America/New_York",
+            "Europe/London",
+        }
+
+        tree = list(expected) + ["posixrules"]
+
+        with tempfile.TemporaryDirectory() as td:
+            for key in tree:
+                self.touch_zone(key, td)
+
+            with self.tzpath_context([td]):
+                actual = self.module.available_timezones()
+                self.assertEqual(actual, expected)
 
 
 class CTestModule(TestModule):

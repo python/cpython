@@ -35,7 +35,8 @@ on efficient attribute extraction for output formatting and manipulation.
 Aware and Naive Objects
 -----------------------
 
-Date and time objects may be categorized as "aware" or "naive."
+Date and time objects may be categorized as "aware" or "naive" depending on
+whether or not they include timezone information.
 
 With sufficient knowledge of applicable algorithmic and political time
 adjustments, such as time zone and daylight saving time information,

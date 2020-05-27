@@ -845,17 +845,15 @@ regen-pegen:
 
 .PHONY=regen-ast
 regen-ast:
-	# Regenerate Include/Python-ast.h using Parser/asdl_c.py -h
+	# Regenerate Include/Python-ast.h and Python/Python-ast.c using Parser/asdl_c.py
 	$(MKDIR_P) $(srcdir)/Include
-	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
-		-h $(srcdir)/Include/Python-ast.h.new \
-		$(srcdir)/Parser/Python.asdl
-	$(UPDATE_FILE) $(srcdir)/Include/Python-ast.h $(srcdir)/Include/Python-ast.h.new
-	# Regenerate Python/Python-ast.c using Parser/asdl_c.py -c
 	$(MKDIR_P) $(srcdir)/Python
 	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
-		-c $(srcdir)/Python/Python-ast.c.new \
-		$(srcdir)/Parser/Python.asdl
+		$(srcdir)/Parser/Python.asdl \
+		-H $(srcdir)/Include/Python-ast.h.new \
+		-C $(srcdir)/Python/Python-ast.c.new
+
+	$(UPDATE_FILE) $(srcdir)/Include/Python-ast.h $(srcdir)/Include/Python-ast.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
 
 .PHONY: regen-opcode
@@ -1431,6 +1429,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_importlib/source \
 		test/test_importlib/zipdata01 \
 		test/test_importlib/zipdata02 \
+		test/test_zoneinfo test/test_zoneinfo/data \
 		test/ziptestdata \
 		asyncio \
 		test/test_asyncio \
@@ -1452,7 +1451,8 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test unittest/test/testmock \
 		venv venv/scripts venv/scripts/common venv/scripts/posix \
-		curses pydoc_data
+		curses pydoc_data \
+		zoneinfo
 libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \

@@ -8156,8 +8156,6 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 }
 #endif /* defined(HAVE_READLINK) || defined(MS_WINDOWS) */
 
-#ifdef HAVE_SYMLINK
-
 #if defined(MS_WINDOWS)
 
 /* Remove the last portion of the path - return 0 on success */
@@ -8179,6 +8177,12 @@ _dirnameW(WCHAR *path)
     *ptr = 0;
     return 0;
 }
+
+#endif
+
+#ifdef HAVE_SYMLINK
+
+#if defined(MS_WINDOWS)
 
 /* Is this path absolute? */
 static int
@@ -13899,11 +13903,6 @@ static PyObject *
 os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 /*[clinic end generated code: output=db50b1b0ba3c7153 input=7fe2d7fdaea3db42]*/
 {
-    if (PyFloat_Check(status_obj)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        return NULL;
-    }
 #ifndef MS_WINDOWS
     int status = _PyLong_AsInt(status_obj);
     if (status == -1 && PyErr_Occurred()) {

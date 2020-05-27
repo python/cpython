@@ -59,12 +59,14 @@ static PyStructSequence_Field floatinfo_fields[] = {
                     "is a normalized float"},
     {"min_10_exp",      "DBL_MIN_10_EXP -- minimum int e such that 10**e is "
                     "a normalized"},
-    {"dig",             "DBL_DIG -- digits"},
+    {"dig",             "DBL_DIG -- maximum number of decimal digits that "
+                    "can be faithfully represented in a float"},
     {"mant_dig",        "DBL_MANT_DIG -- mantissa digits"},
     {"epsilon",         "DBL_EPSILON -- Difference between 1 and the next "
                     "representable float"},
     {"radix",           "FLT_RADIX -- radix of exponent"},
-    {"rounds",          "FLT_ROUNDS -- rounding mode"},
+    {"rounds",          "FLT_ROUNDS -- rounding mode used for arithmetic "
+                    "operations"},
     {0}
 };
 

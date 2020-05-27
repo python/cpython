@@ -591,6 +591,7 @@ FAIL_TEST_CASES = [
     ("f-string_single_closing_brace", "f'}'"),
     ("from_import_invalid", "from import import a"),
     ("from_import_trailing_comma", "from a import b,"),
+    ("import_non_ascii_syntax_error", "import ä £"),
     # This test case checks error paths involving tokens with uninitialized
     # values of col_offset and end_col_offset.
     ("invalid indentation",
