@@ -2747,25 +2747,44 @@ compiler_if(struct compiler *c, stmt_ty s)
 }
 
 static int
+compiler_pattern_name_store(struct compiler *c, expr_ty p)
+{
+    assert(p->kind == Name_kind);
+    assert(p->v.Name.ctx == Store);
+    if (_PyUnicode_EqualToASCIIString(p->v.Name.id, "_")) {
+        ADDOP(c, POP_TOP);
+    }
+    else {
+        VISIT(c, expr, p);
+    }
+    return 1;
+}
+
+static int
 compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
 {
     // TODO: This inital implementation keeps things simple(-ish), but creates a
     // TON of blocks and zero-length jumps, especially for sequences. Simplify?
     // The zero-length jumps can probably be peep-holed.
     basicblock *sub_no, *sub_yes;
+    Py_ssize_t i, size, star;
     asdl_seq *elts;
-    Py_ssize_t i, size;
+    expr_ty elt;
     switch (p->kind) {
         // Atomic patterns:
         case Name_kind:
             if (p->v.Name.ctx == Store) {
-                if (!_PyUnicode_EqualToASCIIString(p->v.Name.id, "_")) {
-                    VISIT(c, expr, p);
+                if (!compiler_pattern_name_store(c, p)) {
+                    return 0;
                 }
                 ADDOP_JREL(c, JUMP_FORWARD, yes);
                 return 1;
-            }  // Loads fall through.
+            }
+            assert(p->v.Name.ctx == Load);
+            // Fall through...
         case Attribute_kind:
+            assert(p->kind != Attribute_kind || p->v.Attribute.ctx == Load);
+            // Fall through....
         case Constant_kind:
             VISIT(c, expr, p);
             ADDOP_COMPARE(c, Eq);
@@ -2774,6 +2793,7 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
             return 1;
         // Nested patterns:
         case BinOp_kind:
+            assert(p->v.BinOp.op == BitOr);
             ADDOP(c, DUP_TOP);
             sub_yes = compiler_new_block(c);
             sub_no = compiler_new_block(c);
@@ -2797,11 +2817,45 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *yes, basicblock *no)
             sub_no = compiler_new_block(c);
             elts = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
             size = asdl_seq_LEN(elts);
+            star = -1;
+            for (i = 0; i < size; i++) {
+                elt = asdl_seq_GET(elts, i);
+                if (elt->kind != Starred_kind) {
+                    continue;
+                }
+                if (elt->kind != Name_kind || elt->v.Name.ctx != Store) {
+                    return compiler_error(c,
+                        "starred sub-patterns must be names");
+                }
+                if (star >= 0) {
+                    return compiler_error(c,
+                        "multiple starred names in pattern");
+                }
+                if ((size - i - 1) << 8 >= INT_MAX) {
+                    return compiler_error(c,
+                        "too many sub-patterns follow starred sub-pattern");
+                }
+                star = i;
+            }
             for (i = 0; i < size; i++) {
                 sub_yes = compiler_new_block(c);
-                ADDOP_JREL(c, FOR_ITER, no);
-                if (!compiler_pattern(c, asdl_seq_GET(elts, i), sub_yes, sub_no)) {
-                    return 0;
+                elt = asdl_seq_GET(elts, i);
+                if (i == star) {
+                    assert(elt->kind == Starred_kind);
+                    ADDOP_I(c, UNPACK_EX, (size - i - 1) << 8);
+                    if (!compiler_pattern_name_store(c, elt->v.Starred.value)) {
+                        return 0;
+                    }
+                    if (size - i - 1) {
+                        ADDOP_I(c, BUILD_TUPLE, size - i - 1);
+                        ADDOP(c, GET_ITER);
+                    }
+                }
+                else {
+                    ADDOP_JREL(c, FOR_ITER, no);
+                    if (!compiler_pattern(c, elt, sub_yes, sub_no)) {
+                        return 0;
+                    }
                 }
                 compiler_use_next_block(c, sub_yes);
             }

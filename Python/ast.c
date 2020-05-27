@@ -306,13 +306,15 @@ static int
 validate_pattern(expr_ty p)
 {
     asdl_seq *elts;
+    expr_ty elt;
     Py_ssize_t i, size;
+    char *error = "invalid Match pattern";
     switch (p->kind) {
         case Attribute_kind:
             return validate_expr(p, Load);
         case BinOp_kind:
             if (p->v.BinOp.op != BitOr) {
-                break;
+                error = "BinOp op in pattern must be BitOr";
             }
             return (validate_pattern(p->v.BinOp.left)
                     && validate_pattern(p->v.BinOp.right));
@@ -323,14 +325,18 @@ validate_pattern(expr_ty p)
             elts = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
             size = asdl_seq_LEN(elts);
             for (i = 0; i < size; i++) {
-                if (!validate_pattern(asdl_seq_GET(elts, i))) {
+                elt = asdl_seq_GET(elts, i);
+                if (elt->kind == Starred_kind) {
+                    elt = elt->v.Starred.value;
+                }
+                if (!validate_pattern(elt)) {
                     return 0;
                 }
             }
             return 1;
         case Name_kind:
             if (p->v.Name.ctx != Load && p->v.Name.ctx != Store) {
-                break;
+                error = "Name ctx in pattern must be either Load or Store";
             }
             return validate_expr(p, p->v.Name.ctx);
         case NamedExpr_kind:
@@ -338,7 +344,7 @@ validate_pattern(expr_ty p)
         default:
             break;
     }
-    PyErr_SetString(PyExc_SystemError, "invalid match pattern");
+    PyErr_SetString(PyExc_ValueError, error);
     return 0;
 }
 
