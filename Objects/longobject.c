@@ -5447,30 +5447,33 @@ static PyObject *
 int_bit_count_impl(PyObject *self)
 /*[clinic end generated code: output=2e571970daf1e5c3 input=a428900d3e39a606]*/
 {
-    Py_ssize_t ndigits, i, bit_count = 0;
-    PyLongObject *result, *x, *y;
-
     assert(self != NULL);
     assert(PyLong_Check(self));
 
-    ndigits = Py_ABS(Py_SIZE(self));
+    PyLongObject *z = (PyLongObject *)self;
+    Py_ssize_t ndigits = Py_ABS(Py_SIZE(self));
+    Py_ssize_t bit_count = 0;
 
-    for (i = 0; i < ndigits && i < PY_SSIZE_T_MAX/PyLong_SHIFT; i++) {
-        bit_count += popcount_digit(((PyLongObject *)self)->ob_digit[i]);
+    /* Each digit has up to PyLong_SHIFT ones, so the accumulated bit count
+       from the first PY_SSIZE_T_MAX/PyLong_SHIFT digits can't overflow a
+       Py_ssize_t. */
+    Py_ssize_t ndigits_fast = Py_MIN(ndigits, PY_SSIZE_T_MAX/PyLong_SHIFT);
+    for (Py_ssize_t i = 0; i < ndigits_fast; i++) {
+        bit_count += popcount_digit(z->ob_digit[i]);
     }
 
-    result = (PyLongObject *)PyLong_FromSsize_t(bit_count);
+    PyObject *result = PyLong_FromSsize_t(bit_count);
     if (result == NULL) {
         return NULL;
     }
 
     /* Use Python integers if bit_count would overflow. */
-    for (; i < ndigits; i++) {
-        x = (PyLongObject *)PyLong_FromLong(popcount_digit(((PyLongObject *)self)->ob_digit[i]));
+    for (Py_ssize_t i = ndigits_fast; i < ndigits; i++) {
+        PyObject *x = PyLong_FromLong(popcount_digit(z->ob_digit[i]));
         if (x == NULL) {
             goto error;
         }
-        y = (PyLongObject *)long_add(result, x);
+        PyObject *y = long_add((PyLongObject *)result, (PyLongObject *)x);
         Py_DECREF(x);
         if (y == NULL) {
             goto error;
@@ -5479,7 +5482,7 @@ int_bit_count_impl(PyObject *self)
         result = y;
     }
 
-    return (PyObject *)result;
+    return result;
 
   error:
     Py_DECREF(result);
