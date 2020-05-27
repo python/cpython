@@ -1,0 +1,1 @@
+Make sure that having the :term:`tempfile.tempdir` variable set as bytes is handled consistently and that the getter functions return the right type, str or bytes.
