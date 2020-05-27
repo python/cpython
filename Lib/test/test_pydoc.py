@@ -81,7 +81,7 @@ CLASSES
      |\x20\x20
      |  NO_MEANING = 'eggs'
      |\x20\x20
-     |  __annotations__ = {'NO_MEANING': <class 'str'>}
+     |  __annotations__ = {'NO_MEANING': 'str'}
 \x20\x20\x20\x20
     class C(builtins.object)
      |  Methods defined here:
@@ -194,7 +194,7 @@ Data descriptors defined here:<br>
 Data and other attributes defined here:<br>
 <dl><dt><strong>NO_MEANING</strong> = 'eggs'</dl>
 
-<dl><dt><strong>__annotations__</strong> = {'NO_MEANING': &lt;class 'str'&gt;}</dl>
+<dl><dt><strong>__annotations__</strong> = {'NO_MEANING': 'str'}</dl>
 
 </td></tr></table> <p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -1055,8 +1055,8 @@ class TestDescriptions(unittest.TestCase):
         T = typing.TypeVar('T')
         class C(typing.Generic[T], typing.Mapping[int, str]): ...
         self.assertEqual(pydoc.render_doc(foo).splitlines()[-1],
-                         'f\x08fo\x08oo\x08o(data: List[Any], x: int)'
-                         ' -> Iterator[Tuple[int, Any]]')
+                         'f\x08fo\x08oo\x08o(data: \'typing.List[typing.Any]\', x: \'int\')'
+                         ' -> \'typing.Iterator[typing.Tuple[int, typing.Any]]\'')
         self.assertEqual(pydoc.render_doc(C).splitlines()[2],
                          'class C\x08C(collections.abc.Mapping, typing.Generic)')
 

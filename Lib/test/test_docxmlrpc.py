@@ -188,9 +188,9 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
                      b'<dd><tt>Use&nbsp;function&nbsp;annotations.</tt></dd>')
         self.assertIn(
             (b'<dl><dt><a name="-annotation"><strong>annotation</strong></a>'
-             b'(x: int)</dt>' + docstring + b'</dl>\n'
+             b'(x: \'int\')</dt>' + docstring + b'</dl>\n'
              b'<dl><dt><a name="-method_annotation"><strong>'
-             b'method_annotation</strong></a>(x: bytes)</dt></dl>'),
+             b'method_annotation</strong></a>(x: \'bytes\')</dt></dl>'),
             response.read())
 
     def test_server_title_escape(self):
