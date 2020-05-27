@@ -140,9 +140,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionchanged:: 3.8
       Use :meth:`__index__` if available.
 
-   .. deprecated:: 3.8
-      Using :meth:`__int__` is deprecated.
-
    .. versionchanged:: 3.10
       This function will no longer use :meth:`__int__`.
 
@@ -162,9 +159,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionchanged:: 3.8
       Use :meth:`__index__` if available.
-
-   .. deprecated:: 3.8
-      Using :meth:`__int__` is deprecated.
 
    .. versionchanged:: 3.10
       This function will no longer use :meth:`__int__`.
@@ -187,9 +181,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionchanged:: 3.8
       Use :meth:`__index__` if available.
 
-   .. deprecated:: 3.8
-      Using :meth:`__int__` is deprecated.
-
    .. versionchanged:: 3.10
       This function will no longer use :meth:`__int__`.
 
@@ -211,9 +202,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionchanged:: 3.8
       Use :meth:`__index__` if available.
-
-   .. deprecated:: 3.8
-      Using :meth:`__int__` is deprecated.
 
    .. versionchanged:: 3.10
       This function will no longer use :meth:`__int__`.
@@ -299,9 +287,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionchanged:: 3.8
       Use :meth:`__index__` if available.
 
-   .. deprecated:: 3.8
-      Using :meth:`__int__` is deprecated.
-
    .. versionchanged:: 3.10
       This function will no longer use :meth:`__int__`.
 
@@ -321,9 +306,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionchanged:: 3.8
       Use :meth:`__index__` if available.
-
-   .. deprecated:: 3.8
-      Using :meth:`__int__` is deprecated.
 
    .. versionchanged:: 3.10
       This function will no longer use :meth:`__int__`.
