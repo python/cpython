@@ -5334,7 +5334,7 @@ int_bit_count_impl(PyObject *self)
     assert(PyLong_Check(self));
 
     PyLongObject *z = (PyLongObject *)self;
-    Py_ssize_t ndigits = Py_ABS(Py_SIZE(self));
+    Py_ssize_t ndigits = Py_ABS(Py_SIZE(z));
     Py_ssize_t bit_count = 0;
 
     /* Each digit has up to PyLong_SHIFT ones, so the accumulated bit count
