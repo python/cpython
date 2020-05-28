@@ -111,3 +111,22 @@ These opcodes are followed by a single integer argument.
 
 - `OP_SUCCESS` -- call the action given by the argument, and exit the
   VM with its return value as result.
+
+Ideas
+-----
+
+We need to extend the VM to support loops and lookaheads.
+
+- Standard loops (`a*`, `a+`, `a.b+`) -- add a new opcode that resets
+  the instruction pointer without destroying the captured value; need
+  a new frame field to store the collected values.  (Probably needs
+  several opcodes.)
+
+- Positive lookahead (`&a`) -- add a new opcode to save the mark in a
+  new frame field, and another opcode that restores the mark from
+  there.
+
+- Negative lookahead (`!a`) -- add another opcode that catches failure
+  and turns it into success, restoring the saved mark.
+
+- Left-recursion -- hmm, tricky...

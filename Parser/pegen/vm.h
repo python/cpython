@@ -93,11 +93,12 @@ static Rule all_rules[] = {
 static void *
 call_action(Parser *p, Frame *f, int iaction)
 {
-    // TODO: compute lineno and col offset (put in frame?)
-    int _start_lineno = 1;
-    int _start_col_offset = 1;
-    int _end_lineno = 99;
-    int _end_col_offset = 99;
+    Token *t = p->tokens[f->mark];
+    int _start_lineno = t->lineno;
+    int _start_col_offset = t->col_offset;
+    t = p->tokens[p->mark - 1];
+    int _end_lineno = t->end_lineno;
+    int _end_col_offset = t->end_col_offset;
 
     switch (iaction) {
     case 0:
