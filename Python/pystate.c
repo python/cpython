@@ -315,6 +315,8 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
     Py_CLEAR(interp->dict);
+    Py_CLEAR(interp->map_abc);
+    Py_CLEAR(interp->seq_abc);
 #ifdef HAVE_FORK
     Py_CLEAR(interp->before_forkers);
     Py_CLEAR(interp->after_forkers_parent);

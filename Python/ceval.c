@@ -848,6 +848,50 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     return 0;
 }
 
+// Need these for pattern matching:
+
+// static int
+// check_match_mapping_type(PyObject *target)
+// {
+//     PyInterpreterState *interp = PyInterpreterState_Get();
+//     if (!interp) {
+//         return -1;
+//     }
+//     if (!interp->map_abc) {
+//         PyObject *abc = PyImport_ImportModule("_collections_abc");
+//         if (!abc) {
+//             return -1;
+//         }
+//         interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
+//         Py_DECREF(abc);
+//     }
+//     return PyObject_IsInstance(target, interp->map_abc);
+// }
+
+static int
+check_match_sequence_type(PyObject *target)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (!interp) {
+        return -1;
+    }
+    if (!interp->seq_abc) {
+        PyObject *abc = PyImport_ImportModule("_collections_abc");
+        if (!abc) {
+            return -1;
+        }
+        interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
+        Py_DECREF(abc);
+    }
+    return (
+        PyObject_IsInstance(target, interp->seq_abc)
+        && !PyIter_Check(target)
+        && !PyObject_TypeCheck(target, &PyUnicode_Type)
+        && !PyObject_TypeCheck(target, &PyBytes_Type)
+        && !PyObject_TypeCheck(target, &PyByteArray_Type)
+    );
+}
+
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 
@@ -3286,11 +3330,11 @@ main_loop:
 
         case TARGET(GET_MATCH_ITER): {
             PyObject *target = TOP();
-            if (!PySequence_Check(target)
-                || PyObject_TypeCheck(target, &PyUnicode_Type)
-                || PyObject_TypeCheck(target, &PyBytes_Type)
-                || PyObject_TypeCheck(target, &PyByteArray_Type)
-            ) {
+            int check = check_match_sequence_type(target);
+            if (check < 0) {
+                goto error;
+            }
+            if (!check) {
                 STACK_SHRINK(1);
                 Py_DECREF(target);
                 JUMPBY(oparg);
