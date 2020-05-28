@@ -829,9 +829,6 @@ Removed
   removed, standard :class:`bytes` objects are always used instead.
   (Contributed by Jon Janzen in :issue:`36409`.)
 
-* The C function ``PyThreadState_DeleteCurrent()`` has been removed. It was not documented.
-  (Contributed by Joannah Nanjekye in :issue:`37878`.)
-
 * The C function ``PyGen_NeedsFinalizing`` has been removed. It was not
   documented, tested, or used anywhere within CPython after the implementation
   of :pep:`442`. Patch by Joannah Nanjekye.
@@ -1108,6 +1105,8 @@ Removed
 
   * Exclude the following functions from the limited C API:
 
+    * ``PyThreadState_DeleteCurrent()``
+      (Contributed by Joannah Nanjekye in :issue:`37878`.)
     * ``_Py_CheckRecursionLimit``
     * ``_Py_NewReference()``
     * ``_Py_ForgetReference()``
