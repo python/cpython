@@ -138,6 +138,11 @@ This module also provides the following helper function:
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.9
+
+      The function uses OpenSSL's ``CRYPTO_memcmp()`` internally when
+      available.
+
 
 .. seealso::
 
