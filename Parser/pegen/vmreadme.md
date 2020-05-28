@@ -79,6 +79,8 @@ error is detected, the VM exits, immediately returning `NULL`.
 
 The following opcodes take no argument.
 
+- `OP_NOOP` -- succeed without a value.  (Used for opcode padding.)
+
 - `OP_NAME` -- call `_PyPegen_name_token()`; fail if it returns
   `NULL`, otherwise succeeds with the return value.
 
@@ -86,8 +88,7 @@ The following opcodes take no argument.
 
 - `OP_STRING` -- call `_PyPegen_string_token()`; same as `OP_NAME`.
 
-- `OP_CUT` -- set the frame's `cut` flag; always succeeds, without a
-  value.
+- `OP_CUT` -- set the frame's `cut` flag; succeeds without a value.
 
 - `OP_OPTIONAL` -- modifies the *previous* operation to treat a `NULL`
   result as a success.

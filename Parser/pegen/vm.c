@@ -47,6 +47,8 @@ run_vm(Parser *p, Rule rules[], int start)
            f->rule->name, f->ialt, f->iop, opcode_names[f->rule->opcodes[f->iop]],
            p->fill > p-> mark ? PyBytes_AsString(p->tokens[p->mark]->bytes) : "<UNSEEN>");
     switch (f->rule->opcodes[f->iop++]) {
+    case OP_NOOP:
+        goto top;
     case OP_NAME:
         v = _PyPegen_name_token(p);
         break;

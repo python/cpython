@@ -1,28 +1,36 @@
 typedef enum _opcodes {
+    OP_NOOP,
     OP_NAME,
     OP_NUMBER,
     OP_STRING,
     OP_CUT,
-    OP_FAILURE,
     OP_OPTIONAL,
+    OP_LOOP_START,
+    OP_LOOP_COLLECT,
+    OP_FAILURE,
     // The rest have an argument
     OP_TOKEN,
     OP_RULE,
     OP_RETURN,
+    OP_LOOP_CONTINUE,
     OP_SUCCESS,
 } Opcode;
 
 char *opcode_names[] = {
+    "OP_NOOP",
     "OP_NAME",
     "OP_NUMBER",
     "OP_STRING",
     "OP_CUT",
-    "OP_FAILURE",
     "OP_OPTIONAL",
+    "OP_LOOP_START",
+    "OP_LOOP_COLLECT",
+    "OP_FAILURE",
     // The rest have an argument
     "OP_TOKEN",
     "OP_RULE",
     "OP_RETURN",
+    "OP_LOOP_CONTINUE",
     "OP_SUCCESS",
 };
 
@@ -52,8 +60,9 @@ typedef struct _stack {
 
 NOTE: [expr] is optional to test OP_RULE_OPTIONAL.
 
-start: expr ENDMARKER
-expr: term '+' [expr] | term
+start: stmt ENDMARKER
+stmt: expr NEWLINE
+expr: term '+' expr | term
 term: NAME | NUMBER
 
 */
@@ -62,29 +71,63 @@ static const int n_keyword_lists = 0;
 static KeywordToken *reserved_keywords[] = {
 };
 
+enum {
+      R_START,
+      R_STMT,
+      R_EXPR,
+      R_TERM,
+};
+
+enum {
+      A_START_0,
+      A_STMT_0,
+      A_EXPR_0,
+      A_EXPR_1,
+      A_TERM_0,
+      A_TERM_1,
+};
+
 static Rule all_rules[] = {
 
     {"start",
-     {0, 6, -1},
+     {0, 4, -1},
      {
-      OP_RULE, 1, OP_TOKEN, NEWLINE, OP_SUCCESS, 0,
+      OP_RULE, R_STMT,
+      OP_SUCCESS, A_START_0,
+
       OP_FAILURE,
      },
     },
 
-    {"expr",
-     {0, 9, -1},
+    {"stmt",
+     {0, -1},
      {
-      OP_RULE, 2, OP_TOKEN, PLUS, OP_OPTIONAL, OP_RULE, 1, OP_RETURN, 1,
-      OP_RULE, 2, OP_RETURN, 2,
+      OP_RULE, R_EXPR,
+      OP_RETURN, A_STMT_0,
+     },
+    },
+
+    {"expr",
+     {0, 8, -1},
+     {
+      OP_RULE, R_TERM,
+      OP_TOKEN, PLUS,
+      OP_RULE, R_EXPR,
+      OP_RETURN, A_EXPR_0,
+
+      OP_RULE, R_TERM,
+      OP_RETURN, A_EXPR_1,
      },
     },
 
     {"term",
      {0, 3, -1},
      {
-      OP_NAME, OP_RETURN, 3,
-      OP_NUMBER, OP_RETURN, 4,
+      OP_NAME,
+      OP_RETURN, A_TERM_0,
+
+      OP_NUMBER,
+      OP_RETURN, A_TERM_1,
      },
     },
 
@@ -101,18 +144,20 @@ call_action(Parser *p, Frame *f, int iaction)
     int _end_col_offset = t->end_col_offset;
 
     switch (iaction) {
-    case 0:
-        return  _PyPegen_make_module(p, _PyPegen_singleton_seq(p, _Py_Expr(f->vals[0], EXTRA)));
-    case 1:
+    case A_START_0:
+        return  _PyPegen_make_module(p, f->vals[0]);
+    case A_STMT_0:
+        return _PyPegen_singleton_seq(p, _Py_Expr(f->vals[0], EXTRA));
+    case A_EXPR_0:
         if (f->vals[2])
             return _Py_BinOp(f->vals[0], Add, f->vals[2], EXTRA);
         else
             return f->vals[0];
-    case 2:
+    case A_EXPR_1:
         return f->vals[0];
-    case 3:
+    case A_TERM_0:
         return f->vals[0];
-    case 4:
+    case A_TERM_1:
         return f->vals[0];
     default:
         assert(0);
