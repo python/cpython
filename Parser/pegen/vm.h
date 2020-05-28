@@ -3,7 +3,6 @@ typedef enum _opcodes {
     OP_NUMBER,
     OP_STRING,
     OP_CUT,
-    OP_SUCCESS,
     OP_FAILURE,
     // The rest have an argument
     OP_TOKEN,
@@ -11,6 +10,7 @@ typedef enum _opcodes {
     OP_RULE,
     OP_RULE_OPTIONAL,
     OP_RETURN,
+    OP_SUCCESS,
 } Opcode;
 
 char *opcode_names[] = {
@@ -18,7 +18,6 @@ char *opcode_names[] = {
     "OP_NUMBER",
     "OP_STRING",
     "OP_CUT",
-    "OP_SUCCESS",
     "OP_FAILURE",
     // The rest have an argument
     "OP_TOKEN",
@@ -26,6 +25,7 @@ char *opcode_names[] = {
     "OP_RULE",
     "OP_RULE_OPTIONAL",
     "OP_RETURN",
+    "OP_SUCCESS",
 };
 
 typedef struct _rule {
