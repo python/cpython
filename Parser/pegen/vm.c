@@ -94,13 +94,15 @@ run_vm(Parser *p, Rule rules[], int start)
         p->error_indicator = 1;
         return NULL;
     }
+
+ fail:
     if (f->rule->opcodes[f->iop] == OP_OPTIONAL) {
         printf("            GA!\n");
         f->vals[f->ival++] = NULL;
+        f->iop++;  // Skip over the OP_OPTIONAL opcode
         goto top;
     }
 
- fail:
     printf("            fail\n");
     p->mark = f->mark;
     if (f->cut)
@@ -112,11 +114,6 @@ run_vm(Parser *p, Rule rules[], int start)
 
  pop:
     f = pop_frame(&stack);
-    if (f->rule->opcodes[f->iop] == OP_OPTIONAL) {
-        printf("            GAGA!\n");
-        f->vals[f->ival++] = NULL;
-        goto top;
-    }
     goto fail;
 }
 

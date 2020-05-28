@@ -130,3 +130,59 @@ We need to extend the VM to support loops and lookaheads.
   and turns it into success, restoring the saved mark.
 
 - Left-recursion -- hmm, tricky...
+
+Loop opcodes
+------------
+
+```
+case START_LOOP:  // At start of first alternative
+    f->collection = malloc(0);
+    f->collected = 0;
+    goto top;
+
+case CONTINUE_LOOP:  // At end of first alternative (replaces RETURN)
+    oparg = f->rule->opcodes[f->iop++];
+    v = call_action(p, f, oparg);
+    if (v) {
+        f->collection = realloc(f->collection, (f->collected + 1)*sizeof(void*));
+        if (!f->collection) return NULL;
+        f->collection[f->collected++] = v;
+        goto top;
+    }
+    break;
+
+case COLLECT_LOOP:  // At start of second (and last) alternative
+    v = <convert f->collection from malloc'ed array to asdl_seq>;
+    free(f->collection);
+    // Continue same as RETURN opcode
+```
+
+(Need some more stuff for `a+` and `a.b+`.)
+
+
+Lookahead opcodes
+-----------------
+
+```
+case SAVE_MARK:
+    f->save_mark = p->mark;
+    goto top;
+
+case POS_LOOKAHEAD:
+    p->mark - f->save_mark;
+    goto top;
+
+case NEG_LOOKAHEAD:
+    goto fail;
+
+/* Later, when v == NULL */
+if (f->rule->opcodes[f->iop] == NEG_LOOKAHEAD) {
+    p->mark - f->save_mark;
+    goto top;
+}
+/* Also at the other fail check, under pop */
+```
+
+If we initialize save_mark to the same value as mark, we can avoid a
+`SAVE_MARK` opcode at the start of alternatives -- this is a common
+pattern.
