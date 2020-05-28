@@ -1,1 +1,0 @@
-Added *jump* parameter to :func:`dis.stack_effect`.

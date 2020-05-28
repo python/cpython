@@ -62,14 +62,16 @@ class TestAsdlParser(unittest.TestCase):
 
     def test_attributes(self):
         stmt = self.types['stmt']
-        self.assertEqual(len(stmt.attributes), 2)
-        self.assertEqual(str(stmt.attributes[0]), 'Field(int, lineno)')
-        self.assertEqual(str(stmt.attributes[1]), 'Field(int, col_offset)')
+        self.assertEqual(len(stmt.attributes), 4)
+        self.assertEqual(repr(stmt.attributes[0]), 'Field(int, lineno)')
+        self.assertEqual(repr(stmt.attributes[1]), 'Field(int, col_offset)')
+        self.assertEqual(repr(stmt.attributes[2]), 'Field(int, end_lineno, opt=True)')
+        self.assertEqual(repr(stmt.attributes[3]), 'Field(int, end_col_offset, opt=True)')
 
     def test_constructor_fields(self):
         ehandler = self.types['excepthandler']
         self.assertEqual(len(ehandler.types), 1)
-        self.assertEqual(len(ehandler.attributes), 2)
+        self.assertEqual(len(ehandler.attributes), 4)
 
         cons = ehandler.types[0]
         self.assertIsInstance(cons, self.asdl.Constructor)
@@ -115,7 +117,8 @@ class TestAsdlParser(unittest.TestCase):
 
         v = CustomVisitor()
         v.visit(self.types['mod'])
-        self.assertEqual(v.names_with_seq, ['Module', 'Interactive', 'Suite'])
+        self.assertEqual(v.names_with_seq,
+                         ['Module', 'Module', 'Interactive', 'FunctionType'])
 
 
 if __name__ == '__main__':

@@ -7,6 +7,9 @@
 Exceptions
 ==========
 
+**Source code:** :source:`Lib/asyncio/exceptions.py`
+
+----------------------------------------------------
 
 .. exception:: TimeoutError
 
@@ -25,26 +28,9 @@ Exceptions
    when asyncio Tasks are cancelled.  In almost all situations the
    exception must be re-raised.
 
-   .. important::
+   .. versionchanged:: 3.8
 
-      This exception is a subclass of :exc:`Exception`, so it can be
-      accidentally suppressed by an overly broad ``try..except`` block::
-
-        try:
-            await operation
-        except Exception:
-            # The cancellation is broken because the *except* block
-            # suppresses the CancelledError exception.
-            log.log('an error has occurred')
-
-      Instead, the following pattern should be used::
-
-        try:
-            await operation
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            log.log('an error has occurred')
+      :exc:`CancelledError` is now a subclass of :class:`BaseException`.
 
 
 .. exception:: InvalidStateError
@@ -65,11 +51,11 @@ Exceptions
 
 .. exception:: IncompleteReadError
 
-    The requested read operation did not complete fully.
+   The requested read operation did not complete fully.
 
-    Raised by the :ref:`asyncio stream APIs<asyncio-streams>`.
+   Raised by the :ref:`asyncio stream APIs<asyncio-streams>`.
 
-    This exception is a subclass of :exc:`EOFError`.
+   This exception is a subclass of :exc:`EOFError`.
 
    .. attribute:: expected
 

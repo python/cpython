@@ -14,11 +14,14 @@ typedef struct _node {
     int                 n_col_offset;
     int                 n_nchildren;
     struct _node        *n_child;
+    int                 n_end_lineno;
+    int                 n_end_col_offset;
 } node;
 
 PyAPI_FUNC(node *) PyNode_New(int type);
 PyAPI_FUNC(int) PyNode_AddChild(node *n, int type,
-                                      char *str, int lineno, int col_offset);
+                                char *str, int lineno, int col_offset,
+                                int end_lineno, int end_col_offset);
 PyAPI_FUNC(void) PyNode_Free(node *n);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_ssize_t) _PyNode_SizeOf(node *n);
@@ -28,7 +31,6 @@ PyAPI_FUNC(Py_ssize_t) _PyNode_SizeOf(node *n);
 #define NCH(n)          ((n)->n_nchildren)
 
 #define CHILD(n, i)     (&(n)->n_child[i])
-#define RCHILD(n, i)    (CHILD(n, NCH(n) + i))
 #define TYPE(n)         ((n)->n_type)
 #define STR(n)          ((n)->n_str)
 #define LINENO(n)       ((n)->n_lineno)
@@ -37,6 +39,7 @@ PyAPI_FUNC(Py_ssize_t) _PyNode_SizeOf(node *n);
 #define REQ(n, type) assert(TYPE(n) == (type))
 
 PyAPI_FUNC(void) PyNode_ListTree(node *);
+void _PyNode_FinalizeEndPos(node *n);  // helper also used in parsetok.c
 
 #ifdef __cplusplus
 }

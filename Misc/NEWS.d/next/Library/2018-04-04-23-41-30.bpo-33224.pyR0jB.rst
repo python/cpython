@@ -1,2 +1,0 @@
-Update difflib.mdiff() for :pep:`479`.  Convert an uncaught StopIteration in a
-generator into a return-statement.

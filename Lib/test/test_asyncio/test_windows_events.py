@@ -2,8 +2,8 @@ import os
 import signal
 import socket
 import sys
-import subprocess
 import time
+import threading
 import unittest
 from unittest import mock
 
@@ -16,7 +16,6 @@ import _winapi
 import asyncio
 from asyncio import windows_events
 from test.test_asyncio import utils as test_utils
-from test.support.script_helper import spawn_python
 
 
 def tearDownModule():
@@ -38,20 +37,46 @@ class UpperProto(asyncio.Protocol):
 
 
 class ProactorLoopCtrlC(test_utils.TestCase):
-    def test_ctrl_c(self):
-        from .test_ctrl_c_in_proactor_loop_helper import __file__ as f
 
-        # ctrl-c will be sent to all processes that share the same console
-        # in order to isolate the effect of raising ctrl-c we'll create
-        # a process with a new console
-        flags = subprocess.CREATE_NEW_CONSOLE
-        with spawn_python(f, creationflags=flags) as p:
-            try:
-                exit_code = p.wait(timeout=5)
-                self.assertEqual(exit_code, 255)
-            except:
-                p.kill()
-                raise
+    def test_ctrl_c(self):
+
+        def SIGINT_after_delay():
+            time.sleep(0.1)
+            signal.raise_signal(signal.SIGINT)
+
+        thread = threading.Thread(target=SIGINT_after_delay)
+        loop = asyncio.get_event_loop()
+        try:
+            # only start the loop once the event loop is running
+            loop.call_soon(thread.start)
+            loop.run_forever()
+            self.fail("should not fall through 'run_forever'")
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.close_loop(loop)
+        thread.join()
+
+
+class ProactorMultithreading(test_utils.TestCase):
+    def test_run_from_nonmain_thread(self):
+        finished = False
+
+        async def coro():
+            await asyncio.sleep(0)
+
+        def func():
+            nonlocal finished
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(coro())
+            # close() must not call signal.set_wakeup_fd()
+            loop.close()
+            finished = True
+
+        thread = threading.Thread(target=func)
+        thread.start()
+        thread.join()
+        self.assertTrue(finished)
 
 
 class ProactorTests(test_utils.TestCase):

@@ -128,7 +128,7 @@ Check for duplicate keywords.
     ...
     Traceback (most recent call last):
     [...]
-    SyntaxError: keyword argument repeated
+    SyntaxError: keyword argument repeated: metaclass
     >>>
 
 Another way.

@@ -127,6 +127,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       the next difference highlight at the top of the browser without any leading
       context).
 
+      .. note::
+         *fromdesc* and *todesc* are interpreted as unescaped HTML and should be
+         properly escaped while receiving input from untrusted sources.
+
       .. versionchanged:: 3.5
          *charset* keyword-only argument was added.  The default charset of
          HTML document changed from ``'ISO-8859-1'`` to ``'utf-8'``.
@@ -334,14 +338,14 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 .. function:: IS_LINE_JUNK(line)
 
-   Return true for ignorable lines.  The line *line* is ignorable if *line* is
+   Return ``True`` for ignorable lines.  The line *line* is ignorable if *line* is
    blank or contains a single ``'#'``, otherwise it is not ignorable.  Used as a
    default for parameter *linejunk* in :func:`ndiff` in older versions.
 
 
 .. function:: IS_CHARACTER_JUNK(ch)
 
-   Return true for ignorable characters.  The character *ch* is ignorable if *ch*
+   Return ``True`` for ignorable characters.  The character *ch* is ignorable if *ch*
    is a space or tab, otherwise it is not ignorable.  Used as a default for
    parameter *charjunk* in :func:`ndiff`.
 
@@ -366,7 +370,7 @@ The :class:`SequenceMatcher` class has this constructor:
    Optional argument *isjunk* must be ``None`` (the default) or a one-argument
    function that takes a sequence element and returns true if and only if the
    element is "junk" and should be ignored. Passing ``None`` for *isjunk* is
-   equivalent to passing ``lambda x: 0``; in other words, no elements are ignored.
+   equivalent to passing ``lambda x: False``; in other words, no elements are ignored.
    For example, pass::
 
       lambda x: x in " \t"
@@ -417,7 +421,7 @@ The :class:`SequenceMatcher` class has this constructor:
       is not changed.
 
 
-   .. method:: find_longest_match(alo, ahi, blo, bhi)
+   .. method:: find_longest_match(alo=0, ahi=None, blo=0, bhi=None)
 
       Find longest matching block in ``a[alo:ahi]`` and ``b[blo:bhi]``.
 
@@ -453,6 +457,9 @@ The :class:`SequenceMatcher` class has this constructor:
       If no blocks match, this returns ``(alo, blo, 0)``.
 
       This method returns a :term:`named tuple` ``Match(a, b, size)``.
+
+      .. versionchanged:: 3.9
+         Added default arguments.
 
 
    .. method:: get_matching_blocks()
@@ -542,6 +549,16 @@ The :class:`SequenceMatcher` class has this constructor:
       :meth:`get_opcodes` hasn't already been called, in which case you may want
       to try :meth:`quick_ratio` or :meth:`real_quick_ratio` first to get an
       upper bound.
+
+      .. note::
+
+         Caution: The result of a :meth:`ratio` call may depend on the order of
+         the arguments. For instance::
+
+            >>> SequenceMatcher(None, 'tide', 'diet').ratio()
+            0.25
+            >>> SequenceMatcher(None, 'diet', 'tide').ratio()
+            0.5
 
 
    .. method:: quick_ratio()

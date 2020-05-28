@@ -1,1 +1,0 @@
-Memory errors during creating posix.environ no longer ignored.

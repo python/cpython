@@ -35,6 +35,7 @@ PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
                                        Py_hash_t hash);
 PyAPI_FUNC(PyObject *) _PyDict_GetItemIdWithError(PyObject *dp,
                                                   struct _Py_Identifier *key);
+PyAPI_FUNC(PyObject *) _PyDict_GetItemStringWithError(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyDict_SetDefault(
     PyObject *mp, PyObject *key, PyObject *defaultobj);
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
@@ -60,8 +61,6 @@ PyAPI_FUNC(PyObject *) _PyDict_Pop(PyObject *, PyObject *, PyObject *);
 PyObject *_PyDict_Pop_KnownHash(PyObject *, PyObject *, Py_hash_t, PyObject *);
 PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 #define _PyDict_HasSplitTable(d) ((d)->ma_values != NULL)
-
-PyAPI_FUNC(int) PyDict_ClearFreeList(void);
 
 /* Like PyDict_Merge, but override can be 0, 1 or 2.  If override is 0,
    the first occurrence of a key wins, if override is 1, the last occurrence

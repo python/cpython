@@ -6,7 +6,7 @@
 /* Submitted by Jim Hugunin */
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 /*[clinic input]
 class complex "PyComplexObject *" "&PyComplex_Type"
@@ -55,6 +55,10 @@ _Py_c_prod(Py_complex a, Py_complex b)
     return r;
 }
 
+/* Avoid bad optimization on Windows ARM64 until the compiler is fixed */
+#ifdef _M_ARM64
+#pragma optimize("", off)
+#endif
 Py_complex
 _Py_c_quot(Py_complex a, Py_complex b)
 {
@@ -112,6 +116,9 @@ _Py_c_quot(Py_complex a, Py_complex b)
     }
     return r;
 }
+#ifdef _M_ARM64
+#pragma optimize("", on)
+#endif
 
 Py_complex
 _Py_c_pow(Py_complex a, Py_complex b)
@@ -289,7 +296,7 @@ try_complex_special_method(PyObject *op)
         if (!PyComplex_Check(res)) {
             PyErr_Format(PyExc_TypeError,
                 "__complex__ returned non-complex (type %.200s)",
-                res->ob_type->tp_name);
+                Py_TYPE(res)->tp_name);
             Py_DECREF(res);
             return NULL;
         }
@@ -298,7 +305,7 @@ try_complex_special_method(PyObject *op)
                 "__complex__ returned non-complex (type %.200s).  "
                 "The ability to return an instance of a strict subclass of complex "
                 "is deprecated, and may be removed in a future version of Python.",
-                res->ob_type->tp_name)) {
+                Py_TYPE(res)->tp_name)) {
             Py_DECREF(res);
             return NULL;
         }
@@ -341,12 +348,6 @@ PyComplex_AsCComplex(PyObject *op)
         cv.real = PyFloat_AsDouble(op);
         return cv;
     }
-}
-
-static void
-complex_dealloc(PyObject *op)
-{
-    op->ob_type->tp_free(op);
 }
 
 static PyObject *
@@ -465,9 +466,7 @@ complex_add(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_add", return 0)
     result = _Py_c_sum(a, b);
-    PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
 
@@ -478,9 +477,7 @@ complex_sub(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_sub", return 0)
     result = _Py_c_diff(a, b);
-    PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
 
@@ -491,9 +488,7 @@ complex_mul(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_mul", return 0)
     result = _Py_c_prod(a, b);
-    PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
 
@@ -504,10 +499,8 @@ complex_div(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_div", return 0)
     errno = 0;
     quot = _Py_c_quot(a, b);
-    PyFPE_END_PROTECT(quot)
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError, "complex division by zero");
         return NULL;
@@ -546,7 +539,6 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         PyErr_SetString(PyExc_ValueError, "complex modulo");
         return NULL;
     }
-    PyFPE_START_PROTECT("complex_pow", return 0)
     errno = 0;
     exponent = b;
     int_exponent = (long)exponent.real;
@@ -555,7 +547,6 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     else
         p = _Py_c_pow(a, exponent);
 
-    PyFPE_END_PROTECT(p)
     Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
@@ -603,9 +594,7 @@ complex_abs(PyComplexObject *v)
 {
     double result;
 
-    PyFPE_START_PROTECT("complex_abs", return 0)
     result = _Py_c_abs(v->cval);
-    PyFPE_END_PROTECT(result)
 
     if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
@@ -742,29 +731,9 @@ complex__format__(PyObject* self, PyObject* args)
     return _PyUnicodeWriter_Finish(&writer);
 }
 
-#if 0
-static PyObject *
-complex_is_finite(PyObject *self)
-{
-    Py_complex c;
-    c = ((PyComplexObject *)self)->cval;
-    return PyBool_FromLong((long)(Py_IS_FINITE(c.real) &&
-                                  Py_IS_FINITE(c.imag)));
-}
-
-PyDoc_STRVAR(complex_is_finite_doc,
-"complex.is_finite() -> bool\n"
-"\n"
-"Returns True if the real and the imaginary part is finite.");
-#endif
-
 static PyMethodDef complex_methods[] = {
     {"conjugate",       (PyCFunction)complex_conjugate, METH_NOARGS,
      complex_conjugate_doc},
-#if 0
-    {"is_finite",       (PyCFunction)complex_is_finite, METH_NOARGS,
-     complex_is_finite_doc},
-#endif
     {"__getnewargs__",          (PyCFunction)complex_getnewargs,        METH_NOARGS},
     {"__format__",          (PyCFunction)complex__format__,
                                        METH_VARARGS, complex__format__doc},
@@ -989,8 +958,8 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         return NULL;
     }
 
-    nbr = r->ob_type->tp_as_number;
-    if (nbr == NULL || nbr->nb_float == NULL) {
+    nbr = Py_TYPE(r)->tp_as_number;
+    if (nbr == NULL || (nbr->nb_float == NULL && nbr->nb_index == NULL)) {
         PyErr_Format(PyExc_TypeError,
                      "complex() first argument must be a string or a number, "
                      "not '%.200s'",
@@ -1001,8 +970,8 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         return NULL;
     }
     if (i != NULL) {
-        nbi = i->ob_type->tp_as_number;
-        if (nbi == NULL || nbi->nb_float == NULL) {
+        nbi = Py_TYPE(i)->tp_as_number;
+        if (nbi == NULL || (nbi->nb_float == NULL && nbi->nb_index == NULL)) {
             PyErr_Format(PyExc_TypeError,
                          "complex() second argument must be a number, "
                          "not '%.200s'",
@@ -1058,7 +1027,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         /* The "imag" part really is entirely imaginary, and
            contributes nothing in the real direction.
            Just treat it as a double. */
-        tmp = (*nbi->nb_float)(i);
+        tmp = PyNumber_Float(i);
         if (tmp == NULL)
             return NULL;
         ci.real = PyFloat_AsDouble(tmp);
@@ -1118,18 +1087,18 @@ PyTypeObject PyComplex_Type = {
     "complex",
     sizeof(PyComplexObject),
     0,
-    complex_dealloc,                            /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)complex_repr,                     /* tp_repr */
     &complex_as_number,                         /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     (hashfunc)complex_hash,                     /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)complex_repr,                     /* tp_str */
+    0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */

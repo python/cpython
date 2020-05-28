@@ -215,9 +215,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.0j",
-              url="https://www.openssl.org/source/openssl-1.1.0j.tar.gz",
-              checksum='b4ca5b78ae6ae79da80790b30dbedbdc',
+              name="OpenSSL 1.1.1g",
+              url="https://www.openssl.org/source/openssl-1.1.1g.tar.gz",
+              checksum='76766e98997660138cdaf13a187bd234',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -227,9 +227,9 @@ def library_recipes():
     if internalTk():
         result.extend([
           dict(
-              name="Tcl 8.6.9",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.9-src.tar.gz",
-              checksum='aa0a121d95a0e7b73a036f26028538d4',
+              name="Tcl 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.8-src.tar.gz",
+              checksum='81656d3367af032e0ae6157eff134f89',
               buildDir="unix",
               configure_pre=[
                     '--enable-shared',
@@ -243,9 +243,12 @@ def library_recipes():
                   },
               ),
           dict(
-              name="Tk 8.6.9.1",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.9.1-src.tar.gz",
-              checksum='9efe3976468352dc894dae0c4e785a8e',
+              name="Tk 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
+              checksum='5e0faecba458ee1386078fb228d008ba',
+              patches=[
+                  "tk868_on_10_8_10_9.patch",
+                   ],
               buildDir="unix",
               configure_pre=[
                     '--enable-aqua',
@@ -299,7 +302,7 @@ def library_recipes():
                   "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
               ],
               patchscripts=[
-                  ("ftp://invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
+                  ("ftp://ftp.invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
                    "f54bf02a349f96a7c4f0d00922f3a0d4"),
                    ],
               useLDFlags=False,
@@ -310,9 +313,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.22.0",
-              url="https://www.sqlite.org/2018/sqlite-autoconf-3220000.tar.gz",
-              checksum='96b5648d542e8afa6ab7ffb8db8ddc3d',
+              name="SQLite 3.31.1",
+              url="https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz",
+              checksum='2d0a553534c521504e3ac3ad3b90f125',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -706,7 +709,6 @@ def extractArchive(builddir, archiveName):
     work for current Tcl and Tk source releases where the basename of
     the archive ends with "-src" but the uncompressed directory does not.
     For now, just special case Tcl and Tk tar.gz downloads.
-    Another special case: the tk8.6.9.1 tarball extracts to tk8.6.9.
     """
     curdir = os.getcwd()
     try:
@@ -716,8 +718,6 @@ def extractArchive(builddir, archiveName):
             if ((retval.startswith('tcl') or retval.startswith('tk'))
                     and retval.endswith('-src')):
                 retval = retval[:-4]
-                if retval == 'tk8.6.9.1':
-                    retval = 'tk8.6.9'
             if os.path.exists(retval):
                 shutil.rmtree(retval)
             fp = os.popen("tar zxf %s 2>&1"%(shellQuote(archiveName),), 'r')
@@ -810,6 +810,16 @@ def build_universal_openssl(basedir, archList):
             "ppc": ["darwin-ppc-cc"],
             "ppc64": ["darwin64-ppc-cc"],
         }
+
+        # Somewhere between OpenSSL 1.1.0j and 1.1.1c, changes cause the
+        # "enable-ec_nistp_64_gcc_128" option to get compile errors when
+        # building on our 10.6 gcc-4.2 environment.  There have been other
+        # reports of projects running into this when using older compilers.
+        # So, for now, do not try to use "enable-ec_nistp_64_gcc_128" when
+        # building for 10.6.
+        if getDeptargetTuple() == (10, 6):
+            arch_opts['x86_64'].remove('enable-ec_nistp_64_gcc_128')
+
         configure_opts = [
             "no-idea",
             "no-mdc2",
@@ -1058,6 +1068,7 @@ def buildPythonDocs():
     runCommand('make clean')
     # Create virtual environment for docs builds with blurb and sphinx
     runCommand('make venv')
+    runCommand('venv/bin/python3 -m pip install -U Sphinx==2.2.0')
     runCommand('make html PYTHON=venv/bin/python')
     os.chdir(curDir)
     if not os.path.exists(docdir):
@@ -1207,7 +1218,8 @@ def buildPython():
             if ln.startswith('VERSION='):
                 VERSION=ln.split()[1]
             if ln.startswith('ABIFLAGS='):
-                ABIFLAGS=ln.split()[1]
+                ABIFLAGS=ln.split()
+                ABIFLAGS=ABIFLAGS[1] if len(ABIFLAGS) > 1 else ''
             if ln.startswith('LDVERSION='):
                 LDVERSION=ln.split()[1]
         fp.close()
@@ -1258,7 +1270,8 @@ def buildPython():
     import pprint
     if getVersionMajorMinor() >= (3, 6):
         # XXX this is extra-fragile
-        path = os.path.join(path_to_lib, '_sysconfigdata_m_darwin_darwin.py')
+        path = os.path.join(path_to_lib,
+            '_sysconfigdata_%s_darwin_darwin.py' % (ABIFLAGS,))
     else:
         path = os.path.join(path_to_lib, '_sysconfigdata.py')
     fp = open(path, 'r')
@@ -1295,12 +1308,6 @@ def buildPython():
                    os.path.join(usr_local_bin, fn))
 
     os.chdir(curdir)
-
-    if PYTHON_3:
-        # Remove the 'Current' link, that way we don't accidentally mess
-        # with an already installed version of python 2
-        os.unlink(os.path.join(rootDir, 'Library', 'Frameworks',
-                            'Python.framework', 'Versions', 'Current'))
 
 def patchFile(inPath, outPath):
     data = fileContents(inPath)
@@ -1518,16 +1525,27 @@ def buildDMG():
     imagepath = imagepath + '.dmg'
 
     os.mkdir(outdir)
+
+    # Try to mitigate race condition in certain versions of macOS, e.g. 10.9,
+    # when hdiutil create fails with  "Resource busy".  For now, just retry
+    # the create a few times and hope that it eventually works.
+
     volname='Python %s'%(getFullVersion())
-    runCommand("hdiutil create -format UDRW -volname %s -srcfolder %s %s"%(
+    cmd = ("hdiutil create -format UDRW -volname %s -srcfolder %s -size 100m %s"%(
             shellQuote(volname),
             shellQuote(os.path.join(WORKDIR, 'installer')),
             shellQuote(imagepath + ".tmp.dmg" )))
-
-    # Try to mitigate race condition in certain versions of macOS, e.g. 10.9,
-    # when hdiutil fails with  "Resource busy"
-
-    time.sleep(10)
+    for i in range(5):
+        fd = os.popen(cmd, 'r')
+        data = fd.read()
+        xit = fd.close()
+        if not xit:
+            break
+        sys.stdout.write(data)
+        print(" -- retrying hdiutil create")
+        time.sleep(5)
+    else:
+        raise RuntimeError("command failed: %s"%(cmd,))
 
     if not os.path.exists(os.path.join(WORKDIR, "mnt")):
         os.mkdir(os.path.join(WORKDIR, "mnt"))

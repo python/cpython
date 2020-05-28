@@ -1,1 +1,0 @@
-Fix distutils logging for non-ASCII strings.  This caused installation issues on Windows.

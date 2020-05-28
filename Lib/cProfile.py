@@ -103,7 +103,7 @@ class Profile(_lsprof.Profiler):
         return self
 
     # This method is more useful to profile a single function call.
-    def runcall(self, func, *args, **kw):
+    def runcall(self, func, /, *args, **kw):
         self.enable()
         try:
             return func(*args, **kw)

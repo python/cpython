@@ -1,1 +1,0 @@
-The ssl module now detects missing NPN support in LibreSSL.

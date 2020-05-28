@@ -14,13 +14,15 @@ import unittest
 import socketserver
 
 import test.support
-from test.support import reap_children, reap_threads, verbose
+from test.support import reap_children, verbose
+from test.support import socket_helper
+from test.support import threading_helper
 
 
 test.support.requires("network")
 
 TEST_STR = b"hello world\n"
-HOST = test.support.HOST
+HOST = socket_helper.HOST
 
 HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
 requires_unix_sockets = unittest.skipUnless(HAVE_UNIX_SOCKETS,
@@ -36,7 +38,7 @@ def signal_alarm(n):
 # Remember real select() to avoid interferences with mocking
 _real_select = select.select
 
-def receive(sock, n, timeout=20):
+def receive(sock, n, timeout=test.support.SHORT_TIMEOUT):
     r, w, x = _real_select([sock], [], [], timeout)
     if sock in r:
         return sock.recv(n)
@@ -65,9 +67,7 @@ def simple_subprocess(testcase):
     except:
         raise
     finally:
-        pid2, status = os.waitpid(pid, 0)
-        testcase.assertEqual(pid2, pid)
-        testcase.assertEqual(72 << 8, status)
+        test.support.wait_process(pid, exitcode=72)
 
 
 class SocketServerTest(unittest.TestCase):
@@ -121,7 +121,7 @@ class SocketServerTest(unittest.TestCase):
         self.assertEqual(server.server_address, server.socket.getsockname())
         return server
 
-    @reap_threads
+    @threading_helper.reap_threads
     def run_server(self, svrcls, hdlrbase, testfunc):
         server = self.make_server(self.pickaddr(svrcls.address_family),
                                   svrcls, hdlrbase)
@@ -157,27 +157,25 @@ class SocketServerTest(unittest.TestCase):
         if verbose: print("done")
 
     def stream_examine(self, proto, addr):
-        s = socket.socket(proto, socket.SOCK_STREAM)
-        s.connect(addr)
-        s.sendall(TEST_STR)
-        buf = data = receive(s, 100)
-        while data and b'\n' not in buf:
-            data = receive(s, 100)
-            buf += data
-        self.assertEqual(buf, TEST_STR)
-        s.close()
+        with socket.socket(proto, socket.SOCK_STREAM) as s:
+            s.connect(addr)
+            s.sendall(TEST_STR)
+            buf = data = receive(s, 100)
+            while data and b'\n' not in buf:
+                data = receive(s, 100)
+                buf += data
+            self.assertEqual(buf, TEST_STR)
 
     def dgram_examine(self, proto, addr):
-        s = socket.socket(proto, socket.SOCK_DGRAM)
-        if HAVE_UNIX_SOCKETS and proto == socket.AF_UNIX:
-            s.bind(self.pickaddr(proto))
-        s.sendto(TEST_STR, addr)
-        buf = data = receive(s, 100)
-        while data and b'\n' not in buf:
-            data = receive(s, 100)
-            buf += data
-        self.assertEqual(buf, TEST_STR)
-        s.close()
+        with socket.socket(proto, socket.SOCK_DGRAM) as s:
+            if HAVE_UNIX_SOCKETS and proto == socket.AF_UNIX:
+                s.bind(self.pickaddr(proto))
+            s.sendto(TEST_STR, addr)
+            buf = data = receive(s, 100)
+            while data and b'\n' not in buf:
+                data = receive(s, 100)
+                buf += data
+            self.assertEqual(buf, TEST_STR)
 
     def test_TCPServer(self):
         self.run_server(socketserver.TCPServer,
@@ -252,7 +250,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_shutdown(self):
         # Issue #2302: shutdown() should always succeed in making an
         # other thread leave serve_forever().

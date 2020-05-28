@@ -15,6 +15,13 @@ CodeType = type(_f.__code__)
 MappingProxyType = type(type.__dict__)
 SimpleNamespace = type(sys.implementation)
 
+def _cell_factory():
+    a = 1
+    def f():
+        nonlocal a
+    return f.__closure__[0]
+CellType = type(_cell_factory())
+
 def _g():
     yield 1
 GeneratorType = type(_g())
@@ -55,7 +62,7 @@ except TypeError:
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 
-del sys, _f, _g, _C, _c,                           # Not for export
+del sys, _f, _g, _C, _c, _ag  # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation
@@ -255,14 +262,8 @@ def coroutine(func):
         if co_flags & 0x20:
             # TODO: Implement this in C.
             co = func.__code__
-            func.__code__ = CodeType(
-                co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
-                co.co_stacksize,
-                co.co_flags | 0x100,  # 0x100 == CO_ITERABLE_COROUTINE
-                co.co_code,
-                co.co_consts, co.co_names, co.co_varnames, co.co_filename,
-                co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
-                co.co_cellvars)
+            # 0x100 == CO_ITERABLE_COROUTINE
+            func.__code__ = co.replace(co_flags=co.co_flags | 0x100)
             return func
 
     # The following code is primarily to support functions that
@@ -290,6 +291,9 @@ def coroutine(func):
         return coro
 
     return wrapped
+
+
+GenericAlias = type(list[int])
 
 
 __all__ = [n for n in globals() if n[:1] != '_']

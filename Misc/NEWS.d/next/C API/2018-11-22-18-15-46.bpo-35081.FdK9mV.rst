@@ -1,2 +1,0 @@
-Internal APIs surrounded by ``#ifdef Py_BUILD_CORE`` have been moved from
-``Include/*.h`` headers to new header files ``Include/internal/pycore_*.h``.

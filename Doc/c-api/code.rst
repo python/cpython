@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _codeobjects:
 
@@ -35,11 +35,16 @@ bound into a function.
 
 .. c:function:: PyCodeObject* PyCode_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
 
-   Return a new code object.  If you need a dummy code object to
-   create a frame, use :c:func:`PyCode_NewEmpty` instead.  Calling
-   :c:func:`PyCode_New` directly can bind you to a precise Python
-   version since the definition of the bytecode changes often.
+   Return a new code object.  If you need a dummy code object to create a frame,
+   use :c:func:`PyCode_NewEmpty` instead.  Calling :c:func:`PyCode_New` directly
+   can bind you to a precise Python version since the definition of the bytecode
+   changes often.
 
+.. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
+
+   Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positional-only arguments.
+
+   .. versionadded:: 3.8
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 

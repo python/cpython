@@ -332,6 +332,12 @@ class LoaderTests(NamespacePackageTest):
         self.assertIsNone(foo.__spec__.origin)
         self.assertIsNone(foo.__file__)
 
+    def test_path_indexable(self):
+        # bpo-35843
+        import foo
+        expected_path = os.path.join(self.root, 'portion1', 'foo')
+        self.assertEqual(foo.__path__[0], expected_path)
+
 
 if __name__ == "__main__":
     unittest.main()

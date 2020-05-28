@@ -1,4 +1,0 @@
-random.gammavariate(1.0, beta) now computes the same result as
-random.expovariate(1.0 / beta).  This synchonizes the two algorithms and
-eliminates some idiosyncrasies in the old implementation.  It does however
-produce a difference stream of random variables than it used to.
