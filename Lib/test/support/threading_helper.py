@@ -1,6 +1,7 @@
+import _thread
 import contextlib
 import functools
-import _thread
+import sys
 import threading
 import time
 
@@ -47,7 +48,7 @@ def threading_cleanup(*original_values):
         values = None
 
         time.sleep(0.01)
-        gc_collect()
+        support.gc_collect()
 
 
 def reap_threads(func):
@@ -98,7 +99,7 @@ def wait_threads_exit(timeout=None):
                        f"(count: {count}, old count: {old_count})")
                 raise AssertionError(msg)
             time.sleep(0.010)
-            gc_collect()
+            support.gc_collect()
 
 
 def join_thread(thread, timeout=None):
@@ -124,7 +125,7 @@ def start_threads(threads, unlock=None):
                 t.start()
                 started.append(t)
         except:
-            if verbose:
+            if support.verbose:
                 print("Can't start %d threads, only %d threads started" %
                       (len(threads), len(started)))
             raise
@@ -133,7 +134,7 @@ def start_threads(threads, unlock=None):
         try:
             if unlock:
                 unlock()
-            endtime = starttime = time.monotonic()
+            endtime = time.monotonic()
             for timeout in range(1, 16):
                 endtime += 60
                 for t in started:
@@ -141,7 +142,7 @@ def start_threads(threads, unlock=None):
                 started = [t for t in started if t.is_alive()]
                 if not started:
                     break
-                if verbose:
+                if support.verbose:
                     print('Unable to join %d threads during a period of '
                           '%d minutes' % (len(started), timeout))
         finally:
