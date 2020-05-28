@@ -627,10 +627,13 @@ is_leaf(merge_node *node)
 }
 
 static inline PyObject *
-leaf_item(merge_node *node)
+leaf_pop_item(merge_node *node)
 {
     assert(is_leaf(node));
-    return node->left;
+    PyObject *res = node->left;
+    node->left = NULL;
+    Py_CLEAR(node->key);
+    return res;
 }
 
 static inline PyObject *
@@ -645,7 +648,7 @@ static inline merge_node *
 left_child(merge_node *node)
 {
     assert(!is_leaf(node));
-    assert(Py_TYPE(node->left) == &merge_node_type);
+    assert(Py_TYPE(node->right) == &merge_node_type);
     return (merge_node *)node->left;
 }
 
@@ -901,9 +904,10 @@ refill_leaf(merge_node *leaf, PyObject *keyfunc)
             goto error;
         }
     }
-
-    Py_SETREF(leaf->left, item);
-    Py_SETREF(leaf->key, key);
+    assert(leaf->left == NULL);
+    leaf->left = item;
+    assert(leaf->key == NULL);
+    leaf->key = key;
     return 1;
 
 error:
@@ -1028,9 +1032,7 @@ merge_next(mergeobject *mo)
     default:
         Py_UNREACHABLE();
     }
-    PyObject *result = leaf_item(mo->root->leaf);
-    Py_INCREF(result);
-    return result;
+    return leaf_pop_item(mo->root->leaf);
 stop:
     mo->state = 2;
     return NULL;
