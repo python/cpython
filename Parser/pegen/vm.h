@@ -4,11 +4,10 @@ typedef enum _opcodes {
     OP_STRING,
     OP_CUT,
     OP_FAILURE,
+    OP_OPTIONAL,
     // The rest have an argument
     OP_TOKEN,
-    OP_TOKEN_OPTIONAL,
     OP_RULE,
-    OP_RULE_OPTIONAL,
     OP_RETURN,
     OP_SUCCESS,
 } Opcode;
@@ -19,11 +18,10 @@ char *opcode_names[] = {
     "OP_STRING",
     "OP_CUT",
     "OP_FAILURE",
+    "OP_OPTIONAL",
     // The rest have an argument
     "OP_TOKEN",
-    "OP_TOKEN_OPTIONAL",
     "OP_RULE",
-    "OP_RULE_OPTIONAL",
     "OP_RETURN",
     "OP_SUCCESS",
 };
@@ -75,9 +73,9 @@ static Rule all_rules[] = {
     },
 
     {"expr",
-     {0, 8, -1},
+     {0, 9, -1},
      {
-      OP_RULE, 2, OP_TOKEN, PLUS, OP_RULE_OPTIONAL, 1, OP_RETURN, 1,
+      OP_RULE, 2, OP_TOKEN, PLUS, OP_OPTIONAL, OP_RULE, 1, OP_RETURN, 1,
       OP_RULE, 2, OP_RETURN, 2,
      },
     },

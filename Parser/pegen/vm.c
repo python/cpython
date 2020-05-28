@@ -56,20 +56,13 @@ run_vm(Parser *p, Rule rules[], int start)
     case OP_CUT:
         f->cut = 1;
         goto top;
+    case OP_OPTIONAL:
+        goto top;
     case OP_TOKEN:
         oparg = f->rule->opcodes[f->iop++];
         v = _PyPegen_expect_token(p, oparg);
         break;
-    case OP_TOKEN_OPTIONAL:
-        oparg = f->rule->opcodes[f->iop++];
-        v = _PyPegen_expect_token(p, oparg);
-        if (!v && !PyErr_Occurred()) {
-            f->vals[f->ival++] = NULL;
-            goto top;
-        }
-        break;
     case OP_RULE:
-    case OP_RULE_OPTIONAL:  // The magic is at label 'pop' below
         oparg = f->rule->opcodes[f->iop++];
         f = push_frame(&stack, &rules[oparg]);
         goto top;
@@ -101,6 +94,11 @@ run_vm(Parser *p, Rule rules[], int start)
         p->error_indicator = 1;
         return NULL;
     }
+    if (f->rule->opcodes[f->iop] == OP_OPTIONAL) {
+        printf("            GA!\n");
+        f->vals[f->ival++] = NULL;
+        goto top;
+    }
 
  fail:
     printf("            fail\n");
@@ -114,8 +112,8 @@ run_vm(Parser *p, Rule rules[], int start)
 
  pop:
     f = pop_frame(&stack);
-    assert(f->rule->opcodes[f->iop - 2] == OP_RULE_OPTIONAL || f->rule->opcodes[f->iop - 2] == OP_RULE);
-    if (f->rule->opcodes[f->iop - 2] == OP_RULE_OPTIONAL) {
+    if (f->rule->opcodes[f->iop] == OP_OPTIONAL) {
+        printf("            GAGA!\n");
         f->vals[f->ival++] = NULL;
         goto top;
     }

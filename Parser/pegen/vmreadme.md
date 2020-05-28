@@ -89,6 +89,9 @@ The following opcodes take no argument.
 - `OP_CUT` -- set the frame's `cut` flag; always succeeds, without a
   value.
 
+- `OP_OPTIONAL` -- modifies the *previous* operation to treat a `NULL`
+  result as a success.
+
 - `OP_FAILURE` -- report a syntax error and exit the VM.
 
 These opcodes are followed by a single integer argument.
@@ -96,16 +99,10 @@ These opcodes are followed by a single integer argument.
 - `OP_TOKEN` -- call `_PyPegen_expect_token()` with the argument;
   processing is the same as for `OP_NAME`.
 
-- `OP_TOKEN_OPTIONAL` -- like `OP_TOKEN` but instead of failing,
-  succeed with a `NULL` value.
-
 - `OP_RULE` -- push a new frame onto the stack, initializing it with
   the given rule, the current input position (mark), at the first
   alternative and opcode.  Then proceed to the first operation of the
   new frame.
-
-- `OP_RULE_OPTIONAL` -- this is to `OP_RULE` as `OP_TOKEN_OPTIONAL` is
-  to `OP_TOKEN`.
 
 - `OP_RETURN` -- call the action given by the argument, then pop the
   frame off the stack.  Execution then proceeds (in the frame newly
