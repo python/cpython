@@ -1,2 +1,1 @@
-Add strict parameter in :meth:`pathlib.PurePath.relative_to`. Patch by
-Domenico Ragusa.
+Add strict argument in :meth:`pathlib.PurePath.relative_to`.

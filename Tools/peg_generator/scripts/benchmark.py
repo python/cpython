@@ -1,17 +1,21 @@
-#!/usr/bin/env python3.9
+#!/usr/bin/env python3
 
 import argparse
 import ast
 import sys
 import os
-import resource
 from time import time
 
-import memory_profiler
+import _peg_parser
+
+try:
+    import memory_profiler
+except ModuleNotFoundError:
+    print("Please run `make venv` to create a virtual environment and install"
+          " all the dependencies, before running this script.")
+    sys.exit(1)
 
 sys.path.insert(0, os.getcwd())
-from peg_extension import parse
-from pegen.build import build_parser_and_generator
 from scripts.test_parse_directory import parse_directory
 
 argparser = argparse.ArgumentParser(
@@ -37,9 +41,6 @@ command_compile = subcommands.add_parser(
     "compile", help="Benchmark parsing and compiling to bytecode"
 )
 command_parse = subcommands.add_parser("parse", help="Benchmark parsing and generating an ast.AST")
-command_check = subcommands.add_parser(
-    "check", help="Benchmark parsing and throwing the tree away"
-)
 
 
 def benchmark(func):
@@ -62,22 +63,20 @@ def benchmark(func):
 @benchmark
 def time_compile(source, parser):
     if parser == "cpython":
-        return compile(source, os.path.join("data", "xxl.py"), "exec")
+        return _peg_parser.compile_string(
+            source,
+            oldparser=True,
+        )
     else:
-        return parse.parse_string(source, mode=2)
+        return _peg_parser.compile_string(source)
 
 
 @benchmark
 def time_parse(source, parser):
     if parser == "cpython":
-        return ast.parse(source, os.path.join("data", "xxl.py"), "exec")
+        return _peg_parser.parse_string(source, oldparser=True)
     else:
-        return parse.parse_string(source, mode=1)
-
-
-@benchmark
-def time_check(source):
-    return parse.parse_string(source, mode=0)
+        return _peg_parser.parse_string(source)
 
 
 def run_benchmark_xxl(subcommand, parser, source):
@@ -85,34 +84,20 @@ def run_benchmark_xxl(subcommand, parser, source):
         time_compile(source, parser)
     elif subcommand == "parse":
         time_parse(source, parser)
-    elif subcommand == "check":
-        time_check(source)
 
 
 def run_benchmark_stdlib(subcommand, parser):
-    modes = {"compile": 2, "parse": 1, "check": 0}
-    extension = None
-    if parser == "pegen":
-        extension = build_parser_and_generator(
-            "../../Grammar/python.gram",
-            "peg_extension/parse.c",
-            compile_extension=True,
-            skip_actions=False,
-        )
     for _ in range(3):
         parse_directory(
             "../../Lib",
             "../../Grammar/python.gram",
+            "../../Grammar/Tokens",
             verbose=False,
-            excluded_files=[
-                "*/bad*",
-                "*/lib2to3/tests/data/*",
-            ],
+            excluded_files=["*/bad*", "*/lib2to3/tests/data/*",],
             skip_actions=False,
             tree_arg=0,
             short=True,
-            extension=extension,
-            mode=modes[subcommand],
+            mode=2 if subcommand == "compile" else 1,
             parser=parser,
         )
 
@@ -125,8 +110,6 @@ def main():
 
     if subcommand is None:
         argparser.error("A benchmark to run is required")
-    if subcommand == "check" and parser == "cpython":
-        argparser.error("Cannot use check target with the CPython parser")
 
     if target == "xxl":
         with open(os.path.join("data", "xxl.py"), "r") as f:

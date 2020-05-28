@@ -1215,12 +1215,12 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeCopy(
 
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
 PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
-/* Clear all static strings. */
-PyAPI_FUNC(void) _PyUnicode_ClearStaticStrings(void);
 
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
+
+PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);
 
 #ifdef __cplusplus
 }

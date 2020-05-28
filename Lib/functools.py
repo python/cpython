@@ -10,7 +10,7 @@
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
-           'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce',
+           'total_ordering', 'cache', 'cmp_to_key', 'lru_cache', 'reduce',
            'TopologicalSorter', 'CycleError',
            'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
            'cached_property']
@@ -886,6 +886,15 @@ try:
     from _functools import _lru_cache_wrapper
 except ImportError:
     pass
+
+
+################################################################################
+### cache -- simplified access to the infinity cache
+################################################################################
+
+def cache(user_function, /):
+    'Simple lightweight unbounded cache.  Sometimes called "memoize".'
+    return lru_cache(maxsize=None)(user_function)
 
 
 ################################################################################

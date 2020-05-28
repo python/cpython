@@ -816,12 +816,8 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (str == NULL)
         goto error;
 
-    int current_use_peg = PyInterpreterState_Get()->config._use_peg_parser;
-    if (flags & PyCF_TYPE_COMMENTS || feature_version >= 0 || compile_mode == 3) {
-        PyInterpreterState_Get()->config._use_peg_parser = 0;
-    }
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
-    PyInterpreterState_Get()->config._use_peg_parser = current_use_peg;
+
     Py_XDECREF(source_copy);
     goto finally;
 
@@ -2653,12 +2649,15 @@ static PyMethodDef zip_methods[] = {
 };
 
 PyDoc_STRVAR(zip_doc,
-"zip(*iterables) --> zip object\n\
+"zip(*iterables) --> A zip object yielding tuples until an input is exhausted.\n\
 \n\
-Return a zip object whose .__next__() method returns a tuple where\n\
-the i-th element comes from the i-th iterable argument.  The .__next__()\n\
-method continues until the shortest iterable in the argument sequence\n\
-is exhausted and then it raises StopIteration.");
+   >>> list(zip('abcdefg', range(3), range(4)))\n\
+   [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]\n\
+\n\
+The zip object yields n-length tuples, where n is the number of iterables\n\
+passed as positional arguments to zip().  The i-th element in every tuple\n\
+comes from the i-th iterable argument to zip().  This continues until the\n\
+shortest argument is exhausted.");
 
 PyTypeObject PyZip_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

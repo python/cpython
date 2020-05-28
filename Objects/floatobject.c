@@ -59,12 +59,14 @@ static PyStructSequence_Field floatinfo_fields[] = {
                     "is a normalized float"},
     {"min_10_exp",      "DBL_MIN_10_EXP -- minimum int e such that 10**e is "
                     "a normalized"},
-    {"dig",             "DBL_DIG -- digits"},
+    {"dig",             "DBL_DIG -- maximum number of decimal digits that "
+                    "can be faithfully represented in a float"},
     {"mant_dig",        "DBL_MANT_DIG -- mantissa digits"},
     {"epsilon",         "DBL_EPSILON -- Difference between 1 and the next "
                     "representable float"},
     {"radix",           "FLT_RADIX -- radix of exponent"},
-    {"rounds",          "FLT_ROUNDS -- rounding mode"},
+    {"rounds",          "FLT_ROUNDS -- rounding mode used for arithmetic "
+                    "operations"},
     {0}
 };
 
@@ -248,7 +250,7 @@ PyFloat_AsDouble(PyObject *op)
     nb = Py_TYPE(op)->tp_as_number;
     if (nb == NULL || nb->nb_float == NULL) {
         if (nb && nb->nb_index) {
-            PyObject *res = PyNumber_Index(op);
+            PyObject *res = _PyNumber_Index(op);
             if (!res) {
                 return -1;
             }
@@ -862,27 +864,7 @@ static PyObject *
 float___trunc___impl(PyObject *self)
 /*[clinic end generated code: output=dd3e289dd4c6b538 input=591b9ba0d650fdff]*/
 {
-    double x = PyFloat_AsDouble(self);
-    double wholepart;           /* integral portion of x, rounded toward 0 */
-
-    (void)modf(x, &wholepart);
-    /* Try to get out cheap if this fits in a Python int.  The attempt
-     * to cast to long must be protected, as C doesn't define what
-     * happens if the double is too big to fit in a long.  Some rare
-     * systems raise an exception then (RISCOS was mentioned as one,
-     * and someone using a non-default option on Sun also bumped into
-     * that).  Note that checking for >= and <= LONG_{MIN,MAX} would
-     * still be vulnerable:  if a long has more bits of precision than
-     * a double, casting MIN/MAX to double may yield an approximation,
-     * and if that's rounded up, then, e.g., wholepart=LONG_MAX+1 would
-     * yield true from the C expression wholepart<=LONG_MAX, despite
-     * that wholepart is actually greater than LONG_MAX.
-     */
-    if (LONG_MIN < wholepart && wholepart < LONG_MAX) {
-        const long aslong = (long)wholepart;
-        return PyLong_FromLong(aslong);
-    }
-    return PyLong_FromDouble(wholepart);
+    return PyLong_FromDouble(PyFloat_AS_DOUBLE(self));
 }
 
 /*[clinic input]

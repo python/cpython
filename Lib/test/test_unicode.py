@@ -720,6 +720,13 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertFalse("©".isidentifier())
         self.assertFalse("0".isidentifier())
 
+    @support.cpython_only
+    def test_isidentifier_legacy(self):
+        import _testcapi
+        u = '𝖀𝖓𝖎𝖈𝖔𝖉𝖊'
+        self.assertTrue(u.isidentifier())
+        self.assertTrue(_testcapi.unicode_legacy_string(u).isidentifier())
+
     def test_isprintable(self):
         self.assertTrue("".isprintable())
         self.assertTrue(" ".isprintable())

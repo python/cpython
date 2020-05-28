@@ -31,6 +31,7 @@ import uuid
 import warnings
 from test import support
 from test.support import socket_helper
+from test.support import threading_helper
 from platform import win32_is_iot
 
 try:
@@ -3163,12 +3164,12 @@ class TestSendfile(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.key = support.threading_setup()
+        cls.key = threading_helper.threading_setup()
         create_file(support.TESTFN, cls.DATA)
 
     @classmethod
     def tearDownClass(cls):
-        support.threading_cleanup(*cls.key)
+        threading_helper.threading_cleanup(*cls.key)
         support.unlink(support.TESTFN)
 
     def setUp(self):
@@ -3485,7 +3486,11 @@ class TermsizeTests(unittest.TestCase):
         should work too.
         """
         try:
-            size = subprocess.check_output(['stty', 'size']).decode().split()
+            size = (
+                subprocess.check_output(
+                    ["stty", "size"], stderr=subprocess.DEVNULL, text=True
+                ).split()
+            )
         except (FileNotFoundError, subprocess.CalledProcessError,
                 PermissionError):
             self.skipTest("stty invocation failed")

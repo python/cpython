@@ -40,6 +40,10 @@ typedef unsigned short mode_t;
 #  define FILE_ATTRIBUTE_NO_SCRUB_DATA 0x20000
 #endif
 
+#ifndef IO_REPARSE_TAG_APPEXECLINK
+#  define IO_REPARSE_TAG_APPEXECLINK 0x8000001BL
+#endif
+
 #endif /* MS_WINDOWS */
 
 /* From Python's stat.py */
@@ -563,7 +567,7 @@ stat_exec(PyObject *module)
         "ST_CTIME"
     };
 
-    for (int i = 0; i < Py_ARRAY_LENGTH(st_constants); i++) {
+    for (int i = 0; i < (int)Py_ARRAY_LENGTH(st_constants); i++) {
         if (PyModule_AddIntConstant(module, st_constants[i], i) < 0) {
             return -1;
         }

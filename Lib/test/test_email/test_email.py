@@ -37,7 +37,8 @@ from email import iterators
 from email import base64mime
 from email import quoprimime
 
-from test.support import unlink, start_threads
+from test.support import threading_helper
+from test.support import unlink
 from test.test_email import openfile, TestEmailBase
 
 # These imports are documented to work, but we are testing them using a
@@ -3241,7 +3242,7 @@ Foo
                     append(make_msgid(domain='testdomain-string'))
 
         threads = [MsgidsThread() for i in range(5)]
-        with start_threads(threads):
+        with threading_helper.start_threads(threads):
             pass
         all_ids = sum([t.msgids for t in threads], [])
         self.assertEqual(len(set(all_ids)), len(all_ids))

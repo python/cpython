@@ -7,6 +7,7 @@ import inspect
 import operator
 import pickle
 from random import choice, randrange
+from itertools import product, chain, combinations
 import string
 import sys
 from test import support
@@ -2218,6 +2219,64 @@ class TestCounter(unittest.TestCase):
         c = CounterSubclassWithGet('abracadabra')
         self.assertTrue(c.called)
         self.assertEqual(dict(c), {'a': 5, 'b': 2, 'c': 1, 'd': 1, 'r':2 })
+
+    def test_multiset_operations_equivalent_to_set_operations(self):
+        # When the multiplicities are all zero or one, multiset operations
+        # are guaranteed to be equivalent to the corresponding operations
+        # for regular sets.
+        s = list(product(('a', 'b', 'c'), range(2)))
+        powerset = chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+        counters = [Counter(dict(groups)) for groups in powerset]
+        for cp, cq in product(counters, repeat=2):
+            sp = set(cp.elements())
+            sq = set(cq.elements())
+            self.assertEqual(set(cp + cq), sp | sq)
+            self.assertEqual(set(cp - cq), sp - sq)
+            self.assertEqual(set(cp | cq), sp | sq)
+            self.assertEqual(set(cp & cq), sp & sq)
+            self.assertEqual(cp.isequal(cq), sp == sq)
+            self.assertEqual(cp.issubset(cq), sp.issubset(sq))
+            self.assertEqual(cp.issuperset(cq), sp.issuperset(sq))
+            self.assertEqual(cp.isdisjoint(cq), sp.isdisjoint(sq))
+
+    def test_multiset_equal(self):
+        self.assertTrue(Counter(a=3, b=2, c=0).isequal('ababa'))
+        self.assertFalse(Counter(a=3, b=2).isequal('babab'))
+
+    def test_multiset_subset(self):
+        self.assertTrue(Counter(a=3, b=2, c=0).issubset('ababa'))
+        self.assertFalse(Counter(a=3, b=2).issubset('babab'))
+
+    def test_multiset_superset(self):
+        self.assertTrue(Counter(a=3, b=2, c=0).issuperset('aab'))
+        self.assertFalse(Counter(a=3, b=2, c=0).issuperset('aabd'))
+
+    def test_multiset_disjoint(self):
+        self.assertTrue(Counter(a=3, b=2, c=0).isdisjoint('cde'))
+        self.assertFalse(Counter(a=3, b=2, c=0).isdisjoint('bcd'))
+
+    def test_multiset_predicates_with_negative_counts(self):
+        # Multiset predicates run on the output of the elements() method,
+        # meaning that zero counts and negative counts are ignored.
+        # The tests below confirm that we get that same results as the
+        # tests above, even after a negative count has been included
+        # in either *self* or *other*.
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isequal('ababa'))
+        self.assertFalse(Counter(a=3, b=2, d=-1).isequal('babab'))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issubset('ababa'))
+        self.assertFalse(Counter(a=3, b=2, d=-1).issubset('babab'))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issuperset('aab'))
+        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).issuperset('aabd'))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint('cde'))
+        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).isdisjoint('bcd'))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isequal(Counter(a=3, b=2, c=-1)))
+        self.assertFalse(Counter(a=3, b=2, d=-1).isequal(Counter(a=2, b=3, c=-1)))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issubset(Counter(a=3, b=2, c=-1)))
+        self.assertFalse(Counter(a=3, b=2, d=-1).issubset(Counter(a=2, b=3, c=-1)))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issuperset(Counter(a=2, b=1, c=-1)))
+        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).issuperset(Counter(a=2, b=1, c=-1, d=1)))
+        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint(Counter(c=1, d=2, e=3, f=-1)))
+        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).isdisjoint(Counter(b=1, c=1, d=1, e=-1)))
 
 
 ################################################################################

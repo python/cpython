@@ -927,14 +927,15 @@ class PurePath(object):
             common += 1
         if strict:
             failure = (root or drv) if n == 0 else common != n
-            error_message = "{!r} does not start with {!r}"
+            error_message = "{!r} is not in the subpath of {!r}"
             up_parts = []
         else:
             failure = root != to_root
             if drv or to_drv:
                 failure = cf([drv]) != cf([to_drv]) or (failure and n > 1)
-            error_message = "{!r} is not related to {!r}"
+            error_message = "{!r} is not on the same drive as {!r}"
             up_parts = (n-common)*['..']
+        error_message += " OR one path is relative and the other is absolute."
         if failure:
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
             raise ValueError(error_message.format(str(self), str(formatted)))

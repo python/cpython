@@ -455,7 +455,7 @@ formatlong(PyObject *v, int flags, int prec, int type)
     if (PyNumber_Check(v)) {
         /* make sure number is a type of integer for o, x, and X */
         if (type == 'o' || type == 'x' || type == 'X')
-            iobj = PyNumber_Index(v);
+            iobj = _PyNumber_Index(v);
         else
             iobj = PyNumber_Long(v);
         if (iobj == NULL) {

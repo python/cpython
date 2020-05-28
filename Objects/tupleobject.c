@@ -22,6 +22,12 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 #define PyTuple_MAXFREELIST  2000  /* Maximum number of tuples of each size to save */
 #endif
 
+/* bpo-40521: tuple free lists are shared by all interpreters. */
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  undef PyTuple_MAXSAVESIZE
+#  define PyTuple_MAXSAVESIZE 0
+#endif
+
 #if PyTuple_MAXSAVESIZE > 0
 /* Entries 1 up to PyTuple_MAXSAVESIZE are free lists, entry 0 is the empty
    tuple () of which at most one instance will be allocated.
@@ -76,8 +82,8 @@ tuple_alloc(Py_ssize_t size)
         numfree[size]--;
         /* Inline PyObject_InitVar */
 #ifdef Py_TRACE_REFS
-        Py_SIZE(op) = size;
-        Py_TYPE(op) = &PyTuple_Type;
+        Py_SET_SIZE(op, size);
+        Py_SET_TYPE(op, &PyTuple_Type);
 #endif
         _Py_NewReference((PyObject *)op);
     }
@@ -248,7 +254,9 @@ tupledealloc(PyTupleObject *op)
 #endif
     }
     Py_TYPE(op)->tp_free((PyObject *)op);
+#if PyTuple_MAXSAVESIZE > 0
 done:
+#endif
     Py_TRASHCAN_END
 }
 
@@ -478,8 +486,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         Py_INCREF(a);
         return (PyObject *)a;
     }
-    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
-        return PyErr_NoMemory();
+    assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) < PY_SSIZE_T_MAX);
     size = Py_SIZE(a) + Py_SIZE(b);
     if (size == 0) {
         return PyTuple_New(0);

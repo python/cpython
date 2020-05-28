@@ -549,25 +549,24 @@ Pure paths provide the following methods and properties:
       >>> p.relative_to('/usr')
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
-        File "pathlib.py", line 940, in relative_to
+        File "pathlib.py", line 941, in relative_to
           raise ValueError(error_message.format(str(self), str(formatted)))
-      ValueError: '/etc/passwd' does not start with '/usr'
+      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
       >>> p.relative_to('/usr', strict=False)
       PurePosixPath('../etc/passwd')
       >>> p.relative_to('foo', strict=False)
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
-        File "pathlib.py", line 940, in relative_to
+        File "pathlib.py", line 941, in relative_to
           raise ValueError(error_message.format(str(self), str(formatted)))
-      ValueError: '/etc/passwd' is not related to 'foo'
+      ValueError: '/etc/passwd' is not on the same drive as 'foo' OR one path is relative and the other is absolute.
 
-   If the path doesn't start with *other* and *strict* is ``True``,
-   :exc:`ValueError` is raised.  If *strict* is ``False`` and the paths are
-   not both relative or both absolute :exc:`ValueError` is raised (on Windows
-   both paths must reference the same drive as well).
+   If the path doesn't start with *other* and *strict* is ``True``, :exc:`ValueError` is raised.  If *strict* is ``False`` and one path is relative and the other is absolute or if they reference different drives :exc:`ValueError` is raised.
 
-   .. versionadded:: 3.9
-      The *strict* parameter was added.
+   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
+
+   .. versionadded:: 3.10
+      The *strict* argument (pre-3.10 behavior is strict).
 
 
 .. method:: PurePath.with_name(name)
@@ -1201,6 +1200,7 @@ os and os.path                         pathlib
 :func:`os.path.abspath`                :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
+:func:`os.makedirs`                    :meth:`Path.mkdir`
 :func:`os.rename`                      :meth:`Path.rename`
 :func:`os.replace`                     :meth:`Path.replace`
 :func:`os.rmdir`                       :meth:`Path.rmdir`
