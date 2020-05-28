@@ -563,6 +563,9 @@ loops that truncate the stream.
            for prod in result:
                yield tuple(prod)
 
+    Note, ``product`` expect its arguments to be finite iterables.
+    It keep all their elements in memory to produce all possible pairs.
+    For this reason ``product`` may require significant auxiliary storage (depending on lengths of iterables).
 
 .. function:: repeat(object[, times])
 
