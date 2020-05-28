@@ -1105,6 +1105,8 @@ Removed
 
   * Exclude the following functions from the limited C API:
 
+    * ``PyThreadState_DeleteCurrent()``
+      (Contributed by Joannah Nanjekye in :issue:`37878`.)
     * ``_Py_CheckRecursionLimit``
     * ``_Py_NewReference()``
     * ``_Py_ForgetReference()``
