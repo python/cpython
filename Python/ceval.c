@@ -850,26 +850,26 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 
 // Need these for pattern matching:
 
-// static int
-// check_match_mapping_type(PyObject *target)
-// {
-//     PyInterpreterState *interp = PyInterpreterState_Get();
-//     if (!interp) {
-//         return -1;
-//     }
-//     if (!interp->map_abc) {
-//         PyObject *abc = PyImport_ImportModule("_collections_abc");
-//         if (!abc) {
-//             return -1;
-//         }
-//         interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
-//         Py_DECREF(abc);
-//         if (!interp->map_abc) {
-//             return -1;
-//         }
-//     }
-//     return PyObject_IsInstance(target, interp->map_abc);
-// }
+static int
+check_match_mapping_type(PyObject *target)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (!interp) {
+        return -1;
+    }
+    if (!interp->map_abc) {
+        PyObject *abc = PyImport_ImportModule("_collections_abc");
+        if (!abc) {
+            return -1;
+        }
+        interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
+        Py_DECREF(abc);
+        if (!interp->map_abc) {
+            return -1;
+        }
+    }
+    return PyObject_IsInstance(target, interp->map_abc);
+}
 
 static int
 check_match_sequence_type(PyObject *target)
@@ -3332,6 +3332,27 @@ main_loop:
 #else
             DISPATCH();
 #endif
+        }
+
+        case TARGET(GET_MATCH_MAP): {
+            PyObject *target = TOP();
+            int check = check_match_mapping_type(target);
+            if (check < 0) {
+                goto error;
+            }
+            if (!check) {
+                STACK_SHRINK(1);
+                Py_DECREF(target);
+                JUMPBY(oparg);
+                DISPATCH();
+            }
+            PyObject *map = PyDict_New();
+            if (!map || PyDict_Update(map, target)) {
+                goto error;
+            }
+            Py_DECREF(target);
+            SET_TOP(map);
+            DISPATCH();
         }
 
         case TARGET(GET_MATCH_ITER): {

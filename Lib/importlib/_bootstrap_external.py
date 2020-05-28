@@ -278,6 +278,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.9a2  3424 (simplify bytecodes for *value unpacking)
 #     Python 3.9a2  3425 (simplify bytecodes for **value unpacking)
 #     Python 3.10a0 3435 (add GET_MATCH_ITER)
+#     Python 3.10a0 3436 (add GET_MATCH_MAP)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no

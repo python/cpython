@@ -993,8 +993,18 @@ All of the following opcodes use their arguments.
 .. opcode:: GET_MATCH_ITER (delta)
 
    Used for pattern matching.  Much like :opcode:`GET_ITER`, but pops TOS and
-   increments the byte code counter by *delta* if TOS is not a :term:`sequence`
-   or is an instance of :class:`str`, :class:`bytes`, or :class:`bytearray`.
+   increments the byte code counter by *delta* if TOS *is not* an instance of
+   :class:`collections.abc.Sequence` or *is* an instance of
+   :class:`str`/:class:`bytes`/:class:`bytearray`.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: GET_MATCH_MAP (delta)
+
+   Used for pattern matching. TOS is popped. If it is an instance of
+   :class:`collections.abc.Mapping`, a :class:`dict` is built from it and pushed
+   in its place. Otherwise, the byte code counter is incremented by *delta*.
 
    .. versionadded:: 3.10
 
