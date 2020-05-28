@@ -194,6 +194,12 @@ class TestHeap:
                 self.assertEqual(list(m), expected)
                 self.assertEqual(list(m), [])
 
+    def test_empty_merges(self):
+        # Merging two empty lists (with or without a key) should produce
+        # another empty list.
+        self.assertEqual(list(self.module.merge([], [])), [])
+        self.assertEqual(list(self.module.merge([], [], key=lambda: 6)), [])
+
     def test_merge_does_not_suppress_index_error(self):
         # Issue 19018: Heapq.merge suppresses IndexError from user generator
         def iterable():
