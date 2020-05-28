@@ -35,7 +35,6 @@ from sphinx.domains.python import PyModulelevel, PyClassmember
 
 # Support for checking for suspicious markup
 
-import patchlevel
 import suspicious
 
 
