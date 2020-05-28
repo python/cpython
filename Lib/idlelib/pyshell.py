@@ -671,18 +671,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.runcode(code)
 
     def runsource(self, source):
-        "Extend base class method: Stuff the source in the line cache first"
+        "Return overriden base call after caching source."
         filename = self.stuffsource(source)
-        # at the moment, InteractiveInterpreter expects str
-        assert isinstance(source, str)
-        #if isinstance(source, str):
-        #    from idlelib import iomenu
-        #    try:
-        #        source = source.encode(iomenu.encoding)
-        #    except UnicodeError:
-        #        self.tkconsole.resetoutput()
-        #        self.write("Unsupported characters in input\n")
-        #        return
         # II.runsource() calls .runcode(), overridden below.
         with warnings.catch_warnings():
             warnings.filterwarnings('once')
