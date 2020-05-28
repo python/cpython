@@ -35,6 +35,7 @@ from sphinx.domains.python import PyModulelevel, PyClassmember
 
 # Support for checking for suspicious markup
 
+import patchlevel
 import suspicious
 
 
@@ -311,7 +312,11 @@ class DeprecatedRemoved(Directive):
     final_argument_whitespace = True
     option_spec = {}
 
-    _label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
+    python_version = patchlevel.get_version_info()[0]
+    python_major, python_minor = map(int, python_version.split("."))
+
+    _deprecated_label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
+    _removed_label = 'Deprecated since version {deprecated}, removed in version {removed}'
 
     def run(self):
         node = addnodes.versionmodified()
@@ -319,7 +324,14 @@ class DeprecatedRemoved(Directive):
         node['type'] = 'deprecated-removed'
         version = (self.arguments[0], self.arguments[1])
         node['version'] = version
-        label = translators['sphinx'].gettext(self._label)
+        removed_major, removed_minor = map(int, self.arguments[1].split("."))
+        if (
+            removed_major < self.python_major or
+            (removed_major == self.python_major and removed_minor <= self.python_minor)
+        ):
+            label = translators['sphinx'].gettext(self._removed_label)
+        else:
+            label = translators['sphinx'].gettext(self._deprecated_label)
         text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
