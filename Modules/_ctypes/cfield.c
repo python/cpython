@@ -1289,7 +1289,8 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     }
 
     data = PyBytes_AS_STRING(value);
-    /* bpo-39593: XXX Why not Py_SIZE(value)? */
+    /* bpo-39593: value will be truncated after a null character on purpose.
+       If we use PyBytes_GET_SIZE(value) in here, it will break the feature.*/
     size = strlen(data);
 
     if (size < length) {
