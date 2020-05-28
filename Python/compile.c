@@ -980,8 +980,8 @@ stack_effect(int opcode, int oparg, int jump)
         case FOR_ITER:
             /* -1 at end of iterator, 1 if continue iterating. */
             return jump > 0 ? -1 : 1;
-        case GET_MATCH_ITER:
-        case GET_MATCH_MAP:
+        case MATCH_SEQ_TYPE:
+        case MATCH_MAP_TYPE:
             return -(jump > 0);
 
         case STORE_ATTR:
@@ -2829,7 +2829,8 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
             }
             end = compiler_new_block(c);
             block = compiler_new_block(c);
-            ADDOP_JREL(c, GET_MATCH_ITER, fail);
+            ADDOP_JREL(c, MATCH_SEQ_TYPE, fail);
+            ADDOP(c, GET_ITER);
             for (i = 0; i < size; i++) {
                 elt = asdl_seq_GET(elts, i);
                 if (i == star) {
@@ -2840,7 +2841,8 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
                     }
                     if (size - i - 1) {
                         ADDOP_I(c, BUILD_TUPLE, size - i - 1);
-                        ADDOP_JREL(c, GET_MATCH_ITER, fail);
+                        ADDOP_JREL(c, MATCH_SEQ_TYPE, fail);
+                        ADDOP(c, GET_ITER);
                     }
                     else {
                         ADDOP_JREL(c, JUMP_FORWARD, end);
