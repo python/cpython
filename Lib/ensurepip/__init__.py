@@ -12,13 +12,13 @@ from . import _bundled
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "46.1.3"
+_SETUPTOOLS_VERSION = "41.2.0"
 
-_PIP_VERSION = "20.1"
+_PIP_VERSION = "19.2.3"
 
 _PROJECTS = [
-    ("setuptools", _SETUPTOOLS_VERSION, 'py3'),
-    ("pip", _PIP_VERSION, 'py2.py3'),
+    ("setuptools", _SETUPTOOLS_VERSION),
+    ("pip", _PIP_VERSION),
 ]
 
 
@@ -107,8 +107,8 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         # Put our bundled wheels into a temporary directory and construct the
         # additional paths that need added to sys.path
         additional_paths = []
-        for project, version, py_tag in _PROJECTS:
-            wheel_name = "{}-{}-{}-none-any.whl".format(project, version, py_tag)
+        for project, version in _PROJECTS:
+            wheel_name = "{}-{}-py2.py3-none-any.whl".format(project, version)
             whl = resources.read_binary(
                 _bundled,
                 wheel_name,
