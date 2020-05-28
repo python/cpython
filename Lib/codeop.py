@@ -57,6 +57,7 @@ Compile():
 """
 
 import __future__
+import warnings
 
 _features = [getattr(__future__, fname)
              for fname in __future__.all_feature_names]
@@ -79,17 +80,22 @@ def _maybe_compile(compiler, source, filename, symbol):
     code = code1 = code2 = None
 
     try:
+        # Capture warnings only on the first call to avoid duplication.
         code = compiler(source, filename, symbol)
     except SyntaxError:
         pass
 
     try:
-        code1 = compiler(source + "\n", filename, symbol)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            code1 = compiler(source + "\n", filename, symbol)
     except SyntaxError as e:
         err1 = e
 
     try:
-        code2 = compiler(source + "\n\n", filename, symbol)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            code2 = compiler(source + "\n\n", filename, symbol)
     except SyntaxError as e:
         err2 = e
 
