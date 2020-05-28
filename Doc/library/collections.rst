@@ -290,6 +290,47 @@ For example::
             >>> sorted(c.elements())
             ['a', 'a', 'a', 'a', 'b', 'b']
 
+    .. method:: isdisjoint(other)
+
+        True if none of the elements in *self* overlap with those in *other*.
+        Negative or missing counts are ignored.
+        Logically equivalent to:  ``not (+self) & (+other)``
+
+        .. versionadded:: 3.10
+
+    .. method:: isequal(other)
+
+        Test whether counts agree exactly.
+        Negative or missing counts are treated as zero.
+
+        This method works differently than the inherited :meth:`__eq__` method
+        which treats negative or missing counts as distinct from zero::
+
+            >>> Counter(a=1, b=0).isequal(Counter(a=1))
+            True
+            >>> Counter(a=1, b=0) == Counter(a=1)
+            False
+
+        Logically equivalent to:  ``+self == +other``
+
+        .. versionadded:: 3.10
+
+    .. method:: issubset(other)
+
+        True if the counts in *self* are less than or equal to those in *other*.
+        Negative or missing counts are treated as zero.
+        Logically equivalent to:  ``not self - (+other)``
+
+        .. versionadded:: 3.10
+
+    .. method:: issuperset(other)
+
+        True if the counts in *self* are greater than or equal to those in *other*.
+        Negative or missing counts are treated as zero.
+        Logically equivalent to:  ``not other - (+self)``
+
+        .. versionadded:: 3.10
+
     .. method:: most_common([n])
 
         Return a list of the *n* most common elements and their counts from the
