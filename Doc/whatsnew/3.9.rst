@@ -868,7 +868,7 @@ Removed
   (Contributed by Victor Stinner in :issue:`39489`.)
 
 * The ``_field_types`` attribute of the :class:`typing.NamedTuple` class
-  has been removed.  It was deprecated deprecated since Python 3.8.  Use
+  has been removed.  It was deprecated since Python 3.8.  Use
   the ``__annotations__`` attribute instead.
   (Contributed by Serhiy Storchaka in :issue:`40182`.)
 
@@ -932,6 +932,55 @@ Changes in the Python API
   of ``wchar_t`` since Python 3.3.
   (Contributed by Inada Naoki in :issue:`34538`.)
 
+
+Changes in the C API
+--------------------
+
+* Instances of heap-allocated types (such as those created with
+  :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their type
+  object since Python 3.8. As indicated in the "Changes in the C API" of Python
+  3.8, for the vast majority of cases, there should be no side effect but for
+  types that have a custom :c:member:`~PyTypeObject.tp_traverse` function,
+  ensure that all custom ``tp_traverse`` functions of heap-allocated types
+  visit the object's type.
+
+    Example:
+
+    .. code-block:: c
+
+        int
+        foo_traverse(foo_struct *self, visitproc visit, void *arg) {
+        // Rest of the traverse function
+        #if PY_VERSION_HEX >= 0x03090000
+            // This was not needed before Python 3.9 (Python issue 35810 and 40217)
+            Py_VISIT(Py_TYPE(self));
+        #endif
+        }
+
+  If your traverse function delegates to ``tp_traverse`` of its base class
+  (or another type), ensure that ``Py_TYPE(self)`` is visited only once.
+  Note that only heap types are expected to visit the type in ``tp_traverse``.
+
+    For example, if your ``tp_traverse`` function includes:
+
+    .. code-block:: c
+
+        base->tp_traverse(self, visit, arg)
+
+    then add:
+
+    .. code-block:: c
+
+        #if PY_VERSION_HEX >= 0x03090000
+            // This was not needed before Python 3.9 (Python issue 35810 and 40217)
+            if (base->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+                // a heap type's tp_traverse already visited Py_TYPE(self)
+            } else {
+                Py_VISIT(Py_TYPE(self));
+            }
+        #else
+
+  (See :issue:`35810` and :issue:`40217` for more information.)
 
 CPython bytecode changes
 ------------------------
