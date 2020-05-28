@@ -84,7 +84,6 @@ def _exists(fn):
 
 def _infer_return_type(*args):
     """Look at the type of all args and divine their implied return type."""
-    global tempdir
     return_type = None
     for arg in args:
         if arg is None:
@@ -295,11 +294,11 @@ def _gettempdir():
     return tempdir
 
 def gettempdir():
-    """A string version of tempfile._gettempdir()."""
+    """Returns tempfile.tempdir as str."""
     return _os.fsdecode(_gettempdir())
 
 def gettempdirb():
-    """A bytes version of tempfile._gettempdir()."""
+    """Returns tempfile.tempdir as bytes."""
     return _os.fsencode(_gettempdir())
 
 def mkstemp(suffix=None, prefix=None, dir=None, text=False):
