@@ -2,6 +2,8 @@ import socket
 import time
 import asyncio
 import sys
+import unittest
+
 from asyncio import proactor_events
 from itertools import cycle, islice
 from test.test_asyncio import utils as test_utils
@@ -232,6 +234,8 @@ class BaseSockTestsMixin:
                 # avoid touching event loop to maintain race condition
                 time.sleep(0.01)
 
+    # FIXME: https://bugs.python.org/issue30064#msg370143
+    @unittest.skipIf(True, "unstable test")
     def test_sock_client_racing(self):
         with test_utils.run_test_server() as httpd:
             sock = socket.socket()
