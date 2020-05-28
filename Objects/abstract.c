@@ -1317,11 +1317,12 @@ PyIndex_Check(PyObject *obj)
 
 
 /* Return a Python int from the object item.
+   Can return an instance of int subclass.
    Raise TypeError if the result is not an int
    or if the object cannot be interpreted as an index.
 */
 PyObject *
-PyNumber_Index(PyObject *item)
+_PyNumber_Index(PyObject *item)
 {
     PyObject *result = NULL;
     if (item == NULL) {
@@ -1360,6 +1361,20 @@ PyNumber_Index(PyObject *item)
     return result;
 }
 
+/* Return an exact Python int from the object item.
+   Raise TypeError if the result is not an int
+   or if the object cannot be interpreted as an index.
+*/
+PyObject *
+PyNumber_Index(PyObject *item)
+{
+    PyObject *result = _PyNumber_Index(item);
+    if (result != NULL && !PyLong_CheckExact(result)) {
+        Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
+    }
+    return result;
+}
+
 /* Return an error on Overflow only if err is not NULL*/
 
 Py_ssize_t
@@ -1367,7 +1382,7 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 {
     Py_ssize_t result;
     PyObject *runerr;
-    PyObject *value = PyNumber_Index(item);
+    PyObject *value = _PyNumber_Index(item);
     if (value == NULL)
         return -1;
 
@@ -1451,11 +1466,7 @@ PyNumber_Long(PyObject *o)
         return result;
     }
     if (m && m->nb_index) {
-        result = PyNumber_Index(o);
-        if (result != NULL && !PyLong_CheckExact(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
-        }
-        return result;
+        return PyNumber_Index(o);
     }
     trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
@@ -1479,9 +1490,6 @@ PyNumber_Long(PyObject *o)
             return NULL;
         }
         Py_SETREF(result, PyNumber_Index(result));
-        if (result != NULL && !PyLong_CheckExact(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
-        }
         return result;
     }
     if (PyErr_Occurred())
@@ -1564,7 +1572,7 @@ PyNumber_Float(PyObject *o)
         return PyFloat_FromDouble(val);
     }
     if (m && m->nb_index) {
-        PyObject *res = PyNumber_Index(o);
+        PyObject *res = _PyNumber_Index(o);
         if (!res) {
             return NULL;
         }
@@ -1590,7 +1598,7 @@ PyNumber_ToBase(PyObject *n, int base)
                         "PyNumber_ToBase: base must be 2, 8, 10 or 16");
         return NULL;
     }
-    PyObject *index = PyNumber_Index(n);
+    PyObject *index = _PyNumber_Index(n);
     if (!index)
         return NULL;
     PyObject *res = _PyLong_Format(index, base);
