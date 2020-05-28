@@ -7,6 +7,7 @@ import doctest
 from test import support
 from unittest import TestCase, skipUnless
 from operator import itemgetter
+from itertools import chain, product
 
 py_heapq = support.import_fresh_module('heapq', blocked=['_heapq'])
 c_heapq = support.import_fresh_module('heapq', fresh=['_heapq'])
@@ -14,7 +15,7 @@ c_heapq = support.import_fresh_module('heapq', fresh=['_heapq'])
 # _heapq.nlargest/nsmallest are saved in heapq._nlargest/_smallest when
 # _heapq is imported, so check them there
 func_names = ['heapify', 'heappop', 'heappush', 'heappushpop', 'heapreplace',
-              '_heappop_max', '_heapreplace_max', '_heapify_max']
+              '_heappop_max', '_heapreplace_max', '_heapify_max', 'merge']
 
 class TestModules(TestCase):
     def test_py_functions(self):
@@ -175,28 +176,23 @@ class TestHeap:
             self.assertEqual(heap_sorted, sorted(data))
 
     def test_merge(self):
-        inputs = []
-        for i in range(random.randrange(25)):
-            row = []
-            for j in range(random.randrange(100)):
-                tup = random.choice('ABC'), random.randrange(-500, 500)
-                row.append(tup)
-            inputs.append(row)
-
-        for key in [None, itemgetter(0), itemgetter(1), itemgetter(1, 0)]:
-            for reverse in [False, True]:
-                seqs = []
-                for seq in inputs:
-                    seqs.append(sorted(seq, key=key, reverse=reverse))
-                self.assertEqual(sorted(chain(*inputs), key=key, reverse=reverse),
-                                 list(self.module.merge(*seqs, key=key, reverse=reverse)))
-                self.assertEqual(list(self.module.merge()), [])
-
-    def test_empty_merges(self):
-        # Merging two empty lists (with or without a key) should produce
-        # another empty list.
-        self.assertEqual(list(self.module.merge([], [])), [])
-        self.assertEqual(list(self.module.merge([], [], key=lambda: 6)), [])
+        lengths = range(25)
+        keys = [None, itemgetter(0), itemgetter(1), itemgetter(1, 0)]
+        reverses = [False, True]
+        for n, key, reverse in product(lengths, keys, reverses):
+            inputs = [
+                sorted(
+                    [(random.choice('ABC'), random.randrange(-500, 500))
+                     for _ in range(random.randrange(20))],
+                    key=key, reverse=reverse
+                )
+                for _ in range(n)
+            ]
+            expected = sorted(chain(*inputs), key=key, reverse=reverse)
+            with self.subTest(inputs=inputs, key=key, reverse=reverse):
+                m = self.module.merge(*inputs, key=key, reverse=reverse)
+                self.assertEqual(list(m), expected)
+                self.assertEqual(list(m), [])
 
     def test_merge_does_not_suppress_index_error(self):
         # Issue 19018: Heapq.merge suppresses IndexError from user generator
@@ -357,7 +353,6 @@ class S:
     def __next__(self):
         raise StopIteration
 
-from itertools import chain
 def L(seqn):
     'Test multiple tiers of iterators'
     return chain(map(lambda x:x, R(Ig(G(seqn)))))
@@ -471,7 +466,7 @@ class TestErrorHandling:
         merge = self.module.merge
         for key in [None, lambda x:x]:
             for reverse in [False, True]:
-                # test comparison failure during heapification
+                # test comparison failure during initialization
                 args = [[CmpErr()]] + [range(100)]*10
                 mo = merge(*args, key=key, reverse=reverse)
                 self.assertRaises(ZeroDivisionError, list, mo)
@@ -482,7 +477,7 @@ class TestErrorHandling:
                     mo = merge(*args, key=key, reverse=reverse)
                     self.assertRaises(ZeroDivisionError, list, mo)
                 for n in range(1, 10):
-                    # test __next__ error during heapification
+                    # test __next__ error during initialization
                     args = [nexterr_immediate(range(10)) for _ in range(n)]
                     mo = merge(*args, key=key, reverse=reverse)
                     self.assertRaises(ZeroDivisionError, list, mo)

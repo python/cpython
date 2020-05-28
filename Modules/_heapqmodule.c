@@ -556,28 +556,112 @@ _heapq__heapify_max(PyObject *module, PyObject *heap)
 }
 
 
-/* merge node object ********************************************************/
+/*
 
-#define DEBUG_MERGE 0
+Algorithm for _heapq.merge:
+===========================
+
+- Maintain a binary tree of merge_node objects
+- A node N is a leaf iff N->leaf == N.
+
+- For each leaf node:
+
+    - leaf->right will be an iterator
+    - leaf->left will be the most recent item produced by leaf->right
+    - leaf->leaf will be leaf itself.
+    - leaf->key will be the keyfunc(leaf->left).
+
+- For each non-leaf node:
+
+    - node->left and node->right will be merge_nodes
+    - node->left->parent == node->right->parent == node
+    - node->leaf will be one of node's descendant leaves.
+    - node->key will be node->leaf->key.
+    - if "winner" is the higher priority of node->left and node->right
+      based on node->left->key and node->right->key, then
+      node->leaf == winner->leaf and node->key == winner->key
+
+- At a normal merge_next call:
+
+    - Try to get the next value for root->leaf, which holds the
+      iterator that produced the previously yielded value.
+    - If the iterator is exhausted, delete that leaf and promote its
+      sibling to where their common parent is in the tree.
+    - Everywhere that the previously yielded champion had won, namely,
+      at each of the relevant leaf's ancestors, re-evaluate the winner
+      among that ancestor's two children, and copy the winner's leaf
+      and key references into that ancestor.
+
+- Reference counting:
+
+    - To prevent cycles, each node's reference to its parent will be
+      borrowed.
+    - To prevent extra INCREF/DECREFs in the innermost DO_GAMES loop,
+      only leaves will have strong references to their keys.
+    - All left and right attributes will be strong references because
+      leaves hold the sole strong references to their items and
+      iterators, and other nodes hold the sole strong references to
+      their children.
+    - The merge object holds the sole strong reference to the root.
+*/
+
+/* merge node object ********************************************************/
 
 struct merge_node;
 
 typedef struct merge_node {
     PyObject_HEAD
-    PyObject *key;             /* strong if leaf else borrowed */
-    PyObject *item;            /* strong if leaf else borrowed */
-    struct merge_node *parent; /* borrowed */
-    struct merge_node *left;   /* strong */
-    PyObject *right;           /* strong */
+    PyObject *key;             /* strong if is_leaf(node) else borrowed */
     struct merge_node *leaf;   /* borrowed */
+    struct merge_node *parent; /* borrowed */
+    PyObject *left;            /* strong */
+    PyObject *right;           /* strong */
 } merge_node;
+
+static PyTypeObject merge_node_type;
+
+static inline int
+is_leaf(merge_node *node)
+{
+    return node->leaf == node;
+}
+
+static inline PyObject *
+leaf_item(merge_node *node)
+{
+    assert(is_leaf(node));
+    return node->left;
+}
+
+static inline PyObject *
+leaf_iterator(merge_node *node)
+{
+    assert(is_leaf(node));
+    assert(PyIter_Check(node->right));
+    return node->right;
+}
+
+static inline merge_node *
+left_child(merge_node *node)
+{
+    assert(!is_leaf(node));
+    assert(Py_TYPE(node->left) == &merge_node_type);
+    return (merge_node *)node->left;
+}
+
+static inline merge_node *
+right_child(merge_node *node)
+{
+    assert(!is_leaf(node));
+    assert(Py_TYPE(node->right) == &merge_node_type);
+    return (merge_node *)node->right;
+}
 
 static int
 merge_node_clear(merge_node *node)
 {
-    if (node->leaf == node) {
+    if (is_leaf(node)) {
         Py_CLEAR(node->key);
-        Py_CLEAR(node->item);
     }
     Py_CLEAR(node->left);
     Py_CLEAR(node->right);
@@ -587,9 +671,8 @@ merge_node_clear(merge_node *node)
 static int
 merge_node_traverse(merge_node *node, visitproc visit, void *arg)
 {
-    if (node->leaf == node) {
+    if (is_leaf(node)) {
         Py_VISIT(node->key);
-        Py_VISIT(node->item);
     }
     Py_VISIT(node->left);
     Py_VISIT(node->right);
@@ -600,15 +683,8 @@ static void
 merge_node_dealloc(merge_node *node)
 {
     PyObject_GC_UnTrack(node);
-    if (node->leaf == node) {
+    if (is_leaf(node)) {
         Py_XDECREF(node->key);
-        Py_XDECREF(node->item);
-#if DEBUG_MERGE
-        printf("DEL LEAF\n");
-    }
-    else {
-        printf("DEL INTERNAL\n");
-#endif
     }
     Py_XDECREF(node->left);
     Py_XDECREF(node->right);
@@ -640,7 +716,8 @@ typedef struct {
 static PyTypeObject merge_type;
 
 static int
-construct_leaf(PyObject *iterable, PyObject *keyfunc, merge_node **node) {
+construct_leaf(PyObject *iterable, PyObject *keyfunc, merge_node **node)
+{
     PyObject *it = NULL, *item = NULL, *key = NULL;
 
     assert(iterable != NULL);
@@ -675,14 +752,10 @@ construct_leaf(PyObject *iterable, PyObject *keyfunc, merge_node **node) {
     }
 
     (*node)->key = key;
-    (*node)->item = item;
-    (*node)->parent = NULL;
-    (*node)->left = NULL;
+    (*node)->left = item;
     (*node)->right = it;
+    (*node)->parent = NULL;
     (*node)->leaf = (*node);
-#if DEBUG_MERGE
-    printf("New leaf %p has %d refs.\n", node, Py_REFCNT(*node));
-#endif
     return 1;
 
 error:
@@ -714,23 +787,20 @@ construct_parent(merge_node *left, merge_node *right, int reverse)
         return NULL;
     }
     parent->key = winner->key;
-    parent->item = winner->item;
     parent->leaf = winner->leaf;
-    parent->left = left;
+    parent->left = (PyObject *)left;
     parent->right = (PyObject *)right;
     parent->parent = NULL;
     Py_INCREF(left);
     Py_INCREF(right);
-    left->parent = right->parent = parent; /* borrowed */
+    left->parent = right->parent = parent;
     return parent;
 }
 
 static int
 build_tree(mergeobject *mo)
 {
-    assert(mo != NULL);
     assert(mo->state == 0);
-    assert(mo->iterables != NULL);
     assert(PyTuple_CheckExact(mo->iterables));
 
     Py_ssize_t n0 = PyTuple_GET_SIZE(mo->iterables);
@@ -740,6 +810,7 @@ build_tree(mergeobject *mo)
         return -1;
     }
     
+    /* first put each nonempty iterator into a leaf. */
     for (Py_ssize_t i=0; i < n0; i++) {
         PyObject *it = PyTuple_GET_ITEM(mo->iterables, i);
         merge_node *leaf;
@@ -755,12 +826,20 @@ build_tree(mergeobject *mo)
             Py_DECREF(leaf);
         }
     }
+    Py_CLEAR(mo->iterables);
 
     n0 = PyList_GET_SIZE(nodes);
     if (n0 == 0) {
+        /* All iterators were empty. */
         goto error;
     }
+    if (n0 == 1) {
+        /* Only one node, so don't compute keys. */
+        Py_CLEAR(mo->keyfunc);
+    }
 
+    /* Now repeatedly unite pairs of adjacent nodes by adding a common
+       parent. Stop once we have one united binary tree. */
     while (n0 > 1) {
         Py_ssize_t n1 = (n0 + 1) / 2;
         new_nodes = PyList_New(n1);
@@ -788,25 +867,19 @@ build_tree(mergeobject *mo)
     mo->root = (merge_node *)PyList_GET_ITEM(nodes, 0);
     Py_INCREF(mo->root);
     Py_CLEAR(nodes);
-    Py_CLEAR(mo->iterables);
     return 0;
 
 error:
+    Py_CLEAR(mo->iterables);
     Py_CLEAR(new_nodes);
     Py_CLEAR(nodes);
-    Py_CLEAR(mo->iterables);
     return -1;
 }
 
 static int
 refill_leaf(merge_node *leaf, PyObject *keyfunc)
 {
-    assert(leaf != NULL);
-    assert(leaf->left == NULL);
-    assert(leaf->leaf == leaf);
-    PyObject *it = leaf->right;
-    assert(it != NULL);
-    assert(PyIter_Check(it));
+    PyObject *it = leaf_iterator(leaf);
     PyObject *item = PyIter_Next(it);
 
     if (item == NULL) {
@@ -829,7 +902,7 @@ refill_leaf(merge_node *leaf, PyObject *keyfunc)
         }
     }
 
-    Py_SETREF(leaf->item, item);
+    Py_SETREF(leaf->left, item);
     Py_SETREF(leaf->key, key);
     return 1;
 
@@ -842,50 +915,45 @@ error:
 static merge_node *
 promote_sibling_of(merge_node *leaf)
 {
-    assert(leaf != NULL);
     merge_node *parent = leaf->parent;
-
     if (parent == NULL) {
+        /* End the iteration now. */
         return NULL;
     }
-    merge_node *left = parent->left;
-    merge_node *right = (merge_node *)parent->right;
+    merge_node *left = left_child(parent);
+    merge_node *right = right_child(parent);
     merge_node *sibling = (leaf == left) ? right : left;
 
-    assert(sibling != NULL);
-    parent->item = sibling->item;
     parent->key = sibling->key;
     parent->leaf = sibling->leaf;
     parent->left = sibling->left;
     parent->right = sibling->right;
 
-    if (sibling->left == NULL) {
+    if (is_leaf(sibling)) {
         /* sibling was a leaf, so parent is now a leaf. */
         parent->leaf = parent;
     }
     else {
-        assert(sibling->right != NULL);
-        sibling->left->parent = parent;
-        ((merge_node *)sibling->right)->parent = parent;
+        left_child(sibling)->parent = parent;
+        right_child(sibling)->parent = parent;
     }
 
-    /* Clear these so we don't accidentally decref them. */
+    /* Clear these so we don't decref them; 
+       they were just moved into the parent. */
     sibling->left = NULL;
     sibling->right = NULL;
     sibling->key = NULL;
-    sibling->item = NULL;
     
     Py_DECREF(leaf);
     Py_DECREF(sibling);
 
-    assert(PyIter_Check(parent->leaf->right));
-    assert(parent->leaf->left == NULL);
-
+    assert(is_leaf(parent->leaf));
     return parent;
 }
 
 static int
-replay_games(mergeobject *mo) {
+replay_games(mergeobject *mo)
+{
     assert(mo->state == 1);
     merge_node *root = mo->root;
     merge_node *node = root->leaf;
@@ -900,6 +968,10 @@ replay_games(mergeobject *mo) {
         if (node == NULL) {
             return -1;
         }
+        if (is_leaf(root)) {
+            /* Only one iterator is left, so use values as keys. */
+            Py_CLEAR(mo->keyfunc);
+        }
         break;
     case 1:
         /* got a value */
@@ -908,44 +980,37 @@ replay_games(mergeobject *mo) {
         Py_UNREACHABLE();
     }
 
+    #define DO_GAMES(OP1, OP2) do {                              \
+        while (node != root) {                                   \
+            node = node->parent;                                 \
+            merge_node *left = left_child(node);                 \
+            merge_node *right = right_child(node);               \
+            int cmp = PyObject_RichCompareBool(OP1, OP2, Py_LT); \
+            if (cmp < 0) {                                       \
+                return -1;                                       \
+            }                                                    \
+            merge_node *winner = cmp ? right : left;             \
+            node->key = winner->key;                             \
+            node->leaf = winner->leaf;                           \
+        }                                                        \
+    } while (0)
+
     if (mo->reverse) {
-        while (node != root) {
-            node = node->parent;
-            merge_node *left = (merge_node *)node->left;
-            merge_node *right = (merge_node *)node->right;
-            int cmp = PyObject_RichCompareBool(left->key, right->key, Py_LT);
-            if (cmp < 0) {
-                return -1;
-            }
-            merge_node *winner = cmp ? right : left;
-            node->key = winner->key;
-            node->item = winner->item;
-            node->leaf = winner->leaf;            
-        }
+        /* winner = right if left < right else left */
+        DO_GAMES(left->key, right->key);
     }
     else {
-        while (node != root) {
-            node = node->parent;
-#if DEBUG_MERGE
-            printf("%p refs: %d\n", node, Py_REFCNT(node));
-#endif
-            merge_node *left = (merge_node *)node->left;
-            merge_node *right = (merge_node *)node->right;
-            int cmp = PyObject_RichCompareBool(right->key, left->key, Py_LT);
-            if (cmp < 0) {
-                return -1;
-            }
-            merge_node *winner = cmp ? right : left;
-            node->key = winner->key;
-            node->item = winner->item;
-            node->leaf = winner->leaf;            
-        }
+        /* winner = right if right < left else left */
+        DO_GAMES(right->key, left->key);
     }
+
+    #undef DO_GAMES
     return 0;
 }
 
 static PyObject *
-merge_next(mergeobject *mo) {
+merge_next(mergeobject *mo)
+{
     switch (mo->state) {
     case 0:
         if (build_tree(mo) < 0) {
@@ -963,7 +1028,7 @@ merge_next(mergeobject *mo) {
     default:
         Py_UNREACHABLE();
     }
-    PyObject *result = mo->root->item;
+    PyObject *result = leaf_item(mo->root->leaf);
     Py_INCREF(result);
     return result;
 stop:
@@ -974,8 +1039,8 @@ stop:
 static PyObject *
 merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *keyfunc = NULL;
-    int reverse = 0;
+    PyObject *key = NULL, *keyfunc = NULL;
+    int reverse = 0, state = 0;
     PyObject *iterables = NULL;
     mergeobject *mo;
 
@@ -986,36 +1051,27 @@ merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|Op:merge",
-                                         kwlist, &keyfunc, &reverse)) {
+                                         kwlist, &key, &reverse)) {
             Py_DECREF(tmpargs);
             return NULL;
         }
         Py_DECREF(tmpargs);
     }
-
-    if (keyfunc == Py_None) {
-        keyfunc = NULL;
-    }
-    Py_XINCREF(keyfunc);
     
     assert(PyTuple_CheckExact(args));
     if (PyTuple_GET_SIZE(args) == 0) {
         /* nothing to merge. */
-        mo = (mergeobject *)type->tp_alloc(type, 0);
-        if (mo == NULL) {
-            return NULL;
-        }
-        mo->root = NULL;        
-        mo->iterables = NULL;
-        mo->keyfunc = NULL;
-        mo->reverse = 0;
-        mo->state = 2;
-        return (PyObject *) mo;
+        state = 2;
+        goto success;
     }
 
     iterables = args;
     Py_INCREF(iterables);
 
+    keyfunc = (key == NULL || key == Py_None) ? NULL : key;
+    Py_XINCREF(keyfunc);
+
+success:
     mo = (mergeobject *)type->tp_alloc(type, 0);
     if (mo == NULL) {
         goto error;
@@ -1024,8 +1080,7 @@ merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     mo->iterables = iterables;
     mo->keyfunc = keyfunc;
     mo->reverse = reverse;
-    mo->state = 0;
-
+    mo->state = state;
     return (PyObject *)mo;
 
 error:
@@ -1240,9 +1295,6 @@ heapq_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddType(m, &merge_type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddType(m, &merge_node_type) < 0) {
         return -1;
     }
     return 0;
