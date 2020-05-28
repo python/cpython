@@ -563,10 +563,9 @@ loops that truncate the stream.
            for prod in result:
                yield tuple(prod)
 
-    Note, this function expect its arguments to be finite iterables.
-    It keep all their elements in memory to produce all possible pairs.
-    For this reason :func:`product` may require significant auxiliary storage
-    (depending on lengths of iterables).
+   Before :func:`product` runs, it completely consumes the input iterables,
+   keeping pools of values in memory to generate the products.  Accordingly,
+   it only useful with finite inputs.
 
 .. function:: repeat(object[, times])
 
