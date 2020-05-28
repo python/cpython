@@ -2,7 +2,7 @@
 # pysqlite2/test/userfunctions.py: tests for user-defined functions and
 #                                  aggregates.
 #
-# Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2005-2007 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -277,8 +277,6 @@ class FunctionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 2)
 
-
-    #
     # Regarding deterministic functions:
     #
     # Between 3.8.3 and 3.15.0, deterministic functions were only used to
@@ -286,7 +284,6 @@ class FunctionTests(unittest.TestCase):
     # sqlite machinery has factored out a call or not. From 3.15.0 and onward,
     # deterministic functions were permitted in WHERE clauses of partial
     # indices, which allows testing based on syntax, iso. the query optimizer.
-    #
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def CheckFuncNonDeterministic(self):
         mock = unittest.mock.Mock(return_value=None)
