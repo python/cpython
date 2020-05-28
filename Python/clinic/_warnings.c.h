@@ -45,7 +45,7 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     if (args[2]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[2]);
+            PyObject *iobj = _PyNumber_Index(args[2]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -66,4 +66,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=484e5ffe94edf0f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb9997fa998fdbad input=a9049054013a1b77]*/

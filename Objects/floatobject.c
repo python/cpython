@@ -250,7 +250,7 @@ PyFloat_AsDouble(PyObject *op)
     nb = Py_TYPE(op)->tp_as_number;
     if (nb == NULL || nb->nb_float == NULL) {
         if (nb && nb->nb_index) {
-            PyObject *res = PyNumber_Index(op);
+            PyObject *res = _PyNumber_Index(op);
             if (!res) {
                 return -1;
             }
