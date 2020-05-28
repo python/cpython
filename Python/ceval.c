@@ -864,6 +864,9 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 //         }
 //         interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
 //         Py_DECREF(abc);
+//         if (!interp->map_abc) {
+//             return -1;
+//         }
 //     }
 //     return PyObject_IsInstance(target, interp->map_abc);
 // }
@@ -882,6 +885,9 @@ check_match_sequence_type(PyObject *target)
         }
         interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
         Py_DECREF(abc);
+        if (!interp->seq_abc) {
+            return -1;
+        }
     }
     return (
         PyObject_IsInstance(target, interp->seq_abc)
