@@ -107,6 +107,8 @@ The mathematical and bitwise operations are the most numerous:
    that conversion from a string or bytestring is not permitted. The result
    always has exact type :class:`float`.
 
+   .. versionadded:: 3.10
+
 
 .. function:: floordiv(a, b)
               __floordiv__(a, b)
