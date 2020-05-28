@@ -982,6 +982,7 @@ stack_effect(int opcode, int oparg, int jump)
             return jump > 0 ? -1 : 1;
         case GET_MATCH_ITER:
             return -(jump > 0);
+
         case STORE_ATTR:
             return -2;
         case DELETE_ATTR:

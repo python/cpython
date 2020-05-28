@@ -369,7 +369,6 @@ class TestAST(unittest.TestCase):
             MatchCase("[b'x']", "y = 0"),
             MatchCase("['x']", "y = 1"),
             MatchCase("[120]", "y = 2"),
-            MatchCase("120", "y = 3"),
             MatchCase("b'x'", "y = 4"),
         ]
         namespace = self.execute_match("x = b'x'", "x", match_cases, "")
