@@ -1289,8 +1289,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     }
 
     data = PyBytes_AS_STRING(value);
-    /* bpo-39593: value will be truncated after a null character on purpose.
-       If we use PyBytes_GET_SIZE(value) in here, it will break the feature.*/
+    // bpo-39593: Use strlen() to truncate the string at the first null character.
     size = strlen(data);
 
     if (size < length) {
