@@ -562,7 +562,12 @@ class OperatorTestCase:
         self.assertIsFloatWithValue(operator.as_float(Confused()), 123.456)
 
         # Not convertible.
-        bad_values = ["123", b"123", bytearray(b"123"), None, 1j]
+        import array
+
+        bad_values = [
+            "123", b"123", bytearray(b"123"), None, 1j,
+            array.array('B', b"123.0"),
+        ]
         for bad_value in bad_values:
             with self.subTest(bad_value=bad_value):
                 with self.assertRaises(TypeError):

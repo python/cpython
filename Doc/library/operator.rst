@@ -103,7 +103,7 @@ The mathematical and bitwise operations are the most numerous:
 
 .. function:: as_float(a)
 
-   Return *a* converted to an float.  Equivalent to ``float(a)``, except
+   Return *a* converted to a float.  Equivalent to ``float(a)``, except
    that conversion from a string or bytestring is not permitted. The result
    always has exact type :class:`float`.
 

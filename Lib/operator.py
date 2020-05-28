@@ -86,8 +86,20 @@ def as_float(obj):
 
     Same as float(obj), but does not accept strings.
     """
-    if isinstance(obj, (str, bytes, bytearray)):
-        raise TypeError("as_float argument must be numeric")
+    # Exclude strings and anything exposing the buffer interface.
+    bad_type = False
+    if isinstance(obj, str):
+        bad_type = True
+    else:
+        try:
+            memoryview(obj)
+            bad_type = True
+        except TypeError:
+            pass
+
+    if bad_type:
+        raise TypeError(f"must be real number, not {obj.__class__.__name__}")
+
     return float(obj)
 
 def floordiv(a, b):
