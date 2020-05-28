@@ -684,7 +684,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         #        self.write("Unsupported characters in input\n")
         #        return
         # II.runsource() calls .runcode(), overridden below.
-        return InteractiveInterpreter.runsource(self, source, filename)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('once')
+            return InteractiveInterpreter.runsource(self, source, filename)
 
     def stuffsource(self, source):
         "Stuff source in the filename cache"
