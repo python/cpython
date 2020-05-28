@@ -1231,7 +1231,9 @@ PyObject *_ctypes_callproc(PPROC pProc,
     if (rtype->type != FFI_TYPE_FLOAT
         && rtype->type != FFI_TYPE_STRUCT
         && rtype->size < sizeof(ffi_arg))
+    {
         resbuf = (char *)resbuf + sizeof(ffi_arg) - rtype->size;
+    }
 #endif
 
 #ifdef MS_WIN32
