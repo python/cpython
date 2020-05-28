@@ -689,6 +689,28 @@ class TestBuggyCases(GetSourceBase):
         finally:
             del linecache.cache[co.co_filename]
 
+    def test_findsource_code_too_short(self):
+        lines = [
+            "",
+            "",
+            "",
+            "def foo(): pass",
+        ]
+        co = compile("\n".join(lines), "f.py", "exec")
+        linecache.cache[co.co_filename] = (
+            1, None, lines, co.co_filename
+        )
+        try:
+            _, lnum = inspect.findsource(co)
+            self.assertEqual(lnum, 3)
+            linecache.cache[co.co_filename] = (
+                1, None, [""] * lnum, co.co_filename
+            )
+            _, lnum = inspect.findsource(co)
+            self.assertEqual(lnum, 0)  # maybe OSError?
+        finally:
+            del linecache.cache[co.co_filename]
+
     def test_findsource_without_filename(self):
         for fname in ['', '<string>']:
             co = compile('x=1', fname, "exec")
