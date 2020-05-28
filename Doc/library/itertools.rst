@@ -563,6 +563,9 @@ loops that truncate the stream.
            for prod in result:
                yield tuple(prod)
 
+   Before :func:`product` runs, it completely consumes the input iterables,
+   keeping pools of values in memory to generate the products.  Accordingly,
+   it only useful with finite inputs.
 
 .. function:: repeat(object[, times])
 
