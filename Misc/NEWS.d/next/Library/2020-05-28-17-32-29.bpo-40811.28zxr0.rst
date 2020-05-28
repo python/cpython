@@ -1,0 +1,2 @@
+Create new event loop in application sub threads if we are trying to get it and
+it is not created yet.
