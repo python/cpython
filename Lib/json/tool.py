@@ -25,7 +25,10 @@ def _read(infile, json_lines):
 
 def _open_outfile(outfile, parser):
     try:
-        return sys.stdout if outfile == '-' else open(outfile, 'w')
+        if outfile == '-':
+            return sys.stdout
+        else:
+            return open(outfile, 'w', encoding='utf-8')
     except IOError as e:
         parser.error(f"can't open '{outfile}': {str(e)}")
 
