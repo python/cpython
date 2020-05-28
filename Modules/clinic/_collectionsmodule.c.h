@@ -52,7 +52,7 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(PyTuple_GET_ITEM(args, 0));
+        PyObject *iobj = _PyNumber_Index(PyTuple_GET_ITEM(args, 0));
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -68,4 +68,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=439d77631a056b4d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=947186d369f50f1e input=a9049054013a1b77]*/
