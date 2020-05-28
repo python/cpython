@@ -19,6 +19,7 @@ from io import BytesIO, StringIO
 import codecs
 import os.path
 import shutil
+import sys
 from urllib.error import URLError
 import urllib.request
 from test import support
@@ -35,7 +36,7 @@ except UnicodeEncodeError:
 supports_nonascii_filenames = True
 if not os.path.supports_unicode_filenames:
     try:
-        support.TESTFN_UNICODE.encode(support.TESTFN_ENCODING)
+        support.TESTFN_UNICODE.encode(sys.getfilesystemencoding())
     except (UnicodeError, TypeError):
         # Either the file system encoding is None, or the file name
         # cannot be encoded in the file system encoding.

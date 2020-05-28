@@ -263,11 +263,6 @@ The :mod:`test.support` module defines the following constants:
     Set to a non-ASCII name for a temporary file.
 
 
-.. data:: TESTFN_ENCODING
-
-   Set to :func:`sys.getfilesystemencoding`.
-
-
 .. data:: TESTFN_UNENCODABLE
 
    Set to a filename (str type) that should not be able to be encoded by file
