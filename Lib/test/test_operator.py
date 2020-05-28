@@ -499,6 +499,75 @@ class OperatorTestCase:
         with self.assertRaises(LookupError):
             operator.length_hint(X(LookupError))
 
+    def test_as_float(self):
+        operator = self.module
+
+        # Exact type float.
+        self.assertIsFloatWithValue(operator.as_float(2.3), 2.3)
+
+        # Subclass of float.
+        class MyFloat(float):
+            pass
+
+        self.assertIsFloatWithValue(operator.as_float(MyFloat(-1.56)), -1.56)
+
+        # Non-float with a __float__ method.
+        class FloatLike:
+            def __float__(self):
+                return 1729.0
+
+        self.assertIsFloatWithValue(operator.as_float(FloatLike()), 1729.0)
+
+        # Non-float with a __float__ method that returns an instance
+        # of a subclass of float.
+        class FloatLike2:
+            def __float__(self):
+                return MyFloat(918.0)
+
+        self.assertIsFloatWithValue(operator.as_float(FloatLike2()), 918.0)
+
+        # Plain old integer
+        self.assertIsFloatWithValue(operator.as_float(2), 2.0)
+
+        # Integer subclass.
+        class MyInt(int):
+            pass
+
+        self.assertIsFloatWithValue(operator.as_float(MyInt(-3)), -3.0)
+
+        # Object supplying __index__ but not __float__.
+        class IntegerLike:
+            def __index__(self):
+                return 77
+
+        self.assertIsFloatWithValue(operator.as_float(IntegerLike()), 77.0)
+
+        # Same as above, but with __index__ returning an instance of an
+        # int subclass.
+        class IntegerLike2:
+            def __index__(self):
+                return MyInt(78)
+
+        self.assertIsFloatWithValue(operator.as_float(IntegerLike2()), 78.0)
+
+        # Object with both __float__ and __index__; __float__ should take
+        # precedence.
+        class Confused:
+            def __float__(self):
+                return 123.456
+
+            def __index__(self):
+                return 123
+
+        self.assertIsFloatWithValue(operator.as_float(Confused()), 123.456)
+
+        # Not convertible.
+        bad_values = ["123", b"123", bytearray(b"123"), None, 1j]
+        for bad_value in bad_values:
+            with self.subTest(bad_value=bad_value):
+                with self.assertRaises(TypeError):
+                    operator.as_float(bad_value)
+
     def test_dunder_is_original(self):
         operator = self.module
 
@@ -508,6 +577,13 @@ class OperatorTestCase:
             dunder = getattr(operator, '__' + name.strip('_') + '__', None)
             if dunder:
                 self.assertIs(dunder, orig)
+
+    def assertIsFloatWithValue(self, actual, expected):
+        self.assertIs(type(actual), float)
+        # Compare reprs rather than values, to deal correctly with corner
+        # cases like nans and signed zeros.
+        self.assertEqual(repr(actual), repr(expected))
+
 
 class PyOperatorTestCase(OperatorTestCase, unittest.TestCase):
     module = py_operator

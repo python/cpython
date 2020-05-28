@@ -80,6 +80,16 @@ def and_(a, b):
     "Same as a & b."
     return a & b
 
+def as_float(obj):
+    """
+    Convert something numeric to float.
+
+    Same as float(obj), but does not accept strings.
+    """
+    if isinstance(obj, (str, bytes, bytearray)):
+        raise TypeError("as_float argument must be numeric")
+    return float(obj)
+
 def floordiv(a, b):
     "Same as a // b."
     return a // b

@@ -1390,6 +1390,32 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_operator_as_float__doc__,
+"as_float($module, obj, /)\n"
+"--\n"
+"\n"
+"Return *obj* interpreted as a float.\n"
+"\n"
+"If *obj* is already of exact type float, return it unchanged.\n"
+"\n"
+"If *obj* is already an instance of float (including possibly an instance of a\n"
+"float subclass), return a float with the same value as *obj*.\n"
+"\n"
+"If *obj* is not an instance of float but its type has a __float__ method, use\n"
+"that method to convert *obj* to a float.\n"
+"\n"
+"If *obj* is not an instance of float and its type does not have a __float__\n"
+"method but does have an __index__ method, use that method to\n"
+"convert *obj* to an integer, and then convert that integer to a float.\n"
+"\n"
+"If *obj* cannot be converted to a float, raise TypeError.\n"
+"\n"
+"Calling as_float is equivalent to calling *float* directly, except that string\n"
+"objects are not accepted.");
+
+#define _OPERATOR_AS_FLOAT_METHODDEF    \
+    {"as_float", (PyCFunction)_operator_as_float, METH_O, _operator_as_float__doc__},
+
 PyDoc_STRVAR(_operator_length_hint__doc__,
 "length_hint($module, obj, default=0, /)\n"
 "--\n"
@@ -1486,4 +1512,4 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=eae5d08f971a65fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a828b48c9f80dbf input=a9049054013a1b77]*/

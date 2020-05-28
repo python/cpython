@@ -1,0 +1,6 @@
+Add a new :func:`operator.as_float` function for converting an arbitrary
+Python numeric object to :class:`float`. This is a simple wrapper around the
+:c:func:`PyFloat_AsDouble` C-API function. The intent is to provide at
+Python level a conversion whose semantics exactly match Python's own
+implicit float conversions, for example those used in the :mod:`math`
+module.

@@ -762,6 +762,50 @@ _tscmp(const unsigned char *a, const unsigned char *b,
 }
 
 /*[clinic input]
+_operator.as_float ->
+
+    obj: object
+    /
+
+Return *obj* interpreted as a float.
+
+If *obj* is already of exact type float, return it unchanged.
+
+If *obj* is already an instance of float (including possibly an instance of a
+float subclass), return a float with the same value as *obj*.
+
+If *obj* is not an instance of float but its type has a __float__ method, use
+that method to convert *obj* to a float.
+
+If *obj* is not an instance of float and its type does not have a __float__
+method but does have an __index__ method, use that method to
+convert *obj* to an integer, and then convert that integer to a float.
+
+If *obj* cannot be converted to a float, raise TypeError.
+
+Calling as_float is equivalent to calling *float* directly, except that string
+objects are not accepted.
+
+[clinic start generated code]*/
+
+static PyObject *
+_operator_as_float(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=25b27903bbd14913 input=39db64b91327f393]*/
+{
+    if (PyFloat_CheckExact(obj)) {
+        Py_INCREF(obj);
+        return obj;
+    }
+
+    double x = PyFloat_AsDouble(obj);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyFloat_FromDouble(x);
+}
+
+
+/*[clinic input]
 _operator.length_hint -> Py_ssize_t
 
     obj: object
@@ -929,6 +973,7 @@ static struct PyMethodDef operator_methods[] = {
     _OPERATOR_GE_METHODDEF
     _OPERATOR__COMPARE_DIGEST_METHODDEF
     _OPERATOR_LENGTH_HINT_METHODDEF
+    _OPERATOR_AS_FLOAT_METHODDEF
     {NULL,              NULL}           /* sentinel */
 
 };

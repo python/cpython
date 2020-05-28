@@ -92,6 +92,13 @@ New Modules
 Improved Modules
 ================
 
+operator
+--------
+
+Added :func:`operator.as_float` to convert a numeric object to :class:`float`.
+This exposes to Python a conversion whose semantics exactly match Python's
+own implicit float conversions, for example as used in the :mod:`math` module.
+
 tracemalloc
 -----------
 

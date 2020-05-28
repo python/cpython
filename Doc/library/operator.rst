@@ -101,6 +101,13 @@ The mathematical and bitwise operations are the most numerous:
    Return the bitwise and of *a* and *b*.
 
 
+.. function:: as_float(a)
+
+   Return *a* converted to an float.  Equivalent to ``float(a)``, except
+   that conversion from a string or bytestring is not permitted. The result
+   always has exact type :class:`float`.
+
+
 .. function:: floordiv(a, b)
               __floordiv__(a, b)
 
