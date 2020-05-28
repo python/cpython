@@ -113,7 +113,7 @@ PEP 616: New removeprefix() and removesuffix() string methods
 to easily remove an unneeded prefix or a suffix from a string. Corresponding
 ``bytes``, ``bytearray``, and ``collections.UserString`` methods have also been
 added. See :pep:`616` for a full description. (Contributed by Dennis Sweeney in
-:issue:`18939`.)
+:issue:`39939`.)
 
 PEP 585: Builtin Generic Types
 ------------------------------
