@@ -202,6 +202,14 @@ class BaseSockTestsMixin:
             # ProactorEventLoop could deliver hello
             self.assertTrue(data.endswith(b'world'))
 
+    # After the first connect attempt before the listener is ready,
+    # the socket needs time to "recover" to make the next connect call.
+    # On Linux, a second retry will do. On Windows, the waiting time is
+    # unpredictable; and on FreeBSD the socket may never come back
+    # because it's a loopback address. Here we'll just retry for a few
+    # times, and have to skip the test if it's not working. See also:
+    # https://stackoverflow.com/a/54437602/3316267
+    # https://lists.freebsd.org/pipermail/freebsd-current/2005-May/049876.html
     async def _basetest_sock_connect_racing(self, listener, sock):
         listener.bind(('127.0.0.1', 0))
         addr = listener.getsockname()
@@ -212,30 +220,26 @@ class BaseSockTestsMixin:
         task.cancel()
 
         listener.listen(1)
-        i = 0
-        while True:
+
+        skip_reason = "Max retries reached"
+        for i in range(128):
             try:
                 await self.loop.sock_connect(sock, addr)
-                break
-            except ConnectionRefusedError:  # on Linux we need another retry
-                await self.loop.sock_connect(sock, addr)
-                break
-            except OSError as e:  # on Windows we need more retries
-                # A connect request was made on an already connected socket
-                if getattr(e, 'winerror', 0) == 10056:
-                    break
+            except ConnectionRefusedError as e:
+                skip_reason = e
+            except OSError as e:
+                skip_reason = e
 
-                # https://stackoverflow.com/a/54437602/3316267
+                # Retry only for this error:
+                # [WinError 10022] An invalid argument was supplied
                 if getattr(e, 'winerror', 0) != 10022:
-                    raise
-                i += 1
-                if i >= 128:
-                    raise  # too many retries
-                # avoid touching event loop to maintain race condition
-                time.sleep(0.01)
+                    break
+            else:
+                # success
+                return
 
-    # FIXME: https://bugs.python.org/issue30064#msg370143
-    @unittest.skipIf(True, "unstable test")
+        self.skipTest(skip_reason)
+
     def test_sock_client_racing(self):
         with test_utils.run_test_server() as httpd:
             sock = socket.socket()
@@ -251,6 +255,8 @@ class BaseSockTestsMixin:
         with listener, sock:
             self.loop.run_until_complete(asyncio.wait_for(
                 self._basetest_sock_send_racing(listener, sock), 10))
+
+    def test_sock_client_connect_racing(self):
         listener = socket.socket()
         sock = socket.socket()
         with listener, sock:
