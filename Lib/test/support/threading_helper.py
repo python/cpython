@@ -47,7 +47,7 @@ def threading_cleanup(*original_values):
         values = None
 
         time.sleep(0.01)
-        gc_collect()
+        support.gc_collect()
 
 
 def reap_threads(func):
@@ -98,7 +98,7 @@ def wait_threads_exit(timeout=None):
                        f"(count: {count}, old count: {old_count})")
                 raise AssertionError(msg)
             time.sleep(0.010)
-            gc_collect()
+            support.gc_collect()
 
 
 def join_thread(thread, timeout=None):
