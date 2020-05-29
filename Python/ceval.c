@@ -892,9 +892,9 @@ match_seq_type(PyObject *target)
     return (
         PyObject_IsInstance(target, interp->seq_abc)
         && !PyIter_Check(target)
-        && !PyObject_TypeCheck(target, &PyUnicode_Type)
-        && !PyObject_TypeCheck(target, &PyBytes_Type)
-        && !PyObject_TypeCheck(target, &PyByteArray_Type)
+        && !PyUnicode_Check(target)
+        && !PyBytes_Check(target)
+        && !PyByteArray_Check(target)
     );
 }
 
