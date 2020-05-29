@@ -448,12 +448,15 @@ do { \
     state->data_stack_base += size; \
 } while (0)
 
+/* We add an explicit cast to memcpy here because MSVC has a bug when
+   compiling C code where it believes that `const void**` cannot be
+   safely casted to `void*`, see bpo-39943 for details. */
 #define DATA_STACK_POP(state, data, size, discard) \
 do { \
     TRACE(("copy data to %p from %" PY_FORMAT_SIZE_T "d " \
            "(%" PY_FORMAT_SIZE_T "d)\n", \
            data, state->data_stack_base-size, size)); \
-    memcpy(data, state->data_stack+state->data_stack_base-size, size); \
+    memcpy((void*) data, state->data_stack+state->data_stack_base-size, size); \
     if (discard) \
         state->data_stack_base -= size; \
 } while (0)
