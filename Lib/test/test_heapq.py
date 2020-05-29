@@ -27,6 +27,7 @@ class TestModules(TestCase):
         for fname in func_names:
             self.assertEqual(getattr(c_heapq, fname).__module__, '_heapq')
 
+
 def load_tests(loader, tests, ignore):
     # The 'merge' function has examples in its docstring which we should test
     # with 'doctest'.
