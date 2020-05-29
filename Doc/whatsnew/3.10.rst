@@ -70,6 +70,9 @@ Summary -- Release highlights
 New Features
 ============
 
+* The :class:`int` type has a new method :meth:`int.bit_count`, returning the
+  number of ones in the binary expansion of a given integer, also known
+  as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
 
 
 Other Language Changes

@@ -1,0 +1,2 @@
+Add :meth:`int.bit_count()`, counting the number of ones in the binary
+representation of an integer. Patch by Niklas Fiekas.
