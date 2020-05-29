@@ -2796,8 +2796,9 @@ static int
 compiler_pattern_namedexpr(struct compiler *c, expr_ty p, basicblock *fail)
 {
     assert(p->kind == NamedExpr_kind);
-    basicblock *block = compiler_new_block(c);
-    basicblock *end = compiler_new_block(c);
+    basicblock *block, *end;
+    CHECK(block = compiler_new_block(c));
+    CHECK(end = compiler_new_block(c));
     ADDOP(c, DUP_TOP);
     CHECK(compiler_pattern(c, p->v.NamedExpr.value, block));
     CHECK(compiler_pattern_store(c, p->v.NamedExpr.target));
@@ -2812,8 +2813,9 @@ compiler_pattern_namedexpr(struct compiler *c, expr_ty p, basicblock *fail)
 static int
 compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail)
 {
-    basicblock *block = compiler_new_block(c);
-    basicblock *end = compiler_new_block(c);
+    basicblock *block, *end;
+    CHECK(block = compiler_new_block(c));
+    CHECK(end = compiler_new_block(c));
     asdl_seq *keys = p->v.Dict.keys;
     asdl_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
@@ -2849,8 +2851,9 @@ compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail)
 {
     assert(p->kind == BinOp_kind);
     assert(p->v.BinOp.op== BitOr);
-    basicblock *block = compiler_new_block(c);
-    basicblock *end = compiler_new_block(c);
+    basicblock *block, *end;
+    CHECK(block = compiler_new_block(c));
+    CHECK(end = compiler_new_block(c));
     ADDOP(c, DUP_TOP);
     CHECK(compiler_pattern(c, p->v.BinOp.left, block));
     ADDOP(c, POP_TOP);
@@ -2882,8 +2885,9 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail)
         }
         star = i;
     }
-    basicblock *block = compiler_new_block(c);
-    basicblock *end = compiler_new_block(c);
+    basicblock *block, *end;
+    CHECK(block = compiler_new_block(c));
+    CHECK(end = compiler_new_block(c));
     ADDOP_JREL(c, MATCH_SEQ, fail);
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
@@ -2940,11 +2944,12 @@ static int
 compiler_match(struct compiler *c, stmt_ty s)
 {
     VISIT(c, expr, s->v.Match.target);
-    basicblock *end = compiler_new_block(c);
+    basicblock *next, *end;
+    CHECK(end = compiler_new_block(c));
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     for (Py_ssize_t i = 0; i < cases; i++) {
         match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
-        basicblock *next = compiler_new_block(c);
+        CHECK(next = compiler_new_block(c));
         ADDOP(c, DUP_TOP);
         compiler_pattern(c, m->pattern, next);
         if (m->guard) {
