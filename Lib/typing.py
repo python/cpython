@@ -1366,6 +1366,11 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
       locals, respectively.
     """
 
+    def resolve(value, globalns, localns=localns):
+        # double resolve forward refs
+        value = _eval_type(value, globalns, localns)
+        return _eval_type(value, globalns, localns)
+
     if getattr(obj, '__no_type_check__', None):
         return {}
     # Classes require a special treatment.
@@ -1382,7 +1387,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False)
-                value = _eval_type(value, base_globals, localns)
+                value = resolve(value, base_globals)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
@@ -1414,7 +1419,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             value = type(None)
         if isinstance(value, str):
             value = ForwardRef(value)
-        value = _eval_type(value, globalns, localns)
+        value = resolve(value, globalns)
         if name in defaults and defaults[name] is None:
             value = Optional[value]
         hints[name] = value
