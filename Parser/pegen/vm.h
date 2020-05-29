@@ -7,13 +7,13 @@ typedef enum _opcodes {
     OP_OPTIONAL,
     OP_LOOP_START,
     OP_LOOP_ITERATE,
+    OP_SUCCESS,
     OP_FAILURE,
     // The rest have an argument
     OP_TOKEN,
     OP_RULE,
     OP_RETURN,
     OP_LOOP_COLLECT,
-    OP_SUCCESS,
 } Opcode;
 
 char *opcode_names[] = {
@@ -25,13 +25,13 @@ char *opcode_names[] = {
     "OP_OPTIONAL",
     "OP_LOOP_START",
     "OP_LOOP_ITERATE",
+    "OP_SUCCESS",
     "OP_FAILURE",
     // The rest have an argument
     "OP_TOKEN",
     "OP_RULE",
     "OP_RETURN",
     "OP_LOOP_COLLECT",
-    "OP_SUCCESS",
 };
 
 typedef struct _rule {
@@ -80,6 +80,7 @@ static KeywordToken *reserved_keywords[] = {
 };
 
 enum {
+      R_ROOT,
       R_START,
       R_STMTS,
       R_STMT,
@@ -102,13 +103,24 @@ enum {
 
 static Rule all_rules[] = {
 
+    {"root",
+     R_ROOT,
+     {0, 3, -1},
+     {
+      OP_RULE, R_START,
+      OP_SUCCESS,
+
+      OP_FAILURE,
+     },
+    },
+
     {"start",
      R_START,
      {0, 6, -1},
      {
       OP_RULE, R_STMTS,
       OP_TOKEN, ENDMARKER,
-      OP_SUCCESS, A_START_0,
+      OP_RETURN, A_START_0,
 
       OP_FAILURE,
      },

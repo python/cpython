@@ -112,10 +112,11 @@ These operations are followed by a single integer argument.
 
 ### Operations for start rules only
 
-- `OP_SUCCESS(action)` -- call the action given by the argument, and
-  exit the VM with its return value as result.
+- `OP_SUCCESS` -- exit the VM with the first collected value as
+  result.
 
-- `OP_FAILURE` -- report a syntax error and exit the VM.
+- `OP_FAILURE` -- report a syntax error and exit the VM with a NULL
+  result.
 
 ### Looping operations
 

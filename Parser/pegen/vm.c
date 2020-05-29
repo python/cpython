@@ -61,10 +61,10 @@ make_asdl_seq(Parser *p, void *collection[], int ncollected)
 }
 
 static void *
-run_vm(Parser *p, Rule rules[], int start)
+run_vm(Parser *p, Rule rules[], int root)
 {
     Stack stack = {p, 0, {{0}}};
-    Frame *f = push_frame(&stack, &rules[start]);
+    Frame *f = push_frame(&stack, &rules[root]);
     void *v;
     int oparg;
     int opc;
@@ -147,12 +147,8 @@ run_vm(Parser *p, Rule rules[], int start)
         f = pop_frame(&stack, v);
         break;
     case OP_SUCCESS:
-        oparg = f->rule->opcodes[f->iop++];
-        v = call_action(p, f, oparg);
-        if (v || PyErr_Occurred()) {
-            return v;
-        }
-        return RAISE_SYNTAX_ERROR("Final action failed");
+        v = f->vals[0];
+        return v;
     case OP_FAILURE:
         return RAISE_SYNTAX_ERROR("A syntax error");
     default:
