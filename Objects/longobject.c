@@ -5309,10 +5309,10 @@ popcount_digit(digit d)
 {
     /* 32bit SWAR popcount. */
     uint32_t u = d;
-    u -= (u >> 1) & 0x55555555;
-    u = (u & 0x33333333) + ((u >> 2) & 0x33333333);
-    u = (u + (u >> 4)) & 0x0f0f0f0f;
-    return (u * 0x01010101) >> 24;
+    u -= (u >> 1) & 0x55555555U;
+    u = (u & 0x33333333U) + ((u >> 2) & 0x33333333U);
+    u = (u + (u >> 4)) & 0x0f0f0f0fU;
+    return (uint32_t)(u * 0x01010101U) >> 24;
 }
 
 /*[clinic input]
