@@ -848,6 +848,56 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     return 0;
 }
 
+// Need these for pattern matching:
+
+static int
+match_map_type(PyObject *target)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (!interp) {
+        return -1;
+    }
+    if (!interp->map_abc) {
+        PyObject *abc = PyImport_ImportModule("_collections_abc");
+        if (!abc) {
+            return -1;
+        }
+        interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
+        Py_DECREF(abc);
+        if (!interp->map_abc) {
+            return -1;
+        }
+    }
+    return PyObject_IsInstance(target, interp->map_abc);
+}
+
+static int
+match_seq_type(PyObject *target)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (!interp) {
+        return -1;
+    }
+    if (!interp->seq_abc) {
+        PyObject *abc = PyImport_ImportModule("_collections_abc");
+        if (!abc) {
+            return -1;
+        }
+        interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
+        Py_DECREF(abc);
+        if (!interp->seq_abc) {
+            return -1;
+        }
+    }
+    return (
+        PyObject_IsInstance(target, interp->seq_abc)
+        && !PyIter_Check(target)
+        && !PyObject_TypeCheck(target, &PyUnicode_Type)
+        && !PyObject_TypeCheck(target, &PyBytes_Type)
+        && !PyObject_TypeCheck(target, &PyByteArray_Type)
+    );
+}
+
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 
@@ -3309,23 +3359,12 @@ main_loop:
         }
 
         case TARGET(MATCH_MAP): {
-            PyInterpreterState *interp = PyInterpreterState_Get();
-            if (!interp) {
+            PyObject *target = TOP();
+            int match = match_map_type(target);
+            if (match < 0) {
                 goto error;
             }
-            if (!interp->map_abc) {
-                PyObject *abc = PyImport_ImportModule("_collections_abc");
-                if (!abc) {
-                    goto error;
-                }
-                interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
-                Py_DECREF(abc);
-                if (!interp->map_abc) {
-                    goto error;
-                }
-            }
-            PyObject *target = TOP();
-            if (!PyObject_IsInstance(target, interp->map_abc)) {
+            if (!match) {
                 STACK_SHRINK(1);
                 Py_DECREF(target);
                 JUMPBY(oparg);
@@ -3351,35 +3390,26 @@ main_loop:
         }
 
         case TARGET(MATCH_SEQ): {
-            PyInterpreterState *interp = PyInterpreterState_Get();
-            if (!interp) {
+            PyObject *target = TOP();
+            int match = match_seq_type(target);
+            if (match < 0) {
                 goto error;
             }
-            if (!interp->seq_abc) {
-                PyObject *abc = PyImport_ImportModule("_collections_abc");
-                if (!abc) {
-                    goto error;
-                }
-                interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
-                Py_DECREF(abc);
-                if (!interp->seq_abc) {
-                    goto error;
-                }
-            }
-            PyObject *target = TOP();
-            if (
-                !PyObject_IsInstance(target, interp->seq_abc)
-                || PyIter_Check(target)
-                || PyObject_TypeCheck(target, &PyUnicode_Type)
-                || PyObject_TypeCheck(target, &PyBytes_Type)
-                || PyObject_TypeCheck(target, &PyByteArray_Type)
-            ) {
+            if (!match) {
                 STACK_SHRINK(1);
                 Py_DECREF(target);
                 JUMPBY(oparg);
                 DISPATCH();
             }
-        }  // Fall...
+            PyObject *iter = PyObject_GetIter(target);
+            if (!iter) {
+                goto error;
+            }
+            Py_DECREF(target);
+            SET_TOP(iter);
+            DISPATCH();
+        }
+
         case TARGET(GET_ITER): {
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
