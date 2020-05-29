@@ -2825,9 +2825,9 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail)
         expr_ty key = asdl_seq_GET(keys, i);
         expr_ty value = asdl_seq_GET(values, i);
         assert(key);
-        assert(p->kind == Attribute_kind || p->kind == Constant_kind || p->kind == Name_kind);
-        assert(p->kind != Attribute_kind || p->v.Attribute.ctx == Load);
-        assert(p->kind != Name_kind || p->v.Name.ctx == Load);
+        assert(key->kind == Attribute_kind || key->kind == Constant_kind || key->kind == Name_kind);
+        assert(key->kind != Attribute_kind || key->v.Attribute.ctx == Load);
+        assert(key->kind != Name_kind || key->v.Name.ctx == Load);
         VISIT(c, expr, key);
         ADDOP_JREL(c, MATCH_KEY, block);
         CHECK(compiler_pattern(c, value, block));
