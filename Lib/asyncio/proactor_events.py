@@ -765,7 +765,14 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     def _loop_self_reading(self, f=None):
         try:
             if f is not None:
-                f.result()  # may raise
+                try:
+                    f.result()  # may raise
+                except ConnectionResetError:
+                    # when run_forever exits, the done callback added at
+                    # the end of this function may still be pending and a subclass
+                    # may have also cancelled the future. this will result in a
+                    # spurious ConnectionResetError. ignore that error.
+                    pass
             f = self._proactor.recv(self._ssock, 4096)
         except exceptions.CancelledError:
             # _close_self_pipe() has been called, stop waiting for data
