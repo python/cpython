@@ -12,7 +12,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_byteswap.h"     // _Py_bswap32()
+#include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_gc.h"           // PyGC_Head
@@ -56,6 +56,48 @@ test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
     if (u64 != UINT64_C(0x1234567890ABCDEF)) {
         PyErr_Format(PyExc_AssertionError,
                      "_Py_bswap64(0xEFCDAB9078563412) returns %llu", u64);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
+static int
+check_popcount(uint32_t x, int expected)
+{
+    // Use volatile to prevent the compiler to optimize out the whole test
+    volatile uint32_t u = x;
+    int bits = _Py_popcount32(u);
+    if (bits != expected) {
+        PyErr_Format(PyExc_AssertionError,
+                     "_Py_popcount32(%lu) returns %i, expected %i",
+                     (unsigned long)x, bits, expected);
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject*
+test_popcount(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    if (check_popcount(0, 0) < 0) {
+        return NULL;
+    }
+    if (check_popcount(1, 1) < 0) {
+        return NULL;
+    }
+    if (check_popcount(UINT32_C(0x100), 1) < 0) {
+        return NULL;
+    }
+    if (check_popcount(UINT32_C(0xffff), 16) < 0) {
+        return NULL;
+    }
+    if (check_popcount(UINT32_C(0x10101010), 4) < 0) {
+        return NULL;
+    }
+    if (check_popcount(UINT32_C(0xDEADCAFE), 22) < 0) {
         return NULL;
     }
 
@@ -157,6 +199,7 @@ static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
+    {"test_popcount", test_popcount, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };

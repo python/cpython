@@ -1,4 +1,6 @@
-/* Bytes swap functions, reverse order of bytes:
+/* Bit and bytes utilities.
+
+   Bytes swap functions, reverse order of bytes:
 
    - _Py_bswap16(uint16_t)
    - _Py_bswap32(uint32_t)
@@ -78,6 +80,31 @@ _Py_bswap64(uint64_t word)
            | ((word & UINT64_C(0x0000FF0000000000)) >> 24)
            | ((word & UINT64_C(0x00FF000000000000)) >> 40)
            | ((word & UINT64_C(0xFF00000000000000)) >> 56));
+#endif
+}
+
+
+// Population count: count the number of 1's in 'u'
+// (number of bits set to 1)
+static inline int
+_Py_popcount32(uint32_t u)
+{
+#if defined(__clang__) || defined(__GNUC__)
+
+#if SIZEOF_INT == 4
+    return __builtin_popcount(u);
+#elif SIZEOF_LONG == 4
+    return __builtin_popcountl(u);
+#else
+#  error "unsupported configuration"
+#endif
+
+#else
+    /* 32-bit SWAR (SIMD Within A Register) popcount */
+    u -= (u >> 1) & UINT32_C(0x55555555);
+    u = (u & UINT32_C(0x33333333)) + ((u >> 2) & UINT32_C(0x33333333));
+    u = (u + (u >> 4)) & UINT32_C(0x0f0f0f0f);
+    return (uint32_t)(u * UINT32_C(0x01010101)) >> 24;
 #endif
 }
 
