@@ -64,7 +64,7 @@ Most operations can succeed or fail, and produce a vaue if they
 succeed.
 
 If an operation succeeds, the value is appended to the frame's values
-stack, and the VM proceeds to the next opcode.
+array (`vals`), and the VM proceeds to the next opcode.
 
 If an operation fails, the VM resets the input to the frame's mark,
 and then proceeds to the next alternative of the frame's rule, if
@@ -92,8 +92,8 @@ The following opcodes take no argument.
 
 - `OP_CUT` -- set the frame's `cut` flag; succeeds without a value.
 
-- `OP_OPTIONAL` -- modifies the *previous* operation to treat a `NULL`
-  result as a success.
+- `OP_OPTIONAL` -- always succeeds, but modifies the *previous*
+  operation to treat a `NULL` result as a success.  (See below.)
 
 These operations are followed by a single integer argument.
 
@@ -153,6 +153,36 @@ The operations are defined as follows:
   is an `asdl_seq *` containing the collected values.
 
 (TODO: additional operations to support `a+` and `b.a+`.)
+
+More about `OP_OPTIONAL`
+------------------------
+
+The `OP_OPTIONAL` flag is a "postfix" operation.  It must *follow* any
+operation that may produce a result.  The normal way of the VM is that
+if the result is `NULL` this is treated as a failure by the VM.  But
+before treating `NULL` as a failure, the VM checks whether the next
+operation is `OP_OPTIONAL`.  If so, it treats `NULL` as a success.  In
+this case a `NULL` is appended to the `vals` array and control flows
+to the next operation.
+
+When the operation preceding `OP_OPTIONAL` succeeds, `OP_OPTIONAL` is
+executed as a regular operation, and always succeed.
+
+Constraints on operation order
+------------------------------
+
+Note that for operations that succeed with a value or fail, there is
+always a next operation.  These operations are `OP_NAME`, `OP_NUMBER`,
+`OP_STRING`, `OP_TOKEN`, and `OP_RULE`.
+
+These operations always succeed: `OP_NOOP`, `OP_CUT`, `OP_OPTIONAL`,
+`OP_START`.
+
+These operations must be last in their alternative: `OP_RETURN`,
+`OP_SUCCESS`, `OP_FAILURE`, `OP_LOOP_ITERATE`, `OP_LOOP_COLLECT`.
+
+These operations must be first in their alternative: `OP_LOOP_START`,
+`OP_FAILURE`.
 
 Ideas
 -----
