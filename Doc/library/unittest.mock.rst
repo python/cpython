@@ -647,6 +647,10 @@ the *new_callable* argument to :func:`patch`.
         arguments and make more complex assertions. See
         :ref:`calls as tuples <calls-as-tuples>`.
 
+       .. versionchanged:: 3.8
+          Added the ``args`` and ``kwargs`` properties to more easily access the
+          positional args and keyword args within a ``Call`` object tuple.
+
 
     .. attribute:: call_args_list
 
