@@ -10,16 +10,15 @@
 */
 
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"   // _PyThreadState_GET()
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include "windows.h"
+#  define WIN32_LEAN_AND_MEAN
+#  include "windows.h"
 #endif /* MS_WINDOWS */
 
 
 PyThreadState* _PyOS_ReadlineTState = NULL;
 
-#include "pythread.h"
 static PyThread_type_lock _PyOS_ReadlineLock = NULL;
 
 int (*PyOS_InputHook)(void) = NULL;

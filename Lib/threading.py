@@ -35,7 +35,6 @@ _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
-_is_main_interpreter = _thread._is_main_interpreter
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True
@@ -122,6 +121,11 @@ class _RLock:
             self._count,
             hex(id(self))
         )
+
+    def _at_fork_reinit(self):
+        self._block._at_fork_reinit()
+        self._owner = None
+        self._count = 0
 
     def acquire(self, blocking=True, timeout=-1):
         """Acquire a lock, blocking or non-blocking.
@@ -244,6 +248,10 @@ class Condition:
         except AttributeError:
             pass
         self._waiters = _deque()
+
+    def _at_fork_reinit(self):
+        self._lock._at_fork_reinit()
+        self._waiters.clear()
 
     def __enter__(self):
         return self._lock.__enter__()
@@ -514,9 +522,9 @@ class Event:
         self._cond = Condition(Lock())
         self._flag = False
 
-    def _reset_internal_locks(self):
-        # private!  called by Thread._reset_internal_locks by _after_fork()
-        self._cond.__init__(Lock())
+    def _at_fork_reinit(self):
+        # Private method called by Thread._reset_internal_locks()
+        self._cond._at_fork_reinit()
 
     def is_set(self):
         """Return true if and only if the internal flag is true."""
@@ -816,9 +824,10 @@ class Thread:
     def _reset_internal_locks(self, is_alive):
         # private!  Called by _after_fork() to reset our internal locks as
         # they may be in an invalid state leading to a deadlock or crash.
-        self._started._reset_internal_locks()
+        self._started._at_fork_reinit()
         if is_alive:
-            self._set_tstate_lock()
+            self._tstate_lock._at_fork_reinit()
+            self._tstate_lock.acquire()
         else:
             # The thread isn't alive after fork: it doesn't have a tstate
             # anymore.
@@ -854,10 +863,6 @@ class Thread:
 
         if self._started.is_set():
             raise RuntimeError("threads can only be started once")
-
-        if self.daemon and not _is_main_interpreter():
-            raise RuntimeError("daemon thread are not supported "
-                               "in subinterpreters")
 
         with _active_limbo_lock:
             _limbo[self] = self

@@ -785,6 +785,8 @@ _operator_length_hint_impl(PyObject *module, PyObject *obj,
     return PyObject_LengthHint(obj, default_value);
 }
 
+/* NOTE: Keep in sync with _hashopenssl.c implementation. */
+
 /*[clinic input]
 _operator._compare_digest = _operator.eq
 
@@ -1170,7 +1172,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     for (idx = 0; idx < nattrs; ++idx) {
         PyObject *item = PyTuple_GET_ITEM(args, idx);
         Py_ssize_t item_len;
-        void *data;
+        const void *data;
         unsigned int kind;
         int dot_count;
 

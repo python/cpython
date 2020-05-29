@@ -19,6 +19,7 @@ make_const(expr_ty node, PyObject *val, PyArena *arena)
         return 0;
     }
     node->kind = Constant_kind;
+    node->v.Constant.kind = NULL;
     node->v.Constant.value = val;
     return 1;
 }
@@ -562,7 +563,8 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(fold_tuple, expr_ty, node_);
         break;
     case Name_kind:
-        if (_PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
+        if (node_->v.Name.ctx == Load &&
+                _PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
             return make_const(node_, PyBool_FromLong(!state->optimize), ctx_);
         }
         break;

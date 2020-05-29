@@ -222,7 +222,7 @@ class SMTP:
     helo_resp = None
     ehlo_msg = "ehlo"
     ehlo_resp = None
-    does_esmtp = 0
+    does_esmtp = False
     default_port = SMTP_PORT
 
     def __init__(self, host='', port=0, local_hostname=None,
@@ -452,7 +452,7 @@ class SMTP:
         self.ehlo_resp = msg
         if code != 250:
             return (code, msg)
-        self.does_esmtp = 1
+        self.does_esmtp = True
         #parse the ehlo response -ddm
         assert isinstance(self.ehlo_resp, bytes), repr(self.ehlo_resp)
         resp = self.ehlo_resp.decode("latin-1").split('\n')
@@ -781,7 +781,7 @@ class SMTP:
             self.helo_resp = None
             self.ehlo_resp = None
             self.esmtp_features = {}
-            self.does_esmtp = 0
+            self.does_esmtp = False
         else:
             # RFC 3207:
             # 501 Syntax error (no parameters allowed)

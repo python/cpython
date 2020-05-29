@@ -1141,8 +1141,7 @@ always available.
 .. data:: platlibdir
 
    Name of the platform-specific library directory. It is used to build the
-   path of platform-specific dynamic libraries and the path of the standard
-   library.
+   path of standard library and the paths of installed extension modules.
 
    It is equal to ``"lib"`` on most platforms. On Fedora and SuSE, it is equal
    to ``"lib64"`` on 64-bit platforms which gives the following ``sys.path``
@@ -1153,8 +1152,10 @@ always available.
    * ``/usr/lib64/pythonX.Y/lib-dynload/``:
      C extension modules of the standard library (like the :mod:`errno` module,
      the exact filename is platform specific)
-   * ``/usr/lib/pythonX.Y/site-packages`` (always use ``lib``, not
+   * ``/usr/lib/pythonX.Y/site-packages/`` (always use ``lib``, not
      :data:`sys.platlibdir`): Third-party modules
+   * ``/usr/lib64/pythonX.Y/site-packages/``:
+     C extension modules of third-party packages
 
    .. versionadded:: 3.9
 

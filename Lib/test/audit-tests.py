@@ -343,7 +343,7 @@ def test_socket():
     try:
         # Don't care if this fails, we just want the audit message
         sock.bind(('127.0.0.1', 8080))
-    except error:
+    except Exception:
         pass
     finally:
         sock.close()

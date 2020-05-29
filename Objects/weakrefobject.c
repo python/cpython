@@ -1,9 +1,10 @@
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR()
+#include "structmember.h"         // PyMemberDef
 
 
 #define GET_WEAKREFS_LISTPTR(o) \
-        ((PyWeakReference **) PyObject_GET_WEAKREFS_LISTPTR(o))
+        ((PyWeakReference **) _PyObject_GET_WEAKREFS_LISTPTR(o))
 
 
 Py_ssize_t
@@ -361,6 +362,12 @@ static PyMemberDef weakref_members[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMethodDef weakref_methods[] = {
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    {NULL} /* Sentinel */
+};
+
 PyTypeObject
 _PyWeakref_RefType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -391,7 +398,7 @@ _PyWeakref_RefType = {
     0,                          /*tp_weaklistoffset*/
     0,                          /*tp_iter*/
     0,                          /*tp_iternext*/
-    0,                          /*tp_methods*/
+    weakref_methods,            /*tp_methods*/
     weakref_members,            /*tp_members*/
     0,                          /*tp_getset*/
     0,                          /*tp_base*/
@@ -658,10 +665,12 @@ proxy_iternext(PyWeakReference *proxy)
 
 
 WRAP_METHOD(proxy_bytes, __bytes__)
+WRAP_METHOD(proxy_reversed, __reversed__)
 
 
 static PyMethodDef proxy_methods[] = {
         {"__bytes__", proxy_bytes, METH_NOARGS},
+        {"__reversed__", proxy_reversed, METH_NOARGS},
         {NULL, NULL}
 };
 
@@ -723,6 +732,21 @@ static PyMappingMethods proxy_as_mapping = {
 };
 
 
+static Py_hash_t
+proxy_hash(PyObject *self)
+{
+    PyWeakReference *proxy = (PyWeakReference *)self;
+    if (!proxy_checkref(proxy)) {
+        return -1;
+    }
+    PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    Py_INCREF(obj);
+    Py_hash_t res = PyObject_Hash(obj);
+    Py_DECREF(obj);
+    return res;
+}
+
+
 PyTypeObject
 _PyWeakref_ProxyType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -739,7 +763,7 @@ _PyWeakref_ProxyType = {
     &proxy_as_number,                   /* tp_as_number */
     &proxy_as_sequence,                 /* tp_as_sequence */
     &proxy_as_mapping,                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
+    proxy_hash,                         /* tp_hash */
     0,                                  /* tp_call */
     proxy_str,                          /* tp_str */
     proxy_getattr,                      /* tp_getattro */

@@ -1074,8 +1074,10 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: PyFrameObject* PyThreadState_GetFrame(PyThreadState *tstate)
 
-   Get the current frame of the Python thread state *tstate*. It can be
-   ``NULL`` if no frame is currently executing.
+   Get the current frame of the Python thread state *tstate*.
+
+   Return a strong reference. Return ``NULL`` if no frame is currently
+   executing.
 
    See also :c:func:`PyEval_GetFrame`.
 
@@ -1114,7 +1116,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.9
 
 
-.. c:function:: PY_INT64_T PyInterpreterState_GetID(PyInterpreterState *interp)
+.. c:function:: int64_t PyInterpreterState_GetID(PyInterpreterState *interp)
 
    Return the interpreter's unique ID.  If there was any error in doing
    so then ``-1`` is returned and an error is set.

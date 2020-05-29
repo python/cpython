@@ -264,9 +264,7 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 /* === New Buffer API ============================================ */
 
 /* Return 1 if the getbuffer function is available, otherwise return 0. */
-#define PyObject_CheckBuffer(obj) \
-    ((Py_TYPE(obj)->tp_as_buffer != NULL) &&  \
-     (Py_TYPE(obj)->tp_as_buffer->bf_getbuffer != NULL))
+PyAPI_FUNC(int) PyObject_CheckBuffer(PyObject *obj);
 
 /* This is a C-API version of the getbuffer function call.  It checks
    to make sure object has the required function pointer and issues the
@@ -337,12 +335,6 @@ PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
     (Py_TYPE(obj)->tp_iternext != NULL && \
      Py_TYPE(obj)->tp_iternext != &_PyObject_NextNotImplemented)
 
-/* === Number Protocol ================================================== */
-
-#define PyIndex_Check(obj)                              \
-    (Py_TYPE(obj)->tp_as_number != NULL &&            \
-     Py_TYPE(obj)->tp_as_number->nb_index != NULL)
-
 /* === Sequence protocol ================================================ */
 
 /* Assume tp_as_sequence and sq_item exist and that 'i' does not
@@ -386,6 +378,9 @@ PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
 
 /* Convert Python int to Py_ssize_t. Do nothing if the argument is None. */
 PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
+
+/* Same as PyNumber_Index but can return an instance of a subclass of int. */
+PyAPI_FUNC(PyObject *) _PyNumber_Index(PyObject *o);
 
 #ifdef __cplusplus
 }

@@ -11,7 +11,7 @@ module instead.
 #define MODULE_VERSION "1.0"
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include <stdbool.h>
 
 
@@ -789,7 +789,7 @@ Reader_iternext(ReaderObj *self)
     Py_UCS4 c;
     Py_ssize_t pos, linelen;
     unsigned int kind;
-    void *data;
+    const void *data;
     PyObject *lineobj;
 
     if (parse_reset(self) < 0)
@@ -996,7 +996,7 @@ join_reset(WriterObj *self)
  * record length.
  */
 static Py_ssize_t
-join_append_data(WriterObj *self, unsigned int field_kind, void *field_data,
+join_append_data(WriterObj *self, unsigned int field_kind, const void *field_data,
                  Py_ssize_t field_len, int *quoted,
                  int copy_phase)
 {
@@ -1107,7 +1107,7 @@ static int
 join_append(WriterObj *self, PyObject *field, int quoted)
 {
     unsigned int field_kind = -1;
-    void *field_data = NULL;
+    const void *field_data = NULL;
     Py_ssize_t field_len = 0;
     Py_ssize_t rec_len;
 
@@ -1139,7 +1139,7 @@ join_append_lineterminator(WriterObj *self)
 {
     Py_ssize_t terminator_len, i;
     unsigned int term_kind;
-    void *term_data;
+    const void *term_data;
 
     terminator_len = PyUnicode_GET_LENGTH(self->dialect->lineterminator);
     if (terminator_len == -1)

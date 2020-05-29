@@ -44,11 +44,6 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     level = _PyLong_AsInt(args[1]);
     if (level == -1 && PyErr_Occurred()) {
         goto exit;
@@ -112,11 +107,6 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[1]) {
-        if (PyFloat_Check(args[1])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         wbits = _PyLong_AsInt(args[1]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
@@ -125,8 +115,17 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_pos;
         }
     }
-    if (!ssize_t_converter(args[2], &bufsize)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bufsize = ival;
     }
 skip_optional_pos:
     return_value = zlib_decompress_impl(module, &data, wbits, bufsize);
@@ -200,11 +199,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto skip_optional_pos;
     }
     if (args[0]) {
-        if (PyFloat_Check(args[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         level = _PyLong_AsInt(args[0]);
         if (level == -1 && PyErr_Occurred()) {
             goto exit;
@@ -214,11 +208,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[1]) {
-        if (PyFloat_Check(args[1])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         method = _PyLong_AsInt(args[1]);
         if (method == -1 && PyErr_Occurred()) {
             goto exit;
@@ -228,11 +217,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         wbits = _PyLong_AsInt(args[2]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
@@ -242,11 +226,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[3]) {
-        if (PyFloat_Check(args[3])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         memLevel = _PyLong_AsInt(args[3]);
         if (memLevel == -1 && PyErr_Occurred()) {
             goto exit;
@@ -256,11 +235,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[4]) {
-        if (PyFloat_Check(args[4])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         strategy = _PyLong_AsInt(args[4]);
         if (strategy == -1 && PyErr_Occurred()) {
             goto exit;
@@ -325,11 +299,6 @@ zlib_decompressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto skip_optional_pos;
     }
     if (args[0]) {
-        if (PyFloat_Check(args[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         wbits = _PyLong_AsInt(args[0]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
@@ -438,8 +407,17 @@ zlib_Decompress_decompress(compobject *self, PyObject *const *args, Py_ssize_t n
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (!ssize_t_converter(args[1], &max_length)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        max_length = ival;
     }
 skip_optional_pos:
     return_value = zlib_Decompress_decompress_impl(self, &data, max_length);
@@ -482,11 +460,6 @@ zlib_Compress_flush(compobject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     if (nargs < 1) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     mode = _PyLong_AsInt(args[0]);
     if (mode == -1 && PyErr_Occurred()) {
@@ -636,8 +609,17 @@ zlib_Decompress_flush(compobject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (!ssize_t_converter(args[0], &length)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
 skip_optional:
     return_value = zlib_Decompress_flush_impl(self, length);
@@ -682,11 +664,6 @@ zlib_adler32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (nargs < 2) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     value = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (value == (unsigned int)-1 && PyErr_Occurred()) {
@@ -741,11 +718,6 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     value = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (value == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
@@ -785,4 +757,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=faae38ef96b88b16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=be34f273564e39a8 input=a9049054013a1b77]*/

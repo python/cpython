@@ -11,8 +11,8 @@ import textwrap
 from io import StringIO, BytesIO
 from itertools import chain
 from random import choice
-from socket import getfqdn
 from threading import Thread
+from unittest.mock import patch
 
 import email
 import email.policy
@@ -37,7 +37,8 @@ from email import iterators
 from email import base64mime
 from email import quoprimime
 
-from test.support import unlink, start_threads
+from test.support import threading_helper
+from test.support import unlink
 from test.test_email import openfile, TestEmailBase
 
 # These imports are documented to work, but we are testing them using a
@@ -3241,7 +3242,7 @@ Foo
                     append(make_msgid(domain='testdomain-string'))
 
         threads = [MsgidsThread() for i in range(5)]
-        with start_threads(threads):
+        with threading_helper.start_threads(threads):
             pass
         all_ids = sum([t.msgids for t in threads], [])
         self.assertEqual(len(set(all_ids)), len(all_ids))
@@ -3342,9 +3343,11 @@ multipart/report
             '.test-idstring@testdomain-string>')
 
     def test_make_msgid_default_domain(self):
-        self.assertTrue(
-            email.utils.make_msgid().endswith(
-                '@' + getfqdn() + '>'))
+        with patch('socket.getfqdn') as mock_getfqdn:
+            mock_getfqdn.return_value = domain = 'pythontest.example.com'
+            self.assertTrue(
+                email.utils.make_msgid().endswith(
+                    '@' + domain + '>'))
 
     def test_Generator_linend(self):
         # Issue 14645.

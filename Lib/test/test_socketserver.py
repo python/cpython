@@ -14,13 +14,15 @@ import unittest
 import socketserver
 
 import test.support
-from test.support import reap_children, reap_threads, verbose
+from test.support import reap_children, verbose
+from test.support import socket_helper
+from test.support import threading_helper
 
 
 test.support.requires("network")
 
 TEST_STR = b"hello world\n"
-HOST = test.support.HOST
+HOST = socket_helper.HOST
 
 HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
 requires_unix_sockets = unittest.skipUnless(HAVE_UNIX_SOCKETS,
@@ -65,9 +67,7 @@ def simple_subprocess(testcase):
     except:
         raise
     finally:
-        pid2, status = os.waitpid(pid, 0)
-        testcase.assertEqual(pid2, pid)
-        testcase.assertEqual(72 << 8, status)
+        test.support.wait_process(pid, exitcode=72)
 
 
 class SocketServerTest(unittest.TestCase):
@@ -121,7 +121,7 @@ class SocketServerTest(unittest.TestCase):
         self.assertEqual(server.server_address, server.socket.getsockname())
         return server
 
-    @reap_threads
+    @threading_helper.reap_threads
     def run_server(self, svrcls, hdlrbase, testfunc):
         server = self.make_server(self.pickaddr(svrcls.address_family),
                                   svrcls, hdlrbase)
@@ -250,7 +250,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_shutdown(self):
         # Issue #2302: shutdown() should always succeed in making an
         # other thread leave serve_forever().

@@ -8,7 +8,7 @@ PyDoc_STRVAR(select_select__doc__,
 "\n"
 "Wait until one or more file descriptors are ready for some kind of I/O.\n"
 "\n"
-"The first three arguments are sequences of file descriptors to be waited for:\n"
+"The first three arguments are iterables of file descriptors to be waited for:\n"
 "rlist -- wait until ready for reading\n"
 "wlist -- wait until ready for writing\n"
 "xlist -- wait for an \"exceptional condition\"\n"
@@ -528,11 +528,6 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        if (PyFloat_Check(fastargs[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         sizehint = _PyLong_AsInt(fastargs[0]);
         if (sizehint == -1 && PyErr_Occurred()) {
             goto exit;
@@ -540,11 +535,6 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         if (!--noptargs) {
             goto skip_optional_pos;
         }
-    }
-    if (PyFloat_Check(fastargs[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     flags = _PyLong_AsInt(fastargs[1]);
     if (flags == -1 && PyErr_Occurred()) {
@@ -625,11 +615,6 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     fd = _PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
@@ -685,11 +670,6 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
@@ -738,11 +718,6 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     if (!fildes_converter(args[0], &fd)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
@@ -845,11 +820,6 @@ select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs,
         if (!--noptargs) {
             goto skip_optional_pos;
         }
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     maxevents = _PyLong_AsInt(args[1]);
     if (maxevents == -1 && PyErr_Occurred()) {
@@ -1041,11 +1011,6 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     fd = _PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1094,11 +1059,6 @@ select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize
         goto exit;
     }
     changelist = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     maxevents = _PyLong_AsInt(args[1]);
     if (maxevents == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1215,4 +1175,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=26bb05e5fba2bfd1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a055330869acbd16 input=a9049054013a1b77]*/

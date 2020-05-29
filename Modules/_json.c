@@ -9,7 +9,7 @@
 #endif
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "pycore_accu.h"
 
 typedef struct {
@@ -159,8 +159,8 @@ ascii_escape_unicode(PyObject *pystr)
     Py_ssize_t output_size;
     Py_ssize_t chars;
     PyObject *rval;
-    void *input;
-    unsigned char *output;
+    const void *input;
+    Py_UCS1 *output;
     int kind;
 
     if (PyUnicode_READY(pystr) == -1)
@@ -225,7 +225,7 @@ escape_unicode(PyObject *pystr)
     Py_ssize_t output_size;
     Py_ssize_t chars;
     PyObject *rval;
-    void *input;
+    const void *input;
     int kind;
     Py_UCS4 maxchar;
 
@@ -647,11 +647,13 @@ scanner_dealloc(PyObject *self)
 static int
 scanner_traverse(PyScannerObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->object_hook);
     Py_VISIT(self->object_pairs_hook);
     Py_VISIT(self->parse_float);
     Py_VISIT(self->parse_int);
     Py_VISIT(self->parse_constant);
+    Py_VISIT(self->memo);
     return 0;
 }
 
@@ -677,7 +679,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
 
     Returns a new PyObject (usually a dict, but object_hook can change that)
     */
-    void *str;
+    const void *str;
     int kind;
     Py_ssize_t end_idx;
     PyObject *val = NULL;
@@ -807,7 +809,7 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
 
     Returns a new PyList
     */
-    void *str;
+    const void *str;
     int kind;
     Py_ssize_t end_idx;
     PyObject *val = NULL;
@@ -910,7 +912,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
         PyLong, or PyFloat.
         May return other types if parse_int or parse_float are set
     */
-    void *str;
+    const void *str;
     int kind;
     Py_ssize_t end_idx;
     Py_ssize_t idx = start;
@@ -1027,7 +1029,7 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     Returns a new PyObject representation of the term.
     */
     PyObject *res;
-    void *str;
+    const void *str;
     int kind;
     Py_ssize_t length;
 
@@ -1744,6 +1746,7 @@ encoder_dealloc(PyObject *self)
 static int
 encoder_traverse(PyEncoderObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->markers);
     Py_VISIT(self->defaultfn);
     Py_VISIT(self->encoder);
@@ -1817,7 +1820,7 @@ _json_exec(PyObject *module)
     }
     Py_INCREF(state->PyScannerType);
     if (PyModule_AddObject(module, "make_scanner", state->PyScannerType) < 0) {
-        Py_DECREF((PyObject*)state->PyScannerType);
+        Py_DECREF(state->PyScannerType);
         return -1;
     }
 
@@ -1827,7 +1830,7 @@ _json_exec(PyObject *module)
     }
     Py_INCREF(state->PyEncoderType);
     if (PyModule_AddObject(module, "make_encoder", state->PyEncoderType) < 0) {
-        Py_DECREF((PyObject*)state->PyEncoderType);
+        Py_DECREF(state->PyEncoderType);
         return -1;
     }
 

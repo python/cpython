@@ -447,6 +447,20 @@ class _NormalAccessor(_Accessor):
     def readlink(self, path):
         return os.readlink(path)
 
+    def owner(self, path):
+        try:
+            import pwd
+            return pwd.getpwuid(self.stat(path).st_uid).pw_name
+        except ImportError:
+            raise NotImplementedError("Path.owner() is unsupported on this system")
+
+    def group(self, path):
+        try:
+            import grp
+            return grp.getgrgid(self.stat(path).st_gid).gr_name
+        except ImportError:
+            raise NotImplementedError("Path.group() is unsupported on this system")
+
 
 _normal_accessor = _NormalAccessor()
 
@@ -856,6 +870,10 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
+    def with_stem(self, stem):
+        """Return a new path with the stem changed."""
+        return self.with_name(stem + self.suffix)
+
     def with_suffix(self, suffix):
         """Return a new path with the file suffix changed.  If the path
         has no suffix, add given suffix.  If the given suffix is an empty
@@ -904,7 +922,8 @@ class PurePath(object):
         cf = self._flavour.casefold_parts
         if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
-            raise ValueError("{!r} does not start with {!r}"
+            raise ValueError("{!r} is not in the subpath of {!r}"
+                    " OR one path is relative and the other is absolute."
                              .format(str(self), str(formatted)))
         return self._from_parsed_parts('', root if n == 1 else '',
                                        abs_parts[n:])
@@ -1041,7 +1060,6 @@ class Path(PurePath):
     """
     __slots__ = (
         '_accessor',
-        '_closed',
     )
 
     def __new__(cls, *args, **kwargs):
@@ -1058,7 +1076,6 @@ class Path(PurePath):
               # Private non-constructor arguments
               template=None,
               ):
-        self._closed = False
         if template is not None:
             self._accessor = template._accessor
         else:
@@ -1071,15 +1088,18 @@ class Path(PurePath):
         return self._from_parsed_parts(self._drv, self._root, parts)
 
     def __enter__(self):
-        if self._closed:
-            self._raise_closed()
         return self
 
     def __exit__(self, t, v, tb):
-        self._closed = True
-
-    def _raise_closed(self):
-        raise ValueError("I/O operation on closed path")
+        # https://bugs.python.org/issue39682
+        # In previous versions of pathlib, this method marked this path as
+        # closed; subsequent attempts to perform I/O would raise an IOError.
+        # This functionality was never documented, and had the effect of
+        # making Path objects mutable, contrary to PEP 428. In Python 3.9 the
+        # _closed attribute was removed, and this method made a no-op.
+        # This method and __enter__()/__exit__() should be deprecated and
+        # removed in the future.
+        pass
 
     def _opener(self, name, flags, mode=0o666):
         # A stub for the opener argument to built-in open()
@@ -1090,8 +1110,6 @@ class Path(PurePath):
         Open the file pointed by this path and return a file descriptor,
         as os.open() does.
         """
-        if self._closed:
-            self._raise_closed()
         return self._accessor.open(self, flags, mode)
 
     # Public API
@@ -1118,22 +1136,18 @@ class Path(PurePath):
         try:
             other_st = other_path.stat()
         except AttributeError:
-            other_st = os.stat(other_path)
+            other_st = self._accessor.stat(other_path)
         return os.path.samestat(st, other_st)
 
     def iterdir(self):
         """Iterate over the files in this directory.  Does not yield any
         result for the special paths '.' and '..'.
         """
-        if self._closed:
-            self._raise_closed()
         for name in self._accessor.listdir(self):
             if name in {'.', '..'}:
                 # Yielding a path object for these makes little sense
                 continue
             yield self._make_child_relpath(name)
-            if self._closed:
-                self._raise_closed()
 
     def glob(self, pattern):
         """Iterate over this subtree and yield all existing files (of any
@@ -1170,8 +1184,6 @@ class Path(PurePath):
         Use resolve() to get the canonical path to a file.
         """
         # XXX untested yet!
-        if self._closed:
-            self._raise_closed()
         if self.is_absolute():
             return self
         # FIXME this must defer to the specific flavour (and, under Windows,
@@ -1186,8 +1198,6 @@ class Path(PurePath):
         normalizing it (for example turning slashes into backslashes under
         Windows).
         """
-        if self._closed:
-            self._raise_closed()
         s = self._flavour.resolve(self, strict=strict)
         if s is None:
             # No symlink resolution => for consistency, raise an error if
@@ -1211,15 +1221,13 @@ class Path(PurePath):
         """
         Return the login name of the file owner.
         """
-        import pwd
-        return pwd.getpwuid(self.stat().st_uid).pw_name
+        return self._accessor.owner(self)
 
     def group(self):
         """
         Return the group name of the file gid.
         """
-        import grp
-        return grp.getgrgid(self.stat().st_gid).gr_name
+        return self._accessor.group(self)
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -1227,8 +1235,6 @@ class Path(PurePath):
         Open the file pointed by this path and return a file object, as
         the built-in open() function does.
         """
-        if self._closed:
-            self._raise_closed()
         return io.open(self, mode, buffering, encoding, errors, newline,
                        opener=self._opener)
 
@@ -1278,8 +1284,6 @@ class Path(PurePath):
         """
         Create this file with the given access mode, if it doesn't exist.
         """
-        if self._closed:
-            self._raise_closed()
         if exist_ok:
             # First try to bump modification time
             # Implementation note: GNU touch uses the UTIME_NOW option of
@@ -1301,8 +1305,6 @@ class Path(PurePath):
         """
         Create a new directory at this given path.
         """
-        if self._closed:
-            self._raise_closed()
         try:
             self._accessor.mkdir(self, mode)
         except FileNotFoundError:
@@ -1320,8 +1322,6 @@ class Path(PurePath):
         """
         Change the permissions of the path, like os.chmod().
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.chmod(self, mode)
 
     def lchmod(self, mode):
@@ -1329,8 +1329,6 @@ class Path(PurePath):
         Like chmod(), except if the path points to a symlink, the symlink's
         permissions are changed, rather than its target's.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.lchmod(self, mode)
 
     def unlink(self, missing_ok=False):
@@ -1338,8 +1336,6 @@ class Path(PurePath):
         Remove this file or link.
         If the path is a directory, use rmdir() instead.
         """
-        if self._closed:
-            self._raise_closed()
         try:
             self._accessor.unlink(self)
         except FileNotFoundError:
@@ -1350,8 +1346,6 @@ class Path(PurePath):
         """
         Remove this directory.  The directory must be empty.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.rmdir(self)
 
     def lstat(self):
@@ -1359,16 +1353,12 @@ class Path(PurePath):
         Like stat(), except if the path points to a symlink, the symlink's
         status information is returned, rather than its target's.
         """
-        if self._closed:
-            self._raise_closed()
         return self._accessor.lstat(self)
 
     def link_to(self, target):
         """
         Create a hard link pointing to a path named target.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.link_to(self, target)
 
     def rename(self, target):
@@ -1376,8 +1366,6 @@ class Path(PurePath):
         Rename this path to the given path,
         and return a new Path instance pointing to the given path.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.rename(self, target)
         return self.__class__(target)
 
@@ -1387,8 +1375,6 @@ class Path(PurePath):
         destination if it exists, and return a new Path instance
         pointing to the given path.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.replace(self, target)
         return self.__class__(target)
 
@@ -1397,8 +1383,6 @@ class Path(PurePath):
         Make this path a symlink pointing to the given path.
         Note the order of arguments (self, target) is the reverse of os.symlink's.
         """
-        if self._closed:
-            self._raise_closed()
         self._accessor.symlink(target, self, target_is_directory)
 
     # Convenience functions for querying the stat results
@@ -1459,9 +1443,8 @@ class Path(PurePath):
         if not self.exists() or not self.is_dir():
             return False
 
-        parent = Path(self.parent)
         try:
-            parent_dev = parent.stat().st_dev
+            parent_dev = self.parent.stat().st_dev
         except OSError:
             return False
 
@@ -1469,7 +1452,7 @@ class Path(PurePath):
         if dev != parent_dev:
             return True
         ino = self.stat().st_ino
-        parent_ino = parent.stat().st_ino
+        parent_ino = self.parent.stat().st_ino
         return ino == parent_ino
 
     def is_symlink(self):
@@ -1576,12 +1559,6 @@ class WindowsPath(Path, PureWindowsPath):
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
-    def owner(self):
-        raise NotImplementedError("Path.owner() is unsupported on this system")
-
-    def group(self):
-        raise NotImplementedError("Path.group() is unsupported on this system")
 
     def is_mount(self):
         raise NotImplementedError("Path.is_mount() is unsupported on this system")

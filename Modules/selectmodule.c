@@ -9,7 +9,7 @@
 #endif
 
 #include "Python.h"
-#include <structmember.h>
+#include "structmember.h"         // PyMemberDef
 
 #ifdef HAVE_SYS_DEVPOLL_H
 #include <sys/resource.h>
@@ -239,7 +239,7 @@ select.select
 
 Wait until one or more file descriptors are ready for some kind of I/O.
 
-The first three arguments are sequences of file descriptors to be waited for:
+The first three arguments are iterables of file descriptors to be waited for:
 rlist -- wait until ready for reading
 wlist -- wait until ready for writing
 xlist -- wait for an "exceptional condition"
@@ -264,7 +264,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=177e72184352df25]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=e467f5d68033de00]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -320,7 +320,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     }
 #endif /* SELECT_USES_HEAP */
 
-    /* Convert sequences to fd_sets, and get maximum fd number
+    /* Convert iterables to fd_sets, and get maximum fd number
      * propagates the Python exception set in seq2set()
      */
     rfd2obj[0].sentinel = -1;
@@ -764,6 +764,8 @@ poll_dealloc(pollObject *self)
 
 
 #ifdef HAVE_SYS_DEVPOLL_H
+static PyMethodDef devpoll_methods[];
+
 typedef struct {
     PyObject_HEAD
     int fd_devpoll;

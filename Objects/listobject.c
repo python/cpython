@@ -1,8 +1,8 @@
 /* List object implementation */
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
-#include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
 #include "pycore_accu.h"
 
@@ -98,28 +98,32 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 
 /* Empty list reuse scheme to save calls to malloc and free */
 #ifndef PyList_MAXFREELIST
-#define PyList_MAXFREELIST 80
+#  define PyList_MAXFREELIST 80
 #endif
+
+/* bpo-40521: list free lists are shared by all interpreters. */
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  undef PyList_MAXFREELIST
+#  define PyList_MAXFREELIST 0
+#endif
+
 static PyListObject *free_list[PyList_MAXFREELIST];
 static int numfree = 0;
 
-int
-PyList_ClearFreeList(void)
+void
+_PyList_ClearFreeList(void)
 {
-    PyListObject *op;
-    int ret = numfree;
     while (numfree) {
-        op = free_list[--numfree];
+        PyListObject *op = free_list[--numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
     }
-    return ret;
 }
 
 void
 _PyList_Fini(void)
 {
-    PyList_ClearFreeList();
+    _PyList_ClearFreeList();
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -257,12 +261,8 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (n == PY_SSIZE_T_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-            "cannot add more objects to list");
-        return -1;
-    }
 
+    assert((size_t)n + 1 < PY_SSIZE_T_MAX);
     if (list_resize(self, n+1) < 0)
         return -1;
 
@@ -297,12 +297,7 @@ app1(PyListObject *self, PyObject *v)
     Py_ssize_t n = PyList_GET_SIZE(self);
 
     assert (v != NULL);
-    if (n == PY_SSIZE_T_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-            "cannot add more objects to list");
-        return -1;
-    }
-
+    assert((size_t)n + 1 < PY_SSIZE_T_MAX);
     if (list_resize(self, n+1) < 0)
         return -1;
 
@@ -499,8 +494,7 @@ list_concat(PyListObject *a, PyObject *bb)
         return NULL;
     }
 #define b ((PyListObject *)bb)
-    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
-        return PyErr_NoMemory();
+    assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) < PY_SSIZE_T_MAX);
     size = Py_SIZE(a) + Py_SIZE(b);
     np = (PyListObject *) list_new_prealloc(size);
     if (np == NULL) {
@@ -2780,6 +2774,7 @@ static PyMethodDef list_methods[] = {
     LIST_COUNT_METHODDEF
     LIST_REVERSE_METHODDEF
     LIST_SORT_METHODDEF
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -2799,7 +2794,7 @@ static PySequenceMethods list_as_sequence = {
 static PyObject *
 list_subscript(PyListObject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i;
         i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
@@ -2854,7 +2849,7 @@ list_subscript(PyListObject* self, PyObject* item)
 static int
 list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return -1;
