@@ -6,13 +6,13 @@ typedef enum _opcodes {
     OP_CUT,
     OP_OPTIONAL,
     OP_LOOP_START,
-    OP_LOOP_COLLECT,
+    OP_LOOP_ITERATE,
     OP_FAILURE,
     // The rest have an argument
     OP_TOKEN,
     OP_RULE,
     OP_RETURN,
-    OP_LOOP_CONTINUE,
+    OP_LOOP_COLLECT,
     OP_SUCCESS,
 } Opcode;
 
@@ -24,13 +24,13 @@ char *opcode_names[] = {
     "OP_CUT",
     "OP_OPTIONAL",
     "OP_LOOP_START",
-    "OP_LOOP_COLLECT",
+    "OP_LOOP_ITERATE",
     "OP_FAILURE",
     // The rest have an argument
     "OP_TOKEN",
     "OP_RULE",
     "OP_RETURN",
-    "OP_LOOP_CONTINUE",
+    "OP_LOOP_COLLECT",
     "OP_SUCCESS",
 };
 
@@ -42,10 +42,12 @@ typedef struct _rule {
 
 typedef struct _frame {
     Rule *rule;
+    int mark;
     int ialt;
     int iop;
     int cut;
-    int mark;
+    int ncollected;
+    void **collection;
     int ival;
     void *vals[10];
 } Frame;
@@ -58,9 +60,9 @@ typedef struct _stack {
 
 /* Toy grammar
 
-NOTE: [expr] is optional to test OP_RULE_OPTIONAL.
+NOTE: [expr] is right-recursive.
 
-start: stmt ENDMARKER
+start: stmt* ENDMARKER
 stmt: expr NEWLINE
 expr: term '+' expr | term
 term: NAME | NUMBER
@@ -73,6 +75,7 @@ static KeywordToken *reserved_keywords[] = {
 
 enum {
       R_START,
+      R_STMTS,
       R_STMT,
       R_EXPR,
       R_TERM,
@@ -90,12 +93,24 @@ enum {
 static Rule all_rules[] = {
 
     {"start",
-     {0, 4, -1},
+     {0, 6, -1},
      {
-      OP_RULE, R_STMT,
+      OP_RULE, R_STMTS,
+      OP_TOKEN, ENDMARKER,
       OP_SUCCESS, A_START_0,
 
       OP_FAILURE,
+     },
+    },
+
+    {"stmt*",
+     {0, 4, -1},
+     {
+      OP_LOOP_START,
+      OP_RULE, R_STMT,
+      OP_LOOP_ITERATE,
+
+      OP_LOOP_COLLECT,
      },
     },
 
@@ -103,6 +118,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
       OP_RULE, R_EXPR,
+      OP_TOKEN, NEWLINE,
       OP_RETURN, A_STMT_0,
      },
     },
@@ -139,7 +155,13 @@ call_action(Parser *p, Frame *f, int iaction)
     Token *t = p->tokens[f->mark];
     int _start_lineno = t->lineno;
     int _start_col_offset = t->col_offset;
-    t = p->tokens[p->mark - 1];
+    if (p->mark > 0) {
+        t = p->tokens[p->mark - 1];
+    }
+    else {
+        // Debug anomaly rather than crashing
+        printf("p->mark=%d, p->fill=%d, f->mark=%d\n", p->mark, p->fill, f->mark);
+    }
     int _end_lineno = t->end_lineno;
     int _end_col_offset = t->end_col_offset;
 
@@ -147,7 +169,7 @@ call_action(Parser *p, Frame *f, int iaction)
     case A_START_0:
         return  _PyPegen_make_module(p, f->vals[0]);
     case A_STMT_0:
-        return _PyPegen_singleton_seq(p, _Py_Expr(f->vals[0], EXTRA));
+        return _Py_Expr(f->vals[0], EXTRA);
     case A_EXPR_0:
         if (f->vals[2])
             return _Py_BinOp(f->vals[0], Add, f->vals[2], EXTRA);

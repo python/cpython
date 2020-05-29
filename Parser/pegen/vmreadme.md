@@ -33,7 +33,7 @@ The main state in a frame is as follows:
 - `int iop`      -- indicates where we are in the current alternative
 - `int cut`      -- whether a "cut" was executed in the current alternative
 
-(We'll need state related to line numbers and column offsets as well.)
+State related to loops is described below.
 
 Note that `rule` and `mark` don't change after the frame is initialized.
 
@@ -57,8 +57,8 @@ The `opcodes` array is a sequence of operation codes and arguments.
 Some opcodes (e.g., `OP_TOKEN`) are followed by an argument; others
 (e.g., `OP_NAME`) are not.  Both are representable as integers.
 
-Opcodes
--------
+Operations
+----------
 
 Most operations can succeed or fail, and produce a vaue if they
 succeed.
@@ -77,6 +77,8 @@ Some operations manipulate other frame fields.
 Calls into the support runtime can also produce *errors* -- when an
 error is detected, the VM exits, immediately returning `NULL`.
 
+### General operations
+
 The following opcodes take no argument.
 
 - `OP_NOOP` -- succeed without a value.  (Used for opcode padding.)
@@ -93,35 +95,69 @@ The following opcodes take no argument.
 - `OP_OPTIONAL` -- modifies the *previous* operation to treat a `NULL`
   result as a success.
 
-- `OP_FAILURE` -- report a syntax error and exit the VM.
+These operations are followed by a single integer argument.
 
-These opcodes are followed by a single integer argument.
+- `OP_TOKEN(type)` -- call `_PyPegen_expect_token()` with the `type`
+  argument; processing is the same as for `OP_NAME`.
 
-- `OP_TOKEN` -- call `_PyPegen_expect_token()` with the argument;
-  processing is the same as for `OP_NAME`.
+- `OP_RULE(rule)` -- push a new frame onto the stack, initializing it
+  with the give rule (by index), the current input position (mark),
+  at the first alternative and opcode.  Then proceed to the first
+  operation of the new frame.
 
-- `OP_RULE` -- push a new frame onto the stack, initializing it with
-  the given rule, the current input position (mark), at the first
-  alternative and opcode.  Then proceed to the first operation of the
-  new frame.
-
-- `OP_RETURN` -- call the action given by the argument, then pop the
-  frame off the stack.  Execution then proceeds (in the frame newly
-  revealed by that pop operation) as if the previous operation
+- `OP_RETURN(action)` -- call the action given by the argument, then
+  pop the frame off the stack.  Execution then proceeds (in the frame
+  newly revealed by that pop operation) as if the previous operation
   succeeded or failed with the return value of the action.
 
-- `OP_SUCCESS` -- call the action given by the argument, and exit the
-  VM with its return value as result.
+### Operations for start rules only
+
+- `OP_SUCCESS(action)` -- call the action given by the argument, and
+  exit the VM with its return value as result.
+
+- `OP_FAILURE` -- report a syntax error and exit the VM.
+
+### Looping operations
+
+For a loop such as `a*`, a synthetic rule must be created with the
+following structure:
+
+```
+# First alternative:
+OP_LOOP_START
+<one operation that produces a value, e.g. OP_NAME, OP_TOKEN, OP_RULE>
+OP_LOOP_ITERATE
+
+# Second alternative:
+OP_LOOP_COLLECT
+```
+
+The values being collected are stored in a `malloc`-ed array named
+`collections` that is grown as needed.  This uses the following
+fields:
+
+- `ncollected` -- the number of collected values.
+- `collection` -- `malloc`-ed array of `void *` values representing
+  the collected values.
+
+The operations are defined as follows:
+
+- `OP_LOOP_START` -- initialize the `collections` array.
+
+- `OP_LOOP_ITERATE` -- append the current value to the `collections`
+  array, save the current input position, and start the next iteration
+  of the loop (resetting the instruction pointer).
+
+- `OP_LOOP_COLLECT` -- restore the input position from the last saved
+  position and pop the frame off the stack, producing a new value that
+  is an `asdl_seq *` containing the collected values.
+
+(TODO: additional operations to support `a+` and `b.a+`.)
 
 Ideas
 -----
 
-We need to extend the VM to support loops and lookaheads.
-
-- Standard loops (`a*`, `a+`, `a.b+`) -- add a new opcode that resets
-  the instruction pointer without destroying the captured value; need
-  a new frame field to store the collected values.  (Probably needs
-  several opcodes.)
+We also need to extend the VM to support lookaheads.
 
 - Positive lookahead (`&a`) -- add a new opcode to save the mark in a
   new frame field, and another opcode that restores the mark from
@@ -132,58 +168,29 @@ We need to extend the VM to support loops and lookaheads.
 
 - Left-recursion -- hmm, tricky...
 
-Loop opcodes
-------------
-
-```
-case START_LOOP:  // At start of first alternative
-    f->collection = malloc(0);
-    f->collected = 0;
-    goto top;
-
-case CONTINUE_LOOP:  // At end of first alternative (replaces RETURN)
-    oparg = f->rule->opcodes[f->iop++];
-    v = call_action(p, f, oparg);
-    if (v) {
-        f->collection = realloc(f->collection, (f->collected + 1)*sizeof(void*));
-        if (!f->collection) return NULL;
-        f->collection[f->collected++] = v;
-        goto top;
-    }
-    break;
-
-case COLLECT_LOOP:  // At start of second (and last) alternative
-    v = <convert f->collection from malloc'ed array to asdl_seq>;
-    free(f->collection);
-    // Continue same as RETURN opcode
-```
-
-(Need some more stuff for `a+` and `a.b+`.)
-
-
 Lookahead opcodes
 -----------------
 
 ```
-case SAVE_MARK:
-    f->save_mark = p->mark;
+case OP_SAVE_MARK:
+    f->savemark = p->mark;
     goto top;
 
-case POS_LOOKAHEAD:
-    p->mark - f->save_mark;
+case OP_POS_LOOKAHEAD:
+    p->mark - f->savemark;
     goto top;
 
-case NEG_LOOKAHEAD:
+case OP_NEG_LOOKAHEAD:
     goto fail;
 
 /* Later, when v == NULL */
-if (f->rule->opcodes[f->iop] == NEG_LOOKAHEAD) {
-    p->mark - f->save_mark;
+if (f->rule->opcodes[f->iop] == OP_NEG_LOOKAHEAD) {
+    p->mark - f->savemark;
     goto top;
 }
 /* Also at the other fail check, under pop */
 ```
 
-If we initialize save_mark to the same value as mark, we can avoid a
+If we initialize savemark to the same value as mark, we can avoid a
 `SAVE_MARK` opcode at the start of alternatives -- this is a common
 pattern.
