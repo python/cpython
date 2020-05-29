@@ -7,11 +7,20 @@
 
 #include "vm.h"
 
+#undef D
+#define DEBUG 0
+
+#if DEBUG
+#define D(x) x
+#else
+#define D(x)
+#endif
+
 static Frame *
 push_frame(Stack *stack, Rule *rule)
 {
-    printf("               push %s\n", rule->name);
-    assert(stack->top < 100);
+    D(printf("               push %s\n", rule->name));
+    assert(stack->top < MAXFRAMES);
     Frame *f = &stack->frames[stack->top++];
     f->rule = rule;
     f->mark = stack->p->mark;
@@ -25,15 +34,16 @@ push_frame(Stack *stack, Rule *rule)
 }
 
 static Frame *
-pop_frame(Stack *stack)
+pop_frame(Stack *stack, void *v)
 {
     assert(stack->top > 1);
     Frame *f = &stack->frames[--stack->top];  // Frame being popped
     if (f->collection) {
         PyMem_Free(f->collection);
     }
+    _PyPegen_insert_memo(stack->p, f->mark, f->rule->type, v);
     f = &stack->frames[stack->top - 1];  // New top of stack
-    printf("               pop %s\n", f->rule->name);
+    D(printf("               pop %s\n", f->rule->name));
     return f;
 }
 
@@ -57,18 +67,22 @@ run_vm(Parser *p, Rule rules[], int start)
     Frame *f = push_frame(&stack, &rules[start]);
     void *v;
     int oparg;
+    int opc;
 
  top:
-    if (p->mark == p->fill)
-        _PyPegen_fill_token(p);
-    for (int i = 0; i < stack.top; i++) printf(" ");
-    int opc = f->rule->opcodes[f->iop];
-    printf("Rule: %s; ialt=%d; iop=%d; op=%s; arg=%d, mark=%d; token=%d; p^='%s'\n",
-           f->rule->name, f->ialt, f->iop, opcode_names[opc],
-           opc >= OP_TOKEN ? f->rule->opcodes[f->iop + 1] : -1,
-           p->mark, p->tokens[p->mark]->type,
-           p->fill > p-> mark ? PyBytes_AsString(p->tokens[p->mark]->bytes) : "<UNSEEN>");
-    switch (f->rule->opcodes[f->iop++]) {
+    opc = f->rule->opcodes[f->iop];
+    if (DEBUG) {
+        if (p->mark == p->fill)
+            _PyPegen_fill_token(p);
+        for (int i = 0; i < stack.top; i++) printf(" ");
+        printf("Rule: %s; ialt=%d; iop=%d; op=%s; arg=%d, mark=%d; token=%d; p^='%s'\n",
+               f->rule->name, f->ialt, f->iop, opcode_names[opc],
+               opc >= OP_TOKEN ? f->rule->opcodes[f->iop + 1] : -1,
+               p->mark, p->tokens[p->mark]->type,
+               p->fill > p-> mark ? PyBytes_AsString(p->tokens[p->mark]->bytes) : "<UNSEEN>");
+    }
+    f->iop++;
+    switch (opc) {
     case OP_NOOP:
         goto top;
     case OP_NAME:
@@ -104,7 +118,7 @@ run_vm(Parser *p, Rule rules[], int start)
         goto top;
     case OP_LOOP_COLLECT:
         v = make_asdl_seq(p, f->collection, f->ncollected);
-        f = pop_frame(&stack);
+        f = pop_frame(&stack, v);
         if (!v) {
             return PyErr_NoMemory();
         }
@@ -115,12 +129,22 @@ run_vm(Parser *p, Rule rules[], int start)
         break;
     case OP_RULE:
         oparg = f->rule->opcodes[f->iop++];
-        f = push_frame(&stack, &rules[oparg]);
+        Rule *rule = &rules[oparg];
+        int memo = _PyPegen_is_memoized(p, rule->type, &v);
+        if (memo) {
+            if (memo < 0) {
+                return NULL;
+            }
+            else {
+                break;  // The result is v
+            }
+        }
+        f = push_frame(&stack, rule);
         goto top;
     case OP_RETURN:
         oparg = f->rule->opcodes[f->iop++];
         v = call_action(p, f, oparg);
-        f = pop_frame(&stack);
+        f = pop_frame(&stack, v);
         break;
     case OP_SUCCESS:
         oparg = f->rule->opcodes[f->iop++];
@@ -132,29 +156,32 @@ run_vm(Parser *p, Rule rules[], int start)
     case OP_FAILURE:
         return RAISE_SYNTAX_ERROR("A syntax error");
     default:
-        abort();
+        printf("opc=%d\n", opc);
+        assert(0);
     }
 
     if (v) {
-        printf("            OK\n");
+        D(printf("            OK\n"));
+        assert(f->ival < MAXVALS);
         f->vals[f->ival++] = v;
         goto top;
     }
     if (PyErr_Occurred()) {
-        printf("            PyErr\n");
+        D(printf("            PyErr\n"));
         p->error_indicator = 1;
         return NULL;
     }
 
  fail:
     if (f->rule->opcodes[f->iop] == OP_OPTIONAL) {
-        printf("            GA!\n");
+        D(printf("            GA!\n"));
+        assert(f->ival < MAXVALS);
         f->vals[f->ival++] = NULL;
         f->iop++;  // Skip over the OP_OPTIONAL opcode
         goto top;
     }
 
-    printf("            fail\n");
+    D(printf("            fail\n"));
     p->mark = f->mark;
     if (f->cut)
         goto pop;
@@ -164,7 +191,7 @@ run_vm(Parser *p, Rule rules[], int start)
     goto top;
 
  pop:
-    f = pop_frame(&stack);
+    f = pop_frame(&stack, NULL);
     goto fail;
 }
 

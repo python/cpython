@@ -36,9 +36,12 @@ char *opcode_names[] = {
 
 typedef struct _rule {
     char *name;
+    int type;
     int alts[10];
     int opcodes[100];
 } Rule;
+
+#define MAXVALS 10
 
 typedef struct _frame {
     Rule *rule;
@@ -49,13 +52,15 @@ typedef struct _frame {
     int ncollected;
     void **collection;
     int ival;
-    void *vals[10];
+    void *vals[MAXVALS];
 } Frame;
+
+#define MAXFRAMES 100
 
 typedef struct _stack {
     Parser *p;
     int top;
-    Frame frames[100];
+    Frame frames[MAXFRAMES];
 } Stack;
 
 /* Toy grammar
@@ -98,6 +103,7 @@ enum {
 static Rule all_rules[] = {
 
     {"start",
+     R_START,
      {0, 6, -1},
      {
       OP_RULE, R_STMTS,
@@ -109,6 +115,7 @@ static Rule all_rules[] = {
     },
 
     {"stmt*",
+     R_STMTS,
      {0, 4, -1},
      {
       OP_LOOP_START,
@@ -120,6 +127,7 @@ static Rule all_rules[] = {
     },
 
     {"stmt",
+     R_STMT,
      {0, -1},
      {
       OP_RULE, R_EXPR,
@@ -129,6 +137,7 @@ static Rule all_rules[] = {
     },
 
     {"expr",
+     R_EXPR,
      {0, 8, -1},
      {
       OP_RULE, R_TERM,
@@ -142,6 +151,7 @@ static Rule all_rules[] = {
     },
 
     {"term",
+     R_TERM,
      {0, 8, -1},
      {
       OP_RULE, R_FACTOR,
@@ -155,7 +165,8 @@ static Rule all_rules[] = {
     },
 
     {"factor",
-     {0, 8, -1},
+     R_FACTOR,
+     {0, 8, 11, -1},
      {
       OP_TOKEN, LPAR,
       OP_RULE, R_EXPR,
@@ -202,7 +213,7 @@ call_action(Parser *p, Frame *f, int iaction)
     case A_TERM_1:
         return f->vals[0];
     case A_FACTOR_0:
-        return f->vals[0];
+        return f->vals[1];
     case A_FACTOR_1:
         return f->vals[0];
     case A_FACTOR_2:
