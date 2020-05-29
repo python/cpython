@@ -86,14 +86,9 @@ unicode_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("center", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -223,11 +218,6 @@ unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     }
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     tabsize = _PyLong_AsInt(args[0]);
     if (tabsize == -1 && PyErr_Occurred()) {
@@ -530,14 +520,9 @@ unicode_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("ljust", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -730,14 +715,9 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -849,14 +829,9 @@ unicode_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("rjust", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -923,14 +898,9 @@ unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto skip_optional_pos;
         }
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -1025,14 +995,9 @@ unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -1080,11 +1045,6 @@ unicode_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     }
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     keepends = _PyLong_AsInt(args[0]);
     if (keepends == -1 && PyErr_Occurred()) {
@@ -1231,14 +1191,9 @@ unicode_zfill(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t width;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(arg);
+        PyObject *iobj = _PyNumber_Index(arg);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -1303,4 +1258,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=b91233f3722643be input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5eb21e314da78b8 input=a9049054013a1b77]*/

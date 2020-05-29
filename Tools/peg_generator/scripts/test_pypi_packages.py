@@ -54,7 +54,7 @@ def find_dirname(package_name: str) -> str:
     assert False  # This is to fix mypy, should never be reached
 
 
-def run_tests(dirname: str, tree: int, extension: Any) -> int:
+def run_tests(dirname: str, tree: int) -> int:
     return test_parse_directory.parse_directory(
         dirname,
         HERE / ".." / ".." / ".." / "Grammar" / "python.gram",
@@ -72,7 +72,6 @@ def run_tests(dirname: str, tree: int, extension: Any) -> int:
         skip_actions=False,
         tree_arg=tree,
         short=True,
-        extension=extension,
         mode=1,
         parser="pegen",
     )
@@ -81,13 +80,6 @@ def run_tests(dirname: str, tree: int, extension: Any) -> int:
 def main() -> None:
     args = argparser.parse_args()
     tree = args.tree
-
-    extension = build.build_c_parser_and_generator(
-        HERE / ".." / ".." / ".." / "Grammar" / "python.gram",
-        HERE / ".." / ".." / ".." / "Grammar" / "Tokens",
-        "peg_extension/parse.c",
-        compile_extension=True,
-    )
 
     for package in get_packages():
         print(f"Extracting files from {package}... ", end="")
@@ -100,7 +92,7 @@ def main() -> None:
 
         print(f"Trying to parse all python files ... ")
         dirname = find_dirname(package)
-        status = run_tests(dirname, tree, extension)
+        status = run_tests(dirname, tree)
         if status == 0:
             shutil.rmtree(dirname)
         else:

@@ -816,8 +816,6 @@ static struct PyMethodDef mmap_object_methods[] = {
 #ifdef MS_WINDOWS
     {"__sizeof__",      (PyCFunction) mmap__sizeof__method,     METH_NOARGS},
 #endif
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
-     PyDoc_STR("See PEP 585")},
     {NULL,         NULL}       /* sentinel */
 };
 
@@ -1575,6 +1573,9 @@ PyInit_mmap(void)
 #ifdef MAP_ANONYMOUS
     setint(dict, "MAP_ANON", MAP_ANONYMOUS);
     setint(dict, "MAP_ANONYMOUS", MAP_ANONYMOUS);
+#endif
+#ifdef MAP_POPULATE
+    setint(dict, "MAP_POPULATE", MAP_POPULATE);
 #endif
 
     setint(dict, "PAGESIZE", (long)my_getpagesize());

@@ -7,20 +7,40 @@ on:
   push:
     branches:
     - master
+    - 3.9
     - 3.8
     - 3.7
   pull_request:
     branches:
     - master
+    - 3.9
     - 3.8
     - 3.7
 
 jobs:
+  check_source:
+    name: 'Check for source changes'
+    runs-on: ubuntu-latest
+    outputs:
+      run_tests: ${{ steps.check.outputs.run_tests }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check for source changes
+        id: check
+        run: |
+          if [ -z "GITHUB_BASE_REF" ]; then
+            echo '::set-output name=run_tests::true'
+          else
+            git fetch origin $GITHUB_BASE_REF --depth=1
+            git diff --name-only origin/$GITHUB_BASE_REF... | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
+          fi
   build_win32:
     name: 'Windows (x86)'
     runs-on: windows-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p Win32
     - name: Display build info
@@ -31,8 +51,10 @@ jobs:
   build_win_amd64:
     name: 'Windows (x64)'
     runs-on: windows-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p x64
     - name: Display build info
@@ -43,8 +65,10 @@ jobs:
   build_macos:
     name: 'macOS'
     runs-on: macos-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Configure CPython
       run: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev
     - name: Build CPython
@@ -57,10 +81,12 @@ jobs:
   build_ubuntu:
     name: 'Ubuntu'
     runs-on: ubuntu-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
     env:
       OPENSSL_VER: 1.1.1f
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: 'Restore OpenSSL build'

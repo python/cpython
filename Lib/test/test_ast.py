@@ -402,6 +402,15 @@ class AST_Tests(unittest.TestCase):
         self.assertRaises(TypeError, ast.Num, 1, None, 2)
         self.assertRaises(TypeError, ast.Num, 1, None, 2, lineno=0)
 
+        # Arbitrary keyword arguments are supported
+        self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
+        self.assertEqual(ast.Num(1, foo='bar').foo, 'bar')
+
+        with self.assertRaisesRegex(TypeError, "Num got multiple values for argument 'n'"):
+            ast.Num(1, n=2)
+        with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
+            ast.Constant(1, value=2)
+
         self.assertEqual(ast.Num(42).n, 42)
         self.assertEqual(ast.Num(4.25).n, 4.25)
         self.assertEqual(ast.Num(4.25j).n, 4.25j)
@@ -653,6 +662,11 @@ class AST_Tests(unittest.TestCase):
         expressions = [f"     | {node.__doc__}" for node in ast.expr.__subclasses__()]
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
+
+    def test_issue40614_feature_version(self):
+        ast.parse('f"{x=}"', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('f"{x=}"', feature_version=(3, 7))
 
 
 class ASTHelpers_Test(unittest.TestCase):
@@ -1851,6 +1865,17 @@ class EndPositionTests(unittest.TestCase):
         cdef = ast.parse(s).body[0]
         self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
 
+    def test_source_segment_missing_info(self):
+        s = 'v = 1\r\nw = 1\nx = 1\n\ry = 1\r\n'
+        v, w, x, y = ast.parse(s).body
+        del v.lineno
+        del w.end_lineno
+        del x.col_offset
+        del y.end_col_offset
+        self.assertIsNone(ast.get_source_segment(s, v))
+        self.assertIsNone(ast.get_source_segment(s, w))
+        self.assertIsNone(ast.get_source_segment(s, x))
+        self.assertIsNone(ast.get_source_segment(s, y))
 
 class NodeVisitorTests(unittest.TestCase):
     def test_old_constant_nodes(self):

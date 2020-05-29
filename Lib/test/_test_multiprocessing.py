@@ -27,6 +27,7 @@ import test.support
 import test.support.script_helper
 from test import support
 from test.support import socket_helper
+from test.support import threading_helper
 
 
 # Skip tests if _multiprocessing wasn't built.
@@ -81,7 +82,7 @@ def close_queue(queue):
 def join_process(process):
     # Since multiprocessing.Process has the same API than threading.Thread
     # (join() and is_alive(), the support function can be reused
-    support.join_thread(process)
+    threading_helper.join_thread(process)
 
 
 if os.name == "posix":
@@ -4234,7 +4235,7 @@ class _TestFinalize(BaseTestCase):
             gc.set_threshold(5, 5, 5)
             threads = [threading.Thread(target=run_finalizers),
                        threading.Thread(target=make_finalizers)]
-            with test.support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 time.sleep(4.0)  # Wait a bit to trigger race condition
                 finish = True
             if exc is not None:
@@ -5039,7 +5040,9 @@ class TestStartMethod(unittest.TestCase):
             self.assertEqual(methods, ['spawn'])
         else:
             self.assertTrue(methods == ['fork', 'spawn'] or
-                            methods == ['fork', 'spawn', 'forkserver'])
+                            methods == ['spawn', 'fork'] or
+                            methods == ['fork', 'spawn', 'forkserver'] or
+                            methods == ['spawn', 'fork', 'forkserver'])
 
     def test_preload_resources(self):
         if multiprocessing.get_start_method() != 'forkserver':

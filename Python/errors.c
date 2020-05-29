@@ -477,7 +477,9 @@ PyErr_SetExcInfo(PyObject *p_type, PyObject *p_value, PyObject *p_traceback)
 
 /* Like PyErr_Restore(), but if an exception is already set,
    set the context associated with it.
- */
+
+   The caller is responsible for ensuring that this call won't create
+   any cycles in the exception context chain. */
 void
 _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
 {
@@ -509,6 +511,62 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
     }
     else {
         _PyErr_Restore(tstate, exc, val, tb);
+    }
+}
+
+/* Set the currently set exception's context to the given exception.
+
+   If the provided exc_info is NULL, then the current Python thread state's
+   exc_info will be used for the context instead.
+
+   This function can only be called when _PyErr_Occurred() is true.
+   Also, this function won't create any cycles in the exception context
+   chain to the extent that _PyErr_SetObject ensures this. */
+void
+_PyErr_ChainStackItem(_PyErr_StackItem *exc_info)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(_PyErr_Occurred(tstate));
+
+    int exc_info_given;
+    if (exc_info == NULL) {
+        exc_info_given = 0;
+        exc_info = tstate->exc_info;
+    } else {
+        exc_info_given = 1;
+    }
+    if (exc_info->exc_type == NULL || exc_info->exc_type == Py_None) {
+        return;
+    }
+
+    _PyErr_StackItem *saved_exc_info;
+    if (exc_info_given) {
+        /* Temporarily set the thread state's exc_info since this is what
+           _PyErr_SetObject uses for implicit exception chaining. */
+        saved_exc_info = tstate->exc_info;
+        tstate->exc_info = exc_info;
+    }
+
+    PyObject *exc, *val, *tb;
+    _PyErr_Fetch(tstate, &exc, &val, &tb);
+
+    PyObject *exc2, *val2, *tb2;
+    exc2 = exc_info->exc_type;
+    val2 = exc_info->exc_value;
+    tb2 = exc_info->exc_traceback;
+    _PyErr_NormalizeException(tstate, &exc2, &val2, &tb2);
+    if (tb2 != NULL) {
+        PyException_SetTraceback(val2, tb2);
+    }
+
+    /* _PyErr_SetObject sets the context from PyThreadState. */
+    _PyErr_SetObject(tstate, exc, val);
+    Py_DECREF(exc);  // since _PyErr_Occurred was true
+    Py_XDECREF(val);
+    Py_XDECREF(tb);
+
+    if (exc_info_given) {
+        tstate->exc_info = saved_exc_info;
     }
 }
 

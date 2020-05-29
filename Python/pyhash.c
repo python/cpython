@@ -129,16 +129,22 @@ _Py_HashDouble(double v)
 }
 
 Py_hash_t
-_Py_HashPointer(const void *p)
+_Py_HashPointerRaw(const void *p)
 {
-    Py_hash_t x;
     size_t y = (size_t)p;
     /* bottom 3 or 4 bits are likely to be 0; rotate y by 4 to avoid
        excessive hash collisions for dicts and sets */
     y = (y >> 4) | (y << (8 * SIZEOF_VOID_P - 4));
-    x = (Py_hash_t)y;
-    if (x == -1)
+    return (Py_hash_t)y;
+}
+
+Py_hash_t
+_Py_HashPointer(const void *p)
+{
+    Py_hash_t x = _Py_HashPointerRaw(p);
+    if (x == -1) {
         x = -2;
+    }
     return x;
 }
 

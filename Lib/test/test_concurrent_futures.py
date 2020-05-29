@@ -1,4 +1,5 @@
 from test import support
+from test.support import threading_helper
 
 # Skip tests if _multiprocessing wasn't built.
 support.import_module('_multiprocessing')
@@ -100,11 +101,11 @@ def make_dummy_object(_):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self._thread_key = support.threading_setup()
+        self._thread_key = threading_helper.threading_setup()
 
     def tearDown(self):
         support.reap_children()
-        support.threading_cleanup(*self._thread_key)
+        threading_helper.threading_cleanup(*self._thread_key)
 
 
 class ExecutorMixin:
@@ -1496,11 +1497,11 @@ _threads_key = None
 
 def setUpModule():
     global _threads_key
-    _threads_key = support.threading_setup()
+    _threads_key = threading_helper.threading_setup()
 
 
 def tearDownModule():
-    support.threading_cleanup(*_threads_key)
+    threading_helper.threading_cleanup(*_threads_key)
     multiprocessing.util._cleanup_tests()
 
 

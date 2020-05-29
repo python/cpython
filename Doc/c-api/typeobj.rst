@@ -1223,10 +1223,24 @@ and :c:type:`PyType_Type` effectively act as defaults.)
        but the instance has no strong reference to the elements inside it, as they
        are allowed to be removed even if the instance is still alive).
 
-
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
    :c:func:`local_traverse` to have these specific names; don't name them just
    anything.
+
+   Heap-allocated types (:const:`Py_TPFLAGS_HEAPTYPE`, such as those created
+   with :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their
+   type. Their traversal function must therefore either visit
+   :c:func:`Py_TYPE(self) <Py_TYPE>`, or delegate this responsibility by
+   calling ``tp_traverse`` of another heap-allocated type (such as a
+   heap-allocated superclass).
+   If they do not, the type object may not be garbage-collected.
+
+   .. versionchanged:: 3.9
+
+      Heap-allocated types are expected to visit ``Py_TYPE(self)`` in
+      ``tp_traverse``.  In earlier versions of Python, due to
+      `bug 40217 <https://bugs.python.org/issue40217>`_, doing this
+      may lead to crashes in subclasses.
 
    **Inheritance:**
 

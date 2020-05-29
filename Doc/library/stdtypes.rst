@@ -434,12 +434,10 @@ Notes:
    Negative shift counts are illegal and cause a :exc:`ValueError` to be raised.
 
 (2)
-   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``
-   without overflow check.
+   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``.
 
 (3)
-   A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
-   overflow check.
+   A right shift by *n* bits is equivalent to floor division by ``pow(2, n)``.
 
 (4)
    Performing these calculations with at least one extra sign extension bit in
@@ -479,6 +477,27 @@ class`. In addition, it provides a few more methods:
             return len(s)       # len('100101') --> 6
 
     .. versionadded:: 3.1
+
+.. method:: int.bit_count()
+
+    Return the number of ones in the binary representation of the absolute
+    value of the integer. This is also known as the population count.
+    Example::
+
+        >>> n = 19
+        >>> bin(n)
+        '0b10011'
+        >>> n.bit_count()
+        3
+        >>> (-n).bit_count()
+        3
+
+    Equivalent to::
+
+        def bit_count(self):
+            return bin(self).count("1")
+
+    .. versionadded:: 3.10
 
 .. method:: int.to_bytes(length, byteorder, \*, signed=False)
 

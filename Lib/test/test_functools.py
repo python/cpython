@@ -19,6 +19,7 @@ import gc
 from weakref import proxy
 import contextlib
 
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
 import functools
@@ -1432,6 +1433,25 @@ class TestTopologicalSort(unittest.TestCase):
         self.assertEqual(run1, run2)
 
 
+class TestCache:
+    # This tests that the pass-through is working as designed.
+    # The underlying functionality is tested in TestLRU.
+
+    def test_cache(self):
+        @self.module.cache
+        def fib(n):
+            if n < 2:
+                return n
+            return fib(n-1) + fib(n-2)
+        self.assertEqual([fib(n) for n in range(16)],
+            [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610])
+        self.assertEqual(fib.cache_info(),
+            self.module._CacheInfo(hits=28, misses=16, maxsize=None, currsize=16))
+        fib.cache_clear()
+        self.assertEqual(fib.cache_info(),
+            self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
+
+
 class TestLRU:
 
     def test_lru(self):
@@ -1779,7 +1799,7 @@ class TestLRU:
             # create n threads in order to fill cache
             threads = [threading.Thread(target=full, args=[k])
                        for k in range(n)]
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 start.set()
 
             hits, misses, maxsize, currsize = f.cache_info()
@@ -1797,7 +1817,7 @@ class TestLRU:
             threads += [threading.Thread(target=full, args=[k])
                         for k in range(n)]
             start.clear()
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 start.set()
         finally:
             sys.setswitchinterval(orig_si)
@@ -1819,7 +1839,7 @@ class TestLRU:
                 self.assertEqual(f(i), 3 * i)
                 stop.wait(10)
         threads = [threading.Thread(target=test) for k in range(n)]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             for i in range(m):
                 start.wait(10)
                 stop.reset()
@@ -1839,7 +1859,7 @@ class TestLRU:
                 self.assertEqual(f(x), 3 * x, i)
         threads = [threading.Thread(target=test, args=(i, v))
                    for i, v in enumerate([1, 2, 2, 3, 2])]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             pass
 
     def test_need_for_rlock(self):
@@ -2773,7 +2793,7 @@ class TestCachedProperty(unittest.TestCase):
                 threading.Thread(target=lambda: item.cost)
                 for k in range(num_threads)
             ]
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 go.set()
         finally:
             sys.setswitchinterval(orig_si)

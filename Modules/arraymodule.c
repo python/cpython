@@ -337,17 +337,6 @@ II_getitem(arrayobject *ap, Py_ssize_t i)
         (unsigned long) ((unsigned int *)ap->ob_item)[i]);
 }
 
-static PyObject *
-get_int_unless_float(PyObject *v)
-{
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "array item must be integer");
-        return NULL;
-    }
-    return _PyLong_FromNbIndexOrNbInt(v);
-}
-
 static int
 II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
@@ -355,7 +344,7 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = get_int_unless_float(v);
+        v = _PyNumber_Index(v);
         if (NULL == v) {
             return -1;
         }
@@ -415,7 +404,7 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = get_int_unless_float(v);
+        v = _PyNumber_Index(v);
         if (NULL == v) {
             return -1;
         }
@@ -468,7 +457,7 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = get_int_unless_float(v);
+        v = _PyNumber_Index(v);
         if (NULL == v) {
             return -1;
         }
@@ -2536,14 +2525,14 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
     Py_INCREF(self);
     if (view->buf == NULL)
         view->buf = (void *)emptybuf;
-    view->len = (Py_SIZE(self)) * self->ob_descr->itemsize;
+    view->len = Py_SIZE(self) * self->ob_descr->itemsize;
     view->readonly = 0;
     view->ndim = 1;
     view->itemsize = self->ob_descr->itemsize;
     view->suboffsets = NULL;
     view->shape = NULL;
     if ((flags & PyBUF_ND)==PyBUF_ND) {
-        view->shape = &((Py_SIZE(self)));
+        view->shape = &((PyVarObject*)self)->ob_size;
     }
     view->strides = NULL;
     if ((flags & PyBUF_STRIDES)==PyBUF_STRIDES)

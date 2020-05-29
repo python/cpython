@@ -42,22 +42,12 @@ _posixshmem_shm_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
     path = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flags = _PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     mode = _PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
@@ -130,4 +120,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=9132861c61d8c2d8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bca8e78d0f43ef1a input=a9049054013a1b77]*/

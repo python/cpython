@@ -82,8 +82,8 @@ tuple_alloc(Py_ssize_t size)
         numfree[size]--;
         /* Inline PyObject_InitVar */
 #ifdef Py_TRACE_REFS
-        Py_SIZE(op) = size;
-        Py_TYPE(op) = &PyTuple_Type;
+        Py_SET_SIZE(op, size);
+        Py_SET_TYPE(op, &PyTuple_Type);
 #endif
         _Py_NewReference((PyObject *)op);
     }
@@ -486,8 +486,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         Py_INCREF(a);
         return (PyObject *)a;
     }
-    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
-        return PyErr_NoMemory();
+    assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) < PY_SSIZE_T_MAX);
     size = Py_SIZE(a) + Py_SIZE(b);
     if (size == 0) {
         return PyTuple_New(0);

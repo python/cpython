@@ -1004,6 +1004,10 @@ class ConvertTest(unittest.TestCase):
             x = statistics._convert(nan, type(nan))
             self.assertTrue(_nan_equal(x, nan))
 
+    def test_invalid_input_type(self):
+        with self.assertRaises(TypeError):
+            statistics._convert(None, float)
+
 
 class FailNegTest(unittest.TestCase):
     """Test _fail_neg private function."""
@@ -1031,6 +1035,50 @@ class FailNegTest(unittest.TestCase):
         else:
             self.fail("expected exception, but it didn't happen")
         self.assertEqual(errmsg, msg)
+
+
+class FindLteqTest(unittest.TestCase):
+    # Test _find_lteq private function.
+
+    def test_invalid_input_values(self):
+        for a, x in [
+            ([], 1),
+            ([1, 2], 3),
+            ([1, 3], 2)
+        ]:
+            with self.subTest(a=a, x=x):
+                with self.assertRaises(ValueError):
+                    statistics._find_lteq(a, x)
+
+    def test_locate_successfully(self):
+        for a, x, expected_i in [
+            ([1, 1, 1, 2, 3], 1, 0),
+            ([0, 1, 1, 1, 2, 3], 1, 1),
+            ([1, 2, 3, 3, 3], 3, 2)
+        ]:
+            with self.subTest(a=a, x=x):
+                self.assertEqual(expected_i, statistics._find_lteq(a, x))
+
+
+class FindRteqTest(unittest.TestCase):
+    # Test _find_rteq private function.
+
+    def test_invalid_input_values(self):
+        for a, l, x in [
+            ([1], 2, 1),
+            ([1, 3], 0, 2)
+        ]:
+            with self.assertRaises(ValueError):
+                statistics._find_rteq(a, l, x)
+
+    def test_locate_successfully(self):
+        for a, l, x, expected_i in [
+            ([1, 1, 1, 2, 3], 0, 1, 2),
+            ([0, 1, 1, 1, 2, 3], 0, 1, 3),
+            ([1, 2, 3, 3, 3], 0, 3, 4)
+        ]:
+            with self.subTest(a=a, l=l, x=x):
+                self.assertEqual(expected_i, statistics._find_rteq(a, l, x))
 
 
 # === Tests for public functions ===
@@ -1475,6 +1523,18 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         for values in ([-1], [1, -2, 3]):
             with self.subTest(values=values):
                 self.assertRaises(exc, self.func, values)
+
+    def test_invalid_type_error(self):
+        # Test error is raised when input contains invalid type(s)
+        for data in [
+            ['3.14'],               # single string
+            ['1', '2', '3'],        # multiple strings
+            [1, '2', 3, '4', 5],    # mixed strings and valid integers
+            [2.3, 3.4, 4.5, '5.6']  # only one string and valid floats
+        ]:
+            with self.subTest(data=data):
+                with self.assertRaises(TypeError):
+                    self.func(data)
 
     def test_ints(self):
         # Test harmonic mean with ints.
