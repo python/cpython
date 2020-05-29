@@ -907,12 +907,18 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertIsNone(server.logged)
 
     @reap_threads
-    def test_noop_with_debug(self):
+    @support.cpython_only
+    def test_dump_ur(self):
         # See: http://bugs.python.org/issue26543
+        untagged_resp_dict = {'READ-WRITE': [b'']}
+
         with self.reaped_server(SimpleIMAPHandler) as server:
             with self.imap_class(*server.server_address) as imap:
-                imap.debug = 5
-                imap.noop()
+                with mock.patch.object(imap, '_mesg') as mock_mesg:
+                    imap._dump_ur(untagged_resp_dict)
+                    mock_mesg.assert_called_with(
+                        "untagged responses dump:READ-WRITE: [b'']"
+                    )
 
 
 @unittest.skipUnless(ssl, "SSL not available")
