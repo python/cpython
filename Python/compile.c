@@ -222,6 +222,8 @@ static int compiler_async_comprehension_generator(
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
 
+static int compiler_pattern(struct compiler *, expr_ty, basicblock *);
+
 static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__, *__annotations__;
 
@@ -1550,6 +1552,11 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
     } \
 }
 
+#define CHECK(X)  \
+    if (!(X)) {   \
+        return 0; \
+    }
+
 /* These macros allows to check only for errors and not emmit bytecode
  * while visiting nodes.
 */
@@ -2751,180 +2758,179 @@ compiler_if(struct compiler *c, stmt_ty s)
 }
 
 static int
-pattern_store_helper(struct compiler *c, expr_ty p)
+compiler_pattern_load(struct compiler *c, expr_ty p, basicblock *fail)
 {
+    assert(p->kind == Attribute_kind || p->kind == Constant_kind || p->kind == Name_kind);
+    assert(p->kind != Attribute_kind || p->v.Attribute.ctx == Load);
+    assert(p->kind != Name_kind || p->v.Name.ctx == Load);
+    VISIT(c, expr, p);
+    ADDOP_COMPARE(c, Eq);
+    ADDOP_JABS(c, POP_JUMP_IF_FALSE, fail);
+    return 1;
+}
+
+static int
+compiler_pattern_store(struct compiler *c, expr_ty p) {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
     if (_PyUnicode_EqualToASCIIString(p->v.Name.id, "_")) {
         ADDOP(c, POP_TOP);
+        return 1;
+    }
+    VISIT(c, expr, p);
+    return 1;
+}
+
+static int
+compiler_pattern_name(struct compiler *c, expr_ty p, basicblock *fail)
+{
+    assert(p->kind == Name_kind);
+    assert(p->v.Name.ctx == Load || p->v.Name.ctx == Store);
+    if (p->v.Name.ctx == Load) {
+        return compiler_pattern_load(c, p, fail);
+    }
+    return compiler_pattern_store(c, p);
+}
+
+static int
+compiler_pattern_namedexpr(struct compiler *c, expr_ty p, basicblock *fail)
+{
+    assert(p->kind == NamedExpr_kind);
+    basicblock *block = compiler_new_block(c);
+    basicblock *end = compiler_new_block(c);
+    ADDOP(c, DUP_TOP);
+    CHECK(compiler_pattern(c, p->v.NamedExpr.value, block));
+    CHECK(compiler_pattern_store(c, p->v.NamedExpr.target));
+    ADDOP_JREL(c, JUMP_FORWARD, end);
+    compiler_use_next_block(c, block);
+    ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, fail);
+    compiler_use_next_block(c, end);
+    return 1;
+}
+
+static int
+compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail)
+{
+    basicblock *block = compiler_new_block(c);
+    basicblock *end = compiler_new_block(c);
+    asdl_seq *keys = p->v.Dict.keys;
+    asdl_seq *values = p->v.Dict.values;
+    Py_ssize_t size = asdl_seq_LEN(values);
+    int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
+    ADDOP_JREL(c, MATCH_MAP, fail);
+    for (Py_ssize_t i = 0; i < size - star; i++) {
+        expr_ty key = asdl_seq_GET(keys, i);
+        expr_ty value = asdl_seq_GET(values, i);
+        assert(key);
+        assert(p->kind == Attribute_kind || p->kind == Constant_kind || p->kind == Name_kind);
+        assert(p->kind != Attribute_kind || p->v.Attribute.ctx == Load);
+        assert(p->kind != Name_kind || p->v.Name.ctx == Load);
+        VISIT(c, expr, key);
+        ADDOP_JREL(c, MATCH_KEY, block);
+        CHECK(compiler_pattern(c, value, block));
+    }
+    if (!star) {
+        ADDOP(c, POP_TOP);
     }
     else {
-        VISIT(c, expr, p);
+        CHECK(compiler_pattern_store(c, asdl_seq_GET(values, size - 1)));
     }
+    ADDOP_JREL(c, JUMP_FORWARD, end);
+    compiler_use_next_block(c, block);
+    ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, fail);
+    compiler_use_next_block(c, end);
+    return 1;
+}
+
+static int
+compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail)
+{
+    assert(p->kind == BinOp_kind);
+    assert(p->v.BinOp.op== BitOr);
+    basicblock *block = compiler_new_block(c);
+    basicblock *end = compiler_new_block(c);
+    ADDOP(c, DUP_TOP);
+    CHECK(compiler_pattern(c, p->v.BinOp.left, block));
+    ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, end);
+    compiler_use_next_block(c, block);
+    CHECK(compiler_pattern(c, p->v.BinOp.right, fail));
+    compiler_use_next_block(c, end);
+    return 1;
+}
+
+static int
+compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail)
+{
+    assert(p->kind == List_kind || p->kind == Tuple_kind);
+    asdl_seq *values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
+    Py_ssize_t size = asdl_seq_LEN(values);
+    Py_ssize_t star = -1;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        expr_ty value = asdl_seq_GET(values, i);
+        if (value->kind != Starred_kind) {
+            continue;
+        }
+        if (star >= 0) {
+            return compiler_error(c, "multiple starred names in pattern");
+        }
+        // TODO: Test this math:
+        if ((size - i - 1) << 8 >= INT_MAX) {
+            return compiler_error(c, "too many sub-patterns follow starred name");
+        }
+        star = i;
+    }
+    basicblock *block = compiler_new_block(c);
+    basicblock *end = compiler_new_block(c);
+    ADDOP_JREL(c, MATCH_SEQ, fail);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        expr_ty value = asdl_seq_GET(values, i);
+        if (i == star) {
+            assert(value->kind == Starred_kind);
+            ADDOP_I(c, UNPACK_EX, (size - i - 1) << 8);
+            CHECK(compiler_pattern_store(c, value->v.Starred.value));
+            if (size - i - 1) {
+                ADDOP_I(c, BUILD_TUPLE, size - i - 1);
+                ADDOP_JREL(c, MATCH_SEQ, fail);
+            }
+            else {
+                ADDOP_JREL(c, JUMP_FORWARD, end);
+            }
+        }
+        else {
+            ADDOP_JREL(c, FOR_ITER, fail);
+            CHECK(compiler_pattern(c, value, block));
+        }
+    }
+    ADDOP_JREL(c, FOR_ITER, end);
+    ADDOP(c, POP_TOP);
+    compiler_use_next_block(c, block);
+    ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, fail);
+    compiler_use_next_block(c, end);
     return 1;
 }
 
 static int
 compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
 {
-    basicblock *end, *block;
-    Py_ssize_t i, size, star;
-    asdl_seq *keys, *values;
-    expr_ty key, value;
     switch (p->kind) {
-        // Atomic patterns:
-        case Name_kind:
-            if (p->v.Name.ctx == Store) {
-                return pattern_store_helper(c, p);
-            }
-            assert(p->v.Name.ctx == Load);
-            // Fall...
         case Attribute_kind:
-            assert(p->kind != Attribute_kind || p->v.Attribute.ctx == Load);
-            // Fall....
         case Constant_kind:
-            VISIT(c, expr, p);
-            ADDOP_COMPARE(c, Eq);
-            ADDOP_JABS(c, POP_JUMP_IF_FALSE, fail);
-            return 1;
-        // Nested patterns:
+            return compiler_pattern_load(c, p, fail);
         case BinOp_kind:
-            assert(p->v.BinOp.op == BitOr);
-            end = compiler_new_block(c);
-            block = compiler_new_block(c);
-            ADDOP(c, DUP_TOP);
-            if (!compiler_pattern(c, p->v.BinOp.left, block)) {
-                return 0;
-            }
-            ADDOP(c, POP_TOP);
-            ADDOP_JREL(c, JUMP_FORWARD, end);
-            compiler_use_next_block(c, block);
-            if (!compiler_pattern(c, p->v.BinOp.right, fail)) {
-                return 0;
-            }
-            compiler_use_next_block(c, end);
-            return 1;
+            return compiler_pattern_or(c, p, fail);
         case Dict_kind:
-            keys = p->v.Dict.keys;
-            values = p->v.Dict.values;
-            size = asdl_seq_LEN(values);
-            star = 0;
-            // TODO: Rely on parser/validation for this?
-            for (i = 0; i < size; i++) {
-                if (asdl_seq_GET(keys, i)) {
-                    continue;
-                }
-                value = asdl_seq_GET(values, i);
-                if (value->kind != Name_kind || value->v.Name.ctx != Store) {
-                    return compiler_error(c,
-                        "starred sub-patterns must be names");
-                }
-                if (i != size - 1) {
-                    return compiler_error(c,
-                        "sub-patterns cannot follow starred name");
-                }
-                star = 1;
-            }
-            end = compiler_new_block(c);
-            block = compiler_new_block(c);
-            ADDOP_JREL(c, MATCH_MAP, fail);
-            for (i = 0; i < size - star; i++) {
-                key = asdl_seq_GET(keys, i);
-                value = asdl_seq_GET(values, i);
-                assert(key);
-                assert(key->kind == Name_kind && key->v.Name.ctx == Load
-                       || key->kind == Constant_kind);
-                VISIT(c, expr, key);
-                ADDOP_JREL(c, MATCH_KEY, block);
-                if (!compiler_pattern(c, value, block)) {
-                    return 0;
-                }
-            }
-            if (!star) {
-                ADDOP(c, POP_TOP);
-            }
-            else if (!pattern_store_helper(c, asdl_seq_GET(values, size - 1))) {
-                return 0;
-            }
-            ADDOP_JREL(c, JUMP_FORWARD, end);
-            compiler_use_next_block(c, block);
-            ADDOP(c, POP_TOP);
-            ADDOP_JREL(c, JUMP_FORWARD, fail);
-            compiler_use_next_block(c, end);
-            return 1;
+            return compiler_pattern_mapping(c, p, fail);
         case List_kind:
-        case Tuple_kind:  // TODO: Undecided yet if tuple syntax is legal.
-            values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
-            size = asdl_seq_LEN(values);
-            star = -1;
-            for (i = 0; i < size; i++) {
-                value = asdl_seq_GET(values, i);
-                if (value->kind != Starred_kind) {
-                    continue;
-                }
-                // TODO: Rely on parser/validation for this?
-                if (value->kind != Name_kind || value->v.Name.ctx != Store) {
-                    return compiler_error(c,
-                        "starred sub-patterns must be names");
-                }
-                if (star >= 0) {
-                    return compiler_error(c,
-                        "multiple starred names in pattern");
-                }
-                // TODO: Test this math:
-                if ((size - i - 1) << 8 >= INT_MAX) {
-                    return compiler_error(c,
-                        "too many sub-patterns follow starred name");
-                }
-                star = i;
-            }
-            end = compiler_new_block(c);
-            block = compiler_new_block(c);
-            ADDOP_JREL(c, MATCH_SEQ, fail);
-            for (i = 0; i < size; i++) {
-                value = asdl_seq_GET(values, i);
-                if (i == star) {
-                    assert(value->kind == Starred_kind);
-                    ADDOP_I(c, UNPACK_EX, (size - i - 1) << 8);
-                    if (!pattern_store_helper(c, value->v.Starred.value)) {
-                        return 0;
-                    }
-                    if (size - i - 1) {
-                        ADDOP_I(c, BUILD_TUPLE, size - i - 1);
-                        ADDOP_JREL(c, MATCH_SEQ, fail);
-                    }
-                    else {
-                        ADDOP_JREL(c, JUMP_FORWARD, end);
-                    }
-                }
-                else {
-                    ADDOP_JREL(c, FOR_ITER, fail);
-                    if (!compiler_pattern(c, value, block)) {
-                        return 0;
-                    }
-                }
-            }
-            ADDOP_JREL(c, FOR_ITER, end);
-            ADDOP(c, POP_TOP);
-            compiler_use_next_block(c, block);
-            ADDOP(c, POP_TOP);
-            ADDOP_JREL(c, JUMP_FORWARD, fail);
-            compiler_use_next_block(c, end);
-            return 1;
+        case Tuple_kind:
+            return compiler_pattern_sequence(c, p, fail);
+        case Name_kind:
+            return compiler_pattern_name(c, p, fail);
         case NamedExpr_kind:
-            end = compiler_new_block(c);
-            block = compiler_new_block(c);
-            ADDOP(c, DUP_TOP);
-            if (!compiler_pattern(c, p->v.NamedExpr.value, block)) {
-                return 0;
-            }
-            VISIT(c, expr, p->v.NamedExpr.target);
-            ADDOP_JREL(c, JUMP_FORWARD, end);
-            compiler_use_next_block(c, block);
-            ADDOP(c, POP_TOP);
-            ADDOP_JREL(c, JUMP_FORWARD, fail);
-            compiler_use_next_block(c, end);
-            return 1;
+            return compiler_pattern_namedexpr(c, p, fail);
         default:
             Py_UNREACHABLE();
     }
@@ -2934,16 +2940,15 @@ static int
 compiler_match(struct compiler *c, stmt_ty s)
 {
     VISIT(c, expr, s->v.Match.target);
-    match_case_ty m;
-    basicblock *next, *end = compiler_new_block(c);
+    basicblock *end = compiler_new_block(c);
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     for (Py_ssize_t i = 0; i < cases; i++) {
-        m = asdl_seq_GET(s->v.Match.cases, i);
-        next = compiler_new_block(c);
+        match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
+        basicblock *next = compiler_new_block(c);
         ADDOP(c, DUP_TOP);
         compiler_pattern(c, m->pattern, next);
-        if (m->guard && !compiler_jump_if(c, m->guard, next, 0)) {
-            return 0;
+        if (m->guard) {
+            CHECK(compiler_jump_if(c, m->guard, next, 0));
         }
         ADDOP(c, POP_TOP);
         VISIT_SEQ(c, stmt, m->body);
