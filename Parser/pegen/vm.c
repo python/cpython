@@ -16,7 +16,7 @@
 #define D(x)
 #endif
 
-static Frame *
+static inline Frame *
 push_frame(Stack *stack, Rule *rule)
 {
     D(printf("               push %s\n", rule->name));
@@ -33,7 +33,7 @@ push_frame(Stack *stack, Rule *rule)
     return f;
 }
 
-static Frame *
+static inline Frame *
 pop_frame(Stack *stack, void *v)
 {
     assert(stack->top > 1);
@@ -47,7 +47,7 @@ pop_frame(Stack *stack, void *v)
     return f;
 }
 
-static asdl_seq *
+static inline asdl_seq *
 make_asdl_seq(Parser *p, void *collection[], int ncollected)
 {
     asdl_seq *seq = _Py_asdl_seq_new(ncollected, p->arena);
