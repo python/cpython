@@ -513,7 +513,7 @@ class EnsurePipTest(BaseTest):
         #    executing pip with sudo, you may want sudo's -H flag."
         # where $HOME is replaced by the HOME environment variable.
         err = re.sub("^(WARNING: )?The directory .* or its parent directory "
-                     "is not owned by the current user .*$", "",
+                     "is not owned or is not writable by the current user.*$", "",
                      err, flags=re.MULTILINE)
         self.assertEqual(err.rstrip(), "")
         # Being fairly specific regarding the expected behaviour for the
