@@ -90,7 +90,7 @@ class AsyncContextDecorator(object):
 
     def __call__(self, func):
         @wraps(func)
-        def inner(*args, **kwds):
+        async def inner(*args, **kwds):
             async with self._recreate_cm():
                 return await func(*args, **kwds)
         return inner
