@@ -32,9 +32,8 @@
 */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include <stddef.h>               // offsetof()
 
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
@@ -608,7 +607,7 @@ set_repr(PySetObject *so)
         goto done;
     listrepr = tmp;
 
-    if (Py_TYPE(so) != &PySet_Type)
+    if (!Py_IS_TYPE(so, &PySet_Type))
         result = PyUnicode_FromFormat("%s({%U})",
                                       Py_TYPE(so)->tp_name,
                                       listrepr);
@@ -1024,6 +1023,7 @@ PyDoc_STRVAR(update_doc,
 static PyObject *
 make_new_set(PyTypeObject *type, PyObject *iterable)
 {
+    assert(PyType_Check(type));
     PySetObject *so;
 
     so = (PySetObject *)type->tp_alloc(type, 0);
@@ -1064,35 +1064,65 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
 static PyObject *emptyfrozenset = NULL;
 
 static PyObject *
-frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 {
-    PyObject *iterable = NULL, *result;
-
-    if (type == &PyFrozenSet_Type && !_PyArg_NoKeywords("frozenset", kwds))
-        return NULL;
-
-    if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable))
-        return NULL;
-
-    if (type != &PyFrozenSet_Type)
+    if (type != &PyFrozenSet_Type) {
         return make_new_set(type, iterable);
+    }
 
     if (iterable != NULL) {
-        /* frozenset(f) is idempotent */
         if (PyFrozenSet_CheckExact(iterable)) {
+            /* frozenset(f) is idempotent */
             Py_INCREF(iterable);
             return iterable;
         }
-        result = make_new_set(type, iterable);
-        if (result == NULL || PySet_GET_SIZE(result))
-            return result;
-        Py_DECREF(result);
+        PyObject *res = make_new_set((PyTypeObject *)type, iterable);
+        if (res == NULL || PySet_GET_SIZE(res) != 0) {
+            return res;
+        }
+        /* If the created frozenset is empty, return the empty frozenset singleton instead */
+        Py_DECREF(res);
     }
-    /* The empty frozenset is a singleton */
-    if (emptyfrozenset == NULL)
-        emptyfrozenset = make_new_set(type, NULL);
+
+    // The empty frozenset is a singleton
+    if (emptyfrozenset == NULL) {
+        emptyfrozenset = make_new_set((PyTypeObject *)type, NULL);
+    }
     Py_XINCREF(emptyfrozenset);
     return emptyfrozenset;
+}
+
+static PyObject *
+frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *iterable = NULL;
+
+    if (type == &PyFrozenSet_Type && !_PyArg_NoKeywords("frozenset", kwds)) {
+        return NULL;
+    }
+
+    if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable)) {
+        return NULL;
+    }
+
+    return make_new_frozenset(type, iterable);
+}
+
+static PyObject *
+frozenset_vectorcall(PyObject *type, PyObject * const*args,
+                     size_t nargsf, PyObject *kwnames)
+{
+    if (!_PyArg_NoKwnames("frozenset", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("frozenset", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    PyObject *iterable = (nargs ? args[0] : NULL);
+    return make_new_frozenset((PyTypeObject *)type, iterable);
 }
 
 static PyObject *
@@ -1463,9 +1493,25 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
         setentry *entry;
         Py_ssize_t pos = 0;
 
-        while (set_next((PySetObject *)other, &pos, &entry))
-            if (set_discard_entry(so, entry->key, entry->hash) < 0)
+        /* Optimization:  When the other set is more than 8 times
+           larger than the base set, replace the other set with
+           interesection of the two sets.
+        */
+        if ((PySet_GET_SIZE(other) >> 3) > PySet_GET_SIZE(so)) {
+            other = set_intersection(so, other);
+            if (other == NULL)
                 return -1;
+        } else {
+            Py_INCREF(other);
+        }
+
+        while (set_next((PySetObject *)other, &pos, &entry))
+            if (set_discard_entry(so, entry->key, entry->hash) < 0) {
+                Py_DECREF(other);
+                return -1;
+            }
+
+        Py_DECREF(other);
     } else {
         PyObject *key, *it;
         it = PyObject_GetIter(other);
@@ -1954,9 +2000,10 @@ set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    dict = _PyObject_GetAttrId((PyObject *)so, &PyId___dict__);
+    if (_PyObject_LookupAttrId((PyObject *)so, &PyId___dict__, &dict) < 0) {
+        goto done;
+    }
     if (dict == NULL) {
-        PyErr_Clear();
         dict = Py_None;
         Py_INCREF(dict);
     }
@@ -1995,6 +2042,28 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
     if (iterable == NULL)
         return 0;
     return set_update_internal(self, iterable);
+}
+
+static PyObject*
+set_vectorcall(PyObject *type, PyObject * const*args,
+               size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(type));
+
+    if (!_PyArg_NoKwnames("set", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("set", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    if (nargs) {
+        return make_new_set((PyTypeObject *)type, args[0]);
+    }
+
+    return make_new_set((PyTypeObject *)type, NULL);
 }
 
 static PySequenceMethods set_as_sequence = {
@@ -2062,6 +2131,7 @@ static PyMethodDef set_methods[] = {
      union_doc},
     {"update",          (PyCFunction)set_update,        METH_VARARGS,
      update_doc},
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2145,6 +2215,7 @@ PyTypeObject PySet_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     set_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
+    .tp_vectorcall = set_vectorcall,
 };
 
 /* frozenset object ********************************************************/
@@ -2173,6 +2244,7 @@ static PyMethodDef frozenset_methods[] = {
      symmetric_difference_doc},
     {"union",           (PyCFunction)set_union,         METH_VARARGS,
      union_doc},
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2243,6 +2315,7 @@ PyTypeObject PyFrozenSet_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     frozenset_new,                      /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
+    .tp_vectorcall = frozenset_vectorcall,
 };
 
 
@@ -2318,7 +2391,7 @@ PySet_ClearFreeList(void)
 }
 
 void
-PySet_Fini(void)
+_PySet_Fini(void)
 {
     Py_CLEAR(emptyfrozenset);
 }
@@ -2512,7 +2585,7 @@ dummy_repr(PyObject *op)
     return PyUnicode_FromString("<dummy key>");
 }
 
-static void
+static void _Py_NO_RETURN
 dummy_dealloc(PyObject* ignore)
 {
     Py_FatalError("deallocating <dummy key>");

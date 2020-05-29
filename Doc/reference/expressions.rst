@@ -28,7 +28,7 @@ Arithmetic conversions
 .. index:: pair: arithmetic; conversion
 
 When a description of an arithmetic operator below uses the phrase "the numeric
-arguments are converted to a common type," this means that the operator
+arguments are converted to a common type", this means that the operator
 implementation for built-in types works as follows:
 
 * If either argument is a complex number, the other is converted to complex;
@@ -148,9 +148,8 @@ immutable, the same rules as for literals apply (i.e., two occurrences of the em
 tuple may or may not yield the same object).
 
 .. index::
-   single: comma; tuple display
-   pair: tuple; display
-   single: , (comma); tuple display
+   single: comma
+   single: , (comma)
 
 Note that tuples are not formed by the parentheses, but rather by use of the
 comma operator.  The exception is the empty tuple, for which parentheses *are*
@@ -179,7 +178,7 @@ called "displays", each of them in two flavors:
 Common syntax elements for comprehensions are:
 
 .. productionlist::
-   comprehension: `expression` `comp_for`
+   comprehension: `assignment_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `expression_nocond` [`comp_iter`]
@@ -912,7 +911,8 @@ series of :term:`arguments <argument>`:
                 :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
-   positional_arguments: ["*"] `expression` ("," ["*"] `expression`)*
+   positional_arguments: positional_item ("," positional_item)*
+   positional_item: `assignment_expression` | "*" `expression`
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*
    keywords_arguments: (`keyword_item` | "**" `expression`)
@@ -1422,8 +1422,13 @@ built-in types.
   The not-a-number values ``float('NaN')`` and ``decimal.Decimal('NaN')`` are
   special.  Any ordered comparison of a number to a not-a-number value is false.
   A counter-intuitive implication is that not-a-number values are not equal to
-  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3``, ``x
-  == x``, ``x != x`` are all false.  This behavior is compliant with IEEE 754.
+  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3`` and
+  ``x == x`` are all false, while ``x != x`` is true.  This behavior is
+  compliant with IEEE 754.
+
+* ``None`` and ``NotImplemented`` are singletons.  :PEP:`8` advises that
+  comparisons for singletons should always be done with ``is`` or ``is not``,
+  never the equality operators.
 
 * Binary sequences (instances of :class:`bytes` or :class:`bytearray`) can be
   compared within and across their types.  They compare lexicographically using
@@ -1442,25 +1447,9 @@ built-in types.
   :exc:`TypeError`.
 
   Sequences compare lexicographically using comparison of corresponding
-  elements, whereby reflexivity of the elements is enforced.
-
-  In enforcing reflexivity of elements, the comparison of collections assumes
-  that for a collection element ``x``, ``x == x`` is always true.  Based on
-  that assumption, element identity is compared first, and element comparison
-  is performed only for distinct elements.  This approach yields the same
-  result as a strict element comparison would, if the compared elements are
-  reflexive.  For non-reflexive elements, the result is different than for
-  strict element comparison, and may be surprising:  The non-reflexive
-  not-a-number values for example result in the following comparison behavior
-  when used in a list::
-
-    >>> nan = float('NaN')
-    >>> nan is nan
-    True
-    >>> nan == nan
-    False                 <-- the defined non-reflexive behavior of NaN
-    >>> [nan] == [nan]
-    True                  <-- list enforces reflexivity and tests identity first
+  elements.  The built-in containers typically assume identical objects are
+  equal to themselves.  That lets them bypass equality tests for identical
+  objects to improve performance and to maintain their internal invariants.
 
   Lexicographical comparison between built-in collections works as follows:
 
@@ -1655,6 +1644,17 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 
+Assignment expressions
+======================
+
+.. productionlist::
+   assignment_expression: [`identifier` ":="] `expression`
+
+.. TODO: BPO-39868
+
+See :pep:`572` for more details about assignment expressions.
+
+
 .. _if_expr:
 
 Conditional expressions
@@ -1724,7 +1724,7 @@ Expression lists
    expression_list: `expression` ("," `expression`)* [","]
    starred_list: `starred_item` ("," `starred_item`)* [","]
    starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
-   starred_item: `expression` | "*" `or_expr`
+   starred_item: `assignment_expression` | "*" `or_expr`
 
 .. index:: object: tuple
 
@@ -1797,6 +1797,8 @@ precedence and have a left-to-right chaining feature as described in the
 +-----------------------------------------------+-------------------------------------+
 | Operator                                      | Description                         |
 +===============================================+=====================================+
+| ``:=``                                        | Assignment expression               |
++-----------------------------------------------+-------------------------------------+
 | :keyword:`lambda`                             | Lambda expression                   |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
@@ -1834,7 +1836,8 @@ precedence and have a left-to-right chaining feature as described in the
 | ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
 | ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
-| ``(expressions...)``,                         | Binding or tuple display,           |
+| ``(expressions...)``,                         | Binding or parenthesized            |
+|                                               | expression,                         |
 | ``[expressions...]``,                         | list display,                       |
 | ``{key: value...}``,                          | dictionary display,                 |
 | ``{expressions...}``                          | set display                         |

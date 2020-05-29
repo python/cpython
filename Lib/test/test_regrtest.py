@@ -25,6 +25,7 @@ from test.libregrtest import utils
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
+LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
 
 TEST_INTERRUPTED = textwrap.dedent("""
     from signal import SIGINT, raise_signal
@@ -54,8 +55,6 @@ class ParseArgsTestCase(unittest.TestCase):
                     libregrtest._parse_args([opt])
                 self.assertIn('Run Python regression tests.', out.getvalue())
 
-    @unittest.skipUnless(hasattr(faulthandler, 'dump_traceback_later'),
-                         "faulthandler.dump_traceback_later() required")
     def test_timeout(self):
         ns = libregrtest._parse_args(['--timeout', '4.2'])
         self.assertEqual(ns.timeout, 4.2)
@@ -155,6 +154,24 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = libregrtest._parse_args([opt])
                 self.assertTrue(ns.single)
                 self.checkError([opt, '-f', 'foo'], "don't go together")
+
+    def test_ignore(self):
+        for opt in '-i', '--ignore':
+            with self.subTest(opt=opt):
+                ns = libregrtest._parse_args([opt, 'pattern'])
+                self.assertEqual(ns.ignore_tests, ['pattern'])
+                self.checkError([opt], 'expected one argument')
+
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, "w") as fp:
+            print('matchfile1', file=fp)
+            print('matchfile2', file=fp)
+
+        filename = os.path.abspath(support.TESTFN)
+        ns = libregrtest._parse_args(['-m', 'match',
+                                      '--ignorefile', filename])
+        self.assertEqual(ns.ignore_tests,
+                         ['matchfile1', 'matchfile2'])
 
     def test_match(self):
         for opt in '-m', '--match':
@@ -390,8 +407,8 @@ class BaseTestCase(unittest.TestCase):
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
-        regex = (r'^[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
-                 % self.TESTNAME_REGEX)
+        regex = (r'^%s\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
+                 % (LOG_PREFIX, self.TESTNAME_REGEX))
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
 
@@ -451,9 +468,10 @@ class BaseTestCase(unittest.TestCase):
         if rerun:
             regex = list_regex('%s re-run test%s', rerun)
             self.check_line(output, regex)
-            self.check_line(output, "Re-running failed tests in verbose mode")
+            regex = LOG_PREFIX + r"Re-running failed tests in verbose mode"
+            self.check_line(output, regex)
             for test_name in rerun:
-                regex = f"Re-running {test_name} in verbose mode"
+                regex = LOG_PREFIX + f"Re-running {test_name} in verbose mode"
                 self.check_line(output, regex)
 
         if no_test_ran:
@@ -572,8 +590,7 @@ class ProgramsTestCase(BaseTestCase):
         self.python_args = ['-Wd', '-E', '-bb']
         self.regrtest_args = ['-uall', '-rwW',
                               '--testdir=%s' % self.tmptestdir]
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            self.regrtest_args.extend(('--timeout', '3600', '-j4'))
+        self.regrtest_args.extend(('--timeout', '3600', '-j4'))
         if sys.platform == 'win32':
             self.regrtest_args.append('-n')
 
@@ -962,6 +979,42 @@ class ArgsTestCase(BaseTestCase):
         regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
         return [match.group(1) for match in regex.finditer(output)]
 
+    def test_ignorefile(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+                def test_method3(self):
+                    pass
+                def test_method4(self):
+                    pass
+        """)
+        all_methods = ['test_method1', 'test_method2',
+                       'test_method3', 'test_method4']
+        testname = self.create_test(code=code)
+
+        # only run a subset
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        subset = [
+            # only ignore the method name
+            'test_method1',
+            # ignore the full identifier
+            '%s.Tests.test_method3' % testname]
+        with open(filename, "w") as fp:
+            for name in subset:
+                print(name, file=fp)
+
+        output = self.run_tests("-v", "--ignorefile", filename, testname)
+        methods = self.parse_methods(output)
+        subset = ['test_method2', 'test_method4']
+        self.assertEqual(methods, subset)
+
     def test_matchfile(self):
         code = textwrap.dedent("""
             import unittest
@@ -1154,6 +1207,33 @@ class ArgsTestCase(BaseTestCase):
                                   env_changed=[testname],
                                   fail_env_changed=True)
 
+    def test_multiprocessing_timeout(self):
+        code = textwrap.dedent(r"""
+            import time
+            import unittest
+            try:
+                import faulthandler
+            except ImportError:
+                faulthandler = None
+
+            class Tests(unittest.TestCase):
+                # test hangs and so should be stopped by the timeout
+                def test_sleep(self):
+                    # we want to test regrtest multiprocessing timeout,
+                    # not faulthandler timeout
+                    if faulthandler is not None:
+                        faulthandler.cancel_dump_traceback_later()
+
+                    time.sleep(60 * 5)
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-j2", "--timeout=1.0", testname, exitcode=2)
+        self.check_executed_tests(output, [testname],
+                                  failed=testname)
+        self.assertRegex(output,
+                         re.compile('%s timed out' % testname, re.MULTILINE))
+
     def test_unraisable_exc(self):
         # --fail-env-changed must catch unraisable exception
         code = textwrap.dedent(r"""
@@ -1207,9 +1287,9 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utils.format_duration(10e-3),
                          '10 ms')
         self.assertEqual(utils.format_duration(1.5),
-                         '1 sec 500 ms')
+                         '1.5 sec')
         self.assertEqual(utils.format_duration(1),
-                         '1 sec')
+                         '1.0 sec')
         self.assertEqual(utils.format_duration(2 * 60),
                          '2 min')
         self.assertEqual(utils.format_duration(2 * 60 + 1),

@@ -36,9 +36,9 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'L'``   | unsigned long      | int               | 4                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'q'``   | signed long long   | int               | 8                     | \(2)  |
+| ``'q'``   | signed long long   | int               | 8                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'Q'``   | unsigned long long | int               | 8                     | \(2)  |
+| ``'Q'``   | unsigned long long | int               | 8                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'f'``   | float              | float             | 4                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -56,13 +56,6 @@ Notes:
    API.
 
    .. deprecated-removed:: 3.3 4.0
-
-(2)
-   The ``'q'`` and ``'Q'`` type codes are available only if
-   the platform C compiler used to build Python supports C :c:type:`long long`,
-   or, on Windows, :c:type:`__int64`.
-
-   .. versionadded:: 3.3
 
 The actual representation of values is determined by the machine architecture
 (strictly speaking, by the C implementation).  The actual size can be accessed
@@ -176,11 +169,6 @@ The following data items and methods are also supported:
    a.append(x)`` except that if there is a type error, the array is unchanged.
 
 
-.. method:: array.fromstring()
-
-   Deprecated alias for :meth:`frombytes`.
-
-
 .. method:: array.fromunicode(s)
 
    Extends this array with data from the given unicode string.  The array must
@@ -236,11 +224,6 @@ The following data items and methods are also supported:
 .. method:: array.tolist()
 
    Convert the array to an ordinary list with the same items.
-
-
-.. method:: array.tostring()
-
-   Deprecated alias for :meth:`tobytes`.
 
 
 .. method:: array.tounicode()

@@ -13,10 +13,14 @@ SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
 SPHINXERRORHANDLING = -W
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_elements.papersize=$(PAPER) \
+# Internal variables.
+PAPEROPT_a4     = -D latex_elements.papersize=a4paper
+PAPEROPT_letter = -D latex_elements.papersize=letterpaper
+
+ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
-.PHONY: help build html htmlhelp latex text changes linkcheck \
+.PHONY: help build html htmlhelp latex text texinfo changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
 	autobuild-dev autobuild-stable venv
 
@@ -29,6 +33,7 @@ help:
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
 	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  text       to make plain text files"
+	@echo "  texinfo    to make Texinfo file"
 	@echo "  epub       to make EPUB files"
 	@echo "  changes    to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
@@ -85,6 +90,11 @@ text: BUILDER = text
 text: build
 	@echo "Build finished; the text files are in build/text."
 
+texinfo: BUILDER = texinfo
+texinfo: build
+	@echo "Build finished; the python.texi file is in build/texinfo."
+	@echo "Run \`make info' in that directory to run it through makeinfo."
+
 epub: BUILDER = epub
 epub: build
 	@echo "Build finished; the epub files are in build/epub."
@@ -133,7 +143,7 @@ clean:
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
 	$(VENVDIR)/bin/python3 -m pip install -U pip setuptools
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==2.0.1 blurb python-docs-theme
+	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==2.2.0 blurb python-docs-theme
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
@@ -178,6 +188,17 @@ dist:
 	rm -rf build/epub
 	make epub
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
+
+	# archive the texinfo build
+	rm -rf build/texinfo
+	make texinfo
+	make info --directory=build/texinfo
+	cp -pPR build/texinfo dist/python-$(DISTVERSION)-docs-texinfo
+	tar -C dist -cf dist/python-$(DISTVERSION)-docs-texinfo.tar python-$(DISTVERSION)-docs-texinfo
+	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-texinfo.tar
+	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-texinfo.zip python-$(DISTVERSION)-docs-texinfo)
+	rm -r dist/python-$(DISTVERSION)-docs-texinfo
+	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
 check:
 	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst

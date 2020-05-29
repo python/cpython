@@ -274,6 +274,8 @@ ABC hierarchy::
       parent package. If a spec cannot be found, ``None`` is returned.
       When passed in, ``target`` is a module object that the finder may
       use to make a more educated guess about what spec to return.
+      :func:`importlib.util.spec_from_loader` may be useful for implementing
+      concrete ``MetaPathFinders``.
 
       .. versionadded:: 3.4
 
@@ -323,7 +325,8 @@ ABC hierarchy::
       within the :term:`path entry` to which it is assigned.  If a spec
       cannot be found, ``None`` is returned.  When passed in, ``target``
       is a module object that the finder may use to make a more educated
-      guess about what spec to return.
+      guess about what spec to return. :func:`importlib.util.spec_from_loader`
+      may be useful for implementing concrete ``PathEntryFinders``.
 
       .. versionadded:: 3.4
 
@@ -1026,6 +1029,10 @@ find and load modules.
     Only class methods are defined by this class to alleviate the need for
     instantiation.
 
+    .. versionchanged:: 3.4
+       Gained :meth:`~Loader.create_module` and :meth:`~Loader.exec_module`
+       methods.
+
 
 .. class:: WindowsRegistryFinder
 
@@ -1165,7 +1172,7 @@ find and load modules.
 
    .. method:: is_package(fullname)
 
-      Return true if :attr:`path` appears to be for a package.
+      Return ``True`` if :attr:`path` appears to be for a package.
 
    .. method:: path_stats(path)
 
@@ -1379,8 +1386,8 @@ an :term:`importer`.
    bytecode file. An empty string represents no optimization, so
    ``/foo/bar/baz.py`` with an *optimization* of ``''`` will result in a
    bytecode path of ``/foo/bar/__pycache__/baz.cpython-32.pyc``. ``None`` causes
-   the interpter's optimization level to be used. Any other value's string
-   representation being used, so ``/foo/bar/baz.py`` with an *optimization* of
+   the interpreter's optimization level to be used. Any other value's string
+   representation is used, so ``/foo/bar/baz.py`` with an *optimization* of
    ``2`` will lead to the bytecode path of
    ``/foo/bar/__pycache__/baz.cpython-32.opt-2.pyc``. The string representation
    of *optimization* can only be alphanumeric, else :exc:`ValueError` is raised.

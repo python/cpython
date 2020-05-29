@@ -157,7 +157,7 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
     if (args[0]) {
         if (!PyUnicode_Check(args[0])) {
-            _PyArg_BadArgument("encode", 1, "str", args[0]);
+            _PyArg_BadArgument("encode", "argument 'encoding'", "str", args[0]);
             goto exit;
         }
         Py_ssize_t encoding_length;
@@ -174,7 +174,7 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
         }
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("encode", 2, "str", args[1]);
+        _PyArg_BadArgument("encode", "argument 'errors'", "str", args[1]);
         goto exit;
     }
     Py_ssize_t errors_length;
@@ -582,7 +582,7 @@ PyDoc_STRVAR(unicode_strip__doc__,
 "strip($self, chars=None, /)\n"
 "--\n"
 "\n"
-"Return a copy of the string with leading and trailing whitespace remove.\n"
+"Return a copy of the string with leading and trailing whitespace removed.\n"
 "\n"
 "If chars is given and not None, remove characters in chars instead.");
 
@@ -630,7 +630,7 @@ static PyObject *
 unicode_lstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *chars = NULL;
+    PyObject *chars = Py_None;
 
     if (!_PyArg_CheckPositional("lstrip", nargs, 0, 1)) {
         goto exit;
@@ -664,7 +664,7 @@ static PyObject *
 unicode_rstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *chars = NULL;
+    PyObject *chars = Py_None;
 
     if (!_PyArg_CheckPositional("rstrip", nargs, 0, 1)) {
         goto exit;
@@ -712,7 +712,7 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("replace", 1, "str", args[0]);
+        _PyArg_BadArgument("replace", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -720,7 +720,7 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     old = args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("replace", 2, "str", args[1]);
+        _PyArg_BadArgument("replace", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -1045,7 +1045,7 @@ unicode_swapcase(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(unicode_maketrans__doc__,
-"maketrans(x, y=None, z=None, /)\n"
+"maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return a translation table usable for str.translate().\n"
@@ -1080,7 +1080,7 @@ unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("maketrans", 2, "str", args[1]);
+        _PyArg_BadArgument("maketrans", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -1091,7 +1091,7 @@ unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("maketrans", 3, "str", args[2]);
+        _PyArg_BadArgument("maketrans", "argument 3", "str", args[2]);
         goto exit;
     }
     if (PyUnicode_READY(args[2]) == -1) {
@@ -1202,7 +1202,7 @@ unicode___format__(PyObject *self, PyObject *arg)
     PyObject *format_spec;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__format__", 0, "str", arg);
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -1232,4 +1232,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=d1541724cb4a0070 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4ed33400979c7e8 input=a9049054013a1b77]*/

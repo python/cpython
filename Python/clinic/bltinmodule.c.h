@@ -102,7 +102,7 @@ builtin_format(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("format", 2, "str", args[1]);
+        _PyArg_BadArgument("format", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -200,7 +200,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto exit;
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("compile", 3, "str", args[2]);
+        _PyArg_BadArgument("compile", "argument 'mode'", "str", args[2]);
         goto exit;
     }
     Py_ssize_t mode_length;
@@ -608,39 +608,45 @@ PyDoc_STRVAR(builtin_ord__doc__,
     {"ord", (PyCFunction)builtin_ord, METH_O, builtin_ord__doc__},
 
 PyDoc_STRVAR(builtin_pow__doc__,
-"pow($module, x, y, z=None, /)\n"
+"pow($module, /, base, exp, mod=None)\n"
 "--\n"
 "\n"
-"Equivalent to x**y (with two arguments) or x**y % z (with three arguments)\n"
+"Equivalent to base**exp with 2 arguments or base**exp % mod with 3 arguments\n"
 "\n"
 "Some types, such as ints, are able to use a more efficient algorithm when\n"
 "invoked using the three argument form.");
 
 #define BUILTIN_POW_METHODDEF    \
-    {"pow", (PyCFunction)(void(*)(void))builtin_pow, METH_FASTCALL, builtin_pow__doc__},
+    {"pow", (PyCFunction)(void(*)(void))builtin_pow, METH_FASTCALL|METH_KEYWORDS, builtin_pow__doc__},
 
 static PyObject *
-builtin_pow_impl(PyObject *module, PyObject *x, PyObject *y, PyObject *z);
+builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
+                 PyObject *mod);
 
 static PyObject *
-builtin_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+builtin_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    PyObject *x;
-    PyObject *y;
-    PyObject *z = Py_None;
+    static const char * const _keywords[] = {"base", "exp", "mod", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "pow", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *base;
+    PyObject *exp;
+    PyObject *mod = Py_None;
 
-    if (!_PyArg_CheckPositional("pow", nargs, 2, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    x = args[0];
-    y = args[1];
-    if (nargs < 3) {
-        goto skip_optional;
+    base = args[0];
+    exp = args[1];
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
-    z = args[2];
-skip_optional:
-    return_value = builtin_pow_impl(module, x, y, z);
+    mod = args[2];
+skip_optional_pos:
+    return_value = builtin_pow_impl(module, base, exp, mod);
 
 exit:
     return return_value;
@@ -719,7 +725,7 @@ builtin_round(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *number;
-    PyObject *ndigits = NULL;
+    PyObject *ndigits = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -849,4 +855,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e173df340a9e4516 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=29686a89b739d600 input=a9049054013a1b77]*/

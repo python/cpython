@@ -439,8 +439,7 @@ class TestRetrievingSourceCode(GetSourceBase):
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_getdoc_inherited(self):
-        self.assertEqual(inspect.getdoc(mod.FesteringGob),
-                         'A longer,\n\nindented\n\ndocstring.')
+        self.assertIsNone(inspect.getdoc(mod.FesteringGob))
         self.assertEqual(inspect.getdoc(mod.FesteringGob.abuse),
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
         self.assertEqual(inspect.getdoc(mod.FesteringGob().abuse),
@@ -449,9 +448,19 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'The automatic gainsaying.')
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
+    def test_getowndoc(self):
+        getowndoc = inspect._getowndoc
+        self.assertEqual(getowndoc(type), type.__doc__)
+        self.assertEqual(getowndoc(int), int.__doc__)
+        self.assertEqual(getowndoc(int.to_bytes), int.to_bytes.__doc__)
+        self.assertEqual(getowndoc(int().to_bytes), int.to_bytes.__doc__)
+        self.assertEqual(getowndoc(int.from_bytes), int.from_bytes.__doc__)
+        self.assertEqual(getowndoc(int.real), int.real.__doc__)
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
     def test_finddoc(self):
         finddoc = inspect._finddoc
-        self.assertEqual(finddoc(int), int.__doc__)
+        self.assertIsNone(finddoc(int))
         self.assertEqual(finddoc(int.to_bytes), int.to_bytes.__doc__)
         self.assertEqual(finddoc(int().to_bytes), int.to_bytes.__doc__)
         self.assertEqual(finddoc(int.from_bytes), int.from_bytes.__doc__)
@@ -2077,6 +2086,7 @@ class TestSignatureObject(unittest.TestCase):
         P = inspect.Parameter
 
         self.assertEqual(str(S()), '()')
+        self.assertEqual(repr(S().parameters), 'mappingproxy(OrderedDict())')
 
         def test(po, pk, pod=42, pkd=100, *args, ko, **kwargs):
             pass
@@ -2269,8 +2279,8 @@ class TestSignatureObject(unittest.TestCase):
         test_callable(d.dump)
 
         # static method
-        test_callable(str.maketrans)
-        test_callable('abc'.maketrans)
+        test_callable(bytes.maketrans)
+        test_callable(b'abc'.maketrans)
 
         # class method
         test_callable(dict.fromkeys)
@@ -3153,14 +3163,21 @@ class TestSignatureObject(unittest.TestCase):
         class MySignature(inspect.Signature): pass
         def foo(a, *, b:1): pass
         foo_sig = MySignature.from_callable(foo)
-        self.assertTrue(isinstance(foo_sig, MySignature))
+        self.assertIsInstance(foo_sig, MySignature)
+
+    def test_signature_from_callable_class(self):
+        # A regression test for a class inheriting its signature from `object`.
+        class MySignature(inspect.Signature): pass
+        class foo: pass
+        foo_sig = MySignature.from_callable(foo)
+        self.assertIsInstance(foo_sig, MySignature)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_from_callable_builtin_obj(self):
         class MySignature(inspect.Signature): pass
         sig = MySignature.from_callable(_pickle.Pickler)
-        self.assertTrue(isinstance(sig, MySignature))
+        self.assertIsInstance(sig, MySignature)
 
     def test_signature_definition_order_preserved_on_kwonly(self):
         for fn in signatures_with_lexicographic_keyword_only_parameters():
@@ -3172,6 +3189,11 @@ class TestSignatureObject(unittest.TestCase):
         signature = inspect.signature(unsorted_keyword_only_parameters_fn)
         l = list(signature.parameters)
         self.assertEqual(l, unsorted_keyword_only_parameters)
+
+    def test_signater_parameters_is_ordered(self):
+        p1 = inspect.signature(lambda x, y: None).parameters
+        p2 = inspect.signature(lambda y, x: None).parameters
+        self.assertNotEqual(p1, p2)
 
 
 class TestParameterObject(unittest.TestCase):
@@ -3566,6 +3588,16 @@ class TestSignatureBind(unittest.TestCase):
         iterator = iter(range(5))
         self.assertEqual(self.call(setcomp_func, iterator), {0, 1, 4, 9, 16})
 
+    def test_signature_bind_posonly_kwargs(self):
+        def foo(bar, /, **kwargs):
+            return bar, kwargs.get(bar)
+
+        sig = inspect.signature(foo)
+        result = sig.bind("pos-only", bar="keyword")
+
+        self.assertEqual(result.kwargs, {"bar": "keyword"})
+        self.assertIn(("bar", "pos-only"), result.arguments.items())
+
 
 class TestBoundArguments(unittest.TestCase):
     def test_signature_bound_arguments_unhashable(self):
@@ -3664,6 +3696,10 @@ class TestBoundArguments(unittest.TestCase):
         ba.apply_defaults()
         self.assertEqual(list(ba.arguments.items()), [('a', 'spam')])
 
+    def test_signature_bound_arguments_arguments_type(self):
+        def foo(a): pass
+        ba = inspect.signature(foo).bind(1)
+        self.assertIs(type(ba.arguments), dict)
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
     def test_signature_get_bound_param(self):

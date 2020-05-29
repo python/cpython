@@ -235,7 +235,6 @@ EXPORTS
   PyExc_SystemError=python39.PyExc_SystemError DATA
   PyExc_SystemExit=python39.PyExc_SystemExit DATA
   PyExc_TabError=python39.PyExc_TabError DATA
-  PyExc_TargetScopeError=python39.PyExc_TargetScopeError DATA
   PyExc_TimeoutError=python39.PyExc_TimeoutError DATA
   PyExc_TypeError=python39.PyExc_TypeError DATA
   PyExc_UnboundLocalError=python39.PyExc_UnboundLocalError DATA
@@ -650,7 +649,6 @@ EXPORTS
   PyUnicode_AsWideChar=python39.PyUnicode_AsWideChar
   PyUnicode_AsWideCharString=python39.PyUnicode_AsWideCharString
   PyUnicode_BuildEncodingMap=python39.PyUnicode_BuildEncodingMap
-  PyUnicode_ClearFreeList=python39.PyUnicode_ClearFreeList
   PyUnicode_Compare=python39.PyUnicode_Compare
   PyUnicode_CompareWithASCIIString=python39.PyUnicode_CompareWithASCIIString
   PyUnicode_Concat=python39.PyUnicode_Concat
@@ -729,12 +727,15 @@ EXPORTS
   Py_DecodeLocale=python39.Py_DecodeLocale
   Py_EncodeLocale=python39.Py_EncodeLocale
   Py_EndInterpreter=python39.Py_EndInterpreter
+  Py_EnterRecursiveCall=python39.Py_EnterRecursiveCall
   Py_Exit=python39.Py_Exit
   Py_FatalError=python39.Py_FatalError
   Py_FileSystemDefaultEncodeErrors=python39.Py_FileSystemDefaultEncodeErrors DATA
   Py_FileSystemDefaultEncoding=python39.Py_FileSystemDefaultEncoding DATA
   Py_Finalize=python39.Py_Finalize
   Py_FinalizeEx=python39.Py_FinalizeEx
+  Py_GenericAlias=python39.Py_GenericAlias
+  Py_GenericAliasType=python39.Py_GenericAliasType
   Py_GetBuildInfo=python39.Py_GetBuildInfo
   Py_GetCompiler=python39.Py_GetCompiler
   Py_GetCopyright=python39.Py_GetCopyright
@@ -752,6 +753,7 @@ EXPORTS
   Py_Initialize=python39.Py_Initialize
   Py_InitializeEx=python39.Py_InitializeEx
   Py_IsInitialized=python39.Py_IsInitialized
+  Py_LeaveRecursiveCall=python39.Py_LeaveRecursiveCall
   Py_Main=python39.Py_Main
   Py_MakePendingCalls=python39.Py_MakePendingCalls
   Py_NewInterpreter=python39.Py_NewInterpreter

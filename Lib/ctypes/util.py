@@ -302,7 +302,7 @@ elif os.name == "posix":
                 res = re.search(expr, os.fsdecode(out))
                 if res:
                     result = res.group(0)
-            except Exception as e:
+            except Exception:
                 pass  # result will be None
             return result
 

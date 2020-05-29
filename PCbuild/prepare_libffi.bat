@@ -93,7 +93,10 @@ echo LIBFFI_SOURCE: %LIBFFI_SOURCE%
 echo MSVCC        : %MSVCC%
 echo.
 
-if not exist Makefile.in (%SH% -lc "(cd $LIBFFI_SOURCE; ./autogen.sh;)")
+if not exist Makefile.in (
+    %SH% -lc "(cd $LIBFFI_SOURCE; ./autogen.sh;)"
+    if errorlevel 1 exit /B 1
+)
 
 if "%BUILD_X64%"=="1" call :BuildOne x64 x86_64-w64-cygwin x86_64-w64-cygwin
 if "%BUILD_X86%"=="1" call :BuildOne x86 i686-pc-cygwin i686-pc-cygwin
@@ -158,11 +161,13 @@ echo ================================================================
 echo Configure the build to generate fficonfig.h and ffi.h
 echo ================================================================
 %SH% -lc "(cd $OLDPWD; ./configure CC='%MSVCC% %ASSEMBLER% %BUILD_PDB%' CXX='%MSVCC% %ASSEMBLER% %BUILD_PDB%' LD='link' CPP='cl -nologo -EP' CXXCPP='cl -nologo -EP' CPPFLAGS='-DFFI_BUILDING_DLL' %BUILD_NOOPT% NM='dumpbin -symbols' STRIP=':' --build=$BUILD --host=$HOST;)"
+if errorlevel 1 exit /B %ERRORLEVEL%
 
 echo ================================================================
 echo Building libffi
 echo ================================================================
 %SH% -lc "(cd $OLDPWD; export PATH=/usr/bin:$PATH; cp src/%SRC_ARCHITECTURE%/ffitarget.h include; make; find .;)"
+if errorlevel 1 exit /B %ERRORLEVEL%
 
 REM Tests are not needed to produce artifacts
 if "%LIBFFI_TEST%" EQU "1" (

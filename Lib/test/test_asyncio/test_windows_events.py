@@ -15,7 +15,6 @@ import _winapi
 
 import asyncio
 from asyncio import windows_events
-from asyncio.streams import _StreamProtocol
 from test.test_asyncio import utils as test_utils
 
 
@@ -59,6 +58,27 @@ class ProactorLoopCtrlC(test_utils.TestCase):
         thread.join()
 
 
+class ProactorMultithreading(test_utils.TestCase):
+    def test_run_from_nonmain_thread(self):
+        finished = False
+
+        async def coro():
+            await asyncio.sleep(0)
+
+        def func():
+            nonlocal finished
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(coro())
+            # close() must not call signal.set_wakeup_fd()
+            loop.close()
+            finished = True
+
+        thread = threading.Thread(target=func)
+        thread.start()
+        thread.join()
+        self.assertTrue(finished)
+
+
 class ProactorTests(test_utils.TestCase):
 
     def setUp(self):
@@ -99,16 +119,14 @@ class ProactorTests(test_utils.TestCase):
 
         clients = []
         for i in range(5):
-            stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
-                                    loop=self.loop, _asyncio_internal=True)
-            protocol = _StreamProtocol(stream,
-                                       loop=self.loop,
-                                       _asyncio_internal=True)
+            stream_reader = asyncio.StreamReader(loop=self.loop)
+            protocol = asyncio.StreamReaderProtocol(stream_reader,
+                                                    loop=self.loop)
             trans, proto = await self.loop.create_pipe_connection(
                 lambda: protocol, ADDRESS)
             self.assertIsInstance(trans, asyncio.Transport)
             self.assertEqual(protocol, proto)
-            clients.append((stream, trans))
+            clients.append((stream_reader, trans))
 
         for i, (r, w) in enumerate(clients):
             w.write('lower-{}\n'.format(i).encode())
@@ -117,7 +135,6 @@ class ProactorTests(test_utils.TestCase):
             response = await r.readline()
             self.assertEqual(response, 'LOWER-{}\n'.format(i).encode())
             w.close()
-            await r.close()
 
         server.close()
 

@@ -1,0 +1,1 @@
+Wait in `KqueueSelector.select` when no fds are registered

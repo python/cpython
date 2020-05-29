@@ -83,7 +83,12 @@ PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);
 
-PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, int optimize);
+typedef struct {
+    int optimize;
+    int ff_features;
+} _PyASTOptimizeState;
+
+PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, _PyASTOptimizeState *state);
 
 #ifdef __cplusplus
 }

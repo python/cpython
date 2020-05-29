@@ -808,7 +808,7 @@ detect classes that can be passed to `hex()`, `oct()` and `bin()`.
 .. nonce: LoeUNh
 .. section: Library
 
-Implement ``unittest.AsyncTestCase`` to help testing asyncio-based code.
+Implement ``unittest.IsolatedAsyncioTestCase`` to help testing asyncio-based code.
 
 ..
 
@@ -1262,7 +1262,7 @@ Reinitialize logging.Handler locks in forked child processes instead of
 attempting to acquire them all in the parent before forking only to be
 released in the child process.  The acquire/release pattern was leading to
 deadlocks in code that has implemented any form of chained logging handlers
-that depend upon one another as the lock acquision order cannot be
+that depend upon one another as the lock acquisition order cannot be
 guaranteed.
 
 ..

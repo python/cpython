@@ -17,7 +17,7 @@ KEYPRESS_VIRTUAL_EVENT_NAME = "<<autocompletewindow-keypress>>"
 # before the default specific IDLE function
 KEYPRESS_SEQUENCES = ("<Key>", "<Key-BackSpace>", "<Key-Return>", "<Key-Tab>",
                       "<Key-Up>", "<Key-Down>", "<Key-Home>", "<Key-End>",
-                      "<Key-Prior>", "<Key-Next>")
+                      "<Key-Prior>", "<Key-Next>", "<Key-Escape>")
 KEYRELEASE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-keyrelease>>"
 KEYRELEASE_SEQUENCE = "<KeyRelease>"
 LISTUPDATE_SEQUENCE = "<B1-ButtonRelease>"
@@ -52,10 +52,12 @@ class AutoCompleteWindow:
         # (for example, he clicked the list)
         self.userwantswindow = None
         # event ids
-        self.hideid = self.keypressid = self.listupdateid = self.winconfigid \
-        = self.keyreleaseid = self.doubleclickid                         = None
+        self.hideid = self.keypressid = self.listupdateid = \
+            self.winconfigid = self.keyreleaseid = self.doubleclickid = None
         # Flag set if last keypress was a tab
         self.lastkey_was_tab = False
+        # Flag set to avoid recursive <Configure> callback invocations.
+        self.is_configuring = False
 
     def _change_start(self, newstart):
         min_len = min(len(self.start), len(newstart))
@@ -223,12 +225,18 @@ class AutoCompleteWindow:
         self.widget.event_add(KEYRELEASE_VIRTUAL_EVENT_NAME,KEYRELEASE_SEQUENCE)
         self.listupdateid = listbox.bind(LISTUPDATE_SEQUENCE,
                                          self.listselect_event)
+        self.is_configuring = False
         self.winconfigid = acw.bind(WINCONFIG_SEQUENCE, self.winconfig_event)
         self.doubleclickid = listbox.bind(DOUBLECLICK_SEQUENCE,
                                           self.doubleclick_event)
         return None
 
     def winconfig_event(self, event):
+        if self.is_configuring:
+            # Avoid running on recursive <Configure> callback invocations.
+            return
+
+        self.is_configuring = True
         if not self.is_active():
             return
         # Position the completion list window
@@ -236,6 +244,7 @@ class AutoCompleteWindow:
         text.see(self.startindex)
         x, y, cx, cy = text.bbox(self.startindex)
         acw = self.autocompletewindow
+        acw.update()
         acw_width, acw_height = acw.winfo_width(), acw.winfo_height()
         text_width, text_height = text.winfo_width(), text.winfo_height()
         new_x = text.winfo_rootx() + min(x, max(0, text_width - acw_width))
@@ -248,6 +257,7 @@ class AutoCompleteWindow:
             # place acw above current line
             new_y -= acw_height
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
+        acw.update_idletasks()
 
         if platform.system().startswith('Windows'):
             # See issue 15786. When on Windows platform, Tk will misbehave
@@ -255,6 +265,8 @@ class AutoCompleteWindow:
             # otherwise mouse button double click will not be able to used.
             acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
             self.winconfigid = None
+
+        self.is_configuring = False
 
     def _hide_event_check(self):
         if not self.autocompletewindow:

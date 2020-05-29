@@ -645,6 +645,10 @@ loops that truncate the stream.
    used anywhere else; otherwise, the *iterable* could get advanced without
    the tee objects being informed.
 
+   ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
+   raised when using simultaneously iterators returned by the same :func:`tee`
+   call, even if the original *iterable* is threadsafe.
+
    This itertool may require significant auxiliary storage (depending on how
    much temporary data needs to be stored). In general, if one iterator uses
    most or all of the data before another iterator starts, it is faster to use
@@ -762,9 +766,9 @@ which incur interpreter overhead.
    def dotproduct(vec1, vec2):
        return sum(map(operator.mul, vec1, vec2))
 
-   def flatten(listOfLists):
+   def flatten(list_of_lists):
        "Flatten one level of nesting"
-       return chain.from_iterable(listOfLists)
+       return chain.from_iterable(list_of_lists)
 
    def repeatfunc(func, times=None, *args):
        """Repeat calls to func with specified arguments.

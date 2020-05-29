@@ -66,6 +66,7 @@ import pkgutil
 import platform
 import re
 import sys
+import sysconfig
 import time
 import tokenize
 import urllib.parse
@@ -392,9 +393,7 @@ class Doc:
 
     docmodule = docclass = docroutine = docother = docproperty = docdata = fail
 
-    def getdocloc(self, object,
-                  basedir=os.path.join(sys.base_exec_prefix, "lib",
-                                       "python%d.%d" %  sys.version_info[:2])):
+    def getdocloc(self, object, basedir=sysconfig.get_path('stdlib')):
         """Return the location of module docs or None"""
 
         try:
@@ -585,7 +584,7 @@ class HTMLDoc(Doc):
         escape = escape or self.escape
         results = []
         here = 0
-        pattern = re.compile(r'\b((http|ftp)://\S+[\w/]|'
+        pattern = re.compile(r'\b((http|https|ftp)://\S+[\w/]|'
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
                                 r'(self\.)?(\w+))')
@@ -826,11 +825,8 @@ class HTMLDoc(Doc):
                 push(msg)
                 for name, kind, homecls, value in ok:
                     base = self.docother(getattr(object, name), name, mod)
-                    if callable(value) or inspect.isdatadescriptor(value):
-                        doc = getattr(value, "__doc__", None)
-                    else:
-                        doc = None
-                    if doc is None:
+                    doc = getdoc(value)
+                    if not doc:
                         push('<dl><dt>%s</dl>\n' % base)
                     else:
                         doc = self.markup(getdoc(value), self.preformat,
@@ -1310,10 +1306,7 @@ location listed above.
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    if callable(value) or inspect.isdatadescriptor(value):
-                        doc = getdoc(value)
-                    else:
-                        doc = None
+                    doc = getdoc(value)
                     try:
                         obj = getattr(object, name)
                     except AttributeError:
@@ -1449,8 +1442,10 @@ location listed above.
             chop = maxlen - len(line)
             if chop < 0: repr = repr[:chop] + '...'
         line = (name and self.bold(name) + ' = ' or '') + repr
-        if doc is not None:
-            line += '\n' + self.indent(str(doc))
+        if not doc:
+            doc = getdoc(object)
+        if doc:
+            line += '\n' + self.indent(str(doc)) + '\n'
         return line
 
 class _PlainTextDoc(TextDoc):
@@ -1673,11 +1668,15 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
     if not (inspect.ismodule(object) or
               inspect.isclass(object) or
               inspect.isroutine(object) or
-              inspect.isdatadescriptor(object)):
+              inspect.isdatadescriptor(object) or
+              inspect.getdoc(object)):
         # If the passed object is a piece of data or an instance,
         # document its available methods instead of its value.
-        object = type(object)
-        desc += ' object'
+        if hasattr(object, '__origin__'):
+            object = object.__origin__
+        else:
+            object = type(object)
+            desc += ' object'
     return title % desc + '\n\n' + renderer.document(object, name)
 
 def doc(thing, title='Python Library Documentation: %s', forceload=0,
