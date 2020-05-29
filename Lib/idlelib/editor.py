@@ -508,7 +508,7 @@ class EditorWindow(object):
             in_selection = False
         if not in_selection:
             text.tag_remove("sel", "1.0", "end")
-        text.mark_set("insert", newdex)
+            text.mark_set("insert", newdex)
         if not self.rmenu:
             self.make_rmenu()
         rmenu = self.rmenu
