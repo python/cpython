@@ -62,8 +62,11 @@ run_vm(Parser *p, Rule rules[], int start)
     if (p->mark == p->fill)
         _PyPegen_fill_token(p);
     for (int i = 0; i < stack.top; i++) printf(" ");
-    printf("Rule: %s; ialt=%d; iop=%d; op=%s; mark=%d; token=%d; p^='%s'\n",
-           f->rule->name, f->ialt, f->iop, opcode_names[f->rule->opcodes[f->iop]], p->mark, p->tokens[p->mark]->type,
+    int opc = f->rule->opcodes[f->iop];
+    printf("Rule: %s; ialt=%d; iop=%d; op=%s; arg=%d, mark=%d; token=%d; p^='%s'\n",
+           f->rule->name, f->ialt, f->iop, opcode_names[opc],
+           opc >= OP_TOKEN ? f->rule->opcodes[f->iop + 1] : -1,
+           p->mark, p->tokens[p->mark]->type,
            p->fill > p-> mark ? PyBytes_AsString(p->tokens[p->mark]->bytes) : "<UNSEEN>");
     switch (f->rule->opcodes[f->iop++]) {
     case OP_NOOP:

@@ -65,7 +65,8 @@ NOTE: [expr] is right-recursive.
 start: stmt* ENDMARKER
 stmt: expr NEWLINE
 expr: term '+' expr | term
-term: NAME | NUMBER
+term: factor '*' term | factor
+factor: '(' expr ')' | NUMBER | NAME
 
 */
 
@@ -79,6 +80,7 @@ enum {
       R_STMT,
       R_EXPR,
       R_TERM,
+      R_FACTOR,
 };
 
 enum {
@@ -88,6 +90,9 @@ enum {
       A_EXPR_1,
       A_TERM_0,
       A_TERM_1,
+      A_FACTOR_0,
+      A_FACTOR_1,
+      A_FACTOR_2,
 };
 
 static Rule all_rules[] = {
@@ -137,13 +142,31 @@ static Rule all_rules[] = {
     },
 
     {"term",
-     {0, 3, -1},
+     {0, 8, -1},
      {
-      OP_NAME,
+      OP_RULE, R_FACTOR,
+      OP_TOKEN, STAR,
+      OP_RULE, R_TERM,
       OP_RETURN, A_TERM_0,
 
-      OP_NUMBER,
+      OP_RULE, R_FACTOR,
       OP_RETURN, A_TERM_1,
+     },
+    },
+
+    {"factor",
+     {0, 8, -1},
+     {
+      OP_TOKEN, LPAR,
+      OP_RULE, R_EXPR,
+      OP_TOKEN, RPAR,
+      OP_RETURN, A_FACTOR_0,
+
+      OP_NUMBER,
+      OP_RETURN, A_FACTOR_1,
+
+      OP_NAME,
+      OP_RETURN, A_FACTOR_2,
      },
     },
 
@@ -171,15 +194,18 @@ call_action(Parser *p, Frame *f, int iaction)
     case A_STMT_0:
         return _Py_Expr(f->vals[0], EXTRA);
     case A_EXPR_0:
-        if (f->vals[2])
-            return _Py_BinOp(f->vals[0], Add, f->vals[2], EXTRA);
-        else
-            return f->vals[0];
+        return _Py_BinOp(f->vals[0], Add, f->vals[2], EXTRA);
     case A_EXPR_1:
         return f->vals[0];
     case A_TERM_0:
         return f->vals[0];
     case A_TERM_1:
+        return f->vals[0];
+    case A_FACTOR_0:
+        return f->vals[0];
+    case A_FACTOR_1:
+        return f->vals[0];
+    case A_FACTOR_2:
         return f->vals[0];
     default:
         assert(0);
