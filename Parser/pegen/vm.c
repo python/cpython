@@ -6,6 +6,7 @@
 #include "parse_string.h"
 
 #include "vm.h"
+#include "vmparse.h"  // Generated parser tables
 
 #undef D
 #define DEBUG 0
@@ -15,6 +16,14 @@
 #else
 #define D(x)
 #endif
+
+#define MAXFRAMES 100
+
+typedef struct _stack {
+    Parser *p;
+    int top;
+    Frame frames[MAXFRAMES];
+} Stack;
 
 static inline Frame *
 push_frame(Stack *stack, Rule *rule)
