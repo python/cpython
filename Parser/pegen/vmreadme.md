@@ -185,6 +185,34 @@ These operations must be last in their alternative: `OP_RETURN`,
 These operations must be first in their alternative: `OP_LOOP_START`,
 `OP_FAILURE`.
 
+Grammar for lists of operations
+-------------------------------
+
+This shows the constraints on how operations can be used together.
+
+```
+root_rule: success_alt failure_alt
+
+success_alt: rule_op OP_SUCCESS
+failure_alt: OP_FAILURE
+
+normal_rule: alt+
+
+loop_rule: loop_start_alt loop_collect_alt
+
+loop_start_alt: OP_LOOP_START regular_op OP_LOOP_ITERATE
+loop_collect_alt: OP_LOOP_COLLECT
+
+alt: any_op+ return_op
+
+any_op: regular_op [OP_OPTIONAL] | special_op
+regular_op: short_op | long_op
+short_op: OP_NAME | OP_NUMBER | OP_STRING
+long_op: OP_TOKEN <token_type> | OP_RULE <rule_id>
+special_op: OP_NOOP | OP_CUT
+return_op: OP_RETURN <action_id>
+```
+
 Ideas
 -----
 
