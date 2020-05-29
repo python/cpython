@@ -212,7 +212,7 @@ class RMenuTest(unittest.TestCase):
     class DummyRMenu:
         def tk_popup(x, y): pass
 
-    def test_rclick(self): 
+    def test_rclick(self):
         pass
 
 
