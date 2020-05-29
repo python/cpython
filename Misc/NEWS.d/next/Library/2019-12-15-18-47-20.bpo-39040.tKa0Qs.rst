@@ -1,0 +1,2 @@
+Fix parsing of invalid mime headers parameters by collapsing whitespace between
+encoded words in a bare-quote-string.
