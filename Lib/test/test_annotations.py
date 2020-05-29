@@ -1,11 +1,10 @@
 import unittest
-from textwrap import dedent
 import sys
+from textwrap import dedent
 
-class AnnotationsFutureTestCase(unittest.TestCase):
+class PostponedAnnotationsTestCase(unittest.TestCase):
     template = dedent(
         """
-        from __future__ import annotations
         def f() -> {ann}:
             ...
         def g(arg: {ann}) -> None:

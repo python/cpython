@@ -613,9 +613,8 @@ any valid Python expression.  The presence of annotations does not change the
 semantics of a function.  The annotation values are available as values of
 a dictionary keyed by the parameters' names in the :attr:`__annotations__`
 attribute of the function object. Used annnotations are preserved as strings at
-runtime which enables postponed evaluation. In this case annotations may be
-evaluated in In this case annotations may be evaluated in a different order
-than they appear in the source code.
+runtime which enables postponed evaluation (annotations may be evaluated in a
+different order than they appear in the source code).
 
 .. index:: pair: lambda; expression
 
