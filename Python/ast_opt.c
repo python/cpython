@@ -395,6 +395,8 @@ static int astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState 
 static int astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+
 #define CALL(FUNC, TYPE, ARG) \
     if (!FUNC((ARG), ctx_, state)) \
         return 0;
@@ -710,6 +712,10 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Expr_kind:
         CALL(astfold_expr, expr_ty, node_->v.Expr.value);
         break;
+    case Match_kind:
+        CALL(astfold_expr, expr_ty, node_->v.Match.target);
+        CALL_SEQ(astfold_match_case, match_case_ty, node_->v.Match.cases);
+        break;
     default:
         break;
     }
@@ -735,6 +741,16 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     CALL(astfold_expr, expr_ty, node_->context_expr);
     CALL_OPT(astfold_expr, expr_ty, node_->optional_vars);
+    return 1;
+}
+
+static int
+astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    CALL_OPT(astfold_expr, expr_ty, node_->guard);
+    // TODO: Create pattern optimizer.
+    // Don't blindly optimize the pattern as an expr; it plays by its own rules!
+    CALL_SEQ(astfold_stmt, stmt_ty, node_->body);
     return 1;
 }
 
