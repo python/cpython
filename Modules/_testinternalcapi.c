@@ -94,7 +94,7 @@ test_popcount(PyObject *self, PyObject *Py_UNUSED(args))
     if (check_popcount(UINT32_C(0xffff), 16) < 0) {
         return NULL;
     }
-    if (check_popcount(UINT32_C(0x10101010), 4) < 0) {
+    if (check_popcount(UINT32_C(0x10204080), 4) < 0) {
         return NULL;
     }
     if (check_popcount(UINT32_C(0xDEADCAFE), 22) < 0) {
