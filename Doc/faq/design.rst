@@ -260,7 +260,7 @@ Why isn't there a switch or case statement in Python?
 
 You can do this easily enough with a sequence of ``if... elif... elif... else``.
 There have been some proposals for switch statement syntax, but there is no
-consensus (yet) on whether and how to do range tests.  See :pep:`275` for
+consensus (yet) on whether and how to do range tests.  See :pep:`3103` for
 complete details and the current status.
 
 For cases where you need to choose from a very large number of possibilities,
