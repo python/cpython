@@ -1,37 +1,37 @@
 typedef enum _opcodes {
     OP_NOOP,
+    OP_CUT,
+    OP_OPTIONAL,
     OP_NAME,
     OP_NUMBER,
     OP_STRING,
-    OP_CUT,
-    OP_OPTIONAL,
     OP_LOOP_START,
     OP_LOOP_ITERATE,
+    OP_LOOP_COLLECT,
     OP_SUCCESS,
     OP_FAILURE,
     // The rest have an argument
     OP_TOKEN,
     OP_RULE,
     OP_RETURN,
-    OP_LOOP_COLLECT,
 } Opcode;
 
 char *opcode_names[] = {
     "OP_NOOP",
+    "OP_CUT",
+    "OP_OPTIONAL",
     "OP_NAME",
     "OP_NUMBER",
     "OP_STRING",
-    "OP_CUT",
-    "OP_OPTIONAL",
     "OP_LOOP_START",
     "OP_LOOP_ITERATE",
+    "OP_LOOP_COLLECT",
     "OP_SUCCESS",
     "OP_FAILURE",
     // The rest have an argument
     "OP_TOKEN",
     "OP_RULE",
     "OP_RETURN",
-    "OP_LOOP_COLLECT",
 };
 
 typedef struct _rule {
