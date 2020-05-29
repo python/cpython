@@ -649,7 +649,7 @@ the *new_callable* argument to :func:`patch`.
 
        .. versionchanged:: 3.8
           Added the ``args`` and ``kwargs`` properties to more easily access the
-          positional args and keyword args within a ``Call`` object tuple.
+          positional args and keyword args within a ``Call`` object.
 
 
     .. attribute:: call_args_list
