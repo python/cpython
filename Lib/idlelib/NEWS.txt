@@ -12,8 +12,9 @@ when fetching a calltip.
 bpo-27115: For 'Go to Line', use a Query entry box subclass with
 IDLE standard behavior and improved error checking.
 
-bpo-39885: Since clicking to get an IDLE context menu moves the
-cursor, any text selection should be and now is cleared.
+bpo-39885: When a context menu is invoked by right-clicking outside
+of a selection, clear the selection and move the cursor.  Cut and
+Copy require that the click be within the selection.
 
 bpo-39852: Edit "Go to line" now clears any selection, preventing
 accidental deletion.  It also updates Ln and Col on the status bar.
