@@ -2853,7 +2853,6 @@ main_loop:
         }
 
         case TARGET(BUILD_MAP): {
-            PREDICTED(BUILD_MAP);
             Py_ssize_t i;
             PyObject *map = _PyDict_NewPresized((Py_ssize_t)oparg);
             if (map == NULL)
@@ -3285,7 +3284,31 @@ main_loop:
 #endif
         }
 
-        case TARGET(MATCH_MAP_TYPE): {
+        case TARGET(MATCH_KEY): {
+            PyObject *key = TOP();
+            PyObject *map = SECOND();
+            assert(PyDict_CheckExact(map));
+            PyObject *value = PyDict_GetItemWithError(map, key);
+            if (!value) {
+                if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                STACK_SHRINK(1);
+                Py_DECREF(key);
+                JUMPBY(oparg);
+                DISPATCH();
+            }
+            Py_INCREF(value);
+            if (PyDict_DelItem(map, key)) {
+                Py_DECREF(value);
+                goto error;
+            }
+            Py_DECREF(key);
+            SET_TOP(value);
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_MAP): {
             PyInterpreterState *interp = PyInterpreterState_Get();
             if (!interp) {
                 goto error;
@@ -3308,11 +3331,26 @@ main_loop:
                 JUMPBY(oparg);
                 DISPATCH();
             }
-            PREDICT(BUILD_MAP);
+            PyObject *copy;
+            if (PyDict_CheckExact(target)) {
+                copy = PyDict_Copy(target);
+                if (!copy) {
+                    goto error;
+                }
+            }
+            else {
+                copy = PyDict_New();
+                if (!copy || PyDict_Update(copy, target)) {
+                    Py_XDECREF(copy);
+                    goto error;
+                }
+            }
+            Py_DECREF(target);
+            SET_TOP(copy);
             DISPATCH();
         }
 
-        case TARGET(MATCH_SEQ_TYPE): {
+        case TARGET(MATCH_SEQ): {
             PyInterpreterState *interp = PyInterpreterState_Get();
             if (!interp) {
                 goto error;
@@ -3341,12 +3379,8 @@ main_loop:
                 JUMPBY(oparg);
                 DISPATCH();
             }
-            PREDICT(GET_ITER);
-            DISPATCH();
-        }
-
+        }  // Fall...
         case TARGET(GET_ITER): {
-            PREDICTED(GET_ITER);
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
             PyObject *iter = PyObject_GetIter(iterable);

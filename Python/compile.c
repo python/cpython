@@ -980,8 +980,9 @@ stack_effect(int opcode, int oparg, int jump)
         case FOR_ITER:
             /* -1 at end of iterator, 1 if continue iterating. */
             return jump > 0 ? -1 : 1;
-        case MATCH_SEQ_TYPE:
-        case MATCH_MAP_TYPE:
+        case MATCH_SEQ:
+        case MATCH_MAP:
+        case MATCH_KEY:
             return -(jump > 0);
 
         case STORE_ATTR:
@@ -2750,7 +2751,7 @@ compiler_if(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_pattern_name_store(struct compiler *c, expr_ty p)
+pattern_store_helper(struct compiler *c, expr_ty p)
 {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
@@ -2768,19 +2769,19 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
 {
     basicblock *end, *block;
     Py_ssize_t i, size, star;
-    asdl_seq *elts;
-    expr_ty elt;
+    asdl_seq *keys, *values;
+    expr_ty key, value;
     switch (p->kind) {
         // Atomic patterns:
         case Name_kind:
             if (p->v.Name.ctx == Store) {
-                return compiler_pattern_name_store(c, p);
+                return pattern_store_helper(c, p);
             }
             assert(p->v.Name.ctx == Load);
-            // Fall through...
+            // Fall...
         case Attribute_kind:
             assert(p->kind != Attribute_kind || p->v.Attribute.ctx == Load);
-            // Fall through....
+            // Fall....
         case Constant_kind:
             VISIT(c, expr, p);
             ADDOP_COMPARE(c, Eq);
@@ -2803,17 +2804,66 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
             }
             compiler_use_next_block(c, end);
             return 1;
-        case List_kind:
-        case Tuple_kind:
-            elts = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
-            size = asdl_seq_LEN(elts);
-            star = -1;
+        case Dict_kind:
+            keys = p->v.Dict.keys;
+            values = p->v.Dict.values;
+            size = asdl_seq_LEN(values);
+            star = 0;
+            // TODO: Rely on parser/validation for this?
             for (i = 0; i < size; i++) {
-                elt = asdl_seq_GET(elts, i);
-                if (elt->kind != Starred_kind) {
+                if (asdl_seq_GET(keys, i)) {
                     continue;
                 }
-                if (elt->kind != Name_kind || elt->v.Name.ctx != Store) {
+                value = asdl_seq_GET(values, i);
+                if (value->kind != Name_kind || value->v.Name.ctx != Store) {
+                    return compiler_error(c,
+                        "starred sub-patterns must be names");
+                }
+                if (i != size - 1) {
+                    return compiler_error(c,
+                        "sub-patterns cannot follow starred name");
+                }
+                star = 1;
+            }
+            end = compiler_new_block(c);
+            block = compiler_new_block(c);
+            ADDOP_JREL(c, MATCH_MAP, fail);
+            for (i = 0; i < size - star; i++) {
+                key = asdl_seq_GET(keys, i);
+                value = asdl_seq_GET(values, i);
+                assert(key);
+                assert(key->kind == Name_kind && key->v.Name.ctx == Load
+                       || key->kind == Constant_kind);
+                VISIT(c, expr, key);
+                ADDOP_JREL(c, MATCH_KEY, block);
+                if (!compiler_pattern(c, value, block)) {
+                    return 0;
+                }
+            }
+            if (!star) {
+                ADDOP(c, POP_TOP);
+            }
+            else if (!pattern_store_helper(c, asdl_seq_GET(values, size - 1))) {
+                return 0;
+            }
+            ADDOP_JREL(c, JUMP_FORWARD, end);
+            compiler_use_next_block(c, block);
+            ADDOP(c, POP_TOP);
+            ADDOP_JREL(c, JUMP_FORWARD, fail);
+            compiler_use_next_block(c, end);
+            return 1;
+        case List_kind:
+        case Tuple_kind:  // TODO: Undecided yet if tuple syntax is legal.
+            values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
+            size = asdl_seq_LEN(values);
+            star = -1;
+            for (i = 0; i < size; i++) {
+                value = asdl_seq_GET(values, i);
+                if (value->kind != Starred_kind) {
+                    continue;
+                }
+                // TODO: Rely on parser/validation for this?
+                if (value->kind != Name_kind || value->v.Name.ctx != Store) {
                     return compiler_error(c,
                         "starred sub-patterns must be names");
                 }
@@ -2821,28 +2871,27 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
                     return compiler_error(c,
                         "multiple starred names in pattern");
                 }
+                // TODO: Test this math:
                 if ((size - i - 1) << 8 >= INT_MAX) {
                     return compiler_error(c,
-                        "too many sub-patterns follow starred sub-pattern");
+                        "too many sub-patterns follow starred name");
                 }
                 star = i;
             }
             end = compiler_new_block(c);
             block = compiler_new_block(c);
-            ADDOP_JREL(c, MATCH_SEQ_TYPE, fail);
-            ADDOP(c, GET_ITER);
+            ADDOP_JREL(c, MATCH_SEQ, fail);
             for (i = 0; i < size; i++) {
-                elt = asdl_seq_GET(elts, i);
+                value = asdl_seq_GET(values, i);
                 if (i == star) {
-                    assert(elt->kind == Starred_kind);
+                    assert(value->kind == Starred_kind);
                     ADDOP_I(c, UNPACK_EX, (size - i - 1) << 8);
-                    if (!compiler_pattern_name_store(c, elt->v.Starred.value)) {
+                    if (!pattern_store_helper(c, value->v.Starred.value)) {
                         return 0;
                     }
                     if (size - i - 1) {
                         ADDOP_I(c, BUILD_TUPLE, size - i - 1);
-                        ADDOP_JREL(c, MATCH_SEQ_TYPE, fail);
-                        ADDOP(c, GET_ITER);
+                        ADDOP_JREL(c, MATCH_SEQ, fail);
                     }
                     else {
                         ADDOP_JREL(c, JUMP_FORWARD, end);
@@ -2850,13 +2899,11 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
                 }
                 else {
                     ADDOP_JREL(c, FOR_ITER, fail);
-                    if (!compiler_pattern(c, elt, block)) {
+                    if (!compiler_pattern(c, value, block)) {
                         return 0;
                     }
                 }
             }
-            // TODO: This could be simplified with VM support. Pop top, and jump
-            // to "fail" if items remain. JUMP_IF_NOT_EMPTY?
             ADDOP_JREL(c, FOR_ITER, end);
             ADDOP(c, POP_TOP);
             compiler_use_next_block(c, block);

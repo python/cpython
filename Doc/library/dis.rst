@@ -990,20 +990,31 @@ All of the following opcodes use their arguments.
    code counter is incremented by *delta*.
 
 
-.. opcode:: MATCH_SEQ_TYPE (delta)
+.. opcode:: MATCH_SEQ (delta)
 
-   Used for pattern matching.  Pops TOS and increments the byte code counter by
-   *delta* if TOS is not an instance of :class:`collections.abc.Sequence`, is an
-   :term:`iterator`, or is an instance of
-   :class:`str`/:class:`bytes`/:class:`bytearray`.
+   Used to implement pattern matching.  Pop TOS.  If it is an instance of
+   :class:`collections.abc.Sequence`, is not an :term:`iterator`, and is not an
+   instance of :class:`str`/:class:`bytes`/:class:`bytearray`, get an iterator
+   from it and push that onto the stack.  Otherwise, increment the bytecode
+   counter by ``delta``.
 
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_MAP_TYPE (delta)
+.. opcode:: MATCH_MAP (delta)
 
-   Used for pattern matching.  Pops TOS and increments the byte code counter by
-   *delta* if TOS is not an instance of :class:`collections.abc.Mapping`.
+   Used to implement pattern matching.  Pop TOS.  If it is an instance of
+   :class:`collections.abc.Mapping`, copy it into a :class:`dict` and push that
+   onto the stack.  Otherwise, increment the bytecode counter by *delta*.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_KEY (delta)
+
+   Used to implement pattern matching.  Pop TOS.  If it is a key in the dict at
+   TOS1, remove it and push the associated value onto the stack.  Otherwise,
+   increment the bytecode counter by *delta*.
 
    .. versionadded:: 3.10
 

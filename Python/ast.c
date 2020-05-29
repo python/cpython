@@ -305,47 +305,81 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 static int
 validate_pattern(expr_ty p)
 {
-    asdl_seq *elts;
-    expr_ty elt;
+    asdl_seq *keys, *values;
+    expr_ty key, value;
     Py_ssize_t i, size;
-    char *error = "invalid Match pattern";
     switch (p->kind) {
         case Attribute_kind:
             return validate_expr(p, Load);
         case BinOp_kind:
             if (p->v.BinOp.op != BitOr) {
-                error = "BinOp op in pattern must be BitOr";
+                PyErr_SetString(PyExc_ValueError,
+                    "BinOp op in pattern must be BitOr");
+                return 0;
             }
             return (validate_pattern(p->v.BinOp.left)
                     && validate_pattern(p->v.BinOp.right));
         case Constant_kind:
-            return validate_constant(p->v.Constant.value);
-        case List_kind:
-        case Tuple_kind:
-            elts = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
-            size = asdl_seq_LEN(elts);
+            return validate_expr(p, Load);
+        case Dict_kind:
+            keys = p->v.Dict.keys;
+            values = p->v.Dict.values;
+            size = asdl_seq_LEN(values);
+            if (asdl_seq_LEN(keys) != size) {
+                PyErr_SetString(PyExc_ValueError,
+                    "Dict keys and values must be equal-length");
+                return 0;
+            }
             for (i = 0; i < size; i++) {
-                elt = asdl_seq_GET(elts, i);
-                if (elt->kind == Starred_kind) {
-                    elt = elt->v.Starred.value;
+                key = asdl_seq_GET(keys, i);
+                if (key) {
+                    if (key->kind == Name_kind) {
+                        if (key->v.Name.ctx != Load) {
+                            PyErr_SetString(PyExc_ValueError,
+                                "Name ctx in Dict keys pattern must be Load");
+                            return 0;
+                        }
+                    }
+                    else if (key->kind != Constant_kind) {
+                        PyErr_SetString(PyExc_ValueError,
+                            "Dict keys pattern must be Constant or Name");
+                        return 0;
+                    }
+                    return validate_expr(key, Load);
                 }
-                if (!validate_pattern(elt)) {
+                if (!validate_pattern(asdl_seq_GET(values, i))) {
+                    return 0;
+                }
+            }
+            return 0;
+        case List_kind:
+        case Tuple_kind:  // TODO: Undecided yet if tuple syntax is legal.
+            values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
+            size = asdl_seq_LEN(values);
+            for (i = 0; i < size; i++) {
+                value = asdl_seq_GET(values, i);
+                if (value->kind == Starred_kind) {
+                    value = value->v.Starred.value;
+                }
+                if (!validate_pattern(value)) {
                     return 0;
                 }
             }
             return 1;
         case Name_kind:
             if (p->v.Name.ctx != Load && p->v.Name.ctx != Store) {
-                error = "Name ctx in pattern must be either Load or Store";
+                PyErr_SetString(PyExc_ValueError,
+                    "Name ctx in pattern must be Load or Store");
+                return 0;
             }
             return validate_expr(p, p->v.Name.ctx);
         case NamedExpr_kind:
-            return validate_pattern(p->v.NamedExpr.value);
+            return (validate_pattern(p->v.NamedExpr.value)
+                    && validate_expr(p->v.NamedExpr.target, Store));
         default:
-            break;
+            PyErr_SetString(PyExc_ValueError, "invalid Match pattern");
+            return 0;
     }
-    PyErr_SetString(PyExc_ValueError, error);
-    return 0;
 }
 
 static int
