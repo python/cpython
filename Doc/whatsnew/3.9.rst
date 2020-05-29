@@ -113,7 +113,7 @@ PEP 616: New removeprefix() and removesuffix() string methods
 to easily remove an unneeded prefix or a suffix from a string. Corresponding
 ``bytes``, ``bytearray``, and ``collections.UserString`` methods have also been
 added. See :pep:`616` for a full description. (Contributed by Dennis Sweeney in
-:issue:`18939`.)
+:issue:`39939`.)
 
 PEP 585: Builtin Generic Types
 ------------------------------
@@ -552,10 +552,9 @@ sys
 ---
 
 Add a new :attr:`sys.platlibdir` attribute: name of the platform-specific
-library directory. It is used to build the path of platform-specific dynamic
-libraries and the path of the standard library. It is equal to ``"lib"`` on
-most platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit
-platforms.
+library directory. It is used to build the path of standard library and the
+paths of installed extension modules. It is equal to ``"lib"`` on most
+platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit platforms.
 (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
 
 Previously, :attr:`sys.stderr` was block-buffered when non-interactive. Now
@@ -828,9 +827,6 @@ Removed
   :func:`~plistlib.dumps` functions. Additionally, the *use_builtin_types* parameter was
   removed, standard :class:`bytes` objects are always used instead.
   (Contributed by Jon Janzen in :issue:`36409`.)
-
-* The C function ``PyThreadState_DeleteCurrent()`` has been removed. It was not documented.
-  (Contributed by Joannah Nanjekye in :issue:`37878`.)
 
 * The C function ``PyGen_NeedsFinalizing`` has been removed. It was not
   documented, tested, or used anywhere within CPython after the implementation
@@ -1108,6 +1104,8 @@ Removed
 
   * Exclude the following functions from the limited C API:
 
+    * ``PyThreadState_DeleteCurrent()``
+      (Contributed by Joannah Nanjekye in :issue:`37878`.)
     * ``_Py_CheckRecursionLimit``
     * ``_Py_NewReference()``
     * ``_Py_ForgetReference()``

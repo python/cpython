@@ -263,11 +263,6 @@ The :mod:`test.support` module defines the following constants:
     Set to a non-ASCII name for a temporary file.
 
 
-.. data:: TESTFN_ENCODING
-
-   Set to :func:`sys.getfilesystemencoding`.
-
-
 .. data:: TESTFN_UNENCODABLE
 
    Set to a filename (str type) that should not be able to be encoded by file
@@ -838,18 +833,6 @@ The :mod:`test.support` module defines the following functions:
    .. versionadded:: 3.9
 
 
-.. function:: wait_threads_exit(timeout=60.0)
-
-   Context manager to wait until all threads created in the ``with`` statement
-   exit.
-
-
-.. function:: start_threads(threads, unlock=None)
-
-   Context manager to start *threads*.  It attempts to join the threads upon
-   exit.
-
-
 .. function:: calcobjsize(fmt)
 
    Return :func:`struct.calcsize` for ``nP{fmt}0n`` or, if ``gettotalrefcount``
@@ -988,11 +971,6 @@ The :mod:`test.support` module defines the following functions:
    the trace function.
 
 
-.. decorator:: reap_threads(func)
-
-   Decorator to ensure the threads are cleaned up even if the test fails.
-
-
 .. decorator:: bigmemtest(size, memuse, dry_run=True)
 
    Decorator for bigmem tests.
@@ -1110,23 +1088,6 @@ The :mod:`test.support` module defines the following functions:
    preserve internal cache.
 
 
-.. function:: threading_setup()
-
-   Return current thread count and copy of dangling threads.
-
-
-.. function:: threading_cleanup(*original_values)
-
-   Cleanup up threads not specified in *original_values*.  Designed to emit
-   a warning if a test leaves running threads in the background.
-
-
-.. function:: join_thread(thread, timeout=30.0)
-
-   Join a *thread* within *timeout*.  Raise an :exc:`AssertionError` if thread
-   is still alive after *timeout* seconds.
-
-
 .. function:: reap_children()
 
    Use this at the end of ``test_main`` whenever sub-processes are started.
@@ -1138,39 +1099,6 @@ The :mod:`test.support` module defines the following functions:
 
    Get an attribute, raising :exc:`unittest.SkipTest` if :exc:`AttributeError`
    is raised.
-
-
-.. function:: catch_threading_exception()
-
-   Context manager catching :class:`threading.Thread` exception using
-   :func:`threading.excepthook`.
-
-   Attributes set when an exception is catched:
-
-   * ``exc_type``
-   * ``exc_value``
-   * ``exc_traceback``
-   * ``thread``
-
-   See :func:`threading.excepthook` documentation.
-
-   These attributes are deleted at the context manager exit.
-
-   Usage::
-
-       with support.catch_threading_exception() as cm:
-           # code spawning a thread which raises an exception
-           ...
-
-           # check the thread exception, use cm attributes:
-           # exc_type, exc_value, exc_traceback, thread
-           ...
-
-       # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
-       # exists at this point
-       # (to avoid reference cycles)
-
-   .. versionadded:: 3.8
 
 
 .. function:: catch_unraisable_exception()
@@ -1628,3 +1556,81 @@ The module defines the following class:
 .. method:: BytecodeTestCase.assertNotInBytecode(x, opname, argval=_UNSPECIFIED)
 
    Throws :exc:`AssertionError` if *opname* is found.
+
+
+:mod:`test.support.threading_helper` --- Utilities for threading tests
+======================================================================
+
+.. module:: test.support.threading_helper
+   :synopsis: Support for threading tests.
+
+The :mod:`test.support.threading_helper` module provides support for threading tests.
+
+.. versionadded:: 3.10
+
+
+.. function:: join_thread(thread, timeout=None)
+
+   Join a *thread* within *timeout*.  Raise an :exc:`AssertionError` if thread
+   is still alive after *timeout* seconds.
+
+
+.. decorator:: reap_threads(func)
+
+   Decorator to ensure the threads are cleaned up even if the test fails.
+
+
+.. function:: start_threads(threads, unlock=None)
+
+   Context manager to start *threads*.  It attempts to join the threads upon
+   exit.
+
+
+.. function:: threading_cleanup(*original_values)
+
+   Cleanup up threads not specified in *original_values*.  Designed to emit
+   a warning if a test leaves running threads in the background.
+
+
+.. function:: threading_setup()
+
+   Return current thread count and copy of dangling threads.
+
+
+.. function:: wait_threads_exit(timeout=None)
+
+   Context manager to wait until all threads created in the ``with`` statement
+   exit.
+
+
+.. function:: catch_threading_exception()
+
+   Context manager catching :class:`threading.Thread` exception using
+   :func:`threading.excepthook`.
+
+   Attributes set when an exception is catched:
+
+   * ``exc_type``
+   * ``exc_value``
+   * ``exc_traceback``
+   * ``thread``
+
+   See :func:`threading.excepthook` documentation.
+
+   These attributes are deleted at the context manager exit.
+
+   Usage::
+
+       with threading_helper.catch_threading_exception() as cm:
+           # code spawning a thread which raises an exception
+           ...
+
+           # check the thread exception, use cm attributes:
+           # exc_type, exc_value, exc_traceback, thread
+           ...
+
+       # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
+       # exists at this point
+       # (to avoid reference cycles)
+
+   .. versionadded:: 3.8

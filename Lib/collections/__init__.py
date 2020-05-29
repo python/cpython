@@ -710,12 +710,24 @@ class Counter(dict):
     # To strip negative and zero counts, add-in an empty counter:
     #       c += Counter()
     #
-    # Rich comparison operators for multiset subset and superset tests
-    # are deliberately omitted due to semantic conflicts with the
-    # existing inherited dict equality method.  Subset and superset
-    # semantics ignore zero counts and require that p≤q ∧ p≥q → p=q;
-    # however, that would not be the case for p=Counter(a=1, b=0)
-    # and q=Counter(a=1) where the dictionaries are not equal.
+    # When the multiplicities are all zero or one, multiset operations
+    # are guaranteed to be equivalent to the corresponding operations
+    # for regular sets.
+    #     Given counter multisets such as:
+    #         cp = Counter(a=1, b=0, c=1)
+    #         cq = Counter(c=1, d=0, e=1)
+    #     The corresponding regular sets would be:
+    #         sp = {'a', 'c'}
+    #         sq = {'c', 'e'}
+    #     All of the following relations would hold:
+    #         set(cp + cq) == sp | sq
+    #         set(cp - cq) == sp - sq
+    #         set(cp | cq) == sp | sq
+    #         set(cp & cq) == sp & sq
+    #         cp.isequal(cq) == (sp == sq)
+    #         cp.issubset(cq) == sp.issubset(sq)
+    #         cp.issuperset(cq) == sp.issuperset(sq)
+    #         cp.isdisjoint(cq) == sp.isdisjoint(sq)
 
     def __add__(self, other):
         '''Add counts from two counters.
@@ -873,6 +885,92 @@ class Counter(dict):
             if other_count < count:
                 self[elem] = other_count
         return self._keep_positive()
+
+    def isequal(self, other):
+        ''' Test whether counts agree exactly.
+
+        Negative or missing counts are treated as zero.
+
+        This is different than the inherited __eq__() method which
+        treats negative or missing counts as distinct from zero:
+
+            >>> Counter(a=1, b=0).isequal(Counter(a=1))
+            True
+            >>> Counter(a=1, b=0) == Counter(a=1)
+            False
+
+        Logically equivalent to:  +self == +other
+        '''
+        if not isinstance(other, Counter):
+            other = Counter(other)
+        for elem in set(self) | set(other):
+            left = self[elem]
+            right = other[elem]
+            if left == right:
+                continue
+            if left < 0:
+                left = 0
+            if right < 0:
+                right = 0
+            if left != right:
+                return False
+        return True
+
+    def issubset(self, other):
+        '''True if the counts in self are less than or equal to those in other.
+
+        Negative or missing counts are treated as zero.
+
+        Logically equivalent to:  not self - (+other)
+        '''
+        if not isinstance(other, Counter):
+            other = Counter(other)
+        for elem, count in self.items():
+            other_count = other[elem]
+            if other_count < 0:
+                other_count = 0
+            if count > other_count:
+                return False
+        return True
+
+    def issuperset(self, other):
+        '''True if the counts in self are greater than or equal to those in other.
+
+        Negative or missing counts are treated as zero.
+
+        Logically equivalent to:  not other - (+self)
+        '''
+        if not isinstance(other, Counter):
+            other = Counter(other)
+        return other.issubset(self)
+
+    def isdisjoint(self, other):
+        '''True if none of the elements in self overlap with those in other.
+
+        Negative or missing counts are ignored.
+
+        Logically equivalent to:  not (+self) & (+other)
+        '''
+        if not isinstance(other, Counter):
+            other = Counter(other)
+        for elem, count in self.items():
+            if count > 0 and other[elem] > 0:
+                return False
+        return True
+
+    # Rich comparison operators for multiset subset and superset tests
+    # have been deliberately omitted due to semantic conflicts with the
+    # existing inherited dict equality method.  Subset and superset
+    # semantics ignore zero counts and require that p⊆q ∧ p⊇q ⇔ p=q;
+    # however, that would not be the case for p=Counter(a=1, b=0)
+    # and q=Counter(a=1) where the dictionaries are not equal.
+
+    def _omitted(self, other):
+        raise TypeError(
+            'Rich comparison operators have been deliberately omitted. '
+            'Use the isequal(), issubset(), and issuperset() methods instead.')
+
+    __lt__ = __le__ = __gt__ = __ge__ = __lt__ = _omitted
 
 
 ########################################################################

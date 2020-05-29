@@ -48,7 +48,7 @@ _bisect_bisect_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (args[2]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[2]);
+            PyObject *iobj = _PyNumber_Index(args[2]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -119,7 +119,7 @@ _bisect_insort_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (args[2]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[2]);
+            PyObject *iobj = _PyNumber_Index(args[2]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -189,7 +189,7 @@ _bisect_bisect_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (args[2]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[2]);
+            PyObject *iobj = _PyNumber_Index(args[2]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -260,7 +260,7 @@ _bisect_insort_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (args[2]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[2]);
+            PyObject *iobj = _PyNumber_Index(args[2]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -283,4 +283,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e9097a9acd10b13f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6cf46f205659f01a input=a9049054013a1b77]*/

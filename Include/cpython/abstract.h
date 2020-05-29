@@ -379,6 +379,9 @@ PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
 /* Convert Python int to Py_ssize_t. Do nothing if the argument is None. */
 PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 
+/* Same as PyNumber_Index but can return an instance of a subclass of int. */
+PyAPI_FUNC(PyObject *) _PyNumber_Index(PyObject *o);
+
 #ifdef __cplusplus
 }
 #endif

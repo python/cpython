@@ -302,7 +302,7 @@ def library_recipes():
                   "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
               ],
               patchscripts=[
-                  ("ftp://invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
+                  ("ftp://ftp.invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
                    "f54bf02a349f96a7c4f0d00922f3a0d4"),
                    ],
               useLDFlags=False,

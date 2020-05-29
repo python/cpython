@@ -236,7 +236,7 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -333,4 +333,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=59dfa71aad39d5e6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4257cfdb155efd00 input=a9049054013a1b77]*/

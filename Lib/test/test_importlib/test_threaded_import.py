@@ -15,8 +15,9 @@ import threading
 import unittest
 from unittest import mock
 from test.support import (
-    verbose, run_unittest, TESTFN, reap_threads,
-    forget, unlink, rmtree, start_threads)
+    verbose, run_unittest, TESTFN,
+    forget, unlink, rmtree)
+from test.support import threading_helper
 
 def task(N, done, done_tasks, errors):
     try:
@@ -124,9 +125,9 @@ class ThreadedImportTests(unittest.TestCase):
             done_tasks = []
             done.clear()
             t0 = time.monotonic()
-            with start_threads(threading.Thread(target=task,
-                                                args=(N, done, done_tasks, errors,))
-                               for i in range(N)):
+            with threading_helper.start_threads(
+                    threading.Thread(target=task, args=(N, done, done_tasks, errors,))
+                    for i in range(N)):
                 pass
             completed = done.wait(10 * 60)
             dt = time.monotonic() - t0
@@ -245,7 +246,7 @@ class ThreadedImportTests(unittest.TestCase):
         del sys.modules[TESTFN]
 
 
-@reap_threads
+@threading_helper.reap_threads
 def test_main():
     old_switchinterval = None
     try:

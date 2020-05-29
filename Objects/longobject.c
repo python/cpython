@@ -363,7 +363,7 @@ PyLong_FromDouble(double dval)
 #define PY_ABS_LONG_MIN         (0-(unsigned long)LONG_MIN)
 #define PY_ABS_SSIZE_T_MIN      (0-(size_t)PY_SSIZE_T_MIN)
 
-/* Get a C long int from an int object or any object that has an __int__
+/* Get a C long int from an int object or any object that has an __index__
    method.
 
    On overflow, return -1 and set *overflow to 1 or -1 depending on the sign of
@@ -382,7 +382,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
     long res;
     Py_ssize_t i;
     int sign;
-    int do_decref = 0; /* if nb_int was called */
+    int do_decref = 0; /* if PyNumber_Index was called */
 
     *overflow = 0;
     if (vv == NULL) {
@@ -394,7 +394,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         v = (PyLongObject *)vv;
     }
     else {
-        v = (PyLongObject *)PyNumber_Index(vv);
+        v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -449,7 +449,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
     return res;
 }
 
-/* Get a C long int from an int object or any object that has an __int__
+/* Get a C long int from an int object or any object that has an __index__
    method.  Return -1 and set an error if overflow occurs. */
 
 long
@@ -466,7 +466,7 @@ PyLong_AsLong(PyObject *obj)
     return result;
 }
 
-/* Get a C int from an int object or any object that has an __int__
+/* Get a C int from an int object or any object that has an __index__
    method.  Return -1 and set an error if overflow occurs. */
 
 int
@@ -674,7 +674,7 @@ PyLong_AsUnsignedLongMask(PyObject *op)
         return _PyLong_AsUnsignedLongMask(op);
     }
 
-    lo = (PyLongObject *)PyNumber_Index(op);
+    lo = (PyLongObject *)_PyNumber_Index(op);
     if (lo == NULL)
         return (unsigned long)-1;
 
@@ -1113,7 +1113,7 @@ PyLong_FromSsize_t(Py_ssize_t ival)
 }
 
 /* Get a C long long int from an int object or any object that has an
-   __int__ method.  Return -1 and set an error if overflow occurs. */
+   __index__ method.  Return -1 and set an error if overflow occurs. */
 
 long long
 PyLong_AsLongLong(PyObject *vv)
@@ -1121,7 +1121,7 @@ PyLong_AsLongLong(PyObject *vv)
     PyLongObject *v;
     long long bytes;
     int res;
-    int do_decref = 0; /* if nb_int was called */
+    int do_decref = 0; /* if PyNumber_Index was called */
 
     if (vv == NULL) {
         PyErr_BadInternalCall();
@@ -1132,7 +1132,7 @@ PyLong_AsLongLong(PyObject *vv)
         v = (PyLongObject *)vv;
     }
     else {
-        v = (PyLongObject *)PyNumber_Index(vv);
+        v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -1247,7 +1247,7 @@ PyLong_AsUnsignedLongLongMask(PyObject *op)
         return _PyLong_AsUnsignedLongLongMask(op);
     }
 
-    lo = (PyLongObject *)PyNumber_Index(op);
+    lo = (PyLongObject *)_PyNumber_Index(op);
     if (lo == NULL)
         return (unsigned long long)-1;
 
@@ -1257,7 +1257,7 @@ PyLong_AsUnsignedLongLongMask(PyObject *op)
 }
 
 /* Get a C long long int from an int object or any object that has an
-   __int__ method.
+   __index__ method.
 
    On overflow, return -1 and set *overflow to 1 or -1 depending on the sign of
    the result.  Otherwise *overflow is 0.
@@ -1275,7 +1275,7 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
     long long res;
     Py_ssize_t i;
     int sign;
-    int do_decref = 0; /* if nb_int was called */
+    int do_decref = 0; /* if PyNumber_Index was called */
 
     *overflow = 0;
     if (vv == NULL) {
@@ -1287,7 +1287,7 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         v = (PyLongObject *)vv;
     }
     else {
-        v = (PyLongObject *)PyNumber_Index(vv);
+        v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -5180,7 +5180,7 @@ long_round(PyObject *self, PyObject *args)
     if (o_ndigits == NULL)
         return long_long(self);
 
-    ndigits = PyNumber_Index(o_ndigits);
+    ndigits = _PyNumber_Index(o_ndigits);
     if (ndigits == NULL)
         return NULL;
 
