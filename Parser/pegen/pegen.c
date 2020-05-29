@@ -1189,7 +1189,6 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     }
 
     if (parser_flags & PyPARSE_VMPARSER) {
-        printf("vmparse\n");
         result = _PyPegen_vmparser(p);
     }
     else {

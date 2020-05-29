@@ -45,14 +45,15 @@ error:
 PyObject *
 _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *keywords[] = {"string", "mode", "oldparser", "vmparser", NULL};
+    static char *keywords[] = {"string", "mode", "oldparser", "vmparser", "ast", NULL};
     char *the_string;
     char *mode_str = "exec";
     int oldparser = 0;
     int vmparser = 0;
+    int ast = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|spp", keywords,
-                                     &the_string, &mode_str, &oldparser, &vmparser)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sppp", keywords,
+                                     &the_string, &mode_str, &oldparser, &vmparser, &ast)) {
         return NULL;
     }
 
@@ -80,8 +81,7 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
     flags.cf_flags = PyCF_IGNORE_COOKIE;
     if (vmparser) {
-        printf("VMPARSER\n");
-        flags.cf_flags |= 0x4000;
+        flags.cf_flags |= PyCF_VMPARSER;
     }
 
     mod_ty res;
@@ -94,7 +94,13 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
     if (res == NULL) {
         goto error;
     }
-    result = PyAST_mod2obj(res);
+    if (ast) {
+        result = PyAST_mod2obj(res);
+    }
+    else {
+        result = Py_None;
+        Py_INCREF(result);
+    }
 
 error:
     PyArena_Free(arena);
