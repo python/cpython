@@ -130,12 +130,11 @@ second alternative must be the single operation `OP_FAILURE`.
 
 ### Operations for loop rules only
 
-For a loop such as `a*`, a synthetic rule must be created with the
-following structure:
+For a loop such as `a*` or `a+`, a synthetic rule must be created with
+the following structure:
 
 ```
 # First alternative:
-OP_LOOP_START
 <one operation that produces a value, e.g. OP_NAME, OP_TOKEN, OP_RULE>
 OP_LOOP_ITERATE
 
@@ -152,9 +151,6 @@ fields:
   the collected values.
 
 The operations are defined as follows:
-
-- `OP_LOOP_START` -- initialize the `collections` array.  (TODO: Maybe
-  we don't need this?)
 
 - `OP_LOOP_ITERATE` -- append the current value to the `collections`
   array, save the current input position, and start the next iteration
@@ -197,8 +193,7 @@ These operations must be last in their alternative: `OP_RETURN`,
 `OP_SUCCESS`, `OP_FAILURE`, `OP_LOOP_ITERATE`, `OP_LOOP_COLLECT`,
 `OP_LOOP_COLLECT_NONEMPTY`.
 
-These operations must be first in their alternative: `OP_LOOP_START`,
-`OP_FAILURE`.
+This operation must be first in its alternative: `OP_FAILURE`.
 
 Grammar for lists of operations
 -------------------------------
@@ -215,7 +210,7 @@ normal_rule: alt+
 
 loop_rule: loop_start_alt loop_collect_alt
 
-loop_start_alt: OP_LOOP_START regular_op OP_LOOP_ITERATE
+loop_start_alt: regular_op OP_LOOP_ITERATE
 loop_collect_alt: OP_LOOP_COLLECT | OP_LOOP_COLLECT_NONEMPTY
 
 alt: any_op+ return_op

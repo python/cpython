@@ -105,13 +105,6 @@ run_vm(Parser *p, Rule rules[], int root)
         goto top;
     case OP_OPTIONAL:
         goto top;
-    case OP_LOOP_START:
-        f->ncollected = 0;
-        f->collection = PyMem_Malloc(0);
-        if (!f->collection) {
-            return PyErr_NoMemory();
-        }
-        goto top;
     case OP_LOOP_ITERATE:
         f->mark = p->mark;
         assert(f->ival == 1);
@@ -119,10 +112,10 @@ run_vm(Parser *p, Rule rules[], int root)
         assert(v);
         f->collection = PyMem_Realloc(f->collection, (f->ncollected + 1) * sizeof(void *));
         if (!f->collection) {
-            return NULL;
+            return PyErr_NoMemory();
         }
         f->collection[f->ncollected++] = v;
-        f->iop = f->rule->alts[f->ialt] + 1;  // Skip OP_LOOP_START operation
+        f->iop = f->rule->alts[f->ialt];
         f->ival = 0;
         goto top;
     case OP_LOOP_COLLECT_NONEMPTY:

@@ -63,9 +63,8 @@ static Rule all_rules[] = {
 
     {"stmt*",
      R_STMTS,
-     {0, 4, -1},
+     {0, 3, -1},
      {
-      OP_LOOP_START,
       OP_RULE, R_STMT,
       OP_LOOP_ITERATE,
 
