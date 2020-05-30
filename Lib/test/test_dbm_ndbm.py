@@ -102,10 +102,10 @@ class DbmTestCase(unittest.TestCase):
             with self.assertRaises(error):
                 db[b'not exist key'] = b'not exist value'
 
-    @unittest.skipUnless(filesystem_helper.TESTFN_NONASCII,
+    @unittest.skipUnless(support.TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
-        filename = filesystem_helper.TESTFN_NONASCII
+        filename = support.TESTFN_NONASCII
         for suffix in ['', '.pag', '.dir', '.db']:
             self.addCleanup(support.unlink, filename + suffix)
         with dbm.ndbm.open(filename, 'c') as db:

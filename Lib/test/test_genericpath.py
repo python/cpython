@@ -482,10 +482,10 @@ class CommonTest(GenericTest):
         # (when the bytes name is used).
         and sys.platform not in ('win32', 'darwin')):
             name = support.TESTFN_UNDECODABLE
-        elif filesystem_helper.TESTFN_NONASCII:
-            name = filesystem_helper.TESTFN_NONASCII
+        elif support.TESTFN_NONASCII:
+            name = support.TESTFN_NONASCII
         else:
-            self.skipTest("need filesystem_helper.TESTFN_NONASCII")
+            self.skipTest("need support.TESTFN_NONASCII")
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
