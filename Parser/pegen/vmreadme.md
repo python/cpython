@@ -2,23 +2,24 @@ Pegen Virtual Machine
 =====================
 
 The Pegen VM is an alternative for the recursive-descent Pegen parser.
-The idea is that the grammar (including actions) is identical, but
-execution does not use the C stack frame.  The hope is that this might
-be faster, but this is far from given.  If it is clear that it will
-*not* be faster, we should stop working on this project.
+The grammar (including actions) is identical, but execution does not
+use the C stack.  We expect this to be faster, and initial
+measurements seem to bear this out.  But we need to keep diligent, and
+if it ever becomes clear that it will *not* be faster, we should stop
+working on this project.
 
 The runtime uses the same `Parser` structure as the recursive-descent
 Pegen parser, and the same helper functions
 (e.g., `_PyPegen_singleton_seq`).
 
 The VM uses a stack to hold state during parsing.  The grammar is
-represented by a few read-only tables.  This design may be familiar
-from that of CPython's "ceval" VM.  The actions are represented by a
-function containing a giant switch with one case for each action.
+represented by a few read-only tables.  The actions are represented by
+a function containing a giant switch with one case per action.  (An
+optimization here could be to combine identical actions.)
 
 The grammar tables and the action function are meant to be generated
 by a parser generator similar to the current one.  Because of the
-actions, the generator needs to generate C code.
+actions, it needs to generate C code.
 
 The primary VM state is a stack of `Frame` structures.  Each frame
 represents a particular attempt to parse a rule at a given point in
@@ -35,17 +36,20 @@ The main state in a frame is as follows:
 
 State related to loops is described below.
 
-Note that `rule` and `mark` don't change after the frame is initialized.
+Note that `rule` doesn't change after the frame is initialized.  Also,
+`mark` normally doesn't change, except for loop operations.
 
-In addition each frame has a "value stack" where successfully
-recognized tokens and rules are stored.  This uses:
+Each frame also has an array of values where successfully recognized
+tokens and rules are stores.  This uses:
 
 - `int ival`     -- number of values stored so far
-- `void *vals[]` -- values stored (the type is `Token *` or an AST node type)
+- `void *vals[]` -- values stored (the type is `Token *` or an AST
+  node type; may be NULL)
 
 A `Rule` structure has the following fields:
 
 - `char *name`    -- rule name, for debugging (e.g., `"start"`)
+- `int type`      -- rule type, used for memo lookup
 - `int alts[]`    -- index into `opcodes` array for each alternative,
                      terminated by `-1`
 - `int opcodes[]` -- array of opcodes and their arguments
@@ -67,15 +71,16 @@ If an operation succeeds, the value is appended to the frame's values
 array (`vals`), and the VM proceeds to the next opcode.
 
 If an operation fails, the VM resets the input to the frame's mark,
-and then proceeds to the next alternative of the frame's rule, if
-there is one, and the frame's `cut` flag is not set.  If the frame's
-`cut` flag is set, or if its rule has no more alternatives, the frame
-is popped off the frame stack and the VM proceeds with failure there.
+and resets the value array.  It then proceeds to the next alternative
+of the frame's rule, if there is one and the frame's `cut` flag is not
+set.  If the frame's `cut` flag is set, or if its rule has no more
+alternatives, the frame is popped off the frame stack and the VM
+proceeds with failure there.
 
 Some operations manipulate other frame fields.
 
-Calls into the support runtime can also produce *errors* -- when an
-error is detected, the VM exits, immediately returning `NULL`.
+Calls into the support runtime can produce *errors* -- when an error
+is detected, the VM exits immediately, returning `NULL`.
 
 ### General operations
 
@@ -90,12 +95,12 @@ The following opcodes take no argument.
 
 - `OP_STRING` -- call `_PyPegen_string_token()`; same as `OP_NAME`.
 
-- `OP_CUT` -- set the frame's `cut` flag; succeeds without a value.
+- `OP_CUT` -- set the frame's `cut` flag; succeed without a value.
 
-- `OP_OPTIONAL` -- always succeeds, but modifies the *previous*
+- `OP_OPTIONAL` -- succeed without a value; modifies the *previous*
   operation to treat a `NULL` result as a success.  (See below.)
 
-These operations are followed by a single integer argument.
+The following operations are followed by a single integer argument.
 
 - `OP_TOKEN(type)` -- call `_PyPegen_expect_token()` with the `type`
   argument; processing is the same as for `OP_NAME`.
@@ -163,8 +168,6 @@ The operations are defined as follows:
 - `OP_LOOP_COLLECT_NONEMPTY` -- like `OP_LOOP_COLLECT` but fails if no
   values are collected.
 
-(TODO: additional operations to support `b.a+`.)
-
 More about `OP_OPTIONAL`
 ------------------------
 
@@ -228,17 +231,17 @@ Ideas
 
 ### "Special" loops
 
-We still need opcodes for `a.b+` (e.g. `','.expr+` is a
+We still need opcodes for `b.a+` (e.g. `','.expr+` is a
 comma-separated list of expressions).  We could generate code like this:
 
 ```
 # first alternative:
-<one opcode for b>
 <one opcode for a>
+<one opcode for b>
 OP_LOOP_ITERATE
 
 # second alternative:
-<one opcode for b>
+<one opcode for a>
 OP_LOOP_COLLECT_NONEMPTY
 ```
 
@@ -289,4 +292,4 @@ if (f->rule->opcodes[f->iop] == OP_NEG_LOOKAHEAD) {
 
 If we initialize savemark to the same value as mark, we can avoid a
 `SAVE_MARK` opcode at the start of alternatives -- this is a common
-pattern.
+pattern.  (OTOH, it costs an extra store for each frame.)
