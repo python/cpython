@@ -90,7 +90,7 @@ def default_filter(package, exclude=(), include=('*',)):
 
 
 def create_archive(source, target=None, interpreter=None, main=None,
-                   filter=None, compressed=False, **filter_kwargs):
+                   filter=None, compressed=False, filter_kwargs={}):
     """Create an application archive from SOURCE.
 
     The SOURCE can be the name of a directory, or a filename or a file-like
@@ -219,10 +219,11 @@ def main(args=None):
         if args.main:
             raise SystemExit("Cannot change the main function when copying")
 
+    filter_kwargs = {"include": args.include, "exclude": args.exclude}
     create_archive(args.source, args.output,
                    interpreter=args.python, main=args.main,
                    compressed=args.compress, filter=default_filter,
-                   include=args.include, exclude=args.exclude)
+                   filter_kwargs=filter_kwargs)
 
 
 if __name__ == '__main__':
