@@ -173,7 +173,7 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
                     hare = GET_CONTEXT(hare);
                 }
                 /* Now hare is the first intersection.
-                   We want to disconnect hare from its second predecessor. 
+                   We want to disconnect hare from its second predecessor.
                    For example:
                    A --> B --> C --> D --> E --> C --> ...
                    becomes

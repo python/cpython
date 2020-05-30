@@ -631,7 +631,7 @@ class BaseExceptionReportingTests:
         self.assertEqual(blocks[1], cause_message)
         self.check_zero_div(blocks[0])
         self.assertIn('inner_raise() # Marker', blocks[2])
-    
+
     def test_rho_context(self):
         # Make sure that rho-shaped linked lists of __context__s do
         # not get stuck in an infinite loop. See bpo-40696.
@@ -643,13 +643,13 @@ class BaseExceptionReportingTests:
                 x = exc
                 x.__context__ = x
                 raise ValueError #rho1
-        
+
         blocks = boundaries.split(self.get_report(cm.exception))
         self.assertEqual(len(blocks), 3, blocks)
         self.assertIn('RuntimeError #rho1', blocks[0])
         self.assertEqual(blocks[1], context_message)
         self.assertIn('ValueError', blocks[2])
-    
+
     def test_rho_context_2(self):
         with self.assertRaises(ValueError) as cm:
             # ValueError -> IndexError -> SyntaxError <=> ZeroDivisionError
