@@ -158,6 +158,11 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         for item in node.items:
             self.visit(item)
 
+    def visit_Repeat0(self, node: Repeat0) -> None:
+        name = self.callmakervisitor.visit(node)
+        self.add_opcode("OP_RULE")
+        self.add_opcode(self._get_rule_opcode(name))
+
 
 def main() -> None:
     grammar, parser, tokenizer = build_parser("./data/simple.gram", False, False)
