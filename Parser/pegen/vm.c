@@ -125,6 +125,12 @@ run_vm(Parser *p, Rule rules[], int root)
         f->iop = f->rule->alts[f->ialt] + 1;  // Skip OP_LOOP_START operation
         f->ival = 0;
         goto top;
+    case OP_LOOP_COLLECT_NONEMPTY:
+        if (!f->ncollected) {
+            v = NULL;
+            f = pop_frame(&stack, v);
+            break;
+        }
     case OP_LOOP_COLLECT:
         v = make_asdl_seq(p, f->collection, f->ncollected);
         f = pop_frame(&stack, v);
