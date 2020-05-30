@@ -98,6 +98,16 @@ _PyErr_CreateException(PyObject *exception, PyObject *value)
     }
 }
 
+static inline PyObject *
+GET_CONTEXT(PyObject *exc)
+{
+    if (exc == NULL) {
+        return NULL;
+    }
+    assert(PyExceptionInstance_Check(exc));
+    return ((PyBaseExceptionObject *)exc)->context;
+}
+
 void
 _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
 {
@@ -136,25 +146,49 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
             value = fixed_value;
         }
 
-        /* Avoid reference cycles through the context chain.
-           This is O(chain length) but context chains are
-           usually very short. Sensitive readers may try
-           to inline the call to PyException_GetContext. */
-        if (exc_value != value) {
-            PyObject *o = exc_value, *context;
-            while ((context = PyException_GetContext(o))) {
-                Py_DECREF(context);
-                if (context == value) {
-                    PyException_SetContext(o, NULL);
-                    break;
-                }
-                o = context;
-            }
-            PyException_SetContext(value, exc_value);
-        }
-        else {
+        if (value == exc_value) {
+            /* This exception is already on top of the stack. */
             Py_DECREF(exc_value);
         }
+        else {
+            /* Otherwise, push the new value on top. */
+            PyException_SetContext(value, exc_value);
+
+            /* Now we need to destroy any reference cycles that might
+               exist in the chain of contexts. Use Floyd's cycle-finding
+               algorithm to determine if the chain has a cycle or if it
+               reaches NULL. */
+            PyObject *tortoise = GET_CONTEXT(value);
+            PyObject *hare = GET_CONTEXT(GET_CONTEXT(value));
+            while (hare != NULL && hare != tortoise) {
+                tortoise = GET_CONTEXT(tortoise);
+                hare = GET_CONTEXT(GET_CONTEXT(hare));
+            }
+            if (hare != NULL) {
+                /* Making it here means there is a cycle.
+                   Now find the _first_ self-intersection. */
+                tortoise = value;
+                while (tortoise != hare) {
+                    tortoise = GET_CONTEXT(tortoise);
+                    hare = GET_CONTEXT(hare);
+                }
+                /* Now hare is the first intersection.
+                   We want to disconnect hare from its second predecessor. 
+                   For example:
+                   A --> B --> C --> D --> E --> C --> ...
+                   becomes
+                   A --> B --> C --> D --> E --> NULL,
+                   since C is the first intersection.
+                   */
+                PyObject *prev = hare, *next = GET_CONTEXT(hare);
+                while (next != hare) {
+                    prev = next;
+                    next = GET_CONTEXT(next);
+                }
+                PyException_SetContext(prev, NULL);
+            }
+        }
+
     }
     if (value != NULL && PyExceptionInstance_Check(value))
         tb = PyException_GetTraceback(value);
