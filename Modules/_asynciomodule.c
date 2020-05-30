@@ -710,6 +710,7 @@ future_add_done_callback(FutureObj *fut, PyObject *arg, PyObject *ctx)
             else {
                 fut->fut_callbacks = PyList_New(1);
                 if (fut->fut_callbacks == NULL) {
+                    Py_DECREF(tup);
                     return NULL;
                 }
 
