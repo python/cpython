@@ -5,6 +5,7 @@ import os, os.path
 import runpy
 import sys
 from test import support
+from test.support import filesystem_helper
 from test.test_tools import skip_if_missing, scriptsdir
 import unittest
 
@@ -57,15 +58,16 @@ class Test(unittest.TestCase):
         )
 
     def test_directory(self):
-        os.mkdir(support.TESTFN)
-        self.addCleanup(support.rmtree, support.TESTFN)
-        c_filename = os.path.join(support.TESTFN, "file.c")
+        os.mkdir(filesystem_helper.TESTFN)
+        self.addCleanup(support.rmtree, filesystem_helper.TESTFN)
+        c_filename = os.path.join(filesystem_helper.TESTFN, "file.c")
         with open(c_filename, "w") as file:
             file.write("int xx;\n")
-        with open(os.path.join(support.TESTFN, "file.py"), "w") as file:
+        with open(os.path.join(filesystem_helper.TESTFN,
+                  "file.py"), "w") as file:
             file.write("xx = 'unaltered'\n")
         script = os.path.join(scriptsdir, "fixcid.py")
-        output = self.run_script(args=(support.TESTFN,))
+        output = self.run_script(args=(filesystem_helper.TESTFN,))
         self.assertMultiLineEqual(output,
             "{}:\n"
             "1\n"
@@ -74,7 +76,7 @@ class Test(unittest.TestCase):
         )
 
     def run_script(self, input="", *, args=("-",), substfile="xx yy\n"):
-        substfilename = support.TESTFN + ".subst"
+        substfilename = filesystem_helper.TESTFN + ".subst"
         with open(substfilename, "w") as file:
             file.write(substfile)
         self.addCleanup(support.unlink, substfilename)

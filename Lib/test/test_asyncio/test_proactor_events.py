@@ -13,6 +13,7 @@ from asyncio.proactor_events import _ProactorWritePipeTransport
 from asyncio.proactor_events import _ProactorDuplexPipeTransport
 from asyncio.proactor_events import _ProactorDatagramTransport
 from test import support
+from test.support import filesystem_helper
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
@@ -919,20 +920,20 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(filesystem_helper.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        support.unlink(support.TESTFN)
+        support.unlink(filesystem_helper.TESTFN)
         super().tearDownClass()
 
     def setUp(self):
         self.loop = asyncio.ProactorEventLoop()
         self.set_event_loop(self.loop)
         self.addCleanup(self.loop.close)
-        self.file = open(support.TESTFN, 'rb')
+        self.file = open(filesystem_helper.TESTFN, 'rb')
         self.addCleanup(self.file.close)
         super().setUp()
 

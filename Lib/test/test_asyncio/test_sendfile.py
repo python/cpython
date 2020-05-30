@@ -10,6 +10,7 @@ from asyncio import base_events
 from asyncio import constants
 from unittest import mock
 from test import support
+from test.support import filesystem_helper
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
@@ -98,17 +99,17 @@ class SendfileBase:
 
     @classmethod
     def setUpClass(cls):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(filesystem_helper.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        support.unlink(support.TESTFN)
+        support.unlink(filesystem_helper.TESTFN)
         super().tearDownClass()
 
     def setUp(self):
-        self.file = open(support.TESTFN, 'rb')
+        self.file = open(filesystem_helper.TESTFN, 'rb')
         self.addCleanup(self.file.close)
         self.loop = self.create_event_loop()
         self.set_event_loop(self.loop)

@@ -7,6 +7,7 @@ import shutil
 import sys
 import test.support
 from test.support import captured_stdout, run_unittest
+from test.support import filesystem_helper
 import unittest
 from distutils.tests import support
 from distutils import log
@@ -62,13 +63,13 @@ class CoreTestCase(support.EnvironGuard, unittest.TestCase):
         super(CoreTestCase, self).tearDown()
 
     def cleanup_testfn(self):
-        path = test.support.TESTFN
+        path = filesystem_helper.TESTFN
         if os.path.isfile(path):
             os.remove(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
 
-    def write_setup(self, text, path=test.support.TESTFN):
+    def write_setup(self, text, path=filesystem_helper.TESTFN):
         f = open(path, "w")
         try:
             f.write(text)
@@ -105,8 +106,8 @@ class CoreTestCase(support.EnvironGuard, unittest.TestCase):
         cwd = os.getcwd()
 
         # Create a directory and write the setup.py file there:
-        os.mkdir(test.support.TESTFN)
-        setup_py = os.path.join(test.support.TESTFN, "setup.py")
+        os.mkdir(filesystem_helper.TESTFN)
+        setup_py = os.path.join(filesystem_helper.TESTFN, "setup.py")
         distutils.core.run_setup(
             self.write_setup(setup_prints_cwd, path=setup_py))
 

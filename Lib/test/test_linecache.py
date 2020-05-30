@@ -6,6 +6,7 @@ import os.path
 import tempfile
 import tokenize
 from test import support
+from test.support import filesystem_helper
 
 
 FILENAME = linecache.__file__
@@ -124,10 +125,10 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(empty, [])
 
     def test_no_ending_newline(self):
-        self.addCleanup(support.unlink, support.TESTFN)
-        with open(support.TESTFN, "w") as fp:
+        self.addCleanup(support.unlink, filesystem_helper.TESTFN)
+        with open(filesystem_helper.TESTFN, "w") as fp:
             fp.write(SOURCE_3)
-        lines = linecache.getlines(support.TESTFN)
+        lines = linecache.getlines(filesystem_helper.TESTFN)
         self.assertEqual(lines, ["\n", "def f():\n", "    return 3\n"])
 
     def test_clearcache(self):
@@ -150,7 +151,7 @@ class LineCacheTests(unittest.TestCase):
     def test_checkcache(self):
         getline = linecache.getline
         # Create a source file and cache its contents
-        source_name = support.TESTFN + '.py'
+        source_name = filesystem_helper.TESTFN + '.py'
         self.addCleanup(support.unlink, source_name)
         with open(source_name, 'w') as source:
             source.write(SOURCE_1)

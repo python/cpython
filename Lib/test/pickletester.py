@@ -31,6 +31,7 @@ from test.support import (
     TestFailed, TESTFN, run_with_locale, no_tracing,
     _2G, _4G, bigmemtest, forget,
     )
+from test.support.filesystem_helper import TESTFN
 from test.support import threading_helper
 
 from pickle import bytes_types

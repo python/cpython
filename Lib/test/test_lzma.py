@@ -9,8 +9,9 @@ from test import support
 import unittest
 
 from test.support import (
-    _4G, TESTFN, import_module, bigmemtest, run_unittest, unlink
+    _4G, import_module, bigmemtest, run_unittest, unlink
 )
+from test.support.filesystem_helper import TESTFN
 
 lzma = import_module("lzma")
 from lzma import LZMACompressor, LZMADecompressor, LZMAError, LZMAFile

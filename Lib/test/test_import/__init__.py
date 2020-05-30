@@ -20,12 +20,13 @@ from unittest import mock
 
 import test.support
 from test.support import (
-    TESTFN, forget, is_jython,
+    forget, is_jython,
     make_legacy_pyc, rmtree, swap_attr, swap_item, temp_umask,
     unlink, unload, cpython_only, TESTFN_UNENCODABLE,
     temp_dir, DirsOnSysPath)
 from test.support import script_helper
 from test.support import threading_helper
+from test.support.filesystem_helper import TESTFN
 from test.test_importlib.util import uncache
 from types import ModuleType
 

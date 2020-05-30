@@ -7,6 +7,7 @@ import sys
 import textwrap
 import unittest
 from test import support
+from test.support import filesystem_helper 
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 from test.test_warnings.data import stacklevel as warning_tests
@@ -927,9 +928,9 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = py_warnings
 
     def test_tracemalloc(self):
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(support.unlink, filesystem_helper.TESTFN)
 
-        with open(support.TESTFN, 'w') as fp:
+        with open(filesystem_helper.TESTFN, 'w') as fp:
             fp.write(textwrap.dedent("""
                 def func():
                     f = open(__file__)
@@ -949,8 +950,8 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
             return stderr
 
         # tracemalloc disabled
-        filename = os.path.abspath(support.TESTFN)
-        stderr = run('-Wd', support.TESTFN)
+        filename = os.path.abspath(filesystem_helper.TESTFN)
+        stderr = run('-Wd', filesystem_helper.TESTFN)
         expected = textwrap.dedent(f'''
             {filename}:5: ResourceWarning: unclosed file <...>
               f = None
@@ -959,7 +960,7 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
         self.assertEqual(stderr, expected)
 
         # tracemalloc enabled
-        stderr = run('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
+        stderr = run('-Wd', '-X', 'tracemalloc=2', filesystem_helper.TESTFN)
         expected = textwrap.dedent(f'''
             {filename}:5: ResourceWarning: unclosed file <...>
               f = None

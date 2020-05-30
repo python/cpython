@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import filesystem_helper
 import gc
 import weakref
 import operator
@@ -321,15 +322,15 @@ class TestJointOps:
         w = ReprWrapper()
         s = self.thetype([w])
         w.value = s
-        fo = open(support.TESTFN, "w")
+        fo = open(filesystem_helper.TESTFN, "w")
         try:
             fo.write(str(s))
             fo.close()
-            fo = open(support.TESTFN, "r")
+            fo = open(filesystem_helper.TESTFN, "r")
             self.assertEqual(fo.read(), repr(s))
         finally:
             fo.close()
-            support.unlink(support.TESTFN)
+            support.unlink(filesystem_helper.TESTFN)
 
     def test_do_not_rehash_dict_keys(self):
         n = 10
@@ -805,14 +806,14 @@ class TestBasicOps:
 
     def test_print(self):
         try:
-            fo = open(support.TESTFN, "w")
+            fo = open(filesystem_helper.TESTFN, "w")
             fo.write(str(self.set))
             fo.close()
-            fo = open(support.TESTFN, "r")
+            fo = open(filesystem_helper.TESTFN, "r")
             self.assertEqual(fo.read(), repr(self.set))
         finally:
             fo.close()
-            support.unlink(support.TESTFN)
+            support.unlink(filesystem_helper.TESTFN)
 
     def test_length(self):
         self.assertEqual(len(self.set), self.length)

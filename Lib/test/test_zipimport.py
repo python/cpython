@@ -9,6 +9,7 @@ import unittest
 import unittest.mock
 
 from test import support
+from test.support import filesystem_helper
 
 from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
 
@@ -656,7 +657,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         zipimport.zipimporter(filename).load_module(TESTMOD)
 
     def testBytesPath(self):
-        filename = support.TESTFN + ".zip"
+        filename = filesystem_helper.TESTFN + ".zip"
         self.addCleanup(support.unlink, filename)
         with ZipFile(filename, "w") as z:
             zinfo = ZipInfo(TESTMOD + ".py", time.localtime(NOW))

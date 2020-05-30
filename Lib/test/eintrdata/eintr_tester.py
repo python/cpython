@@ -22,6 +22,7 @@ import time
 import unittest
 
 from test import support
+from test.support import filesystem_helper
 from test.support import socket_helper
 
 @contextlib.contextmanager
@@ -314,7 +315,7 @@ class SocketEINTRTest(EINTRBaseTest):
     @support.requires_freebsd_version(10, 3)
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'needs mkfifo()')
     def _test_open(self, do_open_close_reader, do_open_close_writer):
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
 
         # Use a fifo: until the child opens it for reading, the parent will
         # block when trying to open it for writing.
@@ -486,16 +487,16 @@ class SelectEINTRTest(EINTRBaseTest):
 
 class FNTLEINTRTest(EINTRBaseTest):
     def _lock(self, lock_func, lock_name):
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(support.unlink, filesystem_helper.TESTFN)
         code = '\n'.join((
             "import fcntl, time",
-            "with open('%s', 'wb') as f:" % support.TESTFN,
+            "with open('%s', 'wb') as f:" % filesystem_helper.TESTFN,
             "   fcntl.%s(f, fcntl.LOCK_EX)" % lock_name,
             "   time.sleep(%s)" % self.sleep_time))
         start_time = time.monotonic()
         proc = self.subprocess(code)
         with kill_on_error(proc):
-            with open(support.TESTFN, 'wb') as f:
+            with open(filesystem_helper.TESTFN, 'wb') as f:
                 while True:  # synchronize the subprocess
                     dt = time.monotonic() - start_time
                     if dt > 60.0:

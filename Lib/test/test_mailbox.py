@@ -9,6 +9,7 @@ import re
 import io
 import tempfile
 from test import support
+from test.support import filesystem_helper
 import unittest
 import textwrap
 import mailbox
@@ -51,7 +52,7 @@ class TestMailbox(TestBase):
     _template = 'From: foo\n\n%s\n'
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = filesystem_helper.TESTFN
         self._delete_recursively(self._path)
         self._box = self._factory(self._path)
 
@@ -1369,7 +1370,7 @@ class TestMessage(TestBase, unittest.TestCase):
     _factory = mailbox.Message      # Overridden by subclasses to reuse tests
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = filesystem_helper.TESTFN
 
     def tearDown(self):
         self._delete_recursively(self._path)
@@ -2019,7 +2020,7 @@ class TestProxyFileBase(TestBase):
 class TestProxyFile(TestProxyFileBase, unittest.TestCase):
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = filesystem_helper.TESTFN
         self._file = open(self._path, 'wb+')
 
     def tearDown(self):
@@ -2068,7 +2069,7 @@ class TestProxyFile(TestProxyFileBase, unittest.TestCase):
 class TestPartialFile(TestProxyFileBase, unittest.TestCase):
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = filesystem_helper.TESTFN
         self._file = open(self._path, 'wb+')
 
     def tearDown(self):
@@ -2131,7 +2132,7 @@ class MaildirTestCase(unittest.TestCase):
 
     def setUp(self):
         # create a new maildir mailbox to work with:
-        self._dir = support.TESTFN
+        self._dir = filesystem_helper.TESTFN
         if os.path.isdir(self._dir):
             support.rmtree(self._dir)
         elif os.path.isfile(self._dir):

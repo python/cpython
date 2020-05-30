@@ -5,6 +5,7 @@ Nick Mathewson
 
 import unittest
 from test import support
+from test.support import filesystem_helper
 
 import os
 import stat
@@ -174,8 +175,8 @@ class UUStdIOTest(unittest.TestCase):
 class UUFileTest(unittest.TestCase):
 
     def setUp(self):
-        self.tmpin  = support.TESTFN + "i"
-        self.tmpout = support.TESTFN + "o"
+        self.tmpin  = filesystem_helper.TESTFN + "i"
+        self.tmpout = filesystem_helper.TESTFN + "o"
         self.addCleanup(support.unlink, self.tmpin)
         self.addCleanup(support.unlink, self.tmpout)
 

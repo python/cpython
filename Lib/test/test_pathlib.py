@@ -12,7 +12,8 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import TESTFN, FakePath
+from test.support import FakePath
+from test.support.filesystem_helper import TESTFN
 
 try:
     import grp, pwd

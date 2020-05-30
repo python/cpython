@@ -6,6 +6,7 @@ import unittest
 
 from test.support import (TESTFN, skip_unless_symlink,
                           can_symlink, create_empty_file, change_cwd)
+from test.support.filesystem_helper import TESTFN
 
 
 class GlobTests(unittest.TestCase):

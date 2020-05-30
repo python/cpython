@@ -8,6 +8,7 @@ import sys
 import unittest
 import warnings
 from test import support
+from test.support import filesystem_helper
 from test.support.script_helper import assert_python_ok
 from test.support import FakePath
 
@@ -97,7 +98,7 @@ class GenericTest:
                     self.assertNotEqual(s1[n:n+1], s2[n:n+1])
 
     def test_getsize(self):
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         self.addCleanup(support.unlink, filename)
 
         create_file(filename, b'Hello')
@@ -108,7 +109,7 @@ class GenericTest:
         self.assertEqual(self.pathmodule.getsize(filename), 12)
 
     def test_filetime(self):
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         self.addCleanup(support.unlink, filename)
 
         create_file(filename, b'foo')
@@ -126,7 +127,7 @@ class GenericTest:
         )
 
     def test_exists(self):
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         bfilename = os.fsencode(filename)
         self.addCleanup(support.unlink, filename)
 
@@ -163,7 +164,7 @@ class GenericTest:
         self.assertFalse(self.pathmodule.exists(r))
 
     def test_isdir(self):
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         bfilename = os.fsencode(filename)
         self.assertIs(self.pathmodule.isdir(filename), False)
         self.assertIs(self.pathmodule.isdir(bfilename), False)
@@ -188,7 +189,7 @@ class GenericTest:
             support.rmdir(filename)
 
     def test_isfile(self):
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         bfilename = os.fsencode(filename)
         self.assertIs(self.pathmodule.isfile(filename), False)
         self.assertIs(self.pathmodule.isfile(bfilename), False)
@@ -213,8 +214,8 @@ class GenericTest:
             support.rmdir(filename)
 
     def test_samefile(self):
-        file1 = support.TESTFN
-        file2 = support.TESTFN + "2"
+        file1 = filesystem_helper.TESTFN
+        file2 = filesystem_helper.TESTFN + "2"
         self.addCleanup(support.unlink, file1)
         self.addCleanup(support.unlink, file2)
 
@@ -227,8 +228,8 @@ class GenericTest:
         self.assertRaises(TypeError, self.pathmodule.samefile)
 
     def _test_samefile_on_link_func(self, func):
-        test_fn1 = support.TESTFN
-        test_fn2 = support.TESTFN + "2"
+        test_fn1 = filesystem_helper.TESTFN
+        test_fn2 = filesystem_helper.TESTFN + "2"
         self.addCleanup(support.unlink, test_fn1)
         self.addCleanup(support.unlink, test_fn2)
 
@@ -252,8 +253,8 @@ class GenericTest:
             self.skipTest('os.link(): %s' % e)
 
     def test_samestat(self):
-        test_fn1 = support.TESTFN
-        test_fn2 = support.TESTFN + "2"
+        test_fn1 = filesystem_helper.TESTFN
+        test_fn2 = filesystem_helper.TESTFN + "2"
         self.addCleanup(support.unlink, test_fn1)
         self.addCleanup(support.unlink, test_fn2)
 
@@ -268,8 +269,8 @@ class GenericTest:
         self.assertRaises(TypeError, self.pathmodule.samestat)
 
     def _test_samestat_on_link_func(self, func):
-        test_fn1 = support.TESTFN + "1"
-        test_fn2 = support.TESTFN + "2"
+        test_fn1 = filesystem_helper.TESTFN + "1"
+        test_fn2 = filesystem_helper.TESTFN + "2"
         self.addCleanup(support.unlink, test_fn1)
         self.addCleanup(support.unlink, test_fn2)
 
@@ -294,7 +295,7 @@ class GenericTest:
             self.skipTest('os.link(): %s' % e)
 
     def test_sameopenfile(self):
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         self.addCleanup(support.unlink, filename)
         create_file(filename)
 
@@ -474,17 +475,17 @@ class CommonTest(GenericTest):
                     self.assertIsInstance(abspath(path), str)
 
     def test_nonascii_abspath(self):
-        if (support.TESTFN_UNDECODABLE
+        if (filesystem_helper.TESTFN_UNDECODABLE
         # Mac OS X denies the creation of a directory with an invalid
         # UTF-8 name. Windows allows creating a directory with an
         # arbitrary bytes name, but fails to enter this directory
         # (when the bytes name is used).
         and sys.platform not in ('win32', 'darwin')):
-            name = support.TESTFN_UNDECODABLE
-        elif support.TESTFN_NONASCII:
-            name = support.TESTFN_NONASCII
+            name = filesystem_helper.TESTFN_UNDECODABLE
+        elif filesystem_helper.TESTFN_NONASCII:
+            name = filesystem_helper.TESTFN_NONASCII
         else:
-            self.skipTest("need support.TESTFN_NONASCII")
+            self.skipTest("need filesystem_helper.TESTFN_NONASCII")
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
@@ -534,8 +535,8 @@ class CommonTest(GenericTest):
 class PathLikeTests(unittest.TestCase):
 
     def setUp(self):
-        self.file_name = support.TESTFN.lower()
-        self.file_path = FakePath(support.TESTFN)
+        self.file_name = filesystem_helper.TESTFN.lower()
+        self.file_path = FakePath(filesystem_helper.TESTFN)
         self.addCleanup(support.unlink, self.file_name)
         create_file(self.file_name, b"test_genericpath.PathLikeTests")
 

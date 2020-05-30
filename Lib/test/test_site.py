@@ -8,8 +8,9 @@ import unittest
 import test.support
 from test import support
 from test.support import socket_helper
-from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
+from test.support import (captured_stderr, EnvironmentVarGuard,
                           change_cwd)
+from test.support.filesystem_helper import TESTFN
 import builtins
 import encodings
 import glob

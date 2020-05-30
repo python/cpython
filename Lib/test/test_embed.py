@@ -1,5 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
+from test.support import filesystem_helper
 import unittest
 
 from collections import namedtuple
@@ -1317,7 +1318,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
                                       returncode=1)
 
     def test_audit_run_interactivehook(self):
-        startup = os.path.join(self.oldcwd, support.TESTFN) + ".py"
+        startup = os.path.join(self.oldcwd, filesystem_helper.TESTFN) + ".py"
         with open(startup, "w", encoding="utf-8") as f:
             print("import sys", file=f)
             print("sys.__interactivehook__ = lambda: None", file=f)
@@ -1330,7 +1331,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
             os.unlink(startup)
 
     def test_audit_run_startup(self):
-        startup = os.path.join(self.oldcwd, support.TESTFN) + ".py"
+        startup = os.path.join(self.oldcwd, filesystem_helper.TESTFN) + ".py"
         with open(startup, "w", encoding="utf-8") as f:
             print("pass", file=f)
         try:

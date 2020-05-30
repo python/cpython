@@ -23,7 +23,8 @@ import sys
 from urllib.error import URLError
 import urllib.request
 from test import support
-from test.support import findfile, run_unittest, FakePath, TESTFN
+from test.support import findfile, run_unittest, FakePath
+from test.support.filesystem_helper import TESTFN
 
 TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
 TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")

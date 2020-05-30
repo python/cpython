@@ -2,8 +2,10 @@ import unittest
 import os.path
 import sys
 import test.support
+from test.support import filesystem_helper
 from ctypes import *
 from ctypes.util import find_library
+
 
 # On some systems, loading the OpenGL libraries needs the RTLD_GLOBAL mode.
 class Test_OpenGL_libs(unittest.TestCase):
@@ -65,8 +67,9 @@ class Test_OpenGL_libs(unittest.TestCase):
         self.gle.gleGetJoinStyle
 
     def test_shell_injection(self):
-        result = find_library('; echo Hello shell > ' + test.support.TESTFN)
-        self.assertFalse(os.path.lexists(test.support.TESTFN))
+        result = find_library('; echo Hello shell > ' +
+                              filesystem_helper.TESTFN)
+        self.assertFalse(os.path.lexists(filesystem_helper.TESTFN))
         self.assertIsNone(result)
 
 

@@ -7,7 +7,8 @@ import sys
 import unittest
 import re
 from test import support
-from test.support import TESTFN, Error, captured_output, unlink, cpython_only, ALWAYS_EQ
+from test.support import Error, captured_output, unlink, cpython_only, ALWAYS_EQ
+from test.support.filesystem_helper import TESTFN
 from test.support.script_helper import assert_python_ok
 import textwrap
 

@@ -8,10 +8,11 @@ import pickle
 import weakref
 import errno
 
-from test.support import (TESTFN, captured_stderr, check_impl_detail,
+from test.support import (captured_stderr, check_impl_detail,
                           check_warnings, cpython_only, gc_collect,
                           no_tracing, unlink, import_module, script_helper,
                           SuppressCrashReport)
+from test.support.filesystem_helper import TESTFN
 from test import support
 
 

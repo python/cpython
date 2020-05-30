@@ -6,7 +6,8 @@ import unittest
 import os
 from difflib import unified_diff
 from io import StringIO
-from test.support import TESTFN, run_unittest, unlink
+from test.support import run_unittest, unlink
+from test.support.filesystem_helper import TESTFN
 from contextlib import contextmanager
 
 import profile

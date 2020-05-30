@@ -18,6 +18,7 @@ import textwrap
 import unittest
 from test import libregrtest
 from test import support
+from test.support import filesystem_helper
 from test.libregrtest import utils
 
 
@@ -770,7 +771,7 @@ class ArgsTestCase(BaseTestCase):
         # Write the list of files using a format similar to regrtest output:
         # [1/2] test_1
         # [2/2] test_2
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         self.addCleanup(support.unlink, filename)
 
         # test format '0:00:00 [2/7] test_opcodes -- test_grammar took 0 sec'
@@ -997,7 +998,7 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
 
         # only run a subset
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         self.addCleanup(support.unlink, filename)
 
         subset = [
@@ -1038,7 +1039,7 @@ class ArgsTestCase(BaseTestCase):
         self.assertEqual(methods, all_methods)
 
         # only run a subset
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         self.addCleanup(support.unlink, filename)
 
         subset = [

@@ -24,7 +24,8 @@ import weakref
 from functools import partial
 from itertools import product, islice
 from test import support
-from test.support import TESTFN, findfile, import_fresh_module, gc_collect, swap_attr
+from test.support import findfile, import_fresh_module, gc_collect, swap_attr
+from test.support.filesystem_helper import TESTFN
 
 # pyET is the pure-Python implementation.
 #

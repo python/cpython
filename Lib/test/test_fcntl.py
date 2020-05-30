@@ -6,8 +6,9 @@ import struct
 import sys
 import unittest
 from multiprocessing import Process
-from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
+from test.support import (verbose, unlink, run_unittest, import_module,
                           cpython_only)
+from test.support.filesystem_helper import TESTFN
 
 # Skip test if no fcntl module.
 fcntl = import_module('fcntl')

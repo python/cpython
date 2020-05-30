@@ -5,6 +5,7 @@ import sys
 import os
 import warnings
 from test import support
+from test.support import filesystem_helper
 
 # Skip this test if the _tkinter module wasn't built.
 _tkinter = support.import_module('_tkinter')
@@ -191,26 +192,26 @@ class TclTest(unittest.TestCase):
 
     def testEvalFile(self):
         tcl = self.interp
-        with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+        with open(filesystem_helper.TESTFN, 'w') as f:
+            self.addCleanup(support.unlink, filesystem_helper.TESTFN)
             f.write("""set a 1
             set b 2
             set c [ expr $a + $b ]
             """)
-        tcl.evalfile(support.TESTFN)
+        tcl.evalfile(filesystem_helper.TESTFN)
         self.assertEqual(tcl.eval('set a'),'1')
         self.assertEqual(tcl.eval('set b'),'2')
         self.assertEqual(tcl.eval('set c'),'3')
 
     def test_evalfile_null_in_result(self):
         tcl = self.interp
-        with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+        with open(filesystem_helper.TESTFN, 'w') as f:
+            self.addCleanup(support.unlink, filesystem_helper.TESTFN)
             f.write("""
             set a "a\0b"
             set b "a\\0b"
             """)
-        tcl.evalfile(support.TESTFN)
+        tcl.evalfile(filesystem_helper.TESTFN)
         self.assertEqual(tcl.eval('set a'), 'a\x00b')
         self.assertEqual(tcl.eval('set b'), 'a\x00b')
 

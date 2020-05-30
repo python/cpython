@@ -24,7 +24,9 @@
 import unittest
 import sqlite3 as sqlite
 
-from test.support import TESTFN, unlink
+from test.support import unlink
+from test.support.filesystem_helper import TESTFN
+
 
 class CollationTests(unittest.TestCase):
     def CheckCreateCollationNotString(self):

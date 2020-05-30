@@ -3,6 +3,7 @@
 import unittest
 import glob
 import test.support
+from test.support import filesystem_helper
 
 # Skip tests if dbm module doesn't exist.
 dbm = test.support.import_module('dbm')
@@ -12,7 +13,7 @@ try:
 except ImportError:
     ndbm = None
 
-_fname = test.support.TESTFN
+_fname = filesystem_helper.TESTFN
 
 #
 # Iterates over every database module supported by dbm currently available,
@@ -177,7 +178,7 @@ class WhichDBTestCase(unittest.TestCase):
 
     def setUp(self):
         delete_files()
-        self.filename = test.support.TESTFN
+        self.filename = filesystem_helper.TESTFN
         self.d = dbm.open(self.filename, 'c')
         self.d.close()
         self.dbm = test.support.import_fresh_module('dbm')

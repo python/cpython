@@ -24,8 +24,9 @@ from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
 from pathlib import Path
 
-from test.support import verbose, TESTFN, check_warnings
+from test.support import verbose, check_warnings
 from test.support import unlink as safe_unlink
+from test.support.filesystem_helper import TESTFN
 from test import support
 from unittest import mock
 

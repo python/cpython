@@ -4,7 +4,7 @@
 #
 
 from test import support
-from test.support import TESTFN
+from test.support.filesystem_helper import TESTFN
 import unittest, io, codecs, sys
 import _multibytecodec
 

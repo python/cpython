@@ -1,6 +1,7 @@
 import unittest
 from unittest import mock
 from test import support
+from test.support import filesystem_helper
 import subprocess
 import sys
 import signal
@@ -1052,7 +1053,7 @@ class ProcessTestCase(BaseTestCase):
         try:
             for i in range(max_handles):
                 try:
-                    tmpfile = os.path.join(tmpdir, support.TESTFN)
+                    tmpfile = os.path.join(tmpdir, filesystem_helper.TESTFN)
                     handles.append(os.open(tmpfile, os.O_WRONLY|os.O_CREAT))
                 except OSError as e:
                     if e.errno != errno.EMFILE:

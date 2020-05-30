@@ -5,6 +5,7 @@
 """
 import unittest
 from test import support
+from test.support import filesystem_helper
 
 with support.check_warnings(('', DeprecationWarning)):
     import binhex
@@ -13,9 +14,9 @@ with support.check_warnings(('', DeprecationWarning)):
 class BinHexTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.fname1 = support.TESTFN + "1"
-        self.fname2 = support.TESTFN + "2"
-        self.fname3 = support.TESTFN + "very_long_filename__very_long_filename__very_long_filename__very_long_filename__"
+        self.fname1 = filesystem_helper.TESTFN + "1"
+        self.fname2 = filesystem_helper.TESTFN + "2"
+        self.fname3 = filesystem_helper.TESTFN + "very_long_filename__very_long_filename__very_long_filename__very_long_filename__"
 
     def tearDown(self):
         support.unlink(self.fname1)

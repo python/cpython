@@ -2,7 +2,8 @@ from test import support
 gdbm = support.import_module("dbm.gnu") #skip if not supported
 import unittest
 import os
-from test.support import TESTFN, TESTFN_NONASCII, unlink
+from test.support import TESTFN_NONASCII, unlink
+from test.support.filesystem_helper import TESTFN
 
 
 filename = TESTFN

@@ -10,9 +10,10 @@ import stat
 import unittest
 import dbm.dumb as dumbdbm
 from test import support
+from test.support import filesystem_helper
 from functools import partial
 
-_fname = support.TESTFN
+_fname = filesystem_helper.TESTFN
 
 def _delete_files():
     for ext in [".dir", ".dat", ".bak"]:

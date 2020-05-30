@@ -9,6 +9,7 @@ import tempfile
 import textwrap
 import unittest
 from test import support
+from test.support import filesystem_helper
 from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
@@ -463,7 +464,7 @@ class CmdLineTest(unittest.TestCase):
         # Issue #15001: PyRun_SimpleFileExFlags() did crash because it kept a
         # borrowed reference to the dict of __main__ module and later modify
         # the dict whereas the module was destroyed
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         self.addCleanup(support.unlink, filename)
         with open(filename, "w") as script:
             print("import sys", file=script)

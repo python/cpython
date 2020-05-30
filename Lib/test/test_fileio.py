@@ -9,8 +9,9 @@ from array import array
 from weakref import proxy
 from functools import wraps
 
-from test.support import (TESTFN, TESTFN_UNICODE, check_warnings, run_unittest,
+from test.support import (TESTFN_UNICODE, check_warnings, run_unittest,
                           make_bad_fd, cpython_only, swap_attr)
+from test.support.filesystem_helper import TESTFN
 from collections import UserList
 
 import _io  # C implementation of io

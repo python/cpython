@@ -12,6 +12,7 @@ import weakref
 
 from copy import deepcopy
 from test import support
+from test.support import filesystem_helper
 
 try:
     import _testcapi
@@ -2975,12 +2976,12 @@ order (MRO) for bases """
         ##             self.ateof = 1
         ##        return s
         ##
-        ## f = file(name=support.TESTFN, mode='w')
+        ## f = file(name=filesystem_helper.TESTFN, mode='w')
         ## lines = ['a\n', 'b\n', 'c\n']
         ## try:
         ##     f.writelines(lines)
         ##     f.close()
-        ##     f = CountedInput(support.TESTFN)
+        ##     f = CountedInput(filesystem_helper.TESTFN)
         ##     for (i, expected) in zip(range(1, 5) + [4], lines + 2 * [""]):
         ##         got = f.readline()
         ##         self.assertEqual(expected, got)
@@ -2992,7 +2993,7 @@ order (MRO) for bases """
         ##         f.close()
         ##     except:
         ##         pass
-        ##     support.unlink(support.TESTFN)
+        ##     support.unlink(filesystem_helper.TESTFN)
 
     def test_keywords(self):
         # Testing keyword args to basic type constructors ...

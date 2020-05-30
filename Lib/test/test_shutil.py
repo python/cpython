@@ -30,7 +30,8 @@ except ImportError:
     posix = None
 
 from test import support
-from test.support import TESTFN, FakePath
+from test.support import FakePath
+from test.support.filesystem_helper import TESTFN
 
 TESTFN2 = TESTFN + "2"
 MACOS = sys.platform.startswith("darwin")

@@ -2,10 +2,12 @@
 
 import sys
 import unittest
-from test.support import run_unittest, TESTFN, unlink, cpython_only
+from test.support import run_unittest, unlink, cpython_only
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
+from test.support.filesystem_helper import TESTFN
 import pickle
 import collections.abc
+
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),

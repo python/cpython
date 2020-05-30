@@ -5,6 +5,7 @@ import os.path
 import py_compile
 import sys
 from test import support
+from test.support import filesystem_helper
 from test.support import script_helper
 import unittest
 import warnings
@@ -300,10 +301,10 @@ class ImportTests(unittest.TestCase):
         "test meaningful only when writing bytecode")
     def test_bug7732(self):
         with support.temp_cwd():
-            source = support.TESTFN + '.py'
+            source = filesystem_helper.TESTFN + '.py'
             os.mkdir(source)
             self.assertRaisesRegex(ImportError, '^No module',
-                imp.find_module, support.TESTFN, ["."])
+                imp.find_module, filesystem_helper.TESTFN, ["."])
 
     def test_multiple_calls_to_get_data(self):
         # Issue #18755: make sure multiple calls to get_data() can succeed.

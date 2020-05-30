@@ -12,6 +12,7 @@ import unittest
 from subprocess import PIPE, Popen
 from test import support
 from test.support import _4G, bigmemtest
+from test.support import filesystem_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 gzip = support.import_module('gzip')
@@ -29,7 +30,7 @@ data2 = b"""/* zlibmodule.c -- gzip-compatible data compression */
 """
 
 
-TEMPDIR = os.path.abspath(support.TESTFN) + '-gzdir'
+TEMPDIR = os.path.abspath(filesystem_helper.TESTFN) + '-gzdir'
 
 
 class UnseekableIO(io.BytesIO):
@@ -44,7 +45,7 @@ class UnseekableIO(io.BytesIO):
 
 
 class BaseTest(unittest.TestCase):
-    filename = support.TESTFN
+    filename = filesystem_helper.TESTFN
 
     def setUp(self):
         support.unlink(self.filename)

@@ -1,5 +1,6 @@
 import netrc, os, unittest, sys, tempfile, textwrap
 from test import support
+from test.support import filesystem_helper
 
 
 class NetrcTestCase(unittest.TestCase):
@@ -108,7 +109,7 @@ class NetrcTestCase(unittest.TestCase):
     def test_security(self):
         # This test is incomplete since we are normally not run as root and
         # therefore can't test the file ownership being wrong.
-        d = support.TESTFN
+        d = filesystem_helper.TESTFN
         os.mkdir(d)
         self.addCleanup(support.rmtree, d)
         fn = os.path.join(d, '.netrc')
@@ -127,7 +128,7 @@ class NetrcTestCase(unittest.TestCase):
             self.assertRaises(netrc.NetrcParseError, netrc.netrc)
 
     def test_file_not_found_in_home(self):
-        d = support.TESTFN
+        d = filesystem_helper.TESTFN
         os.mkdir(d)
         self.addCleanup(support.rmtree, d)
         with support.EnvironmentVarGuard() as environ:
@@ -139,7 +140,7 @@ class NetrcTestCase(unittest.TestCase):
                           file='unlikely_netrc')
 
     def test_home_not_set(self):
-        fake_home = support.TESTFN
+        fake_home = filesystem_helper.TESTFN
         os.mkdir(fake_home)
         self.addCleanup(support.rmtree, fake_home)
         fake_netrc_path = os.path.join(fake_home, '.netrc')

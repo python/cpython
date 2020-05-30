@@ -11,6 +11,7 @@ import unittest.mock
 import tarfile
 
 from test import support
+from test.support import filesystem_helper
 from test.support import script_helper
 
 # Check for our compression modules.
@@ -30,7 +31,7 @@ except ImportError:
 def sha256sum(data):
     return sha256(data).hexdigest()
 
-TEMPDIR = os.path.abspath(support.TESTFN) + "-tardir"
+TEMPDIR = os.path.abspath(filesystem_helper.TESTFN) + "-tardir"
 tarextdir = TEMPDIR + '-extract-test'
 tarname = support.findfile("testtar.tar")
 gzipname = os.path.join(TEMPDIR, "testtar.tar.gz")

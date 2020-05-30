@@ -4,6 +4,7 @@ import string
 import unittest
 import shutil
 from test.support import TESTFN, run_unittest, unlink, reap_children
+from test.support.filesystem_helper import TESTFN
 
 if os.name != 'posix':
     raise unittest.SkipTest('pipes module only works on posix')

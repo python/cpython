@@ -6,6 +6,7 @@ import unittest
 from unittest import mock
 
 from test import support
+from test.support import filesystem_helper
 
 
 class PlatformTest(unittest.TestCase):
@@ -281,7 +282,7 @@ class PlatformTest(unittest.TestCase):
             executable = sys.executable
         platform.libc_ver(executable)
 
-        filename = support.TESTFN
+        filename = filesystem_helper.TESTFN
         self.addCleanup(support.unlink, filename)
 
         with mock.patch('os.confstr', create=True, return_value='mock 1.0'):

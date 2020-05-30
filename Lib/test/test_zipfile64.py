@@ -17,7 +17,8 @@ import sys
 
 from tempfile import TemporaryFile
 
-from test.support import TESTFN, requires_zlib
+from test.support import requires_zlib
+from test.support.filesystem_helper import TESTFN
 
 TESTFN2 = TESTFN + "2"
 

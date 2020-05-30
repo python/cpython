@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import filesystem_helper
 import os
 import sys
 import sysconfig
@@ -42,7 +43,7 @@ class TestSymbolGeneration(unittest.TestCase):
     @unittest.skipUnless(sysconfig.is_python_build(),
                          'test only works from source build directory')
     def test_real_grammar_and_symbol_file(self):
-        output = support.TESTFN
+        output = filesystem_helper.TESTFN
         self.addCleanup(support.unlink, output)
 
         self._copy_file_without_generated_symbols(SYMBOL_FILE, output)

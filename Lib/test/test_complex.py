@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import filesystem_helper
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 
@@ -506,15 +507,15 @@ class ComplexTest(unittest.TestCase):
 
         fo = None
         try:
-            fo = open(support.TESTFN, "w")
+            fo = open(filesystem_helper.TESTFN, "w")
             print(a, b, file=fo)
             fo.close()
-            fo = open(support.TESTFN, "r")
+            fo = open(filesystem_helper.TESTFN, "r")
             self.assertEqual(fo.read(), ("%s %s\n" % (a, b)))
         finally:
             if (fo is not None) and (not fo.closed):
                 fo.close()
-            support.unlink(support.TESTFN)
+            support.unlink(filesystem_helper.TESTFN)
 
     def test_getnewargs(self):
         self.assertEqual((1+2j).__getnewargs__(), (1.0, 2.0))

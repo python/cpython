@@ -4,7 +4,8 @@ import os
 import pathlib
 import unittest
 import warnings
-from test.support import findfile, TESTFN, unlink
+from test.support import findfile, unlink
+from test.support.filesystem_helper import TESTFN
 
 TEST_FILES = (
     ('python.png', 'png'),

@@ -14,6 +14,7 @@ import unittest
 
 from io import StringIO
 from test import support
+from test.support import filesystem_helper
 
 
 import optparse
@@ -1021,10 +1022,10 @@ class TestExtendAddTypes(BaseTest):
         self.parser.add_option("-f", "--file", type="file", dest="file")
 
     def tearDown(self):
-        if os.path.isdir(support.TESTFN):
-            os.rmdir(support.TESTFN)
-        elif os.path.isfile(support.TESTFN):
-            os.unlink(support.TESTFN)
+        if os.path.isdir(filesystem_helper.TESTFN):
+            os.rmdir(filesystem_helper.TESTFN)
+        elif os.path.isfile(filesystem_helper.TESTFN):
+            os.unlink(filesystem_helper.TESTFN)
 
     class MyOption (Option):
         def check_file(option, opt, value):
@@ -1039,21 +1040,21 @@ class TestExtendAddTypes(BaseTest):
         TYPE_CHECKER["file"] = check_file
 
     def test_filetype_ok(self):
-        support.create_empty_file(support.TESTFN)
-        self.assertParseOK(["--file", support.TESTFN, "-afoo"],
-                           {'file': support.TESTFN, 'a': 'foo'},
+        support.create_empty_file(filesystem_helper.TESTFN)
+        self.assertParseOK(["--file", filesystem_helper.TESTFN, "-afoo"],
+                           {'file': filesystem_helper.TESTFN, 'a': 'foo'},
                            [])
 
     def test_filetype_noexist(self):
-        self.assertParseFail(["--file", support.TESTFN, "-afoo"],
+        self.assertParseFail(["--file", filesystem_helper.TESTFN, "-afoo"],
                              "%s: file does not exist" %
-                             support.TESTFN)
+                             filesystem_helper.TESTFN)
 
     def test_filetype_notfile(self):
-        os.mkdir(support.TESTFN)
-        self.assertParseFail(["--file", support.TESTFN, "-afoo"],
+        os.mkdir(filesystem_helper.TESTFN)
+        self.assertParseFail(["--file", filesystem_helper.TESTFN, "-afoo"],
                              "%s: not a regular file" %
-                             support.TESTFN)
+                             filesystem_helper.TESTFN)
 
 
 class TestExtendAddActions(BaseTest):

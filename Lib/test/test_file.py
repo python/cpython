@@ -7,9 +7,10 @@ from weakref import proxy
 import io
 import _pyio as pyio
 
-from test.support import TESTFN
+from test.support.filesystem_helper import TESTFN
 from test import support
 from collections import UserList
+
 
 class AutoFileTests:
     # file tests for which a test file is automatically set up

@@ -9,6 +9,7 @@ import io
 import unittest
 from unittest.mock import patch
 from test import support
+from test.support import filesystem_helper
 import os
 try:
     import ssl
@@ -145,18 +146,18 @@ class urlopen_FileTests(unittest.TestCase):
         # Create a temp file to use for testing
         self.text = bytes("test_urllib: %s\n" % self.__class__.__name__,
                           "ascii")
-        f = open(support.TESTFN, 'wb')
+        f = open(filesystem_helper.TESTFN, 'wb')
         try:
             f.write(self.text)
         finally:
             f.close()
-        self.pathname = support.TESTFN
+        self.pathname = filesystem_helper.TESTFN
         self.returned_obj = urlopen("file:%s" % self.pathname)
 
     def tearDown(self):
         """Shut down the open object"""
         self.returned_obj.close()
-        os.remove(support.TESTFN)
+        os.remove(filesystem_helper.TESTFN)
 
     def test_interface(self):
         # Make sure object returned by urlopen() has the specified methods
@@ -698,10 +699,10 @@ class urlretrieve_FileTests(unittest.TestCase):
         self.tempFiles = []
 
         # Create a temporary file.
-        self.registerFileForCleanUp(support.TESTFN)
+        self.registerFileForCleanUp(filesystem_helper.TESTFN)
         self.text = b'testing urllib.urlretrieve'
         try:
-            FILE = open(support.TESTFN, 'wb')
+            FILE = open(filesystem_helper.TESTFN, 'wb')
             FILE.write(self.text)
             FILE.close()
         finally:
@@ -744,18 +745,19 @@ class urlretrieve_FileTests(unittest.TestCase):
     def test_basic(self):
         # Make sure that a local file just gets its own location returned and
         # a headers value is returned.
-        result = urllib.request.urlretrieve("file:%s" % support.TESTFN)
-        self.assertEqual(result[0], support.TESTFN)
+        result = urllib.request.urlretrieve(
+                "file:%s" % filesystem_helper.TESTFN)
+        self.assertEqual(result[0], filesystem_helper.TESTFN)
         self.assertIsInstance(result[1], email.message.Message,
                               "did not get an email.message.Message instance "
                               "as second returned value")
 
     def test_copy(self):
         # Test that setting the filename argument works.
-        second_temp = "%s.2" % support.TESTFN
+        second_temp = "%s.2" % filesystem_helper.TESTFN
         self.registerFileForCleanUp(second_temp)
         result = urllib.request.urlretrieve(self.constructLocalFileUrl(
-            support.TESTFN), second_temp)
+            filesystem_helper.TESTFN), second_temp)
         self.assertEqual(second_temp, result[0])
         self.assertTrue(os.path.exists(second_temp), "copy of the file was not "
                                                   "made")
@@ -776,10 +778,10 @@ class urlretrieve_FileTests(unittest.TestCase):
             self.assertIsInstance(file_size, int)
             self.assertEqual(block_count, count_holder[0])
             count_holder[0] = count_holder[0] + 1
-        second_temp = "%s.2" % support.TESTFN
+        second_temp = "%s.2" % filesystem_helper.TESTFN
         self.registerFileForCleanUp(second_temp)
         urllib.request.urlretrieve(
-            self.constructLocalFileUrl(support.TESTFN),
+            self.constructLocalFileUrl(filesystem_helper.TESTFN),
             second_temp, hooktester)
 
     def test_reporthook_0_bytes(self):
@@ -789,7 +791,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile()
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+            filesystem_helper.TESTFN, hooktester)
         self.assertEqual(len(report), 1)
         self.assertEqual(report[0][2], 0)
 
@@ -802,7 +804,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile(b"x" * 5)
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+            filesystem_helper.TESTFN, hooktester)
         self.assertEqual(len(report), 2)
         self.assertEqual(report[0][2], 5)
         self.assertEqual(report[1][2], 5)
@@ -816,7 +818,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile(b"x" * 8193)
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+            filesystem_helper.TESTFN, hooktester)
         self.assertEqual(len(report), 3)
         self.assertEqual(report[0][2], 8193)
         self.assertEqual(report[0][1], 8192)

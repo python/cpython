@@ -12,10 +12,11 @@ import textwrap
 import time
 import unittest
 from test import support
+from test.support import filesystem_helper
 from test.support import script_helper
 from test.support import socket_helper
 
-TESTFN = support.TESTFN
+TESTFN = filesystem_helper.TESTFN
 
 
 class TestSupport(unittest.TestCase):

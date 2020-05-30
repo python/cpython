@@ -252,12 +252,6 @@ The :mod:`test.support` module defines the following constants:
    A non-ASCII character encodable by :func:`os.fsencode`.
 
 
-.. data:: TESTFN
-
-   Set to a name that is safe to use as the name of a temporary file.  Any
-   temporary file that is created should be closed and unlinked (removed).
-
-
 .. data:: TESTFN_UNICODE
 
     Set to a non-ASCII name for a temporary file.
@@ -1634,3 +1628,20 @@ The :mod:`test.support.threading_helper` module provides support for threading t
        # (to avoid reference cycles)
 
    .. versionadded:: 3.8
+
+
+:mod:`test.support.filesystem_helper` --- Utilities for filesystem tests
+======================================================================
+
+.. module:: test.support.filesystem_helper
+   :synopsis: Support for filesystem tests.
+
+The :mod:`test.support.filesystem_helper` module provides support for filesystem tests.
+
+.. versionadded:: 3.10
+
+
+.. data:: TESTFN
+
+   Set to a name that is safe to use as the name of a temporary file.  Any
+   temporary file that is created should be closed and unlinked (removed).

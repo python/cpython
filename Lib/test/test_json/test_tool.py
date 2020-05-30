@@ -6,6 +6,7 @@ import unittest
 import subprocess
 
 from test import support
+from test.support import filesystem_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -91,7 +92,7 @@ class TestTool(unittest.TestCase):
         self.assertEqual(process.stderr, '')
 
     def _create_infile(self, data=None):
-        infile = support.TESTFN
+        infile = filesystem_helper.TESTFN
         with open(infile, "w", encoding="utf-8") as fp:
             self.addCleanup(os.remove, infile)
             fp.write(data or self.data)

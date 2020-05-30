@@ -12,6 +12,7 @@ import textwrap
 from contextlib import ExitStack
 from io import StringIO
 from test import support
+from test.support import filesystem_helper
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
 from unittest.mock import patch
@@ -1187,7 +1188,7 @@ def test_pdb_issue_20766():
 
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
-        support.unlink(support.TESTFN)
+        support.unlink(filesystem_helper.TESTFN)
 
     def _run_pdb(self, pdb_args, commands):
         self.addCleanup(support.rmtree, '__pycache__')
@@ -1228,13 +1229,13 @@ class PdbTestCase(unittest.TestCase):
     def _assert_find_function(self, file_content, func_name, expected):
         file_content = textwrap.dedent(file_content)
 
-        with open(support.TESTFN, 'w') as f:
+        with open(filesystem_helper.TESTFN, 'w') as f:
             f.write(file_content)
 
         expected = None if not expected else (
-            expected[0], support.TESTFN, expected[1])
+            expected[0], filesystem_helper.TESTFN, expected[1])
         self.assertEqual(
-            expected, pdb.find_function(func_name, support.TESTFN))
+            expected, pdb.find_function(func_name, filesystem_helper.TESTFN))
 
     def test_find_function_empty_file(self):
         self._assert_find_function('', 'foo', None)
@@ -1257,9 +1258,9 @@ class PdbTestCase(unittest.TestCase):
 
     def test_issue7964(self):
         # open the file as binary so we can force \r\n newline
-        with open(support.TESTFN, 'wb') as f:
+        with open(filesystem_helper.TESTFN, 'wb') as f:
             f.write(b'print("testing my pdb")\r\n')
-        cmd = [sys.executable, '-m', 'pdb', support.TESTFN]
+        cmd = [sys.executable, '-m', 'pdb', filesystem_helper.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
@@ -1310,7 +1311,7 @@ class PdbTestCase(unittest.TestCase):
         # Invoking "continue" on a non-main thread triggered an exception
         # inside signal.signal.
 
-        with open(support.TESTFN, 'wb') as f:
+        with open(filesystem_helper.TESTFN, 'wb') as f:
             f.write(textwrap.dedent("""
                 import threading
                 import pdb
@@ -1322,7 +1323,7 @@ class PdbTestCase(unittest.TestCase):
 
                 t = threading.Thread(target=start_pdb)
                 t.start()""").encode('ascii'))
-        cmd = [sys.executable, '-u', support.TESTFN]
+        cmd = [sys.executable, '-u', filesystem_helper.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
@@ -1335,7 +1336,7 @@ class PdbTestCase(unittest.TestCase):
 
     def test_issue36250(self):
 
-        with open(support.TESTFN, 'wb') as f:
+        with open(filesystem_helper.TESTFN, 'wb') as f:
             f.write(textwrap.dedent("""
                 import threading
                 import pdb
@@ -1351,7 +1352,7 @@ class PdbTestCase(unittest.TestCase):
                 pdb.Pdb(readrc=False).set_trace()
                 evt.set()
                 t.join()""").encode('ascii'))
-        cmd = [sys.executable, '-u', support.TESTFN]
+        cmd = [sys.executable, '-u', filesystem_helper.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,

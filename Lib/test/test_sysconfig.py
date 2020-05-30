@@ -5,9 +5,10 @@ import subprocess
 import shutil
 from copy import copy
 
-from test.support import (import_module, TESTFN, unlink, check_warnings,
+from test.support import (import_module, unlink, check_warnings,
                           captured_stdout, skip_unless_symlink, change_cwd,
                           PythonSymlink)
+from test.support.filesystem_helper import TESTFN
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,

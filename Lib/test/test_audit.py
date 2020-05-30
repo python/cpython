@@ -5,6 +5,7 @@ import subprocess
 import sys
 import unittest
 from test import support
+from test.support import filesystem_helper
 
 if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
     raise unittest.SkipTest("test only relevant when sys.audit is available")
@@ -76,7 +77,7 @@ class AuditTest(unittest.TestCase):
         self.do_test("test_monkeypatch")
 
     def test_open(self):
-        self.do_test("test_open", support.TESTFN)
+        self.do_test("test_open", filesystem_helper.TESTFN)
 
     def test_cantrace(self):
         self.do_test("test_cantrace")

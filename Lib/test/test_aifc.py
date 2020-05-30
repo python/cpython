@@ -1,4 +1,5 @@
-from test.support import check_no_resource_warning, findfile, TESTFN, unlink
+from test.support import check_no_resource_warning, findfile, unlink
+from test.support.filesystem_helper import TESTFN
 import unittest
 from unittest import mock
 from test import audiotests

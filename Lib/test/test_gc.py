@@ -1,8 +1,9 @@
 import unittest
 import unittest.mock
 from test.support import (verbose, refcount_test, run_unittest,
-                          cpython_only, temp_dir, TESTFN, unlink,
+                          cpython_only, temp_dir, unlink,
                           import_module)
+from test.support.filesystem_helper import TESTFN
 from test.support.script_helper import assert_python_ok, make_script
 from test.support import threading_helper
 

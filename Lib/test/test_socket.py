@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import filesystem_helper
 from test.support import socket_helper
 from test.support import threading_helper
 
@@ -5458,14 +5459,14 @@ class TestUnixDomain(unittest.TestCase):
 
     def testStrAddr(self):
         # Test binding to and retrieving a normal string pathname.
-        path = os.path.abspath(support.TESTFN)
+        path = os.path.abspath(filesystem_helper.TESTFN)
         self.bind(self.sock, path)
         self.addCleanup(support.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
     def testBytesAddr(self):
         # Test binding to a bytes pathname.
-        path = os.path.abspath(support.TESTFN)
+        path = os.path.abspath(filesystem_helper.TESTFN)
         self.bind(self.sock, self.encoded(path))
         self.addCleanup(support.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
@@ -5960,16 +5961,16 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
 
         chunk = b"".join([random.choice(string.ascii_letters).encode()
                           for i in range(cls.BUFSIZE)])
-        with open(support.TESTFN, 'wb') as f:
+        with open(filesystem_helper.TESTFN, 'wb') as f:
             for csize in chunks(cls.FILESIZE, cls.BUFSIZE):
                 f.write(chunk)
-        with open(support.TESTFN, 'rb') as f:
+        with open(filesystem_helper.TESTFN, 'rb') as f:
             cls.FILEDATA = f.read()
             assert len(cls.FILEDATA) == cls.FILESIZE
 
     @classmethod
     def tearDownClass(cls):
-        support.unlink(support.TESTFN)
+        support.unlink(filesystem_helper.TESTFN)
 
     def accept_conn(self):
         self.serv.settimeout(support.LONG_TIMEOUT)
@@ -5996,7 +5997,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
 
     def _testRegularFile(self):
         address = self.serv.getsockname()
-        file = open(support.TESTFN, 'rb')
+        file = open(filesystem_helper.TESTFN, 'rb')
         with socket.create_connection(address) as sock, file as file:
             meth = self.meth_from_sock(sock)
             sent = meth(file)
@@ -6031,7 +6032,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
 
     def _testEmptyFileSend(self):
         address = self.serv.getsockname()
-        filename = support.TESTFN + "2"
+        filename = filesystem_helper.TESTFN + "2"
         with open(filename, 'wb'):
             self.addCleanup(support.unlink, filename)
         file = open(filename, 'rb')
@@ -6050,7 +6051,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
 
     def _testOffset(self):
         address = self.serv.getsockname()
-        file = open(support.TESTFN, 'rb')
+        file = open(filesystem_helper.TESTFN, 'rb')
         with socket.create_connection(address) as sock, file as file:
             meth = self.meth_from_sock(sock)
             sent = meth(file, offset=5000)
@@ -6067,7 +6068,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
 
     def _testCount(self):
         address = self.serv.getsockname()
-        file = open(support.TESTFN, 'rb')
+        file = open(filesystem_helper.TESTFN, 'rb')
         sock = socket.create_connection(address,
                                         timeout=support.LOOPBACK_TIMEOUT)
         with sock, file:
@@ -6088,7 +6089,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
 
     def _testCountSmall(self):
         address = self.serv.getsockname()
-        file = open(support.TESTFN, 'rb')
+        file = open(filesystem_helper.TESTFN, 'rb')
         sock = socket.create_connection(address,
                                         timeout=support.LOOPBACK_TIMEOUT)
         with sock, file:
@@ -6109,7 +6110,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
 
     def _testCountWithOffset(self):
         address = self.serv.getsockname()
-        file = open(support.TESTFN, 'rb')
+        file = open(filesystem_helper.TESTFN, 'rb')
         with socket.create_connection(address, timeout=2) as sock, file as file:
             count = 100007
             meth = self.meth_from_sock(sock)
@@ -6128,7 +6129,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
 
     def _testNonBlocking(self):
         address = self.serv.getsockname()
-        file = open(support.TESTFN, 'rb')
+        file = open(filesystem_helper.TESTFN, 'rb')
         with socket.create_connection(address) as sock, file as file:
             sock.setblocking(False)
             meth = self.meth_from_sock(sock)
@@ -6144,7 +6145,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
 
     def _testWithTimeout(self):
         address = self.serv.getsockname()
-        file = open(support.TESTFN, 'rb')
+        file = open(filesystem_helper.TESTFN, 'rb')
         sock = socket.create_connection(address,
                                         timeout=support.LOOPBACK_TIMEOUT)
         with sock, file:
@@ -6162,7 +6163,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
 
     def _testWithTimeoutTriggeredSend(self):
         address = self.serv.getsockname()
-        with open(support.TESTFN, 'rb') as file:
+        with open(filesystem_helper.TESTFN, 'rb') as file:
             with socket.create_connection(address) as sock:
                 sock.settimeout(0.01)
                 meth = self.meth_from_sock(sock)
@@ -6178,17 +6179,17 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
         pass
 
     def test_errors(self):
-        with open(support.TESTFN, 'rb') as file:
+        with open(filesystem_helper.TESTFN, 'rb') as file:
             with socket.socket(type=socket.SOCK_DGRAM) as s:
                 meth = self.meth_from_sock(s)
                 self.assertRaisesRegex(
                     ValueError, "SOCK_STREAM", meth, file)
-        with open(support.TESTFN, 'rt') as file:
+        with open(filesystem_helper.TESTFN, 'rt') as file:
             with socket.socket() as s:
                 meth = self.meth_from_sock(s)
                 self.assertRaisesRegex(
                     ValueError, "binary mode", meth, file)
-        with open(support.TESTFN, 'rb') as file:
+        with open(filesystem_helper.TESTFN, 'rb') as file:
             with socket.socket() as s:
                 meth = self.meth_from_sock(s)
                 self.assertRaisesRegex(TypeError, "positive integer",
