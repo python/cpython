@@ -265,6 +265,10 @@ class TraceCallbackTests(unittest.TestCase):
         cur.execute(queries[0])
         con2.execute("create table bar(x)")
         cur.execute(queries[1])
+
+        # See bpo-40810
+        if sqlite.sqlite_version_info < (3, 7, 15):
+            queries.append(queries[-1])
         self.assertEqual(traced_statements, queries)
 
 
