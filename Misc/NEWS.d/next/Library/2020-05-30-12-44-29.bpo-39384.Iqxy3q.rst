@@ -1,0 +1,1 @@
+Fixed email.contentmanager to allow set_content() to set a null string.
