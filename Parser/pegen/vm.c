@@ -51,7 +51,7 @@ pop_frame(Stack *stack, void *v)
     if (f->collection) {
         PyMem_Free(f->collection);
     }
-    _PyPegen_insert_memo(stack->p, f->mark, f->rule->type, v);
+    _PyPegen_insert_memo(stack->p, f->mark, f->rule->type + 1000, v);
     f = &stack->frames[stack->top - 1];  // New top of stack
     D(printf("               pop %s\n", f->rule->name));
     return f;
@@ -143,7 +143,7 @@ run_vm(Parser *p, Rule rules[], int root)
     case OP_RULE:
         oparg = f->rule->opcodes[f->iop++];
         Rule *rule = &rules[oparg];
-        int memo = _PyPegen_is_memoized(p, rule->type, &v);
+        int memo = _PyPegen_is_memoized(p, rule->type + 1000, &v);
         if (memo) {
             if (memo < 0) {
                 return NULL;
