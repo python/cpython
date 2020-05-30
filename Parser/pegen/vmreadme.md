@@ -226,6 +226,31 @@ return_op: OP_RETURN <action_id>
 Ideas
 -----
 
+### "Special" loops
+
+We still need opcodes for `a.b+` (e.g. `','.expr+` is a
+comma-separated list of expressions).  We could generate code like this:
+
+```
+# first alternative:
+<one opcode for b>
+<one opcode for a>
+OP_LOOP_ITERATE
+
+# second alternative:
+<one opcode for b>
+OP_LOOP_COLLECT_NONEMPTY
+```
+
+- The `OP_LOOP_ITERATE` opcode would ignore the value collected for
+  the delimiter.
+
+- The `OP_LOOP_COLLECT_NONEMPTY` opcode would add the final collected
+  value to the collection, if one was collected.  (Alternatively, we
+  could use a new opcode, e.g. `OP_LOOP_COLLECT_SPECIAL`.)
+
+### Lookaheads
+
 We also need to extend the VM to support lookaheads.
 
 - Positive lookahead (`&a`) -- add a new opcode to save the mark in a
@@ -235,7 +260,9 @@ We also need to extend the VM to support lookaheads.
 - Negative lookahead (`!a`) -- add another opcode that catches failure
   and turns it into success, restoring the saved mark.
 
-- Left-recursion -- hmm, tricky...
+### Left-recursion
+
+Hmm, tricky...  Will think about this later.
 
 Lookahead opcodes
 -----------------

@@ -128,6 +128,7 @@ run_vm(Parser *p, Rule rules[], int root)
             f = pop_frame(&stack, v);
             break;
         }
+        // Fallthrough!
     case OP_LOOP_COLLECT:
         v = make_asdl_seq(p, f->collection, f->ncollected);
         f = pop_frame(&stack, v);
