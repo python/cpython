@@ -1,1 +1,1 @@
-The interpreter no longer hangs when it encountered exceptions whose ``__context__``s formed a cycle.
+The interpreter no longer hangs when it encounters exceptions whose ``__context__`` attributes formed a cycle. Patch by Dennis Sweeney.
