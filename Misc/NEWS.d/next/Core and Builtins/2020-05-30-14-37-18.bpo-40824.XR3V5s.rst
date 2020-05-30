@@ -1,0 +1,4 @@
+Unexpected errors in calling the ``__iter__`` method are no longer masked by
+``TypeError`` in the :keyword:`in` operator and functions
+:func:`~operator.contains`, :func:`~operator.indexOf` and
+:func:`~operator.countOf` of the :mod:`operator` module.
