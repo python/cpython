@@ -257,7 +257,7 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
 /* Use _W_* fields of Windows struct lconv */
 #define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
 #else
-#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(ls->ATTR, NULL)
+#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
 #endif
 #define RESULT_STRING(s)\
     do { \
