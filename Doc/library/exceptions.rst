@@ -66,6 +66,12 @@ In either case, the exception itself is always shown after any chained
 exceptions so that the final line of the traceback always shows the last
 exception that was raised.
 
+.. versionchanged:: 3.5.2
+
+   Setting :attr:`__context__` to self has no any effect.  If set
+   ``__context__`` to the chain contained original exception, it is moved to
+   the start of the context chain.
+
 
 Base classes
 ------------
