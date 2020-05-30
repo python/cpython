@@ -50,7 +50,7 @@ A `Rule` structure has the following fields:
                      terminated by `-1`
 - `int opcodes[]` -- array of opcodes and their arguments
 
-All rules are collected in a single array; the index in this array
+All rules are combined in a single array; the index in this array
 is used by operations that reference other rules.
 
 The `opcodes` array is a sequence of operation codes and arguments.
@@ -110,15 +110,25 @@ These operations are followed by a single integer argument.
   newly revealed by that pop operation) as if the previous operation
   succeeded or failed with the return value of the action.
 
-### Operations for start rules only
+### Operations for root rules only
 
-- `OP_SUCCESS` -- exit the VM with the first collected value as
-  result.
+A grammar must have one or more *root rules*.  A root rule is a
+synthetic rule that uses `OP_SUCCESS` and `OP_FAILURE` operations to
+report overall success or failure.  Only root rules may use these
+operations, and they must be used in the right format.
+
+Each root rule must have exactly two alternatives.  The first
+alternative must be a single operation (generally `OP_RULE`) that
+stores a value in the values array, followed by `OP_SUCCESS`.  The
+second alternative must be the single operation `OP_FAILURE`.
+
+- `OP_SUCCESS` -- exit the VM with the first value from the `vals`
+  array as the result.
 
 - `OP_FAILURE` -- report a syntax error and exit the VM with a NULL
   result.
 
-### Looping operations
+### Operations for loop rules only
 
 For a loop such as `a*`, a synthetic rule must be created with the
 following structure:
@@ -143,7 +153,8 @@ fields:
 
 The operations are defined as follows:
 
-- `OP_LOOP_START` -- initialize the `collections` array.
+- `OP_LOOP_START` -- initialize the `collections` array.  (TODO: Maybe
+  we don't need this?)
 
 - `OP_LOOP_ITERATE` -- append the current value to the `collections`
   array, save the current input position, and start the next iteration
@@ -197,7 +208,7 @@ This shows the constraints on how operations can be used together.
 ```
 root_rule: success_alt failure_alt
 
-success_alt: rule_op OP_SUCCESS
+success_alt: regular_op OP_SUCCESS
 failure_alt: OP_FAILURE
 
 normal_rule: alt+
