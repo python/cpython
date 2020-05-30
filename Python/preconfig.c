@@ -291,7 +291,17 @@ _PyPreConfig_InitCompatConfig(PyPreConfig *config)
     config->coerce_c_locale_warn = 0;
 
     config->dev_mode = -1;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    /* bpo-40512: pymalloc is not compatible with subinterpreters,
+       force usage of libc malloc() which is thread-safe. */
+#ifdef Py_DEBUG
+    config->allocator = PYMEM_ALLOCATOR_MALLOC_DEBUG;
+#else
+    config->allocator = PYMEM_ALLOCATOR_MALLOC;
+#endif
+#else
     config->allocator = PYMEM_ALLOCATOR_NOT_SET;
+#endif
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = -1;
 #endif

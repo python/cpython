@@ -36,7 +36,7 @@ values() methods are not supported.");
 
 typedef struct {
     PyObject_HEAD
-    int di_size;        /* -1 means recompute */
+    Py_ssize_t di_size;        /* -1 means recompute */
     GDBM_FILE di_dbm;
 } dbmobject;
 
@@ -102,19 +102,39 @@ dbm_length(dbmobject *dp)
         return -1;
     }
     if (dp->di_size < 0) {
+#if GDBM_VERSION_MAJOR >= 1 && GDBM_VERSION_MINOR >= 11
+        errno = 0;
+        gdbm_count_t count;
+        if (gdbm_count(dp->di_dbm, &count) == -1) {
+            if (errno != 0) {
+                PyErr_SetFromErrno(DbmError);
+            }
+            else {
+                PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
+            }
+            return -1;
+        }
+        if (count > PY_SSIZE_T_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "count exceeds PY_SSIZE_T_MAX");
+            return -1;
+        }
+        dp->di_size = count;
+#else
         datum key,okey;
-        int size;
         okey.dsize=0;
         okey.dptr=NULL;
 
-        size = 0;
-        for (key=gdbm_firstkey(dp->di_dbm); key.dptr;
+        Py_ssize_t size = 0;
+        for (key = gdbm_firstkey(dp->di_dbm); key.dptr;
              key = gdbm_nextkey(dp->di_dbm,okey)) {
             size++;
-            if(okey.dsize) free(okey.dptr);
+            if (okey.dsize) {
+                free(okey.dptr);
+            }
             okey=key;
         }
         dp->di_size = size;
+#endif
     }
     return dp->di_size;
 }

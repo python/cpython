@@ -559,6 +559,23 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('a/b').with_name, 'c/')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/d')
 
+    def test_with_stem_common(self):
+        P = self.cls
+        self.assertEqual(P('a/b').with_stem('d'), P('a/d'))
+        self.assertEqual(P('/a/b').with_stem('d'), P('/a/d'))
+        self.assertEqual(P('a/b.py').with_stem('d'), P('a/d.py'))
+        self.assertEqual(P('/a/b.py').with_stem('d'), P('/a/d.py'))
+        self.assertEqual(P('/a/b.tar.gz').with_stem('d'), P('/a/d.gz'))
+        self.assertEqual(P('a/Dot ending.').with_stem('d'), P('a/d'))
+        self.assertEqual(P('/a/Dot ending.').with_stem('d'), P('/a/d'))
+        self.assertRaises(ValueError, P('').with_stem, 'd')
+        self.assertRaises(ValueError, P('.').with_stem, 'd')
+        self.assertRaises(ValueError, P('/').with_stem, 'd')
+        self.assertRaises(ValueError, P('a/b').with_stem, '')
+        self.assertRaises(ValueError, P('a/b').with_stem, '/c')
+        self.assertRaises(ValueError, P('a/b').with_stem, 'c/')
+        self.assertRaises(ValueError, P('a/b').with_stem, 'c/d')
+
     def test_with_suffix_common(self):
         P = self.cls
         self.assertEqual(P('a/b').with_suffix('.gz'), P('a/b.gz'))
@@ -1013,6 +1030,20 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, P('c:a/b').with_name, 'd:e')
         self.assertRaises(ValueError, P('c:a/b').with_name, 'd:/e')
         self.assertRaises(ValueError, P('c:a/b').with_name, '//My/Share')
+
+    def test_with_stem(self):
+        P = self.cls
+        self.assertEqual(P('c:a/b').with_stem('d'), P('c:a/d'))
+        self.assertEqual(P('c:/a/b').with_stem('d'), P('c:/a/d'))
+        self.assertEqual(P('c:a/Dot ending.').with_stem('d'), P('c:a/d'))
+        self.assertEqual(P('c:/a/Dot ending.').with_stem('d'), P('c:/a/d'))
+        self.assertRaises(ValueError, P('c:').with_stem, 'd')
+        self.assertRaises(ValueError, P('c:/').with_stem, 'd')
+        self.assertRaises(ValueError, P('//My/Share').with_stem, 'd')
+        self.assertRaises(ValueError, P('c:a/b').with_stem, 'd:')
+        self.assertRaises(ValueError, P('c:a/b').with_stem, 'd:e')
+        self.assertRaises(ValueError, P('c:a/b').with_stem, 'd:/e')
+        self.assertRaises(ValueError, P('c:a/b').with_stem, '//My/Share')
 
     def test_with_suffix(self):
         P = self.cls

@@ -215,9 +215,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1d",
-              url="https://www.openssl.org/source/openssl-1.1.1d.tar.gz",
-              checksum='3be209000dbc7e1b95bcdf47980a3baa',
+              name="OpenSSL 1.1.1g",
+              url="https://www.openssl.org/source/openssl-1.1.1g.tar.gz",
+              checksum='76766e98997660138cdaf13a187bd234',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -302,7 +302,7 @@ def library_recipes():
                   "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
               ],
               patchscripts=[
-                  ("ftp://invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
+                  ("ftp://ftp.invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
                    "f54bf02a349f96a7c4f0d00922f3a0d4"),
                    ],
               useLDFlags=False,
@@ -1308,12 +1308,6 @@ def buildPython():
                    os.path.join(usr_local_bin, fn))
 
     os.chdir(curdir)
-
-    if PYTHON_3:
-        # Remove the 'Current' link, that way we don't accidentally mess
-        # with an already installed version of python 2
-        os.unlink(os.path.join(rootDir, 'Library', 'Frameworks',
-                            'Python.framework', 'Versions', 'Current'))
 
 def patchFile(inPath, outPath):
     data = fileContents(inPath)

@@ -7,7 +7,8 @@ import select
 import threading
 import time
 import unittest
-from test.support import TESTFN, run_unittest, reap_threads, cpython_only
+from test.support import TESTFN, run_unittest, cpython_only
+from test.support import threading_helper
 
 try:
     select.poll
@@ -175,7 +176,7 @@ class PollTests(unittest.TestCase):
         self.assertRaises(OverflowError, pollster.poll, INT_MAX + 1)
         self.assertRaises(OverflowError, pollster.poll, UINT_MAX + 1)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_threaded_poll(self):
         r, w = os.pipe()
         self.addCleanup(os.close, r)
@@ -204,7 +205,7 @@ class PollTests(unittest.TestCase):
             t.join()
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
-    @reap_threads
+    @threading_helper.reap_threads
     def test_poll_blocks_with_negative_ms(self):
         for timeout_ms in [None, -1000, -1, -1.0, -0.1, -1e-100]:
             # Create two file descriptors. This will be used to unlock

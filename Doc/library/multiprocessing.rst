@@ -878,6 +878,16 @@ For an example of the usage of queues for interprocess communication see
 
    It is a simplified :class:`Queue` type, very close to a locked :class:`Pipe`.
 
+   .. method:: close()
+
+      Close the queue: release internal resources.
+
+      A queue must not be used anymore after it is closed. For example,
+      :meth:`get`, :meth:`put` and :meth:`empty` methods must no longer be
+      called.
+
+      .. versionadded:: 3.9
+
    .. method:: empty()
 
       Return ``True`` if the queue is empty, ``False`` otherwise.
@@ -2134,7 +2144,7 @@ with the :class:`Pool` class.
       or by calling :meth:`close` and :meth:`terminate` manually. Failure to do this
       can lead to the process hanging on finalization.
 
-      Note that is **not correct** to rely on the garbage colletor to destroy the pool
+      Note that it is **not correct** to rely on the garbage collector to destroy the pool
       as CPython does not assure that the finalizer of the pool will be called
       (see :meth:`object.__del__` for more information).
 

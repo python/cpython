@@ -2012,12 +2012,6 @@ _side_effect_methods = {
 
 
 def _set_return_value(mock, method, name):
-    # If _mock_wraps is present then attach it so that wrapped object
-    # is used for return value is used when called.
-    if mock._mock_wraps is not None:
-        method._mock_wraps = getattr(mock._mock_wraps, name)
-        return
-
     fixed = _return_values.get(name, DEFAULT)
     if fixed is not DEFAULT:
         method.return_value = fixed

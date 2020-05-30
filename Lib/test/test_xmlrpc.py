@@ -15,6 +15,8 @@ import re
 import io
 import contextlib
 from test import support
+from test.support import socket_helper
+from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
 
 try:
@@ -334,7 +336,7 @@ class XMLRPCTestCase(unittest.TestCase):
             server.handle_request()  # First request and attempt at second
             server.handle_request()  # Retried second request
 
-        server = http.server.HTTPServer((support.HOST, 0), RequestHandler)
+        server = http.server.HTTPServer((socket_helper.HOST, 0), RequestHandler)
         self.addCleanup(server.server_close)
         thread = threading.Thread(target=run_server)
         thread.start()
@@ -1463,7 +1465,7 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
         self.assertTrue(server.use_builtin_types)
 
 
-@support.reap_threads
+@threading_helper.reap_threads
 def test_main():
     support.run_unittest(XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
             BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,

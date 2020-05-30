@@ -16,7 +16,7 @@ Data members:
 
 #include "Python.h"
 #include "code.h"
-#include "frameobject.h"
+#include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_ceval.h"         // _Py_RecursionLimitLowerWaterMark()
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
@@ -1787,14 +1787,17 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *f = tstate->frame;
+    PyFrameObject *f = PyThreadState_GetFrame(tstate);
 
     if (_PySys_Audit(tstate, "sys._getframe", "O", f) < 0) {
+        Py_DECREF(f);
         return NULL;
     }
 
     while (depth > 0 && f != NULL) {
-        f = f->f_back;
+        PyFrameObject *back = PyFrame_GetBack(f);
+        Py_DECREF(f);
+        f = back;
         --depth;
     }
     if (f == NULL) {
@@ -1802,7 +1805,6 @@ sys__getframe_impl(PyObject *module, int depth)
                          "call stack is not deep enough");
         return NULL;
     }
-    Py_INCREF(f);
     return (PyObject*)f;
 }
 

@@ -781,8 +781,19 @@ static int
 append_ast_subscript(_PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_EXPR(e->v.Subscript.value, PR_ATOM);
+    int level = PR_TUPLE;
+    expr_ty slice = e->v.Subscript.slice;
+    if (slice->kind == Tuple_kind) {
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(slice->v.Tuple.elts); i++) {
+            expr_ty element = asdl_seq_GET(slice->v.Tuple.elts, i);
+            if (element->kind == Starred_kind) {
+                ++level;
+                break;
+            }
+        }
+    }
     APPEND_STR("[");
-    APPEND_EXPR(e->v.Subscript.slice, PR_TUPLE);
+    APPEND_EXPR(e->v.Subscript.slice, level);
     APPEND_STR_FINISH("]");
 }
 
@@ -829,7 +840,7 @@ append_named_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     APPEND_STR_IF(level > PR_TUPLE, "(");
     APPEND_EXPR(e->v.NamedExpr.target, PR_ATOM);
-    APPEND_STR(":=");
+    APPEND_STR(" := ");
     APPEND_EXPR(e->v.NamedExpr.value, PR_ATOM);
     APPEND_STR_IF(level > PR_TUPLE, ")");
     return 0;

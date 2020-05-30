@@ -1,7 +1,7 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error, check_syntax_warning
+from test.support import check_syntax_error, check_syntax_warning, use_old_parser
 import inspect
 import unittest
 import sys
@@ -801,6 +801,23 @@ class GrammarTests(unittest.TestCase):
         del abc
         del x, y, (z, xyz)
 
+        x, y, z = "xyz"
+        del x
+        del y,
+        del (z)
+        del ()
+
+        a, b, c, d, e, f, g = "abcdefg"
+        del a, (b, c), (d, (e, f))
+
+        a, b, c, d, e, f, g = "abcdefg"
+        del a, [b, c], (d, [e, f])
+
+        abcd = list("abcd")
+        del abcd[1:2]
+
+        compile("del a, (b[0].c, (d.e, f.g[1:2])), [h.i.j], ()", "<testcase>", "exec")
+
     def test_pass_stmt(self):
         # 'pass'
         pass
@@ -1262,7 +1279,7 @@ class GrammarTests(unittest.TestCase):
     def test_try(self):
         ### try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
         ###         | 'try' ':' suite 'finally' ':' suite
-        ### except_clause: 'except' [expr ['as' expr]]
+        ### except_clause: 'except' [expr ['as' NAME]]
         try:
             1/0
         except ZeroDivisionError:
@@ -1280,6 +1297,9 @@ class GrammarTests(unittest.TestCase):
         except (EOFError, TypeError, ZeroDivisionError) as msg: pass
         try: pass
         finally: pass
+        with self.assertRaises(SyntaxError):
+            compile("try:\n    pass\nexcept Exception as a.b:\n    pass", "?", "exec")
+            compile("try:\n    pass\nexcept Exception as a[b]:\n    pass", "?", "exec")
 
     def test_suite(self):
         # simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
@@ -1693,6 +1713,70 @@ class GrammarTests(unittest.TestCase):
             pass
         with manager() as x, manager():
             pass
+
+        if not use_old_parser():
+            test_cases = [
+                """if 1:
+                    with (
+                        manager()
+                    ):
+                        pass
+                """,
+                """if 1:
+                    with (
+                        manager() as x
+                    ):
+                        pass
+                """,
+                """if 1:
+                    with (
+                        manager() as (x, y),
+                        manager() as z,
+                    ):
+                        pass
+                """,
+                """if 1:
+                    with (
+                        manager(),
+                        manager()
+                    ):
+                        pass
+                """,
+                """if 1:
+                    with (
+                        manager() as x,
+                        manager() as y
+                    ):
+                        pass
+                """,
+                """if 1:
+                    with (
+                        manager() as x,
+                        manager()
+                    ):
+                        pass
+                """,
+                """if 1:
+                    with (
+                        manager() as x,
+                        manager() as y,
+                        manager() as z,
+                    ):
+                        pass
+                """,
+                """if 1:
+                    with (
+                        manager() as x,
+                        manager() as y,
+                        manager(),
+                    ):
+                        pass
+                """,
+            ]
+            for case in test_cases:
+                with self.subTest(case=case):
+                    compile(case, "<string>", "exec")
+
 
     def test_if_else_expr(self):
         # Test ifelse expressions in various cases
