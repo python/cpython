@@ -453,6 +453,12 @@ class EventTests(BaseTestCase):
         with evt._cond:
             self.assertFalse(evt._cond.acquire(False))
 
+    def test_repr(self):
+        evt = self.eventtype()
+        self.assertRegex(repr(evt), r"<\w+\.Event: unset at .*>")
+        evt.set()
+        self.assertRegex(repr(evt), r"<\w+\.Event: set at .*>")
+
 
 class ConditionTests(BaseTestCase):
     """
@@ -800,6 +806,15 @@ class SemaphoreTests(BaseSemaphoreTests):
         sem.acquire()
         sem.release()
 
+    def test_repr(self):
+        sem = self.semtype(3)
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore: 3 at .*>")
+        sem.acquire()
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore: 2 at .*>")
+        sem.release()
+        sem.release()
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore: 4 at .*>")
+
 
 class BoundedSemaphoreTests(BaseSemaphoreTests):
     """
@@ -813,6 +828,12 @@ class BoundedSemaphoreTests(BaseSemaphoreTests):
         sem.acquire()
         sem.release()
         self.assertRaises(ValueError, sem.release)
+
+    def test_repr(self):
+        sem = self.semtype(3)
+        self.assertRegex(repr(sem), r"<\w+\.BoundedSemaphore: 3/3 at .*>")
+        sem.acquire()
+        self.assertRegex(repr(sem), r"<\w+\.BoundedSemaphore: 2/3 at .*>")
 
 
 class BarrierTests(BaseTestCase):
@@ -1006,3 +1027,18 @@ class BarrierTests(BaseTestCase):
         b = self.barriertype(1)
         b.wait()
         b.wait()
+
+    def test_repr(self):
+        b = self.barriertype(3)
+        self.assertRegex(repr(b), r"<\w+\.Barrier: 0/3 at .*>")
+        def f():
+            b.wait(3)
+        bunch = Bunch(f, 2)
+        bunch.wait_for_started()
+        time.sleep(0.2)
+        self.assertRegex(repr(b), r"<\w+\.Barrier: 2/3 at .*>")
+        b.wait(3)
+        bunch.wait_for_finished()
+        self.assertRegex(repr(b), r"<\w+\.Barrier: 0/3 at .*>")
+        b.abort()
+        self.assertRegex(repr(b), r"<\w+\.Barrier: 0/3, broken at .*>")
