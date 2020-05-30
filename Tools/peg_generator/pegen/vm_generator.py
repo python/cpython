@@ -3,7 +3,7 @@ import sys
 import token
 from collections import defaultdict
 from itertools import accumulate
-from typing import Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from pegen import grammar
 from pegen.build import build_parser
@@ -18,6 +18,7 @@ from pegen.grammar import (
     NameLeaf,
     NegativeLookahead,
     Opt,
+    Plain,
     PositiveLookahead,
     Repeat0,
     Repeat1,
@@ -28,6 +29,26 @@ from pegen.grammar import (
 from pegen.parser_generator import ParserGenerator
 
 
+class CCallMakerVisitor(GrammarVisitor):
+    def __init__(
+        self, parser_generator: ParserGenerator,
+    ):
+        self.gen = parser_generator
+        self.cache: Dict[Any, Any] = {}
+
+    def visit_Repeat0(self, node: Repeat0) -> None:
+        if node in self.cache:
+            return self.cache[node]
+        name = self.gen.name_loop(node.node, False)
+        self.cache[node] = name
+
+    def visit_Repeat1(self, node: Repeat1) -> None:
+        if node in self.cache:
+            return self.cache[node]
+        name = self.gen.name_loop(node.node, True)
+        self.cache[node] = name
+
+
 class CParserGenerator(ParserGenerator, GrammarVisitor):
     def __init__(
         self, grammar: grammar.Grammar,
@@ -35,6 +56,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         super().__init__(grammar, token.tok_name, sys.stdout)
 
         self.opcode_buffer: Optional[List[str]] = None
+        self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(self)
 
     @contextlib.contextmanager
     def set_opcode_buffer(self, buffer: List[str]) -> Iterator[None]:
@@ -47,6 +69,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.opcode_buffer.append(opcode)
 
     def generate(self, filename: str) -> None:
+        self.collect_todo()
         while self.todo:
             self.print("static Rule all_rules[] = {")
             for rulename, rule in list(self.todo.items()):
@@ -91,15 +114,35 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         tok_name = token.tok_name[tok_num]
         self.add_opcode(tok_name)
 
-    def visit_Rhs(self, node: Rhs, is_loop: bool = False, is_gather: bool = False) -> None:
-        opcodes_by_alt: Dict[int, List[str]] = defaultdict(list)
+    def handle_loop_rhs(self, node: Rhs, opcodes_by_alt: Dict[int, List[str]]) -> None:
+        with self.set_opcode_buffer(opcodes_by_alt[0]):
+            self.add_opcode("OP_LOOP_START")
+        self.handle_default_rhs(node, opcodes_by_alt, is_loop=True, is_gather=False)
+        with self.set_opcode_buffer(opcodes_by_alt[len(node.alts)]):
+            self.add_opcode("OP_LOOP_COLLECT")
+
+    def handle_default_rhs(
+        self,
+        node: Rhs,
+        opcodes_by_alt: Dict[int, List[str]],
+        is_loop: bool = False,
+        is_gather: bool = False,
+    ) -> None:
         for index, alt in enumerate(node.alts):
             with self.set_opcode_buffer(opcodes_by_alt[index]):
-                self.visit(alt, is_loop=is_loop, is_gather=is_gather)
+                self.visit(alt, is_loop=False, is_gather=False)
                 if alt.action:
                     self.add_opcode("OP_RETURN")
                     self.add_opcode(f"A_{self.current_rule.name.upper()}_{index}")
+                if is_loop:
+                    self.add_opcode("OP_LOOP_ITERATE")
 
+    def visit_Rhs(self, node: Rhs, is_loop: bool = False, is_gather: bool = False) -> None:
+        opcodes_by_alt: Dict[int, List[str]] = defaultdict(list)
+        if is_loop:
+            self.handle_loop_rhs(node, opcodes_by_alt)
+        else:
+            self.handle_default_rhs(node, opcodes_by_alt, is_loop=is_loop, is_gather=is_gather)
         *indexes, _ = accumulate(map(len, opcodes_by_alt.values()))
         indexes = [0, *indexes, -1]
         self.print(f" {{{', '.join(map(str, indexes))}}},")
