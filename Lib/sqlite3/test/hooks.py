@@ -266,6 +266,10 @@ class TraceCallbackTests(unittest.TestCase):
         con2.execute("create table bar(x)")
         cur.execute(queries[1])
 
+        # Extract from SQLite 3.7.15 changelog:
+        # Avoid invoking the sqlite3_trace() callback multiple times when a
+        # statement is automatically reprepared due to SQLITE_SCHEMA errors.
+        #
         # See bpo-40810
         if sqlite.sqlite_version_info < (3, 7, 15):
             queries.append(queries[-1])
