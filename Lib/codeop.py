@@ -80,24 +80,22 @@ def _maybe_compile(compiler, source, filename, symbol):
     code = code1 = code2 = None
 
     try:
-        # Capture warnings only on the first call to avoid duplication.
         code = compiler(source, filename, symbol)
     except SyntaxError:
         pass
 
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+    # Suppress warnings after the first compile to avoid duplication.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
             code1 = compiler(source + "\n", filename, symbol)
-    except SyntaxError as e:
-        err1 = e
+        except SyntaxError as e:
+            err1 = e
 
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+        try:
             code2 = compiler(source + "\n\n", filename, symbol)
-    except SyntaxError as e:
-        err2 = e
+        except SyntaxError as e:
+            err2 = e
 
     try:
         if code:
