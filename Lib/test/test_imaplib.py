@@ -907,7 +907,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertIsNone(server.logged)
 
     @reap_threads
-    @support.cpython_only
+    @cpython_only
     def test_dump_ur(self):
         # See: http://bugs.python.org/issue26543
         untagged_resp_dict = {'READ-WRITE': [b'']}
