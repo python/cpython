@@ -15,6 +15,7 @@ import socketserver
 
 import test.support
 from test.support import reap_children, verbose
+from test.support import filesystem_helper
 from test.support import socket_helper
 from test.support import threading_helper
 
