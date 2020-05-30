@@ -345,7 +345,7 @@ Functions
 
    See also :func:`get_traced_memory`.
 
-   .. versionadded:: 3.10
+   .. versionadded:: 3.9
 
 
 .. function:: get_tracemalloc_memory()
