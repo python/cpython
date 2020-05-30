@@ -761,6 +761,9 @@ Deprecated
   `parso`_.
   (Contributed by Carl Meyer in :issue:`40360`.)
 
+* The *random* parameter of :func:`random.shuffle` has been deprecated.
+  (Contributed by Raymond Hettinger in :issue:`40465`)
+
 .. _LibCST: https://libcst.readthedocs.io/
 .. _parso: https://parso.readthedocs.io/
 
