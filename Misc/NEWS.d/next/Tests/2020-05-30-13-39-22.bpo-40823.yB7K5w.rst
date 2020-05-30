@@ -1,0 +1,2 @@
+Use :meth:`unittest.TestLoader().loadTestsFromTestCase` iso.
+:meth:`unittest.makeSuite` in :mod:`sqlite3` tests.
