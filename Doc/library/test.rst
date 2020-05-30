@@ -1631,7 +1631,7 @@ The :mod:`test.support.threading_helper` module provides support for threading t
 
 
 :mod:`test.support.filesystem_helper` --- Utilities for filesystem tests
-======================================================================
+========================================================================
 
 .. module:: test.support.filesystem_helper
    :synopsis: Support for filesystem tests.
