@@ -64,8 +64,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f'{{"{node.name}",')
         self.print(f" R_{node.name.upper()},")
         self.current_rule = node  # TODO: make this a context manager
-        with self.indent():
-            self.visit(rhs, is_loop=is_loop, is_gather=is_gather)
+        self.visit(rhs, is_loop=is_loop, is_gather=is_gather)
         self.print("},")
 
     def visit_NamedItem(self, node: NamedItem) -> None:
