@@ -53,6 +53,7 @@ typedef struct _frame {
     int iop;
     int cut;
     int ncollected;
+    int capacity;
     void **collection;
     int ival;
     void *vals[MAXVALS];

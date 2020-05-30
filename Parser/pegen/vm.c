@@ -37,6 +37,7 @@ push_frame(Stack *stack, Rule *rule)
     f->iop = 0;
     f->cut = 0;
     f->ncollected = 0;
+    f->capacity = 0;
     f->collection = NULL;
     f->ival = 0;
     return f;
@@ -110,9 +111,12 @@ run_vm(Parser *p, Rule rules[], int root)
         assert(f->ival == 1);
         v = f->vals[0];
         assert(v);
-        f->collection = PyMem_Realloc(f->collection, (f->ncollected + 1) * sizeof(void *));
-        if (!f->collection) {
-            return PyErr_NoMemory();
+        if (f->ncollected >= f->capacity) {
+            f->capacity = (f->ncollected + 1) * 2;  // 2, 6, 14, 30, 62, ... (2**i - 2)
+            f->collection = PyMem_Realloc(f->collection, (f->capacity) * sizeof(void *));
+            if (!f->collection) {
+                return PyErr_NoMemory();
+            }
         }
         f->collection[f->ncollected++] = v;
         f->iop = f->rule->alts[f->ialt];
