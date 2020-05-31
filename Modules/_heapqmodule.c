@@ -846,6 +846,9 @@ build_tree(mergeobject *mo)
     while (n0 > 1) {
         Py_ssize_t n1 = (n0 + 1) / 2;
         new_nodes = PyList_New(n1);
+        if (new_nodes == NULL) {
+            goto error;
+        }
         Py_ssize_t j = 0;
         if (n0 & 1) {
             PyObject *first = PyList_GET_ITEM(nodes, 0);
