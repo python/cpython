@@ -17,6 +17,11 @@ the definitions of the names in the context of the language grammar.  The
 specific numeric values which the names map to may change between Python
 versions.
 
+.. warning::
+
+   The symbol module is deprecated and will be removed in future versions of
+   Python.
+
 This module also provides one additional data object:
 
 
