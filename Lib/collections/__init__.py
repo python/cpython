@@ -713,7 +713,7 @@ class Counter(dict):
         'True if all counts in self are a proper subset of those in other.'
         if not isinstance(other, Counter):
             return NotImplemented
-        return self != other and self <= other
+        return self <= other and self != other
 
     def __ge__(self, other):
         'True if all counts in self are a superset of those in other.'
@@ -725,7 +725,7 @@ class Counter(dict):
         'True if all counts in self are a proper superset of those in other.'
         if not isinstance(other, Counter):
             return NotImplemented
-        return self != other and self >= other
+        return self >= other and self != other
 
     def __repr__(self):
         if not self:
