@@ -1782,8 +1782,12 @@ PyOS_FiniInterrupts(void)
 int
 PyOS_InterruptOccurred(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_Py_ThreadCanHandleSignals(interp)) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate == NULL) {
+        // FIXME: PyGILState_GetThisThreadState doesn't support subinterpreters.
+        tstate = PyGILState_GetThisThreadState();
+    }
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
 

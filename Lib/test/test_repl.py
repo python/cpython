@@ -93,6 +93,21 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
 
+    @cpython_only
+    @unittest.skipIf(sys.platform =="win32", '')
+    def test_close_fd_zero(self):
+        user_input = '''\
+        import os
+        os.close(0)
+        '''
+        user_input = dedent(user_input)
+        user_input = user_input.encode()
+        p = spawn_repl()
+        with SuppressCrashReport():
+            p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

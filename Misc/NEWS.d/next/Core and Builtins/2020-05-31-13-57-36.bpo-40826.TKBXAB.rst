@@ -1,0 +1,2 @@
+Fix segfaults issue when close file descriptor 0 on REPL. Patch by Dong-hee
+Na.
