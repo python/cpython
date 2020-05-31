@@ -602,6 +602,31 @@ class TestMatch(unittest.TestCase):
                 x = True
         self.assertEqual(x, False)
 
+    def test_name_context_00(self) -> None:
+        x = 0
+        y = 1
+        match x:
+            case z := .y:
+                pass
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 1)
+        with self.assertRaises(NameError):
+            z
+
+    def test_name_context_01(self) -> None:
+        class A:
+            B = 0
+        match 0:
+            case x if x:
+                z = 0
+            case y := .x if y:
+                z = 1
+            case A.B:
+                z = 2
+        self.assertEqual(A.B, 0)
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+        self.assertEqual(z, 2)
 
 if __name__ == "__main__":  # XXX: For quick test debugging...
     import dis

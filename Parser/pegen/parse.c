@@ -5798,7 +5798,7 @@ class_pattern_rule(Parser *p)
 }
 
 // Left-recursive
-// name_or_attr: name_or_attr '.' NAME | NAME
+// name_or_attr: NAME | name_or_attr '.' NAME
 static void * name_or_attr_raw(Parser *);
 static void *
 name_or_attr_rule(Parser *p)
@@ -5847,6 +5847,25 @@ name_or_attr_raw(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
+    { // NAME
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> name_or_attr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME"));
+        expr_ty name_var;
+        if (
+            (name_var = _PyPegen_name_token(p))  // NAME
+        )
+        {
+            D(fprintf(stderr, "%*c+ name_or_attr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME"));
+            _res = name_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s name_or_attr[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME"));
+    }
     { // name_or_attr '.' NAME
         if (p->error_indicator) {
             D(p->level--);
@@ -5885,25 +5904,6 @@ name_or_attr_raw(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s name_or_attr[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "name_or_attr '.' NAME"));
-    }
-    { // NAME
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> name_or_attr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME"));
-        expr_ty name_var;
-        if (
-            (name_var = _PyPegen_name_token(p))  // NAME
-        )
-        {
-            D(fprintf(stderr, "%*c+ name_or_attr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME"));
-            _res = name_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s name_or_attr[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME"));
     }
     _res = NULL;
   done:

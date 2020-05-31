@@ -258,9 +258,9 @@ class_pattern:
         _Py_Call(func, args, keywords, EXTRA) }
 
 name_or_attr:
+    | NAME
     | value=name_or_attr '.' attr=NAME {
         _Py_Attribute(value, attr->v.Name.id, Load, EXTRA) }
-    | NAME
 values_pattern:
     | values=','.value_pattern+ [','] {
         values }
