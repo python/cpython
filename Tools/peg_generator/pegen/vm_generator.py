@@ -28,6 +28,32 @@ from pegen.grammar import (
 )
 from pegen.parser_generator import ParserGenerator
 
+CALL_ACTION_HEAD = """
+// TODO: Fill this
+static const int n_keyword_lists = 0;
+static KeywordToken *reserved_keywords[] = {
+};
+
+static void *
+call_action(Parser *p, Frame *f, int iaction)
+{
+    assert(p->mark > 0);
+    Token *t = p->tokens[f->mark];
+    int _start_lineno = t->lineno;
+    int _start_col_offset = t->col_offset;
+    t = p->tokens[p->mark - 1];
+    int _end_lineno = t->end_lineno;
+    int _end_col_offset = t->end_col_offset;
+
+    switch (iaction) {
+"""
+
+CALL_ACTION_TAIL = """\
+    default:
+        assert(0);
+    }
+}
+"""
 
 class RootRule(Rule):
     def __init__(self, name: str, startrulename: str):
@@ -77,19 +103,44 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
     def generate(self, filename: str) -> None:
         self.add_root_rules()
         self.collect_todo()
+        self.gather_actions()
+
         self.print("enum {")
         with self.indent():
             for rulename in self.todo:
                 self.print(f"R_{rulename.upper()},")
         self.print("};")
         self.print()
+
+        self.print("enum {")
+        with self.indent():
+            for actionname, action in self.actions.items():
+                self.print(f"{actionname},  // {action}")
+        self.print("};")
+        self.print()
+
         while self.todo:
             self.print("static Rule all_rules[] = {")
             for rulename, rule in list(self.todo.items()):
                 del self.todo[rulename]
                 with self.indent():
                     self.visit(rule)
-            self.print("}")
+            self.print("};")
+
+        self.printblock(CALL_ACTION_HEAD)
+        with self.indent():
+            for actionname, action in self.actions.items():
+                self.print(f"case {actionname}:")
+                self.print(f"    return {action};")
+        self.printblock(CALL_ACTION_TAIL)
+
+    def gather_actions(self) -> None:
+        self.actions: Dict[str, str] = {}
+        for rulename, rule in self.todo.items():
+            if not rule.is_loop():
+                for index, alt in enumerate(rule.rhs.alts):
+                    actionname = f"A_{rulename.upper()}_{index}"
+                    self.actions[actionname] = alt.action
 
     def add_root_rules(self) -> None:
         assert "root" not in self.todo
@@ -162,8 +213,6 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.add_opcode(tok_name)
 
     def handle_loop_rhs(self, node: Rhs, opcodes_by_alt: Dict[int, List[str]]) -> None:
-        with self.set_opcode_buffer(opcodes_by_alt[0]):
-            self.add_opcode("OP_LOOP_START")
         self.handle_default_rhs(node, opcodes_by_alt, is_loop=True, is_gather=False)
         with self.set_opcode_buffer(opcodes_by_alt[len(node.alts)]):
             self.add_opcode("OP_LOOP_COLLECT")
@@ -178,6 +227,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         for index, alt in enumerate(node.alts):
             with self.set_opcode_buffer(opcodes_by_alt[index]):
                 self.visit(alt, is_loop=False, is_gather=False)
+                assert not (alt.action and is_loop)  # A loop rule can't have actions
                 if alt.action:
                     self.add_opcode("OP_RETURN")
                     self.add_opcode(f"A_{self.current_rule.name.upper()}_{index}")
