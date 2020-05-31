@@ -659,6 +659,7 @@ class _Unparser(NodeVisitor):
         self._precedences = {}
         self._type_ignores = {}
         self._indent = 0
+        self._pattern = False
 
     def interleave(self, inter, f, seq):
         """Call f on each item in seq, calling inter() in between."""
@@ -719,6 +720,17 @@ class _Unparser(NodeVisitor):
         self._indent += 1
         yield
         self._indent -= 1
+
+    @contextmanager
+    def pattern(self):
+        assert not self._pattern
+        self._pattern = True
+        yield
+        assert self._pattern
+        self._pattern = False
+
+    def in_pattern(self):
+        return self._pattern
 
     @contextmanager
     def delimit(self, start, end):
@@ -1320,6 +1332,11 @@ class _Unparser(NodeVisitor):
     boolop_precedence = {"and": _Precedence.AND, "or": _Precedence.OR}
 
     def visit_BoolOp(self, node):
+
+        if self.in_pattern():
+            self.interleave(lambda: self.write(" | "), self.traverse, node.values)
+            return
+
         operator = self.boolops[node.op.__class__.__name__]
         operator_precedence = self.boolop_precedence[operator]
 
@@ -1398,6 +1415,13 @@ class _Unparser(NodeVisitor):
         if node.step:
             self.write(":")
             self.traverse(node.step)
+
+    def visit_Match(self, node):
+        self.fill("match ")
+        self.traverse(node.target)
+        with self.block():
+            for case in node.cases:
+                self.traverse(case)
 
     def visit_arg(self, node):
         self.write(node.arg)
@@ -1482,6 +1506,16 @@ class _Unparser(NodeVisitor):
         if node.optional_vars:
             self.write(" as ")
             self.traverse(node.optional_vars)
+
+    def visit_match_case(self, node):
+        self.fill("case ")
+        with self.pattern():
+            self.traverse(node.pattern)
+        if node.guard:
+            self.write(" if ")
+            self.traverse(node.guard)
+        with  self.block():
+            self.traverse(node.body)
 
 def unparse(ast_obj):
     unparser = _Unparser()
