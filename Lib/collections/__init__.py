@@ -703,26 +703,26 @@ class Counter(dict):
             return NotImplemented
         return not self == other
 
-    def __lt__(self, other):
-        'True if all counts in self are less than those in other.'
-        if not isinstance(other, Counter):
-            return NotImplemented
-        return self != other and self <= other
-
     def __le__(self, other):
-        'True if all counts in self are less or eqaul than those in other.'
+        'True if all counts in self are a subset of those in other.'
         if not isinstance(other, Counter):
             return NotImplemented
         return all(self[e] <= other[e] for c in (self, other) for e in c)
 
+    def __lt__(self, other):
+        'True if all counts in self are a proper subset of those in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return self != other and self <= other
+
     def __ge__(self, other):
-        'True if all counts in self are greater than or eqaul than those in other.'
+        'True if all counts in self are a superset of those in other.'
         if not isinstance(other, Counter):
             return NotImplemented
         return all(self[e] >= other[e] for c in (self, other) for e in c)
 
     def __gt__(self, other):
-        'True if all counts in self are greater than those in other.'
+        'True if all counts in self are a proper superset of those in other.'
         if not isinstance(other, Counter):
             return NotImplemented
         return self != other and self >= other
