@@ -5,7 +5,7 @@ import re
 import token
 from collections import defaultdict
 from itertools import accumulate
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from pegen import grammar
 from pegen.build import build_parser
@@ -105,9 +105,11 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         yield
         self.opcode_buffer = None
 
-    def add_opcode(self, opcode: str) -> None:
+    def add_opcode(self, opcode: str, oparg: Optional[Union[int, str]] = None) -> None:
         assert self.opcode_buffer is not None
         self.opcode_buffer.append(opcode)
+        if oparg is not None:
+            self.opcode_buffer.append(str(oparg))
 
     def generate(self, filename: str) -> None:
         self.add_root_rules()
@@ -201,8 +203,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
 
         opcodes_by_alt: Dict[int, List[str]] = {0: [], 1: []}
         with self.set_opcode_buffer(opcodes_by_alt[0]):
-            self.add_opcode("OP_RULE")
-            self.add_opcode(f"R_{node.startrulename.upper()}")
+            self.add_opcode("OP_RULE", f"R_{node.startrulename.upper()}")
             self.add_opcode("OP_SUCCESS")
         with self.set_opcode_buffer(opcodes_by_alt[1]):
             self.add_opcode("OP_FAILURE")
@@ -242,16 +243,13 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         if name in ("NAME", "NUMBER", "STRING"):
             self.add_opcode(f"OP_{name}")
         elif name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER", "ASYNC", "AWAIT"):
-            self.add_opcode("OP_TOKEN")
-            self.add_opcode(name)
+            self.add_opcode("OP_TOKEN", name)
         else:
-            self.add_opcode("OP_RULE")
-            self.add_opcode(self._get_rule_opcode(name))
+            self.add_opcode("OP_RULE", self._get_rule_opcode(name))
 
     def visit_StringLeaf(self, node: StringLeaf) -> None:
         token_type = self.callmakervisitor.visit(node)
-        self.add_opcode("OP_TOKEN")
-        self.add_opcode(str(token_type))
+        self.add_opcode("OP_TOKEN", token_type)
 
     def handle_loop_rhs(self, node: Rhs, opcodes_by_alt: Dict[int, List[str]]) -> None:
         self.handle_default_rhs(node, opcodes_by_alt, is_loop=True, is_gather=False)
@@ -270,8 +268,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
                 self.visit(alt, is_loop=False, is_gather=False)
                 assert not (alt.action and is_loop)  # A loop rule can't have actions
                 if alt.action:
-                    self.add_opcode("OP_RETURN")
-                    self.add_opcode(f"A_{self.current_rule.name.upper()}_{index}")
+                    self.add_opcode("OP_RETURN", f"A_{self.current_rule.name.upper()}_{index}")
                 if is_loop:
                     self.add_opcode("OP_LOOP_ITERATE")
 
@@ -297,8 +294,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
 
     def visit_Repeat0(self, node: Repeat0) -> None:
         name = self.callmakervisitor.visit(node)
-        self.add_opcode("OP_RULE")
-        self.add_opcode(self._get_rule_opcode(name))
+        self.add_opcode("OP_RULE", self._get_rule_opcode(name))
 
 
 def main() -> None:
