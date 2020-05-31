@@ -290,47 +290,6 @@ For example::
             >>> sorted(c.elements())
             ['a', 'a', 'a', 'a', 'b', 'b']
 
-    .. method:: isdisjoint(other)
-
-        True if none of the elements in *self* overlap with those in *other*.
-        Negative or missing counts are ignored.
-        Logically equivalent to:  ``not (+self) & (+other)``
-
-        .. versionadded:: 3.10
-
-    .. method:: isequal(other)
-
-        Test whether counts agree exactly.
-        Negative or missing counts are treated as zero.
-
-        This method works differently than the inherited :meth:`__eq__` method
-        which treats negative or missing counts as distinct from zero::
-
-            >>> Counter(a=1, b=0).isequal(Counter(a=1))
-            True
-            >>> Counter(a=1, b=0) == Counter(a=1)
-            False
-
-        Logically equivalent to:  ``+self == +other``
-
-        .. versionadded:: 3.10
-
-    .. method:: issubset(other)
-
-        True if the counts in *self* are less than or equal to those in *other*.
-        Negative or missing counts are treated as zero.
-        Logically equivalent to:  ``not self - (+other)``
-
-        .. versionadded:: 3.10
-
-    .. method:: issuperset(other)
-
-        True if the counts in *self* are greater than or equal to those in *other*.
-        Negative or missing counts are treated as zero.
-        Logically equivalent to:  ``not other - (+self)``
-
-        .. versionadded:: 3.10
-
     .. method:: most_common([n])
 
         Return a list of the *n* most common elements and their counts from the
@@ -368,6 +327,19 @@ For example::
         *mapping* (or counter).  Like :meth:`dict.update` but adds counts
         instead of replacing them.  Also, the *iterable* is expected to be a
         sequence of elements, not a sequence of ``(key, value)`` pairs.
+
+Counters support rich comparison operators for equality, subset, and
+superset relationships: ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``.
+All of those tests treat missing elements as having zero counts so that
+``Counter(a=1) == Counter(a=1, b=0)`` returns true.
+
+.. versionadded:: 3.10
+   Rich comparison operations we were added
+
+.. versionchanged:: 3.10
+   In equality tests, missing elements are treated as having zero counts.
+   Formerly, ``Counter(a=3)`` and ``Counter(a=3, b=0)`` were considered
+   distinct.
 
 Common patterns for working with :class:`Counter` objects::
 
