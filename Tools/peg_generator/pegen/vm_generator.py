@@ -29,7 +29,13 @@ from pegen.grammar import (
 from pegen.parser_generator import ParserGenerator
 
 
-class CCallMakerVisitor(GrammarVisitor):
+class RootRule(Rule):
+    def __init__(self, name: str, startrulename: str):
+        super().__init__(name, "void *", Rhs([]), None)
+        self.startrulename = startrulename
+
+
+class VMCallMakerVisitor(GrammarVisitor):
     def __init__(
         self, parser_generator: ParserGenerator,
     ):
@@ -49,14 +55,14 @@ class CCallMakerVisitor(GrammarVisitor):
         self.cache[node] = name
 
 
-class CParserGenerator(ParserGenerator, GrammarVisitor):
+class VMParserGenerator(ParserGenerator, GrammarVisitor):
     def __init__(
         self, grammar: grammar.Grammar,
     ):
         super().__init__(grammar, token.tok_name, sys.stdout)
 
         self.opcode_buffer: Optional[List[str]] = None
-        self.callmakervisitor: CCallMakerVisitor = CCallMakerVisitor(self)
+        self.callmakervisitor: VMCallMakerVisitor = VMCallMakerVisitor(self)
 
     @contextlib.contextmanager
     def set_opcode_buffer(self, buffer: List[str]) -> Iterator[None]:
@@ -69,6 +75,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.opcode_buffer.append(opcode)
 
     def generate(self, filename: str) -> None:
+        self.add_root_rules()
         self.collect_todo()
         while self.todo:
             self.print("static Rule all_rules[] = {")
@@ -77,6 +84,40 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 with self.indent():
                     self.visit(rule)
             self.print("}")
+
+    def add_root_rules(self) -> None:
+        assert "root" not in self.todo
+        assert "root" not in self.rules
+        root = RootRule("root", "start")  # TODO: determine start rules dynamically
+        # Odd way of updating todo/rules, to make the root rule appear first.
+        # TODO: Is this necessary?
+        self.todo = {"root": root} | self.todo
+        self.rules = {"root": root} | self.rules
+
+    def visit_RootRule(self, node: RootRule) -> None:
+        # TODO: Refactor visit_Rule() so we can share code.
+        self.print(f'{{"{node.name}",')
+        self.print(f" R_{node.name.upper()},")
+
+        opcodes_by_alt: Dict[int, List[str]] = {0: [], 1: []}
+        with self.set_opcode_buffer(opcodes_by_alt[0]):
+            self.add_opcode("OP_RULE")
+            self.add_opcode(f"R_{node.startrulename.upper()}")
+            self.add_opcode("OP_SUCCESS")
+        with self.set_opcode_buffer(opcodes_by_alt[1]):
+            self.add_opcode("OP_FAILURE")
+
+        indexes = [0, len(opcodes_by_alt[0]), -1]
+
+        self.print(f" {{{', '.join(map(str, indexes))}}},")
+
+        self.print(" {")
+        with self.indent():
+            for index, opcodes in opcodes_by_alt.items():
+                self.print(", ".join(opcodes) + ",")
+        self.print(" },")
+
+        self.print("},")
 
     def visit_Rule(self, node: Rule) -> None:
         is_loop = node.is_loop()
@@ -151,7 +192,6 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         with self.indent():
             for index, opcodes in opcodes_by_alt.items():
                 self.print(", ".join(opcodes) + ",")
-                self.print()
         self.print(" },")
 
     def visit_Alt(self, node: Alt, is_loop: bool, is_gather: bool) -> None:
@@ -166,7 +206,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
 
 def main() -> None:
     grammar, parser, tokenizer = build_parser("./data/simple.gram", False, False)
-    p = CParserGenerator(grammar)
+    p = VMParserGenerator(grammar)
     p.generate("")
 
 
