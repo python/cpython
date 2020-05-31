@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     try:
         interactive_hook = sys.__interactivehook__
-    except AttributeError():
+    except AttributeError:
         pass
     else:
         if interactive_hook is not None:
