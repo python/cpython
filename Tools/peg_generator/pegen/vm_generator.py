@@ -35,17 +35,17 @@ from pegen.parser_generator import ParserGenerator
 
 CALL_ACTION_HEAD = """
 static void *
-call_action(Parser *p, Frame *f, int iaction)
+call_action(Parser *p, Frame *_f, int _iaction)
 {
     assert(p->mark > 0);
-    Token *t = p->tokens[f->mark];
-    int _start_lineno = t->lineno;
-    int _start_col_offset = t->col_offset;
-    t = p->tokens[p->mark - 1];
-    int _end_lineno = t->end_lineno;
-    int _end_col_offset = t->end_col_offset;
+    Token *_t = p->tokens[_f->mark];
+    int _start_lineno = _t->lineno;
+    int _start_col_offset = _t->col_offset;
+    _t = p->tokens[p->mark - 1];
+    int _end_lineno = _t->end_lineno;
+    int _end_col_offset = _t->end_col_offset;
 
-    switch (iaction) {
+    switch (_iaction) {
 """
 
 CALL_ACTION_TAIL = """\
@@ -201,12 +201,12 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         # Given an alternative like this:
         #     | a=NAME '=' b=expr { foo(p, a, b) }
         # return a string like this:
-        #     "foo(p, f->vals[0], f->vals[2])"
-        # As a special case, if there's no action, return f->vals[0].
+        #     "foo(p, _f->vals[0], _f->vals[2])"
+        # As a special case, if there's no action, return _f->vals[0].
         name_to_index, index = self.map_alt_names_to_vals_index(alt)
         if not alt.action:
             assert index == 1
-            return "f->vals[0]"
+            return "_f->vals[0]"
         # Sadly, the action is given as a string, so tokenize it back.
         # We must not substitute item names when preceded by '.' or '->'.
         # Note that Python tokenizes '->' as two separate tokens.
@@ -217,7 +217,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
             if prevs not in (".", "->"):
                 i = name_to_index.get(s)
                 if i is not None:
-                    s = f"f->vals[{i}]"
+                    s = f"_f->vals[{i}]"
             if prevs == "-" and s == ">":
                 prevs = "->"
             else:

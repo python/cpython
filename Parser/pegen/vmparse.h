@@ -100,35 +100,35 @@ static Rule all_rules[] = {
 };
 
 static void *
-call_action(Parser *p, Frame *f, int iaction)
+call_action(Parser *p, Frame *_f, int _iaction)
 {
     assert(p->mark > 0);
-    Token *t = p->tokens[f->mark];
-    int _start_lineno = t->lineno;
-    int _start_col_offset = t->col_offset;
-    t = p->tokens[p->mark - 1];
-    int _end_lineno = t->end_lineno;
-    int _end_col_offset = t->end_col_offset;
+    Token *_t = p->tokens[_f->mark];
+    int _start_lineno = _t->lineno;
+    int _start_col_offset = _t->col_offset;
+    _t = p->tokens[p->mark - 1];
+    int _end_lineno = _t->end_lineno;
+    int _end_col_offset = _t->end_col_offset;
 
-    switch (iaction) {
+    switch (_iaction) {
     case A_START_0:
-        return _PyPegen_make_module ( p , f->vals[0] );
+        return _PyPegen_make_module ( p , _f->vals[0] );
     case A_STMT_0:
-        return _Py_Expr ( f->vals[0] , EXTRA );
+        return _Py_Expr ( _f->vals[0] , EXTRA );
     case A_STMT_1:
     case A_EXPR_1:
     case A_TERM_1:
     case A_FACTOR_1:
     case A_FACTOR_2:
-        return f->vals[0];
+        return _f->vals[0];
     case A_IF_STMT_0:
-        return _Py_If ( f->vals[1] , f->vals[3] , NULL , EXTRA );
+        return _Py_If ( _f->vals[1] , _f->vals[3] , NULL , EXTRA );
     case A_EXPR_0:
-        return _Py_BinOp ( f->vals[0] , Add , f->vals[2] , EXTRA );
+        return _Py_BinOp ( _f->vals[0] , Add , _f->vals[2] , EXTRA );
     case A_TERM_0:
-        return _Py_BinOp ( f->vals[0] , Mult , f->vals[2] , EXTRA );
+        return _Py_BinOp ( _f->vals[0] , Mult , _f->vals[2] , EXTRA );
     case A_FACTOR_0:
-        return f->vals[1];
+        return _f->vals[1];
     default:
         assert(0);
     }
