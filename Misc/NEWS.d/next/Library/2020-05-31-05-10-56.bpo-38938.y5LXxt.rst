@@ -1,0 +1,1 @@
+Use a more optimized :func:`heapq.merge()` algorithm and add a C implementation. Patch by Dennis Sweeney.
