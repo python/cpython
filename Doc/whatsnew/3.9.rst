@@ -692,9 +692,10 @@ Deprecated
   Python versions it will raise a :exc:`TypeError` for all floats.
   (Contributed by Serhiy Storchaka in :issue:`37315`.)
 
-* The :mod:`parser` module is deprecated and will be removed in future versions
-  of Python. For the majority of use cases, users can leverage the Abstract Syntax
-  Tree (AST) generation and compilation stage, using the :mod:`ast` module.
+* The :mod:`parser` and :mod:`symbol` modules are deprecated and will be
+  removed in future versions of Python. For the majority of use cases,
+  users can leverage the Abstract Syntax Tree (AST) generation and compilation
+  stage, using the :mod:`ast` module.
 
 * Using :data:`NotImplemented` in a boolean context has been deprecated,
   as it is almost exclusively the result of incorrect rich comparator
