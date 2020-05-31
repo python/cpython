@@ -156,7 +156,7 @@ back to the LL(1) parser using a command line switch (``-X
 oldparser``) or an environment variable (``PYTHONOLDPARSER=1``).
 
 See :pep:`617` for more details.  (Contributed by Guido van Rossum,
-Pablo Galindo and Lysandros Nikolau in :issue:`40334`.)
+Pablo Galindo and Lysandros Nikolaou in :issue:`40334`.)
 
 
 Other Language Changes
