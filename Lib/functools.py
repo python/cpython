@@ -11,7 +11,6 @@
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cache', 'cmp_to_key', 'lru_cache', 'reduce',
-           'TopologicalSorter', 'CycleError',
            'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
            'cached_property']
 
