@@ -94,7 +94,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
 
     @cpython_only
-    @unittest.skipIf(sys.platform =="win32", '')
+    @unittest.skipIf(sys.platform =="win32", 'Skip Windows')
     def test_close_fd_zero(self):
         user_input = '''\
         import os
