@@ -31,8 +31,8 @@ The following functions are provided:
    parameter to ``list.insert()`` assuming that *a* is already sorted.
 
    The returned insertion point *i* partitions the array *a* into two halves so
-   that ``all(val < x for val in a[lo:i])`` for the left side and
-   ``all(val >= x for val in a[i:hi])`` for the right side.
+   that ``all(val < x for val in a[lo : i])`` for the left side and
+   ``all(val >= x for val in a[i : hi])`` for the right side.
 
    *key* specifies a :term:`key function` of one argument that is used to
    extract a comparison key from each input element.  The default value is
@@ -49,8 +49,8 @@ The following functions are provided:
    after (to the right of) any existing entries of *x* in *a*.
 
    The returned insertion point *i* partitions the array *a* into two halves so
-   that ``all(val <= x for val in a[lo:i])`` for the left side and
-   ``all(val > x for val in a[i:hi])`` for the right side.
+   that ``all(val <= x for val in a[lo : i])`` for the left side and
+   ``all(val > x for val in a[i : hi])`` for the right side.
 
    *key* specifies a :term:`key function` of one argument that is used to
    extract a comparison key from each input element.  The default value is
