@@ -701,7 +701,7 @@ class Counter(dict):
         'True if any counts disagree. Missing counts are treated as zero.'
         if not isinstance(other, Counter):
             return NotImplemented
-        return not all(self[e] == other[e] for c in (self, other) for e in c)
+        return not self == other
 
     def __lt__(self, other):
         'True if all counts in self are less than those in other.'
