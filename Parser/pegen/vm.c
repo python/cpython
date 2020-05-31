@@ -210,5 +210,5 @@ _PyPegen_vmparser(Parser *p)
     p->keywords = reserved_keywords;
     p->n_keyword_lists = n_keyword_lists;
 
-    return run_vm(p, all_rules, 0);
+    return run_vm(p, all_rules, R_ROOT);
 }

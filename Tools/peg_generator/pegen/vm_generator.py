@@ -3,6 +3,7 @@ import contextlib
 import sys
 import re
 import token
+import tokenize
 from collections import defaultdict
 from itertools import accumulate
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
@@ -15,6 +16,7 @@ from pegen.grammar import (
     Gather,
     GrammarVisitor,
     Group,
+    Leaf,
     Lookahead,
     NamedItem,
     NameLeaf,
@@ -22,6 +24,7 @@ from pegen.grammar import (
     Opt,
     Plain,
     PositiveLookahead,
+    Repeat,
     Repeat0,
     Repeat1,
     Rhs,
@@ -75,7 +78,7 @@ class VMCallMakerVisitor(GrammarVisitor):
         val = ast.literal_eval(node.value)
         if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
             return self.keyword_helper(val)
-        return token.EXACT_TOKEN_TYPES[val]
+        return token.EXACT_TOKEN_TYPES[val]  # type: ignore
 
     def visit_Repeat0(self, node: Repeat0) -> None:
         if node in self.cache:
@@ -127,7 +130,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("enum {")
         with self.indent():
             for actionname, action in self.actions.items():
-                self.print(f"{actionname},  // {action}")
+                self.print(f"{actionname},")
         self.print("};")
         self.print()
 
@@ -141,9 +144,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
 
         self.printblock(CALL_ACTION_HEAD)
         with self.indent():
-            for actionname, action in self.actions.items():
-                self.print(f"case {actionname}:")
-                self.print(f"    return {action};")
+            self.print_action_cases()
         self.printblock(CALL_ACTION_TAIL)
 
     def _group_keywords_by_length(self) -> Dict[int, List[Tuple[str, int]]]:
@@ -179,22 +180,67 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("};")
         self.print()
 
+    def print_action_cases(self) -> None:
+        unique_actions: Dict[str, str] = defaultdict(list)
+        for actionname, action in self.actions.items():
+            unique_actions[action].append(actionname)
+        for action, actionnames in unique_actions.items():
+            for actionname in actionnames:
+                self.print(f"case {actionname}:")
+            self.print(f"    return {action};")
+
     def gather_actions(self) -> None:
         self.actions: Dict[str, str] = {}
         for rulename, rule in self.todo.items():
             if not rule.is_loop():
                 for index, alt in enumerate(rule.rhs.alts):
                     actionname = f"A_{rulename.upper()}_{index}"
-                    self.actions[actionname] = alt.action
+                    self.actions[actionname] = self.translate_action(alt)
+
+    def translate_action(self, alt: Alt) -> str:
+        # Given an alternative like this:
+        #     | a=NAME '=' b=expr { foo(p, a, b) }
+        # return a string like this:
+        #     "foo(p, f->vals[0], f->vals[2])"
+        # As a special case, if there's no action, return f->vals[0].
+        name_to_index, index = self.map_alt_names_to_vals_index(alt)
+        if not alt.action:
+            assert index == 1
+            return "f->vals[0]"
+        # Sadly, the action is given as a string, so tokenize it back.
+        # We must not substitute item names when preceded by '.' or '->'.
+        # Note that Python tokenizes '->' as two separate tokens.
+        res = []
+        prevs = ""
+        for stuff in tokenize.generate_tokens(iter([alt.action]).__next__):
+            _, s, _, _, _ = stuff
+            if prevs not in (".", "->"):
+                i = name_to_index.get(s)
+                if i is not None:
+                    s = f"f->vals[{i}]"
+            if prevs == "-" and s == ">":
+                prevs = "->"
+            else:
+                prevs = s
+            res.append(s)
+        return " ".join(res).strip()
+
+    def map_alt_names_to_vals_index(self, alt: Alt) -> Tuple[Dict[str, int], int]:
+        index = 0
+        map: Dict[str, int] = {}
+        for nameditem in alt.items:
+            if nameditem.name:
+                map[nameditem.name] = index
+            if isinstance(nameditem.item, (Leaf, Group, Opt, Repeat)):
+                index += 1
+        return map, index
 
     def add_root_rules(self) -> None:
         assert "root" not in self.todo
         assert "root" not in self.rules
         root = RootRule("root", "start")  # TODO: determine start rules dynamically
-        # Odd way of updating todo/rules, to make the root rule appear first.
-        # TODO: Is this necessary?
-        self.todo = {"root": root} | self.todo
-        self.rules = {"root": root} | self.rules
+        self.todo["root"] = root
+        self.rules["root"] = root
 
     def visit_RootRule(self, node: RootRule) -> None:
         # TODO: Refactor visit_Rule() so we can share code.
@@ -267,10 +313,10 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
             with self.set_opcode_buffer(opcodes_by_alt[index]):
                 self.visit(alt, is_loop=False, is_gather=False)
                 assert not (alt.action and is_loop)  # A loop rule can't have actions
-                if alt.action:
-                    self.add_opcode("OP_RETURN", f"A_{self.current_rule.name.upper()}_{index}")
                 if is_loop:
                     self.add_opcode("OP_LOOP_ITERATE")
+                else:
+                    self.add_opcode("OP_RETURN", f"A_{self.current_rule.name.upper()}_{index}")
 
     def visit_Rhs(self, node: Rhs, is_loop: bool = False, is_gather: bool = False) -> None:
         opcodes_by_alt: Dict[int, List[str]] = defaultdict(list)

@@ -1,16 +1,16 @@
-start: stmt* ENDMARKER {_PyPegen_make_module(p, f->vals[0])}
+start: a=stmt* ENDMARKER { _PyPegen_make_module(p, a) }
 stmt:
-    | if_stmt NEWLINE { f->vals[0] }
-    | expr NEWLINE {_Py_Expr(f->vals[0], EXTRA)}
+    | a=expr NEWLINE { _Py_Expr(a, EXTRA) }
+    | a=if_stmt NEWLINE { a }
 if_stmt:
-    | 'if' NAME ':' expr { _Py_If(f->vals[1], f->vals[2], NULL, EXTRA) }
+    | 'if' a=NAME ':' b=expr { _Py_If(a, b, NULL, EXTRA) }
 expr:
-    | term '+' expr {_Py_BinOp(f->vals[0], Add, f->vals[2], EXTRA)}
-    | term {f->vals[0]}
+    | a=term '+' b=expr { _Py_BinOp(a, Add, b, EXTRA) }
+    | term
 term: 
-    | factor '*' term  {f->vals[0]}
-    | factor {f->vals[0]}
+    | a=factor '*' b=term { _Py_BinOp(a, Mult, b, EXTRA) }
+    | factor
 factor:
-    | '(' expr ')' {f->vals[1]}
-    | NUMBER {f->vals[0]}
-    | NAME {f->vals[0]}
+    | '(' a=expr ')' { a }
+    | NUMBER
+    | NAME
