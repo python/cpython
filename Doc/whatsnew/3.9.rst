@@ -694,7 +694,7 @@ Deprecated
   (Contributed by Serhiy Storchaka in :issue:`37315`.)
 
 * The :mod:`parser` and :mod:`symbol` modules are deprecated and will be
-  removed in the future versions of Python. For the majority of use cases,
+  removed in future versions of Python. For the majority of use cases,
   users can leverage the Abstract Syntax Tree (AST) generation and compilation
   stage, using the :mod:`ast` module.
 
