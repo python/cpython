@@ -402,10 +402,7 @@ def merge(*iterables, key=None, reverse=False):
             new_nodes.append(parent)
         nodes = new_nodes
         n = len(nodes)
-
     (root,) = nodes
-    _StopIteration = StopIteration
-    _next = next
 
     while True:
         # To find the value to yield, check which leaf
@@ -413,11 +410,14 @@ def merge(*iterables, key=None, reverse=False):
         node = root.leaf
         yield node.left
 
-        try:
-            node.left = _next(node.right)
-        except _StopIteration:
-            # When a leaf is exhausted, move its sibling up to where
-            # its parent is now.
+        # refill the leaf with one value from the iterator.
+        for val in node.right:
+            node.left = val
+            node.key = val if key is None else key(val)
+            break
+        else:
+            # Leaf is exhausted.
+            # Move the leaf's sibling up to where its parent is now.
             parent = node.parent
             if parent is None:
                 return
@@ -437,28 +437,24 @@ def merge(*iterables, key=None, reverse=False):
                 parent.leaf = sibling.leaf
                 sibling.left.parent = sibling.right.parent = parent
             node = parent
-        else:
-            # Item successfully produced by iterator.
-            if key is None:
-                # use the value as the key.
-                node.key = node.left
-            else:
-                node.key = key(node.left)
 
+        # The tight loop: For each ancestor of the chosen leaf,
+        # re-evaluate which of its children is higher priority,
+        # then take that winning child's key and leaf references.
         if reverse:
             while node is not root:
                 node = node.parent
                 left, right = node.left, node.right
                 winner = right if left.key < right.key else left
-                node.leaf = winner.leaf
                 node.key = winner.key
+                node.leaf = winner.leaf
         else:
             while node is not root:
                 node = node.parent
                 left, right = node.left, node.right
                 winner = right if right.key < left.key else left
-                node.leaf = winner.leaf
                 node.key = winner.key
+                node.leaf = winner.leaf
 
 
 # Algorithm notes for nlargest() and nsmallest()

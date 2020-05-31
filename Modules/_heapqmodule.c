@@ -887,15 +887,12 @@ refill_leaf(merge_node *leaf, PyObject *keyfunc)
 {
     PyObject *it = leaf_iterator(leaf);
     PyObject *item = PyIter_Next(it);
-
     if (item == NULL) {
-        Py_CLEAR(leaf->right);
         if (PyErr_Occurred()) {
             return -1;
         }
         return 0;
     }
-   
     PyObject *key;
     if (keyfunc == NULL) {
         key = item;
@@ -904,7 +901,8 @@ refill_leaf(merge_node *leaf, PyObject *keyfunc)
     else {
         key = PyObject_CallOneArg(keyfunc, item);
         if (key == NULL) {
-            goto error;
+            Py_DECREF(item);
+            return -1;
         }
     }
     assert(leaf->left == NULL);
@@ -912,11 +910,6 @@ refill_leaf(merge_node *leaf, PyObject *keyfunc)
     assert(leaf->key == NULL);
     leaf->key = key;
     return 1;
-
-error:
-    Py_XDECREF(item);
-    Py_XDECREF(key);
-    return -1;
 }
 
 static merge_node *
@@ -1021,13 +1014,15 @@ merge_next(mergeobject *mo)
     switch (mo->state) {
     case 0:
         if (build_tree(mo) < 0) {
-            goto stop;
+            mo->state = 2;
+            return NULL;
         }
         mo->state = 1;
         break;
     case 1:
         if (replay_games(mo) < 0) {
-            goto stop;
+            mo->state = 2;
+            return NULL;
         }
         break;
     case 2:
@@ -1036,18 +1031,13 @@ merge_next(mergeobject *mo)
         Py_UNREACHABLE();
     }
     return leaf_pop_item(mo->root->leaf);
-stop:
-    mo->state = 2;
-    return NULL;
 }
 
 static PyObject *
 merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *key = NULL, *keyfunc = NULL;
-    int reverse = 0, state = 0;
-    PyObject *iterables = NULL;
-    mergeobject *mo;
+    PyObject *key = NULL;
+    int reverse = 0;
 
     if (kwds != NULL) {
         char *kwlist[] = {"key", "reverse", 0};
@@ -1062,35 +1052,33 @@ merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         Py_DECREF(tmpargs);
     }
-    
+
+    int state;
+
     assert(PyTuple_CheckExact(args));
     if (PyTuple_GET_SIZE(args) == 0) {
-        /* nothing to merge. */
         state = 2;
-        goto success;
+        args = NULL;
+        key = NULL;
+    }
+    else {
+        state = 0;
+        if (key == Py_None) {
+            key = NULL;
+        }
     }
 
-    iterables = args;
-    Py_INCREF(iterables);
-
-    keyfunc = (key == NULL || key == Py_None) ? NULL : key;
-    Py_XINCREF(keyfunc);
-
-success:
-    mo = (mergeobject *)type->tp_alloc(type, 0);
-    if (mo == NULL) {
-        goto error;
+    mergeobject *mo = (mergeobject *)type->tp_alloc(type, 0);
+    if (mo) {
+        Py_XINCREF(args);
+        Py_XINCREF(key);
+        mo->root = NULL;
+        mo->iterables = args;
+        mo->keyfunc = key;
+        mo->reverse = reverse;
+        mo->state = state;
+        return (PyObject *)mo;
     }
-    mo->root = NULL;
-    mo->iterables = iterables;
-    mo->keyfunc = keyfunc;
-    mo->reverse = reverse;
-    mo->state = state;
-    return (PyObject *)mo;
-
-error:
-    Py_XDECREF(iterables);
-    Py_XDECREF(keyfunc);
     return NULL;
 }
 
