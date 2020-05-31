@@ -1,5 +1,9 @@
 start: stmt* ENDMARKER {_PyPegen_make_module(p, f->vals[0])}
-stmt: expr NEWLINE {_Py_Expr(f->vals[0], EXTRA)}
+stmt:
+    | if_stmt NEWLINE { f->vals[0] }
+    | expr NEWLINE {_Py_Expr(f->vals[0], EXTRA)}
+if_stmt:
+    | 'if' NAME ':' expr { _Py_If(f->vals[1], f->vals[2], NULL, EXTRA) }
 expr:
     | term '+' expr {_Py_BinOp(f->vals[0], Add, f->vals[2], EXTRA)}
     | term {f->vals[0]}

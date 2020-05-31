@@ -1,9 +1,11 @@
+import ast
 import contextlib
 import sys
+import re
 import token
 from collections import defaultdict
 from itertools import accumulate
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from pegen import grammar
 from pegen.build import build_parser
@@ -29,11 +31,6 @@ from pegen.grammar import (
 from pegen.parser_generator import ParserGenerator
 
 CALL_ACTION_HEAD = """
-// TODO: Fill this
-static const int n_keyword_lists = 0;
-static KeywordToken *reserved_keywords[] = {
-};
-
 static void *
 call_action(Parser *p, Frame *f, int iaction)
 {
@@ -67,6 +64,18 @@ class VMCallMakerVisitor(GrammarVisitor):
     ):
         self.gen = parser_generator
         self.cache: Dict[Any, Any] = {}
+        self.keyword_cache: Dict[str, int] = {}
+
+    def keyword_helper(self, keyword: str) -> None:
+        if keyword not in self.keyword_cache:
+            self.keyword_cache[keyword] = self.gen.keyword_type()
+        return self.keyword_cache[keyword]
+
+    def visit_StringLeaf(self, node: StringLeaf) -> None:
+        val = ast.literal_eval(node.value)
+        if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
+            return self.keyword_helper(val)
+        return token.EXACT_TOKEN_TYPES[val]
 
     def visit_Repeat0(self, node: Repeat0) -> None:
         if node in self.cache:
@@ -104,6 +113,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.add_root_rules()
         self.collect_todo()
         self.gather_actions()
+        self._setup_keywords()
 
         self.print("enum {")
         with self.indent():
@@ -133,6 +143,39 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print(f"case {actionname}:")
                 self.print(f"    return {action};")
         self.printblock(CALL_ACTION_TAIL)
+
+    def _group_keywords_by_length(self) -> Dict[int, List[Tuple[str, int]]]:
+        groups: Dict[int, List[Tuple[str, int]]] = {}
+        for keyword_str, keyword_type in self.callmakervisitor.keyword_cache.items():
+            length = len(keyword_str)
+            if length in groups:
+                groups[length].append((keyword_str, keyword_type))
+            else:
+                groups[length] = [(keyword_str, keyword_type)]
+        return groups
+
+    def _setup_keywords(self) -> None:
+        keyword_cache = self.callmakervisitor.keyword_cache
+        n_keyword_lists = (
+            len(max(keyword_cache.keys(), key=len)) + 1 if len(keyword_cache) > 0 else 0
+        )
+        self.print(f"static const int n_keyword_lists = {n_keyword_lists};")
+        groups = self._group_keywords_by_length()
+        self.print("static KeywordToken *reserved_keywords[] = {")
+        with self.indent():
+            num_groups = max(groups) + 1 if groups else 1
+            for keywords_length in range(num_groups):
+                if keywords_length not in groups.keys():
+                    self.print("NULL,")
+                else:
+                    self.print("(KeywordToken[]) {")
+                    with self.indent():
+                        for keyword_str, keyword_type in groups[keywords_length]:
+                            self.print(f'{{"{keyword_str}", {keyword_type}}},')
+                        self.print("{NULL, -1},")
+                    self.print("},")
+        self.print("};")
+        self.print()
 
     def gather_actions(self) -> None:
         self.actions: Dict[str, str] = {}
@@ -206,11 +249,9 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
             self.add_opcode(self._get_rule_opcode(name))
 
     def visit_StringLeaf(self, node: StringLeaf) -> None:
+        token_type = self.callmakervisitor.visit(node)
         self.add_opcode("OP_TOKEN")
-        tok_str = node.value.replace("'", "")
-        tok_num = token.EXACT_TOKEN_TYPES[tok_str]
-        tok_name = token.tok_name[tok_num]
-        self.add_opcode(tok_name)
+        self.add_opcode(str(token_type))
 
     def handle_loop_rhs(self, node: Rhs, opcodes_by_alt: Dict[int, List[str]]) -> None:
         self.handle_default_rhs(node, opcodes_by_alt, is_loop=True, is_gather=False)
