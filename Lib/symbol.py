@@ -11,6 +11,15 @@
 #
 #    make regen-symbol
 
+import warnings
+
+warnings.warn(
+    "The symbol module is deprecated and will be removed "
+    "in future versions of Python",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 #--start constants--
 single_input = 256
 file_input = 257
