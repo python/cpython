@@ -193,17 +193,24 @@ except_block[excepthandler_ty]:
 finally_block[asdl_seq*]: 'finally' ':' a=block { a }
 
 match_stmt[stmt_ty]:
-    | "match" target=expression ':' NEWLINE INDENT cases=case_block+ DEDENT {_Py_Match(target, cases, EXTRA) }
+    | "match" target=expression ':' NEWLINE INDENT cases=case_block+ DEDENT {
+        _Py_Match(target, cases, EXTRA) }
 case_block:
-    | "case" pattern=pattern guard=['if' a=named_expression { a }] ':' body=block {
-      _Py_match_case(pattern, guard, body, p->arena) }
+    | "case" pattern=pattern guard=[guard] ':' body=block {
+        _Py_match_case(pattern, guard, body, p->arena) }
 
 pattern:
-    | a=NAME ':=' b=or_pattern { _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
+    | target=NAME ':=' value=or_pattern {
+        _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, target, Store)), value, EXTRA) }
     | or_pattern
+guard:
+    | 'if' guard=named_expression {
+        guard }
 
 or_pattern:
-    | '|'.closed_pattern+
+    | value=closed_pattern '|' values='|'.closed_pattern+ {
+        _Py_BoolOp(Or, CHECK(_PyPegen_seq_insert_in_front(p, value, values)), EXTRA) }
+    | closed_pattern
 
 closed_pattern:
     | name_pattern
@@ -215,32 +222,67 @@ closed_pattern:
     | class_pattern
 
 name_pattern:
-    | a=NAME !('.' | '(') { a }
+    | a=NAME !('.' | '(') {
+        _PyPegen_set_expr_context(p, a, Store) }
 literal_pattern:
     | NUMBER
     | strings
-    | 'None'
-    | 'True'
-    | 'False'
+    | 'None' {
+        _Py_Constant(Py_None, NULL, EXTRA) }
+    | 'True' {
+        _Py_Constant(Py_True, NULL, EXTRA) }
+    | 'False' {
+        _Py_Constant(Py_False, NULL, EXTRA) }
 constant_pattern:
-    | '.' NAME
-    | a='.'.NAME+ !'(' { a }
+    | '.' name=NAME {
+        name }
+    | value=name_or_attr '.' attr=NAME !'(' {
+        _Py_Attribute(value, attr->v.Name.id, Load, EXTRA) }
 group_pattern:
-    | '(' a=pattern ')' { a }
+    | '(' pattern=pattern ')' {
+        pattern }
 sequence_pattern:
-    | '[' a=[','.pattern+] ']' { _Py_List(a, Load, EXTRA) }
-    | '(' a=[','.pattern+] ')' { _Py_Tuple(a, Load, EXTRA) }
+    | '[' values=values_pattern ']' {
+        _Py_List(values, Load, EXTRA) }
 mapping_pattern:
-    | '{' ','.(key_pattern ':' closed_pattern)+ '}' { NULL }
-key_pattern:
-    | a=literal_pattern &':' { a }
-    | a='|'.literal_pattern+ { NULL }
+    | '{' items=items_pattern '}' {
+        _Py_Dict(CHECK(_PyPegen_get_keys(p, items)), CHECK(_PyPegen_get_values(p, items)), EXTRA) }
 class_pattern:
-    | '.'.NAME+ '(' pattern_args ')'
-pattern_args:
-    | ','.pattern+ ',' ','.(NAME '=' or_pattern)+ { NULL }
-    | ','.(NAME '=' or_pattern)+ { NULL }
-    | a=','.pattern+ { a }
+    | func=name_or_attr '(' ')' {
+        _Py_Call(func, NULL, NULL, EXTRA) }
+    | func=name_or_attr '(' args=','.pattern+ [','] ')' {
+        _Py_Call(func, args, NULL, EXTRA) }
+    | func=name_or_attr '(' keywords=','.keyword_pattern+ [','] ')' {
+        _Py_Call(func, NULL, keywords, EXTRA) }
+    | func=name_or_attr '(' args=','.pattern+ ',' keywords=','.keyword_pattern+ [','] ')' {
+        _Py_Call(func, args, keywords, EXTRA) }
+
+name_or_attr:
+    | value=name_or_attr '.' attr=NAME {
+        _Py_Attribute(value, attr->v.Name.id, Load, EXTRA) }
+    | NAME
+values_pattern:
+    | values=','.value_pattern+ [','] {
+        values }
+items_pattern:
+    | items=','.key_value_pattern+ [','] {
+        items }
+keyword_pattern:
+    | arg=NAME '=' value=or_pattern {
+        _Py_keyword(arg->v.Name.id, value, EXTRA) }
+
+value_pattern:
+    | '*' value=name_pattern {
+        _Py_Starred(value, Store, EXTRA) }
+    | pattern
+key_value_pattern:
+    | key=literal_pattern ':' value=closed_pattern {
+        _PyPegen_key_value_pair(p, key, value) }
+    | key=constant_pattern ':' value=closed_pattern {
+        _PyPegen_key_value_pair(p, key, value) }
+    | '**' value=name_pattern {
+        _PyPegen_key_value_pair(p, NULL, value) }
+
 
 return_stmt[stmt_ty]:
     | 'return' a=[star_expressions] { _Py_Return(a, EXTRA) }
@@ -702,12 +744,12 @@ invalid_assignment:
             _PyPegen_get_invalid_target(a),
             "cannot assign to %s", _PyPegen_get_expr_name(_PyPegen_get_invalid_target(a))) }
     | a=star_expressions augassign (yield_expr | star_expressions) {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION( 
-            a, 
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a,
             "'%s' is an illegal expression for augmented assignment",
             _PyPegen_get_expr_name(a)
         )}
- 
+
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:

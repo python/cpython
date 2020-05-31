@@ -18,6 +18,9 @@ class TestAST(unittest.TestCase):
 
     No tests for name loads/stores, since these need a patma parser to
     disambiguate.
+
+    Note that we use "or" for "|" here, since the parser gives us a BoolOp-Or,
+    not a BinOp-BitOr.
     """
 
     @staticmethod
@@ -206,32 +209,32 @@ class TestAST(unittest.TestCase):
         self.assertEqual(namespace.get("z"), 0)
 
     def test_pipe_00(self) -> None:
-        match_cases = [MatchCase("0 | 1 | 2", "y = 0")]
+        match_cases = [MatchCase("0 or 1 or 2", "y = 0")]
         namespace = self.execute_match("x = 0", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), 0)
         self.assertEqual(namespace.get("y"), 0)
 
     def test_pipe_01(self) -> None:
-        match_cases = [MatchCase("0 | 1 | 2", "y = 0")]
+        match_cases = [MatchCase("0 or 1 or 2", "y = 0")]
         namespace = self.execute_match("x = 1", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), 1)
         self.assertEqual(namespace.get("y"), 0)
 
     def test_pipe_02(self) -> None:
-        match_cases = [MatchCase("0 | 1 | 2", "y = 0")]
+        match_cases = [MatchCase("0 or 1 or 2", "y = 0")]
         namespace = self.execute_match("x = 2", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), 2)
         self.assertEqual(namespace.get("y"), 0)
 
     def test_pipe_03(self) -> None:
-        match_cases = [MatchCase("0 | 1 | 2", "y = 0")]
+        match_cases = [MatchCase("0 or 1 or 2", "y = 0")]
         namespace = self.execute_match("x = 3", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), 3)
         self.assertNotIn("y", namespace)
 
     def test_pipe_04(self) -> None:
         match_cases = [
-            MatchCase("(z := 0) | (z := 1) | (z := 2)", "y = 0", "z == x % 2")
+            MatchCase("(z := 0) or (z := 1) or (z := 2)", "y = 0", "z == x % 2")
         ]
         namespace = self.execute_match("x = 0", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), 0)
@@ -240,7 +243,7 @@ class TestAST(unittest.TestCase):
 
     def test_pipe_05(self) -> None:
         match_cases = [
-            MatchCase("(z := 0) | (z := 1) | (z := 2)", "y = 0", "z == x % 2")
+            MatchCase("(z := 0) or (z := 1) or (z := 2)", "y = 0", "z == x % 2")
         ]
         namespace = self.execute_match("x = 1", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), 1)
@@ -249,7 +252,7 @@ class TestAST(unittest.TestCase):
 
     def test_pipe_06(self) -> None:
         match_cases = [
-            MatchCase("(z := 0) | (z := 1) | (z := 2)", "y = 0", "z == x % 2")
+            MatchCase("(z := 0) or (z := 1) or (z := 2)", "y = 0", "z == x % 2")
         ]
         namespace = self.execute_match("x = 2", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), 2)
@@ -258,7 +261,7 @@ class TestAST(unittest.TestCase):
 
     def test_pipe_07(self) -> None:
         match_cases = [
-            MatchCase("(z := 0) | (z := 1) | (z := 2)", "y = 0", "z == x % 2")
+            MatchCase("(z := 0) or (z := 1) or (z := 2)", "y = 0", "z == x % 2")
         ]
         namespace = self.execute_match("x = 3", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), 3)
@@ -290,19 +293,19 @@ class TestAST(unittest.TestCase):
         self.assertEqual(namespace.get("y"), 0)
 
     def test_sequence_04(self) -> None:
-        match_cases = [MatchCase("(0, 1) | (1, 0)", "y = 0")]
+        match_cases = [MatchCase("(0, 1) or (1, 0)", "y = 0")]
         namespace = self.execute_match("x = [0, 1]", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), [0, 1])
         self.assertEqual(namespace.get("y"), 0)
 
     def test_sequence_05(self) -> None:
-        match_cases = [MatchCase("(0, 1) | (1, 0)", "y = 0")]
+        match_cases = [MatchCase("(0, 1) or (1, 0)", "y = 0")]
         namespace = self.execute_match("x = [1, 0]", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), [1, 0])
         self.assertEqual(namespace.get("y"), 0)
 
     def test_sequence_06(self) -> None:
-        match_cases = [MatchCase("(0, 1) | (1, 0)", "y = 0")]
+        match_cases = [MatchCase("(0, 1) or (1, 0)", "y = 0")]
         namespace = self.execute_match("x = [0, 0]", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), [0, 0])
         self.assertNotIn("y", namespace)
@@ -310,7 +313,7 @@ class TestAST(unittest.TestCase):
     def test_sequence_07(self) -> None:
         match_cases = [
             MatchCase("(w := 0,)", "y = 0"),
-            MatchCase("[] | (1, z := (0 | 1)) | []", "y = 1"),
+            MatchCase("[] or (1, z := (0 or 1)) or []", "y = 1"),
         ]
         namespace = self.execute_match("x = [1, 0]", "x", match_cases, "")
         self.assertNotIn("w", namespace)
@@ -430,28 +433,28 @@ class TestAST(unittest.TestCase):
         self.assertNotIn("y", namespace)
 
     def test_mapping_03(self) -> None:
-        match_cases = [MatchCase("{0: (z := (0 | 1 | 2))}", "y = 0")]
+        match_cases = [MatchCase("{0: (z := (0 or 1 or 2))}", "y = 0")]
         namespace = self.execute_match("x = {0: 0}", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), {0: 0})
         self.assertEqual(namespace.get("y"), 0)
         self.assertEqual(namespace.get("z"), 0)
 
     def test_mapping_04(self) -> None:
-        match_cases = [MatchCase("{0: (z := (0 | 1 | 2))}", "y = 0")]
+        match_cases = [MatchCase("{0: (z := (0 or 1 or 2))}", "y = 0")]
         namespace = self.execute_match("x = {0: 1}", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), {0: 1})
         self.assertEqual(namespace.get("y"), 0)
         self.assertEqual(namespace.get("z"), 1)
 
     def test_mapping_05(self) -> None:
-        match_cases = [MatchCase("{0: (z := (0 | 1 | 2))}", "y = 0")]
+        match_cases = [MatchCase("{0: (z := (0 or 1 or 2))}", "y = 0")]
         namespace = self.execute_match("x = {0: 2}", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), {0: 2})
         self.assertEqual(namespace.get("y"), 0)
         self.assertEqual(namespace.get("z"), 2)
 
     def test_mapping_06(self) -> None:
-        match_cases = [MatchCase("{0: (z := (0 | 1 | 2))}", "y = 0")]
+        match_cases = [MatchCase("{0: (z := (0 or 1 or 2))}", "y = 0")]
         namespace = self.execute_match("x = {0: 3}", "x", match_cases, "")
         self.assertEqual(namespace.get("x"), {0: 3})
         self.assertNotIn("y", namespace)
@@ -517,7 +520,7 @@ class TestAST(unittest.TestCase):
         match_cases = [
             MatchCase("{0: [1, 2, {}]}", "y = 0"),
             MatchCase(
-                "{0: [1, 2, {}] | False} | {1: [()]} | {0: [1, 2, {}]} | [] | 'X' | {}",
+                "{0: [1, 2, {}] or False} or {1: [()]} or {0: [1, 2, {}]} or [] or 'X' or {}",
                 "y = 1",
             ),
             MatchCase("()", "y = 2"),
@@ -530,7 +533,7 @@ class TestAST(unittest.TestCase):
         match_cases = [
             MatchCase("{0: [1, 2, {}]}", "y = 0"),
             MatchCase(
-                "{0: [1, 2, {}] | True} | {1: [()]} | {0: [1, 2, {}]} | [] | 'X' | {}",
+                "{0: [1, 2, {}] or True} or {1: [()]} or {0: [1, 2, {}]} or [] or 'X' or {}",
                 "y = 1",
             ),
             MatchCase("()", "y = 2"),
@@ -540,10 +543,70 @@ class TestAST(unittest.TestCase):
         self.assertEqual(namespace.get("y"), 1)
 
 
+class TestMatch(unittest.TestCase):
+
+    def test_grammar_00(self) -> None:
+        match 0:
+            case 0:
+                x = True
+        self.assertEqual(x, True)
+
+    def test_grammar_01(self) -> None:
+        match 0:
+            case 0 if False:
+                x = False
+            case 0 if True:
+                x = True
+        self.assertEqual(x, True)
+
+    def test_grammar_02(self) -> None:
+        match 0:
+            case 0:
+                x = True
+            case 0:
+                x = False
+        self.assertEqual(x, True)
+
+    def test_grammar_03(self) -> None:
+        x = False
+        match 0:
+            case 0 | 1 | 2 | 3:
+                x = True
+        self.assertEqual(x, True)
+
+    def test_grammar_04(self) -> None:
+        x = False
+        match 1:
+            case 0 | 1 | 2 | 3:
+                x = True
+        self.assertEqual(x, True)
+
+    def test_grammar_05(self) -> None:
+        x = False
+        match 2:
+            case 0 | 1 | 2 | 3:
+                x = True
+        self.assertEqual(x, True)
+
+    def test_grammar_06(self) -> None:
+        x = False
+        match 3:
+            case 0 | 1 | 2 | 3:
+                x = True
+        self.assertEqual(x, True)
+
+    def test_grammar_07(self) -> None:
+        x = False
+        match 4:
+            case 0 | 1 | 2 | 3:
+                x = True
+        self.assertEqual(x, False)
+
+
 if __name__ == "__main__":  # XXX: For quick test debugging...
     import dis
 
     match_cases = [
-        MatchCase("([0, 1]) | {'XXX': (1 | (z := 2))} | (0, q, [[[{}]]])", "pass")
+        MatchCase("([0, 1]) or {'XXX': (1 or (z := 2))} or (0, q, [[[{}]]])", "pass")
     ]
     dis.dis(TestAST.compile_match("", "x", match_cases, ""))

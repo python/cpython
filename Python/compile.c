@@ -983,6 +983,8 @@ stack_effect(int opcode, int oparg, int jump)
             /* -1 at end of iterator, 1 if continue iterating. */
             return jump > 0 ? -1 : 1;
         case MATCH_KEY:
+        case MATCH_MAP:
+        case MATCH_SEQ:
             return -(jump > 0);
 
         case STORE_ATTR:

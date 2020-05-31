@@ -311,14 +311,25 @@ validate_pattern(expr_ty p)
     switch (p->kind) {
         case Attribute_kind:
             return validate_expr(p, Load);
-        case BinOp_kind:
-            if (p->v.BinOp.op != BitOr) {
+        case BoolOp_kind:
+            if (p->v.BoolOp.op != Or) {
                 PyErr_SetString(PyExc_ValueError,
-                    "BinOp op in pattern must be BitOr");
+                    "BoolOp op in pattern must be Or");
                 return 0;
             }
-            return (validate_pattern(p->v.BinOp.left)
-                    && validate_pattern(p->v.BinOp.right));
+            values = p->v.BoolOp.values;
+            size = asdl_seq_LEN(values);
+            if (size < 2) {
+                PyErr_SetString(PyExc_ValueError,
+                    "BoolOp must have at least two values");
+                return 0;
+            }
+            for (i = 0; i < size; i++) {
+                if (!validate_pattern(asdl_seq_GET(values, i))) {
+                    return 0;
+                }
+            }
+            return 1;
         case Constant_kind:
             return validate_expr(p, Load);
         case Dict_kind:
