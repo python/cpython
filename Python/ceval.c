@@ -3410,6 +3410,45 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(MATCH_TYPE): {
+            PyObject *type = TOP();
+            PyObject *target = SECOND();
+            if (!PyType_Check(type)) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "called match pattern must be a type; "
+                              "did you mean '%s'?", Py_TYPE(type)->tp_name);
+                goto error;
+            }
+            PyObject *method = PyObject_GetAttrString(type, "__match__");
+            if (method == Py_None) {
+                Py_DECREF(method);
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "type '%s' cannot be matched",
+                              Py_TYPE(type)->tp_name);
+                goto error;
+            }
+            PyObject *match = PyObject_CallOneArg(method, target);
+            Py_DECREF(method);
+            if (!match) {
+                goto error;
+            }
+            if (match == Py_None) {
+                Py_DECREF(match);
+                STACK_SHRINK(2);
+                Py_DECREF(type);
+                Py_DECREF(target);
+                JUMPBY(oparg);
+                DISPATCH();
+            }
+            STACK_SHRINK(1);
+            Py_DECREF(type);
+            Py_DECREF(target);
+            SET_TOP(match);
+            DISPATCH();
+        }
+
+
+
         case TARGET(GET_ITER): {
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();

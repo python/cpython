@@ -985,7 +985,9 @@ stack_effect(int opcode, int oparg, int jump)
         case MATCH_KEY:
         case MATCH_MAP:
         case MATCH_SEQ:
-            return -(jump > 0);
+            return jump > 0 ? -1 : 0;
+        case MATCH_TYPE:
+            return jump > 0 ? -2 : 0;
 
         case STORE_ATTR:
             return -2;
@@ -2901,6 +2903,8 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail)
             CHECK(compiler_pattern_store(c, value->v.Starred.value));
             if (size - i - 1) {
                 ADDOP_I(c, BUILD_TUPLE, size - i - 1);
+                // Argh, our tuple is backwards! Unpacking and rebuilding is the
+                // simplest way to reverse it:
                 ADDOP_I(c, UNPACK_SEQUENCE, size - i - 1);
                 ADDOP_I(c, BUILD_TUPLE, size - i - 1);
                 ADDOP_JREL(c, MATCH_SEQ, fail);

@@ -990,13 +990,11 @@ All of the following opcodes use their arguments.
    code counter is incremented by *delta*.
 
 
-.. opcode:: MATCH_SEQ (delta)
+.. opcode:: MATCH_KEY (delta)
 
-   Pop TOS.  If it is an instance of :class:`collections.abc.Sequence`, is not
-   an :term:`iterator`, and is not an instance of
-   :class:`str`/:class:`bytes`/:class:`bytearray`, get an iterator from it and
-   push that onto the stack.  Otherwise, increment the bytecode counter by
-   ``delta``.
+   Pop TOS.  If it is a key in the :class:`dict` at TOS1, remove it and push the
+   associated value onto the stack.  Otherwise, increment the bytecode counter
+   by ``delta``.
 
    .. versionadded:: 3.10
 
@@ -1010,11 +1008,22 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_KEY (delta)
+.. opcode:: MATCH_SEQ (delta)
 
-   Pop TOS.  If it is a key in the :class:`dict` at TOS1, remove it and push the
-   associated value onto the stack.  Otherwise, increment the bytecode counter
-   by ``delta``.
+   Pop TOS.  If it is an instance of :class:`collections.abc.Sequence`, is not
+   an :term:`iterator`, and is not an instance of
+   :class:`str`/:class:`bytes`/:class:`bytearray`, get an iterator from it and
+   push that onto the stack.  Otherwise, increment the bytecode counter by
+   ``delta``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_TYPE (delta)
+
+   Pop TOS and TOS1.  If TOS is an instance of :class:`type` and has a
+   ``__match__`` method, call it on TOS1 and push the result onto the stack if
+   it is not ``None``.  Otherwise, increment the bytecode counter by ``delta``.
 
    .. versionadded:: 3.10
 

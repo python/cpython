@@ -213,8 +213,9 @@ def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
-jrel_op('MATCH_SEQ', 166)
+jrel_op('MATCH_KEY', 166)
 jrel_op('MATCH_MAP', 167)
-jrel_op('MATCH_KEY', 168)
+jrel_op('MATCH_SEQ', 168)
+jrel_op('MATCH_TYPE', 169)
 
 del def_op, name_op, jrel_op, jabs_op
