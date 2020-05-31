@@ -4321,6 +4321,9 @@ ex_call:
                     if (!compiler_subkwargs(c, keywords, i - nseen, i)) {
                         return 0;
                     }
+                    if (have_dict) {
+                        ADDOP_I(c, DICT_MERGE, 1);
+                    }
                     have_dict = 1;
                     nseen = 0;
                 }
