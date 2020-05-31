@@ -77,6 +77,12 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
     def generate(self, filename: str) -> None:
         self.add_root_rules()
         self.collect_todo()
+        self.print("enum {")
+        with self.indent():
+            for rulename in self.todo:
+                self.print(f"R_{rulename.upper()},")
+        self.print("};")
+        self.print()
         while self.todo:
             self.print("static Rule all_rules[] = {")
             for rulename, rule in list(self.todo.items()):
