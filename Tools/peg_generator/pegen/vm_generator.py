@@ -69,16 +69,16 @@ class VMCallMakerVisitor(GrammarVisitor):
         self.cache: Dict[Any, Any] = {}
         self.keyword_cache: Dict[str, int] = {}
 
-    def keyword_helper(self, keyword: str) -> None:
+    def keyword_helper(self, keyword: str) -> int:
         if keyword not in self.keyword_cache:
             self.keyword_cache[keyword] = self.gen.keyword_type()
         return self.keyword_cache[keyword]
 
-    def visit_StringLeaf(self, node: StringLeaf) -> None:
+    def visit_StringLeaf(self, node: StringLeaf) -> int:
         val = ast.literal_eval(node.value)
         if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
             return self.keyword_helper(val)
-        return token.EXACT_TOKEN_TYPES[val]  # type: ignore
+        return token.EXACT_TOKEN_TYPES[val]  # type: ignore [attr-defined]
 
     def visit_Repeat0(self, node: Repeat0) -> None:
         if node in self.cache:
@@ -181,7 +181,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.print()
 
     def print_action_cases(self) -> None:
-        unique_actions: Dict[str, str] = defaultdict(list)
+        unique_actions: Dict[str, List[str]] = defaultdict(list)
         for actionname, action in self.actions.items():
             unique_actions[action].append(actionname)
         for action, actionnames in unique_actions.items():
