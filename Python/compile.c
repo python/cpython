@@ -982,8 +982,6 @@ stack_effect(int opcode, int oparg, int jump)
         case FOR_ITER:
             /* -1 at end of iterator, 1 if continue iterating. */
             return jump > 0 ? -1 : 1;
-        case MATCH_SEQ:
-        case MATCH_MAP:
         case MATCH_KEY:
             return -(jump > 0);
 
@@ -2849,17 +2847,21 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail)
 static int
 compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail)
 {
-    assert(p->kind == BinOp_kind);
-    assert(p->v.BinOp.op== BitOr);
+    assert(p->kind == BoolOp_kind);
+    assert(p->v.BoolOp.op== Or);
     basicblock *block, *end;
-    CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP(c, DUP_TOP);
-    CHECK(compiler_pattern(c, p->v.BinOp.left, block));
+    Py_ssize_t size = asdl_seq_LEN(p->v.BoolOp.values);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        CHECK(block = compiler_new_block(c));
+        ADDOP(c, DUP_TOP);
+        CHECK(compiler_pattern(c, asdl_seq_GET(p->v.BoolOp.values, i), block));
+        ADDOP(c, POP_TOP);
+        ADDOP_JREL(c, JUMP_FORWARD, end);
+        compiler_use_next_block(c, block);
+    }
     ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, block);
-    CHECK(compiler_pattern(c, p->v.BinOp.right, fail));
+    ADDOP_JREL(c, JUMP_FORWARD, fail);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -2897,6 +2899,8 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail)
             CHECK(compiler_pattern_store(c, value->v.Starred.value));
             if (size - i - 1) {
                 ADDOP_I(c, BUILD_TUPLE, size - i - 1);
+                ADDOP_I(c, UNPACK_SEQUENCE, size - i - 1);
+                ADDOP_I(c, BUILD_TUPLE, size - i - 1);
                 ADDOP_JREL(c, MATCH_SEQ, fail);
             }
             else {
@@ -2924,7 +2928,7 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
         case Attribute_kind:
         case Constant_kind:
             return compiler_pattern_load(c, p, fail);
-        case BinOp_kind:
+        case BoolOp_kind:
             return compiler_pattern_or(c, p, fail);
         case Dict_kind:
             return compiler_pattern_mapping(c, p, fail);
