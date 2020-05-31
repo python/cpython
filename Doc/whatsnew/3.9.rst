@@ -245,6 +245,14 @@ PyPI and maintained by the CPython core team.
         PEP written and implemented by Paul Ganssle
 
 
+graphlib
+---------
+
+Add the :mod:`graphlib` that contains the :class:`graphlib.TopologicalSorter` class
+to offer functionality to perform topological sorting of graphs. (Contributed by Pablo
+Galindo, Tim Peters and Larry Hastings in :issue:`17005`.)
+
+
 Improved Modules
 ================
 
@@ -351,13 +359,6 @@ ftplib
 :class:`~ftplib.FTP` and :class:`~ftplib.FTP_TLS` now raise a :class:`ValueError`
 if the given timeout for their constructor is zero to prevent the creation of
 a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
-
-functools
----------
-
-Add the :class:`functools.TopologicalSorter` class to offer functionality to perform
-topological sorting of graphs. (Contributed by Pablo Galindo, Tim Peters and Larry
-Hastings in :issue:`17005`.)
 
 gc
 --
