@@ -715,6 +715,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Match_kind:
         CALL(astfold_expr, expr_ty, node_->v.Match.target);
         CALL_SEQ(astfold_match_case, match_case_ty, node_->v.Match.cases);
+        // TODO: Mark unreachable cases for removal? Maybe pattern == NULL?
         break;
     default:
         break;

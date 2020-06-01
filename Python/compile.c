@@ -2772,10 +2772,13 @@ compiler_pattern_load(struct compiler *c, expr_ty p, basicblock *fail)
 }
 
 static int
-compiler_pattern_store(struct compiler *c, expr_ty p) {
+compiler_pattern_store(struct compiler *c, expr_ty p, int anon_ok) {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
     if (_PyUnicode_EqualToASCIIString(p->v.Name.id, "_")) {
+        if (!anon_ok) {
+            return compiler_error(c, "can't assign to '_' here; consider removing?");
+        }
         ADDOP(c, POP_TOP);
         return 1;
     }
@@ -2791,7 +2794,7 @@ compiler_pattern_name(struct compiler *c, expr_ty p, basicblock *fail)
     if (p->v.Name.ctx == Load) {
         return compiler_pattern_load(c, p, fail);
     }
-    return compiler_pattern_store(c, p);
+    return compiler_pattern_store(c, p, 1);
 }
 
 static int
@@ -2803,7 +2806,7 @@ compiler_pattern_namedexpr(struct compiler *c, expr_ty p, basicblock *fail)
     CHECK(end = compiler_new_block(c));
     ADDOP(c, DUP_TOP);
     CHECK(compiler_pattern(c, p->v.NamedExpr.value, block));
-    CHECK(compiler_pattern_store(c, p->v.NamedExpr.target));
+    CHECK(compiler_pattern_store(c, p->v.NamedExpr.target, 0));
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
     ADDOP(c, POP_TOP);
@@ -2826,7 +2829,9 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail)
     for (Py_ssize_t i = 0; i < size - star; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
         expr_ty value = asdl_seq_GET(values, i);
-        assert(key);
+        if (!key) {
+            return compiler_error(c, "can't use starred pattern here; consider moving to end?");
+        }
         assert(key->kind == Attribute_kind || key->kind == Constant_kind || key->kind == Name_kind);
         assert(key->kind != Attribute_kind || key->v.Attribute.ctx == Load);
         assert(key->kind != Name_kind || key->v.Name.ctx == Load);
@@ -2838,7 +2843,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail)
         ADDOP(c, POP_TOP);
     }
     else {
-        CHECK(compiler_pattern_store(c, asdl_seq_GET(values, size - 1)));
+        CHECK(compiler_pattern_store(c, asdl_seq_GET(values, size - 1), 0));
     }
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
@@ -2899,15 +2904,18 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail)
         expr_ty value = asdl_seq_GET(values, i);
         if (i == star) {
             assert(value->kind == Starred_kind);
-            ADDOP_I(c, UNPACK_EX, (size - i - 1) << 8);
-            CHECK(compiler_pattern_store(c, value->v.Starred.value));
-            if (size - i - 1) {
-                ADDOP_I(c, BUILD_TUPLE, size - i - 1);
-                // Argh, our tuple is backwards! Unpacking and rebuilding is the
-                // simplest way to reverse it:
-                ADDOP_I(c, UNPACK_SEQUENCE, size - i - 1);
-                ADDOP_I(c, BUILD_TUPLE, size - i - 1);
-                ADDOP_JREL(c, MATCH_SEQ, fail);
+            Py_ssize_t remaining = size - i - 1;
+            ADDOP_I(c, UNPACK_EX, remaining << 8);
+            CHECK(compiler_pattern_store(c, value->v.Starred.value, 1));
+            if (remaining) {
+                ADDOP_I(c, BUILD_TUPLE, remaining);
+                if (remaining > 1) {
+                    // Argh, our tuple is backwards!
+                    // Unpacking and repacking is the easiest way to reverse it:
+                    ADDOP_I(c, UNPACK_SEQUENCE, remaining);
+                    ADDOP_I(c, BUILD_TUPLE, remaining);
+                }
+                ADDOP(c, GET_ITER);
             }
             else {
                 ADDOP_JREL(c, JUMP_FORWARD, end);

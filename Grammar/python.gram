@@ -192,7 +192,7 @@ except_block[excepthandler_ty]:
     | 'except' ':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
 finally_block[asdl_seq*]: 'finally' ':' a=block { a }
 
-match_stmt[stmt_ty]:
+match_stmt:
     | "match" target=expression ':' NEWLINE INDENT cases=case_block+ DEDENT {
         _Py_Match(target, cases, EXTRA) }
 case_block:
@@ -245,17 +245,19 @@ sequence_pattern:
     | '[' values=values_pattern? ']' {
         _Py_List(values, Load, EXTRA) }
 mapping_pattern:
-    | '{' items=items_pattern '}' {
+    | '{' items=items_pattern? '}' {
         _Py_Dict(CHECK(_PyPegen_get_keys(p, items)), CHECK(_PyPegen_get_values(p, items)), EXTRA) }
 class_pattern:
     | func=name_or_attr '(' ')' {
         _Py_Call(func, NULL, NULL, EXTRA) }
-    | func=name_or_attr '(' args=','.pattern+ ','? ')' {
+    | func=name_or_attr '(' args=','.arg_pattern+ ','? ')' {
         _Py_Call(func, args, NULL, EXTRA) }
     | func=name_or_attr '(' keywords=','.keyword_pattern+ ','? ')' {
         _Py_Call(func, NULL, keywords, EXTRA) }
-    | func=name_or_attr '(' args=','.pattern+ ',' keywords=','.keyword_pattern+ ','? ')' {
+    | func=name_or_attr '(' args=','.arg_pattern+ ',' keywords=','.keyword_pattern+ ','? ')' {
         _Py_Call(func, args, keywords, EXTRA) }
+    | func=name_or_attr '(' [','.arg_pattern+ ','] ','.keyword_pattern+ ',' error=arg_pattern [',' ','.(arg_pattern | keyword_pattern)+] ','? ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "positional pattern follows keyword pattern") }
 
 name_or_attr:
     | NAME
@@ -267,22 +269,25 @@ values_pattern:
 items_pattern:
     | items=','.key_value_pattern+ ','? {
         items }
+arg_pattern[expr_ty]:
+    | pattern !'='
+    | error='*' NAME {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "can't use starred pattern here") }
 keyword_pattern:
     | arg=NAME '=' value=or_pattern {
         _Py_keyword(arg->v.Name.id, value, EXTRA) }
+    | error='**' NAME {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "can't use starred pattern here") }
 
 value_pattern:
     | '*' value=name_pattern {
         _Py_Starred(value, Store, EXTRA) }
     | pattern
 key_value_pattern:
-    | key=literal_pattern ':' value=closed_pattern {
-        _PyPegen_key_value_pair(p, key, value) }
-    | key=constant_pattern ':' value=closed_pattern {
+    | key=(literal_pattern | constant_pattern) ':' value=closed_pattern {
         _PyPegen_key_value_pair(p, key, value) }
     | '**' value=name_pattern {
         _PyPegen_key_value_pair(p, NULL, value) }
-
 
 return_stmt[stmt_ty]:
     | 'return' a=[star_expressions] { _Py_Return(a, EXTRA) }
