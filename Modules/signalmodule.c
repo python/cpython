@@ -1784,7 +1784,7 @@ PyOS_FiniInterrupts(void)
 int
 _PyOS_InterruptOccurred(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    _Py_EnsureTstateNotNULL(tstate);
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
