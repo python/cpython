@@ -419,6 +419,7 @@
     <Compile Include="getpass.py" />
     <Compile Include="gettext.py" />
     <Compile Include="glob.py" />
+    <Compile Include="graphlib.py" />
     <Compile Include="gzip.py" />
     <Compile Include="hashlib.py" />
     <Compile Include="heapq.py" />
