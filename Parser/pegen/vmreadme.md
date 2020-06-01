@@ -144,7 +144,7 @@ the following structure:
 OP_LOOP_ITERATE
 
 # Second alternative:
-Either OP_LOOP_COLLECT or OP_LOOP_COLLECT_NONEMPTY
+<either OP_LOOP_COLLECT or OP_LOOP_COLLECT_NONEMPTY>
 ```
 
 The values being collected are stored in a `malloc`-ed array named
@@ -167,6 +167,26 @@ The operations are defined as follows:
 
 - `OP_LOOP_COLLECT_NONEMPTY` -- like `OP_LOOP_COLLECT` but fails if no
   values are collected.
+
+For a "delimited" loop, written in the metagrammar as `b.a+` (one or
+more `a` items separated by the delimiter `b`), the format is
+slightly different:
+
+```
+# First alternative:
+<one operation that produces the value for 'a' (the "meat")>
+<one operation that produces the value for 'b' (the delimiter)>
+OP_LOOP_ITERATE
+
+# Second alternative:
+<one operation that produces the value for 'a' (the "meat")>
+OP_LOOP_COLLECT_DELIMITED
+```
+
+The new operation is:
+
+- `OP_LOOP_COLLECT_DELIMITED` -- Add the first value from the values array
+  to the collection and then do everything that `OP_LOOP_COLLECT does.
 
 More about `OP_OPTIONAL`
 ------------------------
@@ -204,6 +224,8 @@ Grammar for lists of operations
 This shows the constraints on how operations can be used together.
 
 ```
+rule: root_rule | normal_rule | loop_rule | delimited_rule
+
 root_rule: success_alt failure_alt
 
 success_alt: regular_op OP_SUCCESS
@@ -215,6 +237,11 @@ loop_rule: loop_start_alt loop_collect_alt
 
 loop_start_alt: regular_op OP_LOOP_ITERATE
 loop_collect_alt: OP_LOOP_COLLECT | OP_LOOP_COLLECT_NONEMPTY
+
+delimited_rule: delimited_start_alt delimited_collect_alt
+
+delimited_start_alt: regular_op regular_op OP_LOOP_ITERATE
+delimited_collect_alt: OP_LOOP_COLLECT_DELIMITED
 
 alt: any_op+ return_op
 
@@ -250,7 +277,7 @@ OP_LOOP_COLLECT_NONEMPTY
 
 - The `OP_LOOP_COLLECT_NONEMPTY` opcode would add the final collected
   value to the collection, if one was collected.  (Alternatively, we
-  could use a new opcode, e.g. `OP_LOOP_COLLECT_SPECIAL`.)
+  could use a new opcode, e.g. `OP_LOOP_COLLECT_DELIMITED`.)
 
 ### Lookaheads
 

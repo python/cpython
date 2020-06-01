@@ -108,7 +108,7 @@ run_vm(Parser *p, Rule rules[], int root)
         goto top;
     case OP_LOOP_ITERATE:
         f->mark = p->mark;
-        assert(f->ival == 1);
+        assert(f->ival == 1 || f->ival == 2);
         v = f->vals[0];
         assert(v);
         if (f->ncollected >= f->capacity) {
@@ -122,8 +122,21 @@ run_vm(Parser *p, Rule rules[], int root)
         f->iop = f->rule->alts[f->ialt];
         f->ival = 0;
         goto top;
+    case OP_LOOP_COLLECT_DELIMITED:
+        /* Collect one item */
+        assert(f->ival == 1);
+        if (f->ncollected >= f->capacity) {
+            f->capacity = f->ncollected + 1;  // We know there won't be any more
+            f->collection = PyMem_Realloc(f->collection, (f->capacity) * sizeof(void *));
+            if (!f->collection) {
+                return PyErr_NoMemory();
+            }
+        }
+        f->collection[f->ncollected++] = v;
+        // Fallthrough!
     case OP_LOOP_COLLECT_NONEMPTY:
         if (!f->ncollected) {
+            printf("Nothing collected for %s\n", f->rule->name);
             v = NULL;
             f = pop_frame(&stack, v);
             break;
@@ -197,6 +210,7 @@ run_vm(Parser *p, Rule rules[], int root)
     f->iop = f->rule->alts[++f->ialt];
     if (f->iop == -1)
         goto pop;
+    f->ival = 0;
     goto top;
 
  pop:

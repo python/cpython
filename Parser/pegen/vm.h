@@ -8,6 +8,7 @@ typedef enum _opcodes {
     OP_LOOP_ITERATE,
     OP_LOOP_COLLECT,
     OP_LOOP_COLLECT_NONEMPTY,
+    OP_LOOP_COLLECT_DELIMITED,
     OP_SUCCESS,
     OP_FAILURE,
     // The rest have an argument
@@ -26,6 +27,7 @@ static char *opcode_names[] = {
     "OP_LOOP_ITERATE",
     "OP_LOOP_COLLECT",
     "OP_LOOP_COLLECT_NONEMPTY",
+    "OP_LOOP_COLLECT_DELIMITED",
     "OP_SUCCESS",
     "OP_FAILURE",
     // The rest have an argument
