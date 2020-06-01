@@ -139,20 +139,13 @@ case-insensitive and stored in lowercase [1]_.
 Supported Datatypes
 -------------------
 
-Config parsers do not guess datatypes in configuration files, always storing
-both section names and values as strings.  This means that if you need other
-datatypes, you should convert on your own and that section names will always be
-converted to strings when writing a new value:
+
+Config parsers do not guess datatypes of values in configuration files, always
+storing them internally as strings.  This means that if you need other
+datatypes, you should convert on your own::
 
 .. doctest::
 
-   >>> config[123] = {}
-   >>> config[123]
-   Traceback (most recent call last):
-   ...
-   KeyError: 123
-   >>> config['123']
-   <Section: 123>
    >>> int(topsecret['Port'])
    50022
    >>> float(topsecret['CompressionLevel'])
@@ -179,6 +172,20 @@ Apart from :meth:`~ConfigParser.getboolean`, config parsers also
 provide equivalent :meth:`~ConfigParser.getint` and
 :meth:`~ConfigParser.getfloat` methods.  You can register your own
 converters and customize the provided ones. [1]_
+
+Section names will also be stored as strings and will need to be converted
+manually when reading a section:
+
+.. doctest::
+
+   >>> config[123] = {}
+   >>> config[123]
+   Traceback (most recent call last):
+   ...
+   KeyError: 123
+   >>> config['123']
+   <Section: 123>
+
 
 Fallback Values
 ---------------
