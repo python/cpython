@@ -17,6 +17,7 @@ enum {
     R_FACTOR,
     R_ROOT,
     R__LOOP1_1,
+    R__GATHER_2,
 };
 
 enum {
@@ -31,6 +32,9 @@ enum {
     A_FACTOR_0,
     A_FACTOR_1,
     A_FACTOR_2,
+    A_FACTOR_3,
+    A__GATHER_2_0,
+    A__GATHER_2_1,
 };
 
 static Rule all_rules[] = {
@@ -74,11 +78,12 @@ static Rule all_rules[] = {
     },
     {"factor",
      R_FACTOR,
-     {0, 8, 11, -1},
+     {0, 8, 16, 19, -1},
      {
         OP_TOKEN, 7, OP_RULE, R_EXPR, OP_TOKEN, 8, OP_RETURN, A_FACTOR_0,
-        OP_NUMBER, OP_RETURN, A_FACTOR_1,
-        OP_NAME, OP_RETURN, A_FACTOR_2,
+        OP_TOKEN, 9, OP_RULE, R__GATHER_2, OP_TOKEN, 10, OP_RETURN, A_FACTOR_1,
+        OP_NUMBER, OP_RETURN, A_FACTOR_2,
+        OP_NAME, OP_RETURN, A_FACTOR_3,
      },
     },
     {"root",
@@ -95,6 +100,14 @@ static Rule all_rules[] = {
      {
         OP_RULE, R_STMT, OP_LOOP_ITERATE,
         OP_LOOP_COLLECT_NONEMPTY,
+     },
+    },
+    {"_gather_2",
+     R__GATHER_2,
+     {0, 5, -1},
+     {
+        OP_RULE, R_EXPR, OP_TOKEN, 12, OP_LOOP_ITERATE,
+        OP_RULE, R_EXPR, OP_LOOP_COLLECT_DELIMITED,
      },
     },
 };
@@ -118,8 +131,10 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_STMT_1:
     case A_EXPR_1:
     case A_TERM_1:
-    case A_FACTOR_1:
     case A_FACTOR_2:
+    case A_FACTOR_3:
+    case A__GATHER_2_0:
+    case A__GATHER_2_1:
         return _f->vals[0];
     case A_IF_STMT_0:
         return _Py_If ( _f->vals[1] , _f->vals[3] , NULL , EXTRA );
@@ -129,6 +144,8 @@ call_action(Parser *p, Frame *_f, int _iaction)
         return _Py_BinOp ( _f->vals[0] , Mult , _f->vals[2] , EXTRA );
     case A_FACTOR_0:
         return _f->vals[1];
+    case A_FACTOR_1:
+        return _Py_List ( _f->vals[1] , Load , EXTRA );
     default:
         assert(0);
     }

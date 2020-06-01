@@ -12,5 +12,6 @@ term:
     | factor
 factor:
     | '(' a=expr ')' { a }
+    | '[' a=','.expr+ ']' { _Py_List(a, Load, EXTRA) }
     | NUMBER
     | NAME

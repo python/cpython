@@ -92,6 +92,12 @@ class VMCallMakerVisitor(GrammarVisitor):
         name = self.gen.name_loop(node.node, True)
         self.cache[node] = name
 
+    def visit_Gather(self, node: Gather) -> None:
+        if node in self.cache:
+            return self.cache[node]
+        name = self.gen.name_gather(node)
+        self.cache[node] = name
+
 
 class VMParserGenerator(ParserGenerator, GrammarVisitor):
     def __init__(
@@ -113,6 +119,14 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.opcode_buffer.append(opcode)
         if oparg is not None:
             self.opcode_buffer.append(str(oparg))
+
+    def name_gather(self, node: Gather) -> str:
+        self.counter += 1
+        name = f"_gather_{self.counter}"
+        alt0 = Alt([NamedItem(None, node.node), NamedItem(None, node.separator)])
+        alt1 = Alt([NamedItem(None, node.node)])
+        self.todo[name] = Rule(name, None, Rhs([alt0, alt1]))
+        return name
 
     def generate(self, filename: str) -> None:
         self.add_root_rules()
@@ -205,7 +219,8 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         # As a special case, if there's no action, return _f->vals[0].
         name_to_index, index = self.map_alt_names_to_vals_index(alt)
         if not alt.action:
-            assert index == 1
+            # TODO: Restore the assert, but expect index == 2 in Gather
+            ##assert index == 1, "Alternative with >1 item must have an action"
             return "_f->vals[0]"
         # Sadly, the action is given as a string, so tokenize it back.
         # We must not substitute item names when preceded by '.' or '->'.
@@ -316,9 +331,12 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         for index, alt in enumerate(node.alts):
             with self.set_opcode_buffer(opcodes_by_alt[index]):
                 self.visit(alt, is_loop=False, is_loop1=False, is_gather=False)
-                assert not (alt.action and is_loop)  # A loop rule can't have actions
-                if is_loop:
-                    self.add_opcode("OP_LOOP_ITERATE")
+                assert not (alt.action and (is_loop or is_gather))  # A loop rule can't have actions
+                if is_loop or is_gather:
+                    if index == 0:
+                        self.add_opcode("OP_LOOP_ITERATE")
+                    else:
+                        self.add_opcode("OP_LOOP_COLLECT_DELIMITED")
                 else:
                     self.add_opcode("OP_RETURN", f"A_{self.current_rule.name.upper()}_{index}")
 
@@ -351,7 +369,11 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         name = self.callmakervisitor.visit(node)
         self.add_opcode("OP_RULE", self._get_rule_opcode(name))
 
-    def visit_Repeat1(self, node: Repeat0) -> None:
+    def visit_Repeat1(self, node: Repeat1) -> None:
+        name = self.callmakervisitor.visit(node)
+        self.add_opcode("OP_RULE", self._get_rule_opcode(name))
+
+    def visit_Gather(self, node: Gather) -> None:
         name = self.callmakervisitor.visit(node)
         self.add_opcode("OP_RULE", self._get_rule_opcode(name))
 
