@@ -66,14 +66,14 @@ static Rule all_rules[] = {
      R_IF_STMT,
      {0, -1},
      {
-        OP_TOKEN, 500, OP_NAME, OP_TOKEN, 11, OP_RULE, R_EXPR, OP_RETURN, A_IF_STMT_0,
+        OP_TOKEN, 500, OP_NAME, OP_TOKEN, COLON, OP_RULE, R_EXPR, OP_RETURN, A_IF_STMT_0,
      },
     },
     {"expr",
      R_EXPR,
      {0, 8, -1},
      {
-        OP_RULE, R_TERM, OP_TOKEN, 14, OP_RULE, R_EXPR, OP_RETURN, A_EXPR_0,
+        OP_RULE, R_TERM, OP_TOKEN, PLUS, OP_RULE, R_EXPR, OP_RETURN, A_EXPR_0,
         OP_RULE, R_TERM, OP_RETURN, A_EXPR_1,
      },
     },
@@ -81,7 +81,7 @@ static Rule all_rules[] = {
      R_TERM,
      {0, 8, -1},
      {
-        OP_RULE, R_FACTOR, OP_TOKEN, 16, OP_RULE, R_TERM, OP_RETURN, A_TERM_0,
+        OP_RULE, R_FACTOR, OP_TOKEN, STAR, OP_RULE, R_TERM, OP_RETURN, A_TERM_0,
         OP_RULE, R_FACTOR, OP_RETURN, A_TERM_1,
      },
     },
@@ -89,8 +89,8 @@ static Rule all_rules[] = {
      R_FACTOR,
      {0, 8, 16, 19, 23, -1},
      {
-        OP_TOKEN, 7, OP_RULE, R_EXPR, OP_TOKEN, 8, OP_RETURN, A_FACTOR_0,
-        OP_TOKEN, 9, OP_RULE, R__GATHER_2, OP_TOKEN, 10, OP_RETURN, A_FACTOR_1,
+        OP_TOKEN, LPAR, OP_RULE, R_EXPR, OP_TOKEN, RPAR, OP_RETURN, A_FACTOR_0,
+        OP_TOKEN, LSQB, OP_RULE, R__GATHER_2, OP_TOKEN, RSQB, OP_RETURN, A_FACTOR_1,
         OP_NUMBER, OP_RETURN, A_FACTOR_2,
         OP_SOFT_KEYWORD, SK___PEG_PARSER__, OP_RETURN, A_FACTOR_3,
         OP_NAME, OP_RETURN, A_FACTOR_4,
@@ -116,7 +116,7 @@ static Rule all_rules[] = {
      R__GATHER_2,
      {0, 5, -1},
      {
-        OP_RULE, R_EXPR, OP_TOKEN, 12, OP_LOOP_ITERATE,
+        OP_RULE, R_EXPR, OP_TOKEN, COMMA, OP_LOOP_ITERATE,
         OP_RULE, R_EXPR, OP_LOOP_COLLECT_DELIMITED,
      },
     },
@@ -157,7 +157,7 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_FACTOR_1:
         return _Py_List ( _f->vals[1] , Load , EXTRA );
     case A_FACTOR_3:
-        return RAISE_SYNTAX_ERROR("You found it!");
+        return RAISE_SYNTAX_ERROR ( "You found it!" );
     default:
         assert(0);
     }
