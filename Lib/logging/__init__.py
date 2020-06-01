@@ -1480,7 +1480,18 @@ class Logger(Filterer):
         if self.isEnabledFor(CRITICAL):
             self._log(CRITICAL, msg, args, **kwargs)
 
-    fatal = critical
+    def fatal(self, msg, *args, **kwargs):
+        """
+        Log 'msg % args' with severity 'CRITICAL'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.fatal("Houston, we have a %s", "major disaster", exc_info=1)
+        """
+        warnings.warn("The 'fatal' method is deprecated, "
+            "use 'critical' instead", DeprecationWarning, 2)
+        self.critical(msg, *args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
         """
@@ -2039,7 +2050,15 @@ def critical(msg, *args, **kwargs):
         basicConfig()
     root.critical(msg, *args, **kwargs)
 
-fatal = critical
+def fatal(msg, *args, **kwargs):
+    """
+    Log a message with severity 'CRITICAL' on the root logger. If the logger
+    has no handlers, call basicConfig() to add a console handler with a
+    pre-defined format.
+    """
+    warnings.warn("The 'fatal' function is deprecated, "
+        "use 'critical' instead", DeprecationWarning, 2)
+    critical(msg, *args, **kwargs)
 
 def error(msg, *args, **kwargs):
     """
