@@ -199,7 +199,7 @@ case_block:
     | "case" pattern=pattern guard=guard? ':' body=block {
         _Py_match_case(pattern, guard, body, p->arena) }
 
-pattern:
+pattern[expr_ty]:
     | target=NAME ':=' value=or_pattern {
         _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, target, Store)), value, EXTRA) }
     | or_pattern
@@ -222,7 +222,7 @@ closed_pattern:
     | class_pattern
 
 name_pattern:
-    | a=NAME !('.' | '(') {
+    | a=NAME !('.' | '(' | '=') {
         _PyPegen_set_expr_context(p, a, Store) }
 literal_pattern:
     | NUMBER
@@ -250,14 +250,16 @@ mapping_pattern:
 class_pattern:
     | func=name_or_attr '(' ')' {
         _Py_Call(func, NULL, NULL, EXTRA) }
-    | func=name_or_attr '(' args=','.arg_pattern+ ','? ')' {
+    | func=name_or_attr '(' args=','.pattern+ ','? ')' {
         _Py_Call(func, args, NULL, EXTRA) }
     | func=name_or_attr '(' keywords=','.keyword_pattern+ ','? ')' {
         _Py_Call(func, NULL, keywords, EXTRA) }
-    | func=name_or_attr '(' args=','.arg_pattern+ ',' keywords=','.keyword_pattern+ ','? ')' {
+    | func=name_or_attr '(' args=','.pattern+ ',' keywords=','.keyword_pattern+ ','? ')' {
         _Py_Call(func, args, keywords, EXTRA) }
-    | func=name_or_attr '(' [','.arg_pattern+ ','] ','.keyword_pattern+ ',' error=arg_pattern [',' ','.(arg_pattern | keyword_pattern)+] ','? ')' {
+    | func=name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' error=pattern [',' ','.argument_pattern+] ','? ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "positional pattern follows keyword pattern") }
+    | func=name_or_attr '(' [','.argument_pattern+ ','] error=error_star [',' ','.(argument_pattern | error_star)+] ','? ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "can't use starred pattern here") }
 
 name_or_attr:
     | NAME
@@ -269,15 +271,15 @@ values_pattern:
 items_pattern:
     | items=','.key_value_pattern+ ','? {
         items }
-arg_pattern[expr_ty]:
-    | pattern !'='
-    | error='*' NAME {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "can't use starred pattern here") }
 keyword_pattern:
     | arg=NAME '=' value=or_pattern {
         _Py_keyword(arg->v.Name.id, value, EXTRA) }
-    | error='**' NAME {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "can't use starred pattern here") }
+argument_pattern:
+    | pattern
+    | keyword_pattern
+error_star[expr_ty]:
+    | ('*' | '**') error=NAME {
+        error }
 
 value_pattern:
     | '*' value=name_pattern {
