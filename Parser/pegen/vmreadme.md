@@ -61,6 +61,7 @@ The `opcodes` array is a sequence of operation codes and arguments.
 Some opcodes (e.g., `OP_TOKEN`) are followed by an argument; others
 (e.g., `OP_NAME`) are not.  Both are representable as integers.
 
+
 Operations
 ----------
 
@@ -81,6 +82,7 @@ Some operations manipulate other frame fields.
 
 Calls into the support runtime can produce *errors* -- when an error
 is detected, the VM exits immediately, returning `NULL`.
+
 
 ### General operations
 
@@ -115,6 +117,7 @@ The following operations are followed by a single integer argument.
   newly revealed by that pop operation) as if the previous operation
   succeeded or failed with the return value of the action.
 
+
 ### Operations for root rules only
 
 A grammar must have one or more *root rules*.  A root rule is a
@@ -132,6 +135,7 @@ second alternative must be the single operation `OP_FAILURE`.
 
 - `OP_FAILURE` -- report a syntax error and exit the VM with a NULL
   result.
+
 
 ### Operations for loop rules only
 
@@ -188,6 +192,44 @@ The new operation is:
 - `OP_LOOP_COLLECT_DELIMITED` -- Add the first value from the values array
   to the collection and then do everything that `OP_LOOP_COLLECT does.
 
+
+### Operations for lookaheads
+
+Positive lookaheads use the following pattern:
+
+```
+OP_SAVE_MARK
+<one operation that produces a value>
+OP_POS_LOOKAHEAD
+```
+
+The operations work as follows:
+
+- `OP_SAVE_MARK` -- saves the current input position in a dedicated
+  field of the frame, `savemark`.
+
+- `OP_POS_LOOKAHEAD` -- restores the current input position from the
+  frame's `savemark` field.  (It does not reset the values array;
+  values produced by positive lookaheads are ignored by the actions.
+
+Negative lookaheads use the following pattern:
+
+```
+OP_SAVE_MARK
+<one operation that produces a value>
+OP_NEG_LOOKAHEAD
+```
+
+The new operation works as follows:
+
+- `OP_NEG_LOOKAHEAD` -- fails the current alternative.
+
+In addition, the standard code for success/failure processing checks
+whether the next operation is `OP_NEG_LOOKAHEAD`.  If so, it treats
+`NULL` as a success and restores the current input position from the
+frame's `savemark` field.
+
+
 More about `OP_OPTIONAL`
 ------------------------
 
@@ -201,6 +243,10 @@ to the next operation.
 
 When the operation preceding `OP_OPTIONAL` succeeds, `OP_OPTIONAL` is
 executed as a regular operation, and always succeed.
+
+The `OP_NEG_LOOKAHEAD` works similar (but it also restores the input
+position).
+
 
 Constraints on operation order
 ------------------------------
@@ -217,6 +263,7 @@ These operations must be last in their alternative: `OP_RETURN`,
 `OP_LOOP_COLLECT_NONEMPTY`.
 
 This operation must be first in its alternative: `OP_FAILURE`.
+
 
 Grammar for lists of operations
 -------------------------------
@@ -245,78 +292,31 @@ delimited_collect_alt: OP_LOOP_COLLECT_DELIMITED
 
 alt: any_op+ return_op
 
-any_op: regular_op [OP_OPTIONAL] | special_op
+any_op: regular_op [OP_OPTIONAL] | lookahead_block | special_op
 regular_op: short_op | long_op
 short_op: OP_NAME | OP_NUMBER | OP_STRING
 long_op: OP_TOKEN <token_type> | OP_RULE <rule_id>
 special_op: OP_NOOP | OP_CUT
 return_op: OP_RETURN <action_id>
+
+lookahead_block: OP_SAVE_MARK regular_op lookahead_op
+lookahead_op:  OP_POS_LOOKAHEAD | OP_NEG_LOOKAHEAD
 ```
 
 Ideas
 -----
 
-### "Special" loops
-
-We still need opcodes for `b.a+` (e.g. `','.expr+` is a
-comma-separated list of expressions).  We could generate code like this:
-
-```
-# first alternative:
-<one opcode for a>
-<one opcode for b>
-OP_LOOP_ITERATE
-
-# second alternative:
-<one opcode for a>
-OP_LOOP_COLLECT_NONEMPTY
-```
-
-- The `OP_LOOP_ITERATE` opcode would ignore the value collected for
-  the delimiter.
-
-- The `OP_LOOP_COLLECT_NONEMPTY` opcode would add the final collected
-  value to the collection, if one was collected.  (Alternatively, we
-  could use a new opcode, e.g. `OP_LOOP_COLLECT_DELIMITED`.)
-
-### Lookaheads
-
-We also need to extend the VM to support lookaheads.
-
-- Positive lookahead (`&a`) -- add a new opcode to save the mark in a
-  new frame field, and another opcode that restores the mark from
-  there.
-
-- Negative lookahead (`!a`) -- add another opcode that catches failure
-  and turns it into success, restoring the saved mark.
-
 ### Left-recursion
 
-Hmm, tricky...  Will think about this later.
+- First opcode of first alt is `OP_SETUP_LEFT_REC`.  This initializes
+  the memo cache for f->rule->type to `NULL`.
 
-Lookahead opcodes
------------------
-
-```
-case OP_SAVE_MARK:
-    f->savemark = p->mark;
-    goto top;
-
-case OP_POS_LOOKAHEAD:
-    p->mark - f->savemark;
-    goto top;
-
-case OP_NEG_LOOKAHEAD:
-    goto fail;
-
-/* Later, when v == NULL */
-if (f->rule->opcodes[f->iop] == OP_NEG_LOOKAHEAD) {
-    p->mark - f->savemark;
-    goto top;
-}
-/* Also at the other fail check, under pop */
-```
-
-If we initialize savemark to the same value as mark, we can avoid a
-`SAVE_MARK` opcode at the start of alternatives -- this is a common
-pattern.  (OTOH, it costs an extra store for each frame.)
+- All `OP_RETURN` opcodes in a left-rec rule are replaced with
+  `OP_RETURN_LEFT_REC`.  This compares the current position with the
+  most recently cached position for this rule at this point in the
+  input.  If the new match is *further*, it updates the memo cache,
+  resets `f->mark`, and resets `f->iop` and `f->ialt` to the start of
+  the rule.  It then goes back to the top (possibly skipping the setup
+  op).  If the new match is not further, it is discarded and the most
+  recent match from the memo cache is returned as the result (also
+  updating the end position).

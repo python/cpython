@@ -9,6 +9,9 @@ typedef enum _opcodes {
     OP_LOOP_COLLECT,
     OP_LOOP_COLLECT_NONEMPTY,
     OP_LOOP_COLLECT_DELIMITED,
+    OP_SAVE_MARK,
+    OP_POS_LOOKAHEAD,
+    OP_NEG_LOOKAHEAD,
     OP_SUCCESS,
     OP_FAILURE,
     // The rest have an argument
@@ -29,6 +32,9 @@ static char *opcode_names[] = {
     "OP_LOOP_COLLECT",
     "OP_LOOP_COLLECT_NONEMPTY",
     "OP_LOOP_COLLECT_DELIMITED",
+    "OP_SAVE_MARK",
+    "OP_POS_LOOKAHEAD",
+    "OP_NEG_LOOKAHEAD",
     "OP_SUCCESS",
     "OP_FAILURE",
     // The rest have an argument
@@ -53,12 +59,13 @@ typedef struct _rule {
 typedef struct _frame {
     Rule *rule;
     int mark;
+    int savemark;
     int ialt;
     int iop;
     int cut;
     int ncollected;
     int capacity;
-    void **collection;
     int ival;
+    void **collection;
     void *vals[MAXVALS];
 } Frame;

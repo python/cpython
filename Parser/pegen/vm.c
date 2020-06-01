@@ -106,6 +106,7 @@ run_vm(Parser *p, Rule rules[], int root)
         goto top;
     case OP_OPTIONAL:
         goto top;
+
     case OP_LOOP_ITERATE:
         f->mark = p->mark;
         assert(f->ival == 1 || f->ival == 2);
@@ -149,6 +150,17 @@ run_vm(Parser *p, Rule rules[], int root)
             return PyErr_NoMemory();
         }
         break;
+
+    case OP_SAVE_MARK:
+        f->savemark = p->mark;
+        goto top;
+    case OP_POS_LOOKAHEAD:
+        p->mark = f->savemark;
+        goto top;
+    case OP_NEG_LOOKAHEAD:
+        v = NULL;
+        break;
+
     case OP_TOKEN:
         oparg = f->rule->opcodes[f->iop++];
         v = _PyPegen_expect_token(p, oparg);
@@ -199,11 +211,18 @@ run_vm(Parser *p, Rule rules[], int root)
     }
 
  fail:
-    if (f->rule->opcodes[f->iop] == OP_OPTIONAL) {
-        D(printf("            GA!\n"));
+    opc = f->rule->opcodes[f->iop];
+    if (opc == OP_OPTIONAL) {
+        D(printf("            OP_OPTIONAL\n"));
         assert(f->ival < MAXVALS);
         f->vals[f->ival++] = NULL;
         f->iop++;  // Skip over the OP_OPTIONAL opcode
+        goto top;
+    }
+    if (opc == OP_NEG_LOOKAHEAD) {
+        D(printf("            OP_NEG_LOOKAHEAD\n"));
+        p->mark = f->savemark;
+        f->iop++;  // Skip over the OP_NEG_LOOKAHEAD opcode
         goto top;
     }
 
