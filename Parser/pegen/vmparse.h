@@ -16,7 +16,7 @@ enum {
     R_TERM,
     R_FACTOR,
     R_ROOT,
-    R__LOOP0_1,
+    R__LOOP1_1,
 };
 
 enum {
@@ -38,7 +38,7 @@ static Rule all_rules[] = {
      R_START,
      {0, -1},
      {
-        OP_RULE, R__LOOP0_1, OP_TOKEN, ENDMARKER, OP_RETURN, A_START_0,
+        OP_RULE, R__LOOP1_1, OP_TOKEN, ENDMARKER, OP_RETURN, A_START_0,
      },
     },
     {"stmt",
@@ -89,12 +89,12 @@ static Rule all_rules[] = {
         OP_FAILURE,
      },
     },
-    {"_loop0_1",
-     R__LOOP0_1,
+    {"_loop1_1",
+     R__LOOP1_1,
      {0, 3, -1},
      {
         OP_RULE, R_STMT, OP_LOOP_ITERATE,
-        OP_LOOP_COLLECT,
+        OP_LOOP_COLLECT_NONEMPTY,
      },
     },
 };

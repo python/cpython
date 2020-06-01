@@ -1,4 +1,4 @@
-start: a=stmt* ENDMARKER { _PyPegen_make_module(p, a) }
+start: a=stmt+ ENDMARKER { _PyPegen_make_module(p, a) }
 stmt:
     | a=expr NEWLINE { _Py_Expr(a, EXTRA) }
     | a=if_stmt NEWLINE { a }

@@ -268,6 +268,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
 
     def visit_Rule(self, node: Rule) -> None:
         is_loop = node.is_loop()
+        is_loop1 = node.name.startswith("_loop1")
         is_gather = node.is_gather()
         rhs = node.flatten()
         if node.left_recursive:
@@ -275,7 +276,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f'{{"{node.name}",')
         self.print(f" R_{node.name.upper()},")
         self.current_rule = node  # TODO: make this a context manager
-        self.visit(rhs, is_loop=is_loop, is_gather=is_gather)
+        self.visit(rhs, is_loop=is_loop, is_loop1=is_loop1, is_gather=is_gather)
         self.print("},")
 
     def visit_NamedItem(self, node: NamedItem) -> None:
@@ -297,31 +298,39 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         token_type = self.callmakervisitor.visit(node)
         self.add_opcode("OP_TOKEN", token_type)
 
-    def handle_loop_rhs(self, node: Rhs, opcodes_by_alt: Dict[int, List[str]]) -> None:
+    def handle_loop_rhs(
+        self, node: Rhs, opcodes_by_alt: Dict[int, List[str]], collect_opcode: str,
+    ) -> None:
         self.handle_default_rhs(node, opcodes_by_alt, is_loop=True, is_gather=False)
         with self.set_opcode_buffer(opcodes_by_alt[len(node.alts)]):
-            self.add_opcode("OP_LOOP_COLLECT")
+            self.add_opcode(collect_opcode)
 
     def handle_default_rhs(
         self,
         node: Rhs,
         opcodes_by_alt: Dict[int, List[str]],
         is_loop: bool = False,
+        is_loop1: bool = False,
         is_gather: bool = False,
     ) -> None:
         for index, alt in enumerate(node.alts):
             with self.set_opcode_buffer(opcodes_by_alt[index]):
-                self.visit(alt, is_loop=False, is_gather=False)
+                self.visit(alt, is_loop=False, is_loop1=False, is_gather=False)
                 assert not (alt.action and is_loop)  # A loop rule can't have actions
                 if is_loop:
                     self.add_opcode("OP_LOOP_ITERATE")
                 else:
                     self.add_opcode("OP_RETURN", f"A_{self.current_rule.name.upper()}_{index}")
 
-    def visit_Rhs(self, node: Rhs, is_loop: bool = False, is_gather: bool = False) -> None:
+    def visit_Rhs(
+        self, node: Rhs, is_loop: bool = False, is_loop1: bool = False, is_gather: bool = False,
+    ) -> None:
         opcodes_by_alt: Dict[int, List[str]] = defaultdict(list)
         if is_loop:
-            self.handle_loop_rhs(node, opcodes_by_alt)
+            opcode = "OP_LOOP_COLLECT"
+            if is_loop1:
+                opcode += "_NONEMPTY"
+            self.handle_loop_rhs(node, opcodes_by_alt, opcode)
         else:
             self.handle_default_rhs(node, opcodes_by_alt, is_loop=is_loop, is_gather=is_gather)
         *indexes, _ = accumulate(map(len, opcodes_by_alt.values()))
@@ -334,11 +343,15 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print(", ".join(opcodes) + ",")
         self.print(" },")
 
-    def visit_Alt(self, node: Alt, is_loop: bool, is_gather: bool) -> None:
+    def visit_Alt(self, node: Alt, is_loop: bool, is_loop1: bool, is_gather: bool) -> None:
         for item in node.items:
             self.visit(item)
 
     def visit_Repeat0(self, node: Repeat0) -> None:
+        name = self.callmakervisitor.visit(node)
+        self.add_opcode("OP_RULE", self._get_rule_opcode(name))
+
+    def visit_Repeat1(self, node: Repeat0) -> None:
         name = self.callmakervisitor.visit(node)
         self.add_opcode("OP_RULE", self._get_rule_opcode(name))
 
