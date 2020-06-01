@@ -139,10 +139,9 @@ case-insensitive and stored in lowercase [1]_.
 Supported Datatypes
 -------------------
 
-
 Config parsers do not guess datatypes of values in configuration files, always
 storing them internally as strings.  This means that if you need other
-datatypes, you should convert on your own::
+datatypes, you should convert on your own:
 
 .. doctest::
 
