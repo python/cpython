@@ -562,6 +562,12 @@ Previously, :attr:`sys.stderr` was block-buffered when non-interactive. Now
 ``stderr`` defaults to always being line-buffered.
 (Contributed by Jendrik Seipp in :issue:`13601`.)
 
+tracemalloc
+-----------
+
+Added :func:`tracemalloc.reset_peak` to set the peak size of traced memory
+blocks to the current size, to measure the peak of specific pieces of code.
+(Contributed by Huon Wilson in :issue:`40630`.)
 
 typing
 ------
