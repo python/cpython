@@ -286,7 +286,7 @@ value_pattern:
         _Py_Starred(value, Store, EXTRA) }
     | pattern
 key_value_pattern:
-    | key=(literal_pattern | constant_pattern) ':' value=closed_pattern {
+    | key=(literal_pattern | constant_pattern) ':' value=or_pattern {
         _PyPegen_key_value_pair(p, key, value) }
     | '**' value=name_pattern {
         _PyPegen_key_value_pair(p, NULL, value) }

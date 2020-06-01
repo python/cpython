@@ -2777,7 +2777,7 @@ compiler_pattern_store(struct compiler *c, expr_ty p, int anon_ok) {
     assert(p->v.Name.ctx == Store);
     if (_PyUnicode_EqualToASCIIString(p->v.Name.id, "_")) {
         if (!anon_ok) {
-            return compiler_error(c, "can't assign to '_' here; consider removing?");
+            return compiler_error(c, "can't assign to '_' here; consider removing or renaming?");
         }
         ADDOP(c, POP_TOP);
         return 1;

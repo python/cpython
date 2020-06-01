@@ -1330,16 +1330,14 @@ class _Unparser(NodeVisitor):
                 self.write(" " + self.cmpops[o.__class__.__name__] + " ")
                 self.traverse(e)
 
-    boolops = {"And": "and", "Or": "or"}
-    boolop_precedence = {"and": _Precedence.AND, "or": _Precedence.OR}
+    boolops = {("And", False): "and", ("Or", False): "or", ("Or", True): "|"}
+    boolop_precedence = {
+        "and": _Precedence.AND, "or": _Precedence.OR, "|": _Precedence.OR,
+    }
 
     def visit_BoolOp(self, node):
 
-        if self.in_pattern():
-            self.interleave(lambda: self.write(" | "), self.traverse, node.values)
-            return
-
-        operator = self.boolops[node.op.__class__.__name__]
+        operator = self.boolops[node.op.__class__.__name__, self.in_pattern()]
         operator_precedence = self.boolop_precedence[operator]
 
         def increasing_level_traverse(node):
