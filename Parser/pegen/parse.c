@@ -5454,7 +5454,7 @@ group_pattern_rule(Parser *p)
     return _res;
 }
 
-// sequence_pattern: '[' values_pattern ']'
+// sequence_pattern: '[' values_pattern? ']'
 static void *
 sequence_pattern_rule(Parser *p)
 {
@@ -5474,24 +5474,24 @@ sequence_pattern_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // '[' values_pattern ']'
+    { // '[' values_pattern? ']'
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> sequence_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'[' values_pattern ']'"));
+        D(fprintf(stderr, "%*c> sequence_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'[' values_pattern? ']'"));
         Token * _literal;
         Token * _literal_1;
         void *values;
         if (
             (_literal = _PyPegen_expect_token(p, 9))  // token='['
             &&
-            (values = values_pattern_rule(p))  // values_pattern
+            (values = values_pattern_rule(p), 1)  // values_pattern?
             &&
             (_literal_1 = _PyPegen_expect_token(p, 10))  // token=']'
         )
         {
-            D(fprintf(stderr, "%*c+ sequence_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' values_pattern ']'"));
+            D(fprintf(stderr, "%*c+ sequence_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' values_pattern? ']'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -5511,7 +5511,7 @@ sequence_pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s sequence_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'[' values_pattern ']'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'[' values_pattern? ']'"));
     }
     _res = NULL;
   done:

@@ -364,8 +364,7 @@ validate_pattern(expr_ty p)
             }
             return 1;
         case List_kind:
-        case Tuple_kind:  // TODO: Undecided yet if tuple syntax is legal.
-            values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
+            values = p->v.List.elts;
             size = asdl_seq_LEN(values);
             for (i = 0; i < size; i++) {
                 value = asdl_seq_GET(values, i);

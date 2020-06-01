@@ -196,7 +196,7 @@ match_stmt[stmt_ty]:
     | "match" target=expression ':' NEWLINE INDENT cases=case_block+ DEDENT {
         _Py_Match(target, cases, EXTRA) }
 case_block:
-    | "case" pattern=pattern guard=[guard] ':' body=block {
+    | "case" pattern=pattern guard=guard? ':' body=block {
         _Py_match_case(pattern, guard, body, p->arena) }
 
 pattern:
@@ -242,7 +242,7 @@ group_pattern:
     | '(' pattern=pattern ')' {
         pattern }
 sequence_pattern:
-    | '[' values=values_pattern ']' {
+    | '[' values=values_pattern? ']' {
         _Py_List(values, Load, EXTRA) }
 mapping_pattern:
     | '{' items=items_pattern '}' {
@@ -250,11 +250,11 @@ mapping_pattern:
 class_pattern:
     | func=name_or_attr '(' ')' {
         _Py_Call(func, NULL, NULL, EXTRA) }
-    | func=name_or_attr '(' args=','.pattern+ [','] ')' {
+    | func=name_or_attr '(' args=','.pattern+ ','? ')' {
         _Py_Call(func, args, NULL, EXTRA) }
-    | func=name_or_attr '(' keywords=','.keyword_pattern+ [','] ')' {
+    | func=name_or_attr '(' keywords=','.keyword_pattern+ ','? ')' {
         _Py_Call(func, NULL, keywords, EXTRA) }
-    | func=name_or_attr '(' args=','.pattern+ ',' keywords=','.keyword_pattern+ [','] ')' {
+    | func=name_or_attr '(' args=','.pattern+ ',' keywords=','.keyword_pattern+ ','? ')' {
         _Py_Call(func, args, keywords, EXTRA) }
 
 name_or_attr:
@@ -262,10 +262,10 @@ name_or_attr:
     | value=name_or_attr '.' attr=NAME {
         _Py_Attribute(value, attr->v.Name.id, Load, EXTRA) }
 values_pattern:
-    | values=','.value_pattern+ [','] {
+    | values=','.value_pattern+ ','? {
         values }
 items_pattern:
-    | items=','.key_value_pattern+ [','] {
+    | items=','.key_value_pattern+ ','? {
         items }
 keyword_pattern:
     | arg=NAME '=' value=or_pattern {

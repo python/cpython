@@ -2873,8 +2873,8 @@ compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail)
 static int
 compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail)
 {
-    assert(p->kind == List_kind || p->kind == Tuple_kind);
-    asdl_seq *values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
+    assert(p->kind == List_kind);
+    asdl_seq *values = p->v.List.elts;
     Py_ssize_t size = asdl_seq_LEN(values);
     Py_ssize_t star = -1;
     for (Py_ssize_t i = 0; i < size; i++) {
@@ -2939,7 +2939,6 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail)
         case Dict_kind:
             return compiler_pattern_mapping(c, p, fail);
         case List_kind:
-        case Tuple_kind:
             return compiler_pattern_sequence(c, p, fail);
         case Name_kind:
             return compiler_pattern_name(c, p, fail);
