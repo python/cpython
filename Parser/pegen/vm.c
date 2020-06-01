@@ -155,6 +155,8 @@ run_vm(Parser *p, Rule rules[], int root)
         f->savemark = p->mark;
         goto top;
     case OP_POS_LOOKAHEAD:
+        assert(f->ival > 0);
+        f->ival--;  /* Back out last added value */
         p->mark = f->savemark;
         goto top;
     case OP_NEG_LOOKAHEAD:

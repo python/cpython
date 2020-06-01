@@ -326,6 +326,16 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
     def visit_NamedItem(self, node: NamedItem) -> None:
         self.visit(node.item)
 
+    def visit_PositiveLookahead(self, node: PositiveLookahead) -> None:
+        self.add_opcode("OP_SAVE_MARK")
+        self.visit(node.node)
+        self.add_opcode("OP_POS_LOOKAHEAD")
+
+    def visit_NegativeLookahead(self, node: PositiveLookahead) -> None:
+        self.add_opcode("OP_SAVE_MARK")
+        self.visit(node.node)
+        self.add_opcode("OP_NEG_LOOKAHEAD")
+
     def _get_rule_opcode(self, name: str) -> str:
         return f"R_{name.upper()}"
 
@@ -337,7 +347,6 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
             self.add_opcode("OP_TOKEN", name)
         else:
             self.add_opcode("OP_RULE", self._get_rule_opcode(name))
-
     def visit_StringLeaf(self, node: StringLeaf) -> None:
         op_pair = self.callmakervisitor.visit(node)
         self.add_opcode(*op_pair)

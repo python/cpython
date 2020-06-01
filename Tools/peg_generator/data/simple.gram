@@ -1,7 +1,7 @@
 start: a=stmt+ ENDMARKER { _PyPegen_make_module(p, a) }
 stmt:
-    | a=expr NEWLINE { _Py_Expr(a, EXTRA) }
-    | a=if_stmt
+    | !'if' a=expr NEWLINE { _Py_Expr(a, EXTRA) }
+    | &'if' a=if_stmt
 if_stmt:
     | 'if' a=NAME ':' b=stmt { _Py_If(a, CHECK(_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
 expr:
