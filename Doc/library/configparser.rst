@@ -142,7 +142,7 @@ Supported Datatypes
 Config parsers do not guess datatypes in configuration files, always storing
 both section names and values as strings.  This means that if you need other
 datatypes, you should convert on your own and that section names will always be
-converted to strings when writting a new value:
+converted to strings when writing a new value:
 
 .. doctest::
 
