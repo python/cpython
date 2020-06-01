@@ -663,6 +663,11 @@ class AST_Tests(unittest.TestCase):
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
 
+    def test_issue40614_feature_version(self):
+        ast.parse('f"{x=}"', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('f"{x=}"', feature_version=(3, 7))
+
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None

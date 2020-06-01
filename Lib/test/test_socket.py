@@ -1,6 +1,7 @@
 import unittest
 from test import support
 from test.support import socket_helper
+from test.support import threading_helper
 
 import errno
 import io
@@ -336,7 +337,7 @@ class ThreadableTest:
         self.server_ready.set()
 
     def _setUp(self):
-        self.wait_threads = support.wait_threads_exit()
+        self.wait_threads = threading_helper.wait_threads_exit()
         self.wait_threads.__enter__()
 
         self.server_ready = threading.Event()
@@ -6665,9 +6666,9 @@ def test_main():
     ])
     tests.append(TestMSWindowsTCPFlags)
 
-    thread_info = support.threading_setup()
+    thread_info = threading_helper.threading_setup()
     support.run_unittest(*tests)
-    support.threading_cleanup(*thread_info)
+    threading_helper.threading_cleanup(*thread_info)
 
 
 if __name__ == "__main__":

@@ -52,6 +52,7 @@ jobs:
         python -m pip install -U coverage
         python -m pip install -r Misc/requirements-test.txt
         python -m test.pythoninfo
+        export PYTHONPATH=`find .venv -name fullcoverage`
     - name: 'Tests with coverage'
       run: >
         source ./.venv/bin/activate &&
@@ -67,6 +68,7 @@ jobs:
         || true
     - name: 'Publish code coverage results'
       run: |
+        export PYTHONPATH=
         source ./.venv/bin/activate
         bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
       env:

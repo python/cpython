@@ -1211,6 +1211,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    - :data:`RWF_DSYNC`
    - :data:`RWF_SYNC`
+   - :data:`RWF_APPEND`
 
    Return the total number of bytes actually written.
 
@@ -1228,8 +1229,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. data:: RWF_DSYNC
 
-   Provide a per-write equivalent of the :data:`O_DSYNC` ``open(2)`` flag. This
-   flag effect applies only to the data range written by the system call.
+   Provide a per-write equivalent of the :data:`O_DSYNC` :func:`os.open` flag.
+   This flag effect applies only to the data range written by the system call.
 
    .. availability:: Linux 4.7 and newer.
 
@@ -1238,12 +1239,26 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. data:: RWF_SYNC
 
-   Provide a per-write equivalent of the :data:`O_SYNC` ``open(2)`` flag. This
-   flag effect applies only to the data range written by the system call.
+   Provide a per-write equivalent of the :data:`O_SYNC` :func:`os.open` flag.
+   This flag effect applies only to the data range written by the system call.
 
    .. availability:: Linux 4.7 and newer.
 
    .. versionadded:: 3.7
+
+
+.. data:: RWF_APPEND
+
+    Provide a per-write equivalent of the :data:`O_APPEND` :func:`os.open`
+    flag. This flag is meaningful only for :func:`os.pwritev`, and its
+    effect applies only to the data range written by the system call. The
+    *offset* argument does not affect the write operation; the data is always
+    appended to the end of the file. However, if the *offset* argument is
+    ``-1``, the current file *offset* is updated.
+
+   .. availability:: Linux 4.16 and newer.
+
+   .. versionadded:: 3.10
 
 
 .. function:: read(fd, n)

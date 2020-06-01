@@ -39,16 +39,6 @@ extern "C" {
     _Py_atomic_store_relaxed(&(gilstate)->tstate_current, \
                              (uintptr_t)(value))
 
-static void
-ensure_tstate_not_null(const char *func, PyThreadState *tstate)
-{
-    if (tstate == NULL) {
-        _Py_FatalErrorFunc(func,
-                           "current thread state is NULL (released GIL?)");
-    }
-}
-
-
 /* Forward declarations */
 static PyThreadState *_PyGILState_GetThisThreadState(struct _gilstate_runtime_state *gilstate);
 static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
@@ -431,7 +421,7 @@ PyInterpreterState *
 PyInterpreterState_Get(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
         Py_FatalError("no current interpreter");
@@ -846,7 +836,7 @@ static void
 tstate_delete_common(PyThreadState *tstate,
                      struct _gilstate_runtime_state *gilstate)
 {
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
         Py_FatalError("NULL interpreter");
@@ -897,7 +887,7 @@ PyThreadState_Delete(PyThreadState *tstate)
 void
 _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 {
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
     tstate_delete_common(tstate, gilstate);
     _PyRuntimeGILState_SetThreadState(gilstate, NULL);
@@ -975,7 +965,7 @@ PyThreadState *
 PyThreadState_Get(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
     return tstate;
 }
 

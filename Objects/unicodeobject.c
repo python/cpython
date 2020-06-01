@@ -14617,7 +14617,7 @@ mainformatlong(PyObject *v,
     /* make sure number is a type of integer for o, x, and X */
     if (!PyLong_Check(v)) {
         if (type == 'o' || type == 'x' || type == 'X') {
-            iobj = PyNumber_Index(v);
+            iobj = _PyNumber_Index(v);
             if (iobj == NULL) {
                 if (PyErr_ExceptionMatches(PyExc_TypeError))
                     goto wrongtype;

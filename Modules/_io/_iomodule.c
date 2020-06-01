@@ -532,7 +532,7 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
 {
     Py_off_t result;
     PyObject *runerr;
-    PyObject *value = PyNumber_Index(item);
+    PyObject *value = _PyNumber_Index(item);
     if (value == NULL)
         return -1;
 

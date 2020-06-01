@@ -40,6 +40,7 @@ from itertools import cycle, count
 from test import support
 from test.support.script_helper import (
     assert_python_ok, assert_python_failure, run_python_until_end)
+from test.support import threading_helper
 from test.support import FakePath
 
 import codecs
@@ -1472,7 +1473,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
                         errors.append(e)
                         raise
                 threads = [threading.Thread(target=f) for x in range(20)]
-                with support.start_threads(threads):
+                with threading_helper.start_threads(threads):
                     time.sleep(0.02) # yield
                 self.assertFalse(errors,
                     "the following exceptions were caught: %r" % errors)
@@ -1836,7 +1837,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
                         errors.append(e)
                         raise
                 threads = [threading.Thread(target=f) for x in range(20)]
-                with support.start_threads(threads):
+                with threading_helper.start_threads(threads):
                     time.sleep(0.02) # yield
                 self.assertFalse(errors,
                     "the following exceptions were caught: %r" % errors)
@@ -3270,7 +3271,7 @@ class TextIOWrapperTest(unittest.TestCase):
                 f.write(text)
             threads = [threading.Thread(target=run, args=(x,))
                        for x in range(20)]
-            with support.start_threads(threads, event.set):
+            with threading_helper.start_threads(threads, event.set):
                 time.sleep(0.02)
         with self.open(support.TESTFN) as f:
             content = f.read()

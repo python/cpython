@@ -4,7 +4,7 @@ import collections
 import functools
 import re
 import weakref
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import datetime, timedelta, tzinfo
 
 from . import _common, _tzpath
 

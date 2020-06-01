@@ -118,7 +118,7 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -319,4 +319,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=a87074ca902bd432 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d6e997ebc269f78f input=a9049054013a1b77]*/

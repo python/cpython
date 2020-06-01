@@ -70,6 +70,9 @@ Summary -- Release highlights
 New Features
 ============
 
+* The :class:`int` type has a new method :meth:`int.bit_count`, returning the
+  number of ones in the binary expansion of a given integer, also known
+  as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
 
 
 Other Language Changes
@@ -91,13 +94,6 @@ New Modules
 
 Improved Modules
 ================
-
-tracemalloc
------------
-
-Added :func:`tracemalloc.reset_peak` to set the peak size of traced memory
-blocks to the current size, to measure the peak of specific pieces of code.
-(Contributed by Huon Wilson in :issue:`40630`.)
 
 Optimizations
 =============
@@ -128,6 +124,10 @@ C API Changes
 
 New Features
 ------------
+
+  The result of :c:func:`PyNumber_Index` now always has exact type :class:`int`.
+  Previously, the result could have been an instance of a subclass of ``int``.
+  (Contributed by Serhiy Storchaka in :issue:`40792`.)
 
 
 Porting to Python 3.10
