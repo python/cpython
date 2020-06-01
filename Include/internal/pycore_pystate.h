@@ -86,6 +86,21 @@ _PyThreadState_GET(void)
 #undef PyThreadState_GET
 #define PyThreadState_GET() _PyThreadState_GET()
 
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalError_TstateNULL(const char *func);
+
+static inline void
+_Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
+{
+    if (tstate == NULL) {
+        _Py_FatalError_TstateNULL(func);
+    }
+}
+
+// Call Py_FatalError() if tstate is NULL
+#define _Py_EnsureTstateNotNULL(tstate) \
+    _Py_EnsureFuncTstateNotNULL(__func__, tstate)
+
+
 /* Get the current interpreter state.
 
    The macro is unsafe: it does not check for error and it can return NULL.
@@ -96,7 +111,9 @@ _PyThreadState_GET(void)
    and _PyGILState_GetInterpreterStateUnsafe(). */
 static inline PyInterpreterState* _PyInterpreterState_GET(void) {
     PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
+#ifdef Py_DEBUG
+    _Py_EnsureTstateNotNULL(tstate);
+#endif
     return tstate->interp;
 }
 

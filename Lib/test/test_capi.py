@@ -68,7 +68,10 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(err.rstrip().startswith(
                          b'Fatal Python error: '
                          b'PyThreadState_Get: '
-                         b'current thread state is NULL (released GIL?)'))
+                         b'the function must be called with the GIL held, '
+                         b'but the GIL is released '
+                         b'(the current Python thread state is NULL)'),
+                        err)
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
