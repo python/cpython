@@ -197,4 +197,24 @@ _tracemalloc_get_traced_memory(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_get_traced_memory_impl(module);
 }
-/*[clinic end generated code: output=1bc96dc569706afa input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_tracemalloc_reset_peak__doc__,
+"reset_peak($module, /)\n"
+"--\n"
+"\n"
+"Set the peak size of memory blocks traced by tracemalloc to the current size.\n"
+"\n"
+"Do nothing if the tracemalloc module is not tracing memory allocations.");
+
+#define _TRACEMALLOC_RESET_PEAK_METHODDEF    \
+    {"reset_peak", (PyCFunction)_tracemalloc_reset_peak, METH_NOARGS, _tracemalloc_reset_peak__doc__},
+
+static PyObject *
+_tracemalloc_reset_peak_impl(PyObject *module);
+
+static PyObject *
+_tracemalloc_reset_peak(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _tracemalloc_reset_peak_impl(module);
+}
+/*[clinic end generated code: output=a130117b1af821da input=a9049054013a1b77]*/
