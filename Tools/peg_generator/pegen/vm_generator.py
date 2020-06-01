@@ -68,17 +68,27 @@ class VMCallMakerVisitor(GrammarVisitor):
         self.gen = parser_generator
         self.cache: Dict[Any, Any] = {}
         self.keyword_cache: Dict[str, int] = {}
+        self.soft_keyword_cache: List[str] = []
 
-    def keyword_helper(self, keyword: str) -> int:
+    def keyword_helper(self, keyword: str) -> Tuple[str, int]:
         if keyword not in self.keyword_cache:
             self.keyword_cache[keyword] = self.gen.keyword_type()
-        return self.keyword_cache[keyword]
+        return "OP_TOKEN", self.keyword_cache[keyword]
 
-    def visit_StringLeaf(self, node: StringLeaf) -> int:
+    def soft_keyword_helper(self, keyword: str) -> Tuple[str, str]:
+        if keyword not in self.soft_keyword_cache:
+            self.soft_keyword_cache.append(keyword)
+        return "OP_SOFT_KEYWORD", f"SK_{keyword.upper()}"
+
+    def visit_StringLeaf(self, node: StringLeaf) -> Tuple[str, Union[str, int]]:
         val = ast.literal_eval(node.value)
         if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
-            return self.keyword_helper(val)
-        return token.EXACT_TOKEN_TYPES[val]  # type: ignore [attr-defined]
+            if node.value.endswith("'"):
+                return self.keyword_helper(val)
+            else:
+                return self.soft_keyword_helper(val)
+        tok_num = token.EXACT_TOKEN_TYPES[val]
+        return "OP_TOKEN", token.tok_name[tok_num]
 
     def visit_Repeat0(self, node: Repeat0) -> None:
         if node in self.cache:
@@ -133,6 +143,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.collect_todo()
         self.gather_actions()
         self._setup_keywords()
+        self._setup_soft_keywords()
 
         self.print("enum {")
         with self.indent():
@@ -191,6 +202,24 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
                             self.print(f'{{"{keyword_str}", {keyword_type}}},')
                         self.print("{NULL, -1},")
                     self.print("},")
+        self.print("};")
+        self.print()
+
+    def _setup_soft_keywords(self) -> None:
+        soft_keywords = self.callmakervisitor.soft_keyword_cache
+        if not soft_keywords:
+            return
+
+        self.print("enum {")
+        with self.indent():
+            for soft_keyword in soft_keywords:
+                self.print(f"SK_{soft_keyword.upper()},")
+        self.print("};")
+        self.print()
+        self.print("static const char *soft_keywords[] = {")
+        with self.indent():
+            for soft_keyword in soft_keywords:
+                self.print(f'"{soft_keyword}",')
         self.print("};")
         self.print()
 
@@ -310,8 +339,8 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
             self.add_opcode("OP_RULE", self._get_rule_opcode(name))
 
     def visit_StringLeaf(self, node: StringLeaf) -> None:
-        token_type = self.callmakervisitor.visit(node)
-        self.add_opcode("OP_TOKEN", token_type)
+        op_pair = self.callmakervisitor.visit(node)
+        self.add_opcode(*op_pair)
 
     def handle_loop_rhs(
         self, node: Rhs, opcodes_by_alt: Dict[int, List[str]], collect_opcode: str,

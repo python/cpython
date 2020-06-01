@@ -12,6 +12,7 @@ typedef enum _opcodes {
     OP_SUCCESS,
     OP_FAILURE,
     // The rest have an argument
+    OP_SOFT_KEYWORD,
     OP_TOKEN,
     OP_RULE,
     OP_RETURN,
@@ -31,6 +32,7 @@ static char *opcode_names[] = {
     "OP_SUCCESS",
     "OP_FAILURE",
     // The rest have an argument
+    "OP_SOFT_KEYWORD",
     "OP_TOKEN",
     "OP_RULE",
     "OP_RETURN",

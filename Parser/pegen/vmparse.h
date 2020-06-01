@@ -9,6 +9,14 @@ static KeywordToken *reserved_keywords[] = {
 };
 
 enum {
+    SK___PEG_PARSER__,
+};
+
+static const char *soft_keywords[] = {
+    "__peg_parser__",
+};
+
+enum {
     R_START,
     R_STMT,
     R_IF_STMT,
@@ -33,6 +41,7 @@ enum {
     A_FACTOR_1,
     A_FACTOR_2,
     A_FACTOR_3,
+    A_FACTOR_4,
     A__GATHER_2_0,
     A__GATHER_2_1,
 };
@@ -78,12 +87,13 @@ static Rule all_rules[] = {
     },
     {"factor",
      R_FACTOR,
-     {0, 8, 16, 19, -1},
+     {0, 8, 16, 19, 23, -1},
      {
         OP_TOKEN, 7, OP_RULE, R_EXPR, OP_TOKEN, 8, OP_RETURN, A_FACTOR_0,
         OP_TOKEN, 9, OP_RULE, R__GATHER_2, OP_TOKEN, 10, OP_RETURN, A_FACTOR_1,
         OP_NUMBER, OP_RETURN, A_FACTOR_2,
-        OP_NAME, OP_RETURN, A_FACTOR_3,
+        OP_SOFT_KEYWORD, SK___PEG_PARSER__, OP_RETURN, A_FACTOR_3,
+        OP_NAME, OP_RETURN, A_FACTOR_4,
      },
     },
     {"root",
@@ -132,7 +142,7 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_EXPR_1:
     case A_TERM_1:
     case A_FACTOR_2:
-    case A_FACTOR_3:
+    case A_FACTOR_4:
     case A__GATHER_2_0:
     case A__GATHER_2_1:
         return _f->vals[0];
@@ -146,6 +156,8 @@ call_action(Parser *p, Frame *_f, int _iaction)
         return _f->vals[1];
     case A_FACTOR_1:
         return _Py_List ( _f->vals[1] , Load , EXTRA );
+    case A_FACTOR_3:
+        return RAISE_SYNTAX_ERROR("You found it!");
     default:
         assert(0);
     }

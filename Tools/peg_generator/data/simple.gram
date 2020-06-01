@@ -14,4 +14,5 @@ factor:
     | '(' a=expr ')' { a }
     | '[' a=','.expr+ ']' { _Py_List(a, Load, EXTRA) }
     | NUMBER
+    | "__peg_parser__" { RAISE_SYNTAX_ERROR("You found it!") }
     | NAME

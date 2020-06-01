@@ -153,6 +153,10 @@ run_vm(Parser *p, Rule rules[], int root)
         oparg = f->rule->opcodes[f->iop++];
         v = _PyPegen_expect_token(p, oparg);
         break;
+    case OP_SOFT_KEYWORD:
+        oparg = f->rule->opcodes[f->iop++];
+        v = _PyPegen_expect_soft_keyword(p, soft_keywords[oparg]);
+        break;
     case OP_RULE:
         oparg = f->rule->opcodes[f->iop++];
         Rule *rule = &rules[oparg];
