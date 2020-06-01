@@ -1782,8 +1782,9 @@ PyOS_FiniInterrupts(void)
 int
 PyOS_InterruptOccurred(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_Py_ThreadCanHandleSignals(interp)) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
 
