@@ -933,7 +933,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
                 self.assertIsNone(server.logged)
             self.assertIsNone(server.logged)
 
-    @reap_threads
+    @threading_helper.reap_threads
     @cpython_only
     def test_dump_ur(self):
         # See: http://bugs.python.org/issue26543
