@@ -290,6 +290,10 @@ class zipimporter:
     def __repr__(self):
         return f'<zipimporter object "{self.archive}{path_sep}{self.prefix}">'
 
+    def files(self):
+        import zipfile
+        return zipfile.Path(self.archive, self.prefix)
+
 
 # _zip_searchorder defines how we search for a module in the Zip
 # archive: we first search for a package __init__, then for

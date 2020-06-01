@@ -1,6 +1,5 @@
 import os
 import pathlib
-import zipfile
 import tempfile
 import functools
 import contextlib
@@ -11,28 +10,7 @@ def from_package(package):
     Return a Traversable object for the given package.
 
     """
-    spec = package.__spec__
-    return from_traversable_resources(spec) or fallback_resources(spec)
-
-
-def from_traversable_resources(spec):
-    """
-    If the spec.loader implements TraversableResources,
-    directly or implicitly, it will have a ``files()`` method.
-    """
-    with contextlib.suppress(AttributeError):
-        return spec.loader.files()
-
-
-def fallback_resources(spec):
-    package_directory = pathlib.Path(spec.origin).parent
-    try:
-        archive_path = spec.loader.archive
-        rel_path = package_directory.relative_to(archive_path)
-        return zipfile.Path(archive_path, str(rel_path) + '/')
-    except Exception:
-        pass
-    return package_directory
+    return package.__spec__.loader.files()
 
 
 @contextlib.contextmanager
