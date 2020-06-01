@@ -1,0 +1,1 @@
+Fix GIL usage in :c:func:`PyOS_Readline`: lock the GIL to set an exception.
