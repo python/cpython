@@ -59,14 +59,14 @@ static Rule all_rules[] = {
      {0, 6, -1},
      {
         OP_RULE, R_EXPR, OP_TOKEN, NEWLINE, OP_RETURN, A_STMT_0,
-        OP_RULE, R_IF_STMT, OP_TOKEN, NEWLINE, OP_RETURN, A_STMT_1,
+        OP_RULE, R_IF_STMT, OP_RETURN, A_STMT_1,
      },
     },
     {"if_stmt",
      R_IF_STMT,
      {0, -1},
      {
-        OP_TOKEN, 500, OP_NAME, OP_TOKEN, COLON, OP_RULE, R_EXPR, OP_RETURN, A_IF_STMT_0,
+        OP_TOKEN, 500, OP_NAME, OP_TOKEN, COLON, OP_RULE, R_STMT, OP_RETURN, A_IF_STMT_0,
      },
     },
     {"expr",
@@ -147,7 +147,7 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A__GATHER_2_1:
         return _f->vals[0];
     case A_IF_STMT_0:
-        return _Py_If ( _f->vals[1] , _f->vals[3] , NULL , EXTRA );
+        return _Py_If ( _f->vals[1] , CHECK ( _PyPegen_singleton_seq ( p , _f->vals[3] ) ) , NULL , EXTRA );
     case A_EXPR_0:
         return _Py_BinOp ( _f->vals[0] , Add , _f->vals[2] , EXTRA );
     case A_TERM_0:
