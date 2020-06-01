@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* === Object Protocol ================================================== */
 
 #ifdef PY_SSIZE_T_CLEAN
@@ -381,7 +377,3 @@ PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 
 /* Same as PyNumber_Index but can return an instance of a subclass of int. */
 PyAPI_FUNC(PyObject *) _PyNumber_Index(PyObject *o);
-
-#ifdef __cplusplus
-}
-#endif
