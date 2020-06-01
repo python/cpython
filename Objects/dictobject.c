@@ -112,7 +112,8 @@ converting the dict to the combined table.
 
 #include "Python.h"
 #include "pycore_gc.h"       // _PyObject_GC_IS_TRACKED()
-#include "pycore_object.h"
+#include "pycore_object.h"   // _PyObject_GC_TRACK()
+#include "pycore_pyerrors.h" // _PyErr_Fetch()
 #include "pycore_pystate.h"  // _PyThreadState_GET()
 #include "dict-common.h"
 #include "stringlib/eq.h"    // unicode_eq()
@@ -1387,14 +1388,12 @@ _PyDict_NewPresized(Py_ssize_t minused)
 PyObject *
 PyDict_GetItem(PyObject *op, PyObject *key)
 {
-    Py_hash_t hash;
-    Py_ssize_t ix;
-    PyDictObject *mp = (PyDictObject *)op;
-    PyThreadState *tstate;
-    PyObject *value;
-
-    if (!PyDict_Check(op))
+    if (!PyDict_Check(op)) {
         return NULL;
+    }
+    PyDictObject *mp = (PyDictObject *)op;
+
+    Py_hash_t hash;
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1)
     {
@@ -1405,28 +1404,26 @@ PyDict_GetItem(PyObject *op, PyObject *key)
         }
     }
 
-    /* We can arrive here with a NULL tstate during initialization: try
-       running "python -Wi" for an example related to string interning.
-       Let's just hope that no exception occurs then...  This must be
-       _PyThreadState_GET() and not PyThreadState_Get() because the latter
-       abort Python if tstate is NULL. */
-    tstate = _PyThreadState_GET();
-    if (tstate != NULL && tstate->curexc_type != NULL) {
-        /* preserve the existing exception */
-        PyObject *err_type, *err_value, *err_tb;
-        PyErr_Fetch(&err_type, &err_value, &err_tb);
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
-        /* ignore errors */
-        PyErr_Restore(err_type, err_value, err_tb);
-        if (ix < 0)
-            return NULL;
-    }
-    else {
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
-        if (ix < 0) {
-            PyErr_Clear();
-            return NULL;
-        }
+    PyThreadState *tstate = _PyThreadState_GET();
+#ifdef Py_DEBUG
+    // bpo-40839: Before Python 3.10, it was possible to call PyDict_GetItem()
+    // with the GIL released.
+    _Py_EnsureTstateNotNULL(tstate);
+#endif
+
+    /* Preserve the existing exception */
+    PyObject *exc_type, *exc_value, *exc_tb;
+    PyObject *value;
+    Py_ssize_t ix;
+
+    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    ix = (mp->ma_keys->dk_lookup)(mp, key, hash, &value);
+
+    /* Ignore any exception raised by the lookup */
+    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+
+    if (ix < 0) {
+        return NULL;
     }
     return value;
 }
