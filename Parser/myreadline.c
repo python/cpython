@@ -24,7 +24,7 @@ static PyThread_type_lock _PyOS_ReadlineLock = NULL;
 int (*PyOS_InputHook)(void) = NULL;
 
 /* This function restarts a fgets() after an EINTR error occurred
-   except if PyOS_InterruptOccurred() returns true. */
+   except if _PyOS_InterruptOccurred() returns true. */
 
 static int
 my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
@@ -90,7 +90,7 @@ my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
         }
 #endif
 
-        if (PyOS_InterruptOccurred()) {
+        if (_PyOS_InterruptOccurred(tstate)) {
             return 1; /* Interrupt */
         }
         return -2; /* Error */
