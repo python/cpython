@@ -313,7 +313,7 @@ class TestAST(unittest.TestCase):
     def test_patma_ast_38(self) -> None:
         match_cases = [
             MatchCase("[w := 0,]", "y = 0"),
-            MatchCase("[] or [1, z := (0 or 1)] or []", "y = 1"),
+            MatchCase("[z := 0] or [1, z := (0 or 1)] or [z := 0]", "y = 1"),
         ]
         namespace = self.execute_match("x = [1, 0]", "x", match_cases, "")
         self.assertNotIn("w", namespace)
@@ -994,7 +994,7 @@ class TestMatch(unittest.TestCase):
         match x:
             case [(w := 0)]:
                 y = 0
-            case [] | [1, (z := 0 | 1)] | []:
+            case [z] | [1, (z := 0 | 1)] | [z]:
                 y = 1
         self.assertEqual(w, None)
         self.assertEqual(x, [1, 0])
