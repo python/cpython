@@ -82,26 +82,23 @@ check_popcount(uint32_t x, int expected)
 static PyObject*
 test_popcount(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    if (check_popcount(0, 0) < 0) {
-        return NULL;
-    }
-    if (check_popcount(1, 1) < 0) {
-        return NULL;
-    }
-    if (check_popcount(UINT32_C(0x100), 1) < 0) {
-        return NULL;
-    }
-    if (check_popcount(UINT32_C(0xffff), 16) < 0) {
-        return NULL;
-    }
-    if (check_popcount(UINT32_C(0x10204080), 4) < 0) {
-        return NULL;
-    }
-    if (check_popcount(UINT32_C(0xDEADCAFE), 22) < 0) {
-        return NULL;
-    }
+#define CHECK(X, RESULT) \
+    do { \
+        if (check_popcount(UINT32_C(X), RESULT) < 0) { \
+            return NULL; \
+        } \
+    } while (0)
 
+    CHECK(0, 0);
+    CHECK(1, 1);
+    CHECK(0x08080808, 4);
+    CHECK(0x10101010, 4);
+    CHECK(0x10204080, 4);
+    CHECK(0xDEADCAFE, 22);
+    CHECK(0xFFFFFFFF, 32);
     Py_RETURN_NONE;
+
+#undef CHECK
 }
 
 

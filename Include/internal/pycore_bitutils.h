@@ -85,26 +85,34 @@ _Py_bswap64(uint64_t word)
 
 
 // Population count: count the number of 1's in 'u'
-// (number of bits set to 1)
+// (number of bits set to 1), also known as the hamming weight.
 static inline int
-_Py_popcount32(uint32_t u)
+_Py_popcount32(uint32_t x)
 {
-#if defined(__clang__) || defined(__GNUC__)
-
-#if SIZEOF_INT == 4
-    return __builtin_popcount(u);
-#elif SIZEOF_LONG == 4
-    return __builtin_popcountl(u);
+#if (defined(__clang__) || defined(__GNUC__)) && SIZEOF_INT == 4
+    return __builtin_popcount(x);
+#elif (defined(__clang__) || defined(__GNUC__)) && SIZEOF_INT == 8
+    return __builtin_popcountl(x);
 #else
-#  error "unsupported configuration"
-#endif
+    // 32-bit SWAR (SIMD Within A Register) popcount
 
-#else
-    /* 32-bit SWAR (SIMD Within A Register) popcount */
-    u -= (u >> 1) & UINT32_C(0x55555555);
-    u = (u & UINT32_C(0x33333333)) + ((u >> 2) & UINT32_C(0x33333333));
-    u = (u + (u >> 4)) & UINT32_C(0x0f0f0f0f);
-    return (uint32_t)(u * UINT32_C(0x01010101)) >> 24;
+    // Binary: 0 1 0 1 ...
+    const uint32_t M1 = UINT32_C(0x55555555);
+    // Binary: 00 11 00 11. ..
+    const uint32_t M2 = UINT32_C(0x33333333);
+    // Binary: 0000 1111 0000 1111 ...
+    const uint32_t M4 = UINT32_C(0x0F0F0F0F);
+    // 256^4 + 256^3 + 256^2 + 256^1
+    const uint32_t SUM = UINT32_C(0x01010101);
+
+    // Put count of each 2 bits into those 2 bits
+    x = x - ((x >> 1) & M1);
+    // Put count of each 4 bits into those 4 bits
+    x = (x & M2) + ((x >> 2) & M2);
+    // Put count of each 8 bits into those 8 bits
+    x = (x + (x >> 4)) & M4;
+    // Sum of the 4 byte counts
+    return (uint32_t)((uint64_t)x * (uint64_t)SUM) >> 24;
 #endif
 }
 
