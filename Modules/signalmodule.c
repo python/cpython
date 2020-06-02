@@ -1796,14 +1796,17 @@ PyOS_InterruptOccurred(void)
     return 1;
 }
 
+
+#ifdef HAVE_FORK
 static void
 _clear_pending_signals(void)
 {
-    int i;
-    if (!_Py_atomic_load(&is_tripped))
+    if (!_Py_atomic_load(&is_tripped)) {
         return;
+    }
+
     _Py_atomic_store(&is_tripped, 0);
-    for (i = 1; i < NSIG; ++i) {
+    for (int i = 1; i < NSIG; ++i) {
         _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
     }
 }
@@ -1816,6 +1819,8 @@ _PySignal_AfterFork(void)
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
 }
+#endif   /* HAVE_FORK */
+
 
 int
 _PyOS_IsMainThread(void)
