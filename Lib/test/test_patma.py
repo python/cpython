@@ -1556,6 +1556,67 @@ class TestMatch(unittest.TestCase):
         self.assertEqual(x, -0.25 - 1.75j)
         self.assertEqual(y, 0)
 
+    def test_patma_111(self) -> None:
+        class A:
+            B = 0
+        x = 0
+        match x:
+            case .A.B:
+                y = 0
+        self.assertEqual(A.B, 0)
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_112(self) -> None:
+        class A:
+            class B:
+                C = 0
+        x = 0
+        match x:
+            case A.B.C:
+                y = 0
+        self.assertEqual(A.B.C, 0)
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_113(self) -> None:
+        class A:
+            class B:
+                C = 0
+        x = 0
+        match x:
+            case .A.B.C:
+                y = 0
+        self.assertEqual(A.B.C, 0)
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_114(self) -> None:
+        class A:
+            class B:
+                class C:
+                    D = 0
+        x = 0
+        match x:
+            case .A.B.C.D:
+                y = 0
+        self.assertEqual(A.B.C.D, 0)
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_115(self) -> None:
+        class A:
+            class B:
+                class C:
+                    D = 0
+        x = 0
+        match x:
+            case .A.B.C.D:
+                y = 0
+        self.assertEqual(A.B.C.D, 0)
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
 
 if __name__ == "__main__":  # XXX: For quick test debugging...
     import dis

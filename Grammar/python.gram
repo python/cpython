@@ -238,10 +238,10 @@ literal_pattern:
     | 'False' {
         _Py_Constant(Py_False, NULL, EXTRA) }
 constant_pattern:
-    | '.' name=NAME {
+    | '.' name=NAME !('.' | '(' | '=') {
         name }
-    | value=name_or_attr '.' attr=NAME !'(' {
-        _Py_Attribute(value, attr->v.Name.id, Load, EXTRA) }
+    | '.'? attr=attr !('.' | '(' | '=') {
+        attr }
 group_pattern:
     | '(' pattern=pattern ')' {
         pattern }
@@ -269,10 +269,12 @@ signed_number:
     | NUMBER
     | '-' number=NUMBER {
         _Py_UnaryOp(USub, number, EXTRA) }
-name_or_attr:
-    | NAME
+attr:
     | value=name_or_attr '.' attr=NAME {
         _Py_Attribute(value, attr->v.Name.id, Load, EXTRA) }
+name_or_attr:
+    | attr
+    | NAME
 values_pattern:
     | values=','.value_pattern+ ','? {
         values }
