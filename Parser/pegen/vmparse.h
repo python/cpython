@@ -66,7 +66,7 @@ static Rule all_rules[] = {
      R_IF_STMT,
      {0, -1},
      {
-        OP_TOKEN, 500, OP_NAME, OP_TOKEN, COLON, OP_RULE, R_STMT, OP_RETURN, A_IF_STMT_0,
+        OP_TOKEN, 500, OP_CUT, OP_NAME, OP_TOKEN, COLON, OP_RULE, R_STMT, OP_RETURN, A_IF_STMT_0,
      },
     },
     {"expr",
@@ -160,5 +160,7 @@ call_action(Parser *p, Frame *_f, int _iaction)
         return RAISE_SYNTAX_ERROR ( "You found it!" );
     default:
         assert(0);
+        RAISE_SYNTAX_ERROR("invalid opcode");
+        return NULL;
     }
 }

@@ -52,6 +52,8 @@ call_action(Parser *p, Frame *_f, int _iaction)
 CALL_ACTION_TAIL = """\
     default:
         assert(0);
+        RAISE_SYNTAX_ERROR("invalid opcode");
+        return NULL;
     }
 }
 """
@@ -346,9 +348,13 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
             self.add_opcode("OP_TOKEN", name)
         else:
             self.add_opcode("OP_RULE", self._get_rule_opcode(name))
+
     def visit_StringLeaf(self, node: StringLeaf) -> None:
         op_pair = self.callmakervisitor.visit(node)
         self.add_opcode(*op_pair)
+
+    def visit_Cut(self, node: Cut) -> None:
+        self.add_opcode("OP_CUT")
 
     def handle_loop_rhs(
         self, node: Rhs, opcodes_by_alt: Dict[int, List[str]], collect_opcode: str,
