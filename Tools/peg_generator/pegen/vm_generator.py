@@ -6,6 +6,7 @@ import token
 import tokenize
 from collections import defaultdict
 from itertools import accumulate
+import sys
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from pegen import grammar
@@ -423,7 +424,10 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
 
 
 def main() -> None:
-    grammar, parser, tokenizer = build_parser("./data/simple.gram", False, False)
+    filename = "./data/simple.gram"
+    if sys.argv[1:]:
+        filename = sys.argv[1]
+    grammar, parser, tokenizer = build_parser(filename, False, False)
     p = VMParserGenerator(grammar)
     p.generate("")
 
