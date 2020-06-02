@@ -1492,6 +1492,69 @@ class TestMatch(unittest.TestCase):
         self.assertEqual(x, -1.5j)
         self.assertEqual(y, 0)
 
+    def test_patma_103(self) -> None:
+        x = 0
+        match x:
+            case 0 + 0j:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_104(self) -> None:
+        x = 0
+        match x:
+            case 0 - 0j:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_105(self) -> None:
+        x = 0
+        match x:
+            case -0 + 0j:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_106(self) -> None:
+        x = 0
+        match x:
+            case -0 - 0j:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_107(self) -> None:
+        x = 0.25 + 1.75j
+        match x:
+            case 0.25 + 1.75j:
+                y = 0
+        self.assertEqual(x, 0.25 + 1.75j)
+        self.assertEqual(y, 0)
+
+    def test_patma_108(self) -> None:
+        x = 0.25 - 1.75j
+        match x:
+            case 0.25 - 1.75j:
+                y = 0
+        self.assertEqual(x, 0.25 - 1.75j)
+        self.assertEqual(y, 0)
+
+    def test_patma_109(self) -> None:
+        x = -0.25 + 1.75j
+        match x:
+            case -0.25 + 1.75j:
+                y = 0
+        self.assertEqual(x, -0.25 + 1.75j)
+        self.assertEqual(y, 0)
+
+    def test_patma_110(self) -> None:
+        x = -0.25 - 1.75j
+        match x:
+            case -0.25 - 1.75j:
+                y = 0
+        self.assertEqual(x, -0.25 - 1.75j)
+        self.assertEqual(y, 0)
 
 
 if __name__ == "__main__":  # XXX: For quick test debugging...

@@ -225,9 +225,11 @@ name_pattern:
     | name=NAME !('.' | '(' | '=') {
         _PyPegen_set_expr_context(p, name, Store) }
 literal_pattern:
-    | NUMBER
-    | '-' number=NUMBER {
-        _Py_UnaryOp(USub, number, EXTRA) }
+    | signed_number !('+' | '-')
+    | real=signed_number '+' imag=NUMBER {
+        _Py_BinOp(real, Add, imag, EXTRA) }
+    | real=signed_number '-' imag=NUMBER  {
+        _Py_BinOp(real, Sub, imag, EXTRA) }
     | strings
     | 'None' {
         _Py_Constant(Py_None, NULL, EXTRA) }
@@ -263,6 +265,10 @@ class_pattern:
     | func=name_or_attr '(' [','.argument_pattern+ ','] error=error_star [',' ','.(argument_pattern | error_star)+] ','? ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "can't use starred pattern here") }
 
+signed_number:
+    | NUMBER
+    | '-' number=NUMBER {
+        _Py_UnaryOp(USub, number, EXTRA) }
 name_or_attr:
     | NAME
     | value=name_or_attr '.' attr=NAME {

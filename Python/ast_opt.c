@@ -747,6 +747,47 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
+astfold_pattern_negative(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    assert(node_->kind == UnaryOp_kind);
+    assert(node_->v.UnaryOp.op == USub);
+    assert(node_->v.UnaryOp.operand->kind == Constant_kind);
+    PyObject *value = node_->v.UnaryOp.operand->v.Constant.value;
+    assert(PyComplex_CheckExact(value) || PyFloat_CheckExact(value) || PyLong_CheckExact(value));
+    PyObject *negated = PyNumber_Negative(value);
+    if (!negated) {
+        return 0;
+    }
+    return make_const(node_, negated, ctx_);
+}
+
+static int
+astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    expr_ty left = node_->v.BinOp.left;
+    if (left->kind == UnaryOp_kind) {
+        CALL(astfold_pattern_negative, expr_ty, left);
+    }
+    expr_ty right = node_->v.BinOp.right;
+    assert(node_->v.BinOp.op == Add || node_->v.BinOp.op == Sub);
+    assert(node_->v.BinOp.left->kind = Constant_kind);
+    assert(node_->v.BinOp.right->kind = Constant_kind);
+    assert(PyFloat_CheckExact(left->v.Constant.value) || PyLong_CheckExact(left->v.Constant.value));
+    assert(PyComplex_CheckExact(right->v.Constant.value));
+    PyObject *new;
+    if (node_->v.BinOp.op == Add) {
+        new = PyNumber_Add(left->v.Constant.value, right->v.Constant.value);
+    }
+    else {
+        new = PyNumber_Subtract(left->v.Constant.value, right->v.Constant.value);
+    }
+    if (!new) {
+        return 0;
+    }
+    return make_const(node_, new, ctx_);
+}
+
+static int
 astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     // Don't blindly optimize the pattern as an expr; it plays by its own rules!
@@ -754,6 +795,10 @@ astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     switch (node_->kind) {
         case Attribute_kind:
         case Constant_kind:
+            return 1;
+        case BinOp_kind:
+            CALL(astfold_pattern_complex, expr_ty, node_);
+            return 1;
         case BoolOp_kind:
             // TODO: Quite a bit of potential here.
         case Dict_kind:
@@ -762,16 +807,8 @@ astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         case NamedExpr_kind:
             return 1;
         case UnaryOp_kind:
-            assert(node_->kind == UnaryOp_kind);
-            assert(node_->v.UnaryOp.op == USub);
-            assert(node_->v.UnaryOp.operand->kind == Constant_kind);
-            PyObject *value = node_->v.UnaryOp.operand->v.Constant.value;
-            assert(PyComplex_CheckExact(value) || PyFloat_CheckExact(value) || PyLong_CheckExact(value));
-            PyObject *negated = PyNumber_Negative(value);
-            if (!negated) {
-                return 0;
-            }
-            return make_const(node_, negated, ctx_);
+            CALL(astfold_pattern_negative, expr_ty, node_);
+            return 1;
         default:
             Py_UNREACHABLE();
     }
