@@ -1,0 +1,1 @@
+Built-in loaders (SourceFileLoader and ZipImporter) now supply native ``files()`` implementations and the fallback function has been removed.
