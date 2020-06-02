@@ -290,11 +290,8 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
                 i = name_to_index.get(s)
                 if i is not None:
                     s = f"_f->vals[{i}]"
-            if prevs == "-" and s == ">":
-                prevs = "->"
-            else:
-                prevs = s
             res.append(s)
+            prevs = s
         return " ".join(res).strip()
 
     def map_alt_names_to_vals_index(self, alt: Alt) -> Tuple[Dict[str, int], int]:
