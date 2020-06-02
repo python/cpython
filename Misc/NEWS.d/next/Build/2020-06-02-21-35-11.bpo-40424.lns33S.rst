@@ -1,0 +1,2 @@
+AIX Build: fix a race condition with `makexp_aix` when calling make with -jNN.
+Patch by M. Felt
