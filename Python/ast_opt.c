@@ -716,6 +716,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(astfold_expr, expr_ty, node_->v.Match.target);
         CALL_SEQ(astfold_match_case, match_case_ty, node_->v.Match.cases);
         // TODO: Mark unreachable cases for removal? Maybe pattern == NULL?
+        // TODO: We can even optimize patterns across cases...
         break;
     default:
         break;
@@ -746,11 +747,42 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
+astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    // Don't blindly optimize the pattern as an expr; it plays by its own rules!
+    // TODO: Build out this pattern optimizer.
+    switch (node_->kind) {
+        case Attribute_kind:
+        case Constant_kind:
+        case BoolOp_kind:
+            // TODO: Quite a bit of potential here.
+        case Dict_kind:
+        case List_kind:
+        case Name_kind:
+        case NamedExpr_kind:
+            return 1;
+        case UnaryOp_kind:
+            assert(node_->kind == UnaryOp_kind);
+            assert(node_->v.UnaryOp.op == USub);
+            assert(node_->v.UnaryOp.operand->kind == Constant_kind);
+            PyObject *value = node_->v.UnaryOp.operand->v.Constant.value;
+            assert(PyComplex_CheckExact(value) || PyFloat_CheckExact(value) || PyLong_CheckExact(value));
+            PyObject *negated = PyNumber_Negative(value);
+            if (!negated) {
+                return 0;
+            }
+            return make_const(node_, negated, ctx_);
+        default:
+            Py_UNREACHABLE();
+    }
+    return 1;
+}
+
+static int
 astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
+    CALL_OPT(astfold_pattern, expr_ty, node_->pattern);
     CALL_OPT(astfold_expr, expr_ty, node_->guard);
-    // TODO: Create pattern optimizer.
-    // Don't blindly optimize the pattern as an expr; it plays by its own rules!
     CALL_SEQ(astfold_stmt, stmt_ty, node_->body);
     return 1;
 }

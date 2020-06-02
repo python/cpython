@@ -5162,15 +5162,15 @@ name_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> name_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME !('.' | '(' | '=')"));
-        expr_ty a;
+        expr_ty name;
         if (
-            (a = _PyPegen_name_token(p))  // NAME
+            (name = _PyPegen_name_token(p))  // NAME
             &&
             _PyPegen_lookahead(0, _tmp_52_rule, p)
         )
         {
             D(fprintf(stderr, "%*c+ name_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME !('.' | '(' | '=')"));
-            _res = _PyPegen_set_expr_context ( p , a , Store );
+            _res = _PyPegen_set_expr_context ( p , name , Store );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -5188,7 +5188,7 @@ name_pattern_rule(Parser *p)
     return _res;
 }
 
-// literal_pattern: NUMBER | strings | 'None' | 'True' | 'False'
+// literal_pattern: NUMBER | '-' NUMBER | strings | 'None' | 'True' | 'False'
 static void *
 literal_pattern_rule(Parser *p)
 {
@@ -5226,6 +5226,42 @@ literal_pattern_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s literal_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NUMBER"));
+    }
+    { // '-' NUMBER
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'-' NUMBER"));
+        Token * _literal;
+        expr_ty number;
+        if (
+            (_literal = _PyPegen_expect_token(p, 15))  // token='-'
+            &&
+            (number = _PyPegen_number_token(p))  // NUMBER
+        )
+        {
+            D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'-' NUMBER"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                D(p->level--);
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _Py_UnaryOp ( USub , number , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s literal_pattern[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'-' NUMBER"));
     }
     { // strings
         if (p->error_indicator) {

@@ -386,6 +386,8 @@ validate_pattern(expr_ty p)
         case NamedExpr_kind:
             return (validate_pattern(p->v.NamedExpr.value)
                     && validate_expr(p->v.NamedExpr.target, Store));
+        case UnaryOp_kind:
+            return 1;
         default:
             PyErr_SetString(PyExc_ValueError, "invalid Match pattern");
             return 0;

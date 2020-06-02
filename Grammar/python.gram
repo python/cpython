@@ -222,10 +222,12 @@ closed_pattern:
     | class_pattern
 
 name_pattern:
-    | a=NAME !('.' | '(' | '=') {
-        _PyPegen_set_expr_context(p, a, Store) }
+    | name=NAME !('.' | '(' | '=') {
+        _PyPegen_set_expr_context(p, name, Store) }
 literal_pattern:
     | NUMBER
+    | '-' number=NUMBER {
+        _Py_UnaryOp(USub, number, EXTRA) }
     | strings
     | 'None' {
         _Py_Constant(Py_None, NULL, EXTRA) }

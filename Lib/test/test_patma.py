@@ -1428,6 +1428,71 @@ class TestMatch(unittest.TestCase):
         self.assertEqual(x, 3)
         self.assertEqual(y, None)
 
+    def test_patma_095(self) -> None:
+        x = 0
+        match x:
+            case -0:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_096(self) -> None:
+        x = 0
+        match x:
+            case -0.0:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_097(self) -> None:
+        x = 0
+        match x:
+            case -0j:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_098(self) -> None:
+        x = 0
+        match x:
+            case -0.0j:
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
+    def test_patma_099(self) -> None:
+        x = -1
+        match x:
+            case -1:
+                y = 0
+        self.assertEqual(x, -1)
+        self.assertEqual(y, 0)
+
+    def test_patma_100(self) -> None:
+        x = -1.5
+        match x:
+            case -1.5:
+                y = 0
+        self.assertEqual(x, -1.5)
+        self.assertEqual(y, 0)
+
+    def test_patma_101(self) -> None:
+        x = -1j
+        match x:
+            case -1j:
+                y = 0
+        self.assertEqual(x, -1j)
+        self.assertEqual(y, 0)
+
+    def test_patma_102(self) -> None:
+        x = -1.5j
+        match x:
+            case -1.5j:
+                y = 0
+        self.assertEqual(x, -1.5j)
+        self.assertEqual(y, 0)
+
+
 
 if __name__ == "__main__":  # XXX: For quick test debugging...
     import dis
