@@ -437,7 +437,7 @@ hamt_bitpos(int32_t hash, uint32_t shift)
 static inline uint32_t
 hamt_bitindex(uint32_t bitmap, uint32_t bit)
 {
-    return _Py_popcount32(bitmap & (bit - 1));
+    return (uint32_t)_Py_popcount32(bitmap & (bit - 1));
 }
 
 
@@ -801,7 +801,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
     else {
         /* There was no key before with the same (shift,hash). */
 
-        uint32_t n = _Py_popcount32(self->b_bitmap);
+        uint32_t n = (uint32_t)_Py_popcount32(self->b_bitmap);
 
         if (n >= 16) {
             /* When we have a situation where we want to store more
