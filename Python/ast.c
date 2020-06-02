@@ -311,6 +311,8 @@ validate_pattern(expr_ty p)
     switch (p->kind) {
         case Attribute_kind:
             return validate_expr(p, Load);
+        case BinOp_kind:
+            return 1;
         case BoolOp_kind:
             if (p->v.BoolOp.op != Or) {
                 PyErr_SetString(PyExc_ValueError,
