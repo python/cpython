@@ -7,7 +7,7 @@ import tokenize
 from collections import defaultdict
 from itertools import accumulate
 import sys
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 from pegen import grammar
 from pegen.build import build_parser
@@ -73,43 +73,67 @@ class VMCallMakerVisitor(GrammarVisitor):
         self.keyword_cache: Dict[str, int] = {}
         self.soft_keyword_cache: List[str] = []
 
-    def keyword_helper(self, keyword: str) -> Tuple[str, int]:
+    def keyword_helper(self, keyword: str) -> Tuple[str, str]:
         if keyword not in self.keyword_cache:
             self.keyword_cache[keyword] = self.gen.keyword_type()
-        return "OP_TOKEN", self.keyword_cache[keyword]
+        return "OP_TOKEN", str(self.keyword_cache[keyword])
 
     def soft_keyword_helper(self, keyword: str) -> Tuple[str, str]:
         if keyword not in self.soft_keyword_cache:
             self.soft_keyword_cache.append(keyword)
         return "OP_SOFT_KEYWORD", f"SK_{keyword.upper()}"
 
-    def visit_StringLeaf(self, node: StringLeaf) -> Tuple[str, Union[str, int]]:
+    def visit_StringLeaf(self, node: StringLeaf) -> Tuple[str, str]:
         val = ast.literal_eval(node.value)
         if re.match(r"[a-zA-Z_]\w*\Z", val):  # This is a keyword
             if node.value.endswith("'"):
                 return self.keyword_helper(val)
             else:
                 return self.soft_keyword_helper(val)
-        tok_num = token.EXACT_TOKEN_TYPES[val]
+        tok_num: int = token.EXACT_TOKEN_TYPES[val]  # type: ignore [attr-defined]
         return "OP_TOKEN", token.tok_name[tok_num]
 
-    def visit_Repeat0(self, node: Repeat0) -> None:
+    def visit_Repeat0(self, node: Repeat0) -> str:
         if node in self.cache:
             return self.cache[node]
         name = self.gen.name_loop(node.node, False)
         self.cache[node] = name
+        return name
 
-    def visit_Repeat1(self, node: Repeat1) -> None:
+    def visit_Repeat1(self, node: Repeat1) -> str:
         if node in self.cache:
             return self.cache[node]
         name = self.gen.name_loop(node.node, True)
         self.cache[node] = name
+        return name
 
-    def visit_Gather(self, node: Gather) -> None:
+    def visit_Gather(self, node: Gather) -> str:
         if node in self.cache:
             return self.cache[node]
         name = self.gen.name_gather(node)
         self.cache[node] = name
+        return name
+
+    def visit_Group(self, node: Group) -> str:
+        return self.visit(node.rhs)
+
+    def visit_Rhs(self, node: Rhs) -> Optional[str]:
+        if node in self.cache:
+            return self.cache[node]
+        if can_we_inline(node):
+            return None
+        name = self.gen.name_node(node)
+        self.cache[node] = name
+        return name
+
+
+def can_we_inline(node: Rhs) -> int:
+    if len(node.alts) != 1 or len(node.alts[0].items) != 1:
+        return False
+    # If the alternative has an action we cannot inline
+    if getattr(node.alts[0], "action", None) is not None:
+        return False
+    return True
 
 
 class VMParserGenerator(ParserGenerator, GrammarVisitor):
@@ -127,11 +151,12 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         yield
         self.opcode_buffer = None
 
-    def add_opcode(self, opcode: str, oparg: Optional[Union[int, str]] = None) -> None:
+    def add_opcode(self, opcode: str, oparg: Optional[str] = None) -> None:
+        assert not isinstance(oparg, int)
         assert self.opcode_buffer is not None
         self.opcode_buffer.append(opcode)
         if oparg is not None:
-            self.opcode_buffer.append(str(oparg))
+            self.opcode_buffer.append(oparg)
 
     def name_gather(self, node: Gather) -> str:
         self.counter += 1
@@ -415,6 +440,23 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
     def visit_Alt(self, node: Alt, is_loop: bool, is_loop1: bool, is_gather: bool) -> None:
         for item in node.items:
             self.visit(item)
+
+    def group_helper(self, node: Rhs) -> None:
+        name = self.callmakervisitor.visit(node)
+        if name:
+            self.add_opcode("OP_RULE", self._get_rule_opcode(name))
+        else:
+            self.visit(node.alts[0].items[0])
+
+    def visit_Opt(self, node: Opt) -> None:
+        if isinstance(node.node, Rhs):
+            self.group_helper(node.node)
+        else:
+            self.visit(node.node)
+        self.add_opcode("OP_OPTIONAL")
+
+    def visit_Group(self, node: Group) -> None:
+        self.group_helper(node.rhs)
 
     def visit_Repeat0(self, node: Repeat0) -> None:
         name = self.callmakervisitor.visit(node)

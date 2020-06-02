@@ -8,7 +8,7 @@ expr:
     | a=expr '+' b=term { _Py_BinOp(a, Add, b, EXTRA) }
     | term
 term: 
-    | a=term '*' b=factor { _Py_BinOp(a, Mult, b, EXTRA) }
+    | a=term ['*'] b=factor { _Py_BinOp(a, Mult, b, EXTRA) }
     | factor
 factor:
     | '(' a=expr ')' { a }

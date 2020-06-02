@@ -79,9 +79,9 @@ static Rule all_rules[] = {
     },
     {"term",
      R_TERM,
-     {0, 9, -1},
+     {0, 10, -1},
      {
-        OP_SETUP_LEFT_REC, OP_RULE, R_TERM, OP_TOKEN, STAR, OP_RULE, R_FACTOR, OP_RETURN_LEFT_REC, A_TERM_0,
+        OP_SETUP_LEFT_REC, OP_RULE, R_TERM, OP_TOKEN, STAR, OP_OPTIONAL, OP_RULE, R_FACTOR, OP_RETURN_LEFT_REC, A_TERM_0,
         OP_RULE, R_FACTOR, OP_RETURN_LEFT_REC, A_TERM_1,
      },
     },
