@@ -34,6 +34,7 @@
 
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
@@ -461,15 +462,41 @@ PyOS_AfterFork_Parent(void)
 void
 PyOS_AfterFork_Child(void)
 {
+    PyStatus status;
     _PyRuntimeState *runtime = &_PyRuntime;
-    _PyGILState_Reinit(runtime);
-    _PyEval_ReInitThreads(runtime);
-    _PyImport_ReInitLock();
+
+    status = _PyGILState_Reinit(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
+    status = _PyEval_ReInitThreads(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
+    status = _PyImport_ReInitLock();
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
     _PySignal_AfterFork();
-    _PyRuntimeState_ReInitThreads(runtime);
-    _PyInterpreterState_DeleteExceptMain(runtime);
+
+    status = _PyRuntimeState_ReInitThreads(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
+    status = _PyInterpreterState_DeleteExceptMain(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
 
     run_at_forkers(_PyInterpreterState_GET()->after_forkers_child, 0);
+    return;
+
+fatal_error:
+    Py_ExitStatusException(status);
 }
 
 static int
