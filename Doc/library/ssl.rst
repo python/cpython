@@ -650,7 +650,7 @@ Constants
    possible to trust certificates issued by an intermediate CA without having
    to trust its ancestor root CA.
 
-  .. versionadded::3.8.4
+   .. versionadded:: 3.10
 
 
 .. class:: VerifyFlags
