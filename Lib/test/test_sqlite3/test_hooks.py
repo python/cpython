@@ -262,19 +262,5 @@ class TraceCallbackTests(unittest.TestCase):
         self.assertEqual(traced_statements, queries)
 
 
-def suite():
-    tests = [
-        CollationTests,
-        ProgressTests,
-        TraceCallbackTests,
-    ]
-    return unittest.TestSuite(
-        [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
-    )
-
-def test():
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
-
 if __name__ == "__main__":
-    test()
+    unittest.main()

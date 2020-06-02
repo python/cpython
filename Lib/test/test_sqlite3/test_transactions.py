@@ -195,19 +195,6 @@ class TransactionalDDL(unittest.TestCase):
     def tearDown(self):
         self.con.close()
 
-def suite():
-    tests = [
-        SpecialCommandTests,
-        TransactionTests,
-        TransactionalDDL,
-    ]
-    return unittest.TestSuite(
-        [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
-    )
-
-def test():
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
 
 if __name__ == "__main__":
-    test()
+    unittest.main()
