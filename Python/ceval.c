@@ -436,10 +436,9 @@ PyEval_ReleaseThread(PyThreadState *tstate)
    which are not running in the child process, and clear internal locks
    which might be held by those threads. */
 PyStatus
-_PyEval_ReInitThreads(_PyRuntimeState *runtime)
+_PyEval_ReInitThreads(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    _Py_EnsureTstateNotNULL(tstate);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     struct _gil_runtime_state *gil = &tstate->interp->ceval.gil;
