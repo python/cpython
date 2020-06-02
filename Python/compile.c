@@ -986,8 +986,8 @@ stack_effect(int opcode, int oparg, int jump)
         case MATCH_MAP:
         case MATCH_SEQ:
             return jump > 0 ? -1 : 0;
-        case MATCH_TYPE:
-            return jump > 0 ? -2 : 0;
+        case DESTRUCTURE:
+            return -1;
 
         case STORE_ATTR:
             return -2;

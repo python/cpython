@@ -3410,7 +3410,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_TYPE): {
+        case TARGET(DESTRUCTURE): {
             PyObject *type = TOP();
             PyObject *target = SECOND();
             if (!PyType_Check(type)) {

@@ -130,7 +130,7 @@ extern "C" {
 #define MATCH_KEY               166
 #define MATCH_MAP               167
 #define MATCH_SEQ               168
-#define MATCH_TYPE              169
+#define DESTRUCTURE             169
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here

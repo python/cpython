@@ -168,7 +168,7 @@ static void *opcode_targets[256] = {
     &&TARGET_MATCH_KEY,
     &&TARGET_MATCH_MAP,
     &&TARGET_MATCH_SEQ,
-    &&TARGET_MATCH_TYPE,
+    &&TARGET_DESTRUCTURE,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,

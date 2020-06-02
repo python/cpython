@@ -1019,11 +1019,14 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_TYPE (delta)
+.. opcode:: DESTRUCTURE (argcount)
 
-   Pop TOS and TOS1.  If TOS is an instance of :class:`type` and has a
-   ``__match__`` method, call it on TOS1 and push the result onto the stack if
-   it is not ``None``.  Otherwise, increment the bytecode counter by ``delta``.
+   Pop TOS, TOS1, and TOS2.  If TOS1 is an instance of :class:`type` and has a
+   ``__match__`` method, call it on TOS2.  If the result is not ``None``,
+   destrucuture it into ``argcount`` components (using any keyword names from
+   the :class:`tuple` at TOS), collect these into a tuple, and push that onto
+   the stack, followed by ``True``.  Otherwise, push ``None``, followed by
+   ``False``.
 
    .. versionadded:: 3.10
 
