@@ -2892,7 +2892,6 @@ compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail, PyObject* n
                 // TODO: Format this error message with a name.
                 // PyObject *extra = PySet_Pop(diff);
                 Py_DECREF(control);
-                PyObject_Print(PySet_Pop(diff), stderr, Py_PRINT_RAW);
                 Py_DECREF(diff);
                 return compiler_error(c, "pattern binds different names based on target");
             }

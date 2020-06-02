@@ -358,17 +358,6 @@ validate_pattern(expr_ty p)
                     }
                     return validate_expr(key, Load);
                 }
-                else {
-                    if (i != size - 1) {
-                        // TODO
-                    }
-                    if (key->kind != Name_kind) {
-                        // TODO
-                    }
-                    if (key->v.Name.ctx != Store) {
-                        // TODO
-                    }
-                }
                 if (!validate_pattern(asdl_seq_GET(values, i))) {
                     return 0;
                 }
@@ -379,15 +368,6 @@ validate_pattern(expr_ty p)
             size = asdl_seq_LEN(values);
             for (i = 0; i < size; i++) {
                 value = asdl_seq_GET(values, i);
-                if (value->kind == Starred_kind) {
-                    value = value->v.Starred.value;
-                    if (value->kind != Name_kind) {
-                        // TODO
-                    }
-                    if (value->v.Name.ctx != Store) {
-                        // TODO
-                    }
-                }
                 if (!validate_pattern(value)) {
                     return 0;
                 }
@@ -404,7 +384,6 @@ validate_pattern(expr_ty p)
             return (validate_pattern(p->v.NamedExpr.value)
                     && validate_expr(p->v.NamedExpr.target, Store));
         case UnaryOp_kind:
-            // TODO
             return 1;
         default:
             PyErr_SetString(PyExc_ValueError, "invalid Match pattern");
