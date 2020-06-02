@@ -100,6 +100,10 @@ Dictionary Objects
    :meth:`__eq__` methods will get suppressed.
    To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
 
+   .. versionchanged:: 3.10
+      Calling this API without :term:`GIL` held had been allowed for historical
+      reason. It is no longer allowed.
+
 
 .. c:function:: PyObject* PyDict_GetItemWithError(PyObject *p, PyObject *key)
 
