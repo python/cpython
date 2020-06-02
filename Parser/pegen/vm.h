@@ -12,6 +12,7 @@ typedef enum _opcodes {
     OP_SAVE_MARK,
     OP_POS_LOOKAHEAD,
     OP_NEG_LOOKAHEAD,
+    OP_SETUP_LEFT_REC,
     OP_SUCCESS,
     OP_FAILURE,
     // The rest have an argument
@@ -19,6 +20,7 @@ typedef enum _opcodes {
     OP_TOKEN,
     OP_RULE,
     OP_RETURN,
+    OP_RETURN_LEFT_REC,
 } Opcode;
 
 static char *opcode_names[] = {
@@ -35,6 +37,7 @@ static char *opcode_names[] = {
     "OP_SAVE_MARK",
     "OP_POS_LOOKAHEAD",
     "OP_NEG_LOOKAHEAD",
+    "OP_SETUP_LEFT_REC",
     "OP_SUCCESS",
     "OP_FAILURE",
     // The rest have an argument
@@ -42,6 +45,7 @@ static char *opcode_names[] = {
     "OP_TOKEN",
     "OP_RULE",
     "OP_RETURN",
+    "OP_RETURN_LEFT_REC",
 };
 
 #define MAXALTS 10

@@ -320,3 +320,28 @@ Ideas
   op).  If the new match is not further, it is discarded and the most
   recent match from the memo cache is returned as the result (also
   updating the end position).
+
+### Selective memoization
+
+- We could have a flag in the rule that prevents memo lookups and
+  inserts.  Or we could have separate opcodes, e.g. `OP_RULE_NOMEMO`
+  and `OP_RETURN_NOMEMO`.
+
+### Performance tuning
+
+- To make frames smaller, we could have a separate values stack; the
+  frame would have a `void** vals` instead of `void *vals[]`.  Most
+  frames won't need 20 values, but we could ensure there are always at
+  least that many on the stack.
+
+- Is it faster to check for flags in the rule object (e.g. leftrec) or
+  is it faster to have dedicated opcodes?  My current hunch is that
+  dedicated opcodes are faster, but I really don't know.  Maybe having
+  fewer opcodes is more important than having smaller Rule objects.
+
+- Random other C tricks, esp. tricks that might increase the hit rate
+  in the CPU's L1 cache.  (Remember in modern CPUs memory access is
+  10-100x slower than cache access.)  Who can we tap that knows this
+  stuff?
+
+- If we know `x >= -1`, Which is faster: `if (x < 0)` or `if (x == -1)`?
