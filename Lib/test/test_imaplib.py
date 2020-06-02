@@ -933,6 +933,20 @@ class ThreadedNetworkedTests(unittest.TestCase):
                 self.assertIsNone(server.logged)
             self.assertIsNone(server.logged)
 
+    @threading_helper.reap_threads
+    @cpython_only
+    def test_dump_ur(self):
+        # See: http://bugs.python.org/issue26543
+        untagged_resp_dict = {'READ-WRITE': [b'']}
+
+        with self.reaped_server(SimpleIMAPHandler) as server:
+            with self.imap_class(*server.server_address) as imap:
+                with mock.patch.object(imap, '_mesg') as mock_mesg:
+                    imap._dump_ur(untagged_resp_dict)
+                    mock_mesg.assert_called_with(
+                        "untagged responses dump:READ-WRITE: [b'']"
+                    )
+
 
 @unittest.skipUnless(ssl, "SSL not available")
 class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
