@@ -1,0 +1,1 @@
+Don't crash / raise segfault when compiling an AST with recursive fields.
