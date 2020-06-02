@@ -1098,7 +1098,7 @@ Porting to Python 3.9
   and refers to a constant string.
   (Contributed by Serhiy Storchaka in :issue:`38650`.)
 
-* The :c:type`PyGC_Head` structure is now opaque. It is only defined in the
+* The :c:type:`PyGC_Head` structure is now opaque. It is only defined in the
   internal C API (``pycore_gc.h``).
   (Contributed by Victor Stinner in :issue:`40241`.)
 
