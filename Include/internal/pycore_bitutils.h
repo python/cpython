@@ -86,6 +86,12 @@ _Py_bswap64(uint64_t word)
 
 // Population count: count the number of 1's in 'u'
 // (number of bits set to 1), also known as the hamming weight.
+//
+// Implementation note. CPUID is not used, to test if x86 POPCNT instruction
+// can be used, to keep the implementation simple. For example, Visual Studio
+// __popcnt() is not used this reason. The clang and GCC builtin function can
+// use the x86 POPCNT instruction if the target architecture has SSE4a or
+// newer.
 static inline int
 _Py_popcount32(uint32_t x)
 {
