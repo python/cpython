@@ -470,7 +470,10 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
-    status = _PyEval_ReInitThreads(runtime);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+
+    status = _PyEval_ReInitThreads(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
@@ -491,8 +494,9 @@ PyOS_AfterFork_Child(void)
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
+    assert(_PyThreadState_GET() == tstate);
 
-    run_at_forkers(_PyInterpreterState_GET()->after_forkers_child, 0);
+    run_at_forkers(tstate->interp->after_forkers_child, 0);
     return;
 
 fatal_error:
