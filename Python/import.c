@@ -213,11 +213,7 @@ _PyImport_ReInitLock(void)
     if (import_lock_level > 1) {
         /* Forked as a side effect of import */
         unsigned long me = PyThread_get_thread_ident();
-        /* The following could fail if the lock is already held, but forking as
-           a side-effect of an import is a) rare, b) nuts, and c) difficult to
-           do thanks to the lock only being held when doing individual module
-           locks per import. */
-        PyThread_acquire_lock(import_lock, NOWAIT_LOCK);
+        PyThread_acquire_lock(import_lock, WAIT_LOCK);
         import_lock_thread = me;
         import_lock_level--;
     } else {
