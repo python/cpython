@@ -73,8 +73,7 @@ static Rule all_rules[] = {
      R_EXPR,
      {0, 9, -1},
      {
-        OP_SETUP_LEFT_REC,
-        OP_RULE, R_EXPR, OP_TOKEN, PLUS, OP_RULE, R_TERM, OP_RETURN_LEFT_REC, A_EXPR_0,
+        OP_SETUP_LEFT_REC, OP_RULE, R_EXPR, OP_TOKEN, PLUS, OP_RULE, R_TERM, OP_RETURN_LEFT_REC, A_EXPR_0,
         OP_RULE, R_TERM, OP_RETURN_LEFT_REC, A_EXPR_1,
      },
     },
@@ -82,8 +81,7 @@ static Rule all_rules[] = {
      R_TERM,
      {0, 9, -1},
      {
-        OP_SETUP_LEFT_REC,
-        OP_RULE, R_TERM, OP_TOKEN, STAR, OP_RULE, R_FACTOR, OP_RETURN_LEFT_REC, A_TERM_0,
+        OP_SETUP_LEFT_REC, OP_RULE, R_TERM, OP_TOKEN, STAR, OP_RULE, R_FACTOR, OP_RETURN_LEFT_REC, A_TERM_0,
         OP_RULE, R_FACTOR, OP_RETURN_LEFT_REC, A_TERM_1,
      },
     },

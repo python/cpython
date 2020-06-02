@@ -5,10 +5,10 @@ stmt:
 if_stmt:
     | 'if' a=NAME ':' b=stmt { _Py_If(a, CHECK(_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
 expr:
-    | a=term '+' b=expr { _Py_BinOp(a, Add, b, EXTRA) }
+    | a=expr '+' b=term { _Py_BinOp(a, Add, b, EXTRA) }
     | term
 term: 
-    | a=factor '*' b=term { _Py_BinOp(a, Mult, b, EXTRA) }
+    | a=term '*' b=factor { _Py_BinOp(a, Mult, b, EXTRA) }
     | factor
 factor:
     | '(' a=expr ')' { a }

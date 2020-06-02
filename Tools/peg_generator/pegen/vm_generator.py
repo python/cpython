@@ -315,12 +315,10 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         is_loop1 = node.name.startswith("_loop1")
         is_gather = node.is_gather()
         rhs = node.flatten()
-        if node.left_recursive:
-            raise ValueError("No left recursiveness")
         self.print(f'{{"{node.name}",')
         self.print(f" R_{node.name.upper()},")
         self.current_rule = node  # TODO: make this a context manager
-        self.visit(rhs, is_loop=is_loop, is_loop1=is_loop1, is_gather=is_gather)
+        self.visit(rhs, is_loop=is_loop, is_loop1=is_loop1, is_gather=is_gather, is_leftrec=node.left_recursive)
         self.print("},")
 
     def visit_NamedItem(self, node: NamedItem) -> None:
@@ -365,9 +363,12 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         is_loop: bool = False,
         is_loop1: bool = False,
         is_gather: bool = False,
+        is_leftrec: bool = False,
     ) -> None:
         for index, alt in enumerate(node.alts):
             with self.set_opcode_buffer(opcodes_by_alt[index]):
+                if is_leftrec and index == 0:
+                    self.add_opcode("OP_SETUP_LEFT_REC")
                 self.visit(alt, is_loop=False, is_loop1=False, is_gather=False)
                 assert not (alt.action and (is_loop or is_gather))  # A loop rule can't have actions
                 if is_loop or is_gather:
@@ -376,10 +377,14 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
                     else:
                         self.add_opcode("OP_LOOP_COLLECT_DELIMITED")
                 else:
-                    self.add_opcode("OP_RETURN", f"A_{self.current_rule.name.upper()}_{index}")
+                    opcode = "OP_RETURN"
+                    if is_leftrec:
+                        opcode += "_LEFT_REC"
+                    self.add_opcode(opcode, f"A_{self.current_rule.name.upper()}_{index}")
 
     def visit_Rhs(
         self, node: Rhs, is_loop: bool = False, is_loop1: bool = False, is_gather: bool = False,
+        is_leftrec: bool = False,
     ) -> None:
         opcodes_by_alt: Dict[int, List[str]] = defaultdict(list)
         if is_loop:
@@ -388,7 +393,8 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
                 opcode += "_NONEMPTY"
             self.handle_loop_rhs(node, opcodes_by_alt, opcode)
         else:
-            self.handle_default_rhs(node, opcodes_by_alt, is_loop=is_loop, is_gather=is_gather)
+            self.handle_default_rhs(node, opcodes_by_alt, is_loop=is_loop, is_gather=is_gather,
+                                    is_leftrec=is_leftrec)
         *indexes, _ = accumulate(map(len, opcodes_by_alt.values()))
         indexes = [0, *indexes, -1]
         self.print(f" {{{', '.join(map(str, indexes))}}},")
