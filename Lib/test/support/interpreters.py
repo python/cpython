@@ -118,7 +118,7 @@ _NOT_SET = object()
 class RecvChannel:
     """
     The RecvChannel object represents
-    a recieving channel.
+    a receiving channel.
     """
 
     def __init__(self, id):
