@@ -2482,7 +2482,6 @@ PyInit_select(void)
         if (poll_Type == NULL)
             return NULL;
         get_select_state(m)->poll_Type = (PyTypeObject *)poll_Type;
-        Py_INCREF(poll_Type);
 
         PyModule_AddIntMacro(m, POLLIN);
         PyModule_AddIntMacro(m, POLLPRI);
@@ -2518,7 +2517,6 @@ PyInit_select(void)
     if (devpoll_Type == NULL)
         return NULL;
     get_select_state(m)->devpoll_Type = (PyTypeObject *)devpoll_Type;
-    Py_INCREF(devpoll_Type);
 #endif
 
 #ifdef HAVE_EPOLL
