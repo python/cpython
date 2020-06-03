@@ -42,8 +42,8 @@ def _parse_python_tzpath(env_var):
         msg = _get_invalid_paths_message(raw_tzpath)
 
         warnings.warn(
-            "Invalid paths specified in PYTHONTZPATH environment variable."
-            + msg,
+            f"Invalid paths specified in PYTHONTZPATH "
+            + f"environment variable. {msg}",
             InvalidTZPathWarning,
         )
 
