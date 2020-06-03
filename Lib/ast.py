@@ -1048,51 +1048,46 @@ class _Unparser(NodeVisitor):
         with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
 
-    def _str_literal_helper(self, value, quote_types, use_escaped_whitespace=False):
-        """Helper for writing string literals without using repr.
-
+    def _str_literal_helper(
+        self, value, quote_types=("'", '"', '"""', "'''"), escape=""
+    ):
+        """Helper for writing string literals, minimising escapes.
         Returns (possible quote types, string literal to write).
-        Throws ValueError if we need to use repr to write this string literal.
-
         """
-        # str.__repr__ will escape backslashes, quotes, \n, \r, \t and non-printable characters
-        # We'll handle quotes, \n, \t and space, using triple quotes if necessary, but we'll
-        # just let repr handle any other unicode control and separator characters.
-        def should_use_repr(c):
-            return c == '\\' or (
-                # This logic for determining non-printable characters is based
-                # on that in Tools/unicode/makeunicodedata.py
-                c not in (' ', '\n', '\t') and unicodedata.category(c)[0] in ("C", "Z")
-            )
-
-        if any(map(should_use_repr, value)):
-            raise ValueError
-
-        if use_escaped_whitespace:
-            value = value.replace("\n", "\\n")
-            value = value.replace("\t", "\\t")
-
-        if "\n" in value:
-            quote_types = [quote for quote in quote_types if quote in ('"""', "'''")]
-        quote_types = [quote for quote in quote_types if quote not in value]
-        if not quote_types:
-            raise ValueError
-        if value:
+        # Escape characters we've been told to escape and any non-printable
+        # characters. The logic for determining non-printable characters is
+        # based on that in Tools/unicode/makeunicodedata.py
+        escape = set(escape) | {
+            c for c in value
+            if c not in ' \n\t' and unicodedata.category(c)[0] in ("C", "Z")
+        }
+        qts = quote_types
+        val = value.replace("\\", "\\\\")
+        for c in escape:
+            val = val.replace(c, c.encode('unicode_escape').decode('ascii'))
+        if "\n" in val:
+            qts = [quote for quote in qts if quote in ('"""', "'''")]
+        qts = [quote for quote in qts if quote not in val]
+        if not qts:
+            # If there aren't any possible quote_types, fallback to using repr
+            # on the original value. Try to use a quote_type from quote_types.
+            value = repr(value)
+            quote_type = next((q for q in quote_types if value[0] in q), value[0])
+            return value[1:-1], [quote_type]
+        if val:
             # Sort so that we prefer '''"''' over """\""""
-            quote_types.sort(key=lambda q: q[0] == value[-1])
-        return quote_types, value
+            qts.sort(key=lambda q: q[0] == val[-1])
+            # If we're using triple quotes and we'd need to escape a final quote, escape
+            if qts[0][0] == val[-1]:
+                assert len(qts[0]) == 3
+                val = val[:-1] + "\\" + val[-1]
+        return val, qts
 
     def _write_str_avoiding_backslashes(self, value):
         """Write string literal value with a best effort attempt to avoid backslashes."""
-        try:
-            quote_types, value = self._str_literal_helper(value, ["'", '"', '"""', "'''"])
-            quote_type = quote_types[0]
-            # If we're using triple quotes and we'd need to escape a final quote, raise
-            if value and quote_type[0] == value[-1]:
-                raise ValueError
-            self.write(f"{quote_type}{value}{quote_type}")
-        except ValueError:
-            self.write(repr(value))
+        value, quote_types = self._str_literal_helper(value)
+        quote_type = quote_types[0]
+        self.write(f"{quote_type}{value}{quote_type}")
 
     def visit_JoinedStr(self, node):
         self.write("f")
@@ -1113,23 +1108,16 @@ class _Unparser(NodeVisitor):
             meth(value, self.buffer_writer)
             buffer.append((self.buffer, isinstance(value, Constant)))
         # This part is analagous to _write_str_avoiding_backslashes
-        try:
-            new_buffer = []
-            quote_types = ["'", '"', '"""', "'''"]
-            for i in range(len(buffer)):
-                value, is_constant = buffer[i]
-                quote_types, value = self._str_literal_helper(
-                    value, quote_types, use_escaped_whitespace=is_constant
-                )
-                new_buffer.append(value)
-            value = "".join(new_buffer)
-            quote_type = quote_types[0]
-            # If we're using triple quotes and we'd need to escape a final quote, escape
-            if value and quote_type[0] == value[-1]:
-                value = value[:-1] + "\\" + value[-1]
-            self.write(f"{quote_type}{value}{quote_type}")
-        except ValueError:
-            self.write(repr("".join(b[0] for b in buffer)))
+        new_buffer = []
+        quote_types = ["'", '"', '"""', "'''"]
+        for value, is_constant in buffer:
+            value, quote_types = self._str_literal_helper(
+                value, quote_types, escape='\n\t' if is_constant else ''
+            )
+            new_buffer.append(value)
+        value = "".join(new_buffer)
+        quote_type = quote_types[0]
+        self.write(f"{quote_type}{value}{quote_type}")
 
     def visit_FormattedValue(self, node):
         self.write("f")
@@ -1172,28 +1160,12 @@ class _Unparser(NodeVisitor):
         self.write(node.id)
 
     def _write_docstring(self, node):
-        def esc_char(c):
-            if c in ("\n", "\t"):
-                # In the AST form, we don't know the author's intentation
-                # about how this should be displayed. We'll only escape
-                # \n and \t, because they are more likely to be unescaped
-                # in the source
-                return c
-            return c.encode('unicode_escape').decode('ascii')
-
         self.fill()
         if node.kind == "u":
             self.write("u")
-
-        value = node.value
-        if value:
-            # Preserve quotes in the docstring by escaping them
-            value = "".join(map(esc_char, value))
-            if value[-1] == '"':
-                value = value.replace('"', '\\"', -1)
-            value = value.replace('"""', '""\\"')
-
-        self.write(f'"""{value}"""')
+        value, quote_types = self._str_literal_helper(node.value, ('"""', "'''"))
+        quote_type = quote_types[0]
+        self.write(f"{quote_type}{value}{quote_type}")
 
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):

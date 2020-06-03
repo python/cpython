@@ -342,8 +342,8 @@ class UnparseTestCase(ASTTestCase):
             '\r\\r\t\\t\n\\n',
             '""">>> content = \"\"\"blabla\"\"\" <<<"""',
             r'foo\n\x00',
-            '🐍⛎𩸽üéş^\X\BB\N{LONG RIGHTWARDS SQUIGGLE ARROW}'
-
+            "' \\'\\'\\'\"\"\" \"\"\\'\\' \\'",
+            '🐍⛎𩸽üéş^\\\\X\\\\BB\N{LONG RIGHTWARDS SQUIGGLE ARROW}'
         )
         for docstring in docstrings:
             # check as Module docstrings for easy testing
@@ -461,6 +461,10 @@ class CosmeticTestCase(ASTTestCase):
             '""""""',
             '"""\'\'\'"""',
             '"""\'\'\'\'\'\'"""',
+            '"""🐍⛎𩸽üéş^\\\\X\\\\BB⟿"""',
+            '"""end in single \'quote\'"""',
+            "'''end in double \"quote\"'''",
+            '"""almost end in double "quote"."""',
         )
 
         for prefix in docstring_prefixes:
