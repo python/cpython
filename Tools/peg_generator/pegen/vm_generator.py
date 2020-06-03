@@ -1,13 +1,13 @@
 import ast
 import contextlib
-import sys
+import dataclasses
 import re
+import sys
 import token
 import tokenize
 from collections import defaultdict
 from itertools import accumulate
-import sys
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from pegen import grammar
 from pegen.build import build_parser
@@ -34,6 +34,16 @@ from pegen.grammar import (
 )
 from pegen.parser_generator import ParserGenerator
 
+
+@dataclasses.dataclass
+class Opcode:
+    opcode: str
+    oparg: Optional[Union[int, str]] = None
+
+    def __len__(self) -> int:
+        return 1 if self.oparg is None else 2
+
+
 CALL_ACTION_HEAD = """
 static void *
 call_action(Parser *p, Frame *_f, int _iaction)
@@ -57,6 +67,7 @@ CALL_ACTION_TAIL = """\
     }
 }
 """
+
 
 class RootRule(Rule):
     def __init__(self, name: str, startrulename: str):
@@ -142,11 +153,11 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
     ):
         super().__init__(grammar, token.tok_name, sys.stdout)
 
-        self.opcode_buffer: Optional[List[str]] = None
+        self.opcode_buffer: Optional[List[Opcode]] = None
         self.callmakervisitor: VMCallMakerVisitor = VMCallMakerVisitor(self)
 
     @contextlib.contextmanager
-    def set_opcode_buffer(self, buffer: List[str]) -> Iterator[None]:
+    def set_opcode_buffer(self, buffer: List[Opcode]) -> Iterator[None]:
         self.opcode_buffer = buffer
         yield
         self.opcode_buffer = None
@@ -154,9 +165,8 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
     def add_opcode(self, opcode: str, oparg: Optional[str] = None) -> None:
         assert not isinstance(oparg, int)
         assert self.opcode_buffer is not None
-        self.opcode_buffer.append(opcode)
-        if oparg is not None:
-            self.opcode_buffer.append(oparg)
+
+        self.opcode_buffer.append(Opcode(opcode, oparg))
 
     def name_gather(self, node: Gather) -> str:
         self.counter += 1
@@ -187,13 +197,13 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("};")
         self.print()
 
+        self.print("static Rule all_rules[] = {")
         while self.todo:
-            self.print("static Rule all_rules[] = {")
             for rulename, rule in list(self.todo.items()):
                 del self.todo[rulename]
                 with self.indent():
                     self.visit(rule)
-            self.print("};")
+        self.print("};")
 
         self.printblock(CALL_ACTION_HEAD)
         with self.indent():
@@ -327,27 +337,19 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.rules["root"] = root
 
     def visit_RootRule(self, node: RootRule) -> None:
-        # TODO: Refactor visit_Rule() so we can share code.
         self.print(f'{{"{node.name}",')
         self.print(f" R_{node.name.upper()},")
 
-        opcodes_by_alt: Dict[int, List[str]] = {0: [], 1: []}
-        with self.set_opcode_buffer(opcodes_by_alt[0]):
+        first_alt = Alt([])
+        second_alt = Alt([])
+
+        opcodes_by_alt: Dict[Alt, List[Opcode]] = {first_alt: [], second_alt: []}
+        with self.set_opcode_buffer(opcodes_by_alt[first_alt]):
             self.add_opcode("OP_RULE", f"R_{node.startrulename.upper()}")
             self.add_opcode("OP_SUCCESS")
-        with self.set_opcode_buffer(opcodes_by_alt[1]):
+        with self.set_opcode_buffer(opcodes_by_alt[second_alt]):
             self.add_opcode("OP_FAILURE")
-
-        indexes = [0, len(opcodes_by_alt[0]), -1]
-
-        self.print(f" {{{', '.join(map(str, indexes))}}},")
-
-        self.print(" {")
-        with self.indent():
-            for index, opcodes in opcodes_by_alt.items():
-                self.print(", ".join(opcodes) + ",")
-        self.print(" },")
-
+        self.generate_opcodes(opcodes_by_alt)
         self.print("},")
 
     def visit_Rule(self, node: Rule) -> None:
@@ -358,7 +360,13 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f'{{"{node.name}",')
         self.print(f" R_{node.name.upper()},")
         self.current_rule = node  # TODO: make this a context manager
-        self.visit(rhs, is_loop=is_loop, is_loop1=is_loop1, is_gather=is_gather, is_leftrec=node.left_recursive)
+        self.visit(
+            rhs,
+            is_loop=is_loop,
+            is_loop1=is_loop1,
+            is_gather=is_gather,
+            is_leftrec=node.left_recursive,
+        )
         self.print("},")
 
     def visit_NamedItem(self, node: NamedItem) -> None:
@@ -381,7 +389,15 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         name = node.value
         if name in ("NAME", "NUMBER", "STRING"):
             self.add_opcode(f"OP_{name}")
-        elif name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER", "ASYNC", "AWAIT", "TYPE_COMMENT"):
+        elif name in (
+            "NEWLINE",
+            "DEDENT",
+            "INDENT",
+            "ENDMARKER",
+            "ASYNC",
+            "AWAIT",
+            "TYPE_COMMENT",
+        ):
             self.add_opcode("OP_TOKEN", name)
         else:
             self.add_opcode("OP_RULE", self._get_rule_opcode(name))
@@ -394,27 +410,30 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.add_opcode("OP_CUT")
 
     def handle_loop_rhs(
-        self, node: Rhs, opcodes_by_alt: Dict[int, List[str]], collect_opcode: str,
+        self, node: Rhs, opcodes_by_alt: Dict[Alt, List[Opcode]], collect_opcode: str,
     ) -> None:
         self.handle_default_rhs(node, opcodes_by_alt, is_loop=True, is_gather=False)
-        with self.set_opcode_buffer(opcodes_by_alt[len(node.alts)]):
+        loop_alt = Alt([])
+        with self.set_opcode_buffer(opcodes_by_alt[loop_alt]):
             self.add_opcode(collect_opcode)
 
     def handle_default_rhs(
         self,
         node: Rhs,
-        opcodes_by_alt: Dict[int, List[str]],
+        opcodes_by_alt: Dict[Alt, List[Opcode]],
         is_loop: bool = False,
         is_loop1: bool = False,
         is_gather: bool = False,
         is_leftrec: bool = False,
     ) -> None:
         for index, alt in enumerate(node.alts):
-            with self.set_opcode_buffer(opcodes_by_alt[index]):
+            with self.set_opcode_buffer(opcodes_by_alt[alt]):
                 if is_leftrec and index == 0:
                     self.add_opcode("OP_SETUP_LEFT_REC")
                 self.visit(alt, is_loop=False, is_loop1=False, is_gather=False)
-                assert not (alt.action and (is_loop or is_gather))  # A loop rule can't have actions
+                assert not (
+                    alt.action and (is_loop or is_gather)
+                )  # A loop rule can't have actions
                 if is_loop or is_gather:
                     if index == 0:
                         self.add_opcode("OP_LOOP_ITERATE")
@@ -427,26 +446,40 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
                     self.add_opcode(opcode, f"A_{self.current_rule.name.upper()}_{index}")
 
     def visit_Rhs(
-        self, node: Rhs, is_loop: bool = False, is_loop1: bool = False, is_gather: bool = False,
+        self,
+        node: Rhs,
+        is_loop: bool = False,
+        is_loop1: bool = False,
+        is_gather: bool = False,
         is_leftrec: bool = False,
     ) -> None:
-        opcodes_by_alt: Dict[int, List[str]] = defaultdict(list)
+        opcodes_by_alt: Dict[Alt, List[Opcode]] = defaultdict(list)
         if is_loop:
             opcode = "OP_LOOP_COLLECT"
             if is_loop1:
                 opcode += "_NONEMPTY"
             self.handle_loop_rhs(node, opcodes_by_alt, opcode)
         else:
-            self.handle_default_rhs(node, opcodes_by_alt, is_loop=is_loop, is_gather=is_gather,
-                                    is_leftrec=is_leftrec)
-        *indexes, _ = accumulate(map(len, opcodes_by_alt.values()))
+            self.handle_default_rhs(
+                node, opcodes_by_alt, is_loop=is_loop, is_gather=is_gather, is_leftrec=is_leftrec
+            )
+        self.generate_opcodes(opcodes_by_alt)
+
+    def generate_opcodes(self, opcodes_by_alt: Dict[Alt, List[Opcode]]) -> None:
+        *indexes, _ = accumulate(
+            map(lambda opcodes: sum(map(len, opcodes)), opcodes_by_alt.values())
+        )
         indexes = [0, *indexes, -1]
         self.print(f" {{{', '.join(map(str, indexes))}}},")
 
         self.print(" {")
         with self.indent():
-            for index, opcodes in opcodes_by_alt.items():
-                self.print(", ".join(opcodes) + ",")
+            for alt, opcodes in opcodes_by_alt.items():
+                self.print(f"// {alt if str(alt) else '<Artificial alternative>'}")
+                for opcode in opcodes:
+                    oparg_text = str(opcode.oparg) + "," if opcode.oparg else ""
+                    self.print(f"{opcode.opcode}, {oparg_text}")
+                self.print()
         self.print(" },")
 
     def visit_Alt(self, node: Alt, is_loop: bool, is_loop1: bool, is_gather: bool) -> None:
