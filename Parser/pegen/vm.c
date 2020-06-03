@@ -179,10 +179,11 @@ run_vm(Parser *p, Rule rules[], int root)
 
     case OP_SETUP_LEFT_REC:
         assert(p->mark == f->mark);
-        assert (_PyPegen_is_memoized(p, f->rule->type + 1000, &v) == 0);
         if (_PyPegen_insert_memo(p, f->mark, f->rule->type + 1000, NULL) == -1)  {
             return NULL;
         }
+        f->lastmark = p->mark;
+        f->lastval = NULL;
         goto top;
 
     case OP_SUCCESS:
@@ -226,19 +227,11 @@ run_vm(Parser *p, Rule rules[], int root)
         oparg = f->rule->opcodes[f->iop++];
         v = call_action(p, f, oparg);
         if (v) {
-            // It's a little tricky to recover the cached position:
-            // we must call is_memoized() for the start position, and then
-            // is_memoized() updates p->mark to the cached end position
-            int newmark = p->mark;
-            p->mark = f->mark;
-            void *w;
-            if (_PyPegen_is_memoized(p, f->rule->type + 1000, &w) == -1) {
-                return NULL;
-            }
-            if (newmark > p->mark) {
-                D(printf("        newmark wins\n"));
+            if (p->mark > f->lastmark) {
+                D(printf("        new mark wins\n"));
                 // The new result is better than the cached value; update memo
-                p->mark = newmark;
+                f->lastmark = p->mark;
+                f->lastval = v;
                 int ok = _PyPegen_update_memo(p, f->mark, f->rule->type + 1000, v);
                 if (ok == -1) {
                     return NULL;
@@ -252,8 +245,10 @@ run_vm(Parser *p, Rule rules[], int root)
                 f->iop++;  // Skip over OP_SETUP_LEFT_REC
                 goto top;
             }
+            // Restore last saved position and value
+            p->mark = f->lastmark;
+            v = f->lastval;
             // End the recursion loop, popping the frame
-            v = w;
             f = pop_frame(&stack, v);
             if (!f) {
                 return NULL;

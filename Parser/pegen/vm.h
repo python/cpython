@@ -71,6 +71,8 @@ typedef struct _frame {
     int ncollected;
     int capacity;
     int ival;
+    int lastmark;
     void **collection;
     void *vals[MAXVALS];
+    void *lastval;
 } Frame;
