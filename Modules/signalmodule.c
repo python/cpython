@@ -1779,10 +1779,11 @@ PyOS_FiniInterrupts(void)
     finisignal();
 }
 
+
+// The caller doesn't have to hold the GIL
 int
-PyOS_InterruptOccurred(void)
+_PyOS_InterruptOccurred(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
@@ -1794,6 +1795,15 @@ PyOS_InterruptOccurred(void)
 
     _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
     return 1;
+}
+
+
+// The caller must to hold the GIL
+int
+PyOS_InterruptOccurred(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyOS_InterruptOccurred(tstate);
 }
 
 
