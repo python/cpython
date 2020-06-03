@@ -742,7 +742,7 @@ def _parse_tz_delta(tz_delta):
 
     if not -86400 < total < 86400:
         raise ValueError(
-            "Offset must be strictly between -24h and +24h:" + tz_delta
+            f"Offset must be strictly between -24h and +24h: {tz_delta}"
         )
 
     # Yes, +5 maps to an offset of -5h
