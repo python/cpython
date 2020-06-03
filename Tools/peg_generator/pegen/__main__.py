@@ -16,6 +16,31 @@ from typing import Tuple
 from pegen.build import Grammar, Parser, Tokenizer, ParserGenerator
 
 
+def generate_vm_code(
+    args: argparse.Namespace,
+) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
+    from pegen.build import build_vm_parser_and_generator
+
+    verbose = args.verbose
+    verbose_tokenizer = verbose >= 3
+    verbose_parser = verbose == 2 or verbose >= 4
+    try:
+        grammar, parser, tokenizer, gen = build_vm_parser_and_generator(
+            args.grammar_filename,
+            args.tokens_filename,
+            args.output,
+            verbose_tokenizer,
+            verbose_parser,
+        )
+        return grammar, parser, tokenizer, gen
+    except Exception as err:
+        if args.verbose:
+            raise  # Show traceback
+        traceback.print_exception(err.__class__, err, None)
+        sys.stderr.write("For full traceback, use -v\n")
+        sys.exit(1)
+
+
 def generate_c_code(
     args: argparse.Namespace,
 ) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
@@ -114,6 +139,18 @@ python_parser.add_argument(
 )
 python_parser.add_argument(
     "--skip-actions", action="store_true", help="Suppress code emission for rule actions",
+)
+
+vm_parser = subparsers.add_parser("vm", help="Generate the new VM parser generator")
+vm_parser.set_defaults(func=generate_vm_code)
+vm_parser.add_argument("grammar_filename", help="Grammar description")
+vm_parser.add_argument("tokens_filename", help="Tokens description")
+vm_parser.add_argument(
+    "-o",
+    "--output",
+    metavar="OUT",
+    default="vmparse.h",
+    help="Where to write the generated parser",
 )
 
 

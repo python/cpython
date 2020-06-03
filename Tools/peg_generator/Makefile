@@ -25,6 +25,9 @@ build: peg_extension/parse.c
 peg_extension/parse.c: $(GRAMMAR) $(TOKENS) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen/pegen.c ../../Parser/pegen/parse_string.c ../../Parser/pegen/*.h pegen/grammar_parser.py
 	$(PYTHON) -m pegen -q c $(GRAMMAR) $(TOKENS) -o peg_extension/parse.c --compile-extension
 
+generate_vm: $(GRAMMAR) $(TOKENS) pegen/*.py ../../Parser/pegen/pegen.c ../../Parser/pegen/parse_string.c ../../Parser/pegen/*.h
+	$(PYTHON) -m pegen -q vm $(GRAMMAR) $(TOKENS) -o ../../Parser/pegen/vmparse.h
+
 clean:
 	-rm -f peg_extension/*.o peg_extension/*.so peg_extension/parse.c
 	-rm -f data/xxl.py

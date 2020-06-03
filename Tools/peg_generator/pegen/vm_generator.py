@@ -7,10 +7,9 @@ import token
 import tokenize
 from collections import defaultdict
 from itertools import accumulate
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Set, IO, Text, Union
 
 from pegen import grammar
-from pegen.build import build_parser
 from pegen.grammar import (
     Alt,
     Cut,
@@ -77,9 +76,14 @@ class RootRule(Rule):
 
 class VMCallMakerVisitor(GrammarVisitor):
     def __init__(
-        self, parser_generator: ParserGenerator,
+        self,
+        parser_generator: ParserGenerator,
+        exact_tokens: Dict[str, int],
+        non_exact_tokens: Set[str],
     ):
         self.gen = parser_generator
+        self.exact_tokens = exact_tokens
+        self.non_exact_tokens = non_exact_tokens
         self.cache: Dict[Any, Any] = {}
         self.keyword_cache: Dict[str, int] = {}
         self.soft_keyword_cache: List[str] = []
@@ -101,8 +105,8 @@ class VMCallMakerVisitor(GrammarVisitor):
                 return self.keyword_helper(val)
             else:
                 return self.soft_keyword_helper(val)
-        tok_num: int = token.EXACT_TOKEN_TYPES[val]  # type: ignore [attr-defined]
-        return "OP_TOKEN", token.tok_name[tok_num]
+        tok_num: int = self.exact_tokens[val]
+        return "OP_TOKEN", self.gen.tokens[tok_num]
 
     def visit_Repeat0(self, node: Repeat0) -> str:
         if node in self.cache:
@@ -149,12 +153,19 @@ def can_we_inline(node: Rhs) -> int:
 
 class VMParserGenerator(ParserGenerator, GrammarVisitor):
     def __init__(
-        self, grammar: grammar.Grammar,
+        self,
+        grammar: grammar.Grammar,
+        tokens: Dict[str, int],
+        exact_tokens: Dict[str, int],
+        non_exact_tokens: Set[str],
+        file: Optional[IO[Text]],
     ):
-        super().__init__(grammar, token.tok_name, sys.stdout)
+        super().__init__(grammar, tokens, file)
 
         self.opcode_buffer: Optional[List[Opcode]] = None
-        self.callmakervisitor: VMCallMakerVisitor = VMCallMakerVisitor(self)
+        self.callmakervisitor: VMCallMakerVisitor = VMCallMakerVisitor(
+            self, exact_tokens, non_exact_tokens,
+        )
 
     @contextlib.contextmanager
     def set_opcode_buffer(self, buffer: List[Opcode]) -> Iterator[None]:
@@ -517,6 +528,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
 
 
 def main() -> None:
+    from pegen.build import build_parser
     filename = "../../Grammar/python.gram"
     if sys.argv[1:]:
         filename = sys.argv[1]

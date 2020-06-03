@@ -8,6 +8,7 @@ import itertools
 from typing import Optional, Tuple, List, IO, Set, Dict
 
 from pegen.c_generator import CParserGenerator
+from pegen.vm_generator import VMParserGenerator
 from pegen.grammar import Grammar
 from pegen.grammar_parser import GeneratedParser as GrammarParser
 from pegen.parser import Parser
@@ -181,6 +182,19 @@ def build_python_generator(
     return gen
 
 
+def build_vm_generator(
+    grammar: Grammar, grammar_file: str, tokens_file: str, output_file: str,
+) -> ParserGenerator:
+    with open(tokens_file, "r") as tok_file:
+        all_tokens, exact_tok, non_exact_tok = generate_token_definitions(tok_file)
+    with open(output_file, "w") as file:
+        gen: ParserGenerator = VMParserGenerator(
+            grammar, all_tokens, exact_tok, non_exact_tok, file
+        )
+        gen.generate(grammar_file)
+    return gen
+
+
 def build_c_parser_and_generator(
     grammar_file: str,
     tokens_file: str,
@@ -245,4 +259,27 @@ def build_python_parser_and_generator(
     """
     grammar, parser, tokenizer = build_parser(grammar_file, verbose_tokenizer, verbose_parser)
     gen = build_python_generator(grammar, grammar_file, output_file, skip_actions=skip_actions,)
+    return grammar, parser, tokenizer, gen
+
+
+def build_vm_parser_and_generator(
+    grammar_file: str,
+    tokens_file: str,
+    output_file: str,
+    verbose_tokenizer: bool = False,
+    verbose_parser: bool = False,
+) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
+    """Generate rules, C parser, tokenizer, parser generator for a given grammar
+
+    Args:
+        grammar_file (string): Path for the grammar file
+        tokens_file (string): Path for the tokens file
+        output_file (string): Path for the output file
+        verbose_tokenizer (bool, optional): Whether to display additional output
+          when generating the tokenizer. Defaults to False.
+        verbose_parser (bool, optional): Whether to display additional output
+          when generating the parser. Defaults to False.
+    """
+    grammar, parser, tokenizer = build_parser(grammar_file, verbose_tokenizer, verbose_parser)
+    gen = build_vm_generator(grammar, grammar_file, tokens_file, output_file)
     return grammar, parser, tokenizer, gen
