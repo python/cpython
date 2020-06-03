@@ -494,7 +494,7 @@ Simulation of arrival times and service deliveries for a multiserver queue::
 
     from heapq import heappush, heappop
     from random import expovariate, gauss
-    from statistics import mean, median, stdev
+    from statistics import mean, quantiles
 
     average_arrival_interval = 5.6
     average_service_time = 15.0
@@ -513,8 +513,8 @@ Simulation of arrival times and service deliveries for a multiserver queue::
         service_completed = arrival_time + wait + service_duration
         heappush(servers, service_completed)
 
-    print(f'Mean wait: {mean(waits):.1f}.  Stdev wait: {stdev(waits):.1f}.')
-    print(f'Median wait: {median(waits):.1f}.  Max wait: {max(waits):.1f}.')
+    print(f'Mean wait: {mean(waits):.1f}   Max wait: {max(waits):.1f}')
+    print('Quartiles:', [round(q, 1) for q in quantiles(waits)])
 
 .. seealso::
 

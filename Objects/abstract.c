@@ -1317,11 +1317,12 @@ PyIndex_Check(PyObject *obj)
 
 
 /* Return a Python int from the object item.
+   Can return an instance of int subclass.
    Raise TypeError if the result is not an int
    or if the object cannot be interpreted as an index.
 */
 PyObject *
-PyNumber_Index(PyObject *item)
+_PyNumber_Index(PyObject *item)
 {
     PyObject *result = NULL;
     if (item == NULL) {
@@ -1360,6 +1361,20 @@ PyNumber_Index(PyObject *item)
     return result;
 }
 
+/* Return an exact Python int from the object item.
+   Raise TypeError if the result is not an int
+   or if the object cannot be interpreted as an index.
+*/
+PyObject *
+PyNumber_Index(PyObject *item)
+{
+    PyObject *result = _PyNumber_Index(item);
+    if (result != NULL && !PyLong_CheckExact(result)) {
+        Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
+    }
+    return result;
+}
+
 /* Return an error on Overflow only if err is not NULL*/
 
 Py_ssize_t
@@ -1367,7 +1382,7 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 {
     Py_ssize_t result;
     PyObject *runerr;
-    PyObject *value = PyNumber_Index(item);
+    PyObject *value = _PyNumber_Index(item);
     if (value == NULL)
         return -1;
 
@@ -1426,18 +1441,32 @@ PyNumber_Long(PyObject *o)
     }
     m = Py_TYPE(o)->tp_as_number;
     if (m && m->nb_int) { /* This should include subclasses of int */
-        result = _PyLong_FromNbInt(o);
-        if (result != NULL && !PyLong_CheckExact(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
+        /* Convert using the nb_int slot, which should return something
+           of exact type int. */
+        result = m->nb_int(o);
+        if (!result || PyLong_CheckExact(result))
+            return result;
+        if (!PyLong_Check(result)) {
+            PyErr_Format(PyExc_TypeError,
+                        "__int__ returned non-int (type %.200s)",
+                        result->ob_type->tp_name);
+            Py_DECREF(result);
+            return NULL;
         }
+        /* Issue #17576: warn if 'result' not of exact type int. */
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "__int__ returned non-int (type %.200s).  "
+                "The ability to return an instance of a strict subclass of int "
+                "is deprecated, and may be removed in a future version of Python.",
+                result->ob_type->tp_name)) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
         return result;
     }
     if (m && m->nb_index) {
-        result = _PyLong_FromNbIndexOrNbInt(o);
-        if (result != NULL && !PyLong_CheckExact(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
-        }
-        return result;
+        return PyNumber_Index(o);
     }
     trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
@@ -1452,8 +1481,7 @@ PyNumber_Long(PyObject *o)
         }
         /* __trunc__ is specified to return an Integral type,
            but int() needs to return an int. */
-        m = Py_TYPE(result)->tp_as_number;
-        if (m == NULL || (m->nb_index == NULL && m->nb_int == NULL)) {
+        if (!PyIndex_Check(result)) {
             PyErr_Format(
                 PyExc_TypeError,
                 "__trunc__ returned non-Integral (type %.200s)",
@@ -1461,10 +1489,7 @@ PyNumber_Long(PyObject *o)
             Py_DECREF(result);
             return NULL;
         }
-        Py_SETREF(result, _PyLong_FromNbIndexOrNbInt(result));
-        if (result != NULL && !PyLong_CheckExact(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
-        }
+        Py_SETREF(result, PyNumber_Index(result));
         return result;
     }
     if (PyErr_Occurred())
@@ -1547,7 +1572,7 @@ PyNumber_Float(PyObject *o)
         return PyFloat_FromDouble(val);
     }
     if (m && m->nb_index) {
-        PyObject *res = PyNumber_Index(o);
+        PyObject *res = _PyNumber_Index(o);
         if (!res) {
             return NULL;
         }
@@ -1573,7 +1598,7 @@ PyNumber_ToBase(PyObject *n, int base)
                         "PyNumber_ToBase: base must be 2, 8, 10 or 16");
         return NULL;
     }
-    PyObject *index = PyNumber_Index(n);
+    PyObject *index = _PyNumber_Index(n);
     if (!index)
         return NULL;
     PyObject *res = _PyLong_Format(index, base);

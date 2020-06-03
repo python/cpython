@@ -1,1 +1,0 @@
-Fixed :func:`ast.get_source_segment` for ast nodes that have incomplete location information. Patch by Irit Katriel.

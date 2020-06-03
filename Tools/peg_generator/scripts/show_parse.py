@@ -30,6 +30,8 @@ import os
 import sys
 import tempfile
 
+import _peg_parser
+
 from typing import List
 
 sys.path.insert(0, os.getcwd())
@@ -72,7 +74,7 @@ def diff_trees(a: ast.AST, b: ast.AST, verbose: bool = False) -> List[str]:
 
 
 def show_parse(source: str, verbose: bool = False) -> str:
-    tree = ast.parse(source)
+    tree = _peg_parser.parse_string(source, oldparser=True)
     return format_tree(tree, verbose).rstrip("\n")
 
 
@@ -90,17 +92,11 @@ def main() -> None:
         sep = " "
     program = sep.join(args.program)
     if args.grammar_file:
-        sys.path.insert(0, os.curdir)
-        from pegen.build import build_parser_and_generator
-
-        build_parser_and_generator(args.grammar_file, "peg_parser/parse.c", compile_extension=True)
-        from pegen.parse import parse_string  # type: ignore[import]
-
-        tree = parse_string(program, mode=1)
+        tree = _peg_parser.parse_string(program)
 
         if args.diff:
             a = tree
-            b = ast.parse(program)
+            b = _peg_parser.parse_string(program, oldparser=True)
             diff = diff_trees(a, b, args.verbose)
             if diff:
                 for line in diff:
@@ -111,8 +107,8 @@ def main() -> None:
             print(f"# Parsed using {args.grammar_file}")
             print(format_tree(tree, args.verbose))
     else:
-        tree = ast.parse(program)
-        print("# Parse using ast.parse()")
+        tree = _peg_parser.parse_string(program, oldparser=True)
+        print("# Parse using the old parser")
         print(format_tree(tree, args.verbose))
 
 

@@ -1,3 +1,0 @@
-The :class:`hmac.HMAC` exposes internal implementation details. The
-attributes ``digest_cons``, ``inner``, and ``outer`` are deprecated and will
-be removed in the future.

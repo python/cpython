@@ -1,9 +1,6 @@
 #ifndef Py_PYCORECONFIG_H
 #define Py_PYCORECONFIG_H
 #ifndef Py_LIMITED_API
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -438,8 +435,5 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     PyWideStringList *list,
     Py_ssize_t length, wchar_t **items);
 
-#ifdef __cplusplus
-}
-#endif
 #endif /* !Py_LIMITED_API */
 #endif /* !Py_PYCORECONFIG_H */

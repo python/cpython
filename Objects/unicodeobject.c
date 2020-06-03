@@ -2275,17 +2275,23 @@ PyUnicode_FromString(const char *u)
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
-    if (!id->object) {
-        id->object = PyUnicode_DecodeUTF8Stateful(id->string,
-                                                  strlen(id->string),
-                                                  NULL, NULL);
-        if (!id->object)
-            return NULL;
-        PyUnicode_InternInPlace(&id->object);
-        assert(!id->next);
-        id->next = static_strings;
-        static_strings = id;
+    if (id->object) {
+        return id->object;
     }
+
+    PyObject *obj;
+    obj = PyUnicode_DecodeUTF8Stateful(id->string,
+                                       strlen(id->string),
+                                       NULL, NULL);
+    if (!obj) {
+        return NULL;
+    }
+    PyUnicode_InternInPlace(&obj);
+
+    assert(!id->next);
+    id->object = obj;
+    id->next = static_strings;
+    static_strings = id;
     return id->object;
 }
 
@@ -14617,7 +14623,7 @@ mainformatlong(PyObject *v,
     /* make sure number is a type of integer for o, x, and X */
     if (!PyLong_Check(v)) {
         if (type == 'o' || type == 'x' || type == 'X') {
-            iobj = PyNumber_Index(v);
+            iobj = _PyNumber_Index(v);
             if (iobj == NULL) {
                 if (PyErr_ExceptionMatches(PyExc_TypeError))
                     goto wrongtype;
