@@ -1617,6 +1617,57 @@ class TestMatch(unittest.TestCase):
         self.assertEqual(x, 0)
         self.assertEqual(y, 0)
 
+    def test_patma_116(self) -> None:
+        match = case = 0
+        match match:
+            case case:
+                x = 0
+        self.assertEqual(match, 0)
+        self.assertEqual(case, 0)
+        self.assertEqual(x, 0)
+
+    def test_patma_117(self) -> None:
+        match = case = 0
+        match case:
+            case match:
+                x = 0
+        self.assertEqual(match, 0)
+        self.assertEqual(case, 0)
+        self.assertEqual(x, 0)
+
+    def test_patma_118(self) -> None:
+        x = []
+        match x:
+            case [*_, _]:
+                y = 0
+            case []:
+                y = 1
+        self.assertEqual(x, [])
+        self.assertEqual(y, 1)
+
+    def test_patma_119(self) -> None:
+        from collections import defaultdict
+        x = defaultdict(int)
+        match x:
+            case {0: 0}:
+                y = 0
+            case {}:
+                y = 1
+        self.assertEqual(x, [])
+        self.assertEqual(y, 1)
+
+    def test_patma_120(self) -> None:
+        from collections import defaultdict
+        x = defaultdict(int)
+        match x:
+            case {0: 0}:
+                y = 0
+            case {**z}:
+                y = 1
+        self.assertEqual(x, [])
+        self.assertEqual(y, 1)
+        self.assertEqual(z, {})
+
 
 if __name__ == "__main__":  # XXX: For quick test debugging...
     import dis

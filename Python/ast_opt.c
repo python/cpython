@@ -818,7 +818,7 @@ astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    CALL_OPT(astfold_pattern, expr_ty, node_->pattern);
+    CALL(astfold_pattern, expr_ty, node_->pattern);
     CALL_OPT(astfold_expr, expr_ty, node_->guard);
     CALL_SEQ(astfold_stmt, stmt_ty, node_->body);
     return 1;
