@@ -419,7 +419,7 @@ What is the difference between arguments and parameters?
 
 :term:`Parameters <parameter>` are defined by the names that appear in a
 function definition, whereas :term:`arguments <argument>` are the values
-actually passed to a function when calling it.  Parameters define what types of
+actually passed to a function when calling it.  Parameters define what kind of
 arguments a function can accept.  For example, given the function definition::
 
    def func(foo, bar=None, **kwargs):
