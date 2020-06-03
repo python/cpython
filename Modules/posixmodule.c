@@ -13996,6 +13996,82 @@ os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 }
 #endif
 
+#ifdef MS_WINDOWS
+static PyObject *
+windows_namespace(void)
+{
+    PyObject *d = PyDict_New(), *ret = NULL, *consts = NULL, *errors = NULL;
+    if (d == NULL) {
+        return NULL;
+    }
+
+#define SET(name) \
+    { \
+    PyObject *o = PyLong_FromLong(name); \
+    if (o == NULL) { \
+        goto error; \
+    } \
+    int res = PyDict_SetItemString(d, #name, o); \
+    Py_DECREF(o); \
+    if (res < 0) { \
+        goto error; \
+    } \
+    } \
+
+    SET(DELETE);
+    SET(READ_CONTROL);
+    SET(WRITE_DAC);
+    SET(WRITE_OWNER);
+    SET(SYNCHRONIZE);
+    SET(STANDARD_RIGHTS_REQUIRED);
+    SET(STANDARD_RIGHTS_READ);
+    SET(STANDARD_RIGHTS_WRITE);
+    SET(STANDARD_RIGHTS_EXECUTE);
+    SET(STANDARD_RIGHTS_ALL);
+    SET(SPECIFIC_RIGHTS_ALL);
+    consts = _PyNamespace_New(d);
+    if (consts == NULL) {
+        goto error;
+    }
+    PyDict_Clear(d);
+
+    SET(ERROR_ALREADY_EXISTS);
+    SET(ERROR_BROKEN_PIPE);
+    SET(ERROR_IO_PENDING);
+    SET(ERROR_MORE_DATA);
+    SET(ERROR_NETNAME_DELETED);
+    SET(ERROR_NO_SYSTEM_RESOURCES);
+    SET(ERROR_MORE_DATA);
+    SET(ERROR_NETNAME_DELETED);
+    SET(ERROR_NO_DATA);
+    SET(ERROR_NO_SYSTEM_RESOURCES);
+    SET(ERROR_OPERATION_ABORTED);
+    SET(ERROR_PIPE_BUSY);
+    SET(ERROR_PIPE_CONNECTED);
+    SET(ERROR_SEM_TIMEOUT);
+#undef SET
+    errors = _PyNamespace_New(d);
+    if (errors == NULL) {
+        goto error;
+    }
+    PyDict_Clear(d);
+
+    int res = PyDict_SetItemString(d, "constants", consts);
+    if (res < 0) {
+        goto error;
+    }
+    res = PyDict_SetItemString(d, "errors", errors);
+    if (res < 0) {
+        goto error;
+    }
+    ret = _PyNamespace_New(d);
+error:
+    Py_DECREF(d);
+    Py_XDECREF(consts);
+    Py_XDECREF(errors);
+    return ret;
+}
+#endif
 
 static PyMethodDef posix_methods[] = {
 
@@ -14844,6 +14920,15 @@ posixmodule_exec(PyObject *m)
     if (v == NULL || PyModule_AddObject(m, "environ", v) != 0)
         return -1;
     Py_DECREF(v);
+
+#ifdef MS_WINDOWS
+    v = windows_namespace();
+    Py_XINCREF(v);
+    if (v == NULL || PyModule_AddObject(m, "windows", v) != 0) {
+        return -1;
+    }
+    Py_DECREF(v);
+#endif
 
     if (all_ins(m))
         return -1;
