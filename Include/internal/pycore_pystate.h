@@ -317,6 +317,9 @@ PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
 
+
+PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
+
 #ifdef __cplusplus
 }
 #endif
