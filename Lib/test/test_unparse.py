@@ -440,6 +440,8 @@ class CosmeticTestCase(ASTTestCase):
     def test_fstrings(self):
         self.check_src_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
         self.check_src_roundtrip('''f"\\u2028{'x'}"''')
+        self.check_src_roundtrip(r"f'{x}\n'")
+        self.check_src_roundtrip('''f''\'{"""\n"""}\\n''\'''')
 
     def test_docstrings(self):
         docstrings = (

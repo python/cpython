@@ -1048,8 +1048,13 @@ class _Unparser(NodeVisitor):
         with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
 
-    def _write_str_avoiding_backslashes(self, value):
-        """Write string literal value with a best effort attempt to avoid backslashes."""
+    def _str_literal_helper(self, value, quote_types, use_escaped_whitespace=False):
+        """Helper for writing string literals without using repr.
+
+        Returns (possible quote types, string literal to write).
+        Throws ValueError if we need to use repr to write this string literal.
+
+        """
         # str.__repr__ will escape backslashes, quotes, \n, \r, \t and non-printable characters
         # We'll handle quotes, \n, \t and space, using triple quotes if necessary, but we'll
         # just let repr handle any other unicode control and separator characters.
@@ -1059,28 +1064,63 @@ class _Unparser(NodeVisitor):
                 # on that in Tools/unicode/makeunicodedata.py
                 c not in (' ', '\n', '\t') and unicodedata.category(c)[0] in ("C", "Z")
             )
-        use_repr = any(map(should_use_repr, value))
 
-        if not use_repr:
-            quote_types = ["'", '"', '"""', "'''"]
+        if any(map(should_use_repr, value)):
+            raise ValueError
 
-            if "\n" in value:
-                quote_types = quote_types[2:]
+        if use_escaped_whitespace:
+            value = value.replace("\n", "\\n")
+            value = value.replace("\t", "\\t")
 
-            for quote_type in quote_types:
-                if quote_type not in value:
-                    self.write(f"{quote_type}{value}{quote_type}")
-                    break
-            else:
-                use_repr = True
+        if "\n" in value:
+            quote_types = [quote for quote in quote_types if quote in ('"""', "'''")]
+        quote_types = [quote for quote in quote_types if quote not in value]
+        if not quote_types:
+            raise ValueError
+        return quote_types, value
 
-        if use_repr:
+    def _write_str_avoiding_backslashes(self, value):
+        """Write string literal value with a best effort attempt to avoid backslashes."""
+        try:
+            quote_types, value = self._str_literal_helper(value, ["'", '"', '"""', "'''"])
+            quote_type = quote_types[0]
+            self.write(f"{quote_type}{value}{quote_type}")
+        except ValueError:
             self.write(repr(value))
 
     def visit_JoinedStr(self, node):
         self.write("f")
-        self._fstring_JoinedStr(node, self.buffer_writer)
-        self._write_str_avoiding_backslashes(self.buffer)
+        if self.avoid_backslashes:
+            self._fstring_JoinedStr(node, self.buffer_writer)
+            self._write_str_avoiding_backslashes(self.buffer)
+            return
+
+        # If we don't need to avoid backslashes globally (i.e., we only need
+        # to avoid them inside FormattedValues), it's cosmetically preferred
+        # to use escaped whitespace. That is, it's preferred to use backslashes
+        # for cases like: f"{x}\n". To accomplish this, we keep track of what
+        # in our buffer corresponds to FormattedValues and what corresponds to
+        # Constant parts of the f-string, and allow escapes accordingly.
+        buffer = []
+        for value in node.values:
+            meth = getattr(self, "_fstring_" + type(value).__name__)
+            meth(value, self.buffer_writer)
+            buffer.append((self.buffer, isinstance(value, Constant)))
+        # This part is analagous to _write_str_avoiding_backslashes
+        try:
+            new_buffer = []
+            quote_types = ["'", '"', '"""', "'''"]
+            for i in range(len(buffer)):
+                value, is_constant = buffer[i]
+                quote_types, value = self._str_literal_helper(
+                    value, quote_types, use_escaped_whitespace=is_constant
+                )
+                new_buffer.append(value)
+            quote_type = quote_types[0]
+            value = "".join(new_buffer)
+            self.write(f"{quote_type}{value}{quote_type}")
+        except ValueError:
+            self.write(repr("".join(b[0] for b in buffer)))
 
     def visit_FormattedValue(self, node):
         self.write("f")
