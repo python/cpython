@@ -800,11 +800,11 @@ PyDoc_STRVAR(builtin_issubclass__doc__,
 "issubclass($module, cls, class_or_tuple, /)\n"
 "--\n"
 "\n"
-"Return whether \'cls\' is a derived from another class or is the same class.\n"
+"Return whether \'cls\' is derived from another class or is the same class.\n"
 "\n"
 "A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to\n"
 "check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)\n"
-"or ...`` etc.");
+"or ...``.");
 
 #define BUILTIN_ISSUBCLASS_METHODDEF    \
     {"issubclass", (PyCFunction)(void(*)(void))builtin_issubclass, METH_FASTCALL, builtin_issubclass__doc__},
@@ -830,4 +830,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=780fd9712ec6a6db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2fcf0201790367c input=a9049054013a1b77]*/
