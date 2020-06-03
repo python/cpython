@@ -54,6 +54,7 @@ static char *opcode_names[] = {
 typedef struct _rule {
     char *name;
     int type;
+    int memo;  // To memo or not
     int alts[MAXALTS];
     int opcodes[MAXOPCODES];
 } Rule;

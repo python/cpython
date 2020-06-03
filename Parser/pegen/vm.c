@@ -51,8 +51,11 @@ pop_frame(Stack *stack, void *v)
     if (f->collection) {
         PyMem_Free(f->collection);
     }
-    // TODO: Selective memoization
-    _PyPegen_insert_memo(stack->p, f->mark, f->rule->type + 1000, v);
+    if (f->rule->memo) {
+        if (_PyPegen_insert_memo(stack->p, f->mark, f->rule->type + 1000, v) == -1) {
+            return NULL;
+        }
+    }
     f = &stack->frames[stack->top - 1];  // New top of stack
     D(printf("               pop %s\n", f->rule->name));
     return f;
@@ -145,14 +148,20 @@ run_vm(Parser *p, Rule rules[], int root)
             D(printf("Nothing collected for %s\n", f->rule->name));
             v = NULL;
             f = pop_frame(&stack, v);
+            if (!f) {
+                return NULL;
+            }
             break;
         }
         // Fallthrough!
     case OP_LOOP_COLLECT:
         v = make_asdl_seq(p, f->collection, f->ncollected);
-        f = pop_frame(&stack, v);
         if (!v) {
             return PyErr_NoMemory();
+        }
+        f = pop_frame(&stack, v);
+        if (!f) {
+            return NULL;
         }
         break;
 
@@ -193,12 +202,14 @@ run_vm(Parser *p, Rule rules[], int root)
     case OP_RULE:
         oparg = f->rule->opcodes[f->iop++];
         Rule *rule = &rules[oparg];
-        // TODO: Selective memoization
-        v = NULL;  // In case is_memoized ran into an error
-        int memo = _PyPegen_is_memoized(p, rule->type + 1000, &v);
-        if (memo) {
-            // The result is v; if v != NULL, p->mark has been updated
-            break;
+        if (rule->memo) {
+            v = NULL;  // In case is_memoized ran into an error
+            int memo = _PyPegen_is_memoized(p, rule->type + 1000, &v);
+            if (memo) {
+                D(printf("          Memo hit %s\n", rule->name));
+                // The result is v; if v != NULL, p->mark has been updated
+                break;
+            }
         }
         f = push_frame(&stack, rule);
         goto top;
@@ -206,6 +217,9 @@ run_vm(Parser *p, Rule rules[], int root)
         oparg = f->rule->opcodes[f->iop++];
         v = call_action(p, f, oparg);
         f = pop_frame(&stack, v);
+        if (!f) {
+            return NULL;
+        }
         break;
 
     case OP_RETURN_LEFT_REC:
@@ -241,6 +255,9 @@ run_vm(Parser *p, Rule rules[], int root)
             // End the recursion loop, popping the frame
             v = w;
             f = pop_frame(&stack, v);
+            if (!f) {
+                return NULL;
+            }
         }
         break;
 
@@ -289,6 +306,9 @@ run_vm(Parser *p, Rule rules[], int root)
 
  pop:
     f = pop_frame(&stack, NULL);
+    if (!f) {
+        return NULL;
+    }
     goto fail;
 }
 

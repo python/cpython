@@ -350,6 +350,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
     def visit_RootRule(self, node: RootRule) -> None:
         self.print(f'{{"{node.name}",')
         self.print(f" R_{node.name.upper()},")
+        self.print(f" 0,")
 
         first_alt = Alt([])
         second_alt = Alt([])
@@ -370,6 +371,14 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         rhs = node.flatten()
         self.print(f'{{"{node.name}",')
         self.print(f" R_{node.name.upper()},")
+        if node.memo or node.left_recursive:
+            if node.left_recursive:
+                tag = "leftrec"
+            else:
+                tag = "memo"
+            self.print(f" 1,  // {tag}")
+        else:
+            self.print(f" 0,")
         self.current_rule = node  # TODO: make this a context manager
         self.visit(
             rhs,
