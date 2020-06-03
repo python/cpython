@@ -144,6 +144,9 @@ PyAPI_FUNC(int) _PyState_AddModule(
     PyObject* module,
     struct PyModuleDef* def);
 
+
+PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
+
 #ifdef __cplusplus
 }
 #endif
