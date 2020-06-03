@@ -380,6 +380,8 @@ PyDoc_STRVAR(os_chmod__doc__,
 "    If this functionality is unavailable, using it raises an exception.\n"
 "  mode\n"
 "    Operating-system mode bitfield.\n"
+"    Be careful when using number literals for *mode*. The conventional UNIX notation for numeric\n"
+"    modes uses an octal base, which needs to be indicated with a ``0o`` prefix in Python\n"
 "  dir_fd\n"
 "    If not None, it should be a file descriptor open to a directory,\n"
 "    and path should be relative; path will then be relative to that\n"
