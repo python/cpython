@@ -24,14 +24,23 @@ static PyThread_type_lock _PyOS_ReadlineLock = NULL;
 int (*PyOS_InputHook)(void) = NULL;
 
 /* This function restarts a fgets() after an EINTR error occurred
-   except if PyOS_InterruptOccurred() returns true. */
+   except if _PyOS_InterruptOccurred() returns true. */
 
 static int
 my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
 {
 #ifdef MS_WINDOWS
-    HANDLE hInterruptEvent;
+    HANDLE handle;
+    _Py_BEGIN_SUPPRESS_IPH
+    handle = (HANDLE)_get_osfhandle(fileno(fp));
+    _Py_END_SUPPRESS_IPH
+
+    /* bpo-40826: fgets(fp) does crash if fileno(fp) is closed */
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1; /* EOF */
+    }
 #endif
+
     while (1) {
         if (PyOS_InputHook != NULL) {
             (void)(PyOS_InputHook)();
@@ -60,7 +69,7 @@ my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
            through to check for EOF.
         */
         if (GetLastError()==ERROR_OPERATION_ABORTED) {
-            hInterruptEvent = _PyOS_SigintEvent();
+            HANDLE hInterruptEvent = _PyOS_SigintEvent();
             switch (WaitForSingleObjectEx(hInterruptEvent, 10, FALSE)) {
             case WAIT_OBJECT_0:
                 ResetEvent(hInterruptEvent);
@@ -90,7 +99,7 @@ my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
         }
 #endif
 
-        if (PyOS_InterruptOccurred()) {
+        if (_PyOS_InterruptOccurred(tstate)) {
             return 1; /* Interrupt */
         }
         return -2; /* Error */
