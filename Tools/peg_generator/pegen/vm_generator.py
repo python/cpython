@@ -366,7 +366,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         name = node.value
         if name in ("NAME", "NUMBER", "STRING"):
             self.add_opcode(f"OP_{name}")
-        elif name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER", "ASYNC", "AWAIT"):
+        elif name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER", "ASYNC", "AWAIT", "TYPE_COMMENT"):
             self.add_opcode("OP_TOKEN", name)
         else:
             self.add_opcode("OP_RULE", self._get_rule_opcode(name))
