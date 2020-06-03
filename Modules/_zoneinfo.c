@@ -1219,10 +1219,21 @@ calendarrule_new(uint8_t month, uint8_t week, uint8_t day, int8_t hour,
     // it may create a bug. Considering that the compiler should be able to
     // optimize out the first comparison if day is an unsigned integer anyway,
     // we will leave this comparison in place and disable the compiler warning.
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#endif
+#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
     if (day < 0 || day > 6) {
+#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
 #pragma GCC diagnostic pop
+#endif
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
         PyErr_Format(PyExc_ValueError, "Day must be in [0, 6]");
         return -1;
     }
