@@ -1114,7 +1114,6 @@ class _Unparser(NodeVisitor):
             meth = getattr(self, "_fstring_" + type(value).__name__)
             meth(value, self.buffer_writer)
             buffer.append((self.buffer, isinstance(value, Constant)))
-        # This part is analagous to _write_str_avoiding_backslashes
         new_buffer = []
         quote_types = ["'", '"', '"""', "'''"]
         for value, is_constant in buffer:
