@@ -3872,7 +3872,7 @@ exit_eval_frame:
 
 static void
 format_missing(PyThreadState *tstate, const char *kind,
-               PyCodeObject *co, PyObject *names, PyObject *qualname)
+               PyCodeObject *co, PyObject *names, PyObject *code_name)
 {
     int err;
     Py_ssize_t len = PyList_GET_SIZE(names);
@@ -3925,7 +3925,7 @@ format_missing(PyThreadState *tstate, const char *kind,
         return;
     _PyErr_Format(tstate, PyExc_TypeError,
                   "%U() missing %i required %s argument%s: %U",
-                  qualname,
+                  code_name,
                   len,
                   kind,
                   len == 1 ? "" : "s",
@@ -3936,7 +3936,7 @@ format_missing(PyThreadState *tstate, const char *kind,
 static void
 missing_arguments(PyThreadState *tstate, PyCodeObject *co,
                   Py_ssize_t missing, Py_ssize_t defcount,
-                  PyObject **fastlocals, PyObject *qualname)
+                  PyObject **fastlocals, PyObject *code_name)
 {
     Py_ssize_t i, j = 0;
     Py_ssize_t start, end;
@@ -3968,14 +3968,14 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
         }
     }
     assert(j == missing);
-    format_missing(tstate, kind, co, missing_names, qualname);
+    format_missing(tstate, kind, co, missing_names, code_name);
     Py_DECREF(missing_names);
 }
 
 static void
 too_many_positional(PyThreadState *tstate, PyCodeObject *co,
                     Py_ssize_t given, Py_ssize_t defcount,
-                    PyObject **fastlocals, PyObject *qualname)
+                    PyObject **fastlocals, PyObject *code_name)
 {
     int plural;
     Py_ssize_t kwonly_given = 0;
@@ -4019,7 +4019,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     }
     _PyErr_Format(tstate, PyExc_TypeError,
                   "%U() takes %U positional argument%s but %zd%U %s given",
-                  qualname,
+                  code_name,
                   sig,
                   plural ? "s" : "",
                   given,
@@ -4032,7 +4032,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
 static int
 positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
                                   Py_ssize_t kwcount, PyObject* const* kwnames,
-                                  PyObject *qualname)
+                                  PyObject *code_name)
 {
     int posonly_conflicts = 0;
     PyObject* posonly_names = PyList_New(0);
@@ -4077,7 +4077,7 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
         _PyErr_Format(tstate, PyExc_TypeError,
                       "%U() got some positional-only arguments passed"
                       " as keyword arguments: '%U'",
-                      qualname, error_names);
+                      code_name, error_names);
         Py_DECREF(error_names);
         goto fail;
     }
@@ -4107,14 +4107,13 @@ _PyEval_EvalCode(PyThreadState *tstate,
 {
     assert(is_tstate_valid(tstate));
 
-    PyCodeObject* co = (PyCodeObject*)_co;
-    PyFrameObject *f;
+    PyCodeObject *co = (PyCodeObject*)_co;
+    PyObject *code_name = qualname ? qualname : co->co_name;
+    assert(code_name != NULL);
+    assert(PyUnicode_Check(code_name));
+
     PyObject *retval = NULL;
-    PyObject **fastlocals, **freevars;
-    PyObject *x, *u;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-    Py_ssize_t i, j, n;
-    PyObject *kwdict;
 
     if (globals == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
@@ -4123,14 +4122,16 @@ _PyEval_EvalCode(PyThreadState *tstate,
     }
 
     /* Create the frame */
-    f = _PyFrame_New_NoTrack(tstate, co, globals, locals);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, globals, locals);
     if (f == NULL) {
         return NULL;
     }
-    fastlocals = f->f_localsplus;
-    freevars = f->f_localsplus + co->co_nlocals;
+    PyObject **fastlocals = f->f_localsplus;
+    PyObject **freevars = f->f_localsplus + co->co_nlocals;
 
     /* Create a dictionary for keyword parameters (**kwags) */
+    PyObject *kwdict;
+    Py_ssize_t i;
     if (co->co_flags & CO_VARKEYWORDS) {
         kwdict = PyDict_New();
         if (kwdict == NULL)
@@ -4146,6 +4147,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
     }
 
     /* Copy all positional arguments into local variables */
+    Py_ssize_t j, n;
     if (argcount > co->co_argcount) {
         n = co->co_argcount;
     }
@@ -4153,14 +4155,14 @@ _PyEval_EvalCode(PyThreadState *tstate,
         n = argcount;
     }
     for (j = 0; j < n; j++) {
-        x = args[j];
+        PyObject *x = args[j];
         Py_INCREF(x);
         SETLOCAL(j, x);
     }
 
     /* Pack other positional arguments into the *args argument */
     if (co->co_flags & CO_VARARGS) {
-        u = _PyTuple_FromArray(args + n, argcount - n);
+        PyObject *u = _PyTuple_FromArray(args + n, argcount - n);
         if (u == NULL) {
             goto fail;
         }
@@ -4178,7 +4180,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
         if (keyword == NULL || !PyUnicode_Check(keyword)) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%U() keywords must be strings",
-                          qualname);
+                          code_name);
             goto fail;
         }
 
@@ -4209,14 +4211,15 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
             if (co->co_posonlyargcount
                 && positional_only_passed_as_keyword(tstate, co,
-                                                     kwcount, kwnames, qualname))
+                                                     kwcount, kwnames,
+                                                     code_name))
             {
                 goto fail;
             }
 
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%U() got an unexpected keyword argument '%S'",
-                          qualname, keyword);
+                          code_name, keyword);
             goto fail;
         }
 
@@ -4229,7 +4232,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
         if (GETLOCAL(j) != NULL) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%U() got multiple values for argument '%S'",
-                          qualname, keyword);
+                          code_name, keyword);
             goto fail;
         }
         Py_INCREF(value);
@@ -4238,7 +4241,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
     /* Check the number of positional arguments */
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
-        too_many_positional(tstate, co, argcount, defcount, fastlocals, qualname);
+        too_many_positional(tstate, co, argcount, defcount, fastlocals,
+                            code_name);
         goto fail;
     }
 
@@ -4252,7 +4256,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
             }
         }
         if (missing) {
-            missing_arguments(tstate, co, missing, defcount, fastlocals, qualname);
+            missing_arguments(tstate, co, missing, defcount, fastlocals,
+                              code_name);
             goto fail;
         }
         if (n > m)
@@ -4290,7 +4295,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
             missing++;
         }
         if (missing) {
-            missing_arguments(tstate, co, missing, -1, fastlocals, qualname);
+            missing_arguments(tstate, co, missing, -1, fastlocals,
+                              code_name);
             goto fail;
         }
     }
