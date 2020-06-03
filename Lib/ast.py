@@ -1077,6 +1077,9 @@ class _Unparser(NodeVisitor):
         quote_types = [quote for quote in quote_types if quote not in value]
         if not quote_types:
             raise ValueError
+        if value:
+            # Sort so that we prefer '''"''' over """\""""
+            quote_types.sort(key=lambda q: q[0] == value[-1])
         return quote_types, value
 
     def _write_str_avoiding_backslashes(self, value):
@@ -1084,6 +1087,9 @@ class _Unparser(NodeVisitor):
         try:
             quote_types, value = self._str_literal_helper(value, ["'", '"', '"""', "'''"])
             quote_type = quote_types[0]
+            # If we're using triple quotes and we'd need to escape a final quote, raise
+            if value and quote_type[0] == value[-1]:
+                raise ValueError
             self.write(f"{quote_type}{value}{quote_type}")
         except ValueError:
             self.write(repr(value))
@@ -1116,8 +1122,11 @@ class _Unparser(NodeVisitor):
                     value, quote_types, use_escaped_whitespace=is_constant
                 )
                 new_buffer.append(value)
-            quote_type = quote_types[0]
             value = "".join(new_buffer)
+            quote_type = quote_types[0]
+            # If we're using triple quotes and we'd need to escape a final quote, escape
+            if value and quote_type[0] == value[-1]:
+                value = value[:-1] + "\\" + value[-1]
             self.write(f"{quote_type}{value}{quote_type}")
         except ValueError:
             self.write(repr("".join(b[0] for b in buffer)))

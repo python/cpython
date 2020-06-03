@@ -152,11 +152,14 @@ class UnparseTestCase(ASTTestCase):
         # See issue 25180
         self.check_ast_roundtrip(r"""f'{f"{0}"*3}'""")
         self.check_ast_roundtrip(r"""f'{f"{y}"*3}'""")
+        self.check_ast_roundtrip("""f''""")
+        self.check_ast_roundtrip('''f"""'end' "quote\\""""''')
 
     def test_fstrings_complicated(self):
         # See issue 28002
         self.check_ast_roundtrip("""f'''{"'"}'''""")
         self.check_ast_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
+        self.check_ast_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-'single quote\\'\'\'\'''')
         self.check_ast_roundtrip('f"""{\'\'\'\n\'\'\'}"""')
         self.check_ast_roundtrip('f"""{g(\'\'\'\n\'\'\')}"""')
         self.check_ast_roundtrip('''f"a\\r\\nb"''')
