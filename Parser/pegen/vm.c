@@ -17,7 +17,7 @@
 #define D(x)
 #endif
 
-#define MAXFRAMES 100
+#define MAXFRAMES 1000
 
 typedef struct _stack {
     Parser *p;
@@ -142,7 +142,7 @@ run_vm(Parser *p, Rule rules[], int root)
         // Fallthrough!
     case OP_LOOP_COLLECT_NONEMPTY:
         if (!f->ncollected) {
-            printf("Nothing collected for %s\n", f->rule->name);
+            D(printf("Nothing collected for %s\n", f->rule->name));
             v = NULL;
             f = pop_frame(&stack, v);
             break;

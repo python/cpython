@@ -48,7 +48,7 @@ static char *opcode_names[] = {
     "OP_RETURN_LEFT_REC",
 };
 
-#define MAXALTS 10
+#define MAXALTS 15
 #define MAXOPCODES 100
 
 typedef struct _rule {

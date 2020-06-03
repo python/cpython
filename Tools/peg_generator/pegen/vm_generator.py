@@ -235,15 +235,13 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
 
     def _setup_soft_keywords(self) -> None:
         soft_keywords = self.callmakervisitor.soft_keyword_cache
-        if not soft_keywords:
-            return
-
-        self.print("enum {")
-        with self.indent():
-            for soft_keyword in soft_keywords:
-                self.print(f"SK_{soft_keyword.upper()},")
-        self.print("};")
-        self.print()
+        if soft_keywords:
+            self.print("enum {")
+            with self.indent():
+                for soft_keyword in soft_keywords:
+                    self.print(f"SK_{soft_keyword.upper()},")
+            self.print("};")
+            self.print()
         self.print("static const char *soft_keywords[] = {")
         with self.indent():
             for soft_keyword in soft_keywords:
@@ -278,10 +276,9 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         if not alt.action:
             # TODO: Restore the assert, but expect index == 2 in Gather
             ##assert index == 1, "Alternative with >1 item must have an action"
-            return "_f->vals[0]"
+            return self.make_typed_var(alt, 0)
         # Sadly, the action is given as a string, so tokenize it back.
         # We must not substitute item names when preceded by '.' or '->'.
-        # Note that Python tokenizes '->' as two separate tokens.
         res = []
         prevs = ""
         for stuff in tokenize.generate_tokens(iter([alt.action]).__next__):
@@ -289,7 +286,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
             if prevs not in (".", "->"):
                 i = name_to_index.get(s)
                 if i is not None:
-                    s = f"_f->vals[{i}]"
+                    s = self.make_typed_var(alt, i)
             res.append(s)
             prevs = s
         return " ".join(res).strip()
@@ -304,10 +301,28 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
                 index += 1
         return map, index
 
+    def make_typed_var(self, alt: Alt, index: int) -> str:
+        var = f"_f->vals[{index}]"
+        type = self.get_type_of_indexed_item(alt, index)
+        if type:
+            var = f"(({type}){var})"
+        return var
+
+    def get_type_of_indexed_item(self, alt: Alt, index: int) -> Optional[str]:
+        item = alt.items[index].item
+        if isinstance(item, NameLeaf):
+            if item.value in self.rules:
+                return self.rules[item.value].type
+            if item.value == "NAME":
+                return "expr_ty"
+        if isinstance(item, StringLeaf):
+            return "Token *"
+        return None
+
     def add_root_rules(self) -> None:
         assert "root" not in self.todo
         assert "root" not in self.rules
-        root = RootRule("root", "start")  # TODO: determine start rules dynamically
+        root = RootRule("root", "file")  # TODO: determine start rules dynamically
         self.todo["root"] = root
         self.rules["root"] = root
 
@@ -469,7 +484,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
 
 
 def main() -> None:
-    filename = "./data/simple.gram"
+    filename = "../../Grammar/python.gram"
     if sys.argv[1:]:
         filename = sys.argv[1]
     grammar, parser, tokenizer = build_parser(filename, False, False)
