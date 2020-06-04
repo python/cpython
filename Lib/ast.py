@@ -1090,9 +1090,9 @@ class _Unparser(NodeVisitor):
                 val = val[:-1] + "\\" + val[-1]
         return val, qts
 
-    def _write_str_avoiding_backslashes(self, value):
+    def _write_str_avoiding_backslashes(self, value, **kwargs):
         """Write string literal value with a best effort attempt to avoid backslashes."""
-        value, quote_types = self._str_literal_helper(value)
+        value, quote_types = self._str_literal_helper(value, **kwargs)
         quote_type = quote_types[0]
         self.write(f"{quote_type}{value}{quote_type}")
 
@@ -1169,9 +1169,7 @@ class _Unparser(NodeVisitor):
         self.fill()
         if node.kind == "u":
             self.write("u")
-        value, quote_types = self._str_literal_helper(node.value, ('"""', "'''"))
-        quote_type = quote_types[0]
-        self.write(f"{quote_type}{value}{quote_type}")
+        self._write_str_avoiding_backslashes(node.value, quote_types=('"""', "'''"))
 
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):
