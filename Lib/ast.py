@@ -1068,13 +1068,12 @@ class _Unparser(NodeVisitor):
             c for c in value
             if c not in ' \n\t' and unicodedata.category(c)[0] in ("C", "Z")
         }
-        qts = quote_types
         val = value.replace("\\", "\\\\")
         for c in escape:
             val = val.replace(c, c.encode('unicode_escape').decode('ascii'))
+        qts = [quote for quote in quote_types if quote not in val]
         if "\n" in val:
             qts = [quote for quote in qts if quote in ('"""', "'''")]
-        qts = [quote for quote in qts if quote not in val]
         if not qts:
             # If there aren't any possible quote_types, fallback to using repr
             # on the original value. Try to use a quote_type from quote_types.
