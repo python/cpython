@@ -1060,8 +1060,8 @@ class _Unparser(NodeVisitor):
         """Helper for writing string literals, minimising escapes.
         Returns (possible quote types, string literal to write).
         """
-        # Escape characters we've been told to escape, backslashes, and any
-        # non-printable characters.
+        # Escape characters we've been told to escape, backslashes, and
+        # non-printable characters other than \n and \t.
         escape = {*escape, '\\'}
         val = "".join(
             c.encode('unicode_escape').decode('ascii')
