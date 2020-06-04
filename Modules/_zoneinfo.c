@@ -10,10 +10,9 @@
 // This takes advantage of GCC compiler extensions to determine the type of the
 // variable, so we'll make Py_ASSERT_VAR_UNSIGNED a noop on non-GCC platforms.
 // This is not perfect, but it's better than nothing.
-#ifdef __GNUC__
-#define IS_TYPE_UNSIGNED(type) (((type)-1) > (type)0)
+#ifdef _Py_HAVE_TYPEOF
 #define Py_ASSERT_VAR_UNSIGNED(var) \
-    Py_BUILD_ASSERT(IS_TYPE_UNSIGNED(__typeof__(var)))
+    Py_BUILD_ASSERT(_Py_IS_TYPE_UNSIGNED(_Py_TYPEOF(var)))
 #else
 #define Py_ASSERT_VAR_UNSIGNED(var)
 #endif
