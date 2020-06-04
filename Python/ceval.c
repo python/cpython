@@ -4107,14 +4107,22 @@ _PyEval_EvalCode(PyThreadState *tstate,
 {
     assert(is_tstate_valid(tstate));
 
-    PyCodeObject* co = (PyCodeObject*)_co;
-    PyFrameObject *f;
+    PyCodeObject *co = (PyCodeObject*)_co;
+
+    if (!name) {
+        name = co->co_name;
+    }
+    assert(name != NULL);
+    assert(PyUnicode_Check(name));
+
+    if (!qualname) {
+        qualname = name;
+    }
+    assert(qualname != NULL);
+    assert(PyUnicode_Check(qualname));
+
     PyObject *retval = NULL;
-    PyObject **fastlocals, **freevars;
-    PyObject *x, *u;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-    Py_ssize_t i, j, n;
-    PyObject *kwdict;
 
     if (globals == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
@@ -4123,14 +4131,16 @@ _PyEval_EvalCode(PyThreadState *tstate,
     }
 
     /* Create the frame */
-    f = _PyFrame_New_NoTrack(tstate, co, globals, locals);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, globals, locals);
     if (f == NULL) {
         return NULL;
     }
-    fastlocals = f->f_localsplus;
-    freevars = f->f_localsplus + co->co_nlocals;
+    PyObject **fastlocals = f->f_localsplus;
+    PyObject **freevars = f->f_localsplus + co->co_nlocals;
 
     /* Create a dictionary for keyword parameters (**kwags) */
+    PyObject *kwdict;
+    Py_ssize_t i;
     if (co->co_flags & CO_VARKEYWORDS) {
         kwdict = PyDict_New();
         if (kwdict == NULL)
@@ -4146,6 +4156,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
     }
 
     /* Copy all positional arguments into local variables */
+    Py_ssize_t j, n;
     if (argcount > co->co_argcount) {
         n = co->co_argcount;
     }
@@ -4153,14 +4164,14 @@ _PyEval_EvalCode(PyThreadState *tstate,
         n = argcount;
     }
     for (j = 0; j < n; j++) {
-        x = args[j];
+        PyObject *x = args[j];
         Py_INCREF(x);
         SETLOCAL(j, x);
     }
 
     /* Pack other positional arguments into the *args argument */
     if (co->co_flags & CO_VARARGS) {
-        u = _PyTuple_FromArray(args + n, argcount - n);
+        PyObject *u = _PyTuple_FromArray(args + n, argcount - n);
         if (u == NULL) {
             goto fail;
         }
@@ -4186,16 +4197,16 @@ _PyEval_EvalCode(PyThreadState *tstate,
            normally interned this should almost always hit. */
         co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
         for (j = co->co_posonlyargcount; j < total_args; j++) {
-            PyObject *name = co_varnames[j];
-            if (name == keyword) {
+            PyObject *varname = co_varnames[j];
+            if (varname == keyword) {
                 goto kw_found;
             }
         }
 
         /* Slow fallback, just in case */
         for (j = co->co_posonlyargcount; j < total_args; j++) {
-            PyObject *name = co_varnames[j];
-            int cmp = PyObject_RichCompareBool( keyword, name, Py_EQ);
+            PyObject *varname = co_varnames[j];
+            int cmp = PyObject_RichCompareBool( keyword, varname, Py_EQ);
             if (cmp > 0) {
                 goto kw_found;
             }
@@ -4209,7 +4220,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
             if (co->co_posonlyargcount
                 && positional_only_passed_as_keyword(tstate, co,
-                                                     kwcount, kwnames, qualname))
+                                                     kwcount, kwnames,
+                                                     qualname))
             {
                 goto fail;
             }
@@ -4238,7 +4250,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
     /* Check the number of positional arguments */
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
-        too_many_positional(tstate, co, argcount, defcount, fastlocals, qualname);
+        too_many_positional(tstate, co, argcount, defcount, fastlocals,
+                            qualname);
         goto fail;
     }
 
@@ -4252,7 +4265,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
             }
         }
         if (missing) {
-            missing_arguments(tstate, co, missing, defcount, fastlocals, qualname);
+            missing_arguments(tstate, co, missing, defcount, fastlocals,
+                              qualname);
             goto fail;
         }
         if (n > m)
@@ -4272,12 +4286,11 @@ _PyEval_EvalCode(PyThreadState *tstate,
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
-            PyObject *name;
             if (GETLOCAL(i) != NULL)
                 continue;
-            name = PyTuple_GET_ITEM(co->co_varnames, i);
+            PyObject *varname = PyTuple_GET_ITEM(co->co_varnames, i);
             if (kwdefs != NULL) {
-                PyObject *def = PyDict_GetItemWithError(kwdefs, name);
+                PyObject *def = PyDict_GetItemWithError(kwdefs, varname);
                 if (def) {
                     Py_INCREF(def);
                     SETLOCAL(i, def);
@@ -4290,7 +4303,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
             missing++;
         }
         if (missing) {
-            missing_arguments(tstate, co, missing, -1, fastlocals, qualname);
+            missing_arguments(tstate, co, missing, -1, fastlocals,
+                              qualname);
             goto fail;
         }
     }
