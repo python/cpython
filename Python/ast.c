@@ -312,6 +312,7 @@ validate_pattern(expr_ty p)
         case Attribute_kind:
             return validate_expr(p, Load);
         case BinOp_kind:
+            // TODO
             return 1;
         case BoolOp_kind:
             if (p->v.BoolOp.op != Or) {
@@ -331,6 +332,9 @@ validate_pattern(expr_ty p)
                     return 0;
                 }
             }
+            return 1;
+        case Call_kind:
+            // TODO
             return 1;
         case Constant_kind:
             return validate_expr(p, Load);
@@ -360,6 +364,17 @@ validate_pattern(expr_ty p)
                     }
                     return validate_expr(key, Load);
                 }
+                else {
+                    if (i != size - 1) {
+                        // TODO
+                    }
+                    if (key->kind != Name_kind) {
+                        // TODO
+                    }
+                    if (key->v.Name.ctx != Store) {
+                        // TODO
+                    }
+                }
                 if (!validate_pattern(asdl_seq_GET(values, i))) {
                     return 0;
                 }
@@ -370,6 +385,15 @@ validate_pattern(expr_ty p)
             size = asdl_seq_LEN(values);
             for (i = 0; i < size; i++) {
                 value = asdl_seq_GET(values, i);
+                if (value->kind == Starred_kind) {
+                    value = value->v.Starred.value;
+                    if (value->kind != Name_kind) {
+                        // TODO
+                    }
+                    if (value->v.Name.ctx != Store) {
+                        // TODO
+                    }
+                }
                 if (!validate_pattern(value)) {
                     return 0;
                 }

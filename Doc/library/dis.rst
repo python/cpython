@@ -737,6 +737,14 @@ iterations of the loop.
    by :opcode:`CALL_FUNCTION` to construct a class.
 
 
+.. opcode:: LIST_POP
+
+   TOS is a :class:`list`.  Pop the last item from it, and push it onto the
+   stack.
+
+   .. versionadded:: 3.10
+
+
 .. opcode:: SETUP_WITH (delta)
 
    This opcode performs several operations before a with block starts.  First,
@@ -990,47 +998,6 @@ All of the following opcodes use their arguments.
    code counter is incremented by *delta*.
 
 
-.. opcode:: MATCH_KEY (delta)
-
-   Pop TOS.  If it is a key in the :class:`dict` at TOS1, remove it and push the
-   associated value onto the stack.  Otherwise, increment the bytecode counter
-   by ``delta``.
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_MAP (delta)
-
-   Pop TOS.  If it is an instance of :class:`collections.abc.Mapping`, copy it
-   into a :class:`dict` and push that onto the stack.  Otherwise, increment the
-   bytecode counter by ``delta``.
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_SEQ (delta)
-
-   Pop TOS.  If it is an instance of :class:`collections.abc.Sequence`, is not
-   an :term:`iterator`, and is not an instance of
-   :class:`str`/:class:`bytes`/:class:`bytearray`, get an iterator from it and
-   push that onto the stack.  Otherwise, increment the bytecode counter by
-   ``delta``.
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: DESTRUCTURE (argcount)
-
-   Pop TOS, TOS1, and TOS2.  If TOS1 is an instance of :class:`type` and has a
-   ``__match__`` method, call it on TOS2.  If the result is not ``None``,
-   destrucuture it into ``argcount`` components (using any keyword names from
-   the :class:`tuple` at TOS), collect these into a tuple, and push that onto
-   the stack, followed by ``True``.  Otherwise, push ``None``, followed by
-   ``False``.
-
-   .. versionadded:: 3.10
-
-
 .. opcode:: LOAD_GLOBAL (namei)
 
    Loads the global named ``co_names[namei]`` onto the stack.
@@ -1228,6 +1195,63 @@ All of the following opcodes use their arguments.
    result is pushed on the stack.
 
    .. versionadded:: 3.6
+
+
+.. opcode:: MATCH (delta)
+
+   Pop TOS, TOS1, TOS2, and TOS3.  If TOS2 is an instance of :class:`type` and
+   has a ``__match__`` method, call that method on TOS3.  The returned "proxy"
+   should be non-``None``.
+
+   TOS is an integer argument count, and TOS1 is a :class:`tuple` of attribute
+   names.  Using these together with the ``__match_args__`` and
+   ``__match_args_required__`` attributes (if present) on the "proxy", discover
+   and validate the total collection of attribute names required for a
+   successful match.  If it has all of those attributes, push a reversed
+   :class:`list` of their corresponsing values onto the stack.
+
+   If any part of the above process is unsuccessful, increment the bytecode
+   counter by ``delta``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_MAP (delta)
+
+   Pop TOS and TOS1.  TOS is a tuple of keys.  If TOS1 is an instance of
+   :class:`collections.abc.Mapping`, push a reversed list of values mapped from
+   those keys onto the stack.  Otherwise, increment the bytecode counter by
+   ``delta``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_MAP_STAR (delta)
+
+   Perform the same steps as :opcode:`MATCH_MAP`, but prepend a :class:`dict` of
+   the remaining items to the list of values.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_SEQ (delta)
+
+   Pop TOS and TOS1.  TOS is an :class:`int` length.  If TOS1 is an instance of
+   :class:`collections.abc.Sequence`, is not an :term:`iterator`, is not an
+   instance of :class:`str`/:class:`bytes`/:class:`bytearray`, and has that
+   length, collect it into a reversed list and push that onto the stack.
+   Otherwise, increment the bytecode counter by ``delta``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_SEQ_STAR (delta)
+
+   Pop TOS, TOS1, and TOS2.  TOS and TOS1 are int lengths.  Perform the same
+   steps as :opcode:`MATCH_SEQ` on TOS2, but fold the middle items of the result
+   list between TOS1 and -TOS2 into another, nested list.
+
+   .. versionadded:: 3.10
 
 
 .. opcode:: HAVE_ARGUMENT

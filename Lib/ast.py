@@ -1339,7 +1339,7 @@ class _Unparser(NodeVisitor):
             operator_precedence = _Precedence.OR
         else:
             operator = self.boolops[node.op.__class__.__name__]
-             operator_precedence = self.boolop_precedence[operator]
+            operator_precedence = self.boolop_precedence[operator]
 
         def increasing_level_traverse(node):
             nonlocal operator_precedence

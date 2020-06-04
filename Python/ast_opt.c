@@ -801,6 +801,7 @@ astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             return 1;
         case BoolOp_kind:
             // TODO: Quite a bit of potential here.
+        case Call_kind:
         case Dict_kind:
         case List_kind:
         case Name_kind:

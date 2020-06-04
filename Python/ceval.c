@@ -898,6 +898,226 @@ match_seq_type(PyObject *target)
     );
 }
 
+static PyObject*
+match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
+{
+    assert(PyDict_CheckExact(map));
+    assert(PyTuple_CheckExact(keys));
+    Py_ssize_t nkeys = PyTuple_GET_SIZE(keys);
+    PyObject *seen = NULL;
+    PyObject *values = NULL;
+    if (PyDict_GET_SIZE(map) < nkeys) {
+        goto fail;
+    }
+    seen = PySet_New(NULL);
+    if (!seen) {
+        goto fail;
+    }
+    values = PyList_New(nkeys);
+    if (!values) {
+        goto fail;
+    }
+    for (Py_ssize_t i = 0; i < nkeys; i++) {
+        PyObject *key = PyTuple_GET_ITEM(keys, i);
+        int dupe = PySet_Contains(seen, key);
+        if (dupe || PySet_Add(seen, key)) {
+            if (!_PyErr_Occurred(tstate)) {
+                _PyErr_Format(tstate, PyExc_ValueError,
+                              "mapping pattern checks duplicate key (%R)", key);
+            }
+            goto fail;
+        }
+        PyObject *value = PyDict_GetItemWithError(map, key);
+        if (!value) {
+            goto fail;
+        }
+        Py_INCREF(value);
+        PyList_SET_ITEM(values, nkeys - 1 - i, value);
+        if (PyDict_DelItem(map, key)) {
+            goto fail;
+        }
+    }
+    Py_DECREF(seen);
+    return values;
+fail:
+    Py_XDECREF(seen);
+    Py_XDECREF(values);
+    return NULL;
+}
+
+static Py_ssize_t
+get_match_args_required(PyThreadState *tstate, PyObject *proxy)
+{
+    if (!PyObject_HasAttrString(proxy, "__match_args_required__")) {
+        return 0;
+    }
+    PyObject *mar = PyObject_GetAttrString(proxy, "__match_args_required__");
+    if (!mar) {
+        return -1;
+    }
+    if (!PyLong_CheckExact(mar)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__match_args_required__ must be an int (got %s)",
+                      Py_TYPE(mar)->tp_name);
+        Py_DECREF(mar);
+        return -1;
+    }
+    Py_ssize_t required = PyLong_AsSsize_t(mar);
+    Py_DECREF(mar);
+    if (required < 0) {
+        if (!_PyErr_Occurred(tstate)) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                        "__match_args_required__ must be nonnegative (got %d)",
+                        required);
+        }
+        return -1;
+    }
+    return required;
+}
+
+static PyObject *
+get_match_args(PyThreadState *tstate, PyObject *proxy)
+{
+    if (!PyObject_HasAttrString(proxy, "__match_args__")) {
+        return PyTuple_New(0);
+    }
+    PyObject *ma = PyObject_GetAttrString(proxy, "__match_args__");
+    if (!ma) {
+        return NULL;
+    }
+    if (!PyList_CheckExact(ma)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__match_args__ must be a list (got %s)",
+                      Py_TYPE(ma)->tp_name);
+        Py_DECREF(ma);
+        return NULL;
+    }
+    return PyList_AsTuple(ma);
+}
+
+static PyObject *
+do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *type, PyObject *target)
+{
+    assert(PyLong_CheckExact(count));
+    assert(PyTuple_CheckExact(kwargs));
+    if (!PyType_Check(type)) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "called match pattern must be a type; did you mean '%s'?",
+                      Py_TYPE(type)->tp_name);
+        return NULL;
+    }
+    PyObject *method = PyObject_GetAttrString(type, "__match__");
+    if (!method) {
+        return NULL;
+    }
+    if (method == Py_None) {
+        Py_DECREF(method);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "type %s cannot be matched",
+                      Py_TYPE(type)->tp_name);
+        return NULL;
+    }
+    PyObject *proxy = PyObject_CallOneArg(method, target);
+    Py_DECREF(method);
+    if (!proxy) {
+        return NULL;
+    }
+    if (proxy == Py_None) {
+        Py_DECREF(proxy);
+        return NULL;
+    }
+    Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
+    Py_ssize_t nargs = PyLong_AsSsize_t(count);
+    if (nargs < 0) {
+        Py_DECREF(proxy);
+        return NULL;
+    }
+    nargs -= nkwargs;
+    PyObject *args;
+    if (nargs) {
+        PyObject *_args = get_match_args(tstate, proxy);
+        if (!_args) {
+            Py_DECREF(proxy);
+            return NULL;
+        }
+        if (PyTuple_GET_SIZE(_args) < nargs) {
+            Py_DECREF(_args);
+            Py_DECREF(proxy);
+            // TODO: Add expected and actual counts:
+            _PyErr_SetString(tstate, PyExc_TypeError,
+                            "too many positional matches in pattern");
+            return NULL;
+        }
+        args = PyTuple_GetSlice(_args, 0, nargs);
+        Py_DECREF(_args);
+    }
+    else {
+        args = PyTuple_New(0);
+    }
+    if (!args) {
+        Py_DECREF(proxy);
+        return NULL;
+    }
+    assert(PyTuple_CheckExact(args));
+    PyObject *attrs = PyList_New(nargs + nkwargs);
+    if (!attrs) {
+        Py_DECREF(proxy);
+        Py_DECREF(args);
+        return NULL;
+    }
+    PyObject *seen = PySet_New(NULL);
+    if (!seen) {
+        Py_DECREF(proxy);
+        Py_DECREF(args);
+        Py_DECREF(attrs);
+        return NULL;
+    }
+    PyObject *name;
+    for (Py_ssize_t i = 0; i < nargs + nkwargs; i++) {
+        if (i < nargs) {
+            name = PyTuple_GET_ITEM(args, i);
+        }
+        else {
+            name = PyTuple_GET_ITEM(kwargs, i - nargs);
+        }
+        int dupe = PySet_Contains(seen, name);
+        if (dupe || PySet_Add(seen, name)) {
+            Py_DECREF(proxy);
+            Py_DECREF(args);
+            Py_DECREF(attrs);
+            Py_DECREF(seen);
+            if (!_PyErr_Occurred(tstate)) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "multiple patterns bound to attribute %R", name);
+            }
+            return NULL;
+        }
+        if (!PyObject_HasAttr(proxy, name)) {
+            // TODO: typo checking using __match_args__?
+            Py_DECREF(proxy);
+            Py_DECREF(args);
+            Py_DECREF(attrs);
+            Py_DECREF(seen);
+            return NULL;
+        }
+        PyObject *attr = PyObject_GetAttr(proxy, name);
+        if (!attr) {
+            Py_DECREF(proxy);
+            Py_DECREF(args);
+            Py_DECREF(attrs);
+            Py_DECREF(seen);
+            return NULL;
+        }
+        PyList_SET_ITEM(attrs, nargs + nkwargs - i - 1, attr);
+    }
+    // TODO: check __match_args_required__.
+    Py_DECREF(proxy);
+    Py_DECREF(args);
+    Py_DECREF(seen);
+    return attrs;
+}
+
+
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 
@@ -1577,6 +1797,7 @@ main_loop:
         }
 
         case TARGET(POP_TOP): {
+            PREDICTED(POP_TOP);
             PyObject *value = POP();
             Py_DECREF(value);
             FAST_DISPATCH();
@@ -3334,38 +3555,59 @@ main_loop:
 #endif
         }
 
-        case TARGET(MATCH_KEY): {
-            PyObject *key = TOP();
-            PyObject *map = SECOND();
-            assert(PyDict_CheckExact(map));
-            PyObject *value = PyDict_GetItemWithError(map, key);
-            if (!value) {
-                if (_PyErr_Occurred(tstate)) {
-                    goto error;
-                }
-                STACK_SHRINK(1);
-                Py_DECREF(key);
-                JUMPBY(oparg);
-                DISPATCH();
-            }
-            Py_INCREF(value);
-            if (PyDict_DelItem(map, key)) {
-                Py_DECREF(value);
+        case TARGET(LIST_POP): {
+            PREDICTED(LIST_POP);
+            PyObject *list = TOP();
+            assert(PyList_CheckExact(list));
+            Py_ssize_t size = PyList_GET_SIZE(list);
+            assert(size > 0);
+            PyObject *popped = PyList_GET_ITEM(list, size - 1);
+            Py_INCREF(popped);
+            PUSH(popped);
+            if (PyList_SetSlice(list, size - 1, size, NULL)) {
                 goto error;
             }
-            Py_DECREF(key);
-            SET_TOP(value);
             DISPATCH();
         }
 
-        case TARGET(MATCH_MAP): {
-            PyObject *target = TOP();
+        case TARGET(MATCH): {
+            PyObject *count = TOP();
+            PyObject *names = SECOND();
+            PyObject *type = THIRD();
+            PyObject *target = FOURTH();
+            PyObject *attrs = do_match(tstate, count, names, type, target);
+            Py_DECREF(count);
+            Py_DECREF(names);
+            Py_DECREF(type);
+            Py_DECREF(target);
+            if (!attrs) {
+                STACK_SHRINK(4);
+                if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                JUMPBY(oparg);
+                DISPATCH();
+            }
+            STACK_SHRINK(3);
+            SET_TOP(attrs);
+            PREDICT(LIST_POP);
+            PREDICT(POP_TOP);
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_MAP):
+        case TARGET(MATCH_MAP_STAR): {
+            // TODO: JUST PREPEND THE STAR MAP TO THE LIST!
+            int star = opcode == MATCH_MAP_STAR;
+            PyObject *keys = TOP();
+            PyObject *target = SECOND();
             int match = match_map_type(target);
             if (match < 0) {
                 goto error;
             }
             if (!match) {
-                STACK_SHRINK(1);
+                STACK_SHRINK(2);
+                Py_DECREF(keys);
                 Py_DECREF(target);
                 JUMPBY(oparg);
                 DISPATCH();
@@ -3384,70 +3626,129 @@ main_loop:
                     goto error;
                 }
             }
+            PyObject *values = match_map_items(tstate, copy, keys);
+            if (!values) {
+                Py_DECREF(copy);
+                if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                STACK_SHRINK(2);
+                Py_DECREF(keys);
+                Py_DECREF(target);
+                JUMPBY(oparg);
+                DISPATCH();
+            }
+            // TODO: This is inefficient:
+            if (star && PyList_Insert(values, 0, copy)) {
+                Py_DECREF(copy);
+                goto error;
+            }
+            Py_DECREF(copy);
+            STACK_SHRINK(1);
+            SET_TOP(values);
+            Py_DECREF(keys);
             Py_DECREF(target);
-            SET_TOP(copy);
+            PREDICT(LIST_POP);
+            PREDICT(POP_TOP);
             DISPATCH();
         }
 
-        case TARGET(MATCH_SEQ): {
-            PyObject *target = TOP();
+        case TARGET(MATCH_SEQ):
+        case TARGET(MATCH_SEQ_STAR): {
+            int star = opcode == MATCH_SEQ_STAR;
+            Py_ssize_t size_pre = -1;
+            if (star) {
+                PyObject *_size_pre = POP();
+                assert(PyLong_CheckExact(_size_pre));
+                size_pre = PyLong_AsSsize_t(_size_pre);
+                Py_DECREF(_size_pre);
+                if (size_pre < 0) {
+                    goto error;
+                }
+            }
+            PyObject *_size = TOP();
+            assert(PyLong_CheckExact(_size));
+            Py_ssize_t size = PyLong_AsSsize_t(_size);
+            if (size < 0) {
+                goto error;
+            }
+            PyObject *target = SECOND();
             int match = match_seq_type(target);
             if (match < 0) {
                 goto error;
             }
             if (!match) {
-                STACK_SHRINK(1);
-                Py_DECREF(target);
-                JUMPBY(oparg);
-                DISPATCH();
-            }
-            PyObject *iter = PyObject_GetIter(target);
-            if (!iter) {
-                goto error;
-            }
-            Py_DECREF(target);
-            SET_TOP(iter);
-            DISPATCH();
-        }
-
-        case TARGET(DESTRUCTURE): {
-            PyObject *type = TOP();
-            PyObject *target = SECOND();
-            if (!PyType_Check(type)) {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "called match pattern must be a type; "
-                              "did you mean '%s'?", Py_TYPE(type)->tp_name);
-                goto error;
-            }
-            PyObject *method = PyObject_GetAttrString(type, "__match__");
-            if (method == Py_None) {
-                Py_DECREF(method);
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "type '%s' cannot be matched",
-                              Py_TYPE(type)->tp_name);
-                goto error;
-            }
-            PyObject *match = PyObject_CallOneArg(method, target);
-            Py_DECREF(method);
-            if (!match) {
-                goto error;
-            }
-            if (match == Py_None) {
-                Py_DECREF(match);
                 STACK_SHRINK(2);
-                Py_DECREF(type);
+                Py_DECREF(_size);
                 Py_DECREF(target);
                 JUMPBY(oparg);
                 DISPATCH();
             }
+            // TODO: Break this out:
+            PyObject *list = PySequence_List(target);
+            if (!list) {
+                goto error;
+            }
+            if (!star) {
+                assert(size_pre < 0);
+                if (PyList_GET_SIZE(list) != size) {
+                    Py_DECREF(list);
+                    STACK_SHRINK(2);
+                    Py_DECREF(_size);
+                    Py_DECREF(target);
+                    JUMPBY(oparg);
+                    DISPATCH();
+                }
+                if (PyList_Reverse(list)) {
+                    Py_DECREF(list);
+                    goto error;
+                }
+                STACK_SHRINK(1);
+                SET_TOP(list);
+                Py_DECREF(_size);
+                Py_DECREF(target);
+                DISPATCH();
+            }
+            assert(size_pre >= 0);
+            Py_ssize_t actual = PyList_GET_SIZE(list);
+            if (actual < size_pre + size) {
+                Py_DECREF(list);
+                STACK_SHRINK(2);
+                Py_DECREF(_size);
+                Py_DECREF(target);
+                JUMPBY(oparg);
+                DISPATCH();
+            }
+            PyObject *middle = PyList_GetSlice(list, size_pre, actual - size);
+            if (!middle) {
+                Py_DECREF(list);
+                goto error;
+            }
+            PyObject *nested = PyTuple_Pack(1, middle);
+            Py_DECREF(middle);
+            if (!nested) {
+                Py_DECREF(list);
+                goto error;
+            }
+            if (PyList_SetSlice(list, size_pre, actual - size, nested)) {
+                Py_DECREF(nested);
+                Py_DECREF(list);
+                goto error;
+            }
+            Py_DECREF(nested);
+            if (PyList_Reverse(list)) {
+                Py_DECREF(list);
+                goto error;
+            }
+            assert(PyList_GET_SIZE(list) == size_pre + 1 + size);
             STACK_SHRINK(1);
-            Py_DECREF(type);
+            SET_TOP(list);
+            Py_DECREF(_size);
             Py_DECREF(target);
-            SET_TOP(match);
+            PREDICT(LIST_POP);
+            PREDICT(POP_TOP);
             DISPATCH();
         }
-
-
 
         case TARGET(GET_ITER): {
             /* before: [obj]; after [getiter(obj)] */

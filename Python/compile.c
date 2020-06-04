@@ -982,12 +982,6 @@ stack_effect(int opcode, int oparg, int jump)
         case FOR_ITER:
             /* -1 at end of iterator, 1 if continue iterating. */
             return jump > 0 ? -1 : 1;
-        case MATCH_KEY:
-        case MATCH_MAP:
-        case MATCH_SEQ:
-            return jump > 0 ? -1 : 0;
-        case DESTRUCTURE:
-            return -1;
 
         case STORE_ATTR:
             return -2;
@@ -1124,6 +1118,16 @@ stack_effect(int opcode, int oparg, int jump)
         case DICT_MERGE:
         case DICT_UPDATE:
             return -1;
+        case LIST_POP:
+            return 1;
+        case MATCH:
+            return jump > 0 ? -4 : -3;
+        case MATCH_MAP:
+        case MATCH_MAP_STAR:
+        case MATCH_SEQ:
+            return jump > 0 ? -2 : -1;
+        case MATCH_SEQ_STAR:
+            return jump > 0 ? -3 : -2;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -2772,6 +2776,53 @@ compiler_pattern_load(struct compiler *c, expr_ty p, basicblock *fail)
 }
 
 static int
+compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names) {
+    asdl_seq *args = p->v.Call.args;
+    asdl_seq *kwargs = p->v.Call.keywords;
+    Py_ssize_t nargs = asdl_seq_LEN(args);
+    Py_ssize_t nkwargs = asdl_seq_LEN(kwargs);
+    basicblock *block, *end;
+    CHECK(block = compiler_new_block(c));
+    CHECK(end = compiler_new_block(c));
+    expr_ty func = p->v.Call.func;
+    assert(func->kind == Attribute_kind || func->kind == Name_kind);
+    assert(func->kind != Attribute_kind || func->v.Attribute.ctx == Load);
+    assert(func->kind != Name_kind || func->v.Name.ctx == Load);
+    VISIT(c, expr, func);
+    PyObject *kwnames;
+    CHECK(kwnames = PyTuple_New(nkwargs));
+    // TODO: Catch colliding keywords.
+    Py_ssize_t i;
+    for (i = 0; i < nkwargs; i++) {
+        PyObject *name = ((keyword_ty) asdl_seq_GET(kwargs, i))->arg;
+        Py_INCREF(name);
+        PyTuple_SET_ITEM(kwnames, i, name);
+    }
+    ADDOP_LOAD_CONST_NEW(c, kwnames);
+    PyObject *count;
+    CHECK(count = PyLong_FromSsize_t(nargs + nkwargs));
+    ADDOP_LOAD_CONST_NEW(c, count);
+    ADDOP_JREL(c, MATCH, fail);
+    for (i = 0; i < nargs; i++) {
+        expr_ty arg = asdl_seq_GET(args, i);
+        ADDOP(c, LIST_POP);
+        CHECK(compiler_pattern(c, arg, block, names));
+    }
+    for (i = 0; i < nkwargs; i++) {
+        keyword_ty kwarg = asdl_seq_GET(kwargs, i);
+        ADDOP(c, LIST_POP);
+        CHECK(compiler_pattern(c, kwarg->value, block, names));
+    }
+    ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, end);
+    compiler_use_next_block(c, block);
+    ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, fail);
+    compiler_use_next_block(c, end);
+    return 1;
+}
+
+static int
 compiler_pattern_store(struct compiler *c, expr_ty p, int anon_ok, PyObject* names) {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
@@ -2788,6 +2839,44 @@ compiler_pattern_store(struct compiler *c, expr_ty p, int anon_ok, PyObject* nam
     }
     VISIT(c, expr, p);
     return !PySet_Add(names, p->v.Name.id);
+}
+
+static int
+compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
+{
+    basicblock *block, *end;
+    CHECK(block = compiler_new_block(c));
+    CHECK(end = compiler_new_block(c));
+    asdl_seq *keys = p->v.Dict.keys;
+    asdl_seq *values = p->v.Dict.values;
+    Py_ssize_t size = asdl_seq_LEN(values);
+    int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
+    Py_ssize_t i;
+    for (i = 0; i < size - star; i++) {
+        expr_ty key = asdl_seq_GET(keys, i);
+        if (!key) {
+            return compiler_error(c, "can't use starred pattern here; consider moving to end?");
+        }
+        assert(key->kind == Attribute_kind || key->kind == Constant_kind || key->kind == Name_kind);
+        assert(key->kind != Attribute_kind || key->v.Attribute.ctx == Load);
+        assert(key->kind != Name_kind || key->v.Name.ctx == Load);
+        VISIT(c, expr, asdl_seq_GET(keys, i));
+    }
+    ADDOP_I(c, BUILD_TUPLE, size - star);
+    // TODO: Just drop MATCH_MAP_STAR?
+    ADDOP_JREL(c, star ? MATCH_MAP_STAR : MATCH_MAP, fail);
+    for (i = 0; i < size; i++) {
+        expr_ty value = asdl_seq_GET(values, i);
+        ADDOP(c, LIST_POP);
+        CHECK(compiler_pattern(c, value, block, names));
+    }
+    ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, end);
+    compiler_use_next_block(c, block);
+    ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, fail);
+    compiler_use_next_block(c, end);
+    return 1;
 }
 
 static int
@@ -2820,44 +2909,6 @@ compiler_pattern_namedexpr(struct compiler *c, expr_ty p, basicblock *fail, PyOb
 }
 
 static int
-compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
-{
-    basicblock *block, *end;
-    CHECK(block = compiler_new_block(c));
-    CHECK(end = compiler_new_block(c));
-    asdl_seq *keys = p->v.Dict.keys;
-    asdl_seq *values = p->v.Dict.values;
-    Py_ssize_t size = asdl_seq_LEN(values);
-    int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
-    ADDOP_JREL(c, MATCH_MAP, fail);
-    for (Py_ssize_t i = 0; i < size - star; i++) {
-        expr_ty key = asdl_seq_GET(keys, i);
-        expr_ty value = asdl_seq_GET(values, i);
-        if (!key) {
-            return compiler_error(c, "can't use starred pattern here; consider moving to end?");
-        }
-        assert(key->kind == Attribute_kind || key->kind == Constant_kind || key->kind == Name_kind);
-        assert(key->kind != Attribute_kind || key->v.Attribute.ctx == Load);
-        assert(key->kind != Name_kind || key->v.Name.ctx == Load);
-        VISIT(c, expr, key);
-        ADDOP_JREL(c, MATCH_KEY, block);
-        CHECK(compiler_pattern(c, value, block, names));
-    }
-    if (!star) {
-        ADDOP(c, POP_TOP);
-    }
-    else {
-        CHECK(compiler_pattern_store(c, asdl_seq_GET(values, size - 1), 0, names));
-    }
-    ADDOP_JREL(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, block);
-    ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, fail);
-    compiler_use_next_block(c, end);
-    return 1;
-}
-
-static int
 compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
 {
     assert(p->kind == BoolOp_kind);
@@ -2867,17 +2918,16 @@ compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail, PyObject* n
     CHECK(end = compiler_new_block(c));
     Py_ssize_t size = asdl_seq_LEN(p->v.BoolOp.values);
     assert(size > 1);
+    PyObject *names_copy;
     for (Py_ssize_t i = 0; i < size; i++) {
-        PyObject *names_copy = PySet_New(names);
-        if (!names_copy) {
-            return 0;
-        }
+        CHECK(names_copy  = PySet_New(names));
         CHECK(block = compiler_new_block(c));
         ADDOP(c, DUP_TOP);
         CHECK(compiler_pattern(c, asdl_seq_GET(p->v.BoolOp.values, i), block, names_copy));
         ADDOP(c, POP_TOP);
         ADDOP_JREL(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, block);
+        // TODO: Reuse names_copy without actually building a new copy each loop?
         if (!i) {
             control = names_copy;
         }
@@ -2924,44 +2974,33 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
         if (star >= 0) {
             return compiler_error(c, "multiple starred names in pattern");
         }
-        // TODO: Test this math:
-        if ((size - i - 1) << 8 >= INT_MAX) {
-            return compiler_error(c, "too many sub-patterns follow starred name");
-        }
         star = i;
     }
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP_JREL(c, MATCH_SEQ, fail);
+    if (star >= 0) {
+        // TODO: ERROR CHECKING FOR THESE:
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star - 1))
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(star))
+        ADDOP_JREL(c, MATCH_SEQ_STAR, fail);
+    }
+    else {
+        // TODO: ERROR CHECKING FOR THESE:
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size))
+        ADDOP_JREL(c, MATCH_SEQ, fail);
+    }
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
         if (i == star) {
             assert(value->kind == Starred_kind);
-            Py_ssize_t remaining = size - i - 1;
-            ADDOP_I(c, UNPACK_EX, remaining << 8);
-            CHECK(compiler_pattern_store(c, value->v.Starred.value, 1, names));
-            if (remaining) {
-                ADDOP_I(c, BUILD_TUPLE, remaining);
-                if (remaining > 1) {
-                    // Argh, our tuple is backwards!
-                    // Unpacking and repacking is the easiest way to reverse it:
-                    ADDOP_I(c, UNPACK_SEQUENCE, remaining);
-                    ADDOP_I(c, BUILD_TUPLE, remaining);
-                }
-                ADDOP(c, GET_ITER);
-            }
-            else {
-                ADDOP_JREL(c, JUMP_FORWARD, end);
-            }
+            value = value->v.Starred.value;
         }
-        else {
-            ADDOP_JREL(c, FOR_ITER, fail);
-            CHECK(compiler_pattern(c, value, block, names));
-        }
+        ADDOP(c, LIST_POP);
+        CHECK(compiler_pattern(c, value, block, names));
     }
-    ADDOP_JREL(c, FOR_ITER, end);
     ADDOP(c, POP_TOP);
+    ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
     ADDOP(c, POP_TOP);
     ADDOP_JREL(c, JUMP_FORWARD, fail);
@@ -2974,6 +3013,9 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail, PyObject* name
 {
     switch (p->kind) {
         case Attribute_kind:
+            return compiler_pattern_load(c, p, fail);
+        case Call_kind:
+            return compiler_pattern_call(c, p, fail, names);
         case Constant_kind:
             return compiler_pattern_load(c, p, fail);
         case BoolOp_kind:

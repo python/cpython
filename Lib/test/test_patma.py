@@ -1653,7 +1653,7 @@ class TestMatch(unittest.TestCase):
                 y = 0
             case {}:
                 y = 1
-        self.assertEqual(x, [])
+        self.assertEqual(x, {})
         self.assertEqual(y, 1)
 
     def test_patma_120(self) -> None:
@@ -1664,7 +1664,7 @@ class TestMatch(unittest.TestCase):
                 y = 0
             case {**z}:
                 y = 1
-        self.assertEqual(x, [])
+        self.assertEqual(x, {})
         self.assertEqual(y, 1)
         self.assertEqual(z, {})
 
