@@ -139,7 +139,7 @@ Porting to Python 3.10
   compatibility, this macro can be used::
 
       #if PY_VERSION_HEX < 0x030900A4
-      #  define Py_SET_TYPE(obj, type) do { Py_TYPE(obj) = (type); } while (0)
+      #  define Py_SET_TYPE(obj, type) ((Py_TYPE(obj) = (type)), (void)0)
       #endif
 
   (Contributed by Dong-hee Na in :issue:`39573`.)
@@ -150,7 +150,7 @@ Porting to Python 3.10
   compatibility, this macro can be used::
 
       #if PY_VERSION_HEX < 0x030900A4
-      #  define Py_SET_REFCNT(obj, refcnt) do { Py_REFCNT(obj) = (refcnt); } while (0)
+      #  define Py_SET_REFCNT(obj, refcnt) ((Py_REFCNT(obj) = (refcnt)), (void)0)
       #endif
 
   (Contributed by Victor Stinner in :issue:`39573`.)
@@ -161,7 +161,7 @@ Porting to Python 3.10
   compatibility, this macro can be used::
 
       #if PY_VERSION_HEX < 0x030900A4
-      #  define Py_SET_SIZE(obj, size) do { Py_SIZE(obj) = (size); } while (0)
+      #  define Py_SET_SIZE(obj, size) ((Py_SIZE(obj) = (size)), (void)0)
       #endif
 
   (Contributed by Victor Stinner in :issue:`39573`.)
