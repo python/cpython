@@ -380,8 +380,9 @@ PyDoc_STRVAR(os_chmod__doc__,
 "    If this functionality is unavailable, using it raises an exception.\n"
 "  mode\n"
 "    Operating-system mode bitfield.\n"
-"    Be careful when using number literals for *mode*. The conventional UNIX notation for numeric\n"
-"    modes uses an octal base, which needs to be indicated with a ``0o`` prefix in Python\n"
+"    Be careful when using number literals for *mode*. The conventional UNIX notation for\n"
+"    numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in\n"
+"    Python.\n"
 "  dir_fd\n"
 "    If not None, it should be a file descriptor open to a directory,\n"
 "    and path should be relative; path will then be relative to that\n"
@@ -8879,4 +8880,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=767780ea3beacf34 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21d9d6b4e8e03ee8 input=a9049054013a1b77]*/
