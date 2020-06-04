@@ -1,1 +1,2 @@
-Each interpreter now has its own tuple free lists and empty tuple singleton.
+Tuple free lists, empty tuple singleton, and float free list are no longer
+shared by all interpreters: each interpreter now its own free lists.
