@@ -1061,16 +1061,15 @@ class _Unparser(NodeVisitor):
         """Helper for writing string literals, minimising escapes.
         Returns (possible quote types, string literal to write).
         """
-        # Escape characters we've been told to escape and any non-printable
-        # characters. The logic for determining non-printable characters is
-        # based on that in Tools/unicode/makeunicodedata.py
-        escape = set(escape) | {
+        # Escape characters we've been told to escape, backslashes, and any
+        # non-printable characters. The logic for determining non-printable
+        # characters is based on that in Tools/unicode/makeunicodedata.py
+        escape = {*escape, '\\'} | {
             c for c in value
             if c not in ' \n\t' and unicodedata.category(c)[0] in ("C", "Z")
         }
-        val = value.replace("\\", "\\\\")
         val = "".join(
-            (c.encode('unicode_escape').decode('ascii') if c in escape else c) for c in val
+            (c.encode('unicode_escape').decode('ascii') if c in escape else c) for c in value
         )
         qts = [quote for quote in quote_types if quote not in val]
         if "\n" in val:
