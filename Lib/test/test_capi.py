@@ -17,6 +17,7 @@ import importlib.machinery
 import importlib.util
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
+from test.support import threading_helper
 from test.support.script_helper import assert_python_failure, assert_python_ok
 try:
     import _posixsubprocess
@@ -67,7 +68,10 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(err.rstrip().startswith(
                          b'Fatal Python error: '
                          b'PyThreadState_Get: '
-                         b'current thread state is NULL (released GIL?)'))
+                         b'the function must be called with the GIL held, '
+                         b'but the GIL is released '
+                         b'(the current Python thread state is NULL)'),
+                        err)
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
@@ -575,7 +579,7 @@ class TestPendingCalls(unittest.TestCase):
         threads = [threading.Thread(target=self.pendingcalls_thread,
                                     args=(context,))
                    for i in range(context.nThreads)]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             self.pendingcalls_wait(context.l, n, context)
 
     def pendingcalls_thread(self, context):
@@ -634,7 +638,7 @@ class SubinterpreterTest(unittest.TestCase):
 
 class TestThreadState(unittest.TestCase):
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def test_thread_state(self):
         # some extra thread-state tests driven via _testcapi
         def target():

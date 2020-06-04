@@ -72,6 +72,7 @@ typedef struct {
     int feature_version;
     growable_comment_array type_ignore_comments;
     Token *known_err_token;
+    int level;
 } Parser;
 
 typedef struct {
@@ -118,9 +119,11 @@ int _PyPegen_is_memoized(Parser *p, int type, void *pres);
 
 int _PyPegen_lookahead_with_name(int, expr_ty (func)(Parser *), Parser *);
 int _PyPegen_lookahead_with_int(int, Token *(func)(Parser *, int), Parser *, int);
+int _PyPegen_lookahead_with_string(int , expr_ty (func)(Parser *, const char*), Parser *, const char*);
 int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
 
 Token *_PyPegen_expect_token(Parser *p, int type);
+expr_ty _PyPegen_expect_soft_keyword(Parser *p, const char *keyword);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
 expr_ty _PyPegen_name_token(Parser *p);
@@ -152,7 +155,7 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype, int lineno,
 #define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
 #define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, msg, ...) \
-    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->col_offset, msg, ##__VA_ARGS__)
+    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, msg, ##__VA_ARGS__)
 
 Py_LOCAL_INLINE(void *)
 CHECK_CALL(Parser *p, void *result)
@@ -262,6 +265,7 @@ mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
 // Error reporting helpers
 expr_ty _PyPegen_get_invalid_target(expr_ty e);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
+void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args);
 
 
 void *_PyPegen_parse(Parser *);

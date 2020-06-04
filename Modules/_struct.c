@@ -121,7 +121,7 @@ get_pylong(PyObject *v)
     if (!PyLong_Check(v)) {
         /* Not an integer;  try to use __index__ to convert. */
         if (PyIndex_Check(v)) {
-            v = PyNumber_Index(v);
+            v = _PyNumber_Index(v);
             if (v == NULL)
                 return NULL;
         }
@@ -1296,6 +1296,11 @@ prepare_s(PyStructObject *self)
     size_t ncodes;
 
     fmt = PyBytes_AS_STRING(self->s_format);
+    if (strlen(fmt) != (size_t)PyBytes_GET_SIZE(self->s_format)) {
+        PyErr_SetString(_structmodulestate_global->StructError,
+                        "embedded null character");
+        return -1;
+    }
 
     f = whichtable(&fmt);
 
@@ -1641,6 +1646,7 @@ unpackiter_dealloc(unpackiterobject *self)
 static int
 unpackiter_traverse(unpackiterobject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->so);
     Py_VISIT(self->buf.obj);
     return 0;

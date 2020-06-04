@@ -1,6 +1,7 @@
 import unittest
 from test import support
 from test.support import socket_helper
+from test.support import threading_helper
 
 import errno
 import io
@@ -336,7 +337,7 @@ class ThreadableTest:
         self.server_ready.set()
 
     def _setUp(self):
-        self.wait_threads = support.wait_threads_exit()
+        self.wait_threads = threading_helper.wait_threads_exit()
         self.wait_threads.__enter__()
 
         self.server_ready = threading.Event()
@@ -917,10 +918,8 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertIn('not NoneType', str(cm.exception))
         with self.assertRaises(TypeError) as cm:
             s.sendto(b'foo', 'bar', sockname)
-        self.assertIn('an integer is required', str(cm.exception))
         with self.assertRaises(TypeError) as cm:
             s.sendto(b'foo', None, None)
-        self.assertIn('an integer is required', str(cm.exception))
         # wrong number of args
         with self.assertRaises(TypeError) as cm:
             s.sendto(b'foo')
@@ -1899,11 +1898,11 @@ class GeneralModuleTests(unittest.TestCase):
                                          socket.SOCK_STREAM)
 
     def test_socket_fileno_rejects_float(self):
-        with self.assertRaisesRegex(TypeError, "integer argument expected"):
+        with self.assertRaises(TypeError):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=42.5)
 
     def test_socket_fileno_rejects_other_types(self):
-        with self.assertRaisesRegex(TypeError, "integer is required"):
+        with self.assertRaises(TypeError):
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno="foo")
 
     def test_socket_fileno_rejects_invalid_socket(self):
@@ -6667,9 +6666,9 @@ def test_main():
     ])
     tests.append(TestMSWindowsTCPFlags)
 
-    thread_info = support.threading_setup()
+    thread_info = threading_helper.threading_setup()
     support.run_unittest(*tests)
-    support.threading_cleanup(*thread_info)
+    threading_helper.threading_cleanup(*thread_info)
 
 
 if __name__ == "__main__":

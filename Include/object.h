@@ -119,25 +119,44 @@ typedef struct {
 
 /* Cast argument to PyVarObject* type. */
 #define _PyVarObject_CAST(op) ((PyVarObject*)(op))
+#define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
-#define Py_REFCNT(ob)           (_PyObject_CAST(ob)->ob_refcnt)
-#define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
-#define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
+
+static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
+    return ob->ob_refcnt;
+}
+#define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST_CONST(ob))
+
+
+static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
+    return ob->ob_size;
+}
+#define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
+
+
+static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
+    return ob->ob_type;
+}
+#define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
+
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
     return ob->ob_type == type;
 }
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
+
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     ob->ob_refcnt = refcnt;
 }
 #define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST(ob), refcnt)
 
+
 static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
     ob->ob_type = type;
 }
 #define Py_SET_TYPE(ob, type) _Py_SET_TYPE(_PyObject_CAST(ob), type)
+
 
 static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     ob->ob_size = size;

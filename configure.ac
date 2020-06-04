@@ -3,7 +3,7 @@ dnl * Please run autoreconf to test your changes! *
 dnl ***********************************************
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.9)
+m4_define(PYTHON_VERSION, 3.10)
 
 AC_PREREQ([2.69])
 

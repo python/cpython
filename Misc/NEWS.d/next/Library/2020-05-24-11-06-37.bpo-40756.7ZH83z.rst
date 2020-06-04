@@ -1,0 +1,2 @@
+The second argument (extra) of ``LoggerAdapter.__init__`` now defaults to
+None.

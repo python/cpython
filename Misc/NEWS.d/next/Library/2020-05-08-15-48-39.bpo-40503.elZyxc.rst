@@ -1,1 +1,0 @@
-:pep:`615`, the :mod:`zoneinfo` module. Adds support for the IANA time zone database.

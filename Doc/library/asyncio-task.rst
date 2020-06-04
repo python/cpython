@@ -585,9 +585,9 @@ Waiting Primitives
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently.  Return an iterator of :class:`Future` objects.
-   Each Future object returned represents the earliest result
-   from the set of the remaining awaitables.
+   set concurrently.  Return an iterator of coroutines.
+   Each coroutine returned can be awaited to get the earliest next
+   result from the set of the remaining awaitables.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
@@ -597,9 +597,68 @@ Waiting Primitives
 
    Example::
 
-       for f in as_completed(aws):
-           earliest_result = await f
+       for coro in as_completed(aws):
+           earliest_result = await coro
            # ...
+
+
+Running in Threads
+==================
+
+.. coroutinefunction:: to_thread(func, /, \*args, \*\*kwargs)
+
+   Asynchronously run function *func* in a separate thread.
+
+   Any \*args and \*\*kwargs supplied for this function are directly passed
+   to *func*. Also, the current :class:`contextvars.Context` is propogated,
+   allowing context variables from the event loop thread to be accessed in the
+   separate thread.
+
+   Return a coroutine that can be awaited to get the eventual result of *func*.
+
+   This coroutine function is primarily intended to be used for executing
+   IO-bound functions/methods that would otherwise block the event loop if
+   they were ran in the main thread. For example::
+
+       def blocking_io():
+           print(f"start blocking_io at {time.strftime('%X')}")
+           # Note that time.sleep() can be replaced with any blocking
+           # IO-bound operation, such as file operations.
+           time.sleep(1)
+           print(f"blocking_io complete at {time.strftime('%X')}")
+
+       async def main():
+           print(f"started main at {time.strftime('%X')}")
+
+           await asyncio.gather(
+               asyncio.to_thread(blocking_io),
+               asyncio.sleep(1))
+
+           print(f"finished main at {time.strftime('%X')}")
+
+
+       asyncio.run(main())
+
+       # Expected output:
+       #
+       # started main at 19:50:53
+       # start blocking_io at 19:50:53
+       # blocking_io complete at 19:50:54
+       # finished main at 19:50:54
+
+   Directly calling `blocking_io()` in any coroutine would block the event loop
+   for its duration, resulting in an additional 1 second of run time. Instead,
+   by using `asyncio.to_thread()`, we can run it in a separate thread without
+   blocking the event loop.
+
+   .. note::
+
+      Due to the :term:`GIL`, `asyncio.to_thread()` can typically only be used
+      to make IO-bound functions non-blocking. However, for extension modules
+      that release the GIL or alternative Python implementations that don't
+      have one, `asyncio.to_thread()` can also be used for CPU-bound functions.
+
+   .. versionadded:: 3.9
 
 
 Scheduling From Other Threads

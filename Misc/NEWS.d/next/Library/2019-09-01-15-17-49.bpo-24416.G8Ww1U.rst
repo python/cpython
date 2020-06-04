@@ -1,3 +1,0 @@
-The ``isocalendar()`` methods of :class:`datetime.date` and
-:class:`datetime.datetime` now return a :term:`named tuple`
-instead of a :class:`tuple`.

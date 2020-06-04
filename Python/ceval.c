@@ -240,15 +240,14 @@ UNSIGNAL_ASYNC_EXC(PyInterpreterState *interp)
 #endif
 #include "ceval_gil.h"
 
-static void
-ensure_tstate_not_null(const char *func, PyThreadState *tstate)
+void _Py_NO_RETURN
+_Py_FatalError_TstateNULL(const char *func)
 {
-    if (tstate == NULL) {
-        _Py_FatalErrorFunc(func,
-                           "current thread state is NULL (released GIL?)");
-    }
+    _Py_FatalErrorFunc(func,
+                       "the function must be called with the GIL held, "
+                       "but the GIL is released "
+                       "(the current Python thread state is NULL)");
 }
-
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
 int
@@ -374,7 +373,7 @@ PyEval_AcquireLock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
 
     take_gil(tstate);
 }
@@ -403,7 +402,7 @@ _PyEval_ReleaseLock(PyThreadState *tstate)
 void
 PyEval_AcquireThread(PyThreadState *tstate)
 {
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
 
     take_gil(tstate);
 
@@ -434,15 +433,12 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 
 #ifdef HAVE_FORK
 /* This function is called from PyOS_AfterFork_Child to destroy all threads
- * which are not running in the child process, and clear internal locks
- * which might be held by those threads.
- */
-
-void
-_PyEval_ReInitThreads(_PyRuntimeState *runtime)
+   which are not running in the child process, and clear internal locks
+   which might be held by those threads. */
+PyStatus
+_PyEval_ReInitThreads(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    ensure_tstate_not_null(__func__, tstate);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     struct _gil_runtime_state *gil = &tstate->interp->ceval.gil;
@@ -450,7 +446,7 @@ _PyEval_ReInitThreads(_PyRuntimeState *runtime)
     struct _gil_runtime_state *gil = &runtime->ceval.gil;
 #endif
     if (!gil_created(gil)) {
-        return;
+        return _PyStatus_OK();
     }
     recreate_gil(gil);
 
@@ -458,11 +454,12 @@ _PyEval_ReInitThreads(_PyRuntimeState *runtime)
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
     if (_PyThread_at_fork_reinit(&pending->lock) < 0) {
-        Py_FatalError("Can't initialize threads for pending calls");
+        return _PyStatus_ERR("Can't reinitialize pending calls lock");
     }
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(runtime, tstate);
+    return _PyStatus_OK();
 }
 #endif
 
@@ -486,7 +483,7 @@ PyEval_SaveThread(void)
 #else
     PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
 #endif
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
 
     struct _ceval_runtime_state *ceval = &runtime->ceval;
     struct _ceval_state *ceval2 = &tstate->interp->ceval;
@@ -502,7 +499,7 @@ PyEval_SaveThread(void)
 void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
 
     take_gil(tstate);
 
@@ -944,7 +941,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 {
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
 
 #ifdef DXPAIRS
     int lastopcode = 0;
@@ -3875,7 +3872,7 @@ exit_eval_frame:
 
 static void
 format_missing(PyThreadState *tstate, const char *kind,
-               PyCodeObject *co, PyObject *names)
+               PyCodeObject *co, PyObject *names, PyObject *qualname)
 {
     int err;
     Py_ssize_t len = PyList_GET_SIZE(names);
@@ -3928,7 +3925,7 @@ format_missing(PyThreadState *tstate, const char *kind,
         return;
     _PyErr_Format(tstate, PyExc_TypeError,
                   "%U() missing %i required %s argument%s: %U",
-                  co->co_name,
+                  qualname,
                   len,
                   kind,
                   len == 1 ? "" : "s",
@@ -3939,7 +3936,7 @@ format_missing(PyThreadState *tstate, const char *kind,
 static void
 missing_arguments(PyThreadState *tstate, PyCodeObject *co,
                   Py_ssize_t missing, Py_ssize_t defcount,
-                  PyObject **fastlocals)
+                  PyObject **fastlocals, PyObject *qualname)
 {
     Py_ssize_t i, j = 0;
     Py_ssize_t start, end;
@@ -3971,14 +3968,14 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
         }
     }
     assert(j == missing);
-    format_missing(tstate, kind, co, missing_names);
+    format_missing(tstate, kind, co, missing_names, qualname);
     Py_DECREF(missing_names);
 }
 
 static void
 too_many_positional(PyThreadState *tstate, PyCodeObject *co,
                     Py_ssize_t given, Py_ssize_t defcount,
-                    PyObject **fastlocals)
+                    PyObject **fastlocals, PyObject *qualname)
 {
     int plural;
     Py_ssize_t kwonly_given = 0;
@@ -4022,7 +4019,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     }
     _PyErr_Format(tstate, PyExc_TypeError,
                   "%U() takes %U positional argument%s but %zd%U %s given",
-                  co->co_name,
+                  qualname,
                   sig,
                   plural ? "s" : "",
                   given,
@@ -4034,7 +4031,8 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
 
 static int
 positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
-                                  Py_ssize_t kwcount, PyObject* const* kwnames)
+                                  Py_ssize_t kwcount, PyObject* const* kwnames,
+                                  PyObject *qualname)
 {
     int posonly_conflicts = 0;
     PyObject* posonly_names = PyList_New(0);
@@ -4079,7 +4077,7 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
         _PyErr_Format(tstate, PyExc_TypeError,
                       "%U() got some positional-only arguments passed"
                       " as keyword arguments: '%U'",
-                      co->co_name, error_names);
+                      qualname, error_names);
         Py_DECREF(error_names);
         goto fail;
     }
@@ -4180,7 +4178,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
         if (keyword == NULL || !PyUnicode_Check(keyword)) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%U() keywords must be strings",
-                          co->co_name);
+                          qualname);
             goto fail;
         }
 
@@ -4211,14 +4209,14 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
             if (co->co_posonlyargcount
                 && positional_only_passed_as_keyword(tstate, co,
-                                                     kwcount, kwnames))
+                                                     kwcount, kwnames, qualname))
             {
                 goto fail;
             }
 
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%U() got an unexpected keyword argument '%S'",
-                          co->co_name, keyword);
+                          qualname, keyword);
             goto fail;
         }
 
@@ -4231,7 +4229,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
         if (GETLOCAL(j) != NULL) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%U() got multiple values for argument '%S'",
-                          co->co_name, keyword);
+                          qualname, keyword);
             goto fail;
         }
         Py_INCREF(value);
@@ -4240,7 +4238,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
     /* Check the number of positional arguments */
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
-        too_many_positional(tstate, co, argcount, defcount, fastlocals);
+        too_many_positional(tstate, co, argcount, defcount, fastlocals, qualname);
         goto fail;
     }
 
@@ -4254,7 +4252,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
             }
         }
         if (missing) {
-            missing_arguments(tstate, co, missing, defcount, fastlocals);
+            missing_arguments(tstate, co, missing, defcount, fastlocals, qualname);
             goto fail;
         }
         if (n > m)
@@ -4292,7 +4290,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
             missing++;
         }
         if (missing) {
-            missing_arguments(tstate, co, missing, -1, fastlocals);
+            missing_arguments(tstate, co, missing, -1, fastlocals, qualname);
             goto fail;
         }
     }

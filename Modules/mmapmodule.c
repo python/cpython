@@ -1574,6 +1574,9 @@ PyInit_mmap(void)
     setint(dict, "MAP_ANON", MAP_ANONYMOUS);
     setint(dict, "MAP_ANONYMOUS", MAP_ANONYMOUS);
 #endif
+#ifdef MAP_POPULATE
+    setint(dict, "MAP_POPULATE", MAP_POPULATE);
+#endif
 
     setint(dict, "PAGESIZE", (long)my_getpagesize());
 

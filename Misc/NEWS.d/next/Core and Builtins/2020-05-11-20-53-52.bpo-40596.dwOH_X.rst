@@ -1,2 +1,0 @@
-Fixed :meth:`str.isidentifier` for non-canonicalized strings containing
-non-BMP characters on Windows.

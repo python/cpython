@@ -1,5 +1,4 @@
 import os
-import sys
 import sysconfig
 
 
@@ -13,7 +12,8 @@ def reset_tzpath(to=None):
                 f"tzpaths must be a list or tuple, "
                 + f"not {type(tzpaths)}: {tzpaths!r}"
             )
-        elif not all(map(os.path.isabs, tzpaths)):
+
+        if not all(map(os.path.isabs, tzpaths)):
             raise ValueError(_get_invalid_paths_message(tzpaths))
         base_tzpath = tzpaths
     else:
