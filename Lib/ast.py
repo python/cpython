@@ -25,7 +25,6 @@
     :license: Python License.
 """
 import sys
-import unicodedata
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto
@@ -1062,14 +1061,12 @@ class _Unparser(NodeVisitor):
         Returns (possible quote types, string literal to write).
         """
         # Escape characters we've been told to escape, backslashes, and any
-        # non-printable characters. The logic for determining non-printable
-        # characters is based on that in Tools/unicode/makeunicodedata.py
-        escape = {*escape, '\\'} | {
-            c for c in value
-            if c not in ' \n\t' and unicodedata.category(c)[0] in ("C", "Z")
-        }
+        # non-printable characters.
+        escape = {*escape, '\\'}
         val = "".join(
-            (c.encode('unicode_escape').decode('ascii') if c in escape else c) for c in value
+            c.encode('unicode_escape').decode('ascii')
+            if c in escape or (not c.isprintable() and c not in '\n\t') else c
+            for c in value
         )
         qts = [quote for quote in quote_types if quote not in val]
         if "\n" in val:
