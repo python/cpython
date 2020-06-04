@@ -701,7 +701,7 @@ class TestBooleanOptionalAction(ParserTestCase):
     ]
 
     def test_const(self):
-        # See bpo-wip
+        # See bpo-40862
         parser = argparse.ArgumentParser()
         with self.assertRaises(TypeError) as cm:
             parser.add_argument('--foo', const=True, action=argparse.BooleanOptionalAction)
