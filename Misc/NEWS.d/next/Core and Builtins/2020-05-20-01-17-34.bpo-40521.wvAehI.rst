@@ -1,0 +1,1 @@
+Each interpreter now has its own tuple free lists and empty tuple singleton.
