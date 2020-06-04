@@ -120,6 +120,14 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+mimetypes
+---------
+
+:func:`mimetypes.mimesniff` is added. :func:`mimetypes.mimesniff` guesses
+the types of given datas based on the algorithm described at
+https://mimesniff.spec.whatwg.org/.
+(Contributed by Dong-hee Na in :issue:`40841`.)
+
 py_compile
 ----------
 

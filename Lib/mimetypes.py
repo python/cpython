@@ -36,7 +36,8 @@ __all__ = [
     "knownfiles", "inited", "MimeTypes",
     "guess_type", "guess_all_extensions", "guess_extension",
     "add_type", "init", "read_mime_types",
-    "suffix_map", "encodings_map", "types_map", "common_types"
+    "suffix_map", "encodings_map", "types_map", "common_types",
+    "mimesniff"
 ]
 
 knownfiles = [
@@ -269,6 +270,7 @@ class MimeTypes:
                 except OSError:
                     continue
 
+
 def guess_type(url, strict=True):
     """Guess the type of a file based on its URL.
 
@@ -292,6 +294,30 @@ def guess_type(url, strict=True):
     return _db.guess_type(url, strict)
 
 
+def mimesniff(datas):
+    """Guess the type of given datas.
+
+    Return value is a tuple (type, charset).
+    datas should be bytes or bytearray.
+    This function always returns the most valid type, but charset can be
+    None if there no proper charset.
+    If the datas can not be guessed, it will return 'application/octet-stream'.
+    mimesniff is implemented based on the algorithm which is described at
+    https://mimesniff.spec.whatwg.org/
+    """
+    if not isinstance(datas, (bytes, bytearray)):
+        msg = f'expected bytes or bytearray, but got {type(datas).__name__}'
+        raise TypeError(msg)
+
+    if len(datas) > 512:
+        datas = datas[:512]
+
+    tp, charset = _detect_content(datas)
+    if tp is None:
+        return ('application/octet-stream', None)
+    return (tp, charset)
+
+
 def guess_all_extensions(type, strict=True):
     """Guess the extensions for a file based on its MIME type.
 
@@ -309,6 +335,7 @@ def guess_all_extensions(type, strict=True):
         init()
     return _db.guess_all_extensions(type, strict)
 
+
 def guess_extension(type, strict=True):
     """Guess the extension for a file based on its MIME type.
 
@@ -324,6 +351,7 @@ def guess_extension(type, strict=True):
     if _db is None:
         init()
     return _db.guess_extension(type, strict)
+
 
 def add_type(type, ext, strict=True):
     """Add a mapping between a type and an extension.
@@ -561,6 +589,153 @@ def _default_mime_types():
         '.xul' : 'text/xul',
         }
 
+
+def _detect_content(h):
+    first_non_ws = 0
+    for idx, hb in enumerate(h):
+        if not hb in b'\t\n\x0c\r ':
+            first_non_ws = idx
+            break
+
+    detects= [_match_html_types, _match_exact_sig_types,
+              _match_mask_sig_types, _match_mp4_type, _match_text_type]
+    for detect in detects:
+        tp, charset = detect(h, first_non_ws)
+        if tp:
+            return (tp, charset)
+    return (None, None)
+
+
+def _match_html_types(h, first_non_ws):
+    sigs = [b'<!DOCTYPE HTML', b'<HTML', b'<HEAD',
+            b'<SCRIPT', b'<IFRAME', b'<H1', b'<DIV',
+            b'<FONT', b'<TABLE', b'<A', b'<STYLE',
+            b'<TITLE', b'<B', b'<BODY', b'<BR', b'<P',
+            b'<!--']
+    h = h[first_non_ws:]
+
+    for s in sigs:
+        tp, charset = _match_html_sig(h, s)
+        if tp:
+            return (tp, charset)
+
+    return (None, None)
+
+
+def _match_html_sig(h, sig):
+    tp, charset = None, None
+    if len(h) < len(sig) + 1:
+        return (tp, charset)
+
+    for hc, sc in zip(h, sig):
+        if 65 <= sc <= 90:
+            hc&=0xDF
+        if hc != sc:
+            return (tp, charset)
+
+    # should be a tag-terminating byte (0xTT)
+    # https://mimesniff.spec.whatwg.org/#terminology
+    if not h[len(sig)] in b' >':
+        return (tp, charset)
+    tp, charset = 'text/html', 'utf-8'
+    return (tp, charset)
+
+
+def _match_exact_sig_types(h, first_non_ws):
+    sigs = [
+        # (pattern, mimetype)
+        (b'\x00\x00\x01\x00', 'image/x-icon'),
+        (b'\x00\x00\x02\x00', 'image/x-icon'),
+        (b'%PDF-', 'application/pdf'),
+        (b'%!PS-Adobe-', 'application/postscript'),
+        (b'BM', 'image/bmp'),
+        (b'GIF87a', 'image/gif'),
+        (b'GIF89a', 'image/gif'),
+        (b'\x89PNG\x0D\x0A\x1A\x0A', 'image/png'),
+        (b'\xFF\xD8\xFF', 'image/jpeg'),
+        (b'\x00\x01\x00\x00', 'font/ttf'),
+        (b'OTTO', 'font/otf'),
+        (b'ttcf', 'font/collection'),
+        (b'wOFF', 'font/woff'),
+        (b'wOF2', 'font/woff2'),
+        (b'\x1F\x8B\x08', 'application/x-gzip'),
+        (b'PK\x03\x04', 'application/zip'),
+        (b'Rar!\x1A\x07\x00', 'application/x-rar-compressed'),
+        (b'Rar!\x1A\x07\x01\x00', 'application/x-rar-compressed'),
+    ]
+
+    h = h[first_non_ws:]
+    for sig, mime in sigs:
+        if h.startswith(sig):
+            return (mime, None)
+
+    return (None, None)
+
+
+def _match_mask_sig_types(h, first_non_ws):
+    sigs = [
+        # (mask, pattern, skip_white_space, mimetype)
+        (b'\xFF\xFF\xFF\xFF\xFF', b'<?xml', True, ('text/xml','utf-8')),
+        (b'\xFF\xFF\x00\x00', b'\xFE\xFF\x00\x00', False, ('text/plain', 'utf-16be')),
+        (b'\xFF\xFF\x00\x00', b'\xFF\xFE\x00\x00', False, ('text/plain', 'utf-16le')),
+        (b'\xFF\xFF\xFF\x00', b'\xEF\xBB\xBF\x00', False, ('text/plain', 'utf-8')),
+        (b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF', b'RIFF\x00\x00\x00\x00WEBPVP', False, ('image/webp', None)),
+        (b'\xFF\xFF\xFF\xFF', b'.snd', False, ('audio/basic', None)),
+        (b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF', b'FORM\x00\x00\x00\x00AIFF', False, ('audio/aiff', None)),
+        (b'\xFF\xFF\xFF', b'ID3', False, ('audio/mpeg', None)),
+        (b'\xFF\xFF\xFF\xFF\xFF', b'OggS\x00', False, ('application/ogg', None)),
+        (b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF', b'MThd\x00\x00\x00\x06', False, ('audio/midi', None)),
+        (b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF', b'RIFF\x00\x00\x00\x00AVI ', False, ('video/avi', None)),
+        (b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF', b'RIFF\x00\x00\x00\x00WAVE', False, ('audio/wave', None)),
+        (b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00LP', b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF', False, ('application/vnd.ms-fontobject', None))
+    ]
+
+    for mask, pattern, skip_ws, (tp, charset) in sigs:
+        match = True
+        if skip_ws:
+            data = h[first_non_ws:]
+        if len(mask) != len(pattern):
+            return (None, None)
+        if len(data) < len(pattern):
+            return (None, None)
+        for m, p, d in zip(mask, pattern, data):
+            if d&m != p:
+                match = False
+                break
+        if match:
+            return (tp, charset)
+
+    return (None, None)
+
+
+# https://mimesniff.spec.whatwg.org/#signature-for-mp4
+def _match_mp4_type(h, first_non_ws):
+    if len(h) < 12:
+        return (None, None)
+    box_size = int.from_bytes(h[:4], byteorder='big')
+    if len(h) < box_size or box_size%4 != 0:
+        return (None, None)
+    if h[4:8] != b'ftyp':
+        return (None, None)
+
+    for idx in range(8, box_size, 4):
+        if idx == 12:
+            continue
+        if h[idx:idx+3] == b'mp4':
+            return ('video/mp4', None)
+
+    return (None, None)
+
+
+def _match_text_type(h, first_non_ws):
+    for b in h[first_non_ws:]:
+        if b <= 0x08 or b == 0x0B:
+            return (None, None)
+        if 0x0E <= b <= 0x1A:
+            return (None, None)
+        if 0x1C <= b <= 0x1F:
+            return (None, None)
+    return ('text/plain', 'utf-8')
 
 _default_mime_types()
 
