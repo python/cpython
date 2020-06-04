@@ -3040,10 +3040,13 @@ compiler_match(struct compiler *c, stmt_ty s)
     basicblock *next, *end;
     CHECK(end = compiler_new_block(c));
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
+    assert(cases);
     for (Py_ssize_t i = 0; i < cases; i++) {
         match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
         CHECK(next = compiler_new_block(c));
-        ADDOP(c, DUP_TOP);
+        if (i != cases - 1) {
+            ADDOP(c, DUP_TOP);
+        }
         PyObject* names = PySet_New(NULL);
         if (!names) {
             return 0;
@@ -3054,12 +3057,15 @@ compiler_match(struct compiler *c, stmt_ty s)
         if (m->guard) {
             CHECK(compiler_jump_if(c, m->guard, next, 0));
         }
-        ADDOP(c, POP_TOP);
+        if (i != cases - 1) {
+            ADDOP(c, POP_TOP);
+        }
         VISIT_SEQ(c, stmt, m->body);
-        ADDOP_JREL(c, JUMP_FORWARD, end);
+        if (i != cases - 1) {
+            ADDOP_JREL(c, JUMP_FORWARD, end);
+        }
         compiler_use_next_block(c, next);
     }
-    ADDOP(c, POP_TOP);
     compiler_use_next_block(c, end);
     return 1;
 }
