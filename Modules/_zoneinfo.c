@@ -7,6 +7,17 @@
 
 #include "datetime.h"
 
+// This takes advantage of GCC compiler extensions to determine the type of the
+// variable, so we'll make Py_ASSERT_VAR_UNSIGNED a noop on non-GCC platforms.
+// This is not perfect, but it's better than nothing.
+#ifdef __GNUC__
+#define IS_TYPE_UNSIGNED(type) (((type)-1) > (type)0)
+#define Py_ASSERT_VAR_UNSIGNED(var) \
+    Py_BUILD_ASSERT(IS_TYPE_UNSIGNED(__typeof__(var)))
+#else
+#define Py_ASSERT_VAR_UNSIGNED(var)
+#endif
+
 // Imports
 static PyObject *io_open = NULL;
 static PyObject *_tzpath_find_tzfile = NULL;
@@ -1217,15 +1228,12 @@ calendarrule_new(uint8_t month, uint8_t week, uint8_t day, int8_t hour,
         return -1;
     }
 
-    // day is an unsigned integer, so day < 0 should always return false, but
-    // if day's type changes to a signed integer *without* changing this value,
-    // it may create a bug. Considering that the compiler should be able to
-    // optimize out the first comparison if day is an unsigned integer anyway,
-    // we will leave this comparison in place and disable the compiler warning.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wtype-limits"
-    if (day < 0 || day > 6) {
-#pragma GCC diagnostic pop
+    // The actual bounds of day are (day >= 0 && day <= 6), but since day is an
+    // unsigned variable, day >= 0 is always true. To ensure that a bug is not
+    // introduced in the event that someone changes day to a signed type, we
+    // will assert that it is an unsigned type.
+    Py_ASSERT_VAR_UNSIGNED(day);
+    if (day > 6) {
         PyErr_Format(PyExc_ValueError, "Day must be in [0, 6]");
         return -1;
     }
