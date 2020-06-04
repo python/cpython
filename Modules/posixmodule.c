@@ -2099,7 +2099,7 @@ static PyStructSequence_Field waitid_result_fields[] = {
 };
 
 static PyStructSequence_Desc waitid_result_desc = {
-    "waitid_result", /* name */
+    MODNAME ".waitid_result", /* name */
     waitid_result__doc__, /* doc */
     waitid_result_fields,
     5
@@ -6400,7 +6400,7 @@ static PyStructSequence_Field sched_param_fields[] = {
 };
 
 static PyStructSequence_Desc sched_param_desc = {
-    "sched_param", /* name */
+    MODNAME ".sched_param", /* name */
     os_sched_param__doc__, /* doc */
     sched_param_fields,
     1
@@ -8404,7 +8404,7 @@ and elapsed.\n\
 See os.times for more information.");
 
 static PyStructSequence_Desc times_result_desc = {
-    "times_result", /* name */
+    MODNAME ".times_result", /* name */
     times_result__doc__, /* doc */
     times_result_fields,
     5
@@ -14855,7 +14855,6 @@ posixmodule_exec(PyObject *m)
     PyModule_AddObject(m, "error", PyExc_OSError);
 
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
-    waitid_result_desc.name = MODNAME ".waitid_result";
     PyTypeObject *WaitidResultType = PyStructSequence_NewType(&waitid_result_desc);
     if (WaitidResultType == NULL) {
         return -1;
@@ -14901,7 +14900,6 @@ posixmodule_exec(PyObject *m)
 #endif
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-    sched_param_desc.name = MODNAME ".sched_param";
     PyTypeObject *SchedParamType = PyStructSequence_NewType(&sched_param_desc);
     if (SchedParamType == NULL) {
         return -1;
@@ -14939,7 +14937,6 @@ posixmodule_exec(PyObject *m)
     }
     state->DirEntryType = DirEntryType;
 
-    times_result_desc.name = MODNAME ".times_result";
     PyTypeObject *TimesResultType = PyStructSequence_NewType(&times_result_desc);
     if (TimesResultType == NULL) {
         return -1;
