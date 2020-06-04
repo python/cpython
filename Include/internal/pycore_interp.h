@@ -64,6 +64,26 @@ struct _Py_unicode_state {
     struct _Py_unicode_fs_codec fs_codec;
 };
 
+/* Speed optimization to avoid frequent malloc/free of small tuples */
+#ifndef PyTuple_MAXSAVESIZE
+   // Largest tuple to save on free list
+#  define PyTuple_MAXSAVESIZE 20
+#endif
+#ifndef PyTuple_MAXFREELIST
+   // Maximum number of tuples of each size to save
+#  define PyTuple_MAXFREELIST 2000
+#endif
+
+struct _Py_tuple_state {
+#if PyTuple_MAXSAVESIZE > 0
+    /* Entries 1 up to PyTuple_MAXSAVESIZE are free lists,
+       entry 0 is the empty tuple () of which at most one instance
+       will be allocated. */
+    PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
+    int numfree[PyTuple_MAXSAVESIZE];
+#endif
+};
+
 
 /* interpreter state */
 
@@ -157,6 +177,7 @@ struct _is {
     */
     PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
 #endif
+    struct _Py_tuple_state tuple;
 };
 
 /* Used by _PyImport_Cleanup() */
