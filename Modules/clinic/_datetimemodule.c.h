@@ -54,11 +54,6 @@ datetime_date_fromordinal(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int ordinal;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     ordinal = _PyLong_AsInt(arg);
     if (ordinal == -1 && PyErr_Occurred()) {
         goto exit;
@@ -108,27 +103,12 @@ datetime_date_fromisocalendar(PyTypeObject *type, PyObject *const *args, Py_ssiz
     if (!args) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     year = _PyLong_AsInt(args[0]);
     if (year == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     week = _PyLong_AsInt(args[1]);
     if (week == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     day = _PyLong_AsInt(args[2]);
@@ -221,4 +201,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f61310936e3d8091 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6b92790e74defece input=a9049054013a1b77]*/
