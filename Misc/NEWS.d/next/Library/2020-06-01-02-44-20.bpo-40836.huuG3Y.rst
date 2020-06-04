@@ -1,3 +1,0 @@
-:func:`logging.fatal` and :meth:`logging.Logger.fatal` now raise a
-DeprecationWarning recommanding to use `critical()` instead. Patch
-contributed by Rémi Lapeyre.
