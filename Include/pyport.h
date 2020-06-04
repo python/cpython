@@ -162,6 +162,27 @@ typedef int Py_ssize_clean_t;
 #   define PY_FORMAT_SIZE_T "z"
 #endif
 
+
+/* _Py_HAVE_TYPEOF and _Py_TYPEOF can opportunistically support an equivalent
+ * of GCC's typeof extension where possible. It is not possible to get
+ * equivalent behavior on all platforms, so all uses of _Py_TYPEOF should be
+ * guarded by _Py_HAVE_TYPEOF.
+ */
+#if defined(__GNUC__) || defined(__clang__) || defined(__cplusplus)
+#   define _Py_HAVE_TYPEOF 1
+#   if defined(__cplusplus)
+#       define _Py_TYPEOF(x) decltype(x)
+#   else
+#       define _Py_TYPEOF(x) __typeof__(x)
+#   endif
+#else
+#   define _Py_TYPEOF(x) Py_FatalError( \
+        "_Py_TYPEOF is not available in all supported compilation modes on " \
+        "all supported compilers.  Use the _Py_HAVE_TYPEOF macro to guard " \
+        "any statements using _Py_TYPEOF." \
+        )
+#endif
+
 /* Py_LOCAL can be used instead of static to get the fastest possible calling
  * convention for functions that are local to a given module.
  *

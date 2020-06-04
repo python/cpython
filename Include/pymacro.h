@@ -88,6 +88,7 @@
         (uintptr_t)((a) - 1)) & ~(uintptr_t)((a) - 1)))
 /* Check if pointer "p" is aligned to "a"-bytes boundary. */
 #define _Py_IS_ALIGNED(p, a) (!((uintptr_t)(p) & (uintptr_t)((a) - 1)))
+#define _Py_IS_TYPE_UNSIGNED(type) (((type)-1) > (type)0)
 
 /* Use this for unused arguments in a function definition to silence compiler
  * warnings. Example:
