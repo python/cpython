@@ -84,6 +84,14 @@ struct _Py_tuple_state {
 #endif
 };
 
+struct _Py_float_state {
+    /* Special free list
+       free_list is a singly-linked list of available PyFloatObjects,
+       linked via abuse of their ob_type members. */
+    int numfree;
+    PyFloatObject *free_list;
+};
+
 
 /* interpreter state */
 
@@ -178,6 +186,7 @@ struct _is {
     PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
 #endif
     struct _Py_tuple_state tuple;
+    struct _Py_float_state float_state;
 };
 
 /* Used by _PyImport_Cleanup() */
