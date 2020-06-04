@@ -2,7 +2,7 @@
 
 import unittest
 from test import support
-from test.support import filesystem_helper 
+from test.support import filesystem_helper
 
 import os
 

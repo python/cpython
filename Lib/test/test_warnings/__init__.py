@@ -7,7 +7,7 @@ import sys
 import textwrap
 import unittest
 from test import support
-from test.support import filesystem_helper 
+from test.support import filesystem_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 from test.test_warnings.data import stacklevel as warning_tests

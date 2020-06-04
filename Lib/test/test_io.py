@@ -747,7 +747,7 @@ class IOTest(unittest.TestCase):
 
     def test_no_closefd_with_filename(self):
         # can't use closefd in combination with a file name
-        self.assertRaises(ValueError, self.open, 
+        self.assertRaises(ValueError, self.open,
                           filesystem_helper.TESTFN, "r", closefd=False)
 
     def test_closefd_attr(self):
@@ -1780,7 +1780,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
     def test_truncate(self):
         # Truncate implicitly flushes the buffer.
         self.addCleanup(support.unlink, filesystem_helper.TESTFN)
-        with self.open(filesystem_helper.TESTFN, 
+        with self.open(filesystem_helper.TESTFN,
                        self.write_mode, buffering=0) as raw:
             bufio = self.tp(raw, 8)
             bufio.write(b"abcdef")
@@ -1828,7 +1828,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
             # writing the buffer to the raw streams. This is in addition
             # to concurrency issues due to switching threads in the middle
             # of Python code.
-            with self.open(filesystem_helper.TESTFN, 
+            with self.open(filesystem_helper.TESTFN,
                            self.write_mode, buffering=0) as raw:
                 bufio = self.tp(raw, 8)
                 errors = []
@@ -4045,7 +4045,7 @@ class MiscIOTest(unittest.TestCase):
         self.assertIn(r, str(cm.warning.args[0]))
 
     def test_warn_on_dealloc(self):
-        self._check_warn_on_dealloc(filesystem_helper.TESTFN, 
+        self._check_warn_on_dealloc(filesystem_helper.TESTFN,
                                     "wb", buffering=0)
         self._check_warn_on_dealloc(filesystem_helper.TESTFN, "wb")
         self._check_warn_on_dealloc(filesystem_helper.TESTFN, "w")
