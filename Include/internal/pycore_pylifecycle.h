@@ -64,7 +64,7 @@ extern void _PyTuple_Fini(PyThreadState *tstate);
 extern void _PyList_Fini(void);
 extern void _PySet_Fini(void);
 extern void _PyBytes_Fini(void);
-extern void _PyFloat_Fini(void);
+extern void _PyFloat_Fini(PyThreadState *tstate);
 extern void _PySlice_Fini(void);
 extern void _PyAsyncGen_Fini(void);
 
