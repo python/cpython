@@ -303,6 +303,11 @@ class CodeopTests(unittest.TestCase):
         self.assertNotEqual(compile_command("a = 1\n", "abc").co_filename,
                             compile("a = 1\n", "def", 'single').co_filename)
 
+    def test_warning(self):
+        # Test that the warning is only returned once.
+        with support.check_warnings((".*literal", SyntaxWarning)) as w:
+            compile_command("0 is 0")
+            self.assertEqual(len(w.warnings), 1)
 
 if __name__ == "__main__":
     unittest.main()
