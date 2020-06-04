@@ -187,6 +187,10 @@ struct _is {
 #endif
     struct _Py_tuple_state tuple;
     struct _Py_float_state float_state;
+
+    /* Using a cache is very effective since typically only a single slice is
+       created and then deleted again. */
+    PySliceObject *slice_cache;
 };
 
 /* Used by _PyImport_Cleanup() */
