@@ -14860,8 +14860,9 @@ posixmodule_exec(PyObject *m)
     if (WaitidResultType == NULL) {
         return -1;
     }
-    Py_INCREF(WaitidResultType);
-    PyModule_AddObject(m, "waitid_result", WaitidResultType);
+    if (PyModule_AddType(m, WaitidResultType) < 0) {
+        return -1;
+    }
     state->WaitidResultType = WaitidResultType;
 #endif
 
@@ -14873,8 +14874,9 @@ posixmodule_exec(PyObject *m)
     if (StatResultType == NULL) {
         return -1;
     }
-    Py_INCREF(StatResultType);
-    PyModule_AddObject(m, "stat_result", StatResultType);
+    if (PyModule_AddType(m, StatResultType) < 0) {
+        return -1;
+    }
     state->StatResultType = StatResultType;
     structseq_new = ((PyTypeObject *)StatResultType)->tp_new;
     ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
@@ -14884,8 +14886,9 @@ posixmodule_exec(PyObject *m)
     if (StatVFSResultType == NULL) {
         return -1;
     }
-    Py_INCREF(StatVFSResultType);
-    PyModule_AddObject(m, "statvfs_result", StatVFSResultType);
+    if (PyModule_AddType(m, StatVFSResultType) < 0) {
+        return -1;
+    }
     state->StatVFSResultType = StatVFSResultType;
 #ifdef NEED_TICKS_PER_SECOND
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
@@ -14903,8 +14906,9 @@ posixmodule_exec(PyObject *m)
     if (SchedParamType == NULL) {
         return -1;
     }
-    Py_INCREF(SchedParamType);
-    PyModule_AddObject(m, "sched_param", SchedParamType);
+    if (PyModule_AddType(m, SchedParamType) < 0) {
+        return -1;
+    }
     state->SchedParamType = SchedParamType;
     ((PyTypeObject *)SchedParamType)->tp_new = os_sched_param;
 #endif
@@ -14914,8 +14918,9 @@ posixmodule_exec(PyObject *m)
     if (TerminalSizeType == NULL) {
         return -1;
     }
-    Py_INCREF(TerminalSizeType);
-    PyModule_AddObject(m, "terminal_size", TerminalSizeType);
+    if (PyModule_AddType(m, TerminalSizeType) < 0) {
+        return -1;
+    }
     state->TerminalSizeType = TerminalSizeType;
 
     /* initialize scandir types */
@@ -14929,8 +14934,9 @@ posixmodule_exec(PyObject *m)
     if (DirEntryType == NULL) {
         return -1;
     }
-    Py_INCREF(DirEntryType);
-    PyModule_AddObject(m, "DirEntry", DirEntryType);
+    if (PyModule_AddType(m, DirEntryType) < 0) {
+        return -1;
+    }
     state->DirEntryType = DirEntryType;
 
     times_result_desc.name = MODNAME ".times_result";
@@ -14938,16 +14944,18 @@ posixmodule_exec(PyObject *m)
     if (TimesResultType == NULL) {
         return -1;
     }
-    Py_INCREF(TimesResultType);
-    PyModule_AddObject(m, "times_result", TimesResultType);
+    if (PyModule_AddType(m, TimesResultType) < 0) {
+        return -1;
+    }
     state->TimesResultType = TimesResultType;
 
     PyTypeObject *UnameResultType = PyStructSequence_NewType(&uname_result_desc);
     if (UnameResultType == NULL) {
         return -1;
     }
-    Py_INCREF(UnameResultType);
-    PyModule_AddObject(m, "uname_result", (PyObject *)UnameResultType);
+    if (PyModule_AddType(m, UnameResultType) < 0) {
+        return -1;
+    }
     state->UnameResultType = (PyObject *)UnameResultType;
 
 #ifdef __APPLE__
