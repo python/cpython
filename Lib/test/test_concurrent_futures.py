@@ -6,6 +6,7 @@ support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
 support.import_module('multiprocessing.synchronize')
 
+from test.support import hashlib_helper
 from test.support.script_helper import assert_python_ok
 
 import contextlib
@@ -953,6 +954,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
 
+    @hashlib_helper.requires_hashdigest('md5')
     def test_ressources_gced_in_workers(self):
         # Ensure that argument for a job are correctly gc-ed after the job
         # is finished
