@@ -846,18 +846,18 @@ dir_fd_converter(PyObject *o, void *p)
 
 typedef struct {
     PyObject *billion;
-    PyObject *DirEntryType;
-    PyObject *ScandirIteratorType;
+    PyTypeObject *DirEntryType;
+    PyTypeObject *ScandirIteratorType;
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-    PyObject *SchedParamType;
+    PyTypeObject *SchedParamType;
 #endif
-    PyObject *StatResultType;
-    PyObject *StatVFSResultType;
-    PyObject *TerminalSizeType;
-    PyObject *TimesResultType;
-    PyObject *UnameResultType;
+    PyTypeObject *StatResultType;
+    PyTypeObject *StatVFSResultType;
+    PyTypeObject *TerminalSizeType;
+    PyTypeObject *TimesResultType;
+    PyTypeObject *UnameResultType;
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
-    PyObject *WaitidResultType;
+    PyTypeObject *WaitidResultType;
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
     PyObject *struct_rusage;
@@ -2230,8 +2230,8 @@ static PyObject*
 _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 {
     unsigned long ansec, mnsec, cnsec;
-    PyObject *StatResultType = get_posix_state(module)->StatResultType;
-    PyObject *v = PyStructSequence_New((PyTypeObject *)StatResultType);
+    PyTypeObject *StatResultType = get_posix_state(module)->StatResultType;
+    PyObject *v = PyStructSequence_New(StatResultType);
     if (v == NULL)
         return NULL;
 
@@ -4699,8 +4699,8 @@ os_uname_impl(PyObject *module)
     if (res < 0)
         return posix_error();
 
-    PyObject *UnameResultType = get_posix_state(module)->UnameResultType;
-    value = PyStructSequence_New((PyTypeObject *)UnameResultType);
+    PyTypeObject *UnameResultType = get_posix_state(module)->UnameResultType;
+    value = PyStructSequence_New(UnameResultType);
     if (value == NULL)
         return NULL;
 
@@ -8421,8 +8421,8 @@ build_times_result(PyObject *module, double user, double system,
     double children_user, double children_system,
     double elapsed)
 {
-    PyObject *TimesResultType = get_posix_state(module)->TimesResultType;
-    PyObject *value = PyStructSequence_New((PyTypeObject *)TimesResultType);
+    PyTypeObject *TimesResultType = get_posix_state(module)->TimesResultType;
+    PyObject *value = PyStructSequence_New(TimesResultType);
     if (value == NULL)
         return NULL;
 
@@ -10645,8 +10645,8 @@ os_WSTOPSIG_impl(PyObject *module, int status)
 
 static PyObject*
 _pystatvfs_fromstructstatvfs(PyObject *module, struct statvfs st) {
-    PyObject *StatVFSResultType = get_posix_state(module)->StatVFSResultType;
-    PyObject *v = PyStructSequence_New((PyTypeObject *)StatVFSResultType);
+    PyTypeObject *StatVFSResultType = get_posix_state(module)->StatVFSResultType;
+    PyObject *v = PyStructSequence_New(StatVFSResultType);
     if (v == NULL)
         return NULL;
 
@@ -12540,8 +12540,8 @@ os_get_terminal_size_impl(PyObject *module, int fd)
     }
 #endif /* TERMSIZE_USE_CONIO */
 
-    PyObject *TerminalSizeType = get_posix_state(module)->TerminalSizeType;
-    termsize = PyStructSequence_New((PyTypeObject *)TerminalSizeType);
+    PyTypeObject *TerminalSizeType = get_posix_state(module)->TerminalSizeType;
+    termsize = PyStructSequence_New(TerminalSizeType);
     if (termsize == NULL)
         return NULL;
     PyStructSequence_SET_ITEM(termsize, 0, PyLong_FromLong(columns));
@@ -13250,8 +13250,8 @@ DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
     DirEntry *entry;
     char *joined_path;
 
-    PyObject *DirEntryType = get_posix_state(module)->DirEntryType;
-    entry = PyObject_New(DirEntry, (PyTypeObject *)DirEntryType);
+    PyTypeObject *DirEntryType = get_posix_state(module)->DirEntryType;
+    entry = PyObject_New(DirEntry, DirEntryType);
     if (!entry)
         return NULL;
     entry->name = NULL;
@@ -13586,8 +13586,8 @@ os_scandir_impl(PyObject *module, path_t *path)
         return NULL;
     }
 
-    PyObject *ScandirIteratorType = get_posix_state(module)->ScandirIteratorType;
-    iterator = PyObject_New(ScandirIterator, (PyTypeObject *)ScandirIteratorType);
+    PyTypeObject *ScandirIteratorType = get_posix_state(module)->ScandirIteratorType;
+    iterator = PyObject_New(ScandirIterator, ScandirIteratorType);
     if (!iterator)
         return NULL;
 
@@ -14856,7 +14856,7 @@ posixmodule_exec(PyObject *m)
 
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
     waitid_result_desc.name = MODNAME ".waitid_result";
-    PyObject *WaitidResultType = (PyObject *)PyStructSequence_NewType(&waitid_result_desc);
+    PyTypeObject *WaitidResultType = PyStructSequence_NewType(&waitid_result_desc);
     if (WaitidResultType == NULL) {
         return -1;
     }
@@ -14870,7 +14870,7 @@ posixmodule_exec(PyObject *m)
     stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
     stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
     stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
-    PyObject *StatResultType = (PyObject *)PyStructSequence_NewType(&stat_result_desc);
+    PyTypeObject *StatResultType = PyStructSequence_NewType(&stat_result_desc);
     if (StatResultType == NULL) {
         return -1;
     }
@@ -14878,11 +14878,11 @@ posixmodule_exec(PyObject *m)
         return -1;
     }
     state->StatResultType = StatResultType;
-    structseq_new = ((PyTypeObject *)StatResultType)->tp_new;
-    ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
+    structseq_new = StatResultType->tp_new;
+    StatResultType->tp_new = statresult_new;
 
     statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
-    PyObject *StatVFSResultType = (PyObject *)PyStructSequence_NewType(&statvfs_result_desc);
+    PyTypeObject *StatVFSResultType = PyStructSequence_NewType(&statvfs_result_desc);
     if (StatVFSResultType == NULL) {
         return -1;
     }
@@ -14902,7 +14902,7 @@ posixmodule_exec(PyObject *m)
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
     sched_param_desc.name = MODNAME ".sched_param";
-    PyObject *SchedParamType = (PyObject *)PyStructSequence_NewType(&sched_param_desc);
+    PyTypeObject *SchedParamType = PyStructSequence_NewType(&sched_param_desc);
     if (SchedParamType == NULL) {
         return -1;
     }
@@ -14910,11 +14910,11 @@ posixmodule_exec(PyObject *m)
         return -1;
     }
     state->SchedParamType = SchedParamType;
-    ((PyTypeObject *)SchedParamType)->tp_new = os_sched_param;
+    SchedParamType->tp_new = os_sched_param;
 #endif
 
     /* initialize TerminalSize_info */
-    PyObject *TerminalSizeType = (PyObject *)PyStructSequence_NewType(&TerminalSize_desc);
+    PyTypeObject *TerminalSizeType = PyStructSequence_NewType(&TerminalSize_desc);
     if (TerminalSizeType == NULL) {
         return -1;
     }
@@ -14924,13 +14924,13 @@ posixmodule_exec(PyObject *m)
     state->TerminalSizeType = TerminalSizeType;
 
     /* initialize scandir types */
-    PyObject *ScandirIteratorType = PyType_FromModuleAndSpec(m, &ScandirIteratorType_spec, NULL);
+    PyTypeObject *ScandirIteratorType = (PyTypeObject *)PyType_FromModuleAndSpec(m, &ScandirIteratorType_spec, NULL);
     if (ScandirIteratorType == NULL) {
         return -1;
     }
     state->ScandirIteratorType = ScandirIteratorType;
 
-    PyObject *DirEntryType = PyType_FromModuleAndSpec(m, &DirEntryType_spec, NULL);
+    PyTypeObject *DirEntryType = (PyTypeObject *)PyType_FromModuleAndSpec(m, &DirEntryType_spec, NULL);
     if (DirEntryType == NULL) {
         return -1;
     }
@@ -14940,7 +14940,7 @@ posixmodule_exec(PyObject *m)
     state->DirEntryType = DirEntryType;
 
     times_result_desc.name = MODNAME ".times_result";
-    PyObject *TimesResultType = (PyObject *)PyStructSequence_NewType(&times_result_desc);
+    PyTypeObject *TimesResultType = PyStructSequence_NewType(&times_result_desc);
     if (TimesResultType == NULL) {
         return -1;
     }
@@ -14956,7 +14956,7 @@ posixmodule_exec(PyObject *m)
     if (PyModule_AddType(m, UnameResultType) < 0) {
         return -1;
     }
-    state->UnameResultType = (PyObject *)UnameResultType;
+    state->UnameResultType = UnameResultType;
 
 #ifdef __APPLE__
     /*
