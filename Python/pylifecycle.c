@@ -1249,10 +1249,7 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 {
-    if (is_main_interp) {
-        /* Sundry finalizers */
-        _PyFrame_Fini();
-    }
+    _PyFrame_Fini(tstate);
     _PyTuple_Fini(tstate);
     if (is_main_interp) {
         _PyList_Fini();

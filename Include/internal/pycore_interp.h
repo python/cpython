@@ -92,6 +92,12 @@ struct _Py_float_state {
     PyFloatObject *free_list;
 };
 
+struct _Py_frame_state {
+    PyFrameObject *free_list;
+    /* number of frames currently in free_list */
+    int numfree;
+};
+
 
 /* interpreter state */
 
@@ -187,6 +193,7 @@ struct _is {
 #endif
     struct _Py_tuple_state tuple;
     struct _Py_float_state float_state;
+    struct _Py_frame_state frame;
 
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
