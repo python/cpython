@@ -785,7 +785,6 @@ if sys.platform == 'darwin':
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
     import unicodedata
     TESTFN_UNICODE = unicodedata.normalize('NFD', TESTFN_UNICODE)
-TESTFN_ENCODING = sys.getfilesystemencoding()
 
 # TESTFN_UNENCODABLE is a filename (str type) that should *not* be able to be
 # encoded by the filesystem encoding (in strict mode). It can be None if we
@@ -798,23 +797,23 @@ if os.name == 'nt':
         # probability that the whole name is encodable to MBCS (issue #9819)
         TESTFN_UNENCODABLE = TESTFN + "-\u5171\u0141\u2661\u0363\uDC80"
         try:
-            TESTFN_UNENCODABLE.encode(TESTFN_ENCODING)
+            TESTFN_UNENCODABLE.encode(sys.getfilesystemencoding())
         except UnicodeEncodeError:
             pass
         else:
             print('WARNING: The filename %r CAN be encoded by the filesystem encoding (%s). '
                   'Unicode filename tests may not be effective'
-                  % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
+                  % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
 # Mac OS X denies unencodable filenames (invalid utf-8)
 elif sys.platform != 'darwin':
     try:
         # ascii and utf-8 cannot encode the byte 0xff
-        b'\xff'.decode(TESTFN_ENCODING)
+        b'\xff'.decode(sys.getfilesystemencoding())
     except UnicodeDecodeError:
         # 0xff will be encoded using the surrogate character u+DCFF
         TESTFN_UNENCODABLE = TESTFN \
-            + b'-\xff'.decode(TESTFN_ENCODING, 'surrogateescape')
+            + b'-\xff'.decode(sys.getfilesystemencoding(), 'surrogateescape')
     else:
         # File system encoding (eg. ISO-8859-* encodings) can encode
         # the byte 0xff. Skip some unicode filename tests.
@@ -845,7 +844,7 @@ for name in (
     b'\x81\x98',
 ):
     try:
-        name.decode(TESTFN_ENCODING)
+        name.decode(sys.getfilesystemencoding())
     except UnicodeDecodeError:
         TESTFN_UNDECODABLE = os.fsencode(TESTFN) + name
         break

@@ -231,7 +231,8 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
             if (PyAsyncGen_CheckExact(gen)) {
                 PyErr_SetNone(PyExc_StopAsyncIteration);
             }
-            else {
+            else if (arg) {
+                /* Set exception if not called by gen_iternext() */
                 PyErr_SetNone(PyExc_StopIteration);
             }
         }

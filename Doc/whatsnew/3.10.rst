@@ -70,6 +70,9 @@ Summary -- Release highlights
 New Features
 ============
 
+* The :class:`int` type has a new method :meth:`int.bit_count`, returning the
+  number of ones in the binary expansion of a given integer, also known
+  as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
 
 
 Other Language Changes
@@ -91,13 +94,6 @@ New Modules
 
 Improved Modules
 ================
-
-tracemalloc
------------
-
-Added :func:`tracemalloc.reset_peak` to set the peak size of traced memory
-blocks to the current size, to measure the peak of specific pieces of code.
-(Contributed by Huon Wilson in :issue:`40630`.)
 
 Optimizations
 =============
@@ -151,6 +147,10 @@ Porting to Python 3.10
   ``Py_SIZE(obj) = new_size`` must be replaced with ``Py_SET_SIZE(obj, new_size)``:
   see :c:func:`Py_SET_SIZE()` (available since Python 3.9).
   (Contributed by Victor Stinner in :issue:`39573`.)
+
+* Calling :c:func:`PyDict_GetItem` without :term:`GIL` held had been allowed
+  for historical reason. It is no longer allowed.
+  (Contributed by Victor Stinner in :issue:`40839`.)
 
 Removed
 -------
