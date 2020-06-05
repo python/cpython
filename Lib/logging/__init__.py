@@ -1482,14 +1482,7 @@ class Logger(Filterer):
 
     def fatal(self, msg, *args, **kwargs):
         """
-        Log 'msg % args' with severity 'CRITICAL'.
-
-        The critical() method is preferred.
-
-        To pass exception information, use the keyword argument exc_info with
-        a true value, e.g.
-
-        logger.fatal("Houston, we have a %s", "major disaster", exc_info=1)
+        Don't use this method, use critical() instead.
         """
         self.critical(msg, *args, **kwargs)
 
@@ -2052,11 +2045,7 @@ def critical(msg, *args, **kwargs):
 
 def fatal(msg, *args, **kwargs):
     """
-    Log a message with severity 'CRITICAL' on the root logger. If the logger
-    has no handlers, call basicConfig() to add a console handler with a
-    pre-defined format.
-
-    The critical() function is preferred.
+    Don't use this method, use critical() instead.
     """
     critical(msg, *args, **kwargs)
 
