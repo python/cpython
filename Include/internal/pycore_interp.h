@@ -124,6 +124,12 @@ struct _Py_async_gen_state {
     int asend_numfree;
 };
 
+struct _Py_context_state {
+    // List of free PyContext objects
+    PyContext *freelist;
+    int numfree;
+};
+
 
 
 /* interpreter state */
@@ -223,6 +229,7 @@ struct _is {
     struct _Py_float_state float_state;
     struct _Py_frame_state frame;
     struct _Py_async_gen_state async_gen;
+    struct _Py_context_state context;
 
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
