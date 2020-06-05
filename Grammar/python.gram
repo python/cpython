@@ -196,13 +196,22 @@ match_stmt:
     | "match" target=expression ':' NEWLINE INDENT cases=case_block+ DEDENT {
         _Py_Match(target, cases, EXTRA) }
 case_block:
-    | "case" pattern=pattern guard=guard? ':' body=block {
+    | "case" pattern=pattern_no_comma guard=guard? ':' body=block {
         _Py_match_case(pattern, guard, body, p->arena) }
+
+pattern_no_comma:
+    | pattern=pattern !',' {
+        pattern }
+    | pattern error=',' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "tuple displays cannot be used as patterns; did you mean '[...]'?") }
 
 pattern[expr_ty]:
     | target=NAME ':=' value=or_pattern {
         _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, target, Store)), value, EXTRA) }
+    | error='(' ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "tuple displays cannot be used as patterns; did you mean '[]'?") }
     | or_pattern
+
 guard:
     | 'if' guard=named_expression {
         guard }
@@ -243,7 +252,7 @@ constant_pattern:
     | '.'? attr=attr !('.' | '(' | '=') {
         attr }
 group_pattern:
-    | '(' pattern=pattern ')' {
+    | '(' pattern=pattern_no_comma ')' {
         pattern }
 sequence_pattern:
     | '[' values=values_pattern? ']' {
