@@ -264,11 +264,22 @@ or on combining URL components into a URL string.
    Additionally, the netloc property is broken down into these additional attributes added to
    the returned object: username, password, hostname, and port.
 
+   % escapes are not decoded.
+
+   The *scheme* argument gives the default addressing scheme, to be
+   used only if the URL does not specify one.  It should be the same type
+   (text or bytes) as *url*, except that the default value ``''`` is
+   always allowed, and is automatically converted to ``b''`` if appropriate.
+
+   If the *allow_fragments* argument is false, fragment identifiers are not
+   recognized.  Instead, they are parsed as part of the path, parameters
+   or query component, and :attr:`fragment` is set to the empty string in
+   the return value.
+
    This should generally be used instead of :func:`urlparse` if the more recent URL
    syntax allowing parameters to be applied to each segment of the *path* portion
    of the URL (see :rfc:`2396`) is wanted.  A separate function is needed to
-   separate the path segments and parameters.  This function returns a 5-item
-   :term:`named tuple`:: (addressing scheme, network location, path, query, fragment identifier).
+   separate the path segments and parameters.
 
    The return value is a :term:`named tuple`, its items can be accessed by index
    or as named attributes:
