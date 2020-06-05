@@ -1,3 +1,3 @@
-The tuple free lists, the empty tuple singleton, the float free list, the slice
-cache, and the frame free list are no longer shared by all interpreters: each
-interpreter now its has own free lists and caches.
+The tuple free lists, the empty tuple singleton, the list free list, the float
+free list, the slice cache, and the frame free list are no longer shared by all
+interpreters: each interpreter now its has own free lists and caches.

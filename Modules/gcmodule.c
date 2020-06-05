@@ -1029,7 +1029,7 @@ clear_freelists(void)
     _PyFrame_ClearFreeList(tstate);
     _PyTuple_ClearFreeList(tstate);
     _PyFloat_ClearFreeList(tstate);
-    _PyList_ClearFreeList();
+    _PyList_ClearFreeList(tstate);
     _PyDict_ClearFreeList();
     _PyAsyncGen_ClearFreeLists();
     _PyContext_ClearFreeList();
