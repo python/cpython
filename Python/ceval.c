@@ -1076,6 +1076,17 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
     for (Py_ssize_t i = 0; i < nargs + nkwargs; i++) {
         if (i < nargs) {
             name = PyTuple_GET_ITEM(args, i);
+            if (!PyUnicode_CheckExact(name)) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "__match_args__ elements must be str (got %s)",
+                              Py_TYPE(name)->tp_name);
+                Py_DECREF(proxy);
+                Py_DECREF(args);
+                Py_DECREF(attrs);
+                Py_DECREF(seen);
+                Py_DECREF(name);
+                return NULL;
+            }
         }
         else {
             name = PyTuple_GET_ITEM(kwargs, i - nargs);
