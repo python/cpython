@@ -182,28 +182,60 @@ tuple_index(PyObject *self, Py_ssize_t len, PyObject *item)
     return -1;
 }
 
-// tuple(t for t in args if isinstance(t, TypeVar))
+static int
+tuple_add(PyObject *self, Py_ssize_t len, PyObject *item)
+{
+    if (tuple_index(self, len, item) < 0) {
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(self, len, item);
+        return 1;
+    }
+    return 0;
+}
+
 static PyObject *
 make_parameters(PyObject *args)
 {
-    Py_ssize_t len = PyTuple_GET_SIZE(args);
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t len = nargs;
     PyObject *parameters = PyTuple_New(len);
     if (parameters == NULL)
         return NULL;
     Py_ssize_t iparam = 0;
-    for (Py_ssize_t iarg = 0; iarg < len; iarg++) {
+    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
         int typevar = is_typevar(t);
         if (typevar < 0) {
-            Py_XDECREF(parameters);
+            Py_DECREF(parameters);
             return NULL;
         }
         if (typevar) {
-            if (tuple_index(parameters, iparam, t) < 0) {
-                Py_INCREF(t);
-                PyTuple_SET_ITEM(parameters, iparam, t);
-                iparam++;
+            iparam += tuple_add(parameters, iparam, t);
+        }
+        else {
+            _Py_IDENTIFIER(__parameters__);
+            PyObject *subparams;
+            if (_PyObject_LookupAttrId(t, &PyId___parameters__, &subparams) < 0) {
+                Py_DECREF(parameters);
+                return NULL;
             }
+            if (subparams && PyTuple_Check(subparams)) {
+                Py_ssize_t len2 = PyTuple_GET_SIZE(subparams);
+                Py_ssize_t needed = len2 - 1 - (iarg - iparam);
+                if (needed > 0) {
+                    len += needed;
+                    if (_PyTuple_Resize(&parameters, len) < 0) {
+                        Py_DECREF(subparams);
+                        Py_DECREF(parameters);
+                        return NULL;
+                    }
+                }
+                for (Py_ssize_t j = 0; j < len2; j++) {
+                    PyObject *t2 = PyTuple_GET_ITEM(subparams, j);
+                    iparam += tuple_add(parameters, iparam, t2);
+                }
+            }
+            Py_XDECREF(subparams);
         }
     }
     if (iparam < len) {
@@ -213,6 +245,48 @@ make_parameters(PyObject *args)
         }
     }
     return parameters;
+}
+
+/* If obj is a generic alias, substitute type variables params
+   with substitutions argitems.  For example, if obj is list[T],
+   params is (T, S), and argitems is (str, int), return list[str].
+   If obj doesn't have a __parameters__ attribute or that's not
+   a non-empty tuple, return a new reference to obj. */
+static PyObject *
+subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
+{
+    _Py_IDENTIFIER(__parameters__);
+    PyObject *subparams;
+    if (_PyObject_LookupAttrId(obj, &PyId___parameters__, &subparams) < 0) {
+        return NULL;
+    }
+    if (subparams && PyTuple_Check(subparams) && PyTuple_GET_SIZE(subparams)) {
+        Py_ssize_t nparams = PyTuple_GET_SIZE(params);
+        Py_ssize_t nsubargs = PyTuple_GET_SIZE(subparams);
+        PyObject *subargs = PyTuple_New(nsubargs);
+        if (subargs == NULL) {
+            Py_DECREF(subparams);
+            return NULL;
+        }
+        for (Py_ssize_t i = 0; i < nsubargs; ++i) {
+            PyObject *arg = PyTuple_GET_ITEM(subparams, i);
+            Py_ssize_t iparam = tuple_index(params, nparams, arg);
+            if (iparam >= 0) {
+                arg = argitems[iparam];
+            }
+            Py_INCREF(arg);
+            PyTuple_SET_ITEM(subargs, i, arg);
+        }
+
+        obj = PyObject_GetItem(obj, subargs);
+
+        Py_DECREF(subargs);
+    }
+    else {
+        Py_INCREF(obj);
+    }
+    Py_XDECREF(subparams);
+    return obj;
 }
 
 static PyObject *
@@ -233,17 +307,25 @@ ga_getitem(PyObject *self, PyObject *item)
                             self);
     }
     int is_tuple = PyTuple_Check(item);
-    Py_ssize_t nitem = is_tuple ? PyTuple_GET_SIZE(item) : 1;
-    if (nitem != nparams) {
+    Py_ssize_t nitems = is_tuple ? PyTuple_GET_SIZE(item) : 1;
+    PyObject **argitems = is_tuple ? &PyTuple_GET_ITEM(item, 0) : &item;
+    if (nitems != nparams) {
         return PyErr_Format(PyExc_TypeError,
                             "Too %s arguments for %R",
-                            nitem > nparams ? "many" : "few",
+                            nitems > nparams ? "many" : "few",
                             self);
     }
+    /* Replace all type variables (specified by alias->parameters)
+       with corresponding values specified by argitems.
+        t = list[T];          t[int]      -> newargs = [int]
+        t = dict[str, T];     t[int]      -> newargs = [str, int]
+        t = dict[T, list[S]]; t[str, int] -> newargs = [str, list[int]]
+     */
     Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
     PyObject *newargs = PyTuple_New(nargs);
-    if (newargs == NULL)
+    if (newargs == NULL) {
         return NULL;
+    }
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
         int typevar = is_typevar(arg);
@@ -254,18 +336,21 @@ ga_getitem(PyObject *self, PyObject *item)
         if (typevar) {
             Py_ssize_t iparam = tuple_index(alias->parameters, nparams, arg);
             assert(iparam >= 0);
-            if (is_tuple) {
-                arg = PyTuple_GET_ITEM(item, iparam);
-            }
-            else {
-                assert(iparam == 0);
-                arg = item;
+            arg = argitems[iparam];
+            Py_INCREF(arg);
+        }
+        else {
+            arg = subs_tvars(arg, alias->parameters, argitems);
+            if (arg == NULL) {
+                Py_DECREF(newargs);
+                return NULL;
             }
         }
-        Py_INCREF(arg);
         PyTuple_SET_ITEM(newargs, iarg, arg);
     }
+
     PyObject *res = Py_GenericAlias(alias->origin, newargs);
+
     Py_DECREF(newargs);
     return res;
 }
@@ -339,8 +424,8 @@ ga_getattro(PyObject *self, PyObject *name)
 static PyObject *
 ga_richcompare(PyObject *a, PyObject *b, int op)
 {
-    if (Py_TYPE(a) != &Py_GenericAliasType ||
-        Py_TYPE(b) != &Py_GenericAliasType ||
+    if (!Py_IS_TYPE(a, &Py_GenericAliasType) ||
+        !Py_IS_TYPE(b, &Py_GenericAliasType) ||
         (op != Py_EQ && op != Py_NE))
     {
         Py_RETURN_NOTIMPLEMENTED;

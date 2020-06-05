@@ -58,15 +58,15 @@ extern PyStatus _PyGC_Init(PyThreadState *tstate);
 
 /* Various internal finalizers */
 
-extern void _PyFrame_Fini(void);
+extern void _PyFrame_Fini(PyThreadState *tstate);
 extern void _PyDict_Fini(void);
-extern void _PyTuple_Fini(void);
-extern void _PyList_Fini(void);
+extern void _PyTuple_Fini(PyThreadState *tstate);
+extern void _PyList_Fini(PyThreadState *tstate);
 extern void _PySet_Fini(void);
 extern void _PyBytes_Fini(void);
-extern void _PyFloat_Fini(void);
-extern void _PySlice_Fini(void);
-extern void _PyAsyncGen_Fini(void);
+extern void _PyFloat_Fini(PyThreadState *tstate);
+extern void _PySlice_Fini(PyThreadState *tstate);
+extern void _PyAsyncGen_Fini(PyThreadState *tstate);
 
 extern void PyOS_FiniInterrupts(void);
 

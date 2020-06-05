@@ -3,7 +3,6 @@
 import dis
 import pickle
 import unittest
-import sys
 
 from test.support import check_syntax_error, use_old_parser
 

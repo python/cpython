@@ -1,10 +1,10 @@
 import unittest
 import unittest.mock
 from test.support import (verbose, refcount_test, run_unittest,
-                          cpython_only, start_threads,
-                          temp_dir, TESTFN, unlink,
+                          cpython_only, temp_dir, TESTFN, unlink,
                           import_module)
 from test.support.script_helper import assert_python_ok, make_script
+from test.support import threading_helper
 
 import gc
 import sys
@@ -415,7 +415,7 @@ class GCTests(unittest.TestCase):
             for i in range(N_THREADS):
                 t = threading.Thread(target=run_thread)
                 threads.append(t)
-            with start_threads(threads, lambda: exit.append(1)):
+            with threading_helper.start_threads(threads, lambda: exit.append(1)):
                 time.sleep(1.0)
         finally:
             sys.setswitchinterval(old_switchinterval)

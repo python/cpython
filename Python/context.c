@@ -10,8 +10,6 @@
 
 
 #define CONTEXT_FREELIST_MAXLEN 255
-static PyContext *ctx_freelist = NULL;
-static int ctx_freelist_len = 0;
 
 
 #include "clinic/context.c.h"
@@ -334,11 +332,13 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 static inline PyContext *
 _context_alloc(void)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_context_state *state = &interp->context;
     PyContext *ctx;
-    if (ctx_freelist_len) {
-        ctx_freelist_len--;
-        ctx = ctx_freelist;
-        ctx_freelist = (PyContext *)ctx->ctx_weakreflist;
+    if (state->numfree) {
+        state->numfree--;
+        ctx = state->freelist;
+        state->freelist = (PyContext *)ctx->ctx_weakreflist;
         ctx->ctx_weakreflist = NULL;
         _Py_NewReference((PyObject *)ctx);
     }
@@ -458,10 +458,12 @@ context_tp_dealloc(PyContext *self)
     }
     (void)context_tp_clear(self);
 
-    if (ctx_freelist_len < CONTEXT_FREELIST_MAXLEN) {
-        ctx_freelist_len++;
-        self->ctx_weakreflist = (PyObject *)ctx_freelist;
-        ctx_freelist = self;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_context_state *state = &interp->context;
+    if (state->numfree < CONTEXT_FREELIST_MAXLEN) {
+        state->numfree++;
+        self->ctx_weakreflist = (PyObject *)state->freelist;
+        state->freelist = self;
     }
     else {
         Py_TYPE(self)->tp_free(self);
@@ -1270,27 +1272,25 @@ get_token_missing(void)
 ///////////////////////////
 
 
-int
-PyContext_ClearFreeList(void)
+void
+_PyContext_ClearFreeList(PyThreadState *tstate)
 {
-    int size = ctx_freelist_len;
-    while (ctx_freelist_len) {
-        PyContext *ctx = ctx_freelist;
-        ctx_freelist = (PyContext *)ctx->ctx_weakreflist;
+    struct _Py_context_state *state = &tstate->interp->context;
+    for (; state->numfree; state->numfree--) {
+        PyContext *ctx = state->freelist;
+        state->freelist = (PyContext *)ctx->ctx_weakreflist;
         ctx->ctx_weakreflist = NULL;
         PyObject_GC_Del(ctx);
-        ctx_freelist_len--;
     }
-    return size;
 }
 
 
 void
-_PyContext_Fini(void)
+_PyContext_Fini(PyThreadState *tstate)
 {
     Py_CLEAR(_token_missing);
-    (void)PyContext_ClearFreeList();
-    (void)_PyHamt_Fini();
+    _PyContext_ClearFreeList(tstate);
+    _PyHamt_Fini();
 }
 
 

@@ -1,1 +1,0 @@
-Added zscore() to statistics.NormalDist().

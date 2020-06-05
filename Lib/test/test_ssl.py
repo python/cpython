@@ -5,6 +5,7 @@ import unittest
 import unittest.mock
 from test import support
 from test.support import socket_helper
+from test.support import threading_helper
 import socket
 import select
 import time
@@ -2246,7 +2247,7 @@ class NetworkedTests(unittest.TestCase):
     def test_timeout_connect_ex(self):
         # Issue #12065: on a timeout, connect_ex() should return the original
         # errno (mimicking the behaviour of non-SSL sockets).
-        with support.transient_internet(REMOTE_HOST):
+        with socket_helper.transient_internet(REMOTE_HOST):
             s = test_wrap_socket(socket.socket(socket.AF_INET),
                                 cert_reqs=ssl.CERT_REQUIRED,
                                 do_handshake_on_connect=False)
@@ -2259,7 +2260,7 @@ class NetworkedTests(unittest.TestCase):
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'Needs IPv6')
     def test_get_server_certificate_ipv6(self):
-        with support.transient_internet('ipv6.google.com'):
+        with socket_helper.transient_internet('ipv6.google.com'):
             _test_get_server_certificate(self, 'ipv6.google.com', 443)
             _test_get_server_certificate_fail(self, 'ipv6.google.com', 443)
 
@@ -4429,7 +4430,7 @@ class TestPostHandshakeAuth(unittest.TestCase):
 
         # Ignore expected SSLError in ConnectionHandler of ThreadedEchoServer
         # (it is only raised sometimes on Windows)
-        with support.catch_threading_exception() as cm:
+        with threading_helper.catch_threading_exception() as cm:
             server = ThreadedEchoServer(context=server_context, chatty=False)
             with server:
                 with client_context.wrap_socket(socket.socket(),
@@ -4750,11 +4751,11 @@ def test_main(verbose=False):
     if support.is_resource_enabled('network'):
         tests.append(NetworkedTests)
 
-    thread_info = support.threading_setup()
+    thread_info = threading_helper.threading_setup()
     try:
         support.run_unittest(*tests)
     finally:
-        support.threading_cleanup(*thread_info)
+        threading_helper.threading_cleanup(*thread_info)
 
 if __name__ == "__main__":
     test_main()

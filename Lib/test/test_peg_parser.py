@@ -1,9 +1,6 @@
 import ast
-import os
-import sys
 import _peg_parser as peg_parser
 import unittest
-from pathlib import PurePath
 from typing import Any, Union, Iterable, Tuple
 from textwrap import dedent
 from test import support
@@ -38,6 +35,9 @@ TEST_CASES = [
     ('attribute_simple', 'a.b'),
     ('attributes_subscript', 'a.b[0]'),
     ('augmented_assignment', 'x += 42'),
+    ('augmented_assignment_attribute', 'a.b.c += 42'),
+    ('augmented_assignment_paren', '(x) += 42'),
+    ('augmented_assignment_paren_subscript', '(x[0]) -= 42'),
     ('binop_add', '1 + 1'),
     ('binop_add_multiple', '1 + 1 + 1 + 1'),
     ('binop_all', '1 + 2 * 5 + 3 ** 2 - -3'),
@@ -550,6 +550,11 @@ TEST_CASES = [
         with a as (x, y):
             pass
      '''),
+    ('with_list_target',
+     '''
+        with a as [x, y]:
+            pass
+     '''),
     ('yield', 'yield'),
     ('yield_expr', 'yield a'),
     ('yield_from', 'yield from a'),
@@ -563,6 +568,9 @@ FAIL_TEST_CASES = [
     ("annotation_tuple", "(a,): int"),
     ("annotation_tuple_without_paren", "a,: int"),
     ("assignment_keyword", "a = if"),
+    ("augmented_assignment_list", "[a, b] += 1"),
+    ("augmented_assignment_tuple", "a, b += 1"),
+    ("augmented_assignment_tuple_paren", "(a, b) += (1, 2)"),
     ("comprehension_lambda", "(a for a in lambda: b)"),
     ("comprehension_else", "(a for a in b if c else d"),
     ("del_call", "del a()"),
@@ -583,6 +591,7 @@ FAIL_TEST_CASES = [
     ("f-string_single_closing_brace", "f'}'"),
     ("from_import_invalid", "from import import a"),
     ("from_import_trailing_comma", "from a import b,"),
+    ("import_non_ascii_syntax_error", "import ä £"),
     # This test case checks error paths involving tokens with uninitialized
     # values of col_offset and end_col_offset.
     ("invalid indentation",
@@ -592,6 +601,20 @@ FAIL_TEST_CASES = [
              a
      """),
     ("not_terminated_string", "a = 'example"),
+    ("try_except_attribute_target",
+     """
+     try:
+         pass
+     except Exception as a.b:
+         pass
+     """),
+    ("try_except_subscript_target",
+     """
+     try:
+         pass
+     except Exception as a[0]:
+         pass
+     """),
 ]
 
 FAIL_SPECIALIZED_MESSAGE_CASES = [
@@ -603,9 +626,18 @@ FAIL_SPECIALIZED_MESSAGE_CASES = [
     ("(a, b): int", "only single target (not tuple) can be annotated"),
     ("[a, b]: int", "only single target (not list) can be annotated"),
     ("a(): int", "illegal target for annotation"),
-    ("1 += 1", "cannot assign to literal"),
+    ("1 += 1", "'literal' is an illegal expression for augmented assignment"),
     ("pass\n    pass", "unexpected indent"),
     ("def f():\npass", "expected an indented block"),
+    ("def f(*): pass", "named arguments must follow bare *"),
+    ("def f(*,): pass", "named arguments must follow bare *"),
+    ("def f(*, **a): pass", "named arguments must follow bare *"),
+    ("lambda *: pass", "named arguments must follow bare *"),
+    ("lambda *,: pass", "named arguments must follow bare *"),
+    ("lambda *, **a: pass", "named arguments must follow bare *"),
+    ("f(g()=2", "expression cannot contain assignment, perhaps you meant \"==\"?"),
+    ("f(a, b, *c, d.e=2", "expression cannot contain assignment, perhaps you meant \"==\"?"),
+    ("f(*a, **b, c=0, d[1]=3)", "expression cannot contain assignment, perhaps you meant \"==\"?"),
 ]
 
 GOOD_BUT_FAIL_TEST_CASES = [
@@ -699,7 +731,7 @@ class ASTGenerationTest(unittest.TestCase):
         self.maxDiff = None
         for source in TEST_SOURCES:
             actual_ast = peg_parser.parse_string(source)
-            expected_ast = ast.parse(source)
+            expected_ast = peg_parser.parse_string(source, oldparser=True)
             self.assertEqual(
                 ast.dump(actual_ast, include_attributes=True),
                 ast.dump(expected_ast, include_attributes=True),
@@ -721,12 +753,11 @@ class ASTGenerationTest(unittest.TestCase):
                 f"Actual error message does not match expexted for {source}"
             )
 
-    @support.skip_if_new_parser("This tests nothing for now, since compile uses pegen as well")
     @unittest.expectedFailure
     def test_correct_but_known_to_fail_ast_generation_on_source_files(self) -> None:
         for source in GOOD_BUT_FAIL_SOURCES:
             actual_ast = peg_parser.parse_string(source)
-            expected_ast = ast.parse(source)
+            expected_ast = peg_parser.parse_string(source, oldparser=True)
             self.assertEqual(
                 ast.dump(actual_ast, include_attributes=True),
                 ast.dump(expected_ast, include_attributes=True),
@@ -736,7 +767,7 @@ class ASTGenerationTest(unittest.TestCase):
     def test_correct_ast_generation_without_pos_info(self) -> None:
         for source in GOOD_BUT_FAIL_SOURCES:
             actual_ast = peg_parser.parse_string(source)
-            expected_ast = ast.parse(source)
+            expected_ast = peg_parser.parse_string(source, oldparser=True)
             self.assertEqual(
                 ast.dump(actual_ast),
                 ast.dump(expected_ast),
@@ -752,7 +783,7 @@ class ASTGenerationTest(unittest.TestCase):
     def test_correct_ast_generatrion_eval(self) -> None:
         for source in EXPRESSIONS_TEST_SOURCES:
             actual_ast = peg_parser.parse_string(source, mode='eval')
-            expected_ast = ast.parse(source, mode='eval')
+            expected_ast = peg_parser.parse_string(source, mode='eval', oldparser=True)
             self.assertEqual(
                 ast.dump(actual_ast, include_attributes=True),
                 ast.dump(expected_ast, include_attributes=True),

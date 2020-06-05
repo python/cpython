@@ -1,2 +1,0 @@
-Allow again to spawn daemon threads in subinterpreters (revert change which
-denied them).

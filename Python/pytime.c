@@ -1,6 +1,6 @@
 #include "Python.h"
 #ifdef MS_WINDOWS
-#include <windows.h>
+#include <winsock2.h>         /* struct timeval */
 #endif
 
 #if defined(__APPLE__)

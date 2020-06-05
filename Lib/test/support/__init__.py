@@ -6,63 +6,23 @@ if __name__ != 'test.support':
 import collections.abc
 import contextlib
 import errno
-import faulthandler
 import fnmatch
 import functools
-import gc
 import glob
-import hashlib
 import importlib
 import importlib.util
-import locale
 import os
-import platform
 import re
-import shutil
 import stat
 import struct
-import subprocess
 import sys
 import sysconfig
-import tempfile
-import _thread
-import threading
 import time
 import types
 import unittest
 import warnings
 
 from .testresult import get_test_runner
-
-try:
-    import zlib
-except ImportError:
-    zlib = None
-
-try:
-    import gzip
-except ImportError:
-    gzip = None
-
-try:
-    import bz2
-except ImportError:
-    bz2 = None
-
-try:
-    import lzma
-except ImportError:
-    lzma = None
-
-try:
-    import resource
-except ImportError:
-    resource = None
-
-try:
-    import _hashlib
-except ImportError:
-    _hashlib = None
 
 __all__ = [
     # globals
@@ -81,10 +41,10 @@ __all__ = [
     "create_empty_file", "can_symlink", "fs_is_case_insensitive",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
-    "requires_linux_version", "requires_mac_ver", "requires_hashdigest",
+    "requires_linux_version", "requires_mac_ver",
     "check_syntax_error", "check_syntax_warning",
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
-    "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
+    "BasicTestRunner", "run_unittest", "run_doctest",
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
@@ -98,8 +58,6 @@ __all__ = [
     "open_urlresource",
     # processes
     'temp_umask', "reap_children",
-    # threads
-    "threading_setup", "threading_cleanup", "reap_threads", "start_threads",
     # miscellaneous
     "check_warnings", "check_no_resource_warning", "check_no_warnings",
     "EnvironmentVarGuard",
@@ -121,7 +79,7 @@ __all__ = [
 # The timeout should be long enough for connect(), recv() and send() methods
 # of socket.socket.
 LOOPBACK_TIMEOUT = 5.0
-if sys.platform == 'win32' and platform.machine() == 'ARM':
+if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
     # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
     # seconds on Windows ARM32 buildbot
     LOOPBACK_TIMEOUT = 10
@@ -149,8 +107,6 @@ SHORT_TIMEOUT = 30.0
 # "too long". The timeout value depends on the regrtest --timeout command line
 # option.
 LONG_TIMEOUT = 5 * 60.0
-
-_NOT_SET = object()
 
 
 class Error(Exception):
@@ -448,6 +404,7 @@ else:
     _rmdir = os.rmdir
 
     def _rmtree(path):
+        import shutil
         try:
             shutil.rmtree(path)
             return
@@ -522,6 +479,7 @@ def forget(modname):
 def _is_gui_available():
     if hasattr(_is_gui_available, 'result'):
         return _is_gui_available.result
+    import platform
     reason = None
     if sys.platform.startswith('win') and platform.win32_is_iot():
         reason = "gui is not available on Windows IoT Core"
@@ -622,6 +580,7 @@ def _requires_unix_version(sysname, min_version):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
+            import platform
             if platform.system() == sysname:
                 version_txt = platform.release().split('-', 1)[0]
                 try:
@@ -668,6 +627,7 @@ def requires_mac_ver(*min_version):
         @functools.wraps(func)
         def wrapper(*args, **kw):
             if sys.platform == 'darwin':
+                import platform
                 version_txt = platform.mac_ver()[0]
                 try:
                     version = tuple(map(int, version_txt.split('.')))
@@ -681,36 +641,6 @@ def requires_mac_ver(*min_version):
                             % (min_version_txt, version_txt))
             return func(*args, **kw)
         wrapper.min_version = min_version
-        return wrapper
-    return decorator
-
-
-def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
-    """Decorator raising SkipTest if a hashing algorithm is not available
-
-    The hashing algorithm could be missing or blocked by a strict crypto
-    policy.
-
-    If 'openssl' is True, then the decorator checks that OpenSSL provides
-    the algorithm. Otherwise the check falls back to built-in
-    implementations. The usedforsecurity flag is passed to the constructor.
-
-    ValueError: [digital envelope routines: EVP_DigestInit_ex] disabled for FIPS
-    ValueError: unsupported hash type md4
-    """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                if openssl and _hashlib is not None:
-                    _hashlib.new(digestname, usedforsecurity=usedforsecurity)
-                else:
-                    hashlib.new(digestname, usedforsecurity=usedforsecurity)
-            except ValueError:
-                raise unittest.SkipTest(
-                    f"hash digest '{digestname}' is not available."
-                )
-            return func(*args, **kwargs)
         return wrapper
     return decorator
 
@@ -747,13 +677,33 @@ requires_IEEE_754 = unittest.skipUnless(
     float.__getformat__("double").startswith("IEEE"),
     "test requires IEEE 754 doubles")
 
-requires_zlib = unittest.skipUnless(zlib, 'requires zlib')
+def requires_zlib(reason='requires zlib'):
+    try:
+        import zlib
+    except ImportError:
+        zlib = None
+    return unittest.skipUnless(zlib, reason)
 
-requires_gzip = unittest.skipUnless(gzip, 'requires gzip')
+def requires_gzip(reason='requires gzip'):
+    try:
+        import gzip
+    except ImportError:
+        gzip = None
+    return unittest.skipUnless(gzip, reason)
 
-requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
+def requires_bz2(reason='requires bz2'):
+    try:
+        import bz2
+    except ImportError:
+        bz2 = None
+    return unittest.skipUnless(bz2, reason)
 
-requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
+def requires_lzma(reason='requires lzma'):
+    try:
+        import lzma
+    except ImportError:
+        lzma = None
+    return unittest.skipUnless(lzma, reason)
 
 is_jython = sys.platform.startswith('java')
 
@@ -835,7 +785,6 @@ if sys.platform == 'darwin':
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
     import unicodedata
     TESTFN_UNICODE = unicodedata.normalize('NFD', TESTFN_UNICODE)
-TESTFN_ENCODING = sys.getfilesystemencoding()
 
 # TESTFN_UNENCODABLE is a filename (str type) that should *not* be able to be
 # encoded by the filesystem encoding (in strict mode). It can be None if we
@@ -848,23 +797,23 @@ if os.name == 'nt':
         # probability that the whole name is encodable to MBCS (issue #9819)
         TESTFN_UNENCODABLE = TESTFN + "-\u5171\u0141\u2661\u0363\uDC80"
         try:
-            TESTFN_UNENCODABLE.encode(TESTFN_ENCODING)
+            TESTFN_UNENCODABLE.encode(sys.getfilesystemencoding())
         except UnicodeEncodeError:
             pass
         else:
             print('WARNING: The filename %r CAN be encoded by the filesystem encoding (%s). '
                   'Unicode filename tests may not be effective'
-                  % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
+                  % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
 # Mac OS X denies unencodable filenames (invalid utf-8)
 elif sys.platform != 'darwin':
     try:
         # ascii and utf-8 cannot encode the byte 0xff
-        b'\xff'.decode(TESTFN_ENCODING)
+        b'\xff'.decode(sys.getfilesystemencoding())
     except UnicodeDecodeError:
         # 0xff will be encoded using the surrogate character u+DCFF
         TESTFN_UNENCODABLE = TESTFN \
-            + b'-\xff'.decode(TESTFN_ENCODING, 'surrogateescape')
+            + b'-\xff'.decode(sys.getfilesystemencoding(), 'surrogateescape')
     else:
         # File system encoding (eg. ISO-8859-* encodings) can encode
         # the byte 0xff. Skip some unicode filename tests.
@@ -895,7 +844,7 @@ for name in (
     b'\x81\x98',
 ):
     try:
-        name.decode(TESTFN_ENCODING)
+        name.decode(sys.getfilesystemencoding())
     except UnicodeDecodeError:
         TESTFN_UNDECODABLE = os.fsencode(TESTFN) + name
         break
@@ -930,6 +879,7 @@ def temp_dir(path=None, quiet=False):
         created, only a warning is issued.
 
     """
+    import tempfile
     dir_created = False
     if path is None:
         path = tempfile.mkdtemp()
@@ -1103,6 +1053,10 @@ def check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=No
 
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
+    try:
+        import gzip
+    except ImportError:
+        gzip = None
 
     check = kw.pop('check', None)
 
@@ -1423,90 +1377,6 @@ ioerror_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 
 
 @contextlib.contextmanager
-def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
-    """Return a context manager that raises ResourceDenied when various issues
-    with the Internet connection manifest themselves as exceptions."""
-    import socket
-    import nntplib
-    import urllib.error
-    if timeout is _NOT_SET:
-        timeout = INTERNET_TIMEOUT
-
-    default_errnos = [
-        ('ECONNREFUSED', 111),
-        ('ECONNRESET', 104),
-        ('EHOSTUNREACH', 113),
-        ('ENETUNREACH', 101),
-        ('ETIMEDOUT', 110),
-        # socket.create_connection() fails randomly with
-        # EADDRNOTAVAIL on Travis CI.
-        ('EADDRNOTAVAIL', 99),
-    ]
-    default_gai_errnos = [
-        ('EAI_AGAIN', -3),
-        ('EAI_FAIL', -4),
-        ('EAI_NONAME', -2),
-        ('EAI_NODATA', -5),
-        # Encountered when trying to resolve IPv6-only hostnames
-        ('WSANO_DATA', 11004),
-    ]
-
-    denied = ResourceDenied("Resource %r is not available" % resource_name)
-    captured_errnos = errnos
-    gai_errnos = []
-    if not captured_errnos:
-        captured_errnos = [getattr(errno, name, num)
-                           for (name, num) in default_errnos]
-        gai_errnos = [getattr(socket, name, num)
-                      for (name, num) in default_gai_errnos]
-
-    def filter_error(err):
-        n = getattr(err, 'errno', None)
-        if (isinstance(err, socket.timeout) or
-            (isinstance(err, socket.gaierror) and n in gai_errnos) or
-            (isinstance(err, urllib.error.HTTPError) and
-             500 <= err.code <= 599) or
-            (isinstance(err, urllib.error.URLError) and
-                 (("ConnectionRefusedError" in err.reason) or
-                  ("TimeoutError" in err.reason) or
-                  ("EOFError" in err.reason))) or
-            n in captured_errnos):
-            if not verbose:
-                sys.stderr.write(denied.args[0] + "\n")
-            raise denied from err
-
-    old_timeout = socket.getdefaulttimeout()
-    try:
-        if timeout is not None:
-            socket.setdefaulttimeout(timeout)
-        yield
-    except nntplib.NNTPTemporaryError as err:
-        if verbose:
-            sys.stderr.write(denied.args[0] + "\n")
-        raise denied from err
-    except OSError as err:
-        # urllib can wrap original socket errors multiple times (!), we must
-        # unwrap to get at the original error.
-        while True:
-            a = err.args
-            if len(a) >= 1 and isinstance(a[0], OSError):
-                err = a[0]
-            # The error can also be wrapped as args[1]:
-            #    except socket.error as msg:
-            #        raise OSError('socket error', msg).with_traceback(sys.exc_info()[2])
-            elif len(a) >= 2 and isinstance(a[1], OSError):
-                err = a[1]
-            else:
-                break
-        filter_error(err)
-        raise
-    # XXX should we catch generic exceptions and look for their
-    # __cause__ or __context__?
-    finally:
-        socket.setdefaulttimeout(old_timeout)
-
-
-@contextlib.contextmanager
 def captured_output(stream_name):
     """Return a context manager used by captured_stdout/stdin/stderr
     that temporarily replaces the sys stream *stream_name* with a StringIO."""
@@ -1559,6 +1429,7 @@ def gc_collect():
     longer than expected.  This function tries its best to force all garbage
     objects to disappear.
     """
+    import gc
     gc.collect()
     if is_jython:
         time.sleep(0.1)
@@ -1567,6 +1438,7 @@ def gc_collect():
 
 @contextlib.contextmanager
 def disable_gc():
+    import gc
     have_gc = gc.isenabled()
     gc.disable()
     try:
@@ -1735,6 +1607,7 @@ class _MemoryWatchdog:
             sys.stderr.flush()
             return
 
+        import subprocess
         with f:
             watchdog_script = findfile("memory_watchdog.py")
             self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
@@ -1868,7 +1741,7 @@ def check_impl_detail(**guards):
           if check_impl_detail(cpython=False):  # everywhere except on CPython
     """
     guards, default = _parse_guards(guards)
-    return guards.get(platform.python_implementation().lower(), default)
+    return guards.get(sys.implementation.name, default)
 
 
 def no_tracing(func):
@@ -2115,119 +1988,13 @@ def modules_cleanup(oldmodules):
     # Implicitly imported *real* modules should be left alone (see issue 10556).
     sys.modules.update(oldmodules)
 
-#=======================================================================
-# Threading support to prevent reporting refleaks when running regrtest.py -R
-
 # Flag used by saved_test_environment of test.libregrtest.save_env,
 # to check if a test modified the environment. The flag should be set to False
 # before running a new test.
 #
-# For example, threading_cleanup() sets the flag is the function fails
+# For example, threading_helper.threading_cleanup() sets the flag is the function fails
 # to cleanup threads.
 environment_altered = False
-
-# NOTE: we use thread._count() rather than threading.enumerate() (or the
-# moral equivalent thereof) because a threading.Thread object is still alive
-# until its __bootstrap() method has returned, even after it has been
-# unregistered from the threading module.
-# thread._count(), on the other hand, only gets decremented *after* the
-# __bootstrap() method has returned, which gives us reliable reference counts
-# at the end of a test run.
-
-def threading_setup():
-    return _thread._count(), threading._dangling.copy()
-
-def threading_cleanup(*original_values):
-    global environment_altered
-
-    _MAX_COUNT = 100
-
-    for count in range(_MAX_COUNT):
-        values = _thread._count(), threading._dangling
-        if values == original_values:
-            break
-
-        if not count:
-            # Display a warning at the first iteration
-            environment_altered = True
-            dangling_threads = values[1]
-            print_warning(f"threading_cleanup() failed to cleanup "
-                          f"{values[0] - original_values[0]} threads "
-                          f"(count: {values[0]}, "
-                          f"dangling: {len(dangling_threads)})")
-            for thread in dangling_threads:
-                print_warning(f"Dangling thread: {thread!r}")
-
-            # Don't hold references to threads
-            dangling_threads = None
-        values = None
-
-        time.sleep(0.01)
-        gc_collect()
-
-
-def reap_threads(func):
-    """Use this function when threads are being used.  This will
-    ensure that the threads are cleaned up even when the test fails.
-    """
-    @functools.wraps(func)
-    def decorator(*args):
-        key = threading_setup()
-        try:
-            return func(*args)
-        finally:
-            threading_cleanup(*key)
-    return decorator
-
-
-@contextlib.contextmanager
-def wait_threads_exit(timeout=None):
-    """
-    bpo-31234: Context manager to wait until all threads created in the with
-    statement exit.
-
-    Use _thread.count() to check if threads exited. Indirectly, wait until
-    threads exit the internal t_bootstrap() C function of the _thread module.
-
-    threading_setup() and threading_cleanup() are designed to emit a warning
-    if a test leaves running threads in the background. This context manager
-    is designed to cleanup threads started by the _thread.start_new_thread()
-    which doesn't allow to wait for thread exit, whereas thread.Thread has a
-    join() method.
-    """
-    if timeout is None:
-        timeout = SHORT_TIMEOUT
-    old_count = _thread._count()
-    try:
-        yield
-    finally:
-        start_time = time.monotonic()
-        deadline = start_time + timeout
-        while True:
-            count = _thread._count()
-            if count <= old_count:
-                break
-            if time.monotonic() > deadline:
-                dt = time.monotonic() - start_time
-                msg = (f"wait_threads() failed to cleanup {count - old_count} "
-                       f"threads after {dt:.1f} seconds "
-                       f"(count: {count}, old count: {old_count})")
-                raise AssertionError(msg)
-            time.sleep(0.010)
-            gc_collect()
-
-
-def join_thread(thread, timeout=None):
-    """Join a thread. Raise an AssertionError if the thread is still alive
-    after timeout seconds.
-    """
-    if timeout is None:
-        timeout = SHORT_TIMEOUT
-    thread.join(timeout)
-    if thread.is_alive():
-        msg = f"failed to join the thread in {timeout:.1f} seconds"
-        raise AssertionError(msg)
-
 
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes
@@ -2256,42 +2023,6 @@ def reap_children():
         print_warning(f"reap_children() reaped child process {pid}")
         environment_altered = True
 
-
-@contextlib.contextmanager
-def start_threads(threads, unlock=None):
-    threads = list(threads)
-    started = []
-    try:
-        try:
-            for t in threads:
-                t.start()
-                started.append(t)
-        except:
-            if verbose:
-                print("Can't start %d threads, only %d threads started" %
-                      (len(threads), len(started)))
-            raise
-        yield
-    finally:
-        try:
-            if unlock:
-                unlock()
-            endtime = starttime = time.monotonic()
-            for timeout in range(1, 16):
-                endtime += 60
-                for t in started:
-                    t.join(max(endtime - time.monotonic(), 0.01))
-                started = [t for t in started if t.is_alive()]
-                if not started:
-                    break
-                if verbose:
-                    print('Unable to join %d threads during a period of '
-                          '%d minutes' % (len(started), timeout))
-        finally:
-            started = [t for t in started if t.is_alive()]
-            if started:
-                faulthandler.dump_traceback(sys.stdout)
-                raise AssertionError('Unable to join %d threads' % len(started))
 
 @contextlib.contextmanager
 def swap_attr(obj, attr, new_val):
@@ -2358,11 +2089,13 @@ def swap_item(obj, item, new_val):
 def args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
     settings in sys.flags and sys.warnoptions."""
+    import subprocess
     return subprocess._args_from_interpreter_flags()
 
 def optim_args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
     optimization settings in sys.flags."""
+    import subprocess
     return subprocess._optim_args_from_interpreter_flags()
 
 
@@ -2433,6 +2166,7 @@ def skip_if_buggy_ucrt_strfptime(test):
     See bpo-37552 [Windows] strptime/strftime return invalid
     results with UCRT version 17763.615
     """
+    import locale
     global _buggy_ucrt
     if _buggy_ucrt is None:
         if(sys.platform == 'win32' and
@@ -2502,6 +2236,7 @@ class PythonSymlink:
                     print("failed to clean up {}: {}".format(link, ex))
 
     def _call(self, python, args, env, returncode):
+        import subprocess
         cmd = [python, *args]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, env=env)
@@ -2523,12 +2258,14 @@ class PythonSymlink:
 
 _can_xattr = None
 def can_xattr():
+    import tempfile
     global _can_xattr
     if _can_xattr is not None:
         return _can_xattr
     if not hasattr(os, "setxattr"):
         can = False
     else:
+        import platform
         tmp_dir = tempfile.mkdtemp()
         tmp_fp, tmp_name = tempfile.mkstemp(dir=tmp_dir)
         try:
@@ -2567,6 +2304,7 @@ def skip_if_pgo_task(test):
 
 def fs_is_case_insensitive(directory):
     """Detects if the file system for the specified directory is case-insensitive."""
+    import tempfile
     with tempfile.NamedTemporaryFile(dir=directory) as base:
         base_path = base.name
         case_path = base_path.upper()
@@ -2698,15 +2436,21 @@ class SuppressCrashReport:
                     self.old_modes[report_type] = old_mode, old_file
 
         else:
-            if resource is not None:
+            try:
+                import resource
+                self.resource = resource
+            except ImportError:
+                self.resource = None
+            if self.resource is not None:
                 try:
-                    self.old_value = resource.getrlimit(resource.RLIMIT_CORE)
-                    resource.setrlimit(resource.RLIMIT_CORE,
-                                       (0, self.old_value[1]))
+                    self.old_value = self.resource.getrlimit(self.resource.RLIMIT_CORE)
+                    self.resource.setrlimit(self.resource.RLIMIT_CORE,
+                                            (0, self.old_value[1]))
                 except (ValueError, OSError):
                     pass
 
             if sys.platform == 'darwin':
+                import subprocess
                 # Check if the 'Crash Reporter' on OSX was configured
                 # in 'Developer' mode and warn that it will get triggered
                 # when it is.
@@ -2740,9 +2484,9 @@ class SuppressCrashReport:
                     msvcrt.CrtSetReportMode(report_type, old_mode)
                     msvcrt.CrtSetReportFile(report_type, old_file)
         else:
-            if resource is not None:
+            if self.resource is not None:
                 try:
-                    resource.setrlimit(resource.RLIMIT_CORE, self.old_value)
+                    self.resource.setrlimit(self.resource.RLIMIT_CORE, self.old_value)
                 except (ValueError, OSError):
                     pass
 
@@ -2853,6 +2597,7 @@ def setswitchinterval(interval):
     if is_android and interval < minimum_interval:
         global _is_android_emulator
         if _is_android_emulator is None:
+            import subprocess
             _is_android_emulator = (subprocess.check_output(
                                ['getprop', 'ro.kernel.qemu']).strip() == b'1')
         if _is_android_emulator:
@@ -2862,6 +2607,8 @@ def setswitchinterval(interval):
 
 @contextlib.contextmanager
 def disable_faulthandler():
+    import faulthandler
+
     # use sys.__stderr__ instead of sys.stderr, since regrtest replaces
     # sys.stderr with a StringIO which has no file descriptor when a test
     # is run with -W/--verbose3.
@@ -3134,63 +2881,6 @@ class catch_unraisable_exception:
     def __exit__(self, *exc_info):
         sys.unraisablehook = self._old_hook
         del self.unraisable
-
-
-class catch_threading_exception:
-    """
-    Context manager catching threading.Thread exception using
-    threading.excepthook.
-
-    Attributes set when an exception is catched:
-
-    * exc_type
-    * exc_value
-    * exc_traceback
-    * thread
-
-    See threading.excepthook() documentation for these attributes.
-
-    These attributes are deleted at the context manager exit.
-
-    Usage:
-
-        with support.catch_threading_exception() as cm:
-            # code spawning a thread which raises an exception
-            ...
-
-            # check the thread exception, use cm attributes:
-            # exc_type, exc_value, exc_traceback, thread
-            ...
-
-        # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
-        # exists at this point
-        # (to avoid reference cycles)
-    """
-
-    def __init__(self):
-        self.exc_type = None
-        self.exc_value = None
-        self.exc_traceback = None
-        self.thread = None
-        self._old_hook = None
-
-    def _hook(self, args):
-        self.exc_type = args.exc_type
-        self.exc_value = args.exc_value
-        self.exc_traceback = args.exc_traceback
-        self.thread = args.thread
-
-    def __enter__(self):
-        self._old_hook = threading.excepthook
-        threading.excepthook = self._hook
-        return self
-
-    def __exit__(self, *exc_info):
-        threading.excepthook = self._old_hook
-        del self.exc_type
-        del self.exc_value
-        del self.exc_traceback
-        del self.thread
 
 
 def wait_process(pid, *, exitcode, timeout=None):

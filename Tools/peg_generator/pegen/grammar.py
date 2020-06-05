@@ -4,7 +4,6 @@ from abc import abstractmethod
 from typing import (
     AbstractSet,
     Any,
-    Callable,
     Dict,
     Iterable,
     Iterator,
@@ -13,11 +12,9 @@ from typing import (
     Set,
     Tuple,
     TYPE_CHECKING,
-    TypeVar,
     Union,
 )
 
-from pegen.parser import memoize, Parser
 
 if TYPE_CHECKING:
     from pegen.parser_generator import ParserGenerator

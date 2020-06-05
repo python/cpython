@@ -513,50 +513,6 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
     return result;
 }
 
-/*[clinic input]
-
-_random.Random.randbytes
-
-  self: self(type="RandomObject *")
-  n: Py_ssize_t
-  /
-
-Generate n random bytes.
-[clinic start generated code]*/
-
-static PyObject *
-_random_Random_randbytes_impl(RandomObject *self, Py_ssize_t n)
-/*[clinic end generated code: output=67a28548079a17ea input=7ba658a24150d233]*/
-{
-    if (n < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "number of bytes must be non-negative");
-        return NULL;
-    }
-
-    PyObject *bytes = PyBytes_FromStringAndSize(NULL, n);
-    if (bytes == NULL) {
-        return NULL;
-    }
-    uint8_t *ptr = (uint8_t *)PyBytes_AS_STRING(bytes);
-
-    for (; n; ptr += 4, n -= 4) {
-        uint32_t word = genrand_uint32(self);
-#if PY_BIG_ENDIAN
-        /* Convert to little endian */
-        word = _Py_bswap32(word);
-#endif
-        if (n < 4) {
-            /* Drop least significant bits */
-            memcpy(ptr, (uint8_t *)&word + (4 - n), n);
-            break;
-        }
-        memcpy(ptr, &word, 4);
-    }
-
-    return bytes;
-}
-
 static PyObject *
 random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -586,7 +542,6 @@ static PyMethodDef random_methods[] = {
     _RANDOM_RANDOM_GETSTATE_METHODDEF
     _RANDOM_RANDOM_SETSTATE_METHODDEF
     _RANDOM_RANDOM_GETRANDBITS_METHODDEF
-    _RANDOM_RANDOM_RANDBYTES_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

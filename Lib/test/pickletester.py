@@ -29,8 +29,9 @@ except ImportError:
 from test import support
 from test.support import (
     TestFailed, TESTFN, run_with_locale, no_tracing,
-    _2G, _4G, bigmemtest, reap_threads, forget,
+    _2G, _4G, bigmemtest, forget,
     )
+from test.support import threading_helper
 
 from pickle import bytes_types
 
@@ -1350,7 +1351,7 @@ class AbstractUnpickleTests(unittest.TestCase):
         for p in badpickles:
             self.check_unpickling_error(self.truncated_errors, p)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_unpickle_module_race(self):
         # https://bugs.python.org/issue34572
         locker_module = dedent("""

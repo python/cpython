@@ -4,7 +4,6 @@ import errno
 import io
 import os
 import pathlib
-import signal
 import sys
 import re
 import warnings

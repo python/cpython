@@ -10,9 +10,10 @@ import calendar
 import threading
 import socket
 
-from test.support import (reap_threads, verbose, transient_internet,
-                          run_with_tz, run_with_locale, cpython_only,
-                          requires_hashdigest)
+from test.support import (verbose,
+                          run_with_tz, run_with_locale, cpython_only)
+from test.support import hashlib_helper
+from test.support import threading_helper
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -252,7 +253,7 @@ class NewIMAPTestsMixin():
         # cleanup the server
         self.server.shutdown()
         self.server.server_close()
-        support.join_thread(self.thread)
+        threading_helper.join_thread(self.thread)
         # Explicitly clear the attribute to prevent dangling thread
         self.thread = None
 
@@ -385,7 +386,7 @@ class NewIMAPTestsMixin():
         self.assertEqual(code, 'OK')
         self.assertEqual(server.response, b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
-    @requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5')
     def test_login_cram_md5_bytes(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -403,7 +404,7 @@ class NewIMAPTestsMixin():
         ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
-    @requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5')
     def test_login_cram_md5_plain_text(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -641,13 +642,13 @@ class ThreadedNetworkedTests(unittest.TestCase):
             finally:
                 client.logout()
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_connect(self):
         with self.reaped_server(SimpleIMAPHandler) as server:
             client = self.imap_class(*server.server_address)
             client.shutdown()
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_bracket_flags(self):
 
         # This violates RFC 3501, which disallows ']' characters in tag names,
@@ -696,7 +697,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
             typ, [data] = client.response('PERMANENTFLAGS')
             self.assertIn(b'[test]', data)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_issue5949(self):
 
         class EOFHandler(socketserver.StreamRequestHandler):
@@ -708,7 +709,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertRaises(imaplib.IMAP4.abort,
                               self.imap_class, *server.server_address)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_line_termination(self):
 
         class BadNewlineHandler(SimpleIMAPHandler):
@@ -732,7 +733,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.server.response = yield
             self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_enable_raises_error_if_not_AUTH(self):
         with self.reaped_pair(self.UTF8Server) as (server, client):
             self.assertFalse(client.utf8_enabled)
@@ -741,14 +742,14 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
     # XXX Also need a test that enable after SELECT raises an error.
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_enable_raises_error_if_no_capability(self):
         class NoEnableServer(self.UTF8Server):
             capabilities = 'AUTH'
         with self.reaped_pair(NoEnableServer) as (server, client):
             self.assertRaises(imaplib.IMAP4.error, client.enable, 'foo')
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_enable_UTF8_raises_error_if_not_supported(self):
         class NonUTF8Server(SimpleIMAPHandler):
             pass
@@ -759,7 +760,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
                 client.enable('UTF8=ACCEPT')
                 pass
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_enable_UTF8_True_append(self):
 
         class UTF8AppendServer(self.UTF8Server):
@@ -789,7 +790,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
     # XXX also need a test that makes sure that the Literal and Untagged_status
     # regexes uses unicode in UTF8 mode instead of the default ASCII.
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_search_disallows_charset_in_utf8_mode(self):
         with self.reaped_pair(self.UTF8Server) as (server, client):
             typ, _ = client.authenticate('MYAUTH', lambda x: b'fake')
@@ -799,7 +800,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertTrue(client.utf8_enabled)
             self.assertRaises(imaplib.IMAP4.error, client.search, 'foo', 'bar')
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_bad_auth_name(self):
 
         class MyServer(SimpleIMAPHandler):
@@ -812,7 +813,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
             with self.assertRaises(imaplib.IMAP4.error):
                 client.authenticate('METHOD', lambda: 1)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_invalid_authentication(self):
 
         class MyServer(SimpleIMAPHandler):
@@ -826,7 +827,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
             with self.assertRaises(imaplib.IMAP4.error):
                 code, data = client.authenticate('MYAUTH', lambda x: b'fake')
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_valid_authentication(self):
 
         class MyServer(SimpleIMAPHandler):
@@ -848,8 +849,8 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertEqual(server.response,
                              b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
-    @reap_threads
-    @requires_hashdigest('md5')
+    @threading_helper.reap_threads
+    @hashlib_helper.requires_hashdigest('md5')
     def test_login_cram_md5(self):
 
         class AuthHandler(SimpleIMAPHandler):
@@ -877,7 +878,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertEqual(ret, "OK")
 
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_aborted_authentication(self):
 
         class MyServer(SimpleIMAPHandler):
@@ -906,14 +907,14 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertRaises(imaplib.IMAP4.error,
                               self.imap_class, *server.server_address)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_simple_with_statement(self):
         # simplest call
         with self.reaped_server(SimpleIMAPHandler) as server:
             with self.imap_class(*server.server_address):
                 pass
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_with_statement(self):
         with self.reaped_server(SimpleIMAPHandler) as server:
             with self.imap_class(*server.server_address) as imap:
@@ -921,7 +922,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
                 self.assertEqual(server.logged, 'user')
             self.assertIsNone(server.logged)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_with_statement_logout(self):
         # what happens if already logout in the block?
         with self.reaped_server(SimpleIMAPHandler) as server:
@@ -932,13 +933,27 @@ class ThreadedNetworkedTests(unittest.TestCase):
                 self.assertIsNone(server.logged)
             self.assertIsNone(server.logged)
 
+    @threading_helper.reap_threads
+    @cpython_only
+    def test_dump_ur(self):
+        # See: http://bugs.python.org/issue26543
+        untagged_resp_dict = {'READ-WRITE': [b'']}
+
+        with self.reaped_server(SimpleIMAPHandler) as server:
+            with self.imap_class(*server.server_address) as imap:
+                with mock.patch.object(imap, '_mesg') as mock_mesg:
+                    imap._dump_ur(untagged_resp_dict)
+                    mock_mesg.assert_called_with(
+                        "untagged responses dump:READ-WRITE: [b'']"
+                    )
+
 
 @unittest.skipUnless(ssl, "SSL not available")
 class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
     server_class = SecureTCPServer
     imap_class = IMAP4_SSL
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_ssl_verified(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(CAFILE)
@@ -968,16 +983,16 @@ class RemoteIMAPTest(unittest.TestCase):
     imap_class = imaplib.IMAP4
 
     def setUp(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             self.server = self.imap_class(self.host, self.port)
 
     def tearDown(self):
         if self.server is not None:
-            with transient_internet(self.host):
+            with socket_helper.transient_internet(self.host):
                 self.server.logout()
 
     def test_logincapa(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             for cap in self.server.capabilities:
                 self.assertIsInstance(cap, str)
             self.assertIn('LOGINDISABLED', self.server.capabilities)
@@ -986,7 +1001,7 @@ class RemoteIMAPTest(unittest.TestCase):
             self.assertEqual(rs[0], 'OK')
 
     def test_logout(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             rs = self.server.logout()
             self.server = None
             self.assertEqual(rs[0], 'BYE', rs)
@@ -999,7 +1014,7 @@ class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
 
     def setUp(self):
         super().setUp()
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             rs = self.server.starttls()
             self.assertEqual(rs[0], 'OK')
 
@@ -1039,24 +1054,24 @@ class RemoteIMAP_SSLTest(RemoteIMAPTest):
             server.logout()
 
     def test_logincapa(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             _server = self.imap_class(self.host, self.port)
             self.check_logincapa(_server)
 
     def test_logout(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             _server = self.imap_class(self.host, self.port)
             rs = _server.logout()
             self.assertEqual(rs[0], 'BYE', rs)
 
     def test_ssl_context_certfile_exclusive(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             self.assertRaises(
                 ValueError, self.imap_class, self.host, self.port,
                 certfile=CERTFILE, ssl_context=self.create_ssl_context())
 
     def test_ssl_context_keyfile_exclusive(self):
-        with transient_internet(self.host):
+        with socket_helper.transient_internet(self.host):
             self.assertRaises(
                 ValueError, self.imap_class, self.host, self.port,
                 keyfile=CERTFILE, ssl_context=self.create_ssl_context())

@@ -7873,6 +7873,7 @@ _pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
 _pickle.loads
 
   data: object
+  /
   *
   fix_imports: bool = True
   encoding: str = 'ASCII'
@@ -7899,7 +7900,7 @@ static PyObject *
 _pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
                    const char *encoding, const char *errors,
                    PyObject *buffers)
-/*[clinic end generated code: output=82ac1e6b588e6d02 input=9c2ab6a0960185ea]*/
+/*[clinic end generated code: output=82ac1e6b588e6d02 input=b3615540d0535087]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();

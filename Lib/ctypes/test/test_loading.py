@@ -3,7 +3,6 @@ import os
 import shutil
 import subprocess
 import sys
-import sysconfig
 import unittest
 import test.support
 from ctypes.util import find_library

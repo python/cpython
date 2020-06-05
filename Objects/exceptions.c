@@ -304,22 +304,33 @@ static PyGetSetDef BaseException_getset[] = {
 };
 
 
+static inline PyBaseExceptionObject*
+_PyBaseExceptionObject_cast(PyObject *exc)
+{
+    assert(PyExceptionInstance_Check(exc));
+    return (PyBaseExceptionObject *)exc;
+}
+
+
 PyObject *
-PyException_GetTraceback(PyObject *self) {
-    PyBaseExceptionObject *base_self = (PyBaseExceptionObject *)self;
+PyException_GetTraceback(PyObject *self)
+{
+    PyBaseExceptionObject *base_self = _PyBaseExceptionObject_cast(self);
     Py_XINCREF(base_self->traceback);
     return base_self->traceback;
 }
 
 
 int
-PyException_SetTraceback(PyObject *self, PyObject *tb) {
-    return BaseException_set_tb((PyBaseExceptionObject *)self, tb, NULL);
+PyException_SetTraceback(PyObject *self, PyObject *tb)
+{
+    return BaseException_set_tb(_PyBaseExceptionObject_cast(self), tb, NULL);
 }
 
 PyObject *
-PyException_GetCause(PyObject *self) {
-    PyObject *cause = ((PyBaseExceptionObject *)self)->cause;
+PyException_GetCause(PyObject *self)
+{
+    PyObject *cause = _PyBaseExceptionObject_cast(self)->cause;
     Py_XINCREF(cause);
     return cause;
 }
@@ -328,13 +339,15 @@ PyException_GetCause(PyObject *self) {
 void
 PyException_SetCause(PyObject *self, PyObject *cause)
 {
-    ((PyBaseExceptionObject *)self)->suppress_context = 1;
-    Py_XSETREF(((PyBaseExceptionObject *)self)->cause, cause);
+    PyBaseExceptionObject *base_self = _PyBaseExceptionObject_cast(self);
+    base_self->suppress_context = 1;
+    Py_XSETREF(base_self->cause, cause);
 }
 
 PyObject *
-PyException_GetContext(PyObject *self) {
-    PyObject *context = ((PyBaseExceptionObject *)self)->context;
+PyException_GetContext(PyObject *self)
+{
+    PyObject *context = _PyBaseExceptionObject_cast(self)->context;
     Py_XINCREF(context);
     return context;
 }
@@ -343,7 +356,7 @@ PyException_GetContext(PyObject *self) {
 void
 PyException_SetContext(PyObject *self, PyObject *context)
 {
-    Py_XSETREF(((PyBaseExceptionObject *)self)->context, context);
+    Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
 }
 
 #undef PyExceptionClass_Name
@@ -351,6 +364,7 @@ PyException_SetContext(PyObject *self, PyObject *context)
 const char *
 PyExceptionClass_Name(PyObject *ob)
 {
+    assert(PyExceptionClass_Check(ob));
     return ((PyTypeObject*)ob)->tp_name;
 }
 

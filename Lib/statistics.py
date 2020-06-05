@@ -894,6 +894,13 @@ def _normal_dist_inv_cdf(p, mu, sigma):
     return mu + (x * sigma)
 
 
+# If available, use C implementation
+try:
+    from _statistics import _normal_dist_inv_cdf
+except ImportError:
+    pass
+
+
 class NormalDist:
     "Normal distribution of a random variable"
     # https://en.wikipedia.org/wiki/Normal_distribution
@@ -1111,79 +1118,3 @@ class NormalDist:
 
     def __repr__(self):
         return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
-
-# If available, use C implementation
-try:
-    from _statistics import _normal_dist_inv_cdf
-except ImportError:
-    pass
-
-
-if __name__ == '__main__':
-
-    # Show math operations computed analytically in comparsion
-    # to a monte carlo simulation of the same operations
-
-    from math import isclose
-    from operator import add, sub, mul, truediv
-    from itertools import repeat
-    import doctest
-
-    g1 = NormalDist(10, 20)
-    g2 = NormalDist(-5, 25)
-
-    # Test scaling by a constant
-    assert (g1 * 5 / 5).mean == g1.mean
-    assert (g1 * 5 / 5).stdev == g1.stdev
-
-    n = 100_000
-    G1 = g1.samples(n)
-    G2 = g2.samples(n)
-
-    for func in (add, sub):
-        print(f'\nTest {func.__name__} with another NormalDist:')
-        print(func(g1, g2))
-        print(NormalDist.from_samples(map(func, G1, G2)))
-
-    const = 11
-    for func in (add, sub, mul, truediv):
-        print(f'\nTest {func.__name__} with a constant:')
-        print(func(g1, const))
-        print(NormalDist.from_samples(map(func, G1, repeat(const))))
-
-    const = 19
-    for func in (add, sub, mul):
-        print(f'\nTest constant with {func.__name__}:')
-        print(func(const, g1))
-        print(NormalDist.from_samples(map(func, repeat(const), G1)))
-
-    def assert_close(G1, G2):
-        assert isclose(G1.mean, G1.mean, rel_tol=0.01), (G1, G2)
-        assert isclose(G1.stdev, G2.stdev, rel_tol=0.01), (G1, G2)
-
-    X = NormalDist(-105, 73)
-    Y = NormalDist(31, 47)
-    s = 32.75
-    n = 100_000
-
-    S = NormalDist.from_samples([x + s for x in X.samples(n)])
-    assert_close(X + s, S)
-
-    S = NormalDist.from_samples([x - s for x in X.samples(n)])
-    assert_close(X - s, S)
-
-    S = NormalDist.from_samples([x * s for x in X.samples(n)])
-    assert_close(X * s, S)
-
-    S = NormalDist.from_samples([x / s for x in X.samples(n)])
-    assert_close(X / s, S)
-
-    S = NormalDist.from_samples([x + y for x, y in zip(X.samples(n),
-                                                       Y.samples(n))])
-    assert_close(X + Y, S)
-
-    S = NormalDist.from_samples([x - y for x, y in zip(X.samples(n),
-                                                       Y.samples(n))])
-    assert_close(X - Y, S)
-
-    print(doctest.testmod())

@@ -15,7 +15,6 @@ import re
 import sys
 
 from .errors import DistutilsPlatformError
-from .util import get_platform, get_host_platform
 
 # These are needed in a couple of spots, so just compute them once.
 PREFIX = os.path.normpath(sys.prefix)

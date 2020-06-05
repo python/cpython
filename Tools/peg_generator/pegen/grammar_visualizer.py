@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from typing import Any, Iterator, Iterable, Callable
+from typing import Any, Iterator, Callable
 
 from pegen.build import build_parser
 from pegen.grammar import Grammar, Rule

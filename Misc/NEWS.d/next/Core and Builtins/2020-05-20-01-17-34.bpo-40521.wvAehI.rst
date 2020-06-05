@@ -1,0 +1,4 @@
+The tuple free lists, the empty tuple singleton, the list free list, the float
+free list, the slice cache, the frame free list, the asynchronous generator
+free lists, and the context free list are no longer shared by all interpreters:
+each interpreter now its has own free lists and caches.

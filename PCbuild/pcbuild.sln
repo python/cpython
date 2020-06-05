@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2024
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30028.174
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{553EC33E-9816-4996-A660-5D6186A0B0B3}"
 	ProjectSection(SolutionItems) = preProject
@@ -91,6 +91,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_testconsole", "_testconsol
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_asyncio", "_asyncio.vcxproj", "{384C224A-7474-476E-A01B-750EA7DE918C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_zoneinfo", "_zoneinfo.vcxproj", "{FCBE1EF2-E0F0-40B1-88B5-00A35D378742}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_queue", "_queue.vcxproj", "{78D80A15-BD8C-44E2-B49E-1F05B0A0A687}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblzma", "liblzma.vcxproj", "{12728250-16EC-4DC6-94D7-E21DD88947F8}"
@@ -102,6 +104,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "venvwlauncher", "venvwlauncher.vcxproj", "{FDB84CBB-2FB6-47C8-A2D6-091E0833239D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythonw_uwp", "pythonw_uwp.vcxproj", "{AB603547-1E2A-45B3-9E09-B04596006393}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_uuid", "_uuid.vcxproj", "{CB435430-EBB1-478B-8F4E-C256F6838F55}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1440,6 +1444,38 @@ Global
 		{AB603547-1E2A-45B3-9E09-B04596006393}.Release|Win32.Build.0 = Release|Win32
 		{AB603547-1E2A-45B3-9E09-B04596006393}.Release|x64.ActiveCfg = Release|x64
 		{AB603547-1E2A-45B3-9E09-B04596006393}.Release|x64.Build.0 = Release|x64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Debug|ARM.ActiveCfg = Debug|ARM
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Debug|ARM.Build.0 = Debug|ARM
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Debug|ARM64.Build.0 = Debug|ARM64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Debug|Win32.Build.0 = Debug|Win32
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Debug|x64.ActiveCfg = Debug|x64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Debug|x64.Build.0 = Debug|x64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGInstrument|ARM.ActiveCfg = PGInstrument|ARM
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGInstrument|ARM.Build.0 = PGInstrument|ARM
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGInstrument|ARM64.ActiveCfg = PGInstrument|ARM64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGInstrument|ARM64.Build.0 = PGInstrument|ARM64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGInstrument|Win32.ActiveCfg = PGInstrument|Win32
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGInstrument|Win32.Build.0 = PGInstrument|Win32
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGInstrument|x64.ActiveCfg = PGInstrument|x64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGInstrument|x64.Build.0 = PGInstrument|x64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGUpdate|ARM.ActiveCfg = PGUpdate|ARM
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGUpdate|ARM.Build.0 = PGUpdate|ARM
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGUpdate|ARM64.ActiveCfg = PGUpdate|ARM64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGUpdate|ARM64.Build.0 = PGUpdate|ARM64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGUpdate|Win32.ActiveCfg = PGUpdate|Win32
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGUpdate|Win32.Build.0 = PGUpdate|Win32
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGUpdate|x64.ActiveCfg = PGUpdate|x64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.PGUpdate|x64.Build.0 = PGUpdate|x64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Release|ARM.ActiveCfg = Release|ARM
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Release|ARM.Build.0 = Release|ARM
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Release|ARM64.ActiveCfg = Release|ARM64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Release|ARM64.Build.0 = Release|ARM64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Release|Win32.ActiveCfg = Release|Win32
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Release|Win32.Build.0 = Release|Win32
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Release|x64.ActiveCfg = Release|x64
+		{CB435430-EBB1-478B-8F4E-C256F6838F55}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

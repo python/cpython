@@ -1,1 +1,0 @@
-Expose :data:`~socket.CAN_RAW_JOIN_FILTERS` in the :mod:`socket` module.

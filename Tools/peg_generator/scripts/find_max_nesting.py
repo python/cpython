@@ -13,11 +13,7 @@ INITIAL_NESTING_DEPTH, or NESTED_INCR_AMT variables.
 
 Usage: python -m scripts.find_max_nesting
 """
-import os
 import sys
-from tempfile import TemporaryDirectory
-from pathlib import Path
-from typing import Any
 
 from _peg_parser import parse_string
 

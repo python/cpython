@@ -428,8 +428,8 @@ Other Language Changes
             lastname, *members = family.split()
             return lastname.upper(), *members
 
-    >>> parse('simpsons homer marge bart lisa sally')
-    ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'sally')
+    >>> parse('simpsons homer marge bart lisa maggie')
+    ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'maggie')
 
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 
@@ -1692,7 +1692,7 @@ Deprecated
   :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
   parameter of functions :func:`~gettext.translation` and
   :func:`~gettext.install` are also deprecated, since they are only used for
-  for the ``l*gettext()`` functions.
+  the ``l*gettext()`` functions.
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`

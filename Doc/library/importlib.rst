@@ -480,6 +480,8 @@ ABC hierarchy::
 
 .. class:: ResourceReader
 
+    *Superseded by TraversableReader*
+
     An :term:`abstract base class` to provide the ability to read
     *resources*.
 
@@ -795,6 +797,28 @@ ABC hierarchy::
         itself does not end in ``__init__``.
 
 
+.. class:: Traversable
+
+    An object with a subset of pathlib.Path methods suitable for
+    traversing directories and opening files.
+
+    .. versionadded:: 3.9
+
+
+.. class:: TraversableReader
+
+    An abstract base class for resource readers capable of serving
+    the ``files`` interface. Subclasses ResourceReader and provides
+    concrete implementations of the ResourceReader's abstract
+    methods. Therefore, any loader supplying TraversableReader
+    also supplies ResourceReader.
+
+    Loaders that wish to support resource reading are expected to
+    implement this interface.
+
+    .. versionadded:: 3.9
+
+
 :mod:`importlib.resources` -- Resources
 ---------------------------------------
 
@@ -852,6 +876,19 @@ The following types are defined.
 
 
 The following functions are available.
+
+
+.. function:: files(package)
+
+    Returns an :class:`importlib.resources.abc.Traversable` object
+    representing the resource container for the package (think directory)
+    and its resources (think files). A Traversable may contain other
+    containers (think subdirectories).
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.
+
+    .. versionadded:: 3.9
 
 .. function:: open_binary(package, resource)
 

@@ -603,6 +603,8 @@ static int test_init_from_config(void)
     Py_FrozenFlag = 0;
     config.pathconfig_warnings = 0;
 
+    config._isolated_interpreter = 1;
+
     init_from_config_clear(&config);
 
     dump_config();
