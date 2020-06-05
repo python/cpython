@@ -1516,7 +1516,9 @@ mmap_exec(PyObject *module)
         return -1;
     }
 
+    Py_INCREF(PyExc_OSError);
     if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
+        Py_DECREF(PyExc_OSError);
         return -1;
     }
     if (PyModule_AddType(module, &mmap_object_type) < 0) {
