@@ -1023,16 +1023,15 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
  * Clearing the free lists may give back memory to the OS earlier.
  */
 static void
-clear_freelists(void)
+clear_freelists(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     _PyFrame_ClearFreeList(tstate);
     _PyTuple_ClearFreeList(tstate);
     _PyFloat_ClearFreeList(tstate);
     _PyList_ClearFreeList(tstate);
     _PyDict_ClearFreeList();
     _PyAsyncGen_ClearFreeLists(tstate);
-    _PyContext_ClearFreeList();
+    _PyContext_ClearFreeList(tstate);
 }
 
 // Show stats for objects in each generations
@@ -1306,7 +1305,7 @@ collect(PyThreadState *tstate, int generation,
     /* Clear free list only during the collection of the highest
      * generation */
     if (generation == NUM_GENERATIONS-1) {
-        clear_freelists();
+        clear_freelists(tstate);
     }
 
     if (_PyErr_Occurred(tstate)) {
