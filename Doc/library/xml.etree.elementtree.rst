@@ -823,8 +823,8 @@ Functions
    an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
    If given, it should be a callable that implements the same interface as
    :func:`default_loader`.  *base_url* is base URL of the original file, to resolve
-   relative include file references. *max_depth* is the maximum number of recursive
-   inclusions. Limited to reduce the risk of malicious content explosion. Pass a
+   relative include file references.  *max_depth* is the maximum number of recursive
+   inclusions.  Limited to reduce the risk of malicious content explosion. Pass a
    negative value to disable the limitation.
 
    Returns the expanded resource.  If the parse mode is
