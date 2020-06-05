@@ -1270,7 +1270,11 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
     if (is_main_interp) {
         _Py_HashRandomization_Fini();
         _PyArg_Fini();
-        _PyAsyncGen_Fini();
+    }
+
+    _PyAsyncGen_Fini(tstate);
+
+    if (is_main_interp) {
         _PyContext_Fini();
     }
 

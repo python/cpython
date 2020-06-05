@@ -108,6 +108,23 @@ struct _Py_frame_state {
     int numfree;
 };
 
+#ifndef _PyAsyncGen_MAXFREELIST
+#  define _PyAsyncGen_MAXFREELIST 80
+#endif
+
+struct _Py_async_gen_state {
+    /* Freelists boost performance 6-10%; they also reduce memory
+       fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
+       are short-living objects that are instantiated for every
+       __anext__() call. */
+    struct _PyAsyncGenWrappedValue* value_freelist[_PyAsyncGen_MAXFREELIST];
+    int value_numfree;
+
+    struct PyAsyncGenASend* asend_freelist[_PyAsyncGen_MAXFREELIST];
+    int asend_numfree;
+};
+
+
 
 /* interpreter state */
 
@@ -205,6 +222,7 @@ struct _is {
     struct _Py_list_state list;
     struct _Py_float_state float_state;
     struct _Py_frame_state frame;
+    struct _Py_async_gen_state async_gen;
 
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
