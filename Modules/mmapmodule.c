@@ -1525,11 +1525,11 @@ mmap_exec(PyObject *module)
         return -1;
     }
 
-#define ADD_INT_MACRO(module, macro)                                  \
-    do {                                                              \
-        if (PyModule_AddIntConstant(module, #macro, macro) < 0) {     \
-            return -1;                                                \
-        }                                                             \
+#define ADD_INT_MACRO(module, constant)                                     \
+    do {                                                                    \
+        if (PyModule_AddIntConstant(module, #constant, constant) < 0) {     \
+            return -1;                                                      \
+        }                                                                   \
     } while (0)
 
 #ifdef PROT_EXEC
