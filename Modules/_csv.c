@@ -810,7 +810,7 @@ Reader_iternext(ReaderObj *self)
             PyErr_Format(_csvstate_global->error_obj,
                          "iterator should return strings, "
                          "not %.200s "
-                         "(did you open the file in text mode?)",
+                         "(the file should be opened in text mode)",
                          Py_TYPE(lineobj)->tp_name
                 );
             Py_DECREF(lineobj);
