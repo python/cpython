@@ -1,2 +1,2 @@
 Use :c:func:`PyModule_AddType` iso :c:func:`PyModule_AddObject`, and
-`PyTypeObject` iso. `PyObject` for type objects in :mod:`posixmodule`.
+`PyTypeObject` iso. `PyObject` for type objects in :mod:`posix`.
