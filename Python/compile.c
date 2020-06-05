@@ -3014,6 +3014,9 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail, PyObject* name
     switch (p->kind) {
         case Attribute_kind:
             return compiler_pattern_load(c, p, fail);
+        case BinOp_kind:
+            // Because we allow "2+2j", things like "2+2" make it this far.
+            return compiler_error(c, "patterns cannot include operators");
         case Call_kind:
             return compiler_pattern_call(c, p, fail, names);
         case Constant_kind:
@@ -3028,6 +3031,9 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail, PyObject* name
             return compiler_pattern_name(c, p, fail, names);
         case NamedExpr_kind:
             return compiler_pattern_namedexpr(c, p, fail, names);
+        case JoinedStr_kind:
+            // Because we allow strings, f-strings make it this far.
+            return compiler_error(c, "patterns cannot include f-strings");
         default:
             Py_UNREACHABLE();
     }

@@ -772,8 +772,14 @@ astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state
     assert(node_->v.BinOp.op == Add || node_->v.BinOp.op == Sub);
     assert(node_->v.BinOp.left->kind = Constant_kind);
     assert(node_->v.BinOp.right->kind = Constant_kind);
-    assert(PyFloat_CheckExact(left->v.Constant.value) || PyLong_CheckExact(left->v.Constant.value));
-    assert(PyComplex_CheckExact(right->v.Constant.value));
+    if (!PyFloat_CheckExact(left->v.Constant.value) && !PyLong_CheckExact(left->v.Constant.value)) {
+        // Not actually valid, but it's the complier's job to complain:
+        return 1;
+    }
+    if (!PyComplex_CheckExact(right->v.Constant.value)) {
+        // Ditto:
+        return 1;
+    }
     PyObject *new;
     if (node_->v.BinOp.op == Add) {
         new = PyNumber_Add(left->v.Constant.value, right->v.Constant.value);
@@ -803,6 +809,8 @@ astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             // TODO: Quite a bit of potential here.
         case Call_kind:
         case Dict_kind:
+        // Not actually valid, but it's the complier's job to complain:
+        case JoinedStr_kind:
         case List_kind:
         case Name_kind:
         case NamedExpr_kind:
