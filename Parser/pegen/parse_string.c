@@ -604,6 +604,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 
     struct tok_state* tok = PyTokenizer_FromString(str, 1);
     if (tok == NULL) {
+        PyMem_RawFree(str);
         return NULL;
     }
     Py_INCREF(p->tok->filename);
@@ -629,6 +630,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     result = expr;
 
 exit:
+    PyMem_RawFree(str);
     _PyPegen_Parser_Free(p2);
     PyTokenizer_Free(tok);
     return result;
