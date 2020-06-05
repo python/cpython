@@ -1,0 +1,2 @@
+Improve docstring of :class:`datetime` methods :func:`strftime` and
+:func:`strptime`. Enhanced by Edison Abahurire.
