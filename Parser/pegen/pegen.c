@@ -937,8 +937,8 @@ _PyPegen_number_token(Parser *p)
 static int // bool
 newline_in_string(Parser *p, const char *cur)
 {
-    for (char c = *cur; cur >= p->tok->buf; c = *--cur) {
-        if (c == '\'' || c == '"') {
+    for (const char *c = cur; c >= p->tok->buf; c--) {
+        if (*c == '\'' || *c == '"') {
             return 1;
         }
     }
