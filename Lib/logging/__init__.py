@@ -2045,7 +2045,7 @@ def critical(msg, *args, **kwargs):
 
 def fatal(msg, *args, **kwargs):
     """
-    Don't use this method, use critical() instead.
+    Don't use this function, use critical() instead.
     """
     critical(msg, *args, **kwargs)
 
