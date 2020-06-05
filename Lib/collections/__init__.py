@@ -695,7 +695,13 @@ class Counter(dict):
         'True if all counts agree. Missing counts are treated as zero.'
         if not isinstance(other, Counter):
             return NotImplemented
-        return all(self[e] == other[e] for c in (self, other) for e in c)
+        for elem, count in self.items() - other.items():
+            if count != other[elem]:
+                return False
+        for elem, count in other.items() - self.items():
+            if self[elem] != count:
+                return False
+        return True
 
     def __ne__(self, other):
         'True if any counts disagree. Missing counts are treated as zero.'
