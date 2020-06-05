@@ -707,7 +707,7 @@ class Counter(dict):
         'True if all counts in self are a subset of those in other.'
         if not isinstance(other, Counter):
             return NotImplemented
-        return all(self[e] <= other[e] for c in (self, other) for e in c)
+        return all(self[e] <= other[e] for e, _ in self.items() ^ other.items())
 
     def __lt__(self, other):
         'True if all counts in self are a proper subset of those in other.'
@@ -719,7 +719,7 @@ class Counter(dict):
         'True if all counts in self are a superset of those in other.'
         if not isinstance(other, Counter):
             return NotImplemented
-        return all(self[e] >= other[e] for c in (self, other) for e in c)
+        return all(self[e] >= other[e] for e, _ in self.items() ^ other.items())
 
     def __gt__(self, other):
         'True if all counts in self are a proper superset of those in other.'
