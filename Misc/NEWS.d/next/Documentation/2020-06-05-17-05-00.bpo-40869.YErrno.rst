@@ -1,0 +1,1 @@
+Added :data:`errno.ENOMEDIUM`, :data:`errno.EMEDIUMTYPE`, :data:`errno.ECANCELED`, :data:`errno.ENOKEY`, :data:`errno.EKEYEXPIRED`, :data:`errno.EKEYREVOKED`, :data:`errno.EKEYREJECTED`, :data:`errno.EOWNERDEAD`, :data:`errno.ENOTRECOVERABLE`, :data:`errno.ERFKILL` and :data:`errno.EHWPOISON` descriptions into :mod:`errno`
