@@ -37,11 +37,13 @@ growable_comment_array_init(growable_comment_array *arr, size_t initial_size) {
 static int
 growable_comment_array_add(growable_comment_array *arr, int lineno, char *comment) {
     if (arr->num_items >= arr->size) {
-        arr->size *= 2;
-        arr->items = realloc(arr->items, arr->size * sizeof(*arr->items));
-        if (!arr->items) {
+        size_t new_size = arr->size * 2;
+        void *new_items_array = realloc(arr->items, new_size * sizeof(*arr->items));
+        if (!new_items_array) {
             return 0;
         }
+        arr->items = new_items_array;
+        arr->size = new_size;
     }
 
     arr->items[arr->num_items].lineno = lineno;
@@ -249,25 +251,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         const char *line_start;
 
         type = PyTokenizer_Get(tok, &a, &b);
-        if (type == ERRORTOKEN) {
-            err_ret->error = tok->done;
-            break;
-        }
-        if (type == ENDMARKER && started) {
-            type = NEWLINE; /* Add an extra newline */
-            started = 0;
-            /* Add the right number of dedent tokens,
-               except if a certain flag is given --
-               codeop.py uses this. */
-            if (tok->indent &&
-                !(*flags & PyPARSE_DONT_IMPLY_DEDENT))
-            {
-                tok->pendin = -tok->indent;
-                tok->indent = 0;
-            }
-        }
-        else
-            started = 1;
+
         len = (a != NULL && b != NULL) ? b - a : 0;
         str = (char *) PyObject_MALLOC(len + 1);
         if (str == NULL) {
@@ -326,10 +310,34 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             continue;
         }
 
+        if (type == ERRORTOKEN) {
+            err_ret->error = tok->done;
+            break;
+        }
+        if (type == ENDMARKER && started) {
+            type = NEWLINE; /* Add an extra newline */
+            started = 0;
+            /* Add the right number of dedent tokens,
+               except if a certain flag is given --
+               codeop.py uses this. */
+            if (tok->indent &&
+                !(*flags & PyPARSE_DONT_IMPLY_DEDENT))
+            {
+                tok->pendin = -tok->indent;
+                tok->indent = 0;
+            }
+        }
+        else {
+            started = 1;
+        }
+
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str,
                                lineno, col_offset, tok->lineno, end_col_offset,
                                &(err_ret->expected))) != E_OK) {
+            if (tok->done == E_EOF && !ISWHITESPACE(type)) {
+                tok->done = E_SYNTAX;
+            }
             if (err_ret->error != E_DONE) {
                 PyObject_FREE(str);
                 err_ret->token = type;

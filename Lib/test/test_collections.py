@@ -232,6 +232,52 @@ class TestChainMap(unittest.TestCase):
         for k, v in dict(a=1, B=20, C=30, z=100).items():             # check get
             self.assertEqual(d.get(k, 100), v)
 
+    def test_union_operators(self):
+        cm1 = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
+        cm2 = ChainMap(dict(a=10, e=5), dict(b=20, d=4))
+        cm3 = cm1.copy()
+        d = dict(a=10, c=30)
+        pairs = [('c', 3), ('p',0)]
+
+        tmp = cm1 | cm2 # testing between chainmaps
+        self.assertEqual(tmp.maps, [cm1.maps[0] | dict(cm2), *cm1.maps[1:]])
+        cm1 |= cm2
+        self.assertEqual(tmp, cm1)
+
+        tmp = cm2 | d # testing between chainmap and mapping
+        self.assertEqual(tmp.maps, [cm2.maps[0] | d, *cm2.maps[1:]])
+        self.assertEqual((d | cm2).maps, [d | dict(cm2)])
+        cm2 |= d
+        self.assertEqual(tmp, cm2)
+
+        # testing behavior between chainmap and iterable key-value pairs
+        with self.assertRaises(TypeError):
+            cm3 | pairs
+        tmp = cm3.copy()
+        cm3 |= pairs
+        self.assertEqual(cm3.maps, [tmp.maps[0] | dict(pairs), *tmp.maps[1:]])
+
+        # testing proper return types for ChainMap and it's subclasses
+        class Subclass(ChainMap):
+            pass
+
+        class SubclassRor(ChainMap):
+            def __ror__(self, other):
+                return super().__ror__(other)
+
+        tmp = ChainMap() | ChainMap()
+        self.assertIs(type(tmp), ChainMap)
+        self.assertIs(type(tmp.maps[0]), dict)
+        tmp = ChainMap() | Subclass()
+        self.assertIs(type(tmp), ChainMap)
+        self.assertIs(type(tmp.maps[0]), dict)
+        tmp = Subclass() | ChainMap()
+        self.assertIs(type(tmp), Subclass)
+        self.assertIs(type(tmp.maps[0]), dict)
+        tmp = ChainMap() | SubclassRor()
+        self.assertIs(type(tmp), SubclassRor)
+        self.assertIs(type(tmp.maps[0]), dict)
+
 
 ################################################################################
 ### Named Tuples
@@ -364,6 +410,18 @@ class TestNamedTuple(unittest.TestCase):
         Q = namedtuple('Q', ['o', 'p'])
         self.assertIs(P.m.__doc__, Q.o.__doc__)
         self.assertIs(P.n.__doc__, Q.p.__doc__)
+
+    @support.cpython_only
+    def test_field_repr(self):
+        Point = namedtuple('Point', 'x y')
+        self.assertEqual(repr(Point.x), "_tuplegetter(0, 'Alias for field number 0')")
+        self.assertEqual(repr(Point.y), "_tuplegetter(1, 'Alias for field number 1')")
+
+        Point.x.__doc__ = 'The x-coordinate'
+        Point.y.__doc__ = 'The y-coordinate'
+
+        self.assertEqual(repr(Point.x), "_tuplegetter(0, 'The x-coordinate')")
+        self.assertEqual(repr(Point.y), "_tuplegetter(1, 'The y-coordinate')")
 
     def test_name_fixer(self):
         for spec, renamed in [

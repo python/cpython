@@ -20,7 +20,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 
 #ifndef MS_WINDOWS
 #define UNIX

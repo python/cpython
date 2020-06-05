@@ -499,6 +499,16 @@ class CmdLineTest(unittest.TestCase):
             self.assertNotIn(b'is a package', err)
             self.assertNotIn(b'Traceback', err)
 
+    def test_hint_when_triying_to_import_a_py_file(self):
+        with support.temp_dir() as script_dir, \
+                support.change_cwd(path=script_dir):
+            # Create invalid *.pyc as empty file
+            with open('asyncio.py', 'wb'):
+                pass
+            err = self.check_dash_m_failure('asyncio.py')
+            self.assertIn(b"Try using 'asyncio' instead "
+                          b"of 'asyncio.py' as the module name", err)
+
     def test_dash_m_init_traceback(self):
         # These were wrapped in an ImportError and tracebacks were
         # suppressed; see Issue 14285
@@ -622,14 +632,14 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [
-                    b'    foo = f"""{}',
+                    b'    foo"""',
                     b'          ^',
                     b'SyntaxError: f-string: empty expression not allowed',
                 ],
             )
 
     def test_syntaxerror_invalid_escape_sequence_multi_line(self):
-        script = 'foo = """\\q\n"""\n'
+        script = 'foo = """\\q"""\n'
         with support.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(
@@ -637,10 +647,9 @@ class CmdLineTest(unittest.TestCase):
             )
             self.assertEqual(
                 stderr.splitlines()[-3:],
-                [
-                    b'    foo = """\\q',
+                [   b'    foo = """\\q"""',
                     b'          ^',
-                    b'SyntaxError: invalid escape sequence \\q',
+                    b'SyntaxError: invalid escape sequence \\q'
                 ],
             )
 

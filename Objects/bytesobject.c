@@ -3,10 +3,10 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // PYMEM_CLEANBYTE
 
 #include "pystrhex.h"
 #include <stddef.h>
@@ -1264,12 +1264,14 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
     Py_ssize_t i, length = Py_SIZE(op);
     Py_ssize_t newsize, squotes, dquotes;
     PyObject *v;
-    unsigned char quote, *s, *p;
+    unsigned char quote;
+    const unsigned char *s;
+    Py_UCS1 *p;
 
     /* Compute size of output string */
     squotes = dquotes = 0;
     newsize = 3; /* b'' */
-    s = (unsigned char*)op->ob_sval;
+    s = (const unsigned char*)op->ob_sval;
     for (i = 0; i < length; i++) {
         Py_ssize_t incr = 1;
         switch(s[i]) {
@@ -1339,8 +1341,7 @@ bytes_repr(PyObject *op)
 static PyObject *
 bytes_str(PyObject *op)
 {
-    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
-    if (config->bytes_warning) {
+    if (_Py_GetConfig()->bytes_warning) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
                          "str() on a bytes instance", 1)) {
             return NULL;
@@ -1497,8 +1498,7 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
 
     /* Make sure both arguments are strings. */
     if (!(PyBytes_Check(a) && PyBytes_Check(b))) {
-        PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
-        if (config->bytes_warning && (op == Py_EQ || op == Py_NE)) {
+        if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
             rc = PyObject_IsInstance((PyObject*)a,
                                      (PyObject*)&PyUnicode_Type);
             if (!rc)
@@ -1579,7 +1579,7 @@ bytes_hash(PyBytesObject *a)
 static PyObject*
 bytes_subscript(PyBytesObject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
@@ -1595,7 +1595,7 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, i;
         size_t cur;
-        char* source_buf;
+        const char* source_buf;
         char* result_buf;
         PyObject* result;
 
@@ -1860,7 +1860,7 @@ Py_LOCAL_INLINE(PyObject *)
 do_xstrip(PyBytesObject *self, int striptype, PyObject *sepobj)
 {
     Py_buffer vsep;
-    char *s = PyBytes_AS_STRING(self);
+    const char *s = PyBytes_AS_STRING(self);
     Py_ssize_t len = PyBytes_GET_SIZE(self);
     char *sep;
     Py_ssize_t seplen;
@@ -1900,7 +1900,7 @@ do_xstrip(PyBytesObject *self, int striptype, PyObject *sepobj)
 Py_LOCAL_INLINE(PyObject *)
 do_strip(PyBytesObject *self, int striptype)
 {
-    char *s = PyBytes_AS_STRING(self);
+    const char *s = PyBytes_AS_STRING(self);
     Py_ssize_t len = PyBytes_GET_SIZE(self), i, j;
 
     i = 0;
@@ -2017,7 +2017,8 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
                      PyObject *deletechars)
 /*[clinic end generated code: output=43be3437f1956211 input=0ecdf159f654233c]*/
 {
-    char *input, *output;
+    const char *input;
+    char *output;
     Py_buffer table_view = {NULL, NULL};
     Py_buffer del_table_view = {NULL, NULL};
     const char *table_chars;
@@ -2181,6 +2182,81 @@ bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
 
 /** End DALKE **/
 
+/*[clinic input]
+bytes.removeprefix as bytes_removeprefix
+
+    prefix: Py_buffer
+    /
+
+Return a bytes object with the given prefix string removed if present.
+
+If the bytes starts with the prefix string, return bytes[len(prefix):].
+Otherwise, return a copy of the original bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix)
+/*[clinic end generated code: output=f006865331a06ab6 input=0c93bac817a8502c]*/
+{
+    const char *self_start = PyBytes_AS_STRING(self);
+    Py_ssize_t self_len = PyBytes_GET_SIZE(self);
+    const char *prefix_start = prefix->buf;
+    Py_ssize_t prefix_len = prefix->len;
+
+    if (self_len >= prefix_len
+        && prefix_len > 0
+        && memcmp(self_start, prefix_start, prefix_len) == 0)
+    {
+        return PyBytes_FromStringAndSize(self_start + prefix_len,
+                                         self_len - prefix_len);
+    }
+
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+
+    return PyBytes_FromStringAndSize(self_start, self_len);
+}
+
+/*[clinic input]
+bytes.removesuffix as bytes_removesuffix
+
+    suffix: Py_buffer
+    /
+
+Return a bytes object with the given suffix string removed if present.
+
+If the bytes ends with the suffix string and that suffix is not empty,
+return bytes[:-len(prefix)].  Otherwise, return a copy of the original
+bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
+/*[clinic end generated code: output=d887d308e3242eeb input=9f4e1da8c637bbf1]*/
+{
+    const char *self_start = PyBytes_AS_STRING(self);
+    Py_ssize_t self_len = PyBytes_GET_SIZE(self);
+    const char *suffix_start = suffix->buf;
+    Py_ssize_t suffix_len = suffix->len;
+
+    if (self_len >= suffix_len
+        && suffix_len > 0
+        && memcmp(self_start + self_len - suffix_len,
+                  suffix_start, suffix_len) == 0)
+    {
+        return PyBytes_FromStringAndSize(self_start,
+                                         self_len - suffix_len);
+    }
+
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+
+    return PyBytes_FromStringAndSize(self_start, self_len);
+}
 
 static PyObject *
 bytes_startswith(PyBytesObject *self, PyObject *args)
@@ -2270,7 +2346,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     char *buf;
     Py_ssize_t hexlen, invalid_char;
     unsigned int top, bot;
-    Py_UCS1 *str, *end;
+    const Py_UCS1 *str, *end;
     _PyBytesWriter writer;
 
     _PyBytesWriter_Init(&writer);
@@ -2282,7 +2358,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     hexlen = PyUnicode_GET_LENGTH(string);
 
     if (!PyUnicode_IS_ASCII(string)) {
-        void *data = PyUnicode_DATA(string);
+        const void *data = PyUnicode_DATA(string);
         unsigned int kind = PyUnicode_KIND(string);
         Py_ssize_t i;
 
@@ -2368,7 +2444,7 @@ static PyObject *
 bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
 /*[clinic end generated code: output=1f134da504064139 input=f1238d3455990218]*/
 {
-    char* argbuf = PyBytes_AS_STRING(self);
+    const char *argbuf = PyBytes_AS_STRING(self);
     Py_ssize_t arglen = PyBytes_GET_SIZE(self);
     return _Py_strhex_with_sep(argbuf, arglen, sep, bytes_per_sep);
 }
@@ -2420,6 +2496,8 @@ bytes_methods[] = {
     BYTES_MAKETRANS_METHODDEF
     BYTES_PARTITION_METHODDEF
     BYTES_REPLACE_METHODDEF
+    BYTES_REMOVEPREFIX_METHODDEF
+    BYTES_REMOVESUFFIX_METHODDEF
     {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, _Py_rindex__doc__},
     STRINGLIB_RJUST_METHODDEF
@@ -2536,7 +2614,7 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     /* Is it an integer? */
-    if (PyIndex_Check(x)) {
+    if (_PyIndex_Check(x)) {
         size = PyNumber_AsSsize_t(x, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
             if (!PyErr_ExceptionMatches(PyExc_TypeError))
@@ -3185,7 +3263,7 @@ _PyBytesWriter_AsString(_PyBytesWriter *writer)
 Py_LOCAL_INLINE(Py_ssize_t)
 _PyBytesWriter_GetSize(_PyBytesWriter *writer, char *str)
 {
-    char *start = _PyBytesWriter_AsString(writer);
+    const char *start = _PyBytesWriter_AsString(writer);
     assert(str != NULL);
     assert(str >= start);
     assert(str - start <= writer->allocated);
@@ -3196,7 +3274,7 @@ _PyBytesWriter_GetSize(_PyBytesWriter *writer, char *str)
 Py_LOCAL_INLINE(int)
 _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
 {
-    char *start, *end;
+    const char *start, *end;
 
     if (writer->use_small_buffer) {
         assert(writer->buffer == NULL);

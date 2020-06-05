@@ -476,6 +476,7 @@ class PydocDocTest(unittest.TestCase):
     def test_non_str_name(self):
         # issue14638
         # Treat illegal (non-str) name like no name
+
         class A:
             __name__ = 42
         class B:
@@ -1254,7 +1255,9 @@ cm(x) method of builtins.type instance
 
         X.attr.__doc__ = 'Custom descriptor'
         self.assertEqual(self._get_summary_lines(X.attr), """\
-<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
+<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>
+    Custom descriptor
+""")
 
         X.attr.__name__ = 'foo'
         self.assertEqual(self._get_summary_lines(X.attr), """\

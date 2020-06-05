@@ -4,7 +4,7 @@
 
 #include "Python.h"
 #include "Python-ast.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 typedef struct {
     int initialized;
@@ -1060,6 +1060,12 @@ static const char * const arg_fields[]={
     "type_comment",
 };
 static PyObject* ast2obj_keyword(void*);
+static const char * const keyword_attributes[] = {
+    "lineno",
+    "col_offset",
+    "end_lineno",
+    "end_col_offset",
+};
 static const char * const keyword_fields[]={
     "arg",
     "value",
@@ -1125,8 +1131,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     }
     if (fields) {
         numfields = PySequence_Size(fields);
-        if (numfields == -1)
+        if (numfields == -1) {
             goto cleanup;
+        }
     }
 
     res = 0; /* if no error occurs, this stays 0 to the end */
@@ -1147,15 +1154,35 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
         res = PyObject_SetAttr(self, name, PyTuple_GET_ITEM(args, i));
         Py_DECREF(name);
-        if (res < 0)
+        if (res < 0) {
             goto cleanup;
+        }
     }
     if (kw) {
         i = 0;  /* needed by PyDict_Next */
         while (PyDict_Next(kw, &i, &key, &value)) {
-            res = PyObject_SetAttr(self, key, value);
-            if (res < 0)
+            int contains = PySequence_Contains(fields, key);
+            if (contains == -1) {
+                res = -1;
                 goto cleanup;
+            } else if (contains == 1) {
+                Py_ssize_t p = PySequence_Index(fields, key);
+                if (p == -1) {
+                    res = -1;
+                    goto cleanup;
+                }
+                if (p < PyTuple_GET_SIZE(args)) {
+                    PyErr_Format(PyExc_TypeError,
+                        "%.400s got multiple values for argument '%U'",
+                        Py_TYPE(self)->tp_name, key);
+                    res = -1;
+                    goto cleanup;
+                }
+            }
+            res = PyObject_SetAttr(self, key, value);
+            if (res < 0) {
+                goto cleanup;
+            }
         }
     }
   cleanup:
@@ -1288,11 +1315,9 @@ static PyObject* ast2obj_object(void *o)
     Py_INCREF((PyObject*)o);
     return (PyObject*)o;
 }
-#define ast2obj_singleton ast2obj_object
 #define ast2obj_constant ast2obj_object
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
-#define ast2obj_bytes ast2obj_object
 
 static PyObject* ast2obj_int(long b)
 {
@@ -1985,8 +2010,13 @@ static int init_types(void)
                                     2,
         "keyword(identifier? arg, expr value)");
     if (!state->keyword_type) return 0;
-    if (!add_attributes(state->keyword_type, NULL, 0)) return 0;
+    if (!add_attributes(state->keyword_type, keyword_attributes, 4)) return 0;
     if (PyObject_SetAttr(state->keyword_type, state->arg, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->keyword_type, state->end_lineno, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->keyword_type, state->end_col_offset, Py_None)
+        == -1)
         return 0;
     state->alias_type = make_type("alias", state->AST_type, alias_fields, 2,
         "alias(identifier name, identifier? asname)");
@@ -2066,7 +2096,7 @@ Expression(expr_ty body, PyArena *arena)
     mod_ty p;
     if (!body) {
         PyErr_SetString(PyExc_ValueError,
-                        "field body is required for Expression");
+                        "field 'body' is required for Expression");
         return NULL;
     }
     p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2083,7 +2113,7 @@ FunctionType(asdl_seq * argtypes, expr_ty returns, PyArena *arena)
     mod_ty p;
     if (!returns) {
         PyErr_SetString(PyExc_ValueError,
-                        "field returns is required for FunctionType");
+                        "field 'returns' is required for FunctionType");
         return NULL;
     }
     p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2103,12 +2133,12 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
     stmt_ty p;
     if (!name) {
         PyErr_SetString(PyExc_ValueError,
-                        "field name is required for FunctionDef");
+                        "field 'name' is required for FunctionDef");
         return NULL;
     }
     if (!args) {
         PyErr_SetString(PyExc_ValueError,
-                        "field args is required for FunctionDef");
+                        "field 'args' is required for FunctionDef");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2137,12 +2167,12 @@ AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq
     stmt_ty p;
     if (!name) {
         PyErr_SetString(PyExc_ValueError,
-                        "field name is required for AsyncFunctionDef");
+                        "field 'name' is required for AsyncFunctionDef");
         return NULL;
     }
     if (!args) {
         PyErr_SetString(PyExc_ValueError,
-                        "field args is required for AsyncFunctionDef");
+                        "field 'args' is required for AsyncFunctionDef");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2170,7 +2200,7 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, asdl_seq *
     stmt_ty p;
     if (!name) {
         PyErr_SetString(PyExc_ValueError,
-                        "field name is required for ClassDef");
+                        "field 'name' is required for ClassDef");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2230,7 +2260,7 @@ Assign(asdl_seq * targets, expr_ty value, string type_comment, int lineno, int
     stmt_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for Assign");
+                        "field 'value' is required for Assign");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2254,17 +2284,17 @@ AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, int
     stmt_ty p;
     if (!target) {
         PyErr_SetString(PyExc_ValueError,
-                        "field target is required for AugAssign");
+                        "field 'target' is required for AugAssign");
         return NULL;
     }
     if (!op) {
         PyErr_SetString(PyExc_ValueError,
-                        "field op is required for AugAssign");
+                        "field 'op' is required for AugAssign");
         return NULL;
     }
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for AugAssign");
+                        "field 'value' is required for AugAssign");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2289,12 +2319,12 @@ AnnAssign(expr_ty target, expr_ty annotation, expr_ty value, int simple, int
     stmt_ty p;
     if (!target) {
         PyErr_SetString(PyExc_ValueError,
-                        "field target is required for AnnAssign");
+                        "field 'target' is required for AnnAssign");
         return NULL;
     }
     if (!annotation) {
         PyErr_SetString(PyExc_ValueError,
-                        "field annotation is required for AnnAssign");
+                        "field 'annotation' is required for AnnAssign");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2320,12 +2350,12 @@ For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, string
     stmt_ty p;
     if (!target) {
         PyErr_SetString(PyExc_ValueError,
-                        "field target is required for For");
+                        "field 'target' is required for For");
         return NULL;
     }
     if (!iter) {
         PyErr_SetString(PyExc_ValueError,
-                        "field iter is required for For");
+                        "field 'iter' is required for For");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2352,12 +2382,12 @@ AsyncFor(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse,
     stmt_ty p;
     if (!target) {
         PyErr_SetString(PyExc_ValueError,
-                        "field target is required for AsyncFor");
+                        "field 'target' is required for AsyncFor");
         return NULL;
     }
     if (!iter) {
         PyErr_SetString(PyExc_ValueError,
-                        "field iter is required for AsyncFor");
+                        "field 'iter' is required for AsyncFor");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2383,7 +2413,7 @@ While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
     stmt_ty p;
     if (!test) {
         PyErr_SetString(PyExc_ValueError,
-                        "field test is required for While");
+                        "field 'test' is required for While");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2407,7 +2437,7 @@ If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
     stmt_ty p;
     if (!test) {
         PyErr_SetString(PyExc_ValueError,
-                        "field test is required for If");
+                        "field 'test' is required for If");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2508,7 +2538,7 @@ Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, int end_lineno,
     stmt_ty p;
     if (!test) {
         PyErr_SetString(PyExc_ValueError,
-                        "field test is required for Assert");
+                        "field 'test' is required for Assert");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2601,7 +2631,7 @@ Expr(expr_ty value, int lineno, int col_offset, int end_lineno, int
     stmt_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for Expr");
+                        "field 'value' is required for Expr");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2671,7 +2701,7 @@ BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset, int
     expr_ty p;
     if (!op) {
         PyErr_SetString(PyExc_ValueError,
-                        "field op is required for BoolOp");
+                        "field 'op' is required for BoolOp");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2694,12 +2724,12 @@ NamedExpr(expr_ty target, expr_ty value, int lineno, int col_offset, int
     expr_ty p;
     if (!target) {
         PyErr_SetString(PyExc_ValueError,
-                        "field target is required for NamedExpr");
+                        "field 'target' is required for NamedExpr");
         return NULL;
     }
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for NamedExpr");
+                        "field 'value' is required for NamedExpr");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2722,17 +2752,17 @@ BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int col_offset,
     expr_ty p;
     if (!left) {
         PyErr_SetString(PyExc_ValueError,
-                        "field left is required for BinOp");
+                        "field 'left' is required for BinOp");
         return NULL;
     }
     if (!op) {
         PyErr_SetString(PyExc_ValueError,
-                        "field op is required for BinOp");
+                        "field 'op' is required for BinOp");
         return NULL;
     }
     if (!right) {
         PyErr_SetString(PyExc_ValueError,
-                        "field right is required for BinOp");
+                        "field 'right' is required for BinOp");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2756,12 +2786,12 @@ UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset, int
     expr_ty p;
     if (!op) {
         PyErr_SetString(PyExc_ValueError,
-                        "field op is required for UnaryOp");
+                        "field 'op' is required for UnaryOp");
         return NULL;
     }
     if (!operand) {
         PyErr_SetString(PyExc_ValueError,
-                        "field operand is required for UnaryOp");
+                        "field 'operand' is required for UnaryOp");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2784,12 +2814,12 @@ Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset, int
     expr_ty p;
     if (!args) {
         PyErr_SetString(PyExc_ValueError,
-                        "field args is required for Lambda");
+                        "field 'args' is required for Lambda");
         return NULL;
     }
     if (!body) {
         PyErr_SetString(PyExc_ValueError,
-                        "field body is required for Lambda");
+                        "field 'body' is required for Lambda");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2812,17 +2842,17 @@ IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int col_offset,
     expr_ty p;
     if (!test) {
         PyErr_SetString(PyExc_ValueError,
-                        "field test is required for IfExp");
+                        "field 'test' is required for IfExp");
         return NULL;
     }
     if (!body) {
         PyErr_SetString(PyExc_ValueError,
-                        "field body is required for IfExp");
+                        "field 'body' is required for IfExp");
         return NULL;
     }
     if (!orelse) {
         PyErr_SetString(PyExc_ValueError,
-                        "field orelse is required for IfExp");
+                        "field 'orelse' is required for IfExp");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2881,7 +2911,7 @@ ListComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset, int
     expr_ty p;
     if (!elt) {
         PyErr_SetString(PyExc_ValueError,
-                        "field elt is required for ListComp");
+                        "field 'elt' is required for ListComp");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2904,7 +2934,7 @@ SetComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset, int
     expr_ty p;
     if (!elt) {
         PyErr_SetString(PyExc_ValueError,
-                        "field elt is required for SetComp");
+                        "field 'elt' is required for SetComp");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2927,12 +2957,12 @@ DictComp(expr_ty key, expr_ty value, asdl_seq * generators, int lineno, int
     expr_ty p;
     if (!key) {
         PyErr_SetString(PyExc_ValueError,
-                        "field key is required for DictComp");
+                        "field 'key' is required for DictComp");
         return NULL;
     }
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for DictComp");
+                        "field 'value' is required for DictComp");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2956,7 +2986,7 @@ GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
     expr_ty p;
     if (!elt) {
         PyErr_SetString(PyExc_ValueError,
-                        "field elt is required for GeneratorExp");
+                        "field 'elt' is required for GeneratorExp");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2979,7 +3009,7 @@ Await(expr_ty value, int lineno, int col_offset, int end_lineno, int
     expr_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for Await");
+                        "field 'value' is required for Await");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3018,7 +3048,7 @@ YieldFrom(expr_ty value, int lineno, int col_offset, int end_lineno, int
     expr_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for YieldFrom");
+                        "field 'value' is required for YieldFrom");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3040,7 +3070,7 @@ Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators, int lineno,
     expr_ty p;
     if (!left) {
         PyErr_SetString(PyExc_ValueError,
-                        "field left is required for Compare");
+                        "field 'left' is required for Compare");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3064,7 +3094,7 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int lineno, int
     expr_ty p;
     if (!func) {
         PyErr_SetString(PyExc_ValueError,
-                        "field func is required for Call");
+                        "field 'func' is required for Call");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3089,7 +3119,7 @@ FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int lineno,
     expr_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for FormattedValue");
+                        "field 'value' is required for FormattedValue");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3130,7 +3160,7 @@ Constant(constant value, string kind, int lineno, int col_offset, int
     expr_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for Constant");
+                        "field 'value' is required for Constant");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3153,17 +3183,17 @@ Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno, int
     expr_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for Attribute");
+                        "field 'value' is required for Attribute");
         return NULL;
     }
     if (!attr) {
         PyErr_SetString(PyExc_ValueError,
-                        "field attr is required for Attribute");
+                        "field 'attr' is required for Attribute");
         return NULL;
     }
     if (!ctx) {
         PyErr_SetString(PyExc_ValueError,
-                        "field ctx is required for Attribute");
+                        "field 'ctx' is required for Attribute");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3187,17 +3217,17 @@ Subscript(expr_ty value, expr_ty slice, expr_context_ty ctx, int lineno, int
     expr_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for Subscript");
+                        "field 'value' is required for Subscript");
         return NULL;
     }
     if (!slice) {
         PyErr_SetString(PyExc_ValueError,
-                        "field slice is required for Subscript");
+                        "field 'slice' is required for Subscript");
         return NULL;
     }
     if (!ctx) {
         PyErr_SetString(PyExc_ValueError,
-                        "field ctx is required for Subscript");
+                        "field 'ctx' is required for Subscript");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3221,12 +3251,12 @@ Starred(expr_ty value, expr_context_ty ctx, int lineno, int col_offset, int
     expr_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for Starred");
+                        "field 'value' is required for Starred");
         return NULL;
     }
     if (!ctx) {
         PyErr_SetString(PyExc_ValueError,
-                        "field ctx is required for Starred");
+                        "field 'ctx' is required for Starred");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3249,12 +3279,12 @@ Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, int
     expr_ty p;
     if (!id) {
         PyErr_SetString(PyExc_ValueError,
-                        "field id is required for Name");
+                        "field 'id' is required for Name");
         return NULL;
     }
     if (!ctx) {
         PyErr_SetString(PyExc_ValueError,
-                        "field ctx is required for Name");
+                        "field 'ctx' is required for Name");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3277,7 +3307,7 @@ List(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, int
     expr_ty p;
     if (!ctx) {
         PyErr_SetString(PyExc_ValueError,
-                        "field ctx is required for List");
+                        "field 'ctx' is required for List");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3300,7 +3330,7 @@ Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, int
     expr_ty p;
     if (!ctx) {
         PyErr_SetString(PyExc_ValueError,
-                        "field ctx is required for Tuple");
+                        "field 'ctx' is required for Tuple");
         return NULL;
     }
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3342,12 +3372,12 @@ comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs, int is_async,
     comprehension_ty p;
     if (!target) {
         PyErr_SetString(PyExc_ValueError,
-                        "field target is required for comprehension");
+                        "field 'target' is required for comprehension");
         return NULL;
     }
     if (!iter) {
         PyErr_SetString(PyExc_ValueError,
-                        "field iter is required for comprehension");
+                        "field 'iter' is required for comprehension");
         return NULL;
     }
     p = (comprehension_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3405,7 +3435,7 @@ arg(identifier arg, expr_ty annotation, string type_comment, int lineno, int
     arg_ty p;
     if (!arg) {
         PyErr_SetString(PyExc_ValueError,
-                        "field arg is required for arg");
+                        "field 'arg' is required for arg");
         return NULL;
     }
     p = (arg_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3422,12 +3452,13 @@ arg(identifier arg, expr_ty annotation, string type_comment, int lineno, int
 }
 
 keyword_ty
-keyword(identifier arg, expr_ty value, PyArena *arena)
+keyword(identifier arg, expr_ty value, int lineno, int col_offset, int
+        end_lineno, int end_col_offset, PyArena *arena)
 {
     keyword_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field value is required for keyword");
+                        "field 'value' is required for keyword");
         return NULL;
     }
     p = (keyword_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3435,6 +3466,10 @@ keyword(identifier arg, expr_ty value, PyArena *arena)
         return NULL;
     p->arg = arg;
     p->value = value;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
@@ -3444,7 +3479,7 @@ alias(identifier name, identifier asname, PyArena *arena)
     alias_ty p;
     if (!name) {
         PyErr_SetString(PyExc_ValueError,
-                        "field name is required for alias");
+                        "field 'name' is required for alias");
         return NULL;
     }
     p = (alias_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3461,7 +3496,7 @@ withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
     withitem_ty p;
     if (!context_expr) {
         PyErr_SetString(PyExc_ValueError,
-                        "field context_expr is required for withitem");
+                        "field 'context_expr' is required for withitem");
         return NULL;
     }
     p = (withitem_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3478,7 +3513,7 @@ TypeIgnore(int lineno, string tag, PyArena *arena)
     type_ignore_ty p;
     if (!tag) {
         PyErr_SetString(PyExc_ValueError,
-                        "field tag is required for TypeIgnore");
+                        "field 'tag' is required for TypeIgnore");
         return NULL;
     }
     p = (type_ignore_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -4586,11 +4621,8 @@ PyObject* ast2obj_expr_context(expr_context_ty o)
         case Del:
             Py_INCREF(astmodulestate_global->Del_singleton);
             return astmodulestate_global->Del_singleton;
-        default:
-            /* should never happen, but just in case ... */
-            PyErr_Format(PyExc_SystemError, "unknown expr_context found");
-            return NULL;
     }
+    Py_UNREACHABLE();
 }
 PyObject* ast2obj_boolop(boolop_ty o)
 {
@@ -4601,11 +4633,8 @@ PyObject* ast2obj_boolop(boolop_ty o)
         case Or:
             Py_INCREF(astmodulestate_global->Or_singleton);
             return astmodulestate_global->Or_singleton;
-        default:
-            /* should never happen, but just in case ... */
-            PyErr_Format(PyExc_SystemError, "unknown boolop found");
-            return NULL;
     }
+    Py_UNREACHABLE();
 }
 PyObject* ast2obj_operator(operator_ty o)
 {
@@ -4649,11 +4678,8 @@ PyObject* ast2obj_operator(operator_ty o)
         case FloorDiv:
             Py_INCREF(astmodulestate_global->FloorDiv_singleton);
             return astmodulestate_global->FloorDiv_singleton;
-        default:
-            /* should never happen, but just in case ... */
-            PyErr_Format(PyExc_SystemError, "unknown operator found");
-            return NULL;
     }
+    Py_UNREACHABLE();
 }
 PyObject* ast2obj_unaryop(unaryop_ty o)
 {
@@ -4670,11 +4696,8 @@ PyObject* ast2obj_unaryop(unaryop_ty o)
         case USub:
             Py_INCREF(astmodulestate_global->USub_singleton);
             return astmodulestate_global->USub_singleton;
-        default:
-            /* should never happen, but just in case ... */
-            PyErr_Format(PyExc_SystemError, "unknown unaryop found");
-            return NULL;
     }
+    Py_UNREACHABLE();
 }
 PyObject* ast2obj_cmpop(cmpop_ty o)
 {
@@ -4709,11 +4732,8 @@ PyObject* ast2obj_cmpop(cmpop_ty o)
         case NotIn:
             Py_INCREF(astmodulestate_global->NotIn_singleton);
             return astmodulestate_global->NotIn_singleton;
-        default:
-            /* should never happen, but just in case ... */
-            PyErr_Format(PyExc_SystemError, "unknown cmpop found");
-            return NULL;
     }
+    Py_UNREACHABLE();
 }
 PyObject*
 ast2obj_comprehension(void* _o)
@@ -4952,6 +4972,27 @@ ast2obj_keyword(void* _o)
     value = ast2obj_expr(o->value);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, astmodulestate_global->value, value) == -1)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->col_offset, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->end_lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->end_col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_col_offset, value)
+        < 0)
         goto failed;
     Py_DECREF(value);
     return result;
@@ -9628,6 +9669,10 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
     PyObject* tmp = NULL;
     identifier arg;
     expr_ty value;
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
 
     if (_PyObject_LookupAttr(obj, astmodulestate_global->arg, &tmp) < 0) {
         return 1;
@@ -9655,7 +9700,63 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = keyword(arg, value, arena);
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->lineno, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from keyword");
+        return 1;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->col_offset, &tmp) < 0)
+        {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from keyword");
+        return 1;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_lineno, &tmp) < 0)
+        {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_lineno = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_col_offset, &tmp)
+        < 0) {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_col_offset = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    *out = keyword(arg, value, lineno, col_offset, end_lineno, end_col_offset,
+                   arena);
     return 0;
 failed:
     Py_XDECREF(tmp);

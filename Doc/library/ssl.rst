@@ -42,7 +42,7 @@ This module provides a class, :class:`ssl.SSLSocket`, which is derived from the
 :class:`socket.socket` type, and provides a socket-like wrapper that also
 encrypts and decrypts the data going over the socket with SSL.  It supports
 additional methods such as :meth:`getpeercert`, which retrieves the
-certificate of the other side of the connection, and :meth:`cipher`,which
+certificate of the other side of the connection, and :meth:`cipher`, which
 retrieves the cipher being used for the secure connection.
 
 For more sophisticated applications, the :class:`ssl.SSLContext` class
@@ -2271,7 +2271,7 @@ Visual inspection shows that the certificate does identify the desired service
                 (('postalCode', '03894-4801'),),
                 (('countryName', 'US'),),
                 (('stateOrProvinceName', 'NH'),),
-                (('localityName', 'Wolfeboro,'),),
+                (('localityName', 'Wolfeboro'),),
                 (('organizationName', 'Python Software Foundation'),),
                 (('commonName', 'www.python.org'),)),
     'subjectAltName': (('DNS', 'www.python.org'),
@@ -2486,14 +2486,17 @@ provided.
    - :meth:`~SSLSocket.read`
    - :meth:`~SSLSocket.write`
    - :meth:`~SSLSocket.getpeercert`
+   - :meth:`~SSLSocket.selected_alpn_protocol`
    - :meth:`~SSLSocket.selected_npn_protocol`
    - :meth:`~SSLSocket.cipher`
    - :meth:`~SSLSocket.shared_ciphers`
    - :meth:`~SSLSocket.compression`
    - :meth:`~SSLSocket.pending`
    - :meth:`~SSLSocket.do_handshake`
+   - :meth:`~SSLSocket.verify_client_post_handshake`
    - :meth:`~SSLSocket.unwrap`
    - :meth:`~SSLSocket.get_channel_binding`
+   - :meth:`~SSLSocket.version`
 
    When compared to :class:`SSLSocket`, this object lacks the following
    features:

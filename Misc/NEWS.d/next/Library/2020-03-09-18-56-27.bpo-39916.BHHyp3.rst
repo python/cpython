@@ -1,2 +1,0 @@
-More reliable use of ``os.scandir()`` in ``Path.glob()``. It no longer emits
-a ResourceWarning when interrupted.

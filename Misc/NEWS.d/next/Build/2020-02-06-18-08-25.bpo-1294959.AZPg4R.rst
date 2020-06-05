@@ -1,6 +1,0 @@
-Add ``--with-platlibdir`` option to the configure script: name of the
-platform-specific library directory, stored in the new :attr:`sys.platlibdir`
-attribute. It is used to build the path of platform-specific dynamic libraries
-and the path of the standard library. It is equal to ``"lib"`` on most
-platforms. On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit platforms.
-Patch by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner.

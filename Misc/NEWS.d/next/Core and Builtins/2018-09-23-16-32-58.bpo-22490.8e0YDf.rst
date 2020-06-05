@@ -1,2 +1,0 @@
-Don't leak environment variable ``__PYVENV_LAUNCHER__`` into the interpreter
-session on macOS.

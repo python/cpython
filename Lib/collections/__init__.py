@@ -711,6 +711,13 @@ class Counter(dict):
     #
     # To strip negative and zero counts, add-in an empty counter:
     #       c += Counter()
+    #
+    # Rich comparison operators for multiset subset and superset tests
+    # are deliberately omitted due to semantic conflicts with the
+    # existing inherited dict equality method.  Subset and superset
+    # semantics ignore zero counts and require that p≤q ∧ p≥q → p=q;
+    # however, that would not be the case for p=Counter(a=1, b=0)
+    # and q=Counter(a=1) where the dictionaries are not equal.
 
     def __add__(self, other):
         '''Add counts from two counters.
@@ -979,6 +986,25 @@ class ChainMap(_collections_abc.MutableMapping):
         'Clear maps[0], leaving maps[1:] intact.'
         self.maps[0].clear()
 
+    def __ior__(self, other):
+        self.maps[0] |= other
+        return self
+
+    def __or__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            m = self.maps[0].copy()
+            m.update(other)
+            return self.__class__(m, *self.maps[1:])
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            m = dict(other)
+            for child in reversed(self.maps):
+                m.update(child)
+            return self.__class__(m)
+        return NotImplemented
+
 
 ################################################################################
 ### UserDict
@@ -1220,6 +1246,14 @@ class UserString(_collections_abc.Sequence):
         if isinstance(sub, UserString):
             sub = sub.data
         return self.data.count(sub, start, end)
+    def removeprefix(self, prefix, /):
+        if isinstance(prefix, UserString):
+            prefix = prefix.data
+        return self.__class__(self.data.removeprefix(prefix))
+    def removesuffix(self, suffix, /):
+        if isinstance(suffix, UserString):
+            suffix = suffix.data
+        return self.__class__(self.data.removesuffix(suffix))
     def encode(self, encoding='utf-8', errors='strict'):
         encoding = 'utf-8' if encoding is None else encoding
         errors = 'strict' if errors is None else errors

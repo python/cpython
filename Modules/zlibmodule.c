@@ -6,11 +6,10 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "zlib.h"
 
 
-#include "pythread.h"
 #define ENTER_ZLIB(obj) \
     Py_BEGIN_ALLOW_THREADS; \
     PyThread_acquire_lock((obj)->lock, 1); \

@@ -17,7 +17,8 @@
 /* SHA objects */
 
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_byteswap.h"      // _Py_bswap32()
+#include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
 #include "pystrhex.h"
 
@@ -30,13 +31,8 @@ class SHA512Type "SHAobject *" "&PyType_Type"
 /* Some useful types */
 
 typedef unsigned char SHA_BYTE;
-
-#if SIZEOF_INT == 4
-typedef unsigned int SHA_INT32; /* 32-bit integer */
-typedef unsigned long long SHA_INT64;        /* 64-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
+typedef uint32_t SHA_INT32;  /* 32-bit integer */
+typedef uint64_t SHA_INT64;  /* 64-bit integer */
 
 /* The SHA block size and message digest sizes, in bytes */
 
@@ -62,22 +58,9 @@ typedef struct {
 #if PY_LITTLE_ENDIAN
 static void longReverse(SHA_INT64 *buffer, int byteCount)
 {
-    SHA_INT64 value;
-
     byteCount /= sizeof(*buffer);
-    while (byteCount--) {
-        value = *buffer;
-
-                ((unsigned char*)buffer)[0] = (unsigned char)(value >> 56) & 0xff;
-                ((unsigned char*)buffer)[1] = (unsigned char)(value >> 48) & 0xff;
-                ((unsigned char*)buffer)[2] = (unsigned char)(value >> 40) & 0xff;
-                ((unsigned char*)buffer)[3] = (unsigned char)(value >> 32) & 0xff;
-                ((unsigned char*)buffer)[4] = (unsigned char)(value >> 24) & 0xff;
-                ((unsigned char*)buffer)[5] = (unsigned char)(value >> 16) & 0xff;
-                ((unsigned char*)buffer)[6] = (unsigned char)(value >>  8) & 0xff;
-                ((unsigned char*)buffer)[7] = (unsigned char)(value      ) & 0xff;
-
-                buffer++;
+    for (; byteCount--; buffer++) {
+        *buffer = _Py_bswap64(*buffer);
     }
 }
 #endif

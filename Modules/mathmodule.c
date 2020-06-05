@@ -3421,6 +3421,29 @@ math_ulp_impl(PyObject *module, double x)
     return x2 - x;
 }
 
+static int
+math_exec(PyObject *module)
+{
+    if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObject(module, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
+        return -1;
+    }
+    // 2pi
+    if (PyModule_AddObject(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
+        return -1;
+    }
+#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
+        return -1;
+    }
+#endif
+    return 0;
+}
 
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
@@ -3479,41 +3502,26 @@ static PyMethodDef math_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static PyModuleDef_Slot math_slots[] = {
+    {Py_mod_exec, math_exec},
+    {0, NULL}
+};
 
 PyDoc_STRVAR(module_doc,
 "This module provides access to the mathematical functions\n"
 "defined by the C standard.");
 
-
 static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
-    "math",
-    module_doc,
-    -1,
-    math_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "math",
+    .m_doc = module_doc,
+    .m_size = 0,
+    .m_methods = math_methods,
+    .m_slots = math_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_math(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&mathmodule);
-    if (m == NULL)
-        goto finally;
-
-    PyModule_AddObject(m, "pi", PyFloat_FromDouble(Py_MATH_PI));
-    PyModule_AddObject(m, "e", PyFloat_FromDouble(Py_MATH_E));
-    PyModule_AddObject(m, "tau", PyFloat_FromDouble(Py_MATH_TAU));  /* 2pi */
-    PyModule_AddObject(m, "inf", PyFloat_FromDouble(m_inf()));
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
-    PyModule_AddObject(m, "nan", PyFloat_FromDouble(m_nan()));
-#endif
-
-  finally:
-    return m;
+    return PyModuleDef_Init(&mathmodule);
 }

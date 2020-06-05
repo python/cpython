@@ -1,0 +1,121 @@
+****************************
+  What's New In Python 3.10
+****************************
+
+:Release: |release|
+:Date: |today|
+
+.. Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the bug/patch number as a comment:
+
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer in :issue:`12345`.)
+
+   This saves the maintainer the effort of going through the Mercurial log
+   when researching a change.
+
+This article explains the new features in Python 3.10, compared to 3.9.
+
+For full details, see the :ref:`changelog <changelog>`.
+
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.10 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
+Summary -- Release highlights
+=============================
+
+.. This section singles out the most important changes in Python 3.10.
+   Brevity is key.
+
+
+.. PEP-sized items next.
+
+
+
+New Features
+============
+
+
+
+Other Language Changes
+======================
+
+
+
+New Modules
+===========
+
+* None yet.
+
+
+Improved Modules
+================
+
+tracemalloc
+-----------
+
+Added :func:`tracemalloc.reset_peak` to set the peak size of traced memory
+blocks to the current size, to measure the peak of specific pieces of code.
+(Contributed by Huon Wilson in :issue:`40630`.)
+
+Optimizations
+=============
+
+
+Build and C API Changes
+=======================
+
+
+
+Deprecated
+==========
+
+
+
+Removed
+=======
+
+
+
+Porting to Python 3.10
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+

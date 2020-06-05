@@ -153,7 +153,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: const char *m_doc
 
       Docstring for the module; usually a docstring variable created with
-      :c:func:`PyDoc_STRVAR` is used.
+      :c:macro:`PyDoc_STRVAR` is used.
 
    .. c:member:: Py_ssize_t m_size
 
@@ -527,6 +527,8 @@ since multiple such modules can be created from a single definition.
    mechanisms (either by calling it directly, or by referring to its
    implementation for details of the required state updates).
 
+   The caller must hold the GIL.
+
    Return 0 on success or -1 on failure.
 
    .. versionadded:: 3.3
@@ -535,5 +537,7 @@ since multiple such modules can be created from a single definition.
 
    Removes the module object created from *def* from the interpreter state.
    Return 0 on success or -1 on failure.
+
+   The caller must hold the GIL.
 
    .. versionadded:: 3.3

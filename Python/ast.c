@@ -727,11 +727,8 @@ num_stmts(const node *n)
                 return l;
             }
         default: {
-            char buf[128];
-
-            sprintf(buf, "Non-statement found: %d %d",
-                    TYPE(n), NCH(n));
-            Py_FatalError(buf);
+            _Py_FatalErrorFormat(__func__, "Non-statement found: %d %d",
+                                 TYPE(n), NCH(n));
         }
     }
     Py_UNREACHABLE();
@@ -1664,7 +1661,7 @@ ast_for_decorator(struct compiling *c, const node *n)
     REQ(n, decorator);
     REQ(CHILD(n, 0), AT);
     REQ(CHILD(n, 2), NEWLINE);
-    
+
     return ast_for_expr(c, CHILD(n, 1));
 }
 
@@ -3016,7 +3013,8 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 e = ast_for_expr(c, CHILD(ch, 1));
                 if (!e)
                     return NULL;
-                kw = keyword(NULL, e, c->c_arena);
+                kw = keyword(NULL, e, chch->n_lineno, chch->n_col_offset,
+                             e->end_lineno, e->end_col_offset, c->c_arena);
                 asdl_seq_SET(keywords, nkeywords++, kw);
                 ndoublestars++;
             }
@@ -3050,8 +3048,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
             else {
                 /* a keyword argument */
                 keyword_ty kw;
-                identifier key, tmp;
-                int k;
+                identifier key;
 
                 // To remain LL(1), the grammar accepts any test (basically, any
                 // expression) in the keyword slot of a call site.  So, we need
@@ -3095,18 +3092,12 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 if (forbidden_name(c, key, chch, 1)) {
                     return NULL;
                 }
-                for (k = 0; k < nkeywords; k++) {
-                    tmp = ((keyword_ty)asdl_seq_GET(keywords, k))->arg;
-                    if (tmp && !PyUnicode_Compare(tmp, key)) {
-                        ast_error(c, chch,
-                                  "keyword argument repeated");
-                        return NULL;
-                    }
-                }
                 e = ast_for_expr(c, CHILD(ch, 2));
                 if (!e)
                     return NULL;
-                kw = keyword(key, e, c->c_arena);
+                kw = keyword(key, e, chch->n_lineno, chch->n_col_offset,
+                             e->end_lineno, e->end_col_offset, c->c_arena);
+
                 if (!kw)
                     return NULL;
                 asdl_seq_SET(keywords, nkeywords++, kw);
@@ -3173,10 +3164,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         expr1 = ast_for_testlist(c, ch);
         if (!expr1)
             return NULL;
-        if(!set_context(c, expr1, Store, ch))
-            return NULL;
-        /* set_context checks that most expressions are not the left side.
-          Augmented assignments can only have a name, a subscript, or an
+        /* Augmented assignments can only have a name, a subscript, or an
           attribute on the left, though, so we have to explicitly check for
           those. */
         switch (expr1->kind) {
@@ -3185,8 +3173,14 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             case Subscript_kind:
                 break;
             default:
-                ast_error(c, ch, "illegal expression for augmented assignment");
+                ast_error(c, ch, "'%s' is an illegal expression for augmented assignment",
+                          get_expr_name(expr1));
                 return NULL;
+        }
+
+        /* set_context checks that most expressions are not the left side. */
+        if(!set_context(c, expr1, Store, ch)) {
+            return NULL;
         }
 
         ch = CHILD(n, 2);
@@ -4597,7 +4591,7 @@ decode_unicode_with_escapes(struct compiling *c, const node *n, const char *s,
         if (*s & 0x80) { /* XXX inefficient */
             PyObject *w;
             int kind;
-            void *data;
+            const void *data;
             Py_ssize_t len, i;
             w = decode_utf8(c, &s, end);
             if (w == NULL) {

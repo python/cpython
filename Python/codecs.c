@@ -9,7 +9,8 @@ Copyright (c) Corporation for National Research Initiatives.
    ------------------------------------------------------------------------ */
 
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_interp.h"        // PyInterpreterState.codec_search_path
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "ucnhash.h"
 #include <ctype.h>
 
@@ -32,7 +33,7 @@ static int _PyCodecRegistry_Init(void); /* Forward */
 
 int PyCodec_Register(PyObject *search_function)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         goto onError;
     if (search_function == NULL) {
@@ -104,7 +105,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init()) {
         return NULL;
     }
@@ -187,7 +188,7 @@ int _PyCodec_Forget(const char *encoding)
     PyObject *v;
     int result;
 
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->codec_search_path == NULL) {
         return -1;
     }
@@ -620,7 +621,7 @@ PyObject *_PyCodec_DecodeText(PyObject *object,
    Return 0 on success, -1 on error */
 int PyCodec_RegisterError(const char *name, PyObject *error)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         return -1;
     if (!PyCallable_Check(error)) {
@@ -638,7 +639,7 @@ PyObject *PyCodec_LookupError(const char *name)
 {
     PyObject *handler = NULL;
 
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         return NULL;
 
@@ -701,8 +702,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
 
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         PyObject *res;
-        int kind;
-        void *data;
+        Py_UCS1 *outp;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
         if (PyUnicodeEncodeError_GetEnd(exc, &end))
@@ -711,10 +711,10 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         res = PyUnicode_New(len, '?');
         if (res == NULL)
             return NULL;
-        kind = PyUnicode_KIND(res);
-        data = PyUnicode_DATA(res);
+        assert(PyUnicode_KIND(res) == PyUnicode_1BYTE_KIND);
+        outp = PyUnicode_1BYTE_DATA(res);
         for (i = 0; i < len; ++i)
-            PyUnicode_WRITE(kind, data, i, '?');
+            outp[i] = '?';
         assert(_PyUnicode_CheckConsistency(res, 1));
         return Py_BuildValue("(Nn)", res, end);
     }
@@ -727,8 +727,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
         PyObject *res;
-        int kind;
-        void *data;
+        Py_UCS2 *outp;
         if (PyUnicodeTranslateError_GetStart(exc, &start))
             return NULL;
         if (PyUnicodeTranslateError_GetEnd(exc, &end))
@@ -737,10 +736,10 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         res = PyUnicode_New(len, Py_UNICODE_REPLACEMENT_CHARACTER);
         if (res == NULL)
             return NULL;
-        kind = PyUnicode_KIND(res);
-        data = PyUnicode_DATA(res);
-        for (i=0; i < len; i++)
-            PyUnicode_WRITE(kind, data, i, Py_UNICODE_REPLACEMENT_CHARACTER);
+        assert(PyUnicode_KIND(res) == PyUnicode_2BYTE_KIND);
+        outp = PyUnicode_2BYTE_DATA(res);
+        for (i = 0; i < len; i++)
+            outp[i] = Py_UNICODE_REPLACEMENT_CHARACTER;
         assert(_PyUnicode_CheckConsistency(res, 1));
         return Py_BuildValue("(Nn)", res, end);
     }
@@ -759,7 +758,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         Py_ssize_t start;
         Py_ssize_t end;
         PyObject *res;
-        unsigned char *outp;
+        Py_UCS1 *outp;
         Py_ssize_t ressize;
         Py_UCS4 ch;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
@@ -855,7 +854,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     Py_ssize_t start;
     Py_ssize_t end;
     PyObject *res;
-    unsigned char *outp;
+    Py_UCS1 *outp;
     int ressize;
     Py_UCS4 c;
 
@@ -966,7 +965,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         Py_ssize_t start;
         Py_ssize_t end;
         PyObject *res;
-        unsigned char *outp;
+        Py_UCS1 *outp;
         Py_ssize_t ressize;
         int replsize;
         Py_UCS4 c;
@@ -1492,7 +1491,7 @@ static int _PyCodecRegistry_Init(void)
         }
     };
 
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *mod;
 
     if (interp->codec_search_path != NULL)

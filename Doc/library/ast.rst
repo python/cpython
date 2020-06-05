@@ -35,7 +35,7 @@ Abstract Grammar
 The abstract grammar is currently defined as follows:
 
 .. literalinclude:: ../../Parser/Python.asdl
-   :language: none
+   :language: asdl
 
 
 Node classes

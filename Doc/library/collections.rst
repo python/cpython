@@ -116,6 +116,9 @@ The class can be used to simulate nested scopes and is useful in templating.
         >>> list(combined)
         ['music', 'art', 'opera']
 
+    .. versionchanged:: 3.9
+       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
+
 .. seealso::
 
     * The `MultiContext class
@@ -1158,6 +1161,8 @@ variants of :func:`functools.lru_cache`::
             return value
 
         def __setitem__(self, key, value):
+            if key in self:
+                self.move_to_end(key)
             super().__setitem__(key, value)
             if len(self) > self.maxsize:
                 oldest = next(iter(self))

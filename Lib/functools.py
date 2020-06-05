@@ -10,7 +10,7 @@
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
-           'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce',
+           'total_ordering', 'cache', 'cmp_to_key', 'lru_cache', 'reduce',
            'TopologicalSorter', 'CycleError',
            'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
            'cached_property']
@@ -20,6 +20,7 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
+from types import GenericAlias
 
 
 ################################################################################
@@ -656,6 +657,9 @@ class partialmethod(object):
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 # Helper functions
 
 def _unwrap_partial(func):
@@ -882,6 +886,15 @@ try:
     from _functools import _lru_cache_wrapper
 except ImportError:
     pass
+
+
+################################################################################
+### cache -- simplified access to the infinity cache
+################################################################################
+
+def cache(user_function, /):
+    'Simple lightweight unbounded cache.  Sometimes called "memoize".'
+    return lru_cache(maxsize=None)(user_function)
 
 
 ################################################################################
@@ -1208,3 +1221,5 @@ class cached_property:
                         )
                         raise TypeError(msg) from None
         return val
+
+    __class_getitem__ = classmethod(GenericAlias)

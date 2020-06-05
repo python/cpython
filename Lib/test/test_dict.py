@@ -1324,6 +1324,19 @@ class DictTest(unittest.TestCase):
         d = {0: set()}
         (0, X()) in d.items()
 
+    def test_dict_contain_use_after_free(self):
+        # bpo-40489
+        class S(str):
+            def __eq__(self, other):
+                d.clear()
+                return NotImplemented
+
+            def __hash__(self):
+                return hash('test')
+
+        d = {S(): 'value'}
+        self.assertFalse('test' in d)
+
     def test_init_use_after_free(self):
         class X:
             def __hash__(self):

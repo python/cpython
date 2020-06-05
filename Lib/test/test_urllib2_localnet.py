@@ -9,6 +9,7 @@ import unittest
 import hashlib
 
 from test import support
+from test.support import hashlib_helper
 
 try:
     import ssl
@@ -315,6 +316,7 @@ class BasicAuthTests(unittest.TestCase):
         self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen, self.server_url)
 
 
+@hashlib_helper.requires_hashdigest("md5")
 class ProxyAuthTests(unittest.TestCase):
     URL = "http://localhost"
 
@@ -322,7 +324,6 @@ class ProxyAuthTests(unittest.TestCase):
     PASSWD = "test123"
     REALM = "TestRealm"
 
-    @support.requires_hashdigest("md5")
     def setUp(self):
         super(ProxyAuthTests, self).setUp()
         # Ignore proxy bypass settings in the environment.

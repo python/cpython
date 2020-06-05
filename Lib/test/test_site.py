@@ -7,6 +7,7 @@ executing have not been removed.
 import unittest
 import test.support
 from test import support
+from test.support import socket_helper
 from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
                           change_cwd)
 import builtins
@@ -509,7 +510,7 @@ class ImportSideEffectTests(unittest.TestCase):
         url = license._Printer__data.split()[1]
         req = urllib.request.Request(url, method='HEAD')
         try:
-            with test.support.transient_internet(url):
+            with socket_helper.transient_internet(url):
                 with urllib.request.urlopen(req) as data:
                     code = data.getcode()
         except urllib.error.HTTPError as e:

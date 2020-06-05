@@ -28,12 +28,10 @@ Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallFunction(
 Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallMethod(
     PyObject *obj, const char *name, const char *format, ...);
 
-struct _frame; /* Avoid including frameobject.h */
-
 PyAPI_FUNC(PyObject *) PyEval_GetBuiltins(void);
 PyAPI_FUNC(PyObject *) PyEval_GetGlobals(void);
 PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
-PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
+PyAPI_FUNC(PyFrameObject *) PyEval_GetFrame(void);
 
 PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
 PyAPI_FUNC(int) Py_MakePendingCalls(void);
@@ -80,8 +78,8 @@ PyAPI_FUNC(void) Py_LeaveRecursiveCall(void);
 PyAPI_FUNC(const char *) PyEval_GetFuncName(PyObject *);
 PyAPI_FUNC(const char *) PyEval_GetFuncDesc(PyObject *);
 
-PyAPI_FUNC(PyObject *) PyEval_EvalFrame(struct _frame *);
-PyAPI_FUNC(PyObject *) PyEval_EvalFrameEx(struct _frame *f, int exc);
+PyAPI_FUNC(PyObject *) PyEval_EvalFrame(PyFrameObject *);
+PyAPI_FUNC(PyObject *) PyEval_EvalFrameEx(PyFrameObject *f, int exc);
 
 /* Interface for threads.
 

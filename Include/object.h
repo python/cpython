@@ -27,7 +27,7 @@ of data it contains.  An object's type is fixed when it is created.
 Types themselves are represented as objects; an object contains a
 pointer to the corresponding type object.  The type itself has a type
 pointer pointing to the object representing the type 'type', which
-contains a pointer to itself!).
+contains a pointer to itself!.
 
 Objects do not float around in memory; once allocated an object keeps
 the same size and address.  Objects that must hold variable-size data
@@ -212,6 +212,11 @@ PyAPI_FUNC(PyObject*) PyType_FromSpecWithBases(PyType_Spec*, PyObject*);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
 PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObject *);
+PyAPI_FUNC(PyObject *) PyType_GetModule(struct _typeobject *);
+PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 #endif
 
 /* Generic type check */
@@ -614,11 +619,7 @@ times.
 
 static inline int
 PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-#ifdef Py_LIMITED_API
     return ((PyType_GetFlags(type) & feature) != 0);
-#else
-    return ((type->tp_flags & feature) != 0);
-#endif
 }
 
 #define PyType_FastSubclass(type, flag) PyType_HasFeature(type, flag)

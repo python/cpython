@@ -10,7 +10,9 @@ PyAPI_FUNC(PyObject *) _PyImport_FindBuiltin(
     const char *name             /* UTF-8 encoded string */
     );
 
+#ifdef HAVE_FORK
 extern void _PyImport_ReInitLock(void);
+#endif
 extern void _PyImport_Cleanup(PyThreadState *tstate);
 
 #ifdef __cplusplus

@@ -239,7 +239,7 @@ PyCursesPanel_New(PANEL *pan, PyCursesWindowObject *wo)
 {
     PyCursesPanelObject *po;
 
-    po = PyObject_NEW(PyCursesPanelObject,
+    po = PyObject_New(PyCursesPanelObject,
                       (PyTypeObject *)(_curses_panelstate_global)->PyCursesPanel_Type);
     if (po == NULL) return NULL;
     po->pan = pan;

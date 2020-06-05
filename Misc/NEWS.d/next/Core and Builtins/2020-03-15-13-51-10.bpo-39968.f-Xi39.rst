@@ -1,1 +1,0 @@
-Use inline function to replace extension modules' get_module_state macros.

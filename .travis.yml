@@ -1,5 +1,5 @@
 language: c
-dist: xenial
+dist: bionic
 
 # To cache doc-building dependencies and C compiler output.
 cache:
@@ -10,7 +10,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.1d
+    - OPENSSL=1.1.1f
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     - CFLAGS="-I${OPENSSL_DIR}/include"
@@ -87,6 +87,7 @@ matrix:
         # Need a venv that can parse covered code.
         - ./python -m venv venv
         - ./venv/bin/python -m pip install -U coverage
+        - ./venv/bin/python -m pip install -r Misc/requirements-test.txt
         - ./venv/bin/python -m test.pythoninfo
       script:
         # Skip tests that re-run the entire test suite.
@@ -157,7 +158,9 @@ install:
 before_script:
   # -Og is much faster than -O0
   - CFLAGS="${CFLAGS} -Og" ./configure --with-pydebug
-  - make -j4 regen-all
+  - eval "$(pyenv init -)"
+  - pyenv global 3.8
+  - PYTHON_FOR_REGEN=python3.8 make -j4 regen-all
   - changes=`git status --porcelain`
   - |
       # Check for changes in regenerated files

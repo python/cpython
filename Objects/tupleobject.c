@@ -2,9 +2,10 @@
 /* Tuple object implementation */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_pystate.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_accu.h"
+#include "pycore_gc.h"         // _PyObject_GC_IS_TRACKED()
+#include "pycore_object.h"
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -19,6 +20,12 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 #endif
 #ifndef PyTuple_MAXFREELIST
 #define PyTuple_MAXFREELIST  2000  /* Maximum number of tuples of each size to save */
+#endif
+
+/* bpo-40521: tuple free lists are shared by all interpreters. */
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#  undef PyTuple_MAXSAVESIZE
+#  define PyTuple_MAXSAVESIZE 0
 #endif
 
 #if PyTuple_MAXSAVESIZE > 0
@@ -247,7 +254,9 @@ tupledealloc(PyTupleObject *op)
 #endif
     }
     Py_TYPE(op)->tp_free((PyObject *)op);
+#if PyTuple_MAXSAVESIZE > 0
 done:
+#endif
     Py_TRASHCAN_END
 }
 
@@ -477,8 +486,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         Py_INCREF(a);
         return (PyObject *)a;
     }
-    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
-        return PyErr_NoMemory();
+    assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) < PY_SSIZE_T_MAX);
     size = Py_SIZE(a) + Py_SIZE(b);
     if (size == 0) {
         return PyTuple_New(0);
@@ -763,7 +771,7 @@ static PySequenceMethods tuple_as_sequence = {
 static PyObject*
 tuplesubscript(PyTupleObject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
@@ -832,6 +840,7 @@ static PyMethodDef tuple_methods[] = {
     TUPLE___GETNEWARGS___METHODDEF
     TUPLE_INDEX_METHODDEF
     TUPLE_COUNT_METHODDEF
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -953,26 +962,22 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     return 0;
 }
 
-int
-PyTuple_ClearFreeList(void)
+void
+_PyTuple_ClearFreeList(void)
 {
-    int freelist_size = 0;
 #if PyTuple_MAXSAVESIZE > 0
-    int i;
-    for (i = 1; i < PyTuple_MAXSAVESIZE; i++) {
-        PyTupleObject *p, *q;
-        p = free_list[i];
-        freelist_size += numfree[i];
+    for (Py_ssize_t i = 1; i < PyTuple_MAXSAVESIZE; i++) {
+        PyTupleObject *p = free_list[i];
         free_list[i] = NULL;
         numfree[i] = 0;
         while (p) {
-            q = p;
+            PyTupleObject *q = p;
             p = (PyTupleObject *)(p->ob_item[0]);
             PyObject_GC_Del(q);
         }
     }
+    // the empty tuple singleton is only cleared by _PyTuple_Fini()
 #endif
-    return freelist_size;
 }
 
 void
@@ -983,7 +988,7 @@ _PyTuple_Fini(void)
      * rely on the fact that an empty tuple is a singleton. */
     Py_CLEAR(free_list[0]);
 
-    (void)PyTuple_ClearFreeList();
+    _PyTuple_ClearFreeList();
 #endif
 }
 
