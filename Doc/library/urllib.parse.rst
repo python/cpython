@@ -252,9 +252,11 @@ or on combining URL components into a URL string.
 
 .. function:: urlsplit(url, scheme='', allow_fragments=True)
 
-   Parse a URL into six components, returning a 6-item :term:`named tuple`.  This
+   Similar to :func:`urlparse`, witout splitting the URL parameters.
+
+   Parse a URL into five components, returning a 5-item :term:`named tuple`.  This
    corresponds to the general structure of a URL:
-   ``scheme://netloc/path;parameters?query#fragment``.
+   ``scheme://netloc/path?query#fragment``.
 
    The delimiters as shown above are not part of the result, except for a leading slash in the path
    component, which is retained if present.
@@ -266,9 +268,7 @@ or on combining URL components into a URL string.
    syntax allowing parameters to be applied to each segment of the *path* portion
    of the URL (see :rfc:`2396`) is wanted.  A separate function is needed to
    separate the path segments and parameters.  This function returns a 5-item
-   :term:`named tuple`::
-
-      (addressing scheme, network location, path, query, fragment identifier).
+   :term:`named tuple`:: (addressing scheme, network location, path, query, fragment identifier).
 
    The return value is a :term:`named tuple`, its items can be accessed by index
    or as named attributes:
