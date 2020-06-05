@@ -351,6 +351,7 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f'{{"{node.name}",')
         self.print(f" R_{node.name.upper()},")
         self.print(f" 0,")
+        self.print(f" 0,")
 
         first_alt = Alt([])
         second_alt = Alt([])
@@ -371,14 +372,8 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
         rhs = node.flatten()
         self.print(f'{{"{node.name}",')
         self.print(f" R_{node.name.upper()},")
-        if node.memo or node.left_recursive:
-            if node.left_recursive:
-                tag = "leftrec"
-            else:
-                tag = "memo"
-            self.print(f" 1,  // {tag}")
-        else:
-            self.print(f" 0,")
+        self.print(f" {int(node.memo)},  // memo")
+        self.print(f" {int(node.left_recursive)},  // leftrec")
         self.current_rule = node  # TODO: make this a context manager
         self.visit(
             rhs,
@@ -448,8 +443,6 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
     ) -> None:
         for index, alt in enumerate(node.alts):
             with self.set_opcode_buffer(opcodes_by_alt[alt]):
-                if is_leftrec and index == 0:
-                    self.add_opcode("OP_SETUP_LEFT_REC")
                 self.visit(alt, is_loop=False, is_loop1=False, is_gather=False)
                 assert not (
                     alt.action and (is_loop or is_gather)
@@ -461,8 +454,6 @@ class VMParserGenerator(ParserGenerator, GrammarVisitor):
                         self.add_opcode("OP_LOOP_COLLECT_DELIMITED")
                 else:
                     opcode = "OP_RETURN"
-                    if is_leftrec:
-                        opcode += "_LEFT_REC"
                     self.add_opcode(opcode, f"A_{self.current_rule.name.upper()}_{index}")
 
     def visit_Rhs(

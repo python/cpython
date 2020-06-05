@@ -12,7 +12,6 @@ typedef enum _opcodes {
     OP_SAVE_MARK,
     OP_POS_LOOKAHEAD,
     OP_NEG_LOOKAHEAD,
-    OP_SETUP_LEFT_REC,
     OP_SUCCESS,
     OP_FAILURE,
     // The rest have an argument
@@ -20,7 +19,6 @@ typedef enum _opcodes {
     OP_TOKEN,
     OP_RULE,
     OP_RETURN,
-    OP_RETURN_LEFT_REC,
 } Opcode;
 
 static char *opcode_names[] = {
@@ -37,7 +35,6 @@ static char *opcode_names[] = {
     "OP_SAVE_MARK",
     "OP_POS_LOOKAHEAD",
     "OP_NEG_LOOKAHEAD",
-    "OP_SETUP_LEFT_REC",
     "OP_SUCCESS",
     "OP_FAILURE",
     // The rest have an argument
@@ -45,7 +42,6 @@ static char *opcode_names[] = {
     "OP_TOKEN",
     "OP_RULE",
     "OP_RETURN",
-    "OP_RETURN_LEFT_REC",
 };
 
 #define MAXALTS 15
@@ -53,10 +49,11 @@ static char *opcode_names[] = {
 
 typedef struct _rule {
     char *name;
-    int type;
-    int memo;  // To memo or not
-    int alts[MAXALTS];
-    int opcodes[MAXOPCODES];
+    short type;
+    short memo;  // memoized rule (not left-recursive)
+    short leftrec;  // left-recursive rule (needs memo lookup)
+    short alts[MAXALTS];
+    short opcodes[MAXOPCODES];
 } Rule;
 
 #define MAXVALS 10
@@ -65,14 +62,14 @@ typedef struct _frame {
     Rule *rule;
     int mark;
     int savemark;
-    int ialt;
-    int iop;
-    int cut;
+    int lastmark;
+    short ialt;
+    short iop;
+    short ival;
+    short cut;
     int ncollected;
     int capacity;
-    int ival;
-    int lastmark;
+    void *lastval;
     void **collection;
     void *vals[MAXVALS];
-    void *lastval;
 } Frame;

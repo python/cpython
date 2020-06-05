@@ -52,6 +52,7 @@ pop_frame(Stack *stack, void *v)
         PyMem_Free(f->collection);
     }
     if (f->rule->memo) {
+        D(printf("               insert memo %s: val=%p, mark=%d\n", f->rule->name, v, stack->p->mark));
         if (_PyPegen_insert_memo(stack->p, f->mark, f->rule->type + 1000, v) == -1) {
             return NULL;
         }
@@ -145,7 +146,7 @@ run_vm(Parser *p, Rule rules[], int root)
         // Fallthrough!
     case OP_LOOP_COLLECT_NONEMPTY:
         if (!f->ncollected) {
-            D(printf("Nothing collected for %s\n", f->rule->name));
+            D(printf("               Nothing collected for %s\n", f->rule->name));
             v = NULL;
             f = pop_frame(&stack, v);
             if (!f) {
@@ -177,15 +178,6 @@ run_vm(Parser *p, Rule rules[], int root)
         v = NULL;
         break;
 
-    case OP_SETUP_LEFT_REC:
-        assert(p->mark == f->mark);
-        if (_PyPegen_insert_memo(p, f->mark, f->rule->type + 1000, NULL) == -1)  {
-            return NULL;
-        }
-        f->lastmark = p->mark;
-        f->lastval = NULL;
-        goto top;
-
     case OP_SUCCESS:
         v = f->vals[0];
         return v;
@@ -203,7 +195,7 @@ run_vm(Parser *p, Rule rules[], int root)
     case OP_RULE:
         oparg = f->rule->opcodes[f->iop++];
         Rule *rule = &rules[oparg];
-        if (rule->memo) {
+        if (rule->memo || rule->leftrec) {
             v = NULL;  // In case is_memoized ran into an error
             int memo = _PyPegen_is_memoized(p, rule->type + 1000, &v);
             if (memo) {
@@ -213,42 +205,40 @@ run_vm(Parser *p, Rule rules[], int root)
             }
         }
         f = push_frame(&stack, rule);
+        if (rule->leftrec) {
+            D(printf("               leftrec %s prep: lastval=NULL, lastmark=%d\n", rule->name, f->mark));
+            f->lastval = NULL;
+            f->lastmark = f->mark;
+            if (_PyPegen_insert_memo(p, f->mark, rule->type + 1000, NULL) == -1) {
+                return NULL;
+            }
+        }
         goto top;
     case OP_RETURN:
         oparg = f->rule->opcodes[f->iop++];
         v = call_action(p, f, oparg);
-        f = pop_frame(&stack, v);
-        if (!f) {
-            return NULL;
-        }
-        break;
-
-    case OP_RETURN_LEFT_REC:
-        oparg = f->rule->opcodes[f->iop++];
-        v = call_action(p, f, oparg);
         if (v) {
-            if (p->mark > f->lastmark) {
-                D(printf("        new mark wins\n"));
-                // The new result is better than the cached value; update memo
-                f->lastmark = p->mark;
-                f->lastval = v;
-                int ok = _PyPegen_update_memo(p, f->mark, f->rule->type + 1000, v);
-                if (ok == -1) {
-                    return NULL;
+            if (f->rule->leftrec) {
+                D(printf("               leftrec %s check\n", f->rule->name));
+                if (p->mark > f->lastmark) {  // We improved, recurse again
+                    D(printf("                    leftrec improved: lastval=%p, lastmark=%d\n", v, p->mark));
+                    f->lastval = v;
+                    f->lastmark = p->mark;
+                    if (_PyPegen_update_memo(p, f->mark, f->rule->type + 1000, v) == -1) {
+                        return NULL;
+                    }
+                    f->ialt = 0;
+                    f->iop = 0;
+                    f->ival = 0;
+                    p->mark = f->mark;
+                    goto top;
                 }
-                // Restart parsing this rule from the top
-                p->mark = f->mark;
-                f->ival = 0;
-                f->ialt = 0;
-                f->iop = f->rule->alts[0];
-                assert(f->rule->opcodes[f->iop] == OP_SETUP_LEFT_REC);
-                f->iop++;  // Skip over OP_SETUP_LEFT_REC
-                goto top;
+                else {  // End recursion
+                    D(printf("                    leftrec end: lastval=%p, lastmark=%d\n", f->lastval, f->lastmark));
+                    p->mark = f->lastmark;
+                    v = f->lastval;
+                }
             }
-            // Restore last saved position and value
-            p->mark = f->lastmark;
-            v = f->lastval;
-            // End the recursion loop, popping the frame
             f = pop_frame(&stack, v);
             if (!f) {
                 return NULL;
@@ -261,6 +251,7 @@ run_vm(Parser *p, Rule rules[], int root)
         assert(0);
     }
 
+ ok:
     if (v) {
         D(printf("            OK\n"));
         assert(f->ival < MAXVALS);
@@ -289,7 +280,7 @@ run_vm(Parser *p, Rule rules[], int root)
         goto top;
     }
 
-    D(printf("            fail\n"));
+    D(printf("            alternative fails\n"));
     p->mark = f->mark;
     if (f->cut)
         goto pop;
@@ -300,6 +291,17 @@ run_vm(Parser *p, Rule rules[], int root)
     goto top;
 
  pop:
+    if (f->rule->leftrec) {
+        D(printf("          leftrec %s pop!! lastval=%p, lastmark=%d\n", f->rule->name, f->lastval, f->lastmark));
+        v = f->lastval;
+        p->mark = f->lastmark;
+        if (v) {
+            D(printf("               leftrec pop okay\n"));
+            goto ok;
+        }
+        D(printf("               leftrec pop fail\n"));
+    }
+
     f = pop_frame(&stack, NULL);
     if (!f) {
         return NULL;
