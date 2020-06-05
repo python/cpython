@@ -1273,10 +1273,7 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
     }
 
     _PyAsyncGen_Fini(tstate);
-
-    if (is_main_interp) {
-        _PyContext_Fini();
-    }
+    _PyContext_Fini(tstate);
 
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini(tstate);
