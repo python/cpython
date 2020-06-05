@@ -1249,31 +1249,31 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 {
+    _PyFrame_Fini(tstate);
+    _PyTuple_Fini(tstate);
+    _PyList_Fini(tstate);
     if (is_main_interp) {
-        /* Sundry finalizers */
-        _PyFrame_Fini();
-        _PyTuple_Fini();
-        _PyList_Fini();
         _PySet_Fini();
         _PyBytes_Fini();
     }
 
     _PyLong_Fini(tstate);
+    _PyFloat_Fini(tstate);
 
     if (is_main_interp) {
-        _PyFloat_Fini();
         _PyDict_Fini();
-        _PySlice_Fini();
     }
 
+    _PySlice_Fini(tstate);
     _PyWarnings_Fini(tstate->interp);
 
     if (is_main_interp) {
         _Py_HashRandomization_Fini();
         _PyArg_Fini();
-        _PyAsyncGen_Fini();
-        _PyContext_Fini();
     }
+
+    _PyAsyncGen_Fini(tstate);
+    _PyContext_Fini(tstate);
 
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini(tstate);
@@ -1297,6 +1297,8 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyGC_CollectNoFail();
     }
 
+    _PyGC_Fini(tstate);
+
     finalize_interp_types(tstate, is_main_interp);
 
     if (is_main_interp) {
@@ -1310,8 +1312,6 @@ finalize_interp_clear(PyThreadState *tstate)
 
         _PyExc_Fini();
     }
-
-    _PyGC_Fini(tstate);
 }
 
 

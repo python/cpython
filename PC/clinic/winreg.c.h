@@ -435,11 +435,6 @@ winreg_EnumKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!clinic_HKEY_converter(args[0], &key)) {
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     index = _PyLong_AsInt(args[1]);
     if (index == -1 && PyErr_Occurred()) {
         goto exit;
@@ -491,11 +486,6 @@ winreg_EnumValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!clinic_HKEY_converter(args[0], &key)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     index = _PyLong_AsInt(args[1]);
@@ -1121,4 +1111,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=015afbbd690eb59d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f4f996d40d06f14c input=a9049054013a1b77]*/

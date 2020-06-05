@@ -643,22 +643,6 @@ converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
 
 #define CONV_UNICODE "(unicode conversion error)"
 
-/* Explicitly check for float arguments when integers are expected.
-   Return 1 for error, 0 if ok.
-   XXX Should be removed after the end of the deprecation period in
-   _PyLong_FromNbIndexOrNbInt. */
-static int
-float_argument_error(PyObject *arg)
-{
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        return 1;
-    }
-    else
-        return 0;
-}
-
 /* Convert a non-tuple argument.  Return NULL if conversion went OK,
    or a string with a message describing the failure.  The message is
    formatted as "must be <desired type>, not <actual type>".
@@ -704,10 +688,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     case 'b': { /* unsigned byte -- very short int */
         char *p = va_arg(*p_va, char *);
-        long ival;
-        if (float_argument_error(arg))
-            RETURN_ERR_OCCURRED;
-        ival = PyLong_AsLong(arg);
+        long ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else if (ival < 0) {
@@ -728,11 +709,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'B': {/* byte sized bitfield - both signed and unsigned
                   values allowed */
         char *p = va_arg(*p_va, char *);
-        long ival;
-        if (float_argument_error(arg))
-            RETURN_ERR_OCCURRED;
-        ival = PyLong_AsUnsignedLongMask(arg);
-        if (ival == -1 && PyErr_Occurred())
+        unsigned long ival = PyLong_AsUnsignedLongMask(arg);
+        if (ival == (unsigned long)-1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else
             *p = (unsigned char) ival;
@@ -741,10 +719,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     case 'h': {/* signed short int */
         short *p = va_arg(*p_va, short *);
-        long ival;
-        if (float_argument_error(arg))
-            RETURN_ERR_OCCURRED;
-        ival = PyLong_AsLong(arg);
+        long ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else if (ival < SHRT_MIN) {
@@ -765,11 +740,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'H': { /* short int sized bitfield, both signed and
                    unsigned allowed */
         unsigned short *p = va_arg(*p_va, unsigned short *);
-        long ival;
-        if (float_argument_error(arg))
-            RETURN_ERR_OCCURRED;
-        ival = PyLong_AsUnsignedLongMask(arg);
-        if (ival == -1 && PyErr_Occurred())
+        unsigned long ival = PyLong_AsUnsignedLongMask(arg);
+        if (ival == (unsigned long)-1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else
             *p = (unsigned short) ival;
@@ -778,10 +750,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     case 'i': {/* signed int */
         int *p = va_arg(*p_va, int *);
-        long ival;
-        if (float_argument_error(arg))
-            RETURN_ERR_OCCURRED;
-        ival = PyLong_AsLong(arg);
+        long ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else if (ival > INT_MAX) {
@@ -802,14 +771,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'I': { /* int sized bitfield, both signed and
                    unsigned allowed */
         unsigned int *p = va_arg(*p_va, unsigned int *);
-        unsigned int ival;
-        if (float_argument_error(arg))
-            RETURN_ERR_OCCURRED;
-        ival = (unsigned int)PyLong_AsUnsignedLongMask(arg);
-        if (ival == (unsigned int)-1 && PyErr_Occurred())
+        unsigned long ival = PyLong_AsUnsignedLongMask(arg);
+        if (ival == (unsigned long)-1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else
-            *p = ival;
+            *p = (unsigned int) ival;
         break;
     }
 
@@ -818,9 +784,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         PyObject *iobj;
         Py_ssize_t *p = va_arg(*p_va, Py_ssize_t *);
         Py_ssize_t ival = -1;
-        if (float_argument_error(arg))
-            RETURN_ERR_OCCURRED;
-        iobj = PyNumber_Index(arg);
+        iobj = _PyNumber_Index(arg);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -832,10 +796,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     }
     case 'l': {/* long int */
         long *p = va_arg(*p_va, long *);
-        long ival;
-        if (float_argument_error(arg))
-            RETURN_ERR_OCCURRED;
-        ival = PyLong_AsLong(arg);
+        long ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else
@@ -856,10 +817,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     case 'L': {/* long long */
         long long *p = va_arg( *p_va, long long * );
-        long long ival;
-        if (float_argument_error(arg))
-            RETURN_ERR_OCCURRED;
-        ival = PyLong_AsLongLong(arg);
+        long long ival = PyLong_AsLongLong(arg);
         if (ival == (long long)-1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
         else

@@ -17,8 +17,6 @@ from ctypes import Array, LibraryLoader
 from difflib import SequenceMatcher
 from filecmp import dircmp
 from fileinput import FileInput
-from mmap import mmap
-from ipaddress import IPv4Network, IPv4Interface, IPv6Network, IPv6Interface
 from itertools import chain
 from http.cookies import Morsel
 from multiprocessing.managers import ValueProxy
@@ -49,7 +47,6 @@ class BaseTest(unittest.TestCase):
 
     def test_subscriptable(self):
         for t in (type, tuple, list, dict, set, frozenset, enumerate,
-                  mmap,
                   defaultdict, deque,
                   SequenceMatcher,
                   dircmp,
@@ -74,7 +71,6 @@ class BaseTest(unittest.TestCase):
                   Sequence, MutableSequence,
                   MappingProxyType, AsyncGeneratorType,
                   DirEntry,
-                  IPv4Network, IPv4Interface, IPv6Network, IPv6Interface,
                   chain,
                   TemporaryDirectory, SpooledTemporaryFile,
                   Queue, SimpleQueue,

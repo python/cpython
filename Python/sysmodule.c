@@ -457,7 +457,7 @@ static PyObject *
 sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
+    _Py_EnsureTstateNotNULL(tstate);
 
     if (argc == 0) {
         _PyErr_SetString(tstate, PyExc_TypeError,

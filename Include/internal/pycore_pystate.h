@@ -86,6 +86,21 @@ _PyThreadState_GET(void)
 #undef PyThreadState_GET
 #define PyThreadState_GET() _PyThreadState_GET()
 
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalError_TstateNULL(const char *func);
+
+static inline void
+_Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
+{
+    if (tstate == NULL) {
+        _Py_FatalError_TstateNULL(func);
+    }
+}
+
+// Call Py_FatalError() if tstate is NULL
+#define _Py_EnsureTstateNotNULL(tstate) \
+    _Py_EnsureFuncTstateNotNULL(__func__, tstate)
+
+
 /* Get the current interpreter state.
 
    The macro is unsafe: it does not check for error and it can return NULL.
@@ -96,7 +111,9 @@ _PyThreadState_GET(void)
    and _PyGILState_GetInterpreterStateUnsafe(). */
 static inline PyInterpreterState* _PyInterpreterState_GET(void) {
     PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
+#ifdef Py_DEBUG
+    _Py_EnsureTstateNotNULL(tstate);
+#endif
     return tstate->interp;
 }
 
@@ -114,15 +131,21 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
     PyThreadState *newts);
 
 PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
-PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 
-PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
+#ifdef HAVE_FORK
+extern PyStatus _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
+extern PyStatus _PyGILState_Reinit(_PyRuntimeState *runtime);
+extern void _PySignal_AfterFork(void);
+#endif
 
 
 PyAPI_FUNC(int) _PyState_AddModule(
     PyThreadState *tstate,
     PyObject* module,
     struct PyModuleDef* def);
+
+
+PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

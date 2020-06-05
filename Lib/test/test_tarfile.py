@@ -57,21 +57,21 @@ class TarTest:
     def mode(self):
         return self.prefix + self.suffix
 
-@support.requires_gzip
+@support.requires_gzip()
 class GzipTest:
     tarname = gzipname
     suffix = 'gz'
     open = gzip.GzipFile if gzip else None
     taropen = tarfile.TarFile.gzopen
 
-@support.requires_bz2
+@support.requires_bz2()
 class Bz2Test:
     tarname = bz2name
     suffix = 'bz2'
     open = bz2.BZ2File if bz2 else None
     taropen = tarfile.TarFile.bz2open
 
-@support.requires_lzma
+@support.requires_lzma()
 class LzmaTest:
     tarname = xzname
     suffix = 'xz'

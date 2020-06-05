@@ -5,6 +5,8 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"
+#include "pycore_interp.h"        // _PyInterpreterState.float_state
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <ctype.h>
 #include <float.h>
@@ -16,16 +18,9 @@ class float "PyObject *" "&PyFloat_Type"
 
 #include "clinic/floatobject.c.h"
 
-/* Special free list
-   free_list is a singly-linked list of available PyFloatObjects, linked
-   via abuse of their ob_type members.
-*/
-
 #ifndef PyFloat_MAXFREELIST
-#define PyFloat_MAXFREELIST    100
+#  define PyFloat_MAXFREELIST   100
 #endif
-static int numfree = 0;
-static PyFloatObject *free_list = NULL;
 
 double
 PyFloat_GetMax(void)
@@ -59,12 +54,14 @@ static PyStructSequence_Field floatinfo_fields[] = {
                     "is a normalized float"},
     {"min_10_exp",      "DBL_MIN_10_EXP -- minimum int e such that 10**e is "
                     "a normalized"},
-    {"dig",             "DBL_DIG -- digits"},
+    {"dig",             "DBL_DIG -- maximum number of decimal digits that "
+                    "can be faithfully represented in a float"},
     {"mant_dig",        "DBL_MANT_DIG -- mantissa digits"},
     {"epsilon",         "DBL_EPSILON -- Difference between 1 and the next "
                     "representable float"},
     {"radix",           "FLT_RADIX -- radix of exponent"},
-    {"rounds",          "FLT_ROUNDS -- rounding mode"},
+    {"rounds",          "FLT_ROUNDS -- rounding mode used for arithmetic "
+                    "operations"},
     {0}
 };
 
@@ -115,16 +112,19 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
-    PyFloatObject *op = free_list;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_float_state *state = &interp->float_state;
+    PyFloatObject *op = state->free_list;
     if (op != NULL) {
-        free_list = (PyFloatObject *) Py_TYPE(op);
-        numfree--;
-    } else {
-        op = (PyFloatObject*) PyObject_MALLOC(sizeof(PyFloatObject));
-        if (!op)
-            return PyErr_NoMemory();
+        state->free_list = (PyFloatObject *) Py_TYPE(op);
+        state->numfree--;
     }
-    /* Inline PyObject_New */
+    else {
+        op = PyObject_Malloc(sizeof(PyFloatObject));
+        if (!op) {
+            return PyErr_NoMemory();
+        }
+    }
     (void)PyObject_INIT(op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
@@ -217,13 +217,15 @@ static void
 float_dealloc(PyFloatObject *op)
 {
     if (PyFloat_CheckExact(op)) {
-        if (numfree >= PyFloat_MAXFREELIST)  {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        struct _Py_float_state *state = &interp->float_state;
+        if (state->numfree >= PyFloat_MAXFREELIST)  {
             PyObject_FREE(op);
             return;
         }
-        numfree++;
-        Py_SET_TYPE(op, (PyTypeObject *)free_list);
-        free_list = op;
+        state->numfree++;
+        Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
+        state->free_list = op;
     }
     else
         Py_TYPE(op)->tp_free((PyObject *)op);
@@ -248,7 +250,7 @@ PyFloat_AsDouble(PyObject *op)
     nb = Py_TYPE(op)->tp_as_number;
     if (nb == NULL || nb->nb_float == NULL) {
         if (nb && nb->nb_index) {
-            PyObject *res = PyNumber_Index(op);
+            PyObject *res = _PyNumber_Index(op);
             if (!res) {
                 return -1;
             }
@@ -862,27 +864,7 @@ static PyObject *
 float___trunc___impl(PyObject *self)
 /*[clinic end generated code: output=dd3e289dd4c6b538 input=591b9ba0d650fdff]*/
 {
-    double x = PyFloat_AsDouble(self);
-    double wholepart;           /* integral portion of x, rounded toward 0 */
-
-    (void)modf(x, &wholepart);
-    /* Try to get out cheap if this fits in a Python int.  The attempt
-     * to cast to long must be protected, as C doesn't define what
-     * happens if the double is too big to fit in a long.  Some rare
-     * systems raise an exception then (RISCOS was mentioned as one,
-     * and someone using a non-default option on Sun also bumped into
-     * that).  Note that checking for >= and <= LONG_{MIN,MAX} would
-     * still be vulnerable:  if a long has more bits of precision than
-     * a double, casting MIN/MAX to double may yield an approximation,
-     * and if that's rounded up, then, e.g., wholepart=LONG_MAX+1 would
-     * yield true from the C expression wholepart<=LONG_MAX, despite
-     * that wholepart is actually greater than LONG_MAX.
-     */
-    if (LONG_MIN < wholepart && wholepart < LONG_MAX) {
-        const long aslong = (long)wholepart;
-        return PyLong_FromLong(aslong);
-    }
-    return PyLong_FromDouble(wholepart);
+    return PyLong_FromDouble(PyFloat_AS_DOUBLE(self));
 }
 
 /*[clinic input]
@@ -1999,30 +1981,33 @@ _PyFloat_Init(void)
 }
 
 void
-_PyFloat_ClearFreeList(void)
+_PyFloat_ClearFreeList(PyThreadState *tstate)
 {
-    PyFloatObject *f = free_list, *next;
+    struct _Py_float_state *state = &tstate->interp->float_state;
+    PyFloatObject *f = state->free_list, *next;
     for (; f; f = next) {
         next = (PyFloatObject*) Py_TYPE(f);
         PyObject_FREE(f);
     }
-    free_list = NULL;
-    numfree = 0;
+    state->free_list = NULL;
+    state->numfree = 0;
 }
 
 void
-_PyFloat_Fini(void)
+_PyFloat_Fini(PyThreadState *tstate)
 {
-    _PyFloat_ClearFreeList();
+    _PyFloat_ClearFreeList(tstate);
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyFloat_DebugMallocStats(FILE *out)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_float_state *state = &interp->float_state;
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
-                           numfree, sizeof(PyFloatObject));
+                           state->numfree, sizeof(PyFloatObject));
 }
 
 

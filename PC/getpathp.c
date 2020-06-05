@@ -358,7 +358,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
         goto done;
     }
     /* Find out how big our core buffer is, and how many subkeys we have */
-    rc = RegQueryInfoKey(newKey, NULL, NULL, NULL, &numKeys, NULL, NULL,
+    rc = RegQueryInfoKeyW(newKey, NULL, NULL, NULL, &numKeys, NULL, NULL,
                     NULL, NULL, &dataSize, NULL, NULL);
     if (rc!=ERROR_SUCCESS) {
         goto done;

@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "structmember.h"         // PyMemberDef
@@ -99,21 +100,6 @@ _PyGen_Finalize(PyObject *self)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
-static inline void
-exc_state_clear(_PyErr_StackItem *exc_state)
-{
-    PyObject *t, *v, *tb;
-    t = exc_state->exc_type;
-    v = exc_state->exc_value;
-    tb = exc_state->exc_traceback;
-    exc_state->exc_type = NULL;
-    exc_state->exc_value = NULL;
-    exc_state->exc_traceback = NULL;
-    Py_XDECREF(t);
-    Py_XDECREF(v);
-    Py_XDECREF(tb);
-}
-
 static void
 gen_dealloc(PyGenObject *gen)
 {
@@ -146,7 +132,7 @@ gen_dealloc(PyGenObject *gen)
     Py_CLEAR(gen->gi_code);
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
-    exc_state_clear(&gen->gi_exc_state);
+    _PyErr_ClearExcState(&gen->gi_exc_state);
     PyObject_GC_Del(gen);
 }
 
@@ -220,6 +206,12 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     gen->gi_running = 1;
     gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
+
+    if (exc) {
+        assert(_PyErr_Occurred(tstate));
+        _PyErr_ChainStackItem(NULL);
+    }
+
     result = _PyEval_EvalFrame(tstate, f, exc);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
@@ -239,7 +231,8 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
             if (PyAsyncGen_CheckExact(gen)) {
                 PyErr_SetNone(PyExc_StopAsyncIteration);
             }
-            else {
+            else if (arg) {
+                /* Set exception if not called by gen_iternext() */
                 PyErr_SetNone(PyExc_StopIteration);
             }
         }
@@ -274,7 +267,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     if (!result || f->f_stacktop == NULL) {
         /* generator can't be rerun, so release the frame */
         /* first clean reference cycle through stored exception traceback */
-        exc_state_clear(&gen->gi_exc_state);
+        _PyErr_ClearExcState(&gen->gi_exc_state);
         gen->gi_frame->f_gen = NULL;
         gen->gi_frame = NULL;
         Py_DECREF(f);
@@ -512,16 +505,6 @@ throw_here:
     }
 
     PyErr_Restore(typ, val, tb);
-
-    _PyErr_StackItem *gi_exc_state = &gen->gi_exc_state;
-    if (gi_exc_state->exc_type != NULL && gi_exc_state->exc_type != Py_None) {
-        Py_INCREF(gi_exc_state->exc_type);
-        Py_XINCREF(gi_exc_state->exc_value);
-        Py_XINCREF(gi_exc_state->exc_traceback);
-        _PyErr_ChainExceptions(gi_exc_state->exc_type,
-                               gi_exc_state->exc_value,
-                               gi_exc_state->exc_traceback);
-    }
     return gen_send_ex(gen, Py_None, 1, 0);
 
 failed_throw:
@@ -1179,7 +1162,7 @@ typedef enum {
 } AwaitableState;
 
 
-typedef struct {
+typedef struct PyAsyncGenASend {
     PyObject_HEAD
     PyAsyncGenObject *ags_gen;
 
@@ -1191,7 +1174,7 @@ typedef struct {
 } PyAsyncGenASend;
 
 
-typedef struct {
+typedef struct PyAsyncGenAThrow {
     PyObject_HEAD
     PyAsyncGenObject *agt_gen;
 
@@ -1203,27 +1186,11 @@ typedef struct {
 } PyAsyncGenAThrow;
 
 
-typedef struct {
+typedef struct _PyAsyncGenWrappedValue {
     PyObject_HEAD
     PyObject *agw_val;
 } _PyAsyncGenWrappedValue;
 
-
-#ifndef _PyAsyncGen_MAXFREELIST
-#define _PyAsyncGen_MAXFREELIST 80
-#endif
-
-/* Freelists boost performance 6-10%; they also reduce memory
-   fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
-   are short-living objects that are instantiated for every
-   __anext__ call.
-*/
-
-static _PyAsyncGenWrappedValue *ag_value_freelist[_PyAsyncGen_MAXFREELIST];
-static int ag_value_freelist_free = 0;
-
-static PyAsyncGenASend *ag_asend_freelist[_PyAsyncGen_MAXFREELIST];
-static int ag_asend_freelist_free = 0;
 
 #define _PyAsyncGenWrappedValue_CheckExact(o) \
                     Py_IS_TYPE(o, &_PyAsyncGenWrappedValue_Type)
@@ -1440,27 +1407,29 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 
 
 void
-_PyAsyncGen_ClearFreeLists(void)
+_PyAsyncGen_ClearFreeLists(PyThreadState *tstate)
 {
-    while (ag_value_freelist_free) {
+    struct _Py_async_gen_state *state = &tstate->interp->async_gen;
+
+    while (state->value_numfree) {
         _PyAsyncGenWrappedValue *o;
-        o = ag_value_freelist[--ag_value_freelist_free];
+        o = state->value_freelist[--state->value_numfree];
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         PyObject_GC_Del(o);
     }
 
-    while (ag_asend_freelist_free) {
+    while (state->asend_numfree) {
         PyAsyncGenASend *o;
-        o = ag_asend_freelist[--ag_asend_freelist_free];
+        o = state->asend_freelist[--state->asend_numfree];
         assert(Py_IS_TYPE(o, &_PyAsyncGenASend_Type));
         PyObject_GC_Del(o);
     }
 }
 
 void
-_PyAsyncGen_Fini(void)
+_PyAsyncGen_Fini(PyThreadState *tstate)
 {
-    _PyAsyncGen_ClearFreeLists();
+    _PyAsyncGen_ClearFreeLists(tstate);
 }
 
 
@@ -1503,10 +1472,13 @@ async_gen_asend_dealloc(PyAsyncGenASend *o)
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->ags_gen);
     Py_CLEAR(o->ags_sendval);
-    if (ag_asend_freelist_free < _PyAsyncGen_MAXFREELIST) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_async_gen_state *state = &interp->async_gen;
+    if (state->asend_numfree < _PyAsyncGen_MAXFREELIST) {
         assert(PyAsyncGenASend_CheckExact(o));
-        ag_asend_freelist[ag_asend_freelist_free++] = o;
-    } else {
+        state->asend_freelist[state->asend_numfree++] = o;
+    }
+    else {
         PyObject_GC_Del(o);
     }
 }
@@ -1658,11 +1630,14 @@ static PyObject *
 async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
 {
     PyAsyncGenASend *o;
-    if (ag_asend_freelist_free) {
-        ag_asend_freelist_free--;
-        o = ag_asend_freelist[ag_asend_freelist_free];
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_async_gen_state *state = &interp->async_gen;
+    if (state->asend_numfree) {
+        state->asend_numfree--;
+        o = state->asend_freelist[state->asend_numfree];
         _Py_NewReference((PyObject *)o);
-    } else {
+    }
+    else {
         o = PyObject_GC_New(PyAsyncGenASend, &_PyAsyncGenASend_Type);
         if (o == NULL) {
             return NULL;
@@ -1690,10 +1665,13 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
 {
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agw_val);
-    if (ag_value_freelist_free < _PyAsyncGen_MAXFREELIST) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_async_gen_state *state = &interp->async_gen;
+    if (state->value_numfree < _PyAsyncGen_MAXFREELIST) {
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
-        ag_value_freelist[ag_value_freelist_free++] = o;
-    } else {
+        state->value_freelist[state->value_numfree++] = o;
+    }
+    else {
         PyObject_GC_Del(o);
     }
 }
@@ -1757,12 +1735,15 @@ _PyAsyncGenValueWrapperNew(PyObject *val)
     _PyAsyncGenWrappedValue *o;
     assert(val);
 
-    if (ag_value_freelist_free) {
-        ag_value_freelist_free--;
-        o = ag_value_freelist[ag_value_freelist_free];
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_async_gen_state *state = &interp->async_gen;
+    if (state->value_numfree) {
+        state->value_numfree--;
+        o = state->value_freelist[state->value_numfree];
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         _Py_NewReference((PyObject*)o);
-    } else {
+    }
+    else {
         o = PyObject_GC_New(_PyAsyncGenWrappedValue,
                             &_PyAsyncGenWrappedValue_Type);
         if (o == NULL) {

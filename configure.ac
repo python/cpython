@@ -3,7 +3,7 @@ dnl * Please run autoreconf to test your changes! *
 dnl ***********************************************
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.9)
+m4_define(PYTHON_VERSION, 3.10)
 
 AC_PREREQ([2.69])
 
@@ -2946,6 +2946,42 @@ esac
 ],
 [AC_MSG_RESULT(default)])
 
+validate_tzpath() {
+    # Checks that each element of hte path is an absolute path
+    if test -z "$1"; then
+        # Empty string is allowed: it indicates no system TZPATH
+        return 0
+    fi
+
+    # Bad paths are those that don't start with /
+    dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
+    if ( echo $1 | grep -qE '(^|:)(@<:@^/@:>@|$)' ); then
+        AC_MSG_ERROR([--with-tzpath must contain only absolute paths, not $1])
+        return 1;
+    fi
+}
+
+TZPATH="/usr/share/zoneinfo:/usr/lib/zoneinfo:/usr/share/lib/zoneinfo:/etc/zoneinfo"
+AC_MSG_CHECKING(for --with-tzpath)
+AC_ARG_WITH(tzpath,
+            AS_HELP_STRING([--with-tzpath=<list of absolute paths separated by pathsep>]
+                           [Select the default time zone search path for zoneinfo.TZPATH]),
+[
+case "$withval" in
+    yes)
+        AC_MSG_ERROR([--with-tzpath requires a value])
+        ;;
+    *)
+        validate_tzpath "$withval"
+        TZPATH="$withval"
+        AC_MSG_RESULT("$withval")
+        ;;
+esac
+],
+[validate_tzpath "$TZPATH"
+ AC_MSG_RESULT("$TZPATH")])
+AC_SUBST(TZPATH)
+
 AC_MSG_CHECKING(for --with-address-sanitizer)
 AC_ARG_WITH(address_sanitizer,
             AS_HELP_STRING([--with-address-sanitizer],
@@ -5715,6 +5751,32 @@ esac
 [
 AC_MSG_RESULT(python)
 AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
+])
+
+# builtin hash modules
+default_hashlib_hashes="md5,sha1,sha256,sha512,sha3,blake2"
+AC_DEFINE([PY_BUILTIN_HASHLIB_HASHES], [], [enabled builtin hash modules]
+)
+AC_MSG_CHECKING(for --with-builtin-hashlib-hashes)
+AC_ARG_WITH(builtin-hashlib-hashes,
+            AS_HELP_STRING([--with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2],
+                           [builtin hash modules,
+                            md5, sha1, sha256, sha512, sha3 (with shake), blake2]),
+[
+case "$withval" in
+    yes)
+        withval=$default_hashlib_hashes
+        ;;
+    no)
+        withval=""
+        ;;
+esac
+AC_MSG_RESULT($withval)
+AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$withval")
+],
+[
+AC_MSG_RESULT($default_hashlib_hashes);
+AC_DEFINE_UNQUOTED(PY_BUILTIN_HASHLIB_HASHES, "$default_hashlib_hashes")
 ])
 
 # --with-experimental-isolated-subinterpreters

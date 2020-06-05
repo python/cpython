@@ -40,6 +40,10 @@ typedef unsigned short mode_t;
 #  define FILE_ATTRIBUTE_NO_SCRUB_DATA 0x20000
 #endif
 
+#ifndef IO_REPARSE_TAG_APPEXECLINK
+#  define IO_REPARSE_TAG_APPEXECLINK 0x8000001BL
+#endif
+
 #endif /* MS_WINDOWS */
 
 /* From Python's stat.py */

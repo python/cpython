@@ -1,2 +1,0 @@
-Initialize ``n->n_col_offset``.
-(Patch by Joannah Nanjekye)

@@ -33,6 +33,7 @@ from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import socket_helper
+from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
 
 
@@ -706,7 +707,7 @@ class EventLoopTestsMixin:
         proto.transport.close()
         lsock.close()
 
-        support.join_thread(thread)
+        threading_helper.join_thread(thread)
         self.assertFalse(thread.is_alive())
         self.assertEqual(proto.state, 'CLOSED')
         self.assertEqual(proto.nbytes, len(message))
@@ -1208,7 +1209,7 @@ class EventLoopTestsMixin:
             ConnectionRefusedError, client.connect, ('127.0.0.1', port))
         client.close()
 
-    def test_create_datagram_endpoint(self):
+    def _test_create_datagram_endpoint(self, local_addr, family):
         class TestMyDatagramProto(MyDatagramProto):
             def __init__(inner_self):
                 super().__init__(loop=self.loop)
@@ -1218,9 +1219,11 @@ class EventLoopTestsMixin:
                 self.transport.sendto(b'resp:'+data, addr)
 
         coro = self.loop.create_datagram_endpoint(
-            TestMyDatagramProto, local_addr=('127.0.0.1', 0))
+            TestMyDatagramProto, local_addr=local_addr, family=family)
         s_transport, server = self.loop.run_until_complete(coro)
-        host, port = s_transport.get_extra_info('sockname')
+        sockname = s_transport.get_extra_info('sockname')
+        host, port = socket.getnameinfo(
+            sockname, socket.NI_NUMERICHOST|socket.NI_NUMERICSERV)
 
         self.assertIsInstance(s_transport, asyncio.Transport)
         self.assertIsInstance(server, TestMyDatagramProto)
@@ -1253,6 +1256,13 @@ class EventLoopTestsMixin:
         self.loop.run_until_complete(client.done)
         self.assertEqual('CLOSED', client.state)
         server.transport.close()
+
+    def test_create_datagram_endpoint(self):
+        self._test_create_datagram_endpoint(('127.0.0.1', 0), socket.AF_INET)
+
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 not supported or enabled')
+    def test_create_datagram_endpoint_ipv6(self):
+        self._test_create_datagram_endpoint(('::1', 0), socket.AF_INET6)
 
     def test_create_datagram_endpoint_sock(self):
         sock = None
