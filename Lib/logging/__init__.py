@@ -425,7 +425,7 @@ class PercentStyle(object):
 
     def _format(self, record):
         if defaults := self._defaults:
-            values = {**record.__dict__, **defaults}
+            values = defaults | record.__dict__
         else:
             values = record.__dict__
         return self._fmt % values
@@ -447,7 +447,7 @@ class StrFormatStyle(PercentStyle):
 
     def _format(self, record):
         if defaults := self._defaults:
-            values = {**record.__dict__, **defaults}
+            values = defaults | record.__dict__
         else:
             values = record.__dict__
         return self._fmt.format(**values)
@@ -500,7 +500,7 @@ class StringTemplateStyle(PercentStyle):
 
     def _format(self, record):
         if defaults := self._defaults:
-            values = {**record.__dict__, **defaults}
+            values = defaults | record.__dict__
         else:
             values = record.__dict__
         return self._tpl.substitute(**values)
