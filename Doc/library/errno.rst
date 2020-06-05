@@ -637,3 +637,58 @@ defined by the module.  The specific list of defined symbols is available as
 
    Quota exceeded
 
+
+.. data:: ENOMEDIUM
+
+   No medium found
+
+
+.. data:: EMEDIUMTYPE
+
+   Wrong medium type
+
+
+.. data:: ECANCELED
+
+   Operation Canceled
+
+
+.. data:: ENOKEY
+
+   Required key not available
+
+
+.. data:: EKEYEXPIRED
+
+   Key has expired
+
+
+.. data:: EKEYREVOKED
+
+   Key has been revoked
+
+
+.. data:: EKEYREJECTED
+
+   Key was rejected by service
+
+
+.. data:: EOWNERDEAD
+
+   Owner died
+
+
+.. data:: ENOTRECOVERABLE
+
+   State not recoverable
+
+
+.. data:: ERFKILL
+
+   Operation not possible due to RF-kill
+
+
+.. data:: EHWPOISON
+
+   Memory page has hardware error
+
