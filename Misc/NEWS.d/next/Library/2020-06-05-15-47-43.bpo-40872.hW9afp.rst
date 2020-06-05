@@ -1,0 +1,2 @@
+:class:`multiprocessing.Lock` now has a `locked()` method that returns
+whether the lock is currently held. Patch contributed by Rémi Lapeyre.
