@@ -84,6 +84,16 @@ struct _Py_tuple_state {
 #endif
 };
 
+/* Empty list reuse scheme to save calls to malloc and free */
+#ifndef PyList_MAXFREELIST
+#  define PyList_MAXFREELIST 80
+#endif
+
+struct _Py_list_state {
+    PyListObject *free_list[PyList_MAXFREELIST];
+    int numfree;
+};
+
 struct _Py_float_state {
     /* Special free list
        free_list is a singly-linked list of available PyFloatObjects,
@@ -192,6 +202,7 @@ struct _is {
     PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
 #endif
     struct _Py_tuple_state tuple;
+    struct _Py_list_state list;
     struct _Py_float_state float_state;
     struct _Py_frame_state frame;
 
