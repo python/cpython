@@ -61,7 +61,7 @@ extern PyStatus _PyGC_Init(PyThreadState *tstate);
 extern void _PyFrame_Fini(PyThreadState *tstate);
 extern void _PyDict_Fini(void);
 extern void _PyTuple_Fini(PyThreadState *tstate);
-extern void _PyList_Fini(void);
+extern void _PyList_Fini(PyThreadState *tstate);
 extern void _PySet_Fini(void);
 extern void _PyBytes_Fini(void);
 extern void _PyFloat_Fini(PyThreadState *tstate);
