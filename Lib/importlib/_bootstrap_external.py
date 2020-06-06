@@ -982,15 +982,10 @@ class FileLoader:
             with _io.FileIO(path, 'r') as file:
                 return file.read()
 
-    # TraversableResources
-    def files(self):
-        import pathlib
-        return pathlib.Path(self.path).parent
-
     @_check_name
     def get_resource_reader(self, module):
-        from importlib.abc import TraversableAdapter
-        return TraversableAdapter(self)
+        from importlib.readers import FileReader
+        return FileReader(self)
 
 
 class SourceFileLoader(FileLoader, SourceLoader):
