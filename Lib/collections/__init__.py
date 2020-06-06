@@ -760,10 +760,12 @@ class Counter(dict):
     #         set(cp - cq) == sp - sq
     #         set(cp | cq) == sp | sq
     #         set(cp & cq) == sp & sq
-    #         cp.isequal(cq) == (sp == sq)
-    #         cp.issubset(cq) == sp.issubset(sq)
-    #         cp.issuperset(cq) == sp.issuperset(sq)
-    #         cp.isdisjoint(cq) == sp.isdisjoint(sq)
+    #         (cp == cq) == (sp == sq)
+    #         (cp != cq) == (sp != sq)
+    #         (cp <= cq) == (sp <= sq)
+    #         (cp < cq) == (sp < sq)
+    #         (cp >= cq) == (sp >= sq)
+    #         (cp > cq) == (sp > sq)
 
     def __add__(self, other):
         '''Add counts from two counters.
