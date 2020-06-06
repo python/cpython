@@ -1,9 +1,9 @@
 import pathlib
 import zipfile
-from .abc import TraversableResources
+from . import abc
 
 
-class FileReader(TraversableResources):
+class FileReader(abc.TraversableResources):
     def __init__(self, loader):
         self.path = pathlib.Path(loader.path).parent
 
@@ -14,7 +14,7 @@ class FileReader(TraversableResources):
 class ZipReader(FileReader):
     def __init__(self, loader, module):
         _, _, name = module.rpartition('.')
-        prefix = loader.prefix + name + '/'
+        prefix = loader.prefix.replace('\\', '/') + name + '/'
         self.path = zipfile.Path(loader.archive, prefix)
 
     def open_resource(self, resource):
