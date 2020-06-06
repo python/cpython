@@ -3710,7 +3710,9 @@ class FormatterTest(unittest.TestCase):
             'args': (2, 'placeholders'),
         }
         self.variants = {
-            'custom': 1234
+            'custom': {
+                'custom': 1234
+            }
         }
 
     def get_record(self, name=None):
