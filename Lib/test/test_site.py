@@ -159,6 +159,12 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), 'ModuleNotFoundError')
 
+    def test_addpackage_empty_lines(self):
+        # Issue 33689
+        pth_dir, pth_fn = self.make_pth("\n\n  \n\n")
+        known_paths = site.addpackage(pth_dir, pth_fn, set())
+        self.assertEqual(len(known_paths), 0)
+
     def test_addpackage_import_bad_pth_file(self):
         # Issue 5258
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
