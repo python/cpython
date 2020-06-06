@@ -591,6 +591,15 @@ class StartupImportTests(unittest.TestCase):
             'import site, sys; site.enablerlcompleter(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
 
+    @classmethod
+    def _calc_sys_path_for_underpth_nosite(self, sys_prefix, lines):
+        sys_path = []
+        for line in lines:
+            if not line or line[0] == '#':
+                continue
+            abs_path = os.path.abspath(os.path.join(sys_prefix, line))
+            sys_path.append(abs_path)
+        return sys_path
 
 @unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
 class _pthFileTests(unittest.TestCase):
