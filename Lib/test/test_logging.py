@@ -3934,7 +3934,7 @@ class FormatterTest(unittest.TestCase):
             f = logging.Formatter(fmt, style=style, defaults={'custom': 'Default'})
             r = self.get_record()
             self.assertEqual(f.format(r), 'Default Message with 2 placeholders')
-            r = self.get_record(custom)
+            r = self.get_record("custom")
             self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
 
             # Without default
@@ -3944,7 +3944,7 @@ class FormatterTest(unittest.TestCase):
 
             # Non-existing default is ignored
             f = logging.Formatter(fmt, style=style, defaults={'Non-existing': 'Default'})
-            r = self.get_record(custom)
+            r = self.get_record("custom")
             self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
 
     def test_invalid_style(self):
