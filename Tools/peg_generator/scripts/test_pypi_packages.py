@@ -61,7 +61,7 @@ def run_tests(dirname: str, tree: int) -> int:
         excluded_files=[],
         tree_arg=tree,
         short=True,
-        mode=1,
+        mode=1 if tree else 0,
         parser="pegen",
     )
 
