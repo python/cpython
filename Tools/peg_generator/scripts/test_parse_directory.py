@@ -22,6 +22,10 @@ SUCCESS = "\033[92m"
 FAIL = "\033[91m"
 ENDC = "\033[0m"
 
+COMPILE = 2
+PARSE = 1
+NOTREE = 0
+
 argparser = argparse.ArgumentParser(
     prog="test_parse_directory",
     description="Helper program to test directories or files for pegen",
@@ -110,7 +114,7 @@ def compare_trees(
 
 def parse_file(source: str, file: str, mode: int, oldparser: bool) -> Tuple[Any, float]:
     t0 = time.time()
-    if mode == 2:
+    if mode == COMPILE:
         result = _peg_parser.compile_string(
             source,
             filename=file,
@@ -121,6 +125,7 @@ def parse_file(source: str, file: str, mode: int, oldparser: bool) -> Tuple[Any,
             source,
             filename=file,
             oldparser=oldparser,
+            ast=(mode == PARSE),
         )
     t1 = time.time()
     return result, t1 - t0
@@ -165,7 +170,7 @@ def parse_directory(
     oldparser: bool,
 ) -> int:
     if tree_arg:
-        assert mode == 1, "Mode should be 1 (parse), when comparing the generated trees"
+        assert mode == PARSE, "Mode should be 1 (parse), when comparing the generated trees"
 
     if oldparser and tree_arg:
         print("Cannot specify tree argument with the cpython parser.", file=sys.stderr)

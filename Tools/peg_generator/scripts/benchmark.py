@@ -40,7 +40,12 @@ subcommands = argparser.add_subparsers(title="Benchmarks", dest="subcommand")
 command_compile = subcommands.add_parser(
     "compile", help="Benchmark parsing and compiling to bytecode"
 )
-command_parse = subcommands.add_parser("parse", help="Benchmark parsing and generating an ast.AST")
+command_parse = subcommands.add_parser(
+    "parse", help="Benchmark parsing and generating an ast.AST"
+)
+command_notree = subcommands.add_parser(
+    "notree", help="Benchmark parsing and dumping the tree"
+)
 
 
 def benchmark(func):
@@ -79,14 +84,25 @@ def time_parse(source, parser):
         return _peg_parser.parse_string(source)
 
 
+@benchmark
+def time_notree(source, parser):
+    if parser == "old":
+        return _peg_parser.parse_string(source, oldparser=True, ast=False)
+    else:
+        return _peg_parser.parse_string(source, ast=False)
+
+
 def run_benchmark_xxl(subcommand, parser, source):
     if subcommand == "compile":
         time_compile(source, parser)
     elif subcommand == "parse":
         time_parse(source, parser)
+    elif subcommand == "notree":
+        time_notree(source, parser)
 
 
 def run_benchmark_stdlib(subcommand, parser):
+    modes = {"compile": 2, "parse": 1, "notree": 0}
     for _ in range(3):
         parse_directory(
             "../../Lib",
@@ -94,7 +110,7 @@ def run_benchmark_stdlib(subcommand, parser):
             excluded_files=["*/bad*", "*/lib2to3/tests/data/*",],
             tree_arg=0,
             short=True,
-            mode=2 if subcommand == "compile" else 1,
+            mode=modes[subcommand],
             oldparser=(parser == "old"),
         )
 

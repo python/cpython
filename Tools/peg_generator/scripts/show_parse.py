@@ -100,8 +100,8 @@ def main() -> None:
         tree = _peg_parser.parse_string(program)
 
         if args.diff:
-            a = tree
-            b = _peg_parser.parse_string(program, oldparser=True)
+            a = _peg_parser.parse_string(program, oldparser=True)
+            b = tree
             diff = diff_trees(a, b, args.verbose)
             if diff:
                 for line in diff:
@@ -109,7 +109,7 @@ def main() -> None:
             else:
                 print("# Trees are the same")
         else:
-            print(f"# Parsed using the new parser")
+            print("# Parsed using the new parser")
             print(format_tree(tree, args.verbose))
     else:
         tree = _peg_parser.parse_string(program, oldparser=True)
