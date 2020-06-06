@@ -80,14 +80,15 @@ _Py_compile_string(PyObject *self, PyObject *args, PyObject *kwds)
 PyObject *
 _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *keywords[] = {"string", "filename", "mode", "oldparser", NULL};
+    static char *keywords[] = {"string", "filename", "mode", "oldparser", "ast", NULL};
     char *the_string;
     char *filename = "<string>";
     char *mode_str = "exec";
     int oldparser = 0;
+    int ast = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|ssp", keywords,
-            &the_string, &filename, &mode_str, &oldparser)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sspp", keywords,
+            &the_string, &filename, &mode_str, &oldparser, &ast)) {
         return NULL;
     }
 
@@ -110,7 +111,14 @@ _Py_parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyObject *result = PyAST_mod2obj(mod);
+    PyObject *result;
+    if (ast) {
+        result = PyAST_mod2obj(mod);
+    }
+    else {
+        Py_INCREF(Py_None);
+        result = Py_None;
+    }
     PyArena_Free(arena);
     return result;
 }
