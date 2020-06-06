@@ -3942,7 +3942,7 @@ class FormatterTest(unittest.TestCase):
             # Without default
             f = logging.Formatter(fmt, style=style)
             r = self.get_record()
-            self.assertRaises(KeyError, f.format, r)
+            self.assertRaises(ValueError, f.format, r)
 
             # Non-existing default is ignored
             f = logging.Formatter(fmt, style=style, defaults={'Non-existing': 'Default'})
