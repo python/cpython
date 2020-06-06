@@ -906,7 +906,6 @@ class UrlParseTestCase(unittest.TestCase):
         # Other tests incidentally urlencode things; test non-covered cases:
         # Sequence and object values.
         result = urllib.parse.urlencode({'a': [1, 2], 'b': (3, 4, 5), 'c': None}, True)
-        # we cannot rely on ordering here
         self.assertEqual(result, 'a=1&a=2&b=3&b=4&b=5&c=None')
 
     def test_urlencode_sequences_standalone_keys(self):
