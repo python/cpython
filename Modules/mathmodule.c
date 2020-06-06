@@ -844,7 +844,7 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
         return res;
     }
     for (i = 1; i < nargs; i++) {
-        x = PyNumber_Index(args[i]);
+        x = _PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
@@ -1723,7 +1723,7 @@ math_isqrt(PyObject *module, PyObject *n)
     uint64_t m, u;
     PyObject *a = NULL, *b;
 
-    n = PyNumber_Index(n);
+    n = _PyNumber_Index(n);
     if (n == NULL) {
         return NULL;
     }
@@ -2047,37 +2047,9 @@ math_factorial(PyObject *module, PyObject *arg)
 {
     long x, two_valuation;
     int overflow;
-    PyObject *result, *odd_part, *pyint_form;
+    PyObject *result, *odd_part;
 
-    if (PyFloat_Check(arg)) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Using factorial() with floats is deprecated",
-                         1) < 0)
-        {
-            return NULL;
-        }
-        PyObject *lx;
-        double dx = PyFloat_AS_DOUBLE((PyFloatObject *)arg);
-        if (!(Py_IS_FINITE(dx) && dx == floor(dx))) {
-            PyErr_SetString(PyExc_ValueError,
-                            "factorial() only accepts integral values");
-            return NULL;
-        }
-        lx = PyLong_FromDouble(dx);
-        if (lx == NULL)
-            return NULL;
-        x = PyLong_AsLongAndOverflow(lx, &overflow);
-        Py_DECREF(lx);
-    }
-    else {
-        pyint_form = PyNumber_Index(arg);
-        if (pyint_form == NULL) {
-            return NULL;
-        }
-        x = PyLong_AsLongAndOverflow(pyint_form, &overflow);
-        Py_DECREF(pyint_form);
-    }
-
+    x = PyLong_AsLongAndOverflow(arg, &overflow);
     if (x == -1 && PyErr_Occurred()) {
         return NULL;
     }
@@ -3131,23 +3103,10 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     if (n == NULL) {
         return NULL;
     }
-    if (!PyLong_CheckExact(n)) {
-        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
-        if (n == NULL) {
-            return NULL;
-        }
-    }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
-    }
-    if (!PyLong_CheckExact(k)) {
-        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
-        if (k == NULL) {
-            Py_DECREF(n);
-            return NULL;
-        }
     }
 
     if (Py_SIZE(n) < 0) {
@@ -3254,23 +3213,10 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     if (n == NULL) {
         return NULL;
     }
-    if (!PyLong_CheckExact(n)) {
-        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
-        if (n == NULL) {
-            return NULL;
-        }
-    }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
-    }
-    if (!PyLong_CheckExact(k)) {
-        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
-        if (k == NULL) {
-            Py_DECREF(n);
-            return NULL;
-        }
     }
 
     if (Py_SIZE(n) < 0) {
@@ -3421,6 +3367,29 @@ math_ulp_impl(PyObject *module, double x)
     return x2 - x;
 }
 
+static int
+math_exec(PyObject *module)
+{
+    if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObject(module, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
+        return -1;
+    }
+    // 2pi
+    if (PyModule_AddObject(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
+        return -1;
+    }
+#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
+        return -1;
+    }
+#endif
+    return 0;
+}
 
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
@@ -3479,41 +3448,26 @@ static PyMethodDef math_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static PyModuleDef_Slot math_slots[] = {
+    {Py_mod_exec, math_exec},
+    {0, NULL}
+};
 
 PyDoc_STRVAR(module_doc,
 "This module provides access to the mathematical functions\n"
 "defined by the C standard.");
 
-
 static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
-    "math",
-    module_doc,
-    -1,
-    math_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "math",
+    .m_doc = module_doc,
+    .m_size = 0,
+    .m_methods = math_methods,
+    .m_slots = math_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_math(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&mathmodule);
-    if (m == NULL)
-        goto finally;
-
-    PyModule_AddObject(m, "pi", PyFloat_FromDouble(Py_MATH_PI));
-    PyModule_AddObject(m, "e", PyFloat_FromDouble(Py_MATH_E));
-    PyModule_AddObject(m, "tau", PyFloat_FromDouble(Py_MATH_TAU));  /* 2pi */
-    PyModule_AddObject(m, "inf", PyFloat_FromDouble(m_inf()));
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
-    PyModule_AddObject(m, "nan", PyFloat_FromDouble(m_nan()));
-#endif
-
-  finally:
-    return m;
+    return PyModuleDef_Init(&mathmodule);
 }

@@ -3,12 +3,14 @@
 import os
 import unittest
 from test import support
+from test.support import hashlib_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 from test.test_tools import scriptsdir, skip_if_missing
 
 skip_if_missing()
 
+@hashlib_helper.requires_hashdigest('md5')
 class MD5SumTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

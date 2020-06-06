@@ -41,8 +41,9 @@ but these are two different characters that have different meanings.
 
 The Unicode standard describes how characters are represented by
 **code points**.  A code point value is an integer in the range 0 to
-0x10FFFF (about 1.1 million values, with some 110 thousand assigned so
-far).  In the standard and in this document, a code point is written
+0x10FFFF (about 1.1 million values, the
+`actual number assigned <https://www.unicode.org/versions/latest/#Summary>`_
+is less than that). In the standard and in this document, a code point is written
 using the notation ``U+265E`` to mean the character with value
 ``0x265e`` (9,822 in decimal).
 

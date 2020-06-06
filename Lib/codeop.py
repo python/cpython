@@ -57,6 +57,7 @@ Compile():
 """
 
 import __future__
+import warnings
 
 _features = [getattr(__future__, fname)
              for fname in __future__.all_feature_names]
@@ -83,15 +84,18 @@ def _maybe_compile(compiler, source, filename, symbol):
     except SyntaxError:
         pass
 
-    try:
-        code1 = compiler(source + "\n", filename, symbol)
-    except SyntaxError as e:
-        err1 = e
+    # Suppress warnings after the first compile to avoid duplication.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
+            code1 = compiler(source + "\n", filename, symbol)
+        except SyntaxError as e:
+            err1 = e
 
-    try:
-        code2 = compiler(source + "\n\n", filename, symbol)
-    except SyntaxError as e:
-        err2 = e
+        try:
+            code2 = compiler(source + "\n\n", filename, symbol)
+        except SyntaxError as e:
+            err2 = e
 
     try:
         if code:
@@ -112,7 +116,8 @@ def compile_command(source, filename="<input>", symbol="single"):
     source -- the source string; may contain \n characters
     filename -- optional filename from which source was read; default
                 "<input>"
-    symbol -- optional grammar start symbol; "single" (default) or "eval"
+    symbol -- optional grammar start symbol; "single" (default), "exec"
+              or "eval"
 
     Return value / exceptions raised:
 

@@ -1,5 +1,3 @@
-from test import support
-from test.support.script_helper import assert_python_ok, assert_python_failure
 import builtins
 import codecs
 import gc
@@ -11,6 +9,9 @@ import subprocess
 import sys
 import sysconfig
 import test.support
+from test import support
+from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support import threading_helper
 import textwrap
 import unittest
 import warnings
@@ -365,7 +366,7 @@ class SysModuleTest(unittest.TestCase):
         )
 
     # sys._current_frames() is a CPython-only gimmick.
-    @test.support.reap_threads
+    @threading_helper.reap_threads
     def test_current_frames(self):
         import threading
         import traceback
@@ -545,10 +546,10 @@ class SysModuleTest(unittest.TestCase):
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
         attrs = ("debug",
-                 "inspect", "interactive", "optimize", "dont_write_bytecode",
-                 "no_user_site", "no_site", "ignore_environment", "verbose",
-                 "bytes_warning", "quiet", "hash_randomization", "isolated",
-                 "dev_mode", "utf8_mode")
+                 "inspect", "interactive", "optimize",
+                 "dont_write_bytecode", "no_user_site", "no_site",
+                 "ignore_environment", "verbose", "bytes_warning", "quiet",
+                 "hash_randomization", "isolated", "dev_mode", "utf8_mode")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
             attr_type = bool if attr == "dev_mode" else int
@@ -1056,8 +1057,8 @@ class SizeofTest(unittest.TestCase):
     def setUp(self):
         self.P = struct.calcsize('P')
         self.longdigit = sys.int_info.sizeof_digit
-        import _testcapi
-        self.gc_headsize = _testcapi.SIZEOF_PYGC_HEAD
+        import _testinternalcapi
+        self.gc_headsize = _testinternalcapi.SIZEOF_PYGC_HEAD
 
     check_sizeof = test.support.check_sizeof
 
@@ -1322,7 +1323,7 @@ class SizeofTest(unittest.TestCase):
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
-                  '4P')
+                  '5P')
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
         check(newstyleclass, s + calcsize("2nP2n0P") + 8 + 5*calcsize("n2P"))

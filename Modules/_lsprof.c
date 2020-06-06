@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "frameobject.h"
 #include "rotatingtree.h"
 
 /************************************************************/
@@ -388,15 +387,22 @@ profiler_callback(PyObject *self, PyFrameObject *frame, int what,
 
     /* the 'frame' of a called function is about to start its execution */
     case PyTrace_CALL:
-        ptrace_enter_call(self, (void *)frame->f_code,
-                                (PyObject *)frame->f_code);
+    {
+        PyCodeObject *code = PyFrame_GetCode(frame);
+        ptrace_enter_call(self, (void *)code, (PyObject *)code);
+        Py_DECREF(code);
         break;
+    }
 
     /* the 'frame' of a called function is about to finish
        (either normally or with an exception) */
     case PyTrace_RETURN:
-        ptrace_leave_call(self, (void *)frame->f_code);
+    {
+        PyCodeObject *code = PyFrame_GetCode(frame);
+        ptrace_leave_call(self, (void *)code);
+        Py_DECREF(code);
         break;
+    }
 
     /* case PyTrace_EXCEPTION:
         If the exception results in the function exiting, a

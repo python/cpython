@@ -426,6 +426,8 @@ Miscellaneous options
    defines the following possible values:
 
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
+   * ``-X oldparser``: enable the traditional LL(1) parser.  See also
+     :envvar:`PYTHONOLDPARSER` and :pep:`617`.
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
      interactive interpreter. This only works on debug builds.
@@ -477,6 +479,9 @@ Miscellaneous options
       string encoding and decoding operations.
 
       The ``-X showalloccount`` option has been removed.
+
+   .. deprecated-removed:: 3.9 3.10
+      The ``-X oldparser`` option.
 
 
 Options you shouldn't use
@@ -572,6 +577,15 @@ conflict.
    If this is set to a non-empty string it is equivalent to specifying the
    :option:`-d` option.  If set to an integer, it is equivalent to specifying
    :option:`-d` multiple times.
+
+
+.. envvar:: PYTHONOLDPARSER
+
+   If this is set to a non-empty string, enable the traditional LL(1) parser.
+
+   See also the :option:`-X` ``oldparser`` option and :pep:`617`.
+
+   .. deprecated-removed:: 3.9 3.10
 
 
 .. envvar:: PYTHONINSPECT

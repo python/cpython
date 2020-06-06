@@ -7,7 +7,6 @@
 import unittest
 import re
 import contextlib
-import functools
 import operator
 import pickle
 import ipaddress

@@ -768,11 +768,11 @@ extern char * _getpty(int *, int, mode_t, int);
  */
 
 #ifdef WORDS_BIGENDIAN
-#define PY_BIG_ENDIAN 1
-#define PY_LITTLE_ENDIAN 0
+#  define PY_BIG_ENDIAN 1
+#  define PY_LITTLE_ENDIAN 0
 #else
-#define PY_BIG_ENDIAN 0
-#define PY_LITTLE_ENDIAN 1
+#  define PY_BIG_ENDIAN 0
+#  define PY_LITTLE_ENDIAN 1
 #endif
 
 #ifdef Py_BUILD_CORE
@@ -829,10 +829,10 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif
 
 /* Mark a function which cannot return. Example:
+   PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 
-   PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void); */
+   XLC support is intentionally omitted due to bpo-40244 */
 #if defined(__clang__) || \
-    defined(__xlc__) || \
     (defined(__GNUC__) && \
      ((__GNUC__ >= 3) || \
       (__GNUC__ == 2) && (__GNUC_MINOR__ >= 5)))

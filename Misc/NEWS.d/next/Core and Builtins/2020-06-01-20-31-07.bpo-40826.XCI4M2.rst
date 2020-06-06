@@ -1,0 +1,2 @@
+Fix GIL usage in :c:func:`PyOS_Readline`: lock the GIL to set an exception
+and pass the Python thread state when checking if there is a pending signal.

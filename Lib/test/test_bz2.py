@@ -12,6 +12,7 @@ import random
 import shutil
 import subprocess
 import threading
+from test.support import threading_helper
 from test.support import unlink
 import _compression
 import sys
@@ -502,7 +503,7 @@ class BZ2FileTest(BaseTest):
                 for i in range(5):
                     f.write(data)
             threads = [threading.Thread(target=comp) for i in range(nthreads)]
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 pass
 
     def testMixedIterationAndReads(self):
@@ -710,7 +711,7 @@ class BZ2DecompressorTest(BaseTest):
     def testDecompress4G(self, size):
         # "Test BZ2Decompressor.decompress() with >4GiB input"
         blocksize = 10 * 1024 * 1024
-        block = random.getrandbits(blocksize * 8).to_bytes(blocksize, 'little')
+        block = random.randbytes(blocksize)
         try:
             data = block * (size // blocksize + 1)
             compressed = bz2.compress(data)

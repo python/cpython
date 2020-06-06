@@ -374,7 +374,7 @@ class BaseServer:
 
         """
         print('-'*40, file=sys.stderr)
-        print('Exception happened during processing of request from',
+        print('Exception occurred during processing of request from',
             client_address, file=sys.stderr)
         import traceback
         traceback.print_exc()

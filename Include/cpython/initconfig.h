@@ -1,9 +1,6 @@
 #ifndef Py_PYCORECONFIG_H
 #define Py_PYCORECONFIG_H
 #ifndef Py_LIMITED_API
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -146,6 +143,10 @@ typedef struct {
     /* Enable faulthandler?
        Set to 1 by -X faulthandler and PYTHONFAULTHANDLER. -1 means unset. */
     int faulthandler;
+
+    /* Enable PEG parser?
+       1 by default, set to 0 by -X oldparser and PYTHONOLDPARSER */
+    int _use_peg_parser;
 
     /* Enable tracemalloc?
        Set by -X tracemalloc=N and PYTHONTRACEMALLOC. -1 means unset */
@@ -405,6 +406,10 @@ typedef struct {
 
     /* If equal to 0, stop Python initialization before the "main" phase */
     int _init_main;
+
+    /* If non-zero, disallow threads, subprocesses, and fork.
+       Default: 0. */
+    int _isolated_interpreter;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
@@ -430,8 +435,5 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     PyWideStringList *list,
     Py_ssize_t length, wchar_t **items);
 
-#ifdef __cplusplus
-}
-#endif
 #endif /* !Py_LIMITED_API */
 #endif /* !Py_PYCORECONFIG_H */

@@ -614,6 +614,21 @@ To loop over a sequence in sorted order, use the :func:`sorted` function which
 returns a new sorted list while leaving the source unaltered. ::
 
    >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+   >>> for i in sorted(basket):
+   ...     print(i)
+   ...
+   apple
+   apple
+   banana
+   orange
+   orange
+   pear
+
+Using :func:`set` on a sequence eliminates duplicate elements. The use of
+:func:`sorted` in combination with :func:`set` over a sequence is an idiomatic
+way to loop over unique elements of the sequence in sorted order. ::
+
+   >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
    >>> for f in sorted(set(basket)):
    ...     print(f)
    ...

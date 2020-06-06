@@ -23,14 +23,12 @@
 
 #include "cache.h"
 #include "module.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
 #include "prepare_protocol.h"
 #include "util.h"
-
-#include "pythread.h"
 
 #define ACTION_FINALIZE 1
 #define ACTION_RESET 2
@@ -79,7 +77,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
         NULL
     };
 
-    char* database;
+    const char* database;
     PyObject* database_obj;
     int detect_types = 0;
     PyObject* isolation_level = NULL;
@@ -1644,7 +1642,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     const char *uppercase_name_str;
     int rc;
     unsigned int kind;
-    void *data;
+    const void *data;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         goto finally;

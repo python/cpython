@@ -144,7 +144,7 @@ Vectorcall Support API
    However, the function ``PyVectorcall_NARGS`` should be used to allow
    for future extensions.
 
-   This function is not part of the `limited API <stable>`_.
+   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.8
 
@@ -158,7 +158,7 @@ Vectorcall Support API
    This is mostly useful to check whether or not *op* supports vectorcall,
    which can be done by checking ``PyVectorcall_Function(op) != NULL``.
 
-   This function is not part of the `limited API <stable>`_.
+   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.8
 
@@ -172,7 +172,7 @@ Vectorcall Support API
    It does not check the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag
    and it does not fall back to ``tp_call``.
 
-   This function is not part of the `limited API <stable>`_.
+   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.8
 
@@ -256,7 +256,7 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   This function is not part of the `limited API <stable>`_.
+   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.9
 
@@ -343,7 +343,7 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   This function is not part of the `limited API <stable>`_.
+   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.9
 
@@ -357,7 +357,7 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   This function is not part of the `limited API <stable>`_.
+   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.9
 
@@ -372,7 +372,7 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   This function is not part of the `limited API <stable>`_.
+   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.9
 
@@ -388,7 +388,7 @@ please see individual documentation for details.
    already has a dictionary ready to use for the keyword arguments,
    but not a tuple for the positional arguments.
 
-   This function is not part of the `limited API <stable>`_.
+   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.9
 
@@ -410,7 +410,7 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   This function is not part of the `limited API <stable>`_.
+   This function is not part of the :ref:`limited API <stable>`.
 
    .. versionadded:: 3.9
 

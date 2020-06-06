@@ -358,10 +358,6 @@ class ContextTest(unittest.TestCase):
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
 
-    def test_contextvar_getitem(self):
-        clss = contextvars.ContextVar
-        self.assertEqual(clss[str], clss)
-
 
 # HAMT Tests
 

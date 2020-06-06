@@ -1,9 +1,9 @@
 #include "Python.h"
 #include "pycore_call.h"
-#include "pycore_ceval.h"   /* _PyEval_EvalFrame() */
+#include "pycore_ceval.h"        // _PyEval_EvalFrame()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
 #include "frameobject.h"
 

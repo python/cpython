@@ -10,14 +10,12 @@ extern "C" {
 
 #include "pystate.h"   /* _PyErr_StackItem */
 
-struct _frame; /* Avoid including frameobject.h */
-
 /* _PyGenObject_HEAD defines the initial segment of generator
    and coroutine objects. */
 #define _PyGenObject_HEAD(prefix)                                           \
     PyObject_HEAD                                                           \
     /* Note: gi_frame can be NULL if the generator is "finished" */         \
-    struct _frame *prefix##_frame;                                          \
+    PyFrameObject *prefix##_frame;                                          \
     /* True if generator is being executed. */                              \
     char prefix##_running;                                                  \
     /* The code object backing the generator */                             \
@@ -40,8 +38,8 @@ PyAPI_DATA(PyTypeObject) PyGen_Type;
 #define PyGen_Check(op) PyObject_TypeCheck(op, &PyGen_Type)
 #define PyGen_CheckExact(op) Py_IS_TYPE(op, &PyGen_Type)
 
-PyAPI_FUNC(PyObject *) PyGen_New(struct _frame *);
-PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(struct _frame *,
+PyAPI_FUNC(PyObject *) PyGen_New(PyFrameObject *);
+PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
@@ -60,7 +58,7 @@ PyAPI_DATA(PyTypeObject) _PyCoroWrapper_Type;
 
 #define PyCoro_CheckExact(op) Py_IS_TYPE(op, &PyCoro_Type)
 PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
-PyAPI_FUNC(PyObject *) PyCoro_New(struct _frame *,
+PyAPI_FUNC(PyObject *) PyCoro_New(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 
 /* Asynchronous Generators */
@@ -86,14 +84,12 @@ PyAPI_DATA(PyTypeObject) _PyAsyncGenASend_Type;
 PyAPI_DATA(PyTypeObject) _PyAsyncGenWrappedValue_Type;
 PyAPI_DATA(PyTypeObject) _PyAsyncGenAThrow_Type;
 
-PyAPI_FUNC(PyObject *) PyAsyncGen_New(struct _frame *,
+PyAPI_FUNC(PyObject *) PyAsyncGen_New(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 
 #define PyAsyncGen_CheckExact(op) Py_IS_TYPE(op, &PyAsyncGen_Type)
 
 PyObject *_PyAsyncGenValueWrapperNew(PyObject *);
-
-int PyAsyncGen_ClearFreeLists(void);
 
 #endif
 

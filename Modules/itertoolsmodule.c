@@ -2,7 +2,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_tupleobject.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
@@ -2028,6 +2028,8 @@ static PyMethodDef chain_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)chain_setstate,    METH_O,
      setstate_doc},
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 

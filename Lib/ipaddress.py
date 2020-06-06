@@ -1124,7 +1124,6 @@ class _BaseNetwork(_IPAddressBase):
         return (self.network_address.is_loopback and
                 self.broadcast_address.is_loopback)
 
-
 class _BaseV4:
 
     """Base IPv4 object.

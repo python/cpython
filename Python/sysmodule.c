@@ -16,19 +16,19 @@ Data members:
 
 #include "Python.h"
 #include "code.h"
-#include "frameobject.h"
-#include "pycore_ceval.h"
+#include "frameobject.h"          // PyFrame_GetBack()
+#include "pycore_ceval.h"         // _Py_RecursionLimitLowerWaterMark()
 #include "pycore_initconfig.h"
+#include "pycore_object.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
-#include "pythread.h"
-#include "pydtrace.h"
 
-#include "osdefs.h"
+#include "pydtrace.h"
+#include "osdefs.h"               // DELIM
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -337,7 +337,7 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
         return;
     }
 
-    const PyConfig *config = &ts->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(ts->interp);
     if (config->verbose) {
         PySys_WriteStderr("# clear sys.audit hooks\n");
     }
@@ -457,7 +457,7 @@ static PyObject *
 sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
+    _Py_EnsureTstateNotNULL(tstate);
 
     if (argc == 0) {
         _PyErr_SetString(tstate, PyExc_TypeError,
@@ -846,8 +846,8 @@ static PyObject *
 sys_getfilesystemencoding_impl(PyObject *module)
 /*[clinic end generated code: output=1dc4bdbe9be44aa7 input=8475f8649b8c7d8c]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    const PyConfig *config = &tstate->interp->config;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
@@ -861,8 +861,8 @@ static PyObject *
 sys_getfilesystemencodeerrors_impl(PyObject *module)
 /*[clinic end generated code: output=ba77b36bbf7c96f5 input=22a1e8365566f1e5]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    const PyConfig *config = &tstate->interp->config;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
@@ -1679,7 +1679,7 @@ _PySys_GetSizeOf(PyObject *o)
     }
 
     /* add gc_head size */
-    if (PyObject_IS_GC(o))
+    if (_PyObject_IS_GC(o))
         return ((size_t)size) + sizeof(PyGC_Head);
     return (size_t)size;
 }
@@ -1787,14 +1787,17 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *f = tstate->frame;
+    PyFrameObject *f = PyThreadState_GetFrame(tstate);
 
     if (_PySys_Audit(tstate, "sys._getframe", "O", f) < 0) {
+        Py_DECREF(f);
         return NULL;
     }
 
     while (depth > 0 && f != NULL) {
-        f = f->f_back;
+        PyFrameObject *back = PyFrame_GetBack(f);
+        Py_DECREF(f);
+        f = back;
         --depth;
     }
     if (f == NULL) {
@@ -1802,7 +1805,6 @@ sys__getframe_impl(PyObject *module, int depth)
                          "call stack is not deep enough");
         return NULL;
     }
-    Py_INCREF(f);
     return (PyObject*)f;
 }
 
@@ -2455,7 +2457,7 @@ make_flags(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
     const PyPreConfig *preconfig = &interp->runtime->preconfig;
-    const PyConfig *config = &interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
     PyObject *seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL) {
@@ -2889,7 +2891,7 @@ int
 _PySys_InitMain(PyThreadState *tstate)
 {
     PyObject *sysdict = tstate->interp->sysdict;
-    const PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     int res;
 
 #define COPY_LIST(KEY, VALUE) \

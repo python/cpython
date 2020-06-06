@@ -39,6 +39,7 @@ _curses_panel_clear(PyObject *m)
 static int
 _curses_panel_traverse(PyObject *m, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(m));
     Py_VISIT(get_curses_panelstate(m)->PyCursesError);
     return 0;
 }
@@ -239,7 +240,7 @@ PyCursesPanel_New(PANEL *pan, PyCursesWindowObject *wo)
 {
     PyCursesPanelObject *po;
 
-    po = PyObject_NEW(PyCursesPanelObject,
+    po = PyObject_New(PyCursesPanelObject,
                       (PyTypeObject *)(_curses_panelstate_global)->PyCursesPanel_Type);
     if (po == NULL) return NULL;
     po->pan = pan;
