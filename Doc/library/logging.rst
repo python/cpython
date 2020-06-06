@@ -558,7 +558,7 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       will raise a ``ValueError``.
       For example: ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.10
       The *defaults* parameter was added.
 
    .. method:: format(record)
