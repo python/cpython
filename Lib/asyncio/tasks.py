@@ -709,6 +709,9 @@ class _GatheringFuture(futures.Future):
         self._children = children
         self._cancel_requested = False
 
+    def cancelled(self):
+        return self.done() and self._cancel_requested
+
     def cancel(self, msg=None):
         if self.done():
             return False
