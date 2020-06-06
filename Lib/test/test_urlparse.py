@@ -893,21 +893,21 @@ class UrlParseTestCase(unittest.TestCase):
     def test_urlencode(self):
         result = urllib.parse.urlencode({'a': 1, 'b': None})
         # bpo-18857: urlencode of a None value uses the string 'None'
-        assert set(result.split('&')) == {'a=1', 'b=None'}
+        self.assertEqual(result, 'a=1&b=None')
 
     def test_urlencode_standalone_keys(self):
         result = urllib.parse.urlencode(
             query={'a': 1, 'b': None},
             standalone_keys=True
         )
-        assert set(result.split('&')) == {'a=1', 'b'}
+        self.assertEqual(result, 'a=1&b')
 
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:
         # Sequence and object values.
         result = urllib.parse.urlencode({'a': [1, 2], 'b': (3, 4, 5), 'c': None}, True)
         # we cannot rely on ordering here
-        assert set(result.split('&')) == {'a=1', 'a=2', 'b=3', 'b=4', 'b=5', 'c=None'}
+        self.assertEqual(result, 'a=1&a=2&b=3&b=4&b=5&c=None')
 
     def test_urlencode_sequences_standalone_keys(self):
         result = urllib.parse.urlencode(
@@ -915,7 +915,7 @@ class UrlParseTestCase(unittest.TestCase):
             doseq=True,
             standalone_keys=True
         )
-        assert set(result.split('&')) == {'a=1', 'a', 'b'}
+        self.assertEqual(result, 'a=1&a&b')
 
     def test_urlencode_sequences_trivial(self):
         class Trivial:
