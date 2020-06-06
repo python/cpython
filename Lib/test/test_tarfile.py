@@ -755,6 +755,18 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
         finally:
             tar1.close()
 
+    @support.skip_unless_symlink
+    def test_symlink_overwrite(self):
+        # Test for issue #40049: Extracting a symlink over an existing file
+        # in stream mode causes a backwards seek
+        sympath = os.path.join(TEMPDIR, 'symtype2')
+        pathlib.Path(sympath).touch()
+        try:
+            self.tar.extract('symtype2', TEMPDIR)
+            self.assertTrue(os.path.islink(sympath))
+        finally:
+            pathlib.Path(sympath).unlink(missing_ok=True)
+
 class GzipStreamReadTest(GzipTest, StreamReadTest):
     pass
 
