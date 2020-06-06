@@ -290,10 +290,6 @@ class zipimporter:
     def __repr__(self):
         return f'<zipimporter object "{self.archive}{path_sep}{self.prefix}">'
 
-    def files(self):
-        import zipfile
-        return zipfile.Path(self.archive, self.prefix)
-
 
 # _zip_searchorder defines how we search for a module in the Zip
 # archive: we first search for a package __init__, then for
@@ -736,6 +732,13 @@ class _ZipImportResourceReader:
     def __init__(self, zipimporter, fullname):
         self.zipimporter = zipimporter
         self.fullname = fullname
+
+    def files(self):
+        import zipfile
+        return zipfile.Path(
+            self.zipimporter.archive,
+            self.zipimporter.prefix + self.fullname.replace('.', '/'),
+        )
 
     def open_resource(self, resource):
         fullname_as_path = self.fullname.replace('.', '/')

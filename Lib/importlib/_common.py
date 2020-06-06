@@ -10,7 +10,8 @@ def from_package(package):
     Return a Traversable object for the given package.
 
     """
-    return package.__spec__.loader.files()
+    reader = package.__spec__.loader.get_resource_reader(package.__name__)
+    return reader.files()
 
 
 @contextlib.contextmanager
