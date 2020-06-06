@@ -2994,6 +2994,45 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self.assertEqual(res, [1, zde, None, 3, None, rte])
         cb.assert_called_once_with(fut)
 
+    def test_gather_is_cancelled_is_true_when_gather_cancel_is_true(self):
+        for re in [True, False]:
+            with self.subTest(return_exceptions=re):
+
+                # thread state and cleanup
+                asyncio.set_event_loop(self.one_loop)
+                self.addCleanup(asyncio.set_event_loop, None)
+
+                # setup gather
+                child = asyncio.sleep(1, result=1)
+                gather_ = asyncio.gather(child, return_exceptions=re)
+                self.assertTrue(gather_.cancel())
+
+                # run and assert
+                self.assertFalse(gather_.cancelled())
+                with self.assertRaises(asyncio.CancelledError):
+                    self.one_loop.run_until_complete(gather_)
+                self.assertTrue(gather_.cancelled())
+
+    def test_gather_is_cancelled_is_false_when_gather_cancel_is_false(self):
+        for re in [True, False]:
+            with self.subTest(return_exceptions=re):
+
+                # thread state and cleanup
+                asyncio.set_event_loop(self.one_loop)
+                self.addCleanup(asyncio.set_event_loop, None)
+
+                # setup gather
+                child = self.one_loop.create_future()
+                child.set_result(1)
+                gather_ = asyncio.gather(child, return_exceptions=re)
+                self.assertFalse(gather_.cancel())  # children already done
+
+                # run and assert
+                self.assertFalse(gather_.cancelled())
+                result = self.one_loop.run_until_complete(gather_)
+                self.assertEqual(result, [1])
+                self.assertFalse(gather_.cancelled())
+
 
 class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
 
