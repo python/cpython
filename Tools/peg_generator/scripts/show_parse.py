@@ -41,7 +41,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-d", "--diff", action="store_true", help="show diff between grammar and ast (requires -g)"
 )
-parser.add_argument("-g", "--grammar-file", help="grammar to use (default: use the ast module)")
+parser.add_argument(
+    "-p",
+    "--parser",
+    choices=["new", "old"],
+    default="new",
+    help="choose the parser to use"
+)
 parser.add_argument(
     "-m",
     "--multiline",
@@ -84,19 +90,18 @@ def print_parse(source: str, verbose: bool = False) -> None:
 
 def main() -> None:
     args = parser.parse_args()
-    if args.diff and not args.grammar_file:
-        parser.error("-d/--diff requires -g/--grammar-file")
+    new_parser = args.parser == "new"
     if args.multiline:
         sep = "\n"
     else:
         sep = " "
     program = sep.join(args.program)
-    if args.grammar_file:
+    if new_parser:
         tree = _peg_parser.parse_string(program)
 
         if args.diff:
-            a = tree
-            b = _peg_parser.parse_string(program, oldparser=True)
+            a = _peg_parser.parse_string(program, oldparser=True)
+            b = tree
             diff = diff_trees(a, b, args.verbose)
             if diff:
                 for line in diff:
@@ -104,11 +109,11 @@ def main() -> None:
             else:
                 print("# Trees are the same")
         else:
-            print(f"# Parsed using {args.grammar_file}")
+            print("# Parsed using the new parser")
             print(format_tree(tree, args.verbose))
     else:
         tree = _peg_parser.parse_string(program, oldparser=True)
-        print("# Parse using the old parser")
+        print("# Parsed using the old parser")
         print(format_tree(tree, args.verbose))
 
 

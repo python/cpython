@@ -11,7 +11,7 @@ import _peg_parser
 from glob import glob
 from pathlib import PurePath
 
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Tuple
 
 sys.path.insert(0, os.getcwd())
 from pegen.ast_dump import ast_dump
@@ -22,13 +22,15 @@ SUCCESS = "\033[92m"
 FAIL = "\033[91m"
 ENDC = "\033[0m"
 
+COMPILE = 2
+PARSE = 1
+NOTREE = 0
+
 argparser = argparse.ArgumentParser(
     prog="test_parse_directory",
     description="Helper program to test directories or files for pegen",
 )
 argparser.add_argument("-d", "--directory", help="Directory path containing files to test")
-argparser.add_argument("--grammar-file", help="Grammar file path")
-argparser.add_argument("--tokens-file", help="Tokens file path")
 argparser.add_argument(
     "-e", "--exclude", action="append", default=[], help="Glob(s) for matching files to exclude"
 )
@@ -37,9 +39,6 @@ argparser.add_argument(
 )
 argparser.add_argument(
     "-v", "--verbose", action="store_true", help="Display detailed errors for failures"
-)
-argparser.add_argument(
-    "--skip-actions", action="store_true", help="Suppress code emission for rule actions",
 )
 argparser.add_argument(
     "-t", "--tree", action="count", help="Compare parse tree to official AST", default=0
@@ -113,92 +112,35 @@ def compare_trees(
     return 1
 
 
-def parse_directory(
-    directory: str,
-    grammar_file: str,
-    tokens_file: str,
-    verbose: bool,
-    excluded_files: List[str],
-    skip_actions: bool,
-    tree_arg: int,
-    short: bool,
-    mode: int,
-    parser: str,
-) -> int:
-    if parser == "cpython" and (tree_arg or mode == 0):
-        print("Cannot specify tree argument or mode=0 with the cpython parser.", file=sys.stderr)
-        return 1
-
-    if not directory:
-        print("You must specify a directory of files to test.", file=sys.stderr)
-        return 1
-
-    if grammar_file and tokens_file:
-        if not os.path.exists(grammar_file):
-            print(f"The specified grammar file, {grammar_file}, does not exist.", file=sys.stderr)
-            return 1
-    else:
-        print(
-            "A grammar file or a tokens file was not provided - attempting to use existing parser from stdlib...\n"
+def parse_file(source: str, file: str, mode: int, oldparser: bool) -> Tuple[Any, float]:
+    t0 = time.time()
+    if mode == COMPILE:
+        result = _peg_parser.compile_string(
+            source,
+            filename=file,
+            oldparser=oldparser,
         )
-
-    if tree_arg:
-        assert mode == 1, "Mode should be 1 (parse), when comparing the generated trees"
-
-    # For a given directory, traverse files and attempt to parse each one
-    # - Output success/failure for each file
-    errors = 0
-    files = []
-    trees = {}  # Trees to compare (after everything else is done)
-    total_seconds = 0
-
-    for file in sorted(glob(f"{directory}/**/*.py", recursive=True)):
-        # Only attempt to parse Python files and files that are not excluded
-        should_exclude_file = False
-        for pattern in excluded_files:
-            if PurePath(file).match(pattern):
-                should_exclude_file = True
-                break
-
-        if not should_exclude_file:
-            with tokenize.open(file) as f:
-                source = f.read()
-            try:
-                t0 = time.time()
-                if mode == 2:
-                    result = _peg_parser.compile_string(
-                        source,
-                        filename=file,
-                        oldparser=parser == "cpython",
-                    )
-                else:
-                    result = _peg_parser.parse_string(
-                        source,
-                        filename=file,
-                        oldparser=parser == "cpython"
-                    )
-                t1 = time.time()
-                total_seconds += (t1 - t0)
-                if tree_arg:
-                    trees[file] = result
-                if not short:
-                    report_status(succeeded=True, file=file, verbose=verbose)
-            except Exception as error:
-                try:
-                    _peg_parser.parse_string(source, mode="exec", oldparser=True)
-                except Exception:
-                    if not short:
-                        print(f"File {file} cannot be parsed by either pegen or the ast module.")
-                else:
-                    report_status(
-                        succeeded=False, file=file, verbose=verbose, error=error, short=short
-                    )
-                    errors += 1
-            files.append(file)
+    else:
+        result = _peg_parser.parse_string(
+            source,
+            filename=file,
+            oldparser=oldparser,
+            ast=(mode == PARSE),
+        )
     t1 = time.time()
+    return result, t1 - t0
 
+
+def is_parsing_failure(source: str) -> bool:
+    try:
+        _peg_parser.parse_string(source, mode="exec", oldparser=True)
+    except SyntaxError:
+        return False
+    return True
+
+
+def generate_time_stats(files, total_seconds) -> None:
     total_files = len(files)
-
     total_bytes = 0
     total_lines = 0
     for file in files:
@@ -217,6 +159,57 @@ def parse_directory(
             f"or {total_bytes / total_seconds :,.0f} bytes/sec.",
         )
 
+
+def parse_directory(
+    directory: str,
+    verbose: bool,
+    excluded_files: List[str],
+    tree_arg: int,
+    short: bool,
+    mode: int,
+    oldparser: bool,
+) -> int:
+    if tree_arg:
+        assert mode == PARSE, "Mode should be 1 (parse), when comparing the generated trees"
+
+    if oldparser and tree_arg:
+        print("Cannot specify tree argument with the cpython parser.", file=sys.stderr)
+        return 1
+
+    # For a given directory, traverse files and attempt to parse each one
+    # - Output success/failure for each file
+    errors = 0
+    files = []
+    trees = {}  # Trees to compare (after everything else is done)
+    total_seconds = 0
+
+    for file in sorted(glob(f"{directory}/**/*.py", recursive=True)):
+        # Only attempt to parse Python files and files that are not excluded
+        if any(PurePath(file).match(pattern) for pattern in excluded_files):
+            continue
+
+        with tokenize.open(file) as f:
+            source = f.read()
+
+        try:
+            result, dt = parse_file(source, file, mode, oldparser)
+            total_seconds += dt
+            if tree_arg:
+                trees[file] = result
+            report_status(succeeded=True, file=file, verbose=verbose, short=short)
+        except SyntaxError as error:
+            if is_parsing_failure(source):
+                print(f"File {file} cannot be parsed by either parser.")
+            else:
+                report_status(
+                    succeeded=False, file=file, verbose=verbose, error=error, short=short
+                )
+                errors += 1
+        files.append(file)
+
+    t1 = time.time()
+
+    generate_time_stats(files, total_seconds)
     if short:
         print_memstats()
 
@@ -240,26 +233,20 @@ def parse_directory(
 def main() -> None:
     args = argparser.parse_args()
     directory = args.directory
-    grammar_file = args.grammar_file
-    tokens_file = args.tokens_file
     verbose = args.verbose
     excluded_files = args.exclude
-    skip_actions = args.skip_actions
     tree = args.tree
     short = args.short
     mode = 1 if args.tree else 2
     sys.exit(
         parse_directory(
             directory,
-            grammar_file,
-            tokens_file,
             verbose,
             excluded_files,
-            skip_actions,
             tree,
             short,
             mode,
-            "pegen",
+            oldparser=False,
         )
     )
 
