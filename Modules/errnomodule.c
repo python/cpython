@@ -847,6 +847,10 @@ errno_exec(PyObject *module)
 #ifdef ERFKILL
     add_errcode("ERFKILL", ERFKILL, "Operation not possible due to RF-kill");
 #endif
+#ifdef EHWPOISON
+    add_errcode("EHWPOISON", EHWPOISON, "Memory page has hardware error");
+#endif
+
 
     /* Solaris-specific errnos */
 #ifdef ECANCELED
