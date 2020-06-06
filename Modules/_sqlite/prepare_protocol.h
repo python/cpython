@@ -31,7 +31,7 @@ typedef struct
     PyObject_HEAD
 } pysqlite_PrepareProtocol;
 
-extern PyTypeObject pysqlite_PrepareProtocolType;
+extern PyTypeObject *pysqlite_PrepareProtocolType;
 
 int pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol* self, PyObject* args, PyObject* kwargs);
 void pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol* self);
