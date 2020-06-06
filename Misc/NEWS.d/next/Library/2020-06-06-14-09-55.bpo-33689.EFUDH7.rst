@@ -1,0 +1,2 @@
+Added support for empty .pth lines in the :mod:`site.py`
+By Ido Michael, contributors Malcolm Smith and Tal Einat.
