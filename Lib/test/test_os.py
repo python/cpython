@@ -1814,21 +1814,28 @@ def _execvpe_mockup(defpath=None):
 @unittest.skipUnless(hasattr(os, 'execv'),
                      "need os.execv()")
 class ExecTests(unittest.TestCase):
-    @unittest.skipIf(USING_LINUXTHREADS,
-                     "avoid triggering a linuxthreads bug: see issue #4970")
-    def test_execv_with_bad_program(self):
+    def _test_bad_program(self, do_exec):
         bad_filename = 'nosuchapp'
         with self.assertRaises(OSError) as ctx:
-            os.execv(bad_filename, [bad_filename])
+            do_exec(bad_filename)
         self.assertEqual(ctx.exception.filename, bad_filename)
         self.assertIn(bad_filename, str(ctx.exception))
 
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execv_with_bad_program(self):
+        self._test_bad_program(lambda name: os.execv(name, [name]))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execvp_with_bad_program(self):
+        self._test_bad_program(lambda name: os.execvp(name, [name]))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
+    def test_execve_with_bad_program(self):
+        self._test_bad_program(lambda name: os.execve(name, [name], {}))
+
+    @unittest.skipIf(USING_LINUXTHREADS, "linuxthreads bug: see issue #4970")
     def test_execvpe_with_bad_program(self):
-        bad_filename = 'nosuchapp'
-        with self.assertRaises(OSError) as ctx:
-            os.execvpe(bad_filename, [bad_filename], None)
-        self.assertEqual(ctx.exception.filename, bad_filename)
-        self.assertIn(bad_filename, str(ctx.exception))
+        self._test_bad_program(lambda name: os.execvpe(name, [name], {}))
 
     def test_execv_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execv, 'notepad', ())
