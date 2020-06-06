@@ -664,33 +664,40 @@ boolean {0[0]} NO
         cf = self.fromstring(config_string)
         for space_around_delimiters in (True, False):
             output = io.StringIO()
-            cf.write(output, space_around_delimiters=space_around_delimiters, indent='\t')
+            if space_around_delimiters:
+                indent = ' '
+            else:
+                indent = ''
+
+            cf.write(output, space_around_delimiters=space_around_delimiters, indent=indent)
             delimiter = self.delimiters[0]
             if space_around_delimiters:
                 delimiter = " {} ".format(delimiter)
             expect_string = (
-                "\t[{default_section}]\n"
-                "\tfoo{equals}another very\n"
-                "\t\tlong line\n"
-                "\t\n"
-                "\t[Long Line]\n"
-                "\tfoo{equals}this line is much, much longer than my editor\n"
-                "\t\tlikes it.\n"
-                "\t\n"
-                "\t[Long Line - With Comments!]\n"
-                "\ttest{equals}we\n"
-                "\t\talso\n"
-                "\t\tcomments\n"
-                "\t\tmultiline\n"
-                "\t\n".format(equals=delimiter,
-                            default_section=self.default_section)
+                "{indent}[{default_section}]\n"
+                "{indent}foo{equals}another very\n"
+                "{indent}\tlong line\n"
+                "{indent}\n"
+                "{indent}[Long Line]\n"
+                "{indent}foo{equals}this line is much, much longer than my editor\n"
+                "{indent}\tlikes it.\n"
+                "{indent}\n"
+                "{indent}[Long Line - With Comments!]\n"
+                "{indent}test{equals}we\n"
+                "{indent}\talso\n"
+                "{indent}\tcomments\n"
+                "{indent}\tmultiline\n"
+                "{indent}\n".format(equals=delimiter,
+                                    default_section=self.default_section,
+                                    indent=indent)
                 )
             if self.allow_no_value:
                 expect_string += (
-                    "\t[Valueless]\n"
-                    "\toption-without-value\n"
-                    "\t\n"
+                    indent + "[Valueless]\n"
+                    + indent + "option-without-value\n"
+                    "\n"
                     )
+
             self.assertEqual(output.getvalue(), expect_string)
 
     def test_set_string_types(self):
