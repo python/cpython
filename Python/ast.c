@@ -22,6 +22,25 @@ static int validate_stmt(stmt_ty);
 static int validate_expr(expr_ty, expr_context_ty);
 
 static int
+validate_name(PyObject *name)
+{
+    assert(PyUnicode_Check(name));
+    static const char * const forbidden[] = {
+        "None",
+        "True",
+        "False",
+        NULL
+    };
+    for (int i = 0; forbidden[i] != NULL; i++) {
+        if (_PyUnicode_EqualToASCIIString(name, forbidden[i])) {
+            PyErr_Format(PyExc_ValueError, "Name node can't be used with '%s' constant", forbidden[i]);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
 validate_comprehension(asdl_seq *gens)
 {
     Py_ssize_t i;
@@ -173,6 +192,9 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         actual_ctx = exp->v.Starred.ctx;
         break;
     case Name_kind:
+        if (!validate_name(exp->v.Name.id)) {
+            return 0;
+        }
         actual_ctx = exp->v.Name.ctx;
         break;
     case List_kind:

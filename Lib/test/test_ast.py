@@ -668,6 +668,13 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('f"{x=}"', feature_version=(3, 7))
 
+    def test_constant_as_name(self):
+        for constant in "True", "False", "None":
+            expr = ast.Expression(ast.Name(constant, ast.Load()))
+            ast.fix_missing_locations(expr)
+            with self.assertRaisesRegex(ValueError, f"Name node can't be used with '{constant}' constant"):
+                compile(expr, "<test>", "eval")
+
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
