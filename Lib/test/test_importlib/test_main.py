@@ -254,11 +254,16 @@ class TestEntryPoints(unittest.TestCase):
         assert self.ep.attr is None
 
 
-class FileSystem(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
+class FileSystem(
+        fixtures.OnSysPath, fixtures.SiteDir, fixtures.FileBuilder,
+        unittest.TestCase):
     def test_unicode_dir_on_sys_path(self):
         """
         Ensure a Unicode subdirectory of a directory on sys.path
         does not crash.
         """
-        fixtures.build_files({'☃': {}}, prefix=self.site_dir)
+        fixtures.build_files(
+            {self.unicode_filename(): {}},
+            prefix=self.site_dir,
+            )
         list(distributions())
