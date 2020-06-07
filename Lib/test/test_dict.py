@@ -105,6 +105,19 @@ class DictTest(unittest.TestCase):
         self.assertRaises(TypeError, d.items, None)
         self.assertEqual(repr(dict(a=1).items()), "dict_items([('a', 1)])")
 
+    def test_views_mapping(self):
+        d = {}
+        self.assertIs(d.keys().mapping, d)
+        self.assertIs(d.items().mapping, d)
+        self.assertIs(d.values().mapping, d)
+
+        class MyDict(dict):
+            pass
+        my_dict = MyDict()
+        self.assertIs(my_dict.keys().mapping, my_dict)
+        self.assertIs(my_dict.items().mapping, my_dict)
+        self.assertIs(my_dict.values().mapping, my_dict)
+
     def test_contains(self):
         d = {}
         self.assertNotIn('a', d)

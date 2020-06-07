@@ -117,6 +117,7 @@ converting the dict to the combined table.
 #include "pycore_pystate.h"  // _PyThreadState_GET()
 #include "dict-common.h"
 #include "stringlib/eq.h"    // unicode_eq()
+#include "structmember.h"    // PyMemberDef
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
@@ -4448,6 +4449,12 @@ static PyNumberMethods dictviews_as_number = {
     (binaryfunc)dictviews_or,           /*nb_or*/
 };
 
+static PyMemberDef dictview_members[] = {
+    {"mapping", T_OBJECT, offsetof(_PyDictViewObject, dv_dict),
+     READONLY, "dictionary that this view refers to"},
+    {NULL} /* Sentinel */
+};
+
 static PyObject*
 dictviews_isdisjoint(PyObject *self, PyObject *other)
 {
@@ -4545,7 +4552,7 @@ PyTypeObject PyDictKeys_Type = {
     (getiterfunc)dictkeys_iter,                 /* tp_iter */
     0,                                          /* tp_iternext */
     dictkeys_methods,                           /* tp_methods */
-    0,
+    .tp_members = dictview_members,
 };
 
 static PyObject *
@@ -4651,7 +4658,7 @@ PyTypeObject PyDictItems_Type = {
     (getiterfunc)dictitems_iter,                /* tp_iter */
     0,                                          /* tp_iternext */
     dictitems_methods,                          /* tp_methods */
-    0,
+    .tp_members = dictview_members,
 };
 
 static PyObject *
@@ -4732,7 +4739,7 @@ PyTypeObject PyDictValues_Type = {
     (getiterfunc)dictvalues_iter,               /* tp_iter */
     0,                                          /* tp_iternext */
     dictvalues_methods,                         /* tp_methods */
-    0,
+    .tp_members = dictview_members,
 };
 
 static PyObject *
