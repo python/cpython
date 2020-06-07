@@ -1116,6 +1116,7 @@ class _Unparser(NodeVisitor):
         new_buffer = []
         quote_types = ["'", '"', '"""', "'''"]
         for value, is_constant in buffer:
+            # Repeatedly narrow down the list of possible quote_types
             value, quote_types = self._str_literal_helper(
                 value, quote_types, escape='\n\t' if is_constant else ''
             )
