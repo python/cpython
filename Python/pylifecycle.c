@@ -1250,37 +1250,26 @@ static void
 finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 {
     _PyFrame_Fini(tstate);
-    _PyTuple_Fini(tstate);
-    _PyList_Fini(tstate);
-    if (is_main_interp) {
-        _PySet_Fini();
-        _PyBytes_Fini();
-    }
-
-    _PyLong_Fini(tstate);
-    _PyFloat_Fini(tstate);
-
-    if (is_main_interp) {
-        _PyDict_Fini();
-    }
-
-    _PySlice_Fini(tstate);
-    _PyWarnings_Fini(tstate->interp);
-
-    if (is_main_interp) {
-        _Py_HashRandomization_Fini();
-        _PyArg_Fini();
-    }
-
     _PyAsyncGen_Fini(tstate);
     _PyContext_Fini(tstate);
 
-    /* Cleanup Unicode implementation */
-    _PyUnicode_Fini(tstate);
+    if (is_main_interp) {
+        _PySet_Fini();
+    }
+    if (is_main_interp) {
+        _PyDict_Fini();
+    }
+    _PyList_Fini(tstate);
+    _PyTuple_Fini(tstate);
+
+    _PySlice_Fini(tstate);
 
     if (is_main_interp) {
-        _Py_ClearFileSystemEncoding();
+        _PyBytes_Fini();
     }
+    _PyUnicode_Fini(tstate);
+    _PyFloat_Fini(tstate);
+    _PyLong_Fini(tstate);
 }
 
 
@@ -1299,19 +1288,20 @@ finalize_interp_clear(PyThreadState *tstate)
 
     _PyGC_Fini(tstate);
 
-    finalize_interp_types(tstate, is_main_interp);
+    if (is_main_interp) {
+        _Py_HashRandomization_Fini();
+        _PyArg_Fini();
+        _Py_ClearFileSystemEncoding();
+    }
+
+    _PyWarnings_Fini(tstate->interp);
 
     if (is_main_interp) {
-        /* XXX Still allocated:
-           - various static ad-hoc pointers to interned strings
-           - int and float free list blocks
-           - whatever various modules and libraries allocate
-        */
-
         PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
-
         _PyExc_Fini();
     }
+
+    finalize_interp_types(tstate, is_main_interp);
 }
 
 
