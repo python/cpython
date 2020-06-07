@@ -675,7 +675,7 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
     PyObject *filenamebytes = PyOS_FSPath(filename);
     if (filenamebytes == NULL)
         return NULL;
-    if (PyUnicode_Check(filenamebytes) {
+    if (PyUnicode_Check(filenamebytes)) {
         PyObject *tmp = PyUnicode_EncodeFSDefault(filenamebytes);
         Py_DECREF(filenamebytes);
         filenamebytes = tmp;
