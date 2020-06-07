@@ -1057,7 +1057,7 @@ class _Unparser(NodeVisitor):
     def _str_literal_helper(
         self, value, quote_types=("'", '"', '"""', "'''"), escape=""
     ):
-        """Helper for writing string literals, minimising escapes.
+        """Helper for writing string literals, minimizing escapes.
         Returns (possible quote types, string literal to write).
         """
         # Escape characters we've been told to escape, backslashes, and
