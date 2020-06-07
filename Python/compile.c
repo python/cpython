@@ -1124,10 +1124,14 @@ stack_effect(int opcode, int oparg, int jump)
             return jump > 0 ? -4 : -3;
         case MATCH_MAP:
         case MATCH_MAP_STAR:
-        case MATCH_SEQ:
             return jump > 0 ? -2 : -1;
+        case MATCH_SEQ:
+            return jump > 0 ? -1 : 0;
         case MATCH_SEQ_STAR:
             return jump > 0 ? -3 : -2;
+        case MATCH_LEN_EQ:
+        case MATCH_LEN_GE:
+            return 1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -2865,6 +2869,10 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     ADDOP_I(c, BUILD_TUPLE, size - star);
     // TODO: Just drop MATCH_MAP_STAR?
     ADDOP_JREL(c, star ? MATCH_MAP_STAR : MATCH_MAP, fail);
+    if (size - star) {
+        ADDOP_I(c, MATCH_LEN_GE, size - star);
+        ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+    }
     for (i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
         ADDOP(c, LIST_POP);
@@ -2984,11 +2992,15 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star - 1))
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(star))
         ADDOP_JREL(c, MATCH_SEQ_STAR, fail);
+        if (size) {
+            ADDOP_I(c, MATCH_LEN_GE, size - 1);
+            ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+        }
     }
     else {
-        // TODO: ERROR CHECKING FOR THESE:
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size))
         ADDOP_JREL(c, MATCH_SEQ, fail);
+        ADDOP_I(c, MATCH_LEN_EQ, size);
+        ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     }
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);

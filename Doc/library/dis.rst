@@ -1236,11 +1236,11 @@ All of the following opcodes use their arguments.
 
 .. opcode:: MATCH_SEQ (delta)
 
-   Pop TOS and TOS1.  TOS is an :class:`int` length.  If TOS1 is an instance of
-   :class:`collections.abc.Sequence`, is not an :term:`iterator`, is not an
-   instance of :class:`str`/:class:`bytes`/:class:`bytearray`, and has that
-   length, collect it into a reversed list and push that onto the stack.
-   Otherwise, increment the bytecode counter by ``delta``.
+   Pop TOS. If it is an instance of :class:`collections.abc.Sequence`, is not an
+   :term:`iterator`, and is not an instance of
+   :class:`str`/:class:`bytes`/:class:`bytearray`, collect it into a reversed
+   list and push that onto the stack.  Otherwise, increment the bytecode counter
+   by ``delta``.
 
    .. versionadded:: 3.10
 
@@ -1250,6 +1250,20 @@ All of the following opcodes use their arguments.
    Pop TOS, TOS1, and TOS2.  TOS and TOS1 are int lengths.  Perform the same
    steps as :opcode:`MATCH_SEQ` on TOS2, but fold the middle items of the result
    list between TOS1 and -TOS2 into another, nested list.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_LEN_EQ (size)
+
+   TODO
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_LEN_GE (size)
+
+   TODO
 
    .. versionadded:: 3.10
 

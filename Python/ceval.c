@@ -3668,6 +3668,7 @@ main_loop:
         case TARGET(MATCH_SEQ_STAR): {
             int star = opcode == MATCH_SEQ_STAR;
             Py_ssize_t size_pre = -1;
+            Py_ssize_t size = -1;
             if (star) {
                 PyObject *_size_pre = POP();
                 assert(PyLong_CheckExact(_size_pre));
@@ -3676,21 +3677,21 @@ main_loop:
                 if (size_pre < 0) {
                     goto error;
                 }
+                PyObject *_size = POP();
+                assert(PyLong_CheckExact(_size));
+                size = PyLong_AsSsize_t(_size);
+                Py_DECREF(_size);
+                if (size < 0) {
+                    goto error;
+                }
             }
-            PyObject *_size = TOP();
-            assert(PyLong_CheckExact(_size));
-            Py_ssize_t size = PyLong_AsSsize_t(_size);
-            if (size < 0) {
-                goto error;
-            }
-            PyObject *target = SECOND();
+            PyObject *target = TOP();
             int match = match_seq_type(target);
             if (match < 0) {
                 goto error;
             }
             if (!match) {
-                STACK_SHRINK(2);
-                Py_DECREF(_size);
+                STACK_SHRINK(1);
                 Py_DECREF(target);
                 JUMPBY(oparg);
                 DISPATCH();
@@ -3702,30 +3703,21 @@ main_loop:
             }
             if (!star) {
                 assert(size_pre < 0);
-                if (PyList_GET_SIZE(list) != size) {
-                    Py_DECREF(list);
-                    STACK_SHRINK(2);
-                    Py_DECREF(_size);
-                    Py_DECREF(target);
-                    JUMPBY(oparg);
-                    DISPATCH();
-                }
+                assert(size < 0);
                 if (PyList_Reverse(list)) {
                     Py_DECREF(list);
                     goto error;
                 }
-                STACK_SHRINK(1);
                 SET_TOP(list);
-                Py_DECREF(_size);
                 Py_DECREF(target);
                 DISPATCH();
             }
             assert(size_pre >= 0);
+            assert(size >= 0);
             Py_ssize_t actual = PyList_GET_SIZE(list);
             if (actual < size_pre + size) {
                 Py_DECREF(list);
-                STACK_SHRINK(2);
-                Py_DECREF(_size);
+                STACK_SHRINK(1);
                 Py_DECREF(target);
                 JUMPBY(oparg);
                 DISPATCH();
@@ -3752,12 +3744,26 @@ main_loop:
                 goto error;
             }
             assert(PyList_GET_SIZE(list) == size_pre + 1 + size);
-            STACK_SHRINK(1);
             SET_TOP(list);
-            Py_DECREF(_size);
             Py_DECREF(target);
             PREDICT(LIST_POP);
             PREDICT(POP_TOP);
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_LEN_EQ):
+        case TARGET(MATCH_LEN_GE): {
+            Py_ssize_t len = PyObject_Length(TOP());
+            if (len < 0) {
+                goto error;
+            }
+            if (opcode == MATCH_LEN_EQ ? len == oparg : len >= oparg) {
+                PUSH(Py_True);
+            }
+            else {
+                PUSH(Py_False);
+            }
+            Py_INCREF(TOP());
             DISPATCH();
         }
 

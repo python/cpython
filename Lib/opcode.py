@@ -219,5 +219,7 @@ jrel_op('MATCH_MAP', 167)
 jrel_op('MATCH_MAP_STAR', 168)
 jrel_op('MATCH_SEQ', 169)
 jrel_op('MATCH_SEQ_STAR', 170)
+def_op('MATCH_LEN_EQ', 171)
+def_op('MATCH_LEN_GE', 172)
 
 del def_op, name_op, jrel_op, jabs_op
