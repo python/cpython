@@ -2219,18 +2219,22 @@ _PyPegen_get_binary_operator(Parser *p, const Token *t)
     }
 }
 
+typedef struct {
+    expr_ty value;
+    OperatorFactorPair *original_pair;
+} ValueItem;
+
 expr_ty
 _PyPegen_operator_precedence_expr(Parser *p, expr_ty factor, asdl_seq *terms) {
 
     expr_ty result = NULL;
 
-    OperatorFactorPair **extra_info = PyMem_Calloc(asdl_seq_LEN(terms) + 1, sizeof(OperatorFactorPair*));
-    expr_ty *values = PyMem_Calloc(asdl_seq_LEN(terms) + 1, sizeof(expr_ty));
+    ValueItem *values = PyMem_Calloc(asdl_seq_LEN(terms) + 1, sizeof(ValueItem));
     Token **operators = PyMem_Calloc(asdl_seq_LEN(terms), sizeof(Token*));
 
     ssize_t stack_pos = 0;
 
-    values[0] = factor;
+    values[0].value = factor;
     ssize_t output_pos = 1;
 
 #define _DO_PRECEDENCE_OPERATOR_REDUCTION_STEP do { \
@@ -2239,20 +2243,18 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty factor, asdl_seq *terms) {
             result = NULL; \
             goto exit; \
         } \
-        expr_ty right = values[--output_pos]; \
-        OperatorFactorPair *right_context = extra_info[output_pos]; \
-        expr_ty left = values[--output_pos]; \
-        expr_ty res = _Py_BinOp(left, the_operator, right, \
-                                left->lineno, left->col_offset, \
-                                right_context->end_lineno, \
-                                right_context->end_col_offset, \
+        ValueItem right = values[--output_pos]; \
+        ValueItem left = values[--output_pos]; \
+        expr_ty res = _Py_BinOp(left.value, the_operator, right.value, \
+                                left.value->lineno, left.value->col_offset, \
+                                right.original_pair->end_lineno, \
+                                right.original_pair->end_col_offset, \
                                 p->arena); \
         if (res == NULL) { \
             result = NULL; \
             goto exit; \
         } \
-        values[output_pos++] = res;  \
-        extra_info[output_pos-1] = right_context; \
+        values[output_pos++] = (ValueItem){.value = res, .original_pair = right.original_pair};  \
     } while(0)
  
     for (ssize_t i=0; i < asdl_seq_LEN(terms); i++)
@@ -2267,21 +2269,18 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty factor, asdl_seq *terms) {
             _DO_PRECEDENCE_OPERATOR_REDUCTION_STEP;
         }
         operators[stack_pos++] = oper;
-        values[output_pos++] = the_factor;
-        extra_info[output_pos-1] = pair;
+        values[output_pos++] = (ValueItem){.value = the_factor, .original_pair = pair};
     }
 
     while (stack_pos > 0) {
         _DO_PRECEDENCE_OPERATOR_REDUCTION_STEP;
     }
 
-    result = values[0];
+    result = values[0].value;
 
 exit:
     PyMem_Free(values);
     PyMem_Free(operators);
-    PyMem_Free(extra_info);
-
     return result;
 
 }
