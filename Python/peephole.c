@@ -200,10 +200,10 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
             case MATCH:
-            case MATCH_MAP:
-            case MATCH_MAP_STAR:
-            case MATCH_SEQ:
-            case MATCH_SEQ_STAR:
+            case OLD_MATCH_MAP:
+            case OLD_MATCH_MAP_STAR:
+            case OLD_MATCH_SEQ:
+            case OLD_MATCH_SEQ_STAR:
                 j = GETJUMPTGT(code, i);
                 assert(j < len);
                 blocks[j] = 1;
@@ -509,10 +509,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
             case MATCH:
-            case MATCH_MAP:
-            case MATCH_MAP_STAR:
-            case MATCH_SEQ:
-            case MATCH_SEQ_STAR:
+            case OLD_MATCH_MAP:
+            case OLD_MATCH_MAP_STAR:
+            case OLD_MATCH_SEQ:
+            case OLD_MATCH_SEQ_STAR:
                 j = blocks[j / sizeof(_Py_CODEUNIT) + i + 1] - blocks[i] - 1;
                 j *= sizeof(_Py_CODEUNIT);
                 break;

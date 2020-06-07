@@ -851,7 +851,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 // Need these for pattern matching:
 
 static int
-match_map_type(PyObject *target)
+match_map(PyObject *target)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (!interp) {
@@ -872,7 +872,7 @@ match_map_type(PyObject *target)
 }
 
 static int
-match_seq_type(PyObject *target)
+match_seq(PyObject *target)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (!interp) {
@@ -3606,23 +3606,11 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_MAP):
-        case TARGET(MATCH_MAP_STAR): {
-            // TODO: JUST PREPEND THE STAR MAP TO THE LIST!
-            int star = opcode == MATCH_MAP_STAR;
+        case TARGET(OLD_MATCH_MAP):
+        case TARGET(OLD_MATCH_MAP_STAR): {
+            int star = opcode == OLD_MATCH_MAP_STAR;
             PyObject *keys = TOP();
             PyObject *target = SECOND();
-            int match = match_map_type(target);
-            if (match < 0) {
-                goto error;
-            }
-            if (!match) {
-                STACK_SHRINK(2);
-                Py_DECREF(keys);
-                Py_DECREF(target);
-                JUMPBY(oparg);
-                DISPATCH();
-            }
             PyObject *copy;
             if (PyDict_CheckExact(target)) {
                 copy = PyDict_Copy(target);
@@ -3664,9 +3652,9 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_SEQ):
-        case TARGET(MATCH_SEQ_STAR): {
-            int star = opcode == MATCH_SEQ_STAR;
+        case TARGET(OLD_MATCH_SEQ):
+        case TARGET(OLD_MATCH_SEQ_STAR): {
+            int star = opcode == OLD_MATCH_SEQ_STAR;
             Py_ssize_t size_pre = -1;
             Py_ssize_t size = -1;
             if (star) {
@@ -3686,16 +3674,6 @@ main_loop:
                 }
             }
             PyObject *target = TOP();
-            int match = match_seq_type(target);
-            if (match < 0) {
-                goto error;
-            }
-            if (!match) {
-                STACK_SHRINK(1);
-                Py_DECREF(target);
-                JUMPBY(oparg);
-                DISPATCH();
-            }
             // TODO: Break this out:
             PyObject *list = PySequence_List(target);
             if (!list) {
@@ -3751,18 +3729,42 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_LEN_EQ):
+        case TARGET(MATCH_LEN_EQ): {
+            Py_ssize_t len = PyObject_Length(TOP());
+            if (len < 0) {
+                goto error;
+            }
+            PUSH(len == oparg ? Py_True : Py_False);
+            Py_INCREF(TOP());
+            DISPATCH();
+        }
+
         case TARGET(MATCH_LEN_GE): {
             Py_ssize_t len = PyObject_Length(TOP());
             if (len < 0) {
                 goto error;
             }
-            if (opcode == MATCH_LEN_EQ ? len == oparg : len >= oparg) {
-                PUSH(Py_True);
+            PUSH(len >= oparg ? Py_True : Py_False);
+            Py_INCREF(TOP());
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_MAP): {
+            int match = match_map(TOP());
+            if (match < 0) {
+                goto error;
             }
-            else {
-                PUSH(Py_False);
+            PUSH(match ? Py_True : Py_False);
+            Py_INCREF(TOP());
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_SEQ): {
+            int match = match_seq(TOP());
+            if (match < 0) {
+                goto error;
             }
+            PUSH(match ? Py_True : Py_False);
             Py_INCREF(TOP());
             DISPATCH();
         }

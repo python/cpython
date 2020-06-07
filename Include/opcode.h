@@ -31,6 +31,8 @@ extern "C" {
 #define BINARY_TRUE_DIVIDE       27
 #define INPLACE_FLOOR_DIVIDE     28
 #define INPLACE_TRUE_DIVIDE      29
+#define MATCH_SEQ                30
+#define MATCH_MAP                31
 #define RERAISE                  48
 #define WITH_EXCEPT_START        49
 #define GET_AITER                50
@@ -129,10 +131,10 @@ extern "C" {
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
 #define MATCH                   166
-#define MATCH_MAP               167
-#define MATCH_MAP_STAR          168
-#define MATCH_SEQ               169
-#define MATCH_SEQ_STAR          170
+#define OLD_MATCH_MAP           167
+#define OLD_MATCH_MAP_STAR      168
+#define OLD_MATCH_SEQ           169
+#define OLD_MATCH_SEQ_STAR      170
 #define MATCH_LEN_EQ            171
 #define MATCH_LEN_GE            172
 

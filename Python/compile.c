@@ -1122,15 +1122,17 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case MATCH:
             return jump > 0 ? -4 : -3;
-        case MATCH_MAP:
-        case MATCH_MAP_STAR:
+        case OLD_MATCH_MAP:
+        case OLD_MATCH_MAP_STAR:
             return jump > 0 ? -2 : -1;
-        case MATCH_SEQ:
+        case OLD_MATCH_SEQ:
             return jump > 0 ? -1 : 0;
-        case MATCH_SEQ_STAR:
+        case OLD_MATCH_SEQ_STAR:
             return jump > 0 ? -3 : -2;
         case MATCH_LEN_EQ:
         case MATCH_LEN_GE:
+        case MATCH_MAP:
+        case MATCH_SEQ:
             return 1;
         default:
             return PY_INVALID_STACK_EFFECT;
@@ -2855,6 +2857,12 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     asdl_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
+    ADDOP(c, MATCH_MAP);
+    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+    if (size - star) {
+        ADDOP_I(c, MATCH_LEN_GE, size - star);
+        ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+    }
     Py_ssize_t i;
     for (i = 0; i < size - star; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
@@ -2867,12 +2875,8 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
         VISIT(c, expr, asdl_seq_GET(keys, i));
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
-    // TODO: Just drop MATCH_MAP_STAR?
-    ADDOP_JREL(c, star ? MATCH_MAP_STAR : MATCH_MAP, fail);
-    if (size - star) {
-        ADDOP_I(c, MATCH_LEN_GE, size - star);
-        ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
-    }
+    // TODO: Just drop OLD_MATCH_MAP_STAR?
+    ADDOP_JREL(c, star ? OLD_MATCH_MAP_STAR : OLD_MATCH_MAP, fail);
     for (i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
         ADDOP(c, LIST_POP);
@@ -2987,20 +2991,22 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
+    ADDOP(c, MATCH_SEQ);
+    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     if (star >= 0) {
-        // TODO: ERROR CHECKING FOR THESE:
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star - 1))
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(star))
-        ADDOP_JREL(c, MATCH_SEQ_STAR, fail);
         if (size) {
             ADDOP_I(c, MATCH_LEN_GE, size - 1);
             ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
         }
+        // TODO: ERROR CHECKING FOR THESE:
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star - 1))
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(star))
+        ADDOP_JREL(c, OLD_MATCH_SEQ_STAR, fail);
     }
     else {
-        ADDOP_JREL(c, MATCH_SEQ, fail);
         ADDOP_I(c, MATCH_LEN_EQ, size);
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+        ADDOP_JREL(c, OLD_MATCH_SEQ, fail);
     }
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
