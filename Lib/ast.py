@@ -1071,9 +1071,9 @@ class _Unparser(NodeVisitor):
             )
             for c in string
         )
-        possible_quotes = [quote for quote in quote_types if quote not in escaped_string]
+        possible_quotes = [q for q in quote_types if q not in escaped_string]
         if "\n" in escaped_string:
-            possible_quotes = [quote for quote in possible_quotes if quote in ('"""', "'''")]
+            possible_quotes = [q for q in possible_quotes if q in ('"""', "'''")]
         if not possible_quotes:
             # If there aren't any possible quote_types, fallback to using repr
             # on the original value. Try to use a quote_type from quote_types.
@@ -1083,7 +1083,8 @@ class _Unparser(NodeVisitor):
         if escaped_string:
             # Sort so that we prefer '''"''' over """\""""
             possible_quotes.sort(key=lambda q: q[0] == escaped_string[-1])
-            # If we're using triple quotes and we'd need to escape a final quote, escape
+            # If we're using triple quotes and we'd need to escape a final
+            # quote, escape it
             if possible_quotes[0][0] == escaped_string[-1]:
                 assert len(possible_quotes[0]) == 3
                 escaped_string = escaped_string[:-1] + "\\" + escaped_string[-1]
