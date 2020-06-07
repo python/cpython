@@ -1,1 +1,1 @@
-Fix IndexError in argparse when instance of  :class:`ArgumentParser` parse args like '-a=' what have a 'store_true' action.
+Fix IndexError in :class:`argparse.ArgumentParser` when a `store_true` action is given an explicit argument.
