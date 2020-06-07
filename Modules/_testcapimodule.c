@@ -6318,7 +6318,7 @@ heapctypewithbuffer_getbuffer(HeapCTypeWithBufferObject *self, Py_buffer *view, 
         view, (PyObject*)self, (void *)self->buffer, 4, 1, flags);
 }
 
-static int
+static void
 heapctypewithbuffer_releasebuffer(HeapCTypeWithBufferObject *self, Py_buffer *view)
 {
     assert(view->obj == (void*) self);
