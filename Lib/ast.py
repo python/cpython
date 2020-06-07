@@ -1055,7 +1055,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def _str_literal_helper(
-        self, value, quote_types=("'", '"', '"""', "'''"), escape=""
+        self, string, quote_types=("'", '"', '"""', "'''"), escape=""
     ):
         """Helper for writing string literals, minimizing escapes.
         Returns (possible quote types, string literal to write).
@@ -1063,34 +1063,34 @@ class _Unparser(NodeVisitor):
         # Escape characters we've been told to escape, backslashes, and
         # non-printable characters other than \n and \t.
         escape = {*escape, '\\'}
-        val = "".join(
+        escaped_string = "".join(
             c.encode('unicode_escape').decode('ascii')
             if c in escape or (not c.isprintable() and c not in '\n\t') else c
-            for c in value
+            for c in string
         )
-        possible_quotes = [quote for quote in quote_types if quote not in val]
-        if "\n" in val:
+        possible_quotes = [quote for quote in quote_types if quote not in escaped_string]
+        if "\n" in escaped_string:
             possible_quotes = [quote for quote in possible_quotes if quote in ('"""', "'''")]
         if not possible_quotes:
             # If there aren't any possible quote_types, fallback to using repr
             # on the original value. Try to use a quote_type from quote_types.
-            value = repr(value)
-            quote_type = next((q for q in quote_types if value[0] in q), value[0])
-            return value[1:-1], [quote_type]
-        if val:
+            string = repr(string)
+            quote_type = next((q for q in quote_types if string[0] in q), string[0])
+            return string[1:-1], [quote_type]
+        if escaped_string:
             # Sort so that we prefer '''"''' over """\""""
-            possible_quotes.sort(key=lambda q: q[0] == val[-1])
+            possible_quotes.sort(key=lambda q: q[0] == escaped_string[-1])
             # If we're using triple quotes and we'd need to escape a final quote, escape
-            if possible_quotes[0][0] == val[-1]:
+            if possible_quotes[0][0] == escaped_string[-1]:
                 assert len(possible_quotes[0]) == 3
-                val = val[:-1] + "\\" + val[-1]
-        return val, possible_quotes
+                escaped_string = escaped_string[:-1] + "\\" + escaped_string[-1]
+        return escaped_string, possible_quotes
 
-    def _write_str_avoiding_backslashes(self, value, **kwargs):
+    def _write_str_avoiding_backslashes(self, string, **kwargs):
         """Write string literal value with a best effort attempt to avoid backslashes."""
-        value, quote_types = self._str_literal_helper(value, **kwargs)
+        string, quote_types = self._str_literal_helper(string, **kwargs)
         quote_type = quote_types[0]
-        self.write(f"{quote_type}{value}{quote_type}")
+        self.write(f"{quote_type}{string}{quote_type}")
 
     def visit_JoinedStr(self, node):
         self.write("f")
