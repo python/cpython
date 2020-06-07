@@ -92,6 +92,7 @@ def _trace(message):
     if sys.flags.verbose:
         print(message, file=sys.stderr)
 
+
 def makepath(*paths):
     dir = os.path.join(*paths)
     try:

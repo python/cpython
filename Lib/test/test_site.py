@@ -13,6 +13,7 @@ from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
 import builtins
 import encodings
 import glob
+import io
 import os
 import re
 import shutil
@@ -321,9 +322,8 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertFalse(known_paths)
 
     def test_trace(self):
-        import io
         message = "bla-bla-bla"
-        for verbose, out in (True, message+"\n"), (False, ""):
+        for verbose, out in (True, message + "\n"), (False, ""):
             with mock.patch('sys.flags', mock.Mock(verbose=verbose)), \
                     mock.patch('sys.stderr', io.StringIO()):
                 site._trace(message)
