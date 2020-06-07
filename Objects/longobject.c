@@ -5308,7 +5308,9 @@ int_bit_length_impl(PyObject *self)
 static int
 popcount_digit(digit d)
 {
-    Py_BUILD_ASSERT(sizeof(digit) <= sizeof(uint32_t));
+    // digit can be larger than uint32_t, but only PyLong_SHIFT bits
+    // of it will be ever used.
+    Py_BUILD_ASSERT(PyLong_SHIFT <= 32);
     return _Py_popcount32((uint32_t)d);
 }
 

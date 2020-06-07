@@ -84,7 +84,7 @@ test_popcount(PyObject *self, PyObject *Py_UNUSED(args))
 {
 #define CHECK(X, RESULT) \
     do { \
-        if (check_popcount(UINT32_C(X), RESULT) < 0) { \
+        if (check_popcount(X, RESULT) < 0) { \
             return NULL; \
         } \
     } while (0)

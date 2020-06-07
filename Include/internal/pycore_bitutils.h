@@ -84,7 +84,7 @@ _Py_bswap64(uint64_t word)
 }
 
 
-// Population count: count the number of 1's in 'u'
+// Population count: count the number of 1's in 'x'
 // (number of bits set to 1), also known as the hamming weight.
 //
 // Implementation note. CPUID is not used, to test if x86 POPCNT instruction
@@ -95,21 +95,29 @@ _Py_bswap64(uint64_t word)
 static inline int
 _Py_popcount32(uint32_t x)
 {
-#if (defined(__clang__) || defined(__GNUC__)) && SIZEOF_INT == 4
+#if (defined(__clang__) || defined(__GNUC__))
+
+#if SIZEOF_INT >= 4
+    Py_BUILD_ASSERT(sizeof(x) <= sizeof(unsigned int));
     return __builtin_popcount(x);
-#elif (defined(__clang__) || defined(__GNUC__)) && SIZEOF_INT == 8
+#else
+    // The C standard guarantees that unsigned long will always be big enough
+    // to hold a uint32_t value without losing information.
+    Py_BUILD_ASSERT(sizeof(x) <= sizeof(unsigned long));
     return __builtin_popcountl(x);
+#endif
+
 #else
     // 32-bit SWAR (SIMD Within A Register) popcount
 
     // Binary: 0 1 0 1 ...
-    const uint32_t M1 = UINT32_C(0x55555555);
+    const uint32_t M1 = 0x55555555;
     // Binary: 00 11 00 11. ..
-    const uint32_t M2 = UINT32_C(0x33333333);
+    const uint32_t M2 = 0x33333333;
     // Binary: 0000 1111 0000 1111 ...
-    const uint32_t M4 = UINT32_C(0x0F0F0F0F);
-    // 256^4 + 256^3 + 256^2 + 256^1
-    const uint32_t SUM = UINT32_C(0x01010101);
+    const uint32_t M4 = 0x0F0F0F0F;
+    // 256**4 + 256**3 + 256**2 + 256**1
+    const uint32_t SUM = 0x01010101;
 
     // Put count of each 2 bits into those 2 bits
     x = x - ((x >> 1) & M1);
