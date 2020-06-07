@@ -2223,13 +2223,14 @@ _PyPegen_get_binary_operator(Parser *p, const Token *t)
 typedef struct {
     expr_ty value;
     OperatorFactorPair *original_pair;
+    Token *oper;
 } ValueItem;
 
 static inline int
-_reduction_step(Parser* p, ValueItem *values,
-                Token **operators, ssize_t *output_pos, ssize_t *stack_pos)
+_reduction_step(Parser* p, ValueItem values[],
+                ssize_t *output_pos, ssize_t *stack_pos)
 {
-    operator_ty the_operator = _PyPegen_get_binary_operator(p, operators[--(*stack_pos)]);
+    operator_ty the_operator = _PyPegen_get_binary_operator(p, values[--(*stack_pos)].oper);
     if (the_operator == 0) {
         return -1;
     }
@@ -2262,7 +2263,6 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty initial_factor, asdl_seq *o
     expr_ty result = NULL;
 
     ValueItem *values = PyMem_Calloc(asdl_seq_LEN(ops_factors) + 1, sizeof(ValueItem));
-    Token **operators = PyMem_Calloc(asdl_seq_LEN(ops_factors), sizeof(Token*));
 
     ssize_t stack_pos = 0;
 
@@ -2276,19 +2276,19 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty initial_factor, asdl_seq *o
         Token* oper = pair->oper;
         expr_ty the_factor = pair->factor;
 
-        while (stack_pos > 0 && _PyPegen_get_operator_precedence(operators[stack_pos-1]) >=
+        while (stack_pos > 0 && _PyPegen_get_operator_precedence(values[stack_pos-1].oper) >=
                _PyPegen_get_operator_precedence(oper)) {
-            if (_reduction_step(p, values, operators, &output_pos, &stack_pos) == -1) {
+            if (_reduction_step(p, values, &output_pos, &stack_pos) == -1) {
                 result = NULL;
                 goto exit;
             }
         }
-        operators[stack_pos++] = oper;
+        values[stack_pos++].oper = oper;
         values[output_pos++] = (ValueItem){.value = the_factor, .original_pair = pair};
     }
 
     while (stack_pos > 0) {
-        if (_reduction_step(p, values, operators, &output_pos, &stack_pos) == -1) {
+        if (_reduction_step(p, values, &output_pos, &stack_pos) == -1) {
             result = NULL;
             goto exit;
         }
@@ -2298,6 +2298,5 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty initial_factor, asdl_seq *o
 
 exit:
     PyMem_Free(values);
-    PyMem_Free(operators);
     return result;
 }
