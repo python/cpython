@@ -2229,21 +2229,21 @@ typedef struct {
 static inline int
 _reduction_step(Parser* p, ValueItem stack[], ssize_t *stack_top)
 {
-    operator_ty the_operator = _PyPegen_get_binary_operator(p, stack[*stack_top - 2].oper);
+    ssize_t top = --*stack_top;
+    ValueItem right = stack[top];
+    ValueItem left = stack[--top];
+    operator_ty the_operator = _PyPegen_get_binary_operator(p, stack[top].oper);
     if (the_operator == 0) {
         return -1;
     }
-    ValueItem right = stack[--(*stack_top)];
-    ValueItem left = stack[--(*stack_top)];
     expr_ty res = _Py_BinOp(left.value, the_operator, right.value,
-                                left.value->lineno, left.value->col_offset,
-                                right.original_pair->end_lineno,
-                                right.original_pair->end_col_offset,
-                                p->arena);
+                            left.value->lineno, left.value->col_offset,
+                            right.original_pair->end_lineno,
+                            right.original_pair->end_col_offset,
+                            p->arena);
     if (res == NULL) {
         return -1;
     }
-    ssize_t top = (*stack_top)++;
     stack[top].value = res;
     stack[top].original_pair = right.original_pair;
     return 0;
