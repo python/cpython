@@ -653,8 +653,8 @@ class _Unparser(NodeVisitor):
     output source code for the abstract syntax; original formatting
     is disregarded."""
 
-    def __init__(self, *, avoid_backslashes=False):
-        self.avoid_backslashes = avoid_backslashes
+    def __init__(self, *, _avoid_backslashes=False):
+        self._avoid_backslashes = _avoid_backslashes
         self._source = []
         self._buffer = []
         self._precedences = {}
@@ -1094,7 +1094,7 @@ class _Unparser(NodeVisitor):
 
     def visit_JoinedStr(self, node):
         self.write("f")
-        if self.avoid_backslashes:
+        if self._avoid_backslashes:
             self._fstring_JoinedStr(node, self.buffer_writer)
             self._write_str_avoiding_backslashes(self.buffer)
             return
@@ -1139,7 +1139,7 @@ class _Unparser(NodeVisitor):
 
     def _fstring_FormattedValue(self, node, write):
         write("{")
-        unparser = type(self)(avoid_backslashes=True)
+        unparser = type(self)(_avoid_backslashes=True)
         unparser.set_precedence(_Precedence.TEST.next(), node.value)
         expr = unparser.visit(node.value)
         if expr.startswith("{"):
@@ -1171,7 +1171,7 @@ class _Unparser(NodeVisitor):
         if isinstance(value, (float, complex)):
             # Substitute overflowing decimal literal for AST infinities.
             self.write(repr(value).replace("inf", _INFSTR))
-        elif self.avoid_backslashes and isinstance(value, str):
+        elif self._avoid_backslashes and isinstance(value, str):
             self._write_str_avoiding_backslashes(value)
         else:
             self.write(repr(value))
