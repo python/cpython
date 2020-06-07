@@ -370,7 +370,7 @@ Miscellaneous options
    (:option:`!-vv`), print a message for each file that is checked for when
    searching for a module.  Also provides information on module cleanup at exit.
 
-   .. versionadded:: 3.8
+   .. versionchanged:: 3.10
       When running the :mod:`site` module, report the site-specific paths
       and :file:`.pth` files being processed.
 

@@ -322,9 +322,9 @@ class HelperFunctionsTests(unittest.TestCase):
 
     def test_trace(self):
         import io
-        message="bla-bla-bla"
+        message = "bla-bla-bla"
         for verbose, out in (True, message+"\n"), (False, ""):
-            with mock.patch('sys.flags', mock.Mock(verbose=verbose)),\
+            with mock.patch('sys.flags', mock.Mock(verbose=verbose)), \
                     mock.patch('sys.stderr', io.StringIO()):
                 site._trace(message)
                 self.assertEqual(sys.stderr.getvalue(), out)
