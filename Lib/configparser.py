@@ -932,11 +932,11 @@ class RawConfigParser(MutableMapping):
             value = self._interpolation.before_write(self, section_name, key,
                                                      value)
             if value is not None or not self._allow_no_value:
-                value = delimiter + str(value).replace('\n', '\n\t')
+                value = delimiter + str(value).replace('\n', '\n{}\t'.format(indent))
             else:
                 value = ""
             fp.write("{}{}{}\n".format(indent, key, value))
-        fp.write("\n")
+        fp.write("{}\n".format(indent))
 
     def remove_option(self, section, option):
         """Remove an option."""

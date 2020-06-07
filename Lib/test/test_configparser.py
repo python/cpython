@@ -688,16 +688,16 @@ boolean {0[0]} NO
                 "{indent}\tcomments\n"
                 "{indent}\tmultiline\n"
                 "{indent}\n".format(equals=delimiter,
-                                    default_section=self.default_section,
-                                    indent=indent)
+                            default_section=self.default_section,
+                            indent=indent
+                            )
                 )
             if self.allow_no_value:
                 expect_string += (
-                    indent + "[Valueless]\n"
-                    + indent + "option-without-value\n"
-                    "\n"
+                    "{indent}[Valueless]\n"
+                    "{indent}option-without-value\n"
+                    "{indent}\n".format(indent=indent)
                     )
-
             self.assertEqual(output.getvalue(), expect_string)
 
     def test_set_string_types(self):
