@@ -692,3 +692,150 @@ defined by the module.  The specific list of defined symbols is available as
 
    Memory page has hardware error
 
+
+.. data:: ENOTSUP
+
+   Operation not supported
+
+   .. availability:: Unix.
+
+
+.. data:: ELOCKUNMAPPED
+
+   Locked lock was unmapped
+
+   .. availability:: Unix.
+
+
+.. data:: ENOTACTIVE
+
+   Facility is not active
+
+   .. availability:: Unix.
+
+
+.. data:: EAUTH
+
+   Authentication error
+
+   .. availability:: OSX.
+
+
+.. data:: EBADARCH
+
+   Bad CPU type in executable
+
+   .. availability:: OSX.
+
+
+.. data:: EBADEXEC
+
+   Bad executable (or shared library)
+
+   .. availability:: OSX.
+
+
+.. data:: EBADMACHO
+
+   Malformed Mach-o file
+
+   .. availability:: OSX.
+
+
+.. data:: EBADRPC
+
+   RPC struct is bad
+
+   .. availability:: OSX.
+
+
+.. data:: EDEVERR
+
+   Device error
+
+   .. availability:: OSX.
+
+
+.. data:: EFTYPE
+
+   Inappropriate file type or format
+
+   .. availability:: OSX.
+
+
+.. data:: ENEEDAUTH
+
+   Need authenticator
+
+   .. availability:: OSX.
+
+
+.. data:: ENEEDAUTH
+
+   Need authenticator
+
+   .. availability:: OSX.
+
+
+.. data:: ENOATTR
+
+   Attribute not found
+
+   .. availability:: OSX.
+
+
+.. data:: ENOPOLICY
+
+   Policy not found
+
+   .. availability:: OSX.
+
+
+.. data:: EPROCLIM
+
+   Too many processes
+
+   .. availability:: OSX.
+
+
+.. data:: EPROCUNAVAIL
+
+   Bad procedure for program
+
+   .. availability:: OSX.
+
+
+.. data:: EPROGMISMATCH
+
+   Program version wrong
+
+   .. availability:: OSX.
+
+
+.. data:: EPROGUNAVAIL
+
+   RPC prog. not avail
+
+   .. availability:: OSX.
+
+
+.. data:: EPWROFF
+
+   Device power is off
+
+   .. availability:: OSX.
+
+
+.. data:: ERPCMISMATCH
+
+   RPC version wrong
+
+   .. availability:: OSX.
+
+
+.. data:: ESHLIBVERS
+
+   Shared library version mismatch
+
+   .. availability:: OSX.
+
