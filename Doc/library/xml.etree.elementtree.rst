@@ -817,7 +817,7 @@ Functions
 
 
 .. function:: xml.etree.ElementInclude.include( elem, loader=None, base_url=None, \
-                                                max_depth=DEFAULT_MAX_INCLUSION_DEPTH)
+                                                max_depth=6)
 
    This function expands XInclude directives.  *elem* is the root element.  *loader* is
    an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
