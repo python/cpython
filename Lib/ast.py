@@ -1064,8 +1064,11 @@ class _Unparser(NodeVisitor):
         # non-printable characters other than \n and \t.
         escape = {*escape, '\\'}
         escaped_string = "".join(
-            c.encode('unicode_escape').decode('ascii')
-            if c in escape or (not c.isprintable() and c not in '\n\t') else c
+            (
+                c.encode('unicode_escape').decode('ascii')
+                if c in escape or (not c.isprintable() and c not in '\n\t')
+                else c
+            )
             for c in string
         )
         possible_quotes = [quote for quote in quote_types if quote not in escaped_string]
