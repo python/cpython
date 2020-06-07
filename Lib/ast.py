@@ -1068,10 +1068,10 @@ class _Unparser(NodeVisitor):
             if c in escape or (not c.isprintable() and c not in '\n\t') else c
             for c in value
         )
-        qts = [quote for quote in quote_types if quote not in val]
+        possible_quotes = [quote for quote in quote_types if quote not in val]
         if "\n" in val:
-            qts = [quote for quote in qts if quote in ('"""', "'''")]
-        if not qts:
+            possible_quotes = [quote for quote in possible_quotes if quote in ('"""', "'''")]
+        if not possible_quotes:
             # If there aren't any possible quote_types, fallback to using repr
             # on the original value. Try to use a quote_type from quote_types.
             value = repr(value)
@@ -1079,12 +1079,12 @@ class _Unparser(NodeVisitor):
             return value[1:-1], [quote_type]
         if val:
             # Sort so that we prefer '''"''' over """\""""
-            qts.sort(key=lambda q: q[0] == val[-1])
+            possible_quotes.sort(key=lambda q: q[0] == val[-1])
             # If we're using triple quotes and we'd need to escape a final quote, escape
-            if qts[0][0] == val[-1]:
-                assert len(qts[0]) == 3
+            if possible_quotes[0][0] == val[-1]:
+                assert len(possible_quotes[0]) == 3
                 val = val[:-1] + "\\" + val[-1]
-        return val, qts
+        return val, possible_quotes
 
     def _write_str_avoiding_backslashes(self, value, **kwargs):
         """Write string literal value with a best effort attempt to avoid backslashes."""
