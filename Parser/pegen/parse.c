@@ -381,7 +381,6 @@ static KeywordToken *reserved_keywords[] = {
 #define _loop1_148_type 1303
 #define _tmp_149_type 1304
 #define _tmp_150_type 1305
-#define _tmp_151_type 1306
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -689,7 +688,6 @@ static void *_tmp_147_rule(Parser *p);
 static asdl_seq *_loop1_148_rule(Parser *p);
 static void *_tmp_149_rule(Parser *p);
 static void *_tmp_150_rule(Parser *p);
-static void *_tmp_151_rule(Parser *p);
 
 
 // file: statements? $
@@ -2004,7 +2002,7 @@ compound_stmt_rule(Parser *p)
 // assignment:
 //     | NAME ':' expression ['=' annotated_rhs]
 //     | ('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]
-//     | ((star_targets '='))+ (yield_expr | star_expressions) TYPE_COMMENT?
+//     | ((star_targets '='))+ (yield_expr | star_expressions) !'=' TYPE_COMMENT?
 //     | single_target augassign (yield_expr | star_expressions)
 //     | invalid_assignment
 static stmt_ty
@@ -2110,12 +2108,12 @@ assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]"));
     }
-    { // ((star_targets '='))+ (yield_expr | star_expressions) TYPE_COMMENT?
+    { // ((star_targets '='))+ (yield_expr | star_expressions) !'=' TYPE_COMMENT?
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((star_targets '='))+ (yield_expr | star_expressions) TYPE_COMMENT?"));
+        D(fprintf(stderr, "%*c> assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((star_targets '='))+ (yield_expr | star_expressions) !'=' TYPE_COMMENT?"));
         asdl_seq * a;
         void *b;
         void *tc;
@@ -2124,10 +2122,12 @@ assignment_rule(Parser *p)
             &&
             (b = _tmp_23_rule(p))  // yield_expr | star_expressions
             &&
+            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 22)  // token='='
+            &&
             (tc = _PyPegen_expect_token(p, TYPE_COMMENT), 1)  // TYPE_COMMENT?
         )
         {
-            D(fprintf(stderr, "%*c+ assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((star_targets '='))+ (yield_expr | star_expressions) TYPE_COMMENT?"));
+            D(fprintf(stderr, "%*c+ assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((star_targets '='))+ (yield_expr | star_expressions) !'=' TYPE_COMMENT?"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -2147,7 +2147,7 @@ assignment_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s assignment[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((star_targets '='))+ (yield_expr | star_expressions) TYPE_COMMENT?"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((star_targets '='))+ (yield_expr | star_expressions) !'=' TYPE_COMMENT?"));
     }
     { // single_target augassign (yield_expr | star_expressions)
         if (p->error_indicator) {
@@ -14574,7 +14574,7 @@ invalid_named_expression_rule(Parser *p)
 //     | tuple ':'
 //     | star_named_expression ',' star_named_expressions* ':'
 //     | expression ':' expression ['=' annotated_rhs]
-//     | (((star_expressions | star_targets) '='))+ (yield_expr | star_expressions)
+//     | ((star_expressions '='))+ (yield_expr | star_expressions)
 //     | star_expressions augassign (yield_expr | star_expressions)
 static void *
 invalid_assignment_rule(Parser *p)
@@ -14707,22 +14707,22 @@ invalid_assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ':' expression ['=' annotated_rhs]"));
     }
-    { // (((star_expressions | star_targets) '='))+ (yield_expr | star_expressions)
+    { // ((star_expressions '='))+ (yield_expr | star_expressions)
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(((star_expressions | star_targets) '='))+ (yield_expr | star_expressions)"));
+        D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((star_expressions '='))+ (yield_expr | star_expressions)"));
         void *_tmp_129_var;
         asdl_seq * a;
         if (
-            (a = _loop1_128_rule(p))  // (((star_expressions | star_targets) '='))+
+            (a = _loop1_128_rule(p))  // ((star_expressions '='))+
             &&
             (_tmp_129_var = _tmp_129_rule(p))  // yield_expr | star_expressions
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(((star_expressions | star_targets) '='))+ (yield_expr | star_expressions)"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( _PyPegen_get_invalid_target ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( _PyPegen_get_invalid_target ( a ) ) );
+            D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((star_expressions '='))+ (yield_expr | star_expressions)"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( _PyPegen_get_invalid_target ( p , a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( _PyPegen_get_invalid_target ( p , a ) ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -14732,7 +14732,7 @@ invalid_assignment_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(((star_expressions | star_targets) '='))+ (yield_expr | star_expressions)"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((star_expressions '='))+ (yield_expr | star_expressions)"));
     }
     { // star_expressions augassign (yield_expr | star_expressions)
         if (p->error_indicator) {
@@ -22815,7 +22815,7 @@ _tmp_127_rule(Parser *p)
     return _res;
 }
 
-// _loop1_128: ((star_expressions | star_targets) '=')
+// _loop1_128: (star_expressions '=')
 static asdl_seq *
 _loop1_128_rule(Parser *p)
 {
@@ -22836,15 +22836,15 @@ _loop1_128_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
-    { // ((star_expressions | star_targets) '=')
+    { // (star_expressions '=')
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _loop1_128[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((star_expressions | star_targets) '=')"));
+        D(fprintf(stderr, "%*c> _loop1_128[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(star_expressions '=')"));
         void *_tmp_147_var;
         while (
-            (_tmp_147_var = _tmp_147_rule(p))  // (star_expressions | star_targets) '='
+            (_tmp_147_var = _tmp_147_rule(p))  // star_expressions '='
         )
         {
             _res = _tmp_147_var;
@@ -22864,7 +22864,7 @@ _loop1_128_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop1_128[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((star_expressions | star_targets) '=')"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(star_expressions '=')"));
     }
     if (_n == 0 || p->error_indicator) {
         PyMem_Free(_children);
@@ -23816,7 +23816,7 @@ _tmp_146_rule(Parser *p)
     return _res;
 }
 
-// _tmp_147: (star_expressions | star_targets) '='
+// _tmp_147: star_expressions '='
 static void *
 _tmp_147_rule(Parser *p)
 {
@@ -23827,21 +23827,21 @@ _tmp_147_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // (star_expressions | star_targets) '='
+    { // star_expressions '='
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_147[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(star_expressions | star_targets) '='"));
+        D(fprintf(stderr, "%*c> _tmp_147[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions '='"));
         Token * _literal;
-        void *z;
+        expr_ty z;
         if (
-            (z = _tmp_151_rule(p))  // star_expressions | star_targets
+            (z = star_expressions_rule(p))  // star_expressions
             &&
             (_literal = _PyPegen_expect_token(p, 22))  // token='='
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_147[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(star_expressions | star_targets) '='"));
+            D(fprintf(stderr, "%*c+ _tmp_147[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions '='"));
             _res = z;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -23852,7 +23852,7 @@ _tmp_147_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_147[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(star_expressions | star_targets) '='"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expressions '='"));
     }
     _res = NULL;
   done:
@@ -24034,61 +24034,6 @@ _tmp_150_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_150[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**'"));
-    }
-    _res = NULL;
-  done:
-    D(p->level--);
-    return _res;
-}
-
-// _tmp_151: star_expressions | star_targets
-static void *
-_tmp_151_rule(Parser *p)
-{
-    D(p->level++);
-    if (p->error_indicator) {
-        D(p->level--);
-        return NULL;
-    }
-    void * _res = NULL;
-    int _mark = p->mark;
-    { // star_expressions
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> _tmp_151[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions"));
-        expr_ty star_expressions_var;
-        if (
-            (star_expressions_var = star_expressions_rule(p))  // star_expressions
-        )
-        {
-            D(fprintf(stderr, "%*c+ _tmp_151[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions"));
-            _res = star_expressions_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s _tmp_151[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expressions"));
-    }
-    { // star_targets
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> _tmp_151[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_targets"));
-        expr_ty star_targets_var;
-        if (
-            (star_targets_var = star_targets_rule(p))  // star_targets
-        )
-        {
-            D(fprintf(stderr, "%*c+ _tmp_151[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_targets"));
-            _res = star_targets_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s _tmp_151[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_targets"));
     }
     _res = NULL;
   done:

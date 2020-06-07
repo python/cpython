@@ -161,6 +161,10 @@ byte_offset_to_character_offset(PyObject *line, int col_offset)
 const char *
 _PyPegen_get_expr_name(expr_ty e)
 {
+    if (e == NULL) {
+        return NULL;
+    }
+
     switch (e->kind) {
         case Attribute_kind:
             return "attribute";
@@ -2122,9 +2126,17 @@ _PyPegen_get_invalid_target_from_expr(expr_ty e)
 }
 
 expr_ty
-_PyPegen_get_invalid_target(asdl_seq *e) {
+_PyPegen_get_invalid_target(Parser *p, asdl_seq *e) {
     ssize_t len = asdl_seq_LEN(e);
-    return _PyPegen_get_invalid_target_from_expr((expr_ty)asdl_seq_GET(e, len - 1));
+    for (ssize_t i = 0; i < asdl_seq_LEN(e); i++) {
+        expr_ty item = (expr_ty)asdl_seq_GET(e, i);
+        expr_ty res = _PyPegen_get_invalid_target_from_expr(item);
+        if (res != NULL) {
+            return res;
+        }
+    }
+    _PyPegen_raise_error(p, PyExc_SystemError, "Could not determine invalid target");
+    return NULL;
 }
 
 void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {

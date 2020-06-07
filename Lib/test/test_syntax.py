@@ -140,6 +140,10 @@ SyntaxError: cannot assign to conditional expression
 Traceback (most recent call last):
 SyntaxError: cannot assign to True
 
+>>> x = y = True = z = 3
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
+
 >>> a, b += 1, 2
 Traceback (most recent call last):
 SyntaxError: 'tuple' is an illegal expression for augmented assignment
