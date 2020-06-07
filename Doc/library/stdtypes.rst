@@ -4624,7 +4624,7 @@ support membership tests:
 
 .. describe:: dictview.mapping
 
-   Return the dictionary from which the view was derived.  If ``d`` is a
+   Return the dictionary the view refers to.  If ``d`` is a
    dictionary, then ``d is d.keys().mapping``, ``d is d.values().mapping``,
    and ``d is d.items().mapping``.
 
