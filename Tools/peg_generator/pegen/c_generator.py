@@ -377,7 +377,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"}}")
 
     def generate_precedence_table(self) -> None:
-        operators = self.grammar.metas.get("operators")
+        operators = self.grammar.metas.get("operators", "")
 
         def _generate_token_name(token: str) -> str:
             return self.tokens[self.exact_tokens[token]]

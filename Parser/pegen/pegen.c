@@ -2161,93 +2161,127 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
     );
 }
 
-OperatorTermPair *
+OperatorFactorPair *
 _PyPegen_operator_term_pair(Parser *p, Token* oper, expr_ty factor)
 {
-    OperatorTermPair *a = PyArena_Malloc(p->arena, sizeof(OperatorTermPair));
+    OperatorFactorPair *a = PyArena_Malloc(p->arena, sizeof(OperatorFactorPair));
     if (!a) {
         return NULL;
     }
     a->oper = oper;
     a->factor = factor;
+
+    Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+    if (_token == NULL) {
+        return NULL;
+    }
+    int _end_lineno = _token->end_lineno;
+    int _end_col_offset = _token->end_col_offset;
+    a->end_lineno = _end_lineno;
+    a->end_col_offset = _end_col_offset;
     return a;
 }
 
 static operator_ty
-_PyPegen_get_binary_operator(const Token *t)
+_PyPegen_get_binary_operator(Parser *p, const Token *t)
 {
     switch (t->type) {
-        case VBAR:
-            return BitOr;
-        case CIRCUMFLEX:
-            return BitXor;
-        case AMPER:
-            return BitAnd;
-        case LEFTSHIFT:
-            return LShift;
-        case RIGHTSHIFT:
-            return RShift;
-        case PLUS:
-            return Add;
-        case MINUS:
-            return Sub;
-        case STAR:
-            return Mult;
-        case AT:
-            return MatMult;
-        case SLASH:
-            return Div;
-        case DOUBLESLASH:
-            return FloorDiv;
-        case PERCENT:
-            return Mod;
-        default:
+    case VBAR:
+        return BitOr;
+    case CIRCUMFLEX:
+        return BitXor;
+    case AMPER:
+        return BitAnd;
+    case LEFTSHIFT:
+        return LShift;
+    case RIGHTSHIFT:
+        return RShift;
+    case PLUS:
+        return Add;
+    case MINUS:
+        return Sub;
+    case STAR:
+        return Mult;
+    case AT:
+        if (p->feature_version < 5) {
+            RAISE_SYNTAX_ERROR("The '@' operator is only supported in Python 3.5 and greater");
             return (operator_ty)0;
+        }
+        return MatMult;
+    case SLASH:
+        return Div;
+    case DOUBLESLASH:
+        return FloorDiv;
+    case PERCENT:
+        return Mod;
+    default:
+        return (operator_ty)0;
     }
 }
 
 expr_ty
 _PyPegen_operator_precedence_expr(Parser *p, expr_ty factor, asdl_seq *terms) {
+
     expr_ty result = NULL;
 
-    expr_ty *output= PyMem_Calloc(asdl_seq_LEN(terms) + 1, sizeof(expr_ty));
-    Token **stack = PyMem_Calloc(asdl_seq_LEN(terms), sizeof(Token*));
+    OperatorFactorPair **extra_info = PyMem_Calloc(asdl_seq_LEN(terms) + 1, sizeof(OperatorFactorPair*));
+    expr_ty *values = PyMem_Calloc(asdl_seq_LEN(terms) + 1, sizeof(expr_ty));
+    Token **operators = PyMem_Calloc(asdl_seq_LEN(terms), sizeof(Token*));
 
     ssize_t stack_pos = 0;
 
-    output[0] = factor;
+    values[0] = factor;
     ssize_t output_pos = 1;
 
 #define _DO_PRECEDENCE_OPERATOR_REDUCTION_STEP do { \
-        operator_ty the_operator = _PyPegen_get_binary_operator(stack[--stack_pos]); \
-        expr_ty right = output[--output_pos]; \
-        expr_ty left = output[--output_pos]; \
-        expr_ty res = _Py_BinOp(left, the_operator, right, EXTRA_EXPR(left, right)); \
-        output[output_pos++] = res; \
-        result = res; \
-    } while(0) 
+        operator_ty the_operator = _PyPegen_get_binary_operator(p, operators[--stack_pos]); \
+        if (the_operator == (operator_ty)0) { \
+            result = NULL; \
+            goto exit; \
+        } \
+        expr_ty right = values[--output_pos]; \
+        OperatorFactorPair *right_context = extra_info[output_pos]; \
+        expr_ty left = values[--output_pos]; \
+        expr_ty res = _Py_BinOp(left, the_operator, right, \
+                                left->lineno, left->col_offset, \
+                                right_context->end_lineno, \
+                                right_context->end_col_offset, \
+                                p->arena); \
+        if (res == NULL) { \
+            result = NULL; \
+            goto exit; \
+        } \
+        values[output_pos++] = res;  \
+        extra_info[output_pos-1] = right_context; \
+    } while(0)
+ 
+    for (ssize_t i=0; i < asdl_seq_LEN(terms); i++)
+    {
 
-    for (ssize_t i=0; i<asdl_seq_LEN(terms); i++) {
-
-        OperatorTermPair *pair = (OperatorTermPair*)asdl_seq_GET(terms, i);
+        OperatorFactorPair *pair = (OperatorFactorPair*)asdl_seq_GET(terms, i);
         Token* oper = pair->oper;
         expr_ty the_factor = pair->factor;
 
-        while (stack_pos && _PyPegen_get_operator_precedence(stack[stack_pos-1]) >=
+        while (stack_pos > 0 && _PyPegen_get_operator_precedence(operators[stack_pos-1]) >=
                _PyPegen_get_operator_precedence(oper)) {
             _DO_PRECEDENCE_OPERATOR_REDUCTION_STEP;
         }
-        stack[stack_pos++] = oper;
-
-        output[output_pos++] = the_factor;
+        operators[stack_pos++] = oper;
+        values[output_pos++] = the_factor;
+        extra_info[output_pos-1] = pair;
     }
 
-    while (stack_pos) {
+    while (stack_pos > 0) {
         _DO_PRECEDENCE_OPERATOR_REDUCTION_STEP;
     }
 
-    PyMem_Free(output);
-    PyMem_Free(stack);
+    result = values[0];
+
+exit:
+    PyMem_Free(values);
+    PyMem_Free(operators);
+    PyMem_Free(extra_info);
+
     return result;
 
 }
