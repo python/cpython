@@ -623,9 +623,7 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     _PyIO_State *state = get_io_state(mod);
     if (!state->initialized)
         return 0;
-    if (state->locale_module != NULL) {
-        Py_VISIT(state->locale_module);
-    }
+    Py_VISIT(state->locale_module);
     Py_VISIT(state->unsupported_operation);
     return 0;
 }
