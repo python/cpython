@@ -4622,6 +4622,11 @@ support membership tests:
    .. versionchanged:: 3.8
       Dictionary views are now reversible.
 
+.. describe:: dictview.mapping
+
+   Return the dictionary from which the view was derived.  If ``d`` is a
+   dictionary, then ``d is d.keys().mapping``, ``d is d.values().mapping``,
+   and ``d is d.items().mapping``.
 
 Keys views are set-like since their entries are unique and hashable.  If all
 values are hashable, so that ``(key, value)`` pairs are unique and hashable,
