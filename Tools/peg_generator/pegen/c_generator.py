@@ -391,6 +391,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 if not line:
                     continue
                 associativity, *operators = line.split()
+                # TODO: Add support for right-associative operators.
+                if associativity != "left":
+                    raise ValueError("Only left-associative operators are supported currently")
                 for operator in operators:
                     self.print(f"case {_generate_token_name(operator)}:")
                 with self.indent():
