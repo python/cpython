@@ -161,10 +161,7 @@ byte_offset_to_character_offset(PyObject *line, int col_offset)
 const char *
 _PyPegen_get_expr_name(expr_ty e)
 {
-    if (e == NULL) {
-        return NULL;
-    }
-
+    assert(e != NULL);
     switch (e->kind) {
         case Attribute_kind:
             return "attribute";
@@ -2127,7 +2124,6 @@ _PyPegen_get_invalid_target_from_expr(expr_ty e)
 
 expr_ty
 _PyPegen_get_invalid_target(Parser *p, asdl_seq *e) {
-    ssize_t len = asdl_seq_LEN(e);
     for (ssize_t i = 0; i < asdl_seq_LEN(e); i++) {
         expr_ty item = (expr_ty)asdl_seq_GET(e, i);
         expr_ty res = _PyPegen_get_invalid_target_from_expr(item);
