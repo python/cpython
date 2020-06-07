@@ -646,7 +646,7 @@ invalid_assignment:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
     | a=expression ':' expression ['=' annotated_rhs] {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal target for annotation") }
-    | a=star_expressions '=' (yield_expr | star_expressions) {
+    | a=(z=(star_expressions) '=' {z})+ (yield_expr | star_expressions) {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             _PyPegen_get_invalid_target(a),
             "cannot assign to %s", _PyPegen_get_expr_name(_PyPegen_get_invalid_target(a))) }

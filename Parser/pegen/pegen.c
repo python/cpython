@@ -2077,8 +2077,8 @@ _PyPegen_make_module(Parser *p, asdl_seq *a) {
 
 // Error reporting helpers
 
-expr_ty
-_PyPegen_get_invalid_target(expr_ty e)
+static expr_ty
+_PyPegen_get_invalid_target_from_expr(expr_ty e)
 {
     if (e == NULL) {
         return NULL;
@@ -2088,7 +2088,7 @@ _PyPegen_get_invalid_target(expr_ty e)
         Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
         for (Py_ssize_t i = 0; i < len; i++) {\
             expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
-            expr_ty child = _PyPegen_get_invalid_target(other);\
+            expr_ty child = _PyPegen_get_invalid_target_from_expr(other);\
             if (child != NULL) {\
                 return child;\
             }\
@@ -2111,7 +2111,7 @@ _PyPegen_get_invalid_target(expr_ty e)
             return NULL;
         }
         case Starred_kind:
-            return _PyPegen_get_invalid_target(e->v.Starred.value);
+            return _PyPegen_get_invalid_target_from_expr(e->v.Starred.value);
         case Name_kind:
         case Subscript_kind:
         case Attribute_kind:
@@ -2119,6 +2119,12 @@ _PyPegen_get_invalid_target(expr_ty e)
         default:
             return e;
     }
+}
+
+expr_ty
+_PyPegen_get_invalid_target(asdl_seq *e) {
+    ssize_t len = asdl_seq_LEN(e);
+    return _PyPegen_get_invalid_target_from_expr((expr_ty)asdl_seq_GET(e, len - 1));
 }
 
 void *_PyPegen_arguments_parsing_error(Parser *p, expr_ty e) {
