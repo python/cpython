@@ -678,7 +678,6 @@ Fixed the comparison of plistlib.Data with other types.
 .. section: Library
 
 Fix an uninitialized variable in `ctypes.util`.
-
 The bug only occurs on SunOS when the ctypes implementation searches for the
 `crle` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
 
@@ -2006,7 +2005,7 @@ Adds validation of ucrtbase[d].dll version with warning for old versions.
 .. nonce: 102DA-
 .. section: Build
 
-Avoid error about nonexistant fileblocks.o file by using a lower-level check
+Avoid error about nonexistent fileblocks.o file by using a lower-level check
 for st_blocks in struct stat.
 
 ..

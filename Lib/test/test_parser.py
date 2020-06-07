@@ -1,11 +1,16 @@
 import copy
-import parser
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', 'The parser module is deprecated',
+                            DeprecationWarning)
+    import parser
 import pickle
 import unittest
 import operator
 import struct
 from test import support
 from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_ok
 
 #
 #  First, we test that we can generate trees from valid source fragments,
@@ -221,6 +226,27 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("@funcattrs()\n"
                          "def f(): pass")
 
+        self.check_suite("@False or x\n"
+                         "def f(): pass")
+        self.check_suite("@d := x\n"
+                         "def f(): pass")
+        self.check_suite("@lambda f: x(f)\n"
+                         "def f(): pass")
+        self.check_suite("@[..., x, ...][1]\n"
+                         "def f(): pass")
+        self.check_suite("@x(x)(x)\n"
+                         "def f(): pass")
+        self.check_suite("@(x, x)\n"
+                         "def f(): pass")
+        self.check_suite("@...\n"
+                         "def f(): pass")
+        self.check_suite("@None\n"
+                         "def f(): pass")
+        self.check_suite("@w @(x @y) @(z)\n"
+                         "def f(): pass")
+        self.check_suite("@w[x].y.z\n"
+                         "def f(): pass")
+
         # keyword-only arguments
         self.check_suite("def f(*, a): pass")
         self.check_suite("def f(*, a = 5): pass")
@@ -232,6 +258,18 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("def f(*args, a = 5, b): pass")
         self.check_suite("def f(*args, a, b = 5): pass")
         self.check_suite("def f(*args, a, b = 5, **kwds): pass")
+
+        # positional-only arguments
+        self.check_suite("def f(a, /): pass")
+        self.check_suite("def f(a, /,): pass")
+        self.check_suite("def f(a, b, /): pass")
+        self.check_suite("def f(a, b, /, c): pass")
+        self.check_suite("def f(a, b, /, c = 6): pass")
+        self.check_suite("def f(a, b, /, c, *, d): pass")
+        self.check_suite("def f(a, b, /, c = 1, *, d): pass")
+        self.check_suite("def f(a, b, /, c, *, d = 1): pass")
+        self.check_suite("def f(a, b=1, /, c=2, *, d = 3): pass")
+        self.check_suite("def f(a=0, b=1, /, c=2, *, d = 3): pass")
 
         # function annotations
         self.check_suite("def f(a: int): pass")
@@ -252,6 +290,27 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("@decorator1\n"
                          "@decorator2\n"
                          "class foo():pass")
+
+        self.check_suite("@False or x\n"
+                         "class C: pass")
+        self.check_suite("@d := x\n"
+                         "class C: pass")
+        self.check_suite("@lambda f: x(f)\n"
+                         "class C: pass")
+        self.check_suite("@[..., x, ...][1]\n"
+                         "class C: pass")
+        self.check_suite("@x(x)(x)\n"
+                         "class C: pass")
+        self.check_suite("@(x, x)\n"
+                         "class C: pass")
+        self.check_suite("@...\n"
+                         "class C: pass")
+        self.check_suite("@None\n"
+                         "class C: pass")
+        self.check_suite("@w @(x @y) @(z)\n"
+                         "class C: pass")
+        self.check_suite("@w[x].y.z\n"
+                         "class C: pass")
 
     def test_import_from_statement(self):
         self.check_suite("from sys.path import *")
@@ -318,6 +377,10 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("try: pass\nexcept: pass\nelse: pass\n")
         self.check_suite("try: pass\nexcept: pass\nelse: pass\n"
                          "finally: pass\n")
+
+    def test_if_stmt(self):
+        self.check_suite("if True:\n  pass\nelse:\n  pass\n")
+        self.check_suite("if True:\n  pass\nelif True:\n  pass\nelse:\n  pass\n")
 
     def test_position(self):
         # An absolutely minimal test of position information.  Better
@@ -457,6 +520,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("foo(b := 2, a=1)")
         self.check_suite("foo((b := 2), a=1)")
         self.check_suite("foo(c=(b := 2), a=1)")
+        self.check_suite("{(x := C(i)).q: x for i in y}")
+
 
 #
 #  Second, we take *invalid* trees and make sure we get ParserError
@@ -745,6 +810,22 @@ class IllegalSyntaxTestCase(unittest.TestCase):
         with self.assertRaises(UnicodeEncodeError):
             parser.sequence2st(tree)
 
+    def test_invalid_node_id(self):
+        tree = (257, (269, (-7, '')))
+        self.check_bad_tree(tree, "negative node id")
+        tree = (257, (269, (99, '')))
+        self.check_bad_tree(tree, "invalid token id")
+        tree = (257, (269, (9999, (0, ''))))
+        self.check_bad_tree(tree, "invalid symbol id")
+
+    def test_ParserError_message(self):
+        try:
+            parser.sequence2st((257,(269,(257,(0,'')))))
+        except parser.ParserError as why:
+            self.assertIn("compound_stmt", str(why))  # Expected
+            self.assertIn("file_input", str(why))     # Got
+
+
 
 class CompileTestCase(unittest.TestCase):
 
@@ -820,7 +901,7 @@ class ParserStackLimitTestCase(unittest.TestCase):
 
     def test_trigger_memory_error(self):
         e = self._nested_expression(100)
-        rc, out, err = assert_python_failure('-c', e)
+        rc, out, err = assert_python_failure('-Xoldparser', '-c', e)
         # parsing the expression will result in an error message
         # followed by a MemoryError (see #11963)
         self.assertIn(b's_push: parser stack overflow', err)
@@ -916,7 +997,7 @@ class STObjectTestCase(unittest.TestCase):
                 return (n + 3) & ~3
             return 1 << (n - 1).bit_length()
 
-        basesize = support.calcobjsize('Pii')
+        basesize = support.calcobjsize('Piii')
         nodesize = struct.calcsize('hP3iP0h2i')
         def sizeofchildren(node):
             if node is None:
@@ -952,6 +1033,14 @@ class OtherParserCase(unittest.TestCase):
         # See bug #12264
         with self.assertRaises(TypeError):
             parser.expr("a", "b")
+
+
+class TestDeprecation(unittest.TestCase):
+    def test_deprecation_message(self):
+        code = "def f():\n  import parser\n\nf()"
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'<string>:2: DeprecationWarning', err)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,7 @@ import re
 import subprocess
 import sys
 import os
+import warnings
 from test import support
 
 # Skip this test if the _tkinter module wasn't built.
@@ -429,9 +430,12 @@ class TclTest(unittest.TestCase):
         self.assertEqual(passValue(False), False if self.wantobjects else '0')
         self.assertEqual(passValue('string'), 'string')
         self.assertEqual(passValue('string\u20ac'), 'string\u20ac')
+        self.assertEqual(passValue('string\U0001f4bb'), 'string\U0001f4bb')
         self.assertEqual(passValue('str\x00ing'), 'str\x00ing')
         self.assertEqual(passValue('str\x00ing\xbd'), 'str\x00ing\xbd')
         self.assertEqual(passValue('str\x00ing\u20ac'), 'str\x00ing\u20ac')
+        self.assertEqual(passValue('str\x00ing\U0001f4bb'),
+                         'str\x00ing\U0001f4bb')
         self.assertEqual(passValue(b'str\x00ing'),
                          b'str\x00ing' if self.wantobjects else 'str\x00ing')
         self.assertEqual(passValue(b'str\xc0\x80ing'),
@@ -490,6 +494,7 @@ class TclTest(unittest.TestCase):
         check('string')
         check('string\xbd')
         check('string\u20ac')
+        check('string\U0001f4bb')
         check('')
         check(b'string', 'string')
         check(b'string\xe2\x82\xac', 'string\xe2\x82\xac')
@@ -531,6 +536,7 @@ class TclTest(unittest.TestCase):
             ('a\n b\t\r c\n ', ('a', 'b', 'c')),
             (b'a\n b\t\r c\n ', ('a', 'b', 'c')),
             ('a \u20ac', ('a', '\u20ac')),
+            ('a \U0001f4bb', ('a', '\U0001f4bb')),
             (b'a \xe2\x82\xac', ('a', '\u20ac')),
             (b'a\xc0\x80b c\xc0\x80d', ('a\x00b', 'c\x00d')),
             ('a {b c}', ('a', 'b c')),
@@ -568,9 +574,12 @@ class TclTest(unittest.TestCase):
     def test_split(self):
         split = self.interp.tk.split
         call = self.interp.tk.call
-        self.assertRaises(TypeError, split)
-        self.assertRaises(TypeError, split, 'a', 'b')
-        self.assertRaises(TypeError, split, 2)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'\bsplit\b.*\bsplitlist\b',
+                                    DeprecationWarning)
+            self.assertRaises(TypeError, split)
+            self.assertRaises(TypeError, split, 'a', 'b')
+            self.assertRaises(TypeError, split, 2)
         testcases = [
             ('2', '2'),
             ('', ''),
@@ -612,7 +621,8 @@ class TclTest(unittest.TestCase):
                     expected),
             ]
         for arg, res in testcases:
-            self.assertEqual(split(arg), res, msg=arg)
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(split(arg), res, msg=arg)
 
     def test_splitdict(self):
         splitdict = tkinter._splitdict

@@ -1,7 +1,7 @@
 
 /* Parser-tokenizer link implementation */
 
-#include "pgenheaders.h"
+#include "Python.h"
 #include "tokenizer.h"
 #include "node.h"
 #include "grammar.h"
@@ -16,13 +16,16 @@ static node *parsetok(struct tok_state *, grammar *, int, perrdetail *, int *);
 static int initerr(perrdetail *err_ret, PyObject * filename);
 
 typedef struct {
-    int *items;
+    struct {
+        int lineno;
+        char *comment;
+    } *items;
     size_t size;
     size_t num_items;
-} growable_int_array;
+} growable_comment_array;
 
 static int
-growable_int_array_init(growable_int_array *arr, size_t initial_size) {
+growable_comment_array_init(growable_comment_array *arr, size_t initial_size) {
     assert(initial_size > 0);
     arr->items = malloc(initial_size * sizeof(*arr->items));
     arr->size = initial_size;
@@ -32,22 +35,28 @@ growable_int_array_init(growable_int_array *arr, size_t initial_size) {
 }
 
 static int
-growable_int_array_add(growable_int_array *arr, int item) {
+growable_comment_array_add(growable_comment_array *arr, int lineno, char *comment) {
     if (arr->num_items >= arr->size) {
-        arr->size *= 2;
-        arr->items = realloc(arr->items, arr->size * sizeof(*arr->items));
-        if (!arr->items) {
+        size_t new_size = arr->size * 2;
+        void *new_items_array = realloc(arr->items, new_size * sizeof(*arr->items));
+        if (!new_items_array) {
             return 0;
         }
+        arr->items = new_items_array;
+        arr->size = new_size;
     }
 
-    arr->items[arr->num_items] = item;
+    arr->items[arr->num_items].lineno = lineno;
+    arr->items[arr->num_items].comment = comment;
     arr->num_items++;
     return 1;
 }
 
 static void
-growable_int_array_deallocate(growable_int_array *arr) {
+growable_comment_array_deallocate(growable_comment_array *arr) {
+    for (unsigned i = 0; i < arr->num_items; i++) {
+        PyObject_FREE(arr->items[i].comment);
+    }
     free(arr->items);
 }
 
@@ -87,6 +96,11 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
     if (initerr(err_ret, filename) < 0)
         return NULL;
 
+    if (PySys_Audit("compile", "yO", s, err_ret->filename) < 0) {
+        err_ret->error = E_ERROR;
+        return NULL;
+    }
+
     if (*flags & PyPARSE_IGNORE_COOKIE)
         tok = PyTokenizer_FromUTF8(s, exec_input);
     else
@@ -99,10 +113,10 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
         tok->type_comments = 1;
     }
 
-#ifndef PGEN
     Py_INCREF(err_ret->filename);
     tok->filename = err_ret->filename;
-#endif
+    if (*flags & PyPARSE_ASYNC_HACKS)
+        tok->async_hacks = 1;
     return parsetok(tok, g, start, err_ret, flags);
 }
 
@@ -113,7 +127,6 @@ PyParser_ParseStringFlagsFilenameEx(const char *s, const char *filename_str,
 {
     node *n;
     PyObject *filename = NULL;
-#ifndef PGEN
     if (filename_str != NULL) {
         filename = PyUnicode_DecodeFSDefault(filename_str);
         if (filename == NULL) {
@@ -121,11 +134,8 @@ PyParser_ParseStringFlagsFilenameEx(const char *s, const char *filename_str,
             return NULL;
         }
     }
-#endif
     n = PyParser_ParseStringObject(s, filename, g, start, err_ret, flags);
-#ifndef PGEN
     Py_XDECREF(filename);
-#endif
     return n;
 }
 
@@ -162,6 +172,10 @@ PyParser_ParseFileObject(FILE *fp, PyObject *filename,
     if (initerr(err_ret, filename) < 0)
         return NULL;
 
+    if (PySys_Audit("compile", "OO", Py_None, err_ret->filename) < 0) {
+        return NULL;
+    }
+
     if ((tok = PyTokenizer_FromFile(fp, enc, ps1, ps2)) == NULL) {
         err_ret->error = E_NOMEM;
         return NULL;
@@ -169,10 +183,8 @@ PyParser_ParseFileObject(FILE *fp, PyObject *filename,
     if (*flags & PyPARSE_TYPE_COMMENTS) {
         tok->type_comments = 1;
     }
-#ifndef PGEN
     Py_INCREF(err_ret->filename);
     tok->filename = err_ret->filename;
-#endif
     return parsetok(tok, g, start, err_ret, flags);
 }
 
@@ -184,7 +196,6 @@ PyParser_ParseFileFlagsEx(FILE *fp, const char *filename,
 {
     node *n;
     PyObject *fileobj = NULL;
-#ifndef PGEN
     if (filename != NULL) {
         fileobj = PyUnicode_DecodeFSDefault(filename);
         if (fileobj == NULL) {
@@ -192,32 +203,11 @@ PyParser_ParseFileFlagsEx(FILE *fp, const char *filename,
             return NULL;
         }
     }
-#endif
     n = PyParser_ParseFileObject(fp, fileobj, enc, g,
                                  start, ps1, ps2, err_ret, flags);
-#ifndef PGEN
     Py_XDECREF(fileobj);
-#endif
     return n;
 }
-
-#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
-#if 0
-static const char with_msg[] =
-"%s:%d: Warning: 'with' will become a reserved keyword in Python 2.6\n";
-
-static const char as_msg[] =
-"%s:%d: Warning: 'as' will become a reserved keyword in Python 2.6\n";
-
-static void
-warn(const char *msg, const char *filename, int lineno)
-{
-    if (filename == NULL)
-        filename = "<string>";
-    PySys_WriteStderr(msg, filename, lineno);
-}
-#endif
-#endif
 
 /* Parse input coming from the given tokenizer structure.
    Return error code. */
@@ -230,9 +220,9 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     node *n;
     int started = 0;
     int col_offset, end_col_offset;
-    growable_int_array type_ignores;
+    growable_comment_array type_ignores;
 
-    if (!growable_int_array_init(&type_ignores, 10)) {
+    if (!growable_comment_array_init(&type_ignores, 10)) {
         err_ret->error = E_NOMEM;
         PyTokenizer_Free(tok);
         return NULL;
@@ -240,6 +230,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 
     if ((ps = PyParser_New(g, start)) == NULL) {
         err_ret->error = E_NOMEM;
+        growable_comment_array_deallocate(&type_ignores);
         PyTokenizer_Free(tok);
         return NULL;
     }
@@ -251,7 +242,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 #endif
 
     for (;;) {
-        char *a, *b;
+        const char *a, *b;
         int type;
         size_t len;
         char *str;
@@ -260,25 +251,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         const char *line_start;
 
         type = PyTokenizer_Get(tok, &a, &b);
-        if (type == ERRORTOKEN) {
-            err_ret->error = tok->done;
-            break;
-        }
-        if (type == ENDMARKER && started) {
-            type = NEWLINE; /* Add an extra newline */
-            started = 0;
-            /* Add the right number of dedent tokens,
-               except if a certain flag is given --
-               codeop.py uses this. */
-            if (tok->indent &&
-                !(*flags & PyPARSE_DONT_IMPLY_DEDENT))
-            {
-                tok->pendin = -tok->indent;
-                tok->indent = 0;
-            }
-        }
-        else
-            started = 1;
+
         len = (a != NULL && b != NULL) ? b - a : 0;
         str = (char *) PyObject_MALLOC(len + 1);
         if (str == NULL) {
@@ -330,18 +303,41 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         }
 
         if (type == TYPE_IGNORE) {
-            PyObject_FREE(str);
-            if (!growable_int_array_add(&type_ignores, tok->lineno)) {
+            if (!growable_comment_array_add(&type_ignores, tok->lineno, str)) {
                 err_ret->error = E_NOMEM;
                 break;
             }
             continue;
         }
 
+        if (type == ERRORTOKEN) {
+            err_ret->error = tok->done;
+            break;
+        }
+        if (type == ENDMARKER && started) {
+            type = NEWLINE; /* Add an extra newline */
+            started = 0;
+            /* Add the right number of dedent tokens,
+               except if a certain flag is given --
+               codeop.py uses this. */
+            if (tok->indent &&
+                !(*flags & PyPARSE_DONT_IMPLY_DEDENT))
+            {
+                tok->pendin = -tok->indent;
+                tok->indent = 0;
+            }
+        }
+        else {
+            started = 1;
+        }
+
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str,
                                lineno, col_offset, tok->lineno, end_col_offset,
                                &(err_ret->expected))) != E_OK) {
+            if (tok->done == E_EOF && !ISWHITESPACE(type)) {
+                tok->done = E_SYNTAX;
+            }
             if (err_ret->error != E_DONE) {
                 PyObject_FREE(str);
                 err_ret->token = type;
@@ -365,19 +361,25 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             REQ(ch, ENDMARKER);
 
             for (i = 0; i < type_ignores.num_items; i++) {
-                PyNode_AddChild(ch, TYPE_IGNORE, NULL,
-                                type_ignores.items[i], 0,
-                                type_ignores.items[i], 0);
+                int res = PyNode_AddChild(ch, TYPE_IGNORE, type_ignores.items[i].comment,
+                                          type_ignores.items[i].lineno, 0,
+                                          type_ignores.items[i].lineno, 0);
+                if (res != 0) {
+                    err_ret->error = res;
+                    PyNode_Free(n);
+                    n = NULL;
+                    break;
+                }
+                type_ignores.items[i].comment = NULL;
             }
         }
 
-#ifndef PGEN
         /* Check that the source for a single input statement really
            is a single statement by looking at what is left in the
            buffer after parsing.  Trailing whitespace and comments
            are OK.  */
-        if (start == single_input) {
-            char *cur = tok->cur;
+        if (err_ret->error == E_DONE && start == single_input) {
+            const char *cur = tok->cur;
             char c = *tok->cur;
 
             for (;;) {
@@ -399,12 +401,11 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
                     c = *++cur;
             }
         }
-#endif
     }
     else
         n = NULL;
 
-    growable_int_array_deallocate(&type_ignores);
+    growable_comment_array_deallocate(&type_ignores);
 
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
     *flags = ps->p_flags;
@@ -470,7 +471,6 @@ initerr(perrdetail *err_ret, PyObject *filename)
     err_ret->text = NULL;
     err_ret->token = -1;
     err_ret->expected = -1;
-#ifndef PGEN
     if (filename) {
         Py_INCREF(filename);
         err_ret->filename = filename;
@@ -482,6 +482,5 @@ initerr(perrdetail *err_ret, PyObject *filename)
             return -1;
         }
     }
-#endif
     return 0;
 }

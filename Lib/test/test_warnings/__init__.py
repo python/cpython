@@ -43,6 +43,10 @@ def warnings_state(module):
         module.filters = original_filters
 
 
+class TestWarning(Warning):
+    pass
+
+
 class BaseTest:
 
     """Basic bookkeeping required for testing."""
@@ -566,8 +570,27 @@ class WCmdLineTests(BaseTest):
                               self.module._setoption, 'bogus::Warning')
             self.assertRaises(self.module._OptionError,
                               self.module._setoption, 'ignore:2::4:-5')
+            with self.assertRaises(self.module._OptionError):
+                self.module._setoption('ignore::123')
+            with self.assertRaises(self.module._OptionError):
+                self.module._setoption('ignore::123abc')
+            with self.assertRaises(self.module._OptionError):
+                self.module._setoption('ignore::===')
+            with self.assertRaisesRegex(self.module._OptionError, 'Wärning'):
+                self.module._setoption('ignore::Wärning')
             self.module._setoption('error::Warning::0')
             self.assertRaises(UserWarning, self.module.warn, 'convert to error')
+
+    def test_import_from_module(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module._setoption('ignore::Warning')
+            with self.assertRaises(self.module._OptionError):
+                self.module._setoption('ignore::TestWarning')
+            with self.assertRaises(self.module._OptionError):
+                self.module._setoption('ignore::test.test_warnings.bogus')
+            self.module._setoption('error::test.test_warnings.TestWarning')
+            with self.assertRaises(TestWarning):
+                self.module.warn('test warning', TestWarning)
 
 
 class CWCmdLineTests(WCmdLineTests, unittest.TestCase):
@@ -714,7 +737,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
             self.assertRaises(TypeError, self.module.warn, "Warning!")
 
     def test_show_warning_output(self):
-        # With showarning() missing, make sure that output is okay.
+        # With showwarning() missing, make sure that output is okay.
         text = 'test show_warning'
         with original_warnings.catch_warnings(module=self.module):
             self.module.filterwarnings("always", category=UserWarning)
@@ -877,6 +900,25 @@ class WarningsDisplayTests(BaseTest):
                                 file_object, expected_file_line)
         self.assertEqual(expect, file_object.getvalue())
 
+    def test_formatwarning_override(self):
+        # bpo-35178: Test that a custom formatwarning function gets the 'line'
+        # argument as a positional argument, and not only as a keyword argument
+        def myformatwarning(message, category, filename, lineno, text):
+            return f'm={message}:c={category}:f={filename}:l={lineno}:t={text}'
+
+        file_name = os.path.splitext(warning_tests.__file__)[0] + '.py'
+        line_num = 3
+        file_line = linecache.getline(file_name, line_num).strip()
+        message = 'msg'
+        category = Warning
+        file_object = StringIO()
+        expected = f'm={message}:c={category}:f={file_name}:l={line_num}' + \
+                   f':t={file_line}'
+        with support.swap_attr(self.module, 'formatwarning', myformatwarning):
+            self.module.showwarning(message, category, file_name, line_num,
+                                    file_object, file_line)
+            self.assertEqual(file_object.getvalue(), expected)
+
 
 class CWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = c_warnings
@@ -907,27 +949,26 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
             return stderr
 
         # tracemalloc disabled
+        filename = os.path.abspath(support.TESTFN)
         stderr = run('-Wd', support.TESTFN)
-        expected = textwrap.dedent('''
-            {fname}:5: ResourceWarning: unclosed file <...>
+        expected = textwrap.dedent(f'''
+            {filename}:5: ResourceWarning: unclosed file <...>
               f = None
             ResourceWarning: Enable tracemalloc to get the object allocation traceback
-        ''')
-        expected = expected.format(fname=support.TESTFN).strip()
+        ''').strip()
         self.assertEqual(stderr, expected)
 
         # tracemalloc enabled
         stderr = run('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
-        expected = textwrap.dedent('''
-            {fname}:5: ResourceWarning: unclosed file <...>
+        expected = textwrap.dedent(f'''
+            {filename}:5: ResourceWarning: unclosed file <...>
               f = None
             Object allocated at (most recent call last):
-              File "{fname}", lineno 7
+              File "{filename}", lineno 7
                 func()
-              File "{fname}", lineno 3
+              File "{filename}", lineno 3
                 f = open(__file__)
-        ''')
-        expected = expected.format(fname=support.TESTFN).strip()
+        ''').strip()
         self.assertEqual(stderr, expected)
 
 
@@ -1186,7 +1227,6 @@ class BootstrapTest(unittest.TestCase):
 
 
 class FinalizationTest(unittest.TestCase):
-    @support.requires_type_collecting
     def test_finalization(self):
         # Issue #19421: warnings.warn() should not crash
         # during Python finalization
@@ -1201,7 +1241,8 @@ class A:
 a=A()
         """
         rc, out, err = assert_python_ok("-c", code)
-        self.assertEqual(err.decode(), '<string>:7: UserWarning: test')
+        self.assertEqual(err.decode().rstrip(),
+                         '<string>:7: UserWarning: test')
 
     def test_late_resource_warning(self):
         # Issue #21925: Emitting a ResourceWarning late during the Python

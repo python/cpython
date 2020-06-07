@@ -160,7 +160,7 @@ PyArena_Free(PyArena *arena)
 #if defined(Py_DEBUG)
     /*
     fprintf(stderr,
-        "alloc=%d size=%d blocks=%d block_size=%d big=%d objects=%d\n",
+        "alloc=%zu size=%zu blocks=%zu block_size=%zu big=%zu objects=%zu\n",
         arena->total_allocs, arena->total_size, arena->total_blocks,
         arena->total_block_size, arena->total_big_blocks,
         PyList_Size(arena->a_objects));

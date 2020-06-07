@@ -263,11 +263,6 @@ The :mod:`test.support` module defines the following constants:
     Set to a non-ASCII name for a temporary file.
 
 
-.. data:: TESTFN_ENCODING
-
-   Set to :func:`sys.getfilesystemencoding`.
-
-
 .. data:: TESTFN_UNENCODABLE
 
    Set to a filename (str type) that should not be able to be encoded by file
@@ -287,9 +282,65 @@ The :mod:`test.support` module defines the following constants:
    Set to a filename containing the :data:`FS_NONASCII` character.
 
 
-.. data:: IPV6_ENABLED
+.. data:: LOOPBACK_TIMEOUT
 
-    Set to ``True`` if IPV6 is enabled on this host, ``False`` otherwise.
+   Timeout in seconds for tests using a network server listening on the network
+   local loopback interface like ``127.0.0.1``.
+
+   The timeout is long enough to prevent test failure: it takes into account
+   that the client and the server can run in different threads or even
+   different processes.
+
+   The timeout should be long enough for :meth:`~socket.socket.connect`,
+   :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` methods of
+   :class:`socket.socket`.
+
+   Its default value is 5 seconds.
+
+   See also :data:`INTERNET_TIMEOUT`.
+
+
+.. data:: INTERNET_TIMEOUT
+
+   Timeout in seconds for network requests going to the Internet.
+
+   The timeout is short enough to prevent a test to wait for too long if the
+   Internet request is blocked for whatever reason.
+
+   Usually, a timeout using :data:`INTERNET_TIMEOUT` should not mark a test as
+   failed, but skip the test instead: see
+   :func:`~test.support.socket_helper.transient_internet`.
+
+   Its default value is 1 minute.
+
+   See also :data:`LOOPBACK_TIMEOUT`.
+
+
+.. data:: SHORT_TIMEOUT
+
+   Timeout in seconds to mark a test as failed if the test takes "too long".
+
+   The timeout value depends on the regrtest ``--timeout`` command line option.
+
+   If a test using :data:`SHORT_TIMEOUT` starts to fail randomly on slow
+   buildbots, use :data:`LONG_TIMEOUT` instead.
+
+   Its default value is 30 seconds.
+
+
+.. data:: LONG_TIMEOUT
+
+   Timeout in seconds to detect when a test hangs.
+
+   It is long enough to reduce the risk of test failure on the slowest Python
+   buildbots. It should not be used to mark a test as failed if the test takes
+   "too long".  The timeout value depends on the regrtest ``--timeout`` command
+   line option.
+
+   Its default value is 5 minutes.
+
+   See also :data:`LOOPBACK_TIMEOUT`, :data:`INTERNET_TIMEOUT` and
+   :data:`SHORT_TIMEOUT`.
 
 
 .. data:: SAVEDCWD
@@ -356,10 +407,33 @@ The :mod:`test.support` module defines the following constants:
 
    Check for presence of docstrings.
 
+
 .. data:: TEST_HTTP_URL
 
    Define the URL of a dedicated HTTP server for the network tests.
 
+
+.. data:: ALWAYS_EQ
+
+   Object that is equal to anything.  Used to test mixed type comparison.
+
+
+.. data:: NEVER_EQ
+
+   Object that is not equal to anything (even to :data:`ALWAYS_EQ`).
+   Used to test mixed type comparison.
+
+
+.. data:: LARGEST
+
+   Object that is greater than anything (except itself).
+   Used to test mixed type comparison.
+
+
+.. data:: SMALLEST
+
+   Object that is less than anything (except itself).
+   Used to test mixed type comparison.
 
 
 The :mod:`test.support` module defines the following functions:
@@ -602,13 +676,6 @@ The :mod:`test.support` module defines the following functions:
    ``sys.stdout`` if it's not set.
 
 
-.. function:: strip_python_strerr(stderr)
-
-   Strip the *stderr* of a Python process from potential debug output
-   emitted by the interpreter.  This will typically be run on the result of
-   :meth:`subprocess.Popen.communicate`.
-
-
 .. function:: args_from_interpreter_flags()
 
    Return a list of command line arguments reproducing the current settings
@@ -687,12 +754,6 @@ The :mod:`test.support` module defines the following functions:
    A context manager that temporarily sets the process umask.
 
 
-.. function:: transient_internet(resource_name, *, timeout=30.0, errnos=())
-
-   A context manager that raises :exc:`ResourceDenied` when various issues
-   with the internet connection manifest themselves as exceptions.
-
-
 .. function:: disable_faulthandler()
 
    A context manager that replaces ``sys.stderr`` with ``sys.__stderr__``.
@@ -748,16 +809,28 @@ The :mod:`test.support` module defines the following functions:
    target of the "as" clause, if there is one.
 
 
-.. function:: wait_threads_exit(timeout=60.0)
+.. function:: print_warning(msg)
 
-   Context manager to wait until all threads created in the ``with`` statement
-   exit.
+   Print a warning into :data:`sys.__stderr__`. Format the message as:
+   ``f"Warning -- {msg}"``. If *msg* is made of multiple lines, add
+   ``"Warning -- "`` prefix to each line.
+
+   .. versionadded:: 3.9
 
 
-.. function:: start_threads(threads, unlock=None)
+.. function:: wait_process(pid, *, exitcode, timeout=None)
 
-   Context manager to start *threads*.  It attempts to join the threads upon
-   exit.
+   Wait until process *pid* completes and check that the process exit code is
+   *exitcode*.
+
+   Raise an :exc:`AssertionError` if the process exit code is not equal to
+   *exitcode*.
+
+   If the process runs longer than *timeout* seconds (:data:`SHORT_TIMEOUT` by
+   default), kill the process and raise an :exc:`AssertionError`. The timeout
+   feature is not available on Windows.
+
+   .. versionadded:: 3.9
 
 
 .. function:: calcobjsize(fmt)
@@ -798,12 +871,6 @@ The :mod:`test.support` module defines the following functions:
 .. decorator:: skip_unless_xattr
 
    A decorator for running tests that require support for xattr.
-
-
-.. decorator:: skip_unless_bind_unix_socket
-
-   A decorator for running tests that require a functional bind() for Unix
-   sockets.
 
 
 .. decorator:: anticipate_failure(condition)
@@ -902,11 +969,6 @@ The :mod:`test.support` module defines the following functions:
    not run the test if it is not run by CPython.  Any trace function is unset
    for the duration of the test to prevent unexpected refcounts caused by
    the trace function.
-
-
-.. decorator:: reap_threads(func)
-
-   Decorator to ensure the threads are cleaned up even if the test fails.
 
 
 .. decorator:: bigmemtest(size, memuse, dry_run=True)
@@ -1026,23 +1088,6 @@ The :mod:`test.support` module defines the following functions:
    preserve internal cache.
 
 
-.. function:: threading_setup()
-
-   Return current thread count and copy of dangling threads.
-
-
-.. function:: threading_cleanup(*original_values)
-
-   Cleanup up threads not specified in *original_values*.  Designed to emit
-   a warning if a test leaves running threads in the background.
-
-
-.. function:: join_thread(thread, timeout=30.0)
-
-   Join a *thread* within *timeout*.  Raise an :exc:`AssertionError` if thread
-   is still alive after *timeout* seconds.
-
-
 .. function:: reap_children()
 
    Use this at the end of ``test_main`` whenever sub-processes are started.
@@ -1056,52 +1101,32 @@ The :mod:`test.support` module defines the following functions:
    is raised.
 
 
-.. function:: bind_port(sock, host=HOST)
+.. function:: catch_unraisable_exception()
 
-   Bind the socket to a free port and return the port number.  Relies on
-   ephemeral ports in order to ensure we are using an unbound port.  This is
-   important as many tests may be running simultaneously, especially in a
-   buildbot environment.  This method raises an exception if the
-   ``sock.family`` is :const:`~socket.AF_INET` and ``sock.type`` is
-   :const:`~socket.SOCK_STREAM`, and the socket has
-   :const:`~socket.SO_REUSEADDR` or :const:`~socket.SO_REUSEPORT` set on it.
-   Tests should never set these socket options for TCP/IP sockets.
-   The only case for setting these options is testing multicasting via
-   multiple UDP sockets.
+   Context manager catching unraisable exception using
+   :func:`sys.unraisablehook`.
 
-   Additionally, if the :const:`~socket.SO_EXCLUSIVEADDRUSE` socket option is
-   available (i.e. on Windows), it will be set on the socket.  This will
-   prevent anyone else from binding to our host/port for the duration of the
-   test.
+   Storing the exception value (``cm.unraisable.exc_value``) creates a
+   reference cycle. The reference cycle is broken explicitly when the context
+   manager exits.
 
+   Storing the object (``cm.unraisable.object``) can resurrect it if it is set
+   to an object which is being finalized. Exiting the context manager clears
+   the stored object.
 
-.. function:: bind_unix_socket(sock, addr)
+   Usage::
 
-   Bind a unix socket, raising :exc:`unittest.SkipTest` if
-   :exc:`PermissionError` is raised.
+       with support.catch_unraisable_exception() as cm:
+           # code creating an "unraisable exception"
+           ...
 
+           # check the unraisable exception: use cm.unraisable
+           ...
 
-.. function:: find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM)
+       # cm.unraisable attribute no longer exists at this point
+       # (to break a reference cycle)
 
-   Returns an unused port that should be suitable for binding.  This is
-   achieved by creating a temporary socket with the same family and type as
-   the ``sock`` parameter (default is :const:`~socket.AF_INET`,
-   :const:`~socket.SOCK_STREAM`),
-   and binding it to the specified host address (defaults to ``0.0.0.0``)
-   with the port set to 0, eliciting an unused ephemeral port from the OS.
-   The temporary socket is then closed and deleted, and the ephemeral port is
-   returned.
-
-   Either this method or :func:`bind_port` should be used for any tests
-   where a server socket needs to be bound to a particular port for the
-   duration of the test.
-   Which one to use depends on whether the calling code is creating a Python
-   socket, or if an unused port needs to be provided in a constructor
-   or passed to an external program (i.e. the ``-accept`` argument to
-   openssl's s_server mode).  Always prefer :func:`bind_port` over
-   :func:`find_unused_port` where possible.  Using a hard coded port is
-   discouraged since it can make multiple instances of the test impossible to
-   run simultaneously, which is a problem for buildbots.
+   .. versionadded:: 3.8
 
 
 .. function:: load_package_tests(pkg_dir, loader, standard_tests, pattern)
@@ -1307,16 +1332,89 @@ The :mod:`test.support` module defines the following classes:
       Run *test* and return the result.
 
 
-.. class:: TestHandler(logging.handlers.BufferingHandler)
-
-   Class for logging support.
-
-
 .. class:: FakePath(path)
 
    Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
    method which just returns the *path* argument.  If *path* is an exception,
    it will be raised in :meth:`!__fspath__`.
+
+
+:mod:`test.support.socket_helper` --- Utilities for socket tests
+================================================================
+
+.. module:: test.support.socket_helper
+   :synopsis: Support for socket tests.
+
+
+The :mod:`test.support.socket_helper` module provides support for socket tests.
+
+.. versionadded:: 3.9
+
+
+.. data:: IPV6_ENABLED
+
+    Set to ``True`` if IPv6 is enabled on this host, ``False`` otherwise.
+
+
+.. function:: find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM)
+
+   Returns an unused port that should be suitable for binding.  This is
+   achieved by creating a temporary socket with the same family and type as
+   the ``sock`` parameter (default is :const:`~socket.AF_INET`,
+   :const:`~socket.SOCK_STREAM`),
+   and binding it to the specified host address (defaults to ``0.0.0.0``)
+   with the port set to 0, eliciting an unused ephemeral port from the OS.
+   The temporary socket is then closed and deleted, and the ephemeral port is
+   returned.
+
+   Either this method or :func:`bind_port` should be used for any tests
+   where a server socket needs to be bound to a particular port for the
+   duration of the test.
+   Which one to use depends on whether the calling code is creating a Python
+   socket, or if an unused port needs to be provided in a constructor
+   or passed to an external program (i.e. the ``-accept`` argument to
+   openssl's s_server mode).  Always prefer :func:`bind_port` over
+   :func:`find_unused_port` where possible.  Using a hard coded port is
+   discouraged since it can make multiple instances of the test impossible to
+   run simultaneously, which is a problem for buildbots.
+
+
+.. function:: bind_port(sock, host=HOST)
+
+   Bind the socket to a free port and return the port number.  Relies on
+   ephemeral ports in order to ensure we are using an unbound port.  This is
+   important as many tests may be running simultaneously, especially in a
+   buildbot environment.  This method raises an exception if the
+   ``sock.family`` is :const:`~socket.AF_INET` and ``sock.type`` is
+   :const:`~socket.SOCK_STREAM`, and the socket has
+   :const:`~socket.SO_REUSEADDR` or :const:`~socket.SO_REUSEPORT` set on it.
+   Tests should never set these socket options for TCP/IP sockets.
+   The only case for setting these options is testing multicasting via
+   multiple UDP sockets.
+
+   Additionally, if the :const:`~socket.SO_EXCLUSIVEADDRUSE` socket option is
+   available (i.e. on Windows), it will be set on the socket.  This will
+   prevent anyone else from binding to our host/port for the duration of the
+   test.
+
+
+.. function:: bind_unix_socket(sock, addr)
+
+   Bind a unix socket, raising :exc:`unittest.SkipTest` if
+   :exc:`PermissionError` is raised.
+
+
+.. decorator:: skip_unless_bind_unix_socket
+
+   A decorator for running tests that require a functional ``bind()`` for Unix
+   sockets.
+
+
+.. function:: transient_internet(resource_name, *, timeout=30.0, errnos=())
+
+   A context manager that raises :exc:`~test.support.ResourceDenied` when
+   various issues with the internet connection manifest themselves as
+   exceptions.
 
 
 :mod:`test.support.script_helper` --- Utilities for the Python execution tests
@@ -1354,6 +1452,9 @@ script execution tests.
    in a subprocess.  The values can include ``__isolated``, ``__cleanenv``,
    ``__cwd``, and ``TERM``.
 
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
+
 
 .. function:: assert_python_ok(*args, **env_vars)
 
@@ -1367,6 +1468,9 @@ script execution tests.
    Python is started in isolated mode (command line option ``-I``),
    except if the ``__isolated`` keyword is set to ``False``.
 
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
+
 
 .. function:: assert_python_failure(*args, **env_vars)
 
@@ -1375,6 +1479,9 @@ script execution tests.
    stdout, stderr)`` tuple.
 
    See :func:`assert_python_ok` for more options.
+
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
 
 
 .. function:: spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw)
@@ -1419,3 +1526,111 @@ script execution tests.
    containing the *source*.  If *compiled* is ``True``, both source files will
    be compiled and added to the zip package.  Return a tuple of the full zip
    path and the archive name for the zip file.
+
+
+:mod:`test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
+=============================================================================================
+
+.. module:: test.support.bytecode_helper
+   :synopsis: Support tools for testing correct bytecode generation.
+
+The :mod:`test.support.bytecode_helper` module provides support for testing
+and inspecting bytecode generation.
+
+The module defines the following class:
+
+.. class:: BytecodeTestCase(unittest.TestCase)
+
+   This class has custom assertion methods for inspecting bytecode.
+
+.. method:: BytecodeTestCase.get_disassembly_as_string(co)
+
+   Return the disassembly of *co* as string.
+
+
+.. method:: BytecodeTestCase.assertInBytecode(x, opname, argval=_UNSPECIFIED)
+
+   Return instr if *opname* is found, otherwise throws :exc:`AssertionError`.
+
+
+.. method:: BytecodeTestCase.assertNotInBytecode(x, opname, argval=_UNSPECIFIED)
+
+   Throws :exc:`AssertionError` if *opname* is found.
+
+
+:mod:`test.support.threading_helper` --- Utilities for threading tests
+======================================================================
+
+.. module:: test.support.threading_helper
+   :synopsis: Support for threading tests.
+
+The :mod:`test.support.threading_helper` module provides support for threading tests.
+
+.. versionadded:: 3.10
+
+
+.. function:: join_thread(thread, timeout=None)
+
+   Join a *thread* within *timeout*.  Raise an :exc:`AssertionError` if thread
+   is still alive after *timeout* seconds.
+
+
+.. decorator:: reap_threads(func)
+
+   Decorator to ensure the threads are cleaned up even if the test fails.
+
+
+.. function:: start_threads(threads, unlock=None)
+
+   Context manager to start *threads*.  It attempts to join the threads upon
+   exit.
+
+
+.. function:: threading_cleanup(*original_values)
+
+   Cleanup up threads not specified in *original_values*.  Designed to emit
+   a warning if a test leaves running threads in the background.
+
+
+.. function:: threading_setup()
+
+   Return current thread count and copy of dangling threads.
+
+
+.. function:: wait_threads_exit(timeout=None)
+
+   Context manager to wait until all threads created in the ``with`` statement
+   exit.
+
+
+.. function:: catch_threading_exception()
+
+   Context manager catching :class:`threading.Thread` exception using
+   :func:`threading.excepthook`.
+
+   Attributes set when an exception is catched:
+
+   * ``exc_type``
+   * ``exc_value``
+   * ``exc_traceback``
+   * ``thread``
+
+   See :func:`threading.excepthook` documentation.
+
+   These attributes are deleted at the context manager exit.
+
+   Usage::
+
+       with threading_helper.catch_threading_exception() as cm:
+           # code spawning a thread which raises an exception
+           ...
+
+           # check the thread exception, use cm attributes:
+           # exc_type, exc_value, exc_traceback, thread
+           ...
+
+       # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
+       # exists at this point
+       # (to avoid reference cycles)
+
+   .. versionadded:: 3.8

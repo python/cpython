@@ -17,9 +17,12 @@ __all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token',
 
 import sys
 import threading
+import signal
 import array
 import queue
 import time
+import types
+import os
 from os import getpid
 
 from traceback import format_exc
@@ -57,7 +60,7 @@ if view_types[0] is not list:       # only needed in Py3.0
 
 class Token(object):
     '''
-    Type to uniquely indentify a shared object
+    Type to uniquely identify a shared object
     '''
     __slots__ = ('typeid', 'address', 'id')
 
@@ -246,7 +249,7 @@ class Server(object):
                     try:
                         obj, exposed, gettypeid = \
                             self.id_to_local_proxy_obj[ident]
-                    except KeyError as second_ke:
+                    except KeyError:
                         raise ke
 
                 if methodname not in exposed:
@@ -294,7 +297,7 @@ class Server(object):
             try:
                 try:
                     send(msg)
-                except Exception as e:
+                except Exception:
                     send(('#UNSERIALIZABLE', format_exc()))
             except Exception as e:
                 util.info('exception in thread serving %r',
@@ -358,7 +361,7 @@ class Server(object):
         finally:
             self.stop_event.set()
 
-    def create(self, c, typeid, *args, **kwds):
+    def create(self, c, typeid, /, *args, **kwds):
         '''
         Create a new shared object and return its id
         '''
@@ -569,6 +572,9 @@ class BaseManager(object):
         '''
         Create a server, report its address and run it
         '''
+        # bpo-36368: protect server process from KeyboardInterrupt signals
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         if initializer is not None:
             initializer(*initargs)
 
@@ -583,7 +589,7 @@ class BaseManager(object):
         util.info('manager serving at %r', server.address)
         server.serve_forever()
 
-    def _create(self, typeid, *args, **kwds):
+    def _create(self, typeid, /, *args, **kwds):
         '''
         Create a new shared object; return the token and exposed tuple
         '''
@@ -703,7 +709,7 @@ class BaseManager(object):
             )
 
         if create_method:
-            def temp(self, *args, **kwds):
+            def temp(self, /, *args, **kwds):
                 util.debug('requesting creation of a shared %r object', typeid)
                 token, exp = self._create(typeid, *args, **kwds)
                 proxy = proxytype(
@@ -789,7 +795,7 @@ class BaseProxy(object):
 
     def _callmethod(self, methodname, args=(), kwds={}):
         '''
-        Try to call a method of the referrent and return a copy of the result
+        Try to call a method of the referent and return a copy of the result
         '''
         try:
             conn = self._tls.connection
@@ -943,7 +949,7 @@ def MakeProxyType(name, exposed, _cache={}):
     dic = {}
 
     for meth in exposed:
-        exec('''def %s(self, *args, **kwds):
+        exec('''def %s(self, /, *args, **kwds):
         return self._callmethod(%r, args, kwds)''' % (meth, meth), dic)
 
     ProxyType = type(name, (BaseProxy,), dic)
@@ -982,7 +988,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
 #
 
 class Namespace(object):
-    def __init__(self, **kwds):
+    def __init__(self, /, **kwds):
         self.__dict__.update(kwds)
     def __repr__(self):
         items = list(self.__dict__.items())
@@ -1124,6 +1130,8 @@ class ValueProxy(BaseProxy):
         return self._callmethod('set', (value,))
     value = property(get, set)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
     '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
@@ -1257,11 +1265,15 @@ if HAS_SHMEM:
 
         def __init__(self, *args, **kwargs):
             Server.__init__(self, *args, **kwargs)
+            address = self.address
+            # The address of Linux abstract namespaces can be bytes
+            if isinstance(address, bytes):
+                address = os.fsdecode(address)
             self.shared_memory_context = \
-                _SharedMemoryTracker(f"shmm_{self.address}_{getpid()}")
+                _SharedMemoryTracker(f"shm_{address}_{getpid()}")
             util.debug(f"SharedMemoryServer started by pid {getpid()}")
 
-        def create(self, c, typeid, *args, **kwargs):
+        def create(self, c, typeid, /, *args, **kwargs):
             """Create a new distributed-shared object (not backed by a shared
             memory block) and return its id to be used in a Proxy Object."""
             # Unless set up as a shared proxy, don't make shared_memory_context
@@ -1304,6 +1316,14 @@ if HAS_SHMEM:
         _Server = SharedMemoryServer
 
         def __init__(self, *args, **kwargs):
+            if os.name == "posix":
+                # bpo-36867: Ensure the resource_tracker is running before
+                # launching the manager process, so that concurrent
+                # shared_memory manipulation both in the manager and in the
+                # current process does not create two resource_tracker
+                # processes.
+                from . import resource_tracker
+                resource_tracker.ensure_running()
             BaseManager.__init__(self, *args, **kwargs)
             util.debug(f"{self.__class__.__name__} created by pid {getpid()}")
 

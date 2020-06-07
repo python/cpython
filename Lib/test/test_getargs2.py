@@ -161,12 +161,10 @@ class Unsigned_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(1, getargs_b(BadIndex2()))
         self.assertEqual(0, getargs_b(BadIndex3()))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(99, getargs_b(Int()))
+        self.assertRaises(TypeError, getargs_b, Int())
         self.assertEqual(0, getargs_b(IntSubclass()))
         self.assertRaises(TypeError, getargs_b, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_b(BadInt2()))
+        self.assertRaises(TypeError, getargs_b, BadInt2())
         self.assertEqual(0, getargs_b(BadInt3()))
 
         self.assertRaises(OverflowError, getargs_b, -1)
@@ -187,12 +185,10 @@ class Unsigned_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(1, getargs_B(BadIndex2()))
         self.assertEqual(0, getargs_B(BadIndex3()))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(99, getargs_B(Int()))
+        self.assertRaises(TypeError, getargs_B, Int())
         self.assertEqual(0, getargs_B(IntSubclass()))
         self.assertRaises(TypeError, getargs_B, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_B(BadInt2()))
+        self.assertRaises(TypeError, getargs_B, BadInt2())
         self.assertEqual(0, getargs_B(BadInt3()))
 
         self.assertEqual(UCHAR_MAX, getargs_B(-1))
@@ -213,12 +209,10 @@ class Unsigned_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(1, getargs_H(BadIndex2()))
         self.assertEqual(0, getargs_H(BadIndex3()))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(99, getargs_H(Int()))
+        self.assertRaises(TypeError, getargs_H, Int())
         self.assertEqual(0, getargs_H(IntSubclass()))
         self.assertRaises(TypeError, getargs_H, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_H(BadInt2()))
+        self.assertRaises(TypeError, getargs_H, BadInt2())
         self.assertEqual(0, getargs_H(BadInt3()))
 
         self.assertEqual(USHRT_MAX, getargs_H(-1))
@@ -240,12 +234,10 @@ class Unsigned_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(1, getargs_I(BadIndex2()))
         self.assertEqual(0, getargs_I(BadIndex3()))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(99, getargs_I(Int()))
+        self.assertRaises(TypeError, getargs_I, Int())
         self.assertEqual(0, getargs_I(IntSubclass()))
         self.assertRaises(TypeError, getargs_I, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_I(BadInt2()))
+        self.assertRaises(TypeError, getargs_I, BadInt2())
         self.assertEqual(0, getargs_I(BadInt3()))
 
         self.assertEqual(UINT_MAX, getargs_I(-1))
@@ -293,12 +285,10 @@ class Signed_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(1, getargs_h(BadIndex2()))
         self.assertEqual(0, getargs_h(BadIndex3()))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(99, getargs_h(Int()))
+        self.assertRaises(TypeError, getargs_h, Int())
         self.assertEqual(0, getargs_h(IntSubclass()))
         self.assertRaises(TypeError, getargs_h, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_h(BadInt2()))
+        self.assertRaises(TypeError, getargs_h, BadInt2())
         self.assertEqual(0, getargs_h(BadInt3()))
 
         self.assertRaises(OverflowError, getargs_h, SHRT_MIN-1)
@@ -319,12 +309,10 @@ class Signed_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(1, getargs_i(BadIndex2()))
         self.assertEqual(0, getargs_i(BadIndex3()))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(99, getargs_i(Int()))
+        self.assertRaises(TypeError, getargs_i, Int())
         self.assertEqual(0, getargs_i(IntSubclass()))
         self.assertRaises(TypeError, getargs_i, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_i(BadInt2()))
+        self.assertRaises(TypeError, getargs_i, BadInt2())
         self.assertEqual(0, getargs_i(BadInt3()))
 
         self.assertRaises(OverflowError, getargs_i, INT_MIN-1)
@@ -345,12 +333,10 @@ class Signed_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(1, getargs_l(BadIndex2()))
         self.assertEqual(0, getargs_l(BadIndex3()))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(99, getargs_l(Int()))
+        self.assertRaises(TypeError, getargs_l, Int())
         self.assertEqual(0, getargs_l(IntSubclass()))
         self.assertRaises(TypeError, getargs_l, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_l(BadInt2()))
+        self.assertRaises(TypeError, getargs_l, BadInt2())
         self.assertEqual(0, getargs_l(BadInt3()))
 
         self.assertRaises(OverflowError, getargs_l, LONG_MIN-1)
@@ -400,12 +386,10 @@ class LongLong_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(1, getargs_L(BadIndex2()))
         self.assertEqual(0, getargs_L(BadIndex3()))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(99, getargs_L(Int()))
+        self.assertRaises(TypeError, getargs_L, Int())
         self.assertEqual(0, getargs_L(IntSubclass()))
         self.assertRaises(TypeError, getargs_L, BadInt())
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(1, getargs_L(BadInt2()))
+        self.assertRaises(TypeError, getargs_L, BadInt2())
         self.assertEqual(0, getargs_L(BadInt3()))
 
         self.assertRaises(OverflowError, getargs_L, LLONG_MIN-1)
@@ -457,6 +441,8 @@ class Float_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(getargs_f(BadFloat2()), 4.25)
         self.assertEqual(getargs_f(BadFloat3(7.5)), 7.5)
+        self.assertEqual(getargs_f(Index()), 99.0)
+        self.assertRaises(TypeError, getargs_f, Int())
 
         for x in (FLT_MIN, -FLT_MIN, FLT_MAX, -FLT_MAX, INF, -INF):
             self.assertEqual(getargs_f(x), x)
@@ -489,6 +475,8 @@ class Float_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(getargs_d(BadFloat2()), 4.25)
         self.assertEqual(getargs_d(BadFloat3(7.5)), 7.5)
+        self.assertEqual(getargs_d(Index()), 99.0)
+        self.assertRaises(TypeError, getargs_d, Int())
 
         for x in (DBL_MIN, -DBL_MIN, DBL_MAX, -DBL_MAX, INF, -INF):
             self.assertEqual(getargs_d(x), x)
@@ -511,6 +499,8 @@ class Float_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(getargs_D(BadComplex2()), 4.25+0.5j)
         self.assertEqual(getargs_D(BadComplex3(7.5+0.25j)), 7.5+0.25j)
+        self.assertEqual(getargs_D(Index()), 99.0+0j)
+        self.assertRaises(TypeError, getargs_D, Int())
 
         for x in (DBL_MIN, -DBL_MIN, DBL_MAX, -DBL_MAX, INF, -INF):
             c = complex(x, 1.0)

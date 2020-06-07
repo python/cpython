@@ -53,21 +53,51 @@ basic.events = [(0, 'call'),
 # following that clause?
 
 
-# The entire "while 0:" statement is optimized away.  No code
-# exists for it, so the line numbers skip directly from "del x"
-# to "x = 1".
-def arigo_example():
+# Some constructs like "while 0:", "if 0:" or "if 1:...else:..." are optimized
+# away.  No code # exists for them, so the line numbers skip directly from
+# "del x" to "x = 1".
+def arigo_example0():
     x = 1
     del x
     while 0:
         pass
     x = 1
 
-arigo_example.events = [(0, 'call'),
+arigo_example0.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
                         (5, 'line'),
                         (5, 'return')]
+
+def arigo_example1():
+    x = 1
+    del x
+    if 0:
+        pass
+    x = 1
+
+arigo_example1.events = [(0, 'call'),
+                        (1, 'line'),
+                        (2, 'line'),
+                        (5, 'line'),
+                        (5, 'return')]
+
+def arigo_example2():
+    x = 1
+    del x
+    if 1:
+        x = 1
+    else:
+        pass
+    return None
+
+arigo_example2.events = [(0, 'call'),
+                        (1, 'line'),
+                        (2, 'line'),
+                        (4, 'line'),
+                        (7, 'line'),
+                        (7, 'return')]
+
 
 # check that lines consisting of just one instruction get traced:
 def one_instr_line():
@@ -131,8 +161,8 @@ def raises():
 def test_raise():
     try:
         raises()
-    except Exception as exc:
-        x = 1
+    except Exception:
+        pass
 
 test_raise.events = [(0, 'call'),
                      (1, 'line'),
@@ -161,7 +191,7 @@ def _settrace_and_raise(tracefunc):
 def settrace_and_raise(tracefunc):
     try:
         _settrace_and_raise(tracefunc)
-    except RuntimeError as exc:
+    except RuntimeError:
         pass
 
 settrace_and_raise.events = [(2, 'exception'),
@@ -349,8 +379,12 @@ class TraceTestCase(unittest.TestCase):
 
     def test_01_basic(self):
         self.run_test(basic)
-    def test_02_arigo(self):
-        self.run_test(arigo_example)
+    def test_02_arigo0(self):
+        self.run_test(arigo_example0)
+    def test_02_arigo1(self):
+        self.run_test(arigo_example1)
+    def test_02_arigo2(self):
+        self.run_test(arigo_example2)
     def test_03_one_instr(self):
         self.run_test(one_instr_line)
     def test_04_no_pop_blocks(self):
@@ -446,6 +480,127 @@ class TraceTestCase(unittest.TestCase):
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line')])
+
+    def test_18_except_with_name(self):
+        def func():
+            try:
+                try:
+                    raise Exception
+                except Exception as e:
+                    raise
+                    x = "Something"
+                    y = "Something"
+            except Exception:
+                pass
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (4, 'line'),
+             (5, 'line'),
+             (8, 'line'),
+             (9, 'line'),
+             (9, 'return')])
+
+    def test_19_except_with_finally(self):
+        def func():
+            try:
+                try:
+                    raise Exception
+                finally:
+                    y = "Something"
+            except Exception:
+                b = 23
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (5, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (7, 'return')])
+
+    def test_20_async_for_loop(self):
+        class AsyncIteratorWrapper:
+            def __init__(self, obj):
+                self._it = iter(obj)
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                try:
+                    return next(self._it)
+                except StopIteration:
+                    raise StopAsyncIteration
+
+        async def doit_async():
+            async for letter in AsyncIteratorWrapper("abc"):
+                x = letter
+            y = 42
+
+        def run(tracer):
+            x = doit_async()
+            try:
+                sys.settrace(tracer)
+                x.send(None)
+            finally:
+                sys.settrace(None)
+
+        tracer = self.make_tracer()
+        events = [
+                (0, 'call'),
+                (1, 'line'),
+                (-12, 'call'),
+                (-11, 'line'),
+                (-11, 'return'),
+                (-9, 'call'),
+                (-8, 'line'),
+                (-8, 'return'),
+                (-6, 'call'),
+                (-5, 'line'),
+                (-4, 'line'),
+                (-4, 'return'),
+                (1, 'exception'),
+                (2, 'line'),
+                (1, 'line'),
+                (-6, 'call'),
+                (-5, 'line'),
+                (-4, 'line'),
+                (-4, 'return'),
+                (1, 'exception'),
+                (2, 'line'),
+                (1, 'line'),
+                (-6, 'call'),
+                (-5, 'line'),
+                (-4, 'line'),
+                (-4, 'return'),
+                (1, 'exception'),
+                (2, 'line'),
+                (1, 'line'),
+                (-6, 'call'),
+                (-5, 'line'),
+                (-4, 'line'),
+                (-4, 'exception'),
+                (-3, 'line'),
+                (-2, 'line'),
+                (-2, 'exception'),
+                (-2, 'return'),
+                (1, 'exception'),
+                (3, 'line'),
+                (3, 'return')]
+        try:
+            run(tracer.trace)
+        except Exception:
+            pass
+        self.compare_events(doit_async.__code__.co_firstlineno,
+                            tracer.events, events)
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
@@ -793,8 +948,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(11)
         output.append(12)
 
-    @jump_test(5, 11, [2, 4, 12])
-    def test_jump_over_return_try_finally_in_finally_block(output):
+    @jump_test(5, 11, [2, 4], (ValueError, 'unreachable'))
+    def test_no_jump_over_return_try_finally_in_finally_block(output):
         try:
             output.append(2)
         finally:
@@ -808,8 +963,8 @@ class JumpTestCase(unittest.TestCase):
             pass
         output.append(12)
 
-    @jump_test(3, 4, [1, 4])
-    def test_jump_infinite_while_loop(output):
+    @jump_test(3, 4, [1], (ValueError, 'unreachable'))
+    def test_no_jump_infinite_while_loop(output):
         output.append(1)
         while True:
             output.append(3)
@@ -1202,16 +1357,16 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @jump_test(1, 5, [], (ValueError, "into a 'finally'"))
-    def test_no_jump_into_finally_block(output):
+    @jump_test(1, 5, [5])
+    def test_jump_into_finally_block(output):
         output.append(1)
         try:
             output.append(3)
         finally:
             output.append(5)
 
-    @jump_test(3, 6, [2, 5, 6], (ValueError, "into a 'finally'"))
-    def test_no_jump_into_finally_block_from_try_block(output):
+    @jump_test(3, 6, [2, 6, 7])
+    def test_jump_into_finally_block_from_try_block(output):
         try:
             output.append(2)
             output.append(3)
@@ -1220,8 +1375,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
-    @jump_test(5, 1, [1, 3], (ValueError, "out of a 'finally'"))
-    def test_no_jump_out_of_finally_block(output):
+    @jump_test(5, 1, [1, 3, 1, 3, 5])
+    def test_jump_out_of_finally_block(output):
         output.append(1)
         try:
             output.append(3)
@@ -1286,23 +1441,23 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
             output.append(7)
 
-    @jump_test(3, 5, [1, 2, -2], (ValueError, 'into'))
-    def test_no_jump_between_with_blocks(output):
+    @jump_test(3, 5, [1, 2, 5, -2])
+    def test_jump_between_with_blocks(output):
         output.append(1)
         with tracecontext(output, 2):
             output.append(3)
         with tracecontext(output, 4):
             output.append(5)
 
-    @async_jump_test(3, 5, [1, 2, -2], (ValueError, 'into'))
-    async def test_no_jump_between_async_with_blocks(output):
+    @async_jump_test(3, 5, [1, 2, 5, -2])
+    async def test_jump_between_async_with_blocks(output):
         output.append(1)
         async with asynctracecontext(output, 2):
             output.append(3)
         async with asynctracecontext(output, 4):
             output.append(5)
 
-    @jump_test(5, 7, [2, 4], (ValueError, 'finally'))
+    @jump_test(5, 7, [2, 4], (ValueError, "unreachable"))
     def test_no_jump_over_return_out_of_finally_block(output):
         try:
             output.append(2)
@@ -1396,9 +1551,8 @@ output.append(4)
         output.append(1)
         1 / 0
 
-    @jump_test(3, 2, [2], event='return', error=(ValueError,
-               "can't jump from a yield statement"))
-    def test_no_jump_from_yield(output):
+    @jump_test(3, 2, [2, 5], event='return')
+    def test_jump_from_yield(output):
         def gen():
             output.append(2)
             yield 3

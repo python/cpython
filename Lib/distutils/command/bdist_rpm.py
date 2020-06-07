@@ -6,7 +6,6 @@ distributions)."""
 import subprocess, sys, os
 from distutils.core import Command
 from distutils.debug import DEBUG
-from distutils.util import get_platform
 from distutils.file_util import write_file
 from distutils.errors import *
 from distutils.sysconfig import get_python_version
@@ -309,10 +308,7 @@ class bdist_rpm(Command):
 
         # build package
         log.info("building RPMs")
-        rpm_cmd = ['rpm']
-        if os.path.exists('/usr/bin/rpmbuild') or \
-           os.path.exists('/bin/rpmbuild'):
-            rpm_cmd = ['rpmbuild']
+        rpm_cmd = ['rpmbuild']
 
         if self.source_only: # what kind of RPMs?
             rpm_cmd.append('-bs')
@@ -537,7 +533,8 @@ class bdist_rpm(Command):
                     '',
                     '%' + rpm_opt,])
                 if val:
-                    spec_file.extend(open(val, 'r').read().split('\n'))
+                    with open(val) as f:
+                        spec_file.extend(f.read().split('\n'))
                 else:
                     spec_file.append(default)
 

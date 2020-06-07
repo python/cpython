@@ -25,7 +25,7 @@ There are several ways to enable asyncio debug mode:
 
 * Setting the :envvar:`PYTHONASYNCIODEBUG` environment variable to ``1``.
 
-* Using the :option:`-X` ``dev`` Python command line option.
+* Using the :ref:`Python Development Mode <devmode>`.
 
 * Passing ``debug=True`` to :func:`asyncio.run`.
 
@@ -119,7 +119,7 @@ all concurrent asyncio Tasks and IO operations would be delayed
 by 1 second.
 
 An executor can be used to run a task in a different thread or even in
-a different process to avoid blocking block the OS thread with the
+a different process to avoid blocking the OS thread with the
 event loop.  See the :meth:`loop.run_in_executor` method for more
 details.
 

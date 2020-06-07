@@ -176,6 +176,7 @@ same ``numpy.ndarray`` from two distinct Python shells:
 
 
 .. class:: SharedMemoryManager([address[, authkey]])
+   :module: multiprocessing.managers
 
    A subclass of :class:`~multiprocessing.managers.BaseManager` which can be
    used for the management of shared memory blocks across processes.
@@ -218,8 +219,8 @@ The following example demonstrates the basic mechanisms of a
 .. doctest::
    :options: +SKIP
 
-   >>> from multiprocessing import shared_memory
-   >>> smm = shared_memory.SharedMemoryManager()
+   >>> from multiprocessing.managers import SharedMemoryManager
+   >>> smm = SharedMemoryManager()
    >>> smm.start()  # Start the process that manages the shared memory blocks
    >>> sl = smm.ShareableList(range(4))
    >>> sl
@@ -238,7 +239,7 @@ needed:
 .. doctest::
    :options: +SKIP
 
-   >>> with shared_memory.SharedMemoryManager() as smm:
+   >>> with SharedMemoryManager() as smm:
    ...     sl = smm.ShareableList(range(2000))
    ...     # Divide the work among two processes, storing partial results in sl
    ...     p1 = Process(target=do_work, args=(sl, 0, 1000))

@@ -358,6 +358,26 @@ class TestGzip(BaseTest):
             isizeBytes = fRead.read(4)
             self.assertEqual(isizeBytes, struct.pack('<i', len(data1)))
 
+    def test_compresslevel_metadata(self):
+        # see RFC 1952: http://www.faqs.org/rfcs/rfc1952.html
+        # specifically, discussion of XFL in section 2.3.1
+        cases = [
+            ('fast', 1, b'\x04'),
+            ('best', 9, b'\x02'),
+            ('tradeoff', 6, b'\x00'),
+        ]
+        xflOffset = 8
+
+        for (name, level, expectedXflByte) in cases:
+            with self.subTest(name):
+                fWrite = gzip.GzipFile(self.filename, 'w', compresslevel=level)
+                with fWrite:
+                    fWrite.write(data1)
+                with open(self.filename, 'rb') as fRead:
+                    fRead.seek(xflOffset)
+                    xflByte = fRead.read(1)
+                    self.assertEqual(xflByte, expectedXflByte)
+
     def test_with_open(self):
         # GzipFile supports the context management protocol
         with gzip.GzipFile(self.filename, "wb") as f:
@@ -390,6 +410,15 @@ class TestGzip(BaseTest):
         with gzip.GzipFile(self.filename, "rb") as f:
             d = f.read()
             self.assertEqual(d, data1 * 50, "Incorrect data in file")
+
+    def test_gzip_BadGzipFile_exception(self):
+        self.assertTrue(issubclass(gzip.BadGzipFile, OSError))
+
+    def test_bad_gzip_file(self):
+        with open(self.filename, 'wb') as file:
+            file.write(data1 * 50)
+        with gzip.GzipFile(self.filename, 'r') as file:
+            self.assertRaises(gzip.BadGzipFile, file.readlines)
 
     def test_non_seekable_file(self):
         uncompressed = data1 * 50
@@ -460,7 +489,9 @@ class TestGzip(BaseTest):
             if "x" in mode:
                 support.unlink(self.filename)
             with open(self.filename, mode) as f:
-                with gzip.GzipFile(fileobj=f) as g:
+                with self.assertWarns(FutureWarning):
+                    g = gzip.GzipFile(fileobj=f)
+                with g:
                     self.assertEqual(g.mode, gzip.WRITE)
 
     def test_bytes_filename(self):
@@ -746,7 +777,7 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out[:2], b"\x1f\x8b")
 
     @create_and_remove_directory(TEMPDIR)
-    def test_compress_infile_outfile(self):
+    def test_compress_infile_outfile_default(self):
         local_testgzip = os.path.join(TEMPDIR, 'testgzip')
         gzipname = local_testgzip + '.gz'
         self.assertFalse(os.path.exists(gzipname))

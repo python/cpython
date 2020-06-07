@@ -23,6 +23,7 @@
 
 #ifndef PYSQLITE_UTIL_H
 #define PYSQLITE_UTIL_H
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pythread.h"
 #include "sqlite3.h"
@@ -36,7 +37,6 @@ int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection);
  */
 int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st);
 
-PyObject * _pysqlite_long_from_int64(sqlite_int64 value);
 sqlite_int64 _pysqlite_long_as_int64(PyObject * value);
 
 #if SQLITE_VERSION_NUMBER >= 3007014

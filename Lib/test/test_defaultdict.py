@@ -183,5 +183,43 @@ class TestDefaultDict(unittest.TestCase):
             o = pickle.loads(s)
             self.assertEqual(d, o)
 
+    def test_union(self):
+        i = defaultdict(int, {1: 1, 2: 2})
+        s = defaultdict(str, {0: "zero", 1: "one"})
+
+        i_s = i | s
+        self.assertIs(i_s.default_factory, int)
+        self.assertDictEqual(i_s, {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(i_s), [1, 2, 0])
+
+        s_i = s | i
+        self.assertIs(s_i.default_factory, str)
+        self.assertDictEqual(s_i, {0: "zero", 1: 1, 2: 2})
+        self.assertEqual(list(s_i), [0, 1, 2])
+
+        i_ds = i | dict(s)
+        self.assertIs(i_ds.default_factory, int)
+        self.assertDictEqual(i_ds, {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(i_ds), [1, 2, 0])
+
+        ds_i = dict(s) | i
+        self.assertIs(ds_i.default_factory, int)
+        self.assertDictEqual(ds_i, {0: "zero", 1: 1, 2: 2})
+        self.assertEqual(list(ds_i), [0, 1, 2])
+
+        with self.assertRaises(TypeError):
+            i | list(s.items())
+        with self.assertRaises(TypeError):
+            list(s.items()) | i
+
+        # We inherit a fine |= from dict, so just a few sanity checks here:
+        i |= list(s.items())
+        self.assertIs(i.default_factory, int)
+        self.assertDictEqual(i, {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(i), [1, 2, 0])
+
+        with self.assertRaises(TypeError):
+            i |= None
+
 if __name__ == "__main__":
     unittest.main()

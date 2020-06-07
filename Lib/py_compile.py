@@ -77,7 +77,7 @@ def _get_default_invalidation_mode():
 
 
 def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
-            invalidation_mode=None):
+            invalidation_mode=None, quiet=0):
     """Byte-compile one Python source file to Python bytecode.
 
     :param file: The source file name.
@@ -95,6 +95,8 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
         are -1, 0, 1 and 2.  A value of -1 means to use the optimization
         level of the current interpreter, as given by -O command line options.
     :param invalidation_mode:
+    :param quiet: Return full output with False or 0, errors only with 1,
+        and no output with 2.
 
     :return: Path to the resulting byte compiled file.
 
@@ -143,11 +145,12 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
                                      _optimize=optimize)
     except Exception as err:
         py_exc = PyCompileError(err.__class__, err, dfile or file)
-        if doraise:
-            raise py_exc
-        else:
-            sys.stderr.write(py_exc.msg + '\n')
-            return
+        if quiet < 2:
+            if doraise:
+                raise py_exc
+            else:
+                sys.stderr.write(py_exc.msg + '\n')
+        return
     try:
         dirname = os.path.dirname(cfile)
         if dirname:
@@ -194,10 +197,12 @@ def main(args=None):
                 compile(filename, doraise=True)
             except PyCompileError as error:
                 rv = 1
-                sys.stderr.write("%s\n" % error.msg)
+                if quiet < 2:
+                    sys.stderr.write("%s\n" % error.msg)
             except OSError as error:
                 rv = 1
-                sys.stderr.write("%s\n" % error)
+                if quiet < 2:
+                    sys.stderr.write("%s\n" % error)
     else:
         for filename in args:
             try:
@@ -205,7 +210,8 @@ def main(args=None):
             except PyCompileError as error:
                 # return value to indicate at least one failure
                 rv = 1
-                sys.stderr.write("%s\n" % error.msg)
+                if quiet < 2:
+                    sys.stderr.write("%s\n" % error.msg)
     return rv
 
 if __name__ == "__main__":

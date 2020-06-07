@@ -363,7 +363,7 @@ class ReloadTests:
 
     def test_module_missing_spec(self):
         #Test that reload() throws ModuleNotFounderror when reloading
-        # a module who's missing a spec. (bpo-29851)
+        # a module whose missing a spec. (bpo-29851)
         name = 'spam'
         with test_util.uncache(name):
             module = sys.modules[name] = types.ModuleType(name)

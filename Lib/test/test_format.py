@@ -48,7 +48,7 @@ def testformat(formatstr, args, output=None, limit=None, overflowok=False):
 
 def testcommon(formatstr, args, output=None, limit=None, overflowok=False):
     # if formatstr is a str, test str, bytes, and bytearray;
-    # otherwise, test bytes and bytearry
+    # otherwise, test bytes and bytearray
     if isinstance(formatstr, str):
         testformat(formatstr, args, output, limit, overflowok)
         b_format = formatstr.encode('ascii')
@@ -483,6 +483,17 @@ class FormatTest(unittest.TestCase):
         c = complex(f)
         with self.assertRaises(ValueError) as cm:
             format(c, ".%sf" % (INT_MAX + 1))
+
+    def test_g_format_has_no_trailing_zeros(self):
+        # regression test for bugs.python.org/issue40780
+        self.assertEqual("%.3g" % 1505.0, "1.5e+03")
+        self.assertEqual("%#.3g" % 1505.0, "1.50e+03")
+
+        self.assertEqual(format(1505.0, ".3g"), "1.5e+03")
+        self.assertEqual(format(1505.0, "#.3g"), "1.50e+03")
+
+        self.assertEqual(format(12300050.0, ".6g"), "1.23e+07")
+        self.assertEqual(format(12300050.0, "#.6g"), "1.23000e+07")
 
 
 if __name__ == "__main__":
