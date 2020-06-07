@@ -2261,14 +2261,12 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty initial_factor, asdl_seq *o
 
     expr_ty result = NULL;
 
-    ValueItem *values = PyMem_Calloc(asdl_seq_LEN(ops_factors) + 1, sizeof(ValueItem));
+    ValueItem *values = PyMem_Calloc(len + 1, sizeof(ValueItem));
 
     values[0].value = initial_factor;
     ssize_t output_pos = 1;
  
-    for (ssize_t i = 0; i < asdl_seq_LEN(ops_factors); i++)
-    {
-
+    for (ssize_t i = 0; i < asdl_seq_LEN(ops_factors); i++) {
         OperatorFactorPair *pair = (OperatorFactorPair*)asdl_seq_GET(ops_factors, i);
         Token* oper = pair->oper;
         expr_ty the_factor = pair->factor;
