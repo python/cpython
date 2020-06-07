@@ -2227,14 +2227,14 @@ typedef struct {
 } ValueItem;
 
 static inline int
-_reduction_step(Parser* p, ValueItem values[], ssize_t *output_pos)
+_reduction_step(Parser* p, ValueItem stack[], ssize_t *stack_top)
 {
-    operator_ty the_operator = _PyPegen_get_binary_operator(p, values[*output_pos - 2].oper);
+    operator_ty the_operator = _PyPegen_get_binary_operator(p, stack[*stack_top - 2].oper);
     if (the_operator == 0) {
         return -1;
     }
-    ValueItem right = values[--(*output_pos)];
-    ValueItem left = values[--(*output_pos)];
+    ValueItem right = stack[--(*stack_top)];
+    ValueItem left = stack[--(*stack_top)];
     expr_ty res = _Py_BinOp(left.value, the_operator, right.value,
                                 left.value->lineno, left.value->col_offset,
                                 right.original_pair->end_lineno,
@@ -2243,7 +2243,7 @@ _reduction_step(Parser* p, ValueItem values[], ssize_t *output_pos)
     if (res == NULL) {
         return -1;
     }
-    values[(*output_pos)++] = (ValueItem){.value = res, .original_pair = right.original_pair};
+    stack[(*stack_top)++] = (ValueItem){.value = res, .original_pair = right.original_pair};
     return 0;
 }
 
@@ -2261,37 +2261,37 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty initial_factor, asdl_seq *o
 
     expr_ty result = NULL;
 
-    ValueItem *values = PyMem_Calloc(len + 1, sizeof(ValueItem));
+    ValueItem *stack = PyMem_Calloc(len + 1, sizeof(ValueItem));
 
-    values[0].value = initial_factor;
-    ssize_t output_pos = 1;
+    stack[0].value = initial_factor;
+    ssize_t stack_top = 1;
  
     for (ssize_t i = 0; i < asdl_seq_LEN(ops_factors); i++) {
         OperatorFactorPair *pair = (OperatorFactorPair*)asdl_seq_GET(ops_factors, i);
         Token* oper = pair->oper;
         expr_ty the_factor = pair->factor;
 
-        while (output_pos > 1 && _PyPegen_get_operator_precedence(values[output_pos - 2].oper) >=
+        while (stack_top > 1 && _PyPegen_get_operator_precedence(stack[stack_top - 2].oper) >=
                _PyPegen_get_operator_precedence(oper)) {
-            if (_reduction_step(p, values, &output_pos) == -1) {
+            if (_reduction_step(p, stack, &stack_top) == -1) {
                 result = NULL;
                 goto exit;
             }
         }
-        values[output_pos - 1].oper = oper;
-        values[output_pos++] = (ValueItem){.value = the_factor, .original_pair = pair};
+        stack[stack_top - 1].oper = oper;
+        stack[stack_top++] = (ValueItem){.value = the_factor, .original_pair = pair};
     }
 
-    while (output_pos > 1) {
-        if (_reduction_step(p, values, &output_pos) == -1) {
+    while (stack_top > 1) {
+        if (_reduction_step(p, stack, &stack_top) == -1) {
             result = NULL;
             goto exit;
         }
     }
 
-    result = values[0].value;
+    result = stack[0].value;
 
 exit:
-    PyMem_Free(values);
+    PyMem_Free(stack);
     return result;
 }
