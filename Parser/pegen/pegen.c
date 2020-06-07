@@ -2243,7 +2243,9 @@ _reduction_step(Parser* p, ValueItem stack[], ssize_t *stack_top)
     if (res == NULL) {
         return -1;
     }
-    stack[(*stack_top)++] = (ValueItem){.value = res, .original_pair = right.original_pair};
+    ssize_t top = (*stack_top)++;
+    stack[top].value = res;
+    stack[top].original_pair = right.original_pair;
     return 0;
 }
 
@@ -2279,7 +2281,9 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty initial_factor, asdl_seq *o
             }
         }
         stack[stack_top - 1].oper = oper;
-        stack[stack_top++] = (ValueItem){.value = the_factor, .original_pair = pair};
+        stack[stack_top].value = the_factor;
+        stack[stack_top].original_pair = pair;
+        stack_top++;
     }
 
     while (stack_top > 1) {
