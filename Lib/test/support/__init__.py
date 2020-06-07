@@ -22,6 +22,7 @@ import types
 import unittest
 import warnings
 
+from .filesystem_helper import TESTFN
 from .testresult import get_test_runner
 
 __all__ = [
@@ -37,7 +38,7 @@ __all__ = [
     "record_original_stdout", "get_original_stdout", "captured_stdout",
     "captured_stdin", "captured_stderr",
     # filesystem
-    "TESTFN", "SAVEDCWD", "unlink", "rmtree", "temp_cwd", "findfile",
+    "SAVEDCWD", "unlink", "rmtree", "temp_cwd", "findfile",
     "create_empty_file", "can_symlink", "fs_is_case_insensitive",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
@@ -713,17 +714,6 @@ if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
-
-# Filename used for testing
-if os.name == 'java':
-    # Jython disallows @ in module names
-    TESTFN = '$test'
-else:
-    TESTFN = '@test'
-
-# Disambiguate TESTFN for parallel testing, while letting it remain a valid
-# module name.
-TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 
 # Define the URL of a dedicated HTTP server for the network tests.
 # The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
