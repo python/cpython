@@ -2243,33 +2243,42 @@ _reduction_step(Parser* p, ValueItem *values,
     if (res == NULL) {
         return -1;
     }
-    values[(*output_pos)++] = (ValueItem){.value = res, .original_pair = right.original_pair};  \
+    values[(*output_pos)++] = (ValueItem){.value = res, .original_pair = right.original_pair};
     return 0;
 }
 
+// The input here represents 'factor (operator factor)*'.
+// The ops_factors sequence is a sequence of OperatorFactorPairs.
+// The output is either the initial_factor (if ops_factors is empty)
+// or a BinOp() struct representing the entire expression.
 expr_ty
-_PyPegen_operator_precedence_expr(Parser *p, expr_ty factor, asdl_seq *terms) {
+_PyPegen_operator_precedence_expr(Parser *p, expr_ty initial_factor, asdl_seq *ops_factors)
+{
+    int len = asdl_seq_LEN(ops_factors);
+    if (!len) {
+        return initial_factor;  // Shortcut if there's nothing there
+    }
 
     expr_ty result = NULL;
 
-    ValueItem *values = PyMem_Calloc(asdl_seq_LEN(terms) + 1, sizeof(ValueItem));
-    Token **operators = PyMem_Calloc(asdl_seq_LEN(terms), sizeof(Token*));
+    ValueItem *values = PyMem_Calloc(asdl_seq_LEN(ops_factors) + 1, sizeof(ValueItem));
+    Token **operators = PyMem_Calloc(asdl_seq_LEN(ops_factors), sizeof(Token*));
 
     ssize_t stack_pos = 0;
 
-    values[0].value = factor;
+    values[0].value = initial_factor;
     ssize_t output_pos = 1;
  
-    for (ssize_t i=0; i < asdl_seq_LEN(terms); i++)
+    for (ssize_t i = 0; i < asdl_seq_LEN(ops_factors); i++)
     {
 
-        OperatorFactorPair *pair = (OperatorFactorPair*)asdl_seq_GET(terms, i);
+        OperatorFactorPair *pair = (OperatorFactorPair*)asdl_seq_GET(ops_factors, i);
         Token* oper = pair->oper;
         expr_ty the_factor = pair->factor;
 
         while (stack_pos > 0 && _PyPegen_get_operator_precedence(operators[stack_pos-1]) >=
                _PyPegen_get_operator_precedence(oper)) {
-            if (_reduction_step(p, values, operators, &output_pos, &stack_pos) == -1){
+            if (_reduction_step(p, values, operators, &output_pos, &stack_pos) == -1) {
                 result = NULL;
                 goto exit;
             }
@@ -2279,7 +2288,7 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty factor, asdl_seq *terms) {
     }
 
     while (stack_pos > 0) {
-        if (_reduction_step(p, values, operators, &output_pos, &stack_pos) == -1){
+        if (_reduction_step(p, values, operators, &output_pos, &stack_pos) == -1) {
             result = NULL;
             goto exit;
         }
