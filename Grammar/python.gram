@@ -415,30 +415,9 @@ in_bitwise_or[CmpopExprPair*]: 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, I
 isnot_bitwise_or[CmpopExprPair*]: 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
 is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
 
+operator: '|' | '^' | '&' | '<<' | '>>' | '+' | '-' | '*' | '/' | '//' | '%' | '@'
 bitwise_or[expr_ty]:
-    | a=bitwise_or '|' b=bitwise_xor { _Py_BinOp(a, BitOr, b, EXTRA) }
-    | bitwise_xor
-bitwise_xor[expr_ty]:
-    | a=bitwise_xor '^' b=bitwise_and { _Py_BinOp(a, BitXor, b, EXTRA) }
-    | bitwise_and
-bitwise_and[expr_ty]:
-    | a=bitwise_and '&' b=shift_expr { _Py_BinOp(a, BitAnd, b, EXTRA) }
-    | shift_expr
-shift_expr[expr_ty]:
-    | a=shift_expr '<<' b=sum { _Py_BinOp(a, LShift, b, EXTRA) }
-    | a=shift_expr '>>' b=sum { _Py_BinOp(a, RShift, b, EXTRA) }
-    | sum
-
-sum[expr_ty]:
-    | a=sum '+' b=term { _Py_BinOp(a, Add, b, EXTRA) }
-    | a=sum '-' b=term { _Py_BinOp(a, Sub, b, EXTRA) }
-    | term
-term[expr_ty]:
-    | a=term '*' b=factor { _Py_BinOp(a, Mult, b, EXTRA) }
-    | a=term '/' b=factor { _Py_BinOp(a, Div, b, EXTRA) }
-    | a=term '//' b=factor { _Py_BinOp(a, FloorDiv, b, EXTRA) }
-    | a=term '%' b=factor { _Py_BinOp(a, Mod, b, EXTRA) }
-    | a=term '@' b=factor { CHECK_VERSION(5, "The '@' operator is", _Py_BinOp(a, MatMult, b, EXTRA)) }
+    | a=factor b=(o=operator f=factor {_PyPegen_magic_pair(p, o, f)})+ { magic_action(p, a, b) }
     | factor
 factor[expr_ty] (memo):
     | '+' a=factor { _Py_UnaryOp(UAdd, a, EXTRA) }

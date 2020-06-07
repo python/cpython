@@ -2160,3 +2160,119 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
         "Generator expression must be parenthesized"
     );
 }
+
+MagicPair *
+_PyPegen_magic_pair(Parser *p, Token* oper, expr_ty factor)
+{
+    MagicPair *a = PyArena_Malloc(p->arena, sizeof(MagicPair));
+    if (!a) {
+        return NULL;
+    }
+    a->oper = oper;
+    a->factor = factor;
+    return a;
+}
+
+static int get_precedence(Token* token) {
+    switch (token->type) {
+        case VBAR:
+            return 1;
+        case CIRCUMFLEX:
+            return 2;
+        case LEFTSHIFT:
+        case RIGHTSHIFT:
+            return 3;
+        case PLUS:
+        case MINUS:
+            return 4;
+        case STAR:
+        case SLASH:
+        case DOUBLESLASH:
+        case PERCENT:
+        case AT:
+            return 5;
+        default:
+            return -1;
+    }
+}
+
+static operator_ty
+get_operator(const Token *t)
+{
+    switch (t->type) {
+        case VBAR:
+            return BitOr;
+        case CIRCUMFLEX:
+            return BitXor;
+        case AMPER:
+            return BitAnd;
+        case LEFTSHIFT:
+            return LShift;
+        case RIGHTSHIFT:
+            return RShift;
+        case PLUS:
+            return Add;
+        case MINUS:
+            return Sub;
+        case STAR:
+            return Mult;
+        case AT:
+            return MatMult;
+        case SLASH:
+            return Div;
+        case DOUBLESLASH:
+            return FloorDiv;
+        case PERCENT:
+            return Mod;
+        default:
+            return (operator_ty)0;
+    }
+}
+
+
+
+expr_ty
+magic_action(Parser *p, expr_ty factor, asdl_seq *terms) {
+    expr_ty result = NULL;
+
+    expr_ty *output= PyMem_Calloc(asdl_seq_LEN(terms) + 1, sizeof(expr_ty));
+    Token **stack = PyMem_Calloc(asdl_seq_LEN(terms), sizeof(Token*));
+
+    ssize_t stack_pos = 0;
+
+    output[0] = factor;
+    ssize_t output_pos = 1;
+
+    for (ssize_t i=0; i<asdl_seq_LEN(terms); i++) {
+
+        MagicPair *pair = (MagicPair*)asdl_seq_GET(terms, i);
+        Token* oper = pair->oper;
+        expr_ty the_factor = pair->factor;
+
+        while (stack_pos && get_precedence(stack[stack_pos-1]) >= get_precedence(oper)) {
+            Token* the_oper = stack[--stack_pos];
+            expr_ty right = output[--output_pos];
+            expr_ty left = output[--output_pos];
+            expr_ty res = _Py_BinOp(left, get_operator(the_oper), right, EXTRA_EXPR(left, right));
+            output[output_pos++] = res;
+            result = res;
+        }
+        stack[stack_pos++] = oper;
+
+        output[output_pos++] = the_factor;
+    }
+
+    while (stack_pos) {
+        Token* the_oper = stack[--stack_pos];
+        expr_ty right = output[--output_pos];
+        expr_ty left = output[--output_pos];
+        expr_ty res = _Py_BinOp(left, get_operator(the_oper), right, EXTRA_EXPR(left, right));
+        output[output_pos++] = res;
+        result = res;
+    }
+
+    PyMem_Free(output);
+    PyMem_Free(stack);
+    return result;
+
+}

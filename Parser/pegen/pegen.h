@@ -76,6 +76,11 @@ typedef struct {
 } Parser;
 
 typedef struct {
+    Token *oper;
+    expr_ty factor;
+} MagicPair;
+
+typedef struct {
     cmpop_ty cmpop;
     expr_ty expr;
 } CmpopExprPair;
@@ -267,6 +272,9 @@ expr_ty _PyPegen_get_invalid_target(expr_ty e);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args);
 
+
+MagicPair * _PyPegen_magic_pair(Parser *p, Token* oper, expr_ty factor);
+expr_ty magic_action(Parser *p, expr_ty factor, asdl_seq *terms);
 
 void *_PyPegen_parse(Parser *);
 
