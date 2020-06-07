@@ -9084,7 +9084,7 @@ bitwise_or_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ bitwise_or[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "factor ((operator factor))+"));
-            _res = magic_action ( p , a , b );
+            _res = _PyPegen_operator_precedence_expr ( p , a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -23087,7 +23087,7 @@ _tmp_144_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_144[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "operator factor"));
-            _res = _PyPegen_magic_pair ( p , o , f );
+            _res = _PyPegen_operator_term_pair ( p , o , f );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -23416,6 +23416,32 @@ _tmp_150_rule(Parser *p)
   done:
     D(p->level--);
     return _res;
+}
+
+int _PyPegen_get_operator_precedence(Token* token) {
+    assert(token != NULL);
+    switch(token->type) {
+    case VBAR:
+        return 1;
+    case CIRCUMFLEX:
+        return 2;
+    case AMPER:
+        return 3;
+    case LEFTSHIFT:
+    case RIGHTSHIFT:
+        return 4;
+    case PLUS:
+    case MINUS:
+        return 5;
+    case STAR:
+    case SLASH:
+    case DOUBLESLASH:
+    case PERCENT:
+    case AT:
+        return 6;
+    default:
+        return -1;
+    }
 }
 
 void *

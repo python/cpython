@@ -2161,10 +2161,10 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
     );
 }
 
-MagicPair *
-_PyPegen_magic_pair(Parser *p, Token* oper, expr_ty factor)
+OperatorTermPair *
+_PyPegen_operator_term_pair(Parser *p, Token* oper, expr_ty factor)
 {
-    MagicPair *a = PyArena_Malloc(p->arena, sizeof(MagicPair));
+    OperatorTermPair *a = PyArena_Malloc(p->arena, sizeof(OperatorTermPair));
     if (!a) {
         return NULL;
     }
@@ -2173,31 +2173,8 @@ _PyPegen_magic_pair(Parser *p, Token* oper, expr_ty factor)
     return a;
 }
 
-static int get_precedence(Token* token) {
-    switch (token->type) {
-        case VBAR:
-            return 1;
-        case CIRCUMFLEX:
-            return 2;
-        case LEFTSHIFT:
-        case RIGHTSHIFT:
-            return 3;
-        case PLUS:
-        case MINUS:
-            return 4;
-        case STAR:
-        case SLASH:
-        case DOUBLESLASH:
-        case PERCENT:
-        case AT:
-            return 5;
-        default:
-            return -1;
-    }
-}
-
 static operator_ty
-get_operator(const Token *t)
+_PyPegen_get_binary_operator(const Token *t)
 {
     switch (t->type) {
         case VBAR:
@@ -2229,10 +2206,8 @@ get_operator(const Token *t)
     }
 }
 
-
-
 expr_ty
-magic_action(Parser *p, expr_ty factor, asdl_seq *terms) {
+_PyPegen_operator_precedence_expr(Parser *p, expr_ty factor, asdl_seq *terms) {
     expr_ty result = NULL;
 
     expr_ty *output= PyMem_Calloc(asdl_seq_LEN(terms) + 1, sizeof(expr_ty));
@@ -2243,19 +2218,24 @@ magic_action(Parser *p, expr_ty factor, asdl_seq *terms) {
     output[0] = factor;
     ssize_t output_pos = 1;
 
+#define _DO_PRECEDENCE_OPERATOR_REDUCTION_STEP do { \
+        operator_ty the_operator = _PyPegen_get_binary_operator(stack[--stack_pos]); \
+        expr_ty right = output[--output_pos]; \
+        expr_ty left = output[--output_pos]; \
+        expr_ty res = _Py_BinOp(left, the_operator, right, EXTRA_EXPR(left, right)); \
+        output[output_pos++] = res; \
+        result = res; \
+    } while(0) 
+
     for (ssize_t i=0; i<asdl_seq_LEN(terms); i++) {
 
-        MagicPair *pair = (MagicPair*)asdl_seq_GET(terms, i);
+        OperatorTermPair *pair = (OperatorTermPair*)asdl_seq_GET(terms, i);
         Token* oper = pair->oper;
         expr_ty the_factor = pair->factor;
 
-        while (stack_pos && get_precedence(stack[stack_pos-1]) >= get_precedence(oper)) {
-            Token* the_oper = stack[--stack_pos];
-            expr_ty right = output[--output_pos];
-            expr_ty left = output[--output_pos];
-            expr_ty res = _Py_BinOp(left, get_operator(the_oper), right, EXTRA_EXPR(left, right));
-            output[output_pos++] = res;
-            result = res;
+        while (stack_pos && _PyPegen_get_operator_precedence(stack[stack_pos-1]) >=
+               _PyPegen_get_operator_precedence(oper)) {
+            _DO_PRECEDENCE_OPERATOR_REDUCTION_STEP;
         }
         stack[stack_pos++] = oper;
 
@@ -2263,12 +2243,7 @@ magic_action(Parser *p, expr_ty factor, asdl_seq *terms) {
     }
 
     while (stack_pos) {
-        Token* the_oper = stack[--stack_pos];
-        expr_ty right = output[--output_pos];
-        expr_ty left = output[--output_pos];
-        expr_ty res = _Py_BinOp(left, get_operator(the_oper), right, EXTRA_EXPR(left, right));
-        output[output_pos++] = res;
-        result = res;
+        _DO_PRECEDENCE_OPERATOR_REDUCTION_STEP;
     }
 
     PyMem_Free(output);

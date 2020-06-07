@@ -28,6 +28,15 @@ _PyPegen_parse(Parser *p)
 
 // The end
 '''
+@operators '''
+left |
+left ^
+left &
+left << >>
+left + -
+left * / // % @
+'''
+
 file[mod_ty]: a=[statements] ENDMARKER { _PyPegen_make_module(p, a) }
 interactive[mod_ty]: a=statement_newline { Interactive(a, p->arena) }
 eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { Expression(a, p->arena) }
@@ -417,7 +426,7 @@ is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, I
 
 operator: '|' | '^' | '&' | '<<' | '>>' | '+' | '-' | '*' | '/' | '//' | '%' | '@'
 bitwise_or[expr_ty]:
-    | a=factor b=(o=operator f=factor {_PyPegen_magic_pair(p, o, f)})+ { magic_action(p, a, b) }
+    | a=factor b=(o=operator f=factor {_PyPegen_operator_term_pair(p, o, f)})+ { _PyPegen_operator_precedence_expr(p, a, b) }
     | factor
 factor[expr_ty] (memo):
     | '+' a=factor { _Py_UnaryOp(UAdd, a, EXTRA) }

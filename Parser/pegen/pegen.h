@@ -78,7 +78,7 @@ typedef struct {
 typedef struct {
     Token *oper;
     expr_ty factor;
-} MagicPair;
+} OperatorTermPair;
 
 typedef struct {
     cmpop_ty cmpop;
@@ -266,15 +266,16 @@ expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 int _PyPegen_check_barry_as_flufl(Parser *);
 mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
+OperatorTermPair *_PyPegen_operator_term_pair(Parser *p, Token* oper, expr_ty factor);
+expr_ty _PyPegen_operator_precedence_expr(Parser *p, expr_ty factor, asdl_seq *terms);
 
 // Error reporting helpers
 expr_ty _PyPegen_get_invalid_target(expr_ty e);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args);
 
-
-MagicPair * _PyPegen_magic_pair(Parser *p, Token* oper, expr_ty factor);
-expr_ty magic_action(Parser *p, expr_ty factor, asdl_seq *terms);
+// Automatically generated
+int _PyPegen_get_operator_precedence(Token* token);
 
 void *_PyPegen_parse(Parser *);
 
