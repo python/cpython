@@ -1075,11 +1075,11 @@ class _Unparser(NodeVisitor):
         if "\n" in escaped_string:
             possible_quotes = [q for q in possible_quotes if q in ('"""', "'''")]
         if not possible_quotes:
-            # If there aren't any possible quote_types, fallback to using repr
-            # on the original value. Try to use a quote_type from quote_types.
+            # If there aren't any possible_quotes, fallback to using repr
+            # on the original string. Try to use a quote from quote_types.
             string = repr(string)
-            quote_type = next((q for q in quote_types if string[0] in q), string[0])
-            return string[1:-1], [quote_type]
+            quote = next((q for q in quote_types if string[0] in q), string[0])
+            return string[1:-1], [quote]
         if escaped_string:
             # Sort so that we prefer '''"''' over """\""""
             possible_quotes.sort(key=lambda q: q[0] == escaped_string[-1])
