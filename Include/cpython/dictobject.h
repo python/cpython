@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct _dictkeysobject PyDictKeysObject;
 
 /* The ma_values pointer is NULL for a combined table
@@ -86,7 +82,3 @@ typedef struct {
 
 PyAPI_FUNC(PyObject *) _PyDictView_New(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
-
-#ifdef __cplusplus
-}
-#endif

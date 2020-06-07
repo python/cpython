@@ -29,7 +29,9 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     # test.support.script_helper.
     env = kw.setdefault('env', dict(os.environ))
     env['TERM'] = 'vt100'
-    return subprocess.Popen(cmd_line, executable=sys.executable,
+    return subprocess.Popen(cmd_line,
+                            executable=sys.executable,
+                            text=True,
                             stdin=subprocess.PIPE,
                             stdout=stdout, stderr=stderr,
                             **kw)
@@ -49,12 +51,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
             sys.exit(0)
         """
         user_input = dedent(user_input)
-        user_input = user_input.encode()
         p = spawn_repl()
         with SuppressCrashReport():
             p.stdin.write(user_input)
         output = kill_python(p)
-        self.assertIn(b'After the exception.', output)
+        self.assertIn('After the exception.', output)
         # Exit code 120: Py_FinalizeEx() failed to flush stdout and stderr.
         self.assertIn(p.returncode, (1, 120))
 
@@ -86,12 +87,21 @@ class TestInteractiveInterpreter(unittest.TestCase):
         </test>"""
         '''
         user_input = dedent(user_input)
-        user_input = user_input.encode()
         p = spawn_repl()
-        with SuppressCrashReport():
-            p.stdin.write(user_input)
+        p.stdin.write(user_input)
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
+
+    def test_close_stdin(self):
+        user_input = dedent('''
+            import os
+            print("before close")
+            os.close(0)
+        ''')
+        process = spawn_repl()
+        output = process.communicate(user_input)[0]
+        self.assertEqual(process.returncode, 0)
+        self.assertIn('before close', output)
 
 
 if __name__ == "__main__":

@@ -798,9 +798,10 @@ class uname_result(
         )
 
     def __getitem__(self, key):
-        if key == 5:
-            return self.processor
-        return super().__getitem__(key)
+        return tuple(iter(self))[key]
+
+    def __len__(self):
+        return len(tuple(iter(self)))
 
 
 _uname_cache = None

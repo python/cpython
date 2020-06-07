@@ -1789,6 +1789,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyCode_Type, "code");
     INIT_TYPE(&PyFrame_Type, "frame");
     INIT_TYPE(&PyCFunction_Type, "builtin function");
+    INIT_TYPE(&PyCMethod_Type, "builtin method");
     INIT_TYPE(&PyMethod_Type, "method");
     INIT_TYPE(&PyFunction_Type, "function");
     INIT_TYPE(&PyDictProxy_Type, "dict proxy");

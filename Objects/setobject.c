@@ -57,77 +57,43 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     setentry *table;
     setentry *entry;
-    size_t perturb;
+    size_t perturb = hash;
     size_t mask = so->mask;
     size_t i = (size_t)hash & mask; /* Unsigned for defined overflow behavior */
-    size_t j;
+    int probes;
     int cmp;
 
-    entry = &so->table[i];
-    if (entry->key == NULL)
-        return entry;
-
-    perturb = hash;
-
     while (1) {
-        if (entry->hash == hash) {
-            PyObject *startkey = entry->key;
-            /* startkey cannot be a dummy because the dummy hash field is -1 */
-            assert(startkey != dummy);
-            if (startkey == key)
+        entry = &so->table[i];
+        probes = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
+        do {
+            if (entry->hash == 0 && entry->key == NULL)
                 return entry;
-            if (PyUnicode_CheckExact(startkey)
-                && PyUnicode_CheckExact(key)
-                && _PyUnicode_EQ(startkey, key))
-                return entry;
-            table = so->table;
-            Py_INCREF(startkey);
-            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-            Py_DECREF(startkey);
-            if (cmp < 0)                                          /* unlikely */
-                return NULL;
-            if (table != so->table || entry->key != startkey)     /* unlikely */
-                return set_lookkey(so, key, hash);
-            if (cmp > 0)                                          /* likely */
-                return entry;
-            mask = so->mask;                 /* help avoid a register spill */
-        }
-
-        if (i + LINEAR_PROBES <= mask) {
-            for (j = 0 ; j < LINEAR_PROBES ; j++) {
-                entry++;
-                if (entry->hash == 0 && entry->key == NULL)
+            if (entry->hash == hash) {
+                PyObject *startkey = entry->key;
+                assert(startkey != dummy);
+                if (startkey == key)
                     return entry;
-                if (entry->hash == hash) {
-                    PyObject *startkey = entry->key;
-                    assert(startkey != dummy);
-                    if (startkey == key)
-                        return entry;
-                    if (PyUnicode_CheckExact(startkey)
-                        && PyUnicode_CheckExact(key)
-                        && _PyUnicode_EQ(startkey, key))
-                        return entry;
-                    table = so->table;
-                    Py_INCREF(startkey);
-                    cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-                    Py_DECREF(startkey);
-                    if (cmp < 0)
-                        return NULL;
-                    if (table != so->table || entry->key != startkey)
-                        return set_lookkey(so, key, hash);
-                    if (cmp > 0)
-                        return entry;
-                    mask = so->mask;
-                }
+                if (PyUnicode_CheckExact(startkey)
+                    && PyUnicode_CheckExact(key)
+                    && _PyUnicode_EQ(startkey, key))
+                    return entry;
+                table = so->table;
+                Py_INCREF(startkey);
+                cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                Py_DECREF(startkey);
+                if (cmp < 0)
+                    return NULL;
+                if (table != so->table || entry->key != startkey)
+                    return set_lookkey(so, key, hash);
+                if (cmp > 0)
+                    return entry;
+                mask = so->mask;
             }
-        }
-
+            entry++;
+        } while (probes--);
         perturb >>= PERTURB_SHIFT;
         i = (i * 5 + 1 + perturb) & mask;
-
-        entry = &so->table[i];
-        if (entry->key == NULL)
-            return entry;
     }
 }
 
@@ -141,7 +107,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t perturb;
     size_t mask;
     size_t i;                       /* Unsigned for defined overflow behavior */
-    size_t j;
+    int probes;
     int cmp;
 
     /* Pre-increment is necessary to prevent arbitrary code in the rich
@@ -152,75 +118,39 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 
     mask = so->mask;
     i = (size_t)hash & mask;
-
-    entry = &so->table[i];
-    if (entry->key == NULL)
-        goto found_unused;
-
     perturb = hash;
 
     while (1) {
-        if (entry->hash == hash) {
-            PyObject *startkey = entry->key;
-            /* startkey cannot be a dummy because the dummy hash field is -1 */
-            assert(startkey != dummy);
-            if (startkey == key)
-                goto found_active;
-            if (PyUnicode_CheckExact(startkey)
-                && PyUnicode_CheckExact(key)
-                && _PyUnicode_EQ(startkey, key))
-                goto found_active;
-            table = so->table;
-            Py_INCREF(startkey);
-            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-            Py_DECREF(startkey);
-            if (cmp > 0)                                          /* likely */
-                goto found_active;
-            if (cmp < 0)
-                goto comparison_error;
-            /* Continuing the search from the current entry only makes
-               sense if the table and entry are unchanged; otherwise,
-               we have to restart from the beginning */
-            if (table != so->table || entry->key != startkey)
-                goto restart;
-            mask = so->mask;                 /* help avoid a register spill */
-        }
-
-        if (i + LINEAR_PROBES <= mask) {
-            for (j = 0 ; j < LINEAR_PROBES ; j++) {
-                entry++;
-                if (entry->hash == 0 && entry->key == NULL)
-                    goto found_unused;
-                if (entry->hash == hash) {
-                    PyObject *startkey = entry->key;
-                    assert(startkey != dummy);
-                    if (startkey == key)
-                        goto found_active;
-                    if (PyUnicode_CheckExact(startkey)
-                        && PyUnicode_CheckExact(key)
-                        && _PyUnicode_EQ(startkey, key))
-                        goto found_active;
-                    table = so->table;
-                    Py_INCREF(startkey);
-                    cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-                    Py_DECREF(startkey);
-                    if (cmp > 0)
-                        goto found_active;
-                    if (cmp < 0)
-                        goto comparison_error;
-                    if (table != so->table || entry->key != startkey)
-                        goto restart;
-                    mask = so->mask;
-                }
+        entry = &so->table[i];
+        probes = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
+        do {
+            if (entry->hash == 0 && entry->key == NULL)
+                goto found_unused;
+            if (entry->hash == hash) {
+                PyObject *startkey = entry->key;
+                assert(startkey != dummy);
+                if (startkey == key)
+                    goto found_active;
+                if (PyUnicode_CheckExact(startkey)
+                    && PyUnicode_CheckExact(key)
+                    && _PyUnicode_EQ(startkey, key))
+                    goto found_active;
+                table = so->table;
+                Py_INCREF(startkey);
+                cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                Py_DECREF(startkey);
+                if (cmp > 0)
+                    goto found_active;
+                if (cmp < 0)
+                    goto comparison_error;
+                if (table != so->table || entry->key != startkey)
+                    goto restart;
+                mask = so->mask;
             }
-        }
-
+            entry++;
+        } while (probes--);
         perturb >>= PERTURB_SHIFT;
         i = (i * 5 + 1 + perturb) & mask;
-
-        entry = &so->table[i];
-        if (entry->key == NULL)
-            goto found_unused;
     }
 
   found_unused:

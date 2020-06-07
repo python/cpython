@@ -1249,31 +1249,31 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 {
+    _PyFrame_Fini(tstate);
+    _PyTuple_Fini(tstate);
+    _PyList_Fini(tstate);
     if (is_main_interp) {
-        /* Sundry finalizers */
-        _PyFrame_Fini();
-        _PyTuple_Fini();
-        _PyList_Fini();
         _PySet_Fini();
         _PyBytes_Fini();
     }
 
     _PyLong_Fini(tstate);
+    _PyFloat_Fini(tstate);
 
     if (is_main_interp) {
-        _PyFloat_Fini();
         _PyDict_Fini();
-        _PySlice_Fini();
     }
 
+    _PySlice_Fini(tstate);
     _PyWarnings_Fini(tstate->interp);
 
     if (is_main_interp) {
         _Py_HashRandomization_Fini();
         _PyArg_Fini();
-        _PyAsyncGen_Fini();
-        _PyContext_Fini();
     }
+
+    _PyAsyncGen_Fini(tstate);
+    _PyContext_Fini(tstate);
 
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini(tstate);
@@ -1297,6 +1297,8 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyGC_CollectNoFail();
     }
 
+    _PyGC_Fini(tstate);
+
     finalize_interp_types(tstate, is_main_interp);
 
     if (is_main_interp) {
@@ -1310,8 +1312,6 @@ finalize_interp_clear(PyThreadState *tstate)
 
         _PyExc_Fini();
     }
-
-    _PyGC_Fini(tstate);
 }
 
 
@@ -1561,9 +1561,13 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
 
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *config;
+#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     if (save_tstate != NULL) {
         config = _PyInterpreterState_GetConfig(save_tstate->interp);
-    } else {
+    }
+    else
+#endif
+    {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = PyInterpreterState_Main();
         config = _PyInterpreterState_GetConfig(main_interp);
@@ -1575,6 +1579,11 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
     }
     interp->config._isolated_interpreter = isolated_subinterpreter;
 
+    status = init_interp_create_gil(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
+
     status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
@@ -1583,11 +1592,6 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
     status = init_interp_main(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
-    }
-
-    status = init_interp_create_gil(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
     }
 
     *tstate_p = tstate;

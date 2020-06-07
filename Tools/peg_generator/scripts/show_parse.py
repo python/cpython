@@ -30,6 +30,8 @@ import os
 import sys
 import tempfile
 
+import _peg_parser
+
 from typing import List
 
 sys.path.insert(0, os.getcwd())
@@ -39,7 +41,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-d", "--diff", action="store_true", help="show diff between grammar and ast (requires -g)"
 )
-parser.add_argument("-g", "--grammar-file", help="grammar to use (default: use the ast module)")
+parser.add_argument(
+    "-p",
+    "--parser",
+    choices=["new", "old"],
+    default="new",
+    help="choose the parser to use"
+)
 parser.add_argument(
     "-m",
     "--multiline",
@@ -72,7 +80,7 @@ def diff_trees(a: ast.AST, b: ast.AST, verbose: bool = False) -> List[str]:
 
 
 def show_parse(source: str, verbose: bool = False) -> str:
-    tree = ast.parse(source)
+    tree = _peg_parser.parse_string(source, oldparser=True)
     return format_tree(tree, verbose).rstrip("\n")
 
 
@@ -82,25 +90,18 @@ def print_parse(source: str, verbose: bool = False) -> None:
 
 def main() -> None:
     args = parser.parse_args()
-    if args.diff and not args.grammar_file:
-        parser.error("-d/--diff requires -g/--grammar-file")
+    new_parser = args.parser == "new"
     if args.multiline:
         sep = "\n"
     else:
         sep = " "
     program = sep.join(args.program)
-    if args.grammar_file:
-        sys.path.insert(0, os.curdir)
-        from pegen.build import build_parser_and_generator
-
-        build_parser_and_generator(args.grammar_file, "peg_parser/parse.c", compile_extension=True)
-        from pegen.parse import parse_string  # type: ignore[import]
-
-        tree = parse_string(program, mode=1)
+    if new_parser:
+        tree = _peg_parser.parse_string(program)
 
         if args.diff:
-            a = tree
-            b = ast.parse(program)
+            a = _peg_parser.parse_string(program, oldparser=True)
+            b = tree
             diff = diff_trees(a, b, args.verbose)
             if diff:
                 for line in diff:
@@ -108,11 +109,11 @@ def main() -> None:
             else:
                 print("# Trees are the same")
         else:
-            print(f"# Parsed using {args.grammar_file}")
+            print("# Parsed using the new parser")
             print(format_tree(tree, args.verbose))
     else:
-        tree = ast.parse(program)
-        print("# Parse using ast.parse()")
+        tree = _peg_parser.parse_string(program, oldparser=True)
+        print("# Parsed using the old parser")
         print(format_tree(tree, args.verbose))
 
 

@@ -397,7 +397,9 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    int len = PyBytes_GET_SIZE(f->f_code->co_code)/sizeof(_Py_CODEUNIT);
+    int len = Py_SAFE_DOWNCAST(
+        PyBytes_GET_SIZE(f->f_code->co_code)/sizeof(_Py_CODEUNIT),
+        Py_ssize_t, int);
     int *lines = marklines(f->f_code, len);
     if (lines == NULL) {
         return -1;
@@ -556,31 +558,28 @@ static PyGetSetDef frame_getsetlist[] = {
    free_list.  Else programs creating lots of cyclic trash involving
    frames could provoke free_list into growing without bound.
 */
-
-static PyFrameObject *free_list = NULL;
-static int numfree = 0;         /* number of frames currently in free_list */
 /* max value for numfree */
 #define PyFrame_MAXFREELIST 200
 
 static void _Py_HOT_FUNCTION
 frame_dealloc(PyFrameObject *f)
 {
-    PyObject **p, **valuestack;
-    PyCodeObject *co;
-
-    if (_PyObject_GC_IS_TRACKED(f))
+    if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
+    }
 
     Py_TRASHCAN_SAFE_BEGIN(f)
     /* Kill all local variables */
-    valuestack = f->f_valuestack;
-    for (p = f->f_localsplus; p < valuestack; p++)
+    PyObject **valuestack = f->f_valuestack;
+    for (PyObject **p = f->f_localsplus; p < valuestack; p++) {
         Py_CLEAR(*p);
+    }
 
     /* Free stack */
     if (f->f_stacktop != NULL) {
-        for (p = valuestack; p < f->f_stacktop; p++)
+        for (PyObject **p = valuestack; p < f->f_stacktop; p++) {
             Py_XDECREF(*p);
+        }
     }
 
     Py_XDECREF(f->f_back);
@@ -589,16 +588,22 @@ frame_dealloc(PyFrameObject *f)
     Py_CLEAR(f->f_locals);
     Py_CLEAR(f->f_trace);
 
-    co = f->f_code;
-    if (co->co_zombieframe == NULL)
+    PyCodeObject *co = f->f_code;
+    if (co->co_zombieframe == NULL) {
         co->co_zombieframe = f;
-    else if (numfree < PyFrame_MAXFREELIST) {
-        ++numfree;
-        f->f_back = free_list;
-        free_list = f;
     }
-    else
-        PyObject_GC_Del(f);
+    else {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        struct _Py_frame_state *state = &interp->frame;
+        if (state->numfree < PyFrame_MAXFREELIST) {
+            ++state->numfree;
+            f->f_back = state->free_list;
+            state->free_list = f;
+        }
+        else {
+            PyObject_GC_Del(f);
+        }
+    }
 
     Py_DECREF(co);
     Py_TRASHCAN_SAFE_END(f)
@@ -759,15 +764,105 @@ PyTypeObject PyFrame_Type = {
 
 _Py_IDENTIFIER(__builtins__);
 
+static inline PyFrameObject*
+frame_alloc(PyCodeObject *code)
+{
+    PyFrameObject *f;
+
+    f = code->co_zombieframe;
+    if (f != NULL) {
+        code->co_zombieframe = NULL;
+        _Py_NewReference((PyObject *)f);
+        assert(f->f_code == code);
+        return f;
+    }
+
+    Py_ssize_t ncells = PyTuple_GET_SIZE(code->co_cellvars);
+    Py_ssize_t nfrees = PyTuple_GET_SIZE(code->co_freevars);
+    Py_ssize_t extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_frame_state *state = &interp->frame;
+    if (state->free_list == NULL)
+    {
+        f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, extras);
+        if (f == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        assert(state->numfree > 0);
+        --state->numfree;
+        f = state->free_list;
+        state->free_list = state->free_list->f_back;
+        if (Py_SIZE(f) < extras) {
+            PyFrameObject *new_f = PyObject_GC_Resize(PyFrameObject, f, extras);
+            if (new_f == NULL) {
+                PyObject_GC_Del(f);
+                return NULL;
+            }
+            f = new_f;
+        }
+        _Py_NewReference((PyObject *)f);
+    }
+
+    f->f_code = code;
+    extras = code->co_nlocals + ncells + nfrees;
+    f->f_valuestack = f->f_localsplus + extras;
+    for (Py_ssize_t i=0; i<extras; i++) {
+        f->f_localsplus[i] = NULL;
+    }
+    f->f_locals = NULL;
+    f->f_trace = NULL;
+    return f;
+}
+
+
+static inline PyObject *
+frame_get_builtins(PyFrameObject *back, PyObject *globals)
+{
+    PyObject *builtins;
+
+    if (back != NULL && back->f_globals == globals) {
+        /* If we share the globals, we share the builtins.
+           Save a lookup and a call. */
+        builtins = back->f_builtins;
+        assert(builtins != NULL);
+        Py_INCREF(builtins);
+        return builtins;
+    }
+
+    builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
+    if (builtins != NULL && PyModule_Check(builtins)) {
+        builtins = PyModule_GetDict(builtins);
+        assert(builtins != NULL);
+    }
+    if (builtins != NULL) {
+        Py_INCREF(builtins);
+        return builtins;
+    }
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    /* No builtins! Make up a minimal one.
+       Give them 'None', at least. */
+    builtins = PyDict_New();
+    if (builtins == NULL) {
+        return NULL;
+    }
+    if (PyDict_SetItemString(builtins, "None", Py_None) < 0) {
+        Py_DECREF(builtins);
+        return NULL;
+    }
+    return builtins;
+}
+
+
 PyFrameObject* _Py_HOT_FUNCTION
 _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
                      PyObject *globals, PyObject *locals)
 {
-    PyFrameObject *back = tstate->frame;
-    PyFrameObject *f;
-    PyObject *builtins;
-    Py_ssize_t i;
-
 #ifdef Py_DEBUG
     if (code == NULL || globals == NULL || !PyDict_Check(globals) ||
         (locals != NULL && !PyMapping_Check(locals))) {
@@ -775,82 +870,19 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
         return NULL;
     }
 #endif
-    if (back == NULL || back->f_globals != globals) {
-        builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
-        if (builtins) {
-            if (PyModule_Check(builtins)) {
-                builtins = PyModule_GetDict(builtins);
-                assert(builtins != NULL);
-            }
-        }
-        if (builtins == NULL) {
-            if (PyErr_Occurred()) {
-                return NULL;
-            }
-            /* No builtins!              Make up a minimal one
-               Give them 'None', at least. */
-            builtins = PyDict_New();
-            if (builtins == NULL ||
-                PyDict_SetItemString(
-                    builtins, "None", Py_None) < 0)
-                return NULL;
-        }
-        else
-            Py_INCREF(builtins);
 
+    PyFrameObject *back = tstate->frame;
+    PyObject *builtins = frame_get_builtins(back, globals);
+    if (builtins == NULL) {
+        return NULL;
     }
-    else {
-        /* If we share the globals, we share the builtins.
-           Save a lookup and a call. */
-        builtins = back->f_builtins;
-        assert(builtins != NULL);
-        Py_INCREF(builtins);
-    }
-    if (code->co_zombieframe != NULL) {
-        f = code->co_zombieframe;
-        code->co_zombieframe = NULL;
-        _Py_NewReference((PyObject *)f);
-        assert(f->f_code == code);
-    }
-    else {
-        Py_ssize_t extras, ncells, nfrees;
-        ncells = PyTuple_GET_SIZE(code->co_cellvars);
-        nfrees = PyTuple_GET_SIZE(code->co_freevars);
-        extras = code->co_stacksize + code->co_nlocals + ncells +
-            nfrees;
-        if (free_list == NULL) {
-            f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type,
-            extras);
-            if (f == NULL) {
-                Py_DECREF(builtins);
-                return NULL;
-            }
-        }
-        else {
-            assert(numfree > 0);
-            --numfree;
-            f = free_list;
-            free_list = free_list->f_back;
-            if (Py_SIZE(f) < extras) {
-                PyFrameObject *new_f = PyObject_GC_Resize(PyFrameObject, f, extras);
-                if (new_f == NULL) {
-                    PyObject_GC_Del(f);
-                    Py_DECREF(builtins);
-                    return NULL;
-                }
-                f = new_f;
-            }
-            _Py_NewReference((PyObject *)f);
-        }
 
-        f->f_code = code;
-        extras = code->co_nlocals + ncells + nfrees;
-        f->f_valuestack = f->f_localsplus + extras;
-        for (i=0; i<extras; i++)
-            f->f_localsplus[i] = NULL;
-        f->f_locals = NULL;
-        f->f_trace = NULL;
+    PyFrameObject *f = frame_alloc(code);
+    if (f == NULL) {
+        Py_DECREF(builtins);
+        return NULL;
     }
+
     f->f_stacktop = f->f_valuestack;
     f->f_builtins = builtins;
     Py_XINCREF(back);
@@ -1140,30 +1172,33 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 
 /* Clear out the free list */
 void
-_PyFrame_ClearFreeList(void)
+_PyFrame_ClearFreeList(PyThreadState *tstate)
 {
-    while (free_list != NULL) {
-        PyFrameObject *f = free_list;
-        free_list = free_list->f_back;
+    struct _Py_frame_state *state = &tstate->interp->frame;
+    while (state->free_list != NULL) {
+        PyFrameObject *f = state->free_list;
+        state->free_list = state->free_list->f_back;
         PyObject_GC_Del(f);
-        --numfree;
+        --state->numfree;
     }
-    assert(numfree == 0);
+    assert(state->numfree == 0);
 }
 
 void
-_PyFrame_Fini(void)
+_PyFrame_Fini(PyThreadState *tstate)
 {
-    _PyFrame_ClearFreeList();
+    _PyFrame_ClearFreeList(tstate);
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyFrame_DebugMallocStats(FILE *out)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_frame_state *state = &interp->frame;
     _PyDebugAllocatorStats(out,
                            "free PyFrameObject",
-                           numfree, sizeof(PyFrameObject));
+                           state->numfree, sizeof(PyFrameObject));
 }
 
 

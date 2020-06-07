@@ -176,20 +176,15 @@
     <Warning Text="Pegen updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedParse)' != ''" />
   </Target>
   <Target Name="_RegenAST_H" AfterTargets="_RegenGrammar">
-    <!-- Regenerate Include/Python-ast.h using Parser/asdl_c.py -h -->
-    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(PySourcePath)Parser\asdl_c.py&quot; -h &quot;$(IntDir)Python-ast.h&quot; &quot;$(PySourcePath)Parser\Python.asdl&quot;" />
+    <!-- Regenerate Include/Python-ast.h and Python/Python-ast.c using Parser/asdl_c.py -h -->
+    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(PySourcePath)Parser\asdl_c.py&quot; &quot;$(PySourcePath)Parser\Python.asdl&quot; -H &quot;$(IntDir)Python-ast.h&quot; -C &quot;$(IntDir)Python-ast.c&quot;" />
     <Copy SourceFiles="$(IntDir)Python-ast.h" DestinationFiles="$(PySourcePath)Include\Python-ast.h">
       <Output TaskParameter="CopiedFiles" ItemName="_UpdatedH" />
     </Copy>
-    <Warning Text="Python-ast.h updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' and '@(_UpdatedC)' != ''" />
-  </Target>
-  <Target Name="_RegenAST_C" AfterTargets="_RegenGrammar">
-    <!-- Regenerate Python/Python-ast.c using Parser/asdl_c.py -c -->
-    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(PySourcePath)Parser\asdl_c.py&quot; -c &quot;$(IntDir)Python-ast.c&quot; &quot;$(PySourcePath)Parser\Python.asdl&quot;" />
     <Copy SourceFiles="$(IntDir)Python-ast.c" DestinationFiles="$(PySourcePath)Python\Python-ast.c">
-      <Output TaskParameter="CopiedFiles" ItemName="_UpdatedH" />
+      <Output TaskParameter="CopiedFiles" ItemName="_UpdatedC" />
     </Copy>
-    <Warning Text="Python-ast.c updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' and '@(_UpdatedC)' != ''" />
+    <Warning Text="ASDL is updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' and '@(_UpdatedC)' != ''" />
   </Target>
   <Target Name="_RegenOpcodes" AfterTargets="_RegenAST_C">
     <!-- Regenerate Include/opcode.h from Lib/opcode.py using Tools/scripts/generate_opcode_h.py-->

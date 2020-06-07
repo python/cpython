@@ -63,10 +63,9 @@ SyntaxError: cannot assign to __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
 
-# Pegen does not support this yet
-# >>> del f()
-# Traceback (most recent call last):
-# SyntaxError: cannot delete function call
+>>> del f()
+Traceback (most recent call last):
+SyntaxError: cannot delete function call
 
 >>> a + 1 = 2
 Traceback (most recent call last):
@@ -101,34 +100,53 @@ expression inside that contain should still cause a syntax error.
 This test just checks a couple of cases rather than enumerating all of
 them.
 
-# All of the following also produce different error messages with pegen
-# >>> (a, "b", c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to literal
+>>> (a, "b", c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to literal
 
-# >>> (a, True, c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to True
+>>> (a, True, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
 
 >>> (a, __debug__, c) = (1, 2, 3)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
-# >>> (a, *True, c) = (1, 2, 3)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to True
+>>> (a, *True, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
 
 >>> (a, *__debug__, c) = (1, 2, 3)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
-# >>> [a, b, c + 1] = [1, 2, 3]
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to operator
+>>> [a, b, c + 1] = [1, 2, 3]
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
+
+>>> [a, b[1], c + 1] = [1, 2, 3]
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
+
+>>> [a, b.c.d, c + 1] = [1, 2, 3]
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
 
 >>> a if 1 else b = 1
 Traceback (most recent call last):
 SyntaxError: cannot assign to conditional expression
+
+>>> a, b += 1, 2
+Traceback (most recent call last):
+SyntaxError: 'tuple' is an illegal expression for augmented assignment
+
+>>> (a, b) += 1, 2
+Traceback (most recent call last):
+SyntaxError: 'tuple' is an illegal expression for augmented assignment
+
+>>> [a, b] += 1, 2
+Traceback (most recent call last):
+SyntaxError: 'list' is an illegal expression for augmented assignment
 
 From compiler_complex_args():
 
@@ -160,6 +178,16 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+>>> import ast; ast.parse('''
+... def f(
+...     *, # type: int
+...     a, # type: int
+... ):
+...     pass
+... ''', type_comments=True)
+Traceback (most recent call last):
+SyntaxError: bare * has associated type comment
+
 
 From ast_for_funcdef():
 
@@ -188,11 +216,9 @@ SyntaxError: Generator expression must be parenthesized
 >>> f(x for x in L, **{})
 Traceback (most recent call last):
 SyntaxError: Generator expression must be parenthesized
-
-# >>> f(L, x for x in L)
-# Traceback (most recent call last):
-# SyntaxError: Generator expression must be parenthesized
-
+>>> f(L, x for x in L)
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized
 >>> f(x for x in L, y for y in L)
 Traceback (most recent call last):
 SyntaxError: Generator expression must be parenthesized
@@ -335,16 +361,16 @@ More set_context():
 
 >>> (x for x in x) += 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to generator expression
+SyntaxError: 'generator expression' is an illegal expression for augmented assignment
 >>> None += 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to None
+SyntaxError: 'None' is an illegal expression for augmented assignment
 >>> __debug__ += 1
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 >>> f() += 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to function call
+SyntaxError: 'function call' is an illegal expression for augmented assignment
 
 
 Test continue in finally in weird combinations.
@@ -613,6 +639,14 @@ SyntaxError: cannot assign to f-string expression
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression
 
+>>> from t import x,
+Traceback (most recent call last):
+SyntaxError: trailing comma not allowed without surrounding parentheses
+
+>>> from t import x,y,
+Traceback (most recent call last):
+SyntaxError: trailing comma not allowed without surrounding parentheses
+
 Corner-cases that used to fail to raise the correct error:
 
     >>> def f(*, x=lambda __debug__:0): pass
@@ -641,6 +675,9 @@ Corner-cases that used to crash:
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
+    >>> import ä £
+    Traceback (most recent call last):
+    SyntaxError: invalid character '£' (U+00A3)
 """
 
 import re
@@ -665,7 +702,7 @@ class SyntaxTestCase(unittest.TestCase):
                 self.fail("SyntaxError is not a %s" % subclass.__name__)
             mo = re.search(errtext, str(err))
             if mo is None:
-                self.fail("SyntaxError did not contain '%r'" % (errtext,))
+                self.fail("SyntaxError did not contain %r" % (errtext,))
             self.assertEqual(err.filename, filename)
             if lineno is not None:
                 self.assertEqual(err.lineno, lineno)
@@ -677,10 +714,37 @@ class SyntaxTestCase(unittest.TestCase):
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
 
-    @support.skip_if_new_parser("Pegen does not produce a specialized error "
-                                "message yet")
+    @unittest.skipIf(support.use_old_parser(), "The old parser cannot generate these error messages")
     def test_assign_del(self):
-        self._check_error("del f()", "delete")
+        self._check_error("del (,)", "invalid syntax")
+        self._check_error("del 1", "delete literal")
+        self._check_error("del (1, 2)", "delete literal")
+        self._check_error("del None", "delete None")
+        self._check_error("del *x", "delete starred")
+        self._check_error("del (*x)", "delete starred")
+        self._check_error("del (*x,)", "delete starred")
+        self._check_error("del [*x,]", "delete starred")
+        self._check_error("del f()", "delete function call")
+        self._check_error("del f(a, b)", "delete function call")
+        self._check_error("del o.f()", "delete function call")
+        self._check_error("del a[0]()", "delete function call")
+        self._check_error("del x, f()", "delete function call")
+        self._check_error("del f(), x", "delete function call")
+        self._check_error("del [a, b, ((c), (d,), e.f())]", "delete function call")
+        self._check_error("del (a if True else b)", "delete conditional")
+        self._check_error("del +a", "delete operator")
+        self._check_error("del a, +b", "delete operator")
+        self._check_error("del a + b", "delete operator")
+        self._check_error("del (a + b, c)", "delete operator")
+        self._check_error("del (c[0], a + b)", "delete operator")
+        self._check_error("del a.b.c + 2", "delete operator")
+        self._check_error("del a.b.c[0] + 2", "delete operator")
+        self._check_error("del (a, b, (c, d.e.f + 2))", "delete operator")
+        self._check_error("del [a, b, (c, d.e.f[0] + 2)]", "delete operator")
+        self._check_error("del (a := 5)", "delete named expression")
+        # We don't have a special message for this, but make sure we don't
+        # report "cannot delete name"
+        self._check_error("del a += b", "invalid syntax")
 
     def test_global_param_err_first(self):
         source = """if 1:

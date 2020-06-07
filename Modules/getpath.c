@@ -1296,8 +1296,8 @@ calculate_zip_path(PyCalculatePath *calculate)
 {
     PyStatus res;
 
-    /* Path: <PLATLIBDIR> / "python00.zip" */
-    wchar_t *path = joinpath2(calculate->platlibdir_macro, L"python00.zip");
+    /* Path: <PLATLIBDIR> / "pythonXY.zip" */
+    wchar_t *path = joinpath2(calculate->platlibdir_macro, L"python" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) L".zip");
     if (path == NULL) {
         return _PyStatus_NO_MEMORY();
     }
@@ -1305,7 +1305,7 @@ calculate_zip_path(PyCalculatePath *calculate)
     if (calculate->prefix_found > 0) {
         /* Use the reduced prefix returned by Py_GetPrefix()
 
-           Path: <basename(basename(prefix))> / <PLATLIBDIR> / "python00.zip" */
+           Path: <basename(basename(prefix))> / <PLATLIBDIR> / "pythonXY.zip" */
         wchar_t *parent = _PyMem_RawWcsdup(calculate->prefix);
         if (parent == NULL) {
             res = _PyStatus_NO_MEMORY();
@@ -1324,11 +1324,6 @@ calculate_zip_path(PyCalculatePath *calculate)
         res = _PyStatus_NO_MEMORY();
         goto done;
     }
-
-    /* Replace "00" with version */
-    size_t len = wcslen(calculate->zip_path);
-    calculate->zip_path[len - 6] = VERSION[0];
-    calculate->zip_path[len - 5] = VERSION[2];
 
     res = _PyStatus_OK();
 

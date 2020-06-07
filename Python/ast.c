@@ -22,6 +22,25 @@ static int validate_stmt(stmt_ty);
 static int validate_expr(expr_ty, expr_context_ty);
 
 static int
+validate_name(PyObject *name)
+{
+    assert(PyUnicode_Check(name));
+    static const char * const forbidden[] = {
+        "None",
+        "True",
+        "False",
+        NULL
+    };
+    for (int i = 0; forbidden[i] != NULL; i++) {
+        if (_PyUnicode_EqualToASCIIString(name, forbidden[i])) {
+            PyErr_Format(PyExc_ValueError, "Name node can't be used with '%s' constant", forbidden[i]);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
 validate_comprehension(asdl_seq *gens)
 {
     Py_ssize_t i;
@@ -173,6 +192,9 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         actual_ctx = exp->v.Starred.ctx;
         break;
     case Name_kind:
+        if (!validate_name(exp->v.Name.id)) {
+            return 0;
+        }
         actual_ctx = exp->v.Name.ctx;
         break;
     case List_kind:
@@ -3164,10 +3186,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         expr1 = ast_for_testlist(c, ch);
         if (!expr1)
             return NULL;
-        if(!set_context(c, expr1, Store, ch))
-            return NULL;
-        /* set_context checks that most expressions are not the left side.
-          Augmented assignments can only have a name, a subscript, or an
+        /* Augmented assignments can only have a name, a subscript, or an
           attribute on the left, though, so we have to explicitly check for
           those. */
         switch (expr1->kind) {
@@ -3176,8 +3195,14 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
             case Subscript_kind:
                 break;
             default:
-                ast_error(c, ch, "illegal expression for augmented assignment");
+                ast_error(c, ch, "'%s' is an illegal expression for augmented assignment",
+                          get_expr_name(expr1));
                 return NULL;
+        }
+
+        /* set_context checks that most expressions are not the left side. */
+        if(!set_context(c, expr1, Store, ch)) {
+            return NULL;
         }
 
         ch = CHILD(n, 2);
@@ -5066,6 +5091,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     /* Check for =, which puts the text value of the expression in
        expr_text. */
     if (**str == '=') {
+        if (c->c_feature_version < 8) {
+            ast_error(c, n,
+                      "f-string: self documenting expressions are "
+                      "only supported in Python 3.8 and greater");
+            goto error;
+        }
         *str += 1;
 
         /* Skip over ASCII whitespace.  No need to test for end of string

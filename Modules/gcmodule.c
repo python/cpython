@@ -1023,15 +1023,15 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
  * Clearing the free lists may give back memory to the OS earlier.
  */
 static void
-clear_freelists(void)
+clear_freelists(PyThreadState *tstate)
 {
-    _PyFrame_ClearFreeList();
-    _PyTuple_ClearFreeList();
-    _PyFloat_ClearFreeList();
-    _PyList_ClearFreeList();
+    _PyFrame_ClearFreeList(tstate);
+    _PyTuple_ClearFreeList(tstate);
+    _PyFloat_ClearFreeList(tstate);
+    _PyList_ClearFreeList(tstate);
     _PyDict_ClearFreeList();
-    _PyAsyncGen_ClearFreeLists();
-    _PyContext_ClearFreeList();
+    _PyAsyncGen_ClearFreeLists(tstate);
+    _PyContext_ClearFreeList(tstate);
 }
 
 // Show stats for objects in each generations
@@ -1181,6 +1181,14 @@ collect(PyThreadState *tstate, int generation,
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
 
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    if (tstate->interp->config._isolated_interpreter) {
+        // bpo-40533: The garbage collector must not be run on parallel on
+        // Python objects shared by multiple interpreters.
+        return 0;
+    }
+#endif
+
     if (gcstate->debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
@@ -1297,7 +1305,7 @@ collect(PyThreadState *tstate, int generation,
     /* Clear free list only during the collection of the highest
      * generation */
     if (generation == NUM_GENERATIONS-1) {
-        clear_freelists();
+        clear_freelists(tstate);
     }
 
     if (_PyErr_Occurred(tstate)) {

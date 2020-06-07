@@ -30,6 +30,7 @@ from io import BytesIO
 
 import unittest
 from test import support
+from test.support import threading_helper
 
 
 class NoLogRequestHandler:
@@ -64,7 +65,7 @@ class TestServerThread(threading.Thread):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self._threads = support.threading_setup()
+        self._threads = threading_helper.threading_setup()
         os.environ = support.EnvironmentVarGuard()
         self.server_started = threading.Event()
         self.thread = TestServerThread(self, self.request_handler)
@@ -75,7 +76,7 @@ class BaseTestCase(unittest.TestCase):
         self.thread.stop()
         self.thread = None
         os.environ.__exit__()
-        support.threading_cleanup(*self._threads)
+        threading_helper.threading_cleanup(*self._threads)
 
     def request(self, uri, method='GET', body=None, headers={}):
         self.connection = http.client.HTTPConnection(self.HOST, self.PORT)

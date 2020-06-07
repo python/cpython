@@ -1,0 +1,174 @@
+****************************
+  What's New In Python 3.10
+****************************
+
+:Release: |release|
+:Date: |today|
+
+.. Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the bug/patch number as a comment:
+
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer in :issue:`12345`.)
+
+   This saves the maintainer the effort of going through the Mercurial log
+   when researching a change.
+
+This article explains the new features in Python 3.10, compared to 3.9.
+
+For full details, see the :ref:`changelog <changelog>`.
+
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.10 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
+Summary -- Release highlights
+=============================
+
+.. This section singles out the most important changes in Python 3.10.
+   Brevity is key.
+
+
+.. PEP-sized items next.
+
+
+
+New Features
+============
+
+* The :class:`int` type has a new method :meth:`int.bit_count`, returning the
+  number of ones in the binary expansion of a given integer, also known
+  as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
+
+
+Other Language Changes
+======================
+
+* Builtin and extension functions that take integer arguments no longer accept
+  :class:`~decimal.Decimal`\ s, :class:`~fractions.Fraction`\ s and other
+  objects that can be converted to integers only with a loss (e.g. that have
+  the :meth:`~object.__int__` method but do not have the
+  :meth:`~object.__index__` method).
+  (Contributed by Serhiy Storchaka in :issue:`37999`.)
+
+
+New Modules
+===========
+
+* None yet.
+
+
+Improved Modules
+================
+
+Optimizations
+=============
+
+
+Deprecated
+==========
+
+
+Removed
+=======
+
+
+Porting to Python 3.10
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+
+
+Build Changes
+=============
+
+
+C API Changes
+=============
+
+New Features
+------------
+
+  The result of :c:func:`PyNumber_Index` now always has exact type :class:`int`.
+  Previously, the result could have been an instance of a subclass of ``int``.
+  (Contributed by Serhiy Storchaka in :issue:`40792`.)
+
+
+Porting to Python 3.10
+----------------------
+
+* Since :c:func:`Py_TYPE()` is changed to the inline static function,
+  ``Py_TYPE(obj) = new_type`` must be replaced with ``Py_SET_TYPE(obj, new_type)``:
+  see :c:func:`Py_SET_TYPE()` (available since Python 3.9). For backward
+  compatibility, this macro can be used::
+
+      #if PY_VERSION_HEX < 0x030900A4
+      #  define Py_SET_TYPE(obj, type) ((Py_TYPE(obj) = (type)), (void)0)
+      #endif
+
+  (Contributed by Dong-hee Na in :issue:`39573`.)
+
+* Since :c:func:`Py_REFCNT()` is changed to the inline static function,
+  ``Py_REFCNT(obj) = new_refcnt`` must be replaced with ``Py_SET_REFCNT(obj, new_refcnt)``:
+  see :c:func:`Py_SET_REFCNT()` (available since Python 3.9). For backward
+  compatibility, this macro can be used::
+
+      #if PY_VERSION_HEX < 0x030900A4
+      #  define Py_SET_REFCNT(obj, refcnt) ((Py_REFCNT(obj) = (refcnt)), (void)0)
+      #endif
+
+  (Contributed by Victor Stinner in :issue:`39573`.)
+
+* Since :c:func:`Py_SIZE()` is changed to the inline static function,
+  ``Py_SIZE(obj) = new_size`` must be replaced with ``Py_SET_SIZE(obj, new_size)``:
+  see :c:func:`Py_SET_SIZE()` (available since Python 3.9). For backward
+  compatibility, this macro can be used::
+
+      #if PY_VERSION_HEX < 0x030900A4
+      #  define Py_SET_SIZE(obj, size) ((Py_SIZE(obj) = (size)), (void)0)
+      #endif
+
+  (Contributed by Victor Stinner in :issue:`39573`.)
+
+* Calling :c:func:`PyDict_GetItem` without :term:`GIL` held had been allowed
+  for historical reason. It is no longer allowed.
+  (Contributed by Victor Stinner in :issue:`40839`.)
+
+Removed
+-------
