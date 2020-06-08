@@ -135,24 +135,32 @@ _Py_popcount32(uint32_t x)
 // integer k such that x < 2**k. Equivalent to floor(log2(x)) + 1 for x != 0.
 static inline int
 _Py_bit_length(unsigned long x) {
-    if (!x) {
+    if (x == 0) {
         return 0;
     }
 #if (defined(__clang__) || (defined(__GNUC__) && (((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4)) || (__GNUC__ >= 4))))
+    // Undefined behavior for x == 0.
     return sizeof(unsigned long) * 8 - __builtin_clzl(x);
 #elif defined(_MSC_VER)
-    Py_BUILD_ASSERT(4 == sizeof(unsigned long));
+    Py_BUILD_ASSERT(sizeof(unsigned long) <= 4);
+    // Does not write to msb if x == 0.
     unsigned long msb;
     _BitScanReverse(&msb, x);
-    return msb + 1;
+    return (int)msb + 1;
 #else
     int msb = 0;
-    while (x != 0) {
+    do {
         msb += 1;
         x >>= 1;
-    }
+    } while (x != 0);
     return msb;
 #endif
+}
+
+static inline int
+_Py_bit_length_digit(digit x) {
+    Py_BUILD_ASSERT(PyLong_SHIFT <= sizeof(unsigned long) * 8);
+    return _Py_popcount32((unsigned long)x);
 }
 
 
