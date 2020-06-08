@@ -2385,7 +2385,9 @@ _can_perform_reduction_step(ValueItem *stack, ssize_t stack_top, Token* current)
     if (top_precedence > current_precedence) {
         return 1;
     }
-    return (_PyPegen_is_left_associative(current) && (top_precedence == current_precedence));
+    int is_left_associative = _PyPegen_is_left_associative(current);
+    assert(is_left_associative != -1);
+    return (is_left_associative && (top_precedence == current_precedence));
 }
 
 // The input here represents 'factor (operator factor)*'.
