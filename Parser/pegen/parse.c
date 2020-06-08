@@ -14574,7 +14574,7 @@ invalid_named_expression_rule(Parser *p)
 //     | tuple ':'
 //     | star_named_expression ',' star_named_expressions* ':'
 //     | expression ':' expression ['=' annotated_rhs]
-//     | ((star_expressions '='))+ (yield_expr | star_expressions)
+//     | ((star_expressions '='))+ (yield_expr | star_expressions) !'='
 //     | star_expressions augassign (yield_expr | star_expressions)
 static void *
 invalid_assignment_rule(Parser *p)
@@ -14707,21 +14707,23 @@ invalid_assignment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ':' expression ['=' annotated_rhs]"));
     }
-    { // ((star_expressions '='))+ (yield_expr | star_expressions)
+    { // ((star_expressions '='))+ (yield_expr | star_expressions) !'='
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((star_expressions '='))+ (yield_expr | star_expressions)"));
+        D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((star_expressions '='))+ (yield_expr | star_expressions) !'='"));
         void *_tmp_129_var;
         asdl_seq * a;
         if (
             (a = _loop1_128_rule(p))  // ((star_expressions '='))+
             &&
             (_tmp_129_var = _tmp_129_rule(p))  // yield_expr | star_expressions
+            &&
+            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 22)  // token='='
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((star_expressions '='))+ (yield_expr | star_expressions)"));
+            D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((star_expressions '='))+ (yield_expr | star_expressions) !'='"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( _PyPegen_get_invalid_target ( p , a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( _PyPegen_get_invalid_target ( p , a ) ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -14732,7 +14734,7 @@ invalid_assignment_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((star_expressions '='))+ (yield_expr | star_expressions)"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "((star_expressions '='))+ (yield_expr | star_expressions) !'='"));
     }
     { // star_expressions augassign (yield_expr | star_expressions)
         if (p->error_indicator) {
