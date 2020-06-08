@@ -54,6 +54,10 @@ tuple_alloc(struct _Py_tuple_state *state, Py_ssize_t size)
         return NULL;
     }
 #if PyTuple_MAXSAVESIZE > 0
+#ifdef Py_DEBUG
+    // tuple_alloc() must not be called after _PyTuple_Fini()
+    assert(state->numfree[0] != -1);
+#endif
     if (size < PyTuple_MAXSAVESIZE && (op = state->free_list[size]) != NULL) {
         assert(size != 0);
         state->free_list[size] = (PyTupleObject *) op->ob_item[0];
@@ -102,6 +106,10 @@ PyTuple_New(Py_ssize_t size)
     }
 #if PyTuple_MAXSAVESIZE > 0
     if (size == 0) {
+#ifdef Py_DEBUG
+        // PyTuple_New() must not be called after _PyTuple_Fini()
+        assert(state->numfree[0] != -1);
+#endif
         state->free_list[0] = op;
         ++state->numfree[0];
         Py_INCREF(op);          /* extra INCREF so that this is never freed */
@@ -227,6 +235,10 @@ tupledealloc(PyTupleObject *op)
 #if PyTuple_MAXSAVESIZE > 0
         PyInterpreterState *interp = _PyInterpreterState_GET();
         struct _Py_tuple_state *state = &interp->tuple;
+#ifdef Py_DEBUG
+        // tupledealloc() must not be called after _PyTuple_Fini()
+        assert(state->numfree[0] != -1);
+#endif
         if (len < PyTuple_MAXSAVESIZE &&
             state->numfree[len] < PyTuple_MAXFREELIST &&
             Py_IS_TYPE(op, &PyTuple_Type))
@@ -984,6 +996,9 @@ _PyTuple_Fini(PyThreadState *tstate)
     Py_CLEAR(state->free_list[0]);
 
     _PyTuple_ClearFreeList(tstate);
+#ifdef Py_DEBUG
+    state->numfree[0] = -1;
+#endif
 #endif
 }
 

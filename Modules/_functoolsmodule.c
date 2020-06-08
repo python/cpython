@@ -484,8 +484,7 @@ static int
 keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
 {
     Py_VISIT(ko->cmp);
-    if (ko->object)
-        Py_VISIT(ko->object);
+    Py_VISIT(ko->object);
     return 0;
 }
 

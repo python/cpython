@@ -111,6 +111,10 @@ void
 _PyList_Fini(PyThreadState *tstate)
 {
     _PyList_ClearFreeList(tstate);
+#ifdef Py_DEBUG
+    struct _Py_list_state *state = &tstate->interp->list;
+    state->numfree = -1;
+#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -135,6 +139,10 @@ PyList_New(Py_ssize_t size)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_list_state *state = &interp->list;
     PyListObject *op;
+#ifdef Py_DEBUG
+    // PyList_New() must not be called after _PyList_Fini()
+    assert(state->numfree != -1);
+#endif
     if (state->numfree) {
         state->numfree--;
         op = state->free_list[state->numfree];
@@ -330,6 +338,10 @@ list_dealloc(PyListObject *op)
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_list_state *state = &interp->list;
+#ifdef Py_DEBUG
+    // list_dealloc() must not be called after _PyList_Fini()
+    assert(state->numfree != -1);
+#endif
     if (state->numfree < PyList_MAXFREELIST && PyList_CheckExact(op)) {
         state->free_list[state->numfree++] = op;
     }
