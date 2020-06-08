@@ -543,7 +543,7 @@ conflict.
    If this is set to a non-empty string, it overrides the :data:`sys.platlibdir`
    value.
 
-   .. versionadded:: 3.10
+   .. versionadded:: 3.9
 
 
 .. envvar:: PYTHONSTARTUP
