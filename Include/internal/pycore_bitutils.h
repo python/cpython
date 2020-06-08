@@ -7,8 +7,8 @@
    - _Py_bswap64(uint64_t)
 */
 
-#ifndef Py_INTERNAL_BSWAP_H
-#define Py_INTERNAL_BSWAP_H
+#ifndef Py_INTERNAL_BITUTILS_H
+#define Py_INTERNAL_BITUTILS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -131,8 +131,32 @@ _Py_popcount32(uint32_t x)
 }
 
 
+// Return the index of the most significant 1 bit in 'x'. This is the smallest
+// integer k such that x < 2**k. Equivalent to floor(log2(x)) + 1 for x != 0.
+static inline int
+_Py_bit_length(unsigned long x) {
+    if (!x) {
+        return 0;
+    }
+#if (defined(__clang__) || defined(__GNUC__))
+    return sizeof(unsigned long) * 8 - __builtin_clzl(x);
+#elif defined(_MSC_VER)
+    Py_BUILD_ASSERT(4 == sizeof(unsigned long));
+    unsigned long msb;
+    _BitScanReverse(&msb, x);
+    return 32 - msb;
+#else
+    int msb = 0;
+    while (x != 0) {
+        msb += 1;
+        x >>= 1;
+    }
+    return msb;
+#endif
+}
+
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_BSWAP_H */
-
+#endif /* !Py_INTERNAL_BITUTILS_H */
