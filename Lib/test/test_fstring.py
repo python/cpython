@@ -725,9 +725,11 @@ non-important content
         #  a function into a generator
         def fn(y):
             f'y:{yield y*2}'
+            f'{yield}'
 
         g = fn(4)
         self.assertEqual(next(g), 8)
+        self.assertEqual(next(g), None)
 
     def test_yield_send(self):
         def fn(x):
