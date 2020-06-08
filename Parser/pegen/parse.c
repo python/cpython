@@ -171,215 +171,214 @@ static KeywordToken *reserved_keywords[] = {
 #define operator_type 1093
 #define bitwise_or_type 1094
 #define factor_type 1095
-#define power_type 1096
-#define await_primary_type 1097
-#define primary_type 1098  // Left-recursive
-#define slices_type 1099
-#define slice_type 1100
-#define atom_type 1101
-#define strings_type 1102
-#define list_type 1103
-#define listcomp_type 1104
-#define tuple_type 1105
-#define group_type 1106
-#define genexp_type 1107
-#define set_type 1108
-#define setcomp_type 1109
-#define dict_type 1110
-#define dictcomp_type 1111
-#define double_starred_kvpairs_type 1112
-#define double_starred_kvpair_type 1113
-#define kvpair_type 1114
-#define for_if_clauses_type 1115
-#define for_if_clause_type 1116
-#define yield_expr_type 1117
-#define arguments_type 1118
-#define args_type 1119
-#define kwargs_type 1120
-#define starred_expression_type 1121
-#define kwarg_or_starred_type 1122
-#define kwarg_or_double_starred_type 1123
-#define star_targets_type 1124
-#define star_targets_seq_type 1125
-#define star_target_type 1126
-#define star_atom_type 1127
-#define single_target_type 1128
-#define single_subscript_attribute_target_type 1129
-#define del_targets_type 1130
-#define del_target_type 1131
-#define del_t_atom_type 1132
-#define del_target_end_type 1133
-#define targets_type 1134
-#define target_type 1135
-#define t_primary_type 1136  // Left-recursive
-#define t_lookahead_type 1137
-#define t_atom_type 1138
-#define incorrect_arguments_type 1139
-#define invalid_kwarg_type 1140
-#define invalid_named_expression_type 1141
-#define invalid_assignment_type 1142
-#define invalid_block_type 1143
-#define invalid_comprehension_type 1144
-#define invalid_dict_comprehension_type 1145
-#define invalid_parameters_type 1146
-#define invalid_star_etc_type 1147
-#define invalid_lambda_star_etc_type 1148
-#define invalid_double_type_comments_type 1149
-#define invalid_del_target_type 1150
-#define invalid_import_from_targets_type 1151
-#define _loop0_1_type 1152
-#define _loop0_2_type 1153
-#define _loop0_4_type 1154
-#define _gather_3_type 1155
-#define _loop0_6_type 1156
-#define _gather_5_type 1157
-#define _loop0_8_type 1158
-#define _gather_7_type 1159
-#define _loop0_10_type 1160
-#define _gather_9_type 1161
-#define _loop1_11_type 1162
-#define _loop0_13_type 1163
-#define _gather_12_type 1164
-#define _tmp_14_type 1165
-#define _tmp_15_type 1166
-#define _tmp_16_type 1167
-#define _tmp_17_type 1168
-#define _tmp_18_type 1169
-#define _tmp_19_type 1170
-#define _tmp_20_type 1171
-#define _tmp_21_type 1172
-#define _loop1_22_type 1173
-#define _tmp_23_type 1174
-#define _tmp_24_type 1175
-#define _loop0_26_type 1176
-#define _gather_25_type 1177
-#define _loop0_28_type 1178
-#define _gather_27_type 1179
-#define _tmp_29_type 1180
-#define _loop0_30_type 1181
-#define _loop1_31_type 1182
-#define _loop0_33_type 1183
-#define _gather_32_type 1184
-#define _tmp_34_type 1185
-#define _loop0_36_type 1186
-#define _gather_35_type 1187
-#define _tmp_37_type 1188
-#define _loop0_39_type 1189
-#define _gather_38_type 1190
-#define _loop0_41_type 1191
-#define _gather_40_type 1192
-#define _loop0_43_type 1193
-#define _gather_42_type 1194
-#define _loop0_45_type 1195
-#define _gather_44_type 1196
-#define _tmp_46_type 1197
-#define _loop1_47_type 1198
-#define _tmp_48_type 1199
-#define _tmp_49_type 1200
-#define _tmp_50_type 1201
-#define _tmp_51_type 1202
-#define _tmp_52_type 1203
-#define _loop0_53_type 1204
-#define _loop0_54_type 1205
-#define _loop0_55_type 1206
-#define _loop1_56_type 1207
-#define _loop0_57_type 1208
-#define _loop1_58_type 1209
-#define _loop1_59_type 1210
-#define _loop1_60_type 1211
-#define _loop0_61_type 1212
-#define _loop1_62_type 1213
-#define _loop0_63_type 1214
-#define _loop1_64_type 1215
-#define _loop0_65_type 1216
-#define _loop1_66_type 1217
-#define _loop1_67_type 1218
-#define _tmp_68_type 1219
-#define _loop0_70_type 1220
-#define _gather_69_type 1221
-#define _loop1_71_type 1222
-#define _loop0_73_type 1223
-#define _gather_72_type 1224
-#define _loop1_74_type 1225
-#define _loop0_75_type 1226
-#define _loop0_76_type 1227
-#define _loop0_77_type 1228
-#define _loop1_78_type 1229
-#define _loop0_79_type 1230
-#define _loop1_80_type 1231
-#define _loop1_81_type 1232
-#define _loop1_82_type 1233
-#define _loop0_83_type 1234
-#define _loop1_84_type 1235
-#define _loop0_85_type 1236
-#define _loop1_86_type 1237
-#define _loop0_87_type 1238
-#define _loop1_88_type 1239
-#define _loop1_89_type 1240
-#define _loop1_90_type 1241
-#define _loop1_91_type 1242
-#define _tmp_92_type 1243
-#define _loop1_93_type 1244
-#define _loop0_95_type 1245
-#define _gather_94_type 1246
-#define _tmp_96_type 1247
-#define _tmp_97_type 1248
-#define _tmp_98_type 1249
-#define _tmp_99_type 1250
-#define _loop1_100_type 1251
-#define _tmp_101_type 1252
-#define _tmp_102_type 1253
-#define _loop0_104_type 1254
-#define _gather_103_type 1255
-#define _loop1_105_type 1256
-#define _loop0_106_type 1257
-#define _loop0_107_type 1258
-#define _tmp_108_type 1259
-#define _tmp_109_type 1260
-#define _loop0_111_type 1261
-#define _gather_110_type 1262
-#define _loop0_113_type 1263
-#define _gather_112_type 1264
-#define _loop0_115_type 1265
-#define _gather_114_type 1266
-#define _loop0_117_type 1267
-#define _gather_116_type 1268
-#define _loop0_118_type 1269
-#define _loop0_120_type 1270
-#define _gather_119_type 1271
-#define _tmp_121_type 1272
-#define _loop0_123_type 1273
-#define _gather_122_type 1274
-#define _loop0_125_type 1275
-#define _gather_124_type 1276
-#define _tmp_126_type 1277
-#define _loop0_127_type 1278
-#define _tmp_128_type 1279
-#define _loop0_129_type 1280
-#define _loop0_130_type 1281
-#define _tmp_131_type 1282
-#define _tmp_132_type 1283
-#define _loop0_133_type 1284
-#define _tmp_134_type 1285
-#define _tmp_135_type 1286
-#define _tmp_136_type 1287
-#define _tmp_137_type 1288
-#define _tmp_138_type 1289
-#define _tmp_139_type 1290
-#define _tmp_140_type 1291
-#define _tmp_141_type 1292
-#define _tmp_142_type 1293
-#define _tmp_143_type 1294
-#define _tmp_144_type 1295
-#define _tmp_145_type 1296
-#define _tmp_146_type 1297
-#define _tmp_147_type 1298
-#define _tmp_148_type 1299
-#define _tmp_149_type 1300
-#define _tmp_150_type 1301
-#define _loop1_151_type 1302
-#define _tmp_152_type 1303
-#define _tmp_153_type 1304
+#define await_primary_type 1096
+#define primary_type 1097  // Left-recursive
+#define slices_type 1098
+#define slice_type 1099
+#define atom_type 1100
+#define strings_type 1101
+#define list_type 1102
+#define listcomp_type 1103
+#define tuple_type 1104
+#define group_type 1105
+#define genexp_type 1106
+#define set_type 1107
+#define setcomp_type 1108
+#define dict_type 1109
+#define dictcomp_type 1110
+#define double_starred_kvpairs_type 1111
+#define double_starred_kvpair_type 1112
+#define kvpair_type 1113
+#define for_if_clauses_type 1114
+#define for_if_clause_type 1115
+#define yield_expr_type 1116
+#define arguments_type 1117
+#define args_type 1118
+#define kwargs_type 1119
+#define starred_expression_type 1120
+#define kwarg_or_starred_type 1121
+#define kwarg_or_double_starred_type 1122
+#define star_targets_type 1123
+#define star_targets_seq_type 1124
+#define star_target_type 1125
+#define star_atom_type 1126
+#define single_target_type 1127
+#define single_subscript_attribute_target_type 1128
+#define del_targets_type 1129
+#define del_target_type 1130
+#define del_t_atom_type 1131
+#define del_target_end_type 1132
+#define targets_type 1133
+#define target_type 1134
+#define t_primary_type 1135  // Left-recursive
+#define t_lookahead_type 1136
+#define t_atom_type 1137
+#define incorrect_arguments_type 1138
+#define invalid_kwarg_type 1139
+#define invalid_named_expression_type 1140
+#define invalid_assignment_type 1141
+#define invalid_block_type 1142
+#define invalid_comprehension_type 1143
+#define invalid_dict_comprehension_type 1144
+#define invalid_parameters_type 1145
+#define invalid_star_etc_type 1146
+#define invalid_lambda_star_etc_type 1147
+#define invalid_double_type_comments_type 1148
+#define invalid_del_target_type 1149
+#define invalid_import_from_targets_type 1150
+#define _loop0_1_type 1151
+#define _loop0_2_type 1152
+#define _loop0_4_type 1153
+#define _gather_3_type 1154
+#define _loop0_6_type 1155
+#define _gather_5_type 1156
+#define _loop0_8_type 1157
+#define _gather_7_type 1158
+#define _loop0_10_type 1159
+#define _gather_9_type 1160
+#define _loop1_11_type 1161
+#define _loop0_13_type 1162
+#define _gather_12_type 1163
+#define _tmp_14_type 1164
+#define _tmp_15_type 1165
+#define _tmp_16_type 1166
+#define _tmp_17_type 1167
+#define _tmp_18_type 1168
+#define _tmp_19_type 1169
+#define _tmp_20_type 1170
+#define _tmp_21_type 1171
+#define _loop1_22_type 1172
+#define _tmp_23_type 1173
+#define _tmp_24_type 1174
+#define _loop0_26_type 1175
+#define _gather_25_type 1176
+#define _loop0_28_type 1177
+#define _gather_27_type 1178
+#define _tmp_29_type 1179
+#define _loop0_30_type 1180
+#define _loop1_31_type 1181
+#define _loop0_33_type 1182
+#define _gather_32_type 1183
+#define _tmp_34_type 1184
+#define _loop0_36_type 1185
+#define _gather_35_type 1186
+#define _tmp_37_type 1187
+#define _loop0_39_type 1188
+#define _gather_38_type 1189
+#define _loop0_41_type 1190
+#define _gather_40_type 1191
+#define _loop0_43_type 1192
+#define _gather_42_type 1193
+#define _loop0_45_type 1194
+#define _gather_44_type 1195
+#define _tmp_46_type 1196
+#define _loop1_47_type 1197
+#define _tmp_48_type 1198
+#define _tmp_49_type 1199
+#define _tmp_50_type 1200
+#define _tmp_51_type 1201
+#define _tmp_52_type 1202
+#define _loop0_53_type 1203
+#define _loop0_54_type 1204
+#define _loop0_55_type 1205
+#define _loop1_56_type 1206
+#define _loop0_57_type 1207
+#define _loop1_58_type 1208
+#define _loop1_59_type 1209
+#define _loop1_60_type 1210
+#define _loop0_61_type 1211
+#define _loop1_62_type 1212
+#define _loop0_63_type 1213
+#define _loop1_64_type 1214
+#define _loop0_65_type 1215
+#define _loop1_66_type 1216
+#define _loop1_67_type 1217
+#define _tmp_68_type 1218
+#define _loop0_70_type 1219
+#define _gather_69_type 1220
+#define _loop1_71_type 1221
+#define _loop0_73_type 1222
+#define _gather_72_type 1223
+#define _loop1_74_type 1224
+#define _loop0_75_type 1225
+#define _loop0_76_type 1226
+#define _loop0_77_type 1227
+#define _loop1_78_type 1228
+#define _loop0_79_type 1229
+#define _loop1_80_type 1230
+#define _loop1_81_type 1231
+#define _loop1_82_type 1232
+#define _loop0_83_type 1233
+#define _loop1_84_type 1234
+#define _loop0_85_type 1235
+#define _loop1_86_type 1236
+#define _loop0_87_type 1237
+#define _loop1_88_type 1238
+#define _loop1_89_type 1239
+#define _loop1_90_type 1240
+#define _loop1_91_type 1241
+#define _tmp_92_type 1242
+#define _loop1_93_type 1243
+#define _loop0_95_type 1244
+#define _gather_94_type 1245
+#define _tmp_96_type 1246
+#define _tmp_97_type 1247
+#define _tmp_98_type 1248
+#define _tmp_99_type 1249
+#define _loop1_100_type 1250
+#define _tmp_101_type 1251
+#define _tmp_102_type 1252
+#define _loop0_104_type 1253
+#define _gather_103_type 1254
+#define _loop1_105_type 1255
+#define _loop0_106_type 1256
+#define _loop0_107_type 1257
+#define _tmp_108_type 1258
+#define _tmp_109_type 1259
+#define _loop0_111_type 1260
+#define _gather_110_type 1261
+#define _loop0_113_type 1262
+#define _gather_112_type 1263
+#define _loop0_115_type 1264
+#define _gather_114_type 1265
+#define _loop0_117_type 1266
+#define _gather_116_type 1267
+#define _loop0_118_type 1268
+#define _loop0_120_type 1269
+#define _gather_119_type 1270
+#define _tmp_121_type 1271
+#define _loop0_123_type 1272
+#define _gather_122_type 1273
+#define _loop0_125_type 1274
+#define _gather_124_type 1275
+#define _tmp_126_type 1276
+#define _loop0_127_type 1277
+#define _tmp_128_type 1278
+#define _loop0_129_type 1279
+#define _loop0_130_type 1280
+#define _tmp_131_type 1281
+#define _tmp_132_type 1282
+#define _loop0_133_type 1283
+#define _tmp_134_type 1284
+#define _tmp_135_type 1285
+#define _tmp_136_type 1286
+#define _tmp_137_type 1287
+#define _tmp_138_type 1288
+#define _tmp_139_type 1289
+#define _tmp_140_type 1290
+#define _tmp_141_type 1291
+#define _tmp_142_type 1292
+#define _tmp_143_type 1293
+#define _tmp_144_type 1294
+#define _tmp_145_type 1295
+#define _tmp_146_type 1296
+#define _tmp_147_type 1297
+#define _tmp_148_type 1298
+#define _tmp_149_type 1299
+#define _tmp_150_type 1300
+#define _loop1_151_type 1301
+#define _tmp_152_type 1302
+#define _tmp_153_type 1303
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -477,7 +476,6 @@ static CmpopExprPair* is_bitwise_or_rule(Parser *p);
 static void *operator_rule(Parser *p);
 static expr_ty bitwise_or_rule(Parser *p);
 static expr_ty factor_rule(Parser *p);
-static expr_ty power_rule(Parser *p);
 static expr_ty await_primary_rule(Parser *p);
 static expr_ty primary_rule(Parser *p);
 static expr_ty slices_rule(Parser *p);
@@ -8821,7 +8819,20 @@ is_bitwise_or_rule(Parser *p)
     return _res;
 }
 
-// operator: '|' | '^' | '&' | '<<' | '>>' | '+' | '-' | '*' | '/' | '//' | '%' | '@'
+// operator:
+//     | '|'
+//     | '^'
+//     | '&'
+//     | '<<'
+//     | '>>'
+//     | '+'
+//     | '-'
+//     | '*'
+//     | '/'
+//     | '//'
+//     | '%'
+//     | '@'
+//     | '**'
 static void *
 operator_rule(Parser *p)
 {
@@ -9060,6 +9071,25 @@ operator_rule(Parser *p)
         D(fprintf(stderr, "%*c%s operator[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'@'"));
     }
+    { // '**'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> operator[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**'"));
+        Token * _literal;
+        if (
+            (_literal = _PyPegen_expect_token(p, 35))  // token='**'
+        )
+        {
+            D(fprintf(stderr, "%*c+ operator[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**'"));
+            _res = _literal;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s operator[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**'"));
+    }
     _res = NULL;
   done:
     D(p->level--);
@@ -9129,7 +9159,7 @@ bitwise_or_rule(Parser *p)
     return _res;
 }
 
-// factor: '+' factor | '-' factor | '~' factor | power
+// factor: '+' factor | '-' factor | '~' factor | await_primary
 static expr_ty
 factor_rule(Parser *p)
 {
@@ -9261,112 +9291,28 @@ factor_rule(Parser *p)
         D(fprintf(stderr, "%*c%s factor[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'~' factor"));
     }
-    { // power
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> factor[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "power"));
-        expr_ty power_var;
-        if (
-            (power_var = power_rule(p))  // power
-        )
-        {
-            D(fprintf(stderr, "%*c+ factor[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "power"));
-            _res = power_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s factor[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "power"));
-    }
-    _res = NULL;
-  done:
-    _PyPegen_insert_memo(p, _mark, factor_type, _res);
-    D(p->level--);
-    return _res;
-}
-
-// power: await_primary '**' factor | await_primary
-static expr_ty
-power_rule(Parser *p)
-{
-    D(p->level++);
-    if (p->error_indicator) {
-        D(p->level--);
-        return NULL;
-    }
-    expr_ty _res = NULL;
-    int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        D(p->level--);
-        return NULL;
-    }
-    int _start_lineno = p->tokens[_mark]->lineno;
-    UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
-    UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // await_primary '**' factor
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> power[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "await_primary '**' factor"));
-        Token * _literal;
-        expr_ty a;
-        expr_ty b;
-        if (
-            (a = await_primary_rule(p))  // await_primary
-            &&
-            (_literal = _PyPegen_expect_token(p, 35))  // token='**'
-            &&
-            (b = factor_rule(p))  // factor
-        )
-        {
-            D(fprintf(stderr, "%*c+ power[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "await_primary '**' factor"));
-            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
-            if (_token == NULL) {
-                D(p->level--);
-                return NULL;
-            }
-            int _end_lineno = _token->end_lineno;
-            UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
-            UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _Py_BinOp ( a , Pow , b , EXTRA );
-            if (_res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                D(p->level--);
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s power[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "await_primary '**' factor"));
-    }
     { // await_primary
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> power[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "await_primary"));
+        D(fprintf(stderr, "%*c> factor[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "await_primary"));
         expr_ty await_primary_var;
         if (
             (await_primary_var = await_primary_rule(p))  // await_primary
         )
         {
-            D(fprintf(stderr, "%*c+ power[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "await_primary"));
+            D(fprintf(stderr, "%*c+ factor[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "await_primary"));
             _res = await_primary_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s power[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s factor[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "await_primary"));
     }
     _res = NULL;
   done:
+    _PyPegen_insert_memo(p, _mark, factor_type, _res);
     D(p->level--);
     return _res;
 }
@@ -23633,6 +23579,31 @@ int _PyPegen_get_operator_precedence(Token* token) {
     case PERCENT:
     case AT:
         return 6;
+    case DOUBLESTAR:
+        return 7;
+    default:
+        return -1;
+    }
+}
+
+int _PyPegen_is_left_associative(Token* token) {
+    assert(token != NULL);
+    switch(token->type) {
+    case VBAR:
+    case CIRCUMFLEX:
+    case AMPER:
+    case LEFTSHIFT:
+    case RIGHTSHIFT:
+    case PLUS:
+    case MINUS:
+    case STAR:
+    case SLASH:
+    case DOUBLESLASH:
+    case PERCENT:
+    case AT:
+        return 1;
+    case DOUBLESTAR:
+        return 0;
     default:
         return -1;
     }

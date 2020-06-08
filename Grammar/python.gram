@@ -35,6 +35,7 @@ left &
 left << >>
 left + -
 left * / // % @
+right **
 '''
 
 file[mod_ty]: a=[statements] ENDMARKER { _PyPegen_make_module(p, a) }
@@ -424,7 +425,7 @@ in_bitwise_or[CmpopExprPair*]: 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, I
 isnot_bitwise_or[CmpopExprPair*]: 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
 is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
 
-operator: '|' | '^' | '&' | '<<' | '>>' | '+' | '-' | '*' | '/' | '//' | '%' | '@'
+operator: '|' | '^' | '&' | '<<' | '>>' | '+' | '-' | '*' | '/' | '//' | '%' | '@' | '**'
 bitwise_or[expr_ty]:
     | a=factor b=(o=operator f=factor {_PyPegen_operator_term_pair(p, o, f)})+ { _PyPegen_operator_precedence_expr(p, a, b) }
     | factor
@@ -432,9 +433,6 @@ factor[expr_ty] (memo):
     | '+' a=factor { _Py_UnaryOp(UAdd, a, EXTRA) }
     | '-' a=factor { _Py_UnaryOp(USub, a, EXTRA) }
     | '~' a=factor { _Py_UnaryOp(Invert, a, EXTRA) }
-    | power
-power[expr_ty]:
-    | a=await_primary '**' b=factor { _Py_BinOp(a, Pow, b, EXTRA) }
     | await_primary
 await_primary[expr_ty] (memo):
     | AWAIT a=primary { CHECK_VERSION(5, "Await expressions are", _Py_Await(a, EXTRA)) }

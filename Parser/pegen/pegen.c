@@ -2203,6 +2203,8 @@ _PyPegen_get_binary_operator(Parser *p, const Token *t)
         return Sub;
     case STAR:
         return Mult;
+    case DOUBLESTAR:
+        return Pow;
     case AT:
         if (p->feature_version < 5) {
             RAISE_SYNTAX_ERROR("The '@' operator is only supported in Python 3.5 and greater");
@@ -2376,6 +2378,16 @@ _reduction_step(Parser* p, ValueItem stack[], ssize_t *stack_top)
     return 0;
 }
 
+static inline int
+_can_perform_reduction_step(ValueItem *stack, ssize_t stack_top, Token* current) {
+    int top_precedence = _PyPegen_get_operator_precedence(stack[stack_top - 2].oper);
+    int current_precedence = _PyPegen_get_operator_precedence(current);
+    if (top_precedence > current_precedence) {
+        return 1;
+    }
+    return (_PyPegen_is_left_associative(current) && (top_precedence == current_precedence));
+}
+
 // The input here represents 'factor (operator factor)*'.
 // The ops_factors sequence is a sequence of OperatorFactorPairs.
 // The output is either the initial_factor (if ops_factors is empty)
@@ -2400,8 +2412,7 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty initial_factor, asdl_seq *o
         Token* oper = pair->oper;
         expr_ty the_factor = pair->factor;
 
-        while (stack_top > 1 && _PyPegen_get_operator_precedence(stack[stack_top - 2].oper) >=
-               _PyPegen_get_operator_precedence(oper)) {
+        while (stack_top > 1 && _can_perform_reduction_step(stack, stack_top, oper)) {
             if (_reduction_step(p, stack, &stack_top) == -1) {
                 result = NULL;
                 goto exit;

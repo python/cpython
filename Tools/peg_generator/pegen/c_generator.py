@@ -1,4 +1,5 @@
 import ast
+from collections import defaultdict
 from dataclasses import field, dataclass
 import re
 from typing import Any, Dict, IO, Optional, List, Text, Tuple, Set
@@ -377,27 +378,53 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print(f"}}")
 
     def generate_precedence_table(self) -> None:
-        operators = self.grammar.metas.get("operators", "")
+        operators_text = self.grammar.metas.get("operators")
+        if operators_text is None:
+            operators_text = ""
 
         def _generate_token_name(token: str) -> str:
             return self.tokens[self.exact_tokens[token]]
+
+        operators_by_precedence = defaultdict(list)
+        operators_by_associativity = defaultdict(list)
+        for precedence, line in enumerate(operators_text.splitlines()):
+            line = line.strip()
+            if not line:
+                continue
+            associativity, *operators = line.split()
+            # TODO: Add support for right-associative operators.
+            if associativity not in {"left", "right"}:
+                raise ValueError("Associative of operators must be either 'left' or 'right'")
+            for operator in operators:
+                operators_by_precedence[precedence].append(operator)
+                operators_by_associativity[associativity].append(operator)
 
         self.print("int _PyPegen_get_operator_precedence(Token* token) {")
         with self.indent():
             self.print("assert(token != NULL);")
             self.print("switch(token->type) {")
-            for precedence, line in enumerate(operators.splitlines()):
-                line = line.strip()
-                if not line:
-                    continue
-                associativity, *operators = line.split()
-                # TODO: Add support for right-associative operators.
-                if associativity != "left":
-                    raise ValueError("Only left-associative operators are supported currently")
+            for precedence, operators in operators_by_precedence.items():
                 for operator in operators:
                     self.print(f"case {_generate_token_name(operator)}:")
                 with self.indent():
                     self.print(f"return {precedence};")
+            self.print("default:")
+            with self.indent():
+                self.print("return -1;")
+            self.print("}")
+        self.print("}")
+
+        self.print()
+
+        self.print("int _PyPegen_is_left_associative(Token* token) {")
+        with self.indent():
+            self.print("assert(token != NULL);")
+            self.print("switch(token->type) {")
+            for associativity, operators in operators_by_associativity.items():
+                for operator in operators:
+                    self.print(f"case {_generate_token_name(operator)}:")
+                with self.indent():
+                    self.print(f"return {1 if associativity == 'left' else 0};")
             self.print("default:")
             with self.indent():
                 self.print("return -1;")
@@ -782,7 +809,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 if v == "_cut_var":
                     v += " = 0"  # cut_var must be initialized
                 self.print(f"{var_type}{v};")
-                if v.startswith("_opt_var"):
+                if v is not None and v.startswith("_opt_var"):
                     self.print(f"UNUSED({v}); // Silence compiler warnings")
 
             with self.local_variable_context():

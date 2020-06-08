@@ -278,6 +278,7 @@ void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args);
 
 // Automatically generated
 int _PyPegen_get_operator_precedence(Token* token);
+int _PyPegen_is_left_associative(Token* token);
 
 void *_PyPegen_parse(Parser *);
 
