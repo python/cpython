@@ -586,6 +586,21 @@ PyConfig
       * 1: Remove assertions, set ``__debug__`` to ``False``
       * 2: Strip docstrings
 
+   .. c:member:: PyWideStringList orig_argv
+
+       Original command line arguments.
+
+       If :c:member:`~PyConfig.orig_argv` list is empty and
+       :c:member:`~PyConfig.argv` is not a list only containing an empty
+       string, :c:func:`PyConfig_Read()` copies :c:member:`~PyConfig.argv` into
+       :c:member:`~PyConfig.orig_argv` before modifying
+       :c:member:`~PyConfig.argv` (if :c:member:`~PyConfig.parse_argv` is
+       non-zero).
+
+       See also :c:func:`Py_GetArgcArgv` function.
+
+       .. versionadded:: 3.10
+
    .. c:member:: int parse_argv
 
       If non-zero, parse :c:member:`~PyConfig.argv` the same way the regular
@@ -981,6 +996,8 @@ Py_GetArgcArgv()
 .. c:function:: void Py_GetArgcArgv(int *argc, wchar_t ***argv)
 
    Get the original command line arguments, before Python modified them.
+
+   See also :c:member:`PyConfig.orig_argv` member.
 
 
 Multi-Phase Initialization Private Provisional API
