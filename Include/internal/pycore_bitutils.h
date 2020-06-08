@@ -140,7 +140,7 @@ _Py_bit_length(unsigned long x)
     if (x != 0) {
         // __builtin_clzl() is available since GCC 3.4.
         // Undefined behavior for x == 0.
-        return sizeof(unsigned long) * 8 - __builtin_clzl(x);
+        return (int)sizeof(unsigned long) * 8 - __builtin_clzl(x);
     }
     else {
         return 0;
