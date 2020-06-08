@@ -136,7 +136,7 @@ _Py_popcount32(uint32_t x)
 static inline int
 _Py_bit_length(unsigned long x)
 {
-#if (defined(__clang__) || defined(__GNUC__))
+#if 0 && (defined(__clang__) || defined(__GNUC__))
     if (x != 0) {
         // __builtin_clzl() is available since GCC 3.4.
         // Undefined behavior for x == 0.
@@ -155,11 +155,16 @@ _Py_bit_length(unsigned long x)
         return 0;
     }
 #else
+    const int BIT_LENGTH_TABLE[32] = {
+        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+    };
     int msb = 0;
-    while (x != 0) {
-        msb += 1;
-        x >>= 1;
+    while (x >= 32) {
+        msb += 6;
+        x >>= 6;
     }
+    msb += BIT_LENGTH_TABLE[x];
     return msb;
 #endif
 }
