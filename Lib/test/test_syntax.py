@@ -63,10 +63,6 @@ SyntaxError: cannot assign to __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
 
->>> yield = 1
-Traceback (most recent call last):
-SyntaxError: assignment to yield expression not possible
-
 >>> del f()
 Traceback (most recent call last):
 SyntaxError: cannot delete function call
