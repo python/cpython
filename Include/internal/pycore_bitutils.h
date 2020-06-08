@@ -136,7 +136,7 @@ _Py_popcount32(uint32_t x)
 static inline int
 _Py_bit_length(unsigned long x)
 {
-#if 0 && (defined(__clang__) || defined(__GNUC__))
+#if (defined(__clang__) || defined(__GNUC__))
     if (x != 0) {
         // __builtin_clzl() is available since GCC 3.4.
         // Undefined behavior for x == 0.
