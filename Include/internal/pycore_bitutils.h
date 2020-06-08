@@ -136,25 +136,30 @@ _Py_popcount32(uint32_t x)
 static inline int
 _Py_bit_length(unsigned long x)
 {
-    if (x == 0) {
+#if (defined(__clang__) || defined(__GNUC__))
+    if (x != 0) {
+        // __builtin_clzl() is available since GCC 3.4.
+        // Undefined behavior for x == 0.
+        return sizeof(unsigned long) * 8 - __builtin_clzl(x);
+    }
+    else {
         return 0;
     }
-#if (defined(__clang__) || defined(__GNUC__))
-    // __builtin_clzl() is available since GCC 3.4.
-    // Undefined behavior for x == 0.
-    return sizeof(unsigned long) * 8 - __builtin_clzl(x);
 #elif defined(_MSC_VER)
     Py_BUILD_ASSERT(sizeof(unsigned long) <= 4);
-    // Does not write to msb if x == 0.
     unsigned long msb;
-    _BitScanReverse(&msb, x);
-    return (int)msb + 1;
+    if (_BitScanReverse(&msb, x)) {
+        return (int)msb + 1;
+    }
+    else {
+        return 0;
+    }
 #else
     int msb = 0;
-    do {
+    while (x != 0) {
         msb += 1;
         x >>= 1;
-    } while (x != 0);
+    }
     return msb;
 #endif
 }
