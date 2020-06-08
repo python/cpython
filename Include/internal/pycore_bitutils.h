@@ -164,13 +164,6 @@ _Py_bit_length(unsigned long x)
 #endif
 }
 
-static inline int
-_Py_bit_length_digit(digit x)
-{
-    Py_BUILD_ASSERT(PyLong_SHIFT <= sizeof(unsigned long) * 8);
-    return _Py_popcount32((unsigned long)x);
-}
-
 
 #ifdef __cplusplus
 }
