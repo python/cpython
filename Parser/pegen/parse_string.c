@@ -278,6 +278,9 @@ static void fstring_shift_argument(expr_ty parent, arg_ty args, int lineno, int 
 
 
 static inline void shift_expr(expr_ty parent, expr_ty n, int line, int col) {
+    if (n == NULL) {
+        return;
+    }
     if (parent->lineno < n->lineno) {
         col = 0;
     }
