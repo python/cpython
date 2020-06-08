@@ -128,10 +128,10 @@ test_bit_length(PyObject *self, PyObject *Py_UNUSED(args))
 
     CHECK(0, 0);
     CHECK(1, 1);
-    CHECK(0x08080808, 28);
-    CHECK(0x10101010, 29);
-    CHECK(0x10204080, 29);
-    CHECK(0xDEADCAFE, 32);
+    CHECK(0x1000, 12);
+    CHECK(0x1234, 12);
+    CHECK(0x54321, 19);    
+    CHECK(0x7FFFFFFF, 31);    
     CHECK(0xFFFFFFFF, 32);
     Py_RETURN_NONE;
 
