@@ -411,6 +411,14 @@ typedef struct {
     /* If non-zero, disallow threads, subprocesses, and fork.
        Default: 0. */
     int _isolated_interpreter;
+
+    /* Original command line arguments. If _orig_argv is empty and _argv is
+       not equal to [''], PyConfig_Read() copies the configuration 'argv' list
+       into '_orig_argv' list before modifying 'argv' list (if parse_argv
+       is non-zero).
+
+       _PyConfig_Write() initializes Py_GetArgcArgv() to this list. */
+    PyWideStringList _orig_argv;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
@@ -435,6 +443,14 @@ PyAPI_FUNC(PyStatus) PyConfig_SetArgv(PyConfig *config,
 PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     PyWideStringList *list,
     Py_ssize_t length, wchar_t **items);
+
+
+/* --- Helper functions --------------------------------------- */
+
+/* Get the original command line arguments, before Python modified them.
+
+   See also PyConfig._orig_argv. */
+PyAPI_FUNC(void) Py_GetArgcArgv(int *argc, wchar_t ***argv);
 
 #endif /* !Py_LIMITED_API */
 #endif /* !Py_PYCORECONFIG_H */
