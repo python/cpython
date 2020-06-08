@@ -443,7 +443,7 @@ PyConfig
       by ``--with-platlibdir``, overrideable by the ``PYTHONPLATLIBDIR``
       environment variable.
 
-      .. versionadded:: 3.10
+      .. versionadded:: 3.9
 
    .. c:member:: int buffered_stdio
 
