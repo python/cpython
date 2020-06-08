@@ -1847,8 +1847,6 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
     preconfig->use_environment = config->use_environment;
     preconfig->dev_mode = config->dev_mode;
 
-    // Only call _Py_SetArgcArgv() once.
-    // Calling PyConfig_Read() must not change Py_GetArgcArgv() result.
     if (_Py_SetArgcArgv(config->_orig_argv.length,
                         config->_orig_argv.items) < 0)
     {
