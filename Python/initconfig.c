@@ -24,6 +24,10 @@
 #  endif
 #endif
 
+#ifndef PLATLIBDIR
+#  error "PLATLIBDIR macro must be defined"
+#endif
+
 
 /* --- Command line options --------------------------------------- */
 
