@@ -1080,7 +1080,7 @@ def buildPythonDocs():
         # if build directory existed, it was emptied by make clean, above
         os.chdir('build')
         # Extract the first archive found for this version into build
-        runCommand('tar xjf %s'%shellQuote(doctarfile))
+        runCommand('tar xjf %s'%shellQuote(os.path.join(DEPSRC, doctarfile)))
         # see if tar extracted a directory ending in -docs-html
         archivefiles = [ f for f in os.listdir('.')
             if f.endswith('-docs-html')
