@@ -380,6 +380,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'exec_prefix': GET_DEFAULT_CONFIG,
         'base_exec_prefix': GET_DEFAULT_CONFIG,
         'module_search_paths': GET_DEFAULT_CONFIG,
+        'platlibdir': sys.platlibdir,
 
         'site_import': 1,
         'bytes_warning': 0,
@@ -585,13 +586,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if value is self.GET_DEFAULT_CONFIG:
                 expected[key] = config[key]
 
-        pythonpath_env = expected['pythonpath_env']
-        if pythonpath_env is not None:
-            paths = pythonpath_env.split(os.path.pathsep)
-            expected['module_search_paths'] = [*paths, *expected['module_search_paths']]
-        if modify_path_cb is not None:
-            expected['module_search_paths'] = expected['module_search_paths'].copy()
-            modify_path_cb(expected['module_search_paths'])
+        if expected['module_search_paths'] is not self.IGNORE_CONFIG:
+            pythonpath_env = expected['pythonpath_env']
+            if pythonpath_env is not None:
+                paths = pythonpath_env.split(os.path.pathsep)
+                expected['module_search_paths'] = [*paths, *expected['module_search_paths']]
+            if modify_path_cb is not None:
+                expected['module_search_paths'] = expected['module_search_paths'].copy()
+                modify_path_cb(expected['module_search_paths'])
 
         for key in self.COPY_PRE_CONFIG:
             if key not in expected_preconfig:
@@ -764,6 +766,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'buffered_stdio': 0,
             'user_site_directory': 0,
             'faulthandler': 1,
+            'platlibdir': 'my_platlibdir',
+            'module_search_paths': self.IGNORE_CONFIG,
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
@@ -795,6 +799,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'user_site_directory': 0,
             'faulthandler': 1,
             'warnoptions': ['EnvVar'],
+            'platlibdir': 'env_platlibdir',
+            'module_search_paths': self.IGNORE_CONFIG,
             '_use_peg_parser': 0,
         }
         self.check_all_configs("test_init_compat_env", config, preconfig,
@@ -823,6 +829,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'user_site_directory': 0,
             'faulthandler': 1,
             'warnoptions': ['EnvVar'],
+            'platlibdir': 'env_platlibdir',
+            'module_search_paths': self.IGNORE_CONFIG,
             '_use_peg_parser': 0,
         }
         self.check_all_configs("test_init_python_env", config, preconfig,

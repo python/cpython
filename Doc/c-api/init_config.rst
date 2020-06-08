@@ -436,6 +436,14 @@ PyConfig
 
       :data:`sys.base_prefix`.
 
+   .. c:member:: wchar_t* platlibdir
+
+      :data:`sys.platlibdir`: platform library directory name, set at configure time
+      by ``--with-platlibdir``, overrideable by the ``PYTHONPLATLIBDIR``
+      environment variable.
+
+      .. versionadded:: 3.10
+
    .. c:member:: int buffered_stdio
 
       If equals to 0, enable unbuffered mode, making the stdout and stderr
@@ -884,6 +892,7 @@ Path Configuration
 * Path configuration inputs:
 
   * :c:member:`PyConfig.home`
+  * :c:member:`PyConfig.platlibdir`
   * :c:member:`PyConfig.pathconfig_warnings`
   * :c:member:`PyConfig.program_name`
   * :c:member:`PyConfig.pythonpath_env`
