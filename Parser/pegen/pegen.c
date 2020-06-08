@@ -161,6 +161,7 @@ byte_offset_to_character_offset(PyObject *line, int col_offset)
 const char *
 _PyPegen_get_expr_name(expr_ty e)
 {
+    assert(e != NULL);
     switch (e->kind) {
         case Attribute_kind:
             return "attribute";
