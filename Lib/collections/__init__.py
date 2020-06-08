@@ -407,7 +407,8 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # Create all the named tuple methods to be added to the class namespace
 
     s = f'lambda _cls, {arg_list}: _tuple_new(_cls, ({arg_list}))'
-    namespace = {'_tuple_new': tuple_new, '__name__': f'namedtuple_{typename}'}
+    namespace = {'_tuple_new': tuple_new,  '__builtins__': None,
+                 '__name__': f'namedtuple_{typename}'}
     __new__ = eval(s, namespace)
     __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
     if defaults is not None:
