@@ -2220,6 +2220,132 @@ _PyPegen_get_binary_operator(Parser *p, const Token *t)
     }
 }
 
+/*
+
+Operator precedence
+===================
+
+To parse an expression like 'a|b*c+d&e+f' efficiently, the PEG parser
+treats this as a bunch of factors with operators in between:
+
+    factor (operator factor)*.
+
+It then calls operator_precedence_expr() with the factor and a list of
+OperatorFactorPairs.  The algorithm (based on Edsger W. Dijkstra's
+shunting yard algorithm) uses a stack and a table of operator
+priorities (here generated as the function get_operator_precedence())
+and roughly works as follows.
+
+The stack can be thought of as alternating expressions and operators;
+the top and bottom element are always expressions.  Each operator has
+an associated priority:
+
+ Bottom                   Top
++------+----+------+----+------+
+| expr | op | expr | op | expr |    (1)
+|      |  1 |      |  4 |      |
++------+----+------+----+------+
+
+For each incoming (operator, factor) input, the stack is "reduced" as
+long as the priority of the topmost operator is higher than that of
+the incoming operator, as follows:
+
+ Bottom                   Top         Incoming
++------+----+------+----+-------+    +----+--------+
+| expr | op | left | op | right | <- | op | factor |    (2)
+|      |  1 |      |  4 |       |    |  2 |        |
++------+----+------+----+-------+    +----+--------+
+            \===================/
+                becomes node
+
+Because 4 is higher than 2, we reduce (left, op, right) to a single
+node by creating a new BinOp node with those arguments, and replace
+those three with that node:
+
+ Bottom       Top        Incoming
++------+----+------+    +----+--------+
+| expr | op | node | <- | op | factor |    (3)
+|      |  1 |      |    |  2 |        |
++------+----+------+    +----+--------+
+
+This may happen multiple times, until the priority of the topmost
+operator on the stack is lower than the incoming operator.  Then we
+push the incoming pair onto the stack:
+
+ Bottom                   Top
++------+----+------+----+--------+
+| expr | op | node | op | factor |    (4)
+|      |  1 |      |  2 |        |
++------+----+------+----+--------+
+
+After the last (operator, factor) pair is processed this way, the
+stack is further reduced until it contains only a single entry.
+
+Left vs. right associativity
+----------------------------
+
+For normal, left-associative operators, an important invariant holds:
+at any time, the priorities of the operators on the stack are strictly
+ascending.  For right-associative operators, they are non-descending.
+
+(This highlights an advantage of left-associative operators: if all
+operators are left-associative, the stack size is at most the number
+of distinct operator priorities in the grammar, and this could be used
+to avoid dynamically allocating the stack.  But if at least one
+right-associative operator exists, the stack is only bounded by the
+size of the input.)
+
+Implementation
+--------------
+
+Because in C an array with values of alternating types is cumbersome,
+and because except for the initial element, the stack always grows and
+shrinks by two elements, we define the stack as (value, operator)
+pairs, and keep the operator member of top element NULL.  (However,
+the incoming (op, factor) pair has a different representation.)  Thus,
+the four diagrams above can be rewritten as follows:
+
++---------+---------+---------+
+| expr op | expr op | expr    |    (1)
+|       1 |       4 |         |
++---------+---------+---------+
+
++---------+---------+---------+    +----+--------+
+| expr op | expr op | expr    | <- | op | factor |    (2)
+|       1 |       4 |         |    |  2 |        |
++---------+---------+---------+    +----+--------+
+           \==================/
+               becomes node
+
++---------+---------+    +----+--------+
+| expr op | node    | <- | op | factor |    (3)
+|       1 |         |    |  2 |        |
++---------+---------+    +----+--------+
+
++---------+---------+---------+
+| expr op | node op | factor  |    (4)
+|       1 |       2 |         |
++---------+---------+---------+
+
+(The priorities are not actually stored in the stack elements; they
+are computed by get_operator_precedence().)
+
+A further complication is end line/column offsets.  While each BinOp
+node has its own start and end line/column offsets, the end offsets
+for a node are not always the same as those of its right operand.  In
+particular, if we have 'a + (b + c )' then the end offset of the node
+representing (b+c) points to 'c', but the end offset for the toplevel
+node points to the right parenthesis.  So the end offsets (but not the
+start offsets) are stored separately in the OperatorFactorPair, so
+they can be extracted when needed.
+
+All in all, the node (either original or computed) is stored in the
+.value member, the operator *following* that node, if any, in the
+.oper member, and the rightmost original OperatorFactorPair, used only
+for the end offset, in the .original_pair member.
+
+*/
+
 typedef struct {
     expr_ty value;
     OperatorFactorPair *original_pair;
@@ -2280,6 +2406,7 @@ _PyPegen_operator_precedence_expr(Parser *p, expr_ty initial_factor, asdl_seq *o
                 goto exit;
             }
         }
+
         stack[stack_top - 1].oper = oper;
         stack[stack_top].value = the_factor;
         stack[stack_top].original_pair = pair;
