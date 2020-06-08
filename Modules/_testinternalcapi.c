@@ -130,8 +130,8 @@ test_bit_length(PyObject *self, PyObject *Py_UNUSED(args))
 
     CHECK(0, 0);
     CHECK(1, 1);
-    CHECK(0x1000, 12);
-    CHECK(0x1234, 12);
+    CHECK(0x1000, 13);
+    CHECK(0x1234, 13);
     CHECK(0x54321, 19);
     CHECK(0x7FFFFFFF, 31);
     CHECK(0xFFFFFFFF, 32);
