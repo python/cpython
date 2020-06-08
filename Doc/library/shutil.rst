@@ -570,12 +570,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    available), or "xztar" (if the :mod:`lzma` module is available).
 
    *root_dir* is a directory that will be the root directory of the
-   archive; for example, we typically chdir into *root_dir* before creating the
-   archive.
+   archive, all paths in the archive will be relative to it; for example,
+   we typically chdir into *root_dir* before creating the archive.
 
    *base_dir* is the directory where we start archiving from;
    i.e. *base_dir* will be the common prefix of all files and
-   directories in the archive.
+   directories in the archive.  *base_dir* must be given relative
+   to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
+   use *base_dir* and *root_dir* together.
 
    *root_dir* and *base_dir* both default to the current directory.
 
@@ -725,6 +727,48 @@ The resulting archive contains:
     -rw------- tarek/staff    1675 2008-06-09 13:26:54 ./id_rsa
     -rw-r--r-- tarek/staff     397 2008-06-09 13:26:54 ./id_rsa.pub
     -rw-r--r-- tarek/staff   37192 2010-02-06 18:23:10 ./known_hosts
+
+
+.. _shutil-archiving-example-with-basedir:
+
+Archiving example with *base_dir*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this example, similar to the `one above <shutil-archiving-example_>`_,
+we show how to use :func:`make_archive`, but this time with the usage of
+*base_dir*.  We now have the following directory structure:
+
+.. code-block:: shell-session
+
+    $ tree tmp
+    tmp
+    └── root
+        └── structure
+            ├── content
+                └── please_add.txt
+            └── do_not_add.txt
+
+In the final archive, :file:`please_add.txt` should be included, but
+:file:`do_not_add.txt` should not.  Therefore we use the following::
+
+    >>> from shutil import make_archive
+    >>> import os
+    >>> archive_name = os.path.expanduser(os.path.join('~', 'myarchive'))
+    >>> make_archive(
+    ...     archive_name,
+    ...     'tar',
+    ...     root_dir='tmp/root',
+    ...     base_dir='structure/content',
+    ... )
+    '/Users/tarek/my_archive.tar'
+
+Listing the files in the resulting archive gives us:
+
+.. code-block:: shell-session
+
+    $ python -m tarfile -l /Users/tarek/myarchive.tar
+    structure/content/
+    structure/content/please_add.txt
 
 
 Querying the size of the output terminal
